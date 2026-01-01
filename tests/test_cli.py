@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from agentic_mbse.cli import cmd_init, cmd_validate, main
+from agentic_mbse.cli import cmd_init, cmd_install_commands, cmd_validate, main
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
 
 
@@ -72,54 +72,123 @@ package TestPackage {
 class TestCmdInit:
     """Tests for cmd_init function."""
 
-    def test_creates_config_file(self, tmp_path):
-        """Creates .agentic-mbse.yaml config file."""
+    def test_creates_source_index(self, tmp_path):
+        """Creates SOURCE_INDEX.md file."""
         args = MockArgs(path=str(tmp_path), force=False)
         result = cmd_init(args)
-        
+
         assert result == EXIT_SUCCESS
-        config_path = tmp_path / ".agentic-mbse.yaml"
-        assert config_path.exists()
+        source_index = tmp_path / "SOURCE_INDEX.md"
+        assert source_index.exists()
+        content = source_index.read_text()
+        assert "Source Index" in content
 
     def test_creates_claude_directory(self, tmp_path):
         """Creates .claude/commands/ directory."""
         args = MockArgs(path=str(tmp_path), force=False)
         cmd_init(args)
-        
+
         claude_dir = tmp_path / ".claude" / "commands"
         assert claude_dir.exists()
         assert claude_dir.is_dir()
 
-    def test_fails_if_config_exists_without_force(self, tmp_path):
-        """Fails if config exists and --force not specified."""
-        config_path = tmp_path / ".agentic-mbse.yaml"
-        config_path.write_text("existing: config")
-        
+    def test_skips_source_index_if_exists_without_force(self, tmp_path):
+        """Skips overwriting SOURCE_INDEX.md without --force but still succeeds."""
+        source_index = tmp_path / "SOURCE_INDEX.md"
+        source_index.write_text("existing: content")
+
         args = MockArgs(path=str(tmp_path), force=False)
         result = cmd_init(args)
-        
-        assert result == EXIT_FAILURE
 
-    def test_overwrites_config_with_force(self, tmp_path):
-        """Overwrites existing config when --force specified."""
-        config_path = tmp_path / ".agentic-mbse.yaml"
-        config_path.write_text("old: config")
-        
+        # Should succeed (just skip overwriting)
+        assert result == EXIT_SUCCESS
+        # Should NOT overwrite
+        assert source_index.read_text() == "existing: content"
+
+    def test_overwrites_source_index_with_force(self, tmp_path):
+        """Overwrites existing SOURCE_INDEX.md when --force specified."""
+        source_index = tmp_path / "SOURCE_INDEX.md"
+        source_index.write_text("old: content")
+
         args = MockArgs(path=str(tmp_path), force=True)
         result = cmd_init(args)
-        
+
         assert result == EXIT_SUCCESS
-        content = config_path.read_text()
-        assert "my-project" in content  # New config content
+        content = source_index.read_text()
+        assert "Source Index" in content  # New content from template
 
     def test_uses_current_directory_if_no_path(self, tmp_path, monkeypatch):
         """Uses current directory if no path specified."""
         monkeypatch.chdir(tmp_path)
         args = MockArgs(path=None, force=False)
         result = cmd_init(args)
-        
+
         assert result == EXIT_SUCCESS
-        assert (tmp_path / ".agentic-mbse.yaml").exists()
+        assert (tmp_path / "SOURCE_INDEX.md").exists()
+
+
+class TestCmdInstallCommands:
+    """Tests for cmd_install_commands function."""
+
+    def test_list_shows_commands(self, capsys):
+        """--list shows available commands."""
+        args = MockArgs(list=True, directory=".", force=False)
+        result = cmd_install_commands(args)
+
+        assert result == EXIT_SUCCESS
+        captured = capsys.readouterr()
+        assert "design-model.md" in captured.out
+        assert "audit-models.md" in captured.out
+
+    def test_installs_commands_to_directory(self, tmp_path):
+        """Installs commands to .claude/commands/ directory."""
+        args = MockArgs(list=False, directory=str(tmp_path), force=False)
+        result = cmd_install_commands(args)
+
+        assert result == EXIT_SUCCESS
+        commands_dir = tmp_path / ".claude" / "commands"
+        assert commands_dir.exists()
+        assert (commands_dir / "design-model.md").exists()
+        assert (commands_dir / "audit-models.md").exists()
+
+    def test_skips_existing_without_force(self, tmp_path, capsys):
+        """Skips existing files without --force."""
+        # Create commands dir with existing file
+        commands_dir = tmp_path / ".claude" / "commands"
+        commands_dir.mkdir(parents=True)
+        existing = commands_dir / "design-model.md"
+        existing.write_text("existing content")
+
+        args = MockArgs(list=False, directory=str(tmp_path), force=False)
+        result = cmd_install_commands(args)
+
+        assert result == EXIT_SUCCESS
+        # Should not overwrite
+        assert existing.read_text() == "existing content"
+        captured = capsys.readouterr()
+        assert "Skipping" in captured.out
+
+    def test_overwrites_with_force(self, tmp_path):
+        """Overwrites existing files with --force."""
+        # Create commands dir with existing file
+        commands_dir = tmp_path / ".claude" / "commands"
+        commands_dir.mkdir(parents=True)
+        existing = commands_dir / "design-model.md"
+        existing.write_text("old content")
+
+        args = MockArgs(list=False, directory=str(tmp_path), force=True)
+        result = cmd_install_commands(args)
+
+        assert result == EXIT_SUCCESS
+        # Should overwrite with new content
+        assert existing.read_text() != "old content"
+
+    def test_fails_for_nonexistent_directory(self):
+        """Returns failure for nonexistent directory."""
+        args = MockArgs(list=False, directory="/nonexistent/path", force=False)
+        result = cmd_install_commands(args)
+
+        assert result == EXIT_FAILURE
 
 
 class TestMain:

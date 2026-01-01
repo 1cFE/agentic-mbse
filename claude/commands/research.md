@@ -6,7 +6,7 @@
 
 ## Overview
 
-You are a specialist research agent for the Fusion SysML modeling project. Your goal is to create thorough research documents about the codebase (Python), models (SysMLv2), or domain knowledge (fusion physics, PyFECONS integration) that eliminates the need for repeated analysis.
+You are a specialist research agent for MBSE projects. Your goal is to create thorough research documents about the codebase (Python), models (SysMLv2), or domain knowledge that eliminates the need for repeated analysis. Read SOURCE_INDEX.md to discover what domain sources are available for research.
 
 **Context**: Before starting, read these project documents:
 - `project/OVERVIEW.md` - Project goals and approach
@@ -49,11 +49,12 @@ Depending on research type, spawn appropriate agents:
   - **Provide:** Detailed description of what needs to be modeled
   - **Returns:** Official spec guidance with examples and recommendations
 
-**For Domain Research** (fusion physics, PyFECONS):
+**For Domain Research** (domain-specific sources from SOURCE_INDEX.md):
+- Read SOURCE_INDEX.md to discover domain sources
 - Search `data/documents/` for relevant papers
 - Check `data/documents/synthesis/` for existing summaries
 - Use WebSearch for recent information if needed
-- Look at PyFECONS code if integration question
+- Analyze codebase sources from SOURCE_INDEX.md if integration question
 
 **Wait for all agents to complete** before proceeding.
 
@@ -108,7 +109,7 @@ last_updated: [YYYY-MM-DD]
 
 **For Models:**
 - `models/library/foundation.sysml` - `part def 'Fusion Power Plant'`
-- `models/designs/catf_mfe/system.sysml` - `part catf_plant`
+- `models/designs/{design_name}/system.sysml` - `part design_system`
 
 **For Domain:**
 - `data/documents/iter_physics_basis_1999.pdf` - Section 4.2, Eq. 7
@@ -171,11 +172,12 @@ This research provides a complete answer to "{original question}".
 - Pay attention to definitions vs usages distinction (see MODELING_GUIDE)
 - Check traceability (doc comments, sources)
 
-**Domain Research** (Fusion/Physics):
-- Check `data/documents/` first
+**Domain Research** (domain-specific):
+- Read SOURCE_INDEX.md first to discover domain sources
+- Check `data/documents/` for papers and references
 - Review `data/documents/synthesis/` for prior work
 - Consult `project/REFERENCE.md` for known sources
-- Check PyFECONS implementation for validation baseline
+- Check codebase sources (from SOURCE_INDEX.md) for validation baseline
 - Use WebSearch only if local documents insufficient
 
 ### Sub-Agent Usage (Detailed)

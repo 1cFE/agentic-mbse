@@ -74,7 +74,7 @@ Task(
     Read project/active/structure/plan.md, extract Phase 3 section.
 
     Return condensed version with:
-    - PyFECONS line number mappings
+    - Codebase source line number mappings
     - File creation specs
     - Validation criteria
 
@@ -129,8 +129,8 @@ Launch multiple sysml-file-creator sub-agents:
 # Prepare specifications for each file (from plan)
 file_specs = [
     {
-        "file_path": "models/designs/catf_mfe/magnets.sysml",
-        "package_name": "CATFMFEMagnets",
+        "file_path": "models/designs/{design_name}/magnets.sysml",
+        "package_name": "DesignMagnets",
         "plan_reference": {
             "file": "project/active/structure/plan.md",
             "section": "Phase 3",
@@ -348,8 +348,8 @@ Bash("python /tmp/batch_edit.py models/file.sysml")
    # Traceability check
    python scripts/check_traceability.py models/library/components/
 
-   # PyFECONS comparison (if applicable)
-   python scripts/validate_model_vs_pyfecons.py
+   # Baseline comparison (if applicable)
+   python scripts/validate_model_vs_baseline.py  # If validation source configured
    ```
 
    **Quality Check Interpretation:**
@@ -368,8 +368,8 @@ Bash("python /tmp/batch_edit.py models/file.sysml")
      - Defined `part def 'TF Coil'` with 12 attributes
      - Added constraints FieldLimit, TemperatureLimit
      - All doc comments include sources
-   - Updated `models/designs/catf_mfe/magnets.sysml`
-     - Created instance catf_tf_system with specific values
+   - Updated `models/designs/{design_name}/magnets.sysml`
+     - Created instance tf_system with specific values
 
    **Traceability Updates:**
    - Added 5 entries to traceability_matrix.csv
@@ -378,7 +378,7 @@ Bash("python /tmp/batch_edit.py models/file.sysml")
    **Validation Results:**
    - All models parse successfully
    - Traceability check passed
-   - PyFECONS comparison: geometry matches within 0.1%
+   - Baseline comparison: geometry matches within 0.1%
 
    **Issues Encountered:**
    - Initial parse error due to typo in attribute type
@@ -407,7 +407,7 @@ If all phases complete:
 - [ ] All models parse without errors
 - [ ] All definitions have doc comments with sources
 - [ ] Traceability check passes
-- [ ] PyFECONS comparison passes (if applicable)
+- [ ] Baseline comparison passes (if applicable)
 - [ ] Constraints properly defined
 - [ ] Naming conventions followed
 - [ ] Epic deliverables marked complete
@@ -452,7 +452,7 @@ If all phases complete:
 - Follow MODELING_GUIDE conventions exactly
 - Definitions vs usages distinction critical
 - Include units with values: `= 4.15 [m]`
-- Cite PyFECONS with line numbers in comments
+- Cite codebase sources (from SOURCE_INDEX.md) with line numbers in comments
 - Validate parse after each model file
 - Check traceability before completing phase
 
@@ -461,13 +461,13 @@ After implementation:
 1. **Parse validation** - All models must parse
 2. **Traceability validation** - check_traceability.py passes
 3. **Convention validation** - Manual check of naming
-4. **PyFECONS validation** - Comparison if applicable
+4. **Baseline validation** - Comparison if applicable (from SOURCE_INDEX.md)
 5. **Constraint validation** - Constraints evaluatable
 
 ### Error Handling
 - STOP if model doesn't parse
 - STOP if traceability check fails
-- STOP if PyFECONS comparison fails significantly
+- STOP if Baseline comparison fails significantly
 - Document ALL deviations in plan
 - Get approval before continuing if major issues
 

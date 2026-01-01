@@ -1,12 +1,12 @@
 # Design Model Command
 
 **Purpose:** Semantic design document for SysMLv2 models (engineering-focused, not syntax-focused)
-**Input:** Spec document, PyFECONS analysis, research findings, technical references
+**Input:** Spec document, domain source analysis (from SOURCE_INDEX.md), research findings, technical references
 **Output:** `project/active/{feature-name}/design.md`
 
 ## Overview
 
-You are a specialist design agent for **SysMLv2 models** in the Fusion SysML modeling project. Your goal is to create semantic design documentation that explains the engineering modeling approach in terms an engineer unfamiliar with SysMLv2 details can understand.
+You are a specialist design agent for **SysMLv2 models**. Your goal is to create semantic design documentation that explains the engineering modeling approach in terms an engineer unfamiliar with SysMLv2 details can understand.
 
 **This is a DESIGN DOCUMENT - focus on semantics, not syntax:**
 - Explain WHAT components exist and HOW they relate
@@ -16,7 +16,8 @@ You are a specialist design agent for **SysMLv2 models** in the Fusion SysML mod
 - SysMLv2 syntax examples are helpful but secondary to semantic clarity
 
 **Critical Research Requirements:**
-- **MUST** carefully evaluate the PyFECONS repository to understand existing implementation
+- **MUST** read SOURCE_INDEX.md to discover domain knowledge sources
+- **MUST** analyze codebase sources listed in the index to understand existing implementation
 - **MUST** search the web for additional technical information as needed
 - **MUST** present alternatives when modeling approach is uncertain
 - **MUST** solicit user guidance on design decisions
@@ -52,18 +53,22 @@ START → OUTLINE → RESEARCH → ADD DETAIL → FINALIZE → PROTOTYPE → VAL
 
 ### Example Workflow: Thermal Management Model
 
-**Scenario:** Designing thermal management model for fusion blanket system
+**Scenario:** Designing thermal management model for a thermal subsystem
 
 **Stage 1 - Outline:**
-- Create initial design.md with high-level blanket components
+- Create initial design.md with high-level thermal components
 - Note: Heat generation, coolant system, temperature constraints
 
 **Stage 2 - Research:**
-1. **PyFECONS Analysis** (Explore agent):
-   - Find thermal modules: `blanket_thermal.py`, `coolant_flow.py`
+1. **Source Index Discovery** (read SOURCE_INDEX.md):
+   - Identify codebase sources for thermal analysis
+   - Identify documentation sources for physics references
+
+2. **Codebase Analysis** (Explore agent for each codebase source):
+   - Find thermal modules in configured source locations
    - Extract parameters: heat flux, coolant temp, flow rates
 
-2. **SysMLv2 Guidance** (sysmlv2-doc-analyzer agent):
+3. **SysMLv2 Guidance** (sysmlv2-doc-analyzer agent):
    ```
    Task(
      prompt="How to model thermal management with heat generation,
@@ -72,7 +77,7 @@ START → OUTLINE → RESEARCH → ADD DETAIL → FINALIZE → PROTOTYPE → VAL
    ```
    - Returns: Patterns for flow interfaces, constraint modeling
 
-3. **Web Search:** Material properties, heat transfer correlations
+4. **Web Search:** Material properties, heat transfer correlations
 
 **Stage 3 - Alternatives:**
 - Option A: Single part with all thermal params
@@ -143,8 +148,8 @@ This design-model command implements the process defined in MODELING_PROCESS.md:
 ☐ models/README.md read and understood
 ☐ Feature spec exists at project/active/{feature-name}/spec.md
 ☐ This is a MODELS feature (not CODE)
-☐ PyFECONS location known: /home/reid/PyFECONS
-☐ Ready to launch parallel discovery agents
+☐ SOURCE_INDEX.md exists (or will be created with template)
+☐ Ready to launch discovery agents based on index contents
 ```
 
 If any prerequisites missing, STOP and request clarification.
@@ -194,7 +199,7 @@ If any prerequisites missing, STOP and request clarification.
 
 4. **Identify Research Needs**:
    - What information is missing?
-   - What PyFECONS code needs deep analysis?
+   - What codebase sources (from SOURCE_INDEX.md) need deep analysis?
    - What technical details need web search?
    - What design alternatives need evaluation?
 
@@ -265,10 +270,13 @@ Task(
     model="haiku"  # Fast for pattern retrieval
 )
 
-# Agent 3: PyFECONS baseline analysis
+# Agent 3: Codebase baseline analysis (from SOURCE_INDEX.md)
+# First read SOURCE_INDEX.md to discover codebase sources:
+# Read("SOURCE_INDEX.md")
+# For each source with Type: codebase, launch analysis agent:
 Task(
-    description="Analyze PyFECONS implementation",
-    prompt="""Analyze PyFECONS at /home/reid/PyFECONS for [YOUR FEATURE]:
+    description="Analyze codebase source from SOURCE_INDEX.md",
+    prompt="""Analyze the codebase at {source_location} for [YOUR FEATURE]:
 
     Focus on:
     - Calculation flow and dependencies
@@ -278,6 +286,10 @@ Task(
 
     Extract all relevant formulas with source code line numbers.
     Identify validation data for comparison.
+
+    If no codebase sources configured in SOURCE_INDEX.md:
+    - Report: "No codebase sources configured"
+    - Proceed with web search and documentation
     """,
     subagent_type="general-purpose",
     model="sonnet"  # Needs reasoning for code analysis
@@ -292,8 +304,11 @@ Task(
 
 ```python
 # Use parallel Read calls (4-6 files at once)
-Read("models/designs/catf_mfe/system.sysml")
-Read("models/designs/catf_mfe/physics.sysml")
+# First discover available designs:
+# Glob(pattern="models/designs/*/")
+# Then read files from the relevant design directory:
+Read("models/designs/{design_name}/system.sysml")
+Read("models/designs/{design_name}/physics.sysml")
 Read("models/library/physics/power_balance.sysml")
 Read("models/library/physics/performance_metrics.sysml")
 # ... other relevant files based on library discovery
@@ -304,13 +319,13 @@ Read("models/library/physics/performance_metrics.sysml")
 ### 3. Search Web for Additional Information (AS NEEDED)
 
 Use WebSearch for:
-- Physics models and equations not in PyFECONS
+- Physics models and equations not in configured codebase sources
 - Material properties and engineering constraints
 - Industry standards and best practices
-- Fusion reactor design references
+- Domain-specific design references
 - Validation methodologies
 
-**Only search after** checking PyFECONS and existing models.
+**Only search after** checking codebase sources (from SOURCE_INDEX.md) and existing models.
 
 ### 4. Review Related Documentation
 
@@ -324,11 +339,13 @@ Use WebSearch for:
    ```markdown
    ## Research Findings
 
-   ### PyFECONS Analysis
+   ### Codebase Source Analysis
+   (For each codebase source in SOURCE_INDEX.md that was analyzed)
+   - **Source**: [Source name from index]
    - **Relevant modules**: [List files analyzed]
    - **Key parameters**: [What was found, with line references]
-   - **Calculation approach**: [How PyFECONS implements this]
-   - **Validation methods**: [How PyFECONS validates results]
+   - **Calculation approach**: [How the source implements this]
+   - **Validation methods**: [How the source validates results]
    - **Gaps/uncertainties**: [What's unclear or missing]
 
    ### Web Research
@@ -368,7 +385,7 @@ Use WebSearch for:
 **When evaluating modeling approach alternatives:**
 - Consider using sysmlv2-doc-analyzer to validate approaches against official specs
 - Ask: "What are recommended SysMLv2 patterns for [specific scenario]?"
-- Compare PyFECONS implementation structure with SysMLv2 best practices
+- Compare codebase source implementation structure with SysMLv2 best practices
 - Present alternatives that align with both engineering needs AND spec guidance
 
 2. **Present Alternatives Clearly**:
@@ -385,12 +402,12 @@ Use WebSearch for:
    - Implementation: [Where in models/library/ or models/designs/]
    - Pros: [Benefits - engineering clarity, reusability, validation]
    - Cons: [Drawbacks - complexity, limitations]
-   - PyFECONS alignment: [How well this matches PyFECONS approach]
+   - Baseline alignment: [How well this matches codebase source approach]
 
    **Option B: [Alternative Approach]**
    - Semantic structure: [Alternative organization]
    - Trade-offs: [Different benefits and drawbacks]
-   - PyFECONS alignment: [How this differs from PyFECONS]
+   - Baseline alignment: [How this differs from codebase source]
 
    **Option C: [If applicable]**
    - ...
@@ -427,7 +444,7 @@ Use WebSearch for:
 - Calc def specifications (inputs, outputs, formulas with sources)
 - Cross-file binding documentation (table of all bindings)
 - Validation plan with expected values and tolerances
-- Traceability matrix (SysML ↔ PyFECONS)
+- Traceability matrix (SysML ↔ codebase sources from SOURCE_INDEX.md)
 - Implementation checklist organized by phase
 
 For each iteration:
@@ -455,14 +472,14 @@ For each iteration:
    - [Constraint 1]: [Physical law or engineering limit]
      - Formula: [Mathematical expression]
      - Rationale: [Why this matters]
-     - Source: [PyFECONS, paper reference, web source]
+     - Source: [Codebase source, paper reference, web source]
 
    **Sub-Components** (if applicable):
    - [Sub-component 1]: [Purpose and relationship]
    - [Sub-component 2]: [Purpose and relationship]
 
    **Traceability**:
-   - Primary source: [PyFECONS file/function or technical document]
+   - Primary source: [Codebase source file/function or technical document]
    - Secondary sources: [Additional references]
    - Confidence: [High/Medium/Low - with reasoning]
 
@@ -486,13 +503,13 @@ For each iteration:
    - [Output 1]: [Physical meaning, units, expected range]
 
    **Formula**: [Mathematical expression with clear notation]
-   - Source: [Equation reference - paper, PyFECONS, web]
+   - Source: [Equation reference - paper, codebase source, web]
    - Validity range: [Where this formula applies]
    - Assumptions: [What's assumed]
    - Limitations: [Known approximations or limits]
 
    **Validation**: [How to verify correctness]
-   - Compare to: [PyFECONS function, test data]
+   - Compare to: [Baseline codebase function, test data]
    - Expected accuracy: [Target tolerance]
    ```
 
@@ -574,7 +591,7 @@ This helps implementation agents avoid common syntax errors and provides quick p
 
 #### Documentation Requirements
 - ✓ MUST HAVE: **Source**, **Reference**, **Last Updated** in every doc comment
-- ✓ MUST HAVE: Line number citations for all PyFECONS parameters
+- ✓ MUST HAVE: Line number citations for all codebase source parameters
 - ✓ MUST HAVE: Units documented even if not in [brackets]
 
 ### Pre-Flight Checklist
@@ -583,7 +600,7 @@ Before implementation, verify:
 - [ ] Tested representative syntax patterns with validation script
 - [ ] All unicode converted to ASCII in design
 - [ ] Type declarations specified for all attributes
-- [ ] PyFECONS line numbers mapped
+- [ ] Codebase source line numbers mapped (if validation sources configured)
 - [ ] Validation rules understood
 
 ### Validation Commands
@@ -599,7 +616,7 @@ Before implementation, verify:
 python scripts/test_sysml_parsing.py models/path/to/file.sysml
 
 # Check directory
-python scripts/test_sysml_parsing.py models/designs/catf_mfe/
+python scripts/test_sysml_parsing.py models/designs/{design_name}/
 
 # Traceability check
 python scripts/check_traceability.py models/library/components/
@@ -669,7 +686,7 @@ python scripts/check_traceability.py models/library/components/
    **Files Created/Modified**:
    - models/library/physics/power_balance.sysml (enhanced)
    - models/library/analyses/thermal_loads.sysml (new)
-   - models/designs/catf_mfe/blanket.sysml (modified)
+   - models/designs/{design_name}/blanket.sysml (modified)
 
    **Prototype Status**: [PASS / FAIL]
    ```
@@ -803,7 +820,7 @@ Add to design.md:
 - `models/library/system_definition.sysml` - [Current system model]
 
 ### Existing Instances (Designs)
-- `models/designs/catf_mfe/system.sysml` - [Current design instance]
+- `models/designs/{design_name}/system.sysml` - [Current design instance]
 
 ### Gaps
 [What's missing that this design will address]
@@ -852,29 +869,29 @@ part def 'Element Name' {
 
 **Traceability Sources**:
 - Primary: [Paper/report with section]
-- Secondary: [PyFECONS file or other source]
+- Secondary: [Codebase source file or other source from SOURCE_INDEX.md]
 - Confidence: [High/Medium/Low and why]
 
 **Validation Approach**:
-- Compare to: [PyFECONS baseline or other reference]
+- Compare to: [Baseline codebase or other reference from SOURCE_INDEX.md]
 - Success criteria: [Metric within X%]
 
 ### Model Element 2: [Usage Instance]
 
 **Type**: `part instance_name : 'Definition Name'`
 
-**Purpose**: [Specific instance for CATF MFE or other design]
+**Purpose**: [Specific instance for project design]
 
-**Location**: `models/designs/catf_mfe/[filename].sysml`
+**Location**: `models/designs/{design_name}/[filename].sysml`
 
 **Instance Structure**:
 ```sysmlv2
 part instance_name : 'Definition Name' {
-    doc /* Specific instance for CATF MFE design */
+    doc /* Specific instance for project design */
 
     // Specific values
-    attribute key_property = 4.15 [m];  // From PyFECONS
-    attribute another_property = 12 [T];  // From CATF design doc
+    attribute key_property = 4.15 [m];  // From codebase source
+    attribute another_property = 12 [T];  // From design doc
 
     // Composition
     part specific_subcomponent : 'Subcomponent Type' {
@@ -884,8 +901,8 @@ part instance_name : 'Definition Name' {
 ```
 
 **Parameter Sources**:
-- PyFECONS: `inputs/[file].py` lines X-Y
-- Design document: `data/documents/catf_mfe_design.pdf` Table Z
+- Codebase source: `[source_location]/[file].py` lines X-Y (from SOURCE_INDEX.md)
+- Design document: `data/documents/[design]_design.pdf` Table Z
 - Assumptions: [Any assumptions made]
 
 ### Calculations
@@ -930,15 +947,15 @@ calc def 'Calculation Name' {
 
 | Calc Input | Source File | Source Attribute | Notes |
 |------------|-------------|------------------|-------|
-| p_coils | magnets.sysml | catf_tf_system.cooling_power | TF+PF+CS magnet cooling |
-| p_heating | heating.sysml | catf_heating.wall_plug_power | NBI+ECRH wall-plug power |
-| p_pumps | blanket.sysml | catf_blanket.pump_power | Coolant circulation pumps |
+| p_coils | magnets.sysml | tf_system.cooling_power | TF+PF+CS magnet cooling |
+| p_heating | heating.sysml | heating.wall_plug_power | Heating wall-plug power |
+| p_pumps | blanket.sysml | blanket.pump_power | Coolant circulation pumps |
 
 **Required imports**:
 ```sysmlv2
-private import CATFMFEMagnets::catf_tf_system;
-private import CATFMFEHeating::catf_heating;
-private import CATFMFEBlanket::catf_blanket;
+private import {DesignName}Magnets::tf_system;
+private import {DesignName}Heating::heating;
+private import {DesignName}Blanket::blanket;
 ```
 
 **Dataflow direction**: [Document unidirectional flow to prevent circular dependencies]
@@ -989,8 +1006,10 @@ constraint FieldStrengthLimit {
   - File: `data/documents/[filename].pdf`
   - Used for: [Validation or additional context]
 
-### PyFECONS Integration
-- **Files referenced**: `pyfecons/[module]/[file].py`
+### Codebase Source Integration
+(For each codebase source in SOURCE_INDEX.md)
+- **Source name**: [From SOURCE_INDEX.md]
+- **Files referenced**: `[source_location]/[module]/[file].py`
 - **Parameters extracted**: [List with line numbers]
 - **Validation approach**: [How we compare]
 
@@ -1013,26 +1032,23 @@ python scripts/test_sysml_parsing.py models/library/[area]/[file].sysml
 - Physical limits: [What constraints to check]
 - Geometric consistency: [Radial build verification]
 
-### PyFECONS Comparison
+### Baseline Comparison
 
-**Expected values from PyFECONS baseline:**
+**Expected values from baseline codebase sources (from SOURCE_INDEX.md):**
 
 | Metric | Expected Value | Tolerance | Source |
 |--------|----------------|-----------|--------|
-| P_fusion | 2600 MW | ±1% | DefineInputs.py line 45 |
-| P_alpha | 520.6 MW | ±0.1% | Exact physics (20% of fusion) |
-| P_neutron | 2079.4 MW | ±0.1% | Exact physics (80% of fusion) |
-| P_net | 306.5 MW | ±10% | PowerBalance.py output |
-| Q_eng | 1.42 | ±5% | PowerBalance.py output |
-| η_plant | 0.118 (11.8%) | ±10% | PowerBalance.py output |
+| [Metric 1] | [Value] | ±X% | [source_file.py] line Y |
+| [Metric 2] | [Value] | ±X% | [source_file.py] line Y |
+| [Metric 3] | [Value] | ±X% | Derived calculation |
 
 **Validation commands:**
 ```bash
-# Compare calculated values to PyFECONS baseline
-python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
+# Compare calculated values to baseline (if validation script exists)
+python scripts/compare_with_baseline.py --design {design_name} --metric all
 
-# Verify energy conservation
-# Should satisfy: P_alpha + P_neutron = P_fusion within 0.001%
+# Verify key constraints (e.g., energy conservation)
+# Should satisfy: [constraint] within X%
 ```
 
 ### Manual Verification
@@ -1055,7 +1071,7 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 ☐ Unit tests (if applicable)
 
 ### Phase 2: Structural Components (estimated time)
-☐ Update `models/designs/catf_mfe/[component].sysml`
+☐ Update `models/designs/{design_name}/[component].sysml`
   ☐ Import library calc defs
   ☐ Add calc instances
   ☐ Expose attributes for cross-file binding
@@ -1063,7 +1079,7 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 ☐ Parse validation for all updated files
 
 ### Phase 3: Physics Integration (estimated time)
-☐ Update `models/designs/catf_mfe/physics.sysml`
+☐ Update `models/designs/{design_name}/physics.sysml`
   ☐ Remove inline calc defs (if replacing with library)
   ☐ Import library calc defs
   ☐ Import structural component packages
@@ -1073,9 +1089,9 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 ☐ Cross-file binding validation
 
 ### Phase 4: System Integration & Validation (estimated time)
-☐ Update `models/designs/catf_mfe/system.sysml`
+☐ Update `models/designs/{design_name}/system.sysml`
 ☐ Run full parse validation
-☐ Compare to PyFECONS baseline
+☐ Compare to baseline codebase (if validation source configured in SOURCE_INDEX.md)
 ☐ Document any deviations
 ☐ Update traceability matrix
 
@@ -1083,7 +1099,7 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 
 ## Implementation Benefits
 - [Follows MODELING_GUIDE patterns]
-- [Enables validation against PyFECONS]
+- [Enables validation against baseline sources from SOURCE_INDEX.md]
 - [Reuses existing definitions]
 - [Complete traceability to sources]
 
@@ -1099,7 +1115,7 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 1. Parse validation: Ensure models parse without errors
 2. Traceability check: Run `scripts/check_traceability.py`
 3. Constraint validation: Check all constraints satisfied
-4. PyFECONS comparison: Run comparison for affected metrics
+4. Baseline comparison: Run comparison for affected metrics (if validation sources configured)
 5. Update epic status: Mark relevant deliverables complete
 
 ---
@@ -1111,8 +1127,9 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 ### Critical Requirements
 - **MUST** read models/README.md FIRST to identify existing library calc defs
 - **MUST** follow MODELING_PROCESS.md 3-phase workflow (Discovery → Architecture → Specification)
-- **MUST** launch parallel discovery agents (library + SysMLv2 + PyFECONS)
-- **MUST** carefully evaluate PyFECONS repository
+- **MUST** read SOURCE_INDEX.md to discover domain knowledge sources
+- **MUST** launch parallel discovery agents (library + SysMLv2 + codebase sources)
+- **MUST** carefully analyze codebase sources from SOURCE_INDEX.md
 - **MUST** search web for additional information as needed
 - **MUST** present alternatives when uncertain
 - **MUST** solicit user guidance on design decisions
@@ -1129,11 +1146,11 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 - **Physics/engineering rationale**: Explains WHY the model is structured this way
 - **Progressive detail**: Starts high-level, iteratively adds detail
 - **Alternatives documented**: Shows options considered and decisions made
-- **Complete traceability**: All claims sourced to PyFECONS, papers, or web research
+- **Complete traceability**: All claims sourced to codebase sources, papers, or web research
 - **Validation defined**: Clear plan to verify correctness
 
 ### Research Requirements (CRITICAL)
-- **PyFECONS Analysis**:
+- **Codebase Source Analysis** (for each source in SOURCE_INDEX.md):
   - Use Explore agent to find relevant modules
   - Read source files thoroughly
   - Extract parameters with line references
@@ -1156,7 +1173,7 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 
 ### Iterative Refinement Process
 1. **Start with outline**: High-level structure first
-2. **Research thoroughly**: PyFECONS and web sources
+2. **Research thoroughly**: Codebase sources (from SOURCE_INDEX.md) and web sources
 3. **Present alternatives**: Get user guidance on uncertainties
 4. **Add detail progressively**: One component/subsystem at a time
 5. **Evaluate completeness**: Check if spec requirements met
@@ -1168,8 +1185,8 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 - **Component Interfaces**: Describe what they represent and what they include
 - **Constraints**: Include physics/engineering limits with formulas
 - **Units**: Use ISQ/SI standard units from REFERENCE
-- **Traceability**: Cite PyFECONS (with line numbers), papers, web sources
-- **Validation**: Define PyFECONS comparison or constraint checking
+- **Traceability**: Cite codebase sources (with line numbers), papers, web sources
+- **Validation**: Define baseline comparison or constraint checking
 
 ### Physics and Engineering Accuracy
 - Cite specific equations from source documents
@@ -1182,7 +1199,7 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 ### Sub-Agent Usage (Detailed)
 
 **Explore agents:**
-- Find PyFECONS modules, existing models, patterns
+- Find modules in codebase sources (from SOURCE_INDEX.md), existing models, patterns
 - Locate related definitions in models/library/
 - Identify reusable components and conventions
 
@@ -1220,7 +1237,7 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 
 **Coordination:**
 - Use agents in parallel when researching independent topics
-- Combine PyFECONS analysis + SysMLv2 patterns + web research for comprehensive design
+- Combine codebase source analysis + SysMLv2 patterns + web research for comprehensive design
 - Cross-reference findings before making recommendations
 
 ### Decision Points & User Engagement
@@ -1228,7 +1245,7 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 - Multiple valid model structures exist
 - Uncertain about interface design
 - Trade-offs between approaches
-- PyFECONS implementation differs from standard practice
+- Codebase source implementation differs from standard practice
 - Constraint placement unclear
 - Validation methodology options exist
 
@@ -1251,7 +1268,7 @@ python scripts/compare_with_pyfecons.py --design catf_mfe --metric all
 - Can be understood by engineers unfamiliar with SysMLv2 syntax
 - Interfaces clearly described with engineering meaning
 - Physics/engineering rationale explained throughout
-- PyFECONS thoroughly analyzed and referenced
+- Codebase sources (from SOURCE_INDEX.md) thoroughly analyzed and referenced
 - Web research conducted where needed
 - Alternatives considered and documented
 - User guidance obtained on major decisions

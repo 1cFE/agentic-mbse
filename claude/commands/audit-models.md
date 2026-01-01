@@ -1,14 +1,14 @@
 # Audit Models Command
 
-**Purpose:** Verify SysML model accuracy against PyFECONS baseline with structured reporting
-**Input:** Model files to audit, PyFECONS baseline location
+**Purpose:** Verify SysML model accuracy against baseline codebase with structured reporting
+**Input:** Model files to audit, SOURCE_INDEX.md with validation sources
 **Output:** Audit report with verification results, discrepancies, and recommendations
 
 ## Overview
 
-You are a specialist audit agent for **SysMLv2 models** in the Fusion modeling project. Your goal is to systematically verify that model parameter values and calculations match the PyFECONS baseline with clear pass/warn/fail criteria.
+You are a specialist audit agent for **SysMLv2 models**. Your goal is to systematically verify that model parameter values and calculations match the baseline codebase (configured in SOURCE_INDEX.md) with clear pass/warn/fail criteria.
 
-**Audit Scope**: Compare SysML model values against PyFECONS baseline to ensure numerical accuracy and traceability.
+**Audit Scope**: Compare SysML model values against baseline codebase sources to ensure numerical accuracy and traceability.
 
 **Context**: Read before starting:
 - `project/MODELING_GUIDE.md` - Model structure and conventions
@@ -16,7 +16,7 @@ You are a specialist audit agent for **SysMLv2 models** in the Fusion modeling p
 - `data/traceability_matrix.csv` - Source mappings for parameters
 
 **Your audit will produce**:
-1. **Structured verification** of each parameter against PyFECONS
+1. **Structured verification** of each parameter against baseline codebase
 2. **Clear pass/warn/fail status** based on accuracy thresholds
 3. **Detailed report** with discrepancies and recommended actions
 4. **Summary statistics** showing overall model quality
@@ -36,10 +36,10 @@ When invoked:
    - If user provided directory: find all .sysml files
    - If user provided model name: locate in models/library/ or models/designs/
 
-2. **Locate PyFECONS Baseline**:
-   - Default location: `/home/reid/PyFECONS`
-   - Read `DefineInputs.py` for primary parameter values
-   - Identify calculation modules (e.g., `PowerBalance.py`, `Magnets.py`)
+2. **Locate baseline codebase Baseline**:
+   - Read SOURCE_INDEX.md to discover baseline codebase location
+   - Read primary input files for parameter values
+   - Identify calculation modules relevant to audit scope
 
 3. **Define Audit Scope**:
    Present to user:
@@ -47,19 +47,19 @@ When invoked:
    Audit Scope Identified:
 
    **Target Models:**
-   - models/designs/catf_mfe/magnets.sysml
-   - models/designs/catf_mfe/blanket.sysml
+   - models/designs/{design_name}/magnets.sysml
+   - models/designs/{design_name}/blanket.sysml
    - models/library/physics/power_balance.sysml
 
-   **PyFECONS Baseline:**
-   - Location: /home/reid/PyFECONS
-   - Primary parameters: DefineInputs.py
-   - Calculations: PowerBalance.py, Magnets.py, Blanket.py
+   **Baseline Codebase** (from SOURCE_INDEX.md):
+   - Location: {source_location}
+   - Primary parameters: {input_file}
+   - Calculations: {calculation_modules}
 
    **Verification Standards:**
-   - ✅ PASS: Within ±1% of PyFECONS
-   - ⚠️ WARN: Within ±5% of PyFECONS
-   - ❌ FAIL: Beyond ±5% of PyFECONS
+   - ✅ PASS: Within ±1% of baseline codebase
+   - ⚠️ WARN: Within ±5% of baseline codebase
+   - ❌ FAIL: Beyond ±5% of baseline codebase
 
    Proceed with audit?
    ```
@@ -81,15 +81,15 @@ When invoked:
    ```markdown
    ## Model Parameter Inventory
 
-   ### File: models/designs/catf_mfe/magnets.sysml
+   ### File: models/designs/{design_name}/magnets.sysml
 
-   #### Part: catf_tf_system
+   #### Part: tf_system
    - **major_radius** = 4.15 [m] (line 23)
    - **n_coils** = 18 (line 24)
    - **field_on_axis** = 12.0 [T] (line 25)
    - **current_total** = 15.2e6 [A] (line 26)
 
-   #### Part: catf_pf_system
+   #### Part: pf_system
    - **coil_count** = 6 (line 45)
    - ...
 
@@ -102,15 +102,15 @@ When invoked:
    ```
 
 3. **Extract Traceability**:
-   - Check doc comments for PyFECONS citations
+   - Check doc comments for baseline codebase citations
    - Cross-reference with `data/traceability_matrix.csv`
    - Note parameters with vs without source citations
 
-### Stage 3: PyFECONS Baseline Verification
+### Stage 3: baseline codebase Baseline Verification
 
-**Goal**: Compare each model parameter to PyFECONS baseline value
+**Goal**: Compare each model parameter to baseline codebase baseline value
 
-1. **Read PyFECONS Source Files**:
+1. **Read baseline codebase Source Files**:
    - Read `DefineInputs.py` for input parameters
    - Read relevant calculation modules for outputs
    - Extract values with line numbers
@@ -118,15 +118,15 @@ When invoked:
 
 2. **Match Parameters**:
    For each model parameter:
-   - Find corresponding PyFECONS parameter (by name or traceability)
-   - Extract PyFECONS value
-   - Note PyFECONS source location (file:line)
+   - Find corresponding baseline codebase parameter (by name or traceability)
+   - Extract baseline codebase value
+   - Note baseline codebase source location (file:line)
    - If calculation needed, evaluate it
 
 3. **Calculate Discrepancies**:
    For each matched parameter:
    ```python
-   discrepancy_percent = abs((model_value - pyfecons_value) / pyfecons_value) * 100
+   discrepancy_percent = abs((model_value - baseline_value) / baseline_value) * 100
 
    if discrepancy_percent <= 1.0:
        status = "PASS"
@@ -140,7 +140,7 @@ When invoked:
    ```markdown
    ## Verification Results
 
-   | Parameter | Model Value | PyFECONS Value | Source | Discrepancy | Status |
+   | Parameter | Model Value | baseline codebase Value | Source | Discrepancy | Status |
    |-----------|-------------|----------------|--------|-------------|--------|
    | major_radius | 4.15 m | 4.15 m | DefineInputs.py:45 | 0.00% | ✅ PASS |
    | n_coils | 18 | 18 | DefineInputs.py:48 | 0.00% | ✅ PASS |
@@ -158,7 +158,7 @@ When invoked:
    - **PASS items**: Document for completeness
    - **WARN items**: Investigate if intentional deviation
    - **FAIL items**: Require explanation or correction
-   - **Missing items**: Model parameter not in PyFECONS (or vice versa)
+   - **Missing items**: Model parameter not in baseline codebase (or vice versa)
    - **Unmapped items**: No traceability link established
 
 2. **Investigate Discrepancies**:
@@ -166,7 +166,7 @@ When invoked:
    - Check if model has doc comment explaining deviation
    - Check if units conversion issue
    - Check if design decision to use different value
-   - Check if PyFECONS value is input vs calculated
+   - Check if baseline codebase value is input vs calculated
 
 3. **Generate Detailed Report**:
    ```markdown
@@ -175,7 +175,7 @@ When invoked:
    **Audit Date**: 2025-11-17
    **Auditor**: Claude (audit-models agent)
    **Models Audited**: [list]
-   **PyFECONS Baseline**: /home/reid/PyFECONS (commit: [hash if available])
+   **Baseline Codebase** (from SOURCE_INDEX.md): {source_location} (commit: [hash if available])
 
    ---
 
@@ -202,21 +202,21 @@ When invoked:
    ### Critical Issues (FAIL)
 
    #### 1. blanket_thickness discrepancy
-   - **Model value**: 0.85 m (models/designs/catf_mfe/blanket.sysml:23)
-   - **PyFECONS value**: 0.80 m (DefineInputs.py:95)
+   - **Model value**: 0.85 m (models/designs/{design_name}/blanket.sysml:23)
+   - **baseline codebase value**: 0.80 m (DefineInputs.py:95)
    - **Discrepancy**: 6.25% (exceeds 5% threshold)
    - **Traceability**: Cited as DefineInputs.py:95 in doc comment
-   - **Analysis**: Model uses thicker blanket than PyFECONS baseline
+   - **Analysis**: Model uses thicker blanket than baseline codebase baseline
    - **Recommendation**:
      - If intentional design change, add doc comment explaining rationale
      - If error, update model to 0.80 m to match baseline
      - Update traceability matrix with decision
 
    #### 2. shield_thickness discrepancy
-   - **Model value**: 0.60 m (models/designs/catf_mfe/shield.sysml:18)
-   - **PyFECONS value**: 0.55 m (DefineInputs.py:98)
+   - **Model value**: 0.60 m (models/designs/{design_name}/shield.sysml:18)
+   - **baseline codebase value**: 0.55 m (DefineInputs.py:98)
    - **Discrepancy**: 9.09% (exceeds 5% threshold)
-   - **Traceability**: None - no PyFECONS citation in doc comment
+   - **Traceability**: None - no baseline codebase citation in doc comment
    - **Analysis**: Significant deviation without documented justification
    - **Recommendation**:
      - URGENT: Determine if this is error or intentional
@@ -226,8 +226,8 @@ When invoked:
    ### Warnings (WARN)
 
    #### 1. field_on_axis discrepancy
-   - **Model value**: 12.0 T (models/designs/catf_mfe/magnets.sysml:25)
-   - **PyFECONS value**: 12.2 T (DefineInputs.py:52)
+   - **Model value**: 12.0 T (models/designs/{design_name}/magnets.sysml:25)
+   - **baseline codebase value**: 12.2 T (DefineInputs.py:52)
    - **Discrepancy**: 1.64% (within warning threshold)
    - **Traceability**: Cited as DefineInputs.py:52
    - **Analysis**: Minor deviation, may be rounding or design iteration
@@ -237,11 +237,11 @@ When invoked:
 
    ### Unmapped Parameters
 
-   Parameters in model without PyFECONS traceability:
+   Parameters in model without baseline codebase traceability:
 
-   1. **manufacturing_factor** (models/designs/catf_mfe/magnets.sysml:35)
+   1. **manufacturing_factor** (models/designs/{design_name}/magnets.sysml:35)
       - Value: 1.15
-      - No PyFECONS source cited
+      - No baseline codebase source cited
       - Recommendation: Add traceability or mark as design-specific parameter
 
    [Continue for all unmapped items...]
@@ -267,10 +267,10 @@ When invoked:
    ### Follow-up Actions
    1. **Review 3 WARN items**: Confirm if deviations are justified
    2. **Update documentation**: Ensure all intentional deviations explained
-   3. **Sync with PyFECONS**: Consider if PyFECONS baseline needs updating
+   3. **Sync with baseline codebase**: Consider if baseline codebase baseline needs updating
 
    ### Traceability Improvements
-   - Add PyFECONS citations to unmapped parameters
+   - Add baseline codebase citations to unmapped parameters
    - Update traceability_matrix.csv with all parameter sources
    - Document any design decisions that deviate from baseline
 
@@ -285,21 +285,21 @@ When invoked:
    ## Audit Metadata
 
    **Models Audited:**
-   - models/designs/catf_mfe/magnets.sysml (commit: [hash])
-   - models/designs/catf_mfe/blanket.sysml (commit: [hash])
+   - models/designs/{design_name}/magnets.sysml (commit: [hash])
+   - models/designs/{design_name}/blanket.sysml (commit: [hash])
    - models/library/physics/power_balance.sysml (commit: [hash])
 
-   **PyFECONS Baseline:**
-   - Location: /home/reid/PyFECONS
+   **Baseline Codebase** (from SOURCE_INDEX.md):
+   - Location: {source_location}
    - Commit: [hash if available]
-   - Key files: DefineInputs.py, PowerBalance.py, Magnets.py
+   - Key files: {input_files}
 
    **Audit Configuration:**
    - Pass threshold: ±1%
    - Warn threshold: ±5%
    - Fail threshold: >±5%
 
-   **Next Audit**: Recommended after next model update or PyFECONS sync
+   **Next Audit**: Recommended after next model update or baseline codebase sync
    ```
 
 ### Stage 5: Summary & Next Steps
@@ -366,7 +366,7 @@ When invoked:
 ### Special Cases
 
 **Calculated Values**:
-- If PyFECONS value is calculated, evaluate calculation
+- If baseline codebase value is calculated, evaluate calculation
 - Show calculation steps in report
 - Note any assumptions or dependencies
 
@@ -376,8 +376,8 @@ When invoked:
 - Flag if units incompatible or unclear
 
 **Missing Parameters**:
-- Model has parameter not in PyFECONS: mark as "design-specific"
-- PyFECONS has parameter not in model: mark as "not implemented"
+- Model has parameter not in baseline codebase: mark as "design-specific"
+- baseline codebase has parameter not in model: mark as "not implemented"
 - Report both categories separately
 
 **Arrays/Lists**:
@@ -387,9 +387,9 @@ When invoked:
 
 ### Error Handling
 
-**If PyFECONS not accessible**:
+**If baseline codebase not accessible**:
 - STOP and inform user
-- Request PyFECONS location
+- Request baseline codebase location
 - Cannot proceed without baseline
 
 **If model doesn't parse**:
@@ -402,7 +402,7 @@ When invoked:
 - Attempt name-based matching
 - Request user confirm matches
 
-**If unclear which PyFECONS value to use**:
+**If unclear which baseline codebase value to use**:
 - Present options to user
 - Get clarification
 - Document decision in report
@@ -427,7 +427,7 @@ When invoked:
 ### Efficiency Tips
 
 **For large audits**:
-- Read PyFECONS files once, cache values
+- Read baseline codebase files once, cache values
 - Use parallel reads for multiple models
 - Generate verification table incrementally
 - Don't re-read files unnecessarily
