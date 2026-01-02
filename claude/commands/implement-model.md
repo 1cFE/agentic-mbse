@@ -115,44 +115,21 @@ Create files one by one in main agent:
 - **Drawback**: Slower, more context usage
 
 #### Option B: Parallel (Efficient)
-Launch multiple sysml-file-creator sub-agents:
+Create multiple independent files concurrently using Task tool:
 - **Use when**: 3+ files are independent (no cross-dependencies)
-- **Benefits**: 50% faster, 30-40% token reduction
+- **Benefits**: Faster execution, reduced context usage
 - **Requirement**: Files can be created in any order
 
 **Parallel Execution Pattern:**
 
-```python
-# Check plan for parallel-friendly phases
-# Example: Phase 3 has 5 independent design files
+Use the Task tool with `subagent_type="general-purpose"` to create multiple files in parallel:
+1. Prepare specifications for each file from the plan
+2. Launch Task agents in parallel (single message, multiple Task calls)
+3. Each agent creates one file with full specification
+4. Main agent collects results and validates batch
 
-# Prepare specifications for each file (from plan)
-file_specs = [
-    {
-        "file_path": "models/designs/{design_name}/magnets.sysml",
-        "package_name": "DesignMagnets",
-        "plan_reference": {
-            "file": "project/active/structure/plan.md",
-            "section": "Phase 3",
-            "line_range": "450-520"
-        },
-        "parts": [...],  # Extract from plan
-        "validation_rules": ["no_unicode", "require_types", "standalone_parts"]
-    },
-    # ... 4 more file specs
-]
-
-# Launch all agents in parallel (single message, multiple Task calls)
-import json
-for spec in file_specs:
-    Task(
-        description=f"Create {spec['package_name']} file",
-        prompt=f"Create SysML file with specification:\n{json.dumps(spec, indent=2)}",
-        subagent_type="sysml-file-creator",
-        model="haiku"  # Fast model for straightforward task
-    )
-# All agents execute concurrently, return when complete
-```
+**Note**: Projects can define custom file-creation agents tailored to their validation
+needs for more sophisticated parallel workflows.
 
 **After parallel creation:**
 1. Collect results from all agents

@@ -230,17 +230,18 @@ Identify parallelization opportunities and specify sub-agent invocation details.
 
 **Implementation instruction for phase:**
 ```markdown
-**Implementation Approach**: Use parallel sysml-file-creator agents
+**Implementation Approach**: Parallel file creation (if applicable)
 
-Files can be created concurrently:
+Files that can be created concurrently:
 - models/designs/{design_name}/magnets.sysml
 - models/designs/{design_name}/radial_build.sysml
 - models/designs/{design_name}/blanket.sysml
 - models/designs/{design_name}/shield.sysml
 - models/designs/{design_name}/vacuum.sysml
 
-Invoke sysml-file-creator agent for each with specifications above.
-Main agent validates batch and commits.
+Use Task tool to create files in parallel. Main agent validates batch and commits.
+
+**Note**: Projects can define custom file-creation agents for parallel workflows.
 ```
 
 **Guidelines:**

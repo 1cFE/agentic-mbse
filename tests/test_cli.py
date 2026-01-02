@@ -126,6 +126,68 @@ class TestCmdInit:
         assert result == EXIT_SUCCESS
         assert (tmp_path / "SOURCE_INDEX.md").exists()
 
+    def test_creates_agents_directory(self, tmp_path):
+        """agentic-mbse init creates .claude/agents/ with agent files."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        result = cmd_init(args)
+
+        assert result == EXIT_SUCCESS
+        agents_dir = tmp_path / ".claude" / "agents"
+        assert agents_dir.exists()
+        assert (agents_dir / "sysmlv2-doc-analyzer.md").exists()
+        assert (agents_dir / "python-debugger.md").exists()
+
+    def test_creates_skills_directory(self, tmp_path):
+        """agentic-mbse init creates .claude/skills/ with skill subdirs."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        result = cmd_init(args)
+
+        assert result == EXIT_SUCCESS
+        skill_dir = tmp_path / ".claude" / "skills" / "python-debugger"
+        assert skill_dir.is_dir()
+        assert (skill_dir / "SKILL.md").exists()
+
+    def test_creates_hooks_directory(self, tmp_path):
+        """agentic-mbse init creates .claude/hooks/ with hook scripts."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        result = cmd_init(args)
+
+        assert result == EXIT_SUCCESS
+        hook_path = tmp_path / ".claude" / "hooks" / "ruff-format.sh"
+        assert hook_path.exists()
+        # Check executable permission
+        assert hook_path.stat().st_mode & 0o111  # Has execute bit
+
+    def test_agent_path_substitution(self, tmp_path):
+        """Agent files have documentation paths substituted during install."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+
+        agent_content = (tmp_path / ".claude" / "agents" / "sysmlv2-doc-analyzer.md").read_text()
+        # Should NOT contain old paths
+        assert "agent_literature/SysML/" not in agent_content
+        assert "agent_literature/syside-docs/" not in agent_content
+        # Should contain new paths (absolute to package)
+        assert "/docs/sysmlv2/" in agent_content
+        assert "/docs/syside/" in agent_content
+
+    def test_force_overwrites_agents(self, tmp_path):
+        """--force flag overwrites existing agents."""
+        # First init
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+
+        # Modify an agent file
+        agent_path = tmp_path / ".claude" / "agents" / "sysmlv2-doc-analyzer.md"
+        agent_path.write_text("modified content")
+
+        # Second init with force
+        args = MockArgs(path=str(tmp_path), force=True)
+        cmd_init(args)
+
+        # Should be overwritten
+        assert "modified content" not in agent_path.read_text()
+
 
 class TestCmdInstallCommands:
     """Tests for cmd_install_commands function."""

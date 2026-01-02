@@ -1,0 +1,15 @@
+<div id="syside-sema-reset" class="section">
+
+# syside.sema\_reset[](#syside-sema-reset "Link to this heading")
+
+  - <span class="sig-name descname"><span class="pre">sema\_reset</span></span><span class="sig-paren">(</span>*<span class="n"><span class="pre">element</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n">[<span class="pre">syside.Element</span>](/v0.8.1/api/metamodel/KerML/Element.md "syside.Element")</span>*<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span>[](#syside.sema_reset "Link to this definition")  
+    Reset semantic state of `element`. This will typically remove any implied relationships, and reverse a few other changes made by sema. After this completes, `element.sema_state == SemaState.None`.
+
+<!-- end list -->
+
+  - <span class="sig-name descname"><span class="pre">sema\_reset</span></span><span class="sig-paren">(</span>*<span class="n"><span class="pre">document</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n">[<span class="pre">syside.Document</span>](/v0.8.1/api/generated/syside.Document.md "syside.Document")</span>*, *<span class="n"><span class="pre">reporter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">\[</span></span><span class="p"><span class="pre">\[</span></span>[<span class="pre">syside.Element</span>](/v0.8.1/api/metamodel/KerML/Element.md "syside.Element")<span class="p"><span class="pre">,</span></span><span class="w"> </span>[<span class="pre">syside.UnexpectedDifferentReference</span>](/v0.8.1/api/generated/syside.UnexpectedDifferentReference.md "syside.UnexpectedDifferentReference")<span class="p"><span class="pre">\]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">\]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span>*<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span>  
+    Reset semantic state of `document`. This will call `sema_reset` on all owned elements, and additionally reset all resolved references back to unresolved state. While resetting references, if the resolved reference does not match the current reference, `reporter` will be called with the element the reference applies to and `UnexpectedDifferentReference` that was found. By default, `reporter` will print such errors to `stderr`.
+    
+    After this completes, `document.build_state == BuildState.Indexed`.
+
+</div>

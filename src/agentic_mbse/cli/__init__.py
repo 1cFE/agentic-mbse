@@ -20,6 +20,22 @@ MBSE_COMMANDS = [
     "manage-sources.md",
 ]
 
+# Agents available for installation
+MBSE_AGENTS = [
+    "python-debugger.md",
+    "sysmlv2-doc-analyzer.md",
+]
+
+# Skills available for installation (directories, not files)
+MBSE_SKILLS = [
+    "python-debugger",
+]
+
+# Hooks available for installation
+MBSE_HOOKS = [
+    "ruff-format.sh",
+]
+
 
 def get_commands_dir() -> Path:
     """Get path to bundled commands directory.
@@ -37,6 +53,30 @@ def get_template_path() -> Path:
     """Get path to SOURCE_INDEX.md template."""
     package_root = Path(__file__).parent.parent.parent.parent
     return package_root / "SOURCE_INDEX.md.template"
+
+
+def get_agents_dir() -> Path:
+    """Get path to bundled agents directory."""
+    package_root = Path(__file__).parent.parent.parent.parent
+    return package_root / "claude" / "agents"
+
+
+def get_skills_dir() -> Path:
+    """Get path to bundled skills directory."""
+    package_root = Path(__file__).parent.parent.parent.parent
+    return package_root / "claude" / "skills"
+
+
+def get_hooks_dir() -> Path:
+    """Get path to bundled hooks directory."""
+    package_root = Path(__file__).parent.parent.parent.parent
+    return package_root / "claude" / "hooks"
+
+
+def get_docs_dir() -> Path:
+    """Get path to bundled docs directory."""
+    package_root = Path(__file__).parent.parent.parent.parent
+    return package_root / "docs"
 
 # Load environment variables from .env file (for SYSIDE_LICENSE_KEY, etc.)
 load_dotenv()
@@ -64,7 +104,7 @@ def cmd_init(args: argparse.Namespace) -> int:
 
     Creates:
     - SOURCE_INDEX.md (domain knowledge discovery for agents)
-    - .claude/commands/ with 6 MBSE commands
+    - .claude/commands/ with MBSE commands (including /onboard, /manage-sources)
 
     NOTE: Does NOT create .agentic-mbse.yaml - that config was over-engineered.
     SOURCE_INDEX.md is the single source of domain knowledge.
@@ -112,7 +152,7 @@ Edit this file to add your domain-specific sources.
 
     # Copy commands
     source_commands = get_commands_dir()
-    installed = 0
+    commands_installed = 0
     for cmd in MBSE_COMMANDS:
         src = source_commands / cmd
         dst = commands_dir / cmd
@@ -121,15 +161,87 @@ Edit this file to add your domain-specific sources.
             continue
         if src.exists():
             shutil.copy(src, dst)
-            installed += 1
+            commands_installed += 1
             print(f"  Installed: {cmd}")
         else:
             print(f"  Warning: Command not found: {cmd}", file=sys.stderr)
 
+    # === Install agents with path substitution ===
+    agents_dir = target / ".claude" / "agents"
+    agents_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Created: {agents_dir}")
+
+    docs_path = get_docs_dir()  # Package docs location for substitution
+    source_agents = get_agents_dir()
+    agents_installed = 0
+    for agent in MBSE_AGENTS:
+        src = source_agents / agent
+        dst = agents_dir / agent
+        if dst.exists() and not args.force:
+            print(f"  Skipping (exists): {agent}")
+            continue
+        if src.exists():
+            # Read, substitute paths, write
+            content = src.read_text()
+            content = content.replace("agent_literature/SysML/", f"{docs_path}/sysmlv2/")
+            content = content.replace(
+                "agent_literature/syside-docs/v0.8.1/", f"{docs_path}/syside/"
+            )
+            dst.write_text(content)
+            agents_installed += 1
+            print(f"  Installed: {agent}")
+        else:
+            print(f"  Warning: Agent not found: {agent}", file=sys.stderr)
+
+    # === Install skills (recursive copy) ===
+    skills_dir = target / ".claude" / "skills"
+    skills_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Created: {skills_dir}")
+
+    source_skills = get_skills_dir()
+    skills_installed = 0
+    for skill in MBSE_SKILLS:
+        src = source_skills / skill
+        dst = skills_dir / skill
+        if dst.exists() and not args.force:
+            print(f"  Skipping (exists): {skill}/")
+            continue
+        if src.exists() and src.is_dir():
+            shutil.copytree(src, dst, dirs_exist_ok=True)
+            skills_installed += 1
+            print(f"  Installed: {skill}/")
+        else:
+            print(f"  Warning: Skill not found: {skill}", file=sys.stderr)
+
+    # === Install hooks ===
+    hooks_dir = target / ".claude" / "hooks"
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+    print(f"Created: {hooks_dir}")
+
+    source_hooks = get_hooks_dir()
+    hooks_installed = 0
+    for hook in MBSE_HOOKS:
+        src = source_hooks / hook
+        dst = hooks_dir / hook
+        if dst.exists() and not args.force:
+            print(f"  Skipping (exists): {hook}")
+            continue
+        if src.exists():
+            shutil.copy(src, dst)
+            # Preserve executable permission
+            dst.chmod(src.stat().st_mode)
+            hooks_installed += 1
+            print(f"  Installed: {hook}")
+        else:
+            print(f"  Warning: Hook not found: {hook}", file=sys.stderr)
+
     print("")
     print(f"Initialized MBSE project in {target}")
     print("  - SOURCE_INDEX.md created (edit to add your domain sources)")
-    print(f"  - {installed} commands installed to .claude/commands/")
+    print(f"  - {commands_installed} commands installed to .claude/commands/")
+    print(f"  - {agents_installed} agents installed to .claude/agents/")
+    print(f"  - {skills_installed} skills installed to .claude/skills/")
+    print(f"  - {hooks_installed} hooks installed to .claude/hooks/")
     print("")
     print("Next steps:")
     print("  1. Run /onboard to configure your project and learn the workflow")
@@ -141,7 +253,7 @@ Edit this file to add your domain-specific sources.
 def cmd_install_commands(args: argparse.Namespace) -> int:
     """Install MBSE commands to a project.
 
-    Copies the 6 MBSE command files to .claude/commands/ in target directory.
+    Copies MBSE command files to .claude/commands/ in target directory.
     """
     if args.list:
         print("Available MBSE commands:")
