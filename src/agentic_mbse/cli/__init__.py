@@ -16,6 +16,8 @@ MBSE_COMMANDS = [
     "spec-model.md",
     "research.md",
     "audit-models.md",
+    "onboard.md",
+    "manage-sources.md",
 ]
 
 
@@ -130,8 +132,8 @@ Edit this file to add your domain-specific sources.
     print(f"  - {installed} commands installed to .claude/commands/")
     print("")
     print("Next steps:")
-    print("  1. Edit SOURCE_INDEX.md to add your reference sources")
-    print("  2. Run Claude Code with /design-model to start modeling")
+    print("  1. Run /onboard to configure your project and learn the workflow")
+    print("  2. Or manually edit SOURCE_INDEX.md and start with /design-model")
 
     return EXIT_SUCCESS
 
