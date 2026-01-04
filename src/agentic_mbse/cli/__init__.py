@@ -42,6 +42,7 @@ MBSE_HOOKS = [
 PROJECT_TEMPLATES = [
     ("OVERVIEW.md.template", "project/OVERVIEW.md"),
     ("MODELING_GUIDE.md.template", "project/MODELING_GUIDE.md"),
+    ("MODELING_PROCESS.md.template", "project/MODELING_PROCESS.md"),
     ("REFERENCE.md.template", "project/REFERENCE.md"),
     ("BACKLOG.md.template", "project/backlog/BACKLOG.md"),
 ]

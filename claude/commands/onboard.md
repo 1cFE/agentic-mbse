@@ -530,9 +530,9 @@ Find and replace these placeholders with user's answers:
 - If design optimization: "Define design parameters", "Model constraints", "Create parameter sweep"
 - If requirements traceability: "Define requirements", "Model system structure", "Create traceability links"
 
-#### project/MODELING_GUIDE.md
+#### project/MODELING_GUIDE.md and project/MODELING_PROCESS.md
 
-This file is mostly methodology and doesn't need user-specific updates. Leave as-is - it provides the SysML v2 guidance users need.
+These files are methodology guides and don't need user-specific updates. Leave as-is - they provide the SysML v2 syntax patterns (MODELING_GUIDE) and design workflow (MODELING_PROCESS) guidance users need.
 
 **After updating files**, tell the user:
 
@@ -564,7 +564,8 @@ Present this summary to the user:
 - **project/OVERVIEW.md** - Project architecture and principles (updated with your context)
 - **project/REFERENCE.md** - Technical reference (updated with your sources)
 - **project/BACKLOG.md** - Work backlog (updated with initial tasks)
-- **project/MODELING_GUIDE.md** - SysML v2 methodology guide
+- **project/MODELING_GUIDE.md** - SysML v2 syntax patterns guide
+- **project/MODELING_PROCESS.md** - Design workflow and process guide
 
 ### Review Your Changes
 
