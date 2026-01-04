@@ -37,46 +37,57 @@ MBSE_HOOKS = [
 ]
 
 
-def get_commands_dir() -> Path:
-    """Get path to bundled commands directory.
+def _get_data_root() -> Path:
+    """Get root path for bundled data (claude/, docs/, templates).
 
-    Path calculation:
-    - __file__ = agentic-mbse/src/agentic_mbse/cli/__init__.py
-    - parent.parent.parent.parent = agentic-mbse/
-    - result = agentic-mbse/claude/commands/
+    Supports two installation modes:
+    1. Source checkout: agentic-mbse/src/agentic_mbse/cli/__init__.py
+       → Data at: agentic-mbse/claude/, agentic-mbse/docs/
+    2. Pip install: site-packages/agentic_mbse/cli/__init__.py
+       → Data at: site-packages/agentic_mbse_data/claude/, etc.
     """
-    package_root = Path(__file__).parent.parent.parent.parent
-    return package_root / "claude" / "commands"
+    # Try source checkout path first (development mode)
+    source_root = Path(__file__).parent.parent.parent.parent
+    if (source_root / "claude").exists():
+        return source_root
+
+    # Fallback to pip-installed package data location
+    pip_data_root = Path(__file__).parent.parent.parent / "agentic_mbse_data"
+    if pip_data_root.exists():
+        return pip_data_root
+
+    # Last resort: return source root and let caller handle missing files
+    return source_root
+
+
+def get_commands_dir() -> Path:
+    """Get path to bundled commands directory."""
+    return _get_data_root() / "claude" / "commands"
 
 
 def get_template_path() -> Path:
     """Get path to SOURCE_INDEX.md template."""
-    package_root = Path(__file__).parent.parent.parent.parent
-    return package_root / "SOURCE_INDEX.md.template"
+    return _get_data_root() / "SOURCE_INDEX.md.template"
 
 
 def get_agents_dir() -> Path:
     """Get path to bundled agents directory."""
-    package_root = Path(__file__).parent.parent.parent.parent
-    return package_root / "claude" / "agents"
+    return _get_data_root() / "claude" / "agents"
 
 
 def get_skills_dir() -> Path:
     """Get path to bundled skills directory."""
-    package_root = Path(__file__).parent.parent.parent.parent
-    return package_root / "claude" / "skills"
+    return _get_data_root() / "claude" / "skills"
 
 
 def get_hooks_dir() -> Path:
     """Get path to bundled hooks directory."""
-    package_root = Path(__file__).parent.parent.parent.parent
-    return package_root / "claude" / "hooks"
+    return _get_data_root() / "claude" / "hooks"
 
 
 def get_docs_dir() -> Path:
     """Get path to bundled docs directory."""
-    package_root = Path(__file__).parent.parent.parent.parent
-    return package_root / "docs"
+    return _get_data_root() / "docs"
 
 # Load environment variables from .env file (for SYSIDE_LICENSE_KEY, etc.)
 load_dotenv()
