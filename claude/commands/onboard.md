@@ -41,7 +41,7 @@ Use AskUserQuestion:
   - "Yes, initialize git (default)"
   - "No, continue without git"
 
-If user says yes: run `git init`
+If user says yes: run `git init -b main`
 
 If user says no: warn that `git diff` won't work, proceed anyway
 
@@ -119,109 +119,93 @@ Also use Glob to find key files:
 
 ---
 
-## Stage 2: Domain Context Gathering
+## Stage 2: Project Context
 
-**Goal:** Understand what the user is modeling and what sources they have
+**Goal:** Gather all context in 3 simple questions
 
-### Question Set 1: The System (Structured)
+Ask the user these 3 questions together (in text, not using AskUserQuestion):
 
-Use AskUserQuestion with BOTH questions together:
-
-Question 1:
-- Question: "What type of hardware system do you want to model?"
-- Header: "System Type"
-- Options:
-  - "Energy system (fusion, fission, solar, battery) (default)"
-  - "Aerospace system (satellite, rocket, aircraft)"
-  - "Industrial system (manufacturing, process plant)"
-  - "Other"
-
-Question 2:
-- Question: "What's your primary goal for modeling this system?"
-- Header: "Goal"
-- Options:
-  - "Techno-economic analysis (TEA) (default)"
-  - "Design optimization"
-  - "Requirements traceability"
-  - "System validation"
-
-### Question Set 2: System Details (Conversational)
-
-After structured questions, ask conversationally:
-
-1. "Can you describe the specific system you're modeling in a few sentences?"
-   - Example: "A compact tokamak fusion reactor for commercial power generation"
-   - Used for: README overview, CLAUDE.md system description
-
-2. "What do you already know about this system?"
-   - Prompts to offer:
-     - Physical principles / governing equations?
-     - Design specifications or requirements?
-     - Key components or subsystems?
-     - Performance targets or constraints?
-   - Used for: CLAUDE.md domain concepts
-
-3. "What's the most important thing you want to get out of this modeling effort?"
-   - Used for: README goals, guides command priorities
-
-### Question Set 3: Reference Sources (Critical)
-
-Explain why this matters:
-> MBSE commands like `/design-model` and `/audit-models` need reference sources to:
-> - Extract domain knowledge (formulas, parameters, patterns)
-> - Validate model outputs against authoritative baselines
-> - Research how similar systems are implemented
-
-Ask about each source type:
-
-**Codebases:**
-> "Do you have any reference **codebases** I should know about?"
-> Examples: "PyFECONS for fusion physics", "OpenMDAO for optimization"
-
-For each codebase, ask:
-- What is it?
-- Where is it? (path or URL)
-- What do I use it for?
-- Can I validate against it?
-
-**Documentation:**
-> "Do you have any **documentation** - papers, specs, standards?"
-> Examples: "ITER Physics Basis PDF", "System requirements document"
-
-For each document, ask:
-- What is it?
-- Where is it?
-- What does it define?
-
-**Data sources:**
-> "Do you have any **data sources** - databases, parameter files?"
-> Examples: "Material properties database", "Cost factor spreadsheet"
-
-For each data source, ask:
-- What is it?
-- Where is it?
-- What parameters does it contain?
-
-**If user has no sources yet:**
-> That's okay! You can add sources later with `/manage-sources`.
+> I need to understand your project. Please answer these 3 questions:
 >
-> For now, I'll create SOURCE_INDEX.md with guidance on what makes good sources.
+> **1. What are you modeling?**
+> Describe the hardware system you want to model - what it is, what it does, its domain.
+> (Example: "A compact tokamak fusion reactor for commercial power generation")
 >
-> Common sources to consider:
-> - Reference implementations in your domain
-> - Academic papers defining the physics/requirements
-> - Industry standards or specifications
-> - Existing data from similar projects
+> **2. What are your goals?**
+> What do you want to achieve with this modeling effort?
+> (Example: "Techno-economic analysis to estimate cost of electricity")
+>
+> **3. What sources do you have?**
+> List any reference materials - codebases, documentation, databases.
+> Include file paths or URLs where possible.
+> (Example: "PyFECONS at ~/PyFECONS for physics calculations")
+>
+> It's okay if you don't have sources yet - you can add them later with `/manage-sources`.
 
-### Question Set 4: Existing Content (If Applicable)
+Wait for user to respond with all 3 answers.
 
-If directory has content beyond init files:
+### Processing User Responses
 
-> "I see you have some existing content in this directory. Can you tell me about it?"
-> - {list what we found}
-> - How does this relate to the modeling effort?
-> - Should any of this be referenced in SOURCE_INDEX.md?
-> - Are there any directories I should know about?
+After receiving answers:
+
+1. **Parse system description** → Use for:
+   - CLAUDE.md system context and domain concepts
+   - README overview section
+
+2. **Parse goals** → Use for:
+   - README goals section
+   - CLAUDE.md workflow priorities
+
+3. **Parse sources** → For each source mentioned:
+   - Extract name, type (codebase/documentation/database), and path/URL
+   - Add to SOURCE_INDEX.md with appropriate categorization
+
+### If Directory Has Existing Content
+
+If you found existing content in Stage 1 beyond init files, also ask:
+> "How does the existing content ({list files}) relate to your modeling effort? Should any of it be referenced in SOURCE_INDEX.md?"
+
+---
+
+## Stage 2.5: Claude Settings for Sources
+
+**Goal:** Help user avoid permission prompts for source paths
+
+If the user provided file paths for sources (e.g., `/home/user/PyFECONS`):
+
+Tell the user:
+> I noticed you have sources at these locations:
+> - {path1}
+> - {path2}
+>
+> To avoid permission prompts each session, I can add these to `.claude/settings.json`:
+>
+> ```json
+> {
+>   "permissions": {
+>     "allow": [
+>       "Read({path1}/**)",
+>       "Read({path2}/**)"
+>     ]
+>   }
+> }
+> ```
+
+Use AskUserQuestion:
+- Question: "Would you like me to add read permissions for your source paths to .claude/settings.json?"
+- Header: "Permissions"
+- Options:
+  - "Yes, add permissions (recommended)"
+  - "No, I'll handle permissions manually"
+
+**If yes:**
+- Read existing `.claude/settings.json` if it exists
+- Merge new permissions with existing ones
+- Write updated settings file
+
+**If no:**
+- Proceed without adding permissions
+- User will see prompts when accessing source paths
 
 ---
 
@@ -498,6 +482,67 @@ This directory contains SysML v2 textual models.
 Use `/design-model {feature}` to start creating models.
 ```
 
+### 3.5 Update Project Templates
+
+The `agentic-mbse init` command created template files in `project/` with `<!-- placeholder -->` comments. Update these files with content from the user's answers:
+
+**Check if project/ files exist.** If they do, update them:
+
+#### Update project/OVERVIEW.md
+
+Find and replace these placeholders with user's answers:
+
+| Placeholder | Replace With |
+|-------------|--------------|
+| `<!-- Your project name -->` | Project name from conversation |
+| `<!-- One-line purpose statement -->` | Brief purpose based on system + goals |
+| `<!-- YYYY-MM-DD -->` (Start Date) | Today's date |
+| `<!-- your system -->` | System description from Q1 |
+| `<!-- TEA, performance analysis, etc. -->` | Primary goal from Q2 |
+| `<!-- Your primary design/configuration -->` | First design name (if known) or leave for later |
+| `<!-- What you validate against -->` | Primary reference source from Q3 |
+| `<!-- Current focus -->` | "Initial setup complete" |
+| `<!-- Brief status -->` | "Ready to start modeling" |
+| `<!-- What's next -->` | "Run /spec-model to define first feature" |
+| `<!-- Name -->` (Project Owner) | User's name if known, or leave as placeholder |
+
+#### Update project/REFERENCE.md
+
+| Placeholder | Replace With |
+|-------------|--------------|
+| `<!-- Your primary reference codebase or tool -->` | Primary source name from Q3 |
+| `<!-- Path or URL -->` | Primary source location from Q3 |
+| `<!-- X% -->` (validation target) | "5%" as default, or domain-appropriate |
+| Key reference locations | List paths from sources in Q3 |
+| Physics Models section | Leave as template - user will fill via /research |
+| Material Properties | Leave as template - domain-specific |
+
+#### Update project/BACKLOG.md
+
+| Placeholder | Replace With |
+|-------------|--------------|
+| First P0 epic | "Initial Model Development" |
+| Goal | User's primary goal from Q2 |
+| Scope tasks | Based on system complexity - suggest 3-5 initial tasks |
+
+**Example tasks to suggest based on goal:**
+- If TEA/cost analysis: "Define cost calculation framework", "Model key components", "Implement cost rollup"
+- If design optimization: "Define design parameters", "Model constraints", "Create parameter sweep"
+- If requirements traceability: "Define requirements", "Model system structure", "Create traceability links"
+
+#### project/MODELING_GUIDE.md
+
+This file is mostly methodology and doesn't need user-specific updates. Leave as-is - it provides the SysML v2 guidance users need.
+
+**After updating files**, tell the user:
+
+> I've updated the project documentation files with your project context:
+> - `project/OVERVIEW.md` - Project overview with your system and goals
+> - `project/REFERENCE.md` - Technical reference pointing to your sources
+> - `project/backlog/BACKLOG.md` - Initial work backlog
+>
+> Review these files and customize further as needed.
+
 ---
 
 ## Stage 4: Summary & Education
@@ -516,6 +561,10 @@ Present this summary to the user:
 - **CLAUDE.md** - Domain context for Claude Code
 - **SOURCE_INDEX.md** - {N} reference sources configured (or "guidance for adding sources")
 - **models/** - Directory structure for SysML models
+- **project/OVERVIEW.md** - Project architecture and principles (updated with your context)
+- **project/REFERENCE.md** - Technical reference (updated with your sources)
+- **project/BACKLOG.md** - Work backlog (updated with initial tasks)
+- **project/MODELING_GUIDE.md** - SysML v2 methodology guide
 
 ### Review Your Changes
 
@@ -579,11 +628,12 @@ You're ready to start MBSE modeling!
 
 | Scenario | Detection | Handling |
 |----------|-----------|----------|
-| Not a git repo | `git rev-parse` fails | Offer to init, explain benefits |
+| Not a git repo | `git rev-parse` fails | Offer to init with `-b main`, explain benefits |
 | Uncommitted changes | `git status --porcelain` non-empty | STOP, ask to commit/stash |
 | User declines git | User selects "No" | Warn about no diff, proceed |
-| Empty directory | Only `.claude/`, template SOURCE_INDEX | Full flow, no existing content questions |
-| Has existing content | Other files/dirs found | Ask how it relates, incorporate |
+| Empty directory | Only `.claude/`, template SOURCE_INDEX | Full flow, skip existing content question |
+| Has existing content | Other files/dirs found | Ask how it relates in Stage 2 |
 | Has existing README/CLAUDE | Files exist with content | Read first, propose enhancements |
-| No sources identified | User has none yet | Create guidance-focused SOURCE_INDEX |
+| No sources listed | User has none | Create guidance-focused SOURCE_INDEX, skip Stage 2.5 |
+| Sources with file paths | Paths like `/home/...` | Offer to add permissions in Stage 2.5 |
 | User new to MBSE | Unclear on terminology | Extra explanation, simpler language |

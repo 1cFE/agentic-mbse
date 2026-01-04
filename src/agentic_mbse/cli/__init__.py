@@ -1,7 +1,9 @@
 """Command-line interface for agentic-mbse."""
 import argparse
+import json
 import shutil
 import sys
+import tomllib
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -34,6 +36,14 @@ MBSE_SKILLS = [
 # Hooks available for installation
 MBSE_HOOKS = [
     "ruff-format.sh",
+]
+
+# Project structure templates (source file -> destination path)
+PROJECT_TEMPLATES = [
+    ("OVERVIEW.md.template", "project/OVERVIEW.md"),
+    ("MODELING_GUIDE.md.template", "project/MODELING_GUIDE.md"),
+    ("REFERENCE.md.template", "project/REFERENCE.md"),
+    ("BACKLOG.md.template", "project/backlog/BACKLOG.md"),
 ]
 
 
@@ -89,6 +99,38 @@ def get_docs_dir() -> Path:
     """Get path to bundled docs directory."""
     return _get_data_root() / "docs"
 
+
+def get_project_templates_dir() -> Path:
+    """Get path to bundled project templates directory."""
+    return _get_data_root() / "project_templates"
+
+
+def _detect_editable_deps(target: Path) -> list[str]:
+    """Detect editable dependencies from pyproject.toml.
+
+    Parses [tool.uv.sources] section to find editable paths.
+    Returns list of absolute paths that should be added to Claude settings.
+    """
+    pyproject = target / "pyproject.toml"
+    if not pyproject.exists():
+        return []
+
+    try:
+        data = tomllib.loads(pyproject.read_text())
+        sources = data.get("tool", {}).get("uv", {}).get("sources", {})
+        paths = []
+        for _name, config in sources.items():
+            if isinstance(config, dict) and config.get("editable"):
+                rel_path = config.get("path", "")
+                if rel_path:
+                    abs_path = (target / rel_path).resolve()
+                    if abs_path.exists():
+                        paths.append(str(abs_path))
+        return paths
+    except Exception:
+        return []
+
+
 # Load environment variables from .env file (for SYSIDE_LICENSE_KEY, etc.)
 load_dotenv()
 
@@ -116,9 +158,14 @@ def cmd_init(args: argparse.Namespace) -> int:
     Creates:
     - SOURCE_INDEX.md (domain knowledge discovery for agents)
     - .claude/commands/ with MBSE commands (including /onboard, /manage-sources)
+    - .claude/agents/ with AI agents
+    - .claude/skills/ with skills
+    - .claude/hooks/ with hooks
+    - .claude/settings.json with read permissions for editable dependencies
+    - project/ structure with OVERVIEW.md, MODELING_GUIDE.md, etc.
 
-    NOTE: Does NOT create .agentic-mbse.yaml - that config was over-engineered.
-    SOURCE_INDEX.md is the single source of domain knowledge.
+    This command is idempotent - re-running it will skip existing files
+    unless --force is specified.
     """
     target = Path(args.path or ".").resolve()
 
@@ -127,17 +174,19 @@ def cmd_init(args: argparse.Namespace) -> int:
         print("Create the directory first, or specify a valid path.", file=sys.stderr)
         return EXIT_FAILURE
 
+    # Track what gets created vs skipped for summary
+    created: list[str] = []
+    skipped: list[str] = []
+
     # === Create SOURCE_INDEX.md from template ===
     source_index_path = target / "SOURCE_INDEX.md"
     template_path = get_template_path()
 
     if source_index_path.exists() and not args.force:
-        print(f"SOURCE_INDEX.md already exists at {source_index_path}")
-        print("Use --force to overwrite")
+        skipped.append("SOURCE_INDEX.md")
     else:
         if template_path.exists():
             shutil.copy(template_path, source_index_path)
-            print(f"Created: {source_index_path}")
         else:
             # Fallback: create minimal template inline
             minimal_template = """# Source Index
@@ -154,109 +203,128 @@ MBSE commands read this file to discover what reference sources exist.
 Edit this file to add your domain-specific sources.
 """
             source_index_path.write_text(minimal_template)
-            print(f"Created: {source_index_path} (from fallback template)")
+        created.append("SOURCE_INDEX.md")
 
     # === Create .claude/commands/ and install commands ===
     commands_dir = target / ".claude" / "commands"
     commands_dir.mkdir(parents=True, exist_ok=True)
-    print(f"Created: {commands_dir}")
 
-    # Copy commands
     source_commands = get_commands_dir()
-    commands_installed = 0
     for cmd in MBSE_COMMANDS:
         src = source_commands / cmd
         dst = commands_dir / cmd
         if dst.exists() and not args.force:
-            print(f"  Skipping (exists): {cmd}")
+            skipped.append(f".claude/commands/{cmd}")
             continue
         if src.exists():
             shutil.copy(src, dst)
-            commands_installed += 1
-            print(f"  Installed: {cmd}")
-        else:
-            print(f"  Warning: Command not found: {cmd}", file=sys.stderr)
+            created.append(f".claude/commands/{cmd}")
 
     # === Install agents with path substitution ===
     agents_dir = target / ".claude" / "agents"
     agents_dir.mkdir(parents=True, exist_ok=True)
-    print(f"Created: {agents_dir}")
 
-    docs_path = get_docs_dir()  # Package docs location for substitution
+    docs_path = get_docs_dir()
     source_agents = get_agents_dir()
-    agents_installed = 0
     for agent in MBSE_AGENTS:
         src = source_agents / agent
         dst = agents_dir / agent
         if dst.exists() and not args.force:
-            print(f"  Skipping (exists): {agent}")
+            skipped.append(f".claude/agents/{agent}")
             continue
         if src.exists():
-            # Read, substitute paths, write
             content = src.read_text()
             content = content.replace("agent_literature/SysML/", f"{docs_path}/sysmlv2/")
             content = content.replace(
                 "agent_literature/syside-docs/v0.8.1/", f"{docs_path}/syside/"
             )
             dst.write_text(content)
-            agents_installed += 1
-            print(f"  Installed: {agent}")
-        else:
-            print(f"  Warning: Agent not found: {agent}", file=sys.stderr)
+            created.append(f".claude/agents/{agent}")
 
     # === Install skills (recursive copy) ===
     skills_dir = target / ".claude" / "skills"
     skills_dir.mkdir(parents=True, exist_ok=True)
-    print(f"Created: {skills_dir}")
 
     source_skills = get_skills_dir()
-    skills_installed = 0
     for skill in MBSE_SKILLS:
         src = source_skills / skill
         dst = skills_dir / skill
         if dst.exists() and not args.force:
-            print(f"  Skipping (exists): {skill}/")
+            skipped.append(f".claude/skills/{skill}/")
             continue
         if src.exists() and src.is_dir():
             shutil.copytree(src, dst, dirs_exist_ok=True)
-            skills_installed += 1
-            print(f"  Installed: {skill}/")
-        else:
-            print(f"  Warning: Skill not found: {skill}", file=sys.stderr)
+            created.append(f".claude/skills/{skill}/")
 
     # === Install hooks ===
     hooks_dir = target / ".claude" / "hooks"
     hooks_dir.mkdir(parents=True, exist_ok=True)
-    print(f"Created: {hooks_dir}")
 
     source_hooks = get_hooks_dir()
-    hooks_installed = 0
     for hook in MBSE_HOOKS:
         src = source_hooks / hook
         dst = hooks_dir / hook
         if dst.exists() and not args.force:
-            print(f"  Skipping (exists): {hook}")
+            skipped.append(f".claude/hooks/{hook}")
             continue
         if src.exists():
             shutil.copy(src, dst)
-            # Preserve executable permission
             dst.chmod(src.stat().st_mode)
-            hooks_installed += 1
-            print(f"  Installed: {hook}")
-        else:
-            print(f"  Warning: Hook not found: {hook}", file=sys.stderr)
+            created.append(f".claude/hooks/{hook}")
 
+    # === Create project/ structure with templates ===
+    project_dir = target / "project"
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / "backlog").mkdir(exist_ok=True)
+    (project_dir / "active").mkdir(exist_ok=True)
+    (project_dir / "research").mkdir(exist_ok=True)
+
+    templates_dir = get_project_templates_dir()
+    for template_name, dest_path in PROJECT_TEMPLATES:
+        src = templates_dir / template_name
+        dst = target / dest_path
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if dst.exists() and not args.force:
+            skipped.append(dest_path)
+            continue
+        if src.exists():
+            shutil.copy(src, dst)
+            created.append(dest_path)
+
+    # === Create .claude/settings.json with editable dep permissions ===
+    editable_paths = _detect_editable_deps(target)
+    settings_path = target / ".claude" / "settings.json"
+
+    if editable_paths:
+        if settings_path.exists() and not args.force:
+            skipped.append(".claude/settings.json")
+        else:
+            permissions = [f"Read({p}/**)" for p in editable_paths]
+            settings = {"permissions": {"allow": permissions}}
+            settings_path.write_text(json.dumps(settings, indent=2) + "\n")
+            created.append(f".claude/settings.json ({len(permissions)} read permissions)")
+
+    # === Print summary ===
+    print(f"\nInitialized MBSE project in {target}")
     print("")
-    print(f"Initialized MBSE project in {target}")
-    print("  - SOURCE_INDEX.md created (edit to add your domain sources)")
-    print(f"  - {commands_installed} commands installed to .claude/commands/")
-    print(f"  - {agents_installed} agents installed to .claude/agents/")
-    print(f"  - {skills_installed} skills installed to .claude/skills/")
-    print(f"  - {hooks_installed} hooks installed to .claude/hooks/")
-    print("")
-    print("Next steps:")
-    print("  1. Run /onboard to configure your project and learn the workflow")
-    print("  2. Or manually edit SOURCE_INDEX.md and start with /design-model")
+
+    if created:
+        print(f"Created ({len(created)}):")
+        for item in created:
+            print(f"  + {item}")
+
+    if skipped:
+        print(f"\nSkipped ({len(skipped)}) - already exist:")
+        for item in skipped:
+            print(f"  . {item}")
+
+    if not created:
+        print("\nAll items already exist. Use --force to overwrite.")
+    else:
+        print("")
+        print("Next steps:")
+        print("  1. Run /onboard to configure your project and learn the workflow")
+        print("  2. Or manually edit SOURCE_INDEX.md and start with /design-model")
 
     return EXIT_SUCCESS
 
