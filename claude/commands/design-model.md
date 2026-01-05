@@ -605,20 +605,17 @@ Before implementation, verify:
 ### Validation Commands
 
 ```bash
-# Test syntax snippet
-./scripts/validate_sysml_syntax.sh "test snippet"
-
-# Show common patterns
-./scripts/validate_sysml_syntax.sh --show-patterns
-
-# Parse check single file
-python scripts/test_sysml_parsing.py models/path/to/file.sysml
+# Quick syntax check on single file
+syside check models/path/to/file.sysml
 
 # Check directory
-python scripts/test_sysml_parsing.py models/designs/{design_name}/
+syside check models/designs/{design_name}/
 
-# Traceability check
-python scripts/check_traceability.py models/library/components/
+# Full quality validation (8 levels)
+agentic-mbse validate models/
+
+# Specific level only (e.g., Level 6 = Traceability)
+agentic-mbse validate models/ --level 6
 ```
 
 
@@ -640,14 +637,14 @@ python scripts/check_traceability.py models/library/components/
 
 2. **Run Quality Validation**:
    ```bash
-   python scripts/sysml_checks/run_all_checks.py models/
+   agentic-mbse validate models/
    ```
 
    Focus on:
    - ✅ **Level 1: Syntax validation** (must pass)
    - ✅ **Level 2: Structural completeness** (must pass)
    - ✅ **Level 3: Dataflow integrity** (must pass)
-   - ⚠️ **Levels 4-7**: Note issues for refinement (not blocking)
+   - ⚠️ **Levels 4-8**: Note issues for refinement (not blocking)
 
 3. **Review High-Risk Assumptions**:
    - Read `data/assumption_register.md`
@@ -1023,7 +1020,7 @@ constraint FieldStrengthLimit {
 ### Parsing Validation
 ```bash
 # Test model parses correctly
-python scripts/test_sysml_parsing.py models/library/[area]/[file].sysml
+syside check models/library/[area]/[file].sysml
 ```
 
 ### Constraint Checking
@@ -1041,14 +1038,10 @@ python scripts/test_sysml_parsing.py models/library/[area]/[file].sysml
 | [Metric 2] | [Value] | ±X% | [source_file.py] line Y |
 | [Metric 3] | [Value] | ±X% | Derived calculation |
 
-**Validation commands:**
-```bash
-# Compare calculated values to baseline (if validation script exists)
-python scripts/compare_with_baseline.py --design {design_name} --metric all
-
-# Verify key constraints (e.g., energy conservation)
-# Should satisfy: [constraint] within X%
-```
+**Validation approach:**
+- Manual comparison of calculated vs expected values
+- Document deviations > tolerance in assumption register
+- Verify key constraints (e.g., energy conservation) within tolerance
 
 ### Manual Verification
 - [ ] All definitions have doc comments
@@ -1066,7 +1059,7 @@ python scripts/compare_with_baseline.py --design {design_name} --metric all
   ☐ [Calc def 1] with full documentation
   ☐ [Calc def 2] with full documentation
   ☐ ...
-☐ Parse validation: `python scripts/test_sysml_parsing.py [file]`
+☐ Parse validation: `syside check [file]`
 ☐ Unit tests (if applicable)
 
 ### Phase 2: Structural Components (estimated time)
@@ -1111,10 +1104,10 @@ python scripts/compare_with_baseline.py --design {design_name} --metric all
   - Mitigation: [Compare with multiple sources]
 
 ## Next Steps After Implementation
-1. Parse validation: Ensure models parse without errors
-2. Traceability check: Run `scripts/check_traceability.py`
+1. Parse validation: `syside check models/` to ensure models parse without errors
+2. Full quality validation: `agentic-mbse validate models/` (includes traceability at Level 6)
 3. Constraint validation: Check all constraints satisfied
-4. Baseline comparison: Run comparison for affected metrics (if validation sources configured)
+4. Baseline comparison: Manual comparison for affected metrics (if validation sources configured)
 5. Update epic status: Mark relevant deliverables complete
 
 ---

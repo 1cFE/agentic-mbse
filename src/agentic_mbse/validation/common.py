@@ -3,8 +3,6 @@ Common utilities for SysML quality checks
 
 Provides result dataclasses, file discovery, model loading, and output formatting
 for all quality check levels.
-
-Reuses patterns from scripts/test_sysml_parsing.py
 """
 
 from dataclasses import dataclass, field

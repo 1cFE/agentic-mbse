@@ -3,8 +3,6 @@
 Level 1: Syntax Validation
 
 Validates that all SysML models parse without syntax errors using syside.
-
-Reuses and extends scripts/test_sysml_parsing.py
 """
 
 import sys

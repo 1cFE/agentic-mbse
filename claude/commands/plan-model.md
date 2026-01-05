@@ -389,32 +389,21 @@ syside check models/designs/{design_name}/**/*.sysml
 ```
 - [ ] All files parse without errors
 
-**Geometric consistency:**
+**Full quality validation:**
 ```bash
-# Run radial build validation script
-python scripts/validate_radial_build.py
-```
-- [ ] No gaps or overlaps in radial build
-- [ ] Total radius matches expected value
-- [ ] All layer thicknesses positive
+# Run all 8 quality levels
+agentic-mbse validate models/
 
-**Traceability validation:**
-```bash
-# Check all definitions have sources
-python scripts/check_traceability.py
+# Or run specific levels
+agentic-mbse validate models/ --level 6  # Traceability only
 ```
+- [ ] Levels 1-3 pass (critical)
+- [ ] Levels 4-8 reviewed (informational)
+
+**Traceability validation (Level 6):**
 - [ ] All part defs, attribute defs, calc defs have doc comments
 - [ ] All doc comments cite sources
 - [ ] Traceability matrix complete
-
-**baseline comparison:**
-```bash
-# Compare geometric parameters with baseline codebase (if configured)
-python scripts/compare_with_baseline.py
-```
-- [ ] All geometric parameters within 0.01% of baseline
-- [ ] Calculated volumes within 5% of baseline
-- [ ] Any discrepancies documented with rationale
 
 **Manual verification:**
 - [ ] All acceptance criteria from spec met
@@ -449,14 +438,14 @@ syside check <file>
 # Parse check directory
 syside check models/library/**/*.sysml
 
-# Radial build consistency
-python scripts/validate_radial_build.py
+# Full quality validation (8 levels)
+agentic-mbse validate models/
 
-# Traceability check
-python scripts/check_traceability.py
+# Specific level only
+agentic-mbse validate models/ --level 6  # Traceability
 
-# baseline comparison
-python scripts/compare_with_baseline.py  # If validation source configured
+# See all issues (don't stop on first failure)
+agentic-mbse validate models/ --complete
 ```
 
 ### File Organization

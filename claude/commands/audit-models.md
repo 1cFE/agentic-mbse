@@ -439,8 +439,8 @@ When invoked:
 ---
 
 **Related Commands:**
-- Before audit → Ensure models parse (`python scripts/test_sysml_parsing.py`)
+- Before audit → Ensure models parse (`syside check models/` or `agentic-mbse validate models/ --level 1`)
 - After audit → Fix issues, update traceability, re-audit
-- Complement with → 7-level quality validation for structural checks
+- Complement with → Full quality validation: `agentic-mbse validate models/`
 
 **Last Updated**: 2025-11-17

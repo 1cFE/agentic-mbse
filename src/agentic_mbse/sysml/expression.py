@@ -415,7 +415,7 @@ def evaluate_true_static_expression(expr: Any) -> float:
         ref_name = get_reference_name(expr) or "<unknown>"
         raise ValueError(
             f"Feature reference '{ref_name}' found in static expression. "
-            f"This violates ADR-002 Rule 3. Run 'python scripts/sysml_checks/run_all_checks.py' "
+            f"This violates ADR-002 Rule 3. Run 'agentic-mbse validate' "
             f"to identify and fix the violation."
         )
 

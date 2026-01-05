@@ -146,13 +146,18 @@ needs for more sophisticated parallel workflows.
 
 **BEFORE creating ANY SysML model files:**
 
-1. **Test syntax patterns first** using validation script:
+1. **De-risk complex syntax** by testing in a temp file first:
    ```bash
-   # Test attribute declarations
-   ./scripts/validate_sysml_syntax.sh "attribute test : Real = 1.0 [m];"
+   # Create a minimal test file with your snippet
+   cat > /tmp/test_snippet.sysml << 'EOF'
+   package TestSnippet {
+       // Paste your uncertain syntax here:
+       attribute test : Real = 1.0 [m];
+   }
+   EOF
 
-   # Test part definitions
-   ./scripts/validate_sysml_syntax.sh "part def 'Test Component' { }"
+   # Validate with syside
+   syside check /tmp/test_snippet.sysml
    ```
 
 2. **Common patterns to pre-test:**
@@ -162,17 +167,13 @@ needs for more sophisticated parallel workflows.
    - Temperature values (always Kelvin [K])
    - Any complex syntax you're uncertain about
 
-3. **View reference patterns:**
-   ```bash
-   ./scripts/validate_sysml_syntax.sh --show-patterns
-   ```
+3. **ONLY after validation passes**, proceed with file creation
 
-4. **ONLY after validation passes**, proceed with file creation
-
-5. **If validation fails:**
-   - Fix the pattern based on suggestions
+4. **If validation fails:**
+   - Review the syside error message
+   - Fix the pattern
    - Re-test until it passes
-   - Then use corrected pattern in file
+   - Then use corrected pattern in your actual file
 
 **This prevents:**
 - Iterative syntax correction loops
@@ -202,7 +203,8 @@ For each task in the plan:
    ```
 4. **Validate After Each Model**:
    ```bash
-   python scripts/test_sysml_parsing.py models/path/to/file.sysml
+   # Quick syntax check on single file
+   syside check models/path/to/file.sysml
    ```
 
    If any validations don't pass, you are having trouble resolving parsing issues, or any other modeling challenges arise, make sure of the "sysmlv2-doc-analyzer" subagent!! This agent has full knowledge of the SysMLv2 spec as well as the SysIDE parser, and can help provide guidance as to how to resolve issues. 
@@ -292,9 +294,9 @@ Bash("python /tmp/batch_edit.py models/file.sysml")
 
 1. **Run All Validations**:
    ```bash
-   # STEP 1: Comprehensive Quality Validation (7 levels)
+   # STEP 1: Comprehensive Quality Validation (8 levels)
    # This runs all quality checks on your models
-   python scripts/sysml_checks/run_all_checks.py models/
+   agentic-mbse validate models/
 
    # Quality check output explains each level:
    # Level 1: Syntax Validation (parser errors)
@@ -304,6 +306,7 @@ Bash("python /tmp/batch_edit.py models/file.sysml")
    # Level 5: Semantic Consistency (unit consistency, constraint coverage)
    # Level 6: Traceability & Documentation (missing doc comments)
    # Level 7: Architectural Integrity (manifest validation)
+   # Level 8: Codegen Readiness (qualified names, calc def structure)
 
    # CRITICAL: If quality checks fail:
    # - Review the failure output carefully
@@ -311,30 +314,20 @@ Bash("python /tmp/batch_edit.py models/file.sysml")
    # - Re-run quality checks
    # - STOP and report to user if unable to resolve
    # - DO NOT proceed to commit if Level 1-3 fail (critical errors)
-   # - Levels 4-7 warnings are informational but should be reviewed
+   # - Levels 4-8 warnings are informational but should be reviewed
 
    # STEP 2: ADR-002 Compliance Check
    # Verify no calc defs in design files (per ADR-002 Rule 1)
    grep -r "calc def" models/designs/
    # Should return empty - if not, move calc defs to library/
-
-   # STEP 3: Legacy validation scripts (for backward compatibility)
-   # Parse validation
-   python scripts/test_sysml_parsing.py models/library/components/*.sysml
-
-   # Traceability check
-   python scripts/check_traceability.py models/library/components/
-
-   # Baseline comparison (if applicable)
-   python scripts/validate_model_vs_baseline.py  # If validation source configured
    ```
 
    **Quality Check Interpretation:**
    - **Levels 1-3 MUST pass** - These are critical errors that break models
-   - **Levels 4-7 provide insights** - Warnings guide improvements but don't block
-   - Use `--complete` flag to see all issues: `python scripts/sysml_checks/run_all_checks.py --complete models/`
-   - Use `--level=N` to run specific level: `python scripts/sysml_checks/run_all_checks.py --level=1 models/`
-   - See `scripts/sysml_checks/README.md` for detailed usage
+   - **Levels 4-8 provide insights** - Warnings guide improvements but don't block
+   - Use `--complete` flag to see all issues: `agentic-mbse validate models/ --complete`
+   - Use `--level N` to run specific level: `agentic-mbse validate models/ --level 1`
+   - Use `--verbose` for detailed output: `agentic-mbse validate models/ --verbose`
 
 2. **MANDATORY: Update Plan Document**:
    ```markdown
