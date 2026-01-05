@@ -215,85 +215,27 @@ Use AskUserQuestion:
 
 ### 3.1 Create README.md
 
-Use this template, filling in from conversation:
+Use the template at `project_templates/README.md.template`, filling in placeholders from conversation:
 
-```markdown
-# {Project Name}
+| Placeholder | Replace With |
+|-------------|--------------|
+| `<!-- PROJECT_NAME -->` | Project name from conversation |
+| `<!-- PROJECT_DESCRIPTION -->` | One-line description: "SysML v2 model of {system} for {goal}" |
+| `<!-- PROJECT_STRUCTURE -->` | Directory structure including models/ and any existing directories |
 
-{One-line description}: SysML v2 model of {system} for {goal}.
-
-## What This Project Does
-
-This project uses **Model-Based Systems Engineering (MBSE)** to model {system description from conversation}.
-
-Using SysML v2 and the agentic-mbse toolkit, you can:
-- Define formal models of system structure and behavior
-- Trace requirements to design elements
-- Validate designs against reference sources
-- {Goal-specific benefit based on user's stated goal}
-
-### Modeling Goals
-
-{User's stated goals from conversation - what they want to get out of modeling}
-
-## Getting Started
-
-### MBSE Commands
-
-This project includes AI-assisted commands for the complete MBSE workflow:
-
-| Command | Purpose | When to Use |
-|---------|---------|-------------|
-| `/spec-model` | Define what to model | Starting a new model feature |
-| `/design-model` | Design model structure | After spec, before implementation |
-| `/plan-model` | Plan implementation phases | Complex features needing phasing |
-| `/implement-model` | Create SysML files | Ready to write actual models |
-| `/audit-models` | Validate against sources | Verify correctness |
-| `/research` | Explore domain sources | Need information from references |
-
-### Typical Workflow
-
+**Example PROJECT_STRUCTURE replacement:**
 ```
-1. /spec-model {feature}     → Define requirements
-2. /design-model {feature}   → Design the model
-3. /plan-model {feature}     → Plan implementation
-4. /implement-model {feature} → Generate SysML files
-5. /audit-models             → Validate results
-```
-
-### First Steps
-
-1. Review `SOURCE_INDEX.md` - ensure your reference sources are listed
-2. Run `/spec-model {first-feature}` to start defining your first model
-3. Follow the workflow through design → plan → implement
-
-## Project Structure
-
-```
-{project}/
+project/
 ├── models/                  # SysML v2 model files
-│   ├── library/             # Reusable definitions (part defs, calc defs)
+│   ├── library/             # Reusable definitions
 │   └── designs/             # Specific system instances
-├── SOURCE_INDEX.md          # Domain knowledge sources (CRITICAL)
+├── project/                 # Project documentation
+├── SOURCE_INDEX.md          # Domain knowledge sources
 ├── CLAUDE.md                # Context for Claude Code
-├── README.md                # This file
-└── .claude/commands/        # MBSE slash commands
+└── README.md                # This file
 ```
 
-## Domain Sources
-
-This project draws from the following reference sources:
-
-{List sources from SOURCE_INDEX.md - name and brief purpose for each}
-
-See `SOURCE_INDEX.md` for details on each source.
-
-## Learn More
-
-- **MBSE Workflow**: The commands guide you through spec → design → plan → implement
-- **SysML v2**: Models use the SysML v2 textual notation
-- **Validation**: Use `/audit-models` to verify against reference sources
-```
+Customize the structure based on what was discovered in Stage 1.
 
 ### 3.2 Create CLAUDE.md
 
@@ -506,17 +448,6 @@ Find and replace these placeholders with user's answers:
 | `<!-- What's next -->` | "Run /spec-model to define first feature" |
 | `<!-- Name -->` (Project Owner) | User's name if known, or leave as placeholder |
 
-#### Update project/REFERENCE.md
-
-| Placeholder | Replace With |
-|-------------|--------------|
-| `<!-- Your primary reference codebase or tool -->` | Primary source name from Q3 |
-| `<!-- Path or URL -->` | Primary source location from Q3 |
-| `<!-- X% -->` (validation target) | "5%" as default, or domain-appropriate |
-| Key reference locations | List paths from sources in Q3 |
-| Physics Models section | Leave as template - user will fill via /research |
-| Material Properties | Leave as template - domain-specific |
-
 #### Update project/BACKLOG.md
 
 | Placeholder | Replace With |
@@ -538,7 +469,6 @@ These files are methodology guides and don't need user-specific updates. Leave a
 
 > I've updated the project documentation files with your project context:
 > - `project/OVERVIEW.md` - Project overview with your system and goals
-> - `project/REFERENCE.md` - Technical reference pointing to your sources
 > - `project/backlog/BACKLOG.md` - Initial work backlog
 >
 > Review these files and customize further as needed.
@@ -561,11 +491,10 @@ Present this summary to the user:
 - **CLAUDE.md** - Domain context for Claude Code
 - **SOURCE_INDEX.md** - {N} reference sources configured (or "guidance for adding sources")
 - **models/** - Directory structure for SysML models
-- **project/OVERVIEW.md** - Project architecture and principles (updated with your context)
-- **project/REFERENCE.md** - Technical reference (updated with your sources)
+- **project/OVERVIEW.md** - Project overview (updated with your context)
 - **project/BACKLOG.md** - Work backlog (updated with initial tasks)
 - **project/MODELING_GUIDE.md** - SysML v2 syntax patterns guide
-- **project/MODELING_PROCESS.md** - Design workflow and process guide
+- **project/MODELING_PROCESS.md** - MBSE workflow and methodology guide
 
 ### Review Your Changes
 

@@ -28,7 +28,6 @@ You are a specialist implementation planning agent for **SysMLv2 models**. Your 
 - **Prototype location**: Check design.md for files created/modified (in models/library/ or models/designs/)
 - Feature spec: `project/active/{feature-name}/spec.md` (for acceptance criteria)
 - `project/MODELING_GUIDE.md` - **CRITICAL** for conventions
-- `project/REFERENCE.md` - For validation approach
 
 **Key Principle**: The prototype from design is the foundation. Planning organizes refinement: adding complete doc comments, full constraints, comprehensive integration, detailed validation.
 
@@ -67,7 +66,6 @@ You are a specialist implementation planning agent for **SysMLv2 models**. Your 
 
 3. **Read modeling conventions**
    - `project/MODELING_GUIDE.md` - Definitions vs usages, naming, file organization
-   - `project/REFERENCE.md` - Validation approaches
 
 ### Step 2: Identify Implementation Phases
 

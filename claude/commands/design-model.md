@@ -25,9 +25,8 @@ You are a specialist design agent for **SysMLv2 models**. Your goal is to create
 **Context**: Before starting, read:
 - **`models/README.md`** - **CRITICAL**: Directory structure, library overview, common patterns
 - **`project/MODELING_PROCESS.md`** - **CRITICAL**: Structured 3-phase design workflow
-- `project/OVERVIEW.md` - Four integrated views, principles
+- `project/OVERVIEW.md` - Project goals and status
 - `project/MODELING_GUIDE.md` - Definitions vs usages, naming, patterns
-- `project/REFERENCE.md` - Physics models, material properties, cost formulas
 - `project/sysmlv2_fusion_modeling_specification.md` - Detailed requirements
 - Feature spec: `project/active/{feature-name}/spec.md`
 - Related research: `project/research/{relevant}.md` (if exists)
@@ -164,7 +163,7 @@ If any prerequisites missing, STOP and request clarification.
 
 1. **Read Project Context**:
    - Read MODELING_GUIDE - understand definitions vs usages pattern **thoroughly**
-   - Read REFERENCE - understand physics models, constraints, validation
+   - Read MODELING_PROCESS - understand MBSE methodology and workflow
    - Read specification for detailed modeling requirements
    - Read `project/active/{feature-name}/spec.md` FULLY
    - Verify this is a MODELS feature (not CODE)
@@ -1184,7 +1183,7 @@ python scripts/compare_with_baseline.py --design {design_name} --metric all
 - **Library vs Design**: Clearly specify where elements go
 - **Component Interfaces**: Describe what they represent and what they include
 - **Constraints**: Include physics/engineering limits with formulas
-- **Units**: Use ISQ/SI standard units from REFERENCE
+- **Units**: Use ISQ/SI standard units (per MODELING_GUIDE)
 - **Traceability**: Cite codebase sources (with line numbers), papers, web sources
 - **Validation**: Define baseline comparison or constraint checking
 

@@ -42,83 +42,9 @@ SysMLv2 enables:
 
 ## Technical Approach
 
-### Four Integrated Views
+For MBSE methodology including the Four Integrated Views (Requirements, Behavioral, Structural, Analysis), see [MODELING_PROCESS.md](MODELING_PROCESS.md).
 
-**View 1: Requirements View**
-- Mission objectives
-- Stakeholder requirements
-- Derived technical requirements
-- Verification cases
-
-**View 2: Behavioral View**
-- Function hierarchy
-- Physics behaviors
-- Operational sequences
-- Energy and material flows
-
-**View 3: Structural View**
-- System decomposition
-- Component specifications (geometry, materials, mass, volume)
-- Interfaces and connections
-- Spatial relationships
-
-**View 4: Analysis View**
-- Physics calculations
-- Engineering calculations
-- Performance metrics
-- Cost calculations (if applicable)
-- Constraints and validation
-
-### Integration Pattern
-
-```
-Requirements ──satisfy──> Functions ──allocatedTo──> Components
-     ↑                                                    ↓
-     └────── verifiedBy ←──── Analyses ←──── properties ─┘
-```
-
-Every component:
-- Has properties (geometry, materials, mass)
-- Allocates functions (what it does)
-- Satisfies requirements (with verification)
-- Participates in analyses
-- Enforces constraints (physical laws, engineering limits)
-
----
-
-## Key Principles
-
-### 1. Definitions vs Usages
-
-**Definitions** = reusable types (library)
-- `part def 'Component Type'` - what a component can be
-- Lives in `models/library/`
-
-**Usages** = specific instances (designs)
-- `part my_component : 'Component Type'` - the actual component in your design
-- Lives in `models/designs/`
-
-### 2. Traceability Required
-
-Every model element must answer: "Why do we believe this?"
-- Source citations in doc comments
-- Physical laws, papers, reports, expert judgment
-- Assumptions explicitly marked
-- Validation status documented
-
-### 3. Validation-Driven
-
-- Compare against reference baseline
-- Check constraints continuously
-- Document validation status
-- Target: within acceptable tolerance for key metrics
-
-### 4. Incremental Development
-
-- Build capability incrementally
-- Validate each addition
-- Don't over-specify upfront
-- Learn and adapt
+For SysML syntax and patterns, see [MODELING_GUIDE.md](MODELING_GUIDE.md).
 
 ---
 
@@ -146,12 +72,12 @@ models/
 **Project Management**:
 ```
 project/
-├── OVERVIEW.md             # This file
-├── MODELING_GUIDE.md       # How to write models
-├── REFERENCE.md            # Technical references
-├── backlog/                # Future work epics
+├── OVERVIEW.md             # This file (project status)
+├── MODELING_GUIDE.md       # SysML syntax and patterns
+├── MODELING_PROCESS.md     # MBSE workflow and methodology
+├── backlog/                # Work items
 ├── active/                 # Current work
-└── completed/              # Archive and changelog
+└── completed/              # Archive
 ```
 
 ---
@@ -208,13 +134,13 @@ project/
 
 **For new collaborators**:
 1. Read this overview
-2. Review `MODELING_GUIDE.md` for conventions
-3. Check `REFERENCE.md` for technical context
+2. Review `MODELING_GUIDE.md` for SysML syntax
+3. Review `MODELING_PROCESS.md` for workflow
 4. Look at `backlog/BACKLOG.md` for work items
 5. Examine example models in `models/library/`
 
 **For agents working on this project**:
-1. Read these three project docs first
+1. Read this overview and MODELING_GUIDE first
 2. Check `active/` for current priorities
 3. Follow modeling conventions strictly
 4. Document sources and traceability

@@ -12,7 +12,6 @@ You are a specialist audit agent for **SysMLv2 models**. Your goal is to systema
 
 **Context**: Read before starting:
 - `project/MODELING_GUIDE.md` - Model structure and conventions
-- `project/REFERENCE.md` - Physics models and validation approaches
 - `data/traceability_matrix.csv` - Source mappings for parameters
 
 **Your audit will produce**:

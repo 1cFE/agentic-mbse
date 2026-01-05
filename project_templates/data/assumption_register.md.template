@@ -1,0 +1,44 @@
+# Assumption Register
+
+**Purpose**: Track uncertainties, data gaps, and modeling assumptions
+
+**Last Updated**: <!-- Auto-updated during /design-model and /implement-model -->
+
+---
+
+## High Uncertainty (>50%)
+
+<!-- Entries added during /design-model and /implement-model -->
+
+## Medium Uncertainty (20-50%)
+
+<!-- Entries added during /design-model and /implement-model -->
+
+## Low Uncertainty (<20%)
+
+<!-- Entries added during /design-model and /implement-model -->
+
+---
+
+## Entry Format
+
+```markdown
+### A001: {Assumption Name}
+- **Assumption**: {What is assumed, with value if applicable}
+- **Basis**: {Where the value/decision came from}
+- **Uncertainty**: ±X%
+- **Impact**: High/Medium/Low - {why it matters}
+- **Validation Needed**: {How to validate}
+- **Risk**: {What could go wrong}
+- **Related Models**: {model file paths}
+- **Date**: YYYY-MM-DD
+```
+
+---
+
+## How to Use
+
+1. **During /design-model**: Add assumptions about modeling approach, data sources
+2. **During /implement-model**: Add assumptions about parameter values, formulas
+3. **During /audit-models**: Review high-risk items, update confidence levels
+4. **When validated**: Move to "Resolved" section or delete entry

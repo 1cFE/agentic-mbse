@@ -18,6 +18,52 @@
 
 ---
 
+## MBSE Methodology: Four Integrated Views
+
+This process uses the **Four Integrated Views** approach to systems modeling:
+
+### View 1: Requirements View
+- Mission objectives
+- Stakeholder requirements
+- Derived technical requirements
+- Verification cases
+
+### View 2: Behavioral View
+- Function hierarchy
+- Physics behaviors
+- Operational sequences
+- Energy and material flows
+
+### View 3: Structural View
+- System decomposition
+- Component specifications (geometry, materials, mass, volume)
+- Interfaces and connections
+- Spatial relationships
+
+### View 4: Analysis View
+- Physics calculations
+- Engineering calculations
+- Performance metrics
+- Cost calculations (if applicable)
+- Constraints and validation
+
+### Integration Pattern
+
+```
+Requirements ──satisfy──> Functions ──allocatedTo──> Components
+     ↑                                                    ↓
+     └────── verifiedBy ←──── Analyses ←──── properties ─┘
+```
+
+Every component:
+- Has properties (geometry, materials, mass)
+- Allocates functions (what it does)
+- Satisfies requirements (with verification)
+- Participates in analyses
+- Enforces constraints (physical laws, engineering limits)
+
+---
+
 A structured workflow for designing and implementing SysMLv2 models, optimized for the design-model and plan-model commands.
 
 ## Overview
@@ -45,7 +91,7 @@ This process ensures:
 ☐ Read requirement specification (e.g., spec.md)
 ☐ Read models/README.md for library overview
 ☐ Review MODELING_GUIDE.md for patterns
-☐ Skim REFERENCE.md for physics/engineering formulas
+☐ Check SOURCE_INDEX.md for domain knowledge sources
 ```
 
 **Output**: Clear understanding of what needs to be modeled.
@@ -593,226 +639,17 @@ Design → Prototype → Validate → [Fix issues cheap] → Plan Refinement →
 
 ---
 
-## SysMLv2 Patterns Catalog
+## SysML Syntax Reference
 
-Quick reference for common SysMLv2 patterns.
+For detailed SysMLv2 patterns including:
+- Package imports and namespaces
+- Calc def definitions and instantiation
+- Cross-file attribute binding
+- Part definitions and instantiation
+- Constraints and conditional logic
+- Geometry calculations
 
-### Pattern 1: Package Imports
-
-```sysml
-// Import specific calc def (preferred)
-private import MyLibrary::MyCalculation;
-
-// Import all from package (use sparingly)
-public import MyLibrary::*;
-
-// Import component definition
-private import MyComponents::'Component Type';
-
-// Import instance for cross-file binding
-private import MyDesign::my_component;
-```
-
-**When to use**:
-- `private`: Default (keeps namespace clean)
-- `public`: Only when re-exporting for downstream packages
-
-### Pattern 2: Calc Def Definition
-
-```sysml
-/**
- * [Title]
- *
- * [Description of what it calculates]
- *
- * Formula:
- *   [Mathematical formula or pseudo-code]
- *
- * Source: [Reference to original derivation]
- * Reference: [source file:line or paper citation]
- * Typical Values: [Expected ranges]
- * Assumptions:
- *   - [List key assumptions]
- * Last Updated: [Date]
- */
-calc def MyCalculation {
-    in attribute input_param : Real;  // [units] - Description
-
-    attribute intermediate : Real = input_param * 2.0;  // Optional
-
-    out attribute result : Real = intermediate * 1.5;  // [units] - Description
-
-    constraint Reasonable {
-        doc /* Description of constraint */
-        result > 0 and result < 1000
-    }
-}
-```
-
-### Pattern 3: Calc Def Instantiation
-
-```sysml
-package MyDesign {
-    private import MyPackage::MyCalculation;
-
-    part my_component {
-        // Input parameter
-        attribute my_input : Real = 50.0;
-
-        // Create calc instance
-        calc my_calc : MyCalculation {
-            // Bind input
-            in input_param = my_component::my_input;
-        }
-
-        // Access output (optional)
-        attribute my_result : Real = my_calc.result;
-    }
-}
-```
-
-### Pattern 4: Cross-File Attribute Binding
-
-```sysml
-// File 1: component.sysml
-package MyComponent {
-    part my_part {
-        attribute exposed_value : Real = 42.0;  // EXPOSED
-    }
-}
-
-// File 2: consumer.sysml
-package MyConsumer {
-    private import MyComponent::my_part;  // Import the INSTANCE
-
-    part consumer_part {
-        calc some_calc : SomeCalc {
-            in some_input = my_part.exposed_value;  // Bind to cross-file attribute
-        }
-    }
-}
-```
-
-**Key**: Import the package containing the INSTANCE, not the definition.
-
-### Pattern 5: Attribute with Units
-
-```sysml
-attribute power : Real = 2600.0 [MW];       // Power in megawatts
-attribute radius : Real = 3.5 [m];          // Radius in meters
-attribute temperature : Real = 300 [K];     // Temperature in Kelvin
-attribute fraction : Real = 0.85;           // Dimensionless (no units)
-```
-
-**Standard units**: Use SI units from `import SI::*`
-
-### Pattern 6: Constraints
-
-```sysml
-constraint EnergyConservation {
-    doc /* Total energy in must equal total energy out */
-    energy_in > energy_out * 0.999 and
-    energy_in < energy_out * 1.001
-}
-
-constraint PositiveValue {
-    doc /* Value must be positive */
-    value > 0
-}
-
-constraint Viability {
-    doc /* System must meet minimum performance */
-    efficiency > minimum_efficiency
-}
-```
-
-**Best practice**: Always include `doc /* description */`
-
-### Pattern 7: Volume Calculations
-
-```sysml
-// Cylindrical volume
-attribute volume : Real = 3.14159 * radius * radius * height;  // m³
-
-// Annular volume (ring)
-attribute volume_annular : Real =
-    3.14159 * (outer_radius * outer_radius - inner_radius * inner_radius) * height;
-
-// Spherical volume
-attribute volume_spherical : Real =
-    (4.0 / 3.0) * 3.14159 * radius * radius * radius;
-```
-
-### Pattern 8: Part Definition
-
-```sysml
-part def 'Component Type' {
-    doc /*
-    [Description]
-
-    **Source**: [Where it comes from]
-    **Reference**: [Citations]
-    **Used For**: [Purpose]
-    **Assumptions**: [List assumptions]
-    **Last Updated**: [Date]
-    */
-
-    // Geometric attributes
-    attribute radius : Real {
-        doc /* Description */
-    }
-
-    attribute thickness : Real {
-        doc /* Description */
-    }
-
-    // Physical properties
-    attribute mass : Real {
-        doc /* Description */
-    }
-
-    // Constraints
-    constraint GeometryPositive {
-        doc /* Dimensions must be positive */
-        radius > 0 and thickness > 0
-    }
-}
-```
-
-### Pattern 9: Part Instantiation
-
-```sysml
-package MyDesign {
-    private import MyLibrary::'Component Type';
-
-    part my_component : 'Component Type' {
-        doc /* Specific component instance description */
-
-        // Bind attributes
-        attribute radius = 5.0 [m];
-        attribute thickness = 0.8 [m];
-        attribute mass = 12000 [kg];
-    }
-}
-```
-
-### Pattern 10: Conditional Logic (Derived Attributes)
-
-```sysml
-// Use ternary-like logic with derived attributes
-attribute is_active : Boolean = temperature_operating < 100;
-
-attribute mode : String =
-    is_active ? "active" : "standby";
-
-// More complex: multiple conditions
-attribute efficiency : Real =
-    (temperature_operating < 20) ? 0.95 :
-    (temperature_operating < 100) ? 0.85 :
-    0.60;
-```
-
-**Note**: SysMLv2 supports conditional expressions in attribute definitions.
+**See [MODELING_GUIDE.md](MODELING_GUIDE.md)** - the authoritative syntax reference.
 
 ---
 
@@ -969,6 +806,11 @@ A well-designed model specification should have:
 
 - **models/README.md** - Directory structure and library reference
 - **project/MODELING_GUIDE.md** - SysMLv2 patterns and best practices
-- **project/OVERVIEW.md** - Architecture overview
-- **project/REFERENCE.md** - Technical references
+- **project/OVERVIEW.md** - Project status and goals
+- **SOURCE_INDEX.md** - Domain knowledge sources
 - **SysMLv2 Specification** - https://www.omg.org/spec/SysML
+
+---
+
+**Last Updated**: <!-- YYYY-MM-DD -->
+**Patterns Validated**: See [MODELING_GUIDE.md](MODELING_GUIDE.md) Pattern Validation Status section

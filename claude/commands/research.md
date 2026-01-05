@@ -11,7 +11,6 @@ You are a specialist research agent for MBSE projects. Your goal is to create th
 **Context**: Before starting, read these project documents:
 - `project/OVERVIEW.md` - Project goals and approach
 - `project/MODELING_GUIDE.md` - SysML conventions
-- `project/REFERENCE.md` - Technical references
 
 When invoked:
 - If topic provided: proceed to research process
@@ -176,7 +175,6 @@ This research provides a complete answer to "{original question}".
 - Read SOURCE_INDEX.md first to discover domain sources
 - Check `data/documents/` for papers and references
 - Review `data/documents/synthesis/` for prior work
-- Consult `project/REFERENCE.md` for known sources
 - Check codebase sources (from SOURCE_INDEX.md) for validation baseline
 - Use WebSearch only if local documents insufficient
 

@@ -20,6 +20,7 @@ MBSE_COMMANDS = [
     "audit-models.md",
     "onboard.md",
     "manage-sources.md",
+    "backlog.md",
 ]
 
 # Agents available for installation
@@ -40,10 +41,10 @@ MBSE_HOOKS = [
 
 # Project structure templates (source file -> destination path)
 PROJECT_TEMPLATES = [
+    ("README.md.template", "README.md"),
     ("OVERVIEW.md.template", "project/OVERVIEW.md"),
     ("MODELING_GUIDE.md.template", "project/MODELING_GUIDE.md"),
     ("MODELING_PROCESS.md.template", "project/MODELING_PROCESS.md"),
-    ("REFERENCE.md.template", "project/REFERENCE.md"),
     ("BACKLOG.md.template", "project/backlog/BACKLOG.md"),
 ]
 

@@ -11,7 +11,6 @@ You are a specialist requirements agent for SysML v2 model enhancements. Your go
 **Context**: Before starting, read:
 - `project/OVERVIEW.md` - Project goals and success criteria
 - `project/MODELING_GUIDE.md` - SysML modeling conventions
-- `project/REFERENCE.md` - Technical constraints and assumptions
 - `models/README.md` - Existing model catalog (CHECK IF MODELS ALREADY EXIST!)
 - `project/backlog/BACKLOG.md` - Current epic priorities
 
@@ -346,7 +345,7 @@ Write to `project/active/{feature-name}/spec.md` using the model-specific templa
 
 ### Critical Rules
 - ALWAYS read models/README.md FIRST to check for existing models
-- ALWAYS read project context (OVERVIEW, MODELING_GUIDE, REFERENCE, BACKLOG)
+- ALWAYS read project context (OVERVIEW, MODELING_GUIDE, BACKLOG)
 - ALWAYS create feature directory: `project/active/{feature-name}/`
 - ALWAYS use MR-XXX numbering for modeling requirements
 - ALWAYS specify codebase source traceability sources
