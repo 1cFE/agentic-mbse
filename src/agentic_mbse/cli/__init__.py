@@ -325,10 +325,8 @@ Edit this file to add your domain-specific sources.
             continue
         if src.exists():
             content = src.read_text()
-            content = content.replace("agent_literature/SysML/", f"{docs_path}/sysmlv2/")
-            content = content.replace(
-                "agent_literature/syside-docs/v0.8.1/", f"{docs_path}/syside/"
-            )
+            content = content.replace("{SYSML_DOCS_PATH}", f"{docs_path}/sysmlv2")
+            content = content.replace("{SYSIDE_DOCS_PATH}", f"{docs_path}/syside")
             dst.write_text(content)
             created.append(f".claude/agents/{agent}")
 

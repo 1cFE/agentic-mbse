@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(~/1cfe/agentic-mbse/docs/**)",
+      "Grep(~/1cfe/agentic-mbse/docs/**)",
+      "Glob(~/1cfe/agentic-mbse/docs/**)"
+    ]
+  }
+}

@@ -164,9 +164,9 @@ class TestCmdInit:
         cmd_init(args)
 
         agent_content = (tmp_path / ".claude" / "agents" / "sysmlv2-doc-analyzer.md").read_text()
-        # Should NOT contain old paths
-        assert "agent_literature/SysML/" not in agent_content
-        assert "agent_literature/syside-docs/" not in agent_content
+        # Should NOT contain placeholders (they should be substituted)
+        assert "{SYSML_DOCS_PATH}" not in agent_content
+        assert "{SYSIDE_DOCS_PATH}" not in agent_content
         # Should contain new paths (absolute to package)
         assert "/docs/sysmlv2/" in agent_content
         assert "/docs/syside/" in agent_content

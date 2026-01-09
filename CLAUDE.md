@@ -8,44 +8,46 @@ agentic-mbse is a domain-agnostic Model-Based Systems Engineering (MBSE) toolkit
 
 ## Development Commands
 
+This project uses **uv** for dependency management. All commands should be run via `uv run`.
+
 ```bash
-# Install in development mode (creates agentic-mbse CLI)
-pip install -e ".[dev]"
+# Install dependencies and set up development environment
+uv sync
 
 # Run all tests
-pytest tests/
+uv run pytest tests/
 
 # Run a single test file
-pytest tests/test_cli.py
+uv run pytest tests/test_cli.py
 
 # Run a specific test
-pytest tests/test_cli.py::test_init_creates_files -v
+uv run pytest tests/test_cli.py::test_init_creates_files -v
 
 # Run tests with coverage
-pytest --cov=src/agentic_mbse tests/
+uv run pytest --cov=src/agentic_mbse tests/
 
 # Type checking
-mypy src/
+uv run mypy src/
 
 # Linting and formatting (ruff)
-ruff check src/ tests/
-ruff format src/ tests/
+uv run ruff check src/ tests/
+uv run ruff format src/ tests/
 ```
 
 ## CLI Usage
 
 ```bash
 # Validate SysML models (default path: models/)
-agentic-mbse validate models/
+uv run agentic-mbse validate models/
 
 # Run specific validation level (1-8)
-agentic-mbse validate --level=3 models/
+uv run agentic-mbse validate --level=3 models/
 
 # Initialize new MBSE project with templates and commands
-agentic-mbse init [path]
+uv run agentic-mbse init [path]
 
 # List available MBSE commands
-agentic-mbse install-commands --list
+uv run agentic-mbse install-commands --list
 ```
 
 ## Architecture
@@ -120,3 +122,29 @@ Tests mirror the source structure:
 - `tests/test_sysml_quality_checks.py`: Validation level tests
 - `tests/test_adapter.py`: syside adapter tests
 - `tests/fixtures/`: Sample SysML models for testing
+
+## Directory Clarification
+
+This repo has two similar-looking directories that serve different purposes:
+
+| Directory | Purpose | Committed to Git |
+|-----------|---------|------------------|
+| `.project/` | **Code development** - specs, designs, and backlog for developing the agentic-mbse library itself (Python code, CLI, validation logic) | Yes |
+| `project/` | **SysMLv2 modeling** - project management for SysMLv2 modeling work using the MBSE commands and agents (OVERVIEW.md, MODELING_GUIDE.md, coffee maker test model) | No (created by `replicate_setup.sh`) |
+
+In short:
+- `.project/` = developing THIS tool (code)
+- `project/` = using THIS tool to build SysML models
+
+## Change Coordination
+
+When modifying `scripts/replicate_setup.sh` or `cmd_init()` in `src/agentic_mbse/cli/__init__.py`:
+
+1. Review if the same change is needed in the other
+2. Both handle the same set of commands, agents, skills, and hooks (see `MBSE_COMMANDS`, `MBSE_AGENTS`, `MBSE_SKILLS`, `MBSE_HOOKS` in `cli/__init__.py`)
+3. Both use the same placeholder substitution technique for agent paths
+
+| File | Substitutes placeholders with |
+|------|-------------------------------|
+| `cmd_init()` | Absolute path to installed package's `docs/` |
+| `replicate_setup.sh` | Absolute path to this repo's `docs/` |
