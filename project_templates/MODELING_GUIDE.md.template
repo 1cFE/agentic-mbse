@@ -561,24 +561,23 @@ package MyDesign {
 }
 ```
 
-### Syntax 10: Conditional Logic
+### Syntax 10: Conditional Expressions
 
 ```sysml
-// Use boolean for conditional state
-attribute is_active : Boolean = power > threshold;
+// Basic: if CONDITION? TRUE_VALUE else FALSE_VALUE
+attribute diff : Real = if x > y? x - y else y - x;
 
-// Ternary-like logic with derived attributes
-attribute mode_factor : Real =
-    is_active ? 0.95 : 0.60;
-
-// More complex: multiple conditions
-attribute efficiency : Real =
-    (temperature < 100) ? 0.95 :  // Cold
-    (temperature < 300) ? 0.85 :  // Warm
-    0.60;  // Hot
+// Chained conditions
+attribute factor : Real =
+    if mode == 1? 0.95
+    else if mode == 2? 0.85
+    else 0.60;
 ```
 
-**Note**: SysMLv2 supports conditional expressions in attribute definitions.
+**Key syntax:** `if CONDITION?` (note the `?` after condition, not C-style ternary)
+
+> **Full reference:** See [docs/patterns/conditionals.md](../docs/patterns/conditionals.md) for
+> complete syntax rules, common mistakes, and guidance on conditionals vs type specialization.
 
 ---
 
