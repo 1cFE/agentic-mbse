@@ -2,63 +2,131 @@
 
 **Status:** Draft
 **Owner:** Reid Westwood
-**Created:** 2026-01-09 21:36:19 UTC
-**Branch:** 1cfe_dev
+**Created:** 2026-01-09 22:28:18 UTC
+**Branch:** 1cfe_dev (4f3591e)
 
 ---
 
 ## Overview
 
-A shell script that self-installs the agentic-mbse toolkit within its own repository for dogfooding, wrapping the existing `agentic-mbse init` command and pre-filling context files for the coffee maker test subject.
-
----
+A shell script (`scripts/replicate_setup.sh`) that enables dogfooding the agentic-mbse toolkit within its own development repository by replicating the Claude component installation from `agentic-mbse init` without CLI dependency or overwriting library-owned files.
 
 ## Related Artifacts
 
 - **Spec:** `.project/active/replicate-setup/spec.md`
-- **Implementation Reference:** `src/agentic_mbse/cli/__init__.py:182-432` (cmd_init function)
+- **Reference Implementation:** `src/agentic_mbse/cli/__init__.py:182-432` (`cmd_init` function)
 
 ---
 
 ## Research Findings
 
-### Existing `init` Command Behavior
+### Codebase Analysis
 
-The `cmd_init()` function at `src/agentic_mbse/cli/__init__.py:182-432` provides:
+**Key files examined:**
+- `src/agentic_mbse/cli/__init__.py:182-432` - `cmd_init()` implementation
+- `claude/commands/onboard.md` - `/onboard` command definition
+- `claude/agents/sysmlv2-doc-analyzer.md` - Agent with doc path placeholders
+- `project_templates/*.template` - 5 templates for project structure
+- `SOURCE_INDEX.md.template` - Domain source configuration template
+- `docs/` - Contains `sysmlv2/` and `syside/` subdirectories
 
-1. **Idempotent operation** - Skips existing files unless `--force` is used (line 211, 276, 307, etc.)
-2. **Track created vs skipped** - Lists `created[]` and `skipped[]` at end (lines 206-207, 410-431)
-3. **Force flag** - `--force` overwrites all files (line 533-534)
-4. **Path detection** - `_get_data_root()` (lines 52-72) already handles source checkout vs pip install
+**Key constants from CLI (`cli/__init__.py:14-48`):**
+```python
+MBSE_COMMANDS = [
+    "design-model.md", "plan-model.md", "implement-model.md",
+    "spec-model.md", "research.md", "audit-models.md",
+    "onboard.md", "manage-sources.md", "backlog.md",
+]
+MBSE_AGENTS = ["python-debugger.md", "sysmlv2-doc-analyzer.md"]
+MBSE_SKILLS = ["python-debugger"]
+MBSE_HOOKS = ["ruff-format.sh"]
+PROJECT_TEMPLATES = [
+    ("README.md.template", "README.md"),
+    ("OVERVIEW.md.template", "project/OVERVIEW.md"),
+    ("MODELING_GUIDE.md.template", "project/MODELING_GUIDE.md"),
+    ("MODELING_PROCESS.md.template", "project/MODELING_PROCESS.md"),
+    ("BACKLOG.md.template", "project/backlog/BACKLOG.md"),
+]
+```
 
-### What `init` Creates
+### Current Agent Path Handling (Problem)
 
-| Item | Source | Destination |
-|------|--------|-------------|
-| Commands (9) | `claude/commands/*.md` | `.claude/commands/` |
-| Agents (2) | `claude/agents/*.md` | `.claude/agents/` (with path substitution) |
-| Skills (1) | `claude/skills/python-debugger/` | `.claude/skills/` |
-| Hooks (1) | `claude/hooks/ruff-format.sh` | `.claude/hooks/` |
-| Settings | Generated | `.claude/settings.json` |
-| Templates (5) | `project_templates/` | `project/`, `README.md` |
-| Source Index | `SOURCE_INDEX.md.template` | `SOURCE_INDEX.md` |
-| Gitignore | Inline content | `.gitignore` |
+The current design uses `agent_literature/` as a placeholder that looks like a real path:
 
-### Template File Analysis
+**Source file** (`claude/agents/sysmlv2-doc-analyzer.md:12-16`):
+```markdown
+- **SysML Specifications**: `agent_literature/SysML/*/full_document.md`
+- **Syside Python API**: `agent_literature/syside-docs/v0.8.1/api/`
+```
 
-**`SOURCE_INDEX.md.template`** (56 lines):
-- Contains placeholder comments showing example sources
-- Has "(No primary sources configured yet)" placeholder text
-- Needs pre-filling with self-referential docs path
+**`init` substitution** (`cli/__init__.py:327-332`):
+```python
+content = content.replace("agent_literature/SysML/", f"{docs_path}/sysmlv2/")
+content = content.replace("agent_literature/syside-docs/v0.8.1/", f"{docs_path}/syside/")
+```
 
-**`OVERVIEW.md.template`** (172 lines):
-- Uses `<!-- placeholder -->` format throughout
-- Key placeholders: project name, purpose, status, structure
-- Comprehensive template - we only need to fill key fields for dogfooding
+**Problem:** `agent_literature/` looks like a real directory but is actually just a string that gets replaced. This is confusing.
 
-### Directory Structure
+### Proposed Fix: Obvious Placeholders
 
-No `scripts/` directory currently exists - will create it.
+Change to use placeholders that are obviously placeholders:
+- `agent_literature/SysML/` → `{SYSML_DOCS_PATH}/`
+- `agent_literature/syside-docs/v0.8.1/` → `{SYSIDE_DOCS_PATH}/`
+
+This makes the substitution pattern explicit and prevents confusion.
+
+### Settings.json Permission Format
+
+From CLAUDE.md and `cli/__init__.py:394-399`:
+- `~/path` = relative to $HOME (portable)
+- `//path` = absolute filesystem path
+- `/path` = relative to settings.json file (NOT absolute!)
+
+### Key Distinction: Docs vs SOURCE_INDEX.md
+
+| Component | Purpose | Contains |
+|-----------|---------|----------|
+| `docs/` (via placeholders) | SysML v2 **language** documentation | Specs, guides, syside API docs |
+| `SOURCE_INDEX.md` | **Domain-specific** knowledge sources | Reference implementations, physics papers, specifications for the thing being modeled |
+
+The `sysmlv2-doc-analyzer` agent reads from `docs/` (after placeholder substitution) to answer SysML syntax/pattern questions. MBSE commands read `SOURCE_INDEX.md` to find domain sources (e.g., fusion physics code, coffee maker thermodynamics).
+
+---
+
+## Init vs Replicate Setup: Step-by-Step Comparison
+
+This table compares what `agentic-mbse init` and `/onboard` do for a typical **external target project** versus what `replicate_setup.sh` should do for **this library's own repo**.
+
+| Step | `init` (External Project) | `/onboard` (After Init) | `replicate_setup.sh` (This Repo) |
+|------|---------------------------|-------------------------|----------------------------------|
+| **1. .gitignore** | Creates standard Python .gitignore | N/A (assumes exists) | **SKIP** - library has its own |
+| **2. SOURCE_INDEX.md** | Copies template with placeholders | Fills in user's domain sources interactively | Copies template (no domain sources for toy example) |
+| **3. .claude/commands/** | Copies 9 commands from `claude/commands/` | N/A | Copies same 9 commands (direct file copy) |
+| **4. .claude/agents/** | Copies agents, **substitutes placeholders** with absolute path to installed package's `docs/` | N/A | **Same technique**: substitutes placeholders with absolute path to this repo's `docs/` |
+| **5. .claude/skills/** | Recursively copies skill directories | N/A | Same recursive copy |
+| **6. .claude/hooks/** | Copies hooks, preserves execute bits | N/A | Same copy with permissions |
+| **7. .claude/settings.json** | Creates with `Read/Grep/Glob` for absolute `docs/` path + editable deps | May add user source paths | Creates with `Read/Grep/Glob` for absolute `docs/` path |
+| **8. README.md** | Copies from template | Fills placeholders with project context | **SKIP** - library has its own |
+| **9. project/OVERVIEW.md** | Copies from template | Fills placeholders with system/goals | Creates pre-filled coffee maker test subject |
+| **10. project/MODELING_GUIDE.md** | Copies from template | N/A (methodology guide) | Copies from template |
+| **11. project/MODELING_PROCESS.md** | Copies from template | N/A (methodology guide) | Copies from template |
+| **12. project/backlog/BACKLOG.md** | Copies from template | Fills initial tasks | **SKIP** - library uses `.project/backlog/` |
+| **13. project/{backlog,active,research}/** | Creates directories | N/A | Creates directories |
+| **14. models/library/** | N/A (init doesn't create) | Creates `models/library/` and `models/designs/` | Creates `models/library/` for test model |
+| **15. CLAUDE.md update** | N/A | Creates/updates with system context | Updates with `project/` vs `.project/` explanation |
+| **16. .env check** | N/A | N/A | Warns if `SYSIDE_LICENSE_KEY` missing |
+
+### Key Differences Summary
+
+| Aspect | `init` | `replicate_setup.sh` |
+|--------|--------|----------------------|
+| **Agent path strategy** | Substitutes placeholders → absolute path to installed package's `docs/` | **Same technique**: substitutes placeholders → absolute path to this repo's `docs/` |
+| **README.md** | Creates from template | Skips (library owns) |
+| **.gitignore** | Creates standard Python | Skips (library owns) |
+| **settings.json paths** | Absolute path to installed package's `docs/` | Absolute path to this repo's `docs/` |
+| **SOURCE_INDEX.md** | Template placeholder | Template (no domain sources - toy example) |
+| **project/OVERVIEW.md** | Template placeholder | Pre-filled with coffee maker |
+| **Dependency** | Requires CLI installed | No CLI dependency (direct file ops) |
 
 ---
 
@@ -68,105 +136,193 @@ No `scripts/` directory currently exists - will create it.
 
 ```
 scripts/replicate_setup.sh
-├── Check prerequisites (agentic-mbse installed)
-├── Run: agentic-mbse init . --force
-├── Create: models/library/ directory
-├── Overwrite: SOURCE_INDEX.md (pre-filled)
-└── Overwrite: project/OVERVIEW.md (pre-filled)
+    │
+    ├── Check Prerequisites
+    │   ├── Verify running from repo root
+    │   └── Warn if .env missing SYSIDE_LICENSE_KEY
+    │
+    ├── Install Claude Components
+    │   ├── .claude/commands/*.md (direct copy)
+    │   ├── .claude/agents/*.md (copy with placeholder substitution)
+    │   ├── .claude/skills/* (recursive copy)
+    │   └── .claude/hooks/* (copy with permissions)
+    │
+    ├── Create .claude/settings.json
+    │   └── Read/Grep/Glob permissions for docs/ (absolute path)
+    │
+    ├── Create Project Structure
+    │   ├── project/{backlog,active,research}/
+    │   ├── project/MODELING_GUIDE.md (from template)
+    │   ├── project/MODELING_PROCESS.md (from template)
+    │   ├── project/OVERVIEW.md (pre-filled coffee maker)
+    │   └── models/library/
+    │
+    ├── Create SOURCE_INDEX.md
+    │   └── Copy template (no domain sources)
+    │
+    └── Print Summary
+        └── What was created/updated
 ```
 
-### Script: `scripts/replicate_setup.sh`
-
-**Purpose:** Self-install agentic-mbse toolkit for local dogfooding
-
-**Location:** `scripts/replicate_setup.sh`
-
-**Execution:** `./scripts/replicate_setup.sh` from repo root
-
-**Behavior:**
+### Script Structure
 
 ```bash
 #!/usr/bin/env bash
+# scripts/replicate_setup.sh - Replicate agentic-mbse setup for local development
+
 set -euo pipefail
 
-# 1. Verify running from repo root
-#    Check for pyproject.toml with "agentic-mbse" name
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+DOCS_PATH="$REPO_ROOT/docs"
 
-# 2. Check agentic-mbse is installed
-#    Run: command -v agentic-mbse
-#    Suggest: pip install -e ".[dev]" if missing
+# ANSI colors for output
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m'  # No Color
 
-# 3. Check .env for SYSIDE_LICENSE_KEY (warn only)
-#    grep SYSIDE_LICENSE_KEY .env 2>/dev/null
+log_created() { echo -e "${GREEN}+${NC} $1"; }
+log_skipped() { echo -e "${YELLOW}.${NC} $1 (exists)"; }
 
-# 4. Run init with force
-#    agentic-mbse init . --force
+main() {
+    cd "$REPO_ROOT"
 
-# 5. Create models/library/ if missing
-#    mkdir -p models/library
+    echo "Replicating agentic-mbse setup in $REPO_ROOT"
+    echo ""
 
-# 6. Write pre-filled SOURCE_INDEX.md
-#    Heredoc with self-referential content
+    check_prerequisites
+    install_claude_components
+    create_settings_json
+    create_project_structure
+    create_source_index
+    print_summary
+}
 
-# 7. Write pre-filled project/OVERVIEW.md
-#    Heredoc with coffee maker content
+# ... function implementations ...
 
-# 8. Print summary
+main "$@"
 ```
 
-### Pre-filled `SOURCE_INDEX.md`
+### Component Details
 
-Content pointing to this repo's bundled docs as the domain source:
+#### 1. Prerequisites Check
 
-```markdown
-# Source Index
+```bash
+check_prerequisites() {
+    # Verify repo root markers exist
+    if [[ ! -f "$REPO_ROOT/pyproject.toml" ]] || [[ ! -d "$REPO_ROOT/claude" ]]; then
+        echo "Error: Must run from agentic-mbse repository root" >&2
+        exit 1
+    fi
 
-This file tells MBSE commands where to find domain knowledge sources.
-Commands read this file to discover what references are available for research and validation.
-
-## Primary Sources
-
-### SysML v2 Specification
-- **Type**: documentation
-- **Location**: docs/sysmlv2/
-- **Use for**: SysML syntax, semantics, and best practices
-- **Validation**: N/A (reference only)
-
-### syside Library Documentation
-- **Type**: documentation
-- **Location**: docs/syside/
-- **Use for**: Parser API, CLI usage, integration patterns
-- **Validation**: N/A (reference only)
-
-### agentic-mbse Source Code
-- **Type**: codebase
-- **Location**: src/agentic_mbse/
-- **Use for**: Understanding validation logic, CLI behavior, adapter patterns
-- **Validation**: Compare model outputs against validation pyramid
-
-## How This File Is Used
-
-MBSE commands (design-model, plan-model, implement-model, audit-models) read this file to:
-
-1. **Discover** what reference sources exist for your domain
-2. **Research** by exploring codebase sources and reading documentation
-3. **Validate** by comparing model outputs against baseline sources
-
-## Test Subject
-
-This project uses a **Coffee Maker** as the test subject for exercising MBSE workflows.
-See `project/OVERVIEW.md` for the system description.
+    # Warn about missing license key
+    if [[ ! -f "$REPO_ROOT/.env" ]] || ! grep -q "SYSIDE_LICENSE_KEY" "$REPO_ROOT/.env" 2>/dev/null; then
+        echo -e "${YELLOW}Warning:${NC} SYSIDE_LICENSE_KEY not found in .env"
+        echo "  Validation commands will not work until this is configured."
+        echo ""
+    fi
+}
 ```
 
-### Pre-filled `project/OVERVIEW.md`
+#### 2. Install Claude Components
 
-Content describing the coffee maker test subject:
+```bash
+install_claude_components() {
+    mkdir -p "$REPO_ROOT/.claude/commands"
+    mkdir -p "$REPO_ROOT/.claude/agents"
+    mkdir -p "$REPO_ROOT/.claude/skills"
+    mkdir -p "$REPO_ROOT/.claude/hooks"
 
-```markdown
+    # Commands - direct copy
+    for cmd in design-model.md plan-model.md implement-model.md spec-model.md \
+               research.md audit-models.md onboard.md manage-sources.md backlog.md; do
+        cp "$REPO_ROOT/claude/commands/$cmd" "$REPO_ROOT/.claude/commands/$cmd"
+        log_created ".claude/commands/$cmd"
+    done
+
+    # Agents - copy with placeholder substitution (same as init)
+    for agent in python-debugger.md sysmlv2-doc-analyzer.md; do
+        # Read source, substitute placeholders, write to destination
+        sed -e "s|{SYSML_DOCS_PATH}|$DOCS_PATH/sysmlv2|g" \
+            -e "s|{SYSIDE_DOCS_PATH}|$DOCS_PATH/syside|g" \
+            "$REPO_ROOT/claude/agents/$agent" > "$REPO_ROOT/.claude/agents/$agent"
+        log_created ".claude/agents/$agent (with path substitution)"
+    done
+
+    # Skills - recursive copy
+    if [[ -d "$REPO_ROOT/claude/skills/python-debugger" ]]; then
+        cp -r "$REPO_ROOT/claude/skills/python-debugger" "$REPO_ROOT/.claude/skills/"
+        log_created ".claude/skills/python-debugger/"
+    fi
+
+    # Hooks - copy with permissions
+    for hook in ruff-format.sh; do
+        if [[ -f "$REPO_ROOT/claude/hooks/$hook" ]]; then
+            cp "$REPO_ROOT/claude/hooks/$hook" "$REPO_ROOT/.claude/hooks/$hook"
+            chmod +x "$REPO_ROOT/.claude/hooks/$hook"
+            log_created ".claude/hooks/$hook"
+        fi
+    done
+}
+```
+
+#### 3. Create .claude/settings.json
+
+```bash
+create_settings_json() {
+    local settings_file="$REPO_ROOT/.claude/settings.json"
+
+    # Convert absolute path to ~ format for portability
+    local docs_permission_path="${DOCS_PATH/#$HOME/\~}"
+
+    # Always overwrite to ensure permissions are current
+    cat > "$settings_file" << EOF
+{
+  "permissions": {
+    "allow": [
+      "Read($docs_permission_path/**)",
+      "Grep($docs_permission_path/**)",
+      "Glob($docs_permission_path/**)"
+    ]
+  }
+}
+EOF
+    log_created ".claude/settings.json (permissions for $docs_permission_path)"
+}
+```
+
+#### 4. Create Project Structure
+
+```bash
+create_project_structure() {
+    # Create directories
+    mkdir -p "$REPO_ROOT/project/backlog"
+    mkdir -p "$REPO_ROOT/project/active"
+    mkdir -p "$REPO_ROOT/project/research"
+    mkdir -p "$REPO_ROOT/models/library"
+
+    log_created "project/{backlog,active,research}/"
+    log_created "models/library/"
+
+    # Copy methodology guides from templates
+    cp "$REPO_ROOT/project_templates/MODELING_GUIDE.md.template" \
+       "$REPO_ROOT/project/MODELING_GUIDE.md"
+    log_created "project/MODELING_GUIDE.md"
+
+    cp "$REPO_ROOT/project_templates/MODELING_PROCESS.md.template" \
+       "$REPO_ROOT/project/MODELING_PROCESS.md"
+    log_created "project/MODELING_PROCESS.md"
+
+    # Create pre-filled OVERVIEW.md with coffee maker test subject
+    create_overview_md
+}
+
+create_overview_md() {
+    cat > "$REPO_ROOT/project/OVERVIEW.md" << 'EOF'
 # Project Overview
 
-**Project**: Coffee Maker Model (Dogfooding Test Subject)
-**Purpose**: Exercise agentic-mbse MBSE workflows with a simple, familiar system
+**Project**: Coffee Maker Test Model
+**Purpose**: Dogfooding agentic-mbse with a simple test subject
 **Start Date**: 2026-01-09
 **Status**: Active
 
@@ -174,155 +330,188 @@ Content describing the coffee maker test subject:
 
 ## What We're Building
 
-SysMLv2 models of a **drip coffee maker** that enable:
+SysMLv2 models of a simple drip coffee maker that enable:
 
-1. **Structural Modeling** - Component hierarchy (reservoir, heater, pump, brew basket, carafe, controls)
-2. **Behavioral Modeling** - Brew cycle state machine and control logic
-3. **Physics Integration** - Heat transfer, fluid flow, temperature control
-4. **Validation Framework** - Constraint checking for temperature limits, timing, capacity
+1. **Formal Integration** - Connect behavior (brewing process), structure (components), and physics (heat transfer, fluid flow)
+2. **Validation Framework** - Constraint-based checking against physical laws
+3. **Design Exploration** - Parametric studies (capacity, brew time, temperature)
+4. **Workflow Testing** - Exercise the full MBSE command workflow
 
-**Reference Implementation**: Simple drip coffee maker (~10 cup capacity)
-**Validation Baseline**: Physical constraints (water boiling point, safe temperatures)
+**Reference Implementation**: N/A (test subject for workflow validation)
+**Validation Baseline**: Common sense physics constraints
 
 ---
 
 ## System Description
 
-### Components
+A simple drip coffee maker with these components:
 
-| Part | Function | Key Attributes |
-|------|----------|----------------|
-| Water Reservoir | Store water for brewing | capacity (L), currentLevel (L) |
-| Heating Element | Heat water to brew temperature | power (W), maxTemp (°C) |
-| Pump | Move water from reservoir to brew basket | flowRate (L/min) |
-| Brew Basket | Hold filter and coffee grounds | capacity (g) |
-| Carafe | Collect brewed coffee | capacity (L), keepWarmTemp (°C) |
-| Control Panel | User interface (on/off, brew) | brewButton, powerSwitch |
+**Parts:**
+- Water reservoir (capacity: configurable)
+- Heating element (power: configurable)
+- Pump (flow rate: configurable)
+- Brew basket (filter holder)
+- Carafe (output container)
+- Control panel (on/off, brew button)
 
-### Behaviors
+**Behaviors:**
+- Fill reservoir -> Heat water -> Pump to brew basket -> Drip into carafe
+- Temperature control (maintain brew temp ~195-205F)
+- Auto-shutoff after brewing complete
 
-1. **Idle** - System off, waiting for user
-2. **Heating** - Water heating to brew temperature (92-96°C)
-3. **Brewing** - Pump active, water flowing through grounds
-4. **Keep Warm** - Heating element maintains carafe temperature
-5. **Auto-Shutoff** - Turn off after timeout (safety feature)
-
-### Data Flows
-
-```
-[Reservoir] --water--> [Pump] --water--> [Brew Basket] --coffee--> [Carafe]
-                          ^                                            |
-[Heater] ----heat--------+--------------------------------------------+
-                          ^
-[Controls] ---signals----+
-```
+**Why this subject:**
+- Familiar to most people
+- 5-7 components (right complexity for testing)
+- Clear data flows (water, heat, control signals)
+- Natural requirements (brew time, temperature, capacity)
 
 ---
 
-## Why This Test Subject?
+## Technical Approach
 
-- **Familiar** - Everyone knows how a coffee maker works
-- **Right complexity** - 5-7 components, clear interfaces
-- **Multiple domains** - Thermal, fluid, electrical, control
-- **Natural requirements** - Temperature, timing, capacity, safety
-- **Exercisable** - Can run through full design/plan/implement cycle
-
----
-
-## Technology Stack
-
-**Core Tools**:
-- **SysIDE** - SysML v2 parsing and validation (via `syside` CLI)
-- **Python 3.11+** - Scripting and analysis
-- **Git** - Version control
-- **agentic-mbse** - MBSE workflow commands and validation
-
-**Model Organization**:
-```
-models/
-├── library/           # Reusable definitions (start here)
-│   ├── definitions/   # CoffeeMaker parts
-│   ├── calculations/  # Thermal, flow calculations
-│   └── materials/     # (if needed)
-├── designs/           # Specific configurations
-│   └── basic-drip/    # 10-cup drip coffee maker
-└── tests/             # Test and validation models
-```
-
----
-
-## Success Criteria
-
-### Must Have (Dogfooding Validation)
-- [ ] Can run `/design-model` on coffee maker subject
-- [ ] Can run `/plan-model` to create implementation plan
-- [ ] Can run `/implement-model` to generate SysML files
-- [ ] Can run `/audit-models` to validate against sources
-- [ ] `agentic-mbse validate models/` passes level 1-2
-
-### Should Have
-- [ ] Physics constraints (temperature limits) defined
-- [ ] Behavior state machine modeled
-- [ ] At least one design instance created
+For MBSE methodology, see [MODELING_PROCESS.md](MODELING_PROCESS.md).
+For SysML syntax and patterns, see [MODELING_GUIDE.md](MODELING_GUIDE.md).
 
 ---
 
 ## Current Status
 
-**Active Work Item**: Initial setup via replicate_setup.sh
-**Status**: Ready for modeling
-**Next Up**: Run `/design-model` to create coffee maker design document
+**Active Work Item**: Initial setup
+**Status**: Ready to start modeling
+**Next Up**: Run /spec-model to define first feature
 
 ---
 
 ## Getting Started
 
-**For dogfooding this library**:
-1. Run `./scripts/replicate_setup.sh` to install Claude commands
-2. Ensure `.env` has `SYSIDE_LICENSE_KEY`
-3. Start with `/design-model` to create the coffee maker design doc
-4. Follow the MBSE workflow: design → plan → implement → audit
+1. Run `/spec-model coffee-maker-structure` to define requirements
+2. Run `/design-model coffee-maker-structure` to design the model
+3. Run `/implement-model coffee-maker-structure` to create SysML files
 
 ---
 
 **Last Updated**: 2026-01-09
+EOF
+    log_created "project/OVERVIEW.md (coffee maker test subject)"
+}
 ```
 
-### Error Handling
+#### 5. Create SOURCE_INDEX.md
 
-| Condition | Behavior |
-|-----------|----------|
-| Not in repo root | Exit with error, show expected location |
-| `agentic-mbse` not installed | Exit with error, show install command |
-| `.env` missing or no license key | Warn but continue |
-| `models/` has content | Continue (mkdir -p is safe) |
-
-### Output Messages
-
+```bash
+create_source_index() {
+    # Just copy the template as-is - it already says "no sources configured"
+    cp "$REPO_ROOT/SOURCE_INDEX.md.template" "$REPO_ROOT/SOURCE_INDEX.md"
+    log_created "SOURCE_INDEX.md (from template)"
+}
 ```
-=== agentic-mbse dogfood setup ===
 
-Checking prerequisites...
-  [OK] Running from repo root
-  [OK] agentic-mbse installed
-  [WARN] .env missing SYSIDE_LICENSE_KEY (validation will fail)
+#### 6. Print Summary
 
-Running: agentic-mbse init . --force
-[init output here]
+```bash
+print_summary() {
+    echo ""
+    echo "================================"
+    echo "Setup complete!"
+    echo "================================"
+    echo ""
+    echo "Next steps:"
+    echo "  1. Review project/OVERVIEW.md for the test subject"
+    echo "  2. Run /spec-model coffee-maker-structure to start modeling"
+    echo "  3. Or run /onboard for interactive configuration"
+    echo ""
+    echo "To update after code changes, re-run:"
+    echo "  ./scripts/replicate_setup.sh"
+}
+```
 
-Creating test subject structure...
-  + models/library/
+---
 
-Pre-filling context files...
-  + SOURCE_INDEX.md (self-referential)
-  + project/OVERVIEW.md (coffee maker)
+## Required Code Changes
 
-=== Setup complete ===
+### 1. Update Agent Source File
 
-Next steps:
-  1. Add SYSIDE_LICENSE_KEY to .env (if not done)
-  2. Run: /design-model to start designing the coffee maker
-  3. Follow workflow: design → plan → implement → audit
+**File:** `claude/agents/sysmlv2-doc-analyzer.md`
+
+Change placeholder paths to obvious placeholders:
+
+| Before | After |
+|--------|-------|
+| `agent_literature/SysML/` | `{SYSML_DOCS_PATH}/` |
+| `agent_literature/syside-docs/v0.8.1/` | `{SYSIDE_DOCS_PATH}/` |
+
+**Example changes in file:**
+```markdown
+## Documentation Structure
+
+You have access to:
+- **SysML Specifications**: `{SYSML_DOCS_PATH}/*/full_document.md`
+  - Core specs: `SysML_Spec_v2_Part2`, `SysML_Spec_v2_Part3`
+  - Guides: `SysML_IntroGuide_v2`, `SysML_HoltPerryConcepts_v20`
+  - Examples: `Cheatsheet/`, `SysML_IntegratingReasoning`
+- **Syside Python API**: `{SYSIDE_DOCS_PATH}/api/`
+```
+
+### 2. Update CLI Init Function
+
+**File:** `src/agentic_mbse/cli/__init__.py:327-332`
+
+Update string replacement to use new placeholders:
+
+```python
+# Before:
+content = content.replace("agent_literature/SysML/", f"{docs_path}/sysmlv2/")
+content = content.replace("agent_literature/syside-docs/v0.8.1/", f"{docs_path}/syside/")
+
+# After:
+content = content.replace("{SYSML_DOCS_PATH}", f"{docs_path}/sysmlv2")
+content = content.replace("{SYSIDE_DOCS_PATH}", f"{docs_path}/syside")
+```
+
+### 3. Update Test Assertions
+
+**File:** `tests/test_cli.py:168-169`
+
+Update to check for new placeholders:
+
+```python
+# Before:
+assert "agent_literature/SysML/" not in agent_content
+assert "agent_literature/syside-docs/" not in agent_content
+
+# After:
+assert "{SYSML_DOCS_PATH}" not in agent_content
+assert "{SYSIDE_DOCS_PATH}" not in agent_content
+```
+
+---
+
+## CLAUDE.md Updates
+
+The following section should be added to `CLAUDE.md` after the "Testing Structure" section:
+
+```markdown
+## Directory Clarification
+
+This repo has two similar-looking directories:
+
+| Directory | Purpose | Committed to Git |
+|-----------|---------|------------------|
+| `.project/` | Internal development project management (specs, designs, backlog for agentic-mbse itself) | Yes |
+| `project/` | Dogfooding test subject (OVERVIEW.md, MODELING_GUIDE.md for coffee maker test model) | Created by `replicate_setup.sh` |
+
+## Change Coordination
+
+When modifying `scripts/replicate_setup.sh` or `cmd_init()` in `src/agentic_mbse/cli/__init__.py`:
+
+1. Review if the same change is needed in the other
+2. Both handle the same set of commands, agents, skills, and hooks (see `MBSE_COMMANDS`, `MBSE_AGENTS`, `MBSE_SKILLS`, `MBSE_HOOKS` in `cli/__init__.py`)
+3. Both use the same placeholder substitution technique for agent paths
+
+| File | Substitutes placeholders with |
+|------|-------------------------------|
+| `cmd_init()` | Absolute path to installed package's `docs/` |
+| `replicate_setup.sh` | Absolute path to this repo's `docs/` |
 ```
 
 ---
@@ -330,35 +519,53 @@ Next steps:
 ## Potential Risks
 
 | Risk | Mitigation |
-|------|-----------|
-| Script overwrites user customizations | Use `--force` intentionally; document this behavior |
-| `agentic-mbse` not on PATH | Check explicitly and provide install command |
-| Path issues on different shells | Use `#!/usr/bin/env bash` and `set -euo pipefail` |
+|------|------------|
+| Placeholder format changes | Document the placeholders in agent files and coordinate changes |
+| Forgetting to update one when other changes | Add CLAUDE.md section documenting coordination |
+| Script accidentally run in wrong directory | Check for `pyproject.toml` and `claude/` markers |
 
 ---
 
 ## Integration Strategy
 
-- Script lives in `scripts/` alongside any future dev scripts
-- Does NOT modify `agentic-mbse init` - purely additive
-- Can be run repeatedly after pulling changes to update Claude components
-- Test subject (`models/library/`) is a scaffold, not a full implementation
+- **Complements**: `agentic-mbse init` for external users
+- **Replaces**: Manual setup steps for library development
+- **Workflow**: After pulling changes, run `./scripts/replicate_setup.sh` to update Claude components
 
 ---
 
 ## Validation Approach
 
-**Manual testing:**
+**Testing strategy:**
 1. Run `./scripts/replicate_setup.sh` from repo root
-2. Verify `.claude/commands/` contains all 9 commands
-3. Verify `SOURCE_INDEX.md` has self-referential content
-4. Verify `project/OVERVIEW.md` has coffee maker content
-5. Verify `models/library/` exists
-6. Run a Claude command (e.g., `/design-model`) to confirm it works
+2. Verify all files created as expected
+3. Start Claude Code and verify `/design-model` command is available
+4. Verify `sysmlv2-doc-analyzer` agent can access docs (paths substituted correctly)
+5. Run existing tests to ensure no regressions
 
-**Regression:**
-- Existing tests in `tests/` should continue to pass (script doesn't modify src/)
+**Success criteria:**
+- [ ] Script completes without errors
+- [ ] All Claude components installed to `.claude/`
+- [ ] Agent files have absolute paths (no placeholders remaining)
+- [ ] `.claude/settings.json` has correct permissions for `docs/`
+- [ ] `/design-model`, `/plan-model`, `/implement-model` commands available
+- [ ] `project/OVERVIEW.md` describes coffee maker test subject
+- [ ] Re-running script updates components without errors
+- [ ] README.md and .gitignore NOT modified
 
 ---
 
-**Next Step:** After approval → `/_my_implement`
+## Files to Create/Modify
+
+| File | Action | Notes |
+|------|--------|-------|
+| `scripts/replicate_setup.sh` | Create | Main script (~120 lines) |
+| `claude/agents/sysmlv2-doc-analyzer.md` | Modify | Change `agent_literature/` to `{SYSML_DOCS_PATH}` and `{SYSIDE_DOCS_PATH}` placeholders |
+| `src/agentic_mbse/cli/__init__.py` | Modify | Update placeholder strings in substitution logic |
+| `tests/test_cli.py` | Modify | Update assertions for new placeholder format |
+| `CLAUDE.md` | Modify | Add directory clarification and change coordination sections |
+| `.gitignore` (library's) | Modify | Add `project/`, `models/library/` |
+
+---
+
+**Next Step:** After approval, proceed to `/_my_implement`
