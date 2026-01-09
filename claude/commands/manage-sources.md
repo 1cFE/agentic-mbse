@@ -158,6 +158,38 @@ This source will be available to commands like:
   - `/research` - for exploring domain knowledge
 ```
 
+**Step 6 - Offer to Add Permissions (if local path):**
+
+If the source location is a local file path (starts with `/` or `~`):
+
+Tell the user:
+```
+To avoid permission prompts when accessing this source, I can add read permissions to `.claude/settings.json`.
+```
+
+**Use AskUserQuestion:**
+Question: "Add read permission for {location} to .claude/settings.json?"
+Header: "Permissions"
+Options:
+  - "Yes, add permission (recommended)"
+  - "No, I'll handle permissions manually"
+
+**If yes:**
+- Read existing `.claude/settings.json` if it exists
+- Convert path to `~` format if under $HOME (e.g., `/home/user/foo` → `~/foo`)
+- Add `Read({converted_path}/**)` to permissions.allow array
+- Merge with existing permissions
+- Write updated settings file
+
+**IMPORTANT: Permission path format rules:**
+- `~/path` = relative to $HOME (recommended for portability)
+- `//path` = absolute filesystem path (use when path is not under $HOME)
+- `/path` = relative to settings.json file (NOT absolute - common mistake!)
+
+**If no:**
+- Proceed without adding permissions
+- User will see prompts when accessing this source
+
 ---
 
 #### Option B: Remove an Existing Source

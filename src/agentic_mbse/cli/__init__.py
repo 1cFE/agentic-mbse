@@ -107,6 +107,31 @@ def get_project_templates_dir() -> Path:
     return _get_data_root() / "project_templates"
 
 
+def _to_claude_permission_path(abs_path: str) -> str:
+    """Convert absolute path to Claude Code permission format.
+
+    Claude Code permission paths are format-sensitive:
+    - `/path` = relative to settings.json (NOT absolute!)
+    - `//path` = absolute filesystem path
+    - `~/path` = from $HOME
+
+    This function converts absolute paths to `~` format when under $HOME
+    for portability, or `//` prefix otherwise.
+    """
+    import os
+
+    home = os.path.expanduser("~")
+    if abs_path.startswith(home + "/"):
+        # Convert /home/user/foo to ~/foo
+        return "~" + abs_path[len(home):]
+    elif abs_path == home:
+        return "~"
+    else:
+        # Use / prefix for absolute paths not under home
+        # (Claude interprets //path as absolute filesystem path)
+        return "/" + abs_path
+
+
 def _detect_editable_deps(target: Path) -> list[str]:
     """Detect editable dependencies from pyproject.toml.
 
@@ -158,6 +183,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     """Initialize project with agentic-mbse configuration.
 
     Creates:
+    - .gitignore (standard Python ignores including .env)
     - SOURCE_INDEX.md (domain knowledge discovery for agents)
     - .claude/commands/ with MBSE commands (including /onboard, /manage-sources)
     - .claude/agents/ with AI agents
@@ -179,6 +205,69 @@ def cmd_init(args: argparse.Namespace) -> int:
     # Track what gets created vs skipped for summary
     created: list[str] = []
     skipped: list[str] = []
+
+    # === Create .gitignore with standard Python ignores ===
+    gitignore_path = target / ".gitignore"
+    if gitignore_path.exists() and not args.force:
+        skipped.append(".gitignore")
+    else:
+        gitignore_content = """\
+# Environment and secrets
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Type checking
+.mypy_cache/
+
+# Linting
+.ruff_cache/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+"""
+        gitignore_path.write_text(gitignore_content)
+        created.append(".gitignore")
 
     # === Create SOURCE_INDEX.md from template ===
     source_index_path = target / "SOURCE_INDEX.md"
@@ -293,18 +382,30 @@ Edit this file to add your domain-specific sources.
             shutil.copy(src, dst)
             created.append(dest_path)
 
-    # === Create .claude/settings.json with editable dep permissions ===
-    editable_paths = _detect_editable_deps(target)
+    # === Create .claude/settings.json with permissions ===
     settings_path = target / ".claude" / "settings.json"
 
-    if editable_paths:
-        if settings_path.exists() and not args.force:
-            skipped.append(".claude/settings.json")
-        else:
-            permissions = [f"Read({p}/**)" for p in editable_paths]
-            settings = {"permissions": {"allow": permissions}}
-            settings_path.write_text(json.dumps(settings, indent=2) + "\n")
-            created.append(f".claude/settings.json ({len(permissions)} read permissions)")
+    if settings_path.exists() and not args.force:
+        skipped.append(".claude/settings.json")
+    else:
+        permissions: list[str] = []
+
+        # Add permissions for bundled docs (used by sysmlv2-doc-analyzer agent)
+        docs_permission_path = _to_claude_permission_path(str(docs_path))
+        permissions.extend([
+            f"Read({docs_permission_path}/**)",
+            f"Grep({docs_permission_path}/**)",
+            f"Glob({docs_permission_path}/**)",
+        ])
+
+        # Add permissions for editable dependencies from pyproject.toml
+        editable_paths = _detect_editable_deps(target)
+        for p in editable_paths:
+            permissions.append(f"Read({_to_claude_permission_path(p)}/**)")
+
+        settings = {"permissions": {"allow": permissions}}
+        settings_path.write_text(json.dumps(settings, indent=2) + "\n")
+        created.append(f".claude/settings.json ({len(permissions)} permissions)")
 
     # === Print summary ===
     print(f"\nInitialized MBSE project in {target}")

@@ -171,7 +171,7 @@ If you found existing content in Stage 1 beyond init files, also ask:
 
 **Goal:** Help user avoid permission prompts for source paths
 
-If the user provided file paths for sources (e.g., `/home/user/PyFECONS`):
+If the user provided file paths for sources (e.g., `/home/user/PyFECONS` or `~/PyFECONS`):
 
 Tell the user:
 > I noticed you have sources at these locations:
@@ -184,12 +184,19 @@ Tell the user:
 > {
 >   "permissions": {
 >     "allow": [
->       "Read({path1}/**)",
->       "Read({path2}/**)"
+>       "Read(~/path/to/source1/**)",
+>       "Read(~/path/to/source2/**)"
 >     ]
 >   }
 > }
 > ```
+
+**IMPORTANT: Permission path format rules:**
+- `~/path` = relative to $HOME (recommended for portability)
+- `//path` = absolute filesystem path (use when path is not under $HOME)
+- `/path` = relative to settings.json file (NOT absolute - common mistake!)
+
+Always convert absolute paths like `/home/user/foo` to `~/foo` format.
 
 Use AskUserQuestion:
 - Question: "Would you like me to add read permissions for your source paths to .claude/settings.json?"
@@ -200,6 +207,7 @@ Use AskUserQuestion:
 
 **If yes:**
 - Read existing `.claude/settings.json` if it exists
+- Convert paths to `~` format (e.g., `/home/user/PyFECONS` → `~/PyFECONS`)
 - Merge new permissions with existing ones
 - Write updated settings file
 
@@ -565,5 +573,5 @@ You're ready to start MBSE modeling!
 | Has existing content | Other files/dirs found | Ask how it relates in Stage 2 |
 | Has existing README/CLAUDE | Files exist with content | Read first, propose enhancements |
 | No sources listed | User has none | Create guidance-focused SOURCE_INDEX, skip Stage 2.5 |
-| Sources with file paths | Paths like `/home/...` | Offer to add permissions in Stage 2.5 |
+| Sources with file paths | Paths like `/home/...` or `~/...` | Convert to `~` format, offer to add permissions in Stage 2.5 |
 | User new to MBSE | Unclear on terminology | Extra explanation, simpler language |
