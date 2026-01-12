@@ -148,3 +148,19 @@ When modifying `scripts/replicate_setup.sh` or `cmd_init()` in `src/agentic_mbse
 |------|-------------------------------|
 | `cmd_init()` | Absolute path to installed package's `docs/` |
 | `replicate_setup.sh` | Absolute path to this repo's `docs/` |
+
+## Init File Ownership
+
+When adding new files to `cmd_init()`, categorize them as user-owned or tool-owned:
+
+| Category | Behavior | Examples |
+|----------|----------|----------|
+| **User-owned** | Create once, skip on re-init (preserve customizations) | `SOURCE_INDEX.md`, `OVERVIEW.md`, `BACKLOG.md`, `README.md`, `.gitignore`, `.claude/settings.json` |
+| **Tool-owned** | Always update on re-init (get latest versions) | Commands, agents, skills, hooks, `MODELING_GUIDE.md`, `MODELING_PROCESS.md` |
+
+Use `--force` to overwrite user-owned files.
+
+In code, use:
+- `USER_OWNED_TEMPLATES` list for user-owned project templates
+- `TOOL_OWNED_TEMPLATES` list for tool-owned project templates
+- For non-template files, add existence check with `args.force` for user-owned, or always-update logic for tool-owned

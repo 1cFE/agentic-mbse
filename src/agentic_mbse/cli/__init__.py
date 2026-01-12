@@ -39,14 +39,22 @@ MBSE_HOOKS = [
     "ruff-format.sh",
 ]
 
-# Project structure templates (source file -> destination path)
-PROJECT_TEMPLATES = [
+# Project templates split by ownership:
+# - USER_OWNED: Only created once, never auto-updated (user customizes these)
+# - TOOL_OWNED: Auto-updated on every init (tool manages these)
+USER_OWNED_TEMPLATES = [
     ("README.md.template", "README.md"),
     ("OVERVIEW.md.template", "project/OVERVIEW.md"),
-    ("MODELING_GUIDE.md.template", "project/MODELING_GUIDE.md"),
-    ("MODELING_PROCESS.md.template", "project/MODELING_PROCESS.md"),
     ("BACKLOG.md.template", "project/backlog/BACKLOG.md"),
 ]
+
+TOOL_OWNED_TEMPLATES = [
+    ("MODELING_GUIDE.md.template", "project/MODELING_GUIDE.md"),
+    ("MODELING_PROCESS.md.template", "project/MODELING_PROCESS.md"),
+]
+
+# Combined for backwards compatibility
+PROJECT_TEMPLATES = USER_OWNED_TEMPLATES + TOOL_OWNED_TEMPLATES
 
 
 def _get_data_root() -> Path:
@@ -183,17 +191,20 @@ def cmd_init(args: argparse.Namespace) -> int:
     """Initialize project with agentic-mbse configuration.
 
     Creates:
-    - .gitignore (standard Python ignores including .env)
-    - SOURCE_INDEX.md (domain knowledge discovery for agents)
-    - .claude/commands/ with MBSE commands (including /onboard, /manage-sources)
-    - .claude/agents/ with AI agents
-    - .claude/skills/ with skills
-    - .claude/hooks/ with hooks
-    - .claude/settings.json with read permissions for editable dependencies
-    - project/ structure with OVERVIEW.md, MODELING_GUIDE.md, etc.
+    - .gitignore (standard Python ignores including .env) [user-owned]
+    - SOURCE_INDEX.md (domain knowledge discovery for agents) [user-owned]
+    - .claude/commands/ with MBSE commands [tool-owned]
+    - .claude/agents/ with AI agents [tool-owned]
+    - .claude/skills/ with skills [tool-owned]
+    - .claude/hooks/ with hooks [tool-owned]
+    - .claude/settings.json with read permissions [user-owned]
+    - project/ structure with templates [mixed ownership]
 
-    This command is idempotent - re-running it will skip existing files
-    unless --force is specified.
+    File ownership behavior:
+    - Tool-owned files are always updated (to get latest versions)
+    - User-owned files are skipped if they exist (preserves customizations)
+
+    Use --force to overwrite ALL files including user-owned ones.
     """
     target = Path(args.path or ".").resolve()
 
@@ -202,9 +213,10 @@ def cmd_init(args: argparse.Namespace) -> int:
         print("Create the directory first, or specify a valid path.", file=sys.stderr)
         return EXIT_FAILURE
 
-    # Track what gets created vs skipped for summary
-    created: list[str] = []
-    skipped: list[str] = []
+    # Track what happens for summary
+    created: list[str] = []   # New files (didn't exist before)
+    updated: list[str] = []   # Tool-owned files refreshed
+    skipped: list[str] = []   # User-owned files preserved
 
     # === Create .gitignore with standard Python ignores ===
     gitignore_path = target / ".gitignore"
@@ -296,7 +308,7 @@ Edit this file to add your domain-specific sources.
             source_index_path.write_text(minimal_template)
         created.append("SOURCE_INDEX.md")
 
-    # === Create .claude/commands/ and install commands ===
+    # === Create .claude/commands/ and install commands (TOOL-OWNED) ===
     commands_dir = target / ".claude" / "commands"
     commands_dir.mkdir(parents=True, exist_ok=True)
 
@@ -304,14 +316,15 @@ Edit this file to add your domain-specific sources.
     for cmd in MBSE_COMMANDS:
         src = source_commands / cmd
         dst = commands_dir / cmd
-        if dst.exists() and not args.force:
-            skipped.append(f".claude/commands/{cmd}")
-            continue
         if src.exists():
+            existed = dst.exists()
             shutil.copy(src, dst)
-            created.append(f".claude/commands/{cmd}")
+            if existed:
+                updated.append(f".claude/commands/{cmd}")
+            else:
+                created.append(f".claude/commands/{cmd}")
 
-    # === Install agents with path substitution ===
+    # === Install agents with path substitution (TOOL-OWNED) ===
     agents_dir = target / ".claude" / "agents"
     agents_dir.mkdir(parents=True, exist_ok=True)
 
@@ -320,17 +333,18 @@ Edit this file to add your domain-specific sources.
     for agent in MBSE_AGENTS:
         src = source_agents / agent
         dst = agents_dir / agent
-        if dst.exists() and not args.force:
-            skipped.append(f".claude/agents/{agent}")
-            continue
         if src.exists():
+            existed = dst.exists()
             content = src.read_text()
             content = content.replace("{SYSML_DOCS_PATH}", f"{docs_path}/sysmlv2")
             content = content.replace("{SYSIDE_DOCS_PATH}", f"{docs_path}/syside")
             dst.write_text(content)
-            created.append(f".claude/agents/{agent}")
+            if existed:
+                updated.append(f".claude/agents/{agent}")
+            else:
+                created.append(f".claude/agents/{agent}")
 
-    # === Install skills (recursive copy) ===
+    # === Install skills (TOOL-OWNED) ===
     skills_dir = target / ".claude" / "skills"
     skills_dir.mkdir(parents=True, exist_ok=True)
 
@@ -338,14 +352,15 @@ Edit this file to add your domain-specific sources.
     for skill in MBSE_SKILLS:
         src = source_skills / skill
         dst = skills_dir / skill
-        if dst.exists() and not args.force:
-            skipped.append(f".claude/skills/{skill}/")
-            continue
         if src.exists() and src.is_dir():
+            existed = dst.exists()
             shutil.copytree(src, dst, dirs_exist_ok=True)
-            created.append(f".claude/skills/{skill}/")
+            if existed:
+                updated.append(f".claude/skills/{skill}/")
+            else:
+                created.append(f".claude/skills/{skill}/")
 
-    # === Install hooks ===
+    # === Install hooks (TOOL-OWNED) ===
     hooks_dir = target / ".claude" / "hooks"
     hooks_dir.mkdir(parents=True, exist_ok=True)
 
@@ -353,15 +368,16 @@ Edit this file to add your domain-specific sources.
     for hook in MBSE_HOOKS:
         src = source_hooks / hook
         dst = hooks_dir / hook
-        if dst.exists() and not args.force:
-            skipped.append(f".claude/hooks/{hook}")
-            continue
         if src.exists():
+            existed = dst.exists()
             shutil.copy(src, dst)
             dst.chmod(src.stat().st_mode)
-            created.append(f".claude/hooks/{hook}")
+            if existed:
+                updated.append(f".claude/hooks/{hook}")
+            else:
+                created.append(f".claude/hooks/{hook}")
 
-    # === Create project/ structure with templates ===
+    # === Create project/ structure ===
     project_dir = target / "project"
     project_dir.mkdir(parents=True, exist_ok=True)
     (project_dir / "backlog").mkdir(exist_ok=True)
@@ -369,7 +385,9 @@ Edit this file to add your domain-specific sources.
     (project_dir / "research").mkdir(exist_ok=True)
 
     templates_dir = get_project_templates_dir()
-    for template_name, dest_path in PROJECT_TEMPLATES:
+
+    # === User-owned templates (skip if exists) ===
+    for template_name, dest_path in USER_OWNED_TEMPLATES:
         src = templates_dir / template_name
         dst = target / dest_path
         dst.parent.mkdir(parents=True, exist_ok=True)
@@ -380,7 +398,20 @@ Edit this file to add your domain-specific sources.
             shutil.copy(src, dst)
             created.append(dest_path)
 
-    # === Create .claude/settings.json with permissions ===
+    # === Tool-owned templates (always update) ===
+    for template_name, dest_path in TOOL_OWNED_TEMPLATES:
+        src = templates_dir / template_name
+        dst = target / dest_path
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if src.exists():
+            existed = dst.exists()
+            shutil.copy(src, dst)
+            if existed:
+                updated.append(dest_path)
+            else:
+                created.append(dest_path)
+
+    # === Create .claude/settings.json with permissions (USER-OWNED) ===
     settings_path = target / ".claude" / "settings.json"
 
     if settings_path.exists() and not args.force:
@@ -414,14 +445,19 @@ Edit this file to add your domain-specific sources.
         for item in created:
             print(f"  + {item}")
 
+    if updated:
+        print(f"\nUpdated ({len(updated)}) - tool-managed files refreshed:")
+        for item in updated:
+            print(f"  ~ {item}")
+
     if skipped:
-        print(f"\nSkipped ({len(skipped)}) - already exist:")
+        print(f"\nSkipped ({len(skipped)}) - user files preserved:")
         for item in skipped:
             print(f"  . {item}")
 
-    if not created:
-        print("\nAll items already exist. Use --force to overwrite.")
-    else:
+    if not created and not updated:
+        print("Everything up to date.")
+    elif created or updated:
         print("")
         print("Next steps:")
         print("  1. Run /onboard to configure your project and learn the workflow")
@@ -528,7 +564,7 @@ def main() -> int:
     init_parser.add_argument(
         "--force",
         action="store_true",
-        help="Overwrite existing SOURCE_INDEX.md and commands",
+        help="Overwrite ALL files including user-owned ones (SOURCE_INDEX.md, OVERVIEW.md, settings.json, etc.)",
     )
     init_parser.set_defaults(func=cmd_init)
 
