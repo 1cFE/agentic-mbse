@@ -1,8 +1,9 @@
 # Spec: Documentation Index Tooling
 
-**Status:** Draft
+**Status:** Complete
 **Owner:** Reid Westwood
 **Created:** 2026-01-12T22:45:00+00:00
+**Completed:** 2026-01-13T00:45:00+00:00
 **Complexity:** MEDIUM
 **Epic:** `.project/backlog/epic_documentation-discoverability.md`
 
@@ -18,10 +19,10 @@ Rather than chunking documents into fragments, we need a lightweight indexing ap
 
 ### Success Criteria
 
-- [ ] Agent can quickly identify which section contains "NumericalFunctions" by reading INDEX.md
-- [ ] Human users can navigate large spec documents using section numbers
-- [ ] Index generation is automated and reproducible
-- [ ] Indexes are version-controlled alongside source documents
+- [x] Agent can quickly identify which section contains "NumericalFunctions" by reading INDEX.md
+- [x] Human users can navigate large spec documents using section numbers
+- [x] Index generation is automated and reproducible
+- [x] Indexes are version-controlled alongside source documents
 
 ### Priority
 

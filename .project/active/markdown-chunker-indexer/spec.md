@@ -1,10 +1,22 @@
 # Spec: Markdown Chunker & Indexer
 
-**Status:** Draft
+**Status:** Deprecated
 **Owner:** Reid Westwood
 **Created:** 2026-01-12T20:30:00+00:00
+**Deprecated:** 2026-01-13T00:45:00+00:00
 **Complexity:** MEDIUM
 **Epic:** `.project/backlog/epic_documentation-discoverability.md`
+
+---
+
+> **DEPRECATED**: This spec was superseded by the INDEX.md approach.
+> See: `.project/active/doc-index-tooling/spec.md`
+>
+> **Rationale**: Research showed that for grep-based retrieval with Claude's large context window,
+> physical chunking is unnecessary. A lightweight INDEX.md with section line numbers and AI summaries
+> provides the same navigation benefits without the complexity of managing chunk files.
+>
+> Research: `project/research/20260112-222249_chunking-indexing-strategy.md`
 
 ---
 
