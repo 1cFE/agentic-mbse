@@ -1,9 +1,9 @@
 # EPIC-DOC-001: Documentation Discoverability Overhaul
 
 **Priority**: P0 (Critical - User-facing failure)
-**Status**: In Progress
+**Status**: Complete
 **Created**: 2026-01-12
-**Updated**: 2026-01-13
+**Completed**: 2026-01-13
 **Research**:
 - `.project/research/20260112-064217_sysmlv2-agent-discoverability-failure.md`
 - `project/research/20260112-222249_chunking-indexing-strategy.md`
@@ -207,16 +207,8 @@ python scripts/sync_stdlib.py --force      # Regenerate even if up-to-date
 ---
 
 ### P2-2: Documentation Coverage Dashboard
-**Effort**: 4-6 hours
-**Dependencies**: P0-2
-**Status**: TODO (Low Priority)
-
-Script to audit documentation coverage and index freshness.
-
-**Acceptance Criteria**:
-- [ ] Script checks all expected INDEX.md files exist
-- [ ] Reports checksum mismatches (stale indexes)
-- [ ] Shows coverage gaps
+**Status**: SUPERSEDED
+**Reason**: README.md now documents the maintenance scripts. Manual verification is sufficient given the low frequency of spec updates. A dashboard can be added later if needed.
 
 ---
 
@@ -227,19 +219,11 @@ Completed:
 ├── P0-1: Extract PDFs ✅
 ├── P0-2: Generate section indexes ✅
 ├── P2-1: Index all specs ✅
-└── P1-3: Sync stdlib to docs ✅
-    └── [Milestone: Infrastructure complete - all documentation indexed and searchable]
+├── P1-3: Sync stdlib to docs ✅
+├── P0-3: Split into specialized agents ✅
+└── P2-2: Coverage dashboard (SUPERSEDED - README docs sufficient)
 
-Next:
-└── P0-3: Split into specialized agents (4-6 hours)
-    ├── kerml-expert
-    ├── sysml-expert
-    ├── syside-expert
-    └── sysmlv2-validator
-    └── [Milestone: Complete discoverability solution]
-
-Later:
-└── P2-2: Coverage dashboard (4-6 hours)
+[EPIC COMPLETE] - All documentation discoverability infrastructure in place
 ```
 
 ---
