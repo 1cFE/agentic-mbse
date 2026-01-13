@@ -26,7 +26,10 @@ MBSE_COMMANDS = [
 # Agents available for installation
 MBSE_AGENTS = [
     "python-debugger.md",
-    "sysmlv2-doc-analyzer.md",
+    "kerml-expert.md",
+    "sysml-expert.md",
+    "syside-expert.md",
+    "sysmlv2-validator.md",
 ]
 
 # Skills available for installation (directories, not files)

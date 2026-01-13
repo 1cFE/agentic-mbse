@@ -18,10 +18,11 @@ Our sysmlv2-doc-analyzer agent consistently fails to help users discover standar
 2. **No navigable index**: Large spec documents (14K+ lines) have no roadmap for agents
 3. **Wrong agent strategy**: Agent confidently says "doesn't exist" when it simply can't find something
 4. **No validation fallback**: No agent can run `syside check` to test if code actually works
+5. **Monolithic agent**: Single agent tries to cover all documentation, leading to missed searches
 
 ---
 
-## Solution: INDEX.md Approach
+## Solution: INDEX.md Approach + Specialized Agents
 
 After research ([chunking-indexing-strategy.md](../../project/research/20260112-222249_chunking-indexing-strategy.md)), we chose a lightweight indexing approach over document chunking:
 
@@ -33,15 +34,18 @@ After research ([chunking-indexing-strategy.md](../../project/research/20260112-
 - Agents read INDEX.md first, then use targeted `Read` with offset/limit
 - Scripts automate index generation with checksum-based incremental updates
 
+**Agent Architecture**: Split the monolithic `sysmlv2-doc-analyzer` into specialized agents by documentation source, enabling parallel research and focused expertise.
+
 ---
 
 ## Success Criteria
 
 1. ~~Agent can correctly answer "How do I sum values over a collection?"~~ **ENABLED** - INDEX.md now shows `sum` in section 9.4.7
-2. ~~All critical SysML v2 specs extracted and indexed~~ **DONE** - KerML extracted, indexed
-3. [ ] Standard library functions documented in a greppable quick reference
+2. ~~All critical SysML v2 specs extracted and indexed~~ **DONE** - KerML + Parts 1-3 extracted, indexed
+3. [x] ~~Standard library functions documented in a greppable quick reference~~ **SUPERSEDED** - kerml-expert agent with INDEX.md provides this
 4. [ ] Agent never says "doesn't exist" - only "couldn't find in my documentation"
 5. [ ] Validation agent can test snippets with `syside check`
+6. [ ] Specialized agents enable parallel documentation research
 
 ---
 
@@ -58,7 +62,7 @@ Extracted critical PDFs to markdown:
 ---
 
 ### P0-2: Generate Section Indexes ✅
-**Status**: DONE (KerML), IN PROGRESS (Part1)
+**Status**: DONE
 **Completed**: 2026-01-13
 
 Created automated indexing tooling instead of manual quick reference.
@@ -116,128 +120,89 @@ utility functions (isZero, abs, max, min), and collection aggregations
 
 **Indexes generated**:
 - [x] `docs/sysmlv2/SysML_KerMLSpec/INDEX.md` (111 sections)
-- [ ] `docs/sysmlv2/SysML_Spec_v2_Part1/INDEX.md` (in progress)
+- [x] `docs/sysmlv2/SysML_Spec_v2_Part1/INDEX.md`
+- [x] `docs/sysmlv2/SysML_Spec_v2_Part2/INDEX.md`
+- [x] `docs/sysmlv2/SysML_Spec_v2_Part3/INDEX.md`
 
 **Spec**: `.project/active/doc-index-tooling/spec.md`
 
 ---
 
-## Remaining Items
+### P2-1: Generate Indexes for All Specs ✅
+**Status**: DONE
+**Completed**: 2026-01-13
 
-### P0-3: Update Agent System Prompt
-**Effort**: 1 hour
-**Dependencies**: P0-2
-**Status**: TODO
-
-Update `claude/agents/sysmlv2-doc-analyzer.md` to:
-
-1. **Check INDEX.md FIRST** to understand document structure
-2. **Never say "doesn't exist"** - say "I couldn't find this in my documentation"
-3. **Use targeted reads** - read INDEX.md, find section, read with offset/limit
-
-**Key changes**:
-```markdown
-## Search Strategy (UPDATED)
-
-### For Any Query
-
-1. **FIRST**: Read INDEX.md to understand document structure and find relevant sections
-2. **SECOND**: Use section line numbers to read targeted content with offset/limit
-3. **THIRD**: If not found, search other specs' INDEX.md files
-
-### For Function/Library Questions
-
-When user asks about functions (sum, size, collect, etc.):
-1. Read SysML_KerMLSpec/INDEX.md
-2. Look for section 9.4 Function Library and its subsections
-3. Read the specific subsection (e.g., 9.4.7 Numerical Functions for `sum`)
-
-### CRITICAL: Never Claim Something Doesn't Exist
-
-If you cannot find something:
-- SAY: "I couldn't find [X] in my documentation corpus"
-- DO NOT SAY: "[X] doesn't exist in SysML v2"
-```
-
-**Acceptance Criteria**:
-- [ ] Agent prompt updated with INDEX.md-first strategy
-- [ ] "Never claim doesn't exist" rule added
-- [ ] Agent uses targeted reads with offset/limit
+All spec documents now have INDEX.md files generated.
 
 ---
 
-### P1-1: Add Validation Agent
-**Effort**: 3-4 hours
-**Dependencies**: None
+## Remaining Items
+
+### P0-3: Split Documentation Agent into Specialized Agents
+**Effort**: 4-6 hours
+**Dependencies**: P0-2
 **Status**: TODO
+**Spec**: `.project/active/specialized-doc-agents/spec.md`
 
-Create `claude/agents/sysmlv2-validator.md` to test SysML v2 snippets with `syside check`.
+Replace monolithic `sysmlv2-doc-analyzer` with specialized agents by documentation source:
 
-**Purpose**: When user asks "does this work?" or reports syntax errors, validate with actual parser.
+| Agent | Corpus | Primary Use Cases |
+|-------|--------|-------------------|
+| `kerml-expert` | KerML spec + INDEX.md | Standard library, type system, language semantics |
+| `sysml-expert` | Parts 1-3 + INDEX.md | Modeling constructs, requirements, usage patterns |
+| `syside-expert` | syside docs | Parser, evaluation, tooling integration |
+| `sysmlv2-validator` | syside CLI | Syntax validation, error interpretation |
 
-**Agent workflow**:
-1. Write snippet to temp file
-2. Run `uv run syside check <file>`
-3. Interpret results and suggest fixes (especially imports)
+**Benefits**:
+- Focused corpus per agent reduces false negatives
+- Enables parallel research (spawn multiple agents at once)
+- Each agent uses INDEX.md-first strategy
+- All agents include "never claim doesn't exist" rule
 
 **Acceptance Criteria**:
-- [ ] Agent can write temp files and run syside check
-- [ ] Agent suggests imports for "No Type named X" errors
-- [ ] Agent cleans up temp files
+- [ ] 4 new agents created with focused prompts
+- [ ] Each agent uses INDEX.md-first search strategy
+- [ ] "Never claim doesn't exist" rule in all agents
+- [ ] task-model commands updated to use specialized agents
+- [ ] Old sysmlv2-doc-analyzer deprecated
 
 ---
 
 ### P1-2: Create Standard Library Quick Reference
-**Effort**: 2-3 hours
-**Dependencies**: P0-2
-**Status**: TODO
-
-While INDEX.md helps find sections, a dedicated `STANDARD_LIBRARY_REFERENCE.md` would provide:
-- Function signatures in table format
-- Import examples for each package
-- Common usage patterns
-
-This can be auto-generated from INDEX.md section 9.4 content or from `.kerml` source files.
-
-**Acceptance Criteria**:
-- [ ] Reference file at `docs/sysmlv2/STANDARD_LIBRARY_REFERENCE.md`
-- [ ] All Kernel Function Library packages documented
-- [ ] Import patterns shown for each package
+**Status**: SUPERSEDED
+**Reason**: The `kerml-expert` agent with INDEX.md provides equivalent functionality. INDEX.md section 9.4 summaries list all standard library functions. If a quick reference is still desired, it can be auto-generated later.
 
 ---
 
-### P1-3: Add Kernel Library Files to Searchable Corpus
-**Effort**: 2-3 hours
-**Dependencies**: None
-**Status**: TODO
+### P1-3: Add Standard Library Files to Searchable Corpus ✅
+**Status**: DONE
+**Completed**: 2026-01-13
+**Spec**: `.project/active/stdlib-corpus/spec.md`
 
-Copy `.kerml` files to docs directory for direct grepping:
-```bash
-mkdir -p docs/sysmlv2/kernel_library
-cp -r .venv/lib/python3.12/site-packages/syside/sysml.library/Kernel\ Libraries/* \
-      docs/sysmlv2/kernel_library/
+Created `scripts/sync_stdlib.py` to sync the full syside standard library to `docs/sysmlv2/stdlib/`:
+
+**Script features**:
+- Copies all `.kerml` and `.sysml` files preserving directory structure
+- Generates `INDEX.md` with Quick Reference + file summaries (via `claude -p`)
+- Generates `VERSION.md` with syside version tracking
+- Supports `--dry-run` and `--force` flags
+
+**Output structure**:
+```
+docs/sysmlv2/stdlib/
+├── INDEX.md           # Quick Reference + ~94 file summaries
+├── VERSION.md         # syside version, sync timestamp
+├── Kernel Libraries/  # 36 files (functions, types, semantics)
+├── Systems Library/   # 21 files (Part, Port, Action, etc.)
+└── Domain Libraries/  # 37 files (SI, ISQ, Analysis, etc.)
 ```
 
-**Acceptance Criteria**:
-- [ ] Agent can grep for function names in .kerml source
-- [ ] Files are tracked/versioned appropriately
-
----
-
-### P2-1: Generate Indexes for All Specs
-**Effort**: 1-2 hours (mostly wait time)
-**Dependencies**: P0-2
-**Status**: TODO
-
-Run `generate_index.py` on all spec documents:
+**Usage**:
 ```bash
-python3 scripts/generate_index.py docs/sysmlv2/SysML_Spec_v2_Part2/
-python3 scripts/generate_index.py docs/sysmlv2/SysML_Spec_v2_Part3/
+python scripts/sync_stdlib.py              # Sync and generate INDEX.md
+python scripts/sync_stdlib.py --dry-run    # Preview without copying
+python scripts/sync_stdlib.py --force      # Regenerate even if up-to-date
 ```
-
-**Acceptance Criteria**:
-- [ ] All `full_document.md` files have companion INDEX.md
-- [ ] All indexes use consistent depth (3)
 
 ---
 
@@ -260,19 +225,20 @@ Script to audit documentation coverage and index freshness.
 ```
 Completed:
 ├── P0-1: Extract PDFs ✅
-└── P0-2: Generate section indexes ✅
-    └── [Milestone: Agent CAN find "sum" in INDEX.md]
+├── P0-2: Generate section indexes ✅
+├── P2-1: Index all specs ✅
+└── P1-3: Sync stdlib to docs ✅
+    └── [Milestone: Infrastructure complete - all documentation indexed and searchable]
 
-Next (This Week):
-├── P0-3: Update agent prompt (1 hour)
-│   └── [Milestone: Agent USES INDEX.md effectively]
-├── P1-1: Add validation agent (3-4 hours)
-└── P1-2: Create quick reference (2-3 hours)
+Next:
+└── P0-3: Split into specialized agents (4-6 hours)
+    ├── kerml-expert
+    ├── sysml-expert
+    ├── syside-expert
+    └── sysmlv2-validator
     └── [Milestone: Complete discoverability solution]
 
 Later:
-├── P1-3: Add .kerml to corpus (2-3 hours)
-├── P2-1: Index all specs (1-2 hours)
 └── P2-2: Coverage dashboard (4-6 hours)
 ```
 

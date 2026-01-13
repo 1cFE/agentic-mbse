@@ -207,7 +207,13 @@ For each task in the plan:
    syside check models/path/to/file.sysml
    ```
 
-   If any validations don't pass, you are having trouble resolving parsing issues, or any other modeling challenges arise, make sure of the "sysmlv2-doc-analyzer" subagent!! This agent has full knowledge of the SysMLv2 spec as well as the SysIDE parser, and can help provide guidance as to how to resolve issues. 
+   If any validations don't pass, you are having trouble resolving parsing issues, or any other modeling challenges arise, use the specialized documentation agents:
+   - `sysmlv2-validator` - To check syntax and get error interpretations
+   - `kerml-expert` - For standard library functions (sum, size, etc.) and imports
+   - `sysml-expert` - For modeling patterns and SysML constructs
+   - `syside-expert` - For parser API and tooling questions
+
+   For "why doesn't this work?" questions, spawn `sysmlv2-validator` + the relevant expert agent in parallel. 
    
 5. **IMMEDIATELY Update Progress** - CRITICAL for tracking:
    - **TodoWrite**: Mark current task as completed
