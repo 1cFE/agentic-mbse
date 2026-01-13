@@ -1,21 +1,21 @@
 # Plan: Extract Missing PDF Specifications
 
 **Spec:** `spec.md` (this directory)
-**Status:** In Progress
-**Last Updated:** 2026-01-12T20:45:00+00:00
+**Status:** Complete ✅
+**Last Updated:** 2026-01-12T21:55:00+00:00
 
 ---
 
-## Current Progress
+## Final Progress
 
 | Step | Status | Notes |
 |------|--------|-------|
 | 1. Setup m-scout PDF environment | ✅ Done | `bash ~/m-scout/tools/pdf_processing/scripts/setup_pdf_processor.sh` |
-| 2. Extract KerML spec | ✅ Done | 30 min on CPU, 1,432 chunks (fragmented), `full_document.md` usable |
+| 2. Extract KerML spec | ✅ Done | Docling, 30 min on CPU, `full_document.md` usable |
 | 3. Copy KerML to agentic-mbse | ✅ Done | `docs/sysmlv2/SysML_KerMLSpec/full_document.md` |
-| 4. Extract Part1 spec | ⏳ Running | User running manually (~90 min expected on CPU) |
-| 5. Copy Part1 to agentic-mbse | ⏸️ Pending | Wait for extraction to complete |
-| 6. Verify agent searchability | ⏸️ Pending | grep tests for "NumericalFunctions", "sum", etc. |
+| 4. Extract Part1 spec | ✅ Done | **PyMuPDF** (Docling OOM killed), fast, better chunks |
+| 5. Copy Part1 to agentic-mbse | ✅ Done | `docs/sysmlv2/SysML_Spec_v2_Part1/full_document.md` |
+| 6. Verify agent searchability | ✅ Done | Both docs grep-searchable |
 
 ---
 
@@ -24,157 +24,152 @@
 ```
 /home/reid/1cfe/agentic-mbse/docs/sysmlv2/
 ├── SysML_KerMLSpec/
-│   └── full_document.md    ← NEW (1.17 MB, 13,957 lines)
+│   └── full_document.md    ← NEW (1.17 MB, 13,957 lines) - Docling
 └── SysML_Spec_v2_Part1/
-    └── (pending)           ← User running extraction
+    └── full_document.md    ← NEW (1.37 MB, 47,797 lines) - PyMuPDF
 ```
 
 ---
 
-## Extraction Commands
+## Extraction Results Comparison
 
-### KerML Spec (completed)
-```bash
-cd /home/reid/m-scout && source pdf_env/bin/activate
-PYTHONPATH=/home/reid/m-scout python tools/pdf_processing/processors/pdf_process.py \
-    --docling --use-hybrid-chunker --max-chunk-tokens 10000 \
-    /home/reid/fusion_modeling/agent_literature/SysML/SysML_KerMLSpec.pdf
-```
+| Metric | KerML (Docling) | Part1 (PyMuPDF) |
+|--------|-----------------|-----------------|
+| File size | 1.17 MB | 1.37 MB |
+| Lines | 13,957 | 47,797 |
+| Chunks | 1,432 (broken) | 118 (usable) |
+| Chunk size | 1-70 lines (fragmented) | 3-2,030 lines (meaningful) |
+| Encoding issues | 0 | 0 |
+| Processing time | ~30 min | ~5 min |
+| Memory usage | High (OOM on Part1) | Low |
 
-### Part1 Spec (user running)
-```bash
-cd /home/reid/m-scout && source pdf_env/bin/activate
-PYTHONPATH=/home/reid/m-scout python tools/pdf_processing/processors/pdf_process.py \
-    --docling --use-hybrid-chunker --max-chunk-tokens 10000 --force \
-    /home/reid/fusion_modeling/agent_literature/SysML/SysML_Spec_v2_Part1.pdf
-```
-
-### Copy Commands (after Part1 completes)
-```bash
-# Copy Part1 full_document.md only (skip broken chunks)
-mkdir -p /home/reid/1cfe/agentic-mbse/docs/sysmlv2/SysML_Spec_v2_Part1
-cp /home/reid/fusion_modeling/agent_literature/SysML/SysML_Spec_v2_Part1/full_document.md \
-   /home/reid/1cfe/agentic-mbse/docs/sysmlv2/SysML_Spec_v2_Part1/
-```
-
-### Verification Commands
-```bash
-# Test KerML searchability
-grep -c "NumericalFunctions" /home/reid/1cfe/agentic-mbse/docs/sysmlv2/SysML_KerMLSpec/full_document.md
-grep "function sum" /home/reid/1cfe/agentic-mbse/docs/sysmlv2/SysML_KerMLSpec/full_document.md | head -3
-
-# Test Part1 searchability (after copy)
-grep -c "SysML" /home/reid/1cfe/agentic-mbse/docs/sysmlv2/SysML_Spec_v2_Part1/full_document.md
-```
+**Winner: PyMuPDF** for these technical specs.
 
 ---
 
 ## Best Practices Discovered
 
-### Optimal Extraction Settings
+### Recommended Extraction Method: PyMuPDF
+
+```bash
+cd /home/reid/m-scout && source pdf_env/bin/activate
+PYTHONPATH=/home/reid/m-scout python tools/pdf_processing/processors/pdf_process.py \
+    --pymupdf --force \
+    /path/to/document.pdf
+```
 
 | Setting | Value | Rationale |
 |---------|-------|-----------|
-| Processor | `--docling` | Better structure preservation than PyMuPDF |
-| Chunker | `--use-hybrid-chunker` | Enables `merge_peers=True` for less fragmentation |
-| Max tokens | `--max-chunk-tokens 10000` | Higher value reduces fragmentation (though still problematic) |
-| Environment | `PYTHONPATH=/home/reid/m-scout` | Required for imports to work |
+| Processor | `--pymupdf` | Lower memory, better chunks, faster |
+| Force | `--force` | Overwrite existing partial extractions |
+
+### Why PyMuPDF over Docling
+
+| Aspect | Docling | PyMuPDF |
+|--------|---------|---------|
+| Memory | High (ML models) | Low (no ML) |
+| Speed | Slow (~30 min) | Fast (~5 min) |
+| Chunk quality | Terrible (1-line fragments) | Good (meaningful sections) |
+| Structure preservation | Over-aggressive splitting | Balanced |
+| OOM risk | High on large PDFs | Low |
 
 ### Key Findings
 
-1. **Skip the chunks, use `full_document.md`**
-   - Docling's chunking is fundamentally broken for these specs
-   - 77% of chunks are under 500 bytes (1-line fragments)
-   - The `full_document.md` is grep-searchable and sufficient for agent use
-   - A separate chunking/indexing utility is planned (see `../markdown-chunker-indexer/spec.md`)
+1. **Skip the chunks from either processor, use `full_document.md`**
+   - Docling chunks: 77% under 500 bytes (useless)
+   - PyMuPDF chunks: Better but still not ideal for RAG
+   - Both produce grep-searchable `full_document.md`
+   - Use new markdown-chunker-indexer utility for proper chunking (see `../markdown-chunker-indexer/spec.md`)
 
-2. **Encoding quality varies by document**
-   - KerML extraction: Clean (no garbled characters)
-   - Part2 (existing): Has 1,331 "¥" symbols (garbled bullet points) - needs re-extraction
-   - Part1: TBD (check after extraction completes)
+2. **PyMuPDF is the right choice for SysML specs**
+   - Docling's ML models are overkill for well-structured PDFs
+   - PyMuPDF handles tables and structure adequately
+   - Much faster iteration cycle
 
-3. **Processing time on CPU**
-   - KerML (1.7 MB): ~30 minutes
-   - Part1 (5.4 MB): ~90 minutes estimated
-   - Consider GPU if available for future extractions
-
-4. **NNPACK warnings are harmless**
-   - Thousands of `Could not initialize NNPACK! Reason: Unsupported hardware` warnings
-   - Just means GPU acceleration unavailable, CPU fallback works fine
-   - Does not affect output quality
+3. **Encoding quality**
+   - Both KerML and Part1: Clean (no garbled characters)
+   - Existing Part2: Has 1,331 "¥" symbols - needs re-extraction with PyMuPDF
 
 ### Recommended Future Workflow
 
 ```
-PDF → Docling (full_document.md only) → Markdown Chunker/Indexer → Indexed Chunks
+PDF → PyMuPDF (full_document.md only) → Markdown Chunker/Indexer → Indexed Chunks
       ↑                                  ↑
-      Skip chunk generation              New utility (spec'd)
+      Fast, low memory                   New utility (spec'd)
 ```
 
-1. Extract PDF to `full_document.md` using Docling
-2. **Skip** Docling's built-in chunking (it's broken)
-3. Use new markdown-chunker-indexer utility (when built) to create proper chunks with:
-   - Hierarchy-aware splitting
-   - YAML frontmatter with breadcrumb context
-   - Multi-tier index with hyperlinks
+---
+
+## Verification Results
+
+### KerML Spec
+```bash
+$ grep -c "NumericalFunctions" docs/sysmlv2/SysML_KerMLSpec/full_document.md
+3
+
+$ grep "function sum" docs/sysmlv2/SysML_KerMLSpec/full_document.md | wc -l
+7
+```
+✅ Standard library functions are discoverable.
+
+### Part1 Spec
+```bash
+$ grep -c "SysML" docs/sysmlv2/SysML_Spec_v2_Part1/full_document.md
+711
+
+$ wc -l docs/sysmlv2/SysML_Spec_v2_Part1/full_document.md
+47797
+```
+✅ Content is searchable and complete.
 
 ---
 
-## Quality Assessment
+## Acceptance Criteria Status
 
-### KerML Extraction
+From spec.md:
 
-| Metric | Value | Assessment |
-|--------|-------|------------|
-| File size | 1.17 MB | ✓ Complete |
-| Line count | 13,957 | ✓ Substantial |
-| "NumericalFunctions" mentions | 3 | ✓ Searchable |
-| "function sum" definitions | 7 | ✓ Content present |
-| Garbled characters (¥) | 0 | ✓ Clean encoding |
-| Chunk quality | Poor (1,432 fragments) | ✗ Don't use chunks |
+- [x] KerML extraction succeeds (`processing_completed: true`)
+- [x] Part1 extraction succeeds (`processing_completed: true`)
+- [x] `grep "NumericalFunctions"` finds matches in KerML docs (3 matches)
+- [x] Both directories copied to `docs/sysmlv2/`
+- [x] Existing docs in `docs/sysmlv2/` unchanged
 
-### Part1 Extraction (pending)
-
-| Metric | Value | Assessment |
-|--------|-------|------------|
-| Processing | In progress | ~90 min on CPU |
-| Expected size | ~3-4 MB | Based on PDF size ratio |
+**Note:** Chunk quality criteria not met (Docling chunks broken), but `full_document.md` is sufficient for grep-based agent searches. Proper chunking deferred to markdown-chunker-indexer utility.
 
 ---
 
-## Related Work
+## Follow-up Work
 
-- **This feature:** P0-1 in epic_documentation-discoverability.md
-- **Next feature:** `../markdown-chunker-indexer/spec.md` - proper chunking solution
-- **Blocked:** P0-2 (Standard Library Quick Reference) - needs indexed chunks
+1. **Re-extract Part2 with PyMuPDF** - Fix 1,331 garbled "¥" characters
+2. **Build markdown-chunker-indexer** - See `../markdown-chunker-indexer/spec.md`
+3. **Update sysmlv2-doc-analyzer agent** - Point to new indexed structure
 
 ---
 
-## Resume Checklist
+## Commands Reference
 
-When resuming this work:
+### PyMuPDF Extraction (Recommended)
+```bash
+cd /home/reid/m-scout && source pdf_env/bin/activate
+PYTHONPATH=/home/reid/m-scout python tools/pdf_processing/processors/pdf_process.py \
+    --pymupdf --force /path/to/document.pdf
+```
 
-1. [ ] Check if Part1 extraction completed:
-   ```bash
-   ls -la /home/reid/fusion_modeling/agent_literature/SysML/SysML_Spec_v2_Part1/
-   cat /home/reid/fusion_modeling/agent_literature/SysML/SysML_Spec_v2_Part1/summary.json
-   ```
+### Copy full_document.md Only
+```bash
+mkdir -p /home/reid/1cfe/agentic-mbse/docs/sysmlv2/<DocName>
+cp /home/reid/fusion_modeling/agent_literature/SysML/<DocName>/full_document.md \
+   /home/reid/1cfe/agentic-mbse/docs/sysmlv2/<DocName>/
+```
 
-2. [ ] If complete, copy `full_document.md` to agentic-mbse:
-   ```bash
-   mkdir -p /home/reid/1cfe/agentic-mbse/docs/sysmlv2/SysML_Spec_v2_Part1
-   cp /home/reid/fusion_modeling/agent_literature/SysML/SysML_Spec_v2_Part1/full_document.md \
-      /home/reid/1cfe/agentic-mbse/docs/sysmlv2/SysML_Spec_v2_Part1/
-   ```
+### Verify Extraction Quality
+```bash
+# Check for encoding issues
+grep -c "¥" <full_document.md>
 
-3. [ ] Verify searchability:
-   ```bash
-   grep -c "SysML" /home/reid/1cfe/agentic-mbse/docs/sysmlv2/SysML_Spec_v2_Part1/full_document.md
-   ```
+# Check searchability
+grep -c "<keyword>" <full_document.md>
 
-4. [ ] Check for encoding issues:
-   ```bash
-   grep -c "¥" /home/reid/1cfe/agentic-mbse/docs/sysmlv2/SysML_Spec_v2_Part1/full_document.md
-   ```
-
-5. [ ] Update spec.md status to "Complete" if all acceptance criteria met
+# Check file size
+wc -l <full_document.md>
+```
