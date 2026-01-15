@@ -33,7 +33,7 @@ Prioritized list of epics and features.
 
 **Priority**: P1
 **Effort**: 0.5-1 day
-**Status**: Ready
+**Status**: Complete (2026-01-13)
 
 **Context**: The `~/1cfe/fusion-tea` project serves as our primary development domain for testing agentic-mbse. During modeling work, new patterns were developed (particularly around structured costing) and TOOL_OWNED files may have been modified directly.
 
@@ -43,22 +43,18 @@ Prioritized list of epics and features.
 3. Back-merge valuable patterns and fixes
 
 **Scope**:
-- [ ] Diff fusion-tea's `.claude/` against agentic-mbse's `claude/` directory
-- [ ] Diff fusion-tea's `project/MODELING_GUIDE.md` against template
-- [ ] Diff fusion-tea's `project/MODELING_PROCESS.md` against template
-- [ ] Review costing pattern developments for generalization
-- [ ] Identify any command/agent improvements made on-the-fly
-- [ ] Back-incorporate changes to appropriate agentic-mbse files
+- [x] Diff fusion-tea's `.claude/` against agentic-mbse's `claude/` directory
+- [x] Diff fusion-tea's `project/MODELING_GUIDE.md` against template
+- [x] Diff fusion-tea's `project/MODELING_PROCESS.md` against template
+- [x] Review costing pattern developments for generalization
+- [x] Identify any command/agent improvements made on-the-fly
+- [x] Back-incorporate changes to appropriate agentic-mbse files
 
-**Files to compare** (TOOL_OWNED from `cli/__init__.py`):
-- Commands: `design-model.md`, `implement-model.md`, `plan-model.md`, `spec-model.md`, etc.
-- Agents: `kerml-expert.md`, `sysml-expert.md`, `syside-expert.md`, `sysmlv2-validator.md`
-- Templates: `MODELING_GUIDE.md.template`, `MODELING_PROCESS.md.template`
-
-**Deliverables**:
-- Updated templates/commands/agents in agentic-mbse
-- New patterns in `docs/patterns/` if applicable
-- Documentation of what was backported
+**Completed**:
+- Added Cost Model Imports section to MODELING_GUIDE.md.template
+- Added 3 validated patterns: Multiplicity Cost Aggregation, Part Redefinition, Parameterized Multiplicity
+- Forward sync (commands/agents) identified but deferred (agentic-mbse is newer)
+- See `.project/active/backport-fusion-tea-patterns/spec.md` for full details
 
 **Related**: ITEM-GUIDE-001 (restructuring guides), ITEM-DEVMODE-001 (avoiding future backports)
 
