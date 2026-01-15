@@ -1,12 +1,13 @@
 """Command-line interface for agentic-mbse."""
+
 import argparse
 import json
 import platform
 import shutil
 import sys
-import tomllib
 from pathlib import Path
 
+import tomllib
 from dotenv import load_dotenv
 
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS, run_all_checks
@@ -36,6 +37,7 @@ MBSE_AGENTS = [
 # Skills available for installation (directories, not files)
 MBSE_SKILLS = [
     "python-debugger",
+    "record-learning",
 ]
 
 # Hooks available for installation
@@ -50,6 +52,7 @@ USER_OWNED_TEMPLATES = [
     ("README.md.template", "README.md"),
     ("OVERVIEW.md.template", "project/OVERVIEW.md"),
     ("BACKLOG.md.template", "project/backlog/BACKLOG.md"),
+    ("RAW_LEARNINGS.md.template", "project/learnings/RAW_LEARNINGS.md"),
 ]
 
 TOOL_OWNED_TEMPLATES = [
@@ -146,7 +149,7 @@ def _to_claude_permission_path(abs_path: str) -> str:
     home = os.path.expanduser("~")
     if abs_path.startswith(home + "/"):
         # Convert /home/user/foo to ~/foo
-        return "~" + abs_path[len(home):]
+        return "~" + abs_path[len(home) :]
     elif abs_path == home:
         return "~"
     else:
@@ -339,9 +342,9 @@ def cmd_init(args: argparse.Namespace) -> int:
             return EXIT_FAILURE
 
     # Track what happens for summary
-    created: list[str] = []    # New files (didn't exist before)
-    updated: list[str] = []    # Tool-owned files refreshed
-    skipped: list[str] = []    # User-owned files preserved
+    created: list[str] = []  # New files (didn't exist before)
+    updated: list[str] = []  # Tool-owned files refreshed
+    skipped: list[str] = []  # User-owned files preserved
     symlinked: list[str] = []  # Dev mode symlinks
 
     # === Create .gitignore with standard Python ignores ===
@@ -522,6 +525,7 @@ Edit this file to add your domain-specific sources.
     (project_dir / "backlog").mkdir(exist_ok=True)
     (project_dir / "active").mkdir(exist_ok=True)
     (project_dir / "research").mkdir(exist_ok=True)
+    (project_dir / "learnings").mkdir(exist_ok=True)
 
     templates_dir = get_project_templates_dir()
 
@@ -561,11 +565,13 @@ Edit this file to add your domain-specific sources.
 
         # Add permissions for bundled docs (used by sysmlv2-doc-analyzer agent)
         docs_permission_path = _to_claude_permission_path(str(docs_path))
-        permissions.extend([
-            f"Read({docs_permission_path}/**)",
-            f"Grep({docs_permission_path}/**)",
-            f"Glob({docs_permission_path}/**)",
-        ])
+        permissions.extend(
+            [
+                f"Read({docs_permission_path}/**)",
+                f"Grep({docs_permission_path}/**)",
+                f"Glob({docs_permission_path}/**)",
+            ]
+        )
 
         # Add permissions for editable dependencies from pyproject.toml
         editable_paths = _detect_editable_deps(target)

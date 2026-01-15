@@ -22,6 +22,30 @@ agentic-mbse validate models/
 agentic-mbse init
 ```
 
+This creates:
+- `.claude/commands/` - MBSE workflow commands (`/design-model`, `/implement-model`, etc.)
+- `.claude/agents/` - Specialized AI agents for SysML and documentation
+- `.claude/skills/` - Skills including `/record-learning` for capturing insights
+- `project/` - Project management structure (backlog, active work, learnings)
+- `SOURCE_INDEX.md` - Domain knowledge source configuration
+
+### Learning Feedback Loop
+
+During modeling sessions, capture insights and discoveries with `/record-learning`:
+
+```
+/record-learning
+```
+
+This triggers reflection on the current conversation, identifying:
+- Import patterns discovered
+- Syntax gotchas resolved
+- Error interpretations learned
+- Workarounds implemented
+- Best practices identified
+
+Learnings are stored in `project/learnings/RAW_LEARNINGS.md` for later review and formalization into documentation.
+
 ## Development
 
 ```bash

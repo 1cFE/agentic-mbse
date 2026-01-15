@@ -32,6 +32,7 @@ Each document has **one clear purpose**:
 | **SOURCE_INDEX.md** | Domain knowledge sources | `/manage-sources` |
 | **project/OVERVIEW.md** | Project status and goals | You |
 | **project/backlog/BACKLOG.md** | Work item pipeline | `/backlog` |
+| **project/learnings/RAW_LEARNINGS.md** | Captured insights | `/record-learning` |
 | **project/MODELING_GUIDE.md** | SysML syntax reference | Static (don't edit) |
 | **project/MODELING_PROCESS.md** | MBSE methodology | Static (don't edit) |
 
@@ -45,6 +46,7 @@ Each document has **one clear purpose**:
 **Commands manage for you:**
 - `SOURCE_INDEX.md` - Use `/manage-sources` to add/remove sources
 - `project/backlog/BACKLOG.md` - Use `/backlog add` and `/backlog clear`
+- `project/learnings/RAW_LEARNINGS.md` - Use `/record-learning` to capture insights
 - `project/active/*` - Created by `/spec-model`, `/design-model`, `/plan-model`
 - `models/**/*.sysml` - Created by `/implement-model`
 
@@ -83,6 +85,7 @@ agentic-mbse install-commands [--force]
 | `/manage-sources` | Add/remove domain sources |
 | `/backlog add [source]` | Add work items |
 | `/backlog clear` | Archive completed work |
+| `/record-learning` | Capture session insights |
 
 ### Validation Framework
 
@@ -169,7 +172,9 @@ project/
 │   └── BACKLOG.md           # Work items (/backlog manages)
 ├── active/                  # Current work (commands manage)
 ├── completed/               # Archived work
-└── research/                # Research documents
+├── research/                # Research documents
+└── learnings/
+    └── RAW_LEARNINGS.md     # Session insights (/record-learning)
 ```
 
 ---
@@ -203,3 +208,4 @@ part my_component : 'Component Name' {
 - [Domain Sources](SOURCE_INDEX.md)
 - [Project Status](project/OVERVIEW.md)
 - [Work Items](project/backlog/BACKLOG.md)
+- [Session Learnings](project/learnings/RAW_LEARNINGS.md)
