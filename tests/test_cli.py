@@ -325,3 +325,174 @@ class TestCLIIntegration:
         )
         # May succeed or fail, but should complete
         assert result.returncode in [0, 1]
+
+    def test_cli_init_dev_help(self):
+        """init --help shows --dev option."""
+        result = subprocess.run(
+            ["agentic-mbse", "init", "--help"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        assert "--dev" in result.stdout
+
+
+class TestCmdInitDevMode:
+    """Tests for init --dev mode."""
+
+    def test_dev_creates_symlinks_for_commands(self, tmp_path):
+        """--dev creates symlinks for command files."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        result = cmd_init(args)
+
+        assert result == EXIT_SUCCESS
+        cmd_path = tmp_path / ".claude" / "commands" / "design-model.md"
+        assert cmd_path.is_symlink()
+        # Verify symlink points to source repo
+        assert "agentic-mbse" in str(cmd_path.resolve())
+
+    def test_dev_creates_symlinks_for_agents(self, tmp_path):
+        """--dev creates symlinks for agent files."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        cmd_init(args)
+
+        agent_path = tmp_path / ".claude" / "agents" / "python-debugger.md"
+        assert agent_path.is_symlink()
+
+    def test_dev_creates_symlinks_for_skills(self, tmp_path):
+        """--dev creates symlinks for skill directories."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        cmd_init(args)
+
+        skill_path = tmp_path / ".claude" / "skills" / "python-debugger"
+        assert skill_path.is_symlink()
+        assert skill_path.is_dir()  # Symlink to directory
+
+    def test_dev_creates_symlinks_for_hooks(self, tmp_path):
+        """--dev creates symlinks for hook files."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        cmd_init(args)
+
+        hook_path = tmp_path / ".claude" / "hooks" / "ruff-format.sh"
+        assert hook_path.is_symlink()
+
+    def test_dev_creates_symlinks_for_tool_templates(self, tmp_path):
+        """--dev creates symlinks for tool-owned templates."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        cmd_init(args)
+
+        guide_path = tmp_path / "project" / "MODELING_GUIDE.md"
+        assert guide_path.is_symlink()
+
+    def test_dev_copies_user_owned_files(self, tmp_path):
+        """--dev still copies (not symlinks) user-owned files."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        cmd_init(args)
+
+        # User-owned files should be regular files, not symlinks
+        assert not (tmp_path / "SOURCE_INDEX.md").is_symlink()
+        assert not (tmp_path / ".gitignore").is_symlink()
+        assert not (tmp_path / ".claude" / "settings.json").is_symlink()
+        assert not (tmp_path / "README.md").is_symlink()
+
+    def test_dev_idempotent(self, tmp_path):
+        """Running --dev twice succeeds and updates symlinks."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+
+        # First run
+        result1 = cmd_init(args)
+        assert result1 == EXIT_SUCCESS
+
+        # Second run
+        result2 = cmd_init(args)
+        assert result2 == EXIT_SUCCESS
+
+        # Symlinks should still work
+        cmd_path = tmp_path / ".claude" / "commands" / "design-model.md"
+        assert cmd_path.is_symlink()
+
+    def test_dev_replaces_regular_file_with_symlink(self, tmp_path):
+        """--dev replaces existing regular files with symlinks."""
+        # First init without dev
+        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        cmd_init(args)
+
+        cmd_path = tmp_path / ".claude" / "commands" / "design-model.md"
+        assert not cmd_path.is_symlink()  # Regular file
+
+        # Second init with dev
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        cmd_init(args)
+
+        assert cmd_path.is_symlink()  # Now a symlink
+
+    def test_without_dev_copies_files(self, tmp_path):
+        """Init without --dev still copies files (regression test)."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        cmd_init(args)
+
+        cmd_path = tmp_path / ".claude" / "commands" / "design-model.md"
+        assert not cmd_path.is_symlink()
+        assert cmd_path.exists()
+
+    @pytest.mark.skipif(
+        __import__("platform").system() == "Windows",
+        reason="Windows test not applicable on non-Windows"
+    )
+    def test_dev_agents_keep_placeholders(self, tmp_path):
+        """--dev mode agents are symlinked with placeholders intact."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        cmd_init(args)
+
+        agent_path = tmp_path / ".claude" / "agents" / "syside-expert.md"
+        assert agent_path.is_symlink()
+        # Source files have placeholders, symlink should too
+        content = agent_path.read_text()
+        assert "{SYSIDE_DOCS_PATH}" in content
+
+    def test_dev_updates_gitignore(self, tmp_path):
+        """--dev adds tool-owned paths to .gitignore."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        cmd_init(args)
+
+        gitignore_path = tmp_path / ".gitignore"
+        content = gitignore_path.read_text()
+
+        # Should contain dev mode section
+        assert "# Tool-owned files (managed by agentic-mbse init --dev)" in content
+        assert ".claude/commands/" in content
+        assert ".claude/agents/" in content
+        assert ".claude/skills/" in content
+        assert ".claude/hooks/" in content
+        assert "project/MODELING_GUIDE.md" in content
+        assert "project/MODELING_PROCESS.md" in content
+
+    def test_dev_gitignore_idempotent(self, tmp_path):
+        """Running --dev twice doesn't duplicate .gitignore entries."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+
+        # First run
+        cmd_init(args)
+        gitignore_path = tmp_path / ".gitignore"
+        content_after_first = gitignore_path.read_text()
+        first_count = content_after_first.count(".claude/commands/")
+
+        # Second run
+        cmd_init(args)
+        content_after_second = gitignore_path.read_text()
+        second_count = content_after_second.count(".claude/commands/")
+
+        # Should only appear once
+        assert first_count == 1
+        assert second_count == 1
+
+    def test_without_dev_no_gitignore_update(self, tmp_path):
+        """Init without --dev doesn't add dev mode paths to .gitignore."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        cmd_init(args)
+
+        gitignore_path = tmp_path / ".gitignore"
+        content = gitignore_path.read_text()
+
+        # Should NOT contain dev mode section
+        assert "# Tool-owned files (managed by agentic-mbse init --dev)" not in content

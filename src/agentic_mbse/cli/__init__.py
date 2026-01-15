@@ -1,6 +1,7 @@
 """Command-line interface for agentic-mbse."""
 import argparse
 import json
+import platform
 import shutil
 import sys
 import tomllib
@@ -58,6 +59,17 @@ TOOL_OWNED_TEMPLATES = [
 
 # Combined for backwards compatibility
 PROJECT_TEMPLATES = USER_OWNED_TEMPLATES + TOOL_OWNED_TEMPLATES
+
+# Paths to add to .gitignore in dev mode (symlinks are machine-specific)
+DEV_MODE_GITIGNORE_PATHS = [
+    "# Tool-owned files (managed by agentic-mbse init --dev)",
+    ".claude/commands/",
+    ".claude/agents/",
+    ".claude/skills/",
+    ".claude/hooks/",
+    "project/MODELING_GUIDE.md",
+    "project/MODELING_PROCESS.md",
+]
 
 
 def _get_data_root() -> Path:
@@ -169,6 +181,106 @@ def _detect_editable_deps(target: Path) -> list[str]:
         return []
 
 
+def _check_dev_mode_prerequisites(data_root: Path) -> tuple[bool, str | None]:
+    """Check if dev mode can be used.
+
+    Returns:
+        (can_use, error_message) - error_message is None if can_use is True
+    """
+    # Check Windows
+    if platform.system() == "Windows":
+        return False, "Dev mode is not supported on Windows (symlinks require admin privileges)"
+
+    # Check source checkout (claude/ directory exists at root)
+    if not (data_root / "claude").exists():
+        return False, (
+            "Dev mode requires a source checkout of agentic-mbse.\n"
+            "Pip-installed packages cannot use dev mode.\n"
+            "Clone the repo and install with: pip install -e /path/to/agentic-mbse"
+        )
+
+    return True, None
+
+
+def _install_file(src: Path, dst: Path, is_dev_mode: bool) -> str:
+    """Install a file by copying or symlinking.
+
+    Args:
+        src: Source file path
+        dst: Destination file path
+        is_dev_mode: If True, create symlink; if False, copy
+
+    Returns:
+        Action taken: "created", "updated", "symlinked", or "re-symlinked"
+    """
+    existed = dst.exists() or dst.is_symlink()
+
+    # Remove existing file or symlink before creating new one
+    if existed:
+        dst.unlink()
+
+    if is_dev_mode:
+        dst.symlink_to(src.resolve())
+        return "re-symlinked" if existed else "symlinked"
+    else:
+        shutil.copy(src, dst)
+        return "updated" if existed else "created"
+
+
+def _install_directory(src: Path, dst: Path, is_dev_mode: bool) -> str:
+    """Install a directory by copying or symlinking.
+
+    Args:
+        src: Source directory path
+        dst: Destination directory path
+        is_dev_mode: If True, create symlink; if False, copy tree
+
+    Returns:
+        Action taken: "created", "updated", "symlinked", or "re-symlinked"
+    """
+    existed = dst.exists() or dst.is_symlink()
+
+    if existed:
+        if dst.is_symlink():
+            dst.unlink()
+        else:
+            shutil.rmtree(dst)
+
+    if is_dev_mode:
+        dst.symlink_to(src.resolve())
+        return "re-symlinked" if existed else "symlinked"
+    else:
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+        return "updated" if existed else "created"
+
+
+def _update_gitignore_for_dev_mode(target: Path) -> bool:
+    """Add tool-owned paths to .gitignore for dev mode.
+
+    Symlinks use absolute paths pointing to developer's local agentic-mbse
+    checkout. If committed to git, other developers would have broken symlinks.
+    This function adds tool-owned paths to .gitignore to prevent that.
+
+    Returns True if .gitignore was modified, False if paths already present.
+    """
+    gitignore_path = target / ".gitignore"
+
+    # Read existing content
+    existing_content = ""
+    if gitignore_path.exists():
+        existing_content = gitignore_path.read_text()
+
+    # Check if already has dev mode section (idempotent)
+    marker = DEV_MODE_GITIGNORE_PATHS[0]
+    if marker in existing_content:
+        return False
+
+    # Append dev mode paths
+    new_section = "\n" + "\n".join(DEV_MODE_GITIGNORE_PATHS) + "\n"
+    gitignore_path.write_text(existing_content.rstrip() + new_section)
+    return True
+
+
 # Load environment variables from .env file (for SYSIDE_LICENSE_KEY, etc.)
 load_dotenv()
 
@@ -216,10 +328,21 @@ def cmd_init(args: argparse.Namespace) -> int:
         print("Create the directory first, or specify a valid path.", file=sys.stderr)
         return EXIT_FAILURE
 
+    # Check dev mode prerequisites
+    is_dev_mode = getattr(args, "dev", False)
+    data_root = _get_data_root()
+
+    if is_dev_mode:
+        can_use, error_msg = _check_dev_mode_prerequisites(data_root)
+        if not can_use:
+            print(f"Error: {error_msg}", file=sys.stderr)
+            return EXIT_FAILURE
+
     # Track what happens for summary
-    created: list[str] = []   # New files (didn't exist before)
-    updated: list[str] = []   # Tool-owned files refreshed
-    skipped: list[str] = []   # User-owned files preserved
+    created: list[str] = []    # New files (didn't exist before)
+    updated: list[str] = []    # Tool-owned files refreshed
+    skipped: list[str] = []    # User-owned files preserved
+    symlinked: list[str] = []  # Dev mode symlinks
 
     # === Create .gitignore with standard Python ignores ===
     gitignore_path = target / ".gitignore"
@@ -320,9 +443,10 @@ Edit this file to add your domain-specific sources.
         src = source_commands / cmd
         dst = commands_dir / cmd
         if src.exists():
-            existed = dst.exists()
-            shutil.copy(src, dst)
-            if existed:
+            action = _install_file(src, dst, is_dev_mode)
+            if "symlink" in action:
+                symlinked.append(f".claude/commands/{cmd}")
+            elif action == "updated":
                 updated.append(f".claude/commands/{cmd}")
             else:
                 created.append(f".claude/commands/{cmd}")
@@ -337,15 +461,23 @@ Edit this file to add your domain-specific sources.
         src = source_agents / agent
         dst = agents_dir / agent
         if src.exists():
-            existed = dst.exists()
-            content = src.read_text()
-            content = content.replace("{SYSML_DOCS_PATH}", f"{docs_path}/sysmlv2")
-            content = content.replace("{SYSIDE_DOCS_PATH}", f"{docs_path}/syside")
-            dst.write_text(content)
-            if existed:
-                updated.append(f".claude/agents/{agent}")
+            if is_dev_mode:
+                # Symlink directly - placeholders remain in source
+                action = _install_file(src, dst, is_dev_mode=True)
+                symlinked.append(f".claude/agents/{agent}")
             else:
-                created.append(f".claude/agents/{agent}")
+                # Copy with placeholder substitution
+                existed = dst.exists() or dst.is_symlink()
+                if existed:
+                    dst.unlink()
+                content = src.read_text()
+                content = content.replace("{SYSML_DOCS_PATH}", f"{docs_path}/sysmlv2")
+                content = content.replace("{SYSIDE_DOCS_PATH}", f"{docs_path}/syside")
+                dst.write_text(content)
+                if existed:
+                    updated.append(f".claude/agents/{agent}")
+                else:
+                    created.append(f".claude/agents/{agent}")
 
     # === Install skills (TOOL-OWNED) ===
     skills_dir = target / ".claude" / "skills"
@@ -356,9 +488,10 @@ Edit this file to add your domain-specific sources.
         src = source_skills / skill
         dst = skills_dir / skill
         if src.exists() and src.is_dir():
-            existed = dst.exists()
-            shutil.copytree(src, dst, dirs_exist_ok=True)
-            if existed:
+            action = _install_directory(src, dst, is_dev_mode)
+            if "symlink" in action:
+                symlinked.append(f".claude/skills/{skill}/")
+            elif action == "updated":
                 updated.append(f".claude/skills/{skill}/")
             else:
                 created.append(f".claude/skills/{skill}/")
@@ -372,10 +505,13 @@ Edit this file to add your domain-specific sources.
         src = source_hooks / hook
         dst = hooks_dir / hook
         if src.exists():
-            existed = dst.exists()
-            shutil.copy(src, dst)
-            dst.chmod(src.stat().st_mode)
-            if existed:
+            action = _install_file(src, dst, is_dev_mode)
+            # Preserve execute permission (symlinks inherit from target)
+            if not is_dev_mode:
+                dst.chmod(src.stat().st_mode)
+            if "symlink" in action:
+                symlinked.append(f".claude/hooks/{hook}")
+            elif action == "updated":
                 updated.append(f".claude/hooks/{hook}")
             else:
                 created.append(f".claude/hooks/{hook}")
@@ -407,9 +543,10 @@ Edit this file to add your domain-specific sources.
         dst = target / dest_path
         dst.parent.mkdir(parents=True, exist_ok=True)
         if src.exists():
-            existed = dst.exists()
-            shutil.copy(src, dst)
-            if existed:
+            action = _install_file(src, dst, is_dev_mode)
+            if "symlink" in action:
+                symlinked.append(dest_path)
+            elif action == "updated":
                 updated.append(dest_path)
             else:
                 created.append(dest_path)
@@ -439,12 +576,25 @@ Edit this file to add your domain-specific sources.
         settings_path.write_text(json.dumps(settings, indent=2) + "\n")
         created.append(f".claude/settings.json ({len(permissions)} permissions)")
 
+    # === Update .gitignore for dev mode ===
+    if is_dev_mode:
+        if _update_gitignore_for_dev_mode(target):
+            updated.append(".gitignore (added dev mode paths)")
+
     # === Print summary ===
-    print(f"\nInitialized MBSE project in {target}")
+    if is_dev_mode:
+        print(f"\nInitialized MBSE project in {target} (dev mode)")
+    else:
+        print(f"\nInitialized MBSE project in {target}")
     print("")
 
+    if symlinked:
+        print(f"Symlinked ({len(symlinked)}) - dev mode, points to source:")
+        for item in symlinked:
+            print(f"  @ {item}")
+
     if created:
-        print(f"Created ({len(created)}):")
+        print(f"\nCreated ({len(created)}):")
         for item in created:
             print(f"  + {item}")
 
@@ -458,9 +608,9 @@ Edit this file to add your domain-specific sources.
         for item in skipped:
             print(f"  . {item}")
 
-    if not created and not updated:
+    if not created and not updated and not symlinked:
         print("Everything up to date.")
-    elif created or updated:
+    elif created or updated or symlinked:
         print("")
         print("Next steps:")
         print("  1. Run /onboard to configure your project and learn the workflow")
@@ -568,6 +718,11 @@ def main() -> int:
         "--force",
         action="store_true",
         help="Overwrite ALL files including user-owned ones (SOURCE_INDEX.md, OVERVIEW.md, settings.json, etc.)",
+    )
+    init_parser.add_argument(
+        "--dev",
+        action="store_true",
+        help="Development mode: symlink tool-owned files instead of copying (requires source checkout)",
     )
     init_parser.set_defaults(func=cmd_init)
 
