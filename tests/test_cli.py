@@ -134,7 +134,7 @@ class TestCmdInit:
         assert result == EXIT_SUCCESS
         agents_dir = tmp_path / ".claude" / "agents"
         assert agents_dir.exists()
-        assert (agents_dir / "sysmlv2-doc-analyzer.md").exists()
+        assert (agents_dir / "sysmlv2-validator.md").exists()
         assert (agents_dir / "python-debugger.md").exists()
 
     def test_creates_skills_directory(self, tmp_path):
@@ -163,13 +163,11 @@ class TestCmdInit:
         args = MockArgs(path=str(tmp_path), force=False)
         cmd_init(args)
 
-        agent_content = (tmp_path / ".claude" / "agents" / "sysmlv2-doc-analyzer.md").read_text()
+        agent_content = (tmp_path / ".claude" / "agents" / "syside-expert.md").read_text()
         # Should NOT contain placeholders (they should be substituted)
-        assert "{SYSML_DOCS_PATH}" not in agent_content
         assert "{SYSIDE_DOCS_PATH}" not in agent_content
         # Should contain new paths (absolute to package)
-        assert "/docs/sysmlv2/" in agent_content
-        assert "/docs/syside/" in agent_content
+        assert "/docs/syside" in agent_content
 
     def test_force_overwrites_agents(self, tmp_path):
         """--force flag overwrites existing agents."""
@@ -178,14 +176,14 @@ class TestCmdInit:
         cmd_init(args)
 
         # Modify an agent file
-        agent_path = tmp_path / ".claude" / "agents" / "sysmlv2-doc-analyzer.md"
+        agent_path = tmp_path / ".claude" / "agents" / "syside-expert.md"
         agent_path.write_text("modified content")
 
         # Second init with force
         args = MockArgs(path=str(tmp_path), force=True)
         cmd_init(args)
 
-        # Should be overwritten
+        # Should be overwritten (agents are tool-owned, always updated on re-init)
         assert "modified content" not in agent_path.read_text()
 
 
