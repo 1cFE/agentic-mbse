@@ -4,6 +4,118 @@ Historical record of completed work.
 
 ---
 
+## [2026-01-15] - ITEM-LEARNING-001: Agent Learning Feedback Loop
+
+**Type**: Item
+**Duration**: 1 day
+**Priority**: P1
+
+### Summary
+
+Created a lightweight system for agents to record insights when they discover solutions, building institutional memory that improves future agent performance.
+
+### Deliverables
+
+- `claude/skills/record-learning/SKILL.md` - Skill for capturing learnings
+- `project_templates/RAW_LEARNINGS.md.template` - Template for learnings storage
+- Updated `cmd_init()` to create `project/learnings/` directory
+
+### Key Features
+
+- User-invocable via `/record-learning` command
+- Agent can self-invoke when discovering noteworthy patterns
+- Requires user approval before recording (never autonomous)
+- Structured entry format: timestamp, category, problem, solution, generalization
+
+---
+
+## [2026-01-15] - ITEM-DEVMODE-001: Development Mode for Init
+
+**Type**: Item
+**Duration**: 1 day
+**Priority**: P1
+
+### Summary
+
+Added `--dev` flag to `agentic-mbse init` that creates symlinks for tool-owned files instead of copies, enabling bidirectional editing between agentic-mbse source and domain projects.
+
+### Deliverables
+
+- `--dev` CLI flag for init subcommand
+- Symlink creation for all tool-owned files (commands, agents, skills, hooks, templates)
+- Source checkout detection (errors if used with pip-installed package)
+- Platform detection (errors on Windows)
+- Auto-updates `.gitignore` with tool-owned paths
+
+### Lessons Learned
+
+- Symlinks must use absolute paths for reliability
+- Need to detect pip-installed vs source checkout via `__file__` inspection
+
+---
+
+## [2026-01-15] - ITEM-GUIDE-001: Progressive Disclosure Restructure
+
+**Type**: Item
+**Duration**: 1 day
+**Priority**: P1
+
+### Summary
+
+Restructured `MODELING_GUIDE.md.template` from 1,497 lines to 205 lines using progressive disclosure pattern. Detailed reference material extracted to 12 pattern docs in `docs/patterns/`.
+
+### Deliverables
+
+**Pattern Documents Created** (12 total):
+- `semantic-operators.md` (568 lines) - Assignment, redefinition, binding semantics
+- `syntax-reference.md` (364 lines) - 10 core syntax patterns
+- `mbse-concepts.md` (270 lines) - Allocation, parametric, cost patterns
+- `definitions-usages.md` (260 lines) - Core def vs usage principle
+- `expose-pattern.md` (287 lines) - The EXPOSE pattern for interfaces
+- `adr002-calculations.md` (241 lines) - Calculation architecture
+- `doc-comments.md` (298 lines) - Documentation standards
+- `package-naming.md` (251 lines) - Naming conventions
+- `common-mistakes.md` (353 lines) - Anti-patterns to avoid
+- `constraints.md` (291 lines) - Constraint expressions
+- `cross-file-binding.md` (297 lines) - Multi-file imports
+
+**Updated Files**:
+- `project_templates/MODELING_GUIDE.md.template` - Reduced from 1,497→205 lines
+- `docs/patterns/README.md` - Index of all 12 pattern docs
+
+### Lessons Learned
+
+- Progressive disclosure significantly improves readability
+- Extracting to separate pattern docs enables better discoverability via grep
+- Pattern docs are larger than source sections due to added structure (examples, common mistakes)
+
+---
+
+## [2026-01-13] - ITEM-BACKPORT-001: Backport fusion-tea Patterns
+
+**Type**: Item
+**Duration**: 0.5 days
+**Priority**: P1
+
+### Summary
+
+Backported validated modeling patterns from the fusion-tea domain project into agentic-mbse templates.
+
+### Deliverables
+
+Added to `MODELING_GUIDE.md.template`:
+- Cost Model Imports section (NumericalFunctions::sum)
+- Multiplicity Cost Aggregation Pattern
+- Part Redefinition Pattern (dot notation vs redefines)
+- Parameterized Multiplicity Pattern
+
+### Lessons Learned
+
+- Bidirectional sync between source and domain projects needs automation (→ ITEM-DEVMODE-001)
+- Validated patterns should flow from real usage, not theoretical design
+
+---
+
 ## [2026-01-13] - EPIC-DOC-001: Documentation Discoverability Overhaul
 
 **Type**: Epic
