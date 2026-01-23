@@ -805,8 +805,8 @@ A well-designed model specification should have:
 ## References
 
 - **models/README.md** - Directory structure and library reference
-- **project/MODELING_GUIDE.md** - SysMLv2 patterns and best practices
-- **project/OVERVIEW.md** - Project status and goals
+- **modeling_pm/MODELING_GUIDE.md** - SysMLv2 patterns and best practices
+- **modeling_pm/OVERVIEW.md** - Project status and goals
 - **SOURCE_INDEX.md** - Domain knowledge sources
 - **SysMLv2 Specification** - https://www.omg.org/spec/SysML
 

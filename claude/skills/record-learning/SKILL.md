@@ -47,7 +47,7 @@ Invoke this skill when you:
 
 4. **Get confirmation**: Use AskUserQuestion to let user approve/reject each
 
-5. **Record approved learnings**: Append to `project/learnings/RAW_LEARNINGS.md`
+5. **Record approved learnings**: Append to `modeling_pm/learnings/RAW_LEARNINGS.md`
 
 ### If Agent-Invoked (via Skill tool)
 
@@ -61,7 +61,7 @@ Invoke this skill when you:
    - Category and summary
    - "Should I record this learning?"
 
-4. **If approved**: Record to `project/learnings/RAW_LEARNINGS.md`
+4. **If approved**: Record to `modeling_pm/learnings/RAW_LEARNINGS.md`
 
 5. **If rejected**: Acknowledge and continue without recording
 
@@ -77,7 +77,7 @@ Invoke this skill when you:
 
 ## Entry Format
 
-Append entries to `project/learnings/RAW_LEARNINGS.md` using this format:
+Append entries to `modeling_pm/learnings/RAW_LEARNINGS.md` using this format:
 
 ```markdown
 ---
@@ -143,7 +143,7 @@ in expressions without an import statement.
 
 ## File Location
 
-- **Learnings file**: `project/learnings/RAW_LEARNINGS.md`
+- **Learnings file**: `modeling_pm/learnings/RAW_LEARNINGS.md`
 - **Create if missing**: Initialize with header template
 
 ## Guidelines

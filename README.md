@@ -26,7 +26,7 @@ This creates:
 - `.claude/commands/` - MBSE workflow commands (`/design-model`, `/implement-model`, etc.)
 - `.claude/agents/` - Specialized AI agents for SysML and documentation
 - `.claude/skills/` - Skills including `/record-learning` for capturing insights
-- `project/` - Project management structure (backlog, active work, learnings)
+- `modeling_pm/` - Project management structure (backlog, active work, learnings)
 - `SOURCE_INDEX.md` - Domain knowledge source configuration
 
 ### Learning Feedback Loop
@@ -44,7 +44,7 @@ This triggers reflection on the current conversation, identifying:
 - Workarounds implemented
 - Best practices identified
 
-Learnings are stored in `project/learnings/RAW_LEARNINGS.md` for later review and formalization into documentation.
+Learnings are stored in `modeling_pm/learnings/RAW_LEARNINGS.md` for later review and formalization into documentation.
 
 ## Development
 
@@ -72,4 +72,4 @@ python scripts/generate_index.py docs/sysmlv2/SysML_Spec_v2_Part1/
 # ... etc for each spec directory
 ```
 
-See `.project/backlog/epic_documentation-discoverability.md` for full documentation of the indexing approach.
+See `.modeling_pm/backlog/epic_documentation-discoverability.md` for full documentation of the indexing approach.

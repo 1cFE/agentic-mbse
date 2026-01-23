@@ -2,7 +2,7 @@
 
 **Purpose:** Manage work item lifecycle - add new items, clear completed work
 **Input:** Mode (add/clear) and optional source path
-**Output:** Updated `project/backlog/BACKLOG.md`, archived work in `project/completed/`
+**Output:** Updated `modeling_pm/backlog/BACKLOG.md`, archived work in `modeling_pm/completed/`
 
 ## Overview
 
@@ -24,7 +24,7 @@ When invoked:
 
 ### Stage 1: Gather Work Items
 
-**If source-path provided** (e.g., `/backlog add project/research/20260105-thermal-analysis.md`):
+**If source-path provided** (e.g., `/backlog add modeling_pm/research/20260105-thermal-analysis.md`):
 
 1. Read the research document at the specified path
 2. Extract work items from these sections (in order of priority):
@@ -58,7 +58,7 @@ When invoked:
 
 For each extracted/described work item:
 
-1. Read `project/backlog/BACKLOG.md`
+1. Read `modeling_pm/backlog/BACKLOG.md`
 2. Compare title against existing work items
 3. If title similarity >80% (fuzzy match):
    - Report potential duplicate
@@ -142,7 +142,7 @@ Added {N} work item(s) to backlog:
 **P1 (After P0)**:
 - WI-043: {Title}
 
-Backlog updated at: project/backlog/BACKLOG.md
+Backlog updated at: modeling_pm/backlog/BACKLOG.md
 
 Next steps:
 - Run `/spec-model {feature}` to start on a P0 item
@@ -157,9 +157,9 @@ Next steps:
 
 ### Stage 1: Scan Active Work
 
-1. List directories in `project/active/`:
+1. List directories in `modeling_pm/active/`:
    ```bash
-   ls -d project/active/*/
+   ls -d modeling_pm/active/*/
    ```
 
 2. For each feature directory, assess completion:
@@ -175,7 +175,7 @@ Next steps:
   ```
   Task(
     description="Assess {feature} completion",
-    prompt="Check if the feature in project/active/{feature}/ appears complete:
+    prompt="Check if the feature in modeling_pm/active/{feature}/ appears complete:
            1. Read any spec.md, design.md, plan.md files present
            2. Compare goals/scope against actual models in models/
            3. Report: COMPLETE, MOSTLY_COMPLETE (>80%), IN_PROGRESS, or NOT_STARTED
@@ -220,8 +220,8 @@ For each confirmed completion:
 
 1. **Archive feature directory:**
    ```bash
-   mkdir -p project/completed
-   mv project/active/{feature}/ project/completed/{YYYYMMDD}_{feature}/
+   mkdir -p modeling_pm/completed
+   mv modeling_pm/active/{feature}/ modeling_pm/completed/{YYYYMMDD}_{feature}/
    ```
 
 2. **Update BACKLOG.md:**
@@ -241,15 +241,15 @@ For each confirmed completion:
    **Source**: {original source}
 
    **Deliverables**:
-   - project/completed/20260105_{feature}/spec.md
-   - project/completed/20260105_{feature}/design.md
-   - project/completed/20260105_{feature}/plan.md
+   - modeling_pm/completed/20260105_{feature}/spec.md
+   - modeling_pm/completed/20260105_{feature}/design.md
+   - modeling_pm/completed/20260105_{feature}/plan.md
    - models/library/{relevant}/*.sysml
    - models/designs/{design}/{relevant}/*.sysml
    ```
 
 3. **Update OVERVIEW.md "Current Status" section:**
-   - Read `project/OVERVIEW.md`
+   - Read `modeling_pm/OVERVIEW.md`
    - Update "Completed Epics" list with completed feature
    - Update "Active Work Item" to next P0 item from backlog
    - Update "Next Up" to following P0/P1 item
@@ -262,8 +262,8 @@ Present summary to user:
 Backlog Cleared!
 
 **Archived:**
-- feature1 -> project/completed/20260105_feature1/
-- feature2 -> project/completed/20260105_feature2/
+- feature1 -> modeling_pm/completed/20260105_feature1/
+- feature2 -> modeling_pm/completed/20260105_feature2/
 
 **Backlog Updated:**
 - 2 items moved to "Recently Completed"
@@ -337,11 +337,11 @@ Never archive:
 - Create from template at `project_templates/BACKLOG.md.template`
 - Initialize with empty sections
 
-**If project/active/ doesn't exist:**
+**If modeling_pm/active/ doesn't exist:**
 - Create directory
 - Report "No active work found"
 
-**If project/completed/ doesn't exist:**
+**If modeling_pm/completed/ doesn't exist:**
 - Create directory when first archiving
 
 **If work item conflicts with existing:**

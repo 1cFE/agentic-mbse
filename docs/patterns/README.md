@@ -4,7 +4,7 @@ This directory contains reusable pattern documentation for SysML v2 modeling.
 
 ## Purpose
 
-Patterns provide definitive syntax references and usage guidance for common SysML v2 constructs. The `project/MODELING_GUIDE.md` provides quick-reference examples and links to these detailed pattern documents.
+Patterns provide definitive syntax references and usage guidance for common SysML v2 constructs. The `modeling_pm/MODELING_GUIDE.md` provides quick-reference examples and links to these detailed pattern documents.
 
 ## Available Patterns
 

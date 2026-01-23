@@ -9,7 +9,7 @@
 # What it does:
 # - Installs .claude/commands/, agents/, skills/, hooks/
 # - Creates .claude/settings.json with docs/ permissions
-# - Creates project/ structure with coffee maker test subject
+# - Creates modeling_pm/ structure with coffee maker test subject
 # - Creates SOURCE_INDEX.md from template
 #
 # What it does NOT do (library owns these):
@@ -106,29 +106,29 @@ EOF
 
 create_project_structure() {
     # Create directories
-    mkdir -p "$REPO_ROOT/project/backlog"
-    mkdir -p "$REPO_ROOT/project/active"
-    mkdir -p "$REPO_ROOT/project/research"
+    mkdir -p "$REPO_ROOT/modeling_pm/backlog"
+    mkdir -p "$REPO_ROOT/modeling_pm/active"
+    mkdir -p "$REPO_ROOT/modeling_pm/research"
     mkdir -p "$REPO_ROOT/models/library"
 
-    log_created "project/{backlog,active,research}/"
+    log_created "modeling_pm/{backlog,active,research}/"
     log_created "models/library/"
 
     # Copy methodology guides from templates
     cp "$REPO_ROOT/project_templates/MODELING_GUIDE.md.template" \
-       "$REPO_ROOT/project/MODELING_GUIDE.md"
-    log_created "project/MODELING_GUIDE.md"
+       "$REPO_ROOT/modeling_pm/MODELING_GUIDE.md"
+    log_created "modeling_pm/MODELING_GUIDE.md"
 
     cp "$REPO_ROOT/project_templates/MODELING_PROCESS.md.template" \
-       "$REPO_ROOT/project/MODELING_PROCESS.md"
-    log_created "project/MODELING_PROCESS.md"
+       "$REPO_ROOT/modeling_pm/MODELING_PROCESS.md"
+    log_created "modeling_pm/MODELING_PROCESS.md"
 
     # Create pre-filled OVERVIEW.md with coffee maker test subject
     create_overview_md
 }
 
 create_overview_md() {
-    cat > "$REPO_ROOT/project/OVERVIEW.md" << 'EOF'
+    cat > "$REPO_ROOT/modeling_pm/OVERVIEW.md" << 'EOF'
 # Project Overview
 
 **Project**: Coffee Maker Test Model
@@ -202,7 +202,7 @@ For SysML syntax and patterns, see [MODELING_GUIDE.md](MODELING_GUIDE.md).
 
 **Last Updated**: 2026-01-09
 EOF
-    log_created "project/OVERVIEW.md (coffee maker test subject)"
+    log_created "modeling_pm/OVERVIEW.md (coffee maker test subject)"
 }
 
 create_source_index() {
@@ -218,7 +218,7 @@ print_summary() {
     echo "================================"
     echo ""
     echo "Next steps:"
-    echo "  1. Review project/OVERVIEW.md for the test subject"
+    echo "  1. Review modeling_pm/OVERVIEW.md for the test subject"
     echo "  2. Run /spec-model coffee-maker-structure to start modeling"
     echo "  3. Or run /onboard for interactive configuration"
     echo ""

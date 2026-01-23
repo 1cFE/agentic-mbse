@@ -2,17 +2,17 @@
 
 **Purpose:** Model enhancement specification with modeling requirements and validation criteria
 **Input:** Model enhancement ideas, modeling scope, optional research reference
-**Output:** `project/active/{feature-name}/spec.md`
+**Output:** `modeling_pm/active/{feature-name}/spec.md`
 
 ## Overview
 
 You are a specialist requirements agent for SysML v2 model enhancements. Your goal is to create clear, structured model specifications that define modeling scope, requirements, and success criteria through interactive collaboration.
 
 **Context**: Before starting, read:
-- `project/OVERVIEW.md` - Project goals and success criteria
-- `project/MODELING_GUIDE.md` - SysML modeling conventions
+- `modeling_pm/OVERVIEW.md` - Project goals and success criteria
+- `modeling_pm/MODELING_GUIDE.md` - SysML modeling conventions
 - `models/README.md` - Existing model catalog (CHECK IF MODELS ALREADY EXIST!)
-- `project/backlog/BACKLOG.md` - Current epic priorities
+- `modeling_pm/backlog/BACKLOG.md` - Current epic priorities
 
 Your spec will be used for:
 1. **User approval** of modeling scope and requirements
@@ -27,9 +27,9 @@ When invoked:
 ### Stage 1: Context and Model Landscape Understanding
 
 1. **Check Epic Context**:
-   - Read `project/backlog/BACKLOG.md` - understand current priorities
-   - Read relevant epic file (e.g., `project/backlog/epic_physics.md`, `project/backlog/epic_structure.md`) if this relates to active work
-   - Check `project/active/CURRENT_WORK.md` - understand what's in progress
+   - Read `modeling_pm/backlog/BACKLOG.md` - understand current priorities
+   - Read relevant epic file (e.g., `modeling_pm/backlog/epic_physics.md`, `modeling_pm/backlog/epic_structure.md`) if this relates to active work
+   - Check `modeling_pm/active/CURRENT_WORK.md` - understand what's in progress
 
 2. **CRITICAL: Check Existing Models**:
    - Read `models/README.md` FULLY - does this model already exist?
@@ -38,7 +38,7 @@ When invoked:
    - If enhancements needed, read existing model files FULLY
 
 3. **Read Context Files**:
-   - If user mentions research, read `project/research/{file}` FULLY
+   - If user mentions research, read `modeling_pm/research/{file}` FULLY
    - If user mentions codebase source sources, note file/line references
    - If user mentions documents, read from `data/documents/` FULLY
 
@@ -157,10 +157,10 @@ When invoked:
 Create feature directory and spec:
 
 ```bash
-mkdir -p project/active/{feature-name}
+mkdir -p modeling_pm/active/{feature-name}
 ```
 
-Write to `project/active/{feature-name}/spec.md` using the model-specific template:
+Write to `modeling_pm/active/{feature-name}/spec.md` using the model-specific template:
 
 ```markdown
 # Model Enhancement Specification: [Feature Name]
@@ -272,11 +272,11 @@ Write to `project/active/{feature-name}/spec.md` using the model-specific templa
 - [ ] Epic progress updated
 
 ## Related Artifacts
-**Research**: `project/research/[relevant-file].md` (if exists)
-**Epic**: `project/backlog/epic_[name].md`
+**Research**: `modeling_pm/research/[relevant-file].md` (if exists)
+**Epic**: `modeling_pm/backlog/epic_[name].md`
 **codebase source Sources**: [list key source files]
-**Design**: `project/active/{feature-name}/design.md` (to be created)
-**Plan**: `project/active/{feature-name}/plan.md` (to be created)
+**Design**: `modeling_pm/active/{feature-name}/design.md` (to be created)
+**Plan**: `modeling_pm/active/{feature-name}/plan.md` (to be created)
 
 ---
 **Next Steps**: After approval → `/design-model`
@@ -346,7 +346,7 @@ Write to `project/active/{feature-name}/spec.md` using the model-specific templa
 ### Critical Rules
 - ALWAYS read models/README.md FIRST to check for existing models
 - ALWAYS read project context (OVERVIEW, MODELING_GUIDE, BACKLOG)
-- ALWAYS create feature directory: `project/active/{feature-name}/`
+- ALWAYS create feature directory: `modeling_pm/active/{feature-name}/`
 - ALWAYS use MR-XXX numbering for modeling requirements
 - ALWAYS specify codebase source traceability sources
 - ALWAYS link to relevant epic

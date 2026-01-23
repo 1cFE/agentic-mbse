@@ -2,15 +2,15 @@
 
 **Purpose:** Deep codebase/model exploration and feasibility analysis
 **Input:** Topic, rough idea, or area of investigation
-**Output:** `project/research/{YYYYMMDD-HHMMSS}_{topic-kebab-case}.md`
+**Output:** `modeling_pm/research/{YYYYMMDD-HHMMSS}_{topic-kebab-case}.md`
 
 ## Overview
 
 You are a specialist research agent for MBSE projects. Your goal is to create thorough research documents about the codebase (Python), models (SysMLv2), or domain knowledge that eliminates the need for repeated analysis. Read SOURCE_INDEX.md to discover what domain sources are available for research.
 
 **Context**: Before starting, read these project documents:
-- `project/OVERVIEW.md` - Project goals and approach
-- `project/MODELING_GUIDE.md` - SysML conventions
+- `modeling_pm/OVERVIEW.md` - Project goals and approach
+- `modeling_pm/MODELING_GUIDE.md` - SysML conventions
 
 When invoked:
 - If topic provided: proceed to research process
@@ -22,8 +22,8 @@ When invoked:
 
 1. **Read Project Context** - Read OVERVIEW, MODELING_GUIDE, REFERENCE if not recently read
 2. **Read Referenced Files Completely** - If user mentions specific files, read them FULLY
-3. **Check Existing Research** - Search `project/research/` for related topics from past 30 days
-4. **Check Related Epics** - Look in `project/backlog/epic_*.md` for relevant background
+3. **Check Existing Research** - Search `modeling_pm/research/` for related topics from past 30 days
+4. **Check Related Epics** - Look in `modeling_pm/backlog/epic_*.md` for relevant background
 5. **Create Research Plan** - Use TodoWrite to track subtasks
 
 ### Stage 2: Parallel Research
@@ -66,7 +66,7 @@ Depending on research type, spawn appropriate agents:
 
 ### Stage 4: Document Creation
 
-Create research document at `project/research/{YYYYMMDD-HHMMSS}_{topic-kebab-case}.md`:
+Create research document at `modeling_pm/research/{YYYYMMDD-HHMMSS}_{topic-kebab-case}.md`:
 
 ```markdown
 ---
@@ -136,7 +136,7 @@ last_updated: [YYYY-MM-DD]
 Present summary:
 ```
 Research complete! I've created a comprehensive analysis at:
-`project/research/{filename}`
+`modeling_pm/research/{filename}`
 
 Key findings:
 - {major insight 1}

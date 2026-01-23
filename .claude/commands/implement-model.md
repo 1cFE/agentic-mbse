@@ -1,7 +1,7 @@
 # Implement Model Command
 
 **Purpose:** Execute approved implementation plan for SysMLv2 models
-**Input:** `project/active/{feature-name}/plan.md`
+**Input:** `modeling_pm/active/{feature-name}/plan.md`
 **Output:** Model files, updated plan with progress
 
 ## Overview
@@ -23,8 +23,8 @@ You must follow this process! Make heavy usage of TODO tools to ensure you don't
 - **Plan phase** defined: refinement roadmap with phases
 - **Implementation phase** executes: refinements per plan
 
-1. **Read Plan**: `project/active/{feature-name}/plan.md` FULLY
-2. **Read Design for Prototype Context**: `project/active/{feature-name}/design.md`
+1. **Read Plan**: `modeling_pm/active/{feature-name}/plan.md` FULLY
+2. **Read Design for Prototype Context**: `modeling_pm/active/{feature-name}/design.md`
    - Check "Design Validation Report" section for prototype files created
    - Note validation status (Levels 1-3 should be passing)
    - Review any Level 4-7 issues to address
@@ -54,7 +54,7 @@ Read("plan.md")  # Yet again!
 
 ```python
 # Efficient - read once at start
-plan_full = Read("project/active/structure/plan.md")
+plan_full = Read("modeling_pm/active/structure/plan.md")
 
 # Extract only this phase (e.g., lines 450-580 for Phase 3)
 phase3_lines = plan_full.split('\n')[449:580]  # 0-indexed
@@ -71,7 +71,7 @@ phase3_content = '\n'.join(phase3_lines)
 Task(
     description="Extract Phase 3 details",
     prompt="""
-    Read project/active/structure/plan.md, extract Phase 3 section.
+    Read modeling_pm/active/structure/plan.md, extract Phase 3 section.
 
     Return condensed version with:
     - Codebase source line number mappings

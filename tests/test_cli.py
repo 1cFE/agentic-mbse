@@ -381,7 +381,7 @@ class TestCmdInitDevMode:
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
         cmd_init(args)
 
-        guide_path = tmp_path / "project" / "MODELING_GUIDE.md"
+        guide_path = tmp_path / "modeling_pm" / "MODELING_GUIDE.md"
         assert guide_path.is_symlink()
 
     def test_dev_copies_user_owned_files(self, tmp_path):
@@ -464,8 +464,8 @@ class TestCmdInitDevMode:
         assert ".claude/agents/" in content
         assert ".claude/skills/" in content
         assert ".claude/hooks/" in content
-        assert "project/MODELING_GUIDE.md" in content
-        assert "project/MODELING_PROCESS.md" in content
+        assert "modeling_pm/MODELING_GUIDE.md" in content
+        assert "modeling_pm/MODELING_PROCESS.md" in content
 
     def test_dev_gitignore_idempotent(self, tmp_path):
         """Running --dev twice doesn't duplicate .gitignore entries."""

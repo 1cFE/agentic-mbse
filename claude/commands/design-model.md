@@ -2,7 +2,7 @@
 
 **Purpose:** Semantic design document for SysMLv2 models (engineering-focused, not syntax-focused)
 **Input:** Spec document, domain source analysis (from SOURCE_INDEX.md), research findings, technical references
-**Output:** `project/active/{feature-name}/design.md`
+**Output:** `modeling_pm/active/{feature-name}/design.md`
 
 ## Overview
 
@@ -24,12 +24,12 @@ You are a specialist design agent for **SysMLv2 models**. Your goal is to create
 
 **Context**: Before starting, read:
 - **`models/README.md`** - **CRITICAL**: Directory structure, library overview, common patterns
-- **`project/MODELING_PROCESS.md`** - **CRITICAL**: Structured 3-phase design workflow
-- `project/OVERVIEW.md` - Project goals and status
-- `project/MODELING_GUIDE.md` - Definitions vs usages, naming, patterns
-- `project/sysmlv2_fusion_modeling_specification.md` - Detailed requirements
-- Feature spec: `project/active/{feature-name}/spec.md`
-- Related research: `project/research/{relevant}.md` (if exists)
+- **`modeling_pm/MODELING_PROCESS.md`** - **CRITICAL**: Structured 3-phase design workflow
+- `modeling_pm/OVERVIEW.md` - Project goals and status
+- `modeling_pm/MODELING_GUIDE.md` - Definitions vs usages, naming, patterns
+- `modeling_pm/sysmlv2_fusion_modeling_specification.md` - Detailed requirements
+- Feature spec: `modeling_pm/active/{feature-name}/spec.md`
+- Related research: `modeling_pm/research/{relevant}.md` (if exists)
 
 Your design will be used for:
 1. **User sign-off** on semantic modeling approach
@@ -38,7 +38,7 @@ Your design will be used for:
 
 When invoked:
 - If feature name provided: proceed to design process
-- If no feature: ask for feature name in `project/active/` to design
+- If no feature: ask for feature name in `modeling_pm/active/` to design
 
 ## Design Algorithm
 
@@ -135,7 +135,7 @@ cat models/README.md
 
 **Impact**: Reading this file first can save 30% of design time by immediately identifying reusable components.
 
-### 2. Review project/MODELING_PROCESS.md
+### 2. Review modeling_pm/MODELING_PROCESS.md
 
 **Purpose**: Follow the structured 3-phase workflow.
 
@@ -150,7 +150,7 @@ This design-model command implements the process defined in MODELING_PROCESS.md:
 
 ```markdown
 ☐ models/README.md read and understood
-☐ Feature spec exists at project/active/{feature-name}/spec.md
+☐ Feature spec exists at modeling_pm/active/{feature-name}/spec.md
 ☐ This is a MODELS feature (not CODE)
 ☐ SOURCE_INDEX.md exists (or will be created with template)
 ☐ Ready to launch discovery agents based on index contents
@@ -170,10 +170,10 @@ If any prerequisites missing, STOP and request clarification.
    - Read MODELING_GUIDE - understand definitions vs usages pattern **thoroughly**
    - Read MODELING_PROCESS - understand MBSE methodology and workflow
    - Read specification for detailed modeling requirements
-   - Read `project/active/{feature-name}/spec.md` FULLY
+   - Read `modeling_pm/active/{feature-name}/spec.md` FULLY
    - Verify this is a MODELS feature (not CODE)
 
-2. **Create Initial Design File** at `project/active/{feature-name}/design.md`:
+2. **Create Initial Design File** at `modeling_pm/active/{feature-name}/design.md`:
    - Add header (feature name, type, status, dates)
    - Add overview section (1-2 sentence summary)
    - Add "Related Artifacts" section with links
@@ -348,7 +348,7 @@ Use WebSearch for:
 
 ### 4. Review Related Documentation
 
-- Check `project/research/` for relevant domain knowledge
+- Check `modeling_pm/research/` for relevant domain knowledge
 - Check `data/documents/synthesis/` for existing technical summaries
 - Check `data/traceability_matrix.csv` for related elements
 
@@ -768,7 +768,7 @@ agentic-mbse validate models/ --level 6
 
 **Present to User**:
 
-1. **Design Document**: `project/active/{feature-name}/design.md` (complete)
+1. **Design Document**: `modeling_pm/active/{feature-name}/design.md` (complete)
 
 2. **Validation Report**: (from Stage 6)
    - Quality check results (Levels 1-7)
@@ -812,7 +812,7 @@ Add to design.md:
 
 ---
 
-**Final design document structure** at `project/active/{feature-name}/design.md`:
+**Final design document structure** at `modeling_pm/active/{feature-name}/design.md`:
 
 ```markdown
 # Design: [Feature Name] (MODELS)
@@ -827,9 +827,9 @@ Add to design.md:
 [1-2 sentence summary of what models are being created]
 
 ### Related Artifacts
-- **Spec:** `project/active/{feature-name}/spec.md`
-- **Research:** `project/research/[file].md` (if exists)
-- **Epic:** `project/backlog/epic_[name].md`
+- **Spec:** `modeling_pm/active/{feature-name}/spec.md`
+- **Research:** `modeling_pm/research/[file].md` (if exists)
+- **Epic:** `modeling_pm/backlog/epic_[name].md`
 - **Technical References:** `data/documents/[relevant papers]`
 
 ## Current Model State
@@ -962,7 +962,7 @@ calc def 'Calculation Name' {
 
 **If your design involves cross-file attribute references, document them here:**
 
-**Pattern**: See `models/README.md` and `project/MODELING_PROCESS.md` for cross-file binding patterns.
+**Pattern**: See `models/README.md` and `modeling_pm/MODELING_PROCESS.md` for cross-file binding patterns.
 
 | Calc Input | Source File | Source Attribute | Notes |
 |------------|-------------|------------------|-------|
@@ -1332,9 +1332,9 @@ Use specialized agents based on question type:
 
 **Related Documentation:**
 - **models/README.md** - Directory structure, library reference, common patterns
-- **project/MODELING_PROCESS.md** - Structured 3-phase design workflow (Discovery → Architecture → Specification)
-- **project/MODELING_GUIDE.md** - SysMLv2 patterns and best practices
-- **project/OVERVIEW.md** - Four integrated views architecture
+- **modeling_pm/MODELING_PROCESS.md** - Structured 3-phase design workflow (Discovery → Architecture → Specification)
+- **modeling_pm/MODELING_GUIDE.md** - SysMLv2 patterns and best practices
+- **modeling_pm/OVERVIEW.md** - Four integrated views architecture
 
 **Workflow Notes:**
 - Design phase produces: design.md + working prototype + validation report (Stages 6-8)

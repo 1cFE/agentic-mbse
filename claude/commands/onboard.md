@@ -233,11 +233,11 @@ Use the template at `project_templates/README.md.template`, filling in placehold
 
 **Example PROJECT_STRUCTURE replacement:**
 ```
-project/
+modeling_pm/
 ├── models/                  # SysML v2 model files
 │   ├── library/             # Reusable definitions
 │   └── designs/             # Specific system instances
-├── project/                 # Project documentation
+├── modeling_pm/                 # Project documentation
 ├── SOURCE_INDEX.md          # Domain knowledge sources
 ├── CLAUDE.md                # Context for Claude Code
 └── README.md                # This file
@@ -434,11 +434,11 @@ Use `/design-model {feature}` to start creating models.
 
 ### 3.5 Update Project Templates
 
-The `agentic-mbse init` command created template files in `project/` with `<!-- placeholder -->` comments. Update these files with content from the user's answers:
+The `agentic-mbse init` command created template files in `modeling_pm/` with `<!-- placeholder -->` comments. Update these files with content from the user's answers:
 
-**Check if project/ files exist.** If they do, update them:
+**Check if modeling_pm/ files exist.** If they do, update them:
 
-#### Update project/OVERVIEW.md
+#### Update modeling_pm/OVERVIEW.md
 
 Find and replace these placeholders with user's answers:
 
@@ -456,7 +456,7 @@ Find and replace these placeholders with user's answers:
 | `<!-- What's next -->` | "Run /spec-model to define first feature" |
 | `<!-- Name -->` (Project Owner) | User's name if known, or leave as placeholder |
 
-#### Update project/BACKLOG.md
+#### Update modeling_pm/BACKLOG.md
 
 | Placeholder | Replace With |
 |-------------|--------------|
@@ -469,15 +469,15 @@ Find and replace these placeholders with user's answers:
 - If design optimization: "Define design parameters", "Model constraints", "Create parameter sweep"
 - If requirements traceability: "Define requirements", "Model system structure", "Create traceability links"
 
-#### project/MODELING_GUIDE.md and project/MODELING_PROCESS.md
+#### modeling_pm/MODELING_GUIDE.md and modeling_pm/MODELING_PROCESS.md
 
 These files are methodology guides and don't need user-specific updates. Leave as-is - they provide the SysML v2 syntax patterns (MODELING_GUIDE) and design workflow (MODELING_PROCESS) guidance users need.
 
 **After updating files**, tell the user:
 
 > I've updated the project documentation files with your project context:
-> - `project/OVERVIEW.md` - Project overview with your system and goals
-> - `project/backlog/BACKLOG.md` - Initial work backlog
+> - `modeling_pm/OVERVIEW.md` - Project overview with your system and goals
+> - `modeling_pm/backlog/BACKLOG.md` - Initial work backlog
 >
 > Review these files and customize further as needed.
 
@@ -499,10 +499,10 @@ Present this summary to the user:
 - **CLAUDE.md** - Domain context for Claude Code
 - **SOURCE_INDEX.md** - {N} reference sources configured (or "guidance for adding sources")
 - **models/** - Directory structure for SysML models
-- **project/OVERVIEW.md** - Project overview (updated with your context)
-- **project/BACKLOG.md** - Work backlog (updated with initial tasks)
-- **project/MODELING_GUIDE.md** - SysML v2 syntax patterns guide
-- **project/MODELING_PROCESS.md** - MBSE workflow and methodology guide
+- **modeling_pm/OVERVIEW.md** - Project overview (updated with your context)
+- **modeling_pm/BACKLOG.md** - Work backlog (updated with initial tasks)
+- **modeling_pm/MODELING_GUIDE.md** - SysML v2 syntax patterns guide
+- **modeling_pm/MODELING_PROCESS.md** - MBSE workflow and methodology guide
 
 ### Review Your Changes
 

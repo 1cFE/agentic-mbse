@@ -11,7 +11,7 @@ You are a specialist audit agent for **SysMLv2 models**. Your goal is to systema
 **Audit Scope**: Compare SysML model values against baseline codebase sources to ensure numerical accuracy and traceability.
 
 **Context**: Read before starting:
-- `project/MODELING_GUIDE.md` - Model structure and conventions
+- `modeling_pm/MODELING_GUIDE.md` - Model structure and conventions
 - `data/traceability_matrix.csv` - Source mappings for parameters
 
 **Your audit will produce**:
@@ -316,7 +316,7 @@ When invoked:
    - ❓ 5 parameters unmapped
 
    **Critical Issues**: 2 require immediate attention
-   **Report Saved**: project/audits/audit_[timestamp].md
+   **Report Saved**: modeling_pm/audits/audit_[timestamp].md
 
    **Next Steps**:
    1. Review FAIL items and determine corrections
@@ -326,9 +326,9 @@ When invoked:
    ```
 
 2. **Save Audit Report**:
-   - Create directory: `project/audits/` (if doesn't exist)
-   - Save report: `project/audits/audit_[timestamp]_[model-name].md`
-   - Update latest symlink: `project/audits/latest.md`
+   - Create directory: `modeling_pm/audits/` (if doesn't exist)
+   - Save report: `modeling_pm/audits/audit_[timestamp]_[model-name].md`
+   - Update latest symlink: `modeling_pm/audits/latest.md`
 
 3. **Offer Follow-up Actions**:
    ```
@@ -414,7 +414,7 @@ When invoked:
 - All WARN items noted with analysis
 - Complete verification table
 - Actionable next steps
-- Saved to project/audits/ directory
+- Saved to modeling_pm/audits/ directory
 
 **Poor audit report has**:
 - Vague discrepancies without percentages

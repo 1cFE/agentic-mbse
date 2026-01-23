@@ -52,7 +52,7 @@ python .claude/skills/python-debugger/scripts/claude_debugger.py script.py -b 10
 When you need to create a new script to reproduce or isolate a bug, **always create it in**:
 
 ```
-project/agent_debug_scripts/
+modeling_pm/agent_debug_scripts/
 ```
 
 **Naming convention:**
@@ -84,7 +84,7 @@ print(f"Result: {result}")  # Expect 0 if typo is the cause
 
 **Then debug it:**
 ```bash
-source .venv/bin/activate && PYTHONPATH=/home/reid/my_project python .claude/skills/python-debugger/scripts/claude_debugger.py project/agent_debug_scripts/debug_power_calc_zero_return.py --trace-exceptions
+source .venv/bin/activate && PYTHONPATH=/home/reid/my_project python .claude/skills/python-debugger/scripts/claude_debugger.py modeling_pm/agent_debug_scripts/debug_power_calc_zero_return.py --trace-exceptions
 ```
 
 **Always report scripts created:** In your summary, list any debug scripts you created with their full path. The main agent will document these, and the user can use them to verify findings or understand the issue better.
@@ -156,7 +156,7 @@ Look for:
 - `path/to/script.py` (lines 35-50)
 
 **Debug Scripts Created:**
-- `project/agent_debug_scripts/debug_xxx.py` - [purpose]
+- `modeling_pm/agent_debug_scripts/debug_xxx.py` - [purpose]
 ```
 
 ## Response Guidelines
@@ -231,7 +231,7 @@ File `power_calc.py`, line 87:
 - `my_package/inputs/physics_params.json` (efficiency key)
 
 **Debug Scripts Created:**
-- `project/agent_debug_scripts/debug_power_calc_zero_return.py` - minimal repro with typo test
+- `modeling_pm/agent_debug_scripts/debug_power_calc_zero_return.py` - minimal repro with typo test
 ```
 
 This summary is what the main agent needs - actionable, specific, and preserves context.

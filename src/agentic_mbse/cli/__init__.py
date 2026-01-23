@@ -50,14 +50,14 @@ MBSE_HOOKS = [
 # - TOOL_OWNED: Auto-updated on every init (tool manages these)
 USER_OWNED_TEMPLATES = [
     ("README.md.template", "README.md"),
-    ("OVERVIEW.md.template", "project/OVERVIEW.md"),
-    ("BACKLOG.md.template", "project/backlog/BACKLOG.md"),
-    ("RAW_LEARNINGS.md.template", "project/learnings/RAW_LEARNINGS.md"),
+    ("OVERVIEW.md.template", "modeling_pm/OVERVIEW.md"),
+    ("BACKLOG.md.template", "modeling_pm/backlog/BACKLOG.md"),
+    ("RAW_LEARNINGS.md.template", "modeling_pm/learnings/RAW_LEARNINGS.md"),
 ]
 
 TOOL_OWNED_TEMPLATES = [
-    ("MODELING_GUIDE.md.template", "project/MODELING_GUIDE.md"),
-    ("MODELING_PROCESS.md.template", "project/MODELING_PROCESS.md"),
+    ("MODELING_GUIDE.md.template", "modeling_pm/MODELING_GUIDE.md"),
+    ("MODELING_PROCESS.md.template", "modeling_pm/MODELING_PROCESS.md"),
 ]
 
 # Combined for backwards compatibility
@@ -70,8 +70,8 @@ DEV_MODE_GITIGNORE_PATHS = [
     ".claude/agents/",
     ".claude/skills/",
     ".claude/hooks/",
-    "project/MODELING_GUIDE.md",
-    "project/MODELING_PROCESS.md",
+    "modeling_pm/MODELING_GUIDE.md",
+    "modeling_pm/MODELING_PROCESS.md",
 ]
 
 
@@ -316,7 +316,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     - .claude/skills/ with skills [tool-owned]
     - .claude/hooks/ with hooks [tool-owned]
     - .claude/settings.json with read permissions [user-owned]
-    - project/ structure with templates [mixed ownership]
+    - modeling_pm/ structure with templates [mixed ownership]
 
     File ownership behavior:
     - Tool-owned files are always updated (to get latest versions)
@@ -519,13 +519,13 @@ Edit this file to add your domain-specific sources.
             else:
                 created.append(f".claude/hooks/{hook}")
 
-    # === Create project/ structure ===
-    project_dir = target / "project"
-    project_dir.mkdir(parents=True, exist_ok=True)
-    (project_dir / "backlog").mkdir(exist_ok=True)
-    (project_dir / "active").mkdir(exist_ok=True)
-    (project_dir / "research").mkdir(exist_ok=True)
-    (project_dir / "learnings").mkdir(exist_ok=True)
+    # === Create modeling_pm/ structure ===
+    modeling_pm_dir = target / "modeling_pm"
+    modeling_pm_dir.mkdir(parents=True, exist_ok=True)
+    (modeling_pm_dir / "backlog").mkdir(exist_ok=True)
+    (modeling_pm_dir / "active").mkdir(exist_ok=True)
+    (modeling_pm_dir / "research").mkdir(exist_ok=True)
+    (modeling_pm_dir / "learnings").mkdir(exist_ok=True)
 
     templates_dir = get_project_templates_dir()
 
