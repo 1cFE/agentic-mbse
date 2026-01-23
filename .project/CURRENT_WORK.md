@@ -6,16 +6,19 @@
 
 ## Active Work
 
-### ITEM-REGTEST-001: Model Regression Testing
-
-**Status**: In Progress (spec drafted)
-**Location**: `.project/active/model-regression-testing/`
-
-Building pytest-compatible testing infrastructure for SysML models. When library definitions change, tests reveal if existing designs break.
+*No active work items*
 
 ---
 
 ## Recently Completed
+
+### 2026-01-23: ITEM-SYMLINK-001 Tool-Owned File Safety
+
+Added hash-based modification detection for tool-owned files. Re-running `init` now warns before overwriting local modifications, with options to skip, backup, or overwrite. Also added `LOCAL_GUIDE.md` template for project-specific customizations.
+
+### 2026-01-23: ITEM-REGTEST-001 Model Regression Testing
+
+Added pytest-compatible testing infrastructure for SysML models. `agentic-mbse init` creates `tests/models/` with example tests. Updated spec/plan/implement commands to include test phases. Validated end-to-end in fusion-tea.
 
 ### 2026-01-23: ITEM-RENAME-001 Rename `project/` to `modeling_pm/`
 
@@ -41,9 +44,9 @@ Restructured MODELING_GUIDE.md.template from 1,497 lines to 205 lines using prog
 
 ## Up Next
 
-1. Complete model-regression-testing item (needs design and implementation)
-2. Review external work tracking (LCOE costing, Visualization in fusion-tea)
-3. Investigate symlink scope for tool-owned files (ITEM-SYMLINK-001)
+1. Review external work tracking (LCOE costing, Visualization in fusion-tea)
+2. Example Store for Modeling Agents (ITEM-EXAMPLES-001)
+3. PDF Extraction Header Consistency (TASK-PDF-001)
 
 ---
 
@@ -54,3 +57,5 @@ Restructured MODELING_GUIDE.md.template from 1,497 lines to 205 lines using prog
 - Archived `project-rename` and `syside-084-upgrade` from active to completed
 - Added tracking items for external work in fusion-tea (LCOE, Visualization)
 - Added investigation item for symlink scope (related to fusion-tea overwrite issue)
+- Completed and archived ITEM-REGTEST-001 (Model Regression Testing) - 4 phases
+- Completed and archived ITEM-SYMLINK-001 (Tool-Owned File Safety) - 5 phases

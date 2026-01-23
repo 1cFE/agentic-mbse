@@ -4,6 +4,87 @@ Historical record of completed work.
 
 ---
 
+## [2026-01-23] - ITEM-SYMLINK-001: Tool-Owned File Safety
+
+**Type**: Item
+**Duration**: 1 day
+**Priority**: P2
+
+### Summary
+
+Added hash-based modification detection for tool-owned files. Re-running `agentic-mbse init` now warns users before overwriting files that have local modifications, offering options to skip, backup, or overwrite. Also added `LOCAL_GUIDE.md` template for project-specific customizations that won't be touched by init.
+
+### Deliverables
+
+**Phase 1 - Hash Utilities + LOCAL_GUIDE.md**:
+- Added `_compute_file_hash()`, `_load_tool_hashes()`, `_save_tool_hashes()` functions
+- Created `project_templates/LOCAL_GUIDE.md.template` (user-owned)
+- Added reference from MODELING_GUIDE.md to LOCAL_GUIDE.md
+
+**Phase 2 - Modification Detection + Backup**:
+- Added `_check_modification()` function comparing current hash to stored hash
+- Added `_backup_file()` function with collision handling (.backup, .backup.1, etc.)
+
+**Phase 3 - User Prompts + Install Function**:
+- Added `_prompt_for_modified_file()` with options: skip, backup, overwrite, skip_all, overwrite_all
+- Added `_install_file_with_hash()` function returning (action, hash) tuples
+
+**Phase 4 - Integration**:
+- Integrated modification detection into `cmd_init()`
+- Hash file (`.claude/.tool-hashes.json`) created on normal init, skipped in dev mode
+- Added `backed_up` tracking in summary output
+
+**Phase 5 - Verification**:
+- Audited fusion-tea content (all 4 patterns found in docs/patterns/)
+- 70 tests passing
+
+### Lessons Learned
+
+- Hash-based detection is simpler than marker comments or template comparison
+- User prompt flow with skip_all/overwrite_all improves UX for multiple files
+- Dev mode intentionally skips hashes since files are symlinks
+
+---
+
+## [2026-01-23] - ITEM-REGTEST-001: Model Regression Testing
+
+**Type**: Item
+**Duration**: 1 day
+**Priority**: P1
+
+### Summary
+
+Added pytest-compatible testing infrastructure for SysML models. When library definitions change, running `pytest tests/models/` reveals if existing designs break. The spec/plan/implement workflow now naturally produces tested models.
+
+### Deliverables
+
+**Phase 1 - CLI + Templates**:
+- `agentic-mbse init` creates `tests/models/` directory
+- Created `project_templates/test_models_example.py.template` with syside usage examples
+- Created `project_templates/conftest.py.template` with `load_sysml()` fixture
+
+**Phase 2 - Documentation**:
+- Added "Model Regression Testing" section to `MODELING_GUIDE.md.template`
+- Explains library/usage regression risk and testing paradigm
+
+**Phase 3 - MBSE Commands**:
+- Updated `spec-model.md` with evaluatable success criteria guidance
+- Updated `plan-model.md` with test phase pattern and examples
+- Updated `implement-model.md` with regression testing section and pytest checklist
+
+**Phase 4 - Target Repo Validation**:
+- Validated end-to-end in fusion-tea
+- Fixed template API mismatch (syside `Diagnostics` iteration)
+- Tests correctly detected real model issue (unresolved reference)
+
+### Lessons Learned
+
+- Template tests should use `pytest.skip()` for graceful handling of missing models
+- syside `Diagnostics` requires accessing `.parser` and `.sema` properties, not direct iteration
+- Real-world validation (Phase 4) caught issues unit tests missed
+
+---
+
 ## [2026-01-23] - ITEM-RENAME-001: Rename `project/` to `modeling_pm/`
 
 **Type**: Item

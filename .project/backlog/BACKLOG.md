@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-01-23 (ITEM-RENAME-001 and syside upgrade complete; added LCOE, Visualization, Symlink epics)
+**Last Updated**: 2026-01-23 (ITEM-REGTEST-001 and ITEM-SYMLINK-001 complete)
 
 ---
 
@@ -17,13 +17,7 @@ Prioritized list of epics and features.
 
 ## In Progress
 
-### [ITEM-REGTEST-001] Model Regression Testing
-
-**Priority**: P1
-**Effort**: 1-2 days
-**Status**: In Progress
-
-Active spec at `.project/active/model-regression-testing/spec.md`. Building pytest-compatible testing infrastructure for SysML models to detect when library changes break downstream designs.
+*No items in progress*
 
 ---
 
@@ -151,35 +145,6 @@ Active spec at `.project/active/model-regression-testing/spec.md`. Building pyte
 
 ---
 
-### [ITEM-SYMLINK-001] Investigate Symlinking All Tool-Owned Files
-
-**Priority**: P2
-**Effort**: 2-4 hours
-**Status**: Ready
-
-**Problem**: When re-running `agentic-mbse init` on a target repo, tool-owned files get **copied**, which can overwrite local modifications. This happened with fusion-tea - commit d2c71b85 had local additions to epic files that were lost.
-
-**Current behavior**:
-- `--dev` flag: symlinks commands/agents/skills/hooks (Claude integration)
-- Regular init: copies everything (commands, agents, templates)
-- Tool-owned templates (MODELING_GUIDE.md, MODELING_PROCESS.md) are copied, not symlinked
-
-**Questions to investigate**:
-1. Should ALL tool-owned files be symlinked in `--dev` mode? Currently only Claude integration files are symlinked.
-2. What about non-dev mode? Could we detect "local modifications" and warn before overwriting?
-3. Are there files that should NEVER be symlinked (e.g., user-editable configs)?
-
-**Risk mitigation**:
-- Before running init on fusion-tea again, need to recover d2c71b85 changes manually
-- Consider adding `--dry-run` flag to preview what would be changed
-
-**Success criteria**:
-- [ ] Clear documentation of which files are symlinked vs copied in each mode
-- [ ] Decision on whether to expand symlink scope in `--dev` mode
-- [ ] Optional: warning when about to overwrite modified tool-owned files
-
----
-
 ## P3 - Low Priority
 
 *No epics yet*
@@ -197,6 +162,8 @@ Active spec at `.project/active/model-regression-testing/spec.md`. Building pyte
 | ITEM-LEARNING-001: Learning Feedback Loop | 2026-01-15 | 1 day | `/record-learning` skill + RAW_LEARNINGS.md template |
 | ITEM-SYSIDE-001: SysIDE v0.8.4 Upgrade | 2026-01-16 | 0.5 days | CLI + Python package + versioned docs with compatibility symlinks |
 | ITEM-RENAME-001: Rename `project/` to `modeling_pm/` | 2026-01-23 | 1 day | CLI, templates, commands, agents all updated; 4-phase implementation |
+| ITEM-REGTEST-001: Model Regression Testing | 2026-01-23 | 1 day | pytest infrastructure for SysML models; tests/models/ + command updates |
+| ITEM-SYMLINK-001: Tool-Owned File Safety | 2026-01-23 | 1 day | Hash-based modification detection; LOCAL_GUIDE.md template |
 
 ---
 
