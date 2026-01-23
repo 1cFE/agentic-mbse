@@ -116,7 +116,38 @@ When invoked:
    - **Quality Success**: Parse checks (Level 1-3), documentation complete
    - **Validation Success**: codebase source comparison targets, constraint satisfaction
 
-4. **Present requirements**:
+4. **Define Evaluatable Success Criteria**:
+
+   Success criteria should be **both human-readable AND machine-checkable** where possible.
+   This enables automated regression testing via `pytest tests/models/`.
+
+   **Pattern:** For each key requirement, specify:
+   - **Human description**: What should be true
+   - **Verification method**: Manual review OR automated test
+   - **Test assertion** (if automatable): Specific programmatic check
+
+   **Examples:**
+
+   | Requirement | Human Description | Test Assertion |
+   |-------------|-------------------|----------------|
+   | Definition exists | Library has Motor part definition | `"Motor" in [p.name for p in model.elements(PartDefinition)]` |
+   | Calculation works | System computes total mass | `mass_calc is not None and mass_calc.result is not None` |
+   | Units consistency | All mass attrs use kg | `all(a.unit == "kg" for a in mass_attrs)` |
+   | No parse errors | Model files parse cleanly | `len([d for d in diagnostics if d.severity == Error]) == 0` |
+
+5. **Regression Safety Criteria** (for library modifications):
+
+   When modifying existing library definitions, specify:
+   - Which existing designs depend on this library (check `models/designs/` imports)
+   - What interfaces must remain stable (ports, attributes, types)
+   - Minimum test coverage required before proceeding
+
+   **Example:**
+   > Motor definition is used by designs/tokamak_v1 and designs/prototype.
+   > Interface stability: `torque` output port type and direction must not change.
+   > Test coverage: `tests/models/test_actuators.py::test_motor_interface` must pass.
+
+6. **Present requirements**:
    ```
    Here are the modeling requirements:
 
@@ -150,7 +181,7 @@ When invoked:
    Are these requirements specific enough? Missing anything?
    ```
 
-5. **Iterate until user approves** all requirements
+7. **Iterate until user approves** all requirements
 
 ### Stage 4: Document Creation
 

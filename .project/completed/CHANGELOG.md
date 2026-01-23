@@ -4,6 +4,74 @@ Historical record of completed work.
 
 ---
 
+## [2026-01-23] - ITEM-RENAME-001: Rename `project/` to `modeling_pm/`
+
+**Type**: Item
+**Duration**: 1 day
+**Priority**: P1
+
+### Summary
+
+Renamed the modeling project management directory from `project/` to `modeling_pm/` for clearer semantic distinction. The old name was ambiguous with `.project/` (tool development).
+
+### Deliverables
+
+**Phase 1 - Core Code**:
+- Updated `src/agentic_mbse/cli/__init__.py` - All template paths and comments
+- Updated `scripts/replicate_setup.sh` - Directory creation and user instructions
+- Updated `tests/test_cli.py` - Test expectations for new paths
+
+**Phase 2 - Documentation & Templates**:
+- Updated `CLAUDE.md` - Directory clarification table
+- Updated all 4 project templates with new path references
+
+**Phase 3 - Claude Commands** (8 files):
+- `research.md`, `onboard.md`, `audit-models.md`, `backlog.md`
+- `design-model.md`, `plan-model.md`, `implement-model.md`, `spec-model.md`
+
+**Phase 4 - Agents & Physical Rename**:
+- Updated `python-debugger.md` agent
+- `git mv project/ modeling_pm/`
+- Updated additional discovered files (README.md, record-learning skill, docs/patterns/)
+
+### Lessons Learned
+
+- Comprehensive grep before starting revealed scope accurately
+- `replace_all` edit mode efficient for systematic string replacement
+- Need to check both `claude/` (source) and `.claude/` (installed copies) directories
+
+---
+
+## [2026-01-16] - ITEM-SYSIDE-001: SysIDE v0.8.4 Upgrade
+
+**Type**: Item
+**Duration**: 0.5 days
+**Priority**: Maintenance
+
+### Summary
+
+Upgraded syside tooling (CLI, Python package, documentation) from v0.8.1 to v0.8.4. Created versioned documentation structure with compatibility symlinks for existing agent paths.
+
+### Deliverables
+
+**CLI & Package**:
+- Extracted `syside-0.8.4-x86_64-linux-glibc.tar.xz` to `~/.local/`
+- Updated `pyproject.toml` dependency from `>=0.8.1` to `>=0.8.4`
+
+**Documentation**:
+- Reorganized existing docs into `docs/syside/v0.8.1/`
+- Scraped 348 new files to `docs/syside/python/v0.8.4/`
+- Created compatibility symlinks (`api/` → `python/v0.8.4/`)
+- Added `docs/syside/VERSION.md` for version tracking
+
+### Lessons Learned
+
+- Scraper needed updates for changed docs.sensmetry.com URL structure
+- New structure puts Python API at `/python/v0.8.4/` instead of `/v0.8.4/api/`
+- Symlinks provide backwards compatibility without updating all agents
+
+---
+
 ## [2026-01-15] - ITEM-LEARNING-001: Agent Learning Feedback Loop
 
 **Type**: Item

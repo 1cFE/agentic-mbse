@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-01-15 (archived completed P1 items)
+**Last Updated**: 2026-01-23 (ITEM-RENAME-001 and syside upgrade complete; added LCOE, Visualization, Symlink epics)
 
 ---
 
@@ -17,7 +17,13 @@ Prioritized list of epics and features.
 
 ## In Progress
 
-*No epics currently in progress*
+### [ITEM-REGTEST-001] Model Regression Testing
+
+**Priority**: P1
+**Effort**: 1-2 days
+**Status**: In Progress
+
+Active spec at `.project/active/model-regression-testing/spec.md`. Building pytest-compatible testing infrastructure for SysML models to detect when library changes break downstream designs.
 
 ---
 
@@ -29,11 +35,41 @@ Prioritized list of epics and features.
 
 ## P1 - High Priority
 
-*All P1 items completed - see Completed section below*
+*All P1 items complete or in progress*
 
 ---
 
 ## P2 - Medium Priority
+
+### [ITEM-EXAMPLES-001] Example Store for Modeling Agents
+
+**Priority**: P2
+**Effort**: TBD (needs design)
+**Status**: Idea
+
+**Problem**: Modeling agents lack access to successful prior examples when tackling new modeling tasks. Each session starts fresh without leveraging patterns that worked well in similar situations.
+
+**Goal**: Build an "example store" similar to the learning feedback loop, but focused on capturing and retrieving successful model fragments, patterns, and solutions.
+
+**Key questions to explore**:
+- What constitutes a "successful example"? (validated models, user-approved patterns, etc.)
+- How should examples be indexed for similarity search? (by domain, pattern type, structure?)
+- What metadata is needed? (context, constraints solved, related learnings)
+- How do agents query the store during workflows?
+- Should examples be curated or auto-captured?
+
+**Potential components**:
+- `RAW_EXAMPLES.md` or structured storage for captured examples
+- `/record-example` skill (similar to `/record-learning`)
+- Example retrieval integrated into `/design-model`, `/implement-model`, etc.
+- Similarity matching (semantic search or structured queries)
+
+**Relationship to learnings**:
+- Learnings capture insights about *how to model* (process knowledge)
+- Examples capture *what was modeled successfully* (artifact knowledge)
+- Both accelerate agent workflows through accumulated experience
+
+---
 
 ### [TASK-PDF-001] Investigate PDF Extraction Header Consistency
 
@@ -67,6 +103,83 @@ Prioritized list of epics and features.
 
 ---
 
+### [EPIC-LCOE-001] LCOE Costing Patterns
+
+**Priority**: P2
+**Effort**: TBD (needs research sync with fusion-tea)
+**Status**: Tracking
+**External Work**: `~/1cfe/fusion-tea`
+
+**Problem**: The MBSE → sysml-codegen → teax-simkit pipeline needs nested cost model patterns validated and tooling upgraded.
+
+**Context from fusion-tea**:
+- Research and Stage 1-3 of cost patterns de-risking done in fusion-tea (see `~/1cfe/fusion-tea/.project/backlog/epic-cost-patterns-derisking.md`)
+- Demo model: `~/1cfe/fusion-tea/models/tests/coffee_maker/` with `generate_costs.py` evaluator
+- **CAUTION**: Commit d2c71b85 in fusion-tea was overwritten when applying agentic-mbse updates - need to verify fusion-tea state matches expectations
+
+**agentic-mbse implications**:
+- May need enforcement rules for cost modeling patterns
+- Pattern documentation may belong in `docs/patterns/`
+- When ready, roll validated patterns back to agentic-mbse templates
+
+**Tracking only** - active development happens in fusion-tea and sysml-codegen repos.
+
+---
+
+### [EPIC-VIZ-001] Visualization Tool Integration
+
+**Priority**: P2
+**Effort**: TBD
+**Status**: Tracking
+**External Work**: `~/1cfe/fusion-tea/proof_of_concept/`
+
+**Problem**: Need to visualize SysML model structure for stakeholder communication and debugging.
+
+**Context from fusion-tea**:
+- Visualization POC complete (see `~/1cfe/fusion-tea/.project/backlog/epic_visualization-poc.md`)
+- Cytoscape.js demo: `~/1cfe/fusion-tea/proof_of_concept/cytoscape_demo.html`
+- Extraction pipeline: `~/1cfe/fusion-tea/proof_of_concept/extraction/`
+- Web server: `~/1cfe/fusion-tea/proof_of_concept/web/`
+- Uses coffee_maker model as test fixture: `~/1cfe/fusion-tea/models/tests/coffee_maker/`
+
+**agentic-mbse implications**:
+- When visualization stabilizes, may roll back into agentic-mbse as a standard tool
+- Could become `agentic-mbse visualize` command or web service
+- Would need to work with any SysML project, not just fusion-tea
+
+**Tracking only** - active development continues in fusion-tea POC.
+
+---
+
+### [ITEM-SYMLINK-001] Investigate Symlinking All Tool-Owned Files
+
+**Priority**: P2
+**Effort**: 2-4 hours
+**Status**: Ready
+
+**Problem**: When re-running `agentic-mbse init` on a target repo, tool-owned files get **copied**, which can overwrite local modifications. This happened with fusion-tea - commit d2c71b85 had local additions to epic files that were lost.
+
+**Current behavior**:
+- `--dev` flag: symlinks commands/agents/skills/hooks (Claude integration)
+- Regular init: copies everything (commands, agents, templates)
+- Tool-owned templates (MODELING_GUIDE.md, MODELING_PROCESS.md) are copied, not symlinked
+
+**Questions to investigate**:
+1. Should ALL tool-owned files be symlinked in `--dev` mode? Currently only Claude integration files are symlinked.
+2. What about non-dev mode? Could we detect "local modifications" and warn before overwriting?
+3. Are there files that should NEVER be symlinked (e.g., user-editable configs)?
+
+**Risk mitigation**:
+- Before running init on fusion-tea again, need to recover d2c71b85 changes manually
+- Consider adding `--dry-run` flag to preview what would be changed
+
+**Success criteria**:
+- [ ] Clear documentation of which files are symlinked vs copied in each mode
+- [ ] Decision on whether to expand symlink scope in `--dev` mode
+- [ ] Optional: warning when about to overwrite modified tool-owned files
+
+---
+
 ## P3 - Low Priority
 
 *No epics yet*
@@ -82,6 +195,8 @@ Prioritized list of epics and features.
 | ITEM-GUIDE-001: Progressive Disclosure Restructure | 2026-01-15 | 1 day | MODELING_GUIDE.md reduced from 1497→205 lines, 12 pattern docs created |
 | ITEM-DEVMODE-001: Development Mode (--dev flag) | 2026-01-15 | 1 day | `agentic-mbse init --dev` creates symlinks for tool-owned files |
 | ITEM-LEARNING-001: Learning Feedback Loop | 2026-01-15 | 1 day | `/record-learning` skill + RAW_LEARNINGS.md template |
+| ITEM-SYSIDE-001: SysIDE v0.8.4 Upgrade | 2026-01-16 | 0.5 days | CLI + Python package + versioned docs with compatibility symlinks |
+| ITEM-RENAME-001: Rename `project/` to `modeling_pm/` | 2026-01-23 | 1 day | CLI, templates, commands, agents all updated; 4-phase implementation |
 
 ---
 

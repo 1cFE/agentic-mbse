@@ -2,6 +2,8 @@
 
 Quick reference for SysML v2 modeling. Each section links to detailed pattern docs.
 
+> **Note**: For project-specific patterns and customizations, see [LOCAL_GUIDE.md](LOCAL_GUIDE.md).
+
 **Related Docs:**
 - [models/README.md](../models/README.md) - Model catalog and navigation
 - [OVERVIEW.md](OVERVIEW.md) - Project architecture
@@ -156,6 +158,80 @@ calc my_calc { in value = other_part.exposed_attr; }
 - [ ] Naming conventions followed
 - [ ] No calc defs in designs/ (ADR-002)
 ```
+
+---
+
+## Model Regression Testing
+
+### Why Regression Testing Matters
+
+The library/usage separation pattern enables model reuse but introduces regression risk:
+when you modify a library definition to support a new design, existing designs that
+depend on it may break. Regression tests detect these breakages automatically.
+
+### Test Structure
+
+Model tests live in `tests/models/` and use pytest with the syside library:
+
+```
+tests/
+├── conftest.py          # Common fixtures
+└── models/
+    ├── test_example.py  # Example/template
+    ├── test_library.py  # Library definition tests
+    └── test_designs.py  # Design integration tests
+```
+
+### Writing Model Tests
+
+Model tests verify:
+1. **Parsing** - Models parse without syntax errors
+2. **Structure** - Required elements exist with expected types
+3. **Interfaces** - Ports and attributes have correct types
+4. **Integration** - Designs correctly reference library definitions
+
+Example test pattern:
+```python
+import pytest
+from pathlib import Path
+from agentic_mbse.sysml.syside_adapter import get_syside
+
+MODELS_DIR = Path(__file__).parent.parent.parent / "models"
+
+def test_motor_definition_exists():
+    """Verify Motor part definition exists in actuators library."""
+    files = list((MODELS_DIR / "library").glob("**/*.sysml"))
+    model, diagnostics = get_syside().try_load_model([str(f) for f in files])
+
+    # Check no parse errors
+    syside = get_syside()
+    errors = [d for d in diagnostics if d.severity == syside.DiagnosticSeverity.Error]
+    assert len(errors) == 0, f"Parse errors: {errors}"
+
+    # Find Motor definition
+    part_defs = list(model.elements(syside.PartDefinition))
+    motor_defs = [p for p in part_defs if p.name == "Motor"]
+    assert len(motor_defs) == 1, "Expected exactly one Motor definition"
+```
+
+### Running Tests
+
+```bash
+# Run all model tests
+pytest tests/models/
+
+# Run with verbose output
+pytest tests/models/ -v
+
+# Run specific test file
+pytest tests/models/test_library.py
+```
+
+### When to Write Tests
+
+- **During spec phase**: Define success criteria as test assertions
+- **After library changes**: Verify existing designs still work
+- **Before integration**: Validate design-library compatibility
 
 ---
 
