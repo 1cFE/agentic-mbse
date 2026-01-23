@@ -1,22 +1,14 @@
 <div id="requirements-to-excel-spreadsheet" class="section">
 
-# Requirements to Excel Spreadsheet[](#requirements-to-excel-spreadsheet "Link to this heading")
+# Requirements to Excel Spreadsheet<a href="#requirements-to-excel-spreadsheet" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-This simple Python script uses Syside and Pandas to load the requirements from SysML v2 file `requirements.sysml` and store them into an Excel file `requirements.xlsx`.
-
-<div class="admonition note">
-
-Note
-
-Before running this example, make sure you have activated the Syside license by running `syside-license check` according to the instructions in the [<span class="std std-ref">License Activation</span>](/v0.8.1/automator/install.md) section.
-
-</div>
+This simple Python script uses Syside and Pandas to load the requirements from SysML v2 file <span class="pre">`requirements.sysml`</span> and store them into an Excel file <span class="pre">`requirements.xlsx`</span>.
 
 <div id="additional-dependencies" class="section">
 
-## Additional Dependencies[](#additional-dependencies "Link to this heading")
+## Additional Dependencies<a href="#additional-dependencies" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-This example additionally requires `pandas` and `openpyxl` Python packages that can installed using `pip`. If you are using a virtual environment, ensure that you install the packages into the same `.venv` where Syside Automator is installed.
+This example additionally requires <span class="pre">`pandas`</span> and <span class="pre">`openpyxl`</span> Python packages that can installed using <span class="pre">`pip`</span>. If you are using a virtual environment, ensure that you install the packages into the same <span class="pre">`.venv`</span> where Syside Automator is installed.
 
 <div class="highlight-shell notranslate">
 
@@ -32,7 +24,7 @@ This example additionally requires `pandas` and `openpyxl` Python packages that 
 
 <div id="example-model" class="section">
 
-## Example Model[](#example-model "Link to this heading")
+## Example Model<a href="#example-model" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 <div class="highlight-sysml notranslate">
 
@@ -109,7 +101,7 @@ This example additionally requires `pandas` and `openpyxl` Python packages that 
 
 <div id="example-script" class="section">
 
-## Example Script[](#example-script "Link to this heading")
+## Example Script<a href="#example-script" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 <div class="highlight-python notranslate">
 
@@ -118,18 +110,18 @@ This example additionally requires `pandas` and `openpyxl` Python packages that 
     import pathlib
     import pandas as pd
     import syside
-    
+
     EXAMPLE_DIR = pathlib.Path(__file__).parent
     REQUIREMENTS_EXCEL = EXAMPLE_DIR / "requirements.xlsx"
     REQUIREMENTS_SYSML = EXAMPLE_DIR / "example_model.sysml"
-    
-    
+
+
     def main() -> None:
         # Load model.
         model, diagnostics = syside.load_model([REQUIREMENTS_SYSML])
-    
+
         assert not diagnostics.contains_errors(warnings_as_errors=True)
-    
+
         # Populate the data frame.
         data = []
         for requirement in model.nodes(syside.RequirementDefinition):
@@ -142,11 +134,11 @@ This example additionally requires `pandas` and `openpyxl` Python packages that 
                     }
                 )
         df = pd.DataFrame(data)
-    
+
         # Save the dataframe to the Excel file.
         df.to_excel(REQUIREMENTS_EXCEL, index=False)
-    
-    
+
+
     if __name__ == "__main__":
         main()
 
@@ -158,7 +150,7 @@ This example additionally requires `pandas` and `openpyxl` Python packages that 
 
 <div id="output" class="section">
 
-## Output[](#output "Link to this heading")
+## Output<a href="#output" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 <div class="highlight-text notranslate">
 
@@ -188,9 +180,9 @@ This example additionally requires `pandas` and `openpyxl` Python packages that 
 
 <div id="download" class="section">
 
-## Download[](#download "Link to this heading")
+## Download<a href="#download" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-Download this example [here](/v0.8.1/examples/reqs_to_excel.zip).
+Download this example <a href="/examples/reqs_to_excel.zip" class="reference external">here</a>.
 
 </div>
 

@@ -10,7 +10,7 @@ Prioritized list of work epics for the project.
 
 ### Example: Feature Name
 **Status**: COMPLETE (YYYY-MM-DD)
-**Location**: `project/completed/{feature}/`
+**Location**: `modeling_pm/completed/{feature}/`
 
 Brief description of what was done.
 
@@ -95,9 +95,9 @@ Brief description of what was done.
 
 <!-- Key documentation for this backlog -->
 
-- **Project Overview**: `project/OVERVIEW.md`
-- **Modeling Guide**: `project/MODELING_GUIDE.md`
-- **Workflow**: `project/MODELING_PROCESS.md`
+- **Project Overview**: `modeling_pm/OVERVIEW.md`
+- **Modeling Guide**: `modeling_pm/MODELING_GUIDE.md`
+- **Workflow**: `modeling_pm/MODELING_PROCESS.md`
 <!-- Add project-specific docs -->
 
 ---

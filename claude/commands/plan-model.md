@@ -1,8 +1,8 @@
 # Plan Model Command
 
 **Purpose:** Phased implementation plan for SysMLv2 models with validation checkpoints
-**Input:** Approved design document in `project/active/{feature-name}/design.md`
-**Output:** `project/active/{feature-name}/plan.md`
+**Input:** Approved design document in `modeling_pm/active/{feature-name}/design.md`
+**Output:** `modeling_pm/active/{feature-name}/plan.md`
 
 ## Overview
 
@@ -24,10 +24,10 @@ You are a specialist implementation planning agent for **SysMLv2 models**. Your 
 5. **Has clear checklists** - Every refinement task is a checkbox
 
 **Context**: Read before starting:
-- **Feature design**: `project/active/{feature-name}/design.md` (PRIMARY - includes validation report)
+- **Feature design**: `modeling_pm/active/{feature-name}/design.md` (PRIMARY - includes validation report)
 - **Prototype location**: Check design.md for files created/modified (in models/library/ or models/designs/)
-- Feature spec: `project/active/{feature-name}/spec.md` (for acceptance criteria)
-- `project/MODELING_GUIDE.md` - **CRITICAL** for conventions
+- Feature spec: `modeling_pm/active/{feature-name}/spec.md` (for acceptance criteria)
+- `modeling_pm/MODELING_GUIDE.md` - **CRITICAL** for conventions
 
 **Key Principle**: The prototype from design is the foundation. Planning organizes refinement: adding complete doc comments, full constraints, comprehensive integration, detailed validation.
 
@@ -53,19 +53,19 @@ You are a specialist implementation planning agent for **SysMLv2 models**. Your 
 
 ### Step 1: Read Design Document Thoroughly
 
-1. **Read design document** at `project/active/{feature-name}/design.md` FULLY
+1. **Read design document** at `modeling_pm/active/{feature-name}/design.md` FULLY
    - Understand all model elements to be created
    - Note traceability sources
    - Identify validation requirements
    - Understand dependencies between components
 
-2. **Read spec document** at `project/active/{feature-name}/spec.md`
+2. **Read spec document** at `modeling_pm/active/{feature-name}/spec.md`
    - Extract acceptance criteria
    - Identify deliverables
    - Note any specific validation requirements
 
 3. **Read modeling conventions**
-   - `project/MODELING_GUIDE.md` - Definitions vs usages, naming, file organization
+   - `modeling_pm/MODELING_GUIDE.md` - Definitions vs usages, naming, file organization
 
 ### Step 2: Identify Implementation Phases
 
@@ -96,6 +96,46 @@ For each phase, create:
 4. **Checklist of Changes** - Concrete, actionable items with checkboxes
 5. **Validation Checkpoint** - How to validate this phase succeeded
 6. **User Review Point** (optional) - Natural break for user to review models
+7. **Test Requirements** - What tests to write or verify:
+   - **New library definitions**: Create structural tests in `tests/models/`
+   - **Modified definitions**: Verify existing tests still pass
+   - **Design integrations**: Add/update integration tests
+
+**Test Phase Pattern:** For features with multiple phases:
+
+| Phase | Test Activity |
+|-------|---------------|
+| Library definitions | Write structural tests for new defs |
+| Design instances | Write integration tests |
+| Final validation | Run full regression suite |
+
+**Example Phase with Tests:**
+```markdown
+### Phase 2: Motor Definition Refinement
+
+**Deliverables:**
+- [ ] Enhanced Motor part def with complete attributes
+- [ ] Full doc comments with codebase source citations
+- [ ] Structural test: `tests/models/test_actuators.py::test_motor_attributes`
+
+**Validation Checkpoint:**
+- [ ] Parse check passes: `syside check models/library/actuators.sysml`
+- [ ] Regression tests pass: `pytest tests/models/ -v`
+```
+
+**Final Validation Phase Must Include:**
+```markdown
+### Phase N: Integration & Validation
+
+**Validation Steps:**
+1. Parse validation: `agentic-mbse validate models/ --level=1`
+2. Quality validation: `agentic-mbse validate models/ --level=3`
+3. **Regression tests: `pytest tests/models/ -v`**
+4. Manual review checkpoints
+
+**Completion Gate:**
+All tests in `tests/models/` must pass before marking complete.
+```
 
 **Prototype Context**: Files already exist from design phase. Phase descriptions should specify refinements:
 - "Refine file X to add complete doc comments and full constraints"
@@ -188,9 +228,9 @@ For each phase, create:
 **Created:** [Date]
 
 ## Source Documents
-- **Design:** `project/active/{feature-name}/design.md` - **PRIMARY REFERENCE**
-- **Spec:** `project/active/{feature-name}/spec.md` - For acceptance criteria
-- **Epic:** `project/backlog/epic_[name].md`
+- **Design:** `modeling_pm/active/{feature-name}/design.md` - **PRIMARY REFERENCE**
+- **Spec:** `modeling_pm/active/{feature-name}/spec.md` - For acceptance criteria
+- **Epic:** `modeling_pm/backlog/epic_[name].md`
 
 ## Implementation Strategy
 

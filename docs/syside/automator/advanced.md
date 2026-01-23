@@ -2,7 +2,7 @@
 
 <span id="automator-advanced"></span>
 
-# Advanced Technical Guide[](#advanced-technical-guide "Link to this heading")
+# Advanced Technical Guide<a href="#advanced-technical-guide" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 This section covers advanced technical aspects of Syside Automator for power users who need deeper understanding when building custom applications or scripting heavily using the library.
 
@@ -10,33 +10,33 @@ It details key implementation aspects including multithreading considerations, e
 
 **Learn more:**
 
-  - [<span class="std std-ref">Multithreading</span>](#automator-multithreading): Considerations for multithreading
+- <a href="#automator-multithreading" class="reference internal"><span class="std std-ref">Multithreading</span></a>: Considerations for multithreading
 
-  - [<span class="std std-ref">Expression Evaluation</span>](#automator-expression-evaluation): Capabilities of implemented expression evaluation
+- <a href="#automator-expression-evaluation" class="reference internal"><span class="std std-ref">Expression Evaluation</span></a>: Capabilities of implemented expression evaluation
 
-  - [<span class="std std-ref">Formatting</span>](#automator-formatting): Formatting options
+- <a href="#automator-formatting" class="reference internal"><span class="std std-ref">Formatting</span></a>: Formatting options
 
-  - [<span class="std std-ref">JSON Exports and Imports</span>](#automator-json-exports-imports): JSON serialization features
+- <a href="#automator-json-exports-imports" class="reference internal"><span class="std std-ref">JSON Exports and Imports Labs</span></a>: JSON serialization features
 
 <div id="multithreading" class="section">
 
 <span id="automator-multithreading"></span>
 
-## Multithreading[](#multithreading "Link to this heading")
+## Multithreading<a href="#multithreading" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 On modern computers, multithreading is necessary to achieve high performance and Syside here is no exception. Syside supports internal and external multithreading:
 
-  - Internal multithreading: Syside uses multithreading internally when loading and validating models, which is not visible to the user except for the CPU usage.
+- Internal multithreading: Syside uses multithreading internally when loading and validating models, which is not visible to the user except for the CPU usage.
 
-  - External multithreading: Syside was designed to be used in multithreaded environments. While Python still uses a global interpreter lock (GIL), there is an ongoing effort to remove it. Therefore, the Syside API already exposes necessary locks for building multithreaded applications based on Syside once Python removes the GIL.
+- External multithreading: Syside was designed to be used in multithreaded environments. While Python still uses a global interpreter lock (GIL), there is an ongoing effort to remove it. Therefore, the Syside API already exposes necessary locks for building multithreaded applications based on Syside once Python removes the GIL.
 
 When using Syside in a multithreaded environment, the following guidelines should be followed:
 
-  - Access to [`Documents`](/v0.8.1/api/generated/syside.Document.md "syside.Document") and [`TextDocuments`](/v0.8.1/api/generated/syside.TextDocument.md "syside.TextDocument") should be synchronized
+- Access to <a href="/python/v0.8.4/syside/Document.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Documents</code></span></a> and <a href="/python/v0.8.4/syside/TextDocument.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">TextDocuments</code></span></a> should be synchronized
 
-  - Linked elements allow unsynchronized access to their owning documents for performance
+- Linked elements allow unsynchronized access to their owning documents for performance
 
-  - Users who want to modify model [`Documents`](/v0.8.1/api/generated/syside.Document.md "syside.Document") should do so in a single-thread, or manually lock all dependent [`Documents`](/v0.8.1/api/generated/syside.Document.md "syside.Document") including transitive dependants.
+- Users who want to modify model <a href="/python/v0.8.4/syside/Document.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Documents</code></span></a> should do so in a single-thread, or manually lock all dependent <a href="/python/v0.8.4/syside/Document.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Documents</code></span></a> including transitive dependants.
 
 </div>
 
@@ -44,25 +44,23 @@ When using Syside in a multithreaded environment, the following guidelines shoul
 
 <span id="automator-expression-evaluation"></span>
 
-## Expression Evaluation[](#expression-evaluation "Link to this heading")
+## Expression Evaluation<a href="#expression-evaluation" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 As part of semantic resolution, minimal expression evaluation is implemented. It covers most arithmetic expressions and some standard library functions, enough to parse the standard library and accompanying examples. Currently, the following are not yet supported:
 
-  - arbitrary user defined functions and expressions,
-
-  - quantities and units.
+- arbitrary user defined functions and expressions.
 
 Evaluation is implemented to work on a read-only model so it is not allowed to construct new elements. As a side effect, this reduces the memory usage as models parsed from syntactically valid source files cannot have orphan elements. Rather than constructing orphan literal expression elements, evaluation returns the values directly.
 
 Most SysML operators are supported, however a few are not:
 
-  - `[`, undefined by KerML specification, quantity declaration in SysML
+- <span class="pre">`all`</span>, type extent
 
-  - `all`, type extent
+- <span class="pre">`~`</span>, undefined by KerML specification
 
-  - `~`, undefined by KerML specification
+Quantity expressions, e.g. <span class="pre">`10`</span>` `<span class="pre">`[kg]`</span>, received initial evaluation support in v0.8.2 which needs to be enabled manually by passing <span class="pre">`experimental_quantities=True`</span> to <a href="/python/v0.8.4/syside/Compiler.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Compiler.evaluate</code></span></a> and
 
-[`ConstructorExpressions`](/v0.8.1/api/metamodel/KerML/ConstructorExpression.md "syside.ConstructorExpression") return their owned return parameters ([`InvocationExpressions`](/v0.8.1/api/metamodel/KerML/InvocationExpression.md "syside.InvocationExpression") – themselves prior to v0.8) because they implicitly conform to the constructed object. This means that its arguments are not evaluated eagerly. Given an [`owning_type`](/v0.8.1/api/metamodel/KerML/Feature.md "syside.Feature.owning_type") with a [`feature`](/v0.8.1/api/metamodel/KerML/Type.md "syside.Type.features") that evaluated to a constructor expression `value`, its arguments can be evaluated as:
+<a href="/python/v0.8.4/syside/ConstructorExpression.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">ConstructorExpressions</code></span></a> return their owned return parameters (<a href="/python/v0.8.4/syside/InvocationExpression.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">InvocationExpressions</code></span></a> – themselves prior to v0.8) because they implicitly conform to the constructed object. This means that its arguments are not evaluated eagerly. Given an <a href="/python/v0.8.4/syside/Feature.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">owning_type</code></span></a> with a <a href="/python/v0.8.4/syside/Type.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">feature</code></span></a> that evaluated to a constructor expression <span class="pre">`value`</span>, its arguments can be evaluated as:
 
 <div class="highlight-python notranslate">
 
@@ -91,29 +89,29 @@ Most SysML operators are supported, however a few are not:
 
 Note
 
-Before v0.8, constructor expressions could only be inferred as [`InvocationExpressions`](/v0.8.1/api/metamodel/KerML/InvocationExpression.md "syside.InvocationExpression") that invoked a [`Type`](/v0.8.1/api/metamodel/KerML/Type.md "syside.Type") that was neither a subtype of [`Behavior`](/v0.8.1/api/metamodel/KerML/Behavior.md "syside.Behavior") nor [`Step`](/v0.8.1/api/metamodel/KerML/Step.md "syside.Step"), e.g. `not isinstance(expr.types.at(0), (*syside.Behavior.STD, *syside.Step.STD))`.
+Before v0.8, constructor expressions could only be inferred as <a href="/python/v0.8.4/syside/InvocationExpression.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">InvocationExpressions</code></span></a> that invoked a <a href="/python/v0.8.4/syside/Type.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Type</code></span></a> that was neither a subtype of <a href="/python/v0.8.4/syside/Behavior.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Behavior</code></span></a> nor <a href="/python/v0.8.4/syside/Step.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Step</code></span></a>, e.g. <span class="pre">`not`</span>` `<span class="pre">`isinstance(expr.types.at(0),`</span>` `<span class="pre">`(*syside.Behavior.STD,`</span>` `<span class="pre">`*syside.Step.STD))`</span>.
 
 </div>
 
 In addition, currently supported standard library functions include:
 
-  - `NumericalFunctions::product`
+- <span class="pre">`NumericalFunctions::product`</span>
 
-  - `NumericalFunctions::sum`
+- <span class="pre">`NumericalFunctions::sum`</span>
 
-  - `SequenceFunctions::notEmpty`
+- <span class="pre">`SequenceFunctions::notEmpty`</span>
 
-  - `SequenceFunctions::isEmpty`
+- <span class="pre">`SequenceFunctions::isEmpty`</span>
 
-  - `SequenceFunctions::size`
+- <span class="pre">`SequenceFunctions::size`</span>
 
-  - `SequenceFunctions::includes`
+- <span class="pre">`SequenceFunctions::includes`</span>
 
-  - `SequenceFunctions::excludes`
+- <span class="pre">`SequenceFunctions::excludes`</span>
 
-  - `StringFunctions::Length`
+- <span class="pre">`StringFunctions::Length`</span>
 
-  - `StringFunctions::Substring`
+- <span class="pre">`StringFunctions::Substring`</span>
 
 Support for more standard library functions will be added in future updates.
 
@@ -123,15 +121,15 @@ Support for more standard library functions will be added in future updates.
 
 <span id="automator-formatting"></span>
 
-## Formatting[](#formatting "Link to this heading")
+## Formatting<a href="#formatting" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 Syside provides an AST-based formatter that ensures consistent code style across source files. The formatter:
 
-  - Enforces consistent indentation and token usage (e.g., `:>>` vs `redefines`)
+- Enforces consistent indentation and token usage (e.g., <span class="pre">`:>>`</span> vs <span class="pre">`redefines`</span>)
 
-  - Converts in-memory models to textual syntax, even without original source text
+- Converts in-memory models to textual syntax, even without original source text
 
-  - Supports format ignore pragmas to preserve specific formatting
+- Supports format ignore pragmas to preserve specific formatting
 
 <div class="admonition note">
 
@@ -149,7 +147,7 @@ Example of format ignore pragma usage:
 
     package P {
         part def PartDef;
-    
+
         // syside-format ignore
         part 'my unformatted AST' : PartDef {
     }
@@ -163,17 +161,17 @@ The pragma preserves the formatting of the AST it is attached to, while maintain
 
 </div>
 
-<div id="json-exports-and-imports" class="section">
+<div id="json-exports-and-imports-labs" class="section">
 
 <span id="automator-json-exports-imports"></span>
 
-## JSON Exports and Imports[](#json-exports-and-imports "Link to this heading")
+## JSON Exports and Imports <span class="sd-sphinx-override sd-badge sd-outline-primary sd-text-primary">Labs</span><a href="#json-exports-and-imports-labs" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 Syside also supports bi-directional JSON serialization. Serialization produces a mostly specification compliant JSON with a few minor differences:
 
-  - not all implicit elements are constructed which will fail for attributes that are defined as non-null in the standard JSON schema, e.g. `Function::result`;
+- not all implicit elements are constructed which will fail for attributes that are defined as non-null in the standard JSON schema, e.g. <span class="pre">`Function::result`</span>;
 
-  - references can be serialized with relative `@uri` field for references to elements from other documents by passing `include_cross_ref_uris=True` (default) to [`json.dumps`](/v0.8.1/api/generated/syside.json.dumps.md "syside.json.dumps"). This brings JSON exports in-line with corresponding XMI exports used by the Pilot implementation where references are always exported as `<relative URI>#<element id>`. Additionally, such exports enable much faster deserialization because cross references are transparent and do not require searching the world for their resolution.
+- references can be serialized with relative <span class="pre">`@uri`</span> field for references to elements from other documents by passing <span class="pre">`include_cross_ref_uris=True`</span> (default) to <a href="/python/v0.8.4/syside/json//README.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">json.dumps</code></span></a>. This brings JSON exports in-line with corresponding XMI exports used by the Pilot implementation where references are always exported as <span class="pre">`<relative`</span>` `<span class="pre">`URI>#<element`</span>` `<span class="pre">`id>`</span>. Additionally, such exports enable much faster deserialization because cross references are transparent and do not require searching the world for their resolution.
 
 <div class="admonition warning">
 
@@ -191,19 +189,19 @@ We are working on bringing support of API-specific JSONs to Syside. Also, it is 
 
 JSON deserialization (import) works on the same JSON files as were exported. However, in the interest of keeping the initial implementation simple there are a few limitations:
 
-  - root node is inferred as:
-    
-      - the first `Namespace` without an owning relationship,
-    
-      - the last ancestor of the first element in the array following either owning namespaces, owning related elements, or owning relationships,
-    
-      - the first element in the array otherwise;
+- root node is inferred as:
 
-  - references to elements from other [`Documents`](/v0.8.1/api/generated/syside.Document.md "syside.Document") may contain a `@uri` field. The URI of the [`Document`](/v0.8.1/api/generated/syside.Document.md "syside.Document") model is deserialized into will be used to resolve relative URI references, otherwise an empty URI will be passed to the resolver callback;
+  - the first <span class="pre">`Namespace`</span> without an owning relationship,
 
-  - deserialization may be lossy because the specification dumps all owned elements into [`owned_relationships`](/v0.8.1/api/metamodel/KerML/Element.md "syside.Element.owned_relationships") and [`owned_related_elements`](/v0.8.1/api/metamodel/KerML/Relationship.md "syside.Relationship.owned_related_elements") attributes which lose the more fine grained information stored in the model by Syside. For example, [`SendActionUsage`](/v0.8.1/api/metamodel/SysML/SendActionUsage.md "syside.SendActionUsage") `receiver`, `payload`, and `sender` are all parameters to [`ReferenceUsage`](/v0.8.1/api/metamodel/SysML/ReferenceUsage.md "syside.ReferenceUsage"), only disambiguated by their relative position, so if one is missing the others may be deserialized into different members.position, so if one is missing the others may be deserialized into different members.
+  - the last ancestor of the first element in the array following either owning namespaces, owning related elements, or owning relationships,
 
-Note that deserialization ignores majority of fields present in the JSON schema, including all derived fields with the exception of `name` and `shortName`. Therefore users may wish to export JSONs with minimal export options to reduce memory usage and improve performance.
+  - the first element in the array otherwise;
+
+- references to elements from other <a href="/python/v0.8.4/syside/Document.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Documents</code></span></a> may contain a <span class="pre">`@uri`</span> field. The URI of the <a href="/python/v0.8.4/syside/Document.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Document</code></span></a> model is deserialized into will be used to resolve relative URI references, otherwise an empty URI will be passed to the resolver callback;
+
+- deserialization may be lossy because the specification dumps all owned elements into <a href="/python/v0.8.4/syside/Element.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">owned_relationships</code></span></a> and <a href="/python/v0.8.4/syside/Relationship.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">owned_related_elements</code></span></a> attributes which lose the more fine grained information stored in the model by Syside. For example, <a href="/python/v0.8.4/syside/SendActionUsage.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">SendActionUsage</code></span></a> <span class="pre">`receiver`</span>, <span class="pre">`payload`</span>, and <span class="pre">`sender`</span> are all parameters to <a href="/python/v0.8.4/syside/ReferenceUsage.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">ReferenceUsage</code></span></a>, only disambiguated by their relative position, so if one is missing the others may be deserialized into different members.position, so if one is missing the others may be deserialized into different members.
+
+Note that deserialization ignores majority of fields present in the JSON schema, including all derived fields with the exception of <span class="pre">`name`</span> and <span class="pre">`shortName`</span>. Therefore users may wish to export JSONs with minimal export options to reduce memory usage and improve performance.
 
 <div class="admonition warning">
 

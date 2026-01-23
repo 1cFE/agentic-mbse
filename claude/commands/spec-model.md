@@ -2,17 +2,17 @@
 
 **Purpose:** Model enhancement specification with modeling requirements and validation criteria
 **Input:** Model enhancement ideas, modeling scope, optional research reference
-**Output:** `project/active/{feature-name}/spec.md`
+**Output:** `modeling_pm/active/{feature-name}/spec.md`
 
 ## Overview
 
 You are a specialist requirements agent for SysML v2 model enhancements. Your goal is to create clear, structured model specifications that define modeling scope, requirements, and success criteria through interactive collaboration.
 
 **Context**: Before starting, read:
-- `project/OVERVIEW.md` - Project goals and success criteria
-- `project/MODELING_GUIDE.md` - SysML modeling conventions
+- `modeling_pm/OVERVIEW.md` - Project goals and success criteria
+- `modeling_pm/MODELING_GUIDE.md` - SysML modeling conventions
 - `models/README.md` - Existing model catalog (CHECK IF MODELS ALREADY EXIST!)
-- `project/backlog/BACKLOG.md` - Current epic priorities
+- `modeling_pm/backlog/BACKLOG.md` - Current epic priorities
 
 Your spec will be used for:
 1. **User approval** of modeling scope and requirements
@@ -27,9 +27,9 @@ When invoked:
 ### Stage 1: Context and Model Landscape Understanding
 
 1. **Check Epic Context**:
-   - Read `project/backlog/BACKLOG.md` - understand current priorities
-   - Read relevant epic file (e.g., `project/backlog/epic_physics.md`, `project/backlog/epic_structure.md`) if this relates to active work
-   - Check `project/active/CURRENT_WORK.md` - understand what's in progress
+   - Read `modeling_pm/backlog/BACKLOG.md` - understand current priorities
+   - Read relevant epic file (e.g., `modeling_pm/backlog/epic_physics.md`, `modeling_pm/backlog/epic_structure.md`) if this relates to active work
+   - Check `modeling_pm/active/CURRENT_WORK.md` - understand what's in progress
 
 2. **CRITICAL: Check Existing Models**:
    - Read `models/README.md` FULLY - does this model already exist?
@@ -38,7 +38,7 @@ When invoked:
    - If enhancements needed, read existing model files FULLY
 
 3. **Read Context Files**:
-   - If user mentions research, read `project/research/{file}` FULLY
+   - If user mentions research, read `modeling_pm/research/{file}` FULLY
    - If user mentions codebase source sources, note file/line references
    - If user mentions documents, read from `data/documents/` FULLY
 
@@ -116,7 +116,38 @@ When invoked:
    - **Quality Success**: Parse checks (Level 1-3), documentation complete
    - **Validation Success**: codebase source comparison targets, constraint satisfaction
 
-4. **Present requirements**:
+4. **Define Evaluatable Success Criteria**:
+
+   Success criteria should be **both human-readable AND machine-checkable** where possible.
+   This enables automated regression testing via `pytest tests/models/`.
+
+   **Pattern:** For each key requirement, specify:
+   - **Human description**: What should be true
+   - **Verification method**: Manual review OR automated test
+   - **Test assertion** (if automatable): Specific programmatic check
+
+   **Examples:**
+
+   | Requirement | Human Description | Test Assertion |
+   |-------------|-------------------|----------------|
+   | Definition exists | Library has Motor part definition | `"Motor" in [p.name for p in model.elements(PartDefinition)]` |
+   | Calculation works | System computes total mass | `mass_calc is not None and mass_calc.result is not None` |
+   | Units consistency | All mass attrs use kg | `all(a.unit == "kg" for a in mass_attrs)` |
+   | No parse errors | Model files parse cleanly | `len([d for d in diagnostics if d.severity == Error]) == 0` |
+
+5. **Regression Safety Criteria** (for library modifications):
+
+   When modifying existing library definitions, specify:
+   - Which existing designs depend on this library (check `models/designs/` imports)
+   - What interfaces must remain stable (ports, attributes, types)
+   - Minimum test coverage required before proceeding
+
+   **Example:**
+   > Motor definition is used by designs/tokamak_v1 and designs/prototype.
+   > Interface stability: `torque` output port type and direction must not change.
+   > Test coverage: `tests/models/test_actuators.py::test_motor_interface` must pass.
+
+6. **Present requirements**:
    ```
    Here are the modeling requirements:
 
@@ -150,17 +181,17 @@ When invoked:
    Are these requirements specific enough? Missing anything?
    ```
 
-5. **Iterate until user approves** all requirements
+7. **Iterate until user approves** all requirements
 
 ### Stage 4: Document Creation
 
 Create feature directory and spec:
 
 ```bash
-mkdir -p project/active/{feature-name}
+mkdir -p modeling_pm/active/{feature-name}
 ```
 
-Write to `project/active/{feature-name}/spec.md` using the model-specific template:
+Write to `modeling_pm/active/{feature-name}/spec.md` using the model-specific template:
 
 ```markdown
 # Model Enhancement Specification: [Feature Name]
@@ -272,11 +303,11 @@ Write to `project/active/{feature-name}/spec.md` using the model-specific templa
 - [ ] Epic progress updated
 
 ## Related Artifacts
-**Research**: `project/research/[relevant-file].md` (if exists)
-**Epic**: `project/backlog/epic_[name].md`
+**Research**: `modeling_pm/research/[relevant-file].md` (if exists)
+**Epic**: `modeling_pm/backlog/epic_[name].md`
 **codebase source Sources**: [list key source files]
-**Design**: `project/active/{feature-name}/design.md` (to be created)
-**Plan**: `project/active/{feature-name}/plan.md` (to be created)
+**Design**: `modeling_pm/active/{feature-name}/design.md` (to be created)
+**Plan**: `modeling_pm/active/{feature-name}/plan.md` (to be created)
 
 ---
 **Next Steps**: After approval → `/design-model`
@@ -346,7 +377,7 @@ Write to `project/active/{feature-name}/spec.md` using the model-specific templa
 ### Critical Rules
 - ALWAYS read models/README.md FIRST to check for existing models
 - ALWAYS read project context (OVERVIEW, MODELING_GUIDE, BACKLOG)
-- ALWAYS create feature directory: `project/active/{feature-name}/`
+- ALWAYS create feature directory: `modeling_pm/active/{feature-name}/`
 - ALWAYS use MR-XXX numbering for modeling requirements
 - ALWAYS specify codebase source traceability sources
 - ALWAYS link to relevant epic

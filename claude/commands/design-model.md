@@ -2,7 +2,7 @@
 
 **Purpose:** Semantic design document for SysMLv2 models (engineering-focused, not syntax-focused)
 **Input:** Spec document, domain source analysis (from SOURCE_INDEX.md), research findings, technical references
-**Output:** `project/active/{feature-name}/design.md`
+**Output:** `modeling_pm/active/{feature-name}/design.md`
 
 ## Overview
 
@@ -24,12 +24,12 @@ You are a specialist design agent for **SysMLv2 models**. Your goal is to create
 
 **Context**: Before starting, read:
 - **`models/README.md`** - **CRITICAL**: Directory structure, library overview, common patterns
-- **`project/MODELING_PROCESS.md`** - **CRITICAL**: Structured 3-phase design workflow
-- `project/OVERVIEW.md` - Project goals and status
-- `project/MODELING_GUIDE.md` - Definitions vs usages, naming, patterns
-- `project/sysmlv2_fusion_modeling_specification.md` - Detailed requirements
-- Feature spec: `project/active/{feature-name}/spec.md`
-- Related research: `project/research/{relevant}.md` (if exists)
+- **`modeling_pm/MODELING_PROCESS.md`** - **CRITICAL**: Structured 3-phase design workflow
+- `modeling_pm/OVERVIEW.md` - Project goals and status
+- `modeling_pm/MODELING_GUIDE.md` - Definitions vs usages, naming, patterns
+- `modeling_pm/sysmlv2_fusion_modeling_specification.md` - Detailed requirements
+- Feature spec: `modeling_pm/active/{feature-name}/spec.md`
+- Related research: `modeling_pm/research/{relevant}.md` (if exists)
 
 Your design will be used for:
 1. **User sign-off** on semantic modeling approach
@@ -38,7 +38,7 @@ Your design will be used for:
 
 When invoked:
 - If feature name provided: proceed to design process
-- If no feature: ask for feature name in `project/active/` to design
+- If no feature: ask for feature name in `modeling_pm/active/` to design
 
 ## Design Algorithm
 
@@ -67,14 +67,19 @@ START → OUTLINE → RESEARCH → ADD DETAIL → FINALIZE → PROTOTYPE → VAL
    - Find thermal modules in configured source locations
    - Extract parameters: heat flux, coolant temp, flow rates
 
-3. **SysMLv2 Guidance** (sysmlv2-doc-analyzer agent):
+3. **SysMLv2 Guidance** (kerml-expert + sysml-expert agents in parallel):
    ```
    Task(
+     prompt="What functions exist for aggregation (sum, product)?",
+     subagent_type="kerml-expert"
+   )
+   Task(
      prompt="How to model thermal management with heat generation,
-            coolant flow, temperature limits, heat transfer?"
+            coolant flow, temperature limits, heat transfer?",
+     subagent_type="sysml-expert"
    )
    ```
-   - Returns: Patterns for flow interfaces, constraint modeling
+   - Returns: Function signatures, import patterns, modeling patterns
 
 4. **Web Search:** Material properties, heat transfer correlations
 
@@ -130,7 +135,7 @@ cat models/README.md
 
 **Impact**: Reading this file first can save 30% of design time by immediately identifying reusable components.
 
-### 2. Review project/MODELING_PROCESS.md
+### 2. Review modeling_pm/MODELING_PROCESS.md
 
 **Purpose**: Follow the structured 3-phase workflow.
 
@@ -145,7 +150,7 @@ This design-model command implements the process defined in MODELING_PROCESS.md:
 
 ```markdown
 ☐ models/README.md read and understood
-☐ Feature spec exists at project/active/{feature-name}/spec.md
+☐ Feature spec exists at modeling_pm/active/{feature-name}/spec.md
 ☐ This is a MODELS feature (not CODE)
 ☐ SOURCE_INDEX.md exists (or will be created with template)
 ☐ Ready to launch discovery agents based on index contents
@@ -165,10 +170,10 @@ If any prerequisites missing, STOP and request clarification.
    - Read MODELING_GUIDE - understand definitions vs usages pattern **thoroughly**
    - Read MODELING_PROCESS - understand MBSE methodology and workflow
    - Read specification for detailed modeling requirements
-   - Read `project/active/{feature-name}/spec.md` FULLY
+   - Read `modeling_pm/active/{feature-name}/spec.md` FULLY
    - Verify this is a MODELS feature (not CODE)
 
-2. **Create Initial Design File** at `project/active/{feature-name}/design.md`:
+2. **Create Initial Design File** at `modeling_pm/active/{feature-name}/design.md`:
    - Add header (feature name, type, status, dates)
    - Add overview section (1-2 sentence summary)
    - Add "Related Artifacts" section with links
@@ -247,6 +252,21 @@ Task(
 )
 
 # Agent 2: SysMLv2 patterns and guidance
+# Agent 2a: KerML expert for standard library functions
+Task(
+    description="Get KerML function patterns",
+    prompt="""What standard library functions exist for:
+    - Aggregation (sum, product)
+    - Sequence operations (size, isEmpty)
+    - Control flow (collect, select, reduce)
+
+    Provide import statements and signatures.
+    """,
+    subagent_type="kerml-expert",
+    model="haiku"  # Fast for pattern retrieval
+)
+
+# Agent 2b: SysML expert for modeling patterns
 Task(
     description="Get SysMLv2 modeling patterns",
     prompt="""How should I model [YOUR SYSTEM DESCRIPTION] in SysMLv2?
@@ -265,7 +285,7 @@ Task(
 
     Provide concrete examples for fusion modeling context.
     """,
-    subagent_type="sysmlv2-doc-analyzer",
+    subagent_type="sysml-expert",
     model="haiku"  # Fast for pattern retrieval
 )
 
@@ -328,7 +348,7 @@ Use WebSearch for:
 
 ### 4. Review Related Documentation
 
-- Check `project/research/` for relevant domain knowledge
+- Check `modeling_pm/research/` for relevant domain knowledge
 - Check `data/documents/synthesis/` for existing technical summaries
 - Check `data/traceability_matrix.csv` for related elements
 
@@ -382,7 +402,10 @@ Use WebSearch for:
    - Validation approach (how to verify correctness)
 
 **When evaluating modeling approach alternatives:**
-- Consider using sysmlv2-doc-analyzer to validate approaches against official specs
+- Use specialized agents to validate approaches against official specs:
+  - `kerml-expert` for standard library functions and type system
+  - `sysml-expert` for modeling patterns and constructs
+  - `sysmlv2-validator` to check syntax of proposed code
 - Ask: "What are recommended SysMLv2 patterns for [specific scenario]?"
 - Compare codebase source implementation structure with SysMLv2 best practices
 - Present alternatives that align with both engineering needs AND spec guidance
@@ -745,7 +768,7 @@ agentic-mbse validate models/ --level 6
 
 **Present to User**:
 
-1. **Design Document**: `project/active/{feature-name}/design.md` (complete)
+1. **Design Document**: `modeling_pm/active/{feature-name}/design.md` (complete)
 
 2. **Validation Report**: (from Stage 6)
    - Quality check results (Levels 1-7)
@@ -789,7 +812,7 @@ Add to design.md:
 
 ---
 
-**Final design document structure** at `project/active/{feature-name}/design.md`:
+**Final design document structure** at `modeling_pm/active/{feature-name}/design.md`:
 
 ```markdown
 # Design: [Feature Name] (MODELS)
@@ -804,9 +827,9 @@ Add to design.md:
 [1-2 sentence summary of what models are being created]
 
 ### Related Artifacts
-- **Spec:** `project/active/{feature-name}/spec.md`
-- **Research:** `project/research/[file].md` (if exists)
-- **Epic:** `project/backlog/epic_[name].md`
+- **Spec:** `modeling_pm/active/{feature-name}/spec.md`
+- **Research:** `modeling_pm/research/[file].md` (if exists)
+- **Epic:** `modeling_pm/backlog/epic_[name].md`
 - **Technical References:** `data/documents/[relevant papers]`
 
 ## Current Model State
@@ -939,7 +962,7 @@ calc def 'Calculation Name' {
 
 **If your design involves cross-file attribute references, document them here:**
 
-**Pattern**: See `models/README.md` and `project/MODELING_PROCESS.md` for cross-file binding patterns.
+**Pattern**: See `models/README.md` and `modeling_pm/MODELING_PROCESS.md` for cross-file binding patterns.
 
 | Calc Input | Source File | Source Attribute | Notes |
 |------------|-------------|------------------|-------|
@@ -1195,21 +1218,52 @@ syside check models/library/[area]/[file].sysml
 - Locate related definitions in models/library/
 - Identify reusable components and conventions
 
-**sysmlv2-doc-analyzer agent:**
-- **INVOKE DURING DESIGN for:**
-  - Component structure decisions (how to decompose systems)
-  - Interface design patterns (what should flow between components)
-  - Constraint modeling (how to represent physics/engineering limits)
-  - Requirement modeling (how to link requirements to design elements)
-  - General SysMLv2 syntax or semantics questions
-- **HOW TO USE:**
-  - Provide: Detailed physical system description + specific modeling question
-  - Returns: Official spec guidance with examples and recommendations
-  - Timing: Before making major structural decisions, during alternatives evaluation
-- **EXAMPLE:**
+**SysMLv2 Documentation Agents:**
+
+Use specialized agents based on question type:
+
+| Question Type | Agent | Example |
+|--------------|-------|---------|
+| Standard library functions | `kerml-expert` | "What's the signature of sum?" |
+| Modeling patterns | `sysml-expert` | "How do I model requirements?" |
+| Parser/tooling | `syside-expert` | "How do I evaluate expressions?" |
+| Syntax validation | `sysmlv2-validator` | "Does this code parse?" |
+
+**For comprehensive answers, spawn multiple agents in parallel:**
+- Cross-cutting questions (function + usage pattern) → kerml-expert + sysml-expert
+- "Why doesn't this work?" → sysmlv2-validator + relevant expert
+
+**kerml-expert:** KerML standard library, type system, language semantics
+- Functions: sum, size, collect, reduce, etc.
+- Types: Real, Integer, Boolean, Anything
+- Import patterns for standard library
+
+**sysml-expert:** SysML v2 modeling patterns and constructs
+- Part/port/attribute definitions
+- Requirements, constraints, connections
+- Actions, state machines, flows
+
+**syside-expert:** Parser and tooling questions
+- Model loading, AST querying
+- Expression evaluation
+- Automator workflows
+
+**sysmlv2-validator:** Syntax validation and model inspection
+- Quick syntax check: `syside check`
+- Deep model analysis with Python scripts
+- Error interpretation and fix suggestions
+
+**EXAMPLE (parallel spawning):**
   ```
+  # Spawn both experts in a SINGLE message for parallel execution
   Task(
-    description="SysMLv2 guidance for magnet system interfaces",
+    description="KerML function signatures for magnet calculations",
+    prompt="What functions exist for numerical aggregation? Need sum, product.
+           How do I import them?",
+    subagent_type="kerml-expert"
+  )
+  Task(
+    description="SysMLv2 patterns for magnet system interfaces",
     prompt="How should I model interfaces between a superconducting magnet
            system and cooling system in SysMLv2? The magnet has:
            - Electrical power input (AC/DC conversion)
@@ -1218,7 +1272,7 @@ syside check models/library/[area]/[file].sysml
            - Structural support forces
            Need patterns for: interface definitions, flow properties,
            constraint propagation across interfaces.",
-    subagent_type="sysmlv2-doc-analyzer"
+    subagent_type="sysml-expert"
   )
   ```
 
@@ -1274,13 +1328,13 @@ syside check models/library/[area]/[file].sysml
 **Related Commands:**
 - Before design → `/research` or `/spec-model`
 - After design (with validation) → `/plan-model` for implementation planning
-- For SysMLv2 guidance → use sysmlv2-doc-analyzer agent
+- For SysMLv2 guidance → use kerml-expert, sysml-expert, syside-expert, sysmlv2-validator agents
 
 **Related Documentation:**
 - **models/README.md** - Directory structure, library reference, common patterns
-- **project/MODELING_PROCESS.md** - Structured 3-phase design workflow (Discovery → Architecture → Specification)
-- **project/MODELING_GUIDE.md** - SysMLv2 patterns and best practices
-- **project/OVERVIEW.md** - Four integrated views architecture
+- **modeling_pm/MODELING_PROCESS.md** - Structured 3-phase design workflow (Discovery → Architecture → Specification)
+- **modeling_pm/MODELING_GUIDE.md** - SysMLv2 patterns and best practices
+- **modeling_pm/OVERVIEW.md** - Four integrated views architecture
 
 **Workflow Notes:**
 - Design phase produces: design.md + working prototype + validation report (Stages 6-8)

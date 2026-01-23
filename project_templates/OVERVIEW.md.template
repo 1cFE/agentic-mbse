@@ -71,7 +71,7 @@ models/
 
 **Project Management**:
 ```
-project/
+modeling_pm/
 ├── OVERVIEW.md             # This file (project status)
 ├── MODELING_GUIDE.md       # SysML syntax and patterns
 ├── MODELING_PROCESS.md     # MBSE workflow and methodology
