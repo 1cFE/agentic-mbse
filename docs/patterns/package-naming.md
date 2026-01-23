@@ -10,6 +10,36 @@ Reference this document when:
 - Setting up package hierarchies
 - Creating aggregator packages
 
+## Invalid Syntax: Qualified Package Names
+
+> **Important:** The syntax `package A::B::C { }` is **invalid per the SysML v2 specification** - not just unsupported by syside.
+
+The SysML v2 grammar rule is:
+```
+PackageDeclaration = 'package' Identification
+```
+
+Where `Identification` accepts only a simple `NAME`, not a `QualifiedName`. Qualified names (`::`) are for **references** (imports, type paths), not **declarations**.
+
+```sysml
+// INVALID SysML v2 syntax - will not parse
+package MyProject::Library::Components { ... }
+
+// CORRECT - use simple names
+package MyProject_Library_Components { ... }
+
+// CORRECT - use hierarchical nesting
+package MyProject {
+    package Library {
+        package Components { ... }
+    }
+}
+```
+
+Use underscores or hierarchical nesting for namespace organization.
+
+---
+
 ## Critical Rule: Unique Package Names
 
 > **In SysML v2, each `package` declaration creates a new package element with its own UUID.** Multiple files declaring the same package name create DISTINCT packages, not a single merged package.
@@ -110,18 +140,32 @@ package SubdomainB {
 
 | Element | Convention | Example |
 |---------|------------|---------|
-| Top-level package | `ProjectName::Category` | `FusionTea::Library` |
+| Top-level package | `ProjectName_Category` | `FusionTea_Library` |
 | Sub-package | `lowercase_underscores` | `thermal_analysis` |
 | Definition | `'Title Case'` | `part def 'Heat Exchanger'` |
 | Usage | `snake_case` | `part primary_exchanger` |
 
 ### Package Hierarchy Example
 
+Using underscore-separated unique names:
 ```
-MyProject::Library::Components
-MyProject::Library::Analyses
-MyProject::Designs::BaselineDesign
-MyProject::Designs::AlternativeDesign
+FusionTea_Library_Components
+FusionTea_Library_Analyses
+FusionTea_Designs_BaselineDesign
+FusionTea_Designs_AlternativeDesign
+```
+
+Or using hierarchical nesting in a single file:
+```sysml
+package FusionTea {
+    package Library {
+        package Components { ... }
+        package Analyses { ... }
+    }
+    package Designs {
+        package BaselineDesign { ... }
+    }
+}
 ```
 
 ---
@@ -204,7 +248,7 @@ package A {
 }
 
 // CORRECT: Flat where possible
-package MyProject::Analyses {
+package MyProject_Analyses {
     calc def MyCalc { ... }
 }
 ```
@@ -212,15 +256,32 @@ package MyProject::Analyses {
 ### Inconsistent naming hierarchy
 
 ```sysml
-// WRONG: Inconsistent structure
+// WRONG: Inconsistent naming structure
 package FusionTea_Components { ... }
-package Library::Analyses { ... }
+package LibraryAnalyses { ... }
 package fusion_tea_designs { ... }
 
-// CORRECT: Consistent hierarchy
+// CORRECT: Consistent underscore-separated hierarchy
+package FusionTea_Library_Components { ... }
+package FusionTea_Library_Analyses { ... }
+package FusionTea_Designs_Baseline { ... }
+```
+
+### Using `::` in package declarations
+
+```sysml
+// WRONG: Invalid SysML v2 syntax - qualified names cannot be used in declarations
 package FusionTea::Library::Components { ... }
-package FusionTea::Library::Analyses { ... }
-package FusionTea::Designs::Baseline { ... }
+
+// CORRECT: Use underscores for unique names
+package FusionTea_Library_Components { ... }
+
+// ALSO CORRECT: Use hierarchical nesting
+package FusionTea {
+    package Library {
+        package Components { ... }
+    }
+}
 ```
 
 ---
@@ -248,4 +309,4 @@ Look for errors like:
 
 ---
 
-*Last Updated: 2026-01-15*
+*Last Updated: 2026-01-23*
