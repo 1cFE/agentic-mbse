@@ -1,0 +1,133 @@
+<div id="parameteraccessor" class="section">
+
+# ParameterAccessor<a href="#parameteraccessor" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
+
+*<span class="pre">class</span><span class="w"> </span>*<span class="sig-name descname"><span class="pre">ParameterAccessor</span></span><a href="#syside.ParameterAccessor" class="headerlink" title="Link to this definition"><span class="nerd-font"></span></a>  
+<div class="align-center" align="center">
+
+<img src="data:image/svg+xml;base64,PHN2ZyBjbGFzcz0iZ3JhcGh2aXoiIHN0eWxlPSJ3aWR0aDogMTAuMzEyNXJlbTtoZWlnaHQ6IDExLjc1cmVtOyIgdmlld2JveD0iMC4wMCAwLjAwIDE2NS4wMCAxODguMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxnIGNsYXNzPSJncmFwaCIgaWQ9ImdyYXBoMCIgdHJhbnNmb3JtPSJzY2FsZSgxIDEpIHJvdGF0ZSgwKSB0cmFuc2xhdGUoNCAxODQpIj4KPHRpdGxlPiUzPC90aXRsZT4KPGcgY2xhc3M9Im5vZGUiIGlkPSJub2RlMSI+Cjx0aXRsZT5QYXJhbWV0ZXJBY2Nlc3NvcjwvdGl0bGU+CjxnIGlkPSJhX25vZGUxIj48YSBocmVmPSIjc3lzaWRlLlBhcmFtZXRlckFjY2Vzc29yIj4KPHBvbHlnb24gcG9pbnRzPSIxNDMsLTM2IDE0LC0zNiAxNCwwIDE0MywwIDE0MywtMzYiIHN0eWxlPSJmaWxsOiB2YXIoLS1tZC1ncmFwaHZpei1ub2RlLWJnLWNvbG9yKTtzdHJva2U6IHZhcigtLW1kLWdyYXBodml6LW5vZGUtZmctY29sb3IpOyI+PC9wb2x5Z29uPgo8dGV4dCBmb250LWZhbWlseT0iTGV4ZW5kIiBmb250LXNpemU9IjEyLjAwIiBzdHlsZT0iZmlsbDogdmFyKC0tbWQtY29kZS1mZy1jb2xvcik7LS1tZC1ncmFwaHZpei1ob3Zlci1jb2xvcjogdmFyKC0tbWQtZ3JhcGh2aXotYS1ob3Zlci1jb2xvcik7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSI3OC41IiB5PSItMTQuMiI+UGFyYW1ldGVyQWNjZXNzb3I8L3RleHQ+Cjx0aXRsZT5zeXNpZGUuUGFyYW1ldGVyQWNjZXNzb3I8L3RpdGxlPjwvYT4KPC9nPgo8L2c+CjxnIGNsYXNzPSJub2RlIiBpZD0ibm9kZTIiPgo8dGl0bGU+T3duZWRNZW1iZXJBY2Nlc3NvcjwvdGl0bGU+CjxnIGlkPSJhX25vZGUyIj48YSBocmVmPSIvcHl0aG9uL3YwLjguNC9zeXNpZGUvT3duZWRNZW1iZXJBY2Nlc3Nvci5tZCI+Cjxwb2x5Z29uIHBvaW50cz0iMTU3LC0xMDggMCwtMTA4IDAsLTcyIDE1NywtNzIgMTU3LC0xMDgiIHN0eWxlPSJmaWxsOiB2YXIoLS1tZC1ncmFwaHZpei1ub2RlLWJnLWNvbG9yKTtzdHJva2U6IHZhcigtLW1kLWdyYXBodml6LW5vZGUtZmctY29sb3IpOyI+PC9wb2x5Z29uPgo8dGV4dCBmb250LWZhbWlseT0iTGV4ZW5kIiBmb250LXNpemU9IjEyLjAwIiBzdHlsZT0iZmlsbDogdmFyKC0tbWQtY29kZS1mZy1jb2xvcik7LS1tZC1ncmFwaHZpei1ob3Zlci1jb2xvcjogdmFyKC0tbWQtZ3JhcGh2aXotYS1ob3Zlci1jb2xvcik7IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiB4PSI3OC41IiB5PSItODYuMiI+T3duZWRNZW1iZXJBY2Nlc3NvcjwvdGV4dD4KPHRpdGxlPnN5c2lkZS5Pd25lZE1lbWJlckFjY2Vzc29yPC90aXRsZT48L2E+CjwvZz4KPC9nPgo8ZyBjbGFzcz0iZWRnZSIgaWQ9ImVkZ2UxIj4KPHRpdGxlPk93bmVkTWVtYmVyQWNjZXNzb3ItJmd0O1BhcmFtZXRlckFjY2Vzc29yPC90aXRsZT4KPHBhdGggZD0iTTc4LjUsLTcxLjdDNzguNSwtNjMuOTggNzguNSwtNTQuNzEgNzguNSwtNDYuMTEiIGZpbGw9Im5vbmUiIHN0eWxlPSJzdHJva2U6IHZhcigtLW1kLWdyYXBodml6LWVkZ2UtY29sb3IpOyIgLz4KPHBvbHlnb24gcG9pbnRzPSI4MiwtNDYuMSA3OC41LC0zNi4xIDc1LC00Ni4xIDgyLC00Ni4xIiBzdHlsZT0iZmlsbDogdmFyKC0tbWQtZ3JhcGh2aXotZWRnZS1jb2xvcik7c3Ryb2tlOiB2YXIoLS1tZC1ncmFwaHZpei1lZGdlLWNvbG9yKTsiPjwvcG9seWdvbj4KPC9nPgo8ZyBjbGFzcz0ibm9kZSIgaWQ9Im5vZGUzIj4KPHRpdGxlPk1lbWJlckFjY2Vzc29yPC90aXRsZT4KPGcgaWQ9ImFfbm9kZTMiPjxhIGhyZWY9Ii9weXRob24vdjAuOC40L3N5c2lkZS9NZW1iZXJBY2Nlc3Nvci5tZCI+Cjxwb2x5Z29uIHBvaW50cz0iMTM2LC0xODAgMjEsLTE4MCAyMSwtMTQ0IDEzNiwtMTQ0IDEzNiwtMTgwIiBzdHlsZT0iZmlsbDogdmFyKC0tbWQtZ3JhcGh2aXotbm9kZS1iZy1jb2xvcik7c3Ryb2tlOiB2YXIoLS1tZC1ncmFwaHZpei1ub2RlLWZnLWNvbG9yKTsiPjwvcG9seWdvbj4KPHRleHQgZm9udC1mYW1pbHk9IkxleGVuZCIgZm9udC1zaXplPSIxMi4wMCIgc3R5bGU9ImZpbGw6IHZhcigtLW1kLWNvZGUtZmctY29sb3IpOy0tbWQtZ3JhcGh2aXotaG92ZXItY29sb3I6IHZhcigtLW1kLWdyYXBodml6LWEtaG92ZXItY29sb3IpOyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgeD0iNzguNSIgeT0iLTE1OC4yIj5NZW1iZXJBY2Nlc3NvcjwvdGV4dD4KPHRpdGxlPnN5c2lkZS5NZW1iZXJBY2Nlc3NvcjwvdGl0bGU+PC9hPgo8L2c+CjwvZz4KPGcgY2xhc3M9ImVkZ2UiIGlkPSJlZGdlMiI+Cjx0aXRsZT5NZW1iZXJBY2Nlc3Nvci0mZ3Q7T3duZWRNZW1iZXJBY2Nlc3NvcjwvdGl0bGU+CjxwYXRoIGQ9Ik03OC41LC0xNDMuN0M3OC41LC0xMzUuOTggNzguNSwtMTI2LjcxIDc4LjUsLTExOC4xMSIgZmlsbD0ibm9uZSIgc3R5bGU9InN0cm9rZTogdmFyKC0tbWQtZ3JhcGh2aXotZWRnZS1jb2xvcik7IiAvPgo8cG9seWdvbiBwb2ludHM9IjgyLC0xMTguMSA3OC41LC0xMDguMSA3NSwtMTE4LjEgODIsLTExOC4xIiBzdHlsZT0iZmlsbDogdmFyKC0tbWQtZ3JhcGh2aXotZWRnZS1jb2xvcik7c3Ryb2tlOiB2YXIoLS1tZC1ncmFwaHZpei1lZGdlLWNvbG9yKTsiPjwvcG9seWdvbj4KPC9nPgo8L2c+Cjwvc3ZnPg==" class="graphviz" />
+
+</div>
+
+<span class="sd-summary-text">Members defined in <a href="#syside.ParameterAccessor" class="reference internal" title="syside.ParameterAccessor"><span class="pre"><code class="sourceCode python">ParameterAccessor</code></span></a> (5 members)</span><span class="sd-summary-state-marker sd-summary-chevron-right"><img src="data:image/svg+xml;base64,PHN2ZyBhcmlhLWhpZGRlbj0idHJ1ZSIgY2xhc3M9InNkLW9jdGljb24gc2Qtb2N0aWNvbi1jaGV2cm9uLXJpZ2h0IiBoZWlnaHQ9IjEuNWVtIiB2ZXJzaW9uPSIxLjEiIHZpZXdib3g9IjAgMCAyNCAyNCIgd2lkdGg9IjEuNWVtIj48cGF0aCBkPSJNOC43MiAxOC43OGEuNzUuNzUgMCAwIDEgMC0xLjA2TDE0LjQ0IDEyIDguNzIgNi4yOGEuNzUxLjc1MSAwIDAgMSAuMDE4LTEuMDQyLjc1MS43NTEgMCAwIDEgMS4wNDItLjAxOGw2LjI1IDYuMjVhLjc1Ljc1IDAgMCAxIDAgMS4wNmwtNi4yNSA2LjI1YS43NS43NSAwIDAgMS0xLjA2IDBaIiAvPjwvc3ZnPg==" class="sd-octicon sd-octicon-chevron-right" /></span>
+
+<div class="sd-summary-content sd-card-body docutils">
+
+<div class="pst-scrollable-table-container">
+
+|  |  |  |  |
+|----|----|----|----|
+| <span class="nerd-font"></span> | <a href="#syside.ParameterAccessor.argument" class="reference internal" title="syside.ParameterAccessor.argument"><span class="pre"><code class="sourceCode python">argument</code></span></a> | <span class="pre">`R`</span> | The <span class="pre">`argument`</span> accessible by this <span class="pre">`parameter`</span>. |
+| <span class="nerd-font"></span> | <a href="#syside.ParameterAccessor.extract_argument" class="reference internal" title="syside.ParameterAccessor.extract_argument"><span class="pre"><code class="sourceCode python">extract_argument</code></span></a> |  | Extract the <span class="pre">`argument`</span> while leaving <span class="pre">`parameter`</span> intact. Raises <span class="pre">`ValueError`</span> if there is no <span class="pre">`argument`</span>. |
+| <span class="nerd-font"></span> | <a href="#syside.ParameterAccessor.remove_argument" class="reference internal" title="syside.ParameterAccessor.remove_argument"><span class="pre"><code class="sourceCode python">remove_argument</code></span></a> |  | Remove the <span class="pre">`argument`</span> while leaving <span class="pre">`parameter`</span> intact. Does nothing if there is no <span class="pre">`argument`</span>. |
+| <span class="nerd-font"></span> | <a href="#syside.ParameterAccessor.set_argument" class="reference internal" title="syside.ParameterAccessor.set_argument"><span class="pre"><code class="sourceCode python">set_argument</code></span></a> |  | Set the <span class="pre">`argument`</span> to an owned <span class="pre">`expression`</span>. Ownership constraints apply. An empty parameter will be constructed if there is none. |
+| <span class="nerd-font"></span> | <a href="#syside.ParameterAccessor.set_member_element" class="reference internal" title="syside.ParameterAccessor.set_member_element"><span class="pre"><code class="sourceCode python">set_member_element</code></span></a> |  | Set a new *owned* <span class="pre">`member_element`</span>, ownership constraints apply. Replaces the previous <span class="pre">`member_element`</span>, which may be reused by the model. <span class="pre">`name_id`</span> has no effect since the <span class="pre">`element`</span> is always taken ownership of. |
+
+</div>
+
+</div>
+
+<span class="sd-summary-text">Members inherited from <a href="/python/v0.8.4/syside/OwnedMemberAccessor.md" class="reference internal" title="syside.OwnedMemberAccessor"><span class="pre"><code class="sourceCode python">OwnedMemberAccessor</code></span></a> (1 member)</span><span class="sd-summary-state-marker sd-summary-chevron-right"><img src="data:image/svg+xml;base64,PHN2ZyBhcmlhLWhpZGRlbj0idHJ1ZSIgY2xhc3M9InNkLW9jdGljb24gc2Qtb2N0aWNvbi1jaGV2cm9uLXJpZ2h0IiBoZWlnaHQ9IjEuNWVtIiB2ZXJzaW9uPSIxLjEiIHZpZXdib3g9IjAgMCAyNCAyNCIgd2lkdGg9IjEuNWVtIj48cGF0aCBkPSJNOC43MiAxOC43OGEuNzUuNzUgMCAwIDEgMC0xLjA2TDE0LjQ0IDEyIDguNzIgNi4yOGEuNzUxLjc1MSAwIDAgMSAuMDE4LTEuMDQyLjc1MS43NTEgMCAwIDEgMS4wNDItLjAxOGw2LjI1IDYuMjVhLjc1Ljc1IDAgMCAxIDAgMS4wNmwtNi4yNSA2LjI1YS43NS43NSAwIDAgMS0xLjA2IDBaIiAvPjwvc3ZnPg==" class="sd-octicon sd-octicon-chevron-right" /></span>
+
+<div class="sd-summary-content sd-card-body docutils">
+
+<div class="pst-scrollable-table-container">
+
+|  |  |  |  |
+|----|----|----|----|
+| <span class="nerd-font"></span> | <a href="/python/v0.8.4/syside/OwnedMemberAccessor.md" class="reference internal" title="syside.OwnedMemberAccessor.add_member_element"><span class="pre"><code class="sourceCode python">add_member_element</code></span></a> |  | Constructs a new <span class="pre">`member_element`</span> with the default type if this <span class="pre">`member`</span> is empty, otherwise does nothing. |
+
+</div>
+
+</div>
+
+<span class="sd-summary-text">Members inherited from <a href="/python/v0.8.4/syside/MemberAccessor.md" class="reference internal" title="syside.MemberAccessor"><span class="pre"><code class="sourceCode python">MemberAccessor</code></span></a> (5 members)</span><span class="sd-summary-state-marker sd-summary-chevron-right"><img src="data:image/svg+xml;base64,PHN2ZyBhcmlhLWhpZGRlbj0idHJ1ZSIgY2xhc3M9InNkLW9jdGljb24gc2Qtb2N0aWNvbi1jaGV2cm9uLXJpZ2h0IiBoZWlnaHQ9IjEuNWVtIiB2ZXJzaW9uPSIxLjEiIHZpZXdib3g9IjAgMCAyNCAyNCIgd2lkdGg9IjEuNWVtIj48cGF0aCBkPSJNOC43MiAxOC43OGEuNzUuNzUgMCAwIDEgMC0xLjA2TDE0LjQ0IDEyIDguNzIgNi4yOGEuNzUxLjc1MSAwIDAgMSAuMDE4LTEuMDQyLjc1MS43NTEgMCAwIDEgMS4wNDItLjAxOGw2LjI1IDYuMjVhLjc1Ljc1IDAgMCAxIDAgMS4wNmwtNi4yNSA2LjI1YS43NS43NSAwIDAgMS0xLjA2IDBaIiAvPjwvc3ZnPg==" class="sd-octicon sd-octicon-chevron-right" /></span>
+
+<div class="sd-summary-content sd-card-body docutils">
+
+<div class="pst-scrollable-table-container">
+
+|  |  |  |  |
+|----|----|----|----|
+| <span class="nerd-font"></span> | <a href="/python/v0.8.4/syside/MemberAccessor.md" class="reference internal" title="syside.MemberAccessor.member_element"><span class="pre"><code class="sourceCode python">member_element</code></span></a> | <span class="pre">`R`</span> | The <span class="pre">`member_element`</span> of this <span class="pre">`member`</span> if it is not empty. |
+| <span class="nerd-font"></span> | <a href="/python/v0.8.4/syside/MemberAccessor.md" class="reference internal" title="syside.MemberAccessor.membership"><span class="pre"><code class="sourceCode python">membership</code></span></a> | <span class="pre">`R`</span> | The <span class="pre">`membership`</span> of this <span class="pre">`member`</span> if it is not empty. |
+| <span class="nerd-font"></span> | <a href="/python/v0.8.4/syside/MemberAccessor.md" class="reference internal" title="syside.MemberAccessor.__bool__"><span class="pre"><code class="sourceCode python"><span class="fu">__bool__</span></code></span></a> |  |  |
+| <span class="nerd-font"></span> | <a href="/python/v0.8.4/syside/MemberAccessor.md" class="reference internal" title="syside.MemberAccessor.extract_member_element"><span class="pre"><code class="sourceCode python">extract_member_element</code></span></a> |  | Extract the <span class="pre">`member_element`</span> leaving this <span class="pre">`member`</span> empty. Note that not all empty <span class="pre">`members`</span> are valid textual syntax. This does not check that the model is left in a valid state. |
+| <span class="nerd-font"></span> | <a href="/python/v0.8.4/syside/MemberAccessor.md" class="reference internal" title="syside.MemberAccessor.remove_member_element"><span class="pre"><code class="sourceCode python">remove_member_element</code></span></a> |  | Remove the <span class="pre">`member_element`</span> leaving this <span class="pre">`member`</span> empty. Note that not all empty <span class="pre">`members`</span> are valid textual syntax. This does not check that the model is left in a valid state. |
+
+</div>
+
+</div>
+
+<span class="nerd-font"></span> **Attributes**
+
+*<span class="pre">property</span><span class="w"> </span>*<span class="sig-name descname"><span class="pre">argument</span></span>*<span class="p"><span class="pre">:</span></span><span class="w"> </span><a href="/python/v0.8.4/syside/Expression.md" class="reference internal" title="syside.Expression"><span class="pre">syside.Expression</span></a><span class="w"> </span><span class="p"><span class="pre">\|</span></span><span class="w"> </span><span class="pre">None</span>*<a href="#syside.ParameterAccessor.argument" class="headerlink" title="Link to this definition"><span class="nerd-font"></span></a>  
+The <span class="pre">`argument`</span> accessible by this <span class="pre">`parameter`</span>.
+
+<span class="nerd-font"></span> **Methods**
+
+<span class="sig-name descname"><span class="pre">extract_argument</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><a href="/python/v0.8.4/syside/Expression.md" class="reference internal" title="syside.Expression"><span class="pre">syside.Expression</span></a></span></span><a href="#syside.ParameterAccessor.extract_argument" class="headerlink" title="Link to this definition"><span class="nerd-font"></span></a>  
+Extract the <span class="pre">`argument`</span> while leaving <span class="pre">`parameter`</span> intact. Raises <span class="pre">`ValueError`</span> if there is no <span class="pre">`argument`</span>.
+
+Note that it is up to the user to ensure that the returned orphan element is not leaked.
+
+<span class="sig-name descname"><span class="pre">remove_argument</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a href="#syside.ParameterAccessor.remove_argument" class="headerlink" title="Link to this definition"><span class="nerd-font"></span></a>  
+Remove the <span class="pre">`argument`</span> while leaving <span class="pre">`parameter`</span> intact. Does nothing if there is no <span class="pre">`argument`</span>.
+
+<span class="sig-name descname"><span class="pre">set_argument</span></span><span class="sig-paren">(</span>*<span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">syside.ParameterAccessor.set_argument.M</span></span>*<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">\[</span></span><a href="/python/v0.8.4/syside/FeatureValue.md" class="reference internal" title="syside.FeatureValue"><span class="pre">syside.FeatureValue</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">syside.ParameterAccessor.set_argument.M</span><span class="p"><span class="pre">\]</span></span></span></span><a href="#syside.ParameterAccessor.set_argument" class="headerlink" title="Link to this definition"><span class="nerd-font"></span></a>  
+Set the <span class="pre">`argument`</span> to an owned <span class="pre">`expression`</span>. Ownership constraints apply. An empty parameter will be constructed if there is none.
+
+Returns a pair of (<span class="pre">`feature_value`</span>, <span class="pre">`argument`</span>).
+
+<span class="sig-name descname"><span class="pre">set_argument</span></span><span class="sig-paren">(</span>*<span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">syside.ParameterAccessor.set_argument.M</span><span class="w"> </span><span class="p"><span class="pre">\|</span></span><span class="w"> </span><span class="pre">None</span></span>*<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">\[</span></span><a href="/python/v0.8.4/syside/FeatureValue.md" class="reference internal" title="syside.FeatureValue"><span class="pre">syside.FeatureValue</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">syside.ParameterAccessor.set_argument.M</span><span class="p"><span class="pre">\]</span></span><span class="w"> </span><span class="p"><span class="pre">\|</span></span><span class="w"> </span><span class="pre">None</span></span></span>  
+<span class="pre">`set_argument`</span> overload that will instead remove the argument if <span class="pre">`expression`</span>` `<span class="pre">`is`</span>` `<span class="pre">`None`</span> and return <span class="pre">`None`</span>. Otherwise behaviour is the same.
+
+<span class="sig-name descname"><span class="pre">set_argument</span></span><span class="sig-paren">(</span>*<span class="n"><span class="pre">expression</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span><span class="p"><span class="pre">\[</span></span><span class="pre">syside.ParameterAccessor.set_argument.M</span><span class="p"><span class="pre">\]</span></span></span>*<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">\[</span></span><a href="/python/v0.8.4/syside/FeatureValue.md" class="reference internal" title="syside.FeatureValue"><span class="pre">syside.FeatureValue</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">syside.ParameterAccessor.set_argument.M</span><span class="p"><span class="pre">\]</span></span></span></span>  
+Set the <span class="pre">`argument`</span> to an empty <span class="pre">`Expression`</span> with the corresponding type. An empty parameter will be constructed if there is none.
+
+Returns a pair of (<span class="pre">`feature_value`</span>, <span class="pre">`argument`</span>).
+
+<span class="sig-name descname"><span class="pre">set_member_element</span></span><span class="sig-paren">(</span>*<span class="n"><span class="pre">element</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">syside.ParameterAccessor.set_member_element.M</span></span>*, *<span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a href="/python/v0.8.4/syside//README.md" class="reference internal" title="syside.NameID"><span class="pre">syside.NameID</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">...</span></span>*<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">\[</span></span><a href="/python/v0.8.4/syside/ParameterMembership.md" class="reference internal" title="syside.ParameterMembership"><span class="pre">syside.ParameterMembership</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">syside.ParameterAccessor.set_member_element.M</span><span class="p"><span class="pre">\]</span></span></span></span><a href="#syside.ParameterAccessor.set_member_element" class="headerlink" title="Link to this definition"><span class="nerd-font"></span></a>  
+Set a new *owned* <span class="pre">`member_element`</span>, ownership constraints apply. Replaces the previous <span class="pre">`member_element`</span>, which may be reused by the model. <span class="pre">`name_id`</span> has no effect since the <span class="pre">`element`</span> is always taken ownership of.
+
+Returns a pair of (<span class="pre">`membership`</span>, <span class="pre">`member_element`</span>) where <span class="pre">`member_element`</span> is <span class="pre">`element`</span>.
+
+<span class="sig-name descname"><span class="pre">set_member_element</span></span><span class="sig-paren">(</span>*<span class="n"><span class="pre">element</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">syside.ParameterAccessor.set_member_element.M</span><span class="w"> </span><span class="p"><span class="pre">\|</span></span><span class="w"> </span><span class="pre">None</span></span>*, *<span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a href="/python/v0.8.4/syside//README.md" class="reference internal" title="syside.NameID"><span class="pre">syside.NameID</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">...</span></span>*<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">\[</span></span><a href="/python/v0.8.4/syside/ParameterMembership.md" class="reference internal" title="syside.ParameterMembership"><span class="pre">syside.ParameterMembership</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">syside.ParameterAccessor.set_member_element.M</span><span class="p"><span class="pre">\]</span></span><span class="w"> </span><span class="p"><span class="pre">\|</span></span><span class="w"> </span><span class="pre">None</span></span></span>  
+<span class="pre">`set_member_element`</span> overload that will remove the member element if <span class="pre">`element`</span> is <span class="pre">`None`</span>, otherwise the behaviour is the same.
+
+<span class="sig-name descname"><span class="pre">set_member_element</span></span><span class="sig-paren">(</span>*<span class="n"><span class="pre">element</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">type</span><span class="p"><span class="pre">\[</span></span><span class="pre">syside.ParameterAccessor.set_member_element.M</span><span class="p"><span class="pre">\]</span></span></span>*<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">→</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">\[</span></span><a href="/python/v0.8.4/syside/ParameterMembership.md" class="reference internal" title="syside.ParameterMembership"><span class="pre">syside.ParameterMembership</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">syside.ParameterAccessor.set_member_element.M</span><span class="p"><span class="pre">\]</span></span></span></span>  
+Constructs a new empty <span class="pre">`member_element`</span> with the provided type. Replaces the previous <span class="pre">`member_element`</span>. Because a new element is always constructed, ownership constraints do not apply.
+
+Returns a pair of (<span class="pre">`membership`</span>, <span class="pre">`member_element`</span>).
+
+<span class="sd-summary-text"><span class="nerd-font"></span> Used in</span><span class="sd-summary-state-marker sd-summary-chevron-right"><img src="data:image/svg+xml;base64,PHN2ZyBhcmlhLWhpZGRlbj0idHJ1ZSIgY2xhc3M9InNkLW9jdGljb24gc2Qtb2N0aWNvbi1jaGV2cm9uLXJpZ2h0IiBoZWlnaHQ9IjEuNWVtIiB2ZXJzaW9uPSIxLjEiIHZpZXdib3g9IjAgMCAyNCAyNCIgd2lkdGg9IjEuNWVtIj48cGF0aCBkPSJNOC43MiAxOC43OGEuNzUuNzUgMCAwIDEgMC0xLjA2TDE0LjQ0IDEyIDguNzIgNi4yOGEuNzUxLjc1MSAwIDAgMSAuMDE4LTEuMDQyLjc1MS43NTEgMCAwIDEgMS4wNDItLjAxOGw2LjI1IDYuMjVhLjc1Ljc1IDAgMCAxIDAgMS4wNmwtNi4yNSA2LjI1YS43NS43NSAwIDAgMS0xLjA2IDBaIiAvPjwvc3ZnPg==" class="sd-octicon sd-octicon-chevron-right" /></span>
+
+<div class="sd-summary-content sd-card-body docutils">
+
+- <a href="/python/v0.8.4/syside/AcceptActionUsage.md" class="reference internal" title="syside.AcceptActionUsage"><span class="pre"><code class="sourceCode python">syside.AcceptActionUsage</code></span></a>
+
+  - <a href="/python/v0.8.4/syside/AcceptActionUsage.md" class="reference internal" title="syside.AcceptActionUsage.payload_member"><span class="pre"><code class="sourceCode python">payload_member</code></span></a>
+
+  - <a href="/python/v0.8.4/syside/AcceptActionUsage.md" class="reference internal" title="syside.AcceptActionUsage.receiver_member"><span class="pre"><code class="sourceCode python">receiver_member</code></span></a>
+
+- <a href="/python/v0.8.4/syside/AssignmentActionUsage.md" class="reference internal" title="syside.AssignmentActionUsage"><span class="pre"><code class="sourceCode python">syside.AssignmentActionUsage</code></span></a>
+
+  - <a href="/python/v0.8.4/syside/AssignmentActionUsage.md" class="reference internal" title="syside.AssignmentActionUsage.target_member"><span class="pre"><code class="sourceCode python">target_member</code></span></a>
+
+  - <a href="/python/v0.8.4/syside/AssignmentActionUsage.md" class="reference internal" title="syside.AssignmentActionUsage.value_member"><span class="pre"><code class="sourceCode python">value_member</code></span></a>
+
+- <a href="/python/v0.8.4/syside/SendActionUsage.md" class="reference internal" title="syside.SendActionUsage"><span class="pre"><code class="sourceCode python">syside.SendActionUsage</code></span></a>
+
+  - <a href="/python/v0.8.4/syside/SendActionUsage.md" class="reference internal" title="syside.SendActionUsage.payload_member"><span class="pre"><code class="sourceCode python">payload_member</code></span></a>
+
+  - <a href="/python/v0.8.4/syside/SendActionUsage.md" class="reference internal" title="syside.SendActionUsage.receiver_member"><span class="pre"><code class="sourceCode python">receiver_member</code></span></a>
+
+  - <a href="/python/v0.8.4/syside/SendActionUsage.md" class="reference internal" title="syside.SendActionUsage.sender_member"><span class="pre"><code class="sourceCode python">sender_member</code></span></a>
+
+- <a href="/python/v0.8.4/syside/TerminateActionUsage.md" class="reference internal" title="syside.TerminateActionUsage"><span class="pre"><code class="sourceCode python">syside.TerminateActionUsage</code></span></a>
+
+  - <a href="/python/v0.8.4/syside/TerminateActionUsage.md" class="reference internal" title="syside.TerminateActionUsage.terminated_occurrence_member"><span class="pre"><code class="sourceCode python">terminated_occurrence_member</code></span></a>
+
+</div>
+
+</div>

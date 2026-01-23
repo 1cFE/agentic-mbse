@@ -30,7 +30,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1" },
-    { name = "syside", specifier = ">=0.8.1" },
+    { name = "syside", specifier = ">=0.8.4" },
 ]
 provides-extras = ["dev"]
 
@@ -476,16 +476,17 @@ wheels = [
 
 [[package]]
 name = "syside"
-version = "0.8.3"
+version = "0.8.4"
 source = { registry = "https://gitlab.com/api/v4/projects/69960816/packages/pypi/simple" }
 dependencies = [
     { name = "click" },
 ]
 wheels = [
-    { url = "https://gitlab.com/api/v4/projects/69960816/packages/pypi/files/3d117261675fe664a7fe7361d75d5dbb6731e08d88697e71f2e70d263f37e225/syside-0.8.3-cp312-abi3-macosx_10_13_x86_64.whl", hash = "sha256:3d117261675fe664a7fe7361d75d5dbb6731e08d88697e71f2e70d263f37e225" },
-    { url = "https://gitlab.com/api/v4/projects/69960816/packages/pypi/files/cdc9fc2d21d26e15ac527abae31edff55ae3aa2995cdb078e7fb83162f1b873e/syside-0.8.3-cp312-abi3-macosx_11_0_arm64.whl", hash = "sha256:cdc9fc2d21d26e15ac527abae31edff55ae3aa2995cdb078e7fb83162f1b873e" },
-    { url = "https://gitlab.com/api/v4/projects/69960816/packages/pypi/files/33958ea757be06e9a35d69482cf5d0aa55abf4cd8f80b33fb636e52c19ae9ddd/syside-0.8.3-cp312-abi3-manylinux_2_31_x86_64.whl", hash = "sha256:33958ea757be06e9a35d69482cf5d0aa55abf4cd8f80b33fb636e52c19ae9ddd" },
-    { url = "https://gitlab.com/api/v4/projects/69960816/packages/pypi/files/a095e667afafbee6d1fafb72f32130c0932b1b95dd5da9a5d2ce7942e6a91ad4/syside-0.8.3-cp312-abi3-win_amd64.whl", hash = "sha256:a095e667afafbee6d1fafb72f32130c0932b1b95dd5da9a5d2ce7942e6a91ad4" },
+    { url = "https://gitlab.com/api/v4/projects/69960816/packages/pypi/files/b03b44c2c316463dce1502d2ca02b638a8ac5cc4a3535bcc0d6999b0d2948480/syside-0.8.4-cp312-abi3-macosx_10_13_x86_64.whl", hash = "sha256:b03b44c2c316463dce1502d2ca02b638a8ac5cc4a3535bcc0d6999b0d2948480" },
+    { url = "https://gitlab.com/api/v4/projects/69960816/packages/pypi/files/bed4f6f29ff8fafcafad06fe1e13abfede3d411f79fc55c0664dae8bf3fb24a1/syside-0.8.4-cp312-abi3-macosx_11_0_arm64.whl", hash = "sha256:bed4f6f29ff8fafcafad06fe1e13abfede3d411f79fc55c0664dae8bf3fb24a1" },
+    { url = "https://gitlab.com/api/v4/projects/69960816/packages/pypi/files/230dfff7b975e43c80f8fbccd72c090f288d504797012b267c2599ce467acc38/syside-0.8.4-cp312-abi3-manylinux_2_31_x86_64.whl", hash = "sha256:230dfff7b975e43c80f8fbccd72c090f288d504797012b267c2599ce467acc38" },
+    { url = "https://gitlab.com/api/v4/projects/69960816/packages/pypi/files/e1ce1c5841255e5e88c0b24f4f84d2cdb4810d6ab44509dc8aa6ede1eff7b774/syside-0.8.4-cp312-abi3-win_amd64.whl", hash = "sha256:e1ce1c5841255e5e88c0b24f4f84d2cdb4810d6ab44509dc8aa6ede1eff7b774" },
+    { url = "https://gitlab.com/api/v4/projects/69960816/packages/pypi/files/215dca63a58860efe07d10fa6792b3886b8ed879fe4402a7bc2425ccb61e6185/syside-0.8.4-cp312-abi3-win_arm64.whl", hash = "sha256:215dca63a58860efe07d10fa6792b3886b8ed879fe4402a7bc2425ccb61e6185" },
 ]
 
 [[package]]

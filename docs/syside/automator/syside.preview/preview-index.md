@@ -1,14 +1,14 @@
-<div id="experimental-api" class="section">
+<div id="experimental-api-labs" class="section">
 
-# Experimental API[](#experimental-api "Link to this heading")
+# Experimental API <span class="sd-sphinx-override sd-badge sd-outline-primary sd-text-primary">Labs</span><a href="#experimental-api-labs" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-`syside.preview` is an alternative version of `syside` library that contains experimental changes to the API and upcoming new functionalities. You can think of it as a beta release of a new `syside` version, meant to gather feedback from users.
+<span class="pre">`syside.preview`</span> is an alternative version of <span class="pre">`syside`</span> library that contains experimental changes to the API and upcoming new functionalities. You can think of it as a beta release of a new <span class="pre">`syside`</span> version, meant to gather feedback from users.
 
-Keep in mind that as this is an experimental release, we are still working on improving the quality of implementation. Users should also note that `syside.preview` might be missing particular features or functionalities that are present in `syside` due to bugs or clashing with the experimental changes.
+Keep in mind that as this is an experimental release, we are still working on improving the quality of implementation. Users should also note that <span class="pre">`syside.preview`</span> might be missing particular features or functionalities that are present in <span class="pre">`syside`</span> due to bugs or clashing with the experimental changes.
 
-We expect `syside.preview` to keep growing for the first year of Syside official release. As we gather feedback from users, we will be improving the quality of implementation and merging the changes into `syside` library.
+As we gather feedback from users, we will be improving the quality of implementation and merging the changes into <span class="pre">`syside`</span> library.
 
-For the documentation of proposed changed, please refer to [<span class="std std-ref">Package Contents</span>](/v0.8.1/automator/syside.preview/syside.preview.md). To see the examples of the proposed changes, check out [<span class="std std-ref">Changes in Practice</span>](/v0.8.1/automator/syside.preview/examples.md).
+For the documentation of proposed changes, please refer to <a href="/python/v0.8.4/syside/preview//README.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">API</code></span><code class="sourceCode python"> </code><span class="pre"><code class="sourceCode python">Reference</code></span></a>. To see the examples of the proposed changes, check out <a href="/automator/syside.preview/examples.md" class="reference internal"><span class="std std-ref">Changes in Practice</span></a>.
 
 <div class="toctree-wrapper compound">
 

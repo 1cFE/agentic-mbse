@@ -1,32 +1,24 @@
-<div id="json-import" class="section">
+<div id="json-import-labs" class="section">
 
-# JSON Import[](#json-import "Link to this heading")
+# JSON Import <span class="sd-sphinx-override sd-badge sd-outline-primary sd-text-primary">Labs</span><a href="#json-import-labs" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-This example illustrated importing SysML v2 model from a JSON file by deserializing it. The main function of interest is [`syside.json.loads`](/v0.8.1/api/generated/syside.json.loads.md "syside.json.loads"), which takes a JSON array `s` and a `document` of class [`Document`](/v0.8.1/api/generated/syside.Document.md "syside.Document") that the deserialized model will be stored in. The [`syside.json.loads`](/v0.8.1/api/generated/syside.json.loads.md "syside.json.loads") function returns the deserialized model which can then be used as if it was imported from a `.sysml` file.
-
-<div class="admonition note">
-
-Note
-
-Before running this example, make sure you have activated the Syside license by running `syside-license check` according to the instructions in the [<span class="std std-ref">License Activation</span>](/v0.8.1/automator/install.md) section.
-
-</div>
+This example illustrated importing SysML v2 model from a JSON file by deserializing it. The main function of interest is <a href="/python/v0.8.4/syside/json//README.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">json.loads</code></span></a>, which takes a JSON array <span class="pre">`s`</span> and a <span class="pre">`document`</span> of class <a href="/python/v0.8.4/syside/Document.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Document</code></span></a> that the deserialized model will be stored in. The <a href="/python/v0.8.4/syside/json//README.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">json.loads</code></span></a> function returns the deserialized model which can then be used as if it was imported from a <span class="pre">`.sysml`</span> file.
 
 <div id="concepts-used" class="section">
 
-## Concepts Used[](#concepts-used "Link to this heading")
+## Concepts Used<a href="#concepts-used" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-  - A [`Model`](/v0.8.1/api/generated/syside.Model.md "syside.Model") is a SysMLv2 model represented using abstract syntax. This is the output of the function [`syside.load_model`](/v0.8.1/api/generated/syside.load_model.md "syside.load_model").
+- A <a href="/python/v0.8.4/syside/Model.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Model</code></span></a> is a SysMLv2 model represented using abstract syntax. This is the output of the function <a href="/python/v0.8.4/syside//README.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">load_model</code></span></a>.
 
-  - The `syside.json` module for serializing to SysML v2 JSON.
+- The <span class="pre">`syside.json`</span> module for serializing to SysML v2 JSON.
 
-  - `walk_ownership_tree` is a function that prints out elements in a model in a tree-like format. In this example it is used to show that the model has been successfully deserialized from JSON format.
+- <span class="pre">`walk_ownership_tree`</span> is a function that prints out elements in a model in a tree-like format. In this example it is used to show that the model has been successfully deserialized from JSON format.
 
 </div>
 
 <div id="example-script" class="section">
 
-## Example Script[](#example-script "Link to this heading")
+## Example Script<a href="#example-script" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 <div class="highlight-python notranslate">
 
@@ -34,25 +26,25 @@ Before running this example, make sure you have activated the Syside license by 
 
     import pathlib
     import syside
-    
+
     EXAMPLE_DIR = pathlib.Path(__file__).parent
     MODEL_FILE_PATH = EXAMPLE_DIR / "example_model_3.sysml"
     # The deserialized model will be stored in a document with MODEL_PATH path.
     # The MODEL_PATH does not necessarily need to exist on the local file system.
     MODEL_PATH = "file://" + str(MODEL_FILE_PATH)
-    
-    
+
+
     def walk_ownership_tree(element: syside.Element, level: int = 0) -> None:
         """
         Prints out all elements in a model in a tree-like format, where
         child elements appear indented under their parent elements. For
         example:
-    
+
         Parent
           Child1
           Child2
             Grandchild
-    
+
         Args:
             element: The model element to start printing from
             level: How many levels to indent (increases for nested elements)
@@ -66,16 +58,16 @@ Before running this example, make sure you have activated the Syside license by 
         element.owned_elements.for_each(
             lambda owned_element: walk_ownership_tree(owned_element, level + 1)
         )
-    
-    
+
+
     def main() -> None:
         with open("example_json.json", "r") as f:
             json_import = f.read()
         deserialized_model, _ = syside.json.loads(json_import, MODEL_PATH)
-    
+
         walk_ownership_tree(deserialized_model.document.root_node)
-    
-    
+
+
     if __name__ == "__main__":
         main()
 
@@ -87,7 +79,7 @@ Before running this example, make sure you have activated the Syside license by 
 
 <div id="output" class="section">
 
-## Output[](#output "Link to this heading")
+## Output<a href="#output" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 <div class="highlight-text notranslate">
 
@@ -109,9 +101,9 @@ Before running this example, make sure you have activated the Syside license by 
 
 <div id="download" class="section">
 
-## Download[](#download "Link to this heading")
+## Download<a href="#download" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-Download this example [here](/v0.8.1/examples/json_loads.zip).
+Download this example <a href="/examples/json_loads.zip" class="reference external">here</a>.
 
 </div>
 

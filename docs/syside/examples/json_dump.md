@@ -1,20 +1,12 @@
-<div id="json-export" class="section">
+<div id="json-export-labs" class="section">
 
-# JSON Export[](#json-export "Link to this heading")
+# JSON Export <span class="sd-sphinx-override sd-badge sd-outline-primary sd-text-primary">Labs</span><a href="#json-export-labs" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-This example illustrates exporting the root namespace loaded from a file to the SysML v2 JSON serialization format. The main function of interest is `syside.json.dumps`, which takes an `Element` and generates a string representation of a SysML v2 JSON serialization. The serialization includes the element and (recursively) all its owned members. Typically, as in this example, you would serialize the root namespace of a loaded document.
-
-<div class="admonition note">
-
-Note
-
-Before running this example, make sure you have activated the Syside license by running `syside-license check` according to the instructions in the [<span class="std std-ref">License Activation</span>](/v0.8.1/automator/install.md) section.
-
-</div>
+This example illustrates exporting the root namespace loaded from a file to the SysML v2 JSON serialization format. The main function of interest is <a href="/python/v0.8.4/syside/json//README.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">json.dumps</code></span></a>, which takes an <a href="/python/v0.8.4/syside/Element.md" class="apiref reference external"><span class="pre"><code class="sourceCode python">Element</code></span></a> and generates a string representation of a SysML v2 JSON serialization. The serialization includes the element and (recursively) all its owned members. Typically, as in this example, you would serialize the root namespace of a loaded document.
 
 <div id="example-model" class="section">
 
-## Example Model[](#example-model "Link to this heading")
+## Example Model<a href="#example-model" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 <div class="highlight-sysml notranslate">
 
@@ -23,7 +15,7 @@ Before running this example, make sure you have activated the Syside license by 
     package 'JSON Export Example' {
       part def Electrical;
       part def Mechanical;
-    
+
       part Automobile {
         part 'Drive Train' : Electrical;
         part Chassis : Mechanical;
@@ -38,7 +30,7 @@ Before running this example, make sure you have activated the Syside license by 
 
 <div id="example-script" class="section">
 
-## Example Script[](#example-script "Link to this heading")
+## Example Script<a href="#example-script" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 <div class="highlight-python notranslate">
 
@@ -46,30 +38,30 @@ Before running this example, make sure you have activated the Syside license by 
 
     import pathlib
     import syside
-    
-    
+
+
     EXAMPLE_DIR = pathlib.Path(__file__).parent
     MODEL_FILE_PATH = EXAMPLE_DIR / "example_model.sysml"
-    
-    
+
+
     def main() -> None:
         (model, diagnostics) = syside.try_load_model([MODEL_FILE_PATH])
-    
+
         # Only errors cause an exception. Syside may also report warnings and
         # informational messages, but not for this example.
         assert not diagnostics.contains_errors(warnings_as_errors=True)
-    
+
         # Export the model to JSON
         assert len(model.user_docs) == 1
-    
+
         with model.user_docs[0].lock() as locked:
             print(
                 syside.json.dumps(
                     locked.root_node, syside.SerializationOptions.minimal()
                 )
             )
-    
-    
+
+
     if __name__ == "__main__":
         main()
 
@@ -81,7 +73,7 @@ Before running this example, make sure you have activated the Syside license by 
 
 <div id="output" class="section">
 
-## Output[](#output "Link to this heading")
+## Output<a href="#output" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 <div class="highlight-text notranslate">
 
@@ -258,9 +250,9 @@ Before running this example, make sure you have activated the Syside license by 
 
 <div id="download" class="section">
 
-## Download[](#download "Link to this heading")
+## Download<a href="#download" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-Download this example [here](/v0.8.1/examples/json_dump.zip).
+Download this example <a href="/examples/json_dump.zip" class="reference external">here</a>.
 
 </div>
 

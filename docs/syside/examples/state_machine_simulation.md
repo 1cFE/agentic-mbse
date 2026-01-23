@@ -1,34 +1,26 @@
 <div id="State-Machine-Simulation" class="section">
 
-# State Machine Simulation[](#State-Machine-Simulation "Link to this heading")
+# State Machine Simulation<a href="#State-Machine-Simulation" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-This example shows how to use Python library [python-statemachine](https://python-statemachine.readthedocs.io/en/latest/) to simulate a state machine defined in a SysML file. Since the example is large, we do not show all code inline. To see all files, please download the example [from here](/v0.8.1/examples/state_machine_simulation.zip).
+This example shows how to use Python library <a href="https://python-statemachine.readthedocs.io/en/latest/" class="reference external" target="_blank">python-statemachine</a> to simulate a state machine defined in a SysML file. Since the example is large, we do not show all code inline. To see all files, please download the example <a href="/examples/state_machine_simulation.zip" class="reference external">from here</a>.
 
 <div id="Running-The-Example" class="section">
 
-## Running The Example[](#Running-The-Example "Link to this heading")
+## Running The Example<a href="#Running-The-Example" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-To try the example, please download this Jupyter notebook and accompanying files [from here](/v0.8.1/examples/state_machine_simulation.zip). You should unzip the archive in a folder within the VS Code workspace. To run the example, open `example_notebook.ipynb` file in VS Code. If you have not installed VS Code Python extensions yet, VS Code should prompt you to install them. Follow the installation instructions. Once the extensions are installed, when you open `example_notebook.ipynb` file, VS Code should show “Run All” button at the top of the tab. Click on it to run the example. VS Code may prompt you to install Python packages needed to run Jupyter notebooks, please install them. After installing the dependencies, click on “Run All” button again to run the example.
+To try the example, please download this Jupyter notebook and accompanying files <a href="/examples/state_machine_simulation.zip" class="reference external">from here</a>. You should unzip the archive in a folder within the VS Code workspace. To run the example, open <span class="pre">`example_notebook.ipynb`</span> file in VS Code. If you have not installed VS Code Python extensions yet, VS Code should prompt you to install them. Follow the installation instructions. Once the extensions are installed, when you open <span class="pre">`example_notebook.ipynb`</span> file, VS Code should show “Run All” button at the top of the tab. Click on it to run the example. VS Code may prompt you to install Python packages needed to run Jupyter notebooks, please install them. After installing the dependencies, click on “Run All” button again to run the example.
 
-If VSCode asks you to choose the Python interpreter and you are using a virtual environment, choose the one which includes `.venv` in its path.
-
-<div id="NOTE" class="section">
-
-### NOTE[](#NOTE "Link to this heading")
-
-Before running this example, make sure you have activated the Syside license by running `syside-license check` according to the instructions in the [License Activation](/v0.8.1/automator/install.md) section.
-
-</div>
+If VSCode asks you to choose the Python interpreter and you are using a virtual environment, choose the one which includes <span class="pre">`.venv`</span> in its path.
 
 </div>
 
 <div id="Install-Dependencies" class="section">
 
-## Install Dependencies[](#Install-Dependencies "Link to this heading")
+## Install Dependencies<a href="#Install-Dependencies" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-Download [Graphviz](https://www.graphviz.org/download/)
+Download <a href="https://www.graphviz.org/download/" class="reference external" target="_blank">Graphviz</a>
 
-The following command installs the Python packages needed to run this Jupyter notebook. Annotation `%%capture pip` instructs Jupyter to hide the output. To see the output, comment out that line.
+The following command installs the Python packages needed to run this Jupyter notebook. Annotation <span class="pre">`%%capture`</span>` `<span class="pre">`pip`</span> instructs Jupyter to hide the output. To see the output, comment out that line.
 
 <div class="nbinput nblast docutils container">
 
@@ -131,7 +123,7 @@ Import all dependencies needed for the example.
 
 <div id="Model" class="section">
 
-## Model[](#Model "Link to this heading")
+## Model<a href="#Model" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
 <div class="nbinput nblast docutils container">
 
@@ -152,7 +144,7 @@ Import all dependencies needed for the example.
     MODEL = "example_model.sysml"
     EXAMPLE_DIR = pathlib.Path(os.getcwd())
     MODEL_FILE_PATH = EXAMPLE_DIR / MODEL
-    
+
     (model, diagnostics) = syside.load_model([MODEL_FILE_PATH])
     assert not diagnostics.contains_errors(warnings_as_errors=True)
 
@@ -202,11 +194,11 @@ In this example, we model the alarm system of a fridge that is supposed to infor
 
 <div class="output_area docutils container">
 
-  - State green: The temperature in the fridge is as expected.
+- State green: The temperature in the fridge is as expected.
 
-  - State yellow: The temperature in the fridge is too high, but not critical yet.
+- State yellow: The temperature in the fridge is too high, but not critical yet.
 
-  - State red: The temperature in the fridge is critical, the food is going to get bad.
+- State red: The temperature in the fridge is critical, the food is going to get bad.
 
 </div>
 
@@ -259,21 +251,21 @@ The transitions between these states are guarded by the values of the temperatur
 
 <div class="output_area docutils container">
 
-  - Transition from green to yellow with guard: `readSensors.temp >= YellowThreshold and readSensors.temp < RedThreshold`
+- Transition from green to yellow with guard: <span class="pre">`readSensors.temp`</span>` `<span class="pre">`>=`</span>` `<span class="pre">`YellowThreshold`</span>` `<span class="pre">`and`</span>` `<span class="pre">`readSensors.temp`</span>` `<span class="pre">`<`</span>` `<span class="pre">`RedThreshold`</span>
 
-  - Transition from green to red with guard: `readSensors.temp >= RedThreshold`
+- Transition from green to red with guard: <span class="pre">`readSensors.temp`</span>` `<span class="pre">`>=`</span>` `<span class="pre">`RedThreshold`</span>
 
-  - Transition from yellow to green with guard: `readSensors.temp < YellowThreshold`
+- Transition from yellow to green with guard: <span class="pre">`readSensors.temp`</span>` `<span class="pre">`<`</span>` `<span class="pre">`YellowThreshold`</span>
 
-  - Transition from yellow to red with guard: `readSensors.temp >= RedThreshold`
+- Transition from yellow to red with guard: <span class="pre">`readSensors.temp`</span>` `<span class="pre">`>=`</span>` `<span class="pre">`RedThreshold`</span>
 
-  - Transition from red to green with guard: `readSensors.temp < YellowThreshold`
-
-</div>
+- Transition from red to green with guard: <span class="pre">`readSensors.temp`</span>` `<span class="pre">`<`</span>` `<span class="pre">`YellowThreshold`</span>
 
 </div>
 
-`RedThreshold` and `YellowThreshold` are constants defined in the model:
+</div>
+
+<span class="pre">`RedThreshold`</span> and <span class="pre">`YellowThreshold`</span> are constants defined in the model:
 
 <div class="nbinput docutils container">
 
@@ -321,7 +313,7 @@ The transitions between these states are guarded by the values of the temperatur
 <div class="highlight">
 
     attribute YellowThreshold = 6;
-    
+
     attribute RedThreshold = 9;
 
 </div>
@@ -332,7 +324,7 @@ The transitions between these states are guarded by the values of the temperatur
 
 </div>
 
-While `readSensors.temp` is a result of an action:
+While <span class="pre">`readSensors.temp`</span> is a result of an action:
 
 <div class="nbinput docutils container">
 
@@ -390,7 +382,7 @@ While `readSensors.temp` is a result of an action:
 
 </div>
 
-In file `sm_helpers.py` ([download archive](/v0.8.1/examples/state_machine_simulation.zip)), we provide a class `StateMachine` that enables us to convert a SysML state machine to a state machine based on Python library [python-statemachine](https://python-statemachine.readthedocs.io/en/latest/). Class `StateMachine` is instantiated by giving it the SysML element that represents the state machine, which in our case has the qualified name `Demo::Fridge_Diagnostic::DiagnosticStates`. To retrieve this element we use the helper function `get_node` defined in file `syside_helpers.py`.
+In file <span class="pre">`sm_helpers.py`</span> (<a href="/examples/state_machine_simulation.zip" class="reference external">download archive</a>), we provide a class <span class="pre">`StateMachine`</span> that enables us to convert a SysML state machine to a state machine based on Python library <a href="https://python-statemachine.readthedocs.io/en/latest/" class="reference external" target="_blank">python-statemachine</a>. Class <span class="pre">`StateMachine`</span> is instantiated by giving it the SysML element that represents the state machine, which in our case has the qualified name <span class="pre">`Demo::Fridge_Diagnostic::DiagnosticStates`</span>. To retrieve this element we use the helper function <span class="pre">`get_node`</span> defined in file <span class="pre">`syside_helpers.py`</span>.
 
 <div class="nbinput nblast docutils container">
 
@@ -422,7 +414,7 @@ In file `sm_helpers.py` ([download archive](/v0.8.1/examples/state_machine_simul
 
 </div>
 
-One feature provided by `python-statemachine` is rendering of state machines using graphviz:
+One feature provided by <span class="pre">`python-statemachine`</span> is rendering of state machines using graphviz:
 
 <div class="nbinput docutils container">
 
@@ -462,7 +454,7 @@ One feature provided by `python-statemachine` is rendering of state machines usi
 
 <div class="output_area docutils container">
 
-![../\_images/examples\_state\_machine\_simulation\_20\_0.png](_images/examples_state_machine_simulation_20_0.png)
+![../\_images/examples_state_machine_simulation_20_0.png](_images/examples_state_machine_simulation_20_0.png)
 
 </div>
 
@@ -472,9 +464,9 @@ One feature provided by `python-statemachine` is rendering of state machines usi
 
 <div id="Simulation" class="section">
 
-## Simulation[](#Simulation "Link to this heading")
+## Simulation<a href="#Simulation" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-Converting the state machine to Python also enables us to execute it on sample inputs. Our state machine has one input parameter of type `int` `Demo::Fridge_Actions::readSensors::temp`. We defined function `sensor_readings_generator`, which generates a sequence of random temperature readings. For example:
+Converting the state machine to Python also enables us to execute it on sample inputs. Our state machine has one input parameter of type <span class="pre">`int`</span> <span class="pre">`Demo::Fridge_Actions::readSensors::temp`</span>. We defined function <span class="pre">`sensor_readings_generator`</span>, which generates a sequence of random temperature readings. For example:
 
 <div class="nbinput docutils container">
 
@@ -516,6 +508,7 @@ Converting the state machine to Python also enables us to execute it on sample i
 
 <div class="highlight">
 
+
     [{('Demo', 'Fridge_Actions', 'readSensors', 'temp'): 3},
      {('Demo', 'Fridge_Actions', 'readSensors', 'temp'): 2},
      {('Demo', 'Fridge_Actions', 'readSensors', 'temp'): 7}]
@@ -526,7 +519,7 @@ Converting the state machine to Python also enables us to execute it on sample i
 
 </div>
 
-To execute the state machine, we have to evaluate the transition guards. We evaluate a transition guard in two steps. First, we set the value of `readSensors.temp` to the one we received from our random reading generator, which makes the guard statically evaluatable:
+To execute the state machine, we have to evaluate the transition guards. We evaluate a transition guard in two steps. First, we set the value of <span class="pre">`readSensors.temp`</span> to the one we received from our random reading generator, which makes the guard statically evaluatable:
 
 <div class="nbinput docutils container">
 
@@ -585,7 +578,7 @@ To execute the state machine, we have to evaluate the transition guards. We eval
 
 </div>
 
-Second, we use the constant evaluator `syside.Compiler` to evaluate the value of the guard:
+Second, we use the constant evaluator <span class="pre">`syside.Compiler`</span> to evaluate the value of the guard:
 
 <div class="nbinput docutils container">
 
@@ -637,15 +630,15 @@ Second, we use the constant evaluator `syside.Compiler` to evaluate the value of
 
 <div class="output_area docutils container">
 
-Guard `readSensors.temp >= YellowThreshold and readSensors.temp < RedThreshold` evaluates to `False`.
+Guard <span class="pre">`readSensors.temp`</span>` `<span class="pre">`>=`</span>` `<span class="pre">`YellowThreshold`</span>` `<span class="pre">`and`</span>` `<span class="pre">`readSensors.temp`</span>` `<span class="pre">`<`</span>` `<span class="pre">`RedThreshold`</span> evaluates to <span class="pre">`False`</span>.
 
 </div>
 
 </div>
 
-With these building blocks we can simulate how our state machine behaves on a sequence of random temperature readings generated by `sensor_readings_generator`.
+With these building blocks we can simulate how our state machine behaves on a sequence of random temperature readings generated by <span class="pre">`sensor_readings_generator`</span>.
 
-The following code snippet executes the state machine on 20 randomly generated inputs, logs each input and the resulting state, and renders the state of the machine as a PNG image. The evaluation of transition guards is hidden inside the implementation of class `StateMachine`.
+The following code snippet executes the state machine on 20 randomly generated inputs, logs each input and the resulting state, and renders the state of the machine as a PNG image. The evaluation of transition guards is hidden inside the implementation of class <span class="pre">`StateMachine`</span>.
 
 <div class="nbinput nblast docutils container">
 
@@ -664,7 +657,7 @@ The following code snippet executes the state machine on 20 randomly generated i
 <div class="highlight">
 
     from PIL import Image, ImageDraw
-    
+
     state_list = []
     sensor_values = []
     image_paths = []
@@ -784,7 +777,7 @@ In addition to visually seeing how the state machine executes, we can analyze in
 
 <div class="output_area docutils container">
 
-![../\_images/examples\_state\_machine\_simulation\_32\_0.png](_images/examples_state_machine_simulation_32_0.png)
+![../\_images/examples_state_machine_simulation_32_0.png](_images/examples_state_machine_simulation_32_0.png)
 
 </div>
 
@@ -839,28 +832,28 @@ To understand why this the red state is so prominent, we can look at the detaile
 
 <div>
 
-|    | (Demo, Fridge\_Actions, readSensors, temp) | state  |
-| -- | ------------------------------------------ | ------ |
-| 0  | 3                                          | green  |
-| 1  | 2                                          | green  |
-| 2  | 7                                          | yellow |
-| 3  | 8                                          | yellow |
-| 4  | 7                                          | yellow |
-| 5  | 3                                          | green  |
-| 6  | 1                                          | green  |
-| 7  | 4                                          | green  |
-| 8  | 9                                          | red    |
-| 9  | 12                                         | red    |
-| 10 | 12                                         | red    |
-| 11 | 12                                         | red    |
-| 12 | 7                                          | red    |
-| 13 | 4                                          | green  |
-| 14 | 3                                          | green  |
-| 15 | 6                                          | yellow |
-| 16 | 9                                          | red    |
-| 17 | 9                                          | red    |
-| 18 | 7                                          | red    |
-| 19 | 4                                          | green  |
+|     | (Demo, Fridge_Actions, readSensors, temp) | state  |
+|-----|-------------------------------------------|--------|
+| 0   | 3                                         | green  |
+| 1   | 2                                         | green  |
+| 2   | 7                                         | yellow |
+| 3   | 8                                         | yellow |
+| 4   | 7                                         | yellow |
+| 5   | 3                                         | green  |
+| 6   | 1                                         | green  |
+| 7   | 4                                         | green  |
+| 8   | 9                                         | red    |
+| 9   | 12                                        | red    |
+| 10  | 12                                        | red    |
+| 11  | 12                                        | red    |
+| 12  | 7                                         | red    |
+| 13  | 4                                         | green  |
+| 14  | 3                                         | green  |
+| 15  | 6                                         | yellow |
+| 16  | 9                                         | red    |
+| 17  | 9                                         | red    |
+| 18  | 7                                         | red    |
+| 19  | 4                                         | green  |
 
 </div>
 
@@ -876,9 +869,9 @@ We leave it as exercise to the reader to experiment improving the model.
 
 <div id="Download" class="section">
 
-## Download[](#Download "Link to this heading")
+## Download<a href="#Download" class="headerlink" title="Link to this heading"><span class="nerd-font"></span></a>
 
-Download this example [here](/v0.8.1/examples/state_machine_simulation.zip).
+Download this example <a href="/examples/state_machine_simulation.zip" class="reference external">here</a>.
 
 </div>
 
