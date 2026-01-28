@@ -75,6 +75,7 @@ DEV_MODE_GITIGNORE_PATHS = [
     ".claude/agents/",
     ".claude/skills/",
     ".claude/hooks/",
+    ".claude/.tool-hashes.json",
     "modeling_pm/MODELING_GUIDE.md",
     "modeling_pm/MODELING_PROCESS.md",
 ]
