@@ -40,6 +40,7 @@ MBSE_AGENTS = [
 MBSE_SKILLS = [
     "python-debugger",
     "record-learning",
+    "toolkit-awareness",
 ]
 
 # Hooks available for installation
