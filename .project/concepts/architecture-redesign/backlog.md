@@ -20,7 +20,7 @@
 | B-009 | [SOURCE_INDEX.md placement inconsistent](#b-009-source_indexmd-placement-inconsistent) | Low | Phase 1A | Closed |
 | B-010 | [No migration strategy for existing projects](#b-010-no-migration-strategy-for-existing-projects) | Medium-High | Phase 3E | New |
 | B-011 | [AP-7 Tier 2 claude -p dependency unaddressed](#b-011-ap-7-tier-2-claude--p-dependency) | Medium | Phase 3E | New |
-| B-012 | [File structure should reflect information flow model](#b-012-file-structure-should-reflect-information-flow-model) | High | Phase 1A | New |
+| B-012 | [File structure should reflect information flow model](#b-012-file-structure-should-reflect-information-flow-model) | High | Phase 1A | Complete |
 
 ---
 
@@ -152,7 +152,7 @@ See also: [B-001 Open Questions](#b-001-open-questions)
 
 1. **Epic data model**: What fields does an epic have? The `epic-decomposition` skill covers methodology, but the actual data model (ID scheme, required fields, relationship to goals) needs definition.
 
-2. **Work item state derivation**: The current PM script engine section (6.2) derives state from file system structure. Is this sufficient, or do we need an explicit state file (e.g., `active/{item}/STATUS.md`) for states that can't be inferred from file existence alone (paused, abandoned)?
+2. **Work item state derivation**: The current PM script engine section (6.2) derives state from file system structure. Is this sufficient, or do we need an explicit state file (e.g., `work/active/{item}/STATUS.md`) for states that can't be inferred from file existence alone (paused, abandoned)?
 
 3. **Stage completion criteria**: Are these purely user-approved ("I'm done with the spec, let's move on") or do we add structural checks ("spec must contain at least one MR-XXX before moving to design")? Structural checks add rigor but also friction.
 
@@ -363,7 +363,7 @@ Agent calls: agentic-mbse pm supersede-insight DI-003
 |      TFCoilDefinition (with file paths)         |
 |    - Affected work items: magnet-model (active)  |
 | 7. Write impact report to                       |
-|    research/impacts/DI-003_superseded.md         |
+|    knowledge/research/impacts/DI-003_superseded.md         |
 +-------------------------------------------------+
         |
         v
@@ -398,7 +398,7 @@ Add new operations to the AP-7 operations table:
 ```
 DI-XXX -> [Derived requirements] -> MR-XXX
   -> [traceability_matrix.csv Requirements column] -> model elements
-  -> [active/ directory] -> affected work items
+  -> [work/active/ directory] -> affected work items
 ```
 
 This is fully deterministic (AP-4) — it parses structured files and follows ID references. No LLM needed.
@@ -452,7 +452,7 @@ MR-XXX affected
   v
 Model elements needing review
   |
-  | work item lookup (active/ directory)
+  | work item lookup (work/active/ directory)
   v
 Impact report -> user decides on action
 ```
@@ -483,7 +483,7 @@ Impact report -> user decides on action
    - **Near-term (command-level)**: `/audit-models` checks spec.md's MR-XXX list against `traceability_matrix.csv` entries. Any MR-XXX without a satisfying element is flagged. This is a straightforward set-difference operation.
    - **Future (validation-level)**: Extend `agentic-mbse validate` with a traceability validation level that parses SysML files (via syside adapter) to find all definitions, then checks each against `traceability_matrix.csv`. Definitions without entries are flagged. **This is an architectural requirement**: the architecture doc should state that programmatic traceability checking is a required capability of the validation pyramid, to be implemented as a validation level or sub-level.
 
-5. **Impact report persistence**: **Persist** to `research/impacts/`. The impact report is evidence of why a work item was created and enables later review of how knowledge evolution affected the project.
+5. **Impact report persistence**: **Persist** to `knowledge/research/impacts/`. The impact report is evidence of why a work item was created and enables later review of how knowledge evolution affected the project.
 
 ### Remaining open questions
 
@@ -541,8 +541,8 @@ The "investigate" concept actually covers two different activities that the arch
 
 | Activity | Command | Reads | Produces | Output destination |
 |----------|---------|-------|----------|--------------------|
-| **External research** | `/research` | SOURCE_INDEX authority sources, raw external data | Domain insights (DI-XXX) | `research/pending/` -> `research/approved/` -> KNOWLEDGE.md |
-| **Model analysis** | `/analyze-models` | Existing models, approved KNOWLEDGE.md, ARCHITECTURE.md, REQUIREMENTS.md | Understanding of current model state: what exists, patterns in use, gaps, health | `modeling_pm/analysis/` (standalone artifact, NOT tied to a work item) |
+| **External research** | `/research` | `knowledge/SOURCE_INDEX.md`, authority sources, raw external data | Domain insights (DI-XXX) | `knowledge/research/pending/` -> `knowledge/research/approved/` -> `knowledge/KNOWLEDGE.md` |
+| **Model analysis** | `/analyze-models` | Existing models, approved `knowledge/KNOWLEDGE.md`, `project/ARCHITECTURE.md`, `project/REQUIREMENTS.md` | Understanding of current model state: what exists, patterns in use, gaps, health | `work/analysis/` (standalone artifact, NOT tied to a work item) |
 
 These are fundamentally different:
 - `/research` builds **domain knowledge** (Role 2) — "what does the physics say?"
@@ -550,7 +550,7 @@ These are fundamentally different:
 
 **Critical**: Their outputs must NOT go to the same place. Research produces curated domain insights (KNOWLEDGE.md). Analysis produces model state assessments that inform future specs but are not domain knowledge.
 
-`/analyze-models` output lives in `modeling_pm/analysis/` as standalone artifacts (timestamped, like research: `YYYYMMDD-HHMMSS_topic.md`). These are **not** associated with a specific work item — they're project-level understanding that any future spec can reference.
+`/analyze-models` output lives in `work/analysis/` as standalone artifacts (timestamped, like research: `YYYYMMDD-HHMMSS_topic.md`). These are **not** associated with a specific work item — they're project-level understanding that any future spec can reference.
 
 ### Architecture doc changes
 
@@ -559,14 +559,14 @@ These are fundamentally different:
 | 5.1-5.2 | Delete intent dimension. Section 5 becomes "Work Item Scale" only. |
 | 5.3 | Renumber. Three scales: Trivial, Standard, Epic. |
 | 5.4 | Simplify routing: determine scale only, no intent step. |
-| 7.2 | Expand `/analyze-models` description: standalone artifacts in `modeling_pm/analysis/`, distinct from `/research`. |
+| 7.2 | Expand `/analyze-models` description: standalone artifacts in `work/analysis/`, distinct from `/research`. |
 | 8.1 | Remove intent column from command catalog. Update `/analyze-models` entry. |
-| 3.2 | Add `modeling_pm/analysis/` to file structure. |
+| 3.2 | Add `work/analysis/` to file structure. |
 | Open questions | Delete Q6, Q7, Q8. |
 
 ### Relationship to B-012
 
-The output destinations for `/research` and `/analyze-models` connect to B-012 (file structure should reflect information flow). Research output and KNOWLEDGE.md should move out of `modeling_pm/` (they're data/knowledge, not PM). Analysis output stays in `modeling_pm/` (it's about the models' project state). See B-012 for the full file structure proposal.
+The output destinations for `/research` and `/analyze-models` connect to B-012 (file structure should reflect information flow). **Resolved by B-012**: Research output moves to `knowledge/research/`, KNOWLEDGE.md moves to `knowledge/KNOWLEDGE.md`. Analysis output goes to `work/analysis/` (operational intelligence about model state).
 
 ---
 
@@ -651,7 +651,7 @@ AP-7: extend the "script guarantees" to include input validation, not just outpu
 
 The architecture defines promotion for Rules (per-feature pattern -> REQUIREMENTS.md via Q4). But there's no equivalent for Decisions.
 
-When writing `active/{item}/design.md`, an engineer makes structural decisions. Some turn out to be reusable across work items. The architecture says ARCHITECTURE.md captures "decisions that outlive any single work item" — but that's only knowable in retrospect. There's no mechanism for:
+When writing `work/active/{item}/design.md`, an engineer makes structural decisions. Some turn out to be reusable across work items. The architecture says ARCHITECTURE.md captures "decisions that outlive any single work item" — but that's only knowable in retrospect. There's no mechanism for:
 
 - Detecting that design.md decisions recur across work items
 - Promoting a design.md decision to ARCHITECTURE.md
@@ -717,7 +717,7 @@ The only structured entry point for KNOWLEDGE.md is `/research` -> approval flow
 Define a lightweight capture path:
 1. During any command, the agent can propose a DI-XXX candidate
 2. User approves inline (no separate research doc needed — the work item context IS the source)
-3. Agent calls `agentic-mbse pm add-insight --source active/{item}/design.md --context "..."` (AP-7 T2)
+3. Agent calls `agentic-mbse pm add-insight --source work/active/{item}/design.md --context "..."` (AP-7 T2)
 4. Script assigns ID, appends to KNOWLEDGE.md with source = the work item artifact
 
 This is a simpler variant of the research approval flow — same script, different trigger.
@@ -807,7 +807,7 @@ Section 2, AP-7 Implementation Tiers: add failure mode and testability requireme
 
 **Severity**: High
 **Resolve before**: Phase 1A
-**Status**: New
+**Status**: Complete
 **Related**: B-003 (research vs. analysis output destinations), B-009 (SOURCE_INDEX.md placement)
 
 ### The Problem
@@ -820,80 +820,84 @@ The current file structure (architecture doc Section 3.2) groups things by admin
 | `KNOWLEDGE.md` | `modeling_pm/KNOWLEDGE.md` | Role 2: Domain Knowledge | Curated knowledge is not PM |
 | `intent/` | `modeling_pm/intent/` | Role 3: Project Intent | Raw intent documents define the project's purpose, not its management |
 | `SOURCE_INDEX.md` | project root | Role 1: Authority Sources | Inconsistent with other role artifacts (B-009) |
+| `ARCHITECTURE.md` | `modeling_pm/ARCHITECTURE.md` | Role 5: Modeling Decisions | Project-defining, not work-tracking |
+| `REQUIREMENTS.md` | `modeling_pm/REQUIREMENTS.md` | Role 4: Modeling Requirements | Project-defining, not work-tracking |
+| `VALIDATION_MATRIX.md` | `modeling_pm/VALIDATION_MATRIX.md` | Role 6: System Verification | Defines "done," doesn't manage progress |
 
-`modeling_pm/` should contain **project management artifacts** — backlog, active work items, completed work, analysis reports, process guides. It should NOT contain the project's knowledge base or intent documents, which are **inputs to** the PM process, not part of it.
+`modeling_pm/` conflated two concerns: **project definition** (what we're building and how) and **work management** (tracking execution). These must be separated because they have different producers, consumers, and lifecycles.
 
 The information flow model (Section 3.1) has a clear structure:
 
 ```
-Project Intent (why) + Data Sources (what) + Domain Knowledge (understood what)
-        |                    |                        |
-        v                    v                        v
-                    Modeling Requirements + Decisions
-                              |
-                              v
-                    Model Implementation (managed by PM)
-                              |
-                              v
-                    System Verification
+knowledge/ (what we know)  ──→  project/ (standards)  ──→  work/ (execution)  ──→  models/ (artifacts)
+     ↑                                                          │
+     └──────────────────────── feedback ────────────────────────┘
 ```
 
-The file structure should mirror this flow, not flatten everything under PM.
+Each directory is a stage in the information flow. The file structure should mirror this flow.
 
-### Proposed file structure
+### Decision: Four top-level content directories
+
+The organizing principle: each directory answers a different question.
+
+| Directory | Question it answers | Information roles |
+|-----------|-------------------|-------------------|
+| `knowledge/` | "What do we know?" | Roles 1-2: Authority Sources, Domain Knowledge |
+| `project/` | "What are we building and how?" | Roles 3-6: Intent, Requirements, Decisions, Verification |
+| `work/` | "What's in progress?" | Work management: backlog, active, completed |
+| `models/` | "The models themselves" | Model artifacts |
+
+### Approved file structure
 
 ```
 project-root/
-├── .claude/                      # Tooling (unchanged)
+├── .claude/                     # Tooling (unchanged)
 │   ├── commands/
 │   ├── skills/
 │   └── agents/
 │
-├── knowledge/                    # Roles 1-2: Data and domain knowledge
-│   ├── SOURCE_INDEX.md           #   Role 1: Authority sources registry
-│   ├── KNOWLEDGE.md              #   Role 2: Curated domain insights (DI-XXX)
-│   ├── sources/                  #   Raw data files, documents, references
-│   │   └── ...                   #   (what SOURCE_INDEX.md points to locally)
-│   └── research/                 #   Research outputs
-│       ├── pending/              #     Unapproved research
-│       └── approved/             #     User-approved research
+├── knowledge/                   # "What do we know?"
+│   ├── SOURCE_INDEX.md          #   Role 1: Authority sources registry
+│   ├── KNOWLEDGE.md             #   Role 2: Curated domain insights (DI-XXX)
+│   ├── sources/                 #   Local reference materials (PDFs, data tables)
+│   │   └── ...                  #   External repos stay external, referenced by path
+│   └── research/                #   Research pipeline
+│       ├── pending/             #     Unapproved research
+│       └── approved/            #     User-approved research
 │
-├── intent/                       # Role 3: Project intent
-│   ├── OVERVIEW.md               #   Formalized goals (G-XXX), analysis questions (AQ-XXX)
-│   ├── project-charter.md        #   Raw user documents
-│   └── *.md                      #   Stakeholder notes, mission docs, etc.
+├── project/                     # "What are we building and how?"
+│   ├── OVERVIEW.md              #   Role 3: Goals (G-XXX), questions (AQ-XXX), scope
+│   ├── ARCHITECTURE.md          #   Role 5: Structural decisions (AD-XXX)
+│   ├── REQUIREMENTS.md          #   Role 4: Project-specific rules (PR-XXX)
+│   ├── VALIDATION_MATRIX.md     #   Role 6: Verification criteria (SV-XXX)
+│   ├── MODELING_GUIDE.md        #   Role 4 baseline (tool-owned)
+│   ├── MODELING_PROCESS.md      #   Workflow reference (tool-owned)
+│   └── intent/                  #   Raw user documents (charters, notes, etc.)
+│       └── *.md
 │
-├── modeling_pm/                  # Roles 4-5 + work management
-│   ├── ARCHITECTURE.md           #   Role 5: Model architecture decisions (AD-XXX)
-│   ├── REQUIREMENTS.md           #   Role 4: Project-specific modeling rules (PR-XXX)
-│   ├── MODELING_GUIDE.md         #   Role 4: Baseline rules (tool-owned)
-│   ├── MODELING_PROCESS.md       #   Workflow reference (tool-owned)
-│   ├── EPIC_GUIDE.md             #   Work decomposition guide (tool-owned)
-│   ├── VALIDATION_MATRIX.md      #   Role 6: System verification criteria (SV-XXX)
-│   │
-│   ├── analysis/                 #   /analyze-models output (standalone, not per-work-item)
-│   │   └── YYYYMMDD-HHMMSS_topic.md
-│   │
-│   ├── backlog/
-│   │   └── BACKLOG.md            #   Prioritized work items with scale
-│   ├── active/                   #   In-progress work items
-│   │   └── {work-item-name}/
+├── work/                        # "What's in progress?"
+│   ├── BACKLOG.md               #   Prioritized items with scale
+│   ├── EPIC_GUIDE.md            #   Decomposition guide (tool-owned)
+│   ├── active/                  #   In-progress work items
+│   │   └── {item}/
 │   │       ├── spec.md
 │   │       ├── design.md
 │   │       └── plan.md
-│   ├── completed/                #   Archived work
+│   ├── completed/               #   Archived work
 │   │   └── YYYYMMDD_{item}/
+│   ├── analysis/                #   /analyze-models output (operational intelligence)
+│   │   └── YYYYMMDD-HHMMSS_topic.md
 │   └── learnings/
 │       └── RAW_LEARNINGS.md
 │
-├── models/                       # Model artifacts
+├── models/                      # Model artifacts
 │   ├── library/
 │   └── designs/
 │
 ├── tests/
 │   └── models/
 │
-├── data/                         # Traceability evidence
+├── data/                        # Machine-readable evidence
 │   └── traceability_matrix.csv
 │
 ├── CLAUDE.md
@@ -902,36 +906,58 @@ project-root/
 
 ### Key structural decisions
 
-1. **`knowledge/`** is the home for Roles 1-2. SOURCE_INDEX.md moves here (resolves B-009). Research output moves here. KNOWLEDGE.md moves here. The `sources/` subdirectory provides a conventional place for local copies of authority data referenced by SOURCE_INDEX.md.
+1. **`knowledge/`** is the home for Roles 1-2. SOURCE_INDEX.md moves here (resolves B-009). Research output moves here. KNOWLEDGE.md moves here. The `sources/` subdirectory provides a conventional place for project-local reference materials (PDFs, excerpts, data tables). External repos (like PyFECONS) stay external and are referenced by path in SOURCE_INDEX.md.
 
-2. **`intent/`** is promoted to top-level. Raw intent documents and the formalized OVERVIEW.md live together. This is the "why" of the project — it's not PM.
+2. **`project/`** groups the project's "constitution" — Roles 3-6 together. OVERVIEW.md (formalized intent) sits next to ARCHITECTURE.md and REQUIREMENTS.md because they derive from intent and are always consumed together when starting new work. Raw intent documents nest in `project/intent/` — they're the source material from which OVERVIEW.md was formalized, preserving the derivation relationship. MODELING_GUIDE.md and MODELING_PROCESS.md are methodology references that constrain how work is done, not work-tracking artifacts.
 
-3. **`modeling_pm/`** retains work management (backlog, active, completed), process guides, and project-level modeling rules/decisions. It also gains `analysis/` for `/analyze-models` output. ARCHITECTURE.md and REQUIREMENTS.md stay here because they're working documents that evolve with the project's modeling decisions.
+3. **`work/`** is purely operational — tracking and executing work. BACKLOG.md flattened (no `backlog/` subdirectory — one file doesn't need a wrapper). EPIC_GUIDE.md stays here because it's about *how to decompose work*, not modeling standards. `analysis/` stays here because `/analyze-models` output is operational intelligence (what state are the models in, what work should we do next).
 
-4. **`data/`** at project root for traceability evidence (traceability_matrix.csv). This connects to B-002's traceability model.
+4. **`data/`** at project root for machine-readable evidence (traceability_matrix.csv). Grows naturally if codegen/simulation artifacts land here (B-004 feedback path).
+
+5. **Naming: `project/` not `modeling_pm/`**. In target repos (Context B), there is no `.project/` directory, so no conflict. The name clearly communicates "this is what defines this project." `work/` replaces `modeling_pm/` for the operational subset — shorter, clearer, and doesn't redundantly say "modeling" when all PM in a target repo is modeling PM.
+
+### Why Roles 4-5-6 moved out of PM
+
+The original B-012 proposal kept ARCHITECTURE.md, REQUIREMENTS.md, and VALIDATION_MATRIX.md in `modeling_pm/` with an open question about whether this was right. The answer is: **these are project-defining, not project-managing.**
+
+| Document | What it is | Why it's not PM |
+|----------|-----------|-----------------|
+| ARCHITECTURE.md | Structural decisions about the domain model | Consumed when designing, not when tracking work |
+| REQUIREMENTS.md | Project-specific modeling rules | Constrains all work, doesn't track any work |
+| VALIDATION_MATRIX.md | Success criteria for the system | Defines "done," doesn't manage progress toward it |
+| MODELING_GUIDE.md | Baseline methodology rules | Reference material, not work state |
+| MODELING_PROCESS.md | Workflow reference | Describes how to work, not what's being worked on |
+
+These derive from intent + knowledge and *constrain* work execution. Grouping them with OVERVIEW.md in `project/` means one sweep of that directory gives the agent (or user) the full project definition — goals, standards, decisions, success criteria.
 
 ### Subsumes B-009
 
-B-009 (SOURCE_INDEX.md placement inconsistent) is resolved by this item: SOURCE_INDEX.md moves to `knowledge/SOURCE_INDEX.md`.
+B-009 (SOURCE_INDEX.md placement inconsistent) is resolved: SOURCE_INDEX.md moves to `knowledge/SOURCE_INDEX.md`.
 
 ### Architecture doc impact
 
 | Section | Change |
 |---------|--------|
-| 3.2 | Replace entire file structure diagram |
+| 3.2 | Replace entire file structure diagram with approved structure |
 | 3.3 Role 1 | Update paths: `knowledge/SOURCE_INDEX.md` |
 | 3.3 Role 2 | Update paths: `knowledge/KNOWLEDGE.md`, `knowledge/research/` |
-| 3.3 Role 3 | Update paths: `intent/OVERVIEW.md`, `intent/*.md` |
-| 7.1 | Update research output paths |
-| 7.2 | Add `modeling_pm/analysis/` for `/analyze-models` output |
+| 3.3 Role 3 | Update paths: `project/OVERVIEW.md`, `project/intent/*.md` |
+| 3.3 Role 4 | Update paths: `project/REQUIREMENTS.md`, `project/MODELING_GUIDE.md` |
+| 3.3 Role 5 | Update paths: `project/ARCHITECTURE.md` |
+| 3.3 Role 6 | Update paths: `project/VALIDATION_MATRIX.md` |
+| 7.1 | Update research output paths to `knowledge/research/` |
+| 7.2 | Update `/analyze-models` output path to `work/analysis/` |
+| All references to `modeling_pm/` | Replace with `project/` or `work/` as appropriate |
 
-### Open questions
+### Resolved open questions
 
-1. **ARCHITECTURE.md and REQUIREMENTS.md placement**: These are Roles 4-5, which are arguably "project knowledge" not "PM." But they're working documents that evolve with modeling decisions and are tightly coupled to the work management process. Keeping them in `modeling_pm/` feels right — they're consumed and updated during the spec/design/implement cycle. But this could be debated.
+1. **ARCHITECTURE.md and REQUIREMENTS.md placement**: Resolved — moved to `project/`. They are project-defining documents that derive from intent and constrain all work. They belong with the project definition, not with work tracking.
 
-2. **`data/` directory scope**: Currently just `traceability_matrix.csv`. If more machine-readable artifacts appear (validation results, metrics), they'd go here too. Is `data/` the right name, or should it be more specific (e.g., `traceability/`)?
+2. **`data/` directory scope**: Keep `data/` as the name. Currently just `traceability_matrix.csv`. If codegen/simulation artifacts land here (B-004), the name generalizes naturally.
 
-3. **`knowledge/sources/` convention**: SOURCE_INDEX.md already points to sources by path or URL. The `sources/` subdirectory provides a conventional home for local copies. But some sources (like PyFECONS) are external repos, not local copies. How does this directory relate to external source locations? Likely: `sources/` is for project-local reference materials only (PDFs, excerpts, data tables). External repos stay external and are referenced by path in SOURCE_INDEX.md.
+3. **`knowledge/sources/` convention**: `sources/` is for project-local reference materials only (PDFs, excerpts, data tables). External repos stay external and are referenced by path in SOURCE_INDEX.md.
+
+4. **`analysis/` placement**: `work/analysis/`. The output of `/analyze-models` is operational intelligence — "what state are the models in" — which informs what work to do next. It's not domain knowledge (that's `knowledge/`), it's project state assessment.
 
 ---
 

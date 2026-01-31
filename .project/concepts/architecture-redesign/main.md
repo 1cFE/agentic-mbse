@@ -54,10 +54,10 @@ AP-7 applies wherever the system mutates structured project state. Three impleme
 
 | Operation | Tier | What the script does |
 |-----------|------|---------------------|
-| Approve research | T2 | Move `pending/` → `approved/`, generate DI-XXX entries, append to KNOWLEDGE.md |
-| Register project requirement | T1 | Append PR-XXX row to REQUIREMENTS.md with correct columns (rare — project-level rules only) |
-| Archive work item | T1 | Move `active/{item}/` → `completed/YYYYMMDD_{item}/`, update BACKLOG.md status |
-| Update validation status | T1 | Update Status column in VALIDATION_MATRIX.md for specified SV-XXX |
+| Approve research | T2 | Move `knowledge/research/pending/` → `approved/`, generate DI-XXX entries, append to `knowledge/KNOWLEDGE.md` |
+| Register project requirement | T1 | Append PR-XXX row to `project/REQUIREMENTS.md` with correct columns (rare — project-level rules only) |
+| Archive work item | T1 | Move `work/active/{item}/` → `work/completed/YYYYMMDD_{item}/`, update `work/BACKLOG.md` status |
+| Update validation status | T1 | Update Status column in `project/VALIDATION_MATRIX.md` for specified SV-XXX |
 | Project status query | T1 | Parse all structured files, produce dashboard markdown |
 
 ---
@@ -67,7 +67,7 @@ AP-7 applies wherever the system mutates structured project state. Three impleme
 The architecture addresses five concerns, each detailed in its own document:
 
 **Information Architecture** → See [information-architecture.md](information-architecture.md)
-Six information roles flow through the system: Authority Sources, Domain Knowledge, Project Intent, Modeling Requirements, Modeling Decisions, and System Verification. Each role has a producer, consumer, structured home, and entity format. The file structure mirrors the information flow model, with `knowledge/`, `intent/`, and `modeling_pm/` as top-level directories.
+Six information roles flow through the system: Authority Sources, Domain Knowledge, Project Intent, Modeling Requirements, Modeling Decisions, and System Verification. Each role has a producer, consumer, structured home, and entity format. The file structure mirrors the information flow model with four top-level content directories: `knowledge/` (Roles 1-2), `project/` (Roles 3-6), `work/` (execution tracking), and `models/` (artifacts).
 
 **Workflows** → See [workflows.md](workflows.md)
 The behavioral layer: how knowledge is delivered to commands (skills), how work items move through the system (scale taxonomy and routing), how project state is tracked (PM script engine + agent commands), and how research and analysis work.

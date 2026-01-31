@@ -180,8 +180,9 @@ Implementing phase 2 of 3
 │  CLI Layer: `agentic-mbse status`                │
 │  (Python script — deterministic, testable)       │
 │                                                  │
-│  Reads: BACKLOG.md, REQUIREMENTS.md, active/,    │
-│         completed/, VALIDATION_MATRIX.md,        │
+│  Reads: work/BACKLOG.md, project/REQUIREMENTS.md,│
+│         work/active/, work/completed/,           │
+│         project/VALIDATION_MATRIX.md,            │
 │         models/, tests/                          │
 │                                                  │
 │  Produces: Markdown dashboard with:              │
@@ -225,23 +226,23 @@ The script engine needs to parse structured files. This defines **what it expect
 
 | State | Determined by |
 |-------|-------------- |
-| **backlog** | Entry in BACKLOG.md, no directory in `active/` |
-| **active** | Directory exists in `active/{item}/` |
+| **backlog** | Entry in `work/BACKLOG.md`, no directory in `work/active/` |
+| **active** | Directory exists in `work/active/{item}/` |
 | **active:stage** | Which artifact files exist: spec.md only = speccing; design.md = designing; plan.md = planning; implementation started = implementing |
-| **paused** | Explicit marker in BACKLOG.md or `active/{item}/STATUS` |
-| **completed** | Directory in `completed/` |
+| **paused** | Explicit marker in `work/BACKLOG.md` or `work/active/{item}/STATUS` |
+| **completed** | Directory in `work/completed/` |
 
-**Project requirements compliance** (derived from REQUIREMENTS.md):
+**Project requirements compliance** (derived from `project/REQUIREMENTS.md`):
 
 | Metric | Computed by |
 |--------|-------------|
-| Total project rules | Count rows in REQUIREMENTS.md |
+| Total project rules | Count rows in `project/REQUIREMENTS.md` |
 | With validation method | Count rows where Validation Method column is non-empty |
 | Enforceable (machine-checkable) | Count rows where Enforcement = validation rule (vs. design review) |
 
-Note: Per-feature MR-XXX requirements are NOT tracked at the project level. They are ephemeral artifacts of individual work items in `active/{item}/spec.md` and are archived with the work item when complete.
+Note: Per-feature MR-XXX requirements are NOT tracked at the project level. They are ephemeral artifacts of individual work items in `work/active/{item}/spec.md` and are archived with the work item when complete.
 
-**Validation status** (derived from VALIDATION_MATRIX.md):
+**Validation status** (derived from `project/VALIDATION_MATRIX.md`):
 
 | Metric | Computed by |
 |--------|-------------|
@@ -291,7 +292,7 @@ Two distinct functions, each with a clear job:
 The research flow is the primary instance of the curation gate (AP-6) mechanized via scripts (AP-7). The full data management flow is defined in → [information-architecture.md#role-2-domain-knowledge--knowledgemd-new--research-directory](information-architecture.md#role-2-domain-knowledge--knowledgemd-new--research-directory).
 
 ```
-Input:  Research question + SOURCE_INDEX.md
+Input:  Research question + knowledge/SOURCE_INDEX.md
         │
         v
    Agent explores authority sources using specialist agents
@@ -299,7 +300,7 @@ Input:  Research question + SOURCE_INDEX.md
         │
         v
    Agent writes research document content.
-   Script saves to: research/pending/YYYYMMDD-HHMMSS_topic.md
+   Script saves to: knowledge/research/pending/YYYYMMDD-HHMMSS_topic.md
    (agent does not choose file path — script enforces convention)
         │
         v
@@ -310,7 +311,7 @@ Input:  Research question + SOURCE_INDEX.md
         │
         v
    Agent calls: agentic-mbse pm approve-research <file> --insights '...'
-   (AP-7, Tier 2 script: moves file, assigns IDs, appends to KNOWLEDGE.md)
+   (AP-7, Tier 2 script: moves file, assigns IDs, appends to knowledge/KNOWLEDGE.md)
 ```
 
 **Key**: The agent's job is content generation and user interaction. The script's job is file operations and registry maintenance. This separation is the core application of AP-7.
@@ -319,7 +320,7 @@ Input:  Research question + SOURCE_INDEX.md
 
 ```
 Input:  Model files (models/), test files (tests/),
-        MODELING_GUIDE.md + REQUIREMENTS.md (Role 4 rules)
+        project/MODELING_GUIDE.md + project/REQUIREMENTS.md (Role 4 rules)
         │
         v
    Parse model structure: files, definitions, usages, cross-file deps
