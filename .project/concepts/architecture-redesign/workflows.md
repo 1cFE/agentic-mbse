@@ -176,6 +176,8 @@ Related Artifacts:
 ---
 ```
 
+**Stage-level Status values**: design.md and plan.md use `draft | complete`. These are simpler than spec.md's work-item-level states because stage artifacts don't independently pause or fail — the work item does (via spec.md). A completed design that needs revision during backward navigation (§ 2.3) returns to `draft`; the revision history lives in git.
+
 The body structure of each artifact is defined by command prompts (Phase 3C concern). The architecture only constrains the parseable frontmatter header.
 
 ### 3.2 Work Item States

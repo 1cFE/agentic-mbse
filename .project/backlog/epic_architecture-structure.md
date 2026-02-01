@@ -98,9 +98,9 @@ Element,File,Type,Knowledge,Requirement,Source_Type,Source_Document,Source_Locat
 - EPIC_GUIDE.md content derived from workflows.md § 2.1 (scale taxonomy) and § 3.6 (epic tracking)
 
 **Exit criteria**:
-- [ ] 6 new template files exist in `project_templates/`
-- [ ] Each template is valid markdown and works in the empty state
-- [ ] Entity formats match information-architecture.md § 3
+- [x] 6 new template files exist in `project_templates/`
+- [x] Each template is valid markdown and works in the empty state
+- [x] Entity formats match information-architecture.md § 3
 
 ---
 
@@ -153,9 +153,9 @@ Schemas already sketched in workflows.md § 3.1–3.3 and § 3.6. This deliverab
 **Deliverable**: A design document (`.project/concepts/architecture-redesign/frontmatter-schemas.md` or a section added to an existing doc) that Epic 4 can reference as the authoritative contract.
 
 **Exit criteria**:
-- [ ] All 6 schemas documented with exact field names, types, and allowed values
-- [ ] Each schema has an example
-- [ ] Document is referenced from implementation-plan.md
+- [x] All 6 schemas documented with exact field names, types, and allowed values
+- [x] Each schema has an example
+- [x] Document is referenced from implementation-plan.md
 
 ---
 

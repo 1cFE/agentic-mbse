@@ -93,11 +93,11 @@ Delta checklist: § 1.4 (~12 items)
 **Coordination requirement**: `replicate_setup.sh` must be updated in lockstep (delta checklist § 1.5, ~6 items). Both files create the same structure — they must not diverge.
 
 #### D1.5: YAML Frontmatter Schemas
-Define the exact frontmatter schemas for spec.md, design.md, plan.md, review.md, BACKLOG.md, and epic files. These are the PM engine's input contracts. They should be recorded in a design artifact that Phase 3D (Epic 4) can reference.
+Define the exact frontmatter schemas for spec.md, design.md, plan.md, review.md, BACKLOG.md, and epic files. These are the PM engine's input contracts.
+
+**Deliverable**: [frontmatter-schemas.md](frontmatter-schemas.md) — authoritative schema reference with field tables, concrete examples, design decisions, and PM engine contract notes.
 
 Delta checklist: § 1.6 (6 items)
-
-This is a design activity, not a code change. The schemas are already sketched in [workflows.md](workflows.md) § 3.1-3.3 but need to be consolidated into a single authoritative reference.
 
 #### D1.6: fusion-tea Migration
 Manual, one-time migration of fusion-tea's project structure. Must be done on a git branch so it can be reviewed and reverted if needed.

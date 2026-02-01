@@ -116,8 +116,8 @@ These are new `.template` files in `project_templates/`.
 These are not files to create but specifications to document for the PM engine's input contracts. They should be recorded somewhere accessible during Phase 3D.
 
 - [ ] `[NEW]` Define spec.md frontmatter schema: Status (active|paused|abandoned|failed|completed), Scale (standard), Epic (string), Owner (string), Created (date), Updated (date)
-- [ ] `[NEW]` Define design.md frontmatter schema: Status (string), Created (date), Updated (date), Related Artifacts (Spec path)
-- [ ] `[NEW]` Define plan.md frontmatter schema: Status (string), Created (date), Updated (date), Related Artifacts (Spec + Design paths)
+- [ ] `[NEW]` Define design.md frontmatter schema: Status (draft|complete), Created (date), Updated (date), Related Artifacts (Spec path)
+- [ ] `[NEW]` Define plan.md frontmatter schema: Status (draft|complete), Created (date), Updated (date), Related Artifacts (Spec + Design paths)
 - [ ] `[NEW]` Define review.md frontmatter schema: Verdict (pass|concerns|fail), Created (date), Related Artifacts (Design path)
 - [ ] `[NEW]` Define BACKLOG.md frontmatter schema: epics list (name, goal, priority, status, file, items list), standalone list (name, scale, priority, status, completed)
 - [ ] `[NEW]` Define epic file frontmatter schema: Status (draft|active|completed), Priority, Goal, Created, Updated
