@@ -33,8 +33,7 @@ def compute_source_hash(path: Path) -> str:
     # Check if file is binary
     if is_binary_file(path):
         raise ValueError(
-            f"Binary files not supported: {path}\n"
-            "The comment system only supports text files."
+            f"Binary files not supported: {path}\nThe comment system only supports text files."
         )
 
     # Compute SHA-256 hash
@@ -96,9 +95,7 @@ def get_sidecar_path(source_path: Path, project_root: Path) -> Path:
         relative = source_abs.relative_to(root_abs)
     except ValueError:
         raise ValueError(
-            f"Source file is outside project root:\n"
-            f"  Source: {source_abs}\n"
-            f"  Root: {root_abs}"
+            f"Source file is outside project root:\n  Source: {source_abs}\n  Root: {root_abs}"
         )
 
     # Build sidecar path: <project_root>/.comments/<relative_path>.json

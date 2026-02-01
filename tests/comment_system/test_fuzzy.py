@@ -655,12 +655,8 @@ class TestDisambiguation:
         base_score = compute_similarity("test", "text")  # ~0.75
 
         candidates = [
-            MatchCandidate(
-                line_start=50, line_end=50, snippet="far", score=base_score
-            ),
-            MatchCandidate(
-                line_start=10, line_end=10, snippet="close", score=base_score
-            ),
+            MatchCandidate(line_start=50, line_end=50, snippet="far", score=base_score),
+            MatchCandidate(line_start=10, line_end=10, snippet="close", score=base_score),
         ]
 
         result = _disambiguate_candidates(candidates, original_line_start=12)
@@ -675,12 +671,8 @@ class TestDisambiguation:
         score = compute_similarity("test", "test")  # 1.0
 
         candidates = [
-            MatchCandidate(
-                line_start=100, line_end=100, snippet="far", score=score
-            ),
-            MatchCandidate(
-                line_start=15, line_end=15, snippet="close", score=score
-            ),
+            MatchCandidate(line_start=100, line_end=100, snippet="far", score=score),
+            MatchCandidate(line_start=15, line_end=15, snippet="close", score=score),
         ]
 
         result = _disambiguate_candidates(candidates, original_line_start=10)
@@ -761,3 +753,348 @@ class TestSlidingWindowEdgeCases:
         assert result is not None
         assert result.line_start == 2
         assert result.score.combined == 1.0
+
+
+class TestContextBasedRelocation:
+    """Test context-based relocation (REQ-3 from fuzzy-matching.md)."""
+
+    def test_compute_content_hash(self):
+        """Compute SHA-256 hash of text content."""
+        from comment_system.fuzzy import compute_content_hash
+
+        text = "Hello, world!\nThis is a test."
+        hash_value = compute_content_hash(text)
+
+        # Should have sha256: prefix
+        assert hash_value.startswith("sha256:")
+
+        # Should be deterministic
+        assert compute_content_hash(text) == hash_value
+
+        # Different text should produce different hash
+        assert compute_content_hash("Different text") != hash_value
+
+    def test_compute_content_hash_normalizes_unicode(self):
+        """Content hash normalizes unicode before hashing."""
+        from comment_system.fuzzy import compute_content_hash
+
+        # These are different unicode representations of the same text
+        nfc = "café"  # NFC form
+        nfd = "café"  # NFD form (e + combining accent)
+
+        # Should produce the same hash after normalization
+        assert compute_content_hash(nfc) == compute_content_hash(nfd)
+
+    def test_find_context_region_simple(self):
+        """Find context region with simple before/after markers."""
+        from comment_system.fuzzy import compute_content_hash, find_context_region
+
+        haystack = [
+            "line 1",
+            "line 2",
+            "line 3",  # context_before (lines 1-3)
+            "anchor line 1",
+            "anchor line 2",
+            "line 6",  # context_after (lines 6-8)
+            "line 7",
+            "line 8",
+        ]
+
+        context_before = "\n".join(haystack[0:3])
+        context_after = "\n".join(haystack[5:8])
+        context_before_hash = compute_content_hash(context_before)
+        context_after_hash = compute_content_hash(context_after)
+
+        region = find_context_region(haystack, context_before_hash, context_after_hash)
+
+        assert region is not None
+        assert region.line_start == 4  # Line after context_before (1-indexed)
+        assert region.line_end == 5  # Line before context_after (1-indexed)
+
+    def test_find_context_region_not_found(self):
+        """Return None when context hashes don't match."""
+        from comment_system.fuzzy import find_context_region
+
+        haystack = ["line 1", "line 2", "line 3"]
+
+        # Hashes that won't match anything
+        fake_hash = "sha256:" + "0" * 64
+
+        region = find_context_region(haystack, fake_hash, fake_hash)
+
+        assert region is None
+
+    def test_find_context_region_empty_haystack(self):
+        """Handle empty haystack gracefully."""
+        from comment_system.fuzzy import find_context_region
+
+        region = find_context_region([], "sha256:" + "0" * 64, "sha256:" + "0" * 64)
+
+        assert region is None
+
+    def test_find_context_region_only_before_found(self):
+        """Return None when only context_before matches."""
+        from comment_system.fuzzy import compute_content_hash, find_context_region
+
+        haystack = [
+            "line 1",
+            "line 2",
+            "line 3",  # context_before matches
+            "anchor line",
+            "different line",  # context_after doesn't match
+        ]
+
+        context_before = "\n".join(haystack[0:3])
+        context_before_hash = compute_content_hash(context_before)
+        fake_after_hash = "sha256:" + "0" * 64
+
+        region = find_context_region(haystack, context_before_hash, fake_after_hash)
+
+        assert region is None
+
+    def test_find_context_region_only_after_found(self):
+        """Return None when only context_after matches."""
+        from comment_system.fuzzy import compute_content_hash, find_context_region
+
+        haystack = [
+            "line 1",
+            "anchor line",
+            "line 3",  # context_after matches
+            "line 4",
+            "line 5",
+        ]
+
+        context_after = "\n".join(haystack[2:5])
+        context_after_hash = compute_content_hash(context_after)
+        fake_before_hash = "sha256:" + "0" * 64
+
+        region = find_context_region(haystack, fake_before_hash, context_after_hash)
+
+        assert region is None
+
+    def test_find_best_match_with_context_uses_context(self):
+        """AC-4: When context hashes found, limit fuzzy search to that region."""
+        from comment_system.fuzzy import (
+            compute_content_hash,
+            find_best_match_with_context,
+        )
+
+        # File with anchor moved far from original position
+        # AC-2: Text change that can be detected via fuzzy matching
+        haystack = [
+            "line 1",
+            "line 2",
+            "line 3",  # context_before (lines 1-3)
+            # --- Anchor moved here (far from original line 100) ---
+            "Calculate the piecewise linear scaling factor for input values",  # Modified text
+            "line 50",  # context_after (lines 50-52)
+            "line 51",
+            "line 52",
+        ] + ["filler"] * 100  # Add more lines to simulate large file
+
+        context_before = "\n".join(haystack[0:3])
+        context_after = "\n".join(haystack[4:7])
+        context_before_hash = compute_content_hash(context_before)
+        context_after_hash = compute_content_hash(context_after)
+
+        needle = "Calculate the linear scaling factor for input values"
+        original_line_start = 100  # Original position (far away)
+
+        result = find_best_match_with_context(
+            needle=needle,
+            haystack_lines=haystack,
+            original_line_start=original_line_start,
+            context_before_hash=context_before_hash,
+            context_after_hash=context_after_hash,
+            threshold=0.6,
+            context_window=10,
+        )
+
+        # Should find the match using context, even though it's far from original position
+        assert result is not None
+        assert result.line_start == 4  # Found at line 4 (1-indexed)
+        assert result.score.combined >= 0.6  # Fuzzy match above threshold (0.75)
+
+    def test_find_best_match_with_context_falls_back(self):
+        """Fall back to sliding window when context not found."""
+        from comment_system.fuzzy import find_best_match_with_context
+
+        haystack = [
+            "line 1",
+            "line 2",
+            "target line",  # Anchor at line 3
+            "line 4",
+        ]
+
+        needle = "target line"
+        fake_hash = "sha256:" + "0" * 64
+
+        result = find_best_match_with_context(
+            needle=needle,
+            haystack_lines=haystack,
+            original_line_start=3,
+            context_before_hash=fake_hash,
+            context_after_hash=fake_hash,
+            threshold=0.6,
+            fallback_window=10,
+        )
+
+        # Should still find match via fallback sliding window
+        assert result is not None
+        assert result.line_start == 3
+        assert result.score.combined == 1.0  # Exact match
+
+    def test_find_best_match_with_context_prefers_context_match(self):
+        """Context match is preferred over pure fuzzy match."""
+        from comment_system.fuzzy import (
+            compute_content_hash,
+            find_best_match_with_context,
+        )
+
+        # File with two similar matches: one with context, one without
+        haystack = (
+            [
+                "context before 1",
+                "context before 2",
+                "context before 3",  # context_before
+                "linear scaling model",  # Match WITH context
+                "context after 1",  # context_after
+                "context after 2",
+                "context after 3",
+            ]
+            + ["filler"] * 50
+            + [
+                "linear scaling model",  # Match WITHOUT context (same text)
+            ]
+        )
+
+        context_before = "\n".join(haystack[0:3])
+        context_after = "\n".join(haystack[4:7])
+        context_before_hash = compute_content_hash(context_before)
+        context_after_hash = compute_content_hash(context_after)
+
+        needle = "linear scaling model"
+
+        result = find_best_match_with_context(
+            needle=needle,
+            haystack_lines=haystack,
+            original_line_start=60,  # Closer to second match
+            context_before_hash=context_before_hash,
+            context_after_hash=context_after_hash,
+            threshold=0.6,
+            context_window=10,
+        )
+
+        # Should prefer the match WITH context (line 4), not the closer match without context
+        assert result is not None
+        assert result.line_start == 4  # Context-based match
+
+    def test_find_best_match_with_context_respects_window(self):
+        """AC-4: Context window is ±10 lines from context region."""
+        from comment_system.fuzzy import (
+            compute_content_hash,
+            find_best_match_with_context,
+        )
+
+        # Create a file where the match is just outside the context window
+        haystack = [
+            "context before 1",
+            "context before 2",
+            "context before 3",  # context_before (lines 1-3)
+            "filler 1",
+            "filler 2",
+            # ... context region is around line 5 ...
+            "context after 1",  # context_after (lines 20-22)
+            "context after 2",
+            "context after 3",
+        ]
+        # Add the target far outside the ±10 line window
+        haystack = haystack + ["filler"] * 30 + ["target text that matches"]
+
+        context_before = "\n".join(haystack[0:3])
+        context_after = "\n".join(haystack[6:9])
+        context_before_hash = compute_content_hash(context_before)
+        context_after_hash = compute_content_hash(context_after)
+
+        needle = "target text that matches"
+
+        result = find_best_match_with_context(
+            needle=needle,
+            haystack_lines=haystack,
+            original_line_start=50,
+            context_before_hash=context_before_hash,
+            context_after_hash=context_after_hash,
+            threshold=0.6,
+            context_window=10,  # Only search ±10 lines from context region
+        )
+
+        # Should NOT find match because it's outside the context window
+        # But it SHOULD fall back to sliding window search and find it there
+        assert result is not None  # Found via fallback
+        assert result.line_start > 30  # Found far from context region
+
+    def test_find_best_match_with_context_no_match_anywhere(self):
+        """Return None when no match found in context or fallback."""
+        from comment_system.fuzzy import (
+            compute_content_hash,
+            find_best_match_with_context,
+        )
+
+        haystack = [
+            "context before 1",
+            "context before 2",
+            "context before 3",
+            "completely different text",
+            "context after 1",
+            "context after 2",
+            "context after 3",
+        ]
+
+        context_before = "\n".join(haystack[0:3])
+        context_after = "\n".join(haystack[4:7])
+        context_before_hash = compute_content_hash(context_before)
+        context_after_hash = compute_content_hash(context_after)
+
+        needle = "needle text that doesn't exist"
+
+        result = find_best_match_with_context(
+            needle=needle,
+            haystack_lines=haystack,
+            original_line_start=4,
+            context_before_hash=context_before_hash,
+            context_after_hash=context_after_hash,
+            threshold=0.6,
+        )
+
+        assert result is None
+
+    def test_context_relocation_with_multiple_context_lines(self):
+        """Context region detection works with different context line counts."""
+        from comment_system.fuzzy import compute_content_hash, find_context_region
+
+        haystack = [
+            "a",
+            "b",
+            "c",
+            "d",
+            "e",  # 5-line context_before
+            "anchor",
+            "x",
+            "y",
+            "z",
+            "w",
+            "v",  # 5-line context_after
+        ]
+
+        context_before = "\n".join(haystack[0:5])
+        context_after = "\n".join(haystack[6:11])
+        context_before_hash = compute_content_hash(context_before)
+        context_after_hash = compute_content_hash(context_after)
+
+        region = find_context_region(
+            haystack, context_before_hash, context_after_hash, context_lines=5
+        )
+
+        assert region is not None
+        assert region.line_start == 6  # Line after 5-line context_before
+        assert region.line_end == 6  # Line before 5-line context_after

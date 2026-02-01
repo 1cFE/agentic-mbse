@@ -39,9 +39,7 @@ class Decision(BaseModel, frozen=True):
 
     summary: str = Field(..., min_length=1, max_length=10000)
     decider: str = Field(..., min_length=1, max_length=200)
-    timestamp: str = Field(
-        ..., description="ISO 8601 UTC timestamp (e.g., 2026-02-01T10:00:00Z)"
-    )
+    timestamp: str = Field(..., description="ISO 8601 UTC timestamp (e.g., 2026-02-01T10:00:00Z)")
 
     @field_validator("timestamp")
     @classmethod
@@ -220,8 +218,7 @@ class Thread(BaseModel):
             author=author,
             author_type=author_type,
             body=body,
-            timestamp=timestamp
-            or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            timestamp=timestamp or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         )
         self.comments.append(comment)
         return comment

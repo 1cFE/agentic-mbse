@@ -37,10 +37,7 @@ class TestComputeSourceHash:
 
         assert result.startswith("sha256:")
         # Known SHA-256 of "Hello, world!\n"
-        assert (
-            result
-            == "sha256:d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5"
-        )
+        assert result == "sha256:d9014c4624844aa5bac314773d6b689ad467fa4e1d1a50a1b8a99d5a95f72ff5"
 
     def test_hash_empty_file(self, tmp_path: Path) -> None:
         """Empty file produces valid hash."""
@@ -51,10 +48,7 @@ class TestComputeSourceHash:
 
         assert result.startswith("sha256:")
         # Known SHA-256 of empty string
-        assert (
-            result
-            == "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        )
+        assert result == "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 
     def test_hash_deterministic(self, tmp_path: Path) -> None:
         """Same content produces same hash."""
@@ -288,9 +282,7 @@ class TestNormalizePath:
 
         assert result == file_path.resolve()
 
-    def test_path_with_dot_dot_outside_project_raises_error(
-        self, tmp_path: Path
-    ) -> None:
+    def test_path_with_dot_dot_outside_project_raises_error(self, tmp_path: Path) -> None:
         """Path with .. that escapes project raises ValueError."""
         project_root = tmp_path / "project"
         project_root.mkdir()
@@ -312,9 +304,7 @@ class TestNormalizePath:
         with pytest.raises(ValueError, match="outside project root"):
             normalize_path(outside, project_root)
 
-    def test_path_normalization_removes_redundant_separators(
-        self, tmp_path: Path
-    ) -> None:
+    def test_path_normalization_removes_redundant_separators(self, tmp_path: Path) -> None:
         """Redundant path separators are normalized."""
         file_path = tmp_path / "file.txt"
         file_path.touch()

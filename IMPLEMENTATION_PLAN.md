@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Task 2.2 Complete — Ready for Task 2.3
-**Last Updated**: 2026-02-01 (Task 2.2 completed)
+**Status**: ✅ Iteration 2 Complete — Ready for Iteration 3
+**Last Updated**: 2026-02-01 (Task 2.3 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 100% of Iteration 1 (3/3 tasks complete)
-**Next Action**: Iteration 2 - Fuzzy Matching (Task 2.1)
+**Current Implementation**: 100% of Iterations 1-2 (6/6 tasks complete)
+**Next Action**: Iteration 3 - Anchor Reconciliation (Task 3.1)
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -284,7 +284,7 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 |------|-------------|-------|--------------|--------|
 | 2.1 | Levenshtein & Jaccard similarity | `fuzzy.py`, tests | Unit tests, performance | ✅ **COMPLETE** |
 | 2.2 | Sliding window search | `fuzzy.py`, tests | Performance (< 100ms per anchor on 10k-line file) | ✅ **COMPLETE** |
-| 2.3 | Context-based relocation | `fuzzy.py`, tests | Integration tests with reconciliation | 🔴 **NEXT** |
+| 2.3 | Context-based relocation | `fuzzy.py`, tests | Integration tests with reconciliation | ✅ **COMPLETE** |
 
 #### Task 2.1: Levenshtein & Jaccard Similarity ✅ COMPLETE
 
@@ -331,16 +331,56 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 
 **Status**: ✅ COMPLETE (2026-02-01)
 
+#### Task 2.3: Context-Based Relocation ✅ COMPLETE
+
+**Description**: Implement context-based anchor relocation using hash-based region detection
+
+**Spec References**: `specs/fuzzy-matching.md` (REQ-3), `specs/anchor-reconciliation.md` (REQ-2, AC-2, AC-3)
+
+**Implementation**: Extended `src/comment_system/fuzzy.py` with context functions (95 lines added)
+**Tests**: Extended `tests/comment_system/test_fuzzy.py` (13 new tests, 79 total tests passing, 1 skipped)
+
+**Deliverables**:
+- ✅ `compute_content_hash()` function for hashing context snippets
+- ✅ `find_context_region()` to locate anchors by surrounding context hashes
+- ✅ `find_best_match_with_context()` for context-based fuzzy matching
+- ✅ Context window search (±10 lines from detected region by default)
+- ✅ Fallback to standard sliding window when context not found
+- ✅ Preference for context-based matches over pure content matches
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- Context-based relocation is powerful when anchor content changes but surrounding code stays stable
+- Two-phase search (context region detection → fuzzy match within region) is more accurate than pure content matching
+- Fallback to sliding window ensures graceful degradation when context hashes don't match
+- Hash-based region detection is fast (no fuzzy matching needed for context markers)
+- Context window of ±10 lines (from spec) is sufficient for most relocations
+
+**Actual Size**: 95 lines of implementation added, 300+ lines of tests added
+
+**Status**: ✅ COMPLETE (2026-02-01)
+
+---
+
+### Iteration 2 Summary
+
+**Status**: ✅ COMPLETE (all 3 tasks done)
+**Total Implementation**: 406 lines in `fuzzy.py`
+**Total Tests**: 1063+ lines, 79 tests passing (1 skipped)
+**Performance**: All performance requirements met (< 200ms for 10k-line file searches)
+
+**Iteration 2 unlocks**: Iteration 3 (Anchor Reconciliation) can now begin
+
 ---
 
 ### Iteration 3: Core Algorithms - Anchor Reconciliation (2 tasks)
-**Blocked by**: Iterations 1, 2
+**Blocked by**: Iterations 1, 2 ✅ Complete
 **Focus**: Multi-signal reconciliation algorithm, bulk operations
 
-| Task | Description | Files | Backpressure |
-|------|-------------|-------|--------------|
-| 3.1 | Multi-signal reconciliation | `anchors.py`, tests | Unit tests for each step, health transitions |
-| 3.2 | Bulk reconciliation + atomicity | `anchors.py`, tests | Performance (100 threads in < 1s), rollback tests |
+| Task | Description | Files | Backpressure | Status |
+|------|-------------|-------|--------------|--------|
+| 3.1 | Multi-signal reconciliation | `anchors.py`, tests | Unit tests for each step, health transitions | 🔴 **NEXT** |
+| 3.2 | Bulk reconciliation + atomicity | `anchors.py`, tests | Performance (100 threads in < 1s), rollback tests | ⏸️ Blocked |
 
 ---
 
@@ -453,13 +493,13 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 5/40 tasks complete (12.5%)
+**Overall**: 6/40 tasks complete (15%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
 | **Iteration 1** | 3/3 | ✅ **COMPLETE** | No longer blocks |
-| **Iteration 2** | 2/3 | 🟡 **IN PROGRESS** | Tasks 2.1-2.2 done, 2.3 next |
-| Iteration 3 | 0/2 | ⏸️ Blocked | Blocked by Iter 2 |
+| **Iteration 2** | 3/3 | ✅ **COMPLETE** | No longer blocks |
+| Iteration 3 | 0/2 | 🔴 **READY TO START** | Now unblocked (Task 3.1 next) |
 | Iteration 4 | 0/4 | ⏸️ Blocked | Blocked by Iter 3 |
 | Iteration 5 | 0/3 | ⏸️ Blocked | Blocked by Iter 4 |
 | Iteration 6 | 0/3 | 🔴 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
@@ -476,7 +516,8 @@ Before marking any task complete:
 4. **✅ Task 1.3: Sidecar JSON Serialization** (DONE - 17 tests passing)
 5. **✅ Task 2.1: Levenshtein & Jaccard Similarity** (DONE - 46 tests passing)
 6. **✅ Task 2.2: Sliding Window Search** (DONE - 66 tests passing)
-7. **🔴 Task 2.3: Context-based Relocation** ← START HERE
+7. **✅ Task 2.3: Context-based Relocation** (DONE - 79 tests passing)
+8. **🔴 Task 3.1: Multi-signal Reconciliation** ← START HERE
 
 ---
 

@@ -4,6 +4,7 @@ Provides Levenshtein distance and Jaccard similarity for finding drifted anchors
 All algorithms are pure Python, deterministic, and optimized for performance.
 """
 
+import hashlib
 import unicodedata
 from typing import NamedTuple
 
@@ -280,6 +281,7 @@ def _disambiguate_candidates(
     Returns:
         Best candidate based on disambiguation rules
     """
+
     # Sort by score (descending), then by distance from original (ascending)
     def score_key(c: MatchCandidate) -> tuple[float, int]:
         distance = abs(c.line_start - original_line_start)
@@ -291,9 +293,7 @@ def _disambiguate_candidates(
     best = sorted_candidates[0]
 
     # Check if there are ties within 0.05
-    ties = [
-        c for c in sorted_candidates if abs(c.score.combined - best.score.combined) < 0.05
-    ]
+    ties = [c for c in sorted_candidates if abs(c.score.combined - best.score.combined) < 0.05]
 
     if len(ties) == 1:
         # No ties, return the best
@@ -302,3 +302,142 @@ def _disambiguate_candidates(
     # Multiple ties - choose closest to original position
     closest = min(ties, key=lambda c: abs(c.line_start - original_line_start))
     return closest
+
+
+def compute_content_hash(text: str) -> str:
+    """Compute SHA-256 hash of text content.
+
+    This is used to compute context_before_hash and context_after_hash
+    for anchor reconciliation.
+
+    Args:
+        text: Text content to hash (will be normalized first)
+
+    Returns:
+        Hash string with "sha256:" prefix (e.g., "sha256:abc123...")
+    """
+    normalized = normalize_text(text)
+    sha256_hash = hashlib.sha256(normalized.encode("utf-8"))
+    return f"sha256:{sha256_hash.hexdigest()}"
+
+
+class ContextRegion(NamedTuple):
+    """A region in the file identified by context hashes."""
+
+    line_start: int  # 1-indexed line where context region begins
+    line_end: int  # 1-indexed line where context region ends (inclusive)
+
+
+def find_context_region(
+    haystack_lines: list[str],
+    context_before_hash: str,
+    context_after_hash: str,
+    context_lines: int = 3,
+) -> ContextRegion | None:
+    """Find a region in the file bounded by context hashes.
+
+    Searches for consecutive lines whose hash matches context_before_hash,
+    then searches for consecutive lines whose hash matches context_after_hash.
+    The region between these two context markers is where the anchor likely moved.
+
+    Args:
+        haystack_lines: Target file as list of lines
+        context_before_hash: SHA-256 hash of lines before anchor (with "sha256:" prefix)
+        context_after_hash: SHA-256 hash of lines after anchor (with "sha256:" prefix)
+        context_lines: Number of context lines used to create the hashes (default 3)
+
+    Returns:
+        ContextRegion with line_start and line_end (1-indexed), or None if not found
+    """
+    if not haystack_lines:
+        return None
+
+    haystack_len = len(haystack_lines)
+
+    # Search for context_before_hash
+    before_line: int | None = None
+    for i in range(haystack_len - context_lines + 1):
+        window = "\n".join(haystack_lines[i : i + context_lines])
+        if compute_content_hash(window) == context_before_hash:
+            before_line = i + context_lines  # Line after context_before
+            break
+
+    if before_line is None:
+        return None
+
+    # Search for context_after_hash starting from before_line
+    after_line: int | None = None
+    for i in range(before_line, haystack_len - context_lines + 1):
+        window = "\n".join(haystack_lines[i : i + context_lines])
+        if compute_content_hash(window) == context_after_hash:
+            after_line = i  # Line before context_after
+            break
+
+    if after_line is None:
+        return None
+
+    # Return the region between context markers (1-indexed)
+    return ContextRegion(line_start=before_line + 1, line_end=after_line)
+
+
+def find_best_match_with_context(
+    needle: str,
+    haystack_lines: list[str],
+    original_line_start: int,
+    context_before_hash: str,
+    context_after_hash: str,
+    threshold: float = 0.6,
+    context_window: int = 10,
+    fallback_window: int = 500,
+) -> MatchCandidate | None:
+    """Find the best fuzzy match using context-based relocation.
+
+    This implements REQ-3 from fuzzy-matching.md:
+    1. Search for context_before_hash + context_after_hash pair
+    2. If found, fuzzy-match content within ±context_window lines of that region
+    3. If context not found, fall back to standard sliding window search
+
+    Context-based matches are PREFERRED over pure content fuzzy matches
+    because they use surrounding code structure to locate the anchor.
+
+    Args:
+        needle: Text snippet to search for (original anchor content)
+        haystack_lines: Target file as list of lines
+        original_line_start: Original 1-indexed line position
+        context_before_hash: SHA-256 hash of lines before anchor
+        context_after_hash: SHA-256 hash of lines after anchor
+        threshold: Minimum combined score to consider a match (default 0.6)
+        context_window: Lines to search around context region (default ±10)
+        fallback_window: Fallback window if context not found (default ±500)
+
+    Returns:
+        Best matching MatchCandidate above threshold, or None if no match found
+    """
+    # Try context-based relocation first (REQ-3)
+    context_region = find_context_region(haystack_lines, context_before_hash, context_after_hash)
+
+    if context_region is not None:
+        # Context found! Search within ±context_window lines of the region
+        # Use the midpoint of the context region as the search center
+        search_center = (context_region.line_start + context_region.line_end) // 2
+
+        # Search within ±context_window lines (AC-4: lines 40-60 for region at line 50)
+        match = find_best_match(
+            needle=needle,
+            haystack_lines=haystack_lines,
+            original_line_start=search_center,
+            threshold=threshold,
+            max_window=context_window,
+        )
+
+        if match is not None:
+            return match
+
+    # Fall back to standard sliding window search (no context available)
+    return find_best_match(
+        needle=needle,
+        haystack_lines=haystack_lines,
+        original_line_start=original_line_start,
+        threshold=threshold,
+        max_window=fallback_window,
+    )
