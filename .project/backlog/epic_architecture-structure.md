@@ -104,9 +104,10 @@ Element,File,Type,Knowledge,Requirement,Source_Type,Source_Document,Source_Locat
 
 ---
 
-### D1.2: Revised Project Templates (5 templates)
+### D1.2: Revised Project Templates (5 templates) — COMPLETE
 
 **Type**: Implementation
+**Status**: Complete (2026-02-01)
 **Dependencies**: D1.3 (template decisions)
 
 **Objective**: Update 5 existing templates to match the architecture.
@@ -122,10 +123,10 @@ Element,File,Type,Knowledge,Requirement,Source_Type,Source_Document,Source_Locat
 | `README.md.template` | Update directory structure description to match 4-directory model. |
 
 **Exit criteria**:
-- [ ] All 5 templates updated
-- [ ] OVERVIEW.md has Goals Registry and Analysis Questions tables
-- [ ] BACKLOG.md has YAML frontmatter structure matching workflows.md § 3.6
-- [ ] MODELING_GUIDE.md has reference material flagged or extracted (preparation for skill extraction in Epic 2)
+- [x] All 5 templates updated
+- [x] OVERVIEW.md has Goals Registry and Analysis Questions tables
+- [x] BACKLOG.md has YAML frontmatter structure matching workflows.md § 3.6
+- [x] MODELING_GUIDE.md has reference material flagged or extracted (preparation for skill extraction in Epic 2)
 
 ---
 
@@ -406,4 +407,4 @@ EPIC-CMDREV-001 should be marked as superseded.
 ---
 
 **Last Updated**: 2026-02-01
-**Next Action**: Begin D1.2 (revised templates) and D1.5 (frontmatter schemas) in parallel
+**Next Action**: Begin D1.5 (frontmatter schemas) and D1.4 (cmd_init rewiring)

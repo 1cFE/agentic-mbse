@@ -2,7 +2,7 @@
 
 Quick reference for SysML v2 modeling. Each section links to detailed pattern docs.
 
-> **Note**: For project-specific patterns and customizations, see [LOCAL_GUIDE.md](LOCAL_GUIDE.md).
+> **Note**: For project-specific patterns and customizations, see [REQUIREMENTS.md](REQUIREMENTS.md).
 
 **Related Docs:**
 - [models/README.md](../models/README.md) - Model catalog and navigation
@@ -25,6 +25,7 @@ Quick reference for SysML v2 modeling. Each section links to detailed pattern do
 
 ---
 
+<!-- SKILL: moves to project-structure -->
 ## The EXPOSE Pattern
 
 Expose calc outputs as design attributes for cross-file access:
@@ -103,6 +104,7 @@ part def 'Component' {
 
 ---
 
+<!-- SKILL: moves to sysml-conventions -->
 ## Standard Imports
 
 ```sysml
@@ -118,6 +120,7 @@ package MyProject::Library::Components {
 
 ---
 
+<!-- SKILL: moves to sysml-conventions -->
 ## Key Syntax Patterns
 
 One example each. See pattern docs for full syntax, variations, and common mistakes.
@@ -161,6 +164,7 @@ calc my_calc { in value = other_part.exposed_attr; }
 
 ---
 
+<!-- SKILL: moves to model-validation -->
 ## Model Regression Testing
 
 ### Why Regression Testing Matters
@@ -235,6 +239,7 @@ pytest tests/models/test_library.py
 
 ---
 
+<!-- SKILL: moves to toolkit-awareness -->
 ## Tools and Scripts
 
 ```bash
@@ -256,6 +261,7 @@ syside check models/library/file.sysml
 
 ---
 
+<!-- SKILL: moves to sysml-conventions -->
 ## Pattern Documentation Index
 
 All pattern docs are in the agentic-mbse `docs/patterns/` directory.

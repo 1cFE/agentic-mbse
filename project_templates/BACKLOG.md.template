@@ -1,106 +1,35 @@
-# Work Backlog
-
-Prioritized list of work epics for the project.
-
+---
+epics: []
+standalone: []
 ---
 
-## Recently Completed
+# Project Backlog
 
-<!-- Move completed items here with dates -->
+<!-- This file has two parts:
+     1. YAML frontmatter (above) — machine-readable state, source of truth
+     2. Markdown body (below) — human-readable dashboard, rendered from frontmatter
 
-### Example: Feature Name
-**Status**: COMPLETE (YYYY-MM-DD)
-**Location**: `modeling_pm/completed/{feature}/`
+     The frontmatter is authoritative. When scripts update state (status changes,
+     new items, completions), they update both the YAML and re-render the body.
+     If the body drifts from the frontmatter, the frontmatter wins. -->
 
-Brief description of what was done.
+No epics or work items yet. Use `/spec-model` to start a work item,
+or `/backlog` to manage the backlog.
 
----
+<!-- Rendered dashboard format when populated:
 
-## Priority 0: READY
+## Epic: [Epic Name]
+**Goal**: G-XXX | **Priority**: P0 | **Status**: active
+**Epic file**: [epic-{name}.md](backlog/epic-{name}.md)
 
-<!-- Highest priority work ready to start -->
+| Item | Scale | Status | Notes |
+|------|-------|--------|-------|
+| [Item name] | standard | active | |
 
-### Epic/Feature: <!-- Name -->
-**Status**: READY
-**Priority**: P0
-**Effort**: <!-- Estimate -->
+## Standalone Items
 
-**Goal**: <!-- What this achieves -->
+| Item | Scale | Priority | Status | Notes |
+|------|-------|----------|--------|-------|
+| [Item name] | trivial | P1 | backlog | |
 
-**Scope**:
-- <!-- Task 1 -->
-- <!-- Task 2 -->
-- <!-- Task 3 -->
-
----
-
-## Priority 1: After P0 Complete
-
-<!-- Work to do after current priority -->
-
-### Feature: <!-- Name -->
-**Status**: PENDING
-**Priority**: P1
-**Effort**: <!-- Estimate -->
-
-**Goal**: <!-- What this achieves -->
-
-**Dependencies**: <!-- What must be done first -->
-
----
-
-### Feature: <!-- Another P1 Feature -->
-**Status**: BACKLOG
-**Priority**: P1
-**Effort**: <!-- Estimate -->
-
----
-
-## Priority 2: Medium Term
-
-<!-- Work for after P0 and P1 -->
-
-### Feature: <!-- Name -->
-**Status**: BACKLOG
-**Priority**: P2
-**Effort**: <!-- Estimate -->
-
----
-
-## Priority 3: DEFERRED
-
-<!-- Work that is planned but not scheduled -->
-
-### Epic: <!-- Name -->
-**Goal**: <!-- What this achieves -->
-**Dependencies**: <!-- What must be done first -->
-**Effort**: <!-- Estimate -->
-
-### Epic: <!-- Another Deferred Epic -->
-<!-- Repeat structure -->
-
----
-
-## Priority 4: FUTURE (Ideas, not committed)
-
-<!-- Ideas that may or may not happen -->
-
-- <!-- Idea 1 -->
-- <!-- Idea 2 -->
-- <!-- Idea 3 -->
-
----
-
-## Documentation References
-
-<!-- Key documentation for this backlog -->
-
-- **Project Overview**: `modeling_pm/OVERVIEW.md`
-- **Modeling Guide**: `modeling_pm/MODELING_GUIDE.md`
-- **Workflow**: `modeling_pm/MODELING_PROCESS.md`
-<!-- Add project-specific docs -->
-
----
-
-**Last Updated**: <!-- YYYY-MM-DD -->
-**Next Review**: <!-- When to review -->
+-->

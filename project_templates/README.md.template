@@ -29,30 +29,37 @@ Each document has **one clear purpose**:
 |----------|---------|------------|
 | **README.md** | Project overview (this file) | You |
 | **CLAUDE.md** | AI operating rules, environment setup | You |
-| **SOURCE_INDEX.md** | Domain knowledge sources | `/manage-sources` |
-| **modeling_pm/OVERVIEW.md** | Project status and goals | You |
-| **modeling_pm/backlog/BACKLOG.md** | Work item pipeline | `/backlog` |
-| **modeling_pm/learnings/RAW_LEARNINGS.md** | Captured insights | `/record-learning` |
-| **modeling_pm/MODELING_GUIDE.md** | SysML syntax reference | Static (don't edit) |
-| **modeling_pm/MODELING_PROCESS.md** | MBSE methodology | Static (don't edit) |
+| **knowledge/SOURCE_INDEX.md** | Domain knowledge sources | `/manage-sources` |
+| **knowledge/KNOWLEDGE.md** | Curated domain insights | `/research` |
+| **project/OVERVIEW.md** | Project goals and intent | You |
+| **project/ARCHITECTURE.md** | Model architecture decisions | You |
+| **project/REQUIREMENTS.md** | Project-specific modeling rules | You |
+| **project/VALIDATION_MATRIX.md** | System verification criteria | You |
+| **project/MODELING_GUIDE.md** | SysML syntax reference | Static (don't edit) |
+| **project/MODELING_PROCESS.md** | MBSE methodology | Static (don't edit) |
+| **work/BACKLOG.md** | Work item pipeline | `/backlog` |
+| **work/learnings/RAW_LEARNINGS.md** | Captured insights | `/record-learning` |
 
 ### What You Edit vs What Commands Manage
 
 **You edit directly:**
 - `README.md` - Project-specific setup instructions
 - `CLAUDE.md` - Environment rules (virtualenv, PYTHONPATH, lint)
-- `modeling_pm/OVERVIEW.md` - Project status, goals, success criteria
+- `project/OVERVIEW.md` - Project goals, success criteria
+- `project/ARCHITECTURE.md` - Model architecture decisions
+- `project/REQUIREMENTS.md` - Project-specific modeling rules
+- `project/VALIDATION_MATRIX.md` - System verification criteria
 
 **Commands manage for you:**
-- `SOURCE_INDEX.md` - Use `/manage-sources` to add/remove sources
-- `modeling_pm/backlog/BACKLOG.md` - Use `/backlog add` and `/backlog clear`
-- `modeling_pm/learnings/RAW_LEARNINGS.md` - Use `/record-learning` to capture insights
-- `modeling_pm/active/*` - Created by `/spec-model`, `/design-model`, `/plan-model`
+- `knowledge/SOURCE_INDEX.md` - Use `/manage-sources` to add/remove sources
+- `work/BACKLOG.md` - Use `/backlog add` and `/backlog clear`
+- `work/learnings/RAW_LEARNINGS.md` - Use `/record-learning` to capture insights
+- `work/active/*` - Created by `/spec-model`, `/design-model`, `/plan-model`
 - `models/**/*.sysml` - Created by `/implement-model`
 
 **Static (from agentic-mbse, don't edit):**
-- `modeling_pm/MODELING_GUIDE.md` - SysML patterns and syntax
-- `modeling_pm/MODELING_PROCESS.md` - MBSE methodology and workflow
+- `project/MODELING_GUIDE.md` - SysML patterns and syntax
+- `project/MODELING_PROCESS.md` - MBSE methodology and workflow
 
 ---
 
@@ -86,6 +93,8 @@ agentic-mbse install-commands [--force]
 | `/backlog add [source]` | Add work items |
 | `/backlog clear` | Archive completed work |
 | `/record-learning` | Capture session insights |
+
+Additional commands may be available in later toolkit versions.
 
 ### Validation Framework
 
@@ -161,20 +170,38 @@ models/
 
 **Key Principle**: Library = reusable definitions. Designs = specific instances.
 
-### Project Management
+### Project Documents and Work Management
 
 ```
-modeling_pm/
-├── OVERVIEW.md              # Project status (you edit)
-├── MODELING_GUIDE.md        # SysML reference (static)
-├── MODELING_PROCESS.md      # MBSE methodology (static)
-├── backlog/
-│   └── BACKLOG.md           # Work items (/backlog manages)
-├── active/                  # Current work (commands manage)
-├── completed/               # Archived work
-├── research/                # Research documents
+knowledge/                   # "What do we know?"
+├── SOURCE_INDEX.md          #   Domain knowledge sources
+├── KNOWLEDGE.md             #   Curated domain insights
+├── sources/                 #   Local reference materials
+└── research/                #   Research pipeline
+    ├── pending/             #     Unapproved research
+    └── approved/            #     User-approved research
+
+project/                     # "What are we building and how?"
+├── OVERVIEW.md              #   Project goals and intent
+├── ARCHITECTURE.md          #   Model architecture decisions
+├── REQUIREMENTS.md          #   Project-specific rules
+├── VALIDATION_MATRIX.md     #   System verification criteria
+├── MODELING_GUIDE.md        #   SysML reference (static)
+├── MODELING_PROCESS.md      #   MBSE methodology (static)
+└── intent/                  #   Raw user documents
+
+work/                        # "What's in progress?"
+├── BACKLOG.md               #   Work item dashboard
+├── EPIC_GUIDE.md            #   Epic decomposition guide (static)
+├── backlog/                 #   Epic decomposition files
+├── active/                  #   In-progress work
+├── completed/               #   Archived work
+├── analysis/                #   Model analysis reports
 └── learnings/
-    └── RAW_LEARNINGS.md     # Session insights (/record-learning)
+    └── RAW_LEARNINGS.md     #   Process knowledge
+
+data/                        # Machine-readable evidence
+└── traceability_matrix.csv
 ```
 
 ---
@@ -203,9 +230,9 @@ part my_component : 'Component Name' {
 
 ## Resources
 
-- [MBSE Workflow](modeling_pm/MODELING_PROCESS.md)
-- [SysML Patterns](modeling_pm/MODELING_GUIDE.md)
-- [Domain Sources](SOURCE_INDEX.md)
-- [Project Status](modeling_pm/OVERVIEW.md)
-- [Work Items](modeling_pm/backlog/BACKLOG.md)
-- [Session Learnings](modeling_pm/learnings/RAW_LEARNINGS.md)
+- [MBSE Workflow](project/MODELING_PROCESS.md)
+- [SysML Patterns](project/MODELING_GUIDE.md)
+- [Domain Sources](knowledge/SOURCE_INDEX.md)
+- [Project Goals](project/OVERVIEW.md)
+- [Work Items](work/BACKLOG.md)
+- [Session Learnings](work/learnings/RAW_LEARNINGS.md)
