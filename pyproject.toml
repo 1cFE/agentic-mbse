@@ -42,7 +42,7 @@ Homepage = "https://github.com/yourorg/agentic-mbse"
 Repository = "https://github.com/yourorg/agentic-mbse"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/agentic_mbse"]
+packages = ["src/agentic_mbse", "src/comment_system"]
 
 # Include claude/, docs/, and project_templates/ directories for CLI to access at runtime
 [tool.hatch.build.targets.wheel.force-include]
@@ -72,7 +72,7 @@ select = ["E", "F", "I", "N", "W", "UP"]
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["agentic_mbse"]
+known-first-party = ["agentic_mbse", "comment_system"]
 
 [tool.mypy]
 python_version = "3.12"
