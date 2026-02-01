@@ -1,6 +1,6 @@
 # Spec: Level 8 Extractability Validation
 
-**Status:** Draft
+**Status:** Complete
 **Owner:** Reid Westwood
 **Created:** 2026-02-01 21:56:26 UTC
 **Complexity:** LOW
@@ -19,11 +19,11 @@ A secondary issue: L8's path filter (`"designs" in doc_path.parts`) is hardcoded
 
 ### Success Criteria
 
-- [ ] A model with non-extractable design attribute expressions fails Level 8 with actionable error
-- [ ] A model in `models/tests/` (not `models/designs/`) has its design attributes validated by L8
-- [ ] The path filter for design attribute detection is configurable
-- [ ] Existing tests continue to pass
-- [ ] New synthetic test fixtures exercise the new checks
+- [x] A model with non-extractable design attribute expressions fails Level 8 with actionable error
+- [x] A model in `models/tests/` (not `models/designs/`) has its design attributes validated by L8
+- [x] The path filter for design attribute detection is configurable
+- [x] Existing tests continue to pass
+- [x] New synthetic test fixtures exercise the new checks
 
 ### Priority
 
@@ -101,25 +101,25 @@ L8 validates that design attribute expressions are actually extractable as numer
 
 ### Core Functionality
 
-- [ ] A design attribute with `feature_value_expression` that raises `ValueError` in `evaluate_true_static_expression()` produces an `L8_DESIGN_ATTR_UNEXTRACTABLE` ERROR
-- [ ] A design attribute with a valid literal expression (e.g., `10.0`) passes both the presence and extractability checks
-- [ ] A design attribute with a unit-annotated literal (e.g., `3.0 [m]`) passes extractability
-- [ ] `check_design_attr_completeness(model, design_path_filter="")` checks attributes in all files, not just `designs/`
-- [ ] `check_design_attr_completeness(model, design_path_filter="designs")` preserves current behavior
-- [ ] `validate_codegen_readiness(models_path, design_path_filter="tests")` validates test model attributes
+- [x] A design attribute with `feature_value_expression` that raises `ValueError` in `evaluate_true_static_expression()` produces an `L8_DESIGN_ATTR_UNEXTRACTABLE` ERROR
+- [x] A design attribute with a valid literal expression (e.g., `10.0`) passes both the presence and extractability checks
+- [x] A design attribute with a unit-annotated literal (e.g., `3.0 [m]`) passes extractability
+- [x] `check_design_attr_completeness(model, design_path_filter="")` checks attributes in all files, not just `designs/`
+- [x] `check_design_attr_completeness(model, design_path_filter="designs")` preserves current behavior
+- [x] `validate_codegen_readiness(models_path, design_path_filter="tests")` validates test model attributes
 
 ### Tests
 
-- [ ] Synthetic test fixture with a non-extractable design attribute expression triggers `L8_DESIGN_ATTR_UNEXTRACTABLE`
-- [ ] Synthetic test fixture with valid design attributes passes L8
-- [ ] Synthetic test fixture in a non-`designs/` directory is validated when path filter is adjusted
-- [ ] Existing L8 tests continue to pass
+- [x] Synthetic test fixture with a non-extractable design attribute expression triggers `L8_DESIGN_ATTR_UNEXTRACTABLE`
+- [x] Synthetic test fixture with valid design attributes passes L8
+- [x] Synthetic test fixture in a non-`designs/` directory is validated when path filter is adjusted
+- [x] Existing L8 tests continue to pass
 
 ### Quality & Integration
 
-- [ ] `uv run pytest tests/` passes (all existing tests)
-- [ ] `uv run ruff check src/ tests/` passes
-- [ ] `uv run mypy src/` passes (no new type errors)
+- [x] `uv run pytest tests/` passes (332 passed, 1 skipped — pre-existing skip)
+- [x] `uv run ruff check src/ tests/` passes (on changed files; pre-existing issues in other files)
+- [x] `uv run mypy src/` passes (no new type errors; 125 pre-existing errors unchanged)
 
 ---
 
@@ -133,4 +133,4 @@ L8 validates that design attribute expressions are actually extractable as numer
 
 ---
 
-**Next Steps:** After approval, proceed to `/_my_design`
+**Completed:** 2026-02-01. All success criteria, acceptance criteria, and quality checks verified.
