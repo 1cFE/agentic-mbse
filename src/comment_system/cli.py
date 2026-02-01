@@ -1,6 +1,8 @@
 """CLI entry point for the comment system."""
 
 import hashlib
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -266,6 +268,319 @@ def add(file_path: Path, line_range: str, author: str, author_type: str, body: s
 
     except Exception as e:
         # Unexpected error (should not happen in normal operation)
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(2)
+
+
+@cli.command(name="list")
+@click.option(
+    "--status",
+    type=click.Choice(["open", "resolved", "wontfix"], case_sensitive=False),
+    help="Filter by thread status",
+)
+@click.option(
+    "--health",
+    type=click.Choice(["anchored", "drifted", "orphaned"], case_sensitive=False),
+    help="Filter by anchor health",
+)
+@click.option(
+    "--author",
+    help="Filter by author name",
+)
+@click.option(
+    "--all",
+    "all_files",
+    is_flag=True,
+    help="List threads from all files in project",
+)
+@click.option(
+    "--json",
+    "json_output",
+    is_flag=True,
+    help="Output as JSON instead of human-readable text",
+)
+@click.argument("file_path", type=click.Path(exists=True, path_type=Path), required=False)
+def list_threads(
+    status: str | None,
+    health: str | None,
+    author: str | None,
+    all_files: bool,
+    json_output: bool,
+    file_path: Path | None,
+):
+    """
+    List comment threads with optional filters.
+
+    Examples:
+
+        comment list src/main.py
+
+        comment list --status=open --health=drifted
+
+        comment list --all --author=alice
+
+        comment list --json --all
+    """
+    try:
+        # Validate arguments
+        if all_files and file_path:
+            click.echo("Error: Cannot specify both --all and a file path", err=True)
+            sys.exit(1)
+
+        if not all_files and not file_path:
+            click.echo("Error: Must specify either a file path or --all", err=True)
+            sys.exit(1)
+
+        # Find project root
+        try:
+            project_root = find_project_root()
+        except ValueError as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
+
+        # Normalize filters
+        status_filter = ThreadStatus(status.lower()) if status else None
+        health_filter = AnchorHealth(health.lower()) if health else None
+
+        # Collect sidecar files
+        sidecar_paths = []
+        if all_files:
+            # Find all sidecar files in .comments/
+            comments_dir = project_root / ".comments"
+            if comments_dir.exists():
+                sidecar_paths = list(comments_dir.rglob("*.json"))
+        else:
+            # Single file
+            if file_path:
+                file_path = normalize_path(file_path, project_root)
+                sidecar_path = get_sidecar_path(file_path, project_root)
+                if sidecar_path.exists():
+                    sidecar_paths = [sidecar_path]
+
+        # Collect matching threads
+        matching_threads = []
+        for sidecar_path in sidecar_paths:
+            try:
+                sidecar = read_sidecar(sidecar_path)
+                source_file = sidecar.source_file
+
+                for thread in sidecar.threads:
+                    # Apply filters
+                    if status_filter and thread.status != status_filter:
+                        continue
+                    if health_filter and thread.anchor.health != health_filter:
+                        continue
+                    if author and not any(c.author == author for c in thread.comments):
+                        continue
+
+                    matching_threads.append((source_file, thread))
+            except ValueError:
+                # Skip invalid sidecar files
+                continue
+
+        # Output results
+        if json_output:
+            # JSON output
+            output = []
+            for source_file, thread in matching_threads:
+                output.append(
+                    {
+                        "id": thread.id,
+                        "source_file": source_file,
+                        "status": thread.status.value,
+                        "anchor": {
+                            "line_start": thread.anchor.line_start,
+                            "line_end": thread.anchor.line_end,
+                            "health": thread.anchor.health.value,
+                            "drift_distance": thread.anchor.drift_distance,
+                        },
+                        "comments": len(thread.comments),
+                        "created_at": thread.comments[0].timestamp if thread.comments else None,
+                    }
+                )
+            click.echo(json.dumps(output, indent=2))
+        else:
+            # Human-readable output
+            use_color = os.environ.get("NO_COLOR") is None
+
+            if not matching_threads:
+                click.echo("No matching threads found.")
+                return
+
+            for source_file, thread in matching_threads:
+                # Format status with color
+                status_str = thread.status.value
+                if use_color:
+                    if thread.status == ThreadStatus.OPEN:
+                        status_str = click.style(status_str, fg="green")
+                    elif thread.status == ThreadStatus.RESOLVED:
+                        status_str = click.style(status_str, fg="blue")
+                    else:  # wontfix
+                        status_str = click.style(status_str, fg="yellow")
+
+                # Format health with color
+                health_str = thread.anchor.health.value
+                if use_color:
+                    if thread.anchor.health == AnchorHealth.ANCHORED:
+                        health_str = click.style(health_str, fg="green")
+                    elif thread.anchor.health == AnchorHealth.DRIFTED:
+                        health_str = click.style(health_str, fg="yellow")
+                    else:  # orphaned
+                        health_str = click.style(health_str, fg="red")
+
+                # Print thread info
+                click.echo(
+                    f"{thread.id} [{status_str}] [{health_str}] "
+                    f"{source_file}:{thread.anchor.line_start}:{thread.anchor.line_end} "
+                    f"({len(thread.comments)} comments)"
+                )
+
+    except Exception as e:
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(2)
+
+
+@cli.command()
+@click.argument("thread_id", required=True)
+@click.option(
+    "--json",
+    "json_output",
+    is_flag=True,
+    help="Output as JSON instead of human-readable text",
+)
+@click.option(
+    "--all",
+    "all_files",
+    is_flag=True,
+    help="Search all files in project (default: search only current directory)",
+)
+def show(thread_id: str, json_output: bool, all_files: bool):
+    """
+    Display full thread history with all comments.
+
+    Examples:
+
+        comment show 01HQABCDEFGHIJKLMNOPQRSTUV
+
+        comment show --json 01HQABCDEFGHIJKLMNOPQRSTUV
+
+        comment show --all 01HQABCDEFGHIJKLMNOPQRSTUV
+    """
+    try:
+        # Find project root
+        try:
+            project_root = find_project_root()
+        except ValueError as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
+
+        # Find thread in sidecar files
+        found_thread = None
+        found_source_file = None
+
+        comments_dir = project_root / ".comments"
+        if comments_dir.exists():
+            sidecar_paths = list(comments_dir.rglob("*.json"))
+            for sidecar_path in sidecar_paths:
+                try:
+                    sidecar = read_sidecar(sidecar_path)
+                    for thread in sidecar.threads:
+                        if thread.id == thread_id:
+                            found_thread = thread
+                            found_source_file = sidecar.source_file
+                            break
+                    if found_thread:
+                        break
+                except ValueError:
+                    # Skip invalid sidecar files
+                    continue
+
+        if not found_thread:
+            click.echo(f"Error: Thread not found: {thread_id}", err=True)
+            sys.exit(1)
+
+        # Output thread details
+        if json_output:
+            # JSON output
+            output = {
+                "id": found_thread.id,
+                "source_file": found_source_file,
+                "status": found_thread.status.value,
+                "anchor": {
+                    "line_start": found_thread.anchor.line_start,
+                    "line_end": found_thread.anchor.line_end,
+                    "health": found_thread.anchor.health.value,
+                    "drift_distance": found_thread.anchor.drift_distance,
+                    "content_snippet": found_thread.anchor.content_snippet,
+                },
+                "comments": [
+                    {
+                        "id": comment.id,
+                        "author": comment.author,
+                        "author_type": comment.author_type.value,
+                        "timestamp": comment.timestamp,
+                        "body": comment.body,
+                    }
+                    for comment in found_thread.comments
+                ],
+            }
+            if found_thread.decision:
+                output["decision"] = {
+                    "summary": found_thread.decision.summary,
+                    "decider": found_thread.decision.decider,
+                    "timestamp": found_thread.decision.timestamp,
+                }
+            click.echo(json.dumps(output, indent=2))
+        else:
+            # Human-readable output
+            use_color = os.environ.get("NO_COLOR") is None
+
+            # Header
+            status_str = found_thread.status.value
+            if use_color:
+                if found_thread.status == ThreadStatus.OPEN:
+                    status_str = click.style(status_str, fg="green", bold=True)
+                elif found_thread.status == ThreadStatus.RESOLVED:
+                    status_str = click.style(status_str, fg="blue", bold=True)
+                else:  # wontfix
+                    status_str = click.style(status_str, fg="yellow", bold=True)
+
+            health_str = found_thread.anchor.health.value
+            if use_color:
+                if found_thread.anchor.health == AnchorHealth.ANCHORED:
+                    health_str = click.style(health_str, fg="green")
+                elif found_thread.anchor.health == AnchorHealth.DRIFTED:
+                    health_str = click.style(health_str, fg="yellow")
+                else:  # orphaned
+                    health_str = click.style(health_str, fg="red")
+
+            click.echo(f"Thread: {found_thread.id}")
+            click.echo(f"Status: {status_str}")
+            click.echo(
+                f"Location: {found_source_file}:{found_thread.anchor.line_start}:{found_thread.anchor.line_end}"
+            )
+            click.echo(f"Anchor Health: {health_str}")
+            if found_thread.anchor.drift_distance > 0:
+                click.echo(f"Drift Distance: {found_thread.anchor.drift_distance} lines")
+            click.echo(f"\nSnippet:\n{found_thread.anchor.content_snippet}\n")
+
+            # Comments
+            click.echo("Comments:")
+            for i, comment in enumerate(found_thread.comments, 1):
+                author_str = f"{comment.author} ({comment.author_type.value})"
+                if use_color:
+                    if comment.author_type == AuthorType.AGENT:
+                        author_str = click.style(author_str, fg="cyan")
+
+                click.echo(f"\n[{i}] {author_str} at {comment.timestamp}")
+                click.echo(f"    {comment.body}")
+
+            # Decision (if resolved)
+            if found_thread.decision:
+                click.echo(f"\nDecision by {found_thread.decision.decider} at {found_thread.decision.timestamp}:")
+                click.echo(f"    {found_thread.decision.summary}")
+
+    except Exception as e:
         click.echo(f"Unexpected error: {e}", err=True)
         sys.exit(2)
 

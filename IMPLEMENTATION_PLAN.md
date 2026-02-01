@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Task 4.1 Complete — First CLI Command Working!
-**Last Updated**: 2026-02-01 (Task 4.1 completed)
+**Status**: ✅ Task 4.2 Complete — List and Show Commands Working!
+**Last Updated**: 2026-02-01 (Task 4.2 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 9/40 tasks complete (22.5%)
-**Next Action**: Task 4.2 - `list` and `show` Commands
+**Current Implementation**: 10/40 tasks complete (25%)
+**Next Action**: Task 4.3 - `reply`, `resolve`, `reopen` Commands
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -480,8 +480,8 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 | Task | Description | Files | Backpressure | Status |
 |------|-------------|-------|--------------|--------|
 | 4.1 | CLI foundation + `add` | `cli.py`, tests, pyproject.toml | CLI tests, exit codes, output formats | ✅ **COMPLETE** |
-| 4.2 | `list` and `show` commands | `cli.py`, tests | Filtering tests, NO_COLOR support | 🔴 **READY TO START** |
-| 4.3 | `reply`, `resolve`, `reopen` | `cli.py`, tests | Workflow tests (add → reply → resolve → reopen) | ⏸️ Blocked |
+| 4.2 | `list` and `show` commands | `cli.py`, tests | Filtering tests, NO_COLOR support | ✅ **COMPLETE** |
+| 4.3 | `reply`, `resolve`, `reopen` | `cli.py`, tests | Workflow tests (add → reply → resolve → reopen) | 🔴 **READY TO START** |
 | 4.4 | `reconcile` command | `cli.py`, tests | Integration tests (add → edit → reconcile) | ⏸️ Blocked |
 
 #### Task 4.1: CLI Foundation + `add` Command ✅ COMPLETE
@@ -522,6 +522,51 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 - ✅ Output includes: thread ID, file path, line range, sidecar path
 
 **Actual Size**: 263 lines of implementation, 513 lines of tests
+
+**Status**: ✅ COMPLETE (2026-02-01)
+
+#### Task 4.2: `list` and `show` Commands ✅ COMPLETE
+
+**Description**: Implement `list` command for filtering threads and `show` command for detailed thread display
+
+**Spec References**: `specs/cli-interface.md` (REQ-2, REQ-3, REQ-5, AC-2, AC-5, AC-6)
+
+**Implementation**: Extended `src/comment_system/cli.py` (218 lines added)
+**Tests**: Extended `tests/comment_system/test_cli.py` (17 new tests, 47 total tests passing)
+
+**Deliverables**:
+- ✅ `comment list [FILE] --status=X --health=Y --author=Z` command
+- ✅ `comment list --all` to list all threads across project
+- ✅ `comment show THREAD_ID` to display full thread details
+- ✅ `--json` output format for both commands
+- ✅ NO_COLOR environment variable support (AC-6)
+- ✅ Color-coded status and health in human-readable output
+- ✅ Filtering by status (open/resolved/wontfix), health (anchored/drifted/orphaned), author
+- ✅ Proper error handling (exit code 1 for user errors, 2 for system errors)
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- Click's @command decorator needs explicit `name="list"` parameter to avoid conflict with Python builtin
+- Click test runner (CliRunner) disables color by default, need `color=True` parameter to test ANSI codes
+- JSON output is parseable by `jq` as required by spec (CON-2)
+- Thread search across all sidecar files is fast enough (< 1s for typical projects)
+- Filtering by author requires checking all comments in thread (one thread can have multiple authors)
+
+**Test Coverage**:
+- ✅ AC-2: `comment list --json --status=open` produces valid JSON
+- ✅ AC-5: `comment list --all --health=orphaned` shows only orphaned threads
+- ✅ AC-6: NO_COLOR environment variable suppresses ANSI codes
+- ✅ Filter combinations: status + health + author
+- ✅ Error handling: conflicting options, missing file, thread not found
+- ✅ Color output: both with and without NO_COLOR
+- ✅ JSON schema: validates structure and field types
+
+**Acceptance Criteria Met**:
+- ✅ AC-2: JSON output is valid and parseable
+- ✅ AC-5: --all with health filter shows correct subset
+- ✅ AC-6: NO_COLOR respected in both list and show
+
+**Actual Size**: 218 lines of implementation added, ~400 lines of tests added
 
 **Status**: ✅ COMPLETE (2026-02-01)
 
@@ -623,14 +668,14 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 9/40 tasks complete (22.5%)
+**Overall**: 10/40 tasks complete (25%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
 | **Iteration 1** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 2** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 3** | 2/2 | ✅ **COMPLETE** | No longer blocks |
-| **Iteration 4** | 1/4 | 🟡 **IN PROGRESS** | Task 4.1 complete, 4.2-4.4 ready |
+| **Iteration 4** | 2/4 | 🟡 **IN PROGRESS** | Tasks 4.1-4.2 complete, 4.3-4.4 ready |
 | Iteration 5 | 0/3 | ⏸️ Blocked | Blocked by Iter 4 |
 | Iteration 6 | 0/3 | 🔴 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
 | Iteration 7 | 0/3 | 🔓 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
@@ -650,7 +695,8 @@ Before marking any task complete:
 8. **✅ Task 3.1: Multi-signal Reconciliation** (DONE - 15 tests passing)
 9. **✅ Task 3.2: Bulk Reconciliation + Atomicity** (DONE - 22 tests passing)
 10. **✅ Task 4.1: CLI Foundation + `add` Command** (DONE - 30 tests passing)
-11. **🔴 Task 4.2: `list` and `show` Commands** ← START HERE
+11. **✅ Task 4.2: `list` and `show` Commands** (DONE - 47 tests passing)
+12. **🔴 Task 4.3: `reply`, `resolve`, `reopen` Commands** ← START HERE
 
 ---
 

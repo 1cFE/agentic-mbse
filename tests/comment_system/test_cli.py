@@ -496,3 +496,300 @@ def test_add_unicode_content(runner, git_repo):
     sidecar_path = git_repo / ".comments" / "unicode.txt.json"
     sidecar = read_sidecar(sidecar_path)
     assert "Unicode: 你好 🎉" in sidecar.threads[0].anchor.content_snippet
+
+
+# ============================================================================
+# Tests: list command
+# ============================================================================
+
+
+def test_list_single_file(runner, git_repo):
+    """Test listing threads from a single file."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\nLine 2\nLine 3\n")
+
+    # Create two threads
+    runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "First comment"])
+    runner.invoke(cli, ["add", str(file_path), "-L", "2:2", "Second comment"])
+
+    # List threads
+    result = runner.invoke(cli, ["list", str(file_path)])
+
+    assert result.exit_code == 0
+    assert "test.txt:1:1" in result.output
+    assert "test.txt:2:2" in result.output
+    assert "(1 comments)" in result.output
+
+
+def test_list_no_threads(runner, git_repo):
+    """Test listing when no threads exist."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    result = runner.invoke(cli, ["list", str(file_path)])
+
+    assert result.exit_code == 0
+    assert "No matching threads found" in result.output
+
+
+def test_list_filter_by_status(runner, git_repo):
+    """Test filtering threads by status."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\nLine 2\n")
+
+    # Create open thread
+    result1 = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Open thread"])
+    assert result1.exit_code == 0
+
+    # List only open threads
+    result = runner.invoke(cli, ["list", str(file_path), "--status", "open"])
+
+    assert result.exit_code == 0
+    assert "open" in result.output.lower()
+
+
+def test_list_filter_by_health(runner, git_repo):
+    """Test filtering threads by anchor health."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Comment"])
+
+    # List only anchored threads
+    result = runner.invoke(cli, ["list", str(file_path), "--health", "anchored"])
+
+    assert result.exit_code == 0
+    assert "anchored" in result.output.lower()
+
+
+def test_list_json_output(runner, git_repo):
+    """Test JSON output format."""
+    import json
+
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Comment"])
+
+    result = runner.invoke(cli, ["list", str(file_path), "--json"])
+
+    assert result.exit_code == 0
+
+    # Parse JSON output
+    data = json.loads(result.output)
+    assert isinstance(data, list)
+    assert len(data) == 1
+    assert "id" in data[0]
+    assert "source_file" in data[0]
+    assert "status" in data[0]
+    assert "anchor" in data[0]
+    assert data[0]["source_file"] == "test.txt"
+
+
+def test_list_all_files(runner, git_repo):
+    """Test listing threads from all files."""
+    file1 = git_repo / "test1.txt"
+    file1.write_text("Line 1\n")
+    file2 = git_repo / "test2.txt"
+    file2.write_text("Line 1\n")
+
+    runner.invoke(cli, ["add", str(file1), "-L", "1:1", "Comment 1"])
+    runner.invoke(cli, ["add", str(file2), "-L", "1:1", "Comment 2"])
+
+    result = runner.invoke(cli, ["list", "--all"])
+
+    assert result.exit_code == 0
+    assert "test1.txt:1:1" in result.output
+    assert "test2.txt:1:1" in result.output
+
+
+def test_list_all_and_file_path_error(runner, git_repo):
+    """Test error when both --all and file path are specified."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    result = runner.invoke(cli, ["list", str(file_path), "--all"])
+
+    assert result.exit_code == 1
+    assert "Cannot specify both --all and a file path" in result.output
+
+
+def test_list_no_arguments_error(runner, git_repo):
+    """Test error when neither --all nor file path is specified."""
+    result = runner.invoke(cli, ["list"])
+
+    assert result.exit_code == 1
+    assert "Must specify either a file path or --all" in result.output
+
+
+def test_list_respects_no_color(runner, git_repo, monkeypatch):
+    """Test that NO_COLOR environment variable is respected."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Comment"])
+
+    # Set NO_COLOR environment variable
+    monkeypatch.setenv("NO_COLOR", "1")
+
+    result = runner.invoke(cli, ["list", str(file_path)])
+
+    assert result.exit_code == 0
+    # Check that output doesn't contain ANSI escape codes
+    assert "\x1b[" not in result.output
+
+
+def test_list_with_color(runner, git_repo, monkeypatch):
+    """Test that color codes are present when NO_COLOR is not set."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Comment"])
+
+    # Ensure NO_COLOR is not set
+    monkeypatch.delenv("NO_COLOR", raising=False)
+
+    # Use color=True to force color output in test environment
+    result = runner.invoke(cli, ["list", str(file_path)], color=True)
+
+    assert result.exit_code == 0
+    # Check that output contains ANSI escape codes for color
+    assert "\x1b[" in result.output
+
+
+def test_list_filter_by_author(runner, git_repo):
+    """Test filtering threads by author."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\nLine 2\n")
+
+    # Create threads with different authors
+    runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "--author", "alice", "Alice's comment"])
+    runner.invoke(cli, ["add", str(file_path), "-L", "2:2", "--author", "bob", "Bob's comment"])
+
+    # List only alice's threads
+    result = runner.invoke(cli, ["list", str(file_path), "--author", "alice"])
+
+    assert result.exit_code == 0
+    assert "test.txt:1:1" in result.output
+    assert "test.txt:2:2" not in result.output
+
+
+# ============================================================================
+# Tests: show command
+# ============================================================================
+
+
+def test_show_thread(runner, git_repo):
+    """Test showing a single thread."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Test comment"])
+    assert result.exit_code == 0
+
+    # Extract thread ID from output
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Show thread
+    result = runner.invoke(cli, ["show", thread_id])
+
+    assert result.exit_code == 0
+    assert f"Thread: {thread_id}" in result.output
+    assert "Status: open" in result.output
+    assert "test.txt:1:1" in result.output
+    assert "Anchor Health: anchored" in result.output
+    assert "Test comment" in result.output
+
+
+def test_show_thread_not_found(runner, git_repo):
+    """Test showing a non-existent thread."""
+    result = runner.invoke(cli, ["show", "01HQNONEXISTENT000000000"])
+
+    assert result.exit_code == 1
+    assert "Thread not found" in result.output
+
+
+def test_show_json_output(runner, git_repo):
+    """Test JSON output format for show command."""
+    import json
+
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Test comment"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Show thread as JSON
+    result = runner.invoke(cli, ["show", thread_id, "--json"])
+
+    assert result.exit_code == 0
+
+    # Parse JSON output
+    data = json.loads(result.output)
+    assert data["id"] == thread_id
+    assert data["source_file"] == "test.txt"
+    assert data["status"] == "open"
+    assert "anchor" in data
+    assert "comments" in data
+    assert len(data["comments"]) == 1
+    assert data["comments"][0]["body"] == "Test comment"
+
+
+def test_show_respects_no_color(runner, git_repo, monkeypatch):
+    """Test that NO_COLOR environment variable is respected in show command."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Comment"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Set NO_COLOR environment variable
+    monkeypatch.setenv("NO_COLOR", "1")
+
+    result = runner.invoke(cli, ["show", thread_id])
+
+    assert result.exit_code == 0
+    # Check that output doesn't contain ANSI escape codes
+    assert "\x1b[" not in result.output
+
+
+def test_show_with_color(runner, git_repo, monkeypatch):
+    """Test that color codes are present in show command when NO_COLOR is not set."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Comment"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Ensure NO_COLOR is not set
+    monkeypatch.delenv("NO_COLOR", raising=False)
+
+    # Use color=True to force color output in test environment
+    result = runner.invoke(cli, ["show", thread_id], color=True)
+
+    assert result.exit_code == 0
+    # Check that output contains ANSI escape codes for color
+    assert "\x1b[" in result.output
+
+
+def test_show_multiple_comments(runner, git_repo):
+    """Test showing thread with multiple comments (future: after reply is implemented)."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread with one comment
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "First comment"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Show thread
+    result = runner.invoke(cli, ["show", thread_id])
+
+    assert result.exit_code == 0
+    assert "Comments:" in result.output
+    assert "[1]" in result.output
+    assert "First comment" in result.output
