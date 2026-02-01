@@ -18,11 +18,12 @@ This is the inventory of all components in the redesigned toolkit. For how they 
 | `/audit-models` | VERIFY models + update project docs | Audit scope, which promotions to accept | model-validation, source-traceability, requirements-tracking |
 | `/research` | LEARN from external sources | Research scope, insight capture | source-traceability |
 | `/quick-model` | Make a SMALL change | Change scope (guard: redirect if too big) | sysml-conventions, model-validation |
-| `/review-model` | REVIEW design before implementing | Which findings to accept/skip/defer | sysml-conventions, model-validation, project-structure |
+| `/review-model` | REVIEW design before implementing | Which findings to accept/skip/defer | sysml-conventions, model-validation, project-structure, requirements-tracking |
 | `/analyze-models` | UNDERSTAND current model state | Analysis scope | project-structure, model-validation |
 | `/status` | Understand PROJECT STATE | What to do next | epic-decomposition, requirements-tracking |
 | `/backlog` | Manage WORK ITEMS | Add, prioritize, decompose, close | epic-decomposition |
 | `/onboard` | SET UP a project | Initial goals, architecture sketch, sources | project-structure, source-traceability, epic-decomposition |
+| `/formalize-intent` | EXTRACT goals and questions from intent docs | Which G-XXX/AQ-XXX to accept, modify, or skip | project-structure |
 | `/manage-sources` | Configure SOURCES | Source additions, validation criteria | source-traceability |
 
 ---

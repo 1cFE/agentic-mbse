@@ -144,12 +144,14 @@ This section defines the entity models, state machines, artifact conventions, an
 
 ### 3.1 Work Item Entity Model
 
-Every Standard work item has a directory in `work/active/{item}/`. The first artifact created is **spec.md**, which carries the authoritative metadata for the work item.
+Every Standard work item has a directory in `work/active/{WI-XXX}_{descriptive-str}/`. The first artifact created is **spec.md**, which carries the authoritative metadata for the work item.
 
 **spec.md YAML frontmatter** (required, parseable by PM script engine):
 
 ```yaml
 ---
+ID: WI-XXX
+Name: [human-readable name]
 Status: active | paused | abandoned | failed | completed
 Scale: standard
 Epic: [epic name, matching BACKLOG.md section header]
@@ -159,7 +161,7 @@ Updated: YYYY-MM-DD
 ---
 ```
 
-**spec.md is the state-bearing file**. It is the first artifact created and the last one relevant. The PM script engine reads `work/active/{item}/spec.md` frontmatter as the single source of truth for work item state. Other files (design.md, plan.md) may have their own Status fields for stage-level tracking, but the work item's overall state comes from spec.md. This gives the dashboard a single read point per work item.
+**spec.md is the state-bearing file**. It is the first artifact created and the last one relevant. The PM script engine reads `work/active/{WI-XXX}_{name}/spec.md` frontmatter as the single source of truth for work item state. Other files (design.md, plan.md) may have their own Status fields for stage-level tracking, but the work item's overall state comes from spec.md. This gives the dashboard a single read point per work item.
 
 **All stage artifacts** (spec.md, design.md, plan.md) share a common header pattern:
 
@@ -181,15 +183,15 @@ The body structure of each artifact is defined by command prompts (Phase 3C conc
 | State | Determined by | Mechanism |
 |-------|--------------|-----------|
 | **backlog** | Entry in `work/BACKLOG.md`, no directory in `work/active/` | BACKLOG.md row |
-| **active** | Directory exists in `work/active/{item}/`, spec.md Status = `active` | File system + frontmatter |
+| **active** | Directory exists in `work/active/{WI-XXX}_{name}/`, spec.md Status = `active` | File system + frontmatter |
 | **active:stage** | Which artifact files exist: spec.md only = speccing; +design.md = designing; +plan.md = planning; implementation started = implementing | File system |
 | **paused** | spec.md Status = `paused` | Frontmatter field |
 | **abandoned** | spec.md Status = `abandoned` | Frontmatter field |
 | **failed** | spec.md Status = `failed` (work attempted, approach didn't work) | Frontmatter field |
-| **completed** | Directory in `work/completed/YYYYMMDD_{item}/` | File system (post-archive) |
+| **completed** | Directory in `work/completed/YYYYMMDD_{WI-XXX}_{name}/` | File system (post-archive) |
 
 **State derivation logic**: The PM script engine uses a two-step read:
-1. Check file system: does `work/active/{item}/` exist? → active. Does `work/completed/YYYYMMDD_{item}/` exist? → completed. Neither? → backlog (if in BACKLOG.md).
+1. Check file system: does `work/active/{WI-XXX}_{name}/` exist? → active. Does `work/completed/YYYYMMDD_{WI-XXX}_{name}/` exist? → completed. Neither? → backlog (if in BACKLOG.md).
 2. For active items: read spec.md frontmatter Status field. If `paused`, `abandoned`, or `failed`, that overrides the active state. If `active`, determine sub-stage from which artifact files exist.
 
 ### 3.3 Stage Artifacts and Inter-Stage Contract
@@ -205,7 +207,7 @@ The body structure of each artifact is defined by command prompts (Phase 3C conc
 | review.md | User-curated design review findings (accepted changes, deferred items) | design.md, prototype, REQUIREMENTS.md, ARCHITECTURE.md |
 | plan.md | Phased implementation plan, per-phase scope, risk mitigations | Design decisions from design.md, model dependency analysis |
 
-**review.md** is an optional artifact produced by `/review-model` between design and implementation. It contains a verdict (pass/concerns/fail in YAML frontmatter) and user-curated findings. If changes are accepted, `/design-model` reads review.md and applies them. The review is advisory — the user can proceed without it (AP-5: toolkit, not pipeline).
+**review.md** is an optional artifact produced by `/review-model` between design and implementation. It contains a verdict (pass/concerns/fail in YAML frontmatter) and user-curated findings. If changes are accepted, `/design-model` reads review.md and applies them. The review is advisory — the user can proceed without it (AP-5: toolkit, not pipeline). **review.md is not a tracked stage for PM purposes** — it is part of the design stage. Stage detection remains: spec.md only → speccing; +design.md → designing; +plan.md → planning; implementation → implementing. The PM engine does not look for review.md.
 
 This table is a reference for skills and commands. Skills can use it to know what context to load at each stage. Commands can be validated against it during Phase 3C. The PM script engine uses the frontmatter headers, not the body content.
 
@@ -227,7 +229,7 @@ When a work item is complete, the close flow has two parts: a deterministic scri
 /status close <item>
   │
   ├─► Script (AP-7 T1): Close work item
-  │     1. Move work/active/{item}/ → work/completed/YYYYMMDD_{item}/
+  │     1. Move work/active/{WI-XXX}_{name}/ → work/completed/YYYYMMDD_{WI-XXX}_{name}/
   │     2. Update BACKLOG.md status to completed
   │     3. Return confirmation with archive path
   │
@@ -305,25 +307,29 @@ epics:
     status: active
     file: backlog/epic-end-to-end-pipeline-derisking.md
     items:
-      - name: "Solar+Battery SysML Model"
+      - id: WI-001
+        name: "Solar+Battery SysML Model"
         scale: standard
         status: completed
         completed: 2026-02-05
-      - name: "Codegen Chain Spike"
+      - id: WI-002
+        name: "Codegen Chain Spike"
         scale: standard
         status: active
-        work_dir: active/codegen-chain-spike
-      - name: "Cost Evaluation & Entry Points"
+      - id: WI-003
+        name: "Cost Evaluation & Entry Points"
         scale: standard
         status: backlog
 
 standalone:
-  - name: "Fix cost_model redefines"
+  - id: WI-004
+    name: "Fix cost_model redefines"
     scale: trivial
     priority: P1
     status: completed
     completed: 2026-01-28
-  - name: "Add missing doc comments"
+  - id: WI-005
+    name: "Add missing doc comments"
     scale: standard
     priority: P2
     status: backlog
@@ -351,6 +357,8 @@ standalone:
 ```
 
 BACKLOG.md is the single dashboard for both epics and standalone items. Epic files provide the depth; BACKLOG.md provides the breadth.
+
+**File ownership**: AP-7 scripts own the entire BACKLOG.md file — both YAML frontmatter and markdown body. When a script updates the frontmatter (status change, new item, close), it also re-renders the markdown body from the YAML. This eliminates the sync problem where a script updates structured state but the human-readable view drifts. The body is a deterministic rendering of the frontmatter — the YAML contains enough information to template it (name, scale, priority, status, dates). No agent editing of BACKLOG.md is needed for state transitions.
 
 **Epic file structure** (user-owned, content varies by project):
 
@@ -444,7 +452,7 @@ The script engine needs to parse structured files. This defines **what it expect
 | With validation method | Count rows where Validation Method column is non-empty |
 | Enforceable (machine-checkable) | Count rows where Enforcement = validation rule (vs. design review) |
 
-Note: Per-feature MR-XXX requirements are NOT tracked at the project level. They are ephemeral artifacts of individual work items in `work/active/{item}/spec.md` and are archived with the work item when complete.
+Note: Per-feature MR-XXX requirements are NOT tracked at the project level. They are ephemeral artifacts of individual work items in `work/active/{WI-XXX}_{name}/spec.md` and are archived with the work item when complete.
 
 **Validation status** (derived from `project/VALIDATION_MATRIX.md`):
 
@@ -659,7 +667,7 @@ Domain insights can be captured inline during any command — not just `/researc
 
 **Key properties**:
 - **AP-7 T1 mechanics, T3 invocation**: The agent passes all DI-XXX fields pre-formed. The script does deterministic file ops only — no `claude -p` call.
-- **Source convention**: `work-item:{name}/{artifact}` (e.g., `work-item:magnet-system/design.md`). The work item directory name is the stable identifier, resolvable across `work/active/` and `work/completed/*/`.
+- **Source convention**: `work-item:{WI-XXX}/{artifact}` (e.g., `work-item:WI-003/design.md`). The WI-XXX ID is the stable identifier, resolvable across `work/active/{WI-XXX}_*/` and `work/completed/*_{WI-XXX}_*/` via the `resolve-work-item` script.
 - **Rationale field**: Inline-captured insights include a `Rationale` field recording why the insight was recognized, compensating for the absence of a full research document as provenance.
 - **Add-only**: No supersession. If the agent discovers a contradiction with an existing DI-XXX, it captures the new insight and flags the conflict, but supersession goes through the full flow (§ 6.1).
 - **Immediate, not queued**: The insight is proposed when discovered, while context is fresh. The user can decline to stay in flow.

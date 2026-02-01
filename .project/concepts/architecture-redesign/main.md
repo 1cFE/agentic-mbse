@@ -52,13 +52,15 @@ AP-7 applies wherever the system mutates structured project state. Three impleme
 
 **Input validation guarantee**: Scripts validate the structure of files they read before parsing. Malformed input produces clear error messages, not silent wrong data or crashes. Partial results with warnings are preferred over hard failures — "3 of 5 work items parsed; BACKLOG.md frontmatter has invalid status at epic[1].items[2]" is more useful than a crash.
 
+Mutation scripts (approve-research, close-item, trace-element, promote-requirement, register-decision, supersede-insight, add-insight, update-validation) are **atomic** — they succeed completely or fail with no side effects. Query scripts (status, impact-query, resolve-work-item) are **tolerant** — they produce partial results with warnings when inputs are malformed.
+
 **Operations that require AP-7 treatment** (identified so far):
 
 | Operation | Tier | What the script does |
 |-----------|------|---------------------|
 | Approve research | T2 | Move `knowledge/research/pending/` → `approved/`, generate DI-XXX entries, append to `knowledge/KNOWLEDGE.md` |
 | Register project requirement | T1 | Append PR-XXX row to `project/REQUIREMENTS.md` with correct columns (rare — project-level rules only) |
-| Close work item | T1 | Move `work/active/{item}/` → `work/completed/YYYYMMDD_{item}/`, update `work/BACKLOG.md` status. Agent handles project-document feedback prompt separately (see [workflows.md § 3.5](workflows.md)). |
+| Close work item | T1 | Move `work/active/{WI-XXX}_{name}/` → `work/completed/YYYYMMDD_{WI-XXX}_{name}/`, update `work/BACKLOG.md` status. Agent handles project-document feedback prompt separately (see [workflows.md § 3.5](workflows.md)). |
 | Update validation status | T1 | Update Status column in `project/VALIDATION_MATRIX.md` for specified SV-XXX |
 | Project status query | T1 | Parse all structured files, produce dashboard markdown |
 | Trace element | T1 | Append row to `data/traceability_matrix.csv`. Validates schema, prevents duplicates, validates PR-XXX IDs exist in `project/REQUIREMENTS.md` and DI-XXX IDs exist in `knowledge/KNOWLEDGE.md`. Called by `/implement-model` as elements are created. |
@@ -66,7 +68,8 @@ AP-7 applies wherever the system mutates structured project state. Three impleme
 | Register decision | T1 | Append AD-XXX entry to `project/ARCHITECTURE.md`. Validates format, assigns ID. Called by `/audit-models` when user approves a decision promotion. |
 | Supersede insight | T2 | Mark old DI-XXX as superseded, create new DI-XXX, query `data/traceability_matrix.csv` for affected elements, produce impact report to `knowledge/research/impacts/`. See [workflows.md § 6.1](workflows.md). |
 | Impact query | T1 | Given a DI-XXX or PR-XXX, traverse `data/traceability_matrix.csv` to find all affected model elements and work items. Returns structured result for agent interpretation. |
-| Add insight (inline) | T1 (T3 invocation) | Assign DI-XXX ID, format entry from agent-supplied fields (title, context, model/analysis implications, source, rationale), append to `knowledge/KNOWLEDGE.md`. All content pre-formed by agent — no LLM call. Source uses `work-item:{name}/{artifact}` convention. Called by any command when agent discovers a domain insight mid-workflow. |
+| Add insight (inline) | T1 (T3 invocation) | Assign DI-XXX ID, format entry from agent-supplied fields (title, context, model/analysis implications, source, rationale), append to `knowledge/KNOWLEDGE.md`. All content pre-formed by agent — no LLM call. Source uses `work-item:{WI-XXX}/{artifact}` convention. Called by any command when agent discovers a domain insight mid-workflow. |
+| Resolve work item | T1 (query) | Given WI-XXX, search `work/active/{WI-XXX}_*/` then `work/completed/*_{WI-XXX}_*/`. Returns path or not-found. Internal utility used by other scripts. |
 
 ---
 
@@ -164,20 +167,20 @@ The inventory of everything we're building: 13 commands, 7 skills, 6 agents, and
 
 ## 5. Open Design Questions
 
-Grouped by phase. These are the areas where **further work and detailing must be done**.
+Questions resolved during the concept phase are recorded here for traceability, then the remaining open questions that must be resolved during implementation.
 
-### Phase 1A: Information Architecture
+### Resolved during concept phase
 
-| # | Question | Options | Recommendation | Must resolve before |
-|---|----------|---------|----------------|---------------------|
-| Q1 | Are six roles right, or should Domain Knowledge and Project Intent merge? | (a) Keep six (b) Merge to five (c) Different split | Validate against fusion-tea: try to classify every existing artifact into a role. If a role has <3 items, it may not justify its existence | Phase 2B |
-| Q2 | Where does Architecture Vision live? | (a) Standalone `ARCHITECTURE.md` (b) Section of `OVERVIEW.md` | Standalone — it's a distinct concern (structural "how" vs project "what/why"). But validate: does fusion-tea have enough content for a standalone file? | Phase 1A completion |
-| Q3 | What's the right format for domain insights? | (a) Full AA-XXX format from earlier research (b) Simpler DI-XXX as proposed here (c) Just free-form markdown sections | DI-XXX (b) — enough structure for traceability, not so much that capture becomes burdensome | Phase 1A completion |
-| Q4 | How do project-level rules (REQUIREMENTS.md) get promoted from per-feature experience? | (a) Manual — user adds after noticing a recurring pattern (b) Agent-suggested — `/audit-models` proposes promotions (c) Both | Start with (a); add (b) as a future enhancement when patterns are clearer | Phase 1A completion |
-| Q5 | When does a registry file become unwieldy? | Need empirical validation | Probably ~100 entries. Fusion-tea with ~37 CAS categories and ~15 requirements/feature is well within single-file territory | Defer to experience |
-| Q5a | What is the control flow for intent formalization? | Agent reads `intent/` docs, proposes G-XXX/AQ-XXX entries, user approves, script registers in OVERVIEW.md. Needs: command/script interface, incremental update strategy (new docs added after initial setup), integration with `/onboard` | Follows same pattern as research approval (AP-7 T2) but details TBD | Phase 1A completion |
+| # | Question | Resolution | Where documented |
+|---|----------|------------|------------------|
+| Q1 | Are six roles right? | Yes — validated against fusion-tea. Every role has real content. | information-architecture.md § 3 |
+| Q2 | Where does Architecture Vision live? | Standalone `project/ARCHITECTURE.md` (Role 5). | information-architecture.md § 3 Role 5 |
+| Q3 | Domain insight format? | DI-XXX with 7 fields (Source, Rationale, Context, Model/Analysis implications, Status, Superseded-by/Supersedes). | information-architecture.md § 3 Role 2 |
+| Q4 | How do project-level rules get promoted? | Both paths: `/implement-model` promotes MR-XXX → PR-XXX via `Promote requirement` (AP-7 T1); `/audit-models` proposes pattern-based promotions. | B-002, B-006/B-007, main.md AP-7 table |
+| Q5 | When does a registry file become unwieldy? | ~100 entries. Deferred to experience. | information-architecture.md § 3 Role 2 scaling note |
+| Q5a | Intent formalization control flow? | Dedicated `/formalize-intent` command (AP-7 T2). Can be triggered by `/onboard` or run standalone. | information-architecture.md § 3 Role 3, components.md § 1 |
 
-### Phase 2B: Skills
+### Open — Phase 2B: Skills
 
 | # | Question | Must resolve before |
 |---|----------|---------------------|
@@ -185,7 +188,7 @@ Grouped by phase. These are the areas where **further work and detailing must be
 | Q10 | Should skills load all content upfront or stage-by-stage? | Phase 3C |
 | Q11 | What's the right granularity? If sysml-conventions is 400 lines, is that one skill or two? | Phase 2B completion |
 
-### Phase 3: Commands + PM
+### Open — Phase 3: Commands + PM
 
 | # | Question | Must resolve before |
 |---|----------|---------------------|

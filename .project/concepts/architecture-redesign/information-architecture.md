@@ -124,12 +124,12 @@ project-root/
 │   ├── backlog/               #   Epic decomposition files (user-owned)
 │   │   └── epic-{name}.md    #     Detailed scope, items, sequencing, risks
 │   ├── active/                #   In-progress work items
-│   │   └── {work-item-name}/
+│   │   └── {WI-XXX}_{name}/
 │   │       ├── spec.md
 │   │       ├── design.md
 │   │       └── plan.md
 │   ├── completed/             #   Archived work
-│   │   └── YYYYMMDD_{item}/
+│   │   └── YYYYMMDD_{WI-XXX}_{name}/
 │   ├── analysis/              #   /analyze-models output (operational intelligence)
 │   │   └── YYYYMMDD-HHMMSS_topic.md
 │   └── learnings/
@@ -200,7 +200,7 @@ Each role has a concrete entity format. These are the **data models** — the st
 **Entity format** (`KNOWLEDGE.md`):
 ```markdown
 ### DI-XXX: [Title]
-- **Source**: [approved research doc, user note, authority source, or work-item:{name}/{artifact}]
+- **Source**: [approved research doc, user note, authority source, or work-item:{WI-XXX}/{artifact}]
 - **Rationale**: [only for inline-captured insights: why this was recognized and what evidence supports it]
 - **Context**: [1-3 sentences: the domain fact and why it matters]
 - **Model implications**: [what the models must capture because of this insight]
@@ -287,7 +287,7 @@ Agent calls: agentic-mbse pm approve-research <file>
 
 **Alternative entry points for KNOWLEDGE.md**:
 - User can add entries directly (manual edit)
-- Any command (`/spec-model`, `/design-model`, `/implement-model`, etc.) can capture insights inline via the `add-insight` script (AP-7, T1 with T3 invocation). The agent proposes a DI-XXX candidate, the user approves, and the agent calls the script with pre-formed content — no LLM call needed. Source uses the `work-item:{name}/{artifact}` convention. See [backlog.md B-008](backlog.md) for the full control flow.
+- Any command (`/spec-model`, `/design-model`, `/implement-model`, etc.) can capture insights inline via the `add-insight` script (AP-7, T1 with T3 invocation). The agent proposes a DI-XXX candidate, the user approves, and the agent calls the script with pre-formed content — no LLM call needed. Source uses the `work-item:{WI-XXX}/{artifact}` convention. See [backlog.md B-008](backlog.md) for the full control flow.
 
 **Producer**: `/research` → approval script → `knowledge/KNOWLEDGE.md`; inline capture via `add-insight` script; user direct entry
 **Consumer**: `/spec-model` (surfaces relevant insights), `/status` (coverage reporting)
@@ -359,9 +359,9 @@ The flow from raw documents to structured goals/questions follows the same patte
 - A script registers approved entries in `project/OVERVIEW.md` (correct IDs, format, source traceability)
 - This process can be triggered during `/onboard` (initial project setup) or run standalone when new intent documents are added
 
-**Not yet designed**: The specific command/script interface, whether this is part of `/onboard` or a separate command, and how incremental updates work (user adds a new document to `project/intent/` after initial setup — how do new goals get extracted without re-processing everything). These are Phase 1A design questions.
+A dedicated command — `/formalize-intent` — handles this flow. It can be triggered during `/onboard` (initial project setup) or run standalone when new intent documents are added to `project/intent/`. The command reads intent documents, proposes G-XXX/AQ-XXX entries, the user reviews and approves, and a script registers them in OVERVIEW.md (AP-7 T2: script assigns IDs and enforces format; agent generates the structured entries from prose). Incremental updates (new docs added after initial setup) use the same command — the agent reads OVERVIEW.md to see what's already formalized and proposes only new entries. Detailed command design is a Phase 3C concern.
 
-**Producer**: `/onboard` (initial formalization), intent formalization flow (TBD), user direct editing
+**Producer**: `/onboard` (triggers `/formalize-intent`), `/formalize-intent` (standalone), user direct editing
 **Consumer**: `/spec-model` (reads goals/questions to inform scoping), `/status` (reports goal coverage), `/audit-models` (checks that goals are addressed)
 
 ---
@@ -582,7 +582,7 @@ Role 4: Modeling Requirements       Role 5: Modeling Decisions
                    Work Execution
                     (per-feature spec/design/plan —
                      ephemeral, work-item-scoped)
-                    work/active/{item}/
+                    work/active/{WI-XXX}_{name}/
                               │
                               │ produces
                               v

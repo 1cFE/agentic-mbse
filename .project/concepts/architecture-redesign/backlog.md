@@ -21,6 +21,9 @@
 | B-010 | [No migration strategy for existing projects](#b-010-no-migration-strategy-for-existing-projects) | Medium-High | Phase 1A | Complete |
 | B-011 | [AP-7 Tier 2 claude -p dependency unaddressed](#b-011-ap-7-tier-2-claude--p-dependency) | Medium | Phase 3D | Closed |
 | B-012 | [File structure should reflect information flow model](#b-012-file-structure-should-reflect-information-flow-model) | High | Phase 1A | Complete |
+| B-013 | [MR-XXX → PR-XXX promotion trigger ambiguous](#b-013-mr-xxx--pr-xxx-promotion-trigger-ambiguous) | Medium | Phase 3C | Closed |
+| B-014 | [Work item name resolution needs a reliable lookup mechanism](#b-014-work-item-name-resolution-needs-a-reliable-lookup-mechanism) | Medium | Phase 3D | Complete |
+| B-015 | [AP-7 error model: atomic vs tolerant not distinguished](#b-015-ap-7-error-model-atomic-vs-tolerant-not-distinguished) | Low-Medium | Phase 3D | Complete |
 
 ---
 
@@ -1546,6 +1549,153 @@ B-009 (SOURCE_INDEX.md placement inconsistent) is resolved: SOURCE_INDEX.md move
 2. **`data/` directory scope**: Keep `data/` as the name. Currently just `traceability_matrix.csv`. If codegen/simulation artifacts land here (B-004), the name generalizes naturally.
 
 3. **`knowledge/sources/` convention**: `sources/` is for project-local reference materials only (PDFs, excerpts, data tables). External repos stay external and are referenced by path in SOURCE_INDEX.md.
+
+---
+
+## B-013: MR-XXX → PR-XXX promotion trigger ambiguous
+
+**Severity**: Medium
+**Resolve before**: Phase 3C
+**Status**: Closed — the promotion concept is fully specified in B-002 and information-architecture.md § 5. The "flagging" language in the architecture is imprecise but refers to agent-proposed, user-approved promotion at the moment of recognition. The concrete mechanism (how the agent decides what to propose, what the script arguments look like) is a Phase 3C command-design detail, not an architectural gap.
+
+### The Problem
+
+The architecture describes `trace-element` (an AP-7 T1 script called by `/implement-model`) as the mechanism that "promotes flagged MR-XXX to PR-XXX in REQUIREMENTS.md." But the *flagging* mechanism is unspecified:
+- Who flags an MR-XXX for promotion? The agent during `/spec-model`? The user? The agent during `/implement-model`?
+- How is the flag stored? A marker in spec.md? An argument to the `trace-element` script?
+- When does the flag get evaluated?
+
+Additionally, the close flow (workflows.md § 3.5) asks "Did you discover a modeling pattern that should be a project-wide rule?" — this is a second promotion path. The relationship between the two paths is not clarified.
+
+### Where `trace-element` is discussed
+
+The `trace-element` script appears in three architectural locations:
+
+1. **main.md § 2 (AP-7 Operations table)**: `Trace element | T1 | Append row to data/traceability_matrix.csv. Validates schema, prevents duplicates, validates PR-XXX IDs exist in REQUIREMENTS.md and DI-XXX IDs exist in KNOWLEDGE.md. Called by /implement-model as elements are created.`
+
+2. **information-architecture.md § 5.1 (Durable Chain Only)**: Describes the three-step flow — `/spec-model` writes MR-XXX, some get flagged for promotion, `/implement-model` calls `trace-element` which (a) promotes flagged MR-XXX to PR-XXX in REQUIREMENTS.md, (b) records element → PR-XXX link in traceability_matrix.csv, (c) PR-XXX's Source column records the DI-XXX or G-XXX it derives from.
+
+3. **information-architecture.md § 5.6 (Open Questions)**: Acknowledges that the exact CLI arguments and behavior are a Phase 3D implementation concern.
+
+The concern here is not the script interface (that's deferred), but the *conceptual design* of how promotion decisions are made and when they fire.
+
+### Proposed resolution
+
+Clarify that there are exactly two promotion paths:
+
+1. **Inline during `/implement-model`**: As the agent creates model elements and calls `trace-element`, it can simultaneously propose a PR-XXX promotion if the requirement being satisfied is significant enough to be project-wide. User approves inline. The promotion and traceability registration happen in the same script call.
+
+2. **At close time (workflows.md § 3.5)**: The "Did you discover a pattern?" trigger question catches things missed during implementation. Agent helps draft the PR-XXX, calls `promote-requirement` AP-7 script (or a mode of `trace-element`).
+
+Both paths feed into the same REQUIREMENTS.md output. No "flagging" mechanism in spec.md is needed — promotion is always an immediate, user-approved decision at the moment it's recognized.
+
+### Open questions
+
+1. Should `trace-element` handle both traceability registration AND requirement promotion in one call, or should promotion be a separate script (`promote-requirement`)? The main.md AP-7 table already lists `Promote requirement | T1` as a separate operation — that suggests separate scripts.
+2. Does the agent need to check whether a PR-XXX already exists (idempotency) before proposing promotion?
+
+---
+
+## B-014: Work item name resolution needs a reliable lookup mechanism
+
+**Severity**: Medium
+**Resolve before**: Phase 3D
+**Status**: New
+
+### The Problem
+
+Several places in the architecture reference work items by name:
+- Inline knowledge capture uses `work-item:{name}/{artifact}` as the DI-XXX source convention (workflows.md § 6.4)
+- BACKLOG.md YAML references items by `name` field
+- The PM engine needs to map names to directories
+
+Active items have a predictable path: `work/active/{name}/`. But completed items are archived as `work/completed/YYYYMMDD_{name}/`, making direct lookup by name impossible — resolving `magnet-system` requires scanning `work/completed/*/` with a glob.
+
+More broadly, work item names serve as **stable identifiers** throughout the architecture (in BACKLOG.md, traceability sources, knowledge provenance). But there's no explicit guarantee of uniqueness, no normalization convention (does "Codegen Chain Spike" become `codegen-chain-spike`?), and no lookup mechanism.
+
+### Decisions
+
+1. **Work item IDs**: Work items get immutable IDs following the pattern `WI-XXX` (e.g., `WI-001`, `WI-002`). IDs are assigned by the PM script that creates the item (same pattern as DI-XXX, PR-XXX, etc.). The ID is the stable, unique identifier used everywhere: BACKLOG.md YAML, traceability sources, knowledge provenance.
+
+2. **Directory naming convention**: `{WI-XXX}_{descriptive-str}` — e.g., `WI-003_magnet-system-cost`. The ID prefix guarantees uniqueness and enables direct lookup. The descriptive string provides human readability when browsing the file system. Normalization for the descriptive part: lowercase, hyphens for spaces, strip special chars.
+
+3. **Completed items retain the date prefix**: `work/completed/YYYYMMDD_{WI-XXX}_{descriptive-str}/`. The date prefix is useful for chronological sorting; the WI-XXX prefix enables lookup via glob `work/completed/*_WI-003_*/`.
+
+4. **Active items**: `work/active/{WI-XXX}_{descriptive-str}/`.
+
+5. **Source convention update**: Inline knowledge capture uses `work-item:WI-XXX` (not the descriptive string). This is a direct key — scripts resolve it via glob against `work/active/WI-XXX_*/` or `work/completed/*_WI-XXX_*/`.
+
+### Proposed resolution
+
+Add a `resolve-work-item` capability to the PM script engine. This is not a standalone command but a reusable internal function:
+
+1. **ID assignment**: PM scripts that create work items (e.g., during `/spec-model` or `/backlog add`) assign the next WI-XXX ID. The ID is recorded in BACKLOG.md YAML and in spec.md frontmatter.
+2. **Uniqueness**: Enforced by the ID scheme — sequential, no duplicates.
+3. **Lookup**: `resolve-work-item WI-XXX` searches: `work/active/WI-XXX_*/` → `work/completed/*_WI-XXX_*/`. Returns the path or "not found." This is a utility used by other scripts (e.g., `add-insight` needs to validate the source work item exists).
+
+This replaces the need for scripts to each independently implement path resolution. The ID is the stable identifier; the path is derived.
+
+### Architecture doc impact
+
+| Section | Change |
+|---------|--------|
+| workflows.md § 3.1 | Add `ID: WI-XXX` to spec.md YAML frontmatter |
+| workflows.md § 3.6 | Update BACKLOG.md YAML example: items get `id: WI-XXX` field, directory names use `WI-XXX_` prefix |
+| workflows.md § 3.2 | Update state derivation: directories are `WI-XXX_{descriptive-str}` |
+| workflows.md § 6.4 | Update source convention: `work-item:WI-XXX` (not name) |
+| information-architecture.md § 2 | Update file structure: `work/active/{WI-XXX}_{item}/`, `work/completed/YYYYMMDD_{WI-XXX}_{item}/` |
+| main.md AP-7 operations | Add `resolve-work-item` as a query utility |
+| B-015 | Add `resolve-work-item` to query scripts table |
+
+### Resolved questions
+
+1. **spec.md frontmatter**: Separate fields. `ID: WI-003` and `Name: "Magnet System Cost"`. The directory name is derived (`WI-003_magnet-system-cost`) and the PM engine handles resolution.
+2. **BACKLOG.md YAML**: Separate fields. `id: WI-003` and `name: "Magnet System Cost"`. The human-readable name stays clean; the ID is the machine key.
+
+---
+
+## B-015: AP-7 error model: atomic vs tolerant not distinguished
+
+**Severity**: Low-Medium
+**Resolve before**: Phase 3D
+**Status**: New
+
+### The Problem
+
+The architecture states two properties for AP-7 scripts:
+- "Atomic: all-or-nothing (no partial updates)" — from the research-to-knowledge flow (information-architecture.md § 2)
+- "Partial results with warnings are preferred over hard failures" — from the input validation guarantee (main.md § 2, AP-7)
+
+These are contradictory when applied to the same system without distinction. Some scripts must be atomic (a half-completed file move is worse than no move). Other scripts should be tolerant (a status dashboard that crashes on one malformed file is worse than one that skips it with a warning).
+
+### Proposed resolution
+
+Distinguish two categories of AP-7 scripts based on their operation type:
+
+**Mutation scripts** (atomic — all-or-nothing):
+| Script | What it mutates |
+|--------|----------------|
+| `approve-research` | Moves file, appends to KNOWLEDGE.md |
+| `close-item` | Moves directory, updates BACKLOG.md |
+| `trace-element` | Appends to traceability_matrix.csv |
+| `promote-requirement` | Appends to REQUIREMENTS.md |
+| `register-decision` | Appends to ARCHITECTURE.md |
+| `supersede-insight` | Updates KNOWLEDGE.md (two entries), writes impact report |
+| `add-insight` | Appends to KNOWLEDGE.md |
+| `update-validation` | Updates row in VALIDATION_MATRIX.md |
+
+**Query scripts** (tolerant — partial results with warnings):
+| Script | What it reads |
+|--------|--------------|
+| `status` | BACKLOG.md, spec.md frontmatter, REQUIREMENTS.md, VALIDATION_MATRIX.md, file system |
+| `impact-query` | traceability_matrix.csv, KNOWLEDGE.md, REQUIREMENTS.md |
+| `resolve-work-item` (B-014) | work/active/, work/completed/ |
+
+The principle: **writes are atomic, reads are best-effort.** This aligns with standard database transaction semantics. Mutation scripts validate inputs and either succeed completely or fail with no side effects. Query scripts report what they can parse and warn about what they can't.
+
+### Architecture doc impact
+
+Add a sentence to main.md § 2 (AP-7 input validation guarantee) clarifying the distinction: "Mutation scripts are atomic — they succeed completely or fail with no side effects. Query scripts are tolerant — they produce partial results with warnings when inputs are malformed."
 
 4. **`analysis/` placement**: `work/analysis/`. The output of `/analyze-models` is operational intelligence — "what state are the models in" — which informs what work to do next. It's not domain knowledge (that's `knowledge/`), it's project state assessment.
 
