@@ -235,3 +235,27 @@ class SidecarFile(BaseModel):
     )
     schema_version: str = Field(default="1.0")
     threads: list[Thread] = Field(default_factory=list)
+
+
+class ReconciliationReport(BaseModel):
+    """Summary report from a sidecar reconciliation operation.
+
+    Provides statistics about anchor health status changes during reconciliation.
+    Used for CLI output and logging.
+    """
+
+    total_threads: int = Field(..., ge=0, description="Total number of threads reconciled")
+    anchored_count: int = Field(..., ge=0, description="Threads with health=anchored")
+    drifted_count: int = Field(..., ge=0, description="Threads with health=drifted")
+    orphaned_count: int = Field(..., ge=0, description="Threads with health=orphaned")
+    max_drift_distance: int = Field(..., ge=0, description="Maximum drift distance found")
+    source_hash_before: str = Field(
+        ...,
+        pattern=r"^sha256:[a-fA-F0-9]{64}$",
+        description="Source hash before reconciliation",
+    )
+    source_hash_after: str = Field(
+        ...,
+        pattern=r"^sha256:[a-fA-F0-9]{64}$",
+        description="Source hash after reconciliation",
+    )
