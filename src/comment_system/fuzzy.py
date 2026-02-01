@@ -179,3 +179,126 @@ def is_match(s1: str, s2: str, threshold: float = 0.6) -> bool:
     """
     score = compute_similarity(s1, s2)
     return score.combined >= threshold
+
+
+class MatchCandidate(NamedTuple):
+    """A candidate match from sliding window search."""
+
+    line_start: int  # 1-indexed line number
+    line_end: int  # 1-indexed line number (inclusive)
+    snippet: str  # Matched text snippet
+    score: SimilarityScore  # Similarity metrics
+
+
+def find_best_match(
+    needle: str,
+    haystack_lines: list[str],
+    original_line_start: int,
+    threshold: float = 0.6,
+    max_window: int = 500,
+) -> MatchCandidate | None:
+    """Find the best fuzzy match for needle in haystack using sliding window.
+
+    Searches for the best match within a sliding window around the original position.
+    The search window extends max_window lines above and below the original position.
+    Within that window, tries all possible substring sizes (needle_length ± 20%).
+
+    Args:
+        needle: Text snippet to search for (original anchor content)
+        haystack_lines: Target file as list of lines (1-indexed when returned)
+        original_line_start: Original 1-indexed line position (for search window)
+        threshold: Minimum combined score to consider a match (default 0.6)
+        max_window: Maximum lines to search above/below original (default 500)
+
+    Returns:
+        Best matching MatchCandidate above threshold, or None if no match found
+    """
+    if not needle or not haystack_lines:
+        return None
+
+    # Normalize needle once
+    needle = normalize_text(needle)
+    needle_lines = needle.count("\n") + 1
+
+    # Calculate search bounds: ±max_window lines from original position
+    # (convert to 0-indexed for Python list access)
+    haystack_len = len(haystack_lines)
+    search_start = max(0, original_line_start - 1 - max_window)
+    search_end = min(haystack_len, original_line_start - 1 + max_window)
+
+    # Try windows of varying sizes (needle_lines ± 20%)
+    min_window_len = max(1, int(needle_lines * 0.8))
+    max_window_len = int(needle_lines * 1.2) + 1
+
+    # Sliding window: try all possible positions and sizes
+    candidates: list[MatchCandidate] = []
+
+    for window_start in range(search_start, search_end):
+        for window_len in range(min_window_len, max_window_len + 1):
+            window_end = window_start + window_len
+            if window_end > haystack_len:
+                break
+
+            # Extract window text
+            window_text = "\n".join(haystack_lines[window_start:window_end])
+            window_text = normalize_text(window_text)
+
+            # Compute similarity
+            score = compute_similarity(needle, window_text)
+
+            # Only consider matches above threshold
+            if score.combined >= threshold:
+                candidate = MatchCandidate(
+                    line_start=window_start + 1,  # Convert back to 1-indexed
+                    line_end=window_end,  # window_end is exclusive, so this is correct
+                    snippet=window_text,
+                    score=score,
+                )
+                candidates.append(candidate)
+
+    # No matches found
+    if not candidates:
+        return None
+
+    # Disambiguate: choose highest score, or closest to original if scores within 0.05
+    return _disambiguate_candidates(candidates, original_line_start)
+
+
+def _disambiguate_candidates(
+    candidates: list[MatchCandidate], original_line_start: int
+) -> MatchCandidate:
+    """Choose the best candidate when multiple matches exist.
+
+    Disambiguation rules (from fuzzy-matching.md REQ-5):
+    1. Choose highest combined score
+    2. If scores within 0.05, choose closest to original line position
+
+    Args:
+        candidates: List of candidate matches (must be non-empty)
+        original_line_start: Original 1-indexed line position
+
+    Returns:
+        Best candidate based on disambiguation rules
+    """
+    # Sort by score (descending), then by distance from original (ascending)
+    def score_key(c: MatchCandidate) -> tuple[float, int]:
+        distance = abs(c.line_start - original_line_start)
+        return (-c.score.combined, distance)
+
+    sorted_candidates = sorted(candidates, key=score_key)
+
+    # Get the best candidate
+    best = sorted_candidates[0]
+
+    # Check if there are ties within 0.05
+    ties = [
+        c for c in sorted_candidates if abs(c.score.combined - best.score.combined) < 0.05
+    ]
+
+    if len(ties) == 1:
+        # No ties, return the best
+        return best
+
+    # Multiple ties - choose closest to original position
+    closest = min(ties, key=lambda c: abs(c.line_start - original_line_start))
+    return closest
