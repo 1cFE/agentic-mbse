@@ -53,17 +53,22 @@ MBSE_HOOKS = [
 # - TOOL_OWNED: Auto-updated on every init (tool manages these)
 USER_OWNED_TEMPLATES = [
     ("README.md.template", "README.md"),
-    ("OVERVIEW.md.template", "modeling_pm/OVERVIEW.md"),
-    ("BACKLOG.md.template", "modeling_pm/backlog/BACKLOG.md"),
-    ("RAW_LEARNINGS.md.template", "modeling_pm/learnings/RAW_LEARNINGS.md"),
-    ("LOCAL_GUIDE.md.template", "modeling_pm/LOCAL_GUIDE.md"),
+    ("OVERVIEW.md.template", "project/OVERVIEW.md"),
+    ("BACKLOG.md.template", "work/BACKLOG.md"),
+    ("RAW_LEARNINGS.md.template", "work/learnings/RAW_LEARNINGS.md"),
+    ("KNOWLEDGE.md.template", "knowledge/KNOWLEDGE.md"),
+    ("ARCHITECTURE.md.template", "project/ARCHITECTURE.md"),
+    ("REQUIREMENTS.md.template", "project/REQUIREMENTS.md"),
+    ("VALIDATION_MATRIX.md.template", "project/VALIDATION_MATRIX.md"),
     ("test_models_example.py.template", "tests/models/test_example.py"),
     ("conftest.py.template", "tests/conftest.py"),
 ]
 
 TOOL_OWNED_TEMPLATES = [
-    ("MODELING_GUIDE.md.template", "modeling_pm/MODELING_GUIDE.md"),
-    ("MODELING_PROCESS.md.template", "modeling_pm/MODELING_PROCESS.md"),
+    ("MODELING_GUIDE.md.template", "project/MODELING_GUIDE.md"),
+    ("MODELING_PROCESS.md.template", "project/MODELING_PROCESS.md"),
+    ("EPIC_GUIDE.md.template", "work/EPIC_GUIDE.md"),
+    ("epic_template.md.template", "work/backlog/epic_template.md"),
 ]
 
 # Combined for backwards compatibility
@@ -77,8 +82,10 @@ DEV_MODE_GITIGNORE_PATHS = [
     ".claude/skills/",
     ".claude/hooks/",
     ".claude/.tool-hashes.json",
-    "modeling_pm/MODELING_GUIDE.md",
-    "modeling_pm/MODELING_PROCESS.md",
+    "project/MODELING_GUIDE.md",
+    "project/MODELING_PROCESS.md",
+    "work/EPIC_GUIDE.md",
+    "work/backlog/epic_template.md",
 ]
 
 # Hash file for tracking tool-owned file modifications
@@ -474,13 +481,17 @@ def cmd_init(args: argparse.Namespace) -> int:
 
     Creates:
     - .gitignore (standard Python ignores including .env) [user-owned]
-    - SOURCE_INDEX.md (domain knowledge discovery for agents) [user-owned]
+    - knowledge/SOURCE_INDEX.md (domain knowledge discovery) [user-owned]
+    - knowledge/KNOWLEDGE.md (domain insight registry) [user-owned]
+    - project/ structure (OVERVIEW, ARCHITECTURE, REQUIREMENTS, etc.) [mixed]
+    - work/ structure (BACKLOG, EPIC_GUIDE, epic template, active, completed, etc.) [mixed]
+    - data/traceability_matrix.csv (element traceability) [user-owned]
     - .claude/commands/ with MBSE commands [tool-owned]
     - .claude/agents/ with AI agents [tool-owned]
     - .claude/skills/ with skills [tool-owned]
     - .claude/hooks/ with hooks [tool-owned]
     - .claude/settings.json with read permissions [user-owned]
-    - modeling_pm/ structure with templates [mixed ownership]
+    - tests/ structure with example test files [user-owned]
 
     File ownership behavior:
     - Tool-owned files are always updated (to get latest versions)
@@ -628,13 +639,14 @@ Thumbs.db
         gitignore_path.write_text(gitignore_content)
         created.append(".gitignore")
 
-    # === Create SOURCE_INDEX.md from template ===
-    source_index_path = target / "SOURCE_INDEX.md"
+    # === Create knowledge/SOURCE_INDEX.md from template ===
+    source_index_path = target / "knowledge" / "SOURCE_INDEX.md"
     template_path = get_template_path()
 
     if source_index_path.exists() and not args.force:
-        skipped.append("SOURCE_INDEX.md")
+        skipped.append("knowledge/SOURCE_INDEX.md")
     else:
+        source_index_path.parent.mkdir(parents=True, exist_ok=True)
         if template_path.exists():
             shutil.copy(template_path, source_index_path)
         else:
@@ -653,7 +665,7 @@ MBSE commands read this file to discover what reference sources exist.
 Edit this file to add your domain-specific sources.
 """
             source_index_path.write_text(minimal_template)
-        created.append("SOURCE_INDEX.md")
+        created.append("knowledge/SOURCE_INDEX.md")
 
     # === Create .claude/commands/ and install commands (TOOL-OWNED) ===
     commands_dir = target / ".claude" / "commands"
@@ -780,13 +792,26 @@ Edit this file to add your domain-specific sources.
             else:
                 created.append(rel_path)
 
-    # === Create modeling_pm/ structure ===
-    modeling_pm_dir = target / "modeling_pm"
-    modeling_pm_dir.mkdir(parents=True, exist_ok=True)
-    (modeling_pm_dir / "backlog").mkdir(exist_ok=True)
-    (modeling_pm_dir / "active").mkdir(exist_ok=True)
-    (modeling_pm_dir / "research").mkdir(exist_ok=True)
-    (modeling_pm_dir / "learnings").mkdir(exist_ok=True)
+    # === Create project structure (4-directory architecture) ===
+    for subdir in [
+        "knowledge",
+        "knowledge/research/pending",
+        "knowledge/research/approved",
+        "knowledge/research/impacts",
+        "knowledge/sources",
+        "project",
+        "project/intent",
+        "work",
+        "work/backlog",
+        "work/active",
+        "work/completed",
+        "work/analysis",
+        "work/learnings",
+        "data",
+        "models/library",
+        "models/designs",
+    ]:
+        (target / subdir).mkdir(parents=True, exist_ok=True)
 
     # === Create tests/models/ directory for model regression tests ===
     tests_models_dir = target / "tests" / "models"
@@ -805,6 +830,15 @@ Edit this file to add your domain-specific sources.
         if src.exists():
             shutil.copy(src, dst)
             created.append(dest_path)
+
+    # === Install traceability matrix CSV (USER-OWNED) ===
+    csv_src = templates_dir / "data" / "traceability_matrix.csv"
+    csv_dst = target / "data" / "traceability_matrix.csv"
+    if csv_dst.exists() and not args.force:
+        skipped.append("data/traceability_matrix.csv")
+    elif csv_src.exists():
+        shutil.copy(csv_src, csv_dst)
+        created.append("data/traceability_matrix.csv")
 
     # === Tool-owned templates (always update) ===
     for template_name, dest_path in TOOL_OWNED_TEMPLATES:
@@ -908,7 +942,7 @@ Edit this file to add your domain-specific sources.
         print("")
         print("Next steps:")
         print("  1. Run /onboard to configure your project and learn the workflow")
-        print("  2. Or manually edit SOURCE_INDEX.md and start with /design-model")
+        print("  2. Or manually edit knowledge/SOURCE_INDEX.md and start with /design-model")
 
     return EXIT_SUCCESS
 

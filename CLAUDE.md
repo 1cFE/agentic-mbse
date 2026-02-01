@@ -23,7 +23,7 @@ When working on the agentic-mbse codebase itself:
 When discussing what agentic-mbse provides to its users:
 - **Target repo**: Any SysML modeling project that runs `agentic-mbse init`
 - **What users do**: Build SysML v2 models using guided workflows
-- **Project management**: `modeling_pm/` directory (OVERVIEW.md, MODELING_GUIDE.md, backlog)
+- **Project management**: `knowledge/`, `project/`, `work/`, `data/` directories
 - **Workflow commands**: The MBSE commands we ship in `claude/commands/`:
   - `/spec-model` - requirements and success criteria for models
   - `/design-model` - model architecture decisions
@@ -119,18 +119,32 @@ uv run agentic-mbse install-commands --list
 The toolkit includes Claude Code slash commands and agents installed via `agentic-mbse init`:
 
 - **commands/**: MBSE workflow commands (`/design-model`, `/plan-model`, `/implement-model`, `/spec-model`, `/research`, `/audit-models`, `/onboard`, `/manage-sources`, `/backlog`)
-- **agents/**: Specialized agents (`python-debugger.md`, `sysmlv2-doc-analyzer.md`)
+- **agents/**: Specialized agents (`python-debugger.md`, `kerml-expert.md`, `sysml-expert.md`, `syside-expert.md`, `sysmlv2-validator.md`)
 - **skills/**: Reusable skill definitions
 - **hooks/**: Git hooks (e.g., `ruff-format.sh`)
 
 ### Project Templates (`project_templates/`)
 
 Templates installed by `init` command to bootstrap new MBSE projects:
+
+**User-owned** (created once, preserved on re-init):
 - `README.md.template` → `README.md`
-- `OVERVIEW.md.template` → `modeling_pm/OVERVIEW.md`
-- `MODELING_GUIDE.md.template` → `modeling_pm/MODELING_GUIDE.md`
-- `MODELING_PROCESS.md.template` → `modeling_pm/MODELING_PROCESS.md`
-- `BACKLOG.md.template` → `modeling_pm/backlog/BACKLOG.md`
+- `OVERVIEW.md.template` → `project/OVERVIEW.md`
+- `BACKLOG.md.template` → `work/BACKLOG.md`
+- `KNOWLEDGE.md.template` → `knowledge/KNOWLEDGE.md`
+- `ARCHITECTURE.md.template` → `project/ARCHITECTURE.md`
+- `REQUIREMENTS.md.template` → `project/REQUIREMENTS.md`
+- `VALIDATION_MATRIX.md.template` → `project/VALIDATION_MATRIX.md`
+- `RAW_LEARNINGS.md.template` → `work/learnings/RAW_LEARNINGS.md`
+
+**Tool-owned** (updated on every re-init):
+- `MODELING_GUIDE.md.template` → `project/MODELING_GUIDE.md`
+- `MODELING_PROCESS.md.template` → `project/MODELING_PROCESS.md`
+- `EPIC_GUIDE.md.template` → `work/EPIC_GUIDE.md`
+- `epic_template.md.template` → `work/backlog/epic_template.md`
+
+**Data templates** (user-owned):
+- `data/traceability_matrix.csv` → `data/traceability_matrix.csv`
 
 ### Documentation (`docs/`)
 
@@ -171,7 +185,10 @@ See [Critical: Two Contexts](#critical-two-contexts) for the full distinction. Q
 | Directory | Context | Purpose | Committed to Git |
 |-----------|---------|---------|------------------|
 | `.project/` | A (developing agentic-mbse) | Specs, designs, backlog for the Python library | Yes |
-| `modeling_pm/` | B (target repo simulation) | Project management for SysML modeling work | No (created by `replicate_setup.sh`) |
+| `knowledge/` | B (target repo) | Domain insights, research, source index | No (created by init) |
+| `project/` | B (target repo) | Architecture, requirements, overview, guides | No (created by init) |
+| `work/` | B (target repo) | Backlog, active/completed work items, learnings | No (created by init) |
+| `data/` | B (target repo) | Traceability matrix and structured data | No (created by init) |
 | `claude/commands/` | B (shipped to target repos) | MBSE workflow commands users run | Yes |
 | `tests/` | A (developing agentic-mbse) | pytest tests for Python code | Yes |
 
@@ -194,8 +211,8 @@ When adding new files to `cmd_init()`, categorize them as user-owned or tool-own
 
 | Category | Behavior | Examples |
 |----------|----------|----------|
-| **User-owned** | Create once, skip on re-init (preserve customizations) | `SOURCE_INDEX.md`, `OVERVIEW.md`, `BACKLOG.md`, `README.md`, `.gitignore`, `.claude/settings.json` |
-| **Tool-owned** | Always update on re-init (get latest versions) | Commands, agents, skills, hooks, `MODELING_GUIDE.md`, `MODELING_PROCESS.md` |
+| **User-owned** | Create once, skip on re-init (preserve customizations) | `knowledge/SOURCE_INDEX.md`, `project/OVERVIEW.md`, `work/BACKLOG.md`, `README.md`, `.gitignore`, `.claude/settings.json` |
+| **Tool-owned** | Always update on re-init (get latest versions) | Commands, agents, skills, hooks, `project/MODELING_GUIDE.md`, `project/MODELING_PROCESS.md`, `work/EPIC_GUIDE.md`, `work/backlog/epic_template.md` |
 
 Use `--force` to overwrite user-owned files.
 

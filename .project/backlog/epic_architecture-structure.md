@@ -159,9 +159,10 @@ Schemas already sketched in workflows.md § 3.1–3.3 and § 3.6. This deliverab
 
 ---
 
-### D1.4: `cmd_init()` Rewiring
+### D1.4: `cmd_init()` Rewiring — COMPLETE
 
 **Type**: Implementation
+**Status**: Complete (2026-02-01)
 **Dependencies**: D1.1 (new templates), D1.2 (revised templates), D1.5 (frontmatter schemas)
 
 **Objective**: Update the Python init logic to create the new directory structure and install templates to their new locations.
@@ -244,15 +245,15 @@ D1.4 must reconcile these divergences — bring both files to the same component
 **`docs/source-index.md`** — update path references now that SOURCE_INDEX.md moves to `knowledge/SOURCE_INDEX.md`
 
 **Exit criteria**:
-- [ ] `agentic-mbse init` on a fresh directory creates the full 4-directory structure
-- [ ] All templates installed to correct new locations
-- [ ] `agentic-mbse init --dev` creates correct symlinks
-- [ ] `replicate_setup.sh` produces identical structure (or divergences documented as intentional)
-- [ ] Pre-existing component divergence between `replicate_setup.sh` and `cmd_init()` reconciled
-- [ ] SOURCE_INDEX.md created at `knowledge/SOURCE_INDEX.md`
-- [ ] `data/traceability_matrix.csv` installed with correct schema
-- [ ] agentic-mbse `CLAUDE.md` updated to reflect new structure
-- [ ] `docs/source-index.md` updated for new SOURCE_INDEX.md path
+- [x] `agentic-mbse init` on a fresh directory creates the full 4-directory structure
+- [x] All templates installed to correct new locations
+- [x] `agentic-mbse init --dev` creates correct symlinks
+- [x] `replicate_setup.sh` produces identical structure (or divergences documented as intentional)
+- [x] Pre-existing component divergence between `replicate_setup.sh` and `cmd_init()` reconciled
+- [x] SOURCE_INDEX.md created at `knowledge/SOURCE_INDEX.md`
+- [x] `data/traceability_matrix.csv` installed with correct schema
+- [x] agentic-mbse `CLAUDE.md` updated to reflect new structure
+- [x] `docs/source-index.md` updated for new SOURCE_INDEX.md path
 
 ---
 
@@ -272,9 +273,20 @@ D1.4 must reconcile these divergences — bring both files to the same component
 4. Verify `--dev` mode creates correct symlinks to new paths
 
 **Exit criteria**:
-- [ ] All existing tests updated to expect new structure
-- [ ] New tests for new templates
-- [ ] `uv run pytest tests/test_cli.py` passes
+- [ ] All 9 tests broken by D1.4 rewiring are fixed (see D1.4 audit M1):
+  - `test_creates_source_index` — assert `knowledge/SOURCE_INDEX.md`
+  - `test_overwrites_source_index_with_force` — same path fix
+  - `test_uses_current_directory_if_no_path` — same path fix
+  - `test_dev_creates_symlinks_for_tool_templates` — assert `project/MODELING_GUIDE.md`
+  - `test_dev_updates_gitignore` — check for `project/` paths in gitignore
+  - `test_init_creates_local_guide` — delete or repurpose (LOCAL_GUIDE.md removed)
+  - `test_local_guide_skipped_if_exists` — delete or repurpose
+  - `test_reinit_with_modification_prompts` — use `project/MODELING_GUIDE.md`
+  - `test_force_flag_skips_prompts` — same path fix
+- [ ] New tests for new templates (KNOWLEDGE.md, ARCHITECTURE.md, REQUIREMENTS.md, VALIDATION_MATRIX.md, EPIC_GUIDE.md, epic_template.md)
+- [ ] New tests for CSV installation to `data/traceability_matrix.csv`
+- [ ] New tests for full 16-directory structure creation
+- [ ] `uv run pytest tests/test_cli.py` passes (0 failures)
 
 ---
 
@@ -407,4 +419,4 @@ EPIC-CMDREV-001 should be marked as superseded.
 ---
 
 **Last Updated**: 2026-02-01
-**Next Action**: Begin D1.5 (frontmatter schemas) and D1.4 (cmd_init rewiring)
+**Next Action**: D1.7 (test updates) then D1.6 (fusion-tea migration)
