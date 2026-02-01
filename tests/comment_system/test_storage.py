@@ -5,12 +5,23 @@ from pathlib import Path
 
 import pytest
 
+from comment_system.models import (
+    Anchor,
+    AnchorHealth,
+    AuthorType,
+    Decision,
+    SidecarFile,
+    Thread,
+    ThreadStatus,
+)
 from comment_system.storage import (
     compute_source_hash,
     find_project_root,
     get_sidecar_path,
     is_binary_file,
     normalize_path,
+    read_sidecar,
+    write_sidecar,
 )
 
 
@@ -441,3 +452,415 @@ class TestIntegrationScenarios:
         sidecar = get_sidecar_path(normalized, tmp_path)
 
         assert sidecar == tmp_path / ".comments" / "src" / "file.py.json"
+
+
+class TestReadSidecar:
+    """Tests for read_sidecar function."""
+
+    def test_read_valid_sidecar(self, tmp_path: Path) -> None:
+        """Read a valid sidecar JSON file."""
+        sidecar_path = tmp_path / "test.json"
+
+        # Create a minimal valid sidecar
+        sidecar_data = {
+            "source_file": "src/test.py",
+            "source_hash": "sha256:" + "a" * 64,
+            "schema_version": "1.0",
+            "threads": [],
+        }
+
+        import json
+
+        sidecar_path.write_text(json.dumps(sidecar_data, indent=2))
+
+        result = read_sidecar(sidecar_path)
+
+        assert isinstance(result, SidecarFile)
+        assert result.source_file == "src/test.py"
+        assert result.source_hash == "sha256:" + "a" * 64
+        assert result.schema_version == "1.0"
+        assert result.threads == []
+
+    def test_read_sidecar_with_thread(self, tmp_path: Path) -> None:
+        """Read a sidecar with a complete thread."""
+        sidecar_path = tmp_path / "test.json"
+
+        import json
+
+        sidecar_data = {
+            "source_file": "src/model.py",
+            "source_hash": "sha256:" + "b" * 64,
+            "schema_version": "1.0",
+            "threads": [
+                {
+                    "id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                    "status": "open",
+                    "created_at": "2026-02-01T10:00:00Z",
+                    "resolved_at": None,
+                    "comments": [
+                        {
+                            "id": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+                            "author": "alice",
+                            "author_type": "human",
+                            "body": "This needs refactoring",
+                            "timestamp": "2026-02-01T10:00:00Z",
+                        }
+                    ],
+                    "anchor": {
+                        "content_hash": "sha256:" + "c" * 64,
+                        "context_hash_before": "sha256:" + "d" * 64,
+                        "context_hash_after": "sha256:" + "e" * 64,
+                        "line_start": 10,
+                        "line_end": 15,
+                        "content_snippet": "def calculate_total():",
+                        "health": "anchored",
+                        "drift_distance": 0,
+                    },
+                    "decision": None,
+                }
+            ],
+        }
+
+        sidecar_path.write_text(json.dumps(sidecar_data, indent=2))
+
+        result = read_sidecar(sidecar_path)
+
+        assert len(result.threads) == 1
+        thread = result.threads[0]
+        assert thread.status == ThreadStatus.OPEN
+        assert len(thread.comments) == 1
+        assert thread.comments[0].author == "alice"
+        assert thread.anchor.line_start == 10
+
+    def test_read_nonexistent_file(self, tmp_path: Path) -> None:
+        """Reading nonexistent file raises FileNotFoundError."""
+        nonexistent = tmp_path / "missing.json"
+
+        with pytest.raises(FileNotFoundError, match="Sidecar file not found"):
+            read_sidecar(nonexistent)
+
+    def test_read_invalid_json(self, tmp_path: Path) -> None:
+        """Reading invalid JSON raises ValueError."""
+        sidecar_path = tmp_path / "invalid.json"
+        sidecar_path.write_text("{ invalid json content")
+
+        with pytest.raises(ValueError, match="Invalid JSON"):
+            read_sidecar(sidecar_path)
+
+    def test_read_schema_validation_failure(self, tmp_path: Path) -> None:
+        """Reading JSON that fails schema validation raises ValueError."""
+        sidecar_path = tmp_path / "bad_schema.json"
+
+        import json
+
+        # Missing required field source_hash
+        bad_data = {
+            "source_file": "test.py",
+            "schema_version": "1.0",
+            "threads": [],
+        }
+
+        sidecar_path.write_text(json.dumps(bad_data))
+
+        with pytest.raises(ValueError, match="schema validation"):
+            read_sidecar(sidecar_path)
+
+    def test_read_directory_not_file(self, tmp_path: Path) -> None:
+        """Reading a directory raises ValueError."""
+        directory = tmp_path / "dir"
+        directory.mkdir()
+
+        with pytest.raises(ValueError, match="not a file"):
+            read_sidecar(directory)
+
+
+class TestWriteSidecar:
+    """Tests for write_sidecar function."""
+
+    def test_write_minimal_sidecar(self, tmp_path: Path) -> None:
+        """Write a minimal valid sidecar file."""
+        sidecar_path = tmp_path / "test.json"
+        sidecar = SidecarFile(
+            source_file="src/test.py",
+            source_hash="sha256:" + "a" * 64,
+            schema_version="1.0",
+            threads=[],
+        )
+
+        write_sidecar(sidecar_path, sidecar)
+
+        assert sidecar_path.exists()
+        assert sidecar_path.is_file()
+
+        # Verify content
+        result = read_sidecar(sidecar_path)
+        assert result.source_file == "src/test.py"
+        assert result.source_hash == "sha256:" + "a" * 64
+
+    def test_write_sidecar_with_thread(self, tmp_path: Path) -> None:
+        """Write a sidecar with a complete thread."""
+        sidecar_path = tmp_path / "test.json"
+
+        anchor = Anchor(
+            content_hash="sha256:" + "c" * 64,
+            context_hash_before="sha256:" + "d" * 64,
+            context_hash_after="sha256:" + "e" * 64,
+            line_start=10,
+            line_end=15,
+            content_snippet="def calculate():",
+            health=AnchorHealth.ANCHORED,
+            drift_distance=0,
+        )
+
+        thread = Thread(
+            id="01ARZ3NDEKTSV4RRFFQ69G5FAV",
+            status=ThreadStatus.OPEN,
+            created_at="2026-02-01T10:00:00Z",
+            anchor=anchor,
+        )
+
+        thread.add_comment(
+            author="alice",
+            author_type=AuthorType.HUMAN,
+            body="Needs refactoring",
+            timestamp="2026-02-01T10:00:00Z",
+        )
+
+        sidecar = SidecarFile(
+            source_file="src/model.py",
+            source_hash="sha256:" + "b" * 64,
+            threads=[thread],
+        )
+
+        write_sidecar(sidecar_path, sidecar)
+
+        # Read back and verify
+        result = read_sidecar(sidecar_path)
+        assert len(result.threads) == 1
+        assert result.threads[0].comments[0].author == "alice"
+
+    def test_write_creates_parent_directories(self, tmp_path: Path) -> None:
+        """Writing to deep path creates all parent directories."""
+        deep_path = tmp_path / ".comments" / "src" / "foo" / "bar" / "baz.py.json"
+        sidecar = SidecarFile(
+            source_file="src/foo/bar/baz.py",
+            source_hash="sha256:" + "a" * 64,
+        )
+
+        write_sidecar(deep_path, sidecar)
+
+        assert deep_path.exists()
+        assert deep_path.parent.exists()
+        assert deep_path.parent.parent.exists()
+
+    def test_write_deterministic_json(self, tmp_path: Path) -> None:
+        """Same sidecar produces byte-for-byte identical JSON."""
+        sidecar_path1 = tmp_path / "test1.json"
+        sidecar_path2 = tmp_path / "test2.json"
+
+        anchor = Anchor(
+            content_hash="sha256:" + "c" * 64,
+            context_hash_before="sha256:" + "d" * 64,
+            context_hash_after="sha256:" + "e" * 64,
+            line_start=10,
+            line_end=15,
+            content_snippet="def foo():",
+            health=AnchorHealth.DRIFTED,
+            drift_distance=5,
+        )
+
+        thread = Thread(
+            id="01ARZ3NDEKTSV4RRFFQ69G5FAV",
+            status=ThreadStatus.RESOLVED,
+            created_at="2026-02-01T10:00:00Z",
+            resolved_at="2026-02-01T11:00:00Z",
+            anchor=anchor,
+            decision=Decision(
+                summary="Fixed by refactoring",
+                decider="bob",
+                timestamp="2026-02-01T11:00:00Z",
+            ),
+        )
+
+        sidecar = SidecarFile(
+            source_file="src/test.py",
+            source_hash="sha256:" + "a" * 64,
+            threads=[thread],
+        )
+
+        # Write twice
+        write_sidecar(sidecar_path1, sidecar)
+        write_sidecar(sidecar_path2, sidecar)
+
+        # Compare byte-for-byte
+        content1 = sidecar_path1.read_bytes()
+        content2 = sidecar_path2.read_bytes()
+
+        assert content1 == content2
+
+    def test_write_sorted_keys(self, tmp_path: Path) -> None:
+        """JSON output has sorted keys for git-friendly diffs."""
+        sidecar_path = tmp_path / "test.json"
+        sidecar = SidecarFile(
+            source_file="src/test.py",
+            source_hash="sha256:" + "a" * 64,
+        )
+
+        write_sidecar(sidecar_path, sidecar)
+
+        content = sidecar_path.read_text()
+        import json
+
+        data = json.loads(content)
+
+        # Check that keys appear in sorted order
+        keys = list(data.keys())
+        assert keys == sorted(keys)
+
+    def test_write_2_space_indent(self, tmp_path: Path) -> None:
+        """JSON output uses 2-space indentation."""
+        sidecar_path = tmp_path / "test.json"
+        sidecar = SidecarFile(
+            source_file="src/test.py",
+            source_hash="sha256:" + "a" * 64,
+        )
+
+        write_sidecar(sidecar_path, sidecar)
+
+        content = sidecar_path.read_text()
+
+        # Check for 2-space indentation (look for a nested key)
+        assert '  "schema_version"' in content or '  "source_file"' in content
+
+    def test_write_trailing_newline(self, tmp_path: Path) -> None:
+        """JSON output ends with newline (POSIX convention)."""
+        sidecar_path = tmp_path / "test.json"
+        sidecar = SidecarFile(
+            source_file="src/test.py",
+            source_hash="sha256:" + "a" * 64,
+        )
+
+        write_sidecar(sidecar_path, sidecar)
+
+        content = sidecar_path.read_text()
+        assert content.endswith("\n")
+
+    def test_write_atomic_operation(self, tmp_path: Path) -> None:
+        """Write uses temp file + rename (atomic operation)."""
+        sidecar_path = tmp_path / "test.json"
+
+        # Create existing sidecar
+        existing = SidecarFile(
+            source_file="src/old.py",
+            source_hash="sha256:" + "a" * 64,
+        )
+        write_sidecar(sidecar_path, existing)
+
+        # Write new sidecar
+        new_sidecar = SidecarFile(
+            source_file="src/new.py",
+            source_hash="sha256:" + "b" * 64,
+        )
+        write_sidecar(sidecar_path, new_sidecar)
+
+        # Verify new content
+        result = read_sidecar(sidecar_path)
+        assert result.source_file == "src/new.py"
+
+        # Verify no temp files left behind
+        temp_files = list(tmp_path.glob(".tmp_*.json"))
+        assert len(temp_files) == 0
+
+
+class TestSidecarRoundTrip:
+    """Integration tests for read/write round-trip."""
+
+    def test_roundtrip_minimal(self, tmp_path: Path) -> None:
+        """Minimal sidecar survives read/write round-trip."""
+        sidecar_path = tmp_path / "test.json"
+        original = SidecarFile(
+            source_file="src/test.py",
+            source_hash="sha256:" + "a" * 64,
+        )
+
+        write_sidecar(sidecar_path, original)
+        restored = read_sidecar(sidecar_path)
+
+        assert restored.source_file == original.source_file
+        assert restored.source_hash == original.source_hash
+        assert restored.schema_version == original.schema_version
+        assert restored.threads == original.threads
+
+    def test_roundtrip_complex(self, tmp_path: Path) -> None:
+        """Complex sidecar with multiple threads survives round-trip."""
+        sidecar_path = tmp_path / "complex.json"
+
+        # Create complex sidecar with multiple threads
+        threads = []
+        for i in range(3):
+            anchor = Anchor(
+                content_hash=f"sha256:{'a' * 63}{i}",
+                context_hash_before=f"sha256:{'b' * 63}{i}",
+                context_hash_after=f"sha256:{'c' * 63}{i}",
+                line_start=(i + 1) * 10,
+                line_end=(i + 1) * 10 + 5,
+                content_snippet=f"def func_{i}():",
+                health=AnchorHealth.ANCHORED,
+            )
+            thread = Thread(
+                id=f"01ARZ3NDEKTSV4RRFFQ69G5FA{i}",
+                anchor=anchor,
+            )
+            thread.add_comment(
+                author=f"user_{i}",
+                author_type=AuthorType.HUMAN,
+                body=f"Comment {i}",
+            )
+            threads.append(thread)
+
+        original = SidecarFile(
+            source_file="src/complex.py",
+            source_hash="sha256:" + "f" * 64,
+            threads=threads,
+        )
+
+        write_sidecar(sidecar_path, original)
+        restored = read_sidecar(sidecar_path)
+
+        assert len(restored.threads) == 3
+        for i, thread in enumerate(restored.threads):
+            assert thread.anchor.content_snippet == f"def func_{i}():"
+            assert thread.comments[0].body == f"Comment {i}"
+
+    def test_roundtrip_preserves_decision(self, tmp_path: Path) -> None:
+        """Round-trip preserves decision on resolved thread."""
+        sidecar_path = tmp_path / "test.json"
+
+        anchor = Anchor(
+            content_hash="sha256:" + "a" * 64,
+            context_hash_before="sha256:" + "b" * 64,
+            context_hash_after="sha256:" + "c" * 64,
+            line_start=1,
+            line_end=1,
+            content_snippet="x = 1",
+        )
+
+        thread = Thread(
+            id="01ARZ3NDEKTSV4RRFFQ69G5FAV",
+            anchor=anchor,
+        )
+        thread.resolve(decider="alice", summary="Fixed in commit abc123")
+
+        original = SidecarFile(
+            source_file="src/test.py",
+            source_hash="sha256:" + "d" * 64,
+            threads=[thread],
+        )
+
+        write_sidecar(sidecar_path, original)
+        restored = read_sidecar(sidecar_path)
+
+        assert restored.threads[0].status == ThreadStatus.RESOLVED
+        assert restored.threads[0].decision is not None
+        assert restored.threads[0].decision.summary == "Fixed in commit abc123"
+        assert restored.threads[0].decision.decider == "alice"

@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: In Progress (Iteration 1: Foundation)
-**Last Updated**: 2026-02-01 (Task 1.2 completed)
+**Status**: ✅ Iteration 1 Complete — Ready for Iteration 2
+**Last Updated**: 2026-02-01 (Task 1.3 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 67% of Iteration 1 (2/3 tasks complete)
-**Next Action**: Task 1.3 (Sidecar JSON Serialization)
+**Current Implementation**: 100% of Iteration 1 (3/3 tasks complete)
+**Next Action**: Iteration 2 - Fuzzy Matching (Task 2.1)
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -236,14 +236,18 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 - ✅ Type checking and linting
 
 **Acceptance Criteria**:
-- [ ] SidecarFile serializes with deterministic JSON (same input → same bytes)
-- [ ] Write uses temp file + atomic rename (no partial writes visible)
-- [ ] Parent directories auto-created for deep paths
-- [ ] Invalid JSON schema rejected before file write
-- [ ] Source hash mismatch handled gracefully (clear error message)
-- [ ] Type checking and linting pass
+- [x] SidecarFile serializes with deterministic JSON (same input → same bytes)
+- [x] Write uses temp file + atomic rename (no partial writes visible)
+- [x] Parent directories auto-created for deep paths
+- [x] Invalid JSON schema rejected before file write
+- [x] Source hash mismatch handled gracefully (clear error message)
+- [x] Type checking and linting pass
+
+**Status**: ✅ COMPLETE (2026-02-01)
 
 **Size Estimate**: ~80-120 lines of implementation, ~100-150 lines of tests
+
+**Actual Size**: 113 lines of implementation (read_sidecar + write_sidecar), 249 lines of tests (17 tests, all passing)
 
 **Dependencies**: Task 1.1 (SidecarFile uses Thread model), Task 1.2 (uses path functions)
 
@@ -253,18 +257,20 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 
 **All tasks complete when**:
 - ✅ All quality gates pass: `uv run mypy src/comment_system`, `uv run ruff check src/ tests/`, `uv run pytest tests/`
-- ✅ 100% test coverage for models.py and storage.py
-- ✅ Performance: 10 MB file hash in < 100ms
-- ✅ Security: Path traversal attacks blocked
+- ✅ 100% test coverage for models.py and storage.py (96 tests, all passing)
+- ✅ Performance: 10 MB file hash in < 100ms (verified)
+- ✅ Security: Path traversal attacks blocked (verified)
 - ✅ Deterministic JSON serialization verified (byte-for-byte reproducibility)
 
+**Status**: ✅ COMPLETE (2026-02-01)
+
 **Deliverables**:
-- Fully functional data models with validation
-- File I/O and hashing utilities
-- Sidecar JSON read/write with atomicity
-- ~500-800 lines of implementation code
-- ~450-650 lines of test code
-- 100% test coverage on new code
+- ✅ Fully functional data models with validation
+- ✅ File I/O and hashing utilities
+- ✅ Sidecar JSON read/write with atomicity
+- ✅ 529 lines of implementation code (models.py + storage.py)
+- ✅ 1025 lines of test code (test_models.py + test_storage.py)
+- ✅ 100% test coverage on new code (96 tests, all passing)
 
 ---
 
@@ -402,17 +408,17 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 2/40 tasks complete (5%)
+**Overall**: 3/40 tasks complete (7.5%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
-| **Iteration 1** | 2/3 | 🟡 **IN PROGRESS** | Blocks ALL |
-| Iteration 2 | 0/3 | ⏸️ Blocked | Blocked by Iter 1 |
+| **Iteration 1** | 3/3 | ✅ **COMPLETE** | No longer blocks |
+| **Iteration 2** | 0/3 | 🔴 **READY TO START** | Now unblocked |
 | Iteration 3 | 0/2 | ⏸️ Blocked | Blocked by Iter 2 |
 | Iteration 4 | 0/4 | ⏸️ Blocked | Blocked by Iter 3 |
 | Iteration 5 | 0/3 | ⏸️ Blocked | Blocked by Iter 4 |
-| Iteration 6 | 0/3 | ⏸️ Blocked | Blocked by Iter 1 |
-| Iteration 7 | 0/3 | ⏸️ Blocked | Blocked by Iter 1 |
+| Iteration 6 | 0/3 | 🔴 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
+| Iteration 7 | 0/3 | 🔓 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
 | Iteration 8 | 0/2 | ⏸️ Blocked | Blocked by Iter 4 |
 | Iteration 9 | 0/2 | ⏸️ Blocked | Blocked by Iter 4 |
 | Iteration 10 | 0/4 | ⏸️ Blocked | Blocked by Iter 1-4 (Phase 2) |
@@ -422,7 +428,8 @@ Before marking any task complete:
 1. **✅ Complete Pre-Implementation Checklist** (DONE)
 2. **✅ Task 1.1: Core Pydantic Models** (DONE - 42 tests passing)
 3. **✅ Task 1.2: File Operations and Hashing** (DONE - 37 tests passing)
-4. **🔴 Task 1.3: Sidecar JSON Serialization** ← START HERE
+4. **✅ Task 1.3: Sidecar JSON Serialization** (DONE - 17 tests passing)
+5. **🔴 Task 2.1: Levenshtein & Jaccard Similarity** ← START HERE
 
 ---
 
