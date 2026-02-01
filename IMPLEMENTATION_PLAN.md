@@ -840,14 +840,53 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 ---
 
 ### Iteration 6: Advanced Features - Concurrency (3 tasks)
-**Blocked by**: Iteration 1
+**Blocked by**: Iteration 1 ✅ Complete
 **Focus**: Safe concurrent access
 
-| Task | Description | Files | Backpressure |
-|------|-------------|-------|--------------|
-| 6.1 | File locking (flock/LockFileEx) | `locking.py`, `storage.py`, tests | Platform tests (Unix/Windows) |
-| 6.2 | Optimistic concurrency (hash check) | `storage.py`, tests | Conflict simulation tests |
-| 6.3 | Atomic writes (temp + rename) | `storage.py`, tests | Failure recovery tests |
+| Task | Description | Files | Backpressure | Status |
+|------|-------------|-------|--------------|--------|
+| 6.1 | File locking (flock/LockFileEx) | `locking.py`, `storage.py`, tests | Platform tests (Unix/Windows) | ✅ **COMPLETE** |
+| 6.2 | Optimistic concurrency (hash check) | `storage.py`, tests | Conflict simulation tests | Not started |
+| 6.3 | Atomic writes (temp + rename) | `storage.py`, tests | Failure recovery tests | ⚠️ **PARTIAL** (already implemented in Task 1.3) |
+
+#### Task 6.1: File Locking (flock/LockFileEx) ✅ COMPLETE
+
+**Description**: Implement OS-level file locking for safe concurrent access to sidecar files
+
+**Spec References**: `specs/concurrency.md` (REQ-1, AC-1, AC-5, CON-1, CON-4)
+
+**Implementation**: `src/comment_system/locking.py` (179 lines)
+**Tests**: `tests/comment_system/test_locking.py` (311 lines, 14 tests passing)
+
+**Deliverables**:
+- ✅ `file_lock()` context manager for OS-level locking
+- ✅ Platform-specific implementation (Unix: fcntl.flock, Windows: msvcrt.locking)
+- ✅ Lock modes: "shared" (reads) and "exclusive" (writes)
+- ✅ Timeout support (default 5 seconds) with exponential backoff
+- ✅ `LockTimeout` exception for timeout handling
+- ✅ Automatic cleanup on exception (context manager)
+- ✅ Parent directory creation for lock files
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- fcntl.flock provides true shared/exclusive locks on Unix (multiple shared readers allowed)
+- Windows msvcrt.locking only supports exclusive locks (no native shared locks)
+- Exponential backoff with 10ms-100ms sleep prevents CPU spinning while waiting for locks
+- Context manager ensures locks are always released, even on exceptions
+- File lock creates file if missing, enabling lock-before-write pattern
+
+**Test Coverage**:
+- ✅ AC-1: Concurrent exclusive locks serialize (5 processes appending to file)
+- ✅ AC-5: Lock timeout after custom duration (1 second timeout verified)
+- ✅ Basic operations: exclusive lock, shared lock, sequential locks
+- ✅ Platform features: parent directory creation, file creation
+- ✅ Concurrency: multiple shared locks allowed, exclusive blocks shared, shared blocks exclusive
+- ✅ Error handling: timeout on held lock, cleanup on exception
+- ✅ Lock release: lock succeeds after release, file can be read while locked
+
+**Actual Size**: 179 lines of implementation, 311 lines of tests
+
+**Status**: ✅ COMPLETE (2026-02-01)
 
 ---
 
