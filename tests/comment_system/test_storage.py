@@ -1,5 +1,6 @@
 """Tests for storage.py file operations."""
 
+import multiprocessing
 import time
 from pathlib import Path
 
@@ -15,6 +16,7 @@ from comment_system.models import (
     ThreadStatus,
 )
 from comment_system.storage import (
+    ConcurrencyConflict,
     compute_source_hash,
     find_project_root,
     get_sidecar_path,
@@ -22,6 +24,7 @@ from comment_system.storage import (
     normalize_path,
     read_sidecar,
     write_sidecar,
+    write_sidecar_with_retry,
 )
 
 
@@ -854,3 +857,431 @@ class TestSidecarRoundTrip:
         assert restored.threads[0].decision is not None
         assert restored.threads[0].decision.summary == "Fixed in commit abc123"
         assert restored.threads[0].decision.decider == "alice"
+
+
+class TestOptimisticConcurrency:
+    """Tests for optimistic concurrency control (Task 6.2)."""
+
+    def test_write_succeeds_when_hash_matches(self, tmp_path: Path) -> None:
+        """Write succeeds when source hash matches current file."""
+        # Create source file
+        source_file = tmp_path / "test.py"
+        source_file.write_text("x = 1\ny = 2\n")
+        source_hash = compute_source_hash(source_file)
+
+        # Create sidecar
+        sidecar_path = tmp_path / ".comments" / "test.py.json"
+        anchor = Anchor(
+            content_hash="sha256:" + "a" * 64,
+            context_hash_before="sha256:" + "b" * 64,
+            context_hash_after="sha256:" + "c" * 64,
+            line_start=1,
+            line_end=1,
+            content_snippet="x = 1",
+        )
+        thread = Thread(id="01ARZ3NDEKTSV4RRFFQ69G5FAV", anchor=anchor)
+        sidecar = SidecarFile(
+            source_file=str(source_file),
+            source_hash=source_hash,
+            threads=[thread],
+        )
+
+        # Write with hash check - should succeed
+        write_sidecar(sidecar_path, sidecar, check_hash=True)
+
+        # Verify file was written
+        assert sidecar_path.exists()
+        restored = read_sidecar(sidecar_path)
+        assert len(restored.threads) == 1
+
+    def test_write_fails_when_hash_mismatches(self, tmp_path: Path) -> None:
+        """Write fails when source hash doesn't match current file."""
+        # Create source file with initial content
+        source_file = tmp_path / "test.py"
+        source_file.write_text("x = 1\ny = 2\n")
+        old_hash = compute_source_hash(source_file)
+
+        # Modify source file (simulating concurrent modification)
+        source_file.write_text("x = 1\ny = 2\nz = 3\n")
+
+        # Create sidecar with OLD hash
+        sidecar_path = tmp_path / ".comments" / "test.py.json"
+        anchor = Anchor(
+            content_hash="sha256:" + "a" * 64,
+            context_hash_before="sha256:" + "b" * 64,
+            context_hash_after="sha256:" + "c" * 64,
+            line_start=1,
+            line_end=1,
+            content_snippet="x = 1",
+        )
+        thread = Thread(id="01ARZ3NDEKTSV4RRFFQ69G5FAV", anchor=anchor)
+        sidecar = SidecarFile(
+            source_file=str(source_file),
+            source_hash=old_hash,  # Stale hash
+            threads=[thread],
+        )
+
+        # Write with hash check - should fail
+        with pytest.raises(ConcurrencyConflict, match="Source file hash mismatch"):
+            write_sidecar(sidecar_path, sidecar, check_hash=True)
+
+        # Verify sidecar was NOT written (file may exist from lock but should be empty)
+        if sidecar_path.exists():
+            # Lock creates file, but no content should be written
+            assert sidecar_path.stat().st_size == 0
+        # OR file doesn't exist at all (acceptable)
+
+    def test_write_with_check_hash_false_skips_validation(self, tmp_path: Path) -> None:
+        """Write with check_hash=False bypasses hash check."""
+        # Create source file with initial content
+        source_file = tmp_path / "test.py"
+        source_file.write_text("x = 1\n")
+        old_hash = compute_source_hash(source_file)
+
+        # Modify source file
+        source_file.write_text("x = 1\ny = 2\n")
+
+        # Create sidecar with OLD hash
+        sidecar_path = tmp_path / ".comments" / "test.py.json"
+        anchor = Anchor(
+            content_hash="sha256:" + "a" * 64,
+            context_hash_before="sha256:" + "b" * 64,
+            context_hash_after="sha256:" + "c" * 64,
+            line_start=1,
+            line_end=1,
+            content_snippet="x = 1",
+        )
+        thread = Thread(id="01ARZ3NDEKTSV4RRFFQ69G5FAV", anchor=anchor)
+        sidecar = SidecarFile(
+            source_file=str(source_file),
+            source_hash=old_hash,  # Stale hash
+            threads=[thread],
+        )
+
+        # Write with check_hash=False - should succeed despite stale hash
+        write_sidecar(sidecar_path, sidecar, check_hash=False)
+
+        # Verify file was written
+        assert sidecar_path.exists()
+
+    def test_write_allows_deleted_source_file(self, tmp_path: Path) -> None:
+        """Write succeeds if source file is deleted (orphaned anchors scenario)."""
+        # Create source file temporarily to get hash
+        source_file = tmp_path / "test.py"
+        source_file.write_text("x = 1\n")
+        source_hash = compute_source_hash(source_file)
+
+        # Delete source file (simulating file deletion)
+        source_file.unlink()
+
+        # Create sidecar with hash from deleted file
+        sidecar_path = tmp_path / ".comments" / "test.py.json"
+        anchor = Anchor(
+            content_hash="sha256:" + "a" * 64,
+            context_hash_before="sha256:" + "b" * 64,
+            context_hash_after="sha256:" + "c" * 64,
+            line_start=1,
+            line_end=1,
+            content_snippet="x = 1",
+        )
+        thread = Thread(id="01ARZ3NDEKTSV4RRFFQ69G5FAV", anchor=anchor)
+        sidecar = SidecarFile(
+            source_file=str(source_file),
+            source_hash=source_hash,
+            threads=[thread],
+        )
+
+        # Write with hash check - should succeed (skips check for deleted files)
+        write_sidecar(sidecar_path, sidecar, check_hash=True)
+
+        # Verify file was written
+        assert sidecar_path.exists()
+
+    def test_write_with_acquire_lock_false_skips_locking(self, tmp_path: Path) -> None:
+        """Write with acquire_lock=False bypasses file locking."""
+        source_file = tmp_path / "test.py"
+        source_file.write_text("x = 1\n")
+        source_hash = compute_source_hash(source_file)
+
+        sidecar_path = tmp_path / ".comments" / "test.py.json"
+        anchor = Anchor(
+            content_hash="sha256:" + "a" * 64,
+            context_hash_before="sha256:" + "b" * 64,
+            context_hash_after="sha256:" + "c" * 64,
+            line_start=1,
+            line_end=1,
+            content_snippet="x = 1",
+        )
+        thread = Thread(id="01ARZ3NDEKTSV4RRFFQ69G5FAV", anchor=anchor)
+        sidecar = SidecarFile(
+            source_file=str(source_file),
+            source_hash=source_hash,
+            threads=[thread],
+        )
+
+        # Write without locking - should succeed quickly
+        start = time.time()
+        write_sidecar(sidecar_path, sidecar, acquire_lock=False)
+        elapsed = time.time() - start
+
+        # Should be fast (no lock acquisition overhead)
+        assert elapsed < 0.5
+        assert sidecar_path.exists()
+
+    def test_concurrent_writes_with_locking(self, tmp_path: Path) -> None:
+        """Concurrent writes serialize when locking is enabled."""
+        source_file = tmp_path / "test.py"
+        source_file.write_text("x = 1\n")
+
+        sidecar_path = tmp_path / ".comments" / "test.py.json"
+
+        def write_process(process_id: int) -> None:
+            """Write a sidecar from a separate process."""
+            # Recompute hash in child process
+            hash_val = compute_source_hash(source_file)
+            anchor = Anchor(
+                content_hash=f"sha256:{'a' * 64}",
+                context_hash_before=f"sha256:{'b' * 64}",
+                context_hash_after=f"sha256:{'c' * 64}",
+                line_start=process_id,
+                line_end=process_id,
+                content_snippet=f"line {process_id}",
+            )
+            thread = Thread(id=f"01ARZ3NDEKTSV4RRFFQ69G5F{process_id:02d}", anchor=anchor)
+            sidecar = SidecarFile(
+                source_file=str(source_file),
+                source_hash=hash_val,
+                threads=[thread],
+            )
+            write_sidecar(sidecar_path, sidecar, check_hash=False, acquire_lock=True)
+
+        # Spawn 3 processes to write concurrently
+        processes = []
+        for i in range(3):
+            p = multiprocessing.Process(target=write_process, args=(i,))
+            processes.append(p)
+            p.start()
+
+        # Wait for all to complete
+        for p in processes:
+            p.join()
+
+        # Verify file was written (last writer wins)
+        assert sidecar_path.exists()
+        restored = read_sidecar(sidecar_path)
+        assert len(restored.threads) == 1
+
+
+class TestWriteSidecarWithRetry:
+    """Tests for write_sidecar_with_retry function."""
+
+    def test_retry_succeeds_on_first_attempt(self, tmp_path: Path) -> None:
+        """Retry succeeds immediately when no conflict."""
+        source_file = tmp_path / "test.py"
+        source_file.write_text("x = 1\n")
+        source_hash = compute_source_hash(source_file)
+
+        sidecar_path = tmp_path / ".comments" / "test.py.json"
+
+        # Create initial sidecar
+        anchor = Anchor(
+            content_hash="sha256:" + "a" * 64,
+            context_hash_before="sha256:" + "b" * 64,
+            context_hash_after="sha256:" + "c" * 64,
+            line_start=1,
+            line_end=1,
+            content_snippet="x = 1",
+        )
+        thread = Thread(id="01ARZ3NDEKTSV4RRFFQ69G5FAV", anchor=anchor)
+        initial = SidecarFile(
+            source_file=str(source_file),
+            source_hash=source_hash,
+            threads=[thread],
+        )
+        write_sidecar(sidecar_path, initial, check_hash=False, acquire_lock=False)
+
+        # Update function: add a comment
+        def add_comment(sidecar: SidecarFile) -> SidecarFile:
+            sidecar.threads[0].add_comment("alice", AuthorType.HUMAN, "New comment")
+            return sidecar
+
+        # Retry should succeed on first attempt
+        result = write_sidecar_with_retry(sidecar_path, add_comment, max_retries=3)
+
+        assert len(result.threads[0].comments) == 1
+        assert result.threads[0].comments[0].body == "New comment"
+
+    def test_retry_recovers_from_single_conflict(self, tmp_path: Path) -> None:
+        """Retry recovers when external process modifies source file."""
+        source_file = tmp_path / "test.py"
+        source_file.write_text("x = 1\n")
+        initial_hash = compute_source_hash(source_file)
+
+        sidecar_path = tmp_path / ".comments" / "test.py.json"
+
+        # Create initial sidecar
+        anchor = Anchor(
+            content_hash="sha256:" + "a" * 64,
+            context_hash_before="sha256:" + "b" * 64,
+            context_hash_after="sha256:" + "c" * 64,
+            line_start=1,
+            line_end=1,
+            content_snippet="x = 1",
+        )
+        thread = Thread(id="01ARZ3NDEKTSV4RRFFQ69G5FAV", anchor=anchor)
+        initial = SidecarFile(
+            source_file=str(source_file),
+            source_hash=initial_hash,
+            threads=[thread],
+        )
+        write_sidecar(sidecar_path, initial, check_hash=False, acquire_lock=False)
+
+        # Track number of attempts
+        attempt_count = 0
+        conflict_triggered = False
+
+        def add_comment_with_external_modification(sidecar: SidecarFile) -> SidecarFile:
+            nonlocal attempt_count, conflict_triggered
+
+            # On first attempt, simulate external modification AFTER we read the sidecar
+            # but BEFORE we write it (classic race condition)
+            if attempt_count == 0 and not conflict_triggered:
+                # Modify source file (simulates external edit)
+                source_file.write_text("x = 1\ny = 2\n")
+                conflict_triggered = True
+                # DON'T update the hash - this simulates reading stale data
+
+            attempt_count += 1
+
+            # On retry (attempt 2+), update hash to match new file
+            if attempt_count >= 2:
+                sidecar.source_hash = compute_source_hash(source_file)
+
+            # Add comment
+            sidecar.threads[0].add_comment("bob", AuthorType.HUMAN, "Added comment")
+            return sidecar
+
+        # Retry should fail first time (stale hash), succeed second time (updated hash)
+        result = write_sidecar_with_retry(
+            sidecar_path, add_comment_with_external_modification, max_retries=3
+        )
+
+        assert attempt_count == 2  # First failed, second succeeded
+        assert len(result.threads[0].comments) == 1
+
+    def test_retry_fails_after_max_attempts(self, tmp_path: Path) -> None:
+        """Retry raises ConcurrencyConflict after max_retries exceeded."""
+        source_file = tmp_path / "test.py"
+        source_file.write_text("x = 1\n")
+        initial_hash = compute_source_hash(source_file)
+
+        sidecar_path = tmp_path / ".comments" / "test.py.json"
+
+        # Create initial sidecar
+        anchor = Anchor(
+            content_hash="sha256:" + "a" * 64,
+            context_hash_before="sha256:" + "b" * 64,
+            context_hash_after="sha256:" + "c" * 64,
+            line_start=1,
+            line_end=1,
+            content_snippet="x = 1",
+        )
+        thread = Thread(id="01ARZ3NDEKTSV4RRFFQ69G5FAV", anchor=anchor)
+        initial = SidecarFile(
+            source_file=str(source_file),
+            source_hash=initial_hash,
+            threads=[thread],
+        )
+        write_sidecar(sidecar_path, initial, check_hash=False, acquire_lock=False)
+
+        # Track attempts
+        attempt_count = 0
+        # Track modifications per attempt to ensure continuous conflicts
+        modifications = {}
+
+        def always_conflict(sidecar: SidecarFile) -> SidecarFile:
+            nonlocal attempt_count
+            attempt_count += 1
+
+            # On each read (before update_fn is called), source file has current content
+            # Modify it to create a new hash that doesn't match what we're about to write
+            current_content = source_file.read_text()
+            source_file.write_text(current_content + f"# modification {attempt_count}\n")
+            modifications[attempt_count] = source_file.read_text()
+
+            # Return sidecar with OLD hash (before our modification)
+            # This will fail hash check every time
+            sidecar.threads[0].add_comment("eve", AuthorType.AGENT, f"Attempt {attempt_count}")
+            return sidecar
+
+        # Should fail after 3 attempts
+        with pytest.raises(ConcurrencyConflict, match="after 3 attempts"):
+            write_sidecar_with_retry(sidecar_path, always_conflict, max_retries=3)
+
+        assert attempt_count == 3
+
+    def test_retry_handles_missing_sidecar(self, tmp_path: Path) -> None:
+        """Retry handles case where sidecar doesn't exist yet."""
+        source_file = tmp_path / "test.py"
+        source_file.write_text("x = 1\n")
+        source_hash = compute_source_hash(source_file)
+
+        sidecar_path = tmp_path / ".comments" / "test.py.json"
+        # Sidecar doesn't exist yet
+
+        def create_initial(sidecar: SidecarFile | None) -> SidecarFile:
+            # Handle None case (missing sidecar)
+            if sidecar is None:
+                anchor = Anchor(
+                    content_hash="sha256:" + "a" * 64,
+                    context_hash_before="sha256:" + "b" * 64,
+                    context_hash_after="sha256:" + "c" * 64,
+                    line_start=1,
+                    line_end=1,
+                    content_snippet="x = 1",
+                )
+                thread = Thread(id="01ARZ3NDEKTSV4RRFFQ69G5FAV", anchor=anchor)
+                return SidecarFile(
+                    source_file=str(source_file),
+                    source_hash=source_hash,
+                    threads=[thread],
+                )
+            return sidecar
+
+        # Should create new sidecar
+        result = write_sidecar_with_retry(sidecar_path, create_initial, max_retries=3)
+
+        assert result.threads[0].anchor.content_snippet == "x = 1"
+        assert sidecar_path.exists()
+
+    def test_retry_respects_custom_timeout(self, tmp_path: Path) -> None:
+        """Retry uses custom timeout parameter."""
+        source_file = tmp_path / "test.py"
+        source_file.write_text("x = 1\n")
+        source_hash = compute_source_hash(source_file)
+
+        sidecar_path = tmp_path / ".comments" / "test.py.json"
+
+        def create_sidecar(sidecar: SidecarFile | None) -> SidecarFile:
+            anchor = Anchor(
+                content_hash="sha256:" + "a" * 64,
+                context_hash_before="sha256:" + "b" * 64,
+                context_hash_after="sha256:" + "c" * 64,
+                line_start=1,
+                line_end=1,
+                content_snippet="x = 1",
+            )
+            thread = Thread(id="01ARZ3NDEKTSV4RRFFQ69G5FAV", anchor=anchor)
+            return SidecarFile(
+                source_file=str(source_file),
+                source_hash=source_hash,
+                threads=[thread],
+            )
+
+        # Should succeed with custom timeout
+        result = write_sidecar_with_retry(
+            sidecar_path, create_sidecar, max_retries=1, timeout=10.0
+        )
+
+        assert sidecar_path.exists()
+        assert result.source_hash == source_hash

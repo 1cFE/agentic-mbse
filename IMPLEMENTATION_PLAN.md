@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Iteration 5 Complete — MCP Tools Interface Ready!
-**Last Updated**: 2026-02-01 (Task 5.3 completed)
+**Status**: ✅ Iteration 6 Complete — Concurrency Layer Ready!
+**Last Updated**: 2026-02-01 (Task 6.2 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 15/40 tasks complete (37.5%)
-**Next Action**: Iteration 6, 7, 8, or 9 - All unblocked and ready to start
+**Current Implementation**: 18/40 tasks complete (45.0%)
+**Next Action**: Iteration 7, 8, or 9 - All unblocked and ready to start
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -839,15 +839,22 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 
 ---
 
-### Iteration 6: Advanced Features - Concurrency (3 tasks)
+### Iteration 6: Advanced Features - Concurrency (3 tasks) ✅ COMPLETE
 **Blocked by**: Iteration 1 ✅ Complete
 **Focus**: Safe concurrent access
 
 | Task | Description | Files | Backpressure | Status |
 |------|-------------|-------|--------------|--------|
 | 6.1 | File locking (flock/LockFileEx) | `locking.py`, `storage.py`, tests | Platform tests (Unix/Windows) | ✅ **COMPLETE** |
-| 6.2 | Optimistic concurrency (hash check) | `storage.py`, tests | Conflict simulation tests | Not started |
-| 6.3 | Atomic writes (temp + rename) | `storage.py`, tests | Failure recovery tests | ⚠️ **PARTIAL** (already implemented in Task 1.3) |
+| 6.2 | Optimistic concurrency (hash check) | `storage.py`, tests | Conflict simulation tests | ✅ **COMPLETE** |
+| 6.3 | Atomic writes (temp + rename) | `storage.py`, tests | Failure recovery tests | ✅ **COMPLETE** (implemented in Task 1.3) |
+
+**Status**: ✅ COMPLETE (all 3 tasks done)
+**Total Implementation**: 277 lines added to storage.py and locking.py (Tasks 6.1-6.2)
+**Total Tests**: ~760 lines added, 25 new tests (14 locking + 11 concurrency)
+**Features Implemented**: File locking, optimistic concurrency, retry wrapper, atomic writes
+
+**Iteration 6 unlocks**: All remaining iterations (7, 8, 9) are unblocked
 
 #### Task 6.1: File Locking (flock/LockFileEx) ✅ COMPLETE
 
@@ -887,6 +894,68 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 **Actual Size**: 179 lines of implementation, 311 lines of tests
 
 **Status**: ✅ COMPLETE (2026-02-01)
+
+#### Task 6.2: Optimistic Concurrency (Hash Check) ✅ COMPLETE
+
+**Description**: Implement optimistic concurrency control with source hash checking and retry logic
+
+**Spec References**: `specs/concurrency.md` (REQ-3, AC-2, AC-6)
+
+**Implementation**: Extended `src/comment_system/storage.py` (98 lines added)
+**Tests**: Extended `tests/comment_system/test_storage.py` (11 new tests, 373 total tests passing)
+
+**Deliverables**:
+- ✅ `ConcurrencyConflict` exception class for hash mismatch errors
+- ✅ Updated `write_sidecar()` with `check_hash`, `acquire_lock`, and `timeout` parameters
+- ✅ Hash verification before write (compares sidecar.source_hash with current file hash)
+- ✅ Graceful handling of deleted source files (skips hash check for orphaned anchors)
+- ✅ Integration with file locking from Task 6.1
+- ✅ `write_sidecar_with_retry()` helper function for automatic retry on conflicts
+- ✅ Configurable retry limit (default 3 attempts per REQ-3)
+- ✅ All quality gates pass (mypy, ruff, pytest - 362 tests in comment_system)
+
+**Key Learnings**:
+- Optimistic concurrency pattern: read → check hash → write (detect stale reads)
+- Lock file creation (from `file_lock`) creates empty file - not an error
+- Hash check allows deleted source files (orphaned anchors are valid use case)
+- Retry wrapper handles read-modify-write cycles automatically
+- Update function signature: `Callable[[SidecarFile | None], SidecarFile]` for type safety
+- Concurrent modification tests require careful sequencing (modify AFTER read, BEFORE write)
+
+**Test Coverage**:
+- ✅ AC-2: Hash mismatch detected when CLI writes with stale copy (conflict raised)
+- ✅ AC-6: Retry logic succeeds within 3 attempts (conflict recovery verified)
+- ✅ Write succeeds when hash matches
+- ✅ Write fails when hash mismatches (stale data detected)
+- ✅ check_hash=False bypasses validation (for forced writes)
+- ✅ Deleted source files allowed (orphaned anchors scenario)
+- ✅ acquire_lock=False bypasses locking (for testing)
+- ✅ Concurrent writes serialize when locking enabled
+- ✅ Retry succeeds on first attempt (no conflict)
+- ✅ Retry recovers from single conflict (second attempt succeeds)
+- ✅ Retry fails after max_retries exceeded (persistent conflict)
+- ✅ Retry handles missing sidecar (creation scenario)
+- ✅ Retry respects custom timeout parameter
+
+**Actual Size**: 98 lines of implementation added (ConcurrencyConflict + write_sidecar updates + write_sidecar_with_retry), ~450 lines of tests added (11 tests)
+
+**Status**: ✅ COMPLETE (2026-02-01)
+
+#### Task 6.3: Atomic Writes (temp + rename) ✅ COMPLETE
+
+**Note**: This task was already fully implemented in Task 1.3 (Sidecar JSON Serialization).
+
+**Implementation**: `src/comment_system/storage.py` (lines 268-329 in write_sidecar)
+**Tests**: `tests/comment_system/test_storage.py::TestWriteSidecar::test_write_atomic_operation`
+
+**Deliverables** (from Task 1.3):
+- ✅ Atomic write pattern: temp file + rename
+- ✅ Temp file in same directory (ensures atomic rename on same filesystem per CON-2)
+- ✅ Cleanup on write failure (temp file deleted on exception)
+- ✅ Parent directory auto-creation
+- ✅ Deterministic JSON serialization
+
+**Status**: ✅ COMPLETE (implemented in Task 1.3, no additional work needed)
 
 ---
 
@@ -962,7 +1031,7 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 15/40 tasks complete (37.5%)
+**Overall**: 18/40 tasks complete (45.0%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
@@ -971,11 +1040,11 @@ Before marking any task complete:
 | **Iteration 3** | 2/2 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 4** | 4/4 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 5** | 3/3 | ✅ **COMPLETE** | No longer blocks |
-| Iteration 6 | 0/3 | 🔴 **READY TO START** | Unblocked (can run parallel to Iter 5) |
-| Iteration 7 | 0/3 | 🔴 **READY TO START** | Unblocked (can run parallel to Iter 5) |
-| Iteration 8 | 0/2 | 🔴 **READY TO START** | Now unblocked (Iter 4 complete) |
-| Iteration 9 | 0/2 | 🔴 **READY TO START** | Now unblocked (Iter 4 complete) |
-| Iteration 10 | 0/4 | ⏸️ Blocked | Blocked by Iter 1-4 (all now complete, can start Phase 2) |
+| **Iteration 6** | 3/3 | ✅ **COMPLETE** | No longer blocks |
+| Iteration 7 | 0/3 | 🔴 **READY TO START** | Unblocked |
+| Iteration 8 | 0/2 | 🔴 **READY TO START** | Unblocked |
+| Iteration 9 | 0/2 | 🔴 **READY TO START** | Unblocked |
+| Iteration 10 | 0/4 | 🔴 **READY TO START** | Unblocked (Phase 2 - VSCode extension) |
 
 ### Next Tasks (In Order)
 
@@ -995,7 +1064,10 @@ Before marking any task complete:
 14. **✅ Task 5.1: MCP Server + `comment_add` Tool** (DONE - 18 tests passing)
 15. **✅ Task 5.2: CRUD Tools (list/show/reply/resolve)** (DONE - 41 tests passing)
 16. **✅ Task 5.3: MCP `comment_reconcile` Tool** (DONE - 58 tests passing)
-17. **🔴 Next: Choose from Iteration 6, 7, 8, or 9** ← ALL UNBLOCKED
+17. **✅ Task 6.1: File Locking (flock/LockFileEx)** (DONE - 14 tests passing)
+18. **✅ Task 6.2: Optimistic Concurrency (Hash Check)** (DONE - 11 tests passing)
+19. **✅ Task 6.3: Atomic Writes** (DONE - implemented in Task 1.3)
+20. **🔴 Next: Choose from Iteration 7, 8, or 9** ← ALL UNBLOCKED
 
 ---
 

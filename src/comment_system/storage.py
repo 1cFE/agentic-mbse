@@ -4,9 +4,17 @@ import hashlib
 import json
 import os
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 
+from comment_system.locking import file_lock
 from comment_system.models import SidecarFile
+
+
+class ConcurrencyConflict(Exception):  # noqa: N818
+    """Raised when optimistic concurrency check detects stale sidecar data."""
+
+    pass
 
 
 def compute_source_hash(path: Path) -> str:
@@ -146,6 +154,81 @@ def normalize_path(path: Path, project_root: Path) -> Path:
     return normalized
 
 
+def write_sidecar_with_retry(
+    path: Path,
+    update_fn: Callable[[SidecarFile | None], SidecarFile],
+    *,
+    max_retries: int = 3,
+    timeout: float = 5.0,
+) -> SidecarFile:
+    """
+    Write sidecar with automatic retry on concurrency conflicts.
+
+    This helper function implements the retry pattern for optimistic concurrency:
+    1. Read current sidecar (or create empty if missing)
+    2. Apply user's update function to get new sidecar
+    3. Write with hash check
+    4. If conflict detected, re-read and retry (up to max_retries times)
+
+    Args:
+        path: Path to sidecar file
+        update_fn: Function that takes current SidecarFile (or None) and returns updated one
+        max_retries: Maximum number of retry attempts (default 3)
+        timeout: Lock timeout in seconds (default 5.0)
+
+    Returns:
+        Final written SidecarFile
+
+    Raises:
+        ConcurrencyConflict: If max_retries exceeded
+        LockTimeout: If lock cannot be acquired
+        ValueError: If update_fn produces invalid sidecar
+        OSError: If write fails
+
+    Example:
+        >>> def add_comment(sidecar: SidecarFile | None) -> SidecarFile:
+        ...     # Find thread and append comment
+        ...     if sidecar is None:
+        ...         raise ValueError("Sidecar doesn't exist")
+        ...     thread = sidecar.threads[0]
+        ...     thread.comments.append(new_comment)
+        ...     return sidecar
+        >>> final = write_sidecar_with_retry(sidecar_path, add_comment)
+    """
+    for attempt in range(max_retries):
+        try:
+            # Read current state (or None if missing)
+            try:
+                current: SidecarFile | None = read_sidecar(path)
+            except FileNotFoundError:
+                # Sidecar doesn't exist yet - caller's update_fn should handle this
+                # by creating initial SidecarFile structure
+                current = None
+
+            # Apply user's update function
+            updated = update_fn(current)
+
+            # Write with hash check and locking
+            write_sidecar(path, updated, check_hash=True, acquire_lock=True, timeout=timeout)
+
+            # Success - return written sidecar
+            return updated
+
+        except ConcurrencyConflict:
+            if attempt == max_retries - 1:
+                # Max retries exceeded - raise error
+                raise ConcurrencyConflict(
+                    f"Failed to write {path} after {max_retries} attempts due to "
+                    "concurrent modifications. Please try again."
+                )
+            # Retry - loop will re-read current state
+            continue
+
+    # This should never be reached due to the raise in the loop,
+    # but mypy needs an explicit return
+    raise ConcurrencyConflict(f"Failed to write {path} after {max_retries} attempts")
+
+
 def find_project_root(start_path: Path | None = None) -> Path:
     """
     Find the project root by looking for .git directory.
@@ -213,12 +296,25 @@ def read_sidecar(path: Path) -> SidecarFile:
         raise ValueError(f"Sidecar file failed schema validation: {e}") from e
 
 
-def write_sidecar(path: Path, sidecar: SidecarFile) -> None:
+def write_sidecar(
+    path: Path,
+    sidecar: SidecarFile,
+    *,
+    check_hash: bool = True,
+    acquire_lock: bool = True,
+    timeout: float = 5.0,
+) -> None:
     """
     Write a sidecar file atomically with deterministic JSON.
 
     Uses atomic write pattern (temp file + rename) to ensure no partial
     writes are visible. Creates parent directories as needed.
+
+    Optionally performs optimistic concurrency check by verifying source_hash
+    matches current file hash before writing. If check fails, raises
+    ConcurrencyConflict to signal caller should re-read and retry.
+
+    Optionally acquires file lock before writing to prevent concurrent writes.
 
     JSON output is deterministic (sorted keys, 2-space indent, POSIX
     separators) for git-friendly diffs.
@@ -226,72 +322,104 @@ def write_sidecar(path: Path, sidecar: SidecarFile) -> None:
     Args:
         path: Path to sidecar file (.comments/*.json)
         sidecar: SidecarFile object to serialize
+        check_hash: If True, verify source_hash matches before write (default True)
+        acquire_lock: If True, acquire exclusive lock before write (default True)
+        timeout: Lock timeout in seconds (default 5.0)
 
     Raises:
         ValueError: If sidecar fails validation before write
+        ConcurrencyConflict: If hash check fails (source file changed since read)
+        LockTimeout: If lock cannot be acquired within timeout
         OSError: If write fails (permissions, disk full, etc.)
     """
-    # Validate sidecar before writing
-    try:
-        # Trigger Pydantic validation
-        sidecar.model_validate(sidecar.model_dump())
-    except Exception as e:
-        raise ValueError(f"Sidecar validation failed before write: {e}") from e
+    def _do_write() -> None:
+        """Inner function to perform the actual write operation."""
+        # Optimistic concurrency check: verify source_hash matches current file
+        if check_hash:
+            source_path_obj = Path(sidecar.source_file)
+            try:
+                current_hash = compute_source_hash(source_path_obj)
+                if current_hash != sidecar.source_hash:
+                    raise ConcurrencyConflict(
+                        f"Source file hash mismatch for {source_path_obj}:\n"
+                        f"  Expected: {sidecar.source_hash}\n"
+                        f"  Current:  {current_hash}\n"
+                        "Source file has changed since this sidecar was read. "
+                        "Please re-read, reconcile anchors, and retry."
+                    )
+            except FileNotFoundError:
+                # Source file deleted - this is allowed (orphaned anchors scenario)
+                # Skip hash check but continue with write
+                pass
 
-    # Create parent directories if needed
-    path.parent.mkdir(parents=True, exist_ok=True)
+        # Validate sidecar before writing
+        try:
+            # Trigger Pydantic validation
+            sidecar.model_validate(sidecar.model_dump())
+        except Exception as e:
+            raise ValueError(f"Sidecar validation failed before write: {e}") from e
 
-    # Serialize to deterministic JSON
-    json_data = sidecar.model_dump(mode="json")
+        # Create parent directories if needed
+        path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Convert Path objects to POSIX strings for determinism
-    def ensure_posix_paths(obj):
-        """Recursively convert Path objects to POSIX strings."""
-        if isinstance(obj, dict):
-            return {k: ensure_posix_paths(v) for k, v in obj.items()}
-        elif isinstance(obj, list):
-            return [ensure_posix_paths(item) for item in obj]
-        elif isinstance(obj, Path):
-            return obj.as_posix()
-        else:
-            return obj
+        # Serialize to deterministic JSON
+        json_data = sidecar.model_dump(mode="json")
 
-    json_data = ensure_posix_paths(json_data)
+        # Convert Path objects to POSIX strings for determinism
+        def ensure_posix_paths(obj):
+            """Recursively convert Path objects to POSIX strings."""
+            if isinstance(obj, dict):
+                return {k: ensure_posix_paths(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [ensure_posix_paths(item) for item in obj]
+            elif isinstance(obj, Path):
+                return obj.as_posix()
+            else:
+                return obj
 
-    # Serialize to JSON with deterministic formatting
-    json_str = json.dumps(json_data, indent=2, sort_keys=True, ensure_ascii=False)
-    # Add trailing newline (POSIX convention)
-    json_str += "\n"
+        json_data = ensure_posix_paths(json_data)
 
-    # Atomic write: write to temp file, then rename
-    # Use same directory to ensure atomic rename on same filesystem
-    temp_fd = None
-    temp_path = None
-    try:
-        # Create temp file in same directory as target
-        temp_fd, temp_name = tempfile.mkstemp(
-            dir=path.parent, prefix=".tmp_", suffix=".json", text=True
-        )
-        temp_path = Path(temp_name)
+        # Serialize to JSON with deterministic formatting
+        json_str = json.dumps(json_data, indent=2, sort_keys=True, ensure_ascii=False)
+        # Add trailing newline (POSIX convention)
+        json_str += "\n"
 
-        # Write to temp file
-        os.write(temp_fd, json_str.encode("utf-8"))
-        os.close(temp_fd)
+        # Atomic write: write to temp file, then rename
+        # Use same directory to ensure atomic rename on same filesystem
         temp_fd = None
+        temp_path = None
+        try:
+            # Create temp file in same directory as target
+            temp_fd, temp_name = tempfile.mkstemp(
+                dir=path.parent, prefix=".tmp_", suffix=".json", text=True
+            )
+            temp_path = Path(temp_name)
 
-        # Atomic rename (POSIX: atomic; Windows: atomic on same filesystem)
-        temp_path.replace(path)
+            # Write to temp file
+            os.write(temp_fd, json_str.encode("utf-8"))
+            os.close(temp_fd)
+            temp_fd = None
 
-    except Exception as e:
-        # Clean up temp file on failure
-        if temp_fd is not None:
-            try:
-                os.close(temp_fd)
-            except Exception:
-                pass
-        if temp_path is not None and temp_path.exists():
-            try:
-                temp_path.unlink()
-            except Exception:
-                pass
-        raise OSError(f"Failed to write sidecar file {path}: {e}") from e
+            # Atomic rename (POSIX: atomic; Windows: atomic on same filesystem)
+            temp_path.replace(path)
+
+        except Exception as e:
+            # Clean up temp file on failure
+            if temp_fd is not None:
+                try:
+                    os.close(temp_fd)
+                except Exception:
+                    pass
+            if temp_path is not None and temp_path.exists():
+                try:
+                    temp_path.unlink()
+                except Exception:
+                    pass
+            raise OSError(f"Failed to write sidecar file {path}: {e}") from e
+
+    # Acquire lock and perform write
+    if acquire_lock:
+        with file_lock(path, mode="exclusive", timeout=timeout):
+            _do_write()
+    else:
+        _do_write()
