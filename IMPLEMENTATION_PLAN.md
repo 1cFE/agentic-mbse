@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Task 7.3 Complete — Deletion Handling with [deleted] Markers Working!
-**Last Updated**: 2026-02-01 (Task 7.3 completed)
+**Status**: ✅ Task 8.1 Complete — Decision Log Generation Working!
+**Last Updated**: 2026-02-01 (Task 8.1 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 21/40 tasks complete (52.5%)
-**Next Action**: Choose Iteration 8 (Decision Log) or Iteration 9 (Orchestration)
+**Current Implementation**: 22/40 tasks complete (55%)
+**Next Action**: Task 8.2 (CLI decisions command)
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -1107,13 +1107,57 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 ---
 
 ### Iteration 8: Advanced Features - Decision Log (2 tasks)
-**Blocked by**: Iteration 4
+**Blocked by**: Iteration 4 ✅ Complete
 **Focus**: DECISIONS.md generation
 
-| Task | Description | Files | Backpressure |
-|------|-------------|-------|--------------|
-| 8.1 | Decision log generation | `decisions.py`, tests | Performance (< 5s for 1000 decisions) |
-| 8.2 | CLI `decisions` command | `cli.py`, tests | Git hook integration tests |
+| Task | Description | Files | Backpressure | Status |
+|------|-------------|-------|--------------|--------|
+| 8.1 | Decision log generation | `decisions.py`, tests | Performance (< 5s for 1000 decisions) | ✅ **COMPLETE** |
+| 8.2 | CLI `decisions` command | `cli.py`, tests | Git hook integration tests | 🔴 **NEXT** |
+
+#### Task 8.1: Decision Log Generation ✅ COMPLETE
+
+**Description**: Implement core decision log generation logic that collects and formats decisions from all sidecar files
+
+**Spec References**: `specs/decision-log.md` (REQ-1 through REQ-5, AC-1 through AC-6, CON-1 through CON-4)
+
+**Implementation**: `src/comment_system/decisions.py` (231 lines)
+**Tests**: `tests/comment_system/test_decisions.py` (838 lines, 26 tests passing)
+
+**Deliverables**:
+- ✅ `DecisionEntry` class for representing single decisions with metadata
+- ✅ `collect_decisions()` function to gather decisions from all sidecar files
+- ✅ Separate collections for active vs reopened decisions
+- ✅ `format_decision_entry()` for markdown formatting with deletion markers
+- ✅ `generate_decisions_markdown()` for complete DECISIONS.md content generation
+- ✅ `write_decisions_file()` for file I/O with UTF-8 encoding
+- ✅ File grouping (alphabetically sorted)
+- ✅ Within-file sorting (newest first by resolution timestamp)
+- ✅ Reopened decisions section
+- ✅ Deletion markers ([deleted: path]) for deleted source files
+- ✅ Auto-generated header with timestamp
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- Decision collection naturally separates active vs reopened based on thread status
+- Timestamp parsing from ISO 8601 format enables chronological sorting
+- Git deletion detection integrates cleanly via `is_file_deleted_in_git()`
+- Complete regeneration (not append) ensures consistency (REQ-4)
+- Unicode handling requires explicit UTF-8 encoding in file writes
+
+**Test Coverage**:
+- ✅ AC-1: 3 decisions across 2 files grouped correctly
+- ✅ AC-2: File regeneration (not appending) verified
+- ✅ AC-3: Timestamp sorting (newest first) verified
+- ✅ AC-4: Reopened decisions appear in separate section
+- ✅ AC-5: Deleted files show [deleted: path] marker
+- ✅ AC-6: Header includes "Auto-generated — do not edit manually"
+- ✅ CON-3: Unicode in decision summaries handled correctly
+- ✅ Edge cases: empty projects, invalid sidecars, missing fields
+
+**Actual Size**: 231 lines of implementation, 838 lines of tests
+
+**Status**: ✅ COMPLETE (2026-02-01)
 
 ---
 
@@ -1166,7 +1210,7 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 21/40 tasks complete (52.5%)
+**Overall**: 22/40 tasks complete (55%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
@@ -1177,7 +1221,7 @@ Before marking any task complete:
 | **Iteration 5** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 6** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 7** | 3/3 | ✅ **COMPLETE** | No longer blocks |
-| Iteration 8 | 0/2 | 🔴 **READY TO START** | Unblocked |
+| Iteration 8 | 1/2 | 🟡 **IN PROGRESS** | Task 8.1 done, 8.2 next |
 | Iteration 9 | 0/2 | 🔴 **READY TO START** | Unblocked |
 | Iteration 10 | 0/4 | 🔴 **READY TO START** | Unblocked (Phase 2 - VSCode extension) |
 
@@ -1205,7 +1249,8 @@ Before marking any task complete:
 20. **✅ Task 7.1: Git Rename Detection** (DONE - 19 tests passing)
 21. **✅ Task 7.2: Sidecar Move on Rename** (DONE - 10 tests passing)
 22. **✅ Task 7.3: Deletion Handling** (DONE - 8 new git_ops tests, 4 new CLI tests passing)
-23. **🔴 Next: Choose Iteration 8 or 9** ← ALL UNBLOCKED
+23. **✅ Task 8.1: Decision Log Generation** (DONE - 26 tests passing)
+24. **🔴 Next: Task 8.2 — CLI decisions command**
 
 ---
 
