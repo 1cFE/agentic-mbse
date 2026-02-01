@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
 **Status**: In Progress (Iteration 1: Foundation)
-**Last Updated**: 2026-02-01 (Task 1.1 completed)
+**Last Updated**: 2026-02-01 (Task 1.2 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 33% of Iteration 1 (1/3 tasks complete)
-**Next Action**: Task 1.2 (File Operations and Hashing)
+**Current Implementation**: 67% of Iteration 1 (2/3 tasks complete)
+**Next Action**: Task 1.3 (Sidecar JSON Serialization)
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -193,14 +193,18 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 - ✅ Test fixtures: various file types (text, binary, large files)
 
 **Acceptance Criteria**:
-- [ ] Sidecar path for `src/foo/bar.py` is `.comments/src/foo/bar.py.json`
-- [ ] Binary files (PNG, PDF) raise clear error message
-- [ ] Hash computation for 10 MB file completes in < 100ms
-- [ ] Paths outside project root rejected with security error
-- [ ] Windows and POSIX paths both normalized correctly
-- [ ] Type checking and linting pass
+- [x] Sidecar path for `src/foo/bar.py` is `.comments/src/foo/bar.py.json`
+- [x] Binary files (PNG, PDF) raise clear error message
+- [x] Hash computation for 10 MB file completes in < 100ms
+- [x] Paths outside project root rejected with security error
+- [x] Windows and POSIX paths both normalized correctly
+- [x] Type checking and linting pass
+
+**Status**: ✅ COMPLETE (2026-02-01)
 
 **Size Estimate**: ~100-150 lines of implementation, ~150-200 lines of tests
+
+**Actual Size**: 175 lines of implementation, 388 lines of tests (37 tests, all passing)
 
 **Dependencies**: Task 1.1 (uses models for type hints)
 
@@ -398,11 +402,11 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 0/40 tasks complete (0%)
+**Overall**: 2/40 tasks complete (5%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
-| **Iteration 1** | 1/3 | 🟡 **IN PROGRESS** | Blocks ALL |
+| **Iteration 1** | 2/3 | 🟡 **IN PROGRESS** | Blocks ALL |
 | Iteration 2 | 0/3 | ⏸️ Blocked | Blocked by Iter 1 |
 | Iteration 3 | 0/2 | ⏸️ Blocked | Blocked by Iter 2 |
 | Iteration 4 | 0/4 | ⏸️ Blocked | Blocked by Iter 3 |
@@ -417,8 +421,8 @@ Before marking any task complete:
 
 1. **✅ Complete Pre-Implementation Checklist** (DONE)
 2. **✅ Task 1.1: Core Pydantic Models** (DONE - 42 tests passing)
-3. **🔴 Task 1.2: File Operations and Hashing** ← START HERE
-4. **⏸️ Task 1.3: Sidecar JSON Serialization** (blocked by 1.2)
+3. **✅ Task 1.2: File Operations and Hashing** (DONE - 37 tests passing)
+4. **🔴 Task 1.3: Sidecar JSON Serialization** ← START HERE
 
 ---
 
