@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Iteration 2 Complete — Ready for Iteration 3
-**Last Updated**: 2026-02-01 (Task 2.3 completed)
+**Status**: ✅ Task 3.1 Complete — Ready for Task 3.2
+**Last Updated**: 2026-02-01 (Task 3.1 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 100% of Iterations 1-2 (6/6 tasks complete)
-**Next Action**: Iteration 3 - Anchor Reconciliation (Task 3.1)
+**Current Implementation**: 7/40 tasks complete (17.5%)
+**Next Action**: Task 3.2 - Bulk Reconciliation + Atomicity
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -379,8 +379,46 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 
 | Task | Description | Files | Backpressure | Status |
 |------|-------------|-------|--------------|--------|
-| 3.1 | Multi-signal reconciliation | `anchors.py`, tests | Unit tests for each step, health transitions | 🔴 **NEXT** |
-| 3.2 | Bulk reconciliation + atomicity | `anchors.py`, tests | Performance (100 threads in < 1s), rollback tests | ⏸️ Blocked |
+| 3.1 | Multi-signal reconciliation | `anchors.py`, tests | Unit tests for each step, health transitions | ✅ **COMPLETE** |
+| 3.2 | Bulk reconciliation + atomicity | `anchors.py`, tests | Performance (100 threads in < 1s), rollback tests | 🔴 **NEXT** |
+
+#### Task 3.1: Multi-signal Reconciliation ✅ COMPLETE
+
+**Description**: Implement single-anchor reconciliation with progressive fallback strategies
+
+**Spec References**: `specs/anchor-reconciliation.md` (REQ-1, REQ-2, REQ-3, REQ-4, AC-1 through AC-6)
+
+**Implementation**: `src/comment_system/anchors.py` (183 lines)
+**Tests**: `tests/comment_system/test_anchors.py` (588 lines, 15 tests passing)
+
+**Deliverables**:
+- ✅ `reconcile_anchor()` function implementing multi-signal algorithm
+- ✅ Strategy 1: Exact content hash match at original position (O(1) fast path)
+- ✅ Strategy 2: Exact content hash match elsewhere in file (O(n) full scan)
+- ✅ Strategy 3: Context-based fuzzy matching (uses `find_best_match_with_context`)
+- ✅ Strategy 4: Sliding window fuzzy matching (fallback via `find_best_match`)
+- ✅ Strategy 5: Orphan marking (preserves original position and snippet)
+- ✅ Health transitions: anchored (drift_distance tracked), drifted, orphaned
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- Multi-signal approach provides robust reconciliation with graceful degradation
+- Exact hash matches handle simple moves/insertions without fuzzy matching overhead
+- Context hashes are powerful for disambiguation when content appears multiple times
+- Preserving original anchor data (hashes, snippets) enables audit trails
+- Similarity threshold affects orphan vs drifted classification (0.6 default works well)
+
+**Test Coverage**:
+- ✅ AC-1: Lines inserted above anchor → moves down with health "anchored"
+- ✅ AC-2: Content changes slightly → fuzzy match finds it as "drifted"
+- ✅ AC-3: Duplicate content with different contexts → context hashes disambiguate
+- ✅ AC-4: Content deleted → anchor becomes "orphaned" with original snippet preserved
+- ✅ AC-6: File unchanged → all anchors remain "anchored" with drift_distance=0
+- ✅ Edge cases: empty files, single-line files, multi-line anchors, ambiguous matches
+
+**Actual Size**: 183 lines of implementation, 588 lines of tests
+
+**Status**: ✅ COMPLETE (2026-02-01)
 
 ---
 
@@ -493,13 +531,13 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 6/40 tasks complete (15%)
+**Overall**: 7/40 tasks complete (17.5%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
 | **Iteration 1** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 2** | 3/3 | ✅ **COMPLETE** | No longer blocks |
-| Iteration 3 | 0/2 | 🔴 **READY TO START** | Now unblocked (Task 3.1 next) |
+| **Iteration 3** | 1/2 | 🔵 **IN PROGRESS** | Task 3.1 done, Task 3.2 next |
 | Iteration 4 | 0/4 | ⏸️ Blocked | Blocked by Iter 3 |
 | Iteration 5 | 0/3 | ⏸️ Blocked | Blocked by Iter 4 |
 | Iteration 6 | 0/3 | 🔴 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
@@ -517,7 +555,8 @@ Before marking any task complete:
 5. **✅ Task 2.1: Levenshtein & Jaccard Similarity** (DONE - 46 tests passing)
 6. **✅ Task 2.2: Sliding Window Search** (DONE - 66 tests passing)
 7. **✅ Task 2.3: Context-based Relocation** (DONE - 79 tests passing)
-8. **🔴 Task 3.1: Multi-signal Reconciliation** ← START HERE
+8. **✅ Task 3.1: Multi-signal Reconciliation** (DONE - 15 tests passing)
+9. **🔴 Task 3.2: Bulk Reconciliation + Atomicity** ← START HERE
 
 ---
 
