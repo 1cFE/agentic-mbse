@@ -9,6 +9,7 @@ from pathlib import Path
 
 import click
 
+from comment_system.anchors import reconcile_sidecar
 from comment_system.models import (
     Anchor,
     AnchorHealth,
@@ -579,7 +580,9 @@ def show(thread_id: str, json_output: bool, all_files: bool):
 
             # Decision (if resolved)
             if found_thread.decision:
-                click.echo(f"\nDecision by {found_thread.decision.decider} at {found_thread.decision.timestamp}:")
+                click.echo(
+                    f"\nDecision by {found_thread.decision.decider} at {found_thread.decision.timestamp}:"
+                )
                 click.echo(f"    {found_thread.decision.summary}")
 
     except Exception as e:
@@ -867,6 +870,235 @@ def reopen(thread_id: str):
         click.echo(f"Thread {thread_id} reopened (was {previous_status})")
         if found_thread.decision:
             click.echo(f"  Previous decision preserved: {found_thread.decision.summary}")
+
+    except Exception as e:
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(2)
+
+
+def _format_health(health: str, count: int) -> str:
+    """Format health status with color coding and count.
+
+    Args:
+        health: Health status string ('anchored', 'drifted', 'orphaned')
+        count: Number of threads with this health status
+
+    Returns:
+        Formatted string with color (if NO_COLOR not set) and count
+    """
+    use_color = not os.environ.get("NO_COLOR")
+
+    if use_color:
+        if health == "anchored":
+            health_str = click.style(health, fg="green")
+        elif health == "drifted":
+            health_str = click.style(health, fg="yellow")
+        else:  # orphaned
+            health_str = click.style(health, fg="red")
+    else:
+        health_str = health
+
+    return f"{health_str} ({count})" if count > 0 else f"{health_str} (0)"
+
+
+@cli.command()
+@click.argument("file", type=click.Path(exists=True, path_type=Path), required=False)
+@click.option("--all", "reconcile_all", is_flag=True, help="Reconcile all files in project")
+@click.option("--json", "json_output", is_flag=True, help="Output results as JSON")
+@click.option(
+    "--threshold",
+    type=float,
+    default=0.6,
+    help="Minimum similarity score for fuzzy matching (0-1, default: 0.6)",
+)
+def reconcile(
+    file: Path | None,
+    reconcile_all: bool,
+    json_output: bool,
+    threshold: float,
+) -> None:
+    """Reconcile comment anchors to current source file state.
+
+    Updates anchor positions after file edits using multi-signal reconciliation.
+    Use --all to reconcile all files in the project.
+
+    Examples:
+        comment reconcile src/foo.py
+        comment reconcile --all
+        comment reconcile src/foo.py --json
+    """
+    try:
+        # Validate arguments
+        if not file and not reconcile_all:
+            click.echo("Error: Must specify either FILE or --all", err=True)
+            sys.exit(1)
+
+        if file and reconcile_all:
+            click.echo("Error: Cannot specify both FILE and --all", err=True)
+            sys.exit(1)
+
+        # Validate threshold
+        if not 0.0 <= threshold <= 1.0:
+            click.echo(f"Error: Threshold must be between 0 and 1, got {threshold}", err=True)
+            sys.exit(1)
+
+        # Find project root
+        try:
+            project_root = find_project_root()
+        except ValueError as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
+
+        if reconcile_all:
+            # Reconcile all sidecar files in project
+            comments_dir = project_root / ".comments"
+            if not comments_dir.exists():
+                if json_output:
+                    click.echo(json.dumps({"files": [], "total_threads": 0}))
+                else:
+                    click.echo("No comment files found in project")
+                return
+
+            # Find all sidecar files
+            sidecar_paths = list(comments_dir.rglob("*.json"))
+            if not sidecar_paths:
+                if json_output:
+                    click.echo(json.dumps({"files": [], "total_threads": 0}))
+                else:
+                    click.echo("No comment files found in project")
+                return
+
+            # Reconcile each sidecar
+            results = []
+            total_threads = 0
+            total_anchored = 0
+            total_drifted = 0
+            total_orphaned = 0
+            max_drift = 0
+
+            for sidecar_path in sidecar_paths:
+                # Compute source path from sidecar path
+                relative_path = sidecar_path.relative_to(comments_dir)
+                # Remove .json suffix
+                source_relative = Path(str(relative_path)[: -len(".json")])
+                source_path = project_root / source_relative
+
+                if not source_path.exists():
+                    # Skip if source file no longer exists (orphaned sidecar)
+                    continue
+
+                try:
+                    report = reconcile_sidecar(
+                        sidecar_path=sidecar_path,
+                        source_path=source_path,
+                        threshold=threshold,
+                    )
+
+                    total_threads += report.total_threads
+                    total_anchored += report.anchored_count
+                    total_drifted += report.drifted_count
+                    total_orphaned += report.orphaned_count
+                    max_drift = max(max_drift, report.max_drift_distance)
+
+                    results.append(
+                        {
+                            "file": str(source_relative),
+                            "total_threads": report.total_threads,
+                            "anchored": report.anchored_count,
+                            "drifted": report.drifted_count,
+                            "orphaned": report.orphaned_count,
+                            "max_drift": report.max_drift_distance,
+                        }
+                    )
+                except (ValueError, OSError) as e:
+                    if json_output:
+                        results.append({"file": str(source_relative), "error": str(e)})
+                    else:
+                        click.echo(f"Warning: Failed to reconcile {source_relative}: {e}", err=True)
+
+            if json_output:
+                click.echo(
+                    json.dumps(
+                        {
+                            "files": results,
+                            "total_threads": total_threads,
+                            "total_anchored": total_anchored,
+                            "total_drifted": total_drifted,
+                            "total_orphaned": total_orphaned,
+                            "max_drift": max_drift,
+                        },
+                        indent=2,
+                    )
+                )
+            else:
+                click.echo(f"Reconciled {len(results)} files:")
+                click.echo(f"  Total threads: {total_threads}")
+                click.echo(f"  Anchored: {_format_health('anchored', total_anchored)}")
+                click.echo(f"  Drifted: {_format_health('drifted', total_drifted)}")
+                click.echo(f"  Orphaned: {_format_health('orphaned', total_orphaned)}")
+                if max_drift > 0:
+                    click.echo(f"  Max drift: {max_drift} lines")
+
+        else:
+            # Reconcile single file
+            assert file is not None  # For type checker
+
+            # Normalize and validate file path
+            try:
+                source_path = normalize_path(file, project_root)
+            except ValueError as e:
+                click.echo(f"Error: {e}", err=True)
+                sys.exit(1)
+
+            # Get sidecar path
+            sidecar_path = get_sidecar_path(source_path, project_root)
+
+            # Check if sidecar exists
+            if not sidecar_path.exists():
+                click.echo(f"Error: No comments found for {file}", err=True)
+                sys.exit(1)
+
+            # Reconcile
+            try:
+                report = reconcile_sidecar(
+                    sidecar_path=sidecar_path,
+                    source_path=source_path,
+                    threshold=threshold,
+                )
+            except FileNotFoundError as e:
+                click.echo(f"Error: {e}", err=True)
+                sys.exit(2)
+            except ValueError as e:
+                click.echo(f"Error: {e}", err=True)
+                sys.exit(1)
+            except OSError as e:
+                click.echo(f"Error writing sidecar: {e}", err=True)
+                sys.exit(2)
+
+            if json_output:
+                click.echo(
+                    json.dumps(
+                        {
+                            "file": str(file),
+                            "total_threads": report.total_threads,
+                            "anchored": report.anchored_count,
+                            "drifted": report.drifted_count,
+                            "orphaned": report.orphaned_count,
+                            "max_drift": report.max_drift_distance,
+                            "source_hash_before": report.source_hash_before,
+                            "source_hash_after": report.source_hash_after,
+                        },
+                        indent=2,
+                    )
+                )
+            else:
+                click.echo(f"Reconciled {file}:")
+                click.echo(f"  Total threads: {report.total_threads}")
+                click.echo(f"  Anchored: {_format_health('anchored', report.anchored_count)}")
+                click.echo(f"  Drifted: {_format_health('drifted', report.drifted_count)}")
+                click.echo(f"  Orphaned: {_format_health('orphaned', report.orphaned_count)}")
+                if report.max_drift_distance > 0:
+                    click.echo(f"  Max drift: {report.max_drift_distance} lines")
 
     except Exception as e:
         click.echo(f"Unexpected error: {e}", err=True)

@@ -977,9 +977,7 @@ def test_resolve_wontfix_with_decision(runner, git_repo):
     thread_id = result.output.split("Created thread ")[1].split("\n")[0]
 
     # Resolve as wontfix with decision
-    result = runner.invoke(
-        cli, ["resolve", "--wontfix", "--decision", "Out of scope", thread_id]
-    )
+    result = runner.invoke(cli, ["resolve", "--wontfix", "--decision", "Out of scope", thread_id])
     assert result.exit_code == 0
 
     # Verify status and decision
@@ -1171,9 +1169,7 @@ def test_workflow_resolve_wontfix_then_reopen(runner, git_repo):
     thread_id = result.output.split("Created thread ")[1].split("\n")[0]
 
     # Mark as wontfix
-    result = runner.invoke(
-        cli, ["resolve", "--wontfix", "--decision", "Out of scope", thread_id]
-    )
+    result = runner.invoke(cli, ["resolve", "--wontfix", "--decision", "Out of scope", thread_id])
     assert result.exit_code == 0
 
     # Reopen
@@ -1185,3 +1181,298 @@ def test_workflow_resolve_wontfix_then_reopen(runner, git_repo):
     sidecar = read_sidecar(sidecar_path)
     assert sidecar.threads[0].status.value == "open"
     assert sidecar.threads[0].decision.summary == "Out of scope"
+
+
+# ============================================================================
+# Tests: reconcile command
+# ============================================================================
+
+
+def test_reconcile_single_file_no_changes(runner, git_repo, sample_file):
+    """Reconcile single file that hasn't changed - should remain anchored."""
+    # Create thread
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "3:5", "Comment here"])
+    assert result.exit_code == 0
+
+    # Reconcile without making changes
+    result = runner.invoke(cli, ["reconcile", str(sample_file)])
+    assert result.exit_code == 0
+    assert "Total threads: 1" in result.output
+    assert "(1)" in result.output  # anchored count
+    assert "(0)" in result.output  # drifted and orphaned count
+
+    # Verify anchor health
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].anchor.health == AnchorHealth.ANCHORED
+    assert sidecar.threads[0].anchor.drift_distance == 0
+
+
+def test_reconcile_single_file_after_insertion(runner, git_repo, sample_file):
+    """Reconcile single file after inserting lines above anchor."""
+    # Create thread anchored to lines 5-7
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "5:7", "Comment here"])
+    assert result.exit_code == 0
+
+    # Insert 3 lines at the beginning
+    original_content = sample_file.read_text()
+    new_content = "Inserted 1\nInserted 2\nInserted 3\n" + original_content
+    sample_file.write_text(new_content)
+
+    # Reconcile
+    result = runner.invoke(cli, ["reconcile", str(sample_file)])
+    assert result.exit_code == 0
+    assert "Total threads: 1" in result.output
+    assert "(1)" in result.output  # Check for count format
+    assert "Max drift: 3 lines" in result.output
+
+    # Verify anchor moved down by 3 lines
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].anchor.health == AnchorHealth.ANCHORED
+    assert sidecar.threads[0].anchor.line_start == 8  # 5 + 3
+    assert sidecar.threads[0].anchor.line_end == 10  # 7 + 3
+    assert sidecar.threads[0].anchor.drift_distance == 3
+
+
+def test_reconcile_single_file_after_modification(runner, git_repo, sample_file):
+    """Reconcile single file after modifying anchor content (should drift)."""
+    # Create thread
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "3:5", "Comment here"])
+    assert result.exit_code == 0
+
+    # Modify the anchor content slightly
+    lines = sample_file.read_text().splitlines(keepends=True)
+    lines[2] = "Line 3 modified\n"  # Change line 3
+    sample_file.write_text("".join(lines))
+
+    # Reconcile
+    result = runner.invoke(cli, ["reconcile", str(sample_file)])
+    assert result.exit_code == 0
+    assert "Total threads: 1" in result.output
+    # Should either be anchored (exact context match) or drifted (fuzzy match)
+    # depending on similarity threshold
+
+    # Verify anchor state
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    # Should be drifted or anchored depending on fuzzy match quality
+    assert sidecar.threads[0].anchor.health in [AnchorHealth.ANCHORED, AnchorHealth.DRIFTED]
+
+
+def test_reconcile_single_file_after_deletion(runner, git_repo, sample_file):
+    """Reconcile single file after deleting anchor content (should orphan)."""
+    # Create thread
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "3:5", "Comment here"])
+    assert result.exit_code == 0
+
+    # Delete lines 3-5 (replace with completely different content)
+    lines = sample_file.read_text().splitlines(keepends=True)
+    new_lines = lines[:2] + ["Completely different\n"] + lines[5:]
+    sample_file.write_text("".join(new_lines))
+
+    # Reconcile
+    result = runner.invoke(cli, ["reconcile", str(sample_file)])
+    assert result.exit_code == 0
+    assert "Total threads: 1" in result.output
+    assert "Orphaned:" in result.output  # Check for orphaned status
+
+    # Verify anchor is orphaned
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].anchor.health == AnchorHealth.ORPHANED
+
+
+def test_reconcile_json_output(runner, git_repo, sample_file):
+    """Reconcile with --json output produces valid JSON."""
+    # Create thread
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "3:5", "Comment here"])
+    assert result.exit_code == 0
+
+    # Reconcile with JSON output
+    result = runner.invoke(cli, ["reconcile", str(sample_file), "--json"])
+    assert result.exit_code == 0
+
+    # Parse JSON
+    import json
+
+    data = json.loads(result.output)
+    assert "file" in data
+    assert "total_threads" in data
+    assert data["total_threads"] == 1
+    assert "anchored" in data
+    assert "drifted" in data
+    assert "orphaned" in data
+    assert "max_drift" in data
+    assert "source_hash_before" in data
+    assert "source_hash_after" in data
+
+
+def test_reconcile_with_custom_threshold(runner, git_repo, sample_file):
+    """Reconcile with custom similarity threshold."""
+    # Create thread
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "3:5", "Comment here"])
+    assert result.exit_code == 0
+
+    # Modify content slightly
+    lines = sample_file.read_text().splitlines(keepends=True)
+    lines[2] = "Line 3 slightly modified\n"
+    sample_file.write_text("".join(lines))
+
+    # Reconcile with lower threshold (more permissive)
+    result = runner.invoke(cli, ["reconcile", str(sample_file), "--threshold", "0.3"])
+    assert result.exit_code == 0
+    assert "Total threads: 1" in result.output
+
+
+def test_reconcile_all_no_files(runner, git_repo):
+    """Reconcile --all when no comment files exist."""
+    result = runner.invoke(cli, ["reconcile", "--all"])
+    assert result.exit_code == 0
+    assert "No comment files found in project" in result.output
+
+
+def test_reconcile_all_single_file(runner, git_repo, sample_file):
+    """Reconcile --all with one commented file."""
+    # Create thread
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "3:5", "Comment here"])
+    assert result.exit_code == 0
+
+    # Reconcile all
+    result = runner.invoke(cli, ["reconcile", "--all"])
+    assert result.exit_code == 0
+    assert "Reconciled 1 files:" in result.output
+    assert "Total threads: 1" in result.output
+    assert "(1)" in result.output  # Check for count format
+
+
+def test_reconcile_all_multiple_files(runner, git_repo):
+    """Reconcile --all with multiple commented files."""
+    # Create two files
+    file1 = git_repo / "file1.txt"
+    file1.write_text("Line 1\nLine 2\nLine 3\n")
+    file2 = git_repo / "file2.txt"
+    file2.write_text("Line A\nLine B\nLine C\n")
+
+    # Add comments to both
+    result = runner.invoke(cli, ["add", str(file1), "-L", "1:2", "Comment on file1"])
+    assert result.exit_code == 0
+    result = runner.invoke(cli, ["add", str(file2), "-L", "2:3", "Comment on file2"])
+    assert result.exit_code == 0
+
+    # Reconcile all
+    result = runner.invoke(cli, ["reconcile", "--all"])
+    assert result.exit_code == 0
+    assert "Reconciled 2 files:" in result.output
+    assert "Total threads: 2" in result.output
+    assert "(2)" in result.output  # Check for count format
+
+
+def test_reconcile_all_json_output(runner, git_repo, sample_file):
+    """Reconcile --all with JSON output."""
+    # Create thread
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "3:5", "Comment here"])
+    assert result.exit_code == 0
+
+    # Reconcile all with JSON
+    result = runner.invoke(cli, ["reconcile", "--all", "--json"])
+    assert result.exit_code == 0
+
+    # Parse JSON
+    import json
+
+    data = json.loads(result.output)
+    assert "files" in data
+    assert len(data["files"]) == 1
+    assert "total_threads" in data
+    assert data["total_threads"] == 1
+    assert "total_anchored" in data
+    assert "total_drifted" in data
+    assert "total_orphaned" in data
+
+
+def test_reconcile_no_file_and_no_all(runner, git_repo):
+    """Reconcile without FILE or --all should error."""
+    result = runner.invoke(cli, ["reconcile"])
+    assert result.exit_code == 1
+    assert "Must specify either FILE or --all" in result.output
+
+
+def test_reconcile_both_file_and_all(runner, git_repo, sample_file):
+    """Reconcile with both FILE and --all should error."""
+    result = runner.invoke(cli, ["reconcile", str(sample_file), "--all"])
+    assert result.exit_code == 1
+    assert "Cannot specify both FILE and --all" in result.output
+
+
+def test_reconcile_invalid_threshold_low(runner, git_repo, sample_file):
+    """Reconcile with threshold < 0 should error."""
+    result = runner.invoke(cli, ["reconcile", str(sample_file), "--threshold", "-0.1"])
+    assert result.exit_code == 1
+    assert "Threshold must be between 0 and 1" in result.output
+
+
+def test_reconcile_invalid_threshold_high(runner, git_repo, sample_file):
+    """Reconcile with threshold > 1 should error."""
+    result = runner.invoke(cli, ["reconcile", str(sample_file), "--threshold", "1.5"])
+    assert result.exit_code == 1
+    assert "Threshold must be between 0 and 1" in result.output
+
+
+def test_reconcile_file_not_found(runner, git_repo):
+    """Reconcile on non-existent file should error."""
+    result = runner.invoke(cli, ["reconcile", "nonexistent.txt"])
+    assert result.exit_code != 0
+
+
+def test_reconcile_no_comments_for_file(runner, git_repo, sample_file):
+    """Reconcile file with no comments should error."""
+    result = runner.invoke(cli, ["reconcile", str(sample_file)])
+    assert result.exit_code == 1
+    assert "No comments found for" in result.output
+
+
+def test_reconcile_integration_workflow(runner, git_repo, sample_file):
+    """Integration test: create comment, edit file, reconcile, verify results."""
+    # Step 1: Create comment on lines 4-6
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "4:6", "Check this logic"])
+    assert result.exit_code == 0
+    # Extract thread ID from output: "Created thread <ID>"
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Step 2: Verify initial state
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].anchor.line_start == 4
+    assert sidecar.threads[0].anchor.line_end == 6
+    assert sidecar.threads[0].anchor.health == AnchorHealth.ANCHORED
+
+    # Step 3: Edit file - insert 2 lines at beginning
+    original_content = sample_file.read_text()
+    new_content = "New line 1\nNew line 2\n" + original_content
+    sample_file.write_text(new_content)
+
+    # Step 4: Reconcile
+    result = runner.invoke(cli, ["reconcile", str(sample_file)])
+    assert result.exit_code == 0
+
+    # Step 5: Verify anchor updated
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].anchor.line_start == 6  # 4 + 2
+    assert sidecar.threads[0].anchor.line_end == 8  # 6 + 2
+    assert sidecar.threads[0].anchor.health == AnchorHealth.ANCHORED
+    assert sidecar.threads[0].anchor.drift_distance == 2
+
+    # Step 6: Add reply to thread
+    result = runner.invoke(cli, ["reply", thread_id, "Looks good now"])
+    assert result.exit_code == 0
+
+    # Step 7: Resolve thread
+    result = runner.invoke(cli, ["resolve", thread_id, "--decision", "Refactored for clarity"])
+    assert result.exit_code == 0
+
+    # Step 8: Verify resolved thread still tracks position
+    result = runner.invoke(cli, ["show", thread_id])
+    assert result.exit_code == 0
+    assert "Location: test.txt:6:8" in result.output
+    assert "Status: resolved" in result.output

@@ -221,12 +221,16 @@ def reconcile_sidecar(
         # No reconciliation needed, but return report showing all anchored
         return ReconciliationReport(
             total_threads=len(sidecar.threads),
-            anchored_count=sum(1 for t in sidecar.threads if t.anchor.health == AnchorHealth.ANCHORED),
-            drifted_count=sum(1 for t in sidecar.threads if t.anchor.health == AnchorHealth.DRIFTED),
-            orphaned_count=sum(1 for t in sidecar.threads if t.anchor.health == AnchorHealth.ORPHANED),
-            max_drift_distance=max(
-                (t.anchor.drift_distance for t in sidecar.threads), default=0
+            anchored_count=sum(
+                1 for t in sidecar.threads if t.anchor.health == AnchorHealth.ANCHORED
             ),
+            drifted_count=sum(
+                1 for t in sidecar.threads if t.anchor.health == AnchorHealth.DRIFTED
+            ),
+            orphaned_count=sum(
+                1 for t in sidecar.threads if t.anchor.health == AnchorHealth.ORPHANED
+            ),
+            max_drift_distance=max((t.anchor.drift_distance for t in sidecar.threads), default=0),
             source_hash_before=source_hash_before,
             source_hash_after=source_hash_after,
         )

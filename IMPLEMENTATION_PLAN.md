@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Task 4.3 Complete — Reply, Resolve, and Reopen Commands Working!
-**Last Updated**: 2026-02-01 (Task 4.3 completed)
+**Status**: ✅ Iteration 4 Complete — All Core CLI Commands Implemented!
+**Last Updated**: 2026-02-01 (Task 4.4 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 11/40 tasks complete (27.5%)
-**Next Action**: Task 4.4 - `reconcile` Command
+**Current Implementation**: 12/40 tasks complete (30%)
+**Next Action**: Iteration 5 - MCP Tools Interface
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -482,7 +482,7 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 | 4.1 | CLI foundation + `add` | `cli.py`, tests, pyproject.toml | CLI tests, exit codes, output formats | ✅ **COMPLETE** |
 | 4.2 | `list` and `show` commands | `cli.py`, tests | Filtering tests, NO_COLOR support | ✅ **COMPLETE** |
 | 4.3 | `reply`, `resolve`, `reopen` | `cli.py`, tests | Workflow tests (add → reply → resolve → reopen) | ✅ **COMPLETE** |
-| 4.4 | `reconcile` command | `cli.py`, tests | Integration tests (add → edit → reconcile) | 🔴 **READY TO START** |
+| 4.4 | `reconcile` command | `cli.py`, tests | Integration tests (add → edit → reconcile) | ✅ **COMPLETE** |
 
 #### Task 4.1: CLI Foundation + `add` Command ✅ COMPLETE
 
@@ -613,6 +613,62 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 
 **Status**: ✅ COMPLETE (2026-02-01)
 
+#### Task 4.4: `reconcile` Command ✅ COMPLETE
+
+**Description**: Implement `reconcile` command for single-file and project-wide anchor reconciliation
+
+**Spec References**: `specs/cli-interface.md` (REQ-2, REQ-5), `specs/anchor-reconciliation.md`
+
+**Implementation**: Extended `src/comment_system/cli.py` (204 lines added)
+**Tests**: Extended `tests/comment_system/test_cli.py` (17 new tests, 82 total tests in CLI)
+
+**Deliverables**:
+- ✅ `comment reconcile FILE` command for single-file reconciliation
+- ✅ `comment reconcile --all` for project-wide reconciliation across all sidecar files
+- ✅ `--json` output option for machine-readable results
+- ✅ `--threshold` option for custom similarity threshold (0-1, default 0.6)
+- ✅ `_format_health()` helper function for color-coded health status display
+- ✅ Proper error handling with exit codes (1 for user errors, 2 for system errors)
+- ✅ Summary statistics: total threads, counts by health (anchored/drifted/orphaned), max drift
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- `reconcile_sidecar()` from anchors.py handles all reconciliation logic, CLI is thin wrapper
+- Project-wide reconciliation iterates over all `.comments/*.json` files
+- Health status formatting benefits from color coding (green/yellow/red for anchored/drifted/orphaned)
+- JSON output provides both per-file and aggregate statistics for --all mode
+- Short-circuit optimization: reconcile_sidecar skips work if source hash unchanged
+
+**Test Coverage**:
+- ✅ Single file: no changes, after insertion, after modification, after deletion
+- ✅ JSON output validation (both single file and --all)
+- ✅ Custom threshold parameter
+- ✅ --all mode: no files, single file, multiple files, JSON output
+- ✅ Error cases: no file/no --all, both file and --all, invalid thresholds, file not found, no comments
+- ✅ Integration workflow: create → edit → reconcile → reply → resolve (full lifecycle)
+
+**Acceptance Criteria Met**:
+- ✅ Single file reconciliation updates anchors and reports statistics
+- ✅ --all mode reconciles entire project efficiently
+- ✅ JSON output is valid and parseable by jq
+- ✅ Error messages are clear and actionable
+- ✅ Integration test validates full workflow with reconciliation
+
+**Actual Size**: 204 lines of implementation added (including `_format_health` helper), ~650 lines of tests added (17 tests)
+
+**Status**: ✅ COMPLETE (2026-02-01)
+
+---
+
+### Iteration 4 Summary
+
+**Status**: ✅ COMPLETE (all 4 tasks done)
+**Total Implementation**: 933 lines in `cli.py` (tasks 4.1-4.4)
+**Total Tests**: 1485+ lines, 82 tests passing
+**Commands Implemented**: add, list, show, reply, resolve, reopen, reconcile
+
+**Iteration 4 unlocks**: Iteration 5 (MCP Tools Interface) can now begin
+
 ---
 
 ### Iteration 5: MCP Tools Interface (3 tasks)
@@ -711,20 +767,20 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 11/40 tasks complete (27.5%)
+**Overall**: 12/40 tasks complete (30%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
 | **Iteration 1** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 2** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 3** | 2/2 | ✅ **COMPLETE** | No longer blocks |
-| **Iteration 4** | 3/4 | 🟡 **IN PROGRESS** | Tasks 4.1-4.3 complete, 4.4 ready |
-| Iteration 5 | 0/3 | ⏸️ Blocked | Blocked by Iter 4 (Task 4.4) |
-| Iteration 6 | 0/3 | 🔴 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
-| Iteration 7 | 0/3 | 🔓 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
-| Iteration 8 | 0/2 | ⏸️ Blocked | Blocked by Iter 4 (Task 4.4) |
-| Iteration 9 | 0/2 | ⏸️ Blocked | Blocked by Iter 4 (Task 4.4) |
-| Iteration 10 | 0/4 | ⏸️ Blocked | Blocked by Iter 1-4 (Phase 2) |
+| **Iteration 4** | 4/4 | ✅ **COMPLETE** | No longer blocks |
+| Iteration 5 | 0/3 | 🔴 **READY TO START** | Now unblocked (Iter 4 complete) |
+| Iteration 6 | 0/3 | 🔴 **READY TO START** | Unblocked (can run parallel to Iter 5) |
+| Iteration 7 | 0/3 | 🔴 **READY TO START** | Unblocked (can run parallel to Iter 5) |
+| Iteration 8 | 0/2 | 🔴 **READY TO START** | Now unblocked (Iter 4 complete) |
+| Iteration 9 | 0/2 | 🔴 **READY TO START** | Now unblocked (Iter 4 complete) |
+| Iteration 10 | 0/4 | ⏸️ Blocked | Blocked by Iter 1-4 (all now complete, can start Phase 2) |
 
 ### Next Tasks (In Order)
 
@@ -740,7 +796,8 @@ Before marking any task complete:
 10. **✅ Task 4.1: CLI Foundation + `add` Command** (DONE - 30 tests passing)
 11. **✅ Task 4.2: `list` and `show` Commands** (DONE - 47 tests passing)
 12. **✅ Task 4.3: `reply`, `resolve`, `reopen` Commands** (DONE - 65 tests passing)
-13. **🔴 Task 4.4: `reconcile` Command** ← START HERE
+13. **✅ Task 4.4: `reconcile` Command** (DONE - 82 tests passing)
+14. **🔴 Iteration 5: MCP Tools Interface** ← START HERE (or choose from Iterations 5-10)
 
 ---
 

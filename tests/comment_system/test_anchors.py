@@ -348,9 +348,7 @@ class TestReconcileAnchor:
             content = source_lines[i - 1]
             content_hash = compute_content_hash(content)
             context_before = compute_content_hash(source_lines[i - 2] if i > 1 else "")
-            context_after = compute_content_hash(
-                source_lines[i] if i < len(source_lines) else ""
-            )
+            context_after = compute_content_hash(source_lines[i] if i < len(source_lines) else "")
 
             anchor = Anchor(
                 content_hash=content_hash,
@@ -683,7 +681,9 @@ class TestReconcileSidecar:
         write_sidecar(sidecar_path, sidecar)
 
         # Modify source: insert 3 lines above
-        source_path.write_text("# New header\n# More header\n# Even more\ndef foo():\n    return 42\n")
+        source_path.write_text(
+            "# New header\n# More header\n# Even more\ndef foo():\n    return 42\n"
+        )
         new_hash = compute_source_hash(source_path)
 
         # Reconcile
@@ -745,8 +745,12 @@ def format_currency(amount):
         drifted_content = "    # Apply percentage discount to the price"
         anchor2 = Anchor(
             content_hash=compute_content_hash(drifted_content),
-            context_hash_before=compute_content_hash("def apply_discount(price, discount_percent):"),
-            context_hash_after=compute_content_hash("    return price * (1 - discount_percent / 100)"),
+            context_hash_before=compute_content_hash(
+                "def apply_discount(price, discount_percent):"
+            ),
+            context_hash_after=compute_content_hash(
+                "    return price * (1 - discount_percent / 100)"
+            ),
             line_start=9,
             line_end=9,
             content_snippet=drifted_content,
