@@ -793,3 +793,395 @@ def test_show_multiple_comments(runner, git_repo):
     assert "Comments:" in result.output
     assert "[1]" in result.output
     assert "First comment" in result.output
+
+
+# ============================================================================
+# Integration Tests: comment reply
+# ============================================================================
+
+
+def test_reply_adds_comment_to_thread(runner, git_repo):
+    """Test adding a reply to an existing thread."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create initial thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "First comment"])
+    assert result.exit_code == 0
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Add a reply
+    result = runner.invoke(cli, ["reply", thread_id, "Second comment"])
+    assert result.exit_code == 0
+    assert "Added comment" in result.output
+    assert f"to thread {thread_id}" in result.output
+
+    # Verify the reply was added
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert len(sidecar.threads) == 1
+    assert len(sidecar.threads[0].comments) == 2
+    assert sidecar.threads[0].comments[0].body == "First comment"
+    assert sidecar.threads[0].comments[1].body == "Second comment"
+
+
+def test_reply_with_custom_author(runner, git_repo):
+    """Test adding a reply with custom author."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create initial thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "First comment"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Add a reply with custom author
+    result = runner.invoke(cli, ["reply", "--author", "alice", thread_id, "Reply from alice"])
+    assert result.exit_code == 0
+
+    # Verify the author
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].comments[1].author == "alice"
+
+
+def test_reply_with_agent_author_type(runner, git_repo):
+    """Test adding a reply from an agent."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create initial thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "First comment"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Add a reply from agent
+    result = runner.invoke(
+        cli, ["reply", "--author-type", "agent", "--author", "bot", thread_id, "Agent response"]
+    )
+    assert result.exit_code == 0
+
+    # Verify the author type
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].comments[1].author_type.value == "agent"
+    assert sidecar.threads[0].comments[1].author == "bot"
+
+
+def test_reply_thread_not_found(runner, git_repo):
+    """Test reply to non-existent thread."""
+    result = runner.invoke(cli, ["reply", "01HQNONEXISTENT000000000000", "Some comment"])
+    assert result.exit_code == 1
+    assert "Thread not found" in result.output
+
+
+def test_reply_multiple_times(runner, git_repo):
+    """Test adding multiple replies to same thread."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create initial thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Initial"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Add multiple replies
+    for i in range(1, 4):
+        result = runner.invoke(cli, ["reply", thread_id, f"Reply {i}"])
+        assert result.exit_code == 0
+
+    # Verify all replies were added
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert len(sidecar.threads[0].comments) == 4
+    assert sidecar.threads[0].comments[0].body == "Initial"
+    assert sidecar.threads[0].comments[1].body == "Reply 1"
+    assert sidecar.threads[0].comments[2].body == "Reply 2"
+    assert sidecar.threads[0].comments[3].body == "Reply 3"
+
+
+# ============================================================================
+# Integration Tests: comment resolve
+# ============================================================================
+
+
+def test_resolve_thread_with_decision(runner, git_repo):
+    """Test resolving a thread with a decision."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Question"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Resolve with decision
+    result = runner.invoke(cli, ["resolve", thread_id, "--decision", "Fixed in commit abc123"])
+    assert result.exit_code == 0
+    assert f"Thread {thread_id} marked as resolved" in result.output
+    assert "Fixed in commit abc123" in result.output
+
+    # Verify status and decision
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].status.value == "resolved"
+    assert sidecar.threads[0].decision is not None
+    assert sidecar.threads[0].decision.summary == "Fixed in commit abc123"
+    assert sidecar.threads[0].decision.decider == "unknown"
+
+
+def test_resolve_thread_with_custom_decider(runner, git_repo):
+    """Test resolving with custom decider name."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Question"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Resolve with custom decider
+    result = runner.invoke(
+        cli, ["resolve", "--decider", "alice", thread_id, "--decision", "Approved"]
+    )
+    assert result.exit_code == 0
+
+    # Verify decider
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].decision.decider == "alice"
+
+
+def test_resolve_thread_as_wontfix(runner, git_repo):
+    """Test marking thread as wontfix."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Suggestion"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Resolve as wontfix
+    result = runner.invoke(cli, ["resolve", "--wontfix", thread_id])
+    assert result.exit_code == 0
+    assert f"Thread {thread_id} marked as wontfix" in result.output
+
+    # Verify status
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].status.value == "wontfix"
+
+
+def test_resolve_wontfix_with_decision(runner, git_repo):
+    """Test marking thread as wontfix with optional decision."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Suggestion"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Resolve as wontfix with decision
+    result = runner.invoke(
+        cli, ["resolve", "--wontfix", "--decision", "Out of scope", thread_id]
+    )
+    assert result.exit_code == 0
+
+    # Verify status and decision
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].status.value == "wontfix"
+    assert sidecar.threads[0].decision is not None
+    assert sidecar.threads[0].decision.summary == "Out of scope"
+
+
+def test_resolve_without_decision_fails(runner, git_repo):
+    """Test that resolve without --decision or --wontfix fails."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Question"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Try to resolve without decision
+    result = runner.invoke(cli, ["resolve", thread_id])
+    assert result.exit_code == 1
+    assert "--decision is required unless using --wontfix" in result.output
+
+
+def test_resolve_thread_not_found(runner, git_repo):
+    """Test resolve with non-existent thread."""
+    result = runner.invoke(cli, ["resolve", "01HQNONEXISTENT000000000000", "--decision", "Done"])
+    assert result.exit_code == 1
+    assert "Thread not found" in result.output
+
+
+def test_resolve_already_resolved_thread(runner, git_repo):
+    """Test that resolving an already-resolved thread fails."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create and resolve thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Question"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+    result = runner.invoke(cli, ["resolve", thread_id, "--decision", "Done"])
+    assert result.exit_code == 0
+
+    # Try to resolve again
+    result = runner.invoke(cli, ["resolve", thread_id, "--decision", "Done again"])
+    assert result.exit_code == 1
+    assert "already resolved" in result.output
+
+
+# ============================================================================
+# Integration Tests: comment reopen
+# ============================================================================
+
+
+def test_reopen_resolved_thread(runner, git_repo):
+    """Test reopening a resolved thread."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create and resolve thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Question"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+    result = runner.invoke(cli, ["resolve", thread_id, "--decision", "Fixed"])
+    assert result.exit_code == 0
+
+    # Reopen thread
+    result = runner.invoke(cli, ["reopen", thread_id])
+    assert result.exit_code == 0
+    assert f"Thread {thread_id} reopened (was resolved)" in result.output
+    assert "Previous decision preserved: Fixed" in result.output
+
+    # Verify status is open and decision is preserved
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].status.value == "open"
+    assert sidecar.threads[0].decision is not None
+    assert sidecar.threads[0].decision.summary == "Fixed"
+
+
+def test_reopen_wontfix_thread(runner, git_repo):
+    """Test reopening a wontfix thread."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create and mark as wontfix
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Suggestion"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+    result = runner.invoke(cli, ["resolve", "--wontfix", thread_id])
+    assert result.exit_code == 0
+
+    # Reopen thread
+    result = runner.invoke(cli, ["reopen", thread_id])
+    assert result.exit_code == 0
+    assert f"Thread {thread_id} reopened (was wontfix)" in result.output
+
+    # Verify status is open
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].status.value == "open"
+
+
+def test_reopen_already_open_thread(runner, git_repo):
+    """Test that reopening an open thread fails."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Question"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Try to reopen already-open thread
+    result = runner.invoke(cli, ["reopen", thread_id])
+    assert result.exit_code == 1
+    assert "already open" in result.output
+
+
+def test_reopen_thread_not_found(runner, git_repo):
+    """Test reopen with non-existent thread."""
+    result = runner.invoke(cli, ["reopen", "01HQNONEXISTENT000000000000"])
+    assert result.exit_code == 1
+    assert "Thread not found" in result.output
+
+
+# ============================================================================
+# Workflow Tests: add → reply → resolve → reopen
+# ============================================================================
+
+
+def test_full_thread_workflow(runner, git_repo):
+    """Test complete workflow: create → reply → resolve → reopen → resolve again."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Step 1: Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Initial question"])
+    assert result.exit_code == 0
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Step 2: Add replies
+    result = runner.invoke(cli, ["reply", thread_id, "Investigating"])
+    assert result.exit_code == 0
+    result = runner.invoke(cli, ["reply", thread_id, "Found the issue"])
+    assert result.exit_code == 0
+
+    # Step 3: Resolve thread
+    result = runner.invoke(cli, ["resolve", thread_id, "--decision", "Fixed in commit abc"])
+    assert result.exit_code == 0
+
+    # Verify resolved state
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].status.value == "resolved"
+    assert len(sidecar.threads[0].comments) == 3
+
+    # Step 4: Reopen thread
+    result = runner.invoke(cli, ["reopen", thread_id])
+    assert result.exit_code == 0
+
+    # Verify reopened state
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].status.value == "open"
+    assert sidecar.threads[0].decision.summary == "Fixed in commit abc"  # Decision preserved
+
+    # Step 5: Add another reply after reopening
+    result = runner.invoke(cli, ["reply", thread_id, "Actually, still an issue"])
+    assert result.exit_code == 0
+
+    # Step 6: Resolve again with new decision
+    result = runner.invoke(
+        cli, ["resolve", thread_id, "--decision", "Really fixed this time in commit def"]
+    )
+    assert result.exit_code == 0
+
+    # Verify final state
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].status.value == "resolved"
+    assert len(sidecar.threads[0].comments) == 4
+    # Note: New decision replaces old one (as per spec - frozen=True creates new Decision)
+    assert sidecar.threads[0].decision.summary == "Really fixed this time in commit def"
+
+
+def test_workflow_resolve_wontfix_then_reopen(runner, git_repo):
+    """Test workflow: create → resolve as wontfix → reopen."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "Feature request"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Mark as wontfix
+    result = runner.invoke(
+        cli, ["resolve", "--wontfix", "--decision", "Out of scope", thread_id]
+    )
+    assert result.exit_code == 0
+
+    # Reopen
+    result = runner.invoke(cli, ["reopen", thread_id])
+    assert result.exit_code == 0
+
+    # Verify status and decision preservation
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].status.value == "open"
+    assert sidecar.threads[0].decision.summary == "Out of scope"

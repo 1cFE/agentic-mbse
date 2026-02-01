@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import click
@@ -13,6 +14,7 @@ from comment_system.models import (
     AnchorHealth,
     AuthorType,
     Comment,
+    Decision,
     SidecarFile,
     Thread,
     ThreadStatus,
@@ -579,6 +581,292 @@ def show(thread_id: str, json_output: bool, all_files: bool):
             if found_thread.decision:
                 click.echo(f"\nDecision by {found_thread.decision.decider} at {found_thread.decision.timestamp}:")
                 click.echo(f"    {found_thread.decision.summary}")
+
+    except Exception as e:
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(2)
+
+
+@cli.command()
+@click.argument("thread_id", required=True)
+@click.option(
+    "-a",
+    "--author",
+    default=lambda: click.get_current_context().params.get("author") or "unknown",
+    help="Author name (defaults to 'unknown')",
+)
+@click.option(
+    "--author-type",
+    type=click.Choice(["human", "agent"], case_sensitive=False),
+    default="human",
+    help="Type of author (human or agent)",
+)
+@click.argument("body", required=True)
+def reply(thread_id: str, author: str, author_type: str, body: str):
+    """
+    Add a comment to an existing thread.
+
+    Examples:
+
+        comment reply 01HQABCDEFGHIJKLMNOPQRSTUV "I agree with this"
+
+        comment reply --author=alice 01HQABCDEFGHIJKLMNOPQRSTUV "Fixed in PR #123"
+    """
+    try:
+        # Find project root
+        try:
+            project_root = find_project_root()
+        except ValueError as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
+
+        # Find thread in sidecar files
+        found_thread = None
+        found_sidecar_path = None
+        found_sidecar = None
+
+        comments_dir = project_root / ".comments"
+        if comments_dir.exists():
+            sidecar_paths = list(comments_dir.rglob("*.json"))
+            for sidecar_path in sidecar_paths:
+                try:
+                    sidecar = read_sidecar(sidecar_path)
+                    for thread in sidecar.threads:
+                        if thread.id == thread_id:
+                            found_thread = thread
+                            found_sidecar_path = sidecar_path
+                            found_sidecar = sidecar
+                            break
+                    if found_thread:
+                        break
+                except ValueError:
+                    # Skip invalid sidecar files
+                    continue
+
+        if not found_thread:
+            click.echo(f"Error: Thread not found: {thread_id}", err=True)
+            sys.exit(1)
+
+        # Type narrowing: if found_thread is not None, the others are also not None
+        assert found_sidecar_path is not None
+        assert found_sidecar is not None
+
+        # Create new comment
+        new_comment = Comment(
+            author=author,
+            author_type=AuthorType(author_type.lower()),
+            body=body,
+        )
+
+        # Add comment to thread
+        found_thread.comments.append(new_comment)
+
+        # Write updated sidecar
+        try:
+            write_sidecar(found_sidecar_path, found_sidecar)
+        except (ValueError, OSError) as e:
+            click.echo(f"Error writing sidecar: {e}", err=True)
+            sys.exit(2)
+
+        # Output success message
+        click.echo(f"Added comment {new_comment.id} to thread {thread_id}")
+
+    except Exception as e:
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(2)
+
+
+@cli.command()
+@click.argument("thread_id", required=True)
+@click.option(
+    "--decision",
+    help="Decision summary (required unless using --wontfix)",
+)
+@click.option(
+    "--decider",
+    default=lambda: click.get_current_context().params.get("decider") or "unknown",
+    help="Name of person making the decision (defaults to 'unknown')",
+)
+@click.option(
+    "--wontfix",
+    is_flag=True,
+    help="Mark thread as wontfix instead of resolved",
+)
+def resolve(thread_id: str, decision: str | None, decider: str, wontfix: bool):
+    """
+    Close a thread with an optional decision.
+
+    Examples:
+
+        comment resolve 01HQABCDEFGHIJKLMNOPQRSTUV --decision="Fixed in commit abc123"
+
+        comment resolve --decider=alice 01HQABCDEFGHIJKLMNOPQRSTUV --decision="Not an issue"
+
+        comment resolve --wontfix 01HQABCDEFGHIJKLMNOPQRSTUV
+    """
+    try:
+        # Validate arguments
+        if not wontfix and not decision:
+            click.echo("Error: --decision is required unless using --wontfix", err=True)
+            sys.exit(1)
+
+        # Find project root
+        try:
+            project_root = find_project_root()
+        except ValueError as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
+
+        # Find thread in sidecar files
+        found_thread = None
+        found_sidecar_path = None
+        found_sidecar = None
+
+        comments_dir = project_root / ".comments"
+        if comments_dir.exists():
+            sidecar_paths = list(comments_dir.rglob("*.json"))
+            for sidecar_path in sidecar_paths:
+                try:
+                    sidecar = read_sidecar(sidecar_path)
+                    for thread in sidecar.threads:
+                        if thread.id == thread_id:
+                            found_thread = thread
+                            found_sidecar_path = sidecar_path
+                            found_sidecar = sidecar
+                            break
+                    if found_thread:
+                        break
+                except ValueError:
+                    # Skip invalid sidecar files
+                    continue
+
+        if not found_thread:
+            click.echo(f"Error: Thread not found: {thread_id}", err=True)
+            sys.exit(1)
+
+        # Type narrowing: if found_thread is not None, the others are also not None
+        assert found_sidecar_path is not None
+        assert found_sidecar is not None
+
+        # Check if already resolved
+        if found_thread.status != ThreadStatus.OPEN:
+            click.echo(
+                f"Error: Thread is already {found_thread.status.value}. "
+                f"Use 'comment reopen' to reopen it first.",
+                err=True,
+            )
+            sys.exit(1)
+
+        # Update thread status
+        if wontfix:
+            found_thread.status = ThreadStatus.WONTFIX
+            if decision:
+                # Create decision object if decision summary provided
+                found_thread.decision = Decision(
+                    summary=decision,
+                    decider=decider,
+                    timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                )
+        else:
+            # Type narrowing: decision is guaranteed to be str here due to earlier validation
+            assert decision is not None
+            found_thread.status = ThreadStatus.RESOLVED
+            # Create decision object (required for resolved status)
+            found_thread.decision = Decision(
+                summary=decision,
+                decider=decider,
+                timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            )
+
+        # Write updated sidecar
+        try:
+            write_sidecar(found_sidecar_path, found_sidecar)
+        except (ValueError, OSError) as e:
+            click.echo(f"Error writing sidecar: {e}", err=True)
+            sys.exit(2)
+
+        # Output success message
+        status_str = "wontfix" if wontfix else "resolved"
+        click.echo(f"Thread {thread_id} marked as {status_str}")
+        if found_thread.decision:
+            click.echo(f"  Decision: {found_thread.decision.summary}")
+
+    except Exception as e:
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(2)
+
+
+@cli.command()
+@click.argument("thread_id", required=True)
+def reopen(thread_id: str):
+    """
+    Reopen a resolved or wontfix thread.
+
+    Examples:
+
+        comment reopen 01HQABCDEFGHIJKLMNOPQRSTUV
+    """
+    try:
+        # Find project root
+        try:
+            project_root = find_project_root()
+        except ValueError as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
+
+        # Find thread in sidecar files
+        found_thread = None
+        found_sidecar_path = None
+        found_sidecar = None
+
+        comments_dir = project_root / ".comments"
+        if comments_dir.exists():
+            sidecar_paths = list(comments_dir.rglob("*.json"))
+            for sidecar_path in sidecar_paths:
+                try:
+                    sidecar = read_sidecar(sidecar_path)
+                    for thread in sidecar.threads:
+                        if thread.id == thread_id:
+                            found_thread = thread
+                            found_sidecar_path = sidecar_path
+                            found_sidecar = sidecar
+                            break
+                    if found_thread:
+                        break
+                except ValueError:
+                    # Skip invalid sidecar files
+                    continue
+
+        if not found_thread:
+            click.echo(f"Error: Thread not found: {thread_id}", err=True)
+            sys.exit(1)
+
+        # Type narrowing: if found_thread is not None, the others are also not None
+        assert found_sidecar_path is not None
+        assert found_sidecar is not None
+
+        # Check if already open
+        if found_thread.status == ThreadStatus.OPEN:
+            click.echo("Error: Thread is already open", err=True)
+            sys.exit(1)
+
+        # Store previous status for output message
+        previous_status = found_thread.status.value
+
+        # Reopen thread (decision is preserved)
+        found_thread.status = ThreadStatus.OPEN
+
+        # Write updated sidecar
+        try:
+            write_sidecar(found_sidecar_path, found_sidecar)
+        except (ValueError, OSError) as e:
+            click.echo(f"Error writing sidecar: {e}", err=True)
+            sys.exit(2)
+
+        # Output success message
+        click.echo(f"Thread {thread_id} reopened (was {previous_status})")
+        if found_thread.decision:
+            click.echo(f"  Previous decision preserved: {found_thread.decision.summary}")
 
     except Exception as e:
         click.echo(f"Unexpected error: {e}", err=True)

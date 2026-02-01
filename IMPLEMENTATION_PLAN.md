@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Task 4.2 Complete — List and Show Commands Working!
-**Last Updated**: 2026-02-01 (Task 4.2 completed)
+**Status**: ✅ Task 4.3 Complete — Reply, Resolve, and Reopen Commands Working!
+**Last Updated**: 2026-02-01 (Task 4.3 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 10/40 tasks complete (25%)
-**Next Action**: Task 4.3 - `reply`, `resolve`, `reopen` Commands
+**Current Implementation**: 11/40 tasks complete (27.5%)
+**Next Action**: Task 4.4 - `reconcile` Command
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -481,8 +481,8 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 |------|-------------|-------|--------------|--------|
 | 4.1 | CLI foundation + `add` | `cli.py`, tests, pyproject.toml | CLI tests, exit codes, output formats | ✅ **COMPLETE** |
 | 4.2 | `list` and `show` commands | `cli.py`, tests | Filtering tests, NO_COLOR support | ✅ **COMPLETE** |
-| 4.3 | `reply`, `resolve`, `reopen` | `cli.py`, tests | Workflow tests (add → reply → resolve → reopen) | 🔴 **READY TO START** |
-| 4.4 | `reconcile` command | `cli.py`, tests | Integration tests (add → edit → reconcile) | ⏸️ Blocked |
+| 4.3 | `reply`, `resolve`, `reopen` | `cli.py`, tests | Workflow tests (add → reply → resolve → reopen) | ✅ **COMPLETE** |
+| 4.4 | `reconcile` command | `cli.py`, tests | Integration tests (add → edit → reconcile) | 🔴 **READY TO START** |
 
 #### Task 4.1: CLI Foundation + `add` Command ✅ COMPLETE
 
@@ -567,6 +567,49 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 - ✅ AC-6: NO_COLOR respected in both list and show
 
 **Actual Size**: 218 lines of implementation added, ~400 lines of tests added
+
+**Status**: ✅ COMPLETE (2026-02-01)
+
+#### Task 4.3: `reply`, `resolve`, `reopen` Commands ✅ COMPLETE
+
+**Description**: Implement thread interaction commands for adding comments, resolving threads, and reopening
+
+**Spec References**: `specs/cli-interface.md` (REQ-2, AC-3)
+
+**Implementation**: Extended `src/comment_system/cli.py` (248 lines added)
+**Tests**: Extended `tests/comment_system/test_cli.py` (18 new tests, 65 total tests in CLI)
+
+**Deliverables**:
+- ✅ `comment reply THREAD_ID BODY` command
+- ✅ `comment resolve THREAD_ID --decision=X` command
+- ✅ `comment resolve --wontfix THREAD_ID` command (optional decision)
+- ✅ `comment reopen THREAD_ID` command
+- ✅ Custom author and author-type support for replies (--author, --author-type)
+- ✅ Decision preservation on reopen (immutable Decision model)
+- ✅ Proper error handling (exit code 1 for user errors, 2 for system errors)
+- ✅ Workflow validation (cannot resolve already-resolved, cannot reopen already-open)
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- Type narrowing with assertions needed for mypy after `if not found_thread` checks
+- Decision model is immutable (frozen=True), so reopening preserves original decision
+- Wontfix status can optionally include a decision (unlike resolved which requires it)
+- Full workflow tests (create → reply → resolve → reopen → resolve again) validate end-to-end behavior
+- Decision gets replaced (not updated) when resolving again after reopening
+
+**Test Coverage**:
+- ✅ Reply: add to thread, custom author, agent type, multiple replies, thread not found
+- ✅ Resolve: with decision, custom decider, wontfix, wontfix with decision, validation errors
+- ✅ Reopen: resolved thread, wontfix thread, already open error, thread not found
+- ✅ Workflows: full lifecycle (create → reply × 2 → resolve → reopen → reply → resolve again)
+- ✅ Workflows: wontfix with decision then reopen
+
+**Acceptance Criteria Met**:
+- ✅ AC-3: Invalid thread ID gives exit code 1 with clear error (tested across all commands)
+- ✅ REQ-2: All core thread interaction commands implemented
+- ✅ Decision preservation on reopen verified (spec requirement)
+
+**Actual Size**: 248 lines of implementation added, ~600 lines of tests added (18 tests)
 
 **Status**: ✅ COMPLETE (2026-02-01)
 
@@ -668,19 +711,19 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 10/40 tasks complete (25%)
+**Overall**: 11/40 tasks complete (27.5%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
 | **Iteration 1** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 2** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 3** | 2/2 | ✅ **COMPLETE** | No longer blocks |
-| **Iteration 4** | 2/4 | 🟡 **IN PROGRESS** | Tasks 4.1-4.2 complete, 4.3-4.4 ready |
-| Iteration 5 | 0/3 | ⏸️ Blocked | Blocked by Iter 4 |
+| **Iteration 4** | 3/4 | 🟡 **IN PROGRESS** | Tasks 4.1-4.3 complete, 4.4 ready |
+| Iteration 5 | 0/3 | ⏸️ Blocked | Blocked by Iter 4 (Task 4.4) |
 | Iteration 6 | 0/3 | 🔴 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
 | Iteration 7 | 0/3 | 🔓 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
-| Iteration 8 | 0/2 | ⏸️ Blocked | Blocked by Iter 4 |
-| Iteration 9 | 0/2 | ⏸️ Blocked | Blocked by Iter 4 |
+| Iteration 8 | 0/2 | ⏸️ Blocked | Blocked by Iter 4 (Task 4.4) |
+| Iteration 9 | 0/2 | ⏸️ Blocked | Blocked by Iter 4 (Task 4.4) |
 | Iteration 10 | 0/4 | ⏸️ Blocked | Blocked by Iter 1-4 (Phase 2) |
 
 ### Next Tasks (In Order)
@@ -696,7 +739,8 @@ Before marking any task complete:
 9. **✅ Task 3.2: Bulk Reconciliation + Atomicity** (DONE - 22 tests passing)
 10. **✅ Task 4.1: CLI Foundation + `add` Command** (DONE - 30 tests passing)
 11. **✅ Task 4.2: `list` and `show` Commands** (DONE - 47 tests passing)
-12. **🔴 Task 4.3: `reply`, `resolve`, `reopen` Commands** ← START HERE
+12. **✅ Task 4.3: `reply`, `resolve`, `reopen` Commands** (DONE - 65 tests passing)
+13. **🔴 Task 4.4: `reconcile` Command** ← START HERE
 
 ---
 
