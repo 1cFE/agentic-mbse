@@ -94,74 +94,30 @@ The inventory of everything we're building: 13 commands, 7 skills, 6 agents, and
 
 ---
 
-## 4. Implementation Sequencing
+## 4. Implementation Plan
 
-### Dependency Graph
+**Moved to**: [implementation-plan.md](implementation-plan.md) — Epic structure, sequencing, deliverables, exit criteria, risk register.
+
+**Summary**: Four epics with a strict dependency chain:
 
 ```
- ┌───────────────────────────────────────────────────────────────┐
- │                                                               │
- │  PHASE 1: Foundations                                        │
- │                                                               │
- │  ┌─────────────────────────────────────────────────────┐      │
- │  │ A: Information Architecture + Work Item Taxonomy     │      │
- │  │                                                      │      │
- │  │ - Validate 6 information roles                      │      │
- │  │ - Define entity formats                             │      │
- │  │ - Define document set + file structure              │      │
- │  │ - Validate 3 work item scales                       │      │
- │  │ - Define scale-based routing logic                  │      │
- │  │ - Create project templates                          │      │
- │  └──────────────────────────┬──────────────────────────┘      │
- │                             │                                 │
- └─────────────────────────────┼─────────────────────────────────┘
-                               │
-                               v
- ┌───────────────────────────────────────────────────────────────┐
- │                                                               │
- │  PHASE 2: Knowledge Layer                                    │
- │                                                               │
- │  ┌─────────────────────────────────────────────────────┐      │
- │  │ B: Skills Extraction                                 │      │
- │  │                                                      │      │
- │  │ - Extract shared knowledge from existing commands    │      │
- │  │ - Create SKILL.md for each skill                    │      │
- │  │ - Measure context window impact                     │      │
- │  │ - Adjust granularity based on measurement           │      │
- │  └──────────────────────────┬──────────────────────────┘      │
- │                             │                                 │
- └─────────────────────────────┼─────────────────────────────────┘
-                               │
-                               v
- ┌───────────────────────────────────────────────────────────────┐
- │                                                               │
- │  PHASE 3: Commands + PM (can be parallel)                    │
- │                                                               │
- │  ┌─────────────────────┐    ┌─────────────────────┐          │
- │  │ C: Command Redesign  │    │ D: PM Script Engine  │          │
- │  │                      │    │                       │          │
- │  │ - Refactor existing  │    │ - Python module       │          │
- │  │   commands to use    │    │   (src/agentic_mbse/  │          │
- │  │   skills             │    │    pm/)               │          │
- │  │ - Add new commands   │    │ - CLI subcommand      │          │
- │  │ - Standardize agent  │    │ - Unit tests          │          │
- │  │   references         │    │ - Dashboard output    │          │
- │  └──────────────────────┘    └───────────────────────┘          │
- │                                                               │
- └───────────────────────────────────────────────────────────────┘
+Epic 1: Structure (Phase 1A)
+  Templates, cmd_init, fusion-tea migration, frontmatter schemas
+    │
+    ▼
+Epic 2: Knowledge (Phase 2B)
+  7 skills extracted from commands, context window measurement
+    │
+    ├──────────────────────────────┐
+    ▼                              ▼
+Epic 3: Commands (Phase 3C)    Epic 4: PM Engine (Phase 3D)
+  9 refactored, 5 new             Parsers, state, operations,
+  Validation walkthroughs         dashboard, CLI subcommands
+    │                              │
+    └──────── /status ◄────────────┘
 ```
 
-### Phase Details
-
-**Phase 1A: Information Architecture + Work Item Taxonomy** — The prerequisite. Without knowing what entities exist and where they live, skills can't reference them and commands can't produce/consume them. The work item taxonomy (3 scales: Trivial, Standard, Epic) is straightforward and is validated alongside the information roles. Deliverables: validated role taxonomy, entity formats, scale-based routing logic, document templates, relationship map.
-
-**Phase 1A includes: fusion-tea manual migration.** The detailed implementation plan must explicitly schedule a manual migration of fusion-tea's project structure to match the new architecture. This is a one-time operation, not automated tooling. It includes: file moves (`modeling_pm/` → `knowledge/`, `project/`, `work/`), format changes (BACKLOG.md to YAML frontmatter), and creation of new files (KNOWLEDGE.md, REQUIREMENTS.md, ARCHITECTURE.md, VALIDATION_MATRIX.md) populated from existing fusion-tea content. This must happen during or immediately after Phase 1A — before Phase 2B and 3C need a conforming target repo to develop and test against. See [backlog.md B-010](backlog.md) for details.
-
-**Phase 2B: Skills Extraction** — Depends on 1A (skills reference the information architecture; epic-decomposition skill references the scale taxonomy). Deliverables: 7 skills with SKILL.md files, context window measurements.
-
-**Phase 3C: Command Redesign** — Depends on 2B (commands reference skills). Deliverables: refactored commands at ~200-300 lines, new commands (quick-model, review-model, analyze-models, status).
-
-**Phase 3D: PM Script Engine** — Depends on 1A (needs to know what files to parse). Can proceed in parallel with 3C. Deliverables: `agentic-mbse status` CLI subcommand, unit tests, `/status` command.
+Every individual change is enumerated in [delta-checklist.md](delta-checklist.md) (~111 items).
 
 ---
 

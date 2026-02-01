@@ -86,15 +86,17 @@ The downstream pipeline boundary (how codegen/simulation results feed back into 
 
 ## Reading Order
 
-1. **[main.md](main.md)** — Problem, principles, implementation plan, open questions
+1. **[main.md](main.md)** — Problem, principles, open questions
 2. **[information-architecture.md](information-architecture.md)** — Data models, file structure, role definitions
 3. **[workflows.md](workflows.md)** — Work item lifecycle, PM engine, skills, research
 4. **[components.md](components.md)** — Command/skill/agent/template catalog
 5. **[backlog.md](backlog.md)** — Open items to resolve before implementation
+6. **[delta-checklist.md](delta-checklist.md)** — Every change enumerated (~111 items)
+7. **[implementation-plan.md](implementation-plan.md)** — Epic structure, sequencing, exit criteria, risk register
 
 ## Status
 
-Concept phase — synthesized from 5 research documents, ready for design-phase detailing. See [backlog.md](backlog.md) for open items.
+Concept phase complete. All backlog items closed. Implementation plan drafted with 4 epics and ~111 enumerated changes. See [implementation-plan.md](implementation-plan.md) for the build strategy and [delta-checklist.md](delta-checklist.md) for the exhaustive change list.
 
 ## Archive
 
