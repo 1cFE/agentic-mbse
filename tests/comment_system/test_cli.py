@@ -1476,3 +1476,196 @@ def test_reconcile_integration_workflow(runner, git_repo, sample_file):
     assert result.exit_code == 0
     assert "Location: test.txt:6:8" in result.output
     assert "Status: resolved" in result.output
+
+
+def test_deleted_file_shows_deleted_marker_in_list(runner, git_repo, sample_file):
+    """List command shows [deleted] marker for deleted files."""
+    import subprocess
+
+    # Initialize git properly (git_repo fixture only creates .git dir)
+    subprocess.run(["git", "init"], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Create comment on file
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "1:1", "Comment on file"])
+    assert result.exit_code == 0
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Commit file and sidecar to git (use relative path)
+    relative_file = sample_file.relative_to(git_repo)
+    subprocess.run(["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Add file"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Delete file and commit deletion
+    sample_file.unlink()
+    subprocess.run(["git", "rm", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Delete file"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # List all threads - should show [deleted] marker
+    result = runner.invoke(cli, ["list", "--all"])
+    assert result.exit_code == 0
+    assert "[deleted]" in result.output
+    assert thread_id in result.output
+
+
+def test_deleted_file_shows_deleted_marker_in_show(runner, git_repo, sample_file):
+    """Show command shows [deleted] marker for deleted files."""
+    import subprocess
+
+    # Initialize git properly (git_repo fixture only creates .git dir)
+    subprocess.run(["git", "init"], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Create comment on file
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "1:1", "Comment on file"])
+    assert result.exit_code == 0
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Commit file and sidecar to git (use relative path)
+    relative_file = sample_file.relative_to(git_repo)
+    subprocess.run(["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Add file"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Delete file and commit deletion
+    sample_file.unlink()
+    subprocess.run(["git", "rm", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Delete file"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Show thread - should show [deleted] marker
+    result = runner.invoke(cli, ["show", thread_id, "--all"])
+    assert result.exit_code == 0
+    assert "[deleted]" in result.output
+    assert thread_id in result.output
+
+
+def test_missing_file_shows_missing_marker_when_git_unavailable(runner, git_repo, sample_file):
+    """List command shows [missing] marker when git is not available."""
+    from unittest.mock import patch
+
+    # Create comment on file
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "1:1", "Comment on file"])
+    assert result.exit_code == 0
+
+    # Delete file (without committing to git)
+    sample_file.unlink()
+
+    # Mock git operations to raise GitError (not generic exception)
+    from comment_system.git_ops import GitError
+
+    with patch("comment_system.cli.is_file_deleted_in_git", side_effect=GitError("Git error")):
+        # List all threads - should show [missing] marker (can't determine if deleted)
+        result = runner.invoke(cli, ["list", "--all"])
+        # Should succeed but show [missing] marker
+        if result.exit_code != 0:
+            print(f"Output: {result.output}")
+            print(f"Exception: {result.exception}")
+        assert result.exit_code == 0
+        assert "[missing]" in result.output
+
+
+def test_deleted_file_preserves_thread_data(runner, git_repo, sample_file):
+    """Deleted files preserve thread data and show [deleted] marker in list."""
+    import subprocess
+
+    # Initialize git properly (git_repo fixture only creates .git dir)
+    subprocess.run(["git", "init"], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Create comment on file
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "4:6", "Comment on logic"])
+    assert result.exit_code == 0
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Verify initial state
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert sidecar.threads[0].anchor.health == AnchorHealth.ANCHORED
+    original_snippet = sidecar.threads[0].anchor.content_snippet
+
+    # Commit file (use relative path)
+    relative_file = sample_file.relative_to(git_repo)
+    subprocess.run(["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Add file"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Delete file and commit
+    sample_file.unlink()
+    subprocess.run(["git", "rm", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Delete file"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # List threads - should show [deleted] marker and preserve thread data
+    result = runner.invoke(cli, ["list", "--all"])
+    assert result.exit_code == 0
+    assert "[deleted]" in result.output
+    assert thread_id in result.output
+
+    # Verify sidecar is preserved (not deleted)
+    assert sidecar_path.exists()
+    sidecar = read_sidecar(sidecar_path)
+    # Thread still exists with original data
+    assert len(sidecar.threads) == 1
+    assert sidecar.threads[0].id == thread_id
+    # Snippet is preserved
+    assert sidecar.threads[0].anchor.content_snippet == original_snippet

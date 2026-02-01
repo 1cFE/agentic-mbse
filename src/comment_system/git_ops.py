@@ -268,6 +268,95 @@ def move_sidecar(
         raise
 
 
+def is_file_deleted_in_git(file_path: Path, project_root: Path) -> bool:
+    """
+    Check if a file has been deleted from git (not just missing from filesystem).
+
+    A file is considered deleted in git if:
+    1. It doesn't exist in the filesystem
+    2. It appears in git history (was previously tracked)
+    3. It hasn't been renamed (rename detection returns None)
+
+    This distinguishes between:
+    - Deleted files (in git history, not renamed, not in filesystem) → True
+    - Never-tracked files (not in git history) → False
+    - Renamed files (in git history, renamed to new location) → False
+    - Existing files → False
+
+    Args:
+        file_path: Path to check (may not exist)
+        project_root: Git repository root directory
+
+    Returns:
+        True if file was deleted from git, False otherwise
+
+    Raises:
+        GitNotAvailableError: If git command is not available
+        NotAGitRepositoryError: If project_root is not a git repository
+    """
+    # Check git availability
+    if not is_git_available():
+        raise GitNotAvailableError("Git is not available in the environment")
+
+    # Check if we're in a git repository
+    if not is_git_repository(project_root):
+        raise NotAGitRepositoryError(f"{project_root} is not a git repository")
+
+    # If file exists, it's not deleted
+    if file_path.exists():
+        return False
+
+    # Check if file was renamed (if so, it's not deleted, just moved)
+    try:
+        renamed_path = detect_file_rename(file_path, project_root)
+        if renamed_path is not None:
+            # File was renamed, not deleted
+            return False
+    except GitError:
+        # If rename detection fails, continue to check deletion
+        pass
+
+    # Make path relative to project root for git operations
+    try:
+        relative_path = file_path.relative_to(project_root)
+    except ValueError:
+        # Path is outside project root
+        return False
+
+    # Use git log to check if file was ever in history
+    # If it appears in history but doesn't exist and wasn't renamed, it was deleted
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "log",
+                "--all",
+                "--oneline",
+                "--",
+                str(relative_path),
+            ],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+        if result.returncode != 0:
+            # Git command failed
+            return False
+
+        # If output is non-empty, file was in history
+        # Since file doesn't exist and wasn't renamed, it was deleted
+        return bool(result.stdout.strip())
+
+    except subprocess.TimeoutExpired:
+        # Git command took too long
+        return False
+    except (subprocess.SubprocessError, OSError):
+        # Other git errors
+        return False
+
+
 def detect_and_move_all_sidecars(project_root: Path) -> list[tuple[Path, Path]]:
     """
     Detect all file renames and move corresponding sidecars.

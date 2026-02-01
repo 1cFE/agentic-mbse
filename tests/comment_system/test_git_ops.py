@@ -10,6 +10,7 @@ from comment_system.git_ops import (
     GitNotAvailableError,
     NotAGitRepositoryError,
     detect_file_rename,
+    is_file_deleted_in_git,
     is_git_available,
     is_git_repository,
 )
@@ -879,3 +880,202 @@ class TestDetectAndMoveAllSidecars:
         # Should not raise, just skip
         moved = detect_and_move_all_sidecars(tmp_path)
         assert moved == []
+
+
+class TestDeletionDetection:
+    """Tests for file deletion detection."""
+
+    def test_file_deleted_after_commit(self, tmp_path: Path) -> None:
+        """File deleted in git is detected correctly."""
+        # Initialize git repo
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create and commit file
+        test_file = tmp_path / "test.md"
+        test_file.write_text("# Test")
+        subprocess.run(["git", "add", "test.md"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Add test file"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Delete file and commit
+        test_file.unlink()
+        subprocess.run(["git", "add", "test.md"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Delete test file"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # File should be detected as deleted
+        assert is_file_deleted_in_git(test_file, tmp_path) is True
+
+    def test_file_never_tracked_not_deleted(self, tmp_path: Path) -> None:
+        """File that was never tracked is not considered deleted."""
+        # Initialize git repo
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+
+        # File never tracked (doesn't exist, never in git)
+        test_file = tmp_path / "never_existed.md"
+
+        # Should not be detected as deleted (never in history)
+        assert is_file_deleted_in_git(test_file, tmp_path) is False
+
+    def test_existing_file_not_deleted(self, tmp_path: Path) -> None:
+        """File that still exists is not deleted."""
+        # Initialize git repo
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create and commit file
+        test_file = tmp_path / "test.md"
+        test_file.write_text("# Test")
+        subprocess.run(["git", "add", "test.md"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Add test file"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # File exists, so not deleted
+        assert is_file_deleted_in_git(test_file, tmp_path) is False
+
+    def test_renamed_file_not_deleted(self, tmp_path: Path) -> None:
+        """File that was renamed is not considered deleted."""
+        # Initialize git repo
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create and commit file
+        old_file = tmp_path / "old.md"
+        old_file.write_text("# Test")
+        subprocess.run(["git", "add", "old.md"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Add old file"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Rename file
+        subprocess.run(
+            ["git", "mv", "old.md", "new.md"], cwd=tmp_path, check=True, capture_output=True
+        )
+        subprocess.run(
+            ["git", "commit", "-m", "Rename file"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Old file path should not be detected as deleted (it was renamed)
+        assert is_file_deleted_in_git(old_file, tmp_path) is False
+
+    def test_file_outside_project_root_not_deleted(self, tmp_path: Path) -> None:
+        """File outside project root returns False."""
+        # Initialize git repo
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+
+        # File outside project root
+        outside_file = tmp_path.parent / "outside.md"
+
+        # Should return False
+        assert is_file_deleted_in_git(outside_file, tmp_path) is False
+
+    def test_deletion_detection_requires_git_available(self, tmp_path: Path) -> None:
+        """Deletion detection raises error when git not available."""
+        with patch("comment_system.git_ops.is_git_available", return_value=False):
+            test_file = tmp_path / "test.md"
+            with pytest.raises(GitNotAvailableError):
+                is_file_deleted_in_git(test_file, tmp_path)
+
+    def test_deletion_detection_requires_git_repository(self, tmp_path: Path) -> None:
+        """Deletion detection raises error when not in git repo."""
+        # Not a git repo
+        test_file = tmp_path / "test.md"
+
+        with pytest.raises(NotAGitRepositoryError):
+            is_file_deleted_in_git(test_file, tmp_path)
+
+    def test_file_deleted_then_recreated_not_deleted(self, tmp_path: Path) -> None:
+        """File that was deleted but then recreated is not deleted."""
+        # Initialize git repo
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create and commit file
+        test_file = tmp_path / "test.md"
+        test_file.write_text("# Test v1")
+        subprocess.run(["git", "add", "test.md"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Add test file"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Delete file and commit
+        test_file.unlink()
+        subprocess.run(["git", "add", "test.md"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Delete test file"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Recreate file
+        test_file.write_text("# Test v2")
+
+        # File exists, so not deleted (even though it was deleted in history)
+        assert is_file_deleted_in_git(test_file, tmp_path) is False

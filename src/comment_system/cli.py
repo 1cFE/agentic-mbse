@@ -10,6 +10,7 @@ from pathlib import Path
 import click
 
 from comment_system.anchors import reconcile_sidecar
+from comment_system.git_ops import GitError, is_file_deleted_in_git
 from comment_system.models import (
     Anchor,
     AnchorHealth,
@@ -33,6 +34,36 @@ from comment_system.storage import (
 def compute_content_hash(content: str) -> str:
     """Compute SHA-256 hash of content with 'sha256:' prefix."""
     return f"sha256:{hashlib.sha256(content.encode('utf-8')).hexdigest()}"
+
+
+def format_source_file(source_file: str, project_root: Path) -> str:
+    """
+    Format source file path with [deleted] indicator if file no longer exists.
+
+    Args:
+        source_file: Relative path to source file from sidecar
+        project_root: Project root directory
+
+    Returns:
+        Formatted string: "path/to/file.py" or "path/to/file.py [deleted]"
+    """
+    file_path = project_root / source_file
+
+    # If file exists, return path as-is
+    if file_path.exists():
+        return source_file
+
+    # File doesn't exist - check if it was deleted in git
+    try:
+        if is_file_deleted_in_git(file_path, project_root):
+            return f"{source_file} [deleted]"
+    except GitError:
+        # Git not available or not a git repo - can't determine deletion status
+        # Just show that file is missing
+        pass
+
+    # File missing but not confirmed deleted (might be renamed or never tracked)
+    return f"{source_file} [missing]"
 
 
 def extract_lines(file_path: Path, line_start: int, line_end: int) -> tuple[str, str, str]:
@@ -431,10 +462,13 @@ def list_threads(
                     else:  # orphaned
                         health_str = click.style(health_str, fg="red")
 
+                # Format source file with deletion indicator
+                formatted_source = format_source_file(source_file, project_root)
+
                 # Print thread info
                 click.echo(
                     f"{thread.id} [{status_str}] [{health_str}] "
-                    f"{source_file}:{thread.anchor.line_start}:{thread.anchor.line_end} "
+                    f"{formatted_source}:{thread.anchor.line_start}:{thread.anchor.line_end} "
                     f"({len(thread.comments)} comments)"
                 )
 
@@ -502,6 +536,9 @@ def show(thread_id: str, json_output: bool, all_files: bool):
             click.echo(f"Error: Thread not found: {thread_id}", err=True)
             sys.exit(1)
 
+        # Type narrowing for mypy
+        assert found_source_file is not None, "found_source_file must be set when found_thread is set"
+
         # Output thread details
         if json_output:
             # JSON output
@@ -557,10 +594,13 @@ def show(thread_id: str, json_output: bool, all_files: bool):
                 else:  # orphaned
                     health_str = click.style(health_str, fg="red")
 
+            # Format source file with deletion indicator
+            formatted_source = format_source_file(found_source_file, project_root)
+
             click.echo(f"Thread: {found_thread.id}")
             click.echo(f"Status: {status_str}")
             click.echo(
-                f"Location: {found_source_file}:{found_thread.anchor.line_start}:{found_thread.anchor.line_end}"
+                f"Location: {formatted_source}:{found_thread.anchor.line_start}:{found_thread.anchor.line_end}"
             )
             click.echo(f"Anchor Health: {health_str}")
             if found_thread.anchor.drift_distance > 0:

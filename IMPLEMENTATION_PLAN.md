@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Task 7.2 Complete — Sidecar Move on Rename Working!
-**Last Updated**: 2026-02-01 (Task 7.2 completed)
+**Status**: ✅ Task 7.3 Complete — Deletion Handling with [deleted] Markers Working!
+**Last Updated**: 2026-02-01 (Task 7.3 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 20/40 tasks complete (50.0%)
-**Next Action**: Continue Iteration 7 (Tasks 7.2, 7.3) OR choose Iteration 8 or 9
+**Current Implementation**: 21/40 tasks complete (52.5%)
+**Next Action**: Choose Iteration 8 (Decision Log) or Iteration 9 (Orchestration)
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -967,7 +967,7 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 |------|-------------|-------|--------------|--------|
 | 7.1 | Git rename detection | `git_ops.py`, tests | Git integration tests, non-git repo handling | ✅ **COMPLETE** |
 | 7.2 | Sidecar move on rename | `git_ops.py`, tests | Atomicity tests, directory renames | ✅ **COMPLETE** |
-| 7.3 | Deletion handling (orphaning) | `git_ops.py`, tests | UI tests ("[deleted]" display) | Pending |
+| 7.3 | Deletion handling (orphaning) | `git_ops.py`, `cli.py`, tests | UI tests ("[deleted]" display) | ✅ **COMPLETE** |
 
 #### Task 7.1: Git Rename Detection ✅ COMPLETE
 
@@ -1053,7 +1053,56 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 
 **Status**: ✅ COMPLETE (2026-02-01)
 
+#### Task 7.3: Deletion Handling (Orphaning) ✅ COMPLETE
+
+**Description**: Implement deletion detection for files removed from git, with UI markers in CLI
+
+**Spec References**: `specs/file-tracking.md` (REQ-2, AC-2, AC-4)
+
+**Implementation**: Extended `src/comment_system/git_ops.py` (96 lines added), extended `src/comment_system/cli.py` (31 lines added)
+**Tests**: Extended `tests/comment_system/test_git_ops.py` (8 new tests, 37 total tests passing), extended `tests/comment_system/test_cli.py` (4 new tests, 90 total tests passing)
+
+**Deliverables**:
+- ✅ `is_file_deleted_in_git()` function for detecting file deletions via git history
+- ✅ Distinguishes between deleted files, never-tracked files, and renamed files
+- ✅ `format_source_file()` helper function for CLI display with [deleted] or [missing] markers
+- ✅ Updated `list` and `show` commands to display deletion markers
+- ✅ Sidecar preservation when files are deleted (REQ-2: MUST preserve sidecar file)
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- Git history check (`git log --all --oneline -- <file>`) determines if file was ever tracked
+- Deletion detection integrates with rename detection to avoid false positives
+- [deleted] marker shown when file was in git history and is now deleted
+- [missing] marker shown when git is unavailable or file status can't be determined
+- Sidecar files are never automatically deleted, preserving thread history for audit trails
+- Reconciliation on deleted files should use `--all` flag (can't pass non-existent file path)
+
+**Test Coverage**:
+- ✅ AC-2: File deleted in git → [deleted] marker displayed, snippet preserved
+- ✅ AC-4: File never tracked → not marked as deleted (returns False)
+- ✅ Renamed files not considered deleted (rename detection takes precedence)
+- ✅ Existing files, files outside project root handled correctly
+- ✅ CLI integration: list and show commands display markers
+- ✅ Git unavailable scenarios handled gracefully
+- ✅ Thread data preservation verified after deletion
+
+**Actual Size**: 127 lines of implementation added (96 in git_ops.py, 31 in cli.py), ~900 lines of tests added (12 tests total)
+
+**Status**: ✅ COMPLETE (2026-02-01)
+
 ---
+
+---
+
+### Iteration 7 Summary
+
+**Status**: ✅ COMPLETE (all 3 tasks done)
+**Total Implementation**: 487 lines added to git_ops.py and cli.py (Tasks 7.1-7.3)
+**Total Tests**: 1880+ lines, 37 tests passing in git_ops, 4 new CLI tests
+**Features Implemented**: Git rename detection, sidecar file moves, deletion detection with UI markers
+
+**Iteration 7 unlocks**: Iterations 8 and 9 (Decision Log, Orchestration) can now proceed
 
 ---
 
@@ -1117,7 +1166,7 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 20/40 tasks complete (50.0%)
+**Overall**: 21/40 tasks complete (52.5%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
@@ -1127,7 +1176,7 @@ Before marking any task complete:
 | **Iteration 4** | 4/4 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 5** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 6** | 3/3 | ✅ **COMPLETE** | No longer blocks |
-| **Iteration 7** | 2/3 | 🟡 **IN PROGRESS** | Unblocked |
+| **Iteration 7** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | Iteration 8 | 0/2 | 🔴 **READY TO START** | Unblocked |
 | Iteration 9 | 0/2 | 🔴 **READY TO START** | Unblocked |
 | Iteration 10 | 0/4 | 🔴 **READY TO START** | Unblocked (Phase 2 - VSCode extension) |
@@ -1155,7 +1204,8 @@ Before marking any task complete:
 19. **✅ Task 6.3: Atomic Writes** (DONE - implemented in Task 1.3)
 20. **✅ Task 7.1: Git Rename Detection** (DONE - 19 tests passing)
 21. **✅ Task 7.2: Sidecar Move on Rename** (DONE - 10 tests passing)
-22. **🔴 Next: Task 7.3, OR choose Iteration 8 or 9** ← ALL UNBLOCKED
+22. **✅ Task 7.3: Deletion Handling** (DONE - 8 new git_ops tests, 4 new CLI tests passing)
+23. **🔴 Next: Choose Iteration 8 or 9** ← ALL UNBLOCKED
 
 ---
 
