@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Iteration 6 Complete — Concurrency Layer Ready!
-**Last Updated**: 2026-02-01 (Task 6.2 completed)
+**Status**: ✅ Task 7.1 Complete — Git Rename Detection Working!
+**Last Updated**: 2026-02-01 (Task 7.1 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 18/40 tasks complete (45.0%)
-**Next Action**: Iteration 7, 8, or 9 - All unblocked and ready to start
+**Current Implementation**: 19/40 tasks complete (47.5%)
+**Next Action**: Continue Iteration 7 (Tasks 7.2, 7.3) OR choose Iteration 8 or 9
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -963,11 +963,56 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 **Blocked by**: Iteration 1
 **Focus**: Git integration for renames and deletions
 
-| Task | Description | Files | Backpressure |
-|------|-------------|-------|--------------|
-| 7.1 | Git rename detection | `git_ops.py`, tests | Git integration tests, non-git repo handling |
-| 7.2 | Sidecar move on rename | `git_ops.py`, tests | Atomicity tests, directory renames |
-| 7.3 | Deletion handling (orphaning) | `git_ops.py`, tests | UI tests ("[deleted]" display) |
+| Task | Description | Files | Backpressure | Status |
+|------|-------------|-------|--------------|--------|
+| 7.1 | Git rename detection | `git_ops.py`, tests | Git integration tests, non-git repo handling | ✅ **COMPLETE** |
+| 7.2 | Sidecar move on rename | `git_ops.py`, tests | Atomicity tests, directory renames | Pending |
+| 7.3 | Deletion handling (orphaning) | `git_ops.py`, tests | UI tests ("[deleted]" display) | Pending |
+
+#### Task 7.1: Git Rename Detection ✅ COMPLETE
+
+**Description**: Implement git log integration to detect file renames via git history
+
+**Spec References**: `specs/file-tracking.md` (REQ-1, REQ-3, REQ-5, AC-1, AC-5, AC-6, CON-4)
+
+**Implementation**: `src/comment_system/git_ops.py` (173 lines)
+**Tests**: `tests/comment_system/test_git_ops.py` (453 lines, 19 tests passing)
+
+**Deliverables**:
+- ✅ `is_git_available()` function for checking git presence
+- ✅ `is_git_repository()` function for validating git repos
+- ✅ `detect_file_rename()` function using `git log --all --diff-filter=R`
+- ✅ Rename chain following (A → B → C) with configurable max depth
+- ✅ `GitNotAvailableError` exception for missing git
+- ✅ `NotAGitRepositoryError` exception for non-git directories
+- ✅ Graceful handling of non-git repositories (raises clear exception)
+- ✅ Support for shallow clones (works with available history)
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- Git log with `--all --diff-filter=R` lists all renames in repository
+- Building rename map allows following chains forward from old path
+- Verification of final path existence prevents returning deleted files
+- Timeout protection (10 seconds) prevents hanging on large repos
+- Exception-based error handling provides clear feedback to callers
+
+**Test Coverage**:
+- ✅ AC-1: Simple A → B rename detected correctly
+- ✅ AC-5: Rename chain A → B → C detected (finds C from A)
+- ✅ AC-6: Non-git repository raises NotAGitRepositoryError with clear message
+- ✅ CON-4: Respects max_renames limit (default 10)
+- ✅ Git availability checking (installed, not found, timeout)
+- ✅ Repository detection (in repo, in subdirectory, outside repo)
+- ✅ Subdirectory renames, files outside project root
+- ✅ Renamed then deleted files (returns None)
+- ✅ Files that never existed in git history
+- ✅ Timeout and error handling
+
+**Actual Size**: 173 lines of implementation, 453 lines of tests
+
+**Status**: ✅ COMPLETE (2026-02-01)
+
+---
 
 ---
 
@@ -1031,7 +1076,7 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 18/40 tasks complete (45.0%)
+**Overall**: 19/40 tasks complete (47.5%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
@@ -1041,7 +1086,7 @@ Before marking any task complete:
 | **Iteration 4** | 4/4 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 5** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 6** | 3/3 | ✅ **COMPLETE** | No longer blocks |
-| Iteration 7 | 0/3 | 🔴 **READY TO START** | Unblocked |
+| **Iteration 7** | 1/3 | 🟡 **IN PROGRESS** | Unblocked |
 | Iteration 8 | 0/2 | 🔴 **READY TO START** | Unblocked |
 | Iteration 9 | 0/2 | 🔴 **READY TO START** | Unblocked |
 | Iteration 10 | 0/4 | 🔴 **READY TO START** | Unblocked (Phase 2 - VSCode extension) |
@@ -1067,7 +1112,8 @@ Before marking any task complete:
 17. **✅ Task 6.1: File Locking (flock/LockFileEx)** (DONE - 14 tests passing)
 18. **✅ Task 6.2: Optimistic Concurrency (Hash Check)** (DONE - 11 tests passing)
 19. **✅ Task 6.3: Atomic Writes** (DONE - implemented in Task 1.3)
-20. **🔴 Next: Choose from Iteration 7, 8, or 9** ← ALL UNBLOCKED
+20. **✅ Task 7.1: Git Rename Detection** (DONE - 19 tests passing)
+21. **🔴 Next: Task 7.2, 7.3, OR choose Iteration 8 or 9** ← ALL UNBLOCKED
 
 ---
 
