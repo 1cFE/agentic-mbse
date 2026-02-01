@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Task 7.1 Complete — Git Rename Detection Working!
-**Last Updated**: 2026-02-01 (Task 7.1 completed)
+**Status**: ✅ Task 7.2 Complete — Sidecar Move on Rename Working!
+**Last Updated**: 2026-02-01 (Task 7.2 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,7 +9,7 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 19/40 tasks complete (47.5%)
+**Current Implementation**: 20/40 tasks complete (50.0%)
 **Next Action**: Continue Iteration 7 (Tasks 7.2, 7.3) OR choose Iteration 8 or 9
 
 **Gap Analysis Results** (verified via parallel subagents):
@@ -966,7 +966,7 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 | Task | Description | Files | Backpressure | Status |
 |------|-------------|-------|--------------|--------|
 | 7.1 | Git rename detection | `git_ops.py`, tests | Git integration tests, non-git repo handling | ✅ **COMPLETE** |
-| 7.2 | Sidecar move on rename | `git_ops.py`, tests | Atomicity tests, directory renames | Pending |
+| 7.2 | Sidecar move on rename | `git_ops.py`, tests | Atomicity tests, directory renames | ✅ **COMPLETE** |
 | 7.3 | Deletion handling (orphaning) | `git_ops.py`, tests | UI tests ("[deleted]" display) | Pending |
 
 #### Task 7.1: Git Rename Detection ✅ COMPLETE
@@ -1009,6 +1009,47 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 - ✅ Timeout and error handling
 
 **Actual Size**: 173 lines of implementation, 453 lines of tests
+
+**Status**: ✅ COMPLETE (2026-02-01)
+
+#### Task 7.2: Sidecar Move on Rename ✅ COMPLETE
+
+**Description**: Implement sidecar file moving when source files are renamed, with atomic operations and directory rename support
+
+**Spec References**: `specs/file-tracking.md` (REQ-1, REQ-4, AC-1, AC-3, CON-2)
+
+**Implementation**: Extended `src/comment_system/git_ops.py` (141 lines added)
+**Tests**: Extended `tests/comment_system/test_git_ops.py` (10 new tests, 29 total tests passing)
+
+**Deliverables**:
+- ✅ `move_sidecar()` function for moving individual sidecar files
+- ✅ Updates sidecar's `source_file` field to new path (relative to project root)
+- ✅ Atomic operation using temp file + rename pattern (CON-2)
+- ✅ Parent directory creation for new sidecar location
+- ✅ Old directory cleanup when empty after move
+- ✅ `detect_and_move_all_sidecars()` function for project-wide rename detection and moves
+- ✅ Handles directory renames (processes all affected files)
+- ✅ Graceful handling of invalid sidecar files (skips them)
+- ✅ All quality gates pass (mypy, ruff, pytest - 391 tests total)
+
+**Key Learnings**:
+- Atomic move requires writing to temp file in same directory as target (ensures same filesystem)
+- Sidecar JSON serialization must match write_sidecar format (deterministic, sorted keys)
+- Directory cleanup is best-effort (ignore errors if directory not empty)
+- Invalid sidecars should be skipped silently to avoid breaking bulk operations
+- Source file field stored as relative path for portability
+
+**Test Coverage**:
+- ✅ AC-1: Sidecar moves from `.comments/old.md.json` to `.comments/new.md.json`
+- ✅ AC-3: Directory rename moves all affected sidecars (src/ → lib/)
+- ✅ Simple rename: old.md → new.md
+- ✅ Nested path renames: src/old.md → lib/new.md
+- ✅ No sidecar exists (returns False)
+- ✅ Atomic operation (no temp files left behind)
+- ✅ Empty directory cleanup
+- ✅ Project-wide detection: simple rename, directory rename, no comments dir, no renames, invalid sidecar
+
+**Actual Size**: 141 lines of implementation added (move_sidecar + detect_and_move_all_sidecars), ~530 lines of tests added (10 tests)
 
 **Status**: ✅ COMPLETE (2026-02-01)
 
@@ -1076,7 +1117,7 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 19/40 tasks complete (47.5%)
+**Overall**: 20/40 tasks complete (50.0%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
@@ -1086,7 +1127,7 @@ Before marking any task complete:
 | **Iteration 4** | 4/4 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 5** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 6** | 3/3 | ✅ **COMPLETE** | No longer blocks |
-| **Iteration 7** | 1/3 | 🟡 **IN PROGRESS** | Unblocked |
+| **Iteration 7** | 2/3 | 🟡 **IN PROGRESS** | Unblocked |
 | Iteration 8 | 0/2 | 🔴 **READY TO START** | Unblocked |
 | Iteration 9 | 0/2 | 🔴 **READY TO START** | Unblocked |
 | Iteration 10 | 0/4 | 🔴 **READY TO START** | Unblocked (Phase 2 - VSCode extension) |
@@ -1113,7 +1154,8 @@ Before marking any task complete:
 18. **✅ Task 6.2: Optimistic Concurrency (Hash Check)** (DONE - 11 tests passing)
 19. **✅ Task 6.3: Atomic Writes** (DONE - implemented in Task 1.3)
 20. **✅ Task 7.1: Git Rename Detection** (DONE - 19 tests passing)
-21. **🔴 Next: Task 7.2, 7.3, OR choose Iteration 8 or 9** ← ALL UNBLOCKED
+21. **✅ Task 7.2: Sidecar Move on Rename** (DONE - 10 tests passing)
+22. **🔴 Next: Task 7.3, OR choose Iteration 8 or 9** ← ALL UNBLOCKED
 
 ---
 

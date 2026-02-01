@@ -436,3 +436,446 @@ class TestDetectFileRename:
 
                 result = detect_file_rename(tmp_path / "test.md", tmp_path)
                 assert result is None
+
+
+class TestMoveSidecar:
+    """Test sidecar file moving when source files are renamed."""
+
+    def test_move_sidecar_simple_rename(self, tmp_path: Path) -> None:
+        """Sidecar moves when source file is renamed (AC-1)."""
+        from comment_system.git_ops import move_sidecar
+        from comment_system.models import Anchor, Comment, Thread
+        from comment_system.storage import SidecarFile, write_sidecar
+
+        # Create source file and sidecar
+        old_path = tmp_path / "old.md"
+        old_path.write_text("# Old content")
+
+        # Create sidecar with a thread
+        thread = Thread(
+            comments=[Comment(body="Test comment", author="Test User", author_type="human")],
+            anchor=Anchor(
+                content_hash="sha256:" + "a" * 64,
+                context_hash_before="sha256:" + "b" * 64,
+                context_hash_after="sha256:" + "c" * 64,
+                line_start=1,
+                line_end=1,
+                content_snippet="# Old content",
+            ),
+        )
+        sidecar = SidecarFile(
+            source_file=old_path.relative_to(tmp_path).as_posix(),
+            source_hash="sha256:" + "0" * 64,
+            threads=[thread],
+        )
+        write_sidecar(
+            tmp_path / ".comments" / "old.md.json",
+            sidecar,
+            check_hash=False,
+            acquire_lock=False,
+        )
+
+        # Move sidecar
+        new_path = tmp_path / "new.md"
+        result = move_sidecar(old_path, new_path, tmp_path)
+
+        # Verify move succeeded
+        assert result is True
+
+        # Verify old sidecar gone
+        assert not (tmp_path / ".comments" / "old.md.json").exists()
+
+        # Verify new sidecar exists
+        new_sidecar_path = tmp_path / ".comments" / "new.md.json"
+        assert new_sidecar_path.exists()
+
+        # Verify source_file field updated
+        from comment_system.storage import read_sidecar
+
+        moved_sidecar = read_sidecar(new_sidecar_path)
+        assert moved_sidecar.source_file == "new.md"
+        assert len(moved_sidecar.threads) == 1
+        assert moved_sidecar.threads[0].comments[0].body == "Test comment"
+
+    def test_move_sidecar_nested_path(self, tmp_path: Path) -> None:
+        """Sidecar moves correctly for nested directories."""
+        from comment_system.git_ops import move_sidecar
+        from comment_system.models import Anchor, Comment, Thread
+        from comment_system.storage import SidecarFile, write_sidecar
+
+        # Create nested source file and sidecar
+        old_path = tmp_path / "src" / "old.md"
+        old_path.parent.mkdir(parents=True)
+        old_path.write_text("# Old content")
+
+        thread = Thread(
+            comments=[Comment(body="Test comment", author="Test User", author_type="human")],
+            anchor=Anchor(
+                content_hash="sha256:" + "a" * 64,
+                context_hash_before="sha256:" + "b" * 64,
+                context_hash_after="sha256:" + "c" * 64,
+                line_start=1,
+                line_end=1,
+                content_snippet="# Old content",
+            ),
+        )
+        sidecar = SidecarFile(
+            source_file="src/old.md",
+            source_hash="sha256:" + "0" * 64,
+            threads=[thread],
+        )
+        write_sidecar(
+            tmp_path / ".comments" / "src" / "old.md.json",
+            sidecar,
+            check_hash=False,
+            acquire_lock=False,
+        )
+
+        # Move to different directory
+        new_path = tmp_path / "lib" / "new.md"
+        result = move_sidecar(old_path, new_path, tmp_path)
+
+        # Verify move succeeded
+        assert result is True
+
+        # Verify new sidecar exists at correct location
+        new_sidecar_path = tmp_path / ".comments" / "lib" / "new.md.json"
+        assert new_sidecar_path.exists()
+
+        # Verify source_file updated
+        from comment_system.storage import read_sidecar
+
+        moved_sidecar = read_sidecar(new_sidecar_path)
+        assert moved_sidecar.source_file == "lib/new.md"
+
+    def test_move_sidecar_no_sidecar_exists(self, tmp_path: Path) -> None:
+        """Returns False when no sidecar exists for source file."""
+        from comment_system.git_ops import move_sidecar
+
+        old_path = tmp_path / "old.md"
+        new_path = tmp_path / "new.md"
+
+        # No sidecar exists
+        result = move_sidecar(old_path, new_path, tmp_path)
+        assert result is False
+
+    def test_move_sidecar_atomic_operation(self, tmp_path: Path) -> None:
+        """Sidecar move uses atomic temp + rename (CON-2)."""
+        from comment_system.git_ops import move_sidecar
+        from comment_system.models import Anchor, Comment, Thread
+        from comment_system.storage import SidecarFile, write_sidecar
+
+        # Create source file and sidecar
+        old_path = tmp_path / "old.md"
+        old_path.write_text("# Old content")
+
+        thread = Thread(
+            comments=[Comment(body="Test comment", author="Test User", author_type="human")],
+            anchor=Anchor(
+                content_hash="sha256:" + "a" * 64,
+                context_hash_before="sha256:" + "b" * 64,
+                context_hash_after="sha256:" + "c" * 64,
+                line_start=1,
+                line_end=1,
+                content_snippet="# Old content",
+            ),
+        )
+        sidecar = SidecarFile(
+            source_file="old.md",
+            source_hash="sha256:" + "0" * 64,
+            threads=[thread],
+        )
+        write_sidecar(
+            tmp_path / ".comments" / "old.md.json",
+            sidecar,
+            check_hash=False,
+            acquire_lock=False,
+        )
+
+        # Move sidecar
+        new_path = tmp_path / "new.md"
+        move_sidecar(old_path, new_path, tmp_path)
+
+        # Verify no temp files left behind
+        for path in (tmp_path / ".comments").rglob("*.tmp.json"):
+            pytest.fail(f"Temp file not cleaned up: {path}")
+
+    def test_move_sidecar_cleans_empty_directory(self, tmp_path: Path) -> None:
+        """Removes empty old sidecar directory after move."""
+        from comment_system.git_ops import move_sidecar
+        from comment_system.models import Anchor, Comment, Thread
+        from comment_system.storage import SidecarFile, write_sidecar
+
+        # Create nested source file and sidecar
+        old_path = tmp_path / "old_dir" / "file.md"
+        old_path.parent.mkdir(parents=True)
+        old_path.write_text("# Content")
+
+        thread = Thread(
+            comments=[Comment(body="Test comment", author="Test User", author_type="human")],
+            anchor=Anchor(
+                content_hash="sha256:" + "a" * 64,
+                context_hash_before="sha256:" + "b" * 64,
+                context_hash_after="sha256:" + "c" * 64,
+                line_start=1,
+                line_end=1,
+                content_snippet="# Content",
+            ),
+        )
+        sidecar = SidecarFile(
+            source_file="old_dir/file.md",
+            source_hash="sha256:" + "0" * 64,
+            threads=[thread],
+        )
+        write_sidecar(
+            tmp_path / ".comments" / "old_dir" / "file.md.json",
+            sidecar,
+            check_hash=False,
+            acquire_lock=False,
+        )
+
+        # Move to different directory
+        new_path = tmp_path / "new_dir" / "file.md"
+        move_sidecar(old_path, new_path, tmp_path)
+
+        # Verify old directory cleaned up
+        assert not (tmp_path / ".comments" / "old_dir").exists()
+
+
+class TestDetectAndMoveAllSidecars:
+    """Test project-wide rename detection and sidecar moving."""
+
+    def test_detect_and_move_all_simple_rename(self, tmp_path: Path) -> None:
+        """Detects and moves sidecar for single renamed file."""
+        from comment_system.git_ops import detect_and_move_all_sidecars
+        from comment_system.models import Anchor, Comment, Thread
+        from comment_system.storage import SidecarFile, write_sidecar
+
+        # Initialize git repo
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create and commit file
+        old_path = tmp_path / "old.md"
+        old_path.write_text("# Content")
+        subprocess.run(["git", "add", "old.md"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create sidecar
+        thread = Thread(
+            comments=[Comment(body="Test comment", author="Test User", author_type="human")],
+            anchor=Anchor(
+                content_hash="sha256:" + "a" * 64,
+                context_hash_before="sha256:" + "b" * 64,
+                context_hash_after="sha256:" + "c" * 64,
+                line_start=1,
+                line_end=1,
+                content_snippet="# Content",
+            ),
+        )
+        sidecar = SidecarFile(
+            source_file="old.md",
+            source_hash="sha256:" + "0" * 64,
+            threads=[thread],
+        )
+        write_sidecar(
+            tmp_path / ".comments" / "old.md.json",
+            sidecar,
+            check_hash=False,
+            acquire_lock=False,
+        )
+
+        # Rename file in git
+        subprocess.run(["git", "mv", "old.md", "new.md"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Rename file"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Run detection and move
+        moved = detect_and_move_all_sidecars(tmp_path)
+
+        # Verify one file moved
+        assert len(moved) == 1
+        assert moved[0] == (tmp_path / "old.md", tmp_path / "new.md")
+
+        # Verify sidecar at new location
+        assert (tmp_path / ".comments" / "new.md.json").exists()
+        assert not (tmp_path / ".comments" / "old.md.json").exists()
+
+    def test_detect_and_move_all_directory_rename(self, tmp_path: Path) -> None:
+        """Handles directory renames affecting multiple files (AC-3)."""
+        from comment_system.git_ops import detect_and_move_all_sidecars
+        from comment_system.models import Anchor, Comment, Thread
+        from comment_system.storage import SidecarFile, write_sidecar
+
+        # Initialize git repo
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create src directory with files
+        src_dir = tmp_path / "src"
+        src_dir.mkdir()
+        file1 = src_dir / "file1.md"
+        file2 = src_dir / "file2.md"
+        file1.write_text("# File 1")
+        file2.write_text("# File 2")
+
+        subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Initial commit"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create sidecars
+        for filename in ["file1.md", "file2.md"]:
+            thread = Thread(
+                comments=[Comment(body=f"Comment on {filename}", author="Test User", author_type="human")],
+                anchor=Anchor(
+                    content_hash="sha256:" + "a" * 64,
+                    context_hash_before="sha256:" + "b" * 64,
+                    context_hash_after="sha256:" + "c" * 64,
+                    line_start=1,
+                    line_end=1,
+                    content_snippet=f"# {filename}",
+                ),
+            )
+            sidecar = SidecarFile(
+                source_file=f"src/{filename}",
+                source_hash="sha256:" + "1" * 64,
+                threads=[thread],
+            )
+            write_sidecar(
+                tmp_path / ".comments" / "src" / f"{filename}.json",
+                sidecar,
+                check_hash=False,
+                acquire_lock=False,
+            )
+
+        # Rename directory
+        subprocess.run(["git", "mv", "src", "lib"], cwd=tmp_path, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", "Rename directory"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Run detection and move
+        moved = detect_and_move_all_sidecars(tmp_path)
+
+        # Verify both files moved
+        assert len(moved) == 2
+        moved_dict = {old: new for old, new in moved}
+        assert moved_dict[tmp_path / "src" / "file1.md"] == tmp_path / "lib" / "file1.md"
+        assert moved_dict[tmp_path / "src" / "file2.md"] == tmp_path / "lib" / "file2.md"
+
+        # Verify sidecars at new locations
+        assert (tmp_path / ".comments" / "lib" / "file1.md.json").exists()
+        assert (tmp_path / ".comments" / "lib" / "file2.md.json").exists()
+        assert not (tmp_path / ".comments" / "src").exists()
+
+    def test_detect_and_move_all_no_comments_dir(self, tmp_path: Path) -> None:
+        """Returns empty list when .comments directory doesn't exist."""
+        from comment_system.git_ops import detect_and_move_all_sidecars
+
+        # No .comments directory
+        moved = detect_and_move_all_sidecars(tmp_path)
+        assert moved == []
+
+    def test_detect_and_move_all_no_renames(self, tmp_path: Path) -> None:
+        """Returns empty list when no files have been renamed."""
+        from comment_system.git_ops import detect_and_move_all_sidecars
+        from comment_system.models import Anchor, Comment, Thread
+        from comment_system.storage import SidecarFile, write_sidecar
+
+        # Initialize git repo
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "config", "user.email", "test@example.com"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "config", "user.name", "Test User"],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create file and sidecar (file still exists)
+        file_path = tmp_path / "file.md"
+        file_path.write_text("# Content")
+
+        thread = Thread(
+            comments=[Comment(body="Test comment", author="Test User", author_type="human")],
+            anchor=Anchor(
+                content_hash="sha256:" + "a" * 64,
+                context_hash_before="sha256:" + "b" * 64,
+                context_hash_after="sha256:" + "c" * 64,
+                line_start=1,
+                line_end=1,
+                content_snippet="# Content",
+            ),
+        )
+        sidecar = SidecarFile(
+            source_file="file.md",
+            source_hash="sha256:" + "2" * 64,
+            threads=[thread],
+        )
+        write_sidecar(
+            tmp_path / ".comments" / "file.md.json",
+            sidecar,
+            check_hash=False,
+            acquire_lock=False,
+        )
+
+        # File not renamed (still exists)
+        moved = detect_and_move_all_sidecars(tmp_path)
+        assert moved == []
+
+    def test_detect_and_move_all_invalid_sidecar(self, tmp_path: Path) -> None:
+        """Skips invalid sidecar files gracefully."""
+        from comment_system.git_ops import detect_and_move_all_sidecars
+
+        # Create invalid sidecar file
+        comments_dir = tmp_path / ".comments"
+        comments_dir.mkdir()
+        invalid_sidecar = comments_dir / "invalid.json"
+        invalid_sidecar.write_text("{ invalid json }")
+
+        # Should not raise, just skip
+        moved = detect_and_move_all_sidecars(tmp_path)
+        assert moved == []
