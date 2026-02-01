@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Iteration 4 Complete — All Core CLI Commands Implemented!
-**Last Updated**: 2026-02-01 (Task 4.4 completed)
+**Status**: ✅ Iteration 5.1 Complete — MCP Server Foundation Ready!
+**Last Updated**: 2026-02-01 (Task 5.1 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 12/40 tasks complete (30%)
-**Next Action**: Iteration 5 - MCP Tools Interface
+**Current Implementation**: 13/40 tasks complete (32.5%)
+**Next Action**: Task 5.2 - CRUD Tools (list/show/reply/resolve)
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -672,14 +672,61 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 ---
 
 ### Iteration 5: MCP Tools Interface (3 tasks)
-**Blocked by**: Iteration 4
+**Blocked by**: Iteration 4 ✅ Complete
 **Focus**: Agent-facing JSON tools
 
-| Task | Description | Files | Backpressure |
-|------|-------------|-------|--------------|
-| 5.1 | MCP server + `comment_add` | `mcp_server.py`, tests | JSON schema validation, error codes |
-| 5.2 | CRUD tools (list/show/reply/resolve) | `mcp_server.py`, tests | Concurrency tests (multiple replies) |
-| 5.3 | `comment_reconcile` tool | `mcp_server.py`, tests | Performance (100 threads < 1s) |
+| Task | Description | Files | Backpressure | Status |
+|------|-------------|-------|--------------|--------|
+| 5.1 | MCP server + `comment_add` | `mcp_server.py`, tests | JSON schema validation, error codes | ✅ **COMPLETE** |
+| 5.2 | CRUD tools (list/show/reply/resolve) | `mcp_server.py`, tests | Concurrency tests (multiple replies) | 🔴 Not started |
+| 5.3 | `comment_reconcile` tool | `mcp_server.py`, tests | Performance (100 threads < 1s) | 🔴 Not started |
+
+#### Task 5.1: MCP Server + `comment_add` Tool ✅ COMPLETE
+
+**Description**: Implement MCP server foundation with `comment_add` tool for agent-based workflows
+
+**Spec References**: `specs/mcp-tools.md` (REQ-1, REQ-2, REQ-3, REQ-5, AC-1, AC-2, AC-4)
+
+**Implementation**: `src/comment_system/mcp_server.py` (256 lines)
+**Tests**: `tests/comment_system/test_mcp_server.py` (456 lines, 18 tests passing)
+
+**Deliverables**:
+- ✅ MCP server using `mcp` library with stdio transport
+- ✅ `list_tools()` handler exposing `comment_add` tool with JSON schema
+- ✅ `call_tool()` dispatcher for routing tool calls
+- ✅ `handle_comment_add()` implementation with full validation
+- ✅ Structured error handling with error codes (FILE_NOT_FOUND, VALIDATION_ERROR, etc.)
+- ✅ Request/response models (CommentAddRequest, CommentAddResponse, ErrorResponse)
+- ✅ All inputs validated via Pydantic before execution
+- ✅ All outputs as JSON (never raw text or stderr)
+- ✅ Hash mismatch detection with reconciliation suggestion
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- MCP protocol requires `list[TextContent]` return type with JSON strings
+- All errors must be returned in response body (no stderr usage)
+- Pydantic validation errors are caught and converted to structured ErrorResponse
+- Hash mismatch check prevents out-of-date comments (recommends reconciliation)
+- Tool schema uses JSON Schema format with required fields and constraints
+
+**Test Coverage**:
+- ✅ Tool listing: Verifies comment_add appears with correct schema
+- ✅ Basic operations: Create thread, verify sidecar, append to existing sidecar
+- ✅ Nested paths: Deep directory structures handled correctly
+- ✅ Validation errors: Missing fields, body too long, line_start=0
+- ✅ File errors: File not found, no git repo, path outside repo
+- ✅ Line range errors: Beyond file length, inverted ranges
+- ✅ Dispatcher: Routes to correct handler, unknown tool handling
+- ✅ Models: Request defaults, custom author, error response structure
+
+**Acceptance Criteria Met**:
+- ✅ AC-1: JSON output with correct structure (verified via CommentAddResponse model)
+- ✅ AC-2: FILE_NOT_FOUND error code for missing files
+- ✅ AC-4: Validation error for body length > 10,000 chars
+
+**Actual Size**: 256 lines of implementation, 456 lines of tests
+
+**Status**: ✅ COMPLETE (2026-02-01)
 
 ---
 
@@ -767,7 +814,7 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 12/40 tasks complete (30%)
+**Overall**: 13/40 tasks complete (32.5%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
@@ -775,7 +822,7 @@ Before marking any task complete:
 | **Iteration 2** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 3** | 2/2 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 4** | 4/4 | ✅ **COMPLETE** | No longer blocks |
-| Iteration 5 | 0/3 | 🔴 **READY TO START** | Now unblocked (Iter 4 complete) |
+| **Iteration 5** | 1/3 | 🟡 **IN PROGRESS** | Task 5.1 complete, 5.2-5.3 remain |
 | Iteration 6 | 0/3 | 🔴 **READY TO START** | Unblocked (can run parallel to Iter 5) |
 | Iteration 7 | 0/3 | 🔴 **READY TO START** | Unblocked (can run parallel to Iter 5) |
 | Iteration 8 | 0/2 | 🔴 **READY TO START** | Now unblocked (Iter 4 complete) |
@@ -797,7 +844,8 @@ Before marking any task complete:
 11. **✅ Task 4.2: `list` and `show` Commands** (DONE - 47 tests passing)
 12. **✅ Task 4.3: `reply`, `resolve`, `reopen` Commands** (DONE - 65 tests passing)
 13. **✅ Task 4.4: `reconcile` Command** (DONE - 82 tests passing)
-14. **🔴 Iteration 5: MCP Tools Interface** ← START HERE (or choose from Iterations 5-10)
+14. **✅ Task 5.1: MCP Server + `comment_add` Tool** (DONE - 18 tests passing)
+15. **🔴 Task 5.2: CRUD Tools (list/show/reply/resolve)** ← START HERE
 
 ---
 
