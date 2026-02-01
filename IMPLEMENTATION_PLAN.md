@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Task 3.2 Complete — Iteration 3 Done!
-**Last Updated**: 2026-02-01 (Task 3.2 completed)
+**Status**: ✅ Task 4.1 Complete — First CLI Command Working!
+**Last Updated**: 2026-02-01 (Task 4.1 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 8/40 tasks complete (20%)
-**Next Action**: Task 4.1 - CLI Foundation + `add` Command
+**Current Implementation**: 9/40 tasks complete (22.5%)
+**Next Action**: Task 4.2 - `list` and `show` Commands
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -477,12 +477,53 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 **Blocked by**: Iterations 1-3
 **Focus**: Click-based CLI with all core commands
 
-| Task | Description | Files | Backpressure |
-|------|-------------|-------|--------------|
-| 4.1 | CLI foundation + `add` | `cli.py`, tests, pyproject.toml | CLI tests, exit codes, output formats |
-| 4.2 | `list` and `show` commands | `cli.py`, tests | Filtering tests, NO_COLOR support |
-| 4.3 | `reply`, `resolve`, `reopen` | `cli.py`, tests | Workflow tests (add → reply → resolve → reopen) |
-| 4.4 | `reconcile` command | `cli.py`, tests | Integration tests (add → edit → reconcile) |
+| Task | Description | Files | Backpressure | Status |
+|------|-------------|-------|--------------|--------|
+| 4.1 | CLI foundation + `add` | `cli.py`, tests, pyproject.toml | CLI tests, exit codes, output formats | ✅ **COMPLETE** |
+| 4.2 | `list` and `show` commands | `cli.py`, tests | Filtering tests, NO_COLOR support | 🔴 **READY TO START** |
+| 4.3 | `reply`, `resolve`, `reopen` | `cli.py`, tests | Workflow tests (add → reply → resolve → reopen) | ⏸️ Blocked |
+| 4.4 | `reconcile` command | `cli.py`, tests | Integration tests (add → edit → reconcile) | ⏸️ Blocked |
+
+#### Task 4.1: CLI Foundation + `add` Command ✅ COMPLETE
+
+**Description**: Implement Click-based CLI with `comment add` command for creating threads
+
+**Implementation**: `src/comment_system/cli.py` (263 lines)
+**Tests**: `tests/comment_system/test_cli.py` (513 lines, 30 tests passing)
+
+**Deliverables**:
+- ✅ Click CLI framework with main group and version
+- ✅ `comment add FILE -L START:END BODY` command
+- ✅ Line range parsing with validation (START:END format)
+- ✅ Anchor creation with context extraction (±3 lines)
+- ✅ Sidecar creation and update (atomic writes via existing storage.py)
+- ✅ Helper functions: `extract_lines()`, `create_anchor()`, `compute_content_hash()`
+- ✅ Comprehensive error handling with proper exit codes:
+  - Exit code 0: Success
+  - Exit code 1: User error (invalid input, file outside repo)
+  - Exit code 2: System error (no git repo, I/O failures)
+- ✅ 30 tests covering:
+  - Unit tests for extract_lines() and create_anchor() (13 tests)
+  - Integration tests for `comment add` (11 tests)
+  - Error handling tests (6 tests)
+  - Edge cases: unicode, special chars, nested paths, single-line files (5 tests)
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- Git repo fixture needs to change working directory for `find_project_root()` to work in tests
+- Line range format `-L START:END` is intuitive and matches grep/sed conventions
+- Context extraction (±3 lines) provides enough signal for reconciliation without bloat
+- Exit code discipline (1 vs 2) helps users distinguish their errors from system errors
+- Snippet truncation at 500 chars prevents sidecar bloat while preserving readability
+
+**Acceptance Criteria Met**:
+- ✅ AC-1: `comment add PLAN.md -L 10:15 "Fix this"` creates thread and prints ID
+- ✅ AC-3: Invalid thread ID gives exit code 1 with clear error (tested with invalid line ranges)
+- ✅ Output includes: thread ID, file path, line range, sidecar path
+
+**Actual Size**: 263 lines of implementation, 513 lines of tests
+
+**Status**: ✅ COMPLETE (2026-02-01)
 
 ---
 
@@ -582,14 +623,14 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 8/40 tasks complete (20%)
+**Overall**: 9/40 tasks complete (22.5%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
 | **Iteration 1** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 2** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 3** | 2/2 | ✅ **COMPLETE** | No longer blocks |
-| Iteration 4 | 0/4 | 🔴 **READY TO START** | Now unblocked |
+| **Iteration 4** | 1/4 | 🟡 **IN PROGRESS** | Task 4.1 complete, 4.2-4.4 ready |
 | Iteration 5 | 0/3 | ⏸️ Blocked | Blocked by Iter 4 |
 | Iteration 6 | 0/3 | 🔴 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
 | Iteration 7 | 0/3 | 🔓 **READY TO START** | Now unblocked (can run parallel to Iter 2-5) |
@@ -608,7 +649,8 @@ Before marking any task complete:
 7. **✅ Task 2.3: Context-based Relocation** (DONE - 79 tests passing)
 8. **✅ Task 3.1: Multi-signal Reconciliation** (DONE - 15 tests passing)
 9. **✅ Task 3.2: Bulk Reconciliation + Atomicity** (DONE - 22 tests passing)
-10. **🔴 Task 4.1: CLI Foundation + `add` Command** ← START HERE
+10. **✅ Task 4.1: CLI Foundation + `add` Command** (DONE - 30 tests passing)
+11. **🔴 Task 4.2: `list` and `show` Commands** ← START HERE
 
 ---
 
