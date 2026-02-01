@@ -14,6 +14,7 @@ from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 from pydantic import BaseModel, Field, ValidationError
 
+from comment_system.anchors import reconcile_sidecar
 from comment_system.cli import (
     create_anchor,
     find_project_root,
@@ -143,6 +144,20 @@ class CommentReopenResponse(BaseModel):
 
     thread_id: str = Field(..., description="Thread ID")
     status: str = Field(..., description="New status (open)")
+
+
+class CommentReconcileRequest(BaseModel):
+    """Request model for comment_reconcile tool."""
+
+    file: str | None = Field(default=None, description="Path to source file (optional, omit for all files)")
+    threshold: float = Field(default=0.6, ge=0.0, le=1.0, description="Minimum similarity score for fuzzy matching")
+
+
+class CommentReconcileResponse(BaseModel):
+    """Response model for comment_reconcile tool."""
+
+    files_processed: list[dict[str, Any]] = Field(..., description="List of reconciliation reports per file")
+    total_threads: int = Field(..., description="Total threads reconciled across all files")
 
 
 # ============================================================================
@@ -311,6 +326,27 @@ async def list_tools() -> list[Tool]:
                 "required": ["thread_id"],
             },
         ),
+        Tool(
+            name="comment_reconcile",
+            description="Force reconciliation of anchors for a file or entire project",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "file": {
+                        "type": "string",
+                        "description": "Path to source file (omit for project-wide reconciliation)",
+                    },
+                    "threshold": {
+                        "type": "number",
+                        "description": "Minimum similarity score for fuzzy matching (0-1, default: 0.6)",
+                        "minimum": 0.0,
+                        "maximum": 1.0,
+                        "default": 0.6,
+                    },
+                },
+                "required": [],
+            },
+        ),
     ]
 
 
@@ -330,6 +366,8 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
             return await handle_comment_resolve(arguments)
         elif name == "comment_reopen":
             return await handle_comment_reopen(arguments)
+        elif name == "comment_reconcile":
+            return await handle_comment_reconcile(arguments)
         else:
             error = ErrorResponse(
                 code="UNKNOWN_TOOL", message=f"Unknown tool: {name}"
@@ -852,6 +890,120 @@ async def handle_comment_reopen(arguments: Any) -> list[TextContent]:
     response = CommentReopenResponse(
         thread_id=found_thread.id,
         status=found_thread.status.value,
+    )
+    return [TextContent(type="text", text=json.dumps(response.model_dump(), indent=2))]
+
+
+async def handle_comment_reconcile(arguments: Any) -> list[TextContent]:
+    """Handle comment_reconcile tool call."""
+    try:
+        # Validate input
+        req = CommentReconcileRequest(**arguments)
+    except ValidationError as e:
+        # Return validation errors with field-level details
+        error = ErrorResponse(
+            code="VALIDATION_ERROR",
+            message=f"Invalid input: {e}",
+        )
+        return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
+
+    # Find project root
+    try:
+        project_root = find_project_root(Path.cwd())
+    except ValueError as e:
+        error = ErrorResponse(code="NO_GIT_REPO", message=str(e))
+        return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
+
+    comments_dir = project_root / ".comments"
+
+    # Determine which files to reconcile
+    files_to_reconcile: list[tuple[Path, Path]] = []  # [(source_path, sidecar_path), ...]
+
+    if req.file:
+        # Single file reconciliation
+        try:
+            source_path = normalize_path(Path(req.file), project_root)
+        except ValueError as e:
+            error = ErrorResponse(code="INVALID_PATH", message=str(e))
+            return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
+
+        if not source_path.exists():
+            error = ErrorResponse(
+                code="FILE_NOT_FOUND",
+                message=f"Source file not found: {source_path}",
+            )
+            return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
+
+        sidecar_path = get_sidecar_path(source_path, project_root)
+        if sidecar_path.exists():
+            files_to_reconcile.append((source_path, sidecar_path))
+        else:
+            # No sidecar exists for this file - return success with empty results
+            response = CommentReconcileResponse(
+                files_processed=[],
+                total_threads=0,
+            )
+            return [TextContent(type="text", text=json.dumps(response.model_dump(), indent=2))]
+    else:
+        # Project-wide reconciliation
+        if not comments_dir.exists():
+            # No comments directory - return success with empty results
+            response = CommentReconcileResponse(
+                files_processed=[],
+                total_threads=0,
+            )
+            return [TextContent(type="text", text=json.dumps(response.model_dump(), indent=2))]
+
+        for sidecar_path in comments_dir.rglob("*.json"):
+            # Map sidecar back to source file
+            relative_sidecar = sidecar_path.relative_to(comments_dir)
+            # Remove .json extension to get source path
+            source_relative = Path(str(relative_sidecar)[: -len(".json")])
+            source_path = project_root / source_relative
+
+            if source_path.exists():
+                files_to_reconcile.append((source_path, sidecar_path))
+
+    # Reconcile all files
+    reports = []
+    total_threads = 0
+
+    for source_path, sidecar_path in files_to_reconcile:
+        try:
+            report = reconcile_sidecar(
+                sidecar_path,
+                source_path,
+                threshold=req.threshold,
+            )
+
+            # Convert report to dict for JSON serialization
+            report_dict = {
+                "file": str(source_path.relative_to(project_root)),
+                "total_threads": report.total_threads,
+                "anchored_count": report.anchored_count,
+                "drifted_count": report.drifted_count,
+                "orphaned_count": report.orphaned_count,
+                "max_drift_distance": report.max_drift_distance,
+                "source_hash_before": report.source_hash_before,
+                "source_hash_after": report.source_hash_after,
+            }
+            reports.append(report_dict)
+            total_threads += report.total_threads
+
+        except FileNotFoundError:
+            # Source file disappeared during reconciliation - skip it
+            continue
+        except Exception as e:
+            # Unexpected error during reconciliation - return error
+            error = ErrorResponse(
+                code="RECONCILIATION_FAILED",
+                message=f"Failed to reconcile {source_path}: {e}",
+            )
+            return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
+
+    response = CommentReconcileResponse(
+        files_processed=reports,
+        total_threads=total_threads,
     )
     return [TextContent(type="text", text=json.dumps(response.model_dump(), indent=2))]
 

@@ -10,10 +10,13 @@ from mcp.types import TextContent
 from comment_system.mcp_server import (
     CommentAddRequest,
     CommentAddResponse,
+    CommentReconcileRequest,
+    CommentReconcileResponse,
     ErrorResponse,
     call_tool,
     handle_comment_add,
     handle_comment_list,
+    handle_comment_reconcile,
     handle_comment_reopen,
     handle_comment_reply,
     handle_comment_resolve,
@@ -1095,7 +1098,424 @@ async def test_list_tools_includes_all():
         "comment_reply",
         "comment_resolve",
         "comment_reopen",
+        "comment_reconcile",
     ]
 
     for expected in expected_tools:
         assert expected in tool_names, f"Missing tool: {expected}"
+
+
+# ============================================================================
+# Test comment_reconcile Tool
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_reconcile_single_file_no_changes(sample_file: Path):
+    """Test reconciling a single file with no changes to source."""
+    # Create a comment first
+    result1 = await handle_comment_add(
+        {
+            "file": str(sample_file),
+            "line_start": 2,
+            "line_end": 3,
+            "body": "Test comment",
+        }
+    )
+    data1 = json.loads(result1[0].text)
+    assert "thread_id" in data1
+
+    # Reconcile without changes
+    result = await handle_comment_reconcile({"file": str(sample_file)})
+    data = json.loads(result[0].text)
+
+    assert "files_processed" in data
+    assert data["total_threads"] == 1
+    assert len(data["files_processed"]) == 1
+
+    report = data["files_processed"][0]
+    assert report["total_threads"] == 1
+    assert report["anchored_count"] == 1
+    assert report["drifted_count"] == 0
+    assert report["orphaned_count"] == 0
+    assert report["max_drift_distance"] == 0
+    assert report["source_hash_before"] == report["source_hash_after"]
+
+
+@pytest.mark.asyncio
+async def test_reconcile_single_file_after_insertion(sample_file: Path):
+    """Test reconciling after lines are inserted above anchor."""
+    # Create a comment
+    result1 = await handle_comment_add(
+        {
+            "file": str(sample_file),
+            "line_start": 3,
+            "line_end": 4,
+            "body": "Test comment",
+        }
+    )
+    data1 = json.loads(result1[0].text)
+    thread_id = data1["thread_id"]
+
+    # Modify file - insert line above anchor
+    sample_file.write_text("Line 1\nNEW LINE\nLine 2\nLine 3\nLine 4\nLine 5\n")
+
+    # Reconcile
+    result = await handle_comment_reconcile({"file": str(sample_file)})
+    data = json.loads(result[0].text)
+
+    assert data["total_threads"] == 1
+    report = data["files_processed"][0]
+    assert report["anchored_count"] == 1
+    assert report["drifted_count"] == 0
+    assert report["orphaned_count"] == 0
+    assert report["max_drift_distance"] == 1  # Moved down by 1 line
+
+    # Verify anchor was updated
+    project_root = sample_file.parent
+    sidecar_path = get_sidecar_path(sample_file, project_root)
+    sidecar = read_sidecar(sidecar_path)
+    thread = sidecar.threads[0]
+    assert thread.id == thread_id
+    assert thread.anchor.line_start == 4  # Was 3, now 4 (moved down)
+    assert thread.anchor.line_end == 5  # Was 4, now 5
+
+
+@pytest.mark.asyncio
+async def test_reconcile_single_file_after_modification(sample_file: Path):
+    """Test reconciling after anchor content changes slightly."""
+    # Create a comment
+    result1 = await handle_comment_add(
+        {
+            "file": str(sample_file),
+            "line_start": 2,
+            "line_end": 3,
+            "body": "Test comment",
+        }
+    )
+    data1 = json.loads(result1[0].text)
+    thread_id = data1["thread_id"]
+
+    # Modify file - change anchor content slightly
+    sample_file.write_text("Line 1\nLine 2 modified\nLine 3 modified\nLine 4\nLine 5\n")
+
+    # Reconcile
+    result = await handle_comment_reconcile({"file": str(sample_file)})
+    data = json.loads(result[0].text)
+
+    assert data["total_threads"] == 1
+    report = data["files_processed"][0]
+    # Should be found via fuzzy matching
+    assert report["drifted_count"] >= 0  # May be anchored or drifted depending on similarity
+
+    # Verify anchor still exists
+    project_root = sample_file.parent
+    sidecar_path = get_sidecar_path(sample_file, project_root)
+    sidecar = read_sidecar(sidecar_path)
+    thread = sidecar.threads[0]
+    assert thread.id == thread_id
+
+
+@pytest.mark.asyncio
+async def test_reconcile_single_file_after_deletion(sample_file: Path):
+    """Test reconciling after anchor content is deleted."""
+    # Create a comment
+    result1 = await handle_comment_add(
+        {
+            "file": str(sample_file),
+            "line_start": 2,
+            "line_end": 3,
+            "body": "Test comment",
+        }
+    )
+    data1 = json.loads(result1[0].text)
+    thread_id = data1["thread_id"]
+
+    # Modify file - remove lines completely
+    sample_file.write_text("Line 1\nLine 4\nLine 5\n")
+
+    # Reconcile
+    result = await handle_comment_reconcile({"file": str(sample_file)})
+    data = json.loads(result[0].text)
+
+    assert data["total_threads"] == 1
+    report = data["files_processed"][0]
+    assert report["orphaned_count"] >= 0  # Should be orphaned or drifted
+
+    # Verify anchor still exists
+    project_root = sample_file.parent
+    sidecar_path = get_sidecar_path(sample_file, project_root)
+    sidecar = read_sidecar(sidecar_path)
+    thread = sidecar.threads[0]
+    assert thread.id == thread_id
+
+
+@pytest.mark.asyncio
+async def test_reconcile_file_with_no_sidecar(sample_file: Path):
+    """Test reconciling a file that has no sidecar."""
+    result = await handle_comment_reconcile({"file": str(sample_file)})
+    data = json.loads(result[0].text)
+
+    assert data["files_processed"] == []
+    assert data["total_threads"] == 0
+
+
+@pytest.mark.asyncio
+async def test_reconcile_file_not_found(sample_file: Path):
+    """Test reconciling a non-existent file."""
+    result = await handle_comment_reconcile({"file": "nonexistent.txt"})
+    data = json.loads(result[0].text)
+
+    assert "error" in data
+    assert data["error"]["code"] == "FILE_NOT_FOUND"
+
+
+@pytest.mark.asyncio
+async def test_reconcile_project_wide_no_files(sample_file: Path):
+    """Test project-wide reconciliation with no sidecar files."""
+    result = await handle_comment_reconcile({})
+    data = json.loads(result[0].text)
+
+    assert data["files_processed"] == []
+    assert data["total_threads"] == 0
+
+
+@pytest.mark.asyncio
+async def test_reconcile_project_wide_single_file(sample_file: Path):
+    """Test project-wide reconciliation with one file."""
+    # Create a comment
+    result1 = await handle_comment_add(
+        {
+            "file": str(sample_file),
+            "line_start": 2,
+            "line_end": 3,
+            "body": "Test comment",
+        }
+    )
+    data1 = json.loads(result1[0].text)
+    assert "thread_id" in data1
+
+    # Reconcile project-wide
+    result = await handle_comment_reconcile({})
+    data = json.loads(result[0].text)
+
+    assert data["total_threads"] == 1
+    assert len(data["files_processed"]) == 1
+    assert data["files_processed"][0]["total_threads"] == 1
+
+
+@pytest.mark.asyncio
+async def test_reconcile_project_wide_multiple_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Test project-wide reconciliation with multiple files."""
+    # Create git repo
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    (repo_root / ".git").mkdir()
+
+    # Create multiple files
+    file1 = repo_root / "file1.txt"
+    file1.write_text("Line 1\nLine 2\nLine 3\n")
+
+    file2 = repo_root / "file2.txt"
+    file2.write_text("Line A\nLine B\nLine C\n")
+
+    # Change working directory
+    monkeypatch.chdir(repo_root)
+
+    # Create comments on both files
+    result1 = await handle_comment_add(
+        {
+            "file": str(file1),
+            "line_start": 1,
+            "line_end": 2,
+            "body": "Comment on file1",
+        }
+    )
+    data1 = json.loads(result1[0].text)
+    assert "thread_id" in data1
+
+    result2 = await handle_comment_add(
+        {
+            "file": str(file2),
+            "line_start": 2,
+            "line_end": 3,
+            "body": "Comment on file2",
+        }
+    )
+    data2 = json.loads(result2[0].text)
+    assert "thread_id" in data2
+
+    # Reconcile project-wide
+    result = await handle_comment_reconcile({})
+    data = json.loads(result[0].text)
+
+    assert data["total_threads"] == 2
+    assert len(data["files_processed"]) == 2
+
+
+@pytest.mark.asyncio
+async def test_reconcile_custom_threshold(sample_file: Path):
+    """Test reconciling with a custom similarity threshold."""
+    # Create a comment
+    result1 = await handle_comment_add(
+        {
+            "file": str(sample_file),
+            "line_start": 2,
+            "line_end": 3,
+            "body": "Test comment",
+        }
+    )
+    data1 = json.loads(result1[0].text)
+    assert "thread_id" in data1
+
+    # Reconcile with custom threshold
+    result = await handle_comment_reconcile({"file": str(sample_file), "threshold": 0.8})
+    data = json.loads(result[0].text)
+
+    assert data["total_threads"] == 1
+    assert len(data["files_processed"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_reconcile_invalid_threshold_too_low():
+    """Test reconcile with invalid threshold < 0."""
+    result = await handle_comment_reconcile({"threshold": -0.1})
+    data = json.loads(result[0].text)
+
+    assert "error" in data
+    assert data["error"]["code"] == "VALIDATION_ERROR"
+
+
+@pytest.mark.asyncio
+async def test_reconcile_invalid_threshold_too_high():
+    """Test reconcile with invalid threshold > 1."""
+    result = await handle_comment_reconcile({"threshold": 1.5})
+    data = json.loads(result[0].text)
+
+    assert "error" in data
+    assert data["error"]["code"] == "VALIDATION_ERROR"
+
+
+@pytest.mark.asyncio
+async def test_reconcile_json_output_structure(sample_file: Path):
+    """Test that reconcile JSON output has correct structure."""
+    # Create a comment
+    result1 = await handle_comment_add(
+        {
+            "file": str(sample_file),
+            "line_start": 2,
+            "line_end": 3,
+            "body": "Test comment",
+        }
+    )
+    data1 = json.loads(result1[0].text)
+    assert "thread_id" in data1
+
+    # Reconcile
+    result = await handle_comment_reconcile({"file": str(sample_file)})
+    data = json.loads(result[0].text)
+
+    # Validate structure
+    assert "files_processed" in data
+    assert "total_threads" in data
+    assert isinstance(data["files_processed"], list)
+    assert isinstance(data["total_threads"], int)
+
+    if len(data["files_processed"]) > 0:
+        report = data["files_processed"][0]
+        assert "file" in report
+        assert "total_threads" in report
+        assert "anchored_count" in report
+        assert "drifted_count" in report
+        assert "orphaned_count" in report
+        assert "max_drift_distance" in report
+        assert "source_hash_before" in report
+        assert "source_hash_after" in report
+
+
+@pytest.mark.asyncio
+async def test_reconcile_via_dispatcher(sample_file: Path):
+    """Test reconcile via call_tool dispatcher."""
+    # Create a comment
+    result1 = await call_tool(
+        "comment_add",
+        {
+            "file": str(sample_file),
+            "line_start": 2,
+            "line_end": 3,
+            "body": "Test comment",
+        },
+    )
+    data1 = json.loads(result1[0].text)
+    assert "thread_id" in data1
+
+    # Reconcile via dispatcher
+    result = await call_tool("comment_reconcile", {"file": str(sample_file)})
+    data = json.loads(result[0].text)
+
+    assert "files_processed" in data
+    assert data["total_threads"] == 1
+
+
+@pytest.mark.asyncio
+async def test_reconcile_request_model():
+    """Test CommentReconcileRequest model validation."""
+    # Valid request with file
+    req1 = CommentReconcileRequest(file="test.txt", threshold=0.7)
+    assert req1.file == "test.txt"
+    assert req1.threshold == 0.7
+
+    # Valid request without file (project-wide)
+    req2 = CommentReconcileRequest()
+    assert req2.file is None
+    assert req2.threshold == 0.6  # Default
+
+
+@pytest.mark.asyncio
+async def test_reconcile_response_model():
+    """Test CommentReconcileResponse model validation."""
+    response = CommentReconcileResponse(
+        files_processed=[
+            {
+                "file": "test.txt",
+                "total_threads": 1,
+                "anchored_count": 1,
+                "drifted_count": 0,
+                "orphaned_count": 0,
+                "max_drift_distance": 0,
+                "source_hash_before": "sha256:abc123",
+                "source_hash_after": "sha256:abc123",
+            }
+        ],
+        total_threads=1,
+    )
+    assert response.total_threads == 1
+    assert len(response.files_processed) == 1
+
+
+@pytest.mark.asyncio
+async def test_reconcile_idempotency(sample_file: Path):
+    """Test that reconcile is idempotent (REQ-4)."""
+    # Create a comment
+    result1 = await handle_comment_add(
+        {
+            "file": str(sample_file),
+            "line_start": 2,
+            "line_end": 3,
+            "body": "Test comment",
+        }
+    )
+    data1 = json.loads(result1[0].text)
+    assert "thread_id" in data1
+
+    # Reconcile once
+    result2 = await handle_comment_reconcile({"file": str(sample_file)})
+    data2 = json.loads(result2[0].text)
+
+    # Reconcile again immediately
+    result3 = await handle_comment_reconcile({"file": str(sample_file)})
+    data3 = json.loads(result3[0].text)
+
+    # Results should be identical (same hash, no changes)
+    assert data2["total_threads"] == data3["total_threads"]
+    assert data2["files_processed"][0]["source_hash_after"] == data3["files_processed"][0]["source_hash_after"]

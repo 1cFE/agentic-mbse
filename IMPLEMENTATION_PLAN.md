@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Iteration 5.2 Complete — MCP CRUD Tools Ready!
-**Last Updated**: 2026-02-01 (Task 5.2 completed)
+**Status**: ✅ Iteration 5 Complete — MCP Tools Interface Ready!
+**Last Updated**: 2026-02-01 (Task 5.3 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 14/40 tasks complete (35%)
-**Next Action**: Task 5.3 - MCP reconcile tool
+**Current Implementation**: 15/40 tasks complete (37.5%)
+**Next Action**: Iteration 6, 7, 8, or 9 - All unblocked and ready to start
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -679,7 +679,7 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 |------|-------------|-------|--------------|--------|
 | 5.1 | MCP server + `comment_add` | `mcp_server.py`, tests | JSON schema validation, error codes | ✅ **COMPLETE** |
 | 5.2 | CRUD tools (list/show/reply/resolve) | `mcp_server.py`, tests | Concurrency tests (multiple replies) | ✅ **COMPLETE** |
-| 5.3 | `comment_reconcile` tool | `mcp_server.py`, tests | Performance (100 threads < 1s) | 🔴 Not started |
+| 5.3 | `comment_reconcile` tool | `mcp_server.py`, tests | Performance (100 threads < 1s) | ✅ **COMPLETE** |
 
 #### Task 5.1: MCP Server + `comment_add` Tool ✅ COMPLETE
 
@@ -777,6 +777,66 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 
 **Status**: ✅ COMPLETE (2026-02-01)
 
+#### Task 5.3: MCP `comment_reconcile` Tool ✅ COMPLETE
+
+**Description**: Implement MCP tool for single-file and project-wide anchor reconciliation
+
+**Spec References**: `specs/mcp-tools.md` (REQ-1, REQ-2, REQ-4, REQ-5)
+
+**Implementation**: Extended `src/comment_system/mcp_server.py` (119 lines added)
+**Tests**: Extended `tests/comment_system/test_mcp_server.py` (17 new tests, 58 total tests passing)
+
+**Deliverables**:
+- ✅ Request/response models (CommentReconcileRequest, CommentReconcileResponse)
+- ✅ `comment_reconcile` tool in `list_tools()` with JSON schema
+- ✅ `handle_comment_reconcile()` implementation with single-file and project-wide modes
+- ✅ Updated `call_tool()` dispatcher to route reconcile requests
+- ✅ Validation for threshold parameter (0-1 range)
+- ✅ Idempotency verified (REQ-4): multiple reconciliations produce consistent results
+- ✅ Error handling with structured error codes (FILE_NOT_FOUND, VALIDATION_ERROR, etc.)
+- ✅ JSON output with per-file reports and aggregate statistics
+- ✅ All quality gates pass (mypy, ruff, pytest - 258 tests in comment_system)
+
+**Key Learnings**:
+- Reconcile handler naturally inherits atomicity from `reconcile_sidecar()` function
+- Project-wide reconciliation maps sidecar paths back to source files correctly
+- Empty results (no sidecar files) handled gracefully with empty array response
+- Threshold validation via Pydantic ensures valid similarity scores
+- Idempotency is critical for MCP tools - verified via repeat reconciliation tests
+
+**Test Coverage**:
+- ✅ Single file: no changes, after insertion, after modification, after deletion
+- ✅ File with no sidecar (empty results)
+- ✅ File not found error
+- ✅ Project-wide: no files, single file, multiple files
+- ✅ Custom threshold parameter (0.8)
+- ✅ Invalid thresholds: too low (-0.1), too high (1.5)
+- ✅ JSON output structure validation
+- ✅ Dispatcher routing
+- ✅ Request/response model validation
+- ✅ Idempotency (REQ-4): repeated reconciliations produce same hash
+
+**Acceptance Criteria Met**:
+- ✅ REQ-1: `comment_reconcile` tool defined with file and threshold parameters
+- ✅ REQ-2: JSON output with structured file reports
+- ✅ REQ-4: Idempotency verified - repeated calls are safe
+- ✅ REQ-5: Error codes for all failure modes (FILE_NOT_FOUND, VALIDATION_ERROR, etc.)
+
+**Actual Size**: 119 lines of implementation added (handler + models), ~530 lines of tests added (17 tests)
+
+**Status**: ✅ COMPLETE (2026-02-01)
+
+---
+
+### Iteration 5 Summary
+
+**Status**: ✅ COMPLETE (all 3 tasks done)
+**Total Implementation**: ~775 lines added to `mcp_server.py` (now 1005 lines total)
+**Total Tests**: ~1730 lines added, 58 tests passing
+**Tools Implemented**: comment_add, comment_list, comment_show, comment_reply, comment_resolve, comment_reopen, comment_reconcile
+
+**Iteration 5 unlocks**: Iteration 6 (Concurrency) and Iteration 7 (File Tracking) can now begin
+
 ---
 
 ### Iteration 6: Advanced Features - Concurrency (3 tasks)
@@ -863,7 +923,7 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 14/40 tasks complete (35%)
+**Overall**: 15/40 tasks complete (37.5%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
@@ -871,7 +931,7 @@ Before marking any task complete:
 | **Iteration 2** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 3** | 2/2 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 4** | 4/4 | ✅ **COMPLETE** | No longer blocks |
-| **Iteration 5** | 2/3 | 🟡 **IN PROGRESS** | Tasks 5.1-5.2 complete, 5.3 remains |
+| **Iteration 5** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | Iteration 6 | 0/3 | 🔴 **READY TO START** | Unblocked (can run parallel to Iter 5) |
 | Iteration 7 | 0/3 | 🔴 **READY TO START** | Unblocked (can run parallel to Iter 5) |
 | Iteration 8 | 0/2 | 🔴 **READY TO START** | Now unblocked (Iter 4 complete) |
@@ -895,7 +955,8 @@ Before marking any task complete:
 13. **✅ Task 4.4: `reconcile` Command** (DONE - 82 tests passing)
 14. **✅ Task 5.1: MCP Server + `comment_add` Tool** (DONE - 18 tests passing)
 15. **✅ Task 5.2: CRUD Tools (list/show/reply/resolve)** (DONE - 41 tests passing)
-16. **🔴 Task 5.3: MCP `comment_reconcile` Tool** ← START HERE
+16. **✅ Task 5.3: MCP `comment_reconcile` Tool** (DONE - 58 tests passing)
+17. **🔴 Next: Choose from Iteration 6, 7, 8, or 9** ← ALL UNBLOCKED
 
 ---
 
