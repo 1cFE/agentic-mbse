@@ -9,18 +9,29 @@
 
 | ID | Title | Severity | Resolve before | Status |
 |----|-------|----------|----------------|--------|
-| B-001 | [Model Implementation as a first-class concern](#b-001-model-implementation-as-a-first-class-concern) | High | Phase 1A | New |
-| B-002 | [Knowledge evolution and traceability are incomplete](#b-002-knowledge-evolution-and-traceability-are-incomplete) | High | Phase 1A | Approved |
-| B-003 | [Delete intent dimension; simplify work item taxonomy](#b-003-delete-intent-dimension-simplify-work-item-taxonomy) | Medium | Phase 1A | Approved |
-| B-004 | [Downstream pipeline is invisible](#b-004-downstream-pipeline-is-invisible) | Medium-High | Phase 1A | New |
-| B-005 | [Markdown parsing as state store is fragile](#b-005-markdown-parsing-as-state-store-is-fragile) | Medium | Phase 1A | New |
-| B-006 | [No decision promotion path from design.md to ARCHITECTURE.md](#b-006-no-decision-promotion-path) | Low | Phase 3D | New |
-| B-007 | [/review-model vs /audit-models boundary underspecified](#b-007-review-model-vs-audit-models-boundary) | Low | Phase 3D | New |
-| B-008 | [No inline knowledge capture during non-research commands](#b-008-no-inline-knowledge-capture) | Low-Medium | Phase 3D | New |
+| B-001 | [Model Implementation as a first-class concern](#b-001-model-implementation-as-a-first-class-concern) | High | Phase 1A | Complete |
+| B-002 | [Knowledge evolution and traceability are incomplete](#b-002-knowledge-evolution-and-traceability-are-incomplete) | High | Phase 1A | Complete |
+| B-003 | [Delete intent dimension; simplify work item taxonomy](#b-003-delete-intent-dimension-simplify-work-item-taxonomy) | Medium | Phase 1A | Complete |
+| B-004 | [Downstream pipeline is invisible](#b-004-downstream-pipeline-is-invisible) | Medium-High | Phase 1A | Complete |
+| B-005 | [Markdown parsing as state store is fragile](#b-005-markdown-parsing-as-state-store-is-fragile) | Medium | Phase 1A | Complete |
+| B-006 | [No decision promotion path from design.md to ARCHITECTURE.md](#b-006-no-decision-promotion-path) | Low | Phase 3C | Complete |
+| B-007 | [/review-model vs /audit-models boundary underspecified](#b-007-review-model-vs-audit-models-boundary) | Low | Phase 3C | Complete |
+| B-008 | [No inline knowledge capture during non-research commands](#b-008-no-inline-knowledge-capture) | Low-Medium | Phase 3C | Complete |
 | B-009 | [SOURCE_INDEX.md placement inconsistent](#b-009-source_indexmd-placement-inconsistent) | Low | Phase 1A | Closed |
-| B-010 | [No migration strategy for existing projects](#b-010-no-migration-strategy-for-existing-projects) | Medium-High | Phase 3E | New |
-| B-011 | [AP-7 Tier 2 claude -p dependency unaddressed](#b-011-ap-7-tier-2-claude--p-dependency) | Medium | Phase 3E | New |
+| B-010 | [No migration strategy for existing projects](#b-010-no-migration-strategy-for-existing-projects) | Medium-High | Phase 1A | Complete |
+| B-011 | [AP-7 Tier 2 claude -p dependency unaddressed](#b-011-ap-7-tier-2-claude--p-dependency) | Medium | Phase 3D | Closed |
 | B-012 | [File structure should reflect information flow model](#b-012-file-structure-should-reflect-information-flow-model) | High | Phase 1A | Complete |
+
+---
+
+## Instuctions
+
+1. Align on conceptual intent
+2. Identify architectural impacts and changes required
+3. Keep status up-to-date:
+  - New: gap identified
+  - Approved: all changes identified and agreed on in the backlog item
+  - Complete: all changes implemented in the architecture documents
 
 ---
 
@@ -28,139 +39,182 @@
 
 **Severity**: High
 **Resolve before**: Phase 1A
-**Status**: New
-**Context**: The unified architecture doc currently labels `active/` as "ephemeral, not a Role." This is wrong. The management of work items, epics, and their lifecycle is a core architectural concern.
+**Status**: Complete — decisions made, pending integration into architecture documents
 
 ### The Problem
 
-The current unified-toolkit-architecture.md defines six information roles. Five of them (Authority Sources, Domain Knowledge, Project Intent, Modeling Requirements, Modeling Decisions) have detailed data models, control flows, and structured homes. The sixth — what the original taxonomy research called "Model Implementation" — was collapsed to a footnote.
+The architecture defines six information roles with detailed data models, control flows, and structured homes. But the *process* of creating, managing, and completing work — epics, work items, their lifecycle, feedback loops — was collapsed to scattered mentions across workflows.md and main.md. This confused the artifacts (spec.md, design.md, plan.md — ephemeral) with the process of managing them (not ephemeral at all).
 
-The justification was: "per-feature spec/design/plan files are ephemeral, so they don't need a role in the information architecture." This confused two things:
+B-001 raised four concerns and six open questions. Analysis grounded in fusion-tea's actual practice resolved all of them.
 
-1. **The artifacts** (spec.md, design.md, plan.md) — yes, these are scoped to a work item and archived when done
-2. **The process** of creating, managing, and completing work — this is not ephemeral at all; it is the central activity the entire toolkit exists to support
+### Key Structural Decision: Not a New Role
 
-The original taxonomy (`.project/research/20260130-235423_information-role-taxonomy.md`) had this as a full role with sub-stages: Architecture, Epics, Work Item Cycle, Model Artifacts, and a Decision Lifecycle with feedback loops. All of that was dropped.
+Work items are **operational process**, not an information role. The `work/` directory is already in the file structure (B-012). The information architecture already covers the data (files in `work/`). What was missing is the **lifecycle** of those files — entity models, state machines, conventions, and feedback flows. This belongs in **workflows.md** as a new section, not in information-architecture.md as a new Role.
 
-### What "Role" means in this architecture
+### Resolved Concerns
 
-A Role in the information architecture is a **category of information with defined producers, consumers, data models, and lifecycle management**. The question is not whether the individual artifacts are long-lived — it's whether the system needs structured management of this category.
+#### Concern 1: Epic Lifecycle — Two artifacts, two jobs
 
-By this definition, Model Implementation is unambiguously a Role:
-- It has producers (the entire command set: `/spec-model`, `/design-model`, etc.)
-- It has consumers (`/status`, `/audit-models`, the PM script engine)
-- It needs data models (what is an epic? what is a work item? what states can they be in?)
-- It needs lifecycle management (creation, execution, pausing, resuming, archiving, feedback)
+**Decision**: Epics have two artifacts: a dedicated decomposition file (`work/backlog/epic-{name}.md`) and a summary entry in `work/BACKLOG.md`. No E-XXX ID scheme. No formal state machine beyond draft/active/completed.
 
-### What Must Be Managed
+**Why dedicated files**: Real epic decompositions are substantial (~650 lines in fusion-tea's pipeline de-risking epic). They contain: executive summary, context, system design, success criteria, risks, and detailed per-item breakdowns with scope, deliverables, and dependencies. This is the working document where the decomposition is iterated. Trying to fit that into a BACKLOG.md section would make BACKLOG.md unreadable.
 
-#### 1. Epic Lifecycle
+**The workflow**: Start with research/spec → realize it's too big → write epic file → iterate on decomposition → epic file has per-item requirements → move to item-by-item execution → each `/spec-model` reads the epic file for its baseline → BACKLOG.md tracks progress.
 
-Epics are scoped chunks of modeling work aligned to goals and architecture.
+**BACKLOG.md** is the dashboard: summary entries for both epics and standalone items. Epic files provide the depth; BACKLOG.md provides the breadth.
 
-**Data model needed**:
-- What is an epic? (scope, goal alignment, decomposition into work items)
-- What states can an epic be in? (proposed, active, paused, completed, revised)
-- How does an epic relate to Goals (G-XXX) and Architecture Decisions (AD-XXX)?
-- Where does an epic live in the file system?
+**Epic state is derived**: draft (file exists, no items in pipeline), active (at least one sub-item active), completed (all sub-items completed).
 
-**Control flows needed**:
-- Creation: How are epics proposed and approved? Must align with OVERVIEW.md goals and ARCHITECTURE.md structure.
-- Decomposition: How is an epic broken into work items? (The `epic-decomposition` skill covers the methodology, but the actual mechanics — where items go, how they're tracked — need definition.)
-- Completion: How is an epic closed? What gets archived? What gets updated?
+#### Concern 2: Work Item Lifecycle — Consolidated entity model
 
-#### 2. Work Item Lifecycle
+**Decision**: Define a single authoritative work item entity model with spec.md as the state-bearing file.
 
-Work items are the individual units that go through the pipeline (spec -> design -> plan -> implement).
+**Work item entity model** — parseable metadata header in spec.md:
 
-**Data model needed**:
-- What is a work item? (intent, scale, current stage, parent epic)
-- What states can a work item be in? (backlog, active:speccing, active:designing, active:planning, active:implementing, paused, completed, abandoned)
-- What artifacts does a work item produce at each stage? (spec.md, design.md, plan.md, model files)
-- How is state tracked? (File system conventions that the PM script engine can parse)
+```yaml
+---
+Status: active | paused | abandoned | failed | completed
+Scale: standard
+Epic: [epic name, matching BACKLOG.md section header]
+Owner: [who is working on this]
+Created: YYYY-MM-DD
+Updated: YYYY-MM-DD
+---
+```
 
-**Control flows needed**:
-- Creation: From epic decomposition, or standalone (quick fix, investigation).
-- Stage transitions: What triggers moving from spec -> design -> plan -> implement? Who/what validates that a stage is complete?
-- Pausing and resuming: How does the system track that a work item was paused at "implementing, phase 2 of 3"? How does it resume?
-- Abandonment: What happens when a work item is abandoned? (Different from completion — no archive celebration, but the artifacts may still be useful.)
+**spec.md is the authoritative state-bearing file** for each work item. It is the first artifact created and the last one relevant. The PM script engine reads `work/active/{item}/spec.md` metadata header as the single source of truth for work item state. Other files (design.md, plan.md) may have their own Status fields for stage-level tracking, but the work item's overall state comes from spec.md. This gives the dashboard a single read point per work item.
 
-#### 3. The Pipeline Execution Process
+**Work item states** (consolidated):
 
-The spec -> design -> plan -> implement cycle itself.
+| State | Determined by | Mechanism |
+|-------|--------------|-----------|
+| **backlog** | Entry in `work/BACKLOG.md`, no directory in `work/active/` | BACKLOG.md row |
+| **active** | Directory exists in `work/active/{item}/`, spec.md Status = `active` | File system + header |
+| **active:stage** | Which artifact files exist: spec.md only = speccing; +design.md = designing; +plan.md = planning; implementation started = implementing | File system |
+| **paused** | spec.md Status = `paused` | Metadata header |
+| **abandoned** | spec.md Status = `abandoned` | Metadata header |
+| **failed** | spec.md Status = `failed` (work attempted, approach didn't work) | Metadata header |
+| **completed** | Directory in `work/completed/YYYYMMDD_{item}/` | File system (post-archive) |
 
-**Already partially defined** in the unified architecture (Sections 5-7: Work Item Model, PM, Research Split). But the current treatment focuses on *routing* (which stages to run based on intent/scale) and says little about:
+**Key**: File-system-derived state (which files exist → which stage) is sufficient for active items. The Status field in spec.md handles states that can't be inferred from file existence: paused, abandoned, failed. The PM script reads both.
 
-- **Stage completion criteria**: How does the system know a spec is "done enough" to move to design? Is it purely user approval, or are there structural checks? (E.g., "spec must have at least one MR-XXX" or "design must have a validated prototype.")
-- **Artifact conventions**: What exactly goes in each artifact file? Not the templates (those are in commands), but the file system conventions that make artifacts parseable by scripts.
-- **Inter-stage data flow**: What does design.md read from spec.md? What does plan.md read from design.md? These dependencies define the contract between pipeline stages.
+#### Concern 3: Pipeline Execution — Conventions, not enforcement
 
-#### 4. Feedback Loops
+**Stage completion criteria**: User-approved only. No structural gates. AP-5 (toolkit, not pipeline) says don't add friction. The agent guides quality through command prompts; the user decides when to proceed. Adding structural checks ("spec must have at least one MR-XXX") would be validation theater — the agent can't truly verify completeness, only field presence.
 
-The most architecturally important and currently least defined aspect.
+**Inter-stage data flow contract** (documentation of what commands already do, not enforcement):
 
-**4a. Keeping PM documents up to date**
+| Stage file | Produces (for downstream) | Consumes (from upstream) |
+|-----------|--------------------------|-------------------------|
+| spec.md | MR-XXX requirements, success criteria, scope boundaries | G-XXX goals, DI-XXX insights, existing model state |
+| design.md | Architecture approach, interface decisions, prototype validation results | MR-XXX from spec.md, AD-XXX from ARCHITECTURE.md, PR-XXX from REQUIREMENTS.md |
+| plan.md | Phased implementation plan, per-phase scope, risk mitigations | Design decisions from design.md, model dependency analysis |
 
-When a work item completes, what project-level documents need updating?
-- BACKLOG.md status
-- REQUIREMENTS.md (if the work item revealed a new project-wide rule — Role 4 promotion)
-- ARCHITECTURE.md (if the work item produced a new architectural decision — Role 5 evolution)
-- VALIDATION_MATRIX.md (if new system-level verification criteria emerged)
-- KNOWLEDGE.md (if new domain insights were discovered during implementation)
+This table serves three purposes: (a) skills can reference it for what to load at each stage, (b) commands can be validated against it during Phase 3C, (c) the PM script engine knows what metadata to expect in each file.
 
-**This is a non-trivial coordination problem.** Currently nothing ensures these updates happen. The PM script engine (AP-7) can detect *staleness* (e.g., "work item X completed but BACKLOG.md still shows it as active"), but someone needs to trigger the updates.
+**Artifact conventions** — each file has a YAML frontmatter header with at minimum:
 
-**Options**:
-- Agent-prompted: At work item completion, the `/status close` flow prompts "do any project documents need updating?" and walks through each
-- Script-checked: The PM engine detects inconsistencies and flags them in the dashboard
-- Both: Script detects, agent helps resolve
+```yaml
+---
+Status: [stage-specific status]
+Created: YYYY-MM-DD
+Updated: YYYY-MM-DD
+Related Artifacts:
+  Spec: ./spec.md          # (in design.md and plan.md)
+  Design: ./design.md      # (in plan.md)
+---
+```
 
-**4b. Revising strategies based on learnings**
+The body structure is defined by the command prompts (Phase 3C concern), not the architecture. The architecture only constrains the parseable header.
 
-As work items complete, the team learns things that may invalidate earlier decisions:
-- An epic's scope was wrong -> revise the epic, re-decompose
-- An architectural decision doesn't hold -> revise ARCHITECTURE.md
-- A goal turns out to be infeasible -> revise OVERVIEW.md
-- A modeling rule is too strict or too loose -> revise REQUIREMENTS.md
+#### Concern 4: Feedback Loops — Hybrid close flow
 
-**This is the "going back" problem at the project level** (distinct from the per-work-item backward navigation already described in Section 5.5 of the architecture doc).
+**Decision**: Script handles deterministic parts (archive + BACKLOG.md update). Agent prompts for judgment parts (project document updates). This is the "both" option.
 
-**Control flow needed**: When a work item reveals a project-level issue, how does the system:
-1. Surface the issue (detection — could be agent insight or user observation)
-2. Scope the impact (which documents are affected? which other work items depend on the flawed decision?)
-3. Execute the revision (update the document, re-validate affected work items)
-4. Track the revision (so it's clear the project evolved, not that someone made an error)
+**Close flow**:
 
-**4c. Non-linear development**
+```
+/status close <item>
+  │
+  ├─► Script (AP-7 T1): Archive work item
+  │     1. Move work/active/{item}/ → work/completed/YYYYMMDD_{item}/
+  │     2. Update BACKLOG.md status to completed
+  │     3. Return confirmation with archive path
+  │
+  └─► Agent: Project document review prompt
+        "This work item is archived. Before we're done,
+         let's check if any project-level documents should be updated."
 
-Already partially addressed by the Work Item Taxonomy (intent x scale) and backward navigation. But some scenarios need more definition:
+        Trigger questions (concrete, answerable from recent experience):
+        - REQUIREMENTS.md: "Did you discover a pattern that should
+          be a project-wide rule?"
+        - ARCHITECTURE.md: "Did you make a structural decision that
+          future work items need to know?"
+        - VALIDATION_MATRIX.md: "Should any new system-level
+          verification criteria be added?"
+        - KNOWLEDGE.md: "Did you learn something about the domain
+          that isn't captured yet?"
 
-- **Quick fixes that bypass the pipeline**: `/quick-model` handles trivial changes, but what if a quick fix reveals a deeper problem? How does it escalate to a full work item?
-- **Refactoring across work items**: A refactoring work item touches artifacts produced by multiple completed work items. How does it interact with the archived artifacts?
-- **"Undo" at the work item level**: A completed work item turns out to be wrong. What's the process? Create a new "Fix" work item that references the original? Reopen the original?
-- **Concurrent work items**: Two work items are active simultaneously and touch overlapping model files. How are conflicts detected and resolved?
+        For each "yes": agent helps draft the update,
+        calls the appropriate AP-7 script.
+```
 
-### Proposed Strategy
+**Project-level revisions** (4b from original): When a work item reveals a project-level issue (flawed architecture decision, infeasible goal), the system does not automate detection — this requires human judgment or agent insight. The close flow's trigger questions are the structured opportunity to surface these. For mid-work-item discoveries, the existing backward navigation (workflows.md § 2.3) handles the per-item response; project-level impact is surfaced at close time.
 
-**Recommendation: Option C (Hybrid)** — Add a brief Role entry in Section 3 that defines the data models (epic, work item, states, file system conventions). Then create a dedicated section that defines the process (pipeline execution, feedback loops, non-linear development). The Role entry points to the process section for control flows.
+**Non-linear development** (4c from original): Already adequately covered by existing mechanisms:
+- Quick fix escalation: `/quick-model` user recognizes complexity → creates standard work item via `/backlog add`
+- Cross-item refactoring: New standard work item that references originals; archived artifacts in `work/completed/` are readable
+- Undo: Create a new work item that references and corrects the original; don't reopen
+- Concurrent items: Git handles file-level conflicts; not an architectural concern at this scale
 
-This aligns with how we've already structured other roles: Role 2 (Domain Knowledge) has a data model in Section 3 and a control flow (research-to-knowledge flow) described separately. Role 3 (Project Intent) has a data model in Section 3 and a deferred control flow (intent formalization).
+#### Resumability Convention
 
-See also: [B-001 Open Questions](#b-001-open-questions)
+When a paused work item resumes, the convention is:
+- **Resume = re-read the existing artifact files for the current stage + the plan**
+- `/status` dashboard shows paused items with their current stage
+- The user picks one; the relevant command (`/design-model`, `/implement-model`, etc.) reads existing artifacts to reconstruct context
+- No separate "resume" command needed — existing commands handle "artifact already exists, continue from where we left off"
+- spec.md Status field is updated from `paused` back to `active` (PM script or manual)
 
-### B-001 Open Questions
+### Resolved Open Questions
 
-1. **Epic data model**: What fields does an epic have? The `epic-decomposition` skill covers methodology, but the actual data model (ID scheme, required fields, relationship to goals) needs definition.
+| # | Question | Decision | Rationale |
+|---|----------|----------|-----------|
+| 1 | Epic data model | Two artifacts: dedicated file (`work/backlog/epic-{name}.md`) for decomposition + summary entry in BACKLOG.md for tracking. State derived from sub-items (draft/active/completed). No E-XXX IDs. | Fusion-tea's epics are ~650 lines — they need dedicated files. BACKLOG.md is the dashboard, not the decomposition workspace. |
+| 2 | Work item state derivation | File-system state for active/completed/backlog. spec.md YAML frontmatter Status field for paused/abandoned/failed. spec.md is the single authoritative state-bearing file. | States that can't be inferred from file existence need an explicit field. Single read point per item keeps the PM engine simple. |
+| 3 | Stage completion criteria | User-approved only. No structural gates. | AP-5 (toolkit, not pipeline). Agent guides quality; user decides progression. Structural checks are validation theater. |
+| 4 | Feedback loop automation | Hybrid: script archives + agent prompts trigger-question checklist at close time. Knowledge supersession already solved (B-002). | Deterministic part (archive) = script. Judgment part (which documents need updating) = agent-prompted with concrete questions. |
+| 5 | Concurrent work items | Not an architectural concern. Git handles conflicts. | Fusion-tea: ~3-5 concurrent items, no structural problems. |
+| 6 | Relationship to existing sections | No new Role in information-architecture.md. Add work item lifecycle section to workflows.md between § 2 (Work Item Model) and § 3 (Project Management). | Work items are operational process, not information architecture. File structure already settled (B-012). |
 
-2. **Work item state derivation**: The current PM script engine section (6.2) derives state from file system structure. Is this sufficient, or do we need an explicit state file (e.g., `work/active/{item}/STATUS.md`) for states that can't be inferred from file existence alone (paused, abandoned)?
+### Architecture Document Changes
 
-3. **Stage completion criteria**: Are these purely user-approved ("I'm done with the spec, let's move on") or do we add structural checks ("spec must contain at least one MR-XXX before moving to design")? Structural checks add rigor but also friction.
+**In workflows.md** — new section between § 2 (Work Item Model) and § 3 (Project Management):
 
-4. **Feedback loop automation**: How much of the "keep PM documents up to date" flow should be automated vs. prompted? The AP-7 principle says scripts handle state transitions, but detecting *which* transitions are needed may require agent judgment.
+1. **Work item entity model** — the parseable YAML frontmatter header that spec.md must have (Status, Scale, Epic, Owner, Created, Updated), consolidated from fusion-tea's actual practice
+2. **Work item states** — consolidated state table including paused/abandoned/failed with their mechanisms, spec.md as authoritative state-bearing file
+3. **Stage artifacts and conventions** — what each file contains (YAML header requirements), inter-stage data flow contract table, what the PM script engine can parse
+4. **Resumability convention** — paused items resume by re-reading artifacts, no special machinery
+5. **Work item close flow** — archive (AP-7 T1) + feedback prompt checklist with trigger questions
+6. **Epic tracking** — two artifacts: dedicated file in `work/backlog/epic-{name}.md` for decomposition, summary entry in BACKLOG.md for tracking. State derived from sub-items.
 
-5. **Concurrent work item conflicts**: Is this a real problem for modeling projects, or is it rare enough to handle ad-hoc? Fusion-tea has had ~3 concurrent active items — conflicts have been manageable.
+**In information-architecture.md file structure** — add `work/backlog/` subdirectory for epic decomposition files.
 
-6. **Relationship to existing Sections 5-7**: If we adopt Option C, the existing Work Item Model (Section 5), PM (Section 6), and Research Split (Section 7) sections need consolidation. How much restructuring is appropriate at this stage vs. deferring to when we actually implement?
+**In main.md AP-7 operations table** — one update:
+
+| Operation | Tier | What the script does |
+|-----------|------|---------------------|
+| Close work item | T1 | Move `work/active/{item}/` → `work/completed/YYYYMMDD_{item}/`, update `work/BACKLOG.md` status. Agent handles feedback prompt separately. |
+
+Note: "Archive work item" already exists in the AP-7 table. Rename to "Close work item" and clarify that the agent-driven feedback prompt is a separate concern (not part of the script).
+
+**In information-architecture.md** — no changes. Work items are not a new Role. The `work/` directory description is already adequate.
+
+### Coupling with other backlog items
+
+- **B-002 (Knowledge evolution)**: B-002's supersession flow is a specific instance of the feedback loop pattern. The close-flow trigger question for KNOWLEDGE.md is the general case.
+- **B-005 (Markdown parsing)**: The YAML frontmatter decision for spec.md metadata directly addresses B-005's concern about parseable state. B-005 should reference this as the established pattern.
+- **B-012 (File structure)**: Already resolved. The `work/` directory structure is settled. B-001 defines what goes *in* those files.
 
 ### References
 
@@ -174,7 +228,7 @@ See also: [B-001 Open Questions](#b-001-open-questions)
 
 **Severity**: High
 **Resolve before**: Phase 1A
-**Status**: Approved
+**Status**: Complete — integrated into information-architecture.md § 5, workflows.md § 6, main.md AP-7 operations
 
 This item covers three related problems that must be solved together: (A) knowledge can't evolve, (B) model-to-knowledge traceability isn't formalized in the architecture, and (C) there's no impact propagation when knowledge changes.
 
@@ -227,6 +281,8 @@ Hop 1 (DI -> MR): KNOWLEDGE.md's `Derived requirements` field references MR-XXX 
 Hop 2 (MR -> model): **Not structurally defined.** The spec.md lists MR-XXX requirements, and the model is supposed to satisfy them, but nothing in the architecture says how the link is recorded or verified.
 Hop 3 (model -> source): Doc comment conventions exist in commands/templates but aren't part of the architecture. `traceability_matrix.csv` partially covers this but isn't connected to the information architecture.
 
+**Fundamental problem with the four-hop chain**: It routes through ephemeral working documents (spec.md). Specs are numerous, fine-grained, and may be superseded or archived. If the traceability chain depends on spec.md being present and parseable, it breaks when work items are completed and archived. The durable traceability infrastructure must not depend on ephemeral artifacts.
+
 ### Problem C: No impact propagation when knowledge changes
 
 When a DI-XXX insight is superseded, the system has no way to answer: "what model elements depend on this insight and need review?"
@@ -242,14 +298,50 @@ Steps 1-3 are answerable if the data model is complete. Step 4 requires a formal
 
 ### Proposed Architecture Changes
 
+#### Key design decision: spec.md is a working document, not a traceability link
+
+The original analysis (Problem B) proposed a four-hop traceability chain routing through MR-XXX in spec.md. This has a fundamental problem: **specs are ephemeral working documents**. They are numerous, fine-grained, and get archived or superseded. Durable traceability must not depend on ephemeral artifacts.
+
+**Revised approach**: The durable traceability chain uses only durable artifacts:
+
+```
+DI-XXX (domain insight, in KNOWLEDGE.md)
+   |
+   | Source column in REQUIREMENTS.md
+   v
+PR-XXX (promoted requirement, in REQUIREMENTS.md)
+   |
+   | Requirement column in traceability_matrix.csv
+   v
+Model element (part def, calc def, constraint)
+   |
+   | Source/Reference fields in doc comment
+   v
+Authority source (file:line in PyFECONS, section in spec doc)
+```
+
+Every node in this chain is durable. spec.md is where requirements are *discovered* and promotion decisions are *made*, but it is not load-bearing for traceability.
+
+**How this works in practice**:
+- `/spec-model` writes spec.md with many fine-grained MR-XXX requirements (ephemeral)
+- Some MR-XXX are significant enough to be durable — the agent or user flags these for promotion
+- `/implement-model` calls the `trace-element` AP-7 script, which:
+  1. Promotes flagged MR-XXX to PR-XXX in `project/REQUIREMENTS.md` (if not already there)
+  2. Records the model element → PR-XXX link in `data/traceability_matrix.csv`
+  3. The PR-XXX entry's `Source` column records the DI-XXX or G-XXX it derives from
+
+**What "promotion" means**: Not all MR-XXX get promoted. Fine-grained implementation details ("use ISQ::mass for weight attributes") stay in spec.md and die with the work item. Significant domain requirements ("power balance must account for recirculating power fraction") get promoted to PR-XXX because they're worth tracking long-term. The spec.md flags which MR-XXX should be promoted; `/implement-model` executes the promotion.
+
+**New PR-XXX sub-type**: Add `domain requirement` to the existing sub-types in Role 4 (modeling patterns, structural rules, documentation rules, enforcement rules, naming conventions). Domain requirements are promoted from per-work-item specs and trace to DI-XXX domain insights or G-XXX goals.
+
 #### Change 1: Add traceability as a cross-cutting concern in the architecture doc
 
 Traceability is not an information role — it's the *connective tissue between roles*. The architecture should define the link types, not just the roles.
 
-**Add to Section 3 (after the Document Relationship Map) a new subsection: "3.4 Traceability Model"**
+**Add a new section: "Traceability Model"**
 
 ```
-### 3.4 Traceability Model
+### Traceability Model
 
 The information roles defined above are connected by explicit, typed links.
 These links are the primary mechanism for impact analysis when knowledge evolves.
@@ -258,12 +350,15 @@ These links are the primary mechanism for impact analysis when knowledge evolves
 
 | Link | From | To | Recorded in | Verified by |
 |------|------|----|-------------|-------------|
-| **derives** | DI-XXX (insight) | MR-XXX (requirement) | KNOWLEDGE.md `Derived requirements` field | /status (coverage check) |
-| **satisfies** | Model element | MR-XXX (requirement) | traceability_matrix.csv `Requirement` column | /audit-models (completeness check) |
+| **derives** | DI-XXX (insight) | PR-XXX (requirement) | REQUIREMENTS.md `Source` column | /audit-models (coverage check) |
+| **satisfies** | Model element | PR-XXX (requirement) | traceability_matrix.csv `Requirement` column | /audit-models (completeness check) |
 | **sources** | Model element | Authority source | Doc comment `Source`/`Reference` fields | Level 6 validation (existence + format) |
-| **traces-to** | MR-XXX (requirement) | G-XXX (goal) or AQ-XXX (question) | spec.md traceability section | /status (goal coverage) |
+| **traces-to** | PR-XXX (requirement) | G-XXX (goal) or AQ-XXX (question) | REQUIREMENTS.md `Source` column | /status (goal coverage) |
 | **justifies** | AD-XXX (decision) | Model structure | ARCHITECTURE.md `Rationale` field | /audit-models (adherence check) |
 | **supersedes** | DI-XXX (new) | DI-XXX (old) | KNOWLEDGE.md `Superseded-by` field | approval script (automatic) |
+
+All links are between durable artifacts. Per-work-item spec.md files may reference
+these IDs but are not part of the durable traceability chain.
 
 #### The Traceability Matrix
 
@@ -277,7 +372,8 @@ Schema:
 | Element | Model element name | `MagnetSystemCostCalc` |
 | File | SysML file path | `models/library/calculations/magnet_cost.sysml` |
 | Type | Element kind | `calc def` |
-| Requirements | MR-XXX IDs this element satisfies | `MR-005, MR-012` |
+| Knowledge | DI-XXX IDs this element traces to | `DI-003, DI-012` |
+| Requirement | PR-XXX IDs this element satisfies | `PR-005` |
 | Source_Type | Authority source kind | `codebase` |
 | Source_Document | Authority source name | `PyFECONS` |
 | Source_Location | Specific location | `CAS220103/magnet_cost.py:94` |
@@ -285,24 +381,23 @@ Schema:
 | Assumptions | Known approximations | `Uses 2024 material costs` |
 | Last_Verified | Date of last audit | `2026-01-28` |
 
-**Key addition vs. current template**: The `Requirements` column. This is what makes
-hop 2 (MR -> model element) queryable.
+The matrix has both `Knowledge` (DI-XXX) and `Requirement` (PR-XXX) columns.
+Either or both may be populated for a given element. The `Knowledge` column enables
+direct impact queries when a DI-XXX is superseded, without requiring an intermediate
+requirement hop. The `Requirement` column enables requirement coverage checking.
 
 **Ownership**: Tool-owned schema (columns), user-owned data (rows).
 **Populated by**: `/implement-model` calls `agentic-mbse pm trace-element` (AP-7 T1 script)
-  to append rows. Agent supplies content (element, file, requirements, source); script
-  enforces schema, prevents duplicates, validates MR-XXX IDs against spec.md.
-**Requirements identified by**: `/spec-model` — spec.md lists MR-XXX requirements and
-  names which model elements (existing or planned) must satisfy them.
-**Verified by**: `/audit-models` (checks completeness against spec.md MR-XXX list).
-  Future: `agentic-mbse validate` traceability level (parses SysML via syside, checks
-  all definitions have traceability entries).
+  to append rows. Agent supplies content; script enforces schema, prevents duplicates,
+  validates PR-XXX IDs exist in REQUIREMENTS.md and DI-XXX IDs exist in KNOWLEDGE.md.
+**Verified by**: `/audit-models` (checks completeness). Future: `agentic-mbse validate`
+  traceability level (parses SysML via syside, checks all definitions have entries).
 **Queried by**: PM script engine (impact analysis).
 ```
 
 #### Change 2: Formalize knowledge supersession in the DI-XXX data model
 
-**Modify Role 2 entity format in Section 3.3**:
+**Modify Role 2 entity format**:
 
 ```markdown
 ### DI-XXX: [Title]
@@ -310,15 +405,19 @@ hop 2 (MR -> model element) queryable.
 - **Context**: [1-3 sentences: the domain fact and why it matters]
 - **Model implications**: [what the models must capture because of this insight]
 - **Analysis implications**: [what analyses this enables or requires]
-- **Derived requirements**: [MR-XXX IDs, if specs have been written; "pending" otherwise]
-- **Status**: captured | requirements-derived | addressed | superseded
+- **Status**: captured | addressed | superseded
 - **Superseded-by**: [DI-XXX ID, only when status = superseded]
 - **Supersedes**: [DI-XXX ID, when this insight replaces an earlier one]
 ```
 
+Key changes vs. original entity format:
+- **Dropped `Derived requirements` field**: Back-references to MR-XXX/PR-XXX are not maintained on the DI-XXX side. The link from DI-XXX to model elements goes through `traceability_matrix.csv` (Knowledge column) directly.
+- **Dropped `requirements-derived` status**: Without the back-reference, this status has no meaning. Simplified to three states: `captured` (insight recorded), `addressed` (model elements exist that trace to it), `superseded` (replaced by newer insight).
+- **Added `Superseded-by` and `Supersedes` fields**: Bidirectional links for knowledge evolution.
+
 #### Change 3: Define the knowledge evolution control flow
 
-**Add to Section 7.1 (Research Split) or new Section 7.3: "Knowledge Evolution Flow"**
+**Add to workflows.md: "Knowledge Evolution Flow"**
 
 ```
 #### Knowledge Supersession Flow
@@ -353,55 +452,51 @@ Agent calls: agentic-mbse pm supersede-insight DI-003
 | 2. Add DI-017 entry with Supersedes: DI-003    |
 | 3. Update DI-003: Status = superseded,          |
 |    Superseded-by = DI-017                       |
-| 4. Query: what MR-XXX referenced DI-003?        |
-|    (from DI-003's Derived requirements field)   |
-| 5. Query: what model elements satisfy those      |
-|    MR-XXX? (from traceability_matrix.csv)       |
-| 6. Produce IMPACT REPORT:                       |
-|    - Affected requirements: MR-005, MR-012      |
-|    - Affected model elements: MagnetCostCalc,   |
-|      TFCoilDefinition (with file paths)         |
-|    - Affected work items: magnet-model (active)  |
-| 7. Write impact report to                       |
-|    knowledge/research/impacts/DI-003_superseded.md         |
+| 4. Query traceability_matrix.csv:               |
+|    which elements have Knowledge = DI-003?      |
+| 5. Produce IMPACT REPORT:                       |
+|    - Affected model elements (with file paths)  |
+|    - Affected PR-XXX requirements               |
+|    - Affected work items (from work/active/)    |
+| 6. Write impact report to                       |
+|    knowledge/research/impacts/                   |
+|    DI-003_superseded.md                         |
 +-------------------------------------------------+
         |
         v
 Agent presents impact report to user:
-"DI-003 superseded. 2 requirements and 3 model elements affected.
- Recommend: create a Fix work item for magnet-model to update
+"DI-003 superseded. 3 model elements affected.
+ Recommend: create a work item to update
  cost structure assumptions."
         |
         v
 +-------------------------------------------------+
 | USER DECISION POINT                             |
 |                                                 |
-| "Create fix item"  -> /backlog add (Fix intent) |
-| "Review later"     -> impact report in pending  |
+| "Create work item" -> /backlog add              |
+| "Review later"     -> impact report persists    |
 | "No action needed" -> close (user judgment)     |
 +-------------------------------------------------+
 ```
 
 #### Change 4: Add impact analysis to the PM script engine
 
-**Extend Section 6.2 (PM Script Engine: Data Model)**:
-
 Add new operations to the AP-7 operations table:
 
 | Operation | Tier | What the script does |
 |-----------|------|---------------------|
-| Trace element | T1 | Append row to `traceability_matrix.csv`. Validates schema, prevents duplicates, checks MR-XXX IDs exist in spec.md. Called by `/implement-model` as elements are created. |
-| Supersede insight | T2 | Mark old DI-XXX as superseded, create new DI-XXX, query derived requirements + traceability matrix, produce impact report |
-| Impact query | T1 | Given a DI-XXX or MR-XXX, traverse links to find all affected model elements and work items |
+| Trace element | T1 | Append row to `traceability_matrix.csv`. Validates schema, prevents duplicates, validates PR-XXX IDs exist in REQUIREMENTS.md and DI-XXX IDs exist in KNOWLEDGE.md. Called by `/implement-model` as elements are created. |
+| Promote requirement | T1 | Append PR-XXX row to `project/REQUIREMENTS.md`. Validates format, assigns ID, records Source (DI-XXX or G-XXX). Called by `/implement-model` when spec.md flags an MR-XXX for promotion. |
+| Supersede insight | T2 | Mark old DI-XXX as superseded, create new DI-XXX, query traceability_matrix.csv for affected elements, produce impact report. |
+| Impact query | T1 | Given a DI-XXX or PR-XXX, traverse traceability_matrix.csv to find all affected model elements and work items. |
 
-**Impact query** is the key primitive. It's a graph traversal:
+**Impact query** is the key primitive. It's a direct lookup:
 ```
-DI-XXX -> [Derived requirements] -> MR-XXX
-  -> [traceability_matrix.csv Requirements column] -> model elements
-  -> [work/active/ directory] -> affected work items
+DI-XXX -> [traceability_matrix.csv Knowledge column] -> model elements
+PR-XXX -> [traceability_matrix.csv Requirement column] -> model elements
 ```
 
-This is fully deterministic (AP-4) — it parses structured files and follows ID references. No LLM needed.
+No intermediate hops through ephemeral documents. Fully deterministic (AP-4).
 
 #### Change 5: Traceability validation as an architectural requirement
 
@@ -412,47 +507,38 @@ Level 6 validation (`level6_traceability.py`) currently only checks doc comment 
 1. **Format check**: Doc comments on definitions contain `Source` and `Reference` fields
 2. **Resolvability check**: Referenced source documents exist in SOURCE_INDEX.md
 3. **Completeness check**: `traceability_matrix.csv` has an entry for each definition (parsed via syside adapter)
-4. **Requirement coverage check**: Every MR-XXX in the work item's spec.md has at least one satisfying element in `traceability_matrix.csv`
+4. **Requirement coverage check**: Every PR-XXX in `project/REQUIREMENTS.md` has at least one satisfying element in `traceability_matrix.csv`
 
 Sub-checks 1-3 extend Level 6. Sub-check 4 is a cross-file check that may belong in Level 7 (architectural integrity) or as a standalone `agentic-mbse validate --traceability` flag.
 
-**Architecture doc impact**: Add to Section 3.4 (Traceability Model): "Traceability links are verified programmatically by the validation pyramid. Level 6 validates element-level traceability (doc comments, matrix completeness). Requirement coverage is validated as part of architectural integrity checks."
+**Implementation**: Phase 3D. The syside adapter already parses SysML files and can enumerate definitions. The new check compares that list against `traceability_matrix.csv` entries.
 
-**Implementation**: Phase 3E. The syside adapter already parses SysML files and can enumerate definitions. The new check compares that list against `traceability_matrix.csv` entries.
+#### Change 6: Add traceability diagrams
 
-#### Change 6: Update Document Relationship Map
-
-**Modify the diagram in Section 3.3** to show traceability links as bidirectional:
+Add traceability link diagrams to the new Traceability Model section (supplementary to the main Document Relationship Map, which was updated by B-004):
 
 ```
-KNOWLEDGE.md                        spec.md (per work item)
-  DI-XXX ----derives----->  MR-XXX
+Traceability forward path (durable chain):
+
+KNOWLEDGE.md               REQUIREMENTS.md
+  DI-XXX ───derives───>  PR-XXX
                              |
-                             | satisfies (traced in traceability_matrix.csv)
+                             | satisfies (traceability_matrix.csv)
                              v
-                        Model elements ----sources----> Authority sources
-                         (models/)                      (SOURCE_INDEX.md)
-                             |
-                             | verified against
-                             v
-                        VALIDATION_MATRIX.md
-                          SV-XXX criteria
+                        Model elements ──sources──> Authority sources
+                         (models/)                  (SOURCE_INDEX.md)
 ```
 
-And add reverse arrows showing the impact propagation path:
-
 ```
+Impact propagation (reverse path):
+
 DI-XXX superseded
   |
-  | impact query (script)
-  v
-MR-XXX affected
-  |
-  | traceability_matrix.csv lookup
+  | traceability_matrix.csv Knowledge column (direct lookup)
   v
 Model elements needing review
   |
-  | work item lookup (work/active/ directory)
+  | work/active/ directory scan
   v
 Impact report -> user decides on action
 ```
@@ -461,13 +547,12 @@ Impact report -> user decides on action
 
 | Section | Change |
 |---------|--------|
-| 3.3 (after Document Relationship Map) | **New subsection 3.4**: Traceability Model — link types, traceability matrix schema, validation requirements |
-| 3.3 Role 2 entity format | Add `superseded` status, `Superseded-by` and `Supersedes` fields |
-| 3.3 Document Relationship Map | Add traceability links as bidirectional arrows |
-| 3.4 (new) | State architectural requirement: programmatic traceability checking in validation pyramid |
-| 6.2 PM Script Engine | Add `trace-element`, `supersede-insight`, and `impact-query` operations |
-| 7.1 or new 7.3 | Add Knowledge Evolution Flow (supersession control flow) |
-| AP-7 Operations table (Section 2) | Add `Trace element` (T1), `Supersede insight` (T2), and `Impact query` (T1) |
+| information-architecture.md (new section) | **Traceability Model**: link types, traceability matrix schema (with Knowledge + Requirement columns), traceability diagrams, validation requirements |
+| information-architecture.md Role 2 entity format | Drop `Derived requirements` field. Add `superseded` status, `Superseded-by` and `Supersedes` fields. Simplify status to `captured \| addressed \| superseded`. |
+| information-architecture.md Role 4 | Add `domain requirement` sub-type to PR-XXX. Note promotion path from per-work-item MR-XXX. |
+| information-architecture.md file structure | Add `knowledge/research/impacts/` subdirectory for impact reports. |
+| workflows.md | Add Knowledge Evolution Flow (supersession control flow). |
+| main.md AP-7 Operations table | Add `Trace element` (T1), `Promote requirement` (T1), `Supersede insight` (T2), and `Impact query` (T1). |
 
 ### Resolved decisions
 
@@ -475,21 +560,30 @@ Impact report -> user decides on action
 
 2. **Granularity of the `satisfies` link**: **Element-level** (every `def` gets an entry). Start here; if it proves too verbose in practice, introduce a threshold later (e.g., usages inherit from their def). This is a tuning knob, not an architectural decision — the schema supports either granularity.
 
-3. **Traceability maintenance flow**: Two-stage, split across commands per AP-7:
-   - **`/spec-model` identifies the requirements**: spec.md lists MR-XXX requirements and names which model elements (existing or planned) must satisfy them. This is the *what* — the agent generates it, the user approves it.
-   - **`/implement-model` records the links using a script**: As the agent creates model elements, it calls an AP-7 script (e.g., `agentic-mbse pm trace-element`) to append rows to `traceability_matrix.csv`. The script enforces schema, prevents duplicates, and validates that referenced MR-XXX IDs exist in the work item's spec.md. The agent supplies the content (element name, file path, which MR-XXX it satisfies, source citation); the script handles the structured mutation.
+3. **Traceability chain must use only durable artifacts**: The chain routes through KNOWLEDGE.md (DI-XXX), REQUIREMENTS.md (PR-XXX), traceability_matrix.csv, doc comments, and SOURCE_INDEX.md. Per-work-item spec.md files are working documents — useful for planning but not load-bearing for traceability.
 
-4. **Detecting missing traceability**: Two levels:
-   - **Near-term (command-level)**: `/audit-models` checks spec.md's MR-XXX list against `traceability_matrix.csv` entries. Any MR-XXX without a satisfying element is flagged. This is a straightforward set-difference operation.
-   - **Future (validation-level)**: Extend `agentic-mbse validate` with a traceability validation level that parses SysML files (via syside adapter) to find all definitions, then checks each against `traceability_matrix.csv`. Definitions without entries are flagged. **This is an architectural requirement**: the architecture doc should state that programmatic traceability checking is a required capability of the validation pyramid, to be implemented as a validation level or sub-level.
+4. **Requirement promotion**: Significant MR-XXX requirements in spec.md are promoted to PR-XXX in REQUIREMENTS.md during `/implement-model`. The promotion is selective — fine-grained implementation details stay in spec.md and are archived with the work item. Only requirements worth long-term tracking get promoted. The `trace-element` AP-7 script handles the promotion.
 
-5. **Impact report persistence**: **Persist** to `knowledge/research/impacts/`. The impact report is evidence of why a work item was created and enables later review of how knowledge evolution affected the project.
+5. **DI-XXX does not maintain back-references**: The `Derived requirements` field is dropped from the DI-XXX entity. Impact queries go through traceability_matrix.csv's Knowledge column (direct: DI-XXX → model elements) rather than through an intermediate MR-XXX/PR-XXX hop maintained on KNOWLEDGE.md. This eliminates a maintenance burden without losing query capability.
+
+6. **Detecting missing traceability**: Two levels:
+   - **Near-term (command-level)**: `/audit-models` checks PR-XXX entries in REQUIREMENTS.md against `traceability_matrix.csv`. Any PR-XXX without a satisfying element is flagged.
+   - **Future (validation-level)**: Extend `agentic-mbse validate` with a traceability validation level that parses SysML files (via syside adapter) to find all definitions, then checks each against `traceability_matrix.csv`. Definitions without entries are flagged.
+
+7. **Impact report persistence**: **Persist** to `knowledge/research/impacts/`. The impact report is evidence of why a work item was created and enables later review of how knowledge evolution affected the project.
 
 ### Remaining open questions
 
-1. **Traceability validation level number**: Should this be a sub-level of Level 6 (traceability & documentation) or a new level? Level 6 currently checks doc comment existence; adding traceability matrix completeness and source resolvability is a natural extension. Recommend: extend Level 6 with sub-checks rather than adding a new level. Resolve during Phase 3E.
+1. **Traceability validation level number**: Should this be a sub-level of Level 6 (traceability & documentation) or a new level? Level 6 currently checks doc comment existence; adding traceability matrix completeness and source resolvability is a natural extension. Recommend: extend Level 6 with sub-checks rather than adding a new level. Resolve during Phase 3D.
 
-2. **`trace-element` script interface**: Exact CLI arguments and behavior for the AP-7 script that `/implement-model` calls. Resolve during Phase 3E when implementing the PM script engine.
+2. **`trace-element` script interface**: Exact CLI arguments and behavior for the AP-7 script that `/implement-model` calls, including the promotion step. Resolve during Phase 3D when implementing the PM script engine.
+
+### Coupling with other backlog items
+
+- **B-001 (Model Implementation)**: B-002's impact query traverses `work/active/` to find affected work items. B-001 will formalize the work item lifecycle. Not blocking — B-002 uses the already-established file system conventions. When B-001 defines feedback loops, it should reference B-002's supersession flow as a concrete instance.
+- **B-004 (Downstream pipeline)**: Complete. Document Relationship Map already updated. B-002's traceability diagrams are supplementary to the main map.
+- **B-005 (Markdown parsing fragility)**: B-002's CSV decision for traceability_matrix.csv is consistent with B-005's concerns. B-005 should note this as a precedent.
+- **B-008 (Inline knowledge capture)**: B-008 builds on B-002's infrastructure (same scripts, different trigger). Implement B-002 first.
 
 ---
 
@@ -497,7 +591,7 @@ Impact report -> user decides on action
 
 **Severity**: Medium
 **Resolve before**: Phase 1A
-**Status**: Approved
+**Status**: Complete — integrated into workflows.md § 2, main.md § 4-5, components.md § 4. Work item lifecycle consolidated in workflows.md § 3.
 **Supersedes**: Original B-003 ("Undefined intent x scale combinations") and architecture doc Section 5.2 (Intent Dimension), Q6, Q7, Q8
 
 ### The Problem (original)
@@ -533,7 +627,7 @@ But if only one intent is architecturally distinct, it's not a "category in a ta
 | **Standard** | Full pipeline: spec -> design -> plan -> implement -> audit. Agent adjusts depth naturally. | `/spec-model` | Default pipeline. Work item in `active/`. |
 | **Epic** | Must decompose into sub-items before entering pipeline. | `/backlog decompose` -> sub-items | Different control flow. Parent-child tracking in PM. |
 
-**What happens to Fix/Refactor/Integrate guidance**: This is prompt-level concern, not architecture. The `/spec-model` command can internally ask "what kind of change is this?" and adjust its questions accordingly — but that's a command design decision (Phase 3D), not an information architecture or control flow concern.
+**What happens to Fix/Refactor/Integrate guidance**: This is prompt-level concern, not architecture. The `/spec-model` command can internally ask "what kind of change is this?" and adjust its questions accordingly — but that's a command design decision (Phase 3C), not an information architecture or control flow concern.
 
 ### Decision: Investigate becomes two distinct commands
 
@@ -574,7 +668,7 @@ The output destinations for `/research` and `/analyze-models` connect to B-012 (
 
 **Severity**: Medium-High
 **Resolve before**: Phase 1A
-**Status**: New
+**Status**: Complete
 
 ### The Problem
 
@@ -593,18 +687,111 @@ This creates gaps:
 
 The models aren't the end product — executable simulations and analysis results are. The architecture should at minimum acknowledge this boundary and define what information flows back.
 
-### Recommendation
+### Analysis
 
-1. Add verification type `codegen` to VALIDATION_MATRIX.md types table (Section 3.3, Role 6)
-2. Add verification type `simulation` for teax results
-3. Define a feedback path in the Document Relationship Map (Section 3.3): sysml-codegen/teax errors -> VALIDATION_MATRIX entry -> work item in backlog
-4. This doesn't require building the integration now, but the architecture should have the slots for it
+The four gaps are real, but the original recommendation over-engineers the solution. Three distinct concerns are conflated:
+
+**Concern 1: Codegen failures are a compile loop, not a workflow concern.** A sysml-codegen error is like a compiler error — the user fixes the model and re-runs. Creating backlog items for compile errors is overhead that serves no one. The real gap is that Level 8 validation and sysml-codegen can **drift apart**: Level 8 checks FR-2 through FR-7 today, but if sysml-codegen adds new requirements, Level 8 won't catch them until updated.
+
+**Concern 2: Verification types conflate intent with mechanism.** The existing types (`baseline`, `reasonableness`, `physical`, `relationship`, `rollup`) describe **what you're checking**. "Simulation" describes **how you check it**. An SV-XXX entry like "p_net output accuracy" is a `baseline` check regardless of whether you verify it by model inspection, running codegen + teax, or manual calculation. The missing dimension is **mechanism** — some SV-XXX entries can only be verified after the full pipeline runs, and today they sit as `Status: pending` forever with no explanation of why.
+
+**Concern 3: The Document Relationship Map stops at models/.** The full value chain continues through codegen and teax, with results feeding back through tests. The diagram should show this.
+
+### Decisions
+
+#### Decision 1: State the Level 8 / sysml-codegen contract
+
+Level 8 validation checks are **derived from** sysml-codegen's extraction and analysis requirements. When sysml-codegen rejects a model pattern that Level 8 accepts, that's a bug — Level 8 must be updated to match. This is a development coordination obligation, not an information architecture change.
+
+**No new data models, verification types, or automation.** Just a stated contract.
+
+#### Decision 2: Add `Mechanism` column to VALIDATION_MATRIX.md
+
+Instead of new verification types, add an orthogonal dimension that captures **how** each criterion is verified:
+
+| Mechanism | Meaning | Example |
+|-----------|---------|---------|
+| `model` | Verifiable by model inspection / `agentic-mbse validate` | Structural completeness, naming conventions |
+| `test` | Verifiable by pytest (may include codegen + simulation) | p_net accuracy, energy balance conservation |
+| `manual` | Requires human judgment | "Architecture is reasonable for CATF concept" |
+
+Updated entity format:
+```markdown
+| ID | Description | Type | Mechanism | Expected | Tolerance | Source | Test | Status |
+|----|-------------|------|-----------|----------|-----------|--------|------|--------|
+| SV-001 | Total capital cost ballpark | reasonableness | test | $3B-$15B | range | engineering judgment | test_capital_cost_range | pending |
+| SV-002 | p_net output accuracy | baseline | test | PyFECONS value | ±1% | PowerBalance.py:94 | test_pnet | passing |
+| SV-003 | All calc defs have doc comments | model | model | present | exact | MODELING_GUIDE.md | - | passing |
+```
+
+This lets `/status` report: "4 SV-XXX entries require simulation tests and are not yet verifiable" — which is real information the user needs.
+
+#### Decision 3: Pytest skip pattern for pre-codegen verifications
+
+Users should be able to write verification tests (SV-XXX entries with `Mechanism: test`) through the normal work PM flow (`/spec-model` → `/implement-model`), even before codegen is operational. These tests are the **primary feedback path** from the downstream pipeline back to the modeling workflow.
+
+**Pattern**: Tests that exercise the downstream pipeline use a `pytest.mark` skip condition based on codegen availability:
+
+```python
+import pytest
+
+# Convention: tests/conftest.py defines the marker
+codegen_available = pytest.mark.skipif(
+    not _codegen_pipeline_ready(),
+    reason="Codegen pipeline not yet operational"
+)
+
+@codegen_available
+def test_capital_cost_range():
+    """SV-001: Total capital cost in $3B-$15B range."""
+    result = run_codegen_and_simulate("designs/catf_mfe/")
+    assert 3e9 <= result.total_capital_cost <= 15e9
+```
+
+The skip detection function (`_codegen_pipeline_ready()`) checks for the presence of generated code or a sentinel file — details are an implementation concern, not an architectural one.
+
+**Why this matters**: It lets the modeling workflow produce verification tests as natural artifacts of the spec→implement cycle. The tests exist and document expectations even while codegen is in development. When the downstream pipeline becomes operational, the tests automatically activate and `VALIDATION_MATRIX.md` entries transition from `pending` to `passing`/`failing`.
+
+#### Decision 4: Extend Document Relationship Map
+
+Show the downstream boundary and the feedback path through tests:
+
+```
+                         Model Artifacts
+                          (models/, tests/)
+                              │
+                    ┌─────────┼──────────────────┐
+                    │         │                   │
+                    │         │ verified against   │ consumed by
+                    │         v                   v
+                    │  project/VALIDATION_MATRIX  Downstream Pipeline
+                    │    SV-XXX criteria          (sysml-codegen → teax)
+                    │         ^                   │
+                    │         │                   │ simulation results
+                    │         │                   │ feed back via tests/
+                    │         └───────────────────┘
+                    │
+                    │ Level 8 validates codegen readiness
+                    │ (contract: checks derived from sysml-codegen requirements)
+                    v
+```
+
+#### What this intentionally does NOT add
+
+- **No orchestration of the downstream pipeline.** sysml-codegen and teax have their own CLIs, error reporting, and architecture. agentic-mbse doesn't wrap or manage them.
+- **No automated backlog creation from codegen errors.** Compile errors are fixed immediately. If a codegen error reveals a systemic model problem, the user creates a work item — that's judgment, not automation.
+- **No persistence of simulation results in `data/`.** TEAx tracks its own provenance. Tests capture pass/fail. No need for agentic-mbse to duplicate this.
+- **No new verification types.** The existing five types cover every verification intent. Mechanism (model/test/manual) is the missing orthogonal dimension.
+- **No new architectural principles.** This falls naturally under the existing framework — AP-1 (design for N) already covers extensibility.
 
 ### Architecture doc impact
 
-Section 3.3 Role 6: add `codegen` and `simulation` verification types.
-Section 3.3 Document Relationship Map: extend beyond Model Artifacts to show downstream tools.
-Section 2: consider whether this warrants a new principle or falls under AP-1 (design for N).
+| Section | Change |
+|---------|--------|
+| information-architecture.md § Role 6 | Add `Mechanism` column to VALIDATION_MATRIX.md entity format. Three values: `model`, `test`, `manual`. |
+| information-architecture.md § Document Relationship Map | Extend diagram to show downstream pipeline boundary and test-based feedback path. |
+| main.md § validation pyramid or new note | State the Level 8 / sysml-codegen contract: "Level 8 checks are derived from sysml-codegen requirements. Drift is a bug." |
+| workflows.md or components.md | Document the pytest skip pattern for pre-codegen verification tests as a convention that `/implement-model` follows when producing SV-XXX tests. |
 
 ---
 
@@ -612,11 +799,11 @@ Section 2: consider whether this warrants a new principle or falls under AP-1 (d
 
 **Severity**: Medium
 **Resolve before**: Phase 1A
-**Status**: New
+**Status**: Complete — decisions made, pending integration into architecture documents
 
 ### The Problem
 
-The PM script engine (Section 6.2) derives all state from parsing markdown tables. This is elegant but brittle:
+The PM script engine derives all state from parsing markdown files. This is elegant but brittle:
 
 - Markdown tables break easily (user adds a column, extra space misaligns pipes, prose between table rows)
 - No schema validation is described — the script either parses correctly or silently produces wrong data
@@ -625,27 +812,155 @@ The PM script engine (Section 6.2) derives all state from parsing markdown table
 
 AP-4 says "deterministic state" but markdown parsing is only deterministic if the input is well-formed.
 
-### Recommendation
+### Analysis: File-by-file fragility assessment
 
-The PM script engine should include a `validate-structure` check that runs before any state query:
+B-001 already resolved the highest-risk case by establishing YAML frontmatter for spec.md and epic files. The remaining files have varying risk levels:
 
-1. Define a schema for each structured file (required columns, valid values per column, row format)
-2. `agentic-mbse status` validates structure first, reports malformed files before producing dashboard
-3. AP-7 scripts validate the structure of files they **read** (not just files they write)
-4. Consider whether YAML frontmatter in markdown files would be more robust for machine-parsed fields (human-readable body, machine-parsed header)
+| File | What PM engine reads | Format | Fragility risk |
+|------|---------------------|--------|---------------|
+| `work/active/{item}/spec.md` | Status, Scale, Epic, Owner | YAML frontmatter (B-001) | **Low** |
+| `work/backlog/epic-{name}.md` | Status, Priority, Goal | YAML frontmatter (B-001) | **Low** |
+| `data/traceability_matrix.csv` | Full schema | CSV (B-002) | **Low** |
+| `project/REQUIREMENTS.md` | PR-XXX rows, column values | Markdown table | **Low** — few rows, rarely hand-edited |
+| `project/VALIDATION_MATRIX.md` | SV-XXX rows, Status/Mechanism | Markdown table | **Low** — few rows, script-updated |
+| `knowledge/KNOWLEDGE.md` | DI-XXX entries, Status field | Structured markdown sections | **Low-Medium** — section-based |
+| `work/BACKLOG.md` | Epic sections, item rows, status | Markdown tables + section headers | **Medium** — highest frequency read/write, most complex structure |
 
-### Architecture doc impact
+The real vulnerability is **BACKLOG.md** — most frequently read, most frequently edited (by both humans and agents), and most structurally complex (section headers for epics + nested tables for items).
 
-Section 6.2: add schema validation as a requirement for the PM script engine.
-AP-7: extend the "script guarantees" to include input validation, not just output correctness.
+### Decisions
+
+#### Decision 1: YAML frontmatter is the standard pattern for machine-parsed markdown
+
+All markdown files that AP-7 scripts read should use YAML frontmatter for machine-parsed fields. The markdown body holds human-readable content. Scripts parse frontmatter; they do not parse the body.
+
+This is already established by B-001 for spec.md and epic files. B-005 makes it the **universal convention** across the project.
+
+| File | Machine-parsed fields (YAML frontmatter) | Human-readable body |
+|------|------------------------------------------|---------------------|
+| spec.md | Status, Scale, Epic, Owner, Created, Updated | Requirements, scope, success criteria |
+| design.md | Status, Created, Updated, Related Artifacts | Architecture approach, decisions |
+| plan.md | Status, Created, Updated, Related Artifacts | Phases, scope, risks |
+| epic-{name}.md | Status, Priority, Goal, Created, Updated | Decomposition, per-item breakdowns |
+| BACKLOG.md | Structured epic/item data (see Decision 2) | Human-readable rendered view |
+
+Files that are **not markdown** (traceability_matrix.csv) or are **registry-style** (REQUIREMENTS.md, VALIDATION_MATRIX.md, KNOWLEDGE.md) continue with their existing formats. These are low-risk: few rows, script-maintained, and their tabular structure is simple enough that parse validation catches errors easily.
+
+#### Decision 2: BACKLOG.md uses YAML frontmatter for machine state
+
+BACKLOG.md is the highest-risk file for parse fragility. It's also the most frequently read by the PM engine. Move the structured data to YAML frontmatter; the markdown body is a human-readable rendered view that the agent maintains for readability but scripts do not parse.
+
+**BACKLOG.md format**:
+
+```markdown
+---
+epics:
+  - name: "End-to-End Pipeline De-Risking"
+    goal: G-001
+    priority: P0
+    status: active
+    file: backlog/epic-end-to-end-pipeline-derisking.md
+    items:
+      - name: "Solar+Battery SysML Model"
+        scale: standard
+        status: completed
+        completed: 2026-02-05
+      - name: "Codegen Chain Spike"
+        scale: standard
+        status: active
+        work_dir: active/codegen-chain-spike
+      - name: "Cost Evaluation & Entry Points"
+        scale: standard
+        status: backlog
+
+standalone:
+  - name: "Fix cost_model redefines"
+    scale: trivial
+    priority: P1
+    status: completed
+    completed: 2026-01-28
+  - name: "Add missing doc comments"
+    scale: standard
+    priority: P2
+    status: backlog
+---
+
+# Project Backlog
+
+## Epic: End-to-End Pipeline De-Risking
+**Goal**: G-001 (LCOE traceability) | **Priority**: P0 | **Status**: active
+**Epic file**: [epic-end-to-end-pipeline-derisking.md](backlog/epic-end-to-end-pipeline-derisking.md)
+
+| Item | Scale | Status | Notes |
+|------|-------|--------|-------|
+| Solar+Battery SysML Model | standard | completed | 2026-02-05 |
+| Codegen Chain Spike | standard | active | |
+| Cost Evaluation & Entry Points | standard | backlog | |
+...
+
+## Standalone Items
+
+| Item | Scale | Priority | Status | Notes |
+|------|-------|----------|--------|-------|
+| Fix cost_model redefines | trivial | P1 | completed | 2026-01-28 |
+| Add missing doc comments | standard | P2 | backlog | |
+```
+
+**Why this works**:
+- The PM script reads only the frontmatter — structured YAML, trivially parseable, schema-validatable
+- The markdown body is a rendered dashboard maintained by the agent for human readability
+- If the body drifts from the frontmatter, the frontmatter wins — it's the source of truth
+- AP-7 scripts that update BACKLOG.md update the frontmatter; the agent can re-render the body
+- Human edits go through the frontmatter; the body is a view, not a source
+
+**Trade-off**: The frontmatter duplicates some information that appears in the body. This is intentional — the body is a convenience view, not a data store. The duplication cost is small (BACKLOG.md is a single file) and the reliability gain is large (no markdown table parsing for state queries).
+
+#### Decision 3: AP-7 scripts validate input structure before reading
+
+Extend the AP-7 contract: scripts guarantee not only output correctness but also **input validation**. When a script reads a structured file, it validates the expected structure before proceeding.
+
+**Behavior on validation failure**:
+- Scripts report what they *can* read and flag what they can't
+- "3 of 5 work items parsed; BACKLOG.md frontmatter has invalid status value at epic[1].items[2]" is more useful than a crash
+- The PM engine produces a partial dashboard with warnings, not a hard failure
+
+This is a **graceful degradation** principle: malformed input is reported, not silently misinterpreted or fatally crashed.
+
+#### Decision 4: Schema validation is an implementation concern, not an architecture one
+
+The original recommendation to "define a schema for each structured file" is sound but is Phase 3D work (PM script engine implementation). The architecture states the requirement (scripts validate input) and the convention (YAML frontmatter). The exact schema definitions, validation libraries, and error message formats are implementation details.
+
+### Architecture Document Changes
+
+**In main.md AP-7 section** — extend script guarantees:
+
+Add to the AP-7 key constraint paragraph: "Scripts validate the structure of files they read before parsing. Malformed input produces clear error messages, not silent wrong data or crashes. Partial results with warnings are preferred over hard failures."
+
+**In workflows.md § 4.2** (PM Script Engine: Data Model) — add input validation requirement:
+
+Add a note that the PM engine validates BACKLOG.md frontmatter schema before producing the dashboard. On validation failure, it reports warnings and produces partial results.
+
+**In workflows.md § 3.6** (Epic Tracking) — update BACKLOG.md format:
+
+Replace the current BACKLOG.md example with the YAML-frontmatter-based format.
+
+**In information-architecture.md § 2** (Project File Structure) — update BACKLOG.md description:
+
+Change from "Prioritized items with scale" to "Dashboard with YAML frontmatter for machine state, markdown body for human view."
+
+### Coupling with other backlog items
+
+- **B-001**: B-001 established YAML frontmatter for spec.md and epic files. B-005 extends this as the universal convention and applies it to BACKLOG.md specifically.
+- **B-002**: B-002's CSV decision for traceability_matrix.csv is consistent — machine-parsed data uses machine-friendly formats. B-005 completes the picture for markdown files.
+- **B-012**: File structure is settled. B-005 defines what goes *inside* BACKLOG.md, not where it lives.
 
 ---
 
 ## B-006: No decision promotion path
 
 **Severity**: Low
-**Resolve before**: Phase 3D
-**Status**: New
+**Resolve before**: Phase 3C
+**Status**: Complete — decision promotion is a check within `/audit-models` (see B-007)
 
 ### The Problem
 
@@ -657,28 +972,44 @@ When writing `work/active/{item}/design.md`, an engineer makes structural decisi
 - Promoting a design.md decision to ARCHITECTURE.md
 - `/audit-models` flagging "this pattern appears in 3 work items but isn't in ARCHITECTURE.md"
 
-This is the same class of problem as Rule promotion (Q4) but for structural decisions rather than methodology rules.
+### Decision: Subsume into `/audit-models`
 
-### Recommendation
+Decision promotion does not need its own mechanism. It is one of `/audit-models`' checks — the same command that already handles requirement promotion (Q4). The flow:
 
-Define a promotion path parallel to Rule promotion:
-1. During `/audit-models`, check for recurring structural patterns across completed work items
-2. Suggest promotion to ARCHITECTURE.md when a pattern appears in 3+ work items
-3. Use the same approval flow (agent suggests, user approves, script registers)
+```
+/audit-models reads: models/, project/ARCHITECTURE.md,
+  project/REQUIREMENTS.md, work/completed/
+        │
+        v
+Among other checks:
+  "AD-002 says turbine is BOP. 4 completed work items
+   use a pattern where cooling components are also BOP
+   but this isn't codified. Promote to ARCHITECTURE.md?"
+        │
+        v
+User approves → agent drafts AD-XXX entry →
+  AP-7 script appends to ARCHITECTURE.md
+```
 
-Can defer to Phase 3D since it requires `/audit-models` to exist.
+This parallels requirement promotion exactly: the audit command detects, suggests, user approves, script registers.
+
+No separate mechanism, command, or control flow is needed. See B-007 for the full `/audit-models` specification.
+
+### Architecture doc impact
+
+None beyond B-007. Decision promotion is listed as one of `/audit-models`' checks in the B-007 specification.
 
 ---
 
 ## B-007: /review-model vs /audit-models boundary
 
 **Severity**: Low
-**Resolve before**: Phase 3D
-**Status**: New
+**Resolve before**: Phase 3C
+**Status**: Complete — boundary defined, output artifacts specified
 
 ### The Problem
 
-Both commands verify correctness. The catalog (Section 8.1) implies the distinction is temporal:
+Both commands verify correctness. The catalog implies the distinction is temporal:
 - `/review-model`: before implementing (design review)
 - `/audit-models`: after implementing (verification)
 
@@ -687,40 +1018,298 @@ But their skill sets overlap heavily (both reference sysml-conventions, model-va
 - Whether `/review-model` is a gate (blocks progression to implement) or advisory
 - How their outputs differ structurally
 
-### Recommendation
+### Decisions
 
-Define during Phase 3D command design:
-- `/review-model` = **pre-implementation gate**: checks design.md against REQUIREMENTS.md and ARCHITECTURE.md, validates prototype, produces pass/concerns/fail verdict. Focuses on "will this design work?"
-- `/audit-models` = **post-implementation verification**: checks model artifacts against spec requirements (MR-XXX), runs validation pyramid, checks source traceability. Focuses on "did we build it right?"
-- Make the distinction explicit in Section 8.1 with separate "checks" columns
+#### The boundary: temporal, with distinct outputs and feedback paths
+
+| Dimension | `/review-model` | `/audit-models` |
+|-----------|-----------------|-----------------|
+| **When** | Pre-implementation (after design, before implement) | Post-implementation (after model artifacts exist) |
+| **Reads** | design.md, prototype, `project/REQUIREMENTS.md`, `project/ARCHITECTURE.md` | `models/`, `tests/`, spec.md (MR-XXX), `project/REQUIREMENTS.md`, `project/ARCHITECTURE.md`, `project/VALIDATION_MATRIX.md`, `data/traceability_matrix.csv`, `work/completed/` |
+| **Question** | "Will this design work?" | "Did we build it right? Are project docs current?" |
+| **Checks** | Design compliance with project rules, interface consistency, prototype validation (Levels 1-3), feasibility assessment | Spec requirement satisfaction (MR-XXX), source traceability, validation pyramid, requirement promotion (Q4), decision promotion (B-006) |
+| **Output artifact** | `work/active/{item}/review.md` (user-curated findings) | Updates to project docs via AP-7 scripts; backlog entries for gaps |
+| **Gate behavior** | Advisory — user decides whether to address findings before proceeding | Advisory — produces action items, may create backlog entries |
+| **Feedback path** | review.md → `/design-model` reads and applies accepted changes | Project document updates propagate to all future work items |
+
+#### `/review-model`: User-curated review artifact
+
+**Problem with current practice**: The user reads terminal output and manually copy-pastes findings back to `/design-model`. This is friction-heavy and loses information.
+
+**Solution**: `/review-model` writes a persistent review artifact with user curation.
+
+**Flow**:
+
+```
+/review-model reads design.md, prototype, REQUIREMENTS.md, ARCHITECTURE.md
+        │
+        v
+Agent presents findings organized by dimension:
+  - Structural compliance (does design follow ARCHITECTURE.md?)
+  - Requirements coverage (does design address all MR-XXX?)
+  - Interface consistency (do ports/connections make sense?)
+  - Prototype validation (do Levels 1-3 pass?)
+  - Feasibility (are there known risks?)
+        │
+        v
+┌─────────────────────────────────────────────────┐
+│ USER DECISION POINT                             │
+│                                                 │
+│ For each finding:                               │
+│   "Accept"  → included in review.md             │
+│   "Skip"    → not worth addressing              │
+│   "Defer"   → noted but not blocking            │
+│                                                 │
+│ Why user curation matters:                      │
+│ - Agent sometimes misunderstands design intent  │
+│ - Agent may flag minor issues not worth the     │
+│   cost of changing                              │
+│ - User has context the agent lacks              │
+└──────────────────────┬──────────────────────────┘
+        │
+        v
+review.md written to work/active/{item}/review.md
+  Contains:
+  - Overall verdict: pass / concerns / fail
+  - Accepted changes (user-selected, actionable)
+  - Deferred items (noted, not blocking)
+  - Skipped items (not recorded)
+        │
+        v
+/design-model reads review.md, applies accepted changes
+```
+
+**review.md format**:
+
+```yaml
+---
+Verdict: pass | concerns | fail
+Reviewed: YYYY-MM-DD
+Design: ./design.md
+---
+```
+
+Body contains the accepted and deferred findings in free-form markdown. The verdict is the machine-parseable field; the findings are human-readable.
+
+**Key design choice**: The review is advisory, not a gate. The user can proceed to `/plan-model` or `/implement-model` even with a "concerns" verdict. AP-5 (toolkit, not pipeline) — don't force the user through a gate they may not need.
+
+#### `/audit-models`: Project document updates
+
+`/audit-models` is the post-implementation verification command. Its distinctive feature vs. `/review-model` is that it looks **across** work items and models, not just within a single design, and it **proposes updates to project-level documents**.
+
+**Checks**:
+
+1. **Spec requirement satisfaction**: For the audited scope, check that MR-XXX requirements from spec.md are satisfied by the model artifacts. Flag unsatisfied requirements.
+
+2. **Source traceability**: Check that model elements have entries in `data/traceability_matrix.csv` and that doc comments cite sources registered in `knowledge/SOURCE_INDEX.md`.
+
+3. **Validation pyramid**: Run `agentic-mbse validate` on the audited models. Report results by level.
+
+4. **Requirement promotion** (Q4): Detect patterns that recur across work items but aren't in `project/REQUIREMENTS.md`. Propose promotion to PR-XXX.
+
+5. **Decision promotion** (B-006): Detect structural decisions that recur across work items but aren't in `project/ARCHITECTURE.md`. Propose promotion to AD-XXX.
+
+6. **Verification criteria**: Identify model behaviors that should have SV-XXX entries in `project/VALIDATION_MATRIX.md` but don't.
+
+**Output**: Not a single artifact file. Instead, `/audit-models` proposes specific updates to project documents:
+
+```
+/audit-models reads models, project docs, completed work items
+        │
+        v
+Agent presents findings:
+  "3 unsatisfied MR-XXX in magnet-system spec"
+  "Pattern: all assemblies use sum() rollup — promote to REQUIREMENTS.md?"
+  "Cooling subsystem boundary used in 4 items — promote to ARCHITECTURE.md?"
+  "No SV-XXX for energy balance conservation — add to VALIDATION_MATRIX.md?"
+        │
+        v
+┌─────────────────────────────────────────────────┐
+│ USER DECISION POINT                             │
+│                                                 │
+│ For each proposal:                              │
+│   "Accept"  → agent drafts update,              │
+│               calls AP-7 script                 │
+│   "Skip"    → not acted on                      │
+│   "Defer"   → added to backlog                  │
+└─────────────────────────────────────────────────┘
+```
+
+For accepted proposals, the agent calls the appropriate AP-7 script: `register-requirement` for PR-XXX promotion, a new `register-decision` for AD-XXX promotion, `update-validation` for SV-XXX additions.
+
+### Architecture doc changes
+
+**In components.md § 1** — update command catalog:
+
+| Command | Job | Key user decision | Skills referenced | Output |
+|---------|-----|-------------------|-------------------|--------|
+| `/review-model` | REVIEW design before implementing | Which findings to accept/skip/defer | sysml-conventions, model-validation, project-structure | `review.md` (user-curated) |
+| `/audit-models` | VERIFY models + update project docs | Audit scope, which promotions to accept | model-validation, source-traceability, requirements-tracking | Project doc updates via AP-7 |
+
+**In main.md AP-7 operations** — add one new operation:
+
+| Operation | Tier | What the script does |
+|-----------|------|---------------------|
+| Register decision | T1 | Append AD-XXX entry to `project/ARCHITECTURE.md`. Validates format, assigns ID. Called by `/audit-models` when user approves a decision promotion. |
+
+**In workflows.md § 3.3** (Stage Artifacts) — add review.md to the artifact list:
+
+review.md is an optional artifact produced by `/review-model` between design and implementation. It feeds back into `/design-model` if changes are needed.
+
+### Coupling with other items
+
+- **B-006**: Fully subsumed. Decision promotion is check #5 in `/audit-models`.
+- **B-001**: The close flow (§ 3.5) prompts for project doc updates at work item completion. `/audit-models` is the more thorough version — it checks systematically rather than relying on the user's memory.
+- **B-002**: `/audit-models` check #2 (source traceability) uses the traceability infrastructure from B-002.
 
 ---
 
 ## B-008: No inline knowledge capture during non-research commands
 
 **Severity**: Low-Medium
-**Resolve before**: Phase 3D
-**Status**: New
+**Resolve before**: Phase 3C
+**Status**: Complete — decisions made, pending integration into architecture documents
 
 ### The Problem
 
 During any command — spec, design, implement — the agent may discover domain knowledge that doesn't fit the current work item. Example: "While implementing the magnet model, I realized HTS and LTS have fundamentally different cost structures — this should be a domain insight."
 
-The only structured entry point for KNOWLEDGE.md is `/research` -> approval flow. The architecture mentions `/spec-model` "can suggest adding insights" but doesn't define the control flow. Specifically:
+The only structured entry point for KNOWLEDGE.md is `/research` → approval flow. The architecture mentions `/spec-model` "can suggest adding insights" but doesn't define the control flow. Specifically:
 
 - Does the agent pause the current command, invoke the research approval script, then resume?
 - Does it queue insights for later capture?
 - Is there a lightweight inline path that skips the full research flow?
 
-### Recommendation
+### Decision: Lightweight inline capture via `add-insight` script
 
-Define a lightweight capture path:
-1. During any command, the agent can propose a DI-XXX candidate
-2. User approves inline (no separate research doc needed — the work item context IS the source)
-3. Agent calls `agentic-mbse pm add-insight --source work/active/{item}/design.md --context "..."` (AP-7 T2)
-4. Script assigns ID, appends to KNOWLEDGE.md with source = the work item artifact
+Define a lightweight capture path that reuses the existing AP-7 infrastructure but avoids the full `/research` flow. The agent proposes, the user approves, the script persists.
 
-This is a simpler variant of the research approval flow — same script, different trigger.
+#### Control flow
+
+```
+Agent discovers domain insight during any command
+(e.g., /design-model, /implement-model, /spec-model)
+        │
+        v
+Agent presents the insight to the user:
+  "I noticed that HTS and LTS magnets have fundamentally
+   different cost structures. This seems like a domain
+   insight worth capturing. Add to KNOWLEDGE.md?"
+        │
+        v
+┌─────────────────────────────────────────────────┐
+│ USER DECISION POINT                             │
+│                                                 │
+│ "Yes, capture it"  → proceed to script call     │
+│ "Not now"          → continue current command   │
+│ "Modify first"     → user edits, then capture   │
+└──────────────────────┬──────────────────────────┘
+        │
+        v
+Agent calls: agentic-mbse pm add-insight
+  --title 'HTS vs LTS cost structure divergence'
+  --context '1-3 sentences: the domain fact and why it matters'
+  --model-implications 'what the models must capture'
+  --analysis-implications 'what analyses this enables or requires'
+  --source 'work-item:magnet-system/design.md'
+  --rationale 'Discovered during design: PyFECONS treats all
+    magnets uniformly but CATF data shows 3x cost difference
+    between HTS and LTS at scale'
+        │
+        v
+┌─────────────────────────────────────────────────┐
+│ SCRIPT EXECUTION (AP-7, T1 invoked via T3)      │
+│                                                 │
+│ 1. Assign next DI-XXX ID                       │
+│ 2. Format as structured entry                   │
+│    (all fields passed by agent — no LLM call)   │
+│ 3. Append to knowledge/KNOWLEDGE.md             │
+│ 4. Print confirmation with DI-XXX ID            │
+│                                                 │
+│ Script guarantees:                              │
+│ - Correct ID sequencing (no duplicates)         │
+│ - Correct entry format (no missing fields)      │
+│ - Atomic append                                 │
+│ - Source field uses work-item: convention        │
+└─────────────────────────────────────────────────┘
+        │
+        v
+Agent confirms: "Captured as DI-017."
+Resumes current command where it left off.
+```
+
+#### Key decisions
+
+**1. AP-7 tier: T1 mechanics, T3 invocation pattern.** The agent is already in conversation and has already formulated the insight content. The user has already approved it. The script receives all DI-XXX fields pre-formed — no `claude -p` call needed. This is purely deterministic file ops (ID assignment, format enforcement, atomic append). This avoids the B-011 dependency (`claude -p` availability) entirely for this path.
+
+**2. Source reference uses `work-item:` convention.** The source field records the work item directory name (the stable identifier across the lifecycle) plus the specific artifact where the insight was discovered:
+
+```
+- **Source**: work-item:magnet-system/design.md
+```
+
+The `work-item:` prefix is a convention the PM script can resolve — scan `work/active/` then `work/completed/*/` by the name segment. The directory name is stable: `work/active/magnet-system/` → `work/completed/20260215_magnet-system/`. This leverages the existing work item formality (spec.md as state-bearing file, directory name as identifier) without inventing a new ID scheme.
+
+**3. Rationale field captures discovery context.** The inline path has weaker provenance than the `/research` path (no research document as evidence). The `--rationale` field compensates: it records *why* this insight was recognized and *what evidence* supports it. This goes into the DI-XXX entry as an additional field:
+
+```markdown
+### DI-017: HTS vs LTS cost structure divergence
+- **Source**: work-item:magnet-system/design.md
+- **Rationale**: Discovered during design: PyFECONS treats all magnets
+  uniformly but CATF data shows 3x cost difference between HTS and LTS at scale
+- **Context**: [the domain fact]
+- **Model implications**: [what models must capture]
+- **Analysis implications**: [what analyses this enables]
+- **Status**: captured
+```
+
+The `Rationale` field is only present on inline-captured insights (research-sourced insights have the full research document as provenance). It answers "where did this come from?" when someone reviews KNOWLEDGE.md later.
+
+**4. Immediate inline capture, not queued.** When the agent discovers an insight mid-command, it proposes immediately. The capture is fast (one script call, no LLM) and the insight is freshest in context. Queueing to end-of-command risks losing the context that made the insight recognizable. The user can always say "not now" to stay in flow.
+
+**5. Add-only — no supersession.** The inline path only adds new DI-XXX entries. If the agent discovers a *contradiction* with an existing DI-XXX, it captures the new insight via inline path and flags the conflict for the user, but the supersession flow (B-002: mark old DI-XXX superseded, run impact analysis, produce impact report) happens through the full `/research` or explicit supersession command. The inline path should not bear that complexity.
+
+**6. No deduplication gate.** The script does not attempt to detect near-duplicate insights. Reliable deduplication requires semantic comparison that is beyond a deterministic script's scope. Knowledge maintenance — deduplication, reorganization, staleness review — is a separate concern that operates on KNOWLEDGE.md periodically (e.g., during `/audit-models` or a future `/maintain-knowledge` command), not as a gate on the capture path. Capture should be low-friction.
+
+#### DI-XXX entity format update
+
+The inline capture path adds one optional field to the DI-XXX entity format (information-architecture.md Role 2):
+
+```markdown
+### DI-XXX: [Title]
+- **Source**: [approved research doc, user note, authority source, or work-item:{name}/{artifact}]
+- **Rationale**: [only for inline-captured insights: why this was recognized and what evidence supports it]
+- **Context**: [1-3 sentences: the domain fact and why it matters]
+- **Model implications**: [what the models must capture because of this insight]
+- **Analysis implications**: [what analyses this enables or requires]
+- **Status**: captured | addressed | superseded
+- **Superseded-by**: [DI-XXX ID, only when status = superseded]
+- **Supersedes**: [DI-XXX ID, when this insight replaces an earlier one]
+```
+
+The `Rationale` field is optional — only present when the source is a work item artifact (inline capture) rather than an approved research document (which provides its own provenance).
+
+### Architecture document changes
+
+**In main.md AP-7 operations table** — add one new operation:
+
+| Operation | Tier | What the script does |
+|-----------|------|---------------------|
+| Add insight (inline) | T1 (T3 invocation) | Assign DI-XXX ID, format entry from agent-supplied fields, append to `knowledge/KNOWLEDGE.md`. All content pre-formed by agent — no LLM call. Source uses `work-item:` convention. |
+
+**In information-architecture.md Role 2 entity format** — add optional `Rationale` field. Update `Source` field documentation to include `work-item:{name}/{artifact}` as a valid source type.
+
+**In workflows.md** — add brief note in § 6 (Knowledge Evolution) or as new § 6.3:
+
+"Domain insights can also be captured inline during any command via the `add-insight` script (AP-7, T1). This is a lightweight alternative to the full `/research` flow for insights discovered during spec, design, or implementation work. The inline path is add-only; supersession uses the full flow (§ 6.1)."
+
+**In components.md** — no changes needed. The inline capture is a capability of existing commands, not a new command.
+
+### Coupling with other backlog items
+
+- **B-002 (Knowledge evolution)**: B-008's inline capture feeds into B-002's infrastructure. New DI-XXX entries from inline capture are immediately available for supersession queries and impact analysis. The inline path is add-only; B-002 handles supersession.
+- **B-011 (AP-7 T2 `claude -p` dependency)**: B-008 explicitly avoids the T2 path. The agent passes pre-formed content; the script is pure T1. No `claude -p` dependency.
+- **B-005 (Markdown parsing)**: The `add-insight` script appends structured entries to KNOWLEDGE.md following the same section-based format. KNOWLEDGE.md remains a low-fragility file (section-based, not table-based).
 
 ---
 
@@ -747,41 +1336,45 @@ If (b), add a note in Section 3.2 explaining the exception.
 ## B-010: No migration strategy for existing projects
 
 **Severity**: Medium-High
-**Resolve before**: Phase 3E
-**Status**: New
+**Resolve before**: Phase 3D
+**Status**: Complete — requirement captured in implementation sequencing
 
 ### The Problem
 
 The architecture introduces new structural conventions:
-- BACKLOG.md gets new columns (intent, scale)
+- BACKLOG.md gets YAML frontmatter, new format
 - OVERVIEW.md gets new sections (Goals Registry, Analysis Questions)
 - New files appear (KNOWLEDGE.md, REQUIREMENTS.md, ARCHITECTURE.md, VALIDATION_MATRIX.md)
+- File structure changes from `modeling_pm/` to `knowledge/`, `project/`, `work/`
 
-What happens to fusion-tea (the real validation case) when these changes ship? The architecture defines user-owned vs tool-owned, and `--force` for overwrites. But it doesn't address **structural migration**: updating an existing BACKLOG.md to add columns while preserving existing rows.
+What happens to fusion-tea (the real validation case) when these changes ship?
 
-### Scenarios that need handling
+### Decision: Manual one-time migration, not automated tooling
 
-1. **New tool-owned files**: Easy — `init --update` creates them. No conflict.
-2. **New user-owned files**: Easy — `init` creates templates, user fills them in. No conflict.
-3. **Modified tool-owned files**: Easy — `init --update` overwrites. No conflict.
-4. **Modified user-owned file structure**: Hard — BACKLOG.md has existing rows but needs new columns. `init` skips user-owned files; `--force` would destroy existing content.
+This is a one-time structural change, not a recurring migration concern. Automated migration tooling (`agentic-mbse migrate`, version detection, schema diffing) is over-engineering for a single transition that affects one active project (fusion-tea).
 
-### Recommendation
+**The migration is done manually** as part of the implementation plan. The implementation sequencing must explicitly identify **when** and **how** the fusion-tea repo is restructured to match the new architecture. This includes:
 
-Add a migration concept to the architecture:
-1. `agentic-mbse init --update` should detect version mismatches (current vs. installed)
-2. For structural changes to user-owned files, provide a `migrate` subcommand that adds new columns/sections while preserving existing data
-3. Define migration as an AP-7 T1 operation (deterministic file transformation, no content generation)
+1. **File moves**: `modeling_pm/` content → `knowledge/`, `project/`, `work/` as appropriate
+2. **Format changes**: BACKLOG.md → YAML frontmatter format; OVERVIEW.md → Goals Registry + Analysis Questions
+3. **New files**: Create KNOWLEDGE.md, REQUIREMENTS.md, ARCHITECTURE.md, VALIDATION_MATRIX.md from templates, populated from existing fusion-tea content (research docs, established patterns, existing validation criteria)
+4. **Content preservation**: Existing research docs, work items, backlog entries, and model artifacts must survive the restructuring intact
+
+**Sequencing requirement**: The fusion-tea migration should happen during or immediately after Phase 1A (Information Architecture), when the file structure and entity formats are finalized but before Phase 2B (Skills Extraction) and Phase 3C (Command Redesign) need a conforming target repo to test against.
+
+### Architecture doc impact
+
+Added migration milestone to main.md § 4 (Implementation Sequencing) Phase 1A deliverables.
 
 ---
 
 ## B-011: AP-7 Tier 2 claude -p dependency
 
 **Severity**: Medium
-**Resolve before**: Phase 3E
-**Status**: New
+**Resolve before**: Phase 3D
+**Status**: Closed — not an issue
 
-### The Problem
+### The Problem (original)
 
 Tier 2 scripts call `claude -p` for content generation. This creates a hard dependency on Claude CLI availability:
 
@@ -790,16 +1383,11 @@ Tier 2 scripts call `claude -p` for content generation. This creates a hard depe
 - Cost implications of LLM calls during automated operations
 - Failure modes: what happens when `claude -p` fails (rate limit, network, auth)?
 
-### Recommendation
+### Resolution
 
-Define the Tier 2 contract:
-1. **Content generation is optional**: The script must succeed (file moves, ID assignment, format enforcement) even if content generation fails. Missing content gets a placeholder ("Summary pending — run `agentic-mbse pm regenerate DI-XXX`").
-2. **Testability**: Tier 2 scripts accept a `--dry-run` flag (shows what would change) and a `--no-llm` flag (skips content generation, uses placeholders).
-3. **Mockability**: The LLM call is isolated behind a function that tests can stub.
+Claude Code is already a prerequisite for the entire agentic-mbse workflow — the commands, agents, and skills all run within Claude Code. The T2 scripts that call `claude -p` are invoked from within that environment, so CLI availability is guaranteed during normal use.
 
-### Architecture doc impact
-
-Section 2, AP-7 Implementation Tiers: add failure mode and testability requirements for Tier 2.
+Testing and CI/CD concerns are implementation-level (mock the LLM call, use `--dry-run` flags) and don't require architectural treatment. These are standard practices that can be applied during Phase 3D without architectural decisions.
 
 ---
 
@@ -876,8 +1464,10 @@ project-root/
 │       └── *.md
 │
 ├── work/                        # "What's in progress?"
-│   ├── BACKLOG.md               #   Prioritized items with scale
+│   ├── BACKLOG.md               #   Dashboard: all epics + standalone items
 │   ├── EPIC_GUIDE.md            #   Decomposition guide (tool-owned)
+│   ├── backlog/                 #   Epic decomposition files
+│   │   └── epic-{name}.md      #     Detailed scope, items, sequencing, risks
 │   ├── active/                  #   In-progress work items
 │   │   └── {item}/
 │   │       ├── spec.md

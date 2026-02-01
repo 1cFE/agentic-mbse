@@ -11,14 +11,14 @@ This is the inventory of all components in the redesigned toolkit. For how they 
 
 | Command | Job | Key user decision | Skills referenced |
 |---------|-----|-------------------|-------------------|
-| `/spec-model` | Define WHAT to model | Scope, success criteria, intent confirmation | project-structure, source-traceability |
+| `/spec-model` | Define WHAT to model | Scope, success criteria | project-structure, source-traceability |
 | `/design-model` | Decide HOW to model | Architecture approach, interfaces, where things live | sysml-conventions, project-structure, model-validation, source-traceability |
 | `/plan-model` | Organize the WORK | Phase ordering, scope per phase, risk priorities | model-validation |
 | `/implement-model` | BUILD it correctly | Execution approach, deviation handling, phase approval | sysml-conventions, model-validation, project-structure |
-| `/audit-models` | VERIFY it's right | Audit scope, acceptable deviations, action items | model-validation, source-traceability, requirements-tracking |
+| `/audit-models` | VERIFY models + update project docs | Audit scope, which promotions to accept | model-validation, source-traceability, requirements-tracking |
 | `/research` | LEARN from external sources | Research scope, insight capture | source-traceability |
 | `/quick-model` | Make a SMALL change | Change scope (guard: redirect if too big) | sysml-conventions, model-validation |
-| `/review-model` | REVIEW design before implementing | Pass/concerns/fail per dimension | sysml-conventions, model-validation, project-structure |
+| `/review-model` | REVIEW design before implementing | Which findings to accept/skip/defer | sysml-conventions, model-validation, project-structure |
 | `/analyze-models` | UNDERSTAND current model state | Analysis scope | project-structure, model-validation |
 | `/status` | Understand PROJECT STATE | What to do next | epic-decomposition, requirements-tracking |
 | `/backlog` | Manage WORK ITEMS | Add, prioritize, decompose, close | epic-decomposition |
@@ -66,6 +66,6 @@ claude/skills/{skill-name}/
 | `VALIDATION_MATRIX.md.template` | User-owned | **New** |
 | `EPIC_GUIDE.md.template` | Tool-owned | **New** |
 | `epic_template.md.template` | Tool-owned | **New** |
-| `BACKLOG.md.template` | User-owned | Revised (add intent/scale columns) |
+| `BACKLOG.md.template` | User-owned | Revised (add scale column) |
 | `MODELING_GUIDE.md.template` | Tool-owned | Revised (reference/how-to material extracted to skills; what remains is pure rules) |
 | `MODELING_PROCESS.md.template` | Tool-owned | Revised (reference new documents) |

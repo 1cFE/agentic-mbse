@@ -102,8 +102,10 @@ project-root/
 │   └── research/              #   Research pipeline
 │       ├── pending/           #     Unapproved research
 │       │   └── YYYYMMDD-HHMMSS_topic.md
-│       └── approved/          #     User-approved research
-│           └── YYYYMMDD-HHMMSS_topic.md
+│       ├── approved/          #     User-approved research
+│       │   └── YYYYMMDD-HHMMSS_topic.md
+│       └── impacts/           #     Impact reports from knowledge supersession
+│           └── DI-XXX_superseded.md
 │
 ├── project/                   # "What are we building and how?"
 │   ├── OVERVIEW.md            #   Role 3: Goals (G-XXX), questions (AQ-XXX) (user-owned)
@@ -117,8 +119,10 @@ project-root/
 │       └── *.md               #     Stakeholder notes, mission docs, etc.
 │
 ├── work/                      # "What's in progress?"
-│   ├── BACKLOG.md             #   Prioritized items with scale (user-owned)
+│   ├── BACKLOG.md             #   Dashboard: YAML frontmatter for machine state, body for human view (user-owned)
 │   ├── EPIC_GUIDE.md          #   Decomposition guide (tool-owned)
+│   ├── backlog/               #   Epic decomposition files (user-owned)
+│   │   └── epic-{name}.md    #     Detailed scope, items, sequencing, risks
 │   ├── active/                #   In-progress work items
 │   │   └── {work-item-name}/
 │   │       ├── spec.md
@@ -196,13 +200,24 @@ Each role has a concrete entity format. These are the **data models** — the st
 **Entity format** (`KNOWLEDGE.md`):
 ```markdown
 ### DI-XXX: [Title]
-- **Source**: [approved research doc, user note, or authority source]
+- **Source**: [approved research doc, user note, authority source, or work-item:{name}/{artifact}]
+- **Rationale**: [only for inline-captured insights: why this was recognized and what evidence supports it]
 - **Context**: [1-3 sentences: the domain fact and why it matters]
 - **Model implications**: [what the models must capture because of this insight]
 - **Analysis implications**: [what analyses this enables or requires]
-- **Derived requirements**: [MR-XXX IDs, if specs have been written; "pending" otherwise]
-- **Status**: captured | requirements-derived | addressed
+- **Status**: captured | addressed | superseded
+- **Superseded-by**: [DI-XXX ID, only when status = superseded]
+- **Supersedes**: [DI-XXX ID, when this insight replaces an earlier one]
 ```
+
+The `Rationale` field is optional — present only when the source is a work item artifact (inline capture via the `add-insight` script) rather than an approved research document (which provides its own provenance through the full research pipeline). It records *why* the insight was recognized and *what evidence* supports it, compensating for the lighter provenance chain of the inline path.
+
+**Status values**:
+- `captured`: Insight recorded in KNOWLEDGE.md, not yet reflected in models
+- `addressed`: Model elements exist that trace to this insight (verified via `data/traceability_matrix.csv`)
+- `superseded`: Replaced by a newer insight; `Superseded-by` field identifies the replacement
+
+**Design note**: The `Derived requirements` field from earlier drafts has been removed. Back-references from DI-XXX to model elements are not maintained on the KNOWLEDGE.md side — that would create a maintenance burden with no query benefit. Instead, impact queries go through `data/traceability_matrix.csv` (Knowledge column), which maps DI-XXX directly to model elements. See [§ 5. Traceability Model](#5-traceability-model).
 
 **Scaling**: Single markdown file. Each entry is ~8 lines. At 50 entries = ~400 lines, still scannable. Split threshold: ~100 entries (unlikely for most projects).
 
@@ -272,9 +287,9 @@ Agent calls: agentic-mbse pm approve-research <file>
 
 **Alternative entry points for KNOWLEDGE.md**:
 - User can add entries directly (manual edit)
-- `/spec-model` can suggest adding insights discovered during scoping (same script invocation, different trigger)
+- Any command (`/spec-model`, `/design-model`, `/implement-model`, etc.) can capture insights inline via the `add-insight` script (AP-7, T1 with T3 invocation). The agent proposes a DI-XXX candidate, the user approves, and the agent calls the script with pre-formed content — no LLM call needed. Source uses the `work-item:{name}/{artifact}` convention. See [backlog.md B-008](backlog.md) for the full control flow.
 
-**Producer**: `/research` → approval script → `knowledge/KNOWLEDGE.md`; user direct entry
+**Producer**: `/research` → approval script → `knowledge/KNOWLEDGE.md`; inline capture via `add-insight` script; user direct entry
 **Consumer**: `/spec-model` (surfaces relevant insights), `/status` (coverage reporting)
 
 ---
@@ -417,6 +432,9 @@ These extend the standard rules in MODELING_GUIDE.md.
 | **Documentation rules** | What model elements must document | Doc comments with Source, Reference, Last Updated |
 | **Enforcement rules** | Machine-checkable constraints | E1-E6 from cost patterns research |
 | **Naming conventions** | Standardized element names | 'cost_model' as standard calc usage name |
+| **Domain requirements** | Promoted from per-work-item specs; trace to DI-XXX domain insights or G-XXX goals | "Power balance must account for recirculating power fraction" (promoted from MR-XXX in a power balance spec) |
+
+**Requirement promotion path**: Not all per-feature MR-XXX requirements stay ephemeral. Significant domain requirements — those worth tracking long-term because they constrain all future modeling work — are promoted to PR-XXX in REQUIREMENTS.md during `/implement-model`. The promotion is selective: fine-grained implementation details ("use ISQ::mass for weight attributes") stay in spec.md and are archived with the work item. Only requirements that represent durable project-wide standards get promoted. The `trace-element` AP-7 script handles the promotion mechanically. See [§ 5. Traceability Model](#5-traceability-model) for the full promotion flow.
 
 **Each requirement specifies both criteria and method**: What constitutes compliance, and how to check it (validation rule, design review checklist, regression test). This is what makes them enforceable rather than aspirational.
 
@@ -501,14 +519,15 @@ Per-feature design.md files are **not** part of this role. They are ephemeral ar
 ```markdown
 ## Verification Registry
 
-| ID | Description | Type | Expected | Tolerance | Source | Test | Status |
-|----|-------------|------|----------|-----------|--------|------|--------|
-| SV-001 | Total capital cost ballpark | reasonableness | $3B-$15B | range | engineering judgment | - | pending |
-| SV-002 | p_net output accuracy | baseline | PyFECONS value | ±1% | PowerBalance.py:94 | test_pnet | passing |
-| SV-003 | Energy balance conservation | physical | sum = total | ±0.1% | physics | test_energy_balance | pending |
+| ID | Description | Type | Mechanism | Expected | Tolerance | Source | Test | Status |
+|----|-------------|------|-----------|----------|-----------|--------|------|--------|
+| SV-001 | Total capital cost ballpark | reasonableness | test | $3B-$15B | range | engineering judgment | test_capital_cost_range | pending |
+| SV-002 | p_net output accuracy | baseline | test | PyFECONS value | ±1% | PowerBalance.py:94 | test_pnet | passing |
+| SV-003 | Energy balance conservation | physical | test | sum = total | ±0.1% | physics | test_energy_balance | pending |
+| SV-004 | All calc defs have doc comments | model | model | present | exact | MODELING_GUIDE.md | - | passing |
 ```
 
-**Verification types** (each changes what the check does):
+**Verification types** (each describes **what** is being checked):
 
 | Type | What it checks | When it runs |
 |------|---------------|-------------|
@@ -517,6 +536,16 @@ Per-feature design.md files are **not** part of this role. They are ephemeral ar
 | physical | Conservation laws hold | After model integration |
 | relationship | Input/output vary in expected direction | Sensitivity analysis |
 | rollup | Aggregations are consistent | After cost rollup features |
+
+**Verification mechanisms** (each describes **how** the check is performed):
+
+| Mechanism | Meaning | Example |
+|-----------|---------|---------|
+| `model` | Verifiable by model inspection / `agentic-mbse validate` | Structural completeness, naming conventions |
+| `test` | Verifiable by pytest (may include codegen + simulation) | p_net accuracy, energy balance conservation |
+| `manual` | Requires human judgment | "Architecture is reasonable for CATF concept" |
+
+Mechanism is orthogonal to type: a `baseline` check might be verified by `model` inspection (comparing structure) or by `test` (running codegen + teax and comparing output). The distinction matters because `test` entries that exercise the downstream pipeline (sysml-codegen → teax) cannot be verified until that pipeline is operational. The `/status` dashboard uses the Mechanism column to report: "N entries require simulation tests and are not yet verifiable."
 
 **Producer**: `/spec-model` (creates entries from requirements), `/audit-models` (updates status)
 **Consumer**: `/audit-models`, `/status`, PM script engine
@@ -560,8 +589,166 @@ Role 4: Modeling Requirements       Role 5: Modeling Decisions
                          Model Artifacts
                           (models/, tests/)
                               │
-                              │ verified against
-                              v
-                     project/VALIDATION_MATRIX.md
-                       SV-XXX criteria
+                    ┌─────────┼──────────────────────┐
+                    │         │                       │
+                    │         │ verified against       │ consumed by
+                    │         v                       v
+                    │  project/VALIDATION_MATRIX.md  Downstream Pipeline
+                    │    SV-XXX criteria             (sysml-codegen → teax)
+                    │         ^                       │
+                    │         │  simulation results   │
+                    │         │  feed back via tests/ │
+                    │         └───────────────────────┘
+                    │
+                    │ Level 8 validates codegen readiness
+                    │ (contract: derived from sysml-codegen requirements)
+                    v
 ```
+
+### 4.1 Downstream Pipeline Boundary
+
+The modeling workflow does not end at `models/`. The full value chain is:
+
+```
+models/ ──► sysml-codegen ──► teax ──► analysis results
+```
+
+However, agentic-mbse **defines the boundary, not the other side of it**. sysml-codegen and teax are separate tools with their own architectures, CLIs, and error reporting. agentic-mbse's responsibility is:
+
+- **Outbound**: Produce models that are codegen-ready (validated by Level 8)
+- **Inbound**: Accept verification evidence from the downstream pipeline (via pytest tests that exercise codegen + teax, reported through VALIDATION_MATRIX.md)
+
+The feedback path is through `tests/` — pytest tests written during the normal work PM flow that may exercise the full pipeline. These tests are the link between downstream results and SV-XXX verification status. No separate feedback mechanism is needed.
+
+**What agentic-mbse does NOT do**:
+- Orchestrate or manage sysml-codegen or teax execution
+- Automatically create backlog items from codegen errors (those are compile errors — fix immediately)
+- Persist simulation results (teax tracks its own provenance)
+
+---
+
+## 5. Traceability Model
+
+The information roles defined above are connected by explicit, typed links. These links are the primary mechanism for impact analysis when knowledge evolves. Traceability is not an information role — it is the *connective tissue between roles*.
+
+### 5.1 Design Principle: Durable Chain Only
+
+The traceability chain must use only durable artifacts. Per-work-item spec.md files are where requirements are *discovered* and promotion decisions are *made*, but they are not load-bearing for traceability. The durable chain is:
+
+```
+DI-XXX (domain insight, in KNOWLEDGE.md)
+   |
+   | Source column in REQUIREMENTS.md
+   v
+PR-XXX (promoted requirement, in REQUIREMENTS.md)
+   |
+   | Requirement column in traceability_matrix.csv
+   v
+Model element (part def, calc def, constraint)
+   |
+   | Source/Reference fields in doc comment
+   v
+Authority source (file:line in PyFECONS, section in spec doc)
+```
+
+Every node in this chain is durable. Specs are numerous, fine-grained, and may be superseded or archived. If the traceability chain depended on spec.md being present and parseable, it would break when work items are completed and archived.
+
+**How this works in practice**:
+- `/spec-model` writes spec.md with many fine-grained MR-XXX requirements (ephemeral)
+- Some MR-XXX are significant enough to be durable — the agent or user flags these for promotion
+- `/implement-model` calls the `trace-element` AP-7 script, which:
+  1. Promotes flagged MR-XXX to PR-XXX in `project/REQUIREMENTS.md` (if not already there)
+  2. Records the model element → PR-XXX link in `data/traceability_matrix.csv`
+  3. The PR-XXX entry's `Source` column records the DI-XXX or G-XXX it derives from
+
+### 5.2 Link Types
+
+| Link | From | To | Recorded in | Verified by |
+|------|------|----|-------------|-------------|
+| **derives** | DI-XXX (insight) | PR-XXX (requirement) | REQUIREMENTS.md `Source` column | /audit-models (coverage check) |
+| **satisfies** | Model element | PR-XXX (requirement) | traceability_matrix.csv `Requirement` column | /audit-models (completeness check) |
+| **sources** | Model element | Authority source | Doc comment `Source`/`Reference` fields | Level 6 validation (existence + format) |
+| **traces-to** | PR-XXX (requirement) | G-XXX (goal) or AQ-XXX (question) | REQUIREMENTS.md `Source` column | /status (goal coverage) |
+| **justifies** | AD-XXX (decision) | Model structure | ARCHITECTURE.md `Rationale` field | /audit-models (adherence check) |
+| **supersedes** | DI-XXX (new) | DI-XXX (old) | KNOWLEDGE.md `Superseded-by` field | approval script (automatic) |
+
+All links are between durable artifacts. Per-work-item spec.md files may reference these IDs but are not part of the durable traceability chain.
+
+### 5.3 The Traceability Matrix
+
+`data/traceability_matrix.csv` is the authoritative record of model-element-level traceability. It maps each significant model element to its justifying requirements and authority sources.
+
+**Schema**:
+
+| Column | Description | Example |
+|--------|-------------|---------|
+| Element | Model element name | `MagnetSystemCostCalc` |
+| File | SysML file path | `models/library/calculations/magnet_cost.sysml` |
+| Type | Element kind | `calc def` |
+| Knowledge | DI-XXX IDs this element traces to | `DI-003, DI-012` |
+| Requirement | PR-XXX IDs this element satisfies | `PR-005` |
+| Source_Type | Authority source kind | `codebase` |
+| Source_Document | Authority source name | `PyFECONS` |
+| Source_Location | Specific location | `CAS220103/magnet_cost.py:94` |
+| Confidence | Assessment | `High` |
+| Assumptions | Known approximations | `Uses 2024 material costs` |
+| Last_Verified | Date of last audit | `2026-01-28` |
+
+The matrix has both `Knowledge` (DI-XXX) and `Requirement` (PR-XXX) columns. Either or both may be populated for a given element. The `Knowledge` column enables direct impact queries when a DI-XXX is superseded, without requiring an intermediate requirement hop. The `Requirement` column enables requirement coverage checking.
+
+**Ownership**: Tool-owned schema (columns), user-owned data (rows).
+
+**Populated by**: `/implement-model` calls `agentic-mbse pm trace-element` (AP-7 T1 script) to append rows. Agent supplies content; script enforces schema, prevents duplicates, validates PR-XXX IDs exist in REQUIREMENTS.md and DI-XXX IDs exist in KNOWLEDGE.md.
+
+**Verified by**: `/audit-models` (checks completeness). Future: `agentic-mbse validate` traceability level (parses SysML via syside, checks all definitions have entries).
+
+**Queried by**: PM script engine (impact analysis).
+
+### 5.4 Traceability Diagrams
+
+**Forward path** (durable chain):
+
+```
+KNOWLEDGE.md               REQUIREMENTS.md
+  DI-XXX ───derives───>  PR-XXX
+                             |
+                             | satisfies (traceability_matrix.csv)
+                             v
+                        Model elements ──sources──> Authority sources
+                         (models/)                  (SOURCE_INDEX.md)
+```
+
+**Impact propagation** (reverse path):
+
+```
+DI-XXX superseded
+  |
+  | traceability_matrix.csv Knowledge column (direct lookup)
+  v
+Model elements needing review
+  |
+  | work/active/ directory scan
+  v
+Impact report -> user decides on action
+```
+
+### 5.5 Traceability Validation
+
+**Architectural requirement**: The validation pyramid must include programmatic traceability checking. This is the enforcement mechanism that makes the traceability model reliable.
+
+Level 6 validation (`level6_traceability.py`) currently only checks doc comment *existence*. It must be extended with the following sub-checks:
+
+1. **Format check**: Doc comments on definitions contain `Source` and `Reference` fields
+2. **Resolvability check**: Referenced source documents exist in SOURCE_INDEX.md
+3. **Completeness check**: `traceability_matrix.csv` has an entry for each definition (parsed via syside adapter)
+4. **Requirement coverage check**: Every PR-XXX in `project/REQUIREMENTS.md` has at least one satisfying element in `traceability_matrix.csv`
+
+Sub-checks 1-3 extend Level 6. Sub-check 4 is a cross-file check that may belong in Level 7 (architectural integrity) or as a standalone `agentic-mbse validate --traceability` flag.
+
+**Implementation**: Phase 3D. The syside adapter already parses SysML files and can enumerate definitions. The new check compares that list against `traceability_matrix.csv` entries.
+
+### 5.6 Remaining Open Questions
+
+1. **Traceability validation level number**: Should this be a sub-level of Level 6 (traceability & documentation) or a new level? Level 6 currently checks doc comment existence; adding traceability matrix completeness and source resolvability is a natural extension. Recommend: extend Level 6 with sub-checks rather than adding a new level. Resolve during Phase 3D.
+
+2. **`trace-element` script interface**: Exact CLI arguments and behavior for the AP-7 script that `/implement-model` calls, including the promotion step. Resolve during Phase 3D when implementing the PM script engine.
