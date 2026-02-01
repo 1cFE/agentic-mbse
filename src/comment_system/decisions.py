@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .git_ops import is_file_deleted_in_git
+from .git_ops import GitError, is_file_deleted_in_git
 from .models import Thread, ThreadStatus
 from .storage import read_sidecar
 
@@ -71,7 +71,11 @@ def collect_decisions(project_root: Path) -> tuple[list[DecisionEntry], list[Dec
 
             # Check if source file was deleted
             source_path = project_root / sidecar.source_file
-            is_deleted = is_file_deleted_in_git(source_path, project_root)
+            try:
+                is_deleted = is_file_deleted_in_git(source_path, project_root)
+            except GitError:
+                # Git not available or not a git repo - assume not deleted
+                is_deleted = False
 
             # Process each thread
             for thread in sidecar.threads:

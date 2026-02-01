@@ -1669,3 +1669,272 @@ def test_deleted_file_preserves_thread_data(runner, git_repo, sample_file):
     assert sidecar.threads[0].id == thread_id
     # Snippet is preserved
     assert sidecar.threads[0].anchor.content_snippet == original_snippet
+
+
+# ============================================================================
+# Test Suite: decisions command
+# ============================================================================
+
+
+def test_decisions_command_no_decisions(runner, git_repo):
+    """Generate DECISIONS.md when no decisions exist."""
+    result = runner.invoke(cli, ["decisions"])
+    assert result.exit_code == 0
+    assert "Generated" in result.output
+    assert "DECISIONS.md" in result.output
+    assert "0 decision(s) included" in result.output
+
+    # Verify DECISIONS.md exists and has correct header
+    decisions_path = git_repo / "DECISIONS.md"
+    assert decisions_path.exists()
+    content = decisions_path.read_text()
+    assert "# Decision Log" in content
+    assert "Auto-generated — do not edit manually" in content
+
+
+def test_decisions_command_single_decision(runner, git_repo, sample_file):
+    """Generate DECISIONS.md with one resolved thread."""
+    # Create and resolve a thread
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "1:1", "Fix this bug"])
+    assert result.exit_code == 0
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    result = runner.invoke(
+        cli, ["resolve", thread_id, "--decision", "Fixed by refactoring the logic"]
+    )
+    assert result.exit_code == 0
+
+    # Generate decisions
+    result = runner.invoke(cli, ["decisions"])
+    assert result.exit_code == 0
+    assert "1 decision(s) included" in result.output
+
+    # Verify DECISIONS.md content
+    decisions_path = git_repo / "DECISIONS.md"
+    content = decisions_path.read_text()
+    assert "## Active Decisions" in content
+    assert "test.txt:1" in content
+    assert "Fixed by refactoring the logic" in content
+
+
+def test_decisions_command_multiple_decisions_sorted(runner, git_repo, sample_file):
+    """Generate DECISIONS.md with multiple decisions, sorted correctly."""
+    # Create three threads with different timestamps (simulate by spacing out operations)
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "1:1", "First issue"])
+    thread_id_1 = result.output.split("Created thread ")[1].split("\n")[0]
+
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "3:3", "Second issue"])
+    thread_id_2 = result.output.split("Created thread ")[1].split("\n")[0]
+
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "5:5", "Third issue"])
+    thread_id_3 = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Resolve in order (newest decision should be thread_id_3)
+    result = runner.invoke(cli, ["resolve", thread_id_1, "--decision", "Decision 1"])
+    assert result.exit_code == 0
+
+    result = runner.invoke(cli, ["resolve", thread_id_2, "--decision", "Decision 2"])
+    assert result.exit_code == 0
+
+    result = runner.invoke(cli, ["resolve", thread_id_3, "--decision", "Decision 3"])
+    assert result.exit_code == 0
+
+    # Generate decisions
+    result = runner.invoke(cli, ["decisions"])
+    assert result.exit_code == 0
+    assert "3 decision(s) included" in result.output
+
+    # Verify DECISIONS.md content - newest first
+    decisions_path = git_repo / "DECISIONS.md"
+    content = decisions_path.read_text()
+
+    # Find positions of each decision in the file
+    pos_1 = content.find("Decision 1")
+    pos_2 = content.find("Decision 2")
+    pos_3 = content.find("Decision 3")
+
+    # Newest first means Decision 3 appears before Decision 2, which appears before Decision 1
+    assert pos_3 < pos_2 < pos_1
+
+
+def test_decisions_command_idempotent(runner, git_repo, sample_file):
+    """Running decisions command multiple times produces same result."""
+    # Create and resolve a thread
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "1:1", "Fix this"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+    result = runner.invoke(cli, ["resolve", thread_id, "--decision", "Fixed it"])
+
+    # Generate decisions first time
+    result = runner.invoke(cli, ["decisions"])
+    assert result.exit_code == 0
+    decisions_path = git_repo / "DECISIONS.md"
+    first_content = decisions_path.read_text()
+
+    # Generate decisions second time
+    result = runner.invoke(cli, ["decisions"])
+    assert result.exit_code == 0
+    second_content = decisions_path.read_text()
+
+    # Except for timestamp, content should be deterministic
+    # Compare structure (ignore timestamp line)
+    first_lines = [line for line in first_content.split("\n") if "Last updated:" not in line]
+    second_lines = [line for line in second_content.split("\n") if "Last updated:" not in line]
+    assert first_lines == second_lines
+
+
+def test_decisions_command_reopened_section(runner, git_repo, sample_file):
+    """Reopened threads with decisions appear in separate section."""
+    # Create, resolve, then reopen a thread
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "1:1", "Issue to revisit"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    result = runner.invoke(cli, ["resolve", thread_id, "--decision", "Initial decision"])
+    assert result.exit_code == 0
+
+    result = runner.invoke(cli, ["reopen", thread_id])
+    assert result.exit_code == 0
+
+    # Generate decisions
+    result = runner.invoke(cli, ["decisions"])
+    assert result.exit_code == 0
+    assert "1 decision(s) included" in result.output
+
+    # Verify reopened section exists
+    decisions_path = git_repo / "DECISIONS.md"
+    content = decisions_path.read_text()
+    assert "## Reopened Decisions" in content
+    assert "Initial decision" in content
+    assert "previously resolved but have been reopened" in content
+
+
+def test_decisions_command_deleted_file_marker(runner, git_repo, sample_file):
+    """Deleted source files show [deleted] marker in DECISIONS.md."""
+    import subprocess
+
+    # Initialize git properly
+    subprocess.run(["git", "init"], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Create and resolve a thread
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "1:1", "Fix before delete"])
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+    result = runner.invoke(cli, ["resolve", thread_id, "--decision", "Resolved before deletion"])
+
+    # Commit file to git
+    relative_file = sample_file.relative_to(git_repo)
+    subprocess.run(["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Add file"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Delete file and commit deletion
+    sample_file.unlink()
+    subprocess.run(["git", "rm", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Delete file"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Generate decisions
+    result = runner.invoke(cli, ["decisions"])
+    assert result.exit_code == 0
+    assert "1 decision(s) included" in result.output
+
+    # Verify [deleted] marker
+    decisions_path = git_repo / "DECISIONS.md"
+    content = decisions_path.read_text()
+    assert "[deleted: test.txt]" in content
+    assert "Resolved before deletion" in content
+
+
+def test_decisions_command_multiple_files_grouped(runner, git_repo):
+    """Decisions from multiple files are grouped correctly."""
+    # Create two files
+    file1 = git_repo / "file1.txt"
+    file1.write_text("File 1 content\n")
+    file2 = git_repo / "file2.txt"
+    file2.write_text("File 2 content\n")
+
+    # Create and resolve threads on both files
+    result = runner.invoke(cli, ["add", str(file1), "-L", "1:1", "Issue in file1"])
+    thread_id_1 = result.output.split("Created thread ")[1].split("\n")[0]
+    result = runner.invoke(cli, ["resolve", thread_id_1, "--decision", "Decision for file1"])
+
+    result = runner.invoke(cli, ["add", str(file2), "-L", "1:1", "Issue in file2"])
+    thread_id_2 = result.output.split("Created thread ")[1].split("\n")[0]
+    result = runner.invoke(cli, ["resolve", thread_id_2, "--decision", "Decision for file2"])
+
+    # Generate decisions
+    result = runner.invoke(cli, ["decisions"])
+    assert result.exit_code == 0
+    assert "2 decision(s) included" in result.output
+
+    # Verify both files appear
+    decisions_path = git_repo / "DECISIONS.md"
+    content = decisions_path.read_text()
+    assert "file1.txt" in content
+    assert "file2.txt" in content
+    assert "Decision for file1" in content
+    assert "Decision for file2" in content
+
+
+def test_decisions_command_no_git_repo(runner, git_repo):
+    """Decisions command works when git is not properly initialized (no [deleted] markers)."""
+    # Note: git_repo fixture creates .git dir but doesn't run git init,
+    # so git commands fail but project root detection works
+
+    # Create file and comment
+    sample_file = git_repo / "test.txt"
+    sample_file.write_text("Test content\n")
+
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "1:1", "Issue"])
+    assert result.exit_code == 0
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    result = runner.invoke(cli, ["resolve", thread_id, "--decision", "Resolved"])
+    assert result.exit_code == 0
+
+    # Generate decisions - should work even though git commands would fail
+    result = runner.invoke(cli, ["decisions"])
+    assert result.exit_code == 0
+    assert "1 decision(s) included" in result.output
+
+    # Verify DECISIONS.md exists
+    decisions_path = git_repo / "DECISIONS.md"
+    assert decisions_path.exists()
+    content = decisions_path.read_text()
+    assert "Resolved" in content
+    # Should not have [deleted] marker since git detection failed
+    assert "[deleted" not in content
+
+
+def test_decisions_command_error_no_git_repo_for_project_root(runner):
+    """Decisions command fails gracefully when not in a git repo and can't find project root."""
+    import os
+    import tempfile
+
+    # Create a temporary directory that's NOT a git repo and has no .git parent
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+        os.chdir(tmppath)
+
+        # Try to generate decisions - should fail with exit code 2
+        result = runner.invoke(cli, ["decisions"])
+        assert result.exit_code == 2
+        assert "Error:" in result.output

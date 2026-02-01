@@ -1145,5 +1145,39 @@ def reconcile(
         sys.exit(2)
 
 
+@cli.command()
+def decisions() -> None:
+    """Generate DECISIONS.md from resolved comment threads.
+
+    Aggregates all resolved threads with decisions into a human-readable
+    decision log at the project root. Idempotent - safe to run repeatedly.
+    """
+    from .decisions import write_decisions_file
+
+    try:
+        # Find project root
+        try:
+            project_root = find_project_root()
+        except ValueError as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
+
+        # Generate DECISIONS.md
+        try:
+            decision_count = write_decisions_file(project_root)
+        except OSError as e:
+            click.echo(f"Error writing DECISIONS.md: {e}", err=True)
+            sys.exit(2)
+
+        # Output success message
+        decisions_path = project_root / "DECISIONS.md"
+        click.echo(f"Generated {decisions_path}")
+        click.echo(f"  {decision_count} decision(s) included")
+
+    except Exception as e:
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(2)
+
+
 if __name__ == "__main__":
     cli()
