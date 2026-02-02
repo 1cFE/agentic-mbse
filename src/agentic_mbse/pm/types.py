@@ -242,3 +242,55 @@ class ProjectState(BaseModel):
 class DashboardResult(BaseModel):
     markdown: str
     warnings: list[ParseWarning] = Field(default_factory=list)
+
+
+# --- Operation types ---
+
+
+class OperationResult(BaseModel):
+    """Result of a PM operation."""
+
+    success: bool
+    message: str
+    ids_assigned: dict[str, str] = Field(default_factory=dict)
+    files_modified: list[str] = Field(default_factory=list)
+    warnings: list[ParseWarning] = Field(default_factory=list)
+
+
+class ImpactResult(BaseModel):
+    """Result of an impact query."""
+
+    query_id: str
+    affected_elements: list[TraceabilityEntry] = Field(default_factory=list)
+    affected_work_items: list[str] = Field(default_factory=list)
+    warnings: list[ParseWarning] = Field(default_factory=list)
+
+
+class InsightInput(BaseModel):
+    """Input for creating a new DI-XXX insight (no id or status — assigned by operation)."""
+
+    title: str
+    source: str
+    context: str
+    model_implications: str
+    analysis_implications: str
+    rationale: str | None = None
+
+
+class GoalInput(BaseModel):
+    """Input for creating a new G-XXX goal (no id — assigned by operation)."""
+
+    goal: str
+    priority: str
+    status: str = "active"
+    source: str
+    traced_requirements: str = ""
+
+
+class QuestionInput(BaseModel):
+    """Input for creating a new AQ-XXX question (no id — assigned by operation)."""
+
+    question: str
+    implies: str = ""
+    source: str
+    status: str = "open"

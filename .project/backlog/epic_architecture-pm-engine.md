@@ -155,7 +155,7 @@ Seven deliverables with a dependency structure (see [Sequencing](#sequencing) be
 ### D4.3: Dashboard Generator (`src/agentic_mbse/pm/dashboard.py`)
 
 **Type**: Implementation
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: D4.1 (parsers), D4.2 (state derivation)
 **Delta checklist**: § 3B.1 dashboard items
 
@@ -209,7 +209,7 @@ Implement V1 first. V2 and V3 are incremental additions once parsers for those f
 ### D4.4: AP-7 Operations (`src/agentic_mbse/pm/operations.py`)
 
 **Type**: Implementation
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: D4.1 (parsers for reading files), D4.2 (state derivation for close-item, impact-query)
 **Delta checklist**: § 3B.1 operations items
 
@@ -490,4 +490,4 @@ Epic 3 (Commands) is the primary consumer of this epic's outputs:
 ---
 
 **Last Updated**: 2026-02-02
-**Next Action**: Begin D4.2 (state derivation) — builds on D4.1 parsers.
+**Next Action**: Begin D4.5 (CLI subcommands) — wires operations and dashboard into the CLI.

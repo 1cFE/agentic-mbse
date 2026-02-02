@@ -1,6 +1,6 @@
 # Implementation Plan: D4.4 AP-7 Operations
 
-**Status:** Draft
+**Status:** Complete
 **Created:** 2026-02-02
 **Last Updated:** 2026-02-02
 
@@ -496,35 +496,49 @@ uv run mypy src/                              # Type check
 ## Implementation Notes
 
 ### Phase 1 Completion
-**Completed:**
+**Completed:** 2026-02-02
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Added `OperationResult`, `ImpactResult`, `InsightInput`, `GoalInput`, `QuestionInput` to `types.py`
+- Created `operations.py` with 10 private helpers: `_next_id`, `_update_frontmatter_fields`, `_render_backlog_body`, `_write_backlog`, `_format_insight_entry`, `_format_decision_entry`, `_format_table_row`, `_append_section`, `_append_table_row`, `_append_csv_row`
+- Created `tests/test_pm_operations.py` with 22 Phase 1 tests
+**Issues:** None
+**Deviations:** None
 
 ### Phase 2 Completion
-**Completed:**
+**Completed:** 2026-02-02
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Added 5 operations: `add_insight`, `save_research`, `promote_requirement`, `register_decision`, `add_validation`
+- Added 18 Phase 2 tests (40 total)
+**Issues:** None
+**Deviations:** None
 
 ### Phase 3 Completion
-**Completed:**
+**Completed:** 2026-02-02
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Added 4 operations: `trace_element`, `approve_research`, `register_intent`, `impact_query`
+- Added 13 Phase 3 tests (53 total)
+**Issues:** None
+**Deviations:** None
 
 ### Phase 4 Completion
-**Completed:**
+**Completed:** 2026-02-02
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Added 3 operations: `add_item`, `close_item`, `update_validation`
+- Added 12 Phase 4 tests (65 total)
+**Issues:** None
+**Deviations:** None
 
 ### Phase 5 Completion
-**Completed:**
+**Completed:** 2026-02-02
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Added `get_status` (delegates to `generate_dashboard`)
+- Added `supersede_insight` stub (raises `NotImplementedError`)
+- Updated `__init__.py` with all 14 operations, 5 new types, exports in `__all__`
+- Added 3 Phase 5 tests (68 total)
+- Fixed lint issues: removed unused `io` import, `EpicStatus` import, quoted annotation
+**Issues:** None
+**Deviations:** None
 
 ---
 
-**Status**: Draft → In Progress → Complete
+**Status**: Complete
