@@ -70,6 +70,9 @@ Mutation scripts (approve-research, close-item, trace-element, promote-requireme
 | Impact query | T1 | Given a DI-XXX or PR-XXX, traverse `data/traceability_matrix.csv` to find all affected model elements and work items. Returns structured result for agent interpretation. |
 | Add insight (inline) | T1 (T3 invocation) | Assign DI-XXX ID, format entry from agent-supplied fields (title, context, model/analysis implications, source, rationale), append to `knowledge/KNOWLEDGE.md`. All content pre-formed by agent — no LLM call. Source uses `work-item:{WI-XXX}/{artifact}` convention. Called by any command when agent discovers a domain insight mid-workflow. |
 | Resolve work item | T1 (query) | Given WI-XXX, search `work/active/{WI-XXX}_*/` then `work/completed/*_{WI-XXX}_*/`. Returns path or not-found. Internal utility used by other scripts. |
+| Register intent | T1 | Assign G-XXX / AQ-XXX IDs, format entries from agent-supplied fields, append to Goals Registry and Analysis Questions tables in `modeling_project/OVERVIEW.md`. Validates format, prevents duplicate IDs. Called by `/formalize-intent` after user approves extracted entries. |
+| Add backlog item | T1 | Append work item entry to `work/BACKLOG.md` YAML frontmatter (under the specified epic or standalone list), re-render BACKLOG.md body. Assigns WI-XXX ID. Called by `/status decompose` and `/backlog add`. |
+| Add validation entry | T1 | Append SV-XXX row to `modeling_project/VALIDATION_MATRIX.md`. Validates format, assigns ID. Called by `/status close` when user identifies new verification criteria, and by `/spec-model` when creating initial SV-XXX entries. |
 
 ---
 

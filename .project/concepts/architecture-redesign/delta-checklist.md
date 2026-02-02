@@ -231,7 +231,7 @@ For each command: extract embedded knowledge to skill references, reduce to 200-
 
 **Primary reference**: `.project/active/d2.5-extraction-mapping/extraction-mapping.md` — section-by-section mapping of what to remove, what stays, and which skill absorbs each piece of extracted content.
 
-- [ ] `[REVISE]` `claude/commands/design-model.md` (1,345 lines → target ~250)
+- [x] `[REVISE]` `claude/commands/design-model.md` (1,345 lines → target ~250) — D3.1 complete (131 lines)
   - Extract SysML syntax/patterns to `sysml-conventions` skill reference
   - Extract validation guidance to `model-validation` skill reference
   - Extract file structure rules to `project-structure` skill reference
@@ -240,7 +240,7 @@ For each command: extract embedded knowledge to skill references, reduce to 200-
   - Add reading of `modeling_project/REQUIREMENTS.md` for compliance
   - Add reference to `review.md` as optional output for `/review-model`
 
-- [ ] `[REVISE]` `claude/commands/implement-model.md` (493 lines → target ~250)
+- [x] `[REVISE]` `claude/commands/implement-model.md` (493 lines → target ~250) — D3.1 complete (135 lines)
   - Extract SysML syntax to `sysml-conventions` skill reference
   - Extract validation to `model-validation` skill reference
   - Extract file structure to `project-structure` skill reference
@@ -248,7 +248,7 @@ For each command: extract embedded knowledge to skill references, reduce to 200-
   - Add traceability recording (call `agentic-mbse pm trace-element` for significant model elements)
   - Add requirement promotion (call `agentic-mbse pm promote-requirement` for durable MR-XXX → PR-XXX)
 
-- [ ] `[REVISE]` `claude/commands/spec-model.md` (392 lines → target ~250)
+- [x] `[REVISE]` `claude/commands/spec-model.md` (392 lines → target ~250) — D3.1 complete (124 lines)
   - Extract to `project-structure` skill reference
   - Extract to `source-traceability` skill reference
   - Add reading of `knowledge/KNOWLEDGE.md` for DI-XXX insights
@@ -256,33 +256,33 @@ For each command: extract embedded knowledge to skill references, reduce to 200-
   - Add YAML frontmatter generation for spec.md (Status, Scale, Epic, Owner, Created, Updated)
   - Add SV-XXX entry creation in VALIDATION_MATRIX.md for verification criteria
 
-- [ ] `[REVISE]` `claude/commands/plan-model.md` (676 lines → target ~250)
+- [x] `[REVISE]` `claude/commands/plan-model.md` (676 lines → target ~250) — D3.1 complete (104 lines)
   - Extract to `model-validation` skill reference
   - Add YAML frontmatter generation for plan.md
 
-- [ ] `[REVISE]` `claude/commands/audit-models.md` (446 lines → target ~300)
+- [x] `[REVISE]` `claude/commands/audit-models.md` (446 lines → target ~300) — D3.1 complete (120 lines)
   - Extract to `model-validation` skill reference
   - Extract to `source-traceability` skill reference
   - Add to `requirements-tracking` skill reference
   - Add decision promotion flow: call `agentic-mbse pm register-decision` when user approves promoting a pattern to AD-XXX
   - Add SV-XXX status updates via `agentic-mbse pm update-validation`
 
-- [ ] `[REVISE]` `claude/commands/research.md` (243 lines → target ~250)
+- [x] `[REVISE]` `claude/commands/research.md` (243 lines → target ~250) — D3.1 complete (114 lines)
   - Add approval workflow: call `agentic-mbse pm approve-research` after user approves findings
   - Add DI-XXX insight suggestion and capture flow
   - Add knowledge supersession detection (flag conflicts with existing DI-XXX)
   - Add file save via script (not agent choosing path): `knowledge/research/pending/YYYYMMDD-HHMMSS_topic.md`
 
-- [ ] `[REVISE]` `claude/commands/onboard.md` (577 lines → target ~300)
+- [x] `[REVISE]` `claude/commands/onboard.md` (577 lines → target ~300) — D3.1 complete (113 lines)
   - Add trigger for `/formalize-intent` after initial documents are placed in `modeling_project/intent/`
   - Update project structure references to new directories
   - Add initial ARCHITECTURE.md population guidance
 
-- [ ] `[REVISE]` `claude/commands/manage-sources.md` (357 lines → target ~250)
+- [x] `[REVISE]` `claude/commands/manage-sources.md` (357 lines → target ~250) — D3.1 complete (89 lines)
   - Update SOURCE_INDEX.md path reference to `knowledge/SOURCE_INDEX.md`
   - Extract to `source-traceability` skill reference
 
-- [ ] `[REVISE]` `claude/commands/backlog.md` (358 lines → target ~250)
+- [x] `[REVISE]` `claude/commands/backlog.md` (358 lines → target ~250) — D3.1 complete (99 lines)
   - Add scale assessment (Trivial/Standard/Epic) to work item creation
   - Add epic decomposition flow (call `epic-decomposition` skill)
   - Update BACKLOG.md path to `work/BACKLOG.md`
@@ -290,11 +290,11 @@ For each command: extract embedded knowledge to skill references, reduce to 200-
 
 ### 3A.2 New Commands
 
-- [ ] `[NEW]` `claude/commands/quick-model.md` — Trivial-scale changes. No work item directory. Direct change + validate. Guard rail: if scope exceeds trivial, redirect to `/spec-model`. Skills: `sysml-conventions`, `model-validation`.
-- [ ] `[NEW]` `claude/commands/review-model.md` — Design review before implementation. Produces optional `review.md` with verdict (pass/concerns/fail) in YAML frontmatter. Skills: `sysml-conventions`, `model-validation`, `project-structure`, `requirements-tracking`.
-- [ ] `[NEW]` `claude/commands/analyze-models.md` — Model analysis reports to `work/analysis/YYYYMMDD-HHMMSS_topic.md`. Parse model structure, check rules compliance, compute health indicators. Skills: `project-structure`, `model-validation`.
-- [ ] `[NEW]` `claude/commands/status.md` — Thin wrapper: call `agentic-mbse status` script, present dashboard, add interpretation and recommendations. Skills: `epic-decomposition`, `requirements-tracking`.
-- [ ] `[NEW]` `claude/commands/formalize-intent.md` — Extract G-XXX goals and AQ-XXX analysis questions from `modeling_project/intent/` documents. User reviews and approves each. Calls AP-7 script to register in OVERVIEW.md. Skills: `project-structure`.
+- [x] `[NEW]` `claude/commands/quick-model.md` — D3.2 complete (96 lines). Trivial-scale changes. No work item directory. Direct change + validate. Guard rail: if scope exceeds trivial, redirect to `/spec-model`. Skills: `sysml-conventions`, `model-validation`.
+- [x] `[NEW]` `claude/commands/review-model.md` — D3.2 complete (103 lines). Design review before implementation. Produces optional `review.md` with verdict (pass/concerns/fail) in YAML frontmatter. Skills: `sysml-conventions`, `model-validation`, `project-structure`, `requirements-tracking`.
+- [x] `[NEW]` `claude/commands/analyze-models.md` — D3.2 complete (97 lines). Model analysis reports to `work/analysis/YYYYMMDD-HHMMSS_topic.md`. Parse model structure, check rules compliance, compute health indicators. Skills: `project-structure`, `model-validation`.
+- [x] `[NEW]` `claude/commands/status.md` — D3.2 complete (130 lines). Three modes (default dashboard, decompose epic, close item). Calls `agentic-mbse status` script with Epic 4 placeholder. Close flow with trigger questions. Skills: `epic-decomposition`, `requirements-tracking`.
+- [x] `[NEW]` `claude/commands/formalize-intent.md` — D3.2 complete (97 lines). Extract G-XXX goals and AQ-XXX analysis questions from `modeling_project/intent/` documents or user-provided input. User reviews and approves each. Calls AP-7 script to register in OVERVIEW.md. Skills: `project-structure`.
 
 ### 3A.3 Command Registration in `cmd_init()`
 
@@ -343,7 +343,7 @@ Not code changes — verification activities.
   - Project rules section (REQUIREMENTS.md metrics)
   - Validation status section (VALIDATION_MATRIX.md metrics)
   - Plain markdown output (renders in terminal and IDE)
-- [ ] `[NEW]` `src/agentic_mbse/pm/operations.py` — AP-7 operations:
+- [ ] `[NEW]` `src/agentic_mbse/pm/operations.py` — AP-7 operations (14 total):
 
 #### AP-7 Tier 1 Operations (fully deterministic)
 
@@ -354,6 +354,9 @@ Not code changes — verification activities.
   - [ ] `update-validation`: Update Status column in `modeling_project/VALIDATION_MATRIX.md` for specified SV-XXX
   - [ ] `add-insight` (T1 mechanics, T3 invocation): Assign DI-XXX ID, format entry from agent-supplied fields, append to `knowledge/KNOWLEDGE.md`. Validate all required fields present. Source uses `work-item:{name}/{artifact}` convention
   - [ ] `impact-query`: Given DI-XXX or PR-XXX, traverse `data/traceability_matrix.csv` to find affected model elements and work items. Return structured result
+  - [ ] `register-intent`: Assign G-XXX / AQ-XXX IDs, format entries from agent-supplied fields (statement/question, priority, source, implies), append to Goals Registry and Analysis Questions tables in `modeling_project/OVERVIEW.md`. Validate format, prevent duplicate IDs. Called by `/formalize-intent`.
+  - [ ] `add-item`: Append work item entry to `work/BACKLOG.md` YAML frontmatter (under specified epic or standalone list), re-render BACKLOG.md body. Assign WI-XXX ID. Called by `/status decompose` and `/backlog add`.
+  - [ ] `add-validation`: Append SV-XXX row to `modeling_project/VALIDATION_MATRIX.md`. Validate format, assign ID. Called by `/status close` (new criteria) and `/spec-model` (initial SV-XXX entries).
   - [ ] `status` (dashboard): Parse all structured files, produce dashboard markdown
 
 #### AP-7 Tier 2 Operations (script + headless LLM)
@@ -384,6 +387,9 @@ Not code changes — verification activities.
   - `agentic-mbse pm add-insight --title <text> --source <source> --context <text> --model-implications <text> --analysis-implications <text> [--rationale <text>]`
   - `agentic-mbse pm impact-query <ID>`
   - `agentic-mbse pm supersede-insight <DI-XXX> --new-insight '<json>' --reason '<text>'`
+  - `agentic-mbse pm register-intent --goals '<json>' --questions '<json>'`
+  - `agentic-mbse pm add-item --epic '<epic-name>' --name '<item-name>' --scale standard`
+  - `agentic-mbse pm add-validation --description '<text>' --type <type> --mechanism <mechanism> --expected '<value>' --tolerance '<tolerance>'`
 
 ### 3B.3 Tests for PM Engine
 
@@ -400,6 +406,9 @@ Not code changes — verification activities.
   - impact-query: verify CSV traversal, result structure
   - approve-research: verify file move, KNOWLEDGE.md append
   - supersede-insight: verify status update, new entry, impact report generation
+  - register-intent: verify OVERVIEW.md append, G-XXX/AQ-XXX ID assignment, duplicate prevention
+  - add-item: verify BACKLOG.md YAML frontmatter append, WI-XXX ID assignment, body re-render
+  - add-validation: verify VALIDATION_MATRIX.md append, SV-XXX ID assignment
 - [ ] `[NEW]` `tests/test_pm_cli.py` — Integration tests for CLI subcommands (end-to-end with temp directories)
 - [ ] `[NEW]` `tests/fixtures/pm/` — Test fixtures: sample BACKLOG.md, REQUIREMENTS.md, VALIDATION_MATRIX.md, KNOWLEDGE.md, ARCHITECTURE.md, traceability_matrix.csv, spec.md with frontmatter
 

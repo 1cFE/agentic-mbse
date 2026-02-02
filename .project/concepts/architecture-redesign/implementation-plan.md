@@ -333,7 +333,7 @@ Delta checklist: § 3B.1 dashboard items
 **Design question** (Q13): What's the minimum viable dashboard? Recommend starting with work item states only, then adding requirements and validation metrics incrementally.
 
 #### D4.4: AP-7 Operations (`src/agentic_mbse/pm/operations.py`)
-11 operations spanning Tier 1 (fully deterministic) and Tier 2 (script + content). Each operation is a function that takes structured input and mutates project files deterministically.
+14 operations spanning Tier 1 (fully deterministic) and Tier 2 (script + content). Each operation is a function that takes structured input and mutates project files deterministically.
 
 Delta checklist: § 3B.1 operations items (10 operations)
 
@@ -347,8 +347,11 @@ Delta checklist: § 3B.1 operations items (10 operations)
 7. `impact-query` — needed for knowledge evolution analysis
 8. `register-decision` — needed for design-to-architecture promotion
 9. `update-validation` — needed for SV-XXX status tracking
-10. `supersede-insight` — needed for knowledge evolution (T2, more complex)
-11. Work item name resolution (B-014)
+10. `register-intent` — needed for `/formalize-intent` G-XXX/AQ-XXX registration in OVERVIEW.md
+11. `add-item` — needed for `/status decompose` and `/backlog add` to register work items in BACKLOG.md
+12. `add-validation` — needed for `/status close` and `/spec-model` to add SV-XXX entries to VALIDATION_MATRIX.md
+13. `supersede-insight` — needed for knowledge evolution (T2, more complex)
+14. Work item name resolution (B-014)
 
 #### D4.5: CLI Subcommands
 Wire the operations and dashboard into the `agentic-mbse` CLI as `agentic-mbse status` and `agentic-mbse pm <operation>`.
@@ -382,7 +385,7 @@ Parsers are the foundation — everything else reads structured files through th
 ### Exit Criteria
 
 - [ ] `agentic-mbse status` produces accurate dashboard from fusion-tea project state
-- [ ] All 10 AP-7 operations have unit tests and pass
+- [ ] All 13 AP-7 operations have unit tests and pass
 - [ ] Parsers handle malformed input gracefully (warnings, not crashes)
 - [ ] CLI subcommands work end-to-end (integration tests with temp directories)
 - [ ] Level 6 validation extended with traceability sub-checks
