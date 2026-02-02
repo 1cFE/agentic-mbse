@@ -16,15 +16,20 @@ from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS, run_all_checks
 
 # Commands available for installation
 MBSE_COMMANDS = [
-    "design-model.md",
-    "plan-model.md",
-    "implement-model.md",
-    "spec-model.md",
-    "research.md",
+    "analyze-models.md",
     "audit-models.md",
-    "onboard.md",
-    "manage-sources.md",
     "backlog.md",
+    "design-model.md",
+    "formalize-intent.md",
+    "implement-model.md",
+    "manage-sources.md",
+    "onboard.md",
+    "plan-model.md",
+    "quick-model.md",
+    "research.md",
+    "review-model.md",
+    "spec-model.md",
+    "status.md",
 ]
 
 # Agents available for installation

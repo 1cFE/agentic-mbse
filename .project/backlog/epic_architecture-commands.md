@@ -44,8 +44,8 @@ Two questions from main.md § 5 are blocking. This epic must resolve both.
 ## Success Criteria
 
 - [x] 9 existing commands refactored with skill references (average 114 lines)
-- [ ] 5 new commands created (`quick-model`, `review-model`, `analyze-models`, `status`, `formalize-intent`)
-- [ ] All 14 commands install correctly via `agentic-mbse init` and `replicate_setup.sh`
+- [x] 5 new commands created (`quick-model`, `review-model`, `analyze-models`, `status`, `formalize-intent`)
+- [x] All 14 commands install correctly via `agentic-mbse init` and `replicate_setup.sh`
 - [ ] Each refactored command passes a fusion-tea walkthrough with no knowledge loss (Q12 resolved)
 - [x] Command structure convention documented (Q15 resolved) — `command-convention.md`
 - [ ] `sysmlv2-doc-analyzer` agent status resolved (restored or confirmed deprecated)
@@ -285,7 +285,7 @@ This command may grow slightly due to new workflow steps.
 ### D3.3: Command Registration
 
 **Type**: Implementation
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: D3.1 and D3.2 (commands must exist to register)
 **Delta checklist**: § 3A.3 (2 items)
 
@@ -325,11 +325,11 @@ Add new commands to the install loop. Must match `MBSE_COMMANDS` exactly.
 3. Check each command file installs without errors
 
 **Exit criteria**:
-- [ ] `MBSE_COMMANDS` list updated with all 14 commands
-- [ ] `replicate_setup.sh` updated with matching command set
-- [ ] `agentic-mbse init` installs all 14 commands to `.claude/commands/`
-- [ ] `agentic-mbse init --dev` creates symlinks for all 14 commands
-- [ ] All existing tests pass
+- [x] `MBSE_COMMANDS` list updated with all 14 commands
+- [x] `replicate_setup.sh` updated with matching command set
+- [x] `agentic-mbse init` installs all 14 commands to `.claude/commands/`
+- [x] `agentic-mbse init --dev` creates symlinks for all 14 commands
+- [x] All existing tests pass — 342 passed, 1 skipped
 
 ---
 
@@ -507,4 +507,4 @@ Epic 4 (PM Script Engine) runs in parallel with this epic:
 ---
 
 **Last Updated**: 2026-02-02
-**Next Action**: D3.1 complete. Begin D3.2 (new commands) and D3.4 (agent cleanup) in parallel.
+**Next Action**: D3.1, D3.2, D3.3 complete. Begin D3.4 (agent cleanup) and D3.5 (validation walkthrough).

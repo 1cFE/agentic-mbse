@@ -298,8 +298,8 @@ For each command: extract embedded knowledge to skill references, reduce to 200-
 
 ### 3A.3 Command Registration in `cmd_init()`
 
-- [ ] `[REVISE]` `MBSE_COMMANDS` list in `cli/__init__.py` — Add: `quick-model.md`, `review-model.md`, `analyze-models.md`, `status.md`, `formalize-intent.md`
-- [ ] `[REVISE]` `replicate_setup.sh` — Add new commands to the install loop
+- [x] `[REVISE]` `MBSE_COMMANDS` list in `cli/__init__.py` — Add: `quick-model.md`, `review-model.md`, `analyze-models.md`, `status.md`, `formalize-intent.md`
+- [x] `[REVISE]` `replicate_setup.sh` — Add new commands to the install loop
 
 ### 3A.4 Agents
 

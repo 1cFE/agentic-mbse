@@ -52,8 +52,10 @@ install_claude_components() {
     mkdir -p "$REPO_ROOT/.claude/hooks"
 
     # Commands - direct copy
-    for cmd in design-model.md plan-model.md implement-model.md spec-model.md \
-               research.md audit-models.md onboard.md manage-sources.md backlog.md; do
+    for cmd in analyze-models.md audit-models.md backlog.md design-model.md \
+               formalize-intent.md implement-model.md manage-sources.md onboard.md \
+               plan-model.md quick-model.md research.md review-model.md \
+               spec-model.md status.md; do
         cp "$REPO_ROOT/claude/commands/$cmd" "$REPO_ROOT/.claude/commands/$cmd"
         log_created ".claude/commands/$cmd"
     done
