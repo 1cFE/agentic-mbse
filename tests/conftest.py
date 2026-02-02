@@ -1,7 +1,7 @@
 """Shared pytest fixtures."""
-import pytest
 from pathlib import Path
 
+import pytest
 from dotenv import load_dotenv
 
 # Load environment variables (for SYSIDE_LICENSE_KEY)

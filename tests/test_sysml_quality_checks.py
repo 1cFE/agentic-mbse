@@ -5,10 +5,11 @@ Test suite for the 7-level SysML quality validation framework.
 Follows test-first approach per plan.md.
 """
 
-import pytest
-from pathlib import Path
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
+
+import pytest
 
 
 # Test fixtures for valid/invalid SysML files
@@ -90,7 +91,7 @@ class TestLevel1Syntax:
         from agentic_mbse.validation.level1_syntax import validate_syntax
 
         result = validate_syntax(str(valid_sysml_file.parent.parent))
-        assert result.success == True
+        assert result.success
         assert result.level == 1
         assert len(result.issues) == 0
 
@@ -99,7 +100,7 @@ class TestLevel1Syntax:
         from agentic_mbse.validation.level1_syntax import validate_syntax
 
         result = validate_syntax(str(invalid_sysml_file.parent.parent))
-        assert result.success == False
+        assert not result.success
         assert len(result.issues) > 0
         assert "bad.sysml" in result.issues[0]
 
@@ -110,7 +111,7 @@ class TestLevel1Syntax:
         empty_dir = temp_models_dir / "empty"
         empty_dir.mkdir()
         result = validate_syntax(str(empty_dir))
-        assert result.success == True
+        assert result.success
         assert len(result.warnings) > 0
 
 
@@ -196,7 +197,7 @@ class TestLevel2Structure:
         from agentic_mbse.validation.level2_structure import validate_structure
 
         result = validate_structure(str(temp_models_dir))
-        assert result.success == True
+        assert result.success
         assert len(result.warnings) > 0  # Should warn about no files
 
     def test_unbound_input_detected_basic(self, temp_models_dir):
@@ -229,8 +230,8 @@ class TestLevel2Structure:
             }
         """)
 
+        from agentic_mbse.validation.common import discover_sysml_files, load_sysml_model
         from agentic_mbse.validation.level2_structure import check_unbound_inputs
-        from agentic_mbse.validation.common import load_sysml_model, discover_sysml_files
 
         files = discover_sysml_files(str(temp_models_dir))
         model, _ = load_sysml_model(files)
@@ -671,7 +672,7 @@ class TestLevel7Architecture:
         result = validate_architecture(str(temp_models_dir))
 
         assert result.level == 7
-        assert result.success == True  # Should pass with warning
+        assert result.success  # Should pass with warning
         assert len(result.warnings) > 0  # Should warn about no manifest
 
     def test_manifest_validation(self, temp_models_dir):
@@ -775,9 +776,10 @@ class TestEndToEnd:
 
     def test_fail_fast_mode(self):
         """Test that fail-fast mode stops appropriately"""
-        import tempfile
         import shutil
+        import tempfile
         from pathlib import Path
+
         from agentic_mbse.validation.runner import run_all_checks
 
         # Create temp dir with broken file
@@ -863,10 +865,10 @@ class TestLevel8CodegenReadiness:
 
     def test_check_calc_def_structure_finds_outputs(self):
         """Valid calc defs with outputs pass structure check"""
+        from agentic_mbse.sysml.types import ValidationCode
         from agentic_mbse.validation.level8_codegen import (
             validate_codegen_readiness,
         )
-        from agentic_mbse.sysml.types import ValidationCode
 
         result = validate_codegen_readiness("tests/fixtures/sample_models/")
         no_output_issues = [
@@ -878,10 +880,10 @@ class TestLevel8CodegenReadiness:
 
     def test_check_binding_formats_valid(self):
         """Valid bindings pass format check"""
+        from agentic_mbse.sysml.types import ValidationCode
         from agentic_mbse.validation.level8_codegen import (
             validate_codegen_readiness,
         )
-        from agentic_mbse.sysml.types import ValidationCode
 
         result = validate_codegen_readiness("tests/fixtures/sample_models/")
         binding_issues = [
@@ -906,10 +908,10 @@ class TestLevel8CodegenReadiness:
 
     def test_incomplete_design_attrs_are_errors(self):
         """Incomplete design attributes produce errors per FR-7"""
+        from agentic_mbse.sysml.types import Severity, ValidationCode
         from agentic_mbse.validation.level8_codegen import (
             validate_codegen_readiness,
         )
-        from agentic_mbse.sysml.types import Severity, ValidationCode
 
         result = validate_codegen_readiness("tests/fixtures/sample_models/")
         incomplete_issues = [

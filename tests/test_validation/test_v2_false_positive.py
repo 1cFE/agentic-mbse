@@ -14,12 +14,11 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from agentic_mbse.sysml.syside_adapter import get_syside
-
+from agentic_mbse.sysml.types import ExpressionRef, ValidationCode
 from agentic_mbse.validation.adr002 import (
     _is_calc_output_reference,
     check_static_expressions,
 )
-from agentic_mbse.sysml.types import ExpressionRef, ValidationCode
 
 
 class TestIsCalcOutputReference:

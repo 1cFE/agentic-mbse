@@ -21,10 +21,11 @@ See: SysML v2 Specification Part 1, section 8.2.2.5 (lines 10297-10298)
 Created: 2026-01-23
 """
 
-import pytest
-from pathlib import Path
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture

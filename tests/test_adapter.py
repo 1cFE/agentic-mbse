@@ -1,6 +1,7 @@
 """Tests for SysideAdapter."""
 import pytest
-from agentic_mbse.sysml.syside_adapter import SysideAdapter, DiagnosticSeverity
+
+from agentic_mbse.sysml.syside_adapter import DiagnosticSeverity, SysideAdapter
 
 
 class TestTypeMap:

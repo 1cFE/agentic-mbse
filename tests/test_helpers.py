@@ -1,14 +1,12 @@
 """Tests for helpers.py functions."""
 from pathlib import Path
 
-import pytest
-
 from agentic_mbse.sysml.helpers import (
     get_calc_def_name,
     get_document_url,
+    get_parent_part_name,
     get_source_file,
     get_source_location,
-    get_parent_part_name,
 )
 
 
@@ -34,7 +32,7 @@ class MockCstNode:
     class StartPoint:
         def __init__(self, line):
             self.line = line
-    
+
     def __init__(self, line=0):
         self.start_point = self.StartPoint(line)
 
@@ -58,20 +56,20 @@ class TestGetCalcDefName:
         """Returns target name when FeatureTyping relationship exists."""
         class MockTarget:
             name = "MyCalcDef"
-        
+
         class MockElement:
             heritage = [(MockFeatureTyping(), MockTarget())]
-        
+
         assert get_calc_def_name(MockElement()) == "MyCalcDef"
 
     def test_returns_none_when_target_has_no_name(self):
         """Returns None if target has no name attribute."""
         class MockTarget:
             pass
-        
+
         class MockElement:
             heritage = [(MockFeatureTyping(), MockTarget())]
-        
+
         assert get_calc_def_name(MockElement()) is None
 
 
@@ -82,7 +80,7 @@ class TestGetDocumentUrl:
         """Returns URL directly from element's document."""
         class MockElement:
             document = MockDocument("file:///path/to/file.sysml")
-        
+
         assert get_document_url(MockElement()) == "file:///path/to/file.sysml"
 
     def test_returns_none_without_document(self):
@@ -90,7 +88,7 @@ class TestGetDocumentUrl:
         class MockElement:
             document = None
             owner = None
-        
+
         assert get_document_url(MockElement()) is None
 
     def test_traverses_ownership_chain(self):
@@ -98,11 +96,11 @@ class TestGetDocumentUrl:
         class MockOwner:
             document = MockDocument("file:///parent.sysml")
             owner = None
-        
+
         class MockElement:
             document = None
             owner = MockOwner()
-        
+
         assert get_document_url(MockElement()) == "file:///parent.sysml"
 
 
@@ -114,7 +112,7 @@ class TestGetSourceFile:
         class MockElement:
             document = MockDocument("file:///path/to/model.sysml")
             owner = None
-        
+
         result = get_source_file(MockElement())
         assert result == Path("/path/to/model.sysml")
 
@@ -123,7 +121,7 @@ class TestGetSourceFile:
         class MockElement:
             document = None
             owner = None
-        
+
         assert get_source_file(MockElement()) == Path("unknown")
 
     def test_strips_file_prefix(self):
@@ -131,7 +129,7 @@ class TestGetSourceFile:
         class MockElement:
             document = MockDocument("file:models/test.sysml")
             owner = None
-        
+
         result = get_source_file(MockElement())
         assert "file:" not in str(result)
 
@@ -145,7 +143,7 @@ class TestGetSourceLocation:
             document = MockDocument("file:///path/to/model.sysml")
             owner = None
             cst_node = MockCstNode(line=41)  # 0-indexed
-        
+
         path, line = get_source_location(MockElement())
         assert path == Path("/path/to/model.sysml")
         assert line == 42  # 1-indexed
@@ -155,7 +153,7 @@ class TestGetSourceLocation:
         class MockElement:
             document = MockDocument("file:///path.sysml")
             owner = None
-        
+
         path, line = get_source_location(MockElement())
         assert line == 0
 
@@ -167,7 +165,7 @@ class TestGetParentPartName:
         """Returns empty string if no owning_namespace."""
         class MockElement:
             owning_namespace = None
-        
+
         # Remove owner to avoid fallback
         elem = MockElement()
         assert get_parent_part_name(elem) == ""
@@ -176,13 +174,13 @@ class TestGetParentPartName:
         """Returns part name from owning_namespace."""
         class MockElement:
             owning_namespace = MockPartUsage("my_part")
-        
+
         assert get_parent_part_name(MockElement()) == "my_part"
 
     def test_returns_empty_when_namespace_has_no_name(self):
         """Returns empty string if part has no name."""
         class MockElement:
             owning_namespace = MockPartUsage(None)
-        
+
         elem = MockElement()
         assert get_parent_part_name(elem) == ""

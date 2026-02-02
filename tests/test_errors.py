@@ -1,11 +1,12 @@
 """Tests for error classes."""
 import pytest
+
 from agentic_mbse.errors import (
+    AdapterError,
     AgenticMBSEError,
+    ConfigurationError,
     ModelLoadError,
     ValidationError,
-    ConfigurationError,
-    AdapterError,
 )
 
 

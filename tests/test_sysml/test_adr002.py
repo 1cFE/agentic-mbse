@@ -3,20 +3,19 @@
 Tests the V1, V2, V4 checks from agentic_mbse.validation.adr002
 using the test fixtures in tests/fixtures/adr002_violations/.
 """
-import pytest
 from pathlib import Path
 
-from agentic_mbse.sysml.syside_adapter import get_syside
+import pytest
 
+from agentic_mbse.sysml.syside_adapter import get_syside
 from agentic_mbse.sysml.types import Severity, ValidationCode
 from agentic_mbse.validation.adr002 import (
-    check_calc_def_locations,
-    check_supported_operators,
-    check_static_expressions,
-    _is_expose_pattern,
     _build_calc_output_catalog,
+    _is_expose_pattern,
+    check_calc_def_locations,
+    check_static_expressions,
+    check_supported_operators,
 )
-
 
 # ============================================================================
 # Fixtures
