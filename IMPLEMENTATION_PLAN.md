@@ -78,33 +78,24 @@ The following modules are **complete** with comprehensive tests:
 
 ## Priority 1: Critical Bugs & Missing Features
 
-### Task 1.1: MCP `comment_resolve` Timestamp Bug (CRITICAL)
+### ✅ Task 1.1: MCP `comment_resolve` Timestamp Bug (COMPLETED)
 
 **Spec**: `mcp-tools.md` REQ-4, `data-model.md` CON-3
 **Type**: Bug fix
+**Status**: ✅ COMPLETED (2026-02-02)
 
-**Description**: The MCP `comment_resolve` tool has idempotency logic (lines 794-803) but does NOT set `thread.resolved_at` timestamp on first resolution. The spec requires preserving original `resolved_at` on subsequent resolutions, but currently there's nothing to preserve because it's never set.
+**Implementation Summary**:
+- Fixed `mcp_server.py:handle_comment_resolve()` line 806 to set `resolved_at` timestamp
+- Fixed `mcp_server.py:handle_comment_show()` line 651 to include `resolved_at` in thread dict
+- Enhanced 3 existing tests to verify timestamp behavior:
+  - `test_comment_resolve_basic` - verifies timestamp is set and non-empty
+  - `test_comment_resolve_wontfix` - verifies timestamp for wontfix status
+  - `test_comment_resolve_idempotency` - verifies timestamp preservation on subsequent resolves
+- All 450 tests pass, mypy clean, ruff clean
 
-**Root Cause**: Lines 805-814 in `mcp_server.py:handle_comment_resolve()` update `thread.status` and create `Decision` but skip setting `thread.resolved_at`. This is inconsistent with `Thread.resolve()` and `Thread.wontfix()` methods in `models.py` (lines 155-187).
-
-**Files to modify** (~2 files):
-- `src/comment_system/mcp_server.py:handle_comment_resolve()` - Add `resolved_at` timestamp assignment
-  - Insert after line 806: `found_thread.resolved_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")`
-  - Must respect idempotency check (don't overwrite existing timestamp)
-- `tests/comment_system/test_mcp_server.py` - Add idempotency test
-  - Test: First `comment_resolve` sets `resolved_at` timestamp
-  - Test: Second `comment_resolve` preserves original `resolved_at`
-
-**Acceptance Criteria**:
-- AC-6 from `mcp-tools.md`: `comment_resolve` on already-resolved thread succeeds with `resolved_at` unchanged
-- First resolve: `resolved_at` is set to current timestamp
-- Second resolve: `resolved_at` matches first resolve timestamp (idempotency)
-
-**Backpressure**:
-- Unit test: `test_mcp_server.py::test_resolve_sets_resolved_at`
-- Unit test: `test_mcp_server.py::test_resolve_idempotent_preserves_timestamp`
-
-**Estimated complexity**: Low (1-line fix + 2 tests)
+**Files Modified** (3 files):
+- `src/comment_system/mcp_server.py` - Added `resolved_at` timestamp assignment and show output
+- `tests/comment_system/test_mcp_server.py` - Enhanced tests to verify timestamps
 
 ---
 

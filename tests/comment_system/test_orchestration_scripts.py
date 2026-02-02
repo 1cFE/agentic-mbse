@@ -186,9 +186,7 @@ class TestRalphLoopIntegration:
         assert isinstance(comments, list)
         assert len(comments) == 0
 
-    def test_ralph_workflow_with_open_comments_exits_with_code_1(
-        self, git_repo_with_comment_cli
-    ):
+    def test_ralph_workflow_with_open_comments_exits_with_code_1(self, git_repo_with_comment_cli):
         """AC-4: Ralph detects open comments and signals they need addressing (exit 1)."""
         # Add an open comment to the file Ralph will modify
         sample_file = Path("sample.py")
@@ -220,9 +218,7 @@ class TestRalphLoopIntegration:
         assert len(comments) == 1
         assert comments[0]["status"] == "open"
 
-    def test_ralph_workflow_reconciles_before_checking(
-        self, git_repo_with_comment_cli
-    ):
+    def test_ralph_workflow_reconciles_before_checking(self, git_repo_with_comment_cli):
         """Ralph reconciles anchors before checking comments to ensure they're current."""
         # Add a comment
         sample_file = Path("sample.py")
@@ -333,9 +329,7 @@ class TestRalphLoopIntegration:
         # Verify no ANSI color codes in output
         assert "\033[" not in result.stderr, "ANSI codes found despite NO_COLOR"
 
-    def test_ralph_workflow_allows_custom_comment_command(
-        self, git_repo_with_comment_cli
-    ):
+    def test_ralph_workflow_allows_custom_comment_command(self, git_repo_with_comment_cli):
         """Ralph script respects COMMENT_CMD environment variable."""
         script = PROJECT_ROOT / "scripts" / "ralph_loop_integration.sh"
         sample_file = Path("sample.py")

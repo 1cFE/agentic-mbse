@@ -650,6 +650,10 @@ async def handle_comment_show(arguments: Any) -> list[TextContent]:
         ],
     }
 
+    # Add resolved_at if present
+    if found_thread.resolved_at:
+        thread_dict["resolved_at"] = found_thread.resolved_at
+
     if found_thread.decision:
         thread_dict["decision"] = {
             "summary": found_thread.decision.summary,
@@ -802,8 +806,9 @@ async def handle_comment_resolve(arguments: Any) -> list[TextContent]:
         )
         return [TextContent(type="text", text=json.dumps(response.model_dump(), indent=2))]
 
-    # Update thread status
+    # Update thread status and set resolved_at timestamp
     found_thread.status = target_status
+    found_thread.resolved_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
     # Add decision if provided
     if req.decision:

@@ -1504,7 +1504,9 @@ def test_deleted_file_shows_deleted_marker_in_list(runner, git_repo, sample_file
 
     # Commit file and sidecar to git (use relative path)
     relative_file = sample_file.relative_to(git_repo)
-    subprocess.run(["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True
+    )
     subprocess.run(
         ["git", "commit", "-m", "Add file"],
         cwd=git_repo,
@@ -1555,7 +1557,9 @@ def test_deleted_file_shows_deleted_marker_in_show(runner, git_repo, sample_file
 
     # Commit file and sidecar to git (use relative path)
     relative_file = sample_file.relative_to(git_repo)
-    subprocess.run(["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True
+    )
     subprocess.run(
         ["git", "commit", "-m", "Add file"],
         cwd=git_repo,
@@ -1637,7 +1641,9 @@ def test_deleted_file_preserves_thread_data(runner, git_repo, sample_file):
 
     # Commit file (use relative path)
     relative_file = sample_file.relative_to(git_repo)
-    subprocess.run(["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True
+    )
     subprocess.run(
         ["git", "commit", "-m", "Add file"],
         cwd=git_repo,
@@ -1833,7 +1839,9 @@ def test_decisions_command_deleted_file_marker(runner, git_repo, sample_file):
 
     # Commit file to git
     relative_file = sample_file.relative_to(git_repo)
-    subprocess.run(["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "add", str(relative_file)], cwd=git_repo, check=True, capture_output=True
+    )
     subprocess.run(
         ["git", "commit", "-m", "Add file"],
         cwd=git_repo,

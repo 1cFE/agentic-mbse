@@ -390,7 +390,7 @@ class TestDetectFileRename:
 
         # Create 5 renames (file0 → file1 → ... → file5)
         for i in range(1, 6):
-            old_name = f"file{i-1}.md"
+            old_name = f"file{i - 1}.md"
             new_name = f"file{i}.md"
             subprocess.run(
                 ["git", "mv", old_name, new_name],
@@ -762,7 +762,9 @@ class TestDetectAndMoveAllSidecars:
         # Create sidecars
         for filename in ["file1.md", "file2.md"]:
             thread = Thread(
-                comments=[Comment(body=f"Comment on {filename}", author="Test User", author_type="human")],
+                comments=[
+                    Comment(body=f"Comment on {filename}", author="Test User", author_type="human")
+                ],
                 anchor=Anchor(
                     content_hash="sha256:" + "a" * 64,
                     context_hash_before="sha256:" + "b" * 64,

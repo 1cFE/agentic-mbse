@@ -862,12 +862,15 @@ async def test_comment_resolve_basic(sample_file: Path):
     assert data["thread_id"] == thread_id
     assert data["status"] == "resolved"
     assert "resolved_at" in data
+    assert data["resolved_at"] != ""  # Must set timestamp on first resolve
+    assert data["resolved_at"].endswith("Z")  # UTC timestamp
 
     # Verify thread is resolved
     show_result = await handle_comment_show({"thread_id": thread_id})
     show_data = json.loads(show_result[0].text)
     assert show_data["thread"]["status"] == "resolved"
     assert show_data["thread"]["decision"]["summary"] == "Use approach B"
+    assert show_data["thread"]["resolved_at"] == data["resolved_at"]  # Consistent timestamp
 
 
 @pytest.mark.asyncio
@@ -893,11 +896,14 @@ async def test_comment_resolve_wontfix(sample_file: Path):
     data = json.loads(result[0].text)
 
     assert data["status"] == "wontfix"
+    assert data["resolved_at"] != ""  # Must set timestamp
+    assert data["resolved_at"].endswith("Z")  # UTC timestamp
 
     # Verify in show
     show_result = await handle_comment_show({"thread_id": thread_id})
     show_data = json.loads(show_result[0].text)
     assert show_data["thread"]["status"] == "wontfix"
+    assert show_data["thread"]["resolved_at"] == data["resolved_at"]  # Consistent timestamp
 
 
 @pytest.mark.asyncio
@@ -923,6 +929,10 @@ async def test_comment_resolve_idempotency(sample_file: Path):
     first_data = json.loads(first_result[0].text)
     first_resolved_at = first_data["resolved_at"]
 
+    # Verify timestamp was set on first resolve
+    assert first_resolved_at != ""
+    assert first_resolved_at.endswith("Z")
+
     # Resolve again (should be no-op, timestamp unchanged)
     resolve_args = {
         "thread_id": thread_id,
@@ -931,7 +941,7 @@ async def test_comment_resolve_idempotency(sample_file: Path):
     second_result = await handle_comment_resolve(resolve_args)
     second_data = json.loads(second_result[0].text)
 
-    # Timestamp should be unchanged
+    # Timestamp should be unchanged (idempotency - preserves original timestamp)
     assert second_data["resolved_at"] == first_resolved_at
 
     # Decision should still be the first one (no update)
@@ -1305,7 +1315,9 @@ async def test_reconcile_project_wide_single_file(sample_file: Path):
 
 
 @pytest.mark.asyncio
-async def test_reconcile_project_wide_multiple_files(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+async def test_reconcile_project_wide_multiple_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Test project-wide reconciliation with multiple files."""
     # Create git repo
     repo_root = tmp_path / "repo"
@@ -1518,4 +1530,7 @@ async def test_reconcile_idempotency(sample_file: Path):
 
     # Results should be identical (same hash, no changes)
     assert data2["total_threads"] == data3["total_threads"]
-    assert data2["files_processed"][0]["source_hash_after"] == data3["files_processed"][0]["source_hash_after"]
+    assert (
+        data2["files_processed"][0]["source_hash_after"]
+        == data3["files_processed"][0]["source_hash_after"]
+    )

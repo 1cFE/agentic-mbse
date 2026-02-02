@@ -92,9 +92,7 @@ def test_lock_timeout_on_held_lock(tmp_path):
             time.sleep(duration)
 
     # Start process holding lock for 2 seconds
-    proc = multiprocessing.Process(
-        target=hold_lock_process, args=(str(lock_file), 2.0)
-    )
+    proc = multiprocessing.Process(target=hold_lock_process, args=(str(lock_file), 2.0))
     proc.start()
 
     # Give process time to acquire lock
@@ -130,16 +128,12 @@ def test_lock_succeeds_after_release(tmp_path):
             Path(lock_path).write_text(content)
 
     # Process 1 writes "first"
-    proc1 = multiprocessing.Process(
-        target=write_with_lock, args=(str(lock_file), "first")
-    )
+    proc1 = multiprocessing.Process(target=write_with_lock, args=(str(lock_file), "first"))
     proc1.start()
     proc1.join(timeout=2)
 
     # Process 2 writes "second" (should succeed after proc1 releases)
-    proc2 = multiprocessing.Process(
-        target=write_with_lock, args=(str(lock_file), "second")
-    )
+    proc2 = multiprocessing.Process(target=write_with_lock, args=(str(lock_file), "second"))
     proc2.start()
     proc2.join(timeout=2)
 
@@ -196,9 +190,7 @@ def test_lock_timeout_custom_duration(tmp_path):
             time.sleep(duration)
 
     # Start process holding lock for 3 seconds
-    proc = multiprocessing.Process(
-        target=hold_lock_process, args=(str(lock_file), 3.0)
-    )
+    proc = multiprocessing.Process(target=hold_lock_process, args=(str(lock_file), 3.0))
     proc.start()
 
     # Give process time to acquire lock
@@ -258,9 +250,7 @@ def test_multiple_shared_locks_allowed(tmp_path):
             elapsed = time.time() - start
             # Append to output (note: this write is NOT locked, just for test verification)
             output = Path(output_path).read_text()
-            Path(output_path).write_text(
-                output + f"{process_id}:{content}:{elapsed:.2f}\n"
-            )
+            Path(output_path).write_text(output + f"{process_id}:{content}:{elapsed:.2f}\n")
 
     # Start multiple processes with shared locks concurrently
     processes = []
@@ -301,9 +291,7 @@ def test_exclusive_lock_blocks_shared_lock(tmp_path):
             time.sleep(duration)
 
     # Start process holding exclusive lock for 2 seconds
-    proc = multiprocessing.Process(
-        target=hold_exclusive_lock, args=(str(lock_file), 2.0)
-    )
+    proc = multiprocessing.Process(target=hold_exclusive_lock, args=(str(lock_file), 2.0))
     proc.start()
 
     # Give process time to acquire lock
@@ -339,9 +327,7 @@ def test_shared_lock_blocks_exclusive_lock(tmp_path):
             time.sleep(duration)
 
     # Start process holding shared lock for 2 seconds
-    proc = multiprocessing.Process(
-        target=hold_shared_lock, args=(str(lock_file), 2.0)
-    )
+    proc = multiprocessing.Process(target=hold_shared_lock, args=(str(lock_file), 2.0))
     proc.start()
 
     # Give process time to acquire lock

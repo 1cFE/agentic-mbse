@@ -1279,9 +1279,7 @@ class TestWriteSidecarWithRetry:
             )
 
         # Should succeed with custom timeout
-        result = write_sidecar_with_retry(
-            sidecar_path, create_sidecar, max_retries=1, timeout=10.0
-        )
+        result = write_sidecar_with_retry(sidecar_path, create_sidecar, max_retries=1, timeout=10.0)
 
         assert sidecar_path.exists()
         assert result.source_hash == source_hash

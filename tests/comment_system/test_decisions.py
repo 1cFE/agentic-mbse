@@ -173,7 +173,9 @@ class TestCollectDecisions:
         # Create sidecar with resolved thread
         source_file = tmp_path / "src" / "calculator.py"
         source_file.parent.mkdir(parents=True)
-        source_file.write_text("def calculate_total(items):\n    return sum(item.price for item in items)\n")
+        source_file.write_text(
+            "def calculate_total(items):\n    return sum(item.price for item in items)\n"
+        )
 
         sidecar = SidecarFile(
             source_file="src/calculator.py",
@@ -617,7 +619,10 @@ class TestWriteDecisionsFile:
     def test_decision_count(self, tmp_path, sample_thread_with_decision, sample_reopened_thread):
         """Test that decision count includes both active and reopened decisions."""
         # Create two sidecars
-        for filename, thread in [("active.py", sample_thread_with_decision), ("reopened.py", sample_reopened_thread)]:
+        for filename, thread in [
+            ("active.py", sample_thread_with_decision),
+            ("reopened.py", sample_reopened_thread),
+        ]:
             source_file = tmp_path / filename
             source_file.write_text("code\n")
 
@@ -719,13 +724,27 @@ class TestAcceptanceCriteria:
         ]
 
         threads_file1 = [
-            Thread(status=ThreadStatus.RESOLVED, comments=[], anchor=anchor, decision=decisions_file1[0]),
-            Thread(status=ThreadStatus.RESOLVED, comments=[], anchor=anchor, decision=decisions_file1[1]),
+            Thread(
+                status=ThreadStatus.RESOLVED,
+                comments=[],
+                anchor=anchor,
+                decision=decisions_file1[0],
+            ),
+            Thread(
+                status=ThreadStatus.RESOLVED,
+                comments=[],
+                anchor=anchor,
+                decision=decisions_file1[1],
+            ),
         ]
 
         # File 2: 1 decision
-        decision_file2 = Decision(summary="Decision 2A", decider="Charlie", timestamp="2026-02-01T12:00:00Z")
-        thread_file2 = Thread(status=ThreadStatus.RESOLVED, comments=[], anchor=anchor, decision=decision_file2)
+        decision_file2 = Decision(
+            summary="Decision 2A", decider="Charlie", timestamp="2026-02-01T12:00:00Z"
+        )
+        thread_file2 = Thread(
+            status=ThreadStatus.RESOLVED, comments=[], anchor=anchor, decision=decision_file2
+        )
 
         # Create sidecars
         for filename, threads in [("file1.py", threads_file1), ("file2.py", [thread_file2])]:
