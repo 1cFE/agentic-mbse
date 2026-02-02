@@ -87,7 +87,6 @@ project-root/
 │   │   ├── requirements-tracking/
 │   │   └── toolkit-awareness/
 │   └── agents/                # Specialist agents (tool-owned)
-│       ├── sysmlv2-doc-analyzer.md
 │       ├── kerml-expert.md
 │       ├── sysml-expert.md
 │       ├── syside-expert.md

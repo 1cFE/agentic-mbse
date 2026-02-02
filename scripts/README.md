@@ -1,6 +1,6 @@
 # Scripts
 
-Scripts for document processing and project setup. These are used to prepare documentation for the sysmlv2-doc-analyzer agent.
+Scripts for document processing and project setup. These are used to prepare documentation for specialist agents (sysml-expert, kerml-expert, syside-expert).
 
 ## Document Processing Overview
 

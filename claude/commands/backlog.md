@@ -95,7 +95,7 @@ The script moves `work/active/{WI-XXX}_{name}/` to `work/completed/YYYYMMDD_{WI-
 **Project document review.** After closing, prompt the user with specific questions:
 - "Did you discover a modeling pattern that should be a project-wide rule?" → If yes, help draft and call `agentic-mbse pm promote-requirement`
 - "Did you make a structural decision that future work needs to know?" → If yes, help draft and call `agentic-mbse pm register-decision`
-- "Should any new verification criteria be added?" → If yes, help draft and call `agentic-mbse pm update-validation`
+- "Should any new verification criteria be added?" → If yes, help draft and call `agentic-mbse pm add-validation`
 - "Did you learn something about the domain not yet captured?" → If yes, help draft and call `agentic-mbse pm add-insight`
 
 ## Guidelines

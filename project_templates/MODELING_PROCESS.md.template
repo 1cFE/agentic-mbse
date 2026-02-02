@@ -116,12 +116,11 @@ Task(
     model="haiku"  # Fast for exploration
 )
 
-# Agent 2: Get SysMLv2 patterns
+# Agent 2: Get SysMLv2 modeling patterns
 Task(
-    subagent_type="sysmlv2-doc-analyzer",
+    subagent_type="sysml-expert",
     prompt="""Provide guidance on:
     - Cross-file attribute binding patterns
-    - Package import syntax (private vs public)
     - Calc def instantiation and binding
     - Circular dependency prevention
 
@@ -130,7 +129,20 @@ Task(
     model="haiku"
 )
 
-# Agent 3: Analyze baseline (if applicable)
+# Agent 3: Get KerML base types and imports
+Task(
+    subagent_type="kerml-expert",
+    prompt="""Provide guidance on:
+    - Package import syntax (private vs public)
+    - Standard library functions relevant to calculations
+    - Base type hierarchy for numerical attributes
+
+    Include concrete examples.
+    """,
+    model="haiku"
+)
+
+# Agent 4: Analyze baseline (if applicable)
 Task(
     subagent_type="general-purpose",
     prompt="""Analyze reference baseline at {SOURCE_PATH} for:
@@ -735,7 +747,7 @@ Before starting design-model or plan-model:
 ```markdown
 ☐ Read models/README.md
 ☐ Read requirement spec
-☐ Launch parallel discovery (Explore + sysmlv2-doc-analyzer + baseline analysis)
+☐ Launch parallel discovery (Explore + sysml-expert + baseline analysis)
 ☐ Check library for existing calc defs
 ☐ Map existing model structure
 ☐ Define dataflow direction

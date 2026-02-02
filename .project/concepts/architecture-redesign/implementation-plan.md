@@ -256,7 +256,7 @@ Update `MBSE_COMMANDS` in `cli/__init__.py` and `replicate_setup.sh`.
 Delta checklist: § 3A.3 (2 items)
 
 #### D3.4: Agent Cleanup
-Evaluate sysmlv2-doc-analyzer deprecation status. Standardize doc path references across all agents.
+sysmlv2-doc-analyzer confirmed deprecated and removed (scope covered by sysml-expert + kerml-expert). Doc path references verified consistent across all 5 active agents.
 
 Delta checklist: § 3A.4 (3 items)
 
@@ -385,7 +385,7 @@ Parsers are the foundation — everything else reads structured files through th
 ### Exit Criteria
 
 - [ ] `agentic-mbse status` produces accurate dashboard from fusion-tea project state
-- [ ] All 13 AP-7 operations have unit tests and pass
+- [ ] All 14 AP-7 operations plus save-research have unit tests and pass
 - [ ] Parsers handle malformed input gracefully (warnings, not crashes)
 - [ ] CLI subcommands work end-to-end (integration tests with temp directories)
 - [ ] Level 6 validation extended with traceability sub-checks

@@ -48,8 +48,8 @@ Two questions from main.md § 5 are blocking. This epic must resolve both.
 - [x] All 14 commands install correctly via `agentic-mbse init` and `replicate_setup.sh`
 - [ ] Each refactored command passes a fusion-tea walkthrough with no knowledge loss (Q12 resolved)
 - [x] Command structure convention documented (Q15 resolved) — `command-convention.md`
-- [ ] `sysmlv2-doc-analyzer` agent status resolved (restored or confirmed deprecated)
-- [ ] Agent doc path placeholders standardized across all agent files
+- [x] `sysmlv2-doc-analyzer` agent confirmed deprecated and removed (scope covered by sysml-expert + kerml-expert)
+- [x] Agent doc path placeholders consistent across all 5 active agents
 - [ ] `/status` command works end-to-end with PM dashboard (requires Epic 4)
 - [x] All existing agentic-mbse tests pass (`uv run pytest tests/`) — 342 passed, 1 skipped
 
@@ -203,7 +203,7 @@ This command may grow slightly due to new workflow steps.
 ### D3.2: New Commands (5 commands)
 
 **Type**: Implementation
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: D3.1 partially complete (structural convention established from first 2–3 refactored commands)
 **Delta checklist**: § 3A.2 (5 items)
 
@@ -273,12 +273,12 @@ This command may grow slightly due to new workflow steps.
 **Workflow**: Read documents from `modeling_project/intent/` → extract candidate goals (G-XXX) and analysis questions (AQ-XXX) → present each to user for approval/modification/skip → call AP-7 script to register approved entries in OVERVIEW.md → suggest follow-up actions (research for AQ-XXX questions, /spec-model for actionable goals).
 
 **Exit criteria**:
-- [ ] 5 new command files exist in `claude/commands/`
-- [ ] Each follows the structural convention from D3.1
-- [ ] Each has correct skill references
-- [ ] `/quick-model` has a working scope guard rail
-- [ ] `/review-model` produces review.md with YAML frontmatter (Verdict, Created, Related Artifacts)
-- [ ] `/status` calls PM dashboard script (or has documented placeholder for Epic 4)
+- [x] 5 new command files exist in `claude/commands/`
+- [x] Each follows the structural convention from D3.1
+- [x] Each has correct skill references
+- [x] `/quick-model` has a working scope guard rail
+- [x] `/review-model` produces review.md with YAML frontmatter (Verdict, Created, Related Artifacts)
+- [x] `/status` calls PM dashboard script (or has documented placeholder for Epic 4)
 
 ---
 
@@ -336,7 +336,7 @@ Add new commands to the install loop. Must match `MBSE_COMMANDS` exactly.
 ### D3.4: Agent Cleanup
 
 **Type**: Evaluation + Implementation
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: None (can proceed in parallel with D3.1)
 **Delta checklist**: § 3A.4 (3 items)
 
@@ -363,18 +363,18 @@ Add new commands to the install loop. Must match `MBSE_COMMANDS` exactly.
 3. If `sysmlv2-doc-analyzer` is restored, ensure its placeholders match the pattern
 
 **Exit criteria**:
-- [ ] `sysmlv2-doc-analyzer` disposition decided with documented rationale
-- [ ] If restored: agent moved to `agents/`, added to `MBSE_AGENTS`, placeholders verified
-- [ ] If confirmed deprecated: agent removed from architecture description (components.md reference is informational)
-- [ ] All agent files use consistent `{SYSML_DOCS_PATH}` and `{SYSIDE_DOCS_PATH}` placeholders
-- [ ] `MBSE_AGENTS` list in `cli/__init__.py` reflects final agent set
+- [x] `sysmlv2-doc-analyzer` disposition decided: deprecated and removed. Scope covered by sysml-expert + kerml-expert.
+- [x] Not restored — agent deleted from `agents/deprecated/` and `.claude/agents/`
+- [x] Confirmed deprecated — references cleaned from components.md, information-architecture.md, workflows.md, research.md, MODELING_PROCESS.md
+- [x] All agent files use consistent `{SYSML_DOCS_PATH}` and `{SYSIDE_DOCS_PATH}` placeholders (verified across 5 active agents)
+- [x] `MBSE_AGENTS` list in `cli/__init__.py` reflects final 5-agent set (no change needed)
 
 ---
 
 ### D3.5: Validation Walkthrough (Quality Gate)
 
 **Type**: Verification (not code changes)
-**Status**: Pending
+**Status**: In Progress (Q12 audit complete; interactive walkthroughs pending)
 **Dependencies**: D3.1 (refactored commands), D3.2 (new commands), D2.5 (extraction mapping from Epic 2)
 **Delta checklist**: § 3A.5 (6 walkthrough items + 1 added cross-command pipeline test)
 
@@ -411,7 +411,7 @@ For each command:
 **Exit criteria**:
 - [ ] All 7 walkthrough items completed (5 command walkthroughs + Q12 cross-reference + cross-command pipeline)
 - [ ] No major knowledge gaps found (or all found gaps are fixed)
-- [ ] Q12 resolved: every extracted line range accounted for, validation method confirmed as effective
+- [x] Q12 resolved: every extracted line range accounted for, validation method confirmed as effective — see `.project/active/d3.5-validation-walkthrough/q12-cross-reference-audit.md` (PASS, 0 content gaps)
 - [ ] Walkthrough results documented
 
 ---
@@ -507,4 +507,5 @@ Epic 4 (PM Script Engine) runs in parallel with this epic:
 ---
 
 **Last Updated**: 2026-02-02
-**Next Action**: D3.1, D3.2, D3.3 complete. Begin D3.4 (agent cleanup) and D3.5 (validation walkthrough).
+**Last Updated**: 2026-02-02
+**Next Action**: D3.1–D3.4 complete. D3.5 in progress — Q12 cross-reference audit passed; interactive walkthroughs (items 1–5, 7) require live command sessions against fusion-tea. See `.project/active/d3.5-validation-walkthrough/`.

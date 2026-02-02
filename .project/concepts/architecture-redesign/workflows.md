@@ -510,7 +510,7 @@ Input:  Research question + knowledge/SOURCE_INDEX.md
         │
         v
    Agent explores authority sources using specialist agents
-   (sysmlv2-doc-analyzer, Explore, etc.)
+   (sysml-expert, kerml-expert, Explore, etc.)
         │
         v
    Agent writes research document content.

@@ -303,9 +303,9 @@ For each command: extract embedded knowledge to skill references, reduce to 200-
 
 ### 3A.4 Agents
 
-- [ ] `[EVALUATE]` `claude/agents/deprecated/sysmlv2-doc-analyzer.md` — Architecture lists this as active agent. Decide: restore from deprecated/ to agents/, or confirm deprecation is intentional and remove from architecture.
-- [ ] `[REVISE]` `MBSE_AGENTS` list in `cli/__init__.py` — Add `sysmlv2-doc-analyzer.md` if restored; or add any other agent changes
-- [ ] `[REVISE]` All agent files — Standardize doc path references (verify {SYSML_DOCS_PATH} and {SYSIDE_DOCS_PATH} placeholders are consistent)
+- [x] `[EVALUATE]` `claude/agents/deprecated/sysmlv2-doc-analyzer.md` — Confirmed deprecated and removed. Scope covered by sysml-expert + kerml-expert.
+- [x] `[REVISE]` `MBSE_AGENTS` list in `cli/__init__.py` — No change needed; final 5-agent set is correct without sysmlv2-doc-analyzer.
+- [x] `[REVISE]` All agent files — Verified: {SYSML_DOCS_PATH} and {SYSIDE_DOCS_PATH} placeholders consistent across all 5 active agents.
 
 ### 3A.5 Validation Walkthrough (Quality Gate)
 

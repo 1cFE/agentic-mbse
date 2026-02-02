@@ -43,7 +43,8 @@ Spawn appropriate agents based on research type:
 
 **Model Research** (SysMLv2 files):
 - Explore agent: Find relevant models in `models/library/` and `models/designs/`
-- sysmlv2-doc-analyzer agent: Get official SysMLv2 modeling patterns (use proactively for structural questions, interface patterns, constraint modeling, language features)
+- sysml-expert agent: Get SysML modeling patterns (structural modeling, interface patterns, constraint modeling)
+- kerml-expert agent: Get KerML standard library functions, base types, language features
 - general-purpose agent: Parse and analyze SysML definitions
 
 **Domain Research** (sources from SOURCE_INDEX.md):
@@ -112,9 +113,8 @@ Depth should match the research scope. A targeted syntax question needs less tha
 
 | Question Type | Agent |
 |--------------|-------|
-| SysMLv2 modeling patterns, spec lookups | `sysmlv2-doc-analyzer` |
-| KerML standard library functions | `kerml-expert` |
-| SysML structural modeling | `sysml-expert` |
+| SysMLv2 modeling patterns, structural modeling | `sysml-expert` |
+| KerML standard library functions, base types | `kerml-expert` |
 | Parser/tooling questions | `syside-expert` |
 | Codebase exploration | `Explore` |
 | Deep code analysis | `general-purpose` |

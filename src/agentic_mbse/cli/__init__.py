@@ -883,7 +883,7 @@ Edit this file to add your domain-specific sources.
     else:
         permissions: list[str] = []
 
-        # Add permissions for bundled docs (used by sysmlv2-doc-analyzer agent)
+        # Add permissions for bundled docs (used by specialist agents)
         docs_permission_path = _to_claude_permission_path(str(docs_path))
         permissions.extend(
             [

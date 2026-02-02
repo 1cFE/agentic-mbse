@@ -45,9 +45,8 @@ claude/skills/{skill-name}/
 
 | Agent | Question types | When to invoke |
 |-------|---------------|----------------|
-| `sysmlv2-doc-analyzer` | Cross-cutting SysML v2 questions, specification lookups | Broad SysML questions, pattern recommendations |
 | `kerml-expert` | KerML standard library functions, base types | Import questions, standard function signatures |
-| `sysml-expert` | SysML modeling patterns, part/port/connection | Structural modeling, SysML idioms |
+| `sysml-expert` | SysML modeling patterns, part/port/connection, spec lookups | Structural modeling, SysML idioms, broad pattern recommendations |
 | `syside-expert` | syside parser API, expression evaluation | Parser errors, expression tree questions |
 | `sysmlv2-validator` | Syntax validation, error interpretation | Parse failures, validation error triage |
 | `python-debugger` | Python debugging | Test failures, CLI issues |
