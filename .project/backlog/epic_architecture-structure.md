@@ -257,9 +257,10 @@ D1.4 must reconcile these divergences — bring both files to the same component
 
 ---
 
-### D1.7: Test Updates
+### D1.7: Test Updates — COMPLETE
 
 **Type**: Implementation
+**Status**: Complete (2026-02-02)
 **Dependencies**: D1.4 (`cmd_init()` changes)
 
 **Objective**: Update `tests/test_cli.py` to expect the new directory structure.
@@ -273,20 +274,20 @@ D1.4 must reconcile these divergences — bring both files to the same component
 4. Verify `--dev` mode creates correct symlinks to new paths
 
 **Exit criteria**:
-- [ ] All 9 tests broken by D1.4 rewiring are fixed (see D1.4 audit M1):
+- [x] All 9 tests broken by D1.4 rewiring are fixed (see D1.4 audit M1):
   - `test_creates_source_index` — assert `knowledge/SOURCE_INDEX.md`
   - `test_overwrites_source_index_with_force` — same path fix
   - `test_uses_current_directory_if_no_path` — same path fix
   - `test_dev_creates_symlinks_for_tool_templates` — assert `modeling_project/MODELING_GUIDE.md`
   - `test_dev_updates_gitignore` — check for `modeling_project/` paths in gitignore
-  - `test_init_creates_local_guide` — delete or repurpose (LOCAL_GUIDE.md removed)
-  - `test_local_guide_skipped_if_exists` — delete or repurpose
+  - `test_init_creates_local_guide` — deleted (LOCAL_GUIDE.md removed per D1.3)
+  - `test_local_guide_skipped_if_exists` — deleted (LOCAL_GUIDE.md removed per D1.3)
   - `test_reinit_with_modification_prompts` — use `modeling_project/MODELING_GUIDE.md`
   - `test_force_flag_skips_prompts` — same path fix
-- [ ] New tests for new templates (KNOWLEDGE.md, ARCHITECTURE.md, REQUIREMENTS.md, VALIDATION_MATRIX.md, EPIC_GUIDE.md, epic_template.md)
-- [ ] New tests for CSV installation to `data/traceability_matrix.csv`
-- [ ] New tests for full 16-directory structure creation
-- [ ] `uv run pytest tests/test_cli.py` passes (0 failures)
+- [x] New tests for new templates (KNOWLEDGE.md, ARCHITECTURE.md, REQUIREMENTS.md, VALIDATION_MATRIX.md, EPIC_GUIDE.md, epic_template.md)
+- [x] New tests for CSV installation to `data/traceability_matrix.csv`
+- [x] New tests for full 16-directory structure creation
+- [x] `uv run pytest tests/test_cli.py` passes (0 failures, 80 tests)
 
 ---
 

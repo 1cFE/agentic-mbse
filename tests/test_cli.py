@@ -78,7 +78,7 @@ class TestCmdInit:
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
-        source_index = tmp_path / "SOURCE_INDEX.md"
+        source_index = tmp_path / "knowledge" / "SOURCE_INDEX.md"
         assert source_index.exists()
         content = source_index.read_text()
         assert "Source Index" in content
@@ -94,7 +94,9 @@ class TestCmdInit:
 
     def test_skips_source_index_if_exists_without_force(self, tmp_path):
         """Skips overwriting SOURCE_INDEX.md without --force but still succeeds."""
-        source_index = tmp_path / "SOURCE_INDEX.md"
+        knowledge_dir = tmp_path / "knowledge"
+        knowledge_dir.mkdir(parents=True)
+        source_index = knowledge_dir / "SOURCE_INDEX.md"
         source_index.write_text("existing: content")
 
         args = MockArgs(path=str(tmp_path), force=False)
@@ -107,7 +109,9 @@ class TestCmdInit:
 
     def test_overwrites_source_index_with_force(self, tmp_path):
         """Overwrites existing SOURCE_INDEX.md when --force specified."""
-        source_index = tmp_path / "SOURCE_INDEX.md"
+        knowledge_dir = tmp_path / "knowledge"
+        knowledge_dir.mkdir(parents=True)
+        source_index = knowledge_dir / "SOURCE_INDEX.md"
         source_index.write_text("old: content")
 
         args = MockArgs(path=str(tmp_path), force=True)
@@ -124,7 +128,7 @@ class TestCmdInit:
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
-        assert (tmp_path / "SOURCE_INDEX.md").exists()
+        assert (tmp_path / "knowledge" / "SOURCE_INDEX.md").exists()
 
     def test_creates_agents_directory(self, tmp_path):
         """agentic-mbse init creates .claude/agents/ with agent files."""
@@ -418,7 +422,7 @@ class TestCmdInitDevMode:
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
         cmd_init(args)
 
-        guide_path = tmp_path / "modeling_pm" / "MODELING_GUIDE.md"
+        guide_path = tmp_path / "modeling_project" / "MODELING_GUIDE.md"
         assert guide_path.is_symlink()
 
     def test_dev_copies_user_owned_files(self, tmp_path):
@@ -427,7 +431,7 @@ class TestCmdInitDevMode:
         cmd_init(args)
 
         # User-owned files should be regular files, not symlinks
-        assert not (tmp_path / "SOURCE_INDEX.md").is_symlink()
+        assert not (tmp_path / "knowledge" / "SOURCE_INDEX.md").is_symlink()
         assert not (tmp_path / ".gitignore").is_symlink()
         assert not (tmp_path / ".claude" / "settings.json").is_symlink()
         assert not (tmp_path / "README.md").is_symlink()
@@ -501,8 +505,8 @@ class TestCmdInitDevMode:
         assert ".claude/agents/" in content
         assert ".claude/skills/" in content
         assert ".claude/hooks/" in content
-        assert "modeling_pm/MODELING_GUIDE.md" in content
-        assert "modeling_pm/MODELING_PROCESS.md" in content
+        assert "modeling_project/MODELING_GUIDE.md" in content
+        assert "modeling_project/MODELING_PROCESS.md" in content
 
     def test_dev_gitignore_idempotent(self, tmp_path):
         """Running --dev twice doesn't duplicate .gitignore entries."""
@@ -570,33 +574,6 @@ class TestHashUtilities:
         from agentic_mbse.cli import _load_tool_hashes
         assert _load_tool_hashes(tmp_path) is None
 
-
-class TestLocalGuide:
-    """Tests for LOCAL_GUIDE.md template."""
-
-    def test_init_creates_local_guide(self, tmp_path):
-        """Init creates LOCAL_GUIDE.md in modeling_pm/."""
-        args = MockArgs(path=str(tmp_path), force=False)
-        cmd_init(args)
-
-        local_guide = tmp_path / "modeling_pm" / "LOCAL_GUIDE.md"
-        assert local_guide.exists()
-        assert "Local Modeling Guide" in local_guide.read_text()
-
-    def test_local_guide_skipped_if_exists(self, tmp_path):
-        """LOCAL_GUIDE.md is user-owned, skipped on re-init."""
-        # First init
-        args = MockArgs(path=str(tmp_path), force=False)
-        cmd_init(args)
-
-        # Modify
-        local_guide = tmp_path / "modeling_pm" / "LOCAL_GUIDE.md"
-        local_guide.write_text("# My Custom Guide")
-
-        # Re-init
-        cmd_init(args)
-
-        assert local_guide.read_text() == "# My Custom Guide"
 
 
 class TestModificationDetection:
@@ -849,7 +826,7 @@ class TestModificationDetectionIntegration:
         cmd_init(args)
 
         # Modify a tool-owned file
-        guide = tmp_path / "modeling_pm" / "MODELING_GUIDE.md"
+        guide = tmp_path / "modeling_project" / "MODELING_GUIDE.md"
         guide.write_text("# Modified by user")
 
         # Track prompts
@@ -872,7 +849,7 @@ class TestModificationDetectionIntegration:
         cmd_init(args)
 
         # Modify
-        guide = tmp_path / "modeling_pm" / "MODELING_GUIDE.md"
+        guide = tmp_path / "modeling_project" / "MODELING_GUIDE.md"
         guide.write_text("# Modified")
 
         # Track if prompted
@@ -894,3 +871,141 @@ class TestModificationDetectionIntegration:
         gitignore = tmp_path / ".gitignore"
         content = gitignore.read_text()
         assert ".claude/.tool-hashes.json" in content
+
+
+class TestNewTemplates:
+    """Tests for templates added in D1.1/D1.2."""
+
+    def test_init_creates_knowledge_registry(self, tmp_path):
+        """Init creates KNOWLEDGE.md in knowledge/."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+        assert (tmp_path / "knowledge" / "KNOWLEDGE.md").exists()
+
+    def test_init_creates_architecture(self, tmp_path):
+        """Init creates ARCHITECTURE.md in modeling_project/."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+        assert (tmp_path / "modeling_project" / "ARCHITECTURE.md").exists()
+
+    def test_init_creates_requirements(self, tmp_path):
+        """Init creates REQUIREMENTS.md in modeling_project/."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+        assert (tmp_path / "modeling_project" / "REQUIREMENTS.md").exists()
+
+    def test_init_creates_validation_matrix(self, tmp_path):
+        """Init creates VALIDATION_MATRIX.md in modeling_project/."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+        assert (tmp_path / "modeling_project" / "VALIDATION_MATRIX.md").exists()
+
+    def test_init_creates_epic_guide(self, tmp_path):
+        """Init creates EPIC_GUIDE.md in work/ (tool-owned)."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+        assert (tmp_path / "work" / "EPIC_GUIDE.md").exists()
+
+    def test_init_creates_epic_template(self, tmp_path):
+        """Init creates epic_template.md in work/backlog/."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+        assert (tmp_path / "work" / "backlog" / "epic_template.md").exists()
+
+    def test_user_owned_templates_skipped_on_reinit(self, tmp_path):
+        """User-owned new templates are preserved on re-init."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+
+        # Modify a user-owned template
+        knowledge = tmp_path / "knowledge" / "KNOWLEDGE.md"
+        knowledge.write_text("# Custom knowledge")
+
+        # Re-init
+        cmd_init(args)
+        assert knowledge.read_text() == "# Custom knowledge"
+
+    def test_tool_owned_templates_updated_on_reinit_without_force(self, tmp_path):
+        """Tool-owned templates are silently updated on re-init when unmodified."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        cmd_init(args)
+
+        # Read the original content and hash
+        epic_guide = tmp_path / "work" / "EPIC_GUIDE.md"
+        original_content = epic_guide.read_text()
+        assert len(original_content) > 0
+
+        # Re-init without force — tool-owned file should be updated (no prompt)
+        cmd_init(args)
+
+        # File should still exist with content (was re-installed, not skipped)
+        assert epic_guide.exists()
+        assert epic_guide.read_text() == original_content
+
+    def test_tool_owned_templates_force_overwrites_modified(self, tmp_path):
+        """--force overwrites modified tool-owned templates without prompting."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        cmd_init(args)
+
+        # Modify a tool-owned template
+        epic_guide = tmp_path / "work" / "EPIC_GUIDE.md"
+        epic_guide.write_text("# Modified")
+
+        # Re-init with force
+        args_force = MockArgs(path=str(tmp_path), force=True, dev=False)
+        cmd_init(args_force)
+        assert epic_guide.read_text() != "# Modified"
+
+
+class TestDataTemplates:
+    """Tests for data/ directory templates."""
+
+    def test_init_creates_traceability_csv(self, tmp_path):
+        """Init creates traceability_matrix.csv in data/."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+        csv_path = tmp_path / "data" / "traceability_matrix.csv"
+        assert csv_path.exists()
+        header = csv_path.read_text().splitlines()[0]
+        assert "Element" in header
+        assert "Requirement" in header
+
+    def test_csv_skipped_on_reinit(self, tmp_path):
+        """CSV is user-owned, skipped on re-init."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+
+        csv_path = tmp_path / "data" / "traceability_matrix.csv"
+        csv_path.write_text("custom,data")
+
+        cmd_init(args)
+        assert csv_path.read_text() == "custom,data"
+
+
+class TestDirectoryStructure:
+    """Tests for full directory structure creation."""
+
+    def test_init_creates_full_directory_structure(self, tmp_path):
+        """Init creates all expected directories."""
+        args = MockArgs(path=str(tmp_path), force=False)
+        cmd_init(args)
+        expected_dirs = [
+            "knowledge",
+            "knowledge/research/pending",
+            "knowledge/research/approved",
+            "knowledge/research/impacts",
+            "knowledge/sources",
+            "modeling_project",
+            "modeling_project/intent",
+            "work",
+            "work/backlog",
+            "work/active",
+            "work/completed",
+            "work/analysis",
+            "work/learnings",
+            "data",
+            "models/library",
+            "models/designs",
+        ]
+        for d in expected_dirs:
+            assert (tmp_path / d).is_dir(), f"Missing directory: {d}"
