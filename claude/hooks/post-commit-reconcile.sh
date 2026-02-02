@@ -38,20 +38,16 @@ RECONCILE_OUTPUT=$(comment reconcile --all --json 2>&1) || {
     exit 0
 }
 
-# Parse orphaned count from JSON output
-ORPHANED_COUNT=0
-for file_report in $(echo "$RECONCILE_OUTPUT" | jq -c '.[]' 2>/dev/null || echo "[]"); do
-    FILE_ORPHANED=$(echo "$file_report" | jq -r '.orphaned // 0')
-    ORPHANED_COUNT=$((ORPHANED_COUNT + FILE_ORPHANED))
-done
+# Parse orphaned count from JSON output (top-level total_orphaned field)
+ORPHANED_COUNT=$(echo "$RECONCILE_OUTPUT" | jq -r '.total_orphaned // 0' 2>/dev/null || echo "0")
 
 # Report orphaned count (AC-3)
 if [ "$ORPHANED_COUNT" -gt 0 ]; then
     echo "⚠ Warning: $ORPHANED_COUNT orphaned comment(s) detected after commit" >&2
 
-    # Show which files have orphaned comments
+    # Show which files have orphaned comments (from files array)
     echo "Files with orphaned comments:" >&2
-    for file_report in $(echo "$RECONCILE_OUTPUT" | jq -c '.[]' 2>/dev/null || echo "[]"); do
+    for file_report in $(echo "$RECONCILE_OUTPUT" | jq -c '.files[]' 2>/dev/null || echo "[]"); do
         FILE_ORPHANED=$(echo "$file_report" | jq -r '.orphaned // 0')
         if [ "$FILE_ORPHANED" -gt 0 ]; then
             FILE_PATH=$(echo "$file_report" | jq -r '.file')

@@ -352,6 +352,206 @@ class TestRalphLoopIntegration:
         assert result.returncode == 0
 
 
+class TestGitHooks:
+    """Tests for git hooks (Task 2.1, REQ-4, AC-3, AC-5)."""
+
+    def test_post_commit_hook_reports_orphan_count(self, git_repo_with_comment_cli):
+        """AC-3: Post-commit hook prints orphan count after commit."""
+        # Install post-commit hook
+        hooks_dir = Path(".git") / "hooks"
+        hooks_dir.mkdir(exist_ok=True)
+        hook_script = PROJECT_ROOT / "claude" / "hooks" / "post-commit-reconcile.sh"
+        installed_hook = hooks_dir / "post-commit"
+
+        # Create symlink (or copy if symlink fails)
+        try:
+            installed_hook.symlink_to(hook_script)
+        except OSError:
+            # Fall back to copy on systems that don't support symlinks
+            import shutil
+            shutil.copy(hook_script, installed_hook)
+            installed_hook.chmod(0o755)
+
+        # Add a comment to a file
+        sample_file = Path("sample.py")
+        subprocess.run(
+            ["comment", "add", str(sample_file), "-L", "1:1", "Test comment"],
+            check=True,
+            capture_output=True,
+        )
+
+        # Commit the file (this will delete the source, creating an orphan)
+        subprocess.run(["git", "rm", str(sample_file)], check=True, capture_output=True)
+
+        # Commit and capture hook output
+        result = subprocess.run(
+            ["git", "commit", "-m", "Delete sample.py"],
+            capture_output=True,
+            text=True,
+        )
+
+        # Hook should report orphaned comment (AC-3)
+        assert result.returncode == 0, f"Commit failed: {result.stderr}"
+        assert "orphaned comment" in result.stderr.lower(), \
+            f"Hook did not report orphan count. stderr: {result.stderr}"
+
+    def test_post_commit_hook_no_orphans_success(self, git_repo_with_comment_cli):
+        """Post-commit hook succeeds with no orphans."""
+        # Install post-commit hook
+        hooks_dir = Path(".git") / "hooks"
+        hooks_dir.mkdir(exist_ok=True)
+        hook_script = PROJECT_ROOT / "claude" / "hooks" / "post-commit-reconcile.sh"
+        installed_hook = hooks_dir / "post-commit"
+
+        try:
+            installed_hook.symlink_to(hook_script)
+        except OSError:
+            import shutil
+            shutil.copy(hook_script, installed_hook)
+            installed_hook.chmod(0o755)
+
+        # Make a change without creating orphans
+        sample_file = Path("sample.py")
+        sample_file.write_text("def hello():\n    print('updated')\n")
+        subprocess.run(["git", "add", str(sample_file)], check=True, capture_output=True)
+
+        # Commit and capture hook output
+        result = subprocess.run(
+            ["git", "commit", "-m", "Update sample.py"],
+            capture_output=True,
+            text=True,
+        )
+
+        # Hook should succeed and report no orphans
+        assert result.returncode == 0, f"Commit failed: {result.stderr}"
+        assert ("No orphaned comments" in result.stderr or
+                "0 orphaned comment" in result.stderr), \
+            f"Hook did not report clean state. stderr: {result.stderr}"
+
+    def test_pre_commit_hook_blocks_with_unresolved_comments(self, git_repo_with_comment_cli):
+        """AC-5: Pre-commit hook blocks commit when unresolved comments on staged files."""
+        # Install pre-commit hook
+        hooks_dir = Path(".git") / "hooks"
+        hooks_dir.mkdir(exist_ok=True)
+        hook_script = PROJECT_ROOT / "claude" / "hooks" / "pre-commit-check-comments.sh"
+        installed_hook = hooks_dir / "pre-commit"
+
+        try:
+            installed_hook.symlink_to(hook_script)
+        except OSError:
+            import shutil
+            shutil.copy(hook_script, installed_hook)
+            installed_hook.chmod(0o755)
+
+        # Enable blocking via git config
+        subprocess.run(
+            ["git", "config", "comment-system.block-on-unresolved", "true"],
+            check=True,
+            capture_output=True,
+        )
+
+        # Add an unresolved comment
+        sample_file = Path("sample.py")
+        subprocess.run(
+            ["comment", "add", str(sample_file), "-L", "1:1", "Unresolved issue"],
+            check=True,
+            capture_output=True,
+        )
+
+        # Modify and stage the file
+        sample_file.write_text("def hello():\n    print('modified')\n")
+        subprocess.run(["git", "add", str(sample_file)], check=True, capture_output=True)
+
+        # Attempt commit (should be blocked by hook)
+        result = subprocess.run(
+            ["git", "commit", "-m", "Should be blocked"],
+            capture_output=True,
+            text=True,
+        )
+
+        # Hook should block the commit (AC-5)
+        assert result.returncode == 1, "Hook should have blocked commit"
+        assert "unresolved comment" in result.stderr.lower() or \
+               "blocked" in result.stderr.lower(), \
+            f"Hook did not report blocked commit. stderr: {result.stderr}"
+
+    def test_pre_commit_hook_allows_with_no_comments(self, git_repo_with_comment_cli):
+        """Pre-commit hook allows commit when no unresolved comments on staged files."""
+        # Install pre-commit hook
+        hooks_dir = Path(".git") / "hooks"
+        hooks_dir.mkdir(exist_ok=True)
+        hook_script = PROJECT_ROOT / "claude" / "hooks" / "pre-commit-check-comments.sh"
+        installed_hook = hooks_dir / "pre-commit"
+
+        try:
+            installed_hook.symlink_to(hook_script)
+        except OSError:
+            import shutil
+            shutil.copy(hook_script, installed_hook)
+            installed_hook.chmod(0o755)
+
+        # Enable blocking via git config
+        subprocess.run(
+            ["git", "config", "comment-system.block-on-unresolved", "true"],
+            check=True,
+            capture_output=True,
+        )
+
+        # Modify and stage a file (no comments)
+        sample_file = Path("sample.py")
+        sample_file.write_text("def hello():\n    print('clean')\n")
+        subprocess.run(["git", "add", str(sample_file)], check=True, capture_output=True)
+
+        # Commit (should succeed)
+        result = subprocess.run(
+            ["git", "commit", "-m", "Clean commit"],
+            capture_output=True,
+            text=True,
+        )
+
+        # Hook should allow commit
+        assert result.returncode == 0, f"Commit failed: {result.stderr}"
+
+    def test_pre_commit_hook_disabled_by_default(self, git_repo_with_comment_cli):
+        """Pre-commit hook is opt-in (disabled by default)."""
+        # Install pre-commit hook
+        hooks_dir = Path(".git") / "hooks"
+        hooks_dir.mkdir(exist_ok=True)
+        hook_script = PROJECT_ROOT / "claude" / "hooks" / "pre-commit-check-comments.sh"
+        installed_hook = hooks_dir / "pre-commit"
+
+        try:
+            installed_hook.symlink_to(hook_script)
+        except OSError:
+            import shutil
+            shutil.copy(hook_script, installed_hook)
+            installed_hook.chmod(0o755)
+
+        # Do NOT enable blocking (test default behavior)
+
+        # Add an unresolved comment
+        sample_file = Path("sample.py")
+        subprocess.run(
+            ["comment", "add", str(sample_file), "-L", "1:1", "Unresolved"],
+            check=True,
+            capture_output=True,
+        )
+
+        # Stage the file
+        sample_file.write_text("def hello():\n    print('modified')\n")
+        subprocess.run(["git", "add", str(sample_file)], check=True, capture_output=True)
+
+        # Commit (should succeed because blocking is disabled by default)
+        result = subprocess.run(
+            ["git", "commit", "-m", "Default behavior allows commit"],
+            capture_output=True,
+            text=True,
+        )
+
+        # Hook should allow commit (default: disabled)
+        assert result.returncode == 0, "Hook should not block by default"
+
+
 class TestDocumentation:
     """Tests for orchestration documentation."""
 

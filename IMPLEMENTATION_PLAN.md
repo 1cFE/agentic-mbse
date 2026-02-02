@@ -163,54 +163,43 @@ The following modules are **complete** with comprehensive tests:
 
 ## Priority 2: Missing Orchestration Scripts
 
-### Task 2.1: Git Hook Scripts (post-commit, pre-commit)
+### ✅ Task 2.1: Git Hook Scripts (COMPLETED)
 
 **Spec**: `orchestration.md` REQ-4, REQ-5
 **Type**: Missing reference implementations
+**Status**: ✅ COMPLETED (2026-02-02)
 
-**Description**: The spec requires example git hooks for post-commit reconciliation and pre-commit unresolved comment checks. Currently only `scripts/ralph_loop_integration.sh` exists. Git hook scripts are missing.
+**Implementation Summary**:
+- Git hooks already existed in `claude/hooks/` directory (not `scripts/git-hooks/` as initially planned)
+- Fixed bug in `post-commit-reconcile.sh` where it tried to parse `reconcile --all --json` output incorrectly
+- The hook was iterating over `.[]` instead of accessing `.total_orphaned` and `.files[]`
+- Added 5 comprehensive integration tests for git hooks:
+  - `test_post_commit_hook_reports_orphan_count` - Verifies AC-3 (orphan count reporting)
+  - `test_post_commit_hook_no_orphans_success` - Verifies clean state messaging
+  - `test_pre_commit_hook_blocks_with_unresolved_comments` - Verifies AC-5 (blocking behavior)
+  - `test_pre_commit_hook_allows_with_no_comments` - Verifies normal commit flow
+  - `test_pre_commit_hook_disabled_by_default` - Verifies opt-in behavior (CON-2)
+- Documentation already exists in `docs/orchestration-guide.md` with installation and configuration instructions
+- All 17 orchestration tests pass (12 existing + 5 new)
+- All 465 comment_system tests pass, mypy clean, ruff clean
+
+**Files Modified** (2 files):
+- `claude/hooks/post-commit-reconcile.sh` - Fixed JSON parsing bug (~5 lines changed)
+- `tests/comment_system/test_orchestration_scripts.py` - Added TestGitHooks class with 5 tests (~170 lines)
 
 **Current State**:
-- ✅ `scripts/ralph_loop_integration.sh` - Ralph integration (checks open comments before proceeding)
-- ✅ `scripts/check_open_comments.sh` - Query utility for open comments
-- ✅ `scripts/agent_review_workflow.sh` - Agent-agent review pattern demo
-- ❌ `scripts/git-hooks/post-commit` - Post-commit reconciliation hook (missing)
-- ❌ `scripts/git-hooks/pre-commit` - Pre-commit unresolved comment check (missing)
+- ✅ `claude/hooks/post-commit-reconcile.sh` - Post-commit reconciliation hook (working, tested)
+- ✅ `claude/hooks/pre-commit-check-comments.sh` - Pre-commit unresolved comment check (working, tested)
+- ✅ `docs/orchestration-guide.md` - Installation and configuration documentation (complete)
+- ✅ `scripts/ralph_loop_integration.sh` - Ralph integration (previously complete)
+- ✅ `scripts/check_open_comments.sh` - Query utility (previously complete)
+- ✅ `scripts/agent_review_workflow.sh` - Agent-agent review demo (previously complete)
 
-**Files to create** (~4 files):
-- `scripts/git-hooks/post-commit` - Post-commit reconciliation hook
-  - Run `comment reconcile --all --quiet` after commit
-  - Report orphaned comment count
-  - Optional: Fail if orphaned count > threshold (configurable via `COMMENT_ORPHAN_THRESHOLD`)
-  - Exit code 0: Success (or below threshold)
-  - Exit code 1: Orphan threshold exceeded
-- `scripts/git-hooks/pre-commit` - Pre-commit unresolved comment check
-  - Get list of staged files: `git diff --cached --name-only`
-  - For each staged file: `comment list --status=open <file> --json`
-  - If any open comments exist: Fail with list of unresolved comments
-  - Exit code 0: No open comments on staged files
-  - Exit code 1: Open comments found (blocks commit)
-- `scripts/git-hooks/README.md` - Installation instructions
-  - How to install hooks: `cp scripts/git-hooks/* .git/hooks/`
-  - Configuration options (environment variables)
-  - Opt-in/opt-out guidance
-- `tests/comment_system/test_orchestration_scripts.py` - Update tests
-  - Test: Post-commit hook reports orphan count
-  - Test: Pre-commit hook blocks when open comments exist
-  - Test: Pre-commit hook allows commit when no open comments
-
-**Acceptance Criteria**:
-- AC-3 from `orchestration.md`: Post-commit hook prints orphan count
-- AC-5 from `orchestration.md`: Pre-commit hook blocks commit with unresolved comments on staged files
-- Hooks must handle missing git gracefully (CON-4)
-- Scripts must be idempotent (CON-2)
-
-**Backpressure**:
-- Integration tests: `test_orchestration_scripts.py::test_post_commit_hook_*`
-- Integration tests: `test_orchestration_scripts.py::test_pre_commit_hook_*`
-- Manual testing: Install in test git repo and verify behavior
-
-**Estimated complexity**: Medium (requires git integration testing, ~200 lines total)
+**Acceptance Criteria Met**:
+- ✅ AC-3: Post-commit hook reports orphaned comment count
+- ✅ AC-5: Pre-commit hook blocks commit when unresolved comments on staged files
+- ✅ CON-4: Hooks handle missing git gracefully (exit 0 with warning)
+- ✅ CON-2: Hooks are idempotent and safe to re-run
 
 ---
 
