@@ -91,7 +91,8 @@ This process ensures:
 ☐ Read requirement specification (e.g., spec.md)
 ☐ Read models/README.md for library overview
 ☐ Review MODELING_GUIDE.md for patterns
-☐ Check SOURCE_INDEX.md for domain knowledge sources
+☐ Check knowledge/SOURCE_INDEX.md for domain knowledge sources
+☐ Check knowledge/KNOWLEDGE.md for existing domain insights
 ```
 
 **Output**: Clear understanding of what needs to be modeled.
@@ -177,7 +178,7 @@ Read("models/library/physics/calculations.sysml")
 
 ## Phase 2: Architecture & Design (40%)
 
-**Goal**: Make architectural decisions and design dataflow before writing specifications.
+**Goal**: Make architectural decisions and design dataflow before writing specifications. Record architectural decisions in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### 2.1 Dataflow Design
 
@@ -217,6 +218,8 @@ Read("models/library/physics/calculations.sysml")
 **Key principle**: Data flows DOWN, never UP (no circular imports).
 
 ### 2.2 Library vs Inline Decision
+
+Check [REQUIREMENTS.md](REQUIREMENTS.md) for project-specific rules on calculation placement.
 
 ```markdown
 Choose library calc defs when:
@@ -332,7 +335,7 @@ Updates to existing:
 
 ## Phase 3: Specification & Documentation (30%)
 
-**Goal**: Provide complete implementation specifications with traceability.
+**Goal**: Provide complete implementation specifications with traceability. Check [REQUIREMENTS.md](REQUIREMENTS.md) for project-specific modeling rules.
 
 ### 3.1 File-by-File Specifications
 
@@ -409,6 +412,8 @@ private import ComponentB::component_b;
 ```
 
 ### 3.4 Validation Plan
+
+Update [VALIDATION_MATRIX.md](VALIDATION_MATRIX.md) with verification criteria as you define them.
 
 ```markdown
 ## Validation Strategy
@@ -805,9 +810,13 @@ A well-designed model specification should have:
 ## References
 
 - **models/README.md** - Directory structure and library reference
-- **modeling_pm/MODELING_GUIDE.md** - SysMLv2 patterns and best practices
-- **modeling_pm/OVERVIEW.md** - Project status and goals
-- **SOURCE_INDEX.md** - Domain knowledge sources
+- **MODELING_GUIDE.md** - SysMLv2 patterns and best practices
+- **OVERVIEW.md** - Project goals and intent
+- **ARCHITECTURE.md** - Model architecture decisions
+- **REQUIREMENTS.md** - Project-specific modeling rules
+- **VALIDATION_MATRIX.md** - System verification criteria
+- **knowledge/SOURCE_INDEX.md** - Domain knowledge sources
+- **knowledge/KNOWLEDGE.md** - Curated domain insights
 - **SysMLv2 Specification** - https://www.omg.org/spec/SysML
 
 ---

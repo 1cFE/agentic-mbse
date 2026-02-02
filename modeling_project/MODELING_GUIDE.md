@@ -1,0 +1,287 @@
+# SysML Modeling Guide
+
+Quick reference for SysML v2 modeling. Each section links to detailed pattern docs.
+
+> **Note**: For project-specific patterns and customizations, see [REQUIREMENTS.md](REQUIREMENTS.md).
+
+**Related Docs:**
+- [models/README.md](../models/README.md) - Model catalog and navigation
+- [OVERVIEW.md](OVERVIEW.md) - Project architecture
+
+---
+
+## Core Principle: Definitions vs Usages
+
+| Aspect | Definitions (Library) | Usages (Designs) |
+|--------|----------------------|------------------|
+| **Purpose** | Reusable types | Specific instances |
+| **Location** | `models/library/` | `models/designs/{name}/` |
+| **Naming** | `'Title Case'` with quotes | `snake_case` |
+| **Example** | `part def 'Pump'` | `part my_pump : 'Pump'` |
+
+**Decision**: "Could this apply to multiple designs?" Yes = Definition, No = Usage
+
+> **Full reference**: [patterns/definitions-usages.md] - Complete examples, decision tree, specialization patterns
+
+---
+
+<!-- SKILL: moves to project-structure -->
+## The EXPOSE Pattern
+
+Expose calc outputs as design attributes for cross-file access:
+
+```sysml
+part geometry {
+    calc dimension_calc : DimensionCalculation { ... }
+    attribute calculated_area : Real = dimension_calc.area;  // EXPOSE
+}
+```
+
+Consumers bind to `geometry.calculated_area`, not `geometry.dimension_calc.area`.
+
+> **Full reference**: [patterns/expose-pattern.md] - Anti-patterns, producer/consumer examples
+
+---
+
+## Calculation Architecture (ADR-002)
+
+> `calc def` declarations in `library/` only. Design files contain values and wiring.
+
+| In Design Files | Status |
+|-----------------|--------|
+| Literal: `= 3.0 [m]` | OK |
+| Static expr: `= 3.14 * 2.0` | OK |
+| EXPOSE: `= my_calc.output` | OK |
+| Derived: `= radius * 2.0` | **VIOLATION** - extract to calc def |
+
+> **Full reference**: [patterns/adr002-calculations.md] - Expression taxonomy, resolution patterns
+
+---
+
+## Package Structure
+
+```
+models/
+├── library/          # All definitions (part def, calc def, etc.)
+│   ├── foundation/   # Base types, materials, units
+│   ├── components/   # Component definitions
+│   └── analyses/     # Calc definitions
+├── designs/          # All usages (specific instances)
+│   └── {design_name}/
+└── tests/            # Test models
+```
+
+---
+
+## Naming Conventions
+
+- **Definitions**: `'Title Case'` with single quotes
+- **Usages**: `snake_case`
+- **Attributes**: `snake_case`
+- **Packages**: `lowercase_underscores`
+
+> **Full reference**: [patterns/package-naming.md] - Multi-file organization, unique names rule
+
+---
+
+## Documentation Standards
+
+Every `part def`, `calc def`, `constraint def` requires:
+
+```sysml
+part def 'Component' {
+    doc /*
+    Description of component.
+
+    **Source**: Reference document
+    **Reference**: path/to/source.pdf
+    **Last Updated**: YYYY-MM-DD
+    */
+}
+```
+
+> **Full reference**: [patterns/doc-comments.md] - Citation formats, validation, traceability
+
+---
+
+<!-- SKILL: moves to sysml-conventions -->
+## Standard Imports
+
+```sysml
+package MyProject::Library::Components {
+    import ScalarValues::*;    // Real, Integer, Boolean
+    import ISQ::*;             // Physical quantities
+    import SI::*;              // SI units
+
+    // For cost aggregation over multiplicities:
+    private import NumericalFunctions::sum;
+}
+```
+
+---
+
+<!-- SKILL: moves to sysml-conventions -->
+## Key Syntax Patterns
+
+One example each. See pattern docs for full syntax, variations, and common mistakes.
+
+**Conditional expressions:**
+```sysml
+attribute diff : Real = if x > y? x - y else y - x;
+```
+> [patterns/conditionals.md]
+
+**Constraints:**
+```sysml
+assert constraint TempLimit { temperature < 1000 [K] }
+```
+> [patterns/constraints.md]
+
+**Cross-file binding:**
+```sysml
+private import OtherPackage::other_part;
+calc my_calc { in value = other_part.exposed_attr; }
+```
+> [patterns/cross-file-binding.md]
+
+**Semantic operators** (`=` vs `default :=` vs `:>>`):
+> [patterns/semantic-operators.md] - Critical for correct AST generation
+
+**Full syntax reference:**
+> [patterns/syntax-reference.md] - Package imports, calc defs, part defs, instantiation
+
+---
+
+## Validation Checklist
+
+```
+- [ ] Model parses: `agentic-mbse validate models/`
+- [ ] All definitions have doc comments with sources
+- [ ] Units specified: `= 3.0 [m]` not `= 3.0`
+- [ ] Naming conventions followed
+- [ ] No calc defs in designs/ (ADR-002)
+```
+
+---
+
+<!-- SKILL: moves to model-validation -->
+## Model Regression Testing
+
+### Why Regression Testing Matters
+
+The library/usage separation pattern enables model reuse but introduces regression risk:
+when you modify a library definition to support a new design, existing designs that
+depend on it may break. Regression tests detect these breakages automatically.
+
+### Test Structure
+
+Model tests live in `tests/models/` and use pytest with the syside library:
+
+```
+tests/
+├── conftest.py          # Common fixtures
+└── models/
+    ├── test_example.py  # Example/template
+    ├── test_library.py  # Library definition tests
+    └── test_designs.py  # Design integration tests
+```
+
+### Writing Model Tests
+
+Model tests verify:
+1. **Parsing** - Models parse without syntax errors
+2. **Structure** - Required elements exist with expected types
+3. **Interfaces** - Ports and attributes have correct types
+4. **Integration** - Designs correctly reference library definitions
+
+Example test pattern:
+```python
+import pytest
+from pathlib import Path
+from agentic_mbse.sysml.syside_adapter import get_syside
+
+MODELS_DIR = Path(__file__).parent.parent.parent / "models"
+
+def test_motor_definition_exists():
+    """Verify Motor part definition exists in actuators library."""
+    files = list((MODELS_DIR / "library").glob("**/*.sysml"))
+    model, diagnostics = get_syside().try_load_model([str(f) for f in files])
+
+    # Check no parse errors
+    syside = get_syside()
+    errors = [d for d in diagnostics if d.severity == syside.DiagnosticSeverity.Error]
+    assert len(errors) == 0, f"Parse errors: {errors}"
+
+    # Find Motor definition
+    part_defs = list(model.elements(syside.PartDefinition))
+    motor_defs = [p for p in part_defs if p.name == "Motor"]
+    assert len(motor_defs) == 1, "Expected exactly one Motor definition"
+```
+
+### Running Tests
+
+```bash
+# Run all model tests
+pytest tests/models/
+
+# Run with verbose output
+pytest tests/models/ -v
+
+# Run specific test file
+pytest tests/models/test_library.py
+```
+
+### When to Write Tests
+
+- **During spec phase**: Define success criteria as test assertions
+- **After library changes**: Verify existing designs still work
+- **Before integration**: Validate design-library compatibility
+
+---
+
+<!-- SKILL: moves to toolkit-awareness -->
+## Tools and Scripts
+
+```bash
+# Validate using agentic-mbse
+agentic-mbse validate models/
+
+# Or use SysIDE directly
+syside check models/library/file.sysml
+```
+
+---
+
+## Questions?
+
+- Check examples in `models/library/`
+- Review `OVERVIEW.md` for project status
+- Review `SOURCE_INDEX.md` for domain knowledge sources
+- Use `/research` command to explore sources
+
+---
+
+<!-- SKILL: moves to sysml-conventions -->
+## Pattern Documentation Index
+
+All pattern docs are in the agentic-mbse `docs/patterns/` directory.
+Agents have read permissions via `.claude/settings.json`.
+
+| Pattern Doc | Covers |
+|-------------|--------|
+| `definitions-usages.md` | Definition vs Usage distinction, decision tree |
+| `expose-pattern.md` | EXPOSE pattern details, anti-patterns |
+| `adr002-calculations.md` | Calculation architecture, expression taxonomy |
+| `doc-comments.md` | Documentation standards, citation formats |
+| `conditionals.md` | Conditional expression syntax |
+| `constraints.md` | Constraint syntax and prefixes |
+| `cross-file-binding.md` | Cross-file imports and bindings |
+| `semantic-operators.md` | `=` vs `default :=` vs `:>>` vs `:>` |
+| `syntax-reference.md` | 10 syntax patterns quick reference |
+| `package-naming.md` | Multi-file organization, unique names |
+| `mbse-concepts.md` | Allocation, interfaces, cost patterns |
+| `common-mistakes.md` | Anti-patterns to avoid |
+
+---
+
+**Last Updated**: 2026-01-15
