@@ -5,6 +5,7 @@ used by the parser module. No parsing logic lives here.
 """
 
 from enum import Enum
+from pathlib import Path
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel, Field
@@ -199,3 +200,40 @@ class TraceabilityEntry(BaseModel):
     confidence: str
     assumptions: str
     last_verified: str
+
+
+# --- State derivation types ---
+
+
+class WorkItemStage(str, Enum):
+    SPECCING = "speccing"
+    DESIGNING = "designing"
+    IMPLEMENTING = "implementing"
+    UNKNOWN = "unknown"
+
+
+class DerivedWorkItemState(BaseModel):
+    id: str  # WI-XXX (from directory name)
+    name: str  # descriptive-str from directory name
+    state: WorkItemStatus  # derived: backlog/active/paused/abandoned/failed/completed
+    stage: WorkItemStage | None = None  # only set when state = active
+    epic: str | None = None  # parent epic name from BACKLOG.md
+    directory: Path | None = None  # resolved path, or None for backlog-only items
+    completed_date: str | None = None  # YYYYMMDD from completed dir name
+
+
+class DerivedEpicState(BaseModel):
+    name: str
+    derived_status: EpicStatus  # computed from sub-item states
+    declared_status: EpicStatus  # as declared in BACKLOG.md
+    priority: Priority
+    goal: str | None = None
+    file: str  # epic file path (relative, from BACKLOG.md)
+    items: list[DerivedWorkItemState] = Field(default_factory=list)
+    total: int = 0
+    done: int = 0
+
+
+class ProjectState(BaseModel):
+    epics: list[DerivedEpicState] = Field(default_factory=list)
+    standalone: list[DerivedWorkItemState] = Field(default_factory=list)

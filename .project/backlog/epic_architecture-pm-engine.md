@@ -123,7 +123,7 @@ Seven deliverables with a dependency structure (see [Sequencing](#sequencing) be
 ### D4.2: State Derivation (`src/agentic_mbse/pm/state.py`)
 
 **Type**: Implementation
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: D4.1 (parsers must exist to read frontmatter)
 **Delta checklist**: § 3B.1 state items
 
