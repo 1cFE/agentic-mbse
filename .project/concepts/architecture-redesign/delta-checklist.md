@@ -193,33 +193,33 @@ Manual, one-time operation. Must be executed on a branch.
 
 Each skill gets a directory in `claude/skills/{name}/` with at minimum a `SKILL.md` file and optional `references/` subdirectory.
 
-- [ ] `[NEW]` `claude/skills/sysml-conventions/SKILL.md` — Syntax rules, naming conventions, common patterns, pitfalls, code stencils. Source: extract from `claude/commands/design-model.md` (600+ lines of embedded SysML knowledge), supplemented by `project_templates/MODELING_GUIDE.md.template` reference material.
-- [ ] `[NEW]` `claude/skills/sysml-conventions/references/` — Optional deep reference files (syntax examples, pattern catalog)
-- [ ] `[NEW]` `claude/skills/model-validation/SKILL.md` — Quality pyramid (8 levels), CLI commands (`agentic-mbse validate`), pass/fail criteria, regression test patterns. Source: extract from `design-model.md` and `implement-model.md`.
-- [ ] `[NEW]` `claude/skills/project-structure/SKILL.md` — Library vs designs, file organization, cross-file patterns, EXPOSE pattern, information architecture summary (4 directories, what goes where). Source: extract from `design-model.md`, `spec-model.md`, `implement-model.md`.
-- [ ] `[NEW]` `claude/skills/source-traceability/SKILL.md` — SOURCE_INDEX format, citation patterns, doc comment requirements (Source, Reference fields), traceability matrix schema. Source: extract from `design-model.md`, `manage-sources.md`, `research.md`.
-- [ ] `[NEW]` `claude/skills/epic-decomposition/SKILL.md` — Goldilocks principle adapted for modeling, work item scale taxonomy (Trivial/Standard/Epic), decomposition process, anti-patterns. Source: new content from workflows.md § 2.1, § 3.6.
-- [ ] `[NEW]` `claude/skills/requirements-tracking/SKILL.md` — REQUIREMENTS.md format (PR-XXX), promotion path from per-feature MR-XXX patterns, enforcement methods, compliance checking. Source: new content from information-architecture.md § 3 Role 4.
+- [x] `[NEW]` `claude/skills/sysml-conventions/SKILL.md` — Syntax rules, naming conventions, common patterns, pitfalls, code stencils. Source: extract from `claude/commands/design-model.md` (600+ lines of embedded SysML knowledge), supplemented by `project_templates/MODELING_GUIDE.md.template` reference material.
+- [x] `[NEW]` `claude/skills/sysml-conventions/references/` — Optional deep reference files (syntax examples, pattern catalog)
+- [x] `[NEW]` `claude/skills/model-validation/SKILL.md` — Quality pyramid (8 levels), CLI commands (`agentic-mbse validate`), pass/fail criteria, regression test patterns. Source: extract from `design-model.md` and `implement-model.md`.
+- [x] `[NEW]` `claude/skills/project-structure/SKILL.md` — Library vs designs, file organization, cross-file patterns, EXPOSE pattern, information architecture summary (4 directories, what goes where). Source: extract from `design-model.md`, `spec-model.md`, `implement-model.md`.
+- [x] `[NEW]` `claude/skills/source-traceability/SKILL.md` — SOURCE_INDEX format, citation patterns, doc comment requirements (Source, Reference fields), traceability matrix schema. Source: extract from `design-model.md`, `manage-sources.md`, `research.md`.
+- [x] `[NEW]` `claude/skills/epic-decomposition/SKILL.md` — Goldilocks principle adapted for modeling, work item scale taxonomy (Trivial/Standard/Epic), decomposition process, anti-patterns. Source: new content from workflows.md § 2.1, § 3.6.
+- [x] `[NEW]` `claude/skills/requirements-tracking/SKILL.md` — REQUIREMENTS.md format (PR-XXX), promotion path from per-feature MR-XXX patterns, enforcement methods, compliance checking. Source: new content from information-architecture.md § 3 Role 4.
 
 ### 2.2 Existing Skills — Updates
 
-- [ ] `[REVISE]` `claude/skills/toolkit-awareness/SKILL.md` — Add new PM CLI commands (`agentic-mbse status`, `agentic-mbse pm ...`), new slash commands (`/quick-model`, `/review-model`, `/analyze-models`, `/status`, `/formalize-intent`), updated directory structure.
-- [ ] `[EVALUATE]` `claude/skills/record-learning/SKILL.md` — Architecture doesn't mention this skill. Evaluate: is the learning capture pattern folded into the close-flow trigger questions (workflows.md § 3.5), or does it remain standalone?
+- [x] `[REVISE]` `claude/skills/toolkit-awareness/SKILL.md` — Add new PM CLI commands (`agentic-mbse status`, `agentic-mbse pm ...`), new slash commands (`/quick-model`, `/review-model`, `/analyze-models`, `/status`, `/formalize-intent`), updated directory structure.
+- [x] `[EVALUATE]` `claude/skills/record-learning/SKILL.md` — Architecture doesn't mention this skill. Evaluate: is the learning capture pattern folded into the close-flow trigger questions (workflows.md § 3.5), or does it remain standalone? **Decision: retained standalone** — process learnings are distinct from close-flow reflections.
 
 ### 2.3 Skill Registration in `cmd_init()`
 
-- [ ] `[REVISE]` `MBSE_SKILLS` list in `cli/__init__.py` — Add new skills: `sysml-conventions`, `model-validation`, `project-structure`, `source-traceability`, `epic-decomposition`, `requirements-tracking`
-- [ ] `[REVISE]` `replicate_setup.sh` — Add new skills to the install loop
+- [x] `[REVISE]` `MBSE_SKILLS` list in `cli/__init__.py` — Add new skills: `sysml-conventions`, `model-validation`, `project-structure`, `source-traceability`, `epic-decomposition`, `requirements-tracking`
+- [x] `[REVISE]` `replicate_setup.sh` — Add new skills to the install loop
 
 ### 2.4 Context Window Measurement (Design Activity)
 
 Not a code change but a required decision gate.
 
-- [ ] Measure token count of each SKILL.md
-- [ ] Test loading 3-4 skills simultaneously in a command context
-- [ ] Determine if any skill exceeds 200 lines and needs splitting
-- [ ] Decide skill loading strategy: all upfront vs staged (Q10)
-- [ ] Document results and decisions
+- [x] Measure token count of each SKILL.md
+- [x] Test loading 3-4 skills simultaneously in a command context
+- [x] Determine if any skill exceeds 200 lines and needs splitting
+- [x] Decide skill loading strategy: all upfront vs staged (Q10) **Decision: upfront SKILL.md, on-demand references**
+- [x] Document results and decisions — see `.project/active/d2.4-context-measurement/measurement-report.md`
 
 ---
 
@@ -228,6 +228,8 @@ Not a code change but a required decision gate.
 ### 3A.1 Command Refactoring — Existing Commands
 
 For each command: extract embedded knowledge to skill references, reduce to 200-300 lines, add AP-7 script calls where applicable.
+
+**Primary reference**: `.project/active/d2.5-extraction-mapping/extraction-mapping.md` — section-by-section mapping of what to remove, what stays, and which skill absorbs each piece of extracted content.
 
 - [ ] `[REVISE]` `claude/commands/design-model.md` (1,345 lines → target ~250)
   - Extract SysML syntax/patterns to `sysml-conventions` skill reference

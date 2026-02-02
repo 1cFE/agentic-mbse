@@ -222,6 +222,8 @@ Refactor 9 existing commands to use skills (reducing average from 543 to ~250 li
 #### D3.1: Command Refactoring (9 commands)
 Each existing command gets: embedded knowledge extracted to skill references, AP-7 script calls added where applicable, paths updated to new directory structure.
 
+**Extraction mapping**: `.project/active/d2.5-extraction-mapping/extraction-mapping.md` — section-by-section mapping of what to remove from each command and which skill absorbs it. Use this as the primary checklist for refactoring.
+
 Delta checklist: § 3A.1 (9 items, each with multiple sub-changes)
 
 **Priority order** (most bloated first, since they yield the most skill content):
@@ -263,7 +265,7 @@ Walk each refactored command through a real fusion-tea workflow to verify no imp
 
 Delta checklist: § 3A.5 (6 walkthrough items)
 
-This is a quality gate, not optional. The risk of skill extraction is losing knowledge that was implicitly embedded in long command prompts. The walkthrough catches this before shipping.
+This is a quality gate, not optional. The risk of skill extraction is losing knowledge that was implicitly embedded in long command prompts. The walkthrough catches this before shipping. Cross-reference against the extraction mapping (`.project/active/d2.5-extraction-mapping/extraction-mapping.md`) to verify no knowledge is unaccounted for.
 
 ### Sequencing Within Epic 3
 

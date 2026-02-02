@@ -366,10 +366,12 @@ Add new skills to the install loop. Must match `MBSE_SKILLS` exactly (reconcilia
 ### D2.5: Skill Content Extraction Mapping
 
 **Type**: Design artifact
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: D2.1 (skills written), D2.4 (granularity confirmed)
 
 **Objective**: Produce an explicit mapping from skill content back to the command lines it was extracted from. This is the bridge artifact between Epic 2 and Epic 3 — it tells Epic 3 exactly what to remove from each command.
+
+**Artifact**: `.project/active/d2.5-extraction-mapping/extraction-mapping.md`
 
 **Format**: A table per command listing:
 - Line ranges in the current command that move to skills
@@ -389,9 +391,9 @@ design-model.md (1,345 lines):
 This artifact prevents knowledge loss during Epic 3 refactoring (addresses Q12 risk). The walkthrough (D3.5) can verify against this mapping.
 
 **Exit criteria**:
-- [ ] Extraction mapping exists for all 9 existing commands
-- [ ] Every line range in current commands is accounted for (moved to skill OR stays in command)
-- [ ] No knowledge is unaccounted for
+- [x] Extraction mapping exists for all 9 existing commands
+- [x] Every section in current commands is accounted for (moved to skill OR stays in command)
+- [x] No knowledge is unaccounted for
 
 ---
 
@@ -466,4 +468,4 @@ The `/status` command (Epic 3) also depends on Epic 4 (PM engine), but that is n
 ---
 
 **Last Updated**: 2026-02-02
-**Next Action**: D2.5 (skill content extraction mapping)
+**Next Action**: Epic 2 complete. Proceed to Epic 3 (Commands). See `.project/active/d2.5-extraction-mapping/extraction-mapping.md` for the bridge artifact that tells Epic 3 what to remove from each command.
