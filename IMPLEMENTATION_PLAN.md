@@ -99,40 +99,31 @@ The following modules are **complete** with comprehensive tests:
 
 ---
 
-### Task 1.2: CLI `--match <text>` Flag for Text-Based Anchoring
+### ✅ Task 1.2: CLI `--match <text>` Flag for Text-Based Anchoring (COMPLETED)
 
 **Spec**: `cli-interface.md` REQ-4 (anchoring methods)
 **Type**: Missing feature
+**Status**: ✅ COMPLETED (2026-02-02)
 
-**Description**: The CLI currently supports only `-L <start>:<end>` for line-range anchoring. The spec requires `--match <text>` for text-based anchoring with ambiguity detection (fail if text appears multiple times).
+**Implementation Summary**:
+- Added `--match` option to `cli.py:add()` command for text-based anchoring
+- Implemented mutual exclusivity validation between `-L` and `--match`
+- Implemented text search logic with ambiguity detection (fails if text appears multiple times)
+- Implemented "not found" detection (fails if text doesn't exist in file)
+- Added 5 comprehensive tests covering all scenarios:
+  - Single occurrence → creates thread correctly
+  - Multiple occurrences → exits with error code 1
+  - Text not found → exits with error code 1
+  - Both `-L` and `--match` specified → validation error
+  - Neither specified → validation error
+- All 455 tests pass, mypy clean, ruff clean
 
-**Current State**: `cli.py:add()` lines 172-178 define only `-L` option. No `--match` option exists.
+**Files Modified** (2 files):
+- `src/comment_system/cli.py` - Added `--match` option and search logic (~80 lines)
+- `tests/comment_system/test_cli.py` - Added 5 tests (~90 lines)
 
-**Files to modify** (~3 files):
-- `src/comment_system/cli.py:add()` - Add `--match` option and search logic
-  - Add click option: `@click.option("--match", help="Anchor to first occurrence of text")`
-  - Validate mutual exclusivity: `-L` and `--match` cannot both be specified
-  - Search logic: Find all occurrences of text in source file
-  - Ambiguity check: If count > 1, fail with "Ambiguous match: text appears {count} times"
-  - Not found check: If count == 0, fail with "Text not found: '{text}'"
-  - Extract line range from single match
-- `tests/comment_system/test_cli.py` - Add comprehensive tests
-  - Test: `--match` with single occurrence → creates thread with correct line range
-  - Test: `--match` with multiple occurrences → exits with "Ambiguous match" error
-  - Test: `--match` with zero occurrences → exits with "Text not found" error
-  - Test: Both `-L` and `--match` specified → validation error
-  - Test: Neither `-L` nor `--match` specified → validation error
-
-**Acceptance Criteria**:
-- AC-4 from `cli-interface.md`: `comment add PLAN.md --match "linear scaling"` fails if text appears twice with exit code 1
-
-**Backpressure**:
-- Unit tests: `test_cli.py::test_add_with_match_single_occurrence`
-- Unit tests: `test_cli.py::test_add_with_match_ambiguous`
-- Unit tests: `test_cli.py::test_add_with_match_not_found`
-- Unit tests: `test_cli.py::test_add_with_match_and_lines_mutually_exclusive`
-
-**Estimated complexity**: Low-Medium (string search + validation, ~50 lines)
+**Acceptance Criteria Met**:
+- ✅ AC-4 from `cli-interface.md`: `comment add PLAN.md --match "linear scaling"` fails with exit code 1 when text appears twice
 
 ---
 

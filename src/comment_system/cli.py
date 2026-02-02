@@ -173,9 +173,14 @@ def cli():
     "-L",
     "--lines",
     "line_range",
-    required=True,
     metavar="START:END",
     help="Line range to anchor comment (e.g., -L 10:15)",
+)
+@click.option(
+    "--match",
+    "match_text",
+    metavar="TEXT",
+    help="Anchor to first occurrence of text (fails if ambiguous)",
 )
 @click.option(
     "-a",
@@ -190,7 +195,14 @@ def cli():
     help="Type of author (human or agent)",
 )
 @click.argument("body", required=True)
-def add(file_path: Path, line_range: str, author: str, author_type: str, body: str):
+def add(
+    file_path: Path,
+    line_range: str | None,
+    match_text: str | None,
+    author: str,
+    author_type: str,
+    body: str,
+):
     """
     Create a new comment thread anchored to a source location.
 
@@ -199,29 +211,24 @@ def add(file_path: Path, line_range: str, author: str, author_type: str, body: s
         comment add src/main.py -L 42:45 "Fix this function"
 
         comment add PLAN.md -L 10:10 --author=alice "Needs clarification"
+
+        comment add PLAN.md --match "linear scaling" "Optimize this"
     """
     try:
-        # Parse line range
-        try:
-            parts = line_range.split(":")
-            if len(parts) != 2:
-                click.echo(
-                    f"Error: Invalid line range format: {line_range}\n"
-                    "Expected format: START:END (e.g., 10:15)",
-                    err=True,
-                )
-                sys.exit(1)
-            line_start = int(parts[0])
-            line_end = int(parts[1])
-        except ValueError as e:
-            if "invalid literal" in str(e):
-                click.echo(
-                    f"Error: Invalid line range: {line_range}\n"
-                    "Line numbers must be integers (e.g., -L 10:15)",
-                    err=True,
-                )
-                sys.exit(1)
-            raise
+        # Validate anchoring method: must specify exactly one of -L or --match
+        if line_range is None and match_text is None:
+            click.echo(
+                "Error: Must specify either -L (line range) or --match (text pattern)",
+                err=True,
+            )
+            sys.exit(1)
+
+        if line_range is not None and match_text is not None:
+            click.echo(
+                "Error: Cannot specify both -L and --match (mutually exclusive)",
+                err=True,
+            )
+            sys.exit(1)
 
         # Find project root from current working directory
         try:
@@ -236,6 +243,62 @@ def add(file_path: Path, line_range: str, author: str, author_type: str, body: s
         except ValueError as e:
             click.echo(f"Error: {e}", err=True)
             sys.exit(1)
+
+        # Determine line range (either from -L or from --match)
+        if line_range is not None:
+            # Parse line range from -L option
+            try:
+                parts = line_range.split(":")
+                if len(parts) != 2:
+                    click.echo(
+                        f"Error: Invalid line range format: {line_range}\n"
+                        "Expected format: START:END (e.g., 10:15)",
+                        err=True,
+                    )
+                    sys.exit(1)
+                line_start = int(parts[0])
+                line_end = int(parts[1])
+            except ValueError as e:
+                if "invalid literal" in str(e):
+                    click.echo(
+                        f"Error: Invalid line range: {line_range}\n"
+                        "Line numbers must be integers (e.g., -L 10:15)",
+                        err=True,
+                    )
+                    sys.exit(1)
+                raise
+        else:
+            # Find text match in file
+            assert match_text is not None  # Type narrowing for mypy
+            try:
+                with open(file_path, encoding="utf-8") as f:
+                    lines = f.readlines()
+            except (FileNotFoundError, OSError) as e:
+                click.echo(f"Error reading file: {e}", err=True)
+                sys.exit(1)
+
+            # Find all occurrences of match_text
+            matches = []
+            for line_num, line in enumerate(lines, start=1):
+                if match_text in line:
+                    matches.append(line_num)
+
+            if len(matches) == 0:
+                click.echo(
+                    f"Error: Text not found: '{match_text}'",
+                    err=True,
+                )
+                sys.exit(1)
+            elif len(matches) > 1:
+                click.echo(
+                    f"Error: Ambiguous match: text appears {len(matches)} times on lines {', '.join(map(str, matches))}",
+                    err=True,
+                )
+                sys.exit(1)
+            else:
+                # Single match - anchor to that line
+                line_start = matches[0]
+                line_end = matches[0]
 
         # Create anchor
         try:

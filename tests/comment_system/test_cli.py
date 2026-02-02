@@ -498,6 +498,105 @@ def test_add_unicode_content(runner, git_repo):
     assert "Unicode: 你好 🎉" in sidecar.threads[0].anchor.content_snippet
 
 
+def test_add_with_match_single_occurrence(runner, git_repo):
+    """Test --match flag with single text occurrence."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\nLine 2 unique text\nLine 3\n")
+
+    result = runner.invoke(
+        cli, ["add", str(file_path), "--match", "unique text", "Comment on matched line"]
+    )
+
+    assert result.exit_code == 0
+    assert "Created thread" in result.output
+    assert "Lines: 2:2" in result.output
+
+    # Verify sidecar has correct line range
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert len(sidecar.threads) == 1
+    assert sidecar.threads[0].anchor.line_start == 2
+    assert sidecar.threads[0].anchor.line_end == 2
+    assert "unique text" in sidecar.threads[0].anchor.content_snippet
+
+
+def test_add_with_match_ambiguous(runner, git_repo):
+    """Test AC-4: --match flag fails with ambiguous match (multiple occurrences)."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("linear scaling\nLine 2\nlinear scaling\n")
+
+    result = runner.invoke(
+        cli, ["add", str(file_path), "--match", "linear scaling", "This should fail"]
+    )
+
+    assert result.exit_code == 1
+    assert "Ambiguous match" in result.output
+    assert "2 times" in result.output
+    assert "1, 3" in result.output
+
+    # Verify sidecar was NOT created
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    assert not sidecar_path.exists()
+
+
+def test_add_with_match_not_found(runner, git_repo):
+    """Test --match flag fails when text is not found."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\nLine 2\nLine 3\n")
+
+    result = runner.invoke(
+        cli, ["add", str(file_path), "--match", "nonexistent", "This should fail"]
+    )
+
+    assert result.exit_code == 1
+    assert "Text not found: 'nonexistent'" in result.output
+
+    # Verify sidecar was NOT created
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    assert not sidecar_path.exists()
+
+
+def test_add_with_match_and_lines_mutually_exclusive(runner, git_repo):
+    """Test that -L and --match cannot be used together."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\nLine 2\nLine 3\n")
+
+    result = runner.invoke(
+        cli,
+        [
+            "add",
+            str(file_path),
+            "-L",
+            "1:1",
+            "--match",
+            "Line 2",
+            "This should fail",
+        ],
+    )
+
+    assert result.exit_code == 1
+    assert "mutually exclusive" in result.output
+
+    # Verify sidecar was NOT created
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    assert not sidecar_path.exists()
+
+
+def test_add_with_neither_match_nor_lines(runner, git_repo):
+    """Test that either -L or --match must be specified."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\nLine 2\nLine 3\n")
+
+    result = runner.invoke(cli, ["add", str(file_path), "This should fail"])
+
+    assert result.exit_code == 1
+    assert "Must specify either -L" in result.output or "must specify" in result.output.lower()
+
+    # Verify sidecar was NOT created
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    assert not sidecar_path.exists()
+
+
 # ============================================================================
 # Tests: list command
 # ============================================================================
