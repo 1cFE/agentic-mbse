@@ -260,7 +260,7 @@ Six deliverables with a dependency structure (see [Sequencing](#sequencing) belo
 ### D2.3: Skill Registration
 
 **Type**: Implementation
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: D2.1 (skills exist), D2.2 (existing skills evaluated), D2.4 (measurement confirms no granularity changes needed)
 **Delta checklist**: § 2.3 (2 items)
 
@@ -293,18 +293,18 @@ Add new skills to the install loop. Must match `MBSE_SKILLS` exactly (reconcilia
 3. Check each skill directory has at minimum `SKILL.md`
 
 **Exit criteria**:
-- [ ] `MBSE_SKILLS` list updated with all new skills
-- [ ] `replicate_setup.sh` updated with matching skill set
-- [ ] `agentic-mbse init` installs all skills to `.claude/skills/`
-- [ ] `agentic-mbse init --dev` creates symlinks for all skills
-- [ ] All existing tests pass (`uv run pytest tests/`)
+- [x] `MBSE_SKILLS` list updated with all 9 skills (alphabetically sorted)
+- [x] `replicate_setup.sh` updated with matching skill set
+- [x] `agentic-mbse init` installs all 9 skills to `.claude/skills/`
+- [x] `agentic-mbse init --dev` creates symlinks for all 9 skills
+- [x] All existing tests pass (342 passed, 1 skipped)
 
 ---
 
 ### D2.4: Context Window Measurement
 
 **Type**: Design activity (empirical measurement + decision)
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: D2.1 (skills must exist to measure them)
 **Delta checklist**: § 2.4 (5 items)
 
@@ -353,13 +353,13 @@ Add new skills to the install loop. Must match `MBSE_SKILLS` exactly (reconcilia
 **Note**: The 4,000-token threshold is a starting estimate. The actual constraint is that skills + command prompt + typical project context (files being read) must leave sufficient context for the agent's working memory. This may need adjustment based on empirical experience in Epic 3 walkthroughs.
 
 **Exit criteria**:
-- [ ] Token count measured for each SKILL.md
-- [ ] Skill combination loads computed for each command
-- [ ] Baseline comparison documented (current vs proposed)
-- [ ] Q9 resolved: context window impact quantified
-- [ ] Q10 resolved: loading strategy decided (upfront vs staged)
-- [ ] Q11 resolved: granularity confirmed or adjusted
-- [ ] Measurement report documented
+- [x] Token count measured for each SKILL.md
+- [x] Skill combination loads computed for each command
+- [x] Baseline comparison documented (current vs proposed)
+- [x] Q9 resolved: context window impact quantified — max 6,353 tokens (3.2% of context), net decrease for heaviest commands
+- [x] Q10 resolved: loading strategy decided — load SKILL.md upfront, references on demand, no staging
+- [x] Q11 resolved: granularity confirmed — all 9 skills under 200 lines, no splits needed
+- [x] Measurement report documented at `.project/active/d2.4-context-measurement/measurement-report.md`
 
 ---
 
@@ -466,4 +466,4 @@ The `/status` command (Epic 3) also depends on Epic 4 (PM engine), but that is n
 ---
 
 **Last Updated**: 2026-02-02
-**Next Action**: D2.1 (write new skills) and D2.2 (evaluate existing skills) in parallel
+**Next Action**: D2.5 (skill content extraction mapping)

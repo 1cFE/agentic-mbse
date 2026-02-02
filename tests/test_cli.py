@@ -147,9 +147,15 @@ class TestCmdInit:
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
-        skill_dir = tmp_path / ".claude" / "skills" / "python-debugger"
-        assert skill_dir.is_dir()
-        assert (skill_dir / "SKILL.md").exists()
+        all_skills = [
+            "epic-decomposition", "model-validation", "project-structure",
+            "python-debugger", "record-learning", "requirements-tracking",
+            "source-traceability", "sysml-conventions", "toolkit-awareness",
+        ]
+        skills_dir = tmp_path / ".claude" / "skills"
+        for skill in all_skills:
+            assert (skills_dir / skill).is_dir()
+            assert (skills_dir / skill / "SKILL.md").exists()
 
     def test_creates_hooks_directory(self, tmp_path):
         """agentic-mbse init creates .claude/hooks/ with hook scripts."""
@@ -405,9 +411,15 @@ class TestCmdInitDevMode:
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
         cmd_init(args)
 
-        skill_path = tmp_path / ".claude" / "skills" / "python-debugger"
-        assert skill_path.is_symlink()
-        assert skill_path.is_dir()  # Symlink to directory
+        all_skills = [
+            "epic-decomposition", "model-validation", "project-structure",
+            "python-debugger", "record-learning", "requirements-tracking",
+            "source-traceability", "sysml-conventions", "toolkit-awareness",
+        ]
+        for skill in all_skills:
+            skill_path = tmp_path / ".claude" / "skills" / skill
+            assert skill_path.is_symlink()
+            assert skill_path.is_dir()
 
     def test_dev_creates_symlinks_for_hooks(self, tmp_path):
         """--dev creates symlinks for hook files."""

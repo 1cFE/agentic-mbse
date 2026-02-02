@@ -103,3 +103,8 @@ exclude_lines = [
 
 [tool.uv]
 extra-index-url = ["https://gitlab.com/api/v4/projects/69960816/packages/pypi/simple"]
+
+[dependency-groups]
+dev = [
+    "tiktoken>=0.12.0",
+]

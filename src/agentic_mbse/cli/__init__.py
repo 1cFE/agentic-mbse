@@ -38,8 +38,14 @@ MBSE_AGENTS = [
 
 # Skills available for installation (directories, not files)
 MBSE_SKILLS = [
+    "epic-decomposition",
+    "model-validation",
+    "project-structure",
     "python-debugger",
     "record-learning",
+    "requirements-tracking",
+    "source-traceability",
+    "sysml-conventions",
     "toolkit-awareness",
 ]
 

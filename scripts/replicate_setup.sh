@@ -68,7 +68,9 @@ install_claude_components() {
     done
 
     # Skills - recursive copy
-    for skill in python-debugger record-learning toolkit-awareness; do
+    for skill in epic-decomposition model-validation project-structure \
+                 python-debugger record-learning requirements-tracking \
+                 source-traceability sysml-conventions toolkit-awareness; do
         if [[ -d "$REPO_ROOT/claude/skills/$skill" ]]; then
             cp -r "$REPO_ROOT/claude/skills/$skill" "$REPO_ROOT/.claude/skills/"
             log_created ".claude/skills/$skill/"
