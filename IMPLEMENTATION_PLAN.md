@@ -1,6 +1,6 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Last Updated**: 2026-02-02 (Task 4.1 completed)
+**Last Updated**: 2026-02-02 (Task 4.2 completed — all planned work done)
 **Planning Session**: 2026-02-02 (comprehensive spec study and gap analysis)
 **Verification Session**: 2026-02-02 (confirmed all gaps via code inspection)
 
@@ -274,31 +274,30 @@ The following modules are **complete** with comprehensive tests:
 
 ---
 
-### Task 4.2: Decision Log File Size Warning
+### ✅ Task 4.2: Decision Log File Size Warning (COMPLETED)
 
 **Spec**: `decision-log.md` CON-4
 **Type**: Missing validation
+**Status**: ✅ COMPLETED (2026-02-02)
 
-**Description**: The `decisions` command should warn if generated `DECISIONS.md` exceeds 1 MB to prevent git performance issues.
+**Implementation Summary**:
+- Added file size check in `decisions.py:write_decisions_file()` after writing DECISIONS.md
+- File size calculated with `Path(path).stat().st_size` and converted to MB
+- Warning printed to stderr if file size exceeds 1 MB (1,000,000 bytes)
+- Warning message format: "Warning: DECISIONS.md is {size:.1f} MB (> 1 MB recommended maximum)"
+- Warning does not block command (exit code 0 always returned)
+- Added comprehensive test `test_large_decision_log_warning` with 3000 decisions to exceed 1 MB threshold
+- Test verifies file size > 1 MB and warning message appears in stderr
+- All 469 tests pass, mypy clean, ruff clean
 
-**Current State**: No file size check in `decisions.py:write_decisions_file()`.
+**Files Modified** (2 files):
+- `src/comment_system/decisions.py` - Added sys import and file size check (~10 lines)
+- `tests/comment_system/test_decisions.py` - Added test (~70 lines)
 
-**Files to modify** (~1 file):
-- `src/comment_system/decisions.py:write_decisions_file()` - Add file size check
-  - After writing file: Get file size with `Path(path).stat().st_size`
-  - If size > 1 MB: Print warning to stderr
-  - Warning message: "Warning: DECISIONS.md is {size:.1f} MB (> 1 MB recommended maximum)"
-- `tests/comment_system/test_decisions.py` - Add test
-  - Test: Generate large decision log → prints warning
-
-**Acceptance Criteria**:
-- Warning printed to stderr if `DECISIONS.md` > 1 MB
-- Warning does not block command (exit code 0)
-
-**Backpressure**:
-- Unit test: `test_decisions.py::test_large_decision_log_warning`
-
-**Estimated complexity**: Low (10 lines)
+**Acceptance Criteria Met**:
+- ✅ Warning printed to stderr if `DECISIONS.md` > 1 MB
+- ✅ Warning does not block command (exit code 0)
+- ✅ File size displayed in warning message
 
 ---
 
@@ -372,21 +371,22 @@ For critical bugs (Task 1.1), write failing test first to confirm bug, then fix.
 - **Fully implemented specs**: 10 (data-model, fuzzy-matching, anchor-reconciliation, file-operations, concurrency, file-tracking, decision-log, mcp-tools, cli-interface, orchestration)
 - **Partially implemented specs**: 1 (vscode-extension - not started, deferred)
 - **Core modules**: 9/9 complete (100%)
-- **Test coverage**: ~10,200 lines of tests across 10 test files (468 tests)
+- **Test coverage**: ~10,270 lines of tests across 10 test files (469 tests)
 - **Critical bugs**: 0 (all resolved)
 - **Missing features**: 0 (all implemented)
-- **Polish tasks**: 1 remaining (Task 4.2), 1 completed (Task 4.1)
-- **Estimated remaining work**: 1 task (polish/hardening only)
+- **Polish tasks**: 2/2 completed (Task 4.1, Task 4.2)
+- **Estimated remaining work**: 0 tasks — all planned work complete!
 
 ---
 
 ## Next Iteration Recommendation
 
-**Priority 1 and 3 tasks complete!** All critical bugs and missing features have been implemented. The core system is now **production-ready** with:
+**🎉 ALL PLANNED TASKS COMPLETE!** The comment system is **fully production-ready** with:
 - ✅ All CLI commands fully functional with automatic rename detection
-- ✅ MCP server with correct timestamp handling
+- ✅ MCP server with correct timestamp handling and structured error handling
 - ✅ Optimistic concurrency retry pattern integrated
 - ✅ Git hooks tested and documented
-- ✅ 468 tests passing, mypy clean, ruff clean
+- ✅ File size warning for large decision logs
+- ✅ 469 tests passing, mypy clean, ruff clean
 
-**Remaining work**: Only Task 4.2 (file size warning) remains for polish/hardening. This is a low-priority, non-blocking enhancement.
+**Remaining work**: None! All Priority 1-4 tasks are complete. Only deferred/out-of-scope tasks remain (VSCode extension, shell completions, etc.).

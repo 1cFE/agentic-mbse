@@ -1,5 +1,6 @@
 """Decision log generation from resolved comment threads."""
 
+import sys
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -227,6 +228,15 @@ def write_decisions_file(project_root: Path) -> int:
     # Write to file
     decisions_path = project_root / "DECISIONS.md"
     decisions_path.write_text(content, encoding="utf-8")
+
+    # Check file size and warn if it exceeds 1 MB
+    file_size_bytes = decisions_path.stat().st_size
+    file_size_mb = file_size_bytes / (1024 * 1024)
+    if file_size_bytes > 1_000_000:
+        print(
+            f"Warning: DECISIONS.md is {file_size_mb:.1f} MB (> 1 MB recommended maximum)",
+            file=sys.stderr,
+        )
 
     # Count decisions
     active, reopened = collect_decisions(project_root)

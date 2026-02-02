@@ -700,6 +700,76 @@ class TestWriteDecisionsFile:
         assert "Use UTF-8 encoding for émojis 🎉 and spëcial çhars" in content
         assert "Tëster" in content
 
+    def test_large_decision_log_warning(self, tmp_path, capsys):
+        """Test that a warning is printed when DECISIONS.md exceeds 1 MB (CON-4)."""
+        # Create a large number of threads with decisions to exceed 1 MB
+        # Each decision entry is roughly 300-400 bytes, so we need ~2500-3500 decisions
+        # to generate > 1 MB of content
+        threads = []
+        for i in range(3000):
+            anchor = Anchor(
+                content_hash=f"sha256:{'a' * 64}",
+                context_hash_before=f"sha256:{'b' * 64}",
+                context_hash_after=f"sha256:{'c' * 64}",
+                line_start=i * 10 + 1,
+                line_end=i * 10 + 6,
+                content_snippet=f"def function_{i}():\n    # This is a function that does something\n    return result_{i}",
+                health=AnchorHealth.ANCHORED,
+            )
+
+            decision = Decision(
+                summary=f"Decision #{i}: This is a detailed decision summary that explains the architectural choice made for function_{i} and its implications on the system design",
+                decider="Tester",
+                timestamp=f"2026-02-01T{i % 24:02d}:00:00Z",
+            )
+
+            thread = Thread(
+                status=ThreadStatus.RESOLVED,
+                comments=[],
+                anchor=anchor,
+                decision=decision,
+                resolved_at=f"2026-02-01T{i % 24:02d}:00:00Z",
+            )
+            threads.append(thread)
+
+        # Create sidecar with all threads
+        sidecar = SidecarFile(
+            source_file="large_file.py",
+            source_hash="sha256:" + "a" * 64,
+            schema_version="1.0",
+            threads=threads,
+        )
+
+        sidecar_path = tmp_path / ".comments" / "large_file.py.json"
+        write_sidecar(sidecar_path, sidecar)
+
+        # Create source file
+        source_file = tmp_path / "large_file.py"
+        source_file.write_text("# Large file\n")
+
+        # Initialize git repo
+        import subprocess
+
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+        subprocess.run(["git", "add", "."], cwd=tmp_path, check=True, capture_output=True)
+
+        # Generate decisions file
+        write_decisions_file(tmp_path)
+
+        # Verify file size exceeds 1 MB
+        decisions_path = tmp_path / "DECISIONS.md"
+        file_size_bytes = decisions_path.stat().st_size
+        assert file_size_bytes > 1_000_000, f"File size {file_size_bytes} is not > 1 MB"
+
+        # Verify warning was printed to stderr
+        captured = capsys.readouterr()
+        assert "Warning: DECISIONS.md is" in captured.err
+        assert "MB (> 1 MB recommended maximum)" in captured.err
+
+        # Verify file size is shown in the warning
+        file_size_mb = file_size_bytes / (1024 * 1024)
+        assert f"{file_size_mb:.1f}" in captured.err
+
 
 class TestAcceptanceCriteria:
     """Test suite for explicit acceptance criteria."""
