@@ -90,7 +90,7 @@ Present assessment to the user. If incomplete, recommend what remains.
 ```
 agentic-mbse pm close-item <WI-XXX>
 ```
-The script moves `work/active/{WI-XXX}_{name}/` to `work/completed/YYYYMMDD_{WI-XXX}_{name}/` and updates BACKLOG.md status.
+The script sets all artifact Status fields to their completion values (spec.md → `completed`, design.md → `complete`, plan.md → `complete`), moves the directory to `work/completed/YYYYMMDD_{WI-XXX}_{name}/`, and updates BACKLOG.md status. All mutations are atomic.
 
 **Project document review.** After closing, prompt the user with specific questions:
 - "Did you discover a modeling pattern that should be a project-wide rule?" → If yes, help draft and call `agentic-mbse pm promote-requirement`

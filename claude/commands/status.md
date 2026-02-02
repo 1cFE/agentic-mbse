@@ -83,7 +83,7 @@ Call the AP-7 script to archive the work item:
 agentic-mbse pm close-item <WI-XXX>
 ```
 
-The script moves `work/active/{WI-XXX}_{name}/` to `work/completed/YYYYMMDD_{WI-XXX}_{name}/`, updates `work/BACKLOG.md` status to completed, and returns confirmation with the archive path.
+The script sets all artifact Status fields to their completion values (spec.md → `completed`, design.md → `complete`, plan.md → `complete`), moves the directory to `work/completed/YYYYMMDD_{WI-XXX}_{name}/`, updates `work/BACKLOG.md` status to completed, and returns confirmation with the archive path. All mutations are atomic.
 
 > **Note**: If the close-item script is not yet available (Epic 4), perform the archive manually: move the directory and update BACKLOG.md frontmatter.
 

@@ -61,6 +61,14 @@ All frontmatter uses YAML block style (not flow style). Lists use `- ` prefix. N
 
 **Rationale**: Stage detection uses file existence: spec.md only → speccing; +design.md → designing; +plan.md → planning; implementation started → implementing. review.md sits between design and plan but does not change the stage. The PM engine may read review.md's verdict for display purposes but does not track it as a lifecycle stage.
 
+### DD-4: Status Tracks Work Completion, Not Document Readiness
+
+**Decision**: The `Status` field in design.md and plan.md tracks whether the work described in the artifact has been completed, not whether the document text is finalized as a draft. `draft` means work is in progress; `complete` means the work is done.
+
+**Rationale**: design.md `Status: complete` means the design has been implemented and verified, not that the design document was approved. plan.md `Status: complete` means the plan has been fully executed, not that the plan text was finalized. This aligns all three artifacts on a consistent semantic: Status tracks work state. The richer enum on spec.md (`paused`, `abandoned`, `failed`) remains because those are work-item-level states that affect the whole item — stage artifacts don't independently pause or fail.
+
+**Who sets it**: The `close-item` AP-7 operation sets all three artifacts' Status fields atomically as part of the archive operation. No command edits these fields directly.
+
 ---
 
 ## 3. Schemas
@@ -105,7 +113,7 @@ Stage artifact for the design phase. Contains architecture decisions and prototy
 
 | Field | Type | Required | Allowed Values | Description |
 |-------|------|----------|---------------|-------------|
-| `Status` | enum | Required | `draft`, `complete` | Stage-level status (not the work item status — that's in spec.md). |
+| `Status` | enum | Required | `draft`, `complete` | Whether the work described in this artifact has been completed. `draft` = work in progress; `complete` = design implemented and verified. Set by `close-item` AP-7 operation. |
 | `Created` | date | Required | `YYYY-MM-DD` | Date the design was created. |
 | `Updated` | date | Required | `YYYY-MM-DD` | Date of the most recent edit. |
 | `Related Artifacts` | map | Required | See sub-fields | Links to related stage files. |
@@ -131,7 +139,7 @@ Stage artifact for the planning phase. Contains phased implementation plan.
 
 | Field | Type | Required | Allowed Values | Description |
 |-------|------|----------|---------------|-------------|
-| `Status` | enum | Required | `draft`, `complete` | Stage-level status. |
+| `Status` | enum | Required | `draft`, `complete` | Whether the work described in this artifact has been completed. `draft` = work in progress; `complete` = plan fully executed. Set by `close-item` AP-7 operation. |
 | `Created` | date | Required | `YYYY-MM-DD` | Date the plan was created. |
 | `Updated` | date | Required | `YYYY-MM-DD` | Date of the most recent edit. |
 | `Related Artifacts` | map | Required | See sub-fields | Links to related stage files. |

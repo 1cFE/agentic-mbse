@@ -176,7 +176,7 @@ Related Artifacts:
 ---
 ```
 
-**Stage-level Status values**: design.md and plan.md use `draft | complete`. These are simpler than spec.md's work-item-level states because stage artifacts don't independently pause or fail — the work item does (via spec.md). A completed design that needs revision during backward navigation (§ 2.3) returns to `draft`; the revision history lives in git.
+**Stage-level Status values**: design.md and plan.md use `draft | complete`. These track whether the work described in the artifact has been completed — `draft` means work is in progress, `complete` means the work is done (design implemented, plan executed). They are simpler than spec.md's work-item-level states because stage artifacts don't independently pause or fail — the work item does (via spec.md). Status fields are set to `complete` by the `close-item` AP-7 operation as part of the archive flow; commands that create these artifacts set them to `draft`. A completed design that needs revision during backward navigation (§ 2.3) returns to `draft`; the revision history lives in git.
 
 The body structure of each artifact is defined by command prompts (Phase 3C concern). The architecture only constrains the parseable frontmatter header.
 
@@ -231,9 +231,12 @@ When a work item is complete, the close flow has two parts: a deterministic scri
 /status close <item>
   │
   ├─► Script (AP-7 T1): Close work item
-  │     1. Move work/active/{WI-XXX}_{name}/ → work/completed/YYYYMMDD_{WI-XXX}_{name}/
-  │     2. Update BACKLOG.md status to completed
-  │     3. Return confirmation with archive path
+  │     1. Set spec.md Status: completed, Updated: today
+  │     2. Set design.md Status: complete (if file exists)
+  │     3. Set plan.md Status: complete (if file exists)
+  │     4. Move work/active/{WI-XXX}_{name}/ → work/completed/YYYYMMDD_{WI-XXX}_{name}/
+  │     5. Update BACKLOG.md status to completed, re-render body
+  │     6. Return confirmation with archive path
   │
   └─► Agent: Project document review prompt
         "This work item is archived. Before we're done,

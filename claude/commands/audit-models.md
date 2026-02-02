@@ -89,6 +89,16 @@ Verify **each** MR-XXX requirement is satisfied by the implemented models. Verif
 
 5. **Report** — generate the audit report and save to `work/analysis/YYYYMMDD-HHMMSS_audit_{scope}.md`. Present summary to user with overall status, statistics per category, and critical findings. Offer follow-ups: fix FAILs and re-audit, add traceability for gaps, create work items for significant issues (`/backlog`).
 
+6. **Close offer** (work item audit only) — if the audit verdict is positive (all MR-XXX satisfied, all spec acceptance criteria met, Levels 1-3 passing), ask the user whether they want to close the work item. Use `AskUserQuestion` with options: "Close this work item" (archives to completed, updates all Status fields) and "Keep open" (no state change — user may want further work or re-audit). If the user confirms close:
+   ```
+   agentic-mbse pm close-item <WI-XXX>
+   ```
+   Then proceed to the project document review trigger questions (same as `/backlog close` and `/status close`):
+   - "Did you discover a modeling pattern that should be a project-wide rule?" → `agentic-mbse pm promote-requirement`
+   - "Did you make a structural decision that future work needs to know?" → `agentic-mbse pm register-decision`
+   - "Should any new verification criteria be added?" → `agentic-mbse pm add-validation`
+   - "Did you learn something about the domain not yet captured?" → `agentic-mbse pm add-insight`
+
 ## What Good Output Looks Like
 
 An audit report should contain:

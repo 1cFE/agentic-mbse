@@ -225,7 +225,7 @@ Operations are listed in recommended build order (most immediately useful first)
 
 | # | Operation | Tier | Atomicity | What it does | Called by |
 |---|-----------|------|-----------|--------------|----------|
-| 1 | `close-item` | T1 | Atomic | Move `work/active/{WI-XXX}_{name}/` → `work/completed/YYYYMMDD_{WI-XXX}_{name}/`; update BACKLOG.md YAML frontmatter status to completed with date; re-render BACKLOG.md markdown body | `/backlog close`, `/status close` |
+| 1 | `close-item` | T1 | Atomic | Set spec.md Status to `completed` and Updated to today; set design.md and plan.md Status to `complete` (if they exist); move `work/active/{WI-XXX}_{name}/` → `work/completed/YYYYMMDD_{WI-XXX}_{name}/`; update BACKLOG.md YAML frontmatter status to completed with date; re-render BACKLOG.md markdown body | `/backlog close`, `/status close`, `/audit-models` |
 | 2 | `add-insight` | T1 (T3 invocation) | Atomic | Assign next DI-XXX ID; format entry from agent-supplied fields (title, source, context, model-implications, analysis-implications, rationale); append to `knowledge/KNOWLEDGE.md`; validate all required fields present | `/implement-model`, `/backlog close`, `/status close`, `/quick-model` (suggestion only) |
 | 3 | `save-research` | T1 | Atomic | Write research document content to `knowledge/research/pending/YYYYMMDD-HHMMSS_topic.md`; agent does NOT choose file path — script enforces naming convention | `/research` |
 | 4 | `approve-research` | T2 | Atomic | Move file from `knowledge/research/pending/` → `approved/`; for each insight in `--insights` JSON: assign DI-XXX ID, format entry, append to `knowledge/KNOWLEDGE.md`; print confirmation with file paths + IDs | `/research` |
@@ -258,7 +258,7 @@ This table verifies that every AP-7 script invocation in Epic 3 commands is cove
 | Command | Operations called | Lines in command |
 |---------|------------------|-----------------|
 | `/implement-model` | `add-insight`, `trace-element`, `promote-requirement` | 64-68 |
-| `/audit-models` | `update-validation`, `register-decision` | 66, 88 |
+| `/audit-models` | `update-validation`, `register-decision`, `close-item` | 66, 88, 91 |
 | `/research` | `save-research`, `supersede-insight`, `approve-research` | 62, 73, 89 |
 | `/backlog` | `add-to-backlog` (= `add-item`), `close-item`, `promote-requirement`, `register-decision`, `add-validation`, `add-insight` | 41, 74, 91, 96-99 |
 | `/formalize-intent` | `register-intent` | 74 |
