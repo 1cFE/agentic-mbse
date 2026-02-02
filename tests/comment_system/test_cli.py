@@ -1929,6 +1929,9 @@ def test_decisions_command_error_no_git_repo_for_project_root(runner):
     import os
     import tempfile
 
+    # Save original working directory
+    original_cwd = os.getcwd()
+
     # Create a temporary directory that's NOT a git repo and has no .git parent
     with tempfile.TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
@@ -1938,3 +1941,6 @@ def test_decisions_command_error_no_git_repo_for_project_root(runner):
         result = runner.invoke(cli, ["decisions"])
         assert result.exit_code == 2
         assert "Error:" in result.output
+
+    # Restore original working directory
+    os.chdir(original_cwd)
