@@ -161,6 +161,69 @@ def get_project_templates_dir() -> Path:
     return _get_data_root() / "project_templates"
 
 
+def find_project_root() -> Path | None:
+    """Walk up from CWD to find a project root.
+
+    Looks for work/BACKLOG.md (primary) or .claude/ (fallback).
+    Returns None if neither found.
+    """
+    current = Path.cwd()
+    while True:
+        if (current / "work" / "BACKLOG.md").exists():
+            return current
+        if (current / ".claude").exists():
+            return current
+        parent = current.parent
+        if parent == current:
+            return None
+        current = parent
+
+
+def cmd_status(args) -> int:
+    """Show project status dashboard."""
+    from agentic_mbse.cli.pm_cli import _print_warnings
+
+    project_root = find_project_root()
+    if project_root is None:
+        print(
+            "Error: Not inside a project (no work/BACKLOG.md found)",
+            file=sys.stderr,
+        )
+        return EXIT_FAILURE
+
+    if args.json_output:
+        from agentic_mbse.pm.parser import parse_requirements, parse_validation_matrix
+        from agentic_mbse.pm.state import derive_project_state
+
+        warnings = []
+        state_result = derive_project_state(project_root)
+        warnings.extend(state_result.warnings)
+        req_result = parse_requirements(project_root / "modeling_project" / "REQUIREMENTS.md")
+        warnings.extend(req_result.warnings)
+        val_result = parse_validation_matrix(
+            project_root / "modeling_project" / "VALIDATION_MATRIX.md"
+        )
+        warnings.extend(val_result.warnings)
+
+        _print_warnings(warnings)
+
+        output = {
+            "project": project_root.name,
+            "state": state_result.data.model_dump(mode="json"),
+            "requirements": [r.model_dump(mode="json") for r in req_result.data],
+            "validation": [v.model_dump(mode="json") for v in val_result.data],
+        }
+        print(json.dumps(output, indent=2))
+    else:
+        from agentic_mbse.pm.dashboard import generate_dashboard
+
+        result = generate_dashboard(project_root)
+        _print_warnings(result.warnings)
+        print(result.markdown)
+
+    return EXIT_SUCCESS
+
+
 def _to_claude_permission_path(abs_path: str) -> str:
     """Convert absolute path to Claude Code permission format.
 
@@ -272,11 +335,7 @@ def _save_tool_hashes(target: Path, hashes: dict) -> None:
     hash_path.write_text(json.dumps(hashes, indent=2) + "\n")
 
 
-def _check_modification(
-    path: Path,
-    stored_hashes: dict | None,
-    relative_path: str
-) -> bool:
+def _check_modification(path: Path, stored_hashes: dict | None, relative_path: str) -> bool:
     """Check if file was modified since install.
 
     Returns True if file exists AND has been modified from installed version.
@@ -327,16 +386,16 @@ def _prompt_for_modified_file(path: str) -> str:
 
     while True:
         choice = input("  Choice [s/b/o/S/O]: ").strip()
-        if choice == 's':
-            return 'skip'
-        elif choice == 'b':
-            return 'backup'
-        elif choice == 'o':
-            return 'overwrite'
-        elif choice == 'S':
-            return 'skip_all'
-        elif choice == 'O':
-            return 'overwrite_all'
+        if choice == "s":
+            return "skip"
+        elif choice == "b":
+            return "backup"
+        elif choice == "o":
+            return "overwrite"
+        elif choice == "S":
+            return "skip_all"
+        elif choice == "O":
+            return "overwrite_all"
         else:
             print("  Invalid choice. Please enter s, b, o, S, or O.")
 
@@ -346,7 +405,7 @@ def _install_file_with_hash(
     dst: Path,
     is_dev_mode: bool,
     was_modified: bool = False,
-    user_action: str = "overwrite"
+    user_action: str = "overwrite",
 ) -> tuple[str, str | None]:
     """Install a file by copying or symlinking, returning hash.
 
@@ -365,10 +424,10 @@ def _install_file_with_hash(
     existed = dst.exists() or dst.is_symlink()
 
     # Handle modified file based on user choice
-    if was_modified and user_action == 'skip':
+    if was_modified and user_action == "skip":
         return ("skipped", None)
 
-    if was_modified and user_action == 'backup':
+    if was_modified and user_action == "backup":
         backup_path = _backup_file(dst)
         print(f"    Backed up to: {backup_path.name}")
 
@@ -382,7 +441,7 @@ def _install_file_with_hash(
     else:
         shutil.copy(src, dst)
         content_hash = _compute_file_hash(dst)
-        if was_modified and user_action == 'backup':
+        if was_modified and user_action == "backup":
             return ("backed_up_and_updated", content_hash)
         return ("updated" if existed else "created", content_hash)
 
@@ -575,12 +634,12 @@ def cmd_init(args: argparse.Namespace) -> int:
                 user_decisions[f] = default_action
             else:
                 action = _prompt_for_modified_file(f)
-                if action == 'skip_all':
-                    default_action = 'skip'
-                    user_decisions[f] = 'skip'
-                elif action == 'overwrite_all':
-                    default_action = 'overwrite'
-                    user_decisions[f] = 'overwrite'
+                if action == "skip_all":
+                    default_action = "skip"
+                    user_decisions[f] = "skip"
+                elif action == "overwrite_all":
+                    default_action = "overwrite"
+                    user_decisions[f] = "overwrite"
                 else:
                     user_decisions[f] = action
 
@@ -726,13 +785,13 @@ Edit this file to add your domain-specific sources.
                 was_modified = rel_path in modified_files
                 user_action = user_decisions.get(rel_path, "overwrite")
 
-                if was_modified and user_action == 'skip':
+                if was_modified and user_action == "skip":
                     skipped.append(rel_path)
                     continue
 
                 existed = dst.exists() or dst.is_symlink()
 
-                if was_modified and user_action == 'backup':
+                if was_modified and user_action == "backup":
                     backup_path = _backup_file(dst)
                     print(f"    Backed up to: {backup_path.name}")
 
@@ -748,7 +807,7 @@ Edit this file to add your domain-specific sources.
                 # Compute and store hash
                 new_hashes[rel_path] = _compute_file_hash(dst)
 
-                if was_modified and user_action == 'backup':
+                if was_modified and user_action == "backup":
                     backed_up.append(rel_path)
                 elif existed:
                     updated.append(rel_path)
@@ -909,11 +968,9 @@ Edit this file to add your domain-specific sources.
 
     # === Save tool hashes (normal mode only) ===
     if not is_dev_mode and new_hashes:
-        _save_tool_hashes(target, {
-            "version": "1.0.0",
-            "commit": _get_git_commit(),
-            "files": new_hashes
-        })
+        _save_tool_hashes(
+            target, {"version": "1.0.0", "commit": _get_git_commit(), "files": new_hashes}
+        )
 
     # === Print summary ===
     if is_dev_mode:
@@ -1087,6 +1144,24 @@ def main() -> int:
         help="Overwrite existing command files",
     )
     install_parser.set_defaults(func=cmd_install_commands)
+
+    # status command
+    status_parser = subparsers.add_parser(
+        "status",
+        help="Show project status dashboard",
+    )
+    status_parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="Output as JSON instead of markdown",
+    )
+    status_parser.set_defaults(func=cmd_status)
+
+    # pm command group (delegated to pm_cli module)
+    from agentic_mbse.cli.pm_cli import register_pm_subcommands
+
+    register_pm_subcommands(subparsers)
 
     args = parser.parse_args()
 
