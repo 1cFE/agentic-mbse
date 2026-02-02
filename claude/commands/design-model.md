@@ -28,7 +28,9 @@ When invoked without a work item, ask which item in `work/active/` to design.
 
 ### 1. Understand
 
-Read the spec fully. It tells you what to design and points to what else matters — specific goals (G-XXX), architecture decisions (AD-XXX), requirements (PR-XXX), and prior research. Read those selectively.
+Read the spec fully. It tells you what to design and points to what else matters — specific goals (G-XXX), requirements (PR-XXX), DI-XXX insights, and prior research. Read those selectively.
+
+Read `modeling_project/ARCHITECTURE.md` to understand the full structural decision landscape (AD-XXX). The spec references specific requirements, but the design needs to respect *all* relevant architectural decisions — domain decomposition, package organization, calculation placement rules — not just the ones the spec explicitly called out.
 
 Read `models/README.md` to understand what already exists. Read `knowledge/SOURCE_INDEX.md` to know what domain sources are available. Read `modeling_project/MODELING_PROCESS.md` for the project's design methodology.
 
@@ -88,6 +90,7 @@ Document approval in design.md. Note that `/review-model` is available for indep
 
 A design.md should contain:
 
+- **YAML Frontmatter** — Status, Created, Updated, Related Artifacts (Spec)
 - **Overview** — what's being designed and why
 - **Research Findings** — what you learned from codebase sources, existing models, web research
 - **Design Decisions** — user-approved choices with rationale (if any)

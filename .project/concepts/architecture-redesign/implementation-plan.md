@@ -333,21 +333,22 @@ Delta checklist: § 3B.1 dashboard items
 **Design question** (Q13): What's the minimum viable dashboard? Recommend starting with work item states only, then adding requirements and validation metrics incrementally.
 
 #### D4.4: AP-7 Operations (`src/agentic_mbse/pm/operations.py`)
-10 operations spanning Tier 1 (fully deterministic) and Tier 2 (script + content). Each operation is a function that takes structured input and mutates project files deterministically.
+11 operations spanning Tier 1 (fully deterministic) and Tier 2 (script + content). Each operation is a function that takes structured input and mutates project files deterministically.
 
 Delta checklist: § 3B.1 operations items (10 operations)
 
 **Recommended build order** (most immediately useful first):
 1. `close-item` — needed for the close flow ([workflows.md](workflows.md) § 3.5)
 2. `add-insight` — needed for inline knowledge capture (B-008)
-3. `approve-research` — needed for the research approval flow
-4. `trace-element` — needed for traceability recording during implementation
-5. `promote-requirement` — needed for MR-XXX → PR-XXX promotion
-6. `impact-query` — needed for knowledge evolution analysis
-7. `register-decision` — needed for design-to-architecture promotion
-8. `update-validation` — needed for SV-XXX status tracking
-9. `supersede-insight` — needed for knowledge evolution (T2, more complex)
-10. Work item name resolution (B-014)
+3. `save-research` — needed for deterministic file save to `knowledge/research/pending/` (AP-7; agent must not choose file path)
+4. `approve-research` — needed for the research approval flow
+5. `trace-element` — needed for traceability recording during implementation
+6. `promote-requirement` — needed for MR-XXX → PR-XXX promotion
+7. `impact-query` — needed for knowledge evolution analysis
+8. `register-decision` — needed for design-to-architecture promotion
+9. `update-validation` — needed for SV-XXX status tracking
+10. `supersede-insight` — needed for knowledge evolution (T2, more complex)
+11. Work item name resolution (B-014)
 
 #### D4.5: CLI Subcommands
 Wire the operations and dashboard into the `agentic-mbse` CLI as `agentic-mbse status` and `agentic-mbse pm <operation>`.

@@ -43,15 +43,15 @@ Two questions from main.md § 5 are blocking. This epic must resolve both.
 
 ## Success Criteria
 
-- [ ] 9 existing commands refactored with skill references (average under 300 lines)
+- [x] 9 existing commands refactored with skill references (average 114 lines)
 - [ ] 5 new commands created (`quick-model`, `review-model`, `analyze-models`, `status`, `formalize-intent`)
 - [ ] All 14 commands install correctly via `agentic-mbse init` and `replicate_setup.sh`
 - [ ] Each refactored command passes a fusion-tea walkthrough with no knowledge loss (Q12 resolved)
-- [ ] Command structure convention documented (Q15 resolved)
+- [x] Command structure convention documented (Q15 resolved) — `command-convention.md`
 - [ ] `sysmlv2-doc-analyzer` agent status resolved (restored or confirmed deprecated)
 - [ ] Agent doc path placeholders standardized across all agent files
 - [ ] `/status` command works end-to-end with PM dashboard (requires Epic 4)
-- [ ] All existing agentic-mbse tests pass (`uv run pytest tests/`)
+- [x] All existing agentic-mbse tests pass (`uv run pytest tests/`) — 342 passed, 1 skipped
 
 ---
 
@@ -62,7 +62,7 @@ Five deliverables with a dependency structure (see [Sequencing](#sequencing) bel
 ### D3.1: Command Refactoring (9 existing commands)
 
 **Type**: Implementation
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: Epic 2 complete (skills exist, extraction mapping D2.5 available)
 **Delta checklist**: § 3A.1 (9 items, each with multiple sub-changes)
 
@@ -190,13 +190,13 @@ This command may grow slightly due to new workflow steps.
 **What stays**: Source management workflow (add/validate/update sources in SOURCE_INDEX.md), source validation criteria.
 
 **Exit criteria**:
-- [ ] All 9 commands refactored with skill references
-- [ ] Average command length under 300 lines
-- [ ] All commands reference new directory paths (knowledge/, modeling_project/, work/, data/)
-- [ ] AP-7 script invocations added where specified
-- [ ] YAML frontmatter generation added to spec-model and plan-model
-- [ ] Structural convention documented from first 2–3 commands (Q15 resolved)
-- [ ] D2.5 extraction mapping verified — no unaccounted-for knowledge
+- [x] All 9 commands refactored with skill references (avg 114 lines, max 135)
+- [x] Average command length under 300 lines (actual avg: 114 lines, 79% reduction)
+- [x] All commands reference new directory paths (knowledge/, modeling_project/, work/, data/) — zero `modeling_pm/` refs
+- [x] AP-7 script invocations added where specified (implement: 3, audit: 2, research: 1, backlog: inline)
+- [x] YAML frontmatter generation added to spec-model, plan-model, and design-model
+- [x] Structural convention documented — `.project/active/d3.1-command-refactoring/command-convention.md` (Q15 resolved)
+- [x] D2.5 extraction mapping verified — all SKILL sections removed, all PARTIAL trimmed, all STAYS retained
 
 ---
 
@@ -507,4 +507,4 @@ Epic 4 (PM Script Engine) runs in parallel with this epic:
 ---
 
 **Last Updated**: 2026-02-02
-**Next Action**: Begin D3.1 (design-model.md refactoring — establishes the structural convention)
+**Next Action**: D3.1 complete. Begin D3.2 (new commands) and D3.4 (agent cleanup) in parallel.

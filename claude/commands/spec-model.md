@@ -1,392 +1,123 @@
+---
+name: spec-model
+description: Define modeling requirements and success criteria for SysMLv2 model enhancements
+skills: [project-structure, source-traceability, model-validation, requirements-tracking]
+allowed-tools: [Read, Grep, Glob, Bash, Task, Write, Edit, AskUserQuestion]
+user-invocable: true
+---
+
 # Spec Model Command
 
-**Purpose:** Model enhancement specification with modeling requirements and validation criteria
+**Purpose:** Define WHAT to model — scope, requirements, and success criteria for a modeling work item.
 **Input:** Model enhancement ideas, modeling scope, optional research reference
-**Output:** `modeling_pm/active/{feature-name}/spec.md`
+**Output:** `work/active/{WI-XXX}_{name}/spec.md`
 
-## Overview
+The spec is the **first artifact** for a Standard work item and the **state-bearing file** — its YAML frontmatter is the single source of truth for work item state. Everything downstream (design, plan, implementation) consumes the spec's requirements and scope boundaries.
 
-You are a specialist requirements agent for SysML v2 model enhancements. Your goal is to create clear, structured model specifications that define modeling scope, requirements, and success criteria through interactive collaboration.
+When invoked without a description, ask what model enhancement the user wants to specify.
 
-**Context**: Before starting, read:
-- `modeling_pm/OVERVIEW.md` - Project goals and success criteria
-- `modeling_pm/MODELING_GUIDE.md` - SysML modeling conventions
-- `models/README.md` - Existing model catalog (CHECK IF MODELS ALREADY EXIST!)
-- `modeling_pm/backlog/BACKLOG.md` - Current epic priorities
+## Skills Referenced
 
-Your spec will be used for:
-1. **User approval** of modeling scope and requirements
-2. **Design/implementation teams** to build the right models
-
-When invoked:
-- If modeling scope provided: proceed to spec process
-- If no description: ask "What model enhancement would you like to specify?" and request current limitations, modeling needs, validation targets
+- **project-structure**: Library vs designs separation, file organization. Consult when specifying where model elements belong.
+- **source-traceability**: Citation patterns, SOURCE_INDEX format. Consult when specifying traceability requirements.
+- **model-validation**: Quality pyramid, regression testing patterns. Consult when defining success criteria and verification methods.
+- **requirements-tracking**: MR-XXX/PR-XXX format, EARS syntax. Consult when writing requirements. Flag durable requirements for later promotion to PR-XXX.
 
 ## Process
 
-### Stage 1: Context and Model Landscape Understanding
+### 1. Understand the Landscape
 
-1. **Check Epic Context**:
-   - Read `modeling_pm/backlog/BACKLOG.md` - understand current priorities
-   - Read relevant epic file (e.g., `modeling_pm/backlog/epic_physics.md`, `modeling_pm/backlog/epic_structure.md`) if this relates to active work
-   - Check `modeling_pm/active/CURRENT_WORK.md` - understand what's in progress
+The spec is the first to survey what matters for this work item. Read broadly.
 
-2. **CRITICAL: Check Existing Models**:
-   - Read `models/README.md` FULLY - does this model already exist?
-   - Search `models/library/` for existing definitions
-   - Search `models/designs/` for existing usages
-   - If enhancements needed, read existing model files FULLY
+**Project context:**
+- `modeling_project/OVERVIEW.md` — project goals (G-XXX) and analysis questions (AQ-XXX). Which ones does this work item serve?
+- `knowledge/KNOWLEDGE.md` — domain insights (DI-XXX). Are there captured insights relevant to this scope? Surface them — they should inform requirements.
+- `work/BACKLOG.md` — which epic does this belong to?
+- `knowledge/SOURCE_INDEX.md` — what domain sources are available for traceability?
 
-3. **Read Context Files**:
-   - If user mentions research, read `modeling_pm/research/{file}` FULLY
-   - If user mentions codebase source sources, note file/line references
-   - If user mentions documents, read from `data/documents/` FULLY
+**Epic context** (when the work item belongs to an epic): Read the epic file at `work/backlog/epic-{name}.md`. Epics contain baseline requirements, scope boundaries, dependencies, and per-item breakdowns. **The spec should start from this foundation, not a blank page.** Identify which epic-level requirements apply to this specific work item.
 
-4. **Identify Modeling Scope** - Ask focused questions:
-   - **Scope Type**: New models / Enhance existing / Refactor?
-   - **Location**: Library (definitions) or Designs (usages)?
-   - **Current Limitations**: What's missing or wrong in existing models?
-   - **Validation Target**: What codebase source values or behaviors should model match?
-   - **Related Epic**: Which epic from backlog (Physics, Structure, Constraints, etc.)?
+**Existing models:**
+- `models/README.md` — what's already in the library? Does this model already exist?
+- Search `models/library/` and `models/designs/` for related definitions
+- If enhancing or refactoring, read the relevant model files
 
-5. **Present scope understanding**:
-   ```
-   Based on what you've described, I understand:
+**Prior work:**
+- `knowledge/research/` — has research been done on this topic?
+- Related completed work items in `work/completed/` (if referenced)
 
-   **Modeling Scope**: [New Models / Enhance Existing / Refactor]
-   **Current State**:
-   - Existing models: [list files and key elements, or "None - creating new"]
-   - Current limitations: [what's missing/wrong]
+Ask focused questions to fill gaps: scope type (new/enhance/refactor), location (library/designs), current limitations, validation targets.
 
-   **Modeling Needs**: [What models/enhancements required in 1-2 sentences]
-   **Validation Target**: [codebase source comparison, constraint satisfaction, etc.]
-   **Impact**: [Why this matters for project goals]
-   **Related Epic**: [Which epic from backlog this belongs to]
+### 2. Scope and Confirm
 
-   Is this accurate? Missing anything important?
-   ```
+Present your understanding back to the user: what's being modeled, current state, what needs to change, why it matters, which G-XXX goals and AQ-XXX questions it addresses, what epic it belongs to.
 
-6. **Wait for user confirmation** before proceeding
+Define clear boundaries — what's in scope and what's not. If scope is too large (>5 model files or multiple independent concerns), suggest decomposition via `/backlog`.
 
-### Stage 2: Modeling Requirements Scoping
+**Wait for user confirmation before writing requirements.**
 
-1. **Define Required Model Elements**:
-   - What definitions need to be created/enhanced? (calc defs, part defs, attributes)
-   - What usages need to be instantiated? (designs/{design_name}/...)
-   - What cross-file bindings or imports required?
+### 3. Define Requirements and Success Criteria
 
-2. **Identify Validation Requirements**:
-   - codebase source comparison targets (values, calculations)
-   - Constraint satisfaction requirements
-   - Integration with existing models
+Write requirements in MR-XXX format per the **requirements-tracking** skill (EARS syntax: "The model SHALL..."). Categorize as Functional, Quality, Constraint, or Traceability.
 
-3. **Establish Scope Boundaries**:
-   ```
-   Here's what I understand we ARE modeling:
-   - [Model element 1 - e.g., ThermalLoad calc def in library/analyses/]
-   - [Model element 2 - e.g., blanket thermal usage in designs/{design_name}/]
-   - [Integration point 3 - e.g., bindings to power_balance outputs]
+**Trace requirements to their sources.** Each MR-XXX should reference the G-XXX goal, AQ-XXX question, DI-XXX insight, or PR-XXX project requirement it derives from. This establishes the upstream traceability chain.
 
-   And we are NOT including:
-   - [Out of scope model element 1]
-   - [Future enhancement 2]
+**Define success criteria that are both human-readable AND machine-checkable** where possible. The **model-validation** skill has regression testing patterns. For library modifications, identify which existing designs depend on the library and what interfaces must remain stable.
 
-   Does this modeling scope feel right for one feature?
-   ```
+**Flag requirements for promotion.** Some MR-XXX will be durable enough to become project-wide PR-XXX rules (e.g., "all power calculations must account for recirculating power"). Flag these explicitly — `/implement-model` will handle the actual promotion.
 
-4. **Get user approval** on scope before defining requirements
+**Create SV-XXX entries.** When a success criterion maps to a verifiable system-level check, create an entry in `modeling_project/VALIDATION_MATRIX.md` with status `pending`. These become the verification contract for `/audit-models`.
 
-### Stage 3: Modeling Requirements Definition
+Present requirements to the user. Iterate until approved.
 
-1. **Draft Modeling Requirements (MR-XXX format)**:
-   - Use EARS format: "The model SHALL..."
-   - Number sequentially: MR-001, MR-002, etc.
-   - Include type: Functional / Quality / Constraint / Traceability
-   - Include rationale: Why this requirement matters
-   - Include validation: How we verify this requirement
+### 4. Write the Spec
 
-2. **Categorize Requirements**:
-   - **Functional**: What model elements/calculations must exist
-   - **Quality**: Parse validation, documentation standards, completeness
-   - **Constraint**: Physical constraints, integration requirements
-   - **Traceability**: Source citations, codebase source mapping, documentation
-
-3. **Define Success Criteria**:
-   - **Functional Success**: Model elements defined, calculations correct
-   - **Quality Success**: Parse checks (Level 1-3), documentation complete
-   - **Validation Success**: codebase source comparison targets, constraint satisfaction
-
-4. **Define Evaluatable Success Criteria**:
-
-   Success criteria should be **both human-readable AND machine-checkable** where possible.
-   This enables automated regression testing via `pytest tests/models/`.
-
-   **Pattern:** For each key requirement, specify:
-   - **Human description**: What should be true
-   - **Verification method**: Manual review OR automated test
-   - **Test assertion** (if automatable): Specific programmatic check
-
-   **Examples:**
-
-   | Requirement | Human Description | Test Assertion |
-   |-------------|-------------------|----------------|
-   | Definition exists | Library has Motor part definition | `"Motor" in [p.name for p in model.elements(PartDefinition)]` |
-   | Calculation works | System computes total mass | `mass_calc is not None and mass_calc.result is not None` |
-   | Units consistency | All mass attrs use kg | `all(a.unit == "kg" for a in mass_attrs)` |
-   | No parse errors | Model files parse cleanly | `len([d for d in diagnostics if d.severity == Error]) == 0` |
-
-5. **Regression Safety Criteria** (for library modifications):
-
-   When modifying existing library definitions, specify:
-   - Which existing designs depend on this library (check `models/designs/` imports)
-   - What interfaces must remain stable (ports, attributes, types)
-   - Minimum test coverage required before proceeding
-
-   **Example:**
-   > Motor definition is used by designs/tokamak_v1 and designs/prototype.
-   > Interface stability: `torque` output port type and direction must not change.
-   > Test coverage: `tests/models/test_actuators.py::test_motor_interface` must pass.
-
-6. **Present requirements**:
-   ```
-   Here are the modeling requirements:
-
-   **Functional Requirements:**
-   - **MR-001**: The model SHALL define [calc def/part def name] in models/[path]
-     - Type: Functional
-     - Rationale: [Why needed]
-     - Validation: [How to verify]
-   - **MR-002**: The model SHALL implement [calculation/relationship]
-     - Type: Functional
-     - Rationale: [Why needed]
-     - Validation: codebase source comparison to [source:line]
-
-   **Quality Requirements:**
-   - **MR-003**: All definitions SHALL have doc comments citing sources
-     - Type: Quality / Traceability
-     - Rationale: Maintain traceability per project standards
-     - Validation: Level 6 documentation check passes
-
-   **Constraint Requirements:**
-   - **MR-004**: The model SHALL satisfy [constraint condition]
-     - Type: Constraint
-     - Rationale: [Physical or design constraint]
-     - Validation: Constraint checking in validation
-
-   **Success Criteria:**
-   - Functional: [All MR-XXX with Type=Functional implemented]
-   - Quality: [Parse validation Level 1-3 passes, documentation Level 6]
-   - Validation: [codebase source values match within X%, constraints satisfied]
-
-   Are these requirements specific enough? Missing anything?
-   ```
-
-7. **Iterate until user approves** all requirements
-
-### Stage 4: Document Creation
-
-Create feature directory and spec:
+Create the work item directory and write the spec:
 
 ```bash
-mkdir -p modeling_pm/active/{feature-name}
+mkdir -p work/active/{WI-XXX}_{name}
 ```
 
-Write to `modeling_pm/active/{feature-name}/spec.md` using the model-specific template:
-
-```markdown
-# Model Enhancement Specification: [Feature Name]
-
-**Type**: Model Enhancement
-**Modeling Scope**: [New Models / Enhance Existing / Refactor]
-**Epic:** [Related epic from backlog - e.g., Physics, Structure, Constraints]
-**Status:** Draft
-**Owner:** Reid Westwood
-**Created:** [Date]
-**Last Updated:** [Date]
-
-## Overview
-[1-2 sentence summary of what models are being created/enhanced and why]
-
-## Current State
-
-### Existing Models
-[List existing model files if enhancing/refactoring, or "None - creating new models" if new]
-- **File**: `models/[path]/[file].sysml`
-  - Relevant elements: [list key calc defs, part defs, attributes with line numbers]
-  - Current capabilities: [what it does now]
-
-### Known Issues
-[Specific issues with current models that this spec addresses]
-- [Issue 1 - e.g., Missing thermal load calculations]
-- [Issue 2 - e.g., No integration between blanket and cooling systems]
-
-## Modeling Requirements
-
-### MR-001: [Requirement Name]
-- **Type**: [Functional / Quality / Constraint / Traceability]
-- **Description**: The model SHALL [EARS format requirement]
-- **Priority**: [Must Have / Should Have / Nice to Have]
-- **Rationale**: [Why this requirement matters]
-- **Validation**: [How we verify - e.g., codebase source comparison, parse check, constraint satisfaction]
-
-### MR-002: [Requirement Name]
-[Repeat structure for each requirement]
-
-[Continue numbering MR-003, MR-004, etc.]
-
-## Scope Boundaries
-
-### In Scope
-- [Model element 1 - e.g., ThermalLoad calc def in library/analyses/thermal_loads.sysml]
-- [Model element 2 - e.g., blanket thermal usage in designs/{design_name}/blanket.sysml]
-- [Integration/binding requirement]
-
-### Out of Scope
-- [Out of scope item 1]
-- [Future enhancement that won't be in this spec]
-
-## Success Criteria
-
-### Functional Success
-- [ ] All MR-XXX with Type=Functional implemented
-- [ ] Model elements defined in correct locations (library/ vs designs/)
-- [ ] Calculations produce expected outputs
-
-### Quality Success
-- [ ] Parse validation (Level 1): All .sysml files parse without syntax errors
-- [ ] Structural validation (Level 2): No unused definitions, complete interfaces
-- [ ] Dataflow validation (Level 3): No circular dependencies
-- [ ] Documentation validation (Level 6): All definitions have doc comments with sources
-
-### Validation Success
-- [ ] codebase source comparison: [specific values/calculations] match within [X%]
-- [ ] Constraint satisfaction: [specific constraints] validated
-- [ ] Integration: [cross-file bindings/imports] resolve correctly
-
-## Assumptions & Risks
-
-### Assumptions
-- **A-001**: [Assumption description]
-  - Confidence: [High / Medium / Low]
-  - Impact if Wrong: [What happens if assumption is incorrect]
-
-[Continue A-002, A-003, etc.]
-
-### Risks
-- **R-001**: [Risk description]
-  - Likelihood: [High / Medium / Low]
-  - Impact: [High / Medium / Low]
-  - Mitigation: [How to reduce/address risk]
-
-[Continue R-002, R-003, etc.]
-
-## Traceability
-
-### Source Requirements
-- codebase source: [specific files and line numbers]
-- Literature: [papers, equations, references]
-- Design requirements: [project requirements if applicable]
-
-### Downstream Impacts
-- Models affected: [list other model files that depend on or interact with these changes]
-- Designs affected: [specific design usages in designs/{design_name}/]
-
-## Acceptance Criteria Checklist
-
-- [ ] All MR-XXX requirements implemented
-- [ ] Functional success criteria met
-- [ ] Quality success criteria met (Levels 1-3 pass, Level 6 complete)
-- [ ] Validation success criteria met (codebase source comparison, constraints)
-- [ ] No regressions in existing models
-- [ ] Traceability matrix updated (`data/traceability_matrix.csv`)
-- [ ] Documentation complete (doc comments in models)
-- [ ] Epic progress updated
-
-## Related Artifacts
-**Research**: `modeling_pm/research/[relevant-file].md` (if exists)
-**Epic**: `modeling_pm/backlog/epic_[name].md`
-**codebase source Sources**: [list key source files]
-**Design**: `modeling_pm/active/{feature-name}/design.md` (to be created)
-**Plan**: `modeling_pm/active/{feature-name}/plan.md` (to be created)
-
+The spec.md must start with YAML frontmatter (this is the work item's authoritative state):
+```yaml
 ---
-**Next Steps**: After approval → `/design-model`
+Status: active
+Scale: standard
+Epic: <epic name from work/BACKLOG.md>
+Owner: <user>
+Created: <YYYY-MM-DD>
+Updated: <YYYY-MM-DD>
+---
 ```
+
+## What Good Output Looks Like
+
+A spec.md should contain:
+
+- **YAML Frontmatter** — Status, Scale, Epic, Owner, Created, Updated (state-bearing, read by PM scripts)
+- **Overview** — what's being created/enhanced and why (1-2 sentences)
+- **Goals & Context** — which G-XXX goals and AQ-XXX questions this serves, relevant DI-XXX insights surfaced from KNOWLEDGE.md, epic-level context if applicable
+- **Current State** — existing model files and elements (with paths and line numbers), known issues. "None — creating new" if greenfield.
+- **Modeling Requirements** — MR-XXX numbered per **requirements-tracking** skill. Each has: type, EARS-format description, priority, rationale, validation method, and source (G-XXX, AQ-XXX, DI-XXX, or PR-XXX it derives from). Flag any that should be promoted to PR-XXX.
+- **Scope Boundaries** — in scope (specific model elements with file paths) and out of scope
+- **Success Criteria** — functional (elements exist, calculations work), quality (validation levels pass), verification (baseline comparison targets, constraint satisfaction). Reference SV-XXX entries created in VALIDATION_MATRIX.md.
+- **Assumptions & Risks** — numbered, with confidence/likelihood and impact
+- **Traceability** — source requirements (codebase files with lines, literature), downstream impacts (other models/designs affected), applicable PR-XXX project requirements
+- **Related Artifacts** — links to epic file, research, design (to be created), plan (to be created)
+
+The depth should match the complexity. A simple library addition needs less than a multi-subsystem enhancement.
 
 ## Guidelines
 
-### Quality Standards
-- Modeling scope clearly defined (New / Enhance / Refactor)
-- Current state accurately captured (existing models surveyed)
-- Requirements use MR-XXX numbering with structured format
-- Scope boundaries prevent feature creep
-- Success criteria measurable and testable
-- Assumptions and risks explicitly documented
-
-### Model-Specific Requirements
-
-**Location Requirements**:
-- MUST specify whether library/ (definitions) or designs/ (usages)
-- MUST identify specific files and model elements affected
-- MUST follow library vs designs pattern from MODELING_GUIDE
-
-**Traceability Requirements**:
-- MUST specify codebase source source files and line numbers
-- MUST include literature references if applicable
-- MUST plan for traceability_matrix.csv updates
-- MUST require doc comments with sources for all definitions
-
-**Validation Requirements**:
-- MUST specify codebase source comparison targets (values, calculations, accuracy)
-- MUST specify constraint satisfaction requirements
-- MUST specify integration validation (cross-file imports, bindings)
-- MUST include 7-level quality validation checkpoints
-
-**Epic Alignment**:
-- MUST link to appropriate epic (Physics, Structure, Constraints, etc.)
-- MUST consider epic goals and priorities
-- MUST identify downstream impacts on other models/designs
-
-### Requirement Format Standards
-
-**MR-XXX Requirements MUST include**:
-- Type (Functional / Quality / Constraint / Traceability)
-- Description (EARS format: "The model SHALL...")
-- Priority (Must Have / Should Have / Nice to Have)
-- Rationale (Why this matters)
-- Validation (How to verify)
-
-**Good MR Examples**:
-- MR-001: The model SHALL define ThermalLoad calc def in library/analyses/thermal_loads.sysml
-  - Type: Functional
-  - Rationale: Required for blanket thermal analysis
-  - Validation: Parse check passes, calc def present in file
-
-- MR-002: The model SHALL compute thermal load matching codebase source ThermalPower.py:125 within 2%
-  - Type: Functional / Validation
-  - Rationale: Ensure numerical accuracy
-  - Validation: codebase source comparison test
-
-### Error Handling
-- If modeling scope vague, STOP and request clarification
-- If existing models not found in models/README.md, STOP and search thoroughly
-- If scope too large (>5 model files), STOP and suggest breaking into phases
-- If codebase source sources not specified, STOP and ask for traceability sources
-- If conflicts with existing models, note and discuss integration strategy
-
-### Critical Rules
-- ALWAYS read models/README.md FIRST to check for existing models
-- ALWAYS read project context (OVERVIEW, MODELING_GUIDE, BACKLOG)
-- ALWAYS create feature directory: `modeling_pm/active/{feature-name}/`
-- ALWAYS use MR-XXX numbering for modeling requirements
-- ALWAYS specify codebase source traceability sources
-- ALWAYS link to relevant epic
-- NEVER use vague criteria like "model works well" - specify measurable validation targets
+- Survey broadly — the spec's job is to establish context that downstream commands read selectively
+- Start from the epic file when one exists — don't reinvent baseline requirements
+- Trace every requirement to its source (G-XXX, DI-XXX, PR-XXX, or domain knowledge)
+- Always check `models/README.md` — don't spec something that already exists
+- Requirements must be specific and measurable — never "model works well"
+- Specify where elements go (library/ vs designs/) per **project-structure** skill
+- Specify traceability sources (file:line references) per **source-traceability** skill
+- If scope is vague, stop and ask. If sources aren't specified, stop and ask.
 
 ---
 
-**Related Commands:**
-- Before spec-model → `/research` for exploration of modeling approaches
-- After spec-model → `/design-model` for technical design and prototyping
-
-**Last Updated**: 2025-11-17
+**Related Commands:** Before → `/research` | After → `/design-model`

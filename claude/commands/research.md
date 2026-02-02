@@ -1,243 +1,135 @@
+---
+name: research
+description: Explore authority sources and capture approved domain insights into the knowledge base
+skills: [source-traceability]
+allowed-tools: [Read, Grep, Glob, Bash, Task, Write, Edit, AskUserQuestion, WebSearch, WebFetch]
+user-invocable: true
+---
+
 # Research Command
 
-**Purpose:** Deep codebase/model exploration and feasibility analysis
-**Input:** Topic, rough idea, or area of investigation
-**Output:** `modeling_pm/research/{YYYYMMDD-HHMMSS}_{topic-kebab-case}.md`
+**Purpose:** LEARN from external sources — explore authority sources, produce a research document, and capture approved domain insights (DI-XXX) into the knowledge base.
+**Input:** Research question or topic
+**Output:** Research document in `knowledge/research/pending/` (moved to `approved/` on approval) + DI-XXX entries in `knowledge/KNOWLEDGE.md`
 
-## Overview
+Research is the primary curation gate (AP-6): raw findings pass through user review before entering the knowledge base. The agent generates content; scripts handle file operations and registry updates (AP-7); the user makes approval decisions.
 
-You are a specialist research agent for MBSE projects. Your goal is to create thorough research documents about the codebase (Python), models (SysMLv2), or domain knowledge that eliminates the need for repeated analysis. Read SOURCE_INDEX.md to discover what domain sources are available for research.
+When invoked without a topic, ask "What would you like me to research?" and wait.
 
-**Context**: Before starting, read these project documents:
-- `modeling_pm/OVERVIEW.md` - Project goals and approach
-- `modeling_pm/MODELING_GUIDE.md` - SysML conventions
+## Skills Referenced
 
-When invoked:
-- If topic provided: proceed to research process
-- If no topic: ask "What would you like me to research?" and wait
+- **source-traceability**: SOURCE_INDEX format, source types, citation patterns. Consult when reading `knowledge/SOURCE_INDEX.md` to discover available sources, and when writing citations in the research document.
 
 ## Process
 
-### Stage 1: Context Gathering
+### 1. Gather Context
 
-1. **Read Project Context** - Read OVERVIEW, MODELING_GUIDE, REFERENCE if not recently read
-2. **Read Referenced Files Completely** - If user mentions specific files, read them FULLY
-3. **Check Existing Research** - Search `modeling_pm/research/` for related topics from past 30 days
-4. **Check Related Epics** - Look in `modeling_pm/backlog/epic_*.md` for relevant background
-5. **Create Research Plan** - Use TodoWrite to track subtasks
+Read to understand what's already known and what sources are available:
 
-### Stage 2: Parallel Research
+- `knowledge/SOURCE_INDEX.md` — authority sources available for this project (see **source-traceability** skill for source types)
+- `knowledge/KNOWLEDGE.md` — existing DI-XXX insights. Are any relevant? Does the topic overlap with existing insights?
+- `modeling_project/OVERVIEW.md` — project goals (G-XXX) and analysis questions (AQ-XXX). Which does this research serve?
+- `knowledge/research/` — check `pending/` and `approved/` for prior research on related topics to avoid duplication
 
-Depending on research type, spawn appropriate agents:
+If the user mentions specific files, read them fully before proceeding. Check related epics in `work/backlog/` for background that shapes the research question.
 
-**For Codebase Research** (Python scripts, tests):
-- **Explore agent** (thoroughness: "medium"): Find all files related to topic
-- **general-purpose agent**: Analyze implementation details
-- **Explore agent** (thoroughness: "quick"): Find similar patterns
+### 2. Research in Parallel
 
-**For Model Research** (SysMLv2 files):
-- **Explore agent**: Find relevant model files in `models/library/` or `models/designs/`
-- **general-purpose agent**: Parse and analyze SysML definitions
-- **Explore agent**: Find related requirements, constraints, or analyses
-- **sysmlv2-doc-analyzer agent**: Get official SysMLv2 modeling patterns
-  - **Use PROACTIVELY when researching:**
-    - How to model specific physical systems or processes in SysMLv2
-    - Proper patterns for requirements, constraints, or interfaces
-    - Best practices for component decomposition
-    - Questions about SysMLv2 language features or syntax
-  - **Provide:** Detailed description of what needs to be modeled
-  - **Returns:** Official spec guidance with examples and recommendations
+Spawn appropriate agents based on research type:
 
-**For Domain Research** (domain-specific sources from SOURCE_INDEX.md):
-- Read SOURCE_INDEX.md to discover domain sources
-- Search `data/documents/` for relevant papers
-- Check `data/documents/synthesis/` for existing summaries
-- Use WebSearch for recent information if needed
-- Analyze codebase sources from SOURCE_INDEX.md if integration question
+**Codebase Research** (Python scripts, tests):
+- Explore agent: Find all files related to topic
+- general-purpose agent: Analyze implementation details
 
-**Wait for all agents to complete** before proceeding.
+**Model Research** (SysMLv2 files):
+- Explore agent: Find relevant models in `models/library/` and `models/designs/`
+- sysmlv2-doc-analyzer agent: Get official SysMLv2 modeling patterns (use proactively for structural questions, interface patterns, constraint modeling, language features)
+- general-purpose agent: Parse and analyze SysML definitions
 
-### Stage 3: Analysis and Synthesis
+**Domain Research** (sources from SOURCE_INDEX.md):
+- Read local materials in `knowledge/sources/` and paths listed in SOURCE_INDEX.md
+- Analyze codebase sources from SOURCE_INDEX.md for integration questions
+- Use WebSearch / WebFetch for information not covered by local sources
 
-1. **Read Identified Files Completely** - Read ALL files found by agents (no limit/offset)
-2. **Cross-Reference Findings** - Connect discoveries across components
-3. **Extract Actionable Insights** - Focus on implementation-relevant patterns
-4. **Check Against Project Conventions** - Verify alignment with MODELING_GUIDE and REFERENCE
+Launch related agents in parallel. Wait for all agents to complete before proceeding.
 
-### Stage 4: Document Creation
+### 3. Synthesize and Write
 
-Create research document at `modeling_pm/research/{YYYYMMDD-HHMMSS}_{topic-kebab-case}.md`:
+Read all files identified by agents completely. Cross-reference findings across sources. Extract actionable insights — focus on what matters for modeling decisions.
 
-```markdown
----
-date: [ISO format with timezone]
-researcher: [Your name or "Claude"]
-topic: "[research topic]"
-tags: [research, codebase|models|domain, relevant-area]
-status: complete
-last_updated: [YYYY-MM-DD]
----
-
-# Research: [Topic]
-
-**Date**: [date with timezone]
-**Researcher**: [name]
-**Research Type**: [Codebase / Models / Domain / Integration]
-
-## Research Question
-[Original user query]
-
-## Summary
-[High-level findings answering the question - 3-5 bullet points]
-
-## Detailed Findings
-
-### [Component/Area 1]
-- Finding with reference ([file.ext:line](link) or model element reference)
-- Implementation/modeling details
-- Relevant constraints or patterns
-
-### [Component/Area 2]
-- Additional findings
-- Cross-references to related components
-
-## Code/Model References
-**For Code:**
-- `path/to/script.py:123` - Description of what it does
-- `tests/test_file.py:45-67` - Test coverage notes
-
-**For Models:**
-- `models/library/foundation.sysml` - `part def 'Fusion Power Plant'`
-- `models/designs/{design_name}/system.sysml` - `part design_system`
-
-**For Domain:**
-- `data/documents/iter_physics_basis_1999.pdf` - Section 4.2, Eq. 7
-- `data/documents/synthesis/first_wall_design_basis.md`
-
-## Architecture/Modeling Insights
-[Patterns, conventions, design decisions discovered]
-[How this aligns with project MODELING_GUIDE]
-
-## Feasibility Assessment
-[Can the proposed feature/change be implemented?]
-[What challenges or risks exist?]
-[What dependencies or prerequisites are needed?]
-
-## Recommendations
-[Suggested approach based on findings]
-[Alternatives to consider]
-[Next steps]
-
-## Open Questions
-[Areas needing further investigation]
-[Decisions that require stakeholder input]
+Write the research document content. The agent calls a script to save it — do not write the file directly:
 ```
-
-Present summary:
+agentic-mbse pm save-research --topic "<topic-kebab-case>" --content-file <temp-file>
 ```
-Research complete! I've created a comprehensive analysis at:
-`modeling_pm/research/{filename}`
+The script saves to `knowledge/research/pending/YYYYMMDD-HHMMSS_topic.md` with the correct path and naming convention.
 
-Key findings:
-- {major insight 1}
-- {major insight 2}
-- {feasibility assessment}
+Present findings to the user: summary of key discoveries, feasibility assessment, and recommendations.
 
-Recommendations:
-- {suggested next steps}
+**Check for knowledge conflicts.** Compare findings against existing DI-XXX entries in `knowledge/KNOWLEDGE.md`. If new findings contradict or refine an existing insight, flag it:
+> "DI-003 states [X]. New findings suggest [Y]. Should we supersede DI-003?"
 
-This research provides a complete answer to "{original question}".
+If the user confirms supersession:
 ```
+agentic-mbse pm supersede-insight DI-XXX --new-insight '<structured JSON for new DI>' --reason '<why superseded>'
+```
+This marks the old insight as superseded, creates the replacement, and produces an impact report at `knowledge/research/impacts/`.
+
+### 4. Approve and Capture Insights
+
+**Suggest DI-XXX insight candidates** — domain facts from the research worth preserving as structured knowledge. For each candidate, propose: title, context, model implications, and analysis implications.
+
+The user reviews each element separately:
+- **Research report**: Approve / Revise / Reject
+- **Each insight**: Accept / Modify / Skip
+
+If revisions are needed, edit the document and re-present.
+
+On approval, call:
+```
+agentic-mbse pm approve-research <file> --insights '<structured JSON of approved DI-XXX entries>'
+```
+The script moves the file from `pending/` to `approved/`, assigns DI-XXX IDs, formats entries, and appends them to `knowledge/KNOWLEDGE.md`. Report the assigned IDs to the user.
+
+If the user rejects the report, the file stays in `pending/` (or delete if requested).
+
+## What Good Output Looks Like
+
+A research document should contain:
+
+- **Frontmatter** — date, researcher, topic, tags, research type
+- **Research Question** — the original query
+- **Summary** — 3-5 bullet points answering the question
+- **Detailed Findings** — per-area sections with file:line or model element references for all claims
+- **Code/Model/Domain References** — specific paths and locations cited
+- **Architecture/Modeling Insights** — patterns, conventions, design decisions discovered
+- **Feasibility Assessment** (when applicable) — can it be done, challenges, dependencies
+- **Recommendations** — suggested approach, alternatives, next steps
+- **Open Questions** — areas needing further investigation
+
+Depth should match the research scope. A targeted syntax question needs less than a domain-wide feasibility study.
+
+## Sub-Agent Usage
+
+| Question Type | Agent |
+|--------------|-------|
+| SysMLv2 modeling patterns, spec lookups | `sysmlv2-doc-analyzer` |
+| KerML standard library functions | `kerml-expert` |
+| SysML structural modeling | `sysml-expert` |
+| Parser/tooling questions | `syside-expert` |
+| Codebase exploration | `Explore` |
+| Deep code analysis | `general-purpose` |
+
+Spawn multiple agents in parallel for independent questions. Cross-reference findings before making recommendations.
 
 ## Guidelines
 
-### Quality Standards
-- Research must answer user's question clearly and completely
-- Document should be readable by someone unfamiliar with the project
-- All claims must include specific file:line or model element references
-- Respect project conventions from MODELING_GUIDE and REFERENCE
-- Research should be comprehensive enough to avoid redundant analysis
-
-### Research Type Guidelines
-
-**Codebase Research** (Python):
-- Focus on `scripts/`, `tests/`, configuration files
-- Check existing patterns in parent repos (mbse_ai, sysml-ai, m-scout)
-- Identify test coverage and validation approaches
-
-**Model Research** (SysMLv2):
-- Search in `models/library/` for definitions
-- Search in `models/designs/` for specific instances
-- Pay attention to definitions vs usages distinction (see MODELING_GUIDE)
-- Check traceability (doc comments, sources)
-
-**Domain Research** (domain-specific):
-- Read SOURCE_INDEX.md first to discover domain sources
-- Check `data/documents/` for papers and references
-- Review `data/documents/synthesis/` for prior work
-- Check codebase sources (from SOURCE_INDEX.md) for validation baseline
-- Use WebSearch only if local documents insufficient
-
-### Sub-Agent Usage (Detailed)
-
-**Explore agents:**
-- Use parallel agents to maximize efficiency
-- Specify thoroughness level ("quick", "medium", "very thorough")
-- Find files, patterns, and related components
-
-**general-purpose agents:**
-- Complex analysis tasks
-- Implementation detail examination
-- Cross-component integration analysis
-
-**sysmlv2-doc-analyzer agent:**
-- **INVOKE WHEN:** Researching SysMLv2 modeling approaches or patterns
-- **HOW TO USE:**
-  ```
-  Task(
-    description="SysMLv2 modeling guidance for [topic]",
-    prompt="[Detailed description of physical system or modeling question]
-           Example: How should I model thermal management for a fusion
-           reactor blanket with heat generation, coolant flow, temperature
-           limits, and heat transfer through multiple layers?",
-    subagent_type="sysmlv2-doc-analyzer"
-  )
-  ```
-- **Agent searches:** Official SysMLv2 specs, guides, and examples
-- **Agent returns:** Recommended patterns with citations and examples
-- **When to use:**
-  - Before deciding on component structure
-  - When uncertain about interface or constraint modeling
-  - For requirements traceability patterns
-  - For general SysMLv2 syntax or semantics questions
-
-**WebSearch:**
-- Physics models and equations not in local documents
-- Recent fusion reactor design information
-- Material properties and engineering standards
-
-**Coordination:**
-- Launch related agents in parallel when possible
-- Wait for all agents before synthesis
-- Cross-reference findings from multiple sources
-
-### Error Handling
-- If insufficient information found, document gaps and STOP
-- If conflicting patterns discovered, document all and ask user
-- For unexpected issues, STOP and consult user
-- If research reveals project convention violations, note them
-
-### Critical Rules
-- ALWAYS read project context docs (OVERVIEW, MODELING_GUIDE, REFERENCE) first
-- ALWAYS read mentioned files before spawning sub-agents
-- ALWAYS wait for all sub-agents to complete before synthesis
-- NEVER write documents with placeholder values
-- Ensure research completely answers the original question before concluding
+- Read SOURCE_INDEX.md first — know what sources exist before researching
+- All claims must include specific file:line, model element, or literature references
+- Check for conflicts with existing DI-XXX before suggesting new insights
+- Never save research documents by writing directly — always use the save-research script
+- If insufficient information is found, document gaps and stop
+- If conflicting patterns are discovered, document all and ask the user
 
 ---
 
-**Related Commands:**
-- After research → `/spec` to define requirements
-- After research → `/design-code` or `/design-model` for technical design
-
-**Last Updated**: 2025-10-27
+**Related Commands:** After research → `/spec-model` to define requirements | `/design-model` for technical design | `/manage-sources` to configure sources
