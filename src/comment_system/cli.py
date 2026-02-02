@@ -537,7 +537,9 @@ def show(thread_id: str, json_output: bool, all_files: bool):
             sys.exit(1)
 
         # Type narrowing for mypy
-        assert found_source_file is not None, "found_source_file must be set when found_thread is set"
+        assert found_source_file is not None, (
+            "found_source_file must be set when found_thread is set"
+        )
 
         # Output thread details
         if json_output:

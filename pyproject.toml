@@ -39,6 +39,7 @@ dev = [
 
 [project.scripts]
 agentic-mbse = "agentic_mbse.cli:main"
+comment = "comment_system.cli:cli"
 
 [project.urls]
 Homepage = "https://github.com/yourorg/agentic-mbse"

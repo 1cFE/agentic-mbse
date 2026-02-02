@@ -39,9 +39,7 @@ class DecisionEntry:
             return datetime.fromisoformat(self.thread.resolved_at.replace("Z", "+00:00"))
         # Fallback to decision timestamp if resolved_at is missing
         if self.thread.decision:
-            return datetime.fromisoformat(
-                self.thread.decision.timestamp.replace("Z", "+00:00")
-            )
+            return datetime.fromisoformat(self.thread.decision.timestamp.replace("Z", "+00:00"))
         # Shouldn't happen, but use thread creation as last resort
         return datetime.fromisoformat(self.thread.created_at.replace("Z", "+00:00"))
 
@@ -128,7 +126,9 @@ def format_decision_entry(entry: DecisionEntry, project_root: Path) -> str:
     # Format anchor location
     anchor = thread.anchor
     line_range = (
-        f"{anchor.line_start}" if anchor.line_start == anchor.line_end else f"{anchor.line_start}-{anchor.line_end}"
+        f"{anchor.line_start}"
+        if anchor.line_start == anchor.line_end
+        else f"{anchor.line_start}-{anchor.line_end}"
     )
 
     # Format timestamp (extract just the date)

@@ -76,9 +76,13 @@ class CommentAddResponse(BaseModel):
 class CommentListRequest(BaseModel):
     """Request model for comment_list tool."""
 
-    file: str | None = Field(default=None, description="Path to source file (optional, omit for all files)")
+    file: str | None = Field(
+        default=None, description="Path to source file (optional, omit for all files)"
+    )
     status: str | None = Field(default=None, description="Filter by status (open/resolved/wontfix)")
-    health: str | None = Field(default=None, description="Filter by health (anchored/drifted/orphaned)")
+    health: str | None = Field(
+        default=None, description="Filter by health (anchored/drifted/orphaned)"
+    )
     author: str | None = Field(default=None, description="Filter by author name")
 
 
@@ -149,14 +153,20 @@ class CommentReopenResponse(BaseModel):
 class CommentReconcileRequest(BaseModel):
     """Request model for comment_reconcile tool."""
 
-    file: str | None = Field(default=None, description="Path to source file (optional, omit for all files)")
-    threshold: float = Field(default=0.6, ge=0.0, le=1.0, description="Minimum similarity score for fuzzy matching")
+    file: str | None = Field(
+        default=None, description="Path to source file (optional, omit for all files)"
+    )
+    threshold: float = Field(
+        default=0.6, ge=0.0, le=1.0, description="Minimum similarity score for fuzzy matching"
+    )
 
 
 class CommentReconcileResponse(BaseModel):
     """Response model for comment_reconcile tool."""
 
-    files_processed: list[dict[str, Any]] = Field(..., description="List of reconciliation reports per file")
+    files_processed: list[dict[str, Any]] = Field(
+        ..., description="List of reconciliation reports per file"
+    )
     total_threads: int = Field(..., description="Total threads reconciled across all files")
 
 
@@ -369,10 +379,10 @@ async def call_tool(name: str, arguments: Any) -> list[TextContent]:
         elif name == "comment_reconcile":
             return await handle_comment_reconcile(arguments)
         else:
-            error = ErrorResponse(
-                code="UNKNOWN_TOOL", message=f"Unknown tool: {name}"
-            )
-            return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
+            error = ErrorResponse(code="UNKNOWN_TOOL", message=f"Unknown tool: {name}")
+            return [
+                TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))
+            ]
     except Exception as e:
         # Catch-all for unexpected errors
         error = ErrorResponse(code="INTERNAL_ERROR", message=str(e))
@@ -428,11 +438,7 @@ async def handle_comment_add(arguments: Any) -> list[TextContent]:
         return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
 
     # Create comment
-    comment = Comment(
-        body=req.body,
-        author=req.author,
-        author_type=AuthorType(req.author_type)
-    )
+    comment = Comment(body=req.body, author=req.author, author_type=AuthorType(req.author_type))
 
     # Create or update sidecar
     sidecar_path = get_sidecar_path(source_path, project_root)
@@ -447,7 +453,9 @@ async def handle_comment_add(arguments: Any) -> list[TextContent]:
                     "Run reconciliation first."
                 ),
             )
-            return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
+            return [
+                TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))
+            ]
     else:
         # Create new sidecar
         sidecar = SidecarFile(
@@ -514,7 +522,9 @@ async def handle_comment_list(arguments: Any) -> list[TextContent]:
             source_path = normalize_path(source_path, project_root)
         except ValueError as e:
             error = ErrorResponse(code="INVALID_PATH", message=str(e))
-            return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
+            return [
+                TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))
+            ]
 
         sidecar_path = get_sidecar_path(source_path, project_root)
         if sidecar_path.exists():
@@ -541,19 +551,21 @@ async def handle_comment_list(arguments: Any) -> list[TextContent]:
                 if req.author and not any(c.author == req.author for c in thread.comments):
                     continue
 
-                matching_threads.append({
-                    "id": thread.id,
-                    "source_file": source_file,
-                    "status": thread.status.value,
-                    "anchor": {
-                        "line_start": thread.anchor.line_start,
-                        "line_end": thread.anchor.line_end,
-                        "health": thread.anchor.health.value,
-                        "drift_distance": thread.anchor.drift_distance,
-                    },
-                    "comment_count": len(thread.comments),
-                    "first_comment": thread.comments[0].body[:100],  # Preview
-                })
+                matching_threads.append(
+                    {
+                        "id": thread.id,
+                        "source_file": source_file,
+                        "status": thread.status.value,
+                        "anchor": {
+                            "line_start": thread.anchor.line_start,
+                            "line_end": thread.anchor.line_end,
+                            "health": thread.anchor.health.value,
+                            "drift_distance": thread.anchor.drift_distance,
+                        },
+                        "comment_count": len(thread.comments),
+                        "first_comment": thread.comments[0].body[:100],  # Preview
+                    }
+                )
         except ValueError:
             # Skip invalid sidecar files
             continue
@@ -925,14 +937,18 @@ async def handle_comment_reconcile(arguments: Any) -> list[TextContent]:
             source_path = normalize_path(Path(req.file), project_root)
         except ValueError as e:
             error = ErrorResponse(code="INVALID_PATH", message=str(e))
-            return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
+            return [
+                TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))
+            ]
 
         if not source_path.exists():
             error = ErrorResponse(
                 code="FILE_NOT_FOUND",
                 message=f"Source file not found: {source_path}",
             )
-            return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
+            return [
+                TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))
+            ]
 
         sidecar_path = get_sidecar_path(source_path, project_root)
         if sidecar_path.exists():
@@ -999,7 +1015,9 @@ async def handle_comment_reconcile(arguments: Any) -> list[TextContent]:
                 code="RECONCILIATION_FAILED",
                 message=f"Failed to reconcile {source_path}: {e}",
             )
-            return [TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))]
+            return [
+                TextContent(type="text", text=json.dumps({"error": error.model_dump()}, indent=2))
+            ]
 
     response = CommentReconcileResponse(
         files_processed=reports,

@@ -124,9 +124,7 @@ def _acquire_lock_unix(fd: int, mode: LockMode, timeout: float, start_time: floa
             # Lock held by another process - retry with backoff
             elapsed = time.time() - start_time
             if elapsed >= timeout:
-                raise LockTimeout(
-                    f"Failed to acquire {mode} lock after {timeout:.1f} seconds"
-                )
+                raise LockTimeout(f"Failed to acquire {mode} lock after {timeout:.1f} seconds")
 
             # Exponential backoff with max 100ms sleep
             sleep_time = min(0.01 * (2 ** min(int(elapsed * 10), 10)), 0.1)
@@ -151,9 +149,7 @@ def _acquire_lock_windows(fd: int, mode: LockMode, timeout: float, start_time: f
             # Lock held by another process - retry with backoff
             elapsed = time.time() - start_time
             if elapsed >= timeout:
-                raise LockTimeout(
-                    f"Failed to acquire {mode} lock after {timeout:.1f} seconds"
-                )
+                raise LockTimeout(f"Failed to acquire {mode} lock after {timeout:.1f} seconds")
 
             # Exponential backoff with max 100ms sleep
             sleep_time = min(0.01 * (2 ** min(int(elapsed * 10), 10)), 0.1)

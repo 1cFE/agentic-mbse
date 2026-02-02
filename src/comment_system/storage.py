@@ -332,6 +332,7 @@ def write_sidecar(
         LockTimeout: If lock cannot be acquired within timeout
         OSError: If write fails (permissions, disk full, etc.)
     """
+
     def _do_write() -> None:
         """Inner function to perform the actual write operation."""
         # Optimistic concurrency check: verify source_hash matches current file

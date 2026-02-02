@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Task 8.2 Complete — CLI Decisions Command Working!
-**Last Updated**: 2026-02-01 (Task 8.2 completed)
+**Status**: ✅ Task 9.1 Complete — Bash Script Utilities Ready!
+**Last Updated**: 2026-02-02 (Task 9.1 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 23/40 tasks complete (57.5%)
-**Next Action**: Task 9.1 (Bash script utilities) or start Iteration 10 (VSCode Extension)
+**Current Implementation**: 24/40 tasks complete (60%)
+**Next Action**: Task 9.2 (Ralph loop integration) or start Iteration 10 (VSCode Extension)
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -1224,13 +1224,53 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 ---
 
 ### Iteration 9: Integration - Orchestration (2 tasks)
-**Blocked by**: Iteration 4
+**Blocked by**: Iteration 4 ✅ Complete
 **Focus**: Bash utilities and Ralph integration
 
-| Task | Description | Files | Backpressure |
-|------|-------------|-------|--------------|
-| 9.1 | Bash script utilities | `orchestration.py`, scripts, docs | Integration tests (bash → CLI → verify) |
-| 9.2 | Ralph loop integration | Scripts, docs | Mock Ralph loop tests |
+| Task | Description | Files | Backpressure | Status |
+|------|-------------|-------|--------------|--------|
+| 9.1 | Bash script utilities | scripts/, claude/hooks/, docs/ | Integration tests (bash → CLI → verify) | ✅ **COMPLETE** |
+| 9.2 | Ralph loop integration | Scripts, docs | Mock Ralph loop tests | 🔴 **READY TO START** |
+
+#### Task 9.1: Bash Script Utilities ✅ COMPLETE
+
+**Description**: Implement example bash scripts and git hooks demonstrating orchestration patterns from specs/orchestration.md
+
+**Spec References**: `specs/orchestration.md` (REQ-1 through REQ-5, AC-1 through AC-6)
+
+**Implementation**:
+- `scripts/check_open_comments.sh` (77 lines) - Query open comments for agent workflows
+- `scripts/agent_review_workflow.sh` (90 lines) - Agent-agent review pattern demonstration
+- `claude/hooks/post-commit-reconcile.sh` (66 lines) - Auto-reconcile after commits
+- `claude/hooks/pre-commit-check-comments.sh` (61 lines) - Block commits with unresolved comments
+- `docs/orchestration-guide.md` (358 lines) - Comprehensive orchestration documentation
+
+**Tests**: `tests/comment_system/test_orchestration_scripts.py` (171 lines, 4 tests passing)
+
+**Deliverables**:
+- ✅ Example bash scripts demonstrating 5 orchestration patterns
+- ✅ Git hooks (pre-commit and post-commit) with configurability
+- ✅ Comprehensive documentation with usage examples
+- ✅ Integration tests verify AC-1 (valid JSON output)
+- ✅ Scripts are executable and follow bash best practices
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- Scripts marked as **examples** requiring customization for production use
+- Git hooks use git config for optional behavior (fail-on-orphans, block-on-unresolved)
+- CLI entry point added to pyproject.toml (`comment` command)
+- Test fixture uses direct Python invocation to preserve CWD in tests
+- Simplified test suite focuses on smoke testing and AC compliance
+
+**Acceptance Criteria Met**:
+- ✅ AC-1: Bash script produces valid JSON array (verified in tests)
+- ✅ Scripts exist and are executable (verified in test_scripts_exist_and_are_executable)
+- ✅ Documentation covers all workflow patterns
+- ✅ Git hooks are configurable and safe by default
+
+**Actual Size**: ~650 lines total (scripts + hooks + docs + tests)
+
+**Status**: ✅ COMPLETE (2026-02-02)
 
 ---
 
@@ -1272,7 +1312,7 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 22/40 tasks complete (55%)
+**Overall**: 24/40 tasks complete (60%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
@@ -1284,7 +1324,7 @@ Before marking any task complete:
 | **Iteration 6** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 7** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 8** | 2/2 | ✅ **COMPLETE** | No longer blocks |
-| Iteration 9 | 0/2 | 🔴 **READY TO START** | Unblocked |
+| Iteration 9 | 1/2 | 🟡 **IN PROGRESS** | Unblocked (Task 9.1 complete) |
 | Iteration 10 | 0/4 | 🔴 **READY TO START** | Unblocked (Phase 2 - VSCode extension) |
 
 ### Next Tasks (In Order)
@@ -1313,7 +1353,8 @@ Before marking any task complete:
 22. **✅ Task 7.3: Deletion Handling** (DONE - 8 new git_ops tests, 4 new CLI tests passing)
 23. **✅ Task 8.1: Decision Log Generation** (DONE - 26 tests passing)
 24. **✅ Task 8.2: CLI Decisions Command** (DONE - 9 tests passing)
-25. **🔴 Next: Task 9.1 — Bash script utilities** OR **Start Iteration 10** (VSCode Extension - Phase 2)
+25. **✅ Task 9.1: Bash Script Utilities** (DONE - 4 tests passing, 650+ lines scripts/hooks/docs)
+26. **🔴 Next: Task 9.2 — Ralph loop integration** OR **Start Iteration 10** (VSCode Extension - Phase 2)
 
 ---
 

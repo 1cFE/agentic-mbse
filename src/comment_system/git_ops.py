@@ -71,9 +71,7 @@ def is_git_repository(path: Path) -> bool:
         return False
 
 
-def detect_file_rename(
-    old_path: Path, project_root: Path, max_renames: int = 10
-) -> Path | None:
+def detect_file_rename(old_path: Path, project_root: Path, max_renames: int = 10) -> Path | None:
     """
     Detect if a file has been renamed using git history.
 
@@ -182,9 +180,7 @@ def detect_file_rename(
     return None
 
 
-def move_sidecar(
-    old_source_path: Path, new_source_path: Path, project_root: Path
-) -> bool:
+def move_sidecar(old_source_path: Path, new_source_path: Path, project_root: Path) -> bool:
     """
     Move sidecar file when source file is renamed.
 
@@ -236,9 +232,7 @@ def move_sidecar(
     json_str = json.dumps(sidecar_dict, indent=2, sort_keys=True)
 
     # Write to temp file in same directory (ensures atomic rename on same filesystem)
-    temp_fd, temp_path_str = tempfile.mkstemp(
-        dir=new_sidecar.parent, suffix=".tmp.json", text=True
-    )
+    temp_fd, temp_path_str = tempfile.mkstemp(dir=new_sidecar.parent, suffix=".tmp.json", text=True)
     temp_path = Path(temp_path_str)
 
     try:
