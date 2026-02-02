@@ -61,10 +61,10 @@ Three questions from main.md § 5 are blocking. This epic must resolve all three
 
 Six deliverables with a dependency structure (see [Sequencing](#sequencing) below).
 
-### D2.1: New Skills (7 skills)
+### D2.1: New Skills (6 skills)
 
 **Type**: Implementation
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: Epic 1 complete (directory paths settled)
 **Delta checklist**: § 2.1 (7 items + optional reference subdirectories)
 
@@ -202,11 +202,11 @@ Six deliverables with a dependency structure (see [Sequencing](#sequencing) belo
 **Reconciliation with implementation-plan.md**: The plan lists 7 skills. Six are extracted as above. The seventh slot was `toolkit-awareness` (revision of existing) — which is handled in D2.2. The net new skill count is 6; the total skill count including revisions is 9 (6 new + toolkit-awareness revised + record-learning evaluated + python-debugger unchanged).
 
 **Exit criteria**:
-- [ ] 6 new skill directories exist in `claude/skills/`
-- [ ] Each has a `SKILL.md` under 200 lines with correct frontmatter
-- [ ] Each SKILL.md contains only knowledge (no workflow logic, no project-specific data)
-- [ ] Skills reference new directory paths from Epic 1 (knowledge/, modeling_project/, work/, data/)
-- [ ] Content extracted from commands is identified and marked for removal in Epic 3
+- [x] 6 new skill directories exist in `claude/skills/`
+- [x] Each has a `SKILL.md` under 200 lines with correct frontmatter
+- [x] Each SKILL.md contains only knowledge (no workflow logic, no project-specific data)
+- [x] Skills reference new directory paths from Epic 1 (knowledge/, modeling_project/, work/, data/)
+- [x] Content extracted from commands is identified and marked for removal in Epic 3
 
 ---
 

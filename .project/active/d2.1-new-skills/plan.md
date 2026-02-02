@@ -1,6 +1,6 @@
 # Implementation Plan: D2.1 — New Skills (6 Skills)
 
-**Status:** Draft
+**Status:** Complete
 **Created:** 2026-02-02
 **Last Updated:** 2026-02-02
 
@@ -386,32 +386,48 @@ uv run pytest tests/   # Final regression check
 
 ## Implementation Notes
 
-[TO BE FILLED DURING IMPLEMENTATION]
-
 ### Phase 1 Completion
-**Completed:**
+**Completed:** 2026-02-02
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Created `claude/skills/sysml-conventions/SKILL.md` (149 body lines)
+- Created `claude/skills/sysml-conventions/references/stencils.md` (code stencils + pattern index)
+**Issues:** None
+**Deviations:** None — body fit within 200 lines without aggressive trimming
 
 ### Phase 2 Completion
-**Completed:**
+**Completed:** 2026-02-02
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Created `claude/skills/model-validation/SKILL.md` (160 body lines)
+- Created `claude/skills/project-structure/SKILL.md` (146 body lines)
+**Issues:** None
+**Deviations:** None — ADR-002 split clean between skills
 
 ### Phase 3 Completion
-**Completed:**
+**Completed:** 2026-02-02
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Created `claude/skills/source-traceability/SKILL.md` (140 body lines)
+**Issues:** None
+**Deviations:** None — distributed extraction produced coherent skill
 
 ### Phase 4 Completion
-**Completed:**
+**Completed:** 2026-02-02
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Created `claude/skills/epic-decomposition/SKILL.md` (113 body lines)
+- Created `claude/skills/requirements-tracking/SKILL.md` (123 body lines)
+**Issues:** None
+**Deviations:** None
+
+### Final Validation Results
+- All 6 directories exist with valid SKILL.md files
+- All body line counts < 200 (range: 113-160)
+- All YAML frontmatter validates correctly (4 required fields)
+- All 7 cross-references from design cross-reference map present
+- Only model-validation has Bash in allowed-tools
+- No stale `modeling_pm/` paths in any skill
+- `sysml-conventions` has `references/` subdirectory
+- All skills use Epic 1 paths (`knowledge/`, `modeling_project/`, `work/`, `data/`)
+- 342 existing tests pass, 1 skipped (zero regressions)
 
 ---
 
-**Status**: Draft → In Progress → Complete
+**Status**: Complete
