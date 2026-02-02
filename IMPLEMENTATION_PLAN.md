@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
-**Status**: ✅ Task 9.1 Complete — Bash Script Utilities Ready!
-**Last Updated**: 2026-02-02 (Task 9.1 completed)
+**Status**: ✅ Iteration 9 Complete — All Orchestration Features Ready!
+**Last Updated**: 2026-02-02 (Task 9.2 completed)
 **Project**: Comment system for text files with file-native storage
 
 ---
@@ -9,8 +9,8 @@
 ## Executive Summary
 
 **Planning Status**: ✅ Complete
-**Current Implementation**: 24/40 tasks complete (60%)
-**Next Action**: Task 9.2 (Ralph loop integration) or start Iteration 10 (VSCode Extension)
+**Current Implementation**: 25/40 tasks complete (62.5%)
+**Next Action**: Start Iteration 10 (VSCode Extension - Phase 2) or mark project as MVP complete
 
 **Gap Analysis Results** (verified via parallel subagents):
 - **Specs vs Plan**: 100% alignment — all 11 specs correctly mapped to 40+ tasks
@@ -1230,7 +1230,7 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 | Task | Description | Files | Backpressure | Status |
 |------|-------------|-------|--------------|--------|
 | 9.1 | Bash script utilities | scripts/, claude/hooks/, docs/ | Integration tests (bash → CLI → verify) | ✅ **COMPLETE** |
-| 9.2 | Ralph loop integration | Scripts, docs | Mock Ralph loop tests | 🔴 **READY TO START** |
+| 9.2 | Ralph loop integration | Scripts, docs | Mock Ralph loop tests | ✅ **COMPLETE** |
 
 #### Task 9.1: Bash Script Utilities ✅ COMPLETE
 
@@ -1272,6 +1272,66 @@ Iteration 1 is the **critical foundation** that ALL other work depends on:
 
 **Status**: ✅ COMPLETE (2026-02-02)
 
+#### Task 9.2: Ralph Loop Integration ✅ COMPLETE
+
+**Description**: Implement complete Ralph loop integration script with comprehensive tests demonstrating REQ-3 and AC-4
+
+**Spec References**: `specs/orchestration.md` (REQ-3, AC-4, CON-3)
+
+**Implementation**: `scripts/ralph_loop_integration.sh` (182 lines)
+**Tests**: Extended `tests/comment_system/test_orchestration_scripts.py` (8 new tests, 12 total orchestration tests passing)
+**Documentation**: Extended `docs/orchestration-guide.md` (Pattern 3 section)
+
+**Deliverables**:
+- ✅ Complete Ralph loop integration script
+- ✅ Reconciliation before checking comments (ensures up-to-date anchors)
+- ✅ Exit code 1 when comments need addressing (signals Ralph to address them)
+- ✅ Exit code 0 when no comments exist (Ralph can proceed)
+- ✅ JSON output of open comments for programmatic access
+- ✅ Workflow guidance for addressing comments (5 steps)
+- ✅ Support for single-file and project-wide checking
+- ✅ Environment variable configuration (COMMENT_CMD, RALPH_COMMENT_THRESHOLD)
+- ✅ NO_COLOR support for terminal output
+- ✅ 8 comprehensive tests covering all scenarios
+- ✅ All quality gates pass (mypy, ruff, pytest)
+
+**Key Learnings**:
+- Exit codes must use `exit` not `return` when in main script flow (not in functions)
+- Simplified script (no complex function nesting) is more maintainable
+- Reconciliation step is critical to ensure comments are current before checking
+- JSON output on stdout + human messages on stderr provides both automation and UX
+- Tests require careful working directory management (monkeypatch.chdir + subprocess inheritance)
+
+**Test Coverage**:
+- ✅ AC-4: Ralph detects open comments and signals via exit code 1
+- ✅ REQ-3: Ralph checks comments before implementing tasks
+- ✅ CON-3: Deterministic behavior (no LLM required for control flow)
+- ✅ Script exists and is executable
+- ✅ No comments → exit 0, empty JSON array
+- ✅ Open comments → exit 1, JSON array with comments
+- ✅ Reconciliation runs before checking
+- ✅ All-files mode (no file specified)
+- ✅ Workflow guidance displayed
+- ✅ NO_COLOR respected
+- ✅ Custom COMMENT_CMD supported
+
+**Actual Size**: 182 lines in ralph_loop_integration.sh, ~400 lines of tests added (8 tests), ~30 lines in orchestration-guide.md
+
+**Status**: ✅ COMPLETE (2026-02-02)
+
+---
+
+### Iteration 9 Summary
+
+**Status**: ✅ COMPLETE (all 2 tasks done)
+**Total Implementation**: ~830 lines total (scripts + hooks + docs)
+**Total Tests**: ~570 lines, 12 tests passing
+**Scripts Implemented**: check_open_comments.sh, agent_review_workflow.sh, ralph_loop_integration.sh
+**Git Hooks**: post-commit-reconcile.sh, pre-commit-check-comments.sh
+**Documentation**: orchestration-guide.md (comprehensive patterns and examples)
+
+**Iteration 9 unlocks**: Iteration 10 (VSCode Extension - Phase 2)
+
 ---
 
 ### Iteration 10: Integration - VSCode Extension (4 tasks — Phase 2)
@@ -1312,7 +1372,7 @@ Before marking any task complete:
 
 ## Progress Tracking
 
-**Overall**: 24/40 tasks complete (60%)
+**Overall**: 25/40 tasks complete (62.5%)
 
 | Iteration | Tasks | Status | Blocking |
 |-----------|-------|--------|----------|
@@ -1324,7 +1384,7 @@ Before marking any task complete:
 | **Iteration 6** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 7** | 3/3 | ✅ **COMPLETE** | No longer blocks |
 | **Iteration 8** | 2/2 | ✅ **COMPLETE** | No longer blocks |
-| Iteration 9 | 1/2 | 🟡 **IN PROGRESS** | Unblocked (Task 9.1 complete) |
+| **Iteration 9** | 2/2 | ✅ **COMPLETE** | No longer blocks |
 | Iteration 10 | 0/4 | 🔴 **READY TO START** | Unblocked (Phase 2 - VSCode extension) |
 
 ### Next Tasks (In Order)
@@ -1354,7 +1414,8 @@ Before marking any task complete:
 23. **✅ Task 8.1: Decision Log Generation** (DONE - 26 tests passing)
 24. **✅ Task 8.2: CLI Decisions Command** (DONE - 9 tests passing)
 25. **✅ Task 9.1: Bash Script Utilities** (DONE - 4 tests passing, 650+ lines scripts/hooks/docs)
-26. **🔴 Next: Task 9.2 — Ralph loop integration** OR **Start Iteration 10** (VSCode Extension - Phase 2)
+26. **✅ Task 9.2: Ralph Loop Integration** (DONE - 8 tests passing, 182 lines script + tests + docs)
+27. **🔴 Next: Start Iteration 10** (VSCode Extension - Phase 2) OR **Mark MVP Complete**
 
 ---
 

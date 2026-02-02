@@ -128,8 +128,35 @@ comment resolve THREAD_ID --decision="Section 3 expanded with examples"
 
 ### Pattern 3: Ralph Loop Integration (REQ-3, AC-4)
 
+**Complete Implementation**: See `scripts/ralph_loop_integration.sh` for a full working example.
+
+The Ralph loop integration script demonstrates how an automated AI coding loop (Ralph) can check for and address open comments before proceeding with task implementation. This ensures that feedback is incorporated into the development workflow.
+
+**Key Features:**
+- Reconciles anchors before checking comments (ensures comments are up-to-date)
+- Detects open comments on files to be modified
+- Returns exit code 1 if comments need addressing (signals Ralph to address them)
+- Returns exit code 0 if no comments exist (Ralph can proceed)
+- Provides workflow guidance for addressing comments
+- Outputs JSON array of open comments for programmatic access
+
+**Usage:**
+
 ```bash
-# Ralph's workflow (simplified)
+# Check specific file
+./scripts/ralph_loop_integration.sh FILE_TO_MODIFY
+
+# Check all files
+./scripts/ralph_loop_integration.sh
+
+# Customize via environment variables
+COMMENT_CMD="uv run comment" ./scripts/ralph_loop_integration.sh
+RALPH_COMMENT_THRESHOLD=0.7 ./scripts/ralph_loop_integration.sh
+```
+
+**Simplified Workflow:**
+
+```bash
 # 1. Ralph reads specs and picks task
 
 # 2. Before implementing, check for open comments on files to be touched
