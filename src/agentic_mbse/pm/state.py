@@ -346,7 +346,9 @@ def derive_project_state(project_root: Path) -> ParseResult[ProjectState]:
     # Step 5: Build standalone list (includes orphans)
     standalone_items = [all_items[sa.id] for sa in backlog.standalone if sa.id in all_items]
     orphan_ids = set(all_items.keys()) - backlog_item_ids
-    standalone_items += [all_items[wi_id] for wi_id in sorted(orphan_ids) if all_items[wi_id].epic is None]
+    standalone_items += [
+        all_items[wi_id] for wi_id in sorted(orphan_ids) if all_items[wi_id].epic is None
+    ]
 
     return ParseResult(
         data=ProjectState(

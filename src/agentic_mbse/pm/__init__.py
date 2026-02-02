@@ -8,6 +8,7 @@ Also provides state derivation: deterministic work item state,
 stage detection, epic state derivation, and WI-XXX name resolution.
 """
 
+from agentic_mbse.pm.dashboard import generate_dashboard
 from agentic_mbse.pm.parser import (
     parse_architecture,
     parse_backlog,
@@ -25,6 +26,7 @@ from agentic_mbse.pm.state import (
 from agentic_mbse.pm.types import (
     AnalysisQuestionEntry,
     BacklogData,
+    DashboardResult,
     DecisionEntry,
     DecisionStatus,
     DerivedEpicState,
@@ -56,6 +58,7 @@ __all__ = [
     # Infrastructure
     "ParseWarning",
     "ParseResult",
+    "DashboardResult",
     # Enums
     "EpicStatus",
     "WorkItemStatus",
@@ -96,4 +99,6 @@ __all__ = [
     # State derivation functions
     "derive_project_state",
     "resolve_work_item",
+    # Dashboard
+    "generate_dashboard",
 ]

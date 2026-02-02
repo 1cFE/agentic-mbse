@@ -237,3 +237,8 @@ class DerivedEpicState(BaseModel):
 class ProjectState(BaseModel):
     epics: list[DerivedEpicState] = Field(default_factory=list)
     standalone: list[DerivedWorkItemState] = Field(default_factory=list)
+
+
+class DashboardResult(BaseModel):
+    markdown: str
+    warnings: list[ParseWarning] = Field(default_factory=list)
