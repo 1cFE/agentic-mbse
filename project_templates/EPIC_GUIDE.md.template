@@ -56,7 +56,7 @@ When you have a body of work that exceeds the "Just Right" indicators, decompose
 
 ### Step 1: Review Epic Scope
 
-What domain concern does this epic address? Which project goals (G-XXX) does it serve? What architectural decisions (AD-XXX) constrain it? Read the relevant entries in `project/OVERVIEW.md` and `project/ARCHITECTURE.md` to ground the decomposition in existing decisions.
+What domain concern does this epic address? Which project goals (G-XXX) does it serve? What architectural decisions (AD-XXX) constrain it? Read the relevant entries in `modeling_project/OVERVIEW.md` and `modeling_project/ARCHITECTURE.md` to ground the decomposition in existing decisions.
 
 ### Step 2: Identify Authority Source Dependencies
 
@@ -106,7 +106,7 @@ Updated: YYYY-MM-DD
 
 - **Status**: `draft` while decomposition is in progress, `active` once items are being executed, `completed` when all items are done.
 - **Priority**: P0 (critical) through P3 (low). Matches BACKLOG.md priority scheme.
-- **Goal**: Links to a project goal in `project/OVERVIEW.md`. Every epic should trace to at least one goal.
+- **Goal**: Links to a project goal in `modeling_project/OVERVIEW.md`. Every epic should trace to at least one goal.
 - **Created/Updated**: ISO dates. Updated changes whenever the epic file is modified.
 
 ### Body Sections
@@ -179,6 +179,6 @@ Without traceability, the PM dashboard cannot explain why the epic matters. Ever
 **References:**
 - `epic_template.md` — Template for new epics
 - `work/backlog/BACKLOG.md` — Where epics are tracked
-- `project/OVERVIEW.md` — Project goals (G-XXX)
-- `project/ARCHITECTURE.md` — Architectural decisions (AD-XXX)
+- `modeling_project/OVERVIEW.md` — Project goals (G-XXX)
+- `modeling_project/ARCHITECTURE.md` — Architectural decisions (AD-XXX)
 - `knowledge/KNOWLEDGE.md` — Domain insights (DI-XXX)

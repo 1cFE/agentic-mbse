@@ -56,7 +56,7 @@ A target project after `agentic-mbse init` and as it grows. Four top-level conte
 | Directory | Question | Information roles |
 |-----------|----------|-------------------|
 | `knowledge/` | "What do we know?" | Roles 1-2: Authority Sources, Domain Knowledge |
-| `project/` | "What are we building and how?" | Roles 3-6: Intent, Requirements, Decisions, Verification |
+| `modeling_project/` | "What are we building and how?" | Roles 3-6: Intent, Requirements, Decisions, Verification |
 | `work/` | "What's in progress?" | Work management: backlog, active, completed |
 | `models/` | "The models themselves" | Model artifacts |
 
@@ -107,7 +107,7 @@ project-root/
 │       └── impacts/           #     Impact reports from knowledge supersession
 │           └── DI-XXX_superseded.md
 │
-├── project/                   # "What are we building and how?"
+├── modeling_project/           # "What are we building and how?"
 │   ├── OVERVIEW.md            #   Role 3: Goals (G-XXX), questions (AQ-XXX) (user-owned)
 │   ├── ARCHITECTURE.md        #   Role 5: Structural decisions, AD-XXX (user-owned)
 │   ├── REQUIREMENTS.md        #   Role 4: Project-specific rules, PR-XXX (user-owned)
@@ -155,7 +155,7 @@ project-root/
 **Key structural decisions**:
 
 - **`knowledge/`**: Home for Roles 1-2. SOURCE_INDEX.md, KNOWLEDGE.md, and the research pipeline all live here. The `sources/` subdirectory is for project-local reference materials; external repos stay external and are referenced by path in SOURCE_INDEX.md. Research reports start in `pending/`; the approval script (AP-7, T2) moves them to `approved/` and extracts insights into `KNOWLEDGE.md` — a visible file system operation, not an invisible metadata change.
-- **`project/`**: The project's "constitution" — Roles 3-6 together. Formalized intent (OVERVIEW.md) sits next to the standards and decisions that derive from it (ARCHITECTURE.md, REQUIREMENTS.md, VALIDATION_MATRIX.md). Raw intent documents nest in `project/intent/`, preserving the derivation relationship. MODELING_GUIDE.md and MODELING_PROCESS.md are methodology references that constrain how work is done.
+- **`modeling_project/`**: The project's "constitution" — Roles 3-6 together. Formalized intent (OVERVIEW.md) sits next to the standards and decisions that derive from it (ARCHITECTURE.md, REQUIREMENTS.md, VALIDATION_MATRIX.md). Raw intent documents nest in `modeling_project/intent/`, preserving the derivation relationship. MODELING_GUIDE.md and MODELING_PROCESS.md are methodology references that constrain how work is done.
 - **`work/`**: Purely operational — tracking and executing work. BACKLOG.md, active items, completed archives, analysis reports, and learnings. Nothing here defines standards or project identity.
 - **`.claude/`**: Tooling home. Commands, skills, agents are all tool-owned and updated on `agentic-mbse init --update`.
 - **`models/` and `tests/`** at project root: Model artifacts are the primary output.
@@ -294,7 +294,7 @@ Agent calls: agentic-mbse pm approve-research <file>
 
 ---
 
-### Role 3: Project Intent — `project/intent/` directory + `project/OVERVIEW.md` (revised)
+### Role 3: Project Intent — `modeling_project/intent/` directory + `modeling_modeling_project/OVERVIEW.md` (revised)
 
 **Purpose**: Why this project exists. What questions the models must answer. This is the demand signal.
 
@@ -302,12 +302,12 @@ Agent calls: agentic-mbse pm approve-research <file>
 
 | Concern | What it is | Where it lives |
 |---------|-----------|----------------|
-| **Raw intent documents** | User-authored or uploaded prose: project charters, mission statements, stakeholder notes, meeting summaries. These can be lengthy (400+ lines) and are the user's own words. | `project/intent/` directory |
-| **Formalized goals and questions** | Structured, ID'd entries extracted from the raw documents. These are what the rest of the system references. | `project/OVERVIEW.md` (Goals Registry, Analysis Questions tables) |
+| **Raw intent documents** | User-authored or uploaded prose: project charters, mission statements, stakeholder notes, meeting summaries. These can be lengthy (400+ lines) and are the user's own words. | `modeling_project/intent/` directory |
+| **Formalized goals and questions** | Structured, ID'd entries extracted from the raw documents. These are what the rest of the system references. | `modeling_modeling_project/OVERVIEW.md` (Goals Registry, Analysis Questions tables) |
 
-**Raw intent documents** (`project/intent/`):
+**Raw intent documents** (`modeling_project/intent/`):
 ```
-project/intent/
+modeling_project/intent/
 ├── project-charter.md          # User-written or uploaded, any length
 ├── stakeholder-notes.md        # Meeting notes, requirements discussions
 ├── mission-statement.md        # High-level framing
@@ -353,20 +353,20 @@ Questions the models must be able to answer. Each implies structural requirement
 The flow from raw documents to structured goals/questions follows the same pattern as Role 2 (raw → curation gate → structured output). This requires its own control flow combining agent intelligence (reading prose, proposing goals) with script-backed state transitions (AP-7, assigning G-XXX / AQ-XXX IDs, appending to OVERVIEW.md).
 
 **Control flow needed** (to be detailed during design):
-- User uploads/writes documents in `project/intent/`
+- User uploads/writes documents in `modeling_project/intent/`
 - An agent-driven process reads the documents, proposes structured G-XXX goals and AQ-XXX analysis questions
 - User reviews, approves, modifies, or rejects each
-- A script registers approved entries in `project/OVERVIEW.md` (correct IDs, format, source traceability)
+- A script registers approved entries in `modeling_modeling_project/OVERVIEW.md` (correct IDs, format, source traceability)
 - This process can be triggered during `/onboard` (initial project setup) or run standalone when new intent documents are added
 
-A dedicated command — `/formalize-intent` — handles this flow. It can be triggered during `/onboard` (initial project setup) or run standalone when new intent documents are added to `project/intent/`. The command reads intent documents, proposes G-XXX/AQ-XXX entries, the user reviews and approves, and a script registers them in OVERVIEW.md (AP-7 T2: script assigns IDs and enforces format; agent generates the structured entries from prose). Incremental updates (new docs added after initial setup) use the same command — the agent reads OVERVIEW.md to see what's already formalized and proposes only new entries. Detailed command design is a Phase 3C concern.
+A dedicated command — `/formalize-intent` — handles this flow. It can be triggered during `/onboard` (initial project setup) or run standalone when new intent documents are added to `modeling_project/intent/`. The command reads intent documents, proposes G-XXX/AQ-XXX entries, the user reviews and approves, and a script registers them in OVERVIEW.md (AP-7 T2: script assigns IDs and enforces format; agent generates the structured entries from prose). Incremental updates (new docs added after initial setup) use the same command — the agent reads OVERVIEW.md to see what's already formalized and proposes only new entries. Detailed command design is a Phase 3C concern.
 
 **Producer**: `/onboard` (triggers `/formalize-intent`), `/formalize-intent` (standalone), user direct editing
 **Consumer**: `/spec-model` (reads goals/questions to inform scoping), `/status` (reports goal coverage), `/audit-models` (checks that goals are addressed)
 
 ---
 
-### Role 4: Modeling Requirements — `project/MODELING_GUIDE.md` (tool-owned baseline) + `project/REQUIREMENTS.md` (user-owned extensions)
+### Role 4: Modeling Requirements — `modeling_modeling_project/MODELING_GUIDE.md` (tool-owned baseline) + `modeling_modeling_project/REQUIREMENTS.md` (user-owned extensions)
 
 **Purpose**: Project-wide rules, patterns, and constraints that govern how *all* modeling work is done. These are durable standards that derive from Project Intent and Domain Knowledge — not per-feature specs (those are ephemeral artifacts of individual work items, living within Model Implementation).
 
@@ -447,7 +447,7 @@ These extend the standard rules in MODELING_GUIDE.md.
 
 ---
 
-### Role 5: Modeling Decisions — `project/ARCHITECTURE.md` (new)
+### Role 5: Modeling Decisions — `modeling_modeling_project/ARCHITECTURE.md` (new)
 
 **Purpose**: Domain-level architectural decisions about the models themselves — the structural choices that shape how the system is decomposed and organized. Think of these as **ADRs (Architecture Decision Records) for the model ecosystem**.
 
@@ -511,7 +511,7 @@ Per-feature design.md files are **not** part of this role. They are ephemeral ar
 
 ---
 
-### Role 6: System Verification — `project/VALIDATION_MATRIX.md` (new)
+### Role 6: System Verification — `modeling_modeling_project/VALIDATION_MATRIX.md` (new)
 
 **Purpose**: Verification criteria for the integrated system — beyond per-work-item checks.
 
@@ -555,13 +555,13 @@ Mechanism is orthogonal to type: a `baseline` check might be verified by `model`
 ## 4. Document Relationship Map
 
 ```
-project/intent/                knowledge/SOURCE_INDEX.md
+modeling_project/intent/        knowledge/SOURCE_INDEX.md
   raw user documents               Authority sources
        │                               │
        │ formalization flow             │ explored by /research
        │ (agent + AP-7 script)          v
        v                          knowledge/research/pending/
-project/OVERVIEW.md                    │
+modeling_project/OVERVIEW.md                    │
   G-XXX goals ──────────────►         │ user approves (AP-7 script)
   AQ-XXX questions                    v
        │                         knowledge/research/approved/
@@ -573,8 +573,8 @@ project/OVERVIEW.md                    │
        v                                                 v
 Role 4: Modeling Requirements       Role 5: Modeling Decisions
   (methodology — HOW to model)        (architecture — WHAT structure)
-  project/MODELING_GUIDE.md            project/ARCHITECTURE.md
-  project/REQUIREMENTS.md               AD-XXX decisions
+  modeling_project/MODELING_GUIDE.md            modeling_project/ARCHITECTURE.md
+  modeling_project/REQUIREMENTS.md               AD-XXX decisions
        │                                     │
        │  constrains methodology             │ constrains structure
        │                                     │
@@ -593,7 +593,7 @@ Role 4: Modeling Requirements       Role 5: Modeling Decisions
                     │         │                       │
                     │         │ verified against       │ consumed by
                     │         v                       v
-                    │  project/VALIDATION_MATRIX.md  Downstream Pipeline
+                    │  modeling_project/VALIDATION_MATRIX.md  Downstream Pipeline
                     │    SV-XXX criteria             (sysml-codegen → teax)
                     │         ^                       │
                     │         │  simulation results   │
@@ -657,7 +657,7 @@ Every node in this chain is durable. Specs are numerous, fine-grained, and may b
 - `/spec-model` writes spec.md with many fine-grained MR-XXX requirements (ephemeral)
 - Some MR-XXX are significant enough to be durable — the agent or user flags these for promotion
 - `/implement-model` calls the `trace-element` AP-7 script, which:
-  1. Promotes flagged MR-XXX to PR-XXX in `project/REQUIREMENTS.md` (if not already there)
+  1. Promotes flagged MR-XXX to PR-XXX in `modeling_project/REQUIREMENTS.md` (if not already there)
   2. Records the model element → PR-XXX link in `data/traceability_matrix.csv`
   3. The PR-XXX entry's `Source` column records the DI-XXX or G-XXX it derives from
 
@@ -741,7 +741,7 @@ Level 6 validation (`level6_traceability.py`) currently only checks doc comment 
 1. **Format check**: Doc comments on definitions contain `Source` and `Reference` fields
 2. **Resolvability check**: Referenced source documents exist in SOURCE_INDEX.md
 3. **Completeness check**: `traceability_matrix.csv` has an entry for each definition (parsed via syside adapter)
-4. **Requirement coverage check**: Every PR-XXX in `project/REQUIREMENTS.md` has at least one satisfying element in `traceability_matrix.csv`
+4. **Requirement coverage check**: Every PR-XXX in `modeling_project/REQUIREMENTS.md` has at least one satisfying element in `traceability_matrix.csv`
 
 Sub-checks 1-3 extend Level 6. Sub-check 4 is a cross-file check that may belong in Level 7 (architectural integrity) or as a standalone `agentic-mbse validate --traceability` flag.
 

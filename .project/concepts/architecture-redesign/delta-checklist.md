@@ -43,7 +43,7 @@ These are new `.template` files in `project_templates/`.
 ### 1.3 Project Templates — Files to Evaluate
 
 - [ ] `[EVALUATE]` `project_templates/data/assumption_register.md.template` — Not mentioned in architecture. Decide: keep, merge into another artifact, or delete.
-- [ ] `[EVALUATE]` `project_templates/LOCAL_GUIDE.md.template` — Not mentioned in architecture. Was project-specific customizations. Decide: fold into project/REQUIREMENTS.md or keep separate.
+- [ ] `[EVALUATE]` `project_templates/LOCAL_GUIDE.md.template` — Not mentioned in architecture. Was project-specific customizations. Decide: fold into modeling_project/REQUIREMENTS.md or keep separate.
 - [ ] `[EVALUATE]` `project_templates/RAW_LEARNINGS.md.template` — Architecture puts this at `work/learnings/RAW_LEARNINGS.md`. Confirm destination path update.
 - [ ] `[EVALUATE]` `project_templates/data/traceability_matrix.csv` — Architecture puts this at `data/traceability_matrix.csv`. Confirm schema matches information-architecture.md § 5.3 (Element, File, Type, Knowledge, Requirement, Source_Type, Source_Document, Source_Location, Confidence, Assumptions, Last_Verified).
 
@@ -57,8 +57,8 @@ These are new `.template` files in `project_templates/`.
   - `knowledge/research/approved/`
   - `knowledge/research/impacts/`
   - `knowledge/sources/`
-  - `project/` (top-level)
-  - `project/intent/`
+  - `modeling_project/` (top-level)
+  - `modeling_project/intent/`
   - `work/` (top-level)
   - `work/backlog/`
   - `work/active/`
@@ -70,19 +70,19 @@ These are new `.template` files in `project_templates/`.
 #### Template registration changes
 
 - [ ] `[REVISE]` `USER_OWNED_TEMPLATES` — Update destination paths:
-  - `OVERVIEW.md.template` → `project/OVERVIEW.md` (was `modeling_pm/OVERVIEW.md`)
+  - `OVERVIEW.md.template` → `modeling_project/OVERVIEW.md` (was `modeling_pm/OVERVIEW.md`)
   - `BACKLOG.md.template` → `work/BACKLOG.md` (was `modeling_pm/backlog/BACKLOG.md`)
   - `RAW_LEARNINGS.md.template` → `work/learnings/RAW_LEARNINGS.md` (was `modeling_pm/learnings/RAW_LEARNINGS.md`)
 - [ ] `[REVISE]` `USER_OWNED_TEMPLATES` — Add new entries:
   - `KNOWLEDGE.md.template` → `knowledge/KNOWLEDGE.md`
-  - `ARCHITECTURE.md.template` → `project/ARCHITECTURE.md`
-  - `REQUIREMENTS.md.template` → `project/REQUIREMENTS.md`
-  - `VALIDATION_MATRIX.md.template` → `project/VALIDATION_MATRIX.md`
+  - `ARCHITECTURE.md.template` → `modeling_project/ARCHITECTURE.md`
+  - `REQUIREMENTS.md.template` → `modeling_project/REQUIREMENTS.md`
+  - `VALIDATION_MATRIX.md.template` → `modeling_project/VALIDATION_MATRIX.md`
 - [ ] `[REVISE]` `USER_OWNED_TEMPLATES` — Remove or update:
   - `LOCAL_GUIDE.md.template` → evaluate (see 1.3)
 - [ ] `[REVISE]` `TOOL_OWNED_TEMPLATES` — Update destination paths:
-  - `MODELING_GUIDE.md.template` → `project/MODELING_GUIDE.md` (was `modeling_pm/MODELING_GUIDE.md`)
-  - `MODELING_PROCESS.md.template` → `project/MODELING_PROCESS.md` (was `modeling_pm/MODELING_PROCESS.md`)
+  - `MODELING_GUIDE.md.template` → `modeling_project/MODELING_GUIDE.md` (was `modeling_pm/MODELING_GUIDE.md`)
+  - `MODELING_PROCESS.md.template` → `modeling_project/MODELING_PROCESS.md` (was `modeling_pm/MODELING_PROCESS.md`)
 - [ ] `[REVISE]` `TOOL_OWNED_TEMPLATES` — Add new entries:
   - `EPIC_GUIDE.md.template` → `work/EPIC_GUIDE.md`
 
@@ -92,9 +92,9 @@ These are new `.template` files in `project_templates/`.
 
 #### .gitignore update
 
-- [ ] `[REVISE]` `DEV_MODE_GITIGNORE_PATHS` — Update paths from `modeling_pm/` to `project/` for tool-owned files:
-  - `modeling_pm/MODELING_GUIDE.md` → `project/MODELING_GUIDE.md`
-  - `modeling_pm/MODELING_PROCESS.md` → `project/MODELING_PROCESS.md`
+- [ ] `[REVISE]` `DEV_MODE_GITIGNORE_PATHS` — Update paths from `modeling_pm/` to `modeling_project/` for tool-owned files:
+  - `modeling_pm/MODELING_GUIDE.md` → `modeling_project/MODELING_GUIDE.md`
+  - `modeling_pm/MODELING_PROCESS.md` → `modeling_project/MODELING_PROCESS.md`
   - Add `work/EPIC_GUIDE.md`
 
 #### Data template installation
@@ -103,13 +103,13 @@ These are new `.template` files in `project_templates/`.
 
 ### 1.5 CLI: `replicate_setup.sh` Changes
 
-- [ ] `[REVISE]` `create_project_structure()` — Update directory creation from `modeling_pm/{backlog,active,research}` to `knowledge/`, `knowledge/research/{pending,approved,impacts}`, `knowledge/sources/`, `project/`, `project/intent/`, `work/`, `work/{backlog,active,completed,analysis,learnings}`, `data/`
+- [ ] `[REVISE]` `create_project_structure()` — Update directory creation from `modeling_pm/{backlog,active,research}` to `knowledge/`, `knowledge/research/{pending,approved,impacts}`, `knowledge/sources/`, `modeling_project/`, `modeling_project/intent/`, `work/`, `work/{backlog,active,completed,analysis,learnings}`, `data/`
 - [ ] `[REVISE]` `create_project_structure()` — Update template copy destinations:
-  - `MODELING_GUIDE.md` → `project/MODELING_GUIDE.md` (was `modeling_pm/`)
-  - `MODELING_PROCESS.md` → `project/MODELING_PROCESS.md` (was `modeling_pm/`)
-- [ ] `[REVISE]` `create_overview_md()` — Write to `project/OVERVIEW.md` (was `modeling_pm/OVERVIEW.md`), update content to include Goals Registry and Analysis Questions table structure
+  - `MODELING_GUIDE.md` → `modeling_project/MODELING_GUIDE.md` (was `modeling_pm/`)
+  - `MODELING_PROCESS.md` → `modeling_project/MODELING_PROCESS.md` (was `modeling_pm/`)
+- [ ] `[REVISE]` `create_overview_md()` — Write to `modeling_project/OVERVIEW.md` (was `modeling_pm/OVERVIEW.md`), update content to include Goals Registry and Analysis Questions table structure
 - [ ] `[REVISE]` `create_source_index()` — Copy to `knowledge/SOURCE_INDEX.md` (was root `SOURCE_INDEX.md`)
-- [ ] `[NEW]` Add creation of new template files: `knowledge/KNOWLEDGE.md`, `project/ARCHITECTURE.md`, `project/REQUIREMENTS.md`, `project/VALIDATION_MATRIX.md`, `work/BACKLOG.md` (with YAML frontmatter)
+- [ ] `[NEW]` Add creation of new template files: `knowledge/KNOWLEDGE.md`, `modeling_project/ARCHITECTURE.md`, `modeling_project/REQUIREMENTS.md`, `modeling_project/VALIDATION_MATRIX.md`, `work/BACKLOG.md` (with YAML frontmatter)
 
 ### 1.6 YAML Frontmatter Schemas (Design Artifact)
 
@@ -128,10 +128,10 @@ Manual, one-time operation. Must be executed on a branch.
 
 #### File moves
 
-- [ ] `modeling_pm/OVERVIEW.md` → `project/OVERVIEW.md`
-- [ ] `modeling_pm/MODELING_GUIDE.md` → `project/MODELING_GUIDE.md`
-- [ ] `modeling_pm/MODELING_PROCESS.md` → `project/MODELING_PROCESS.md`
-- [ ] `modeling_pm/LOCAL_GUIDE.md` → evaluate: fold into `project/REQUIREMENTS.md` or keep at `project/LOCAL_GUIDE.md`
+- [ ] `modeling_pm/OVERVIEW.md` → `modeling_project/OVERVIEW.md`
+- [ ] `modeling_pm/MODELING_GUIDE.md` → `modeling_project/MODELING_GUIDE.md`
+- [ ] `modeling_pm/MODELING_PROCESS.md` → `modeling_project/MODELING_PROCESS.md`
+- [ ] `modeling_pm/LOCAL_GUIDE.md` → evaluate: fold into `modeling_project/REQUIREMENTS.md` or keep at `modeling_project/LOCAL_GUIDE.md`
 - [ ] `modeling_pm/backlog/BACKLOG.md` → `work/BACKLOG.md`
 - [ ] `modeling_pm/active/*` → `work/active/*`
 - [ ] `modeling_pm/research/*` → `knowledge/research/approved/*` (existing research was user-reviewed)
@@ -142,9 +142,9 @@ Manual, one-time operation. Must be executed on a branch.
 #### New files to create (populated from existing content)
 
 - [ ] `knowledge/KNOWLEDGE.md` — Extract DI-XXX entries from existing research documents and modeling knowledge
-- [ ] `project/ARCHITECTURE.md` — Extract architectural decisions from existing OVERVIEW.md and research docs (domain decomposition, package organization, key decisions like CAS hierarchy)
-- [ ] `project/REQUIREMENTS.md` — Extract project-specific rules from LOCAL_GUIDE.md and learned patterns (cost patterns, doc comment requirements, etc.)
-- [ ] `project/VALIDATION_MATRIX.md` — Populate from existing test assertions in `tests/models/` (power balance accuracy, structural checks, etc.)
+- [ ] `modeling_project/ARCHITECTURE.md` — Extract architectural decisions from existing OVERVIEW.md and research docs (domain decomposition, package organization, key decisions like CAS hierarchy)
+- [ ] `modeling_project/REQUIREMENTS.md` — Extract project-specific rules from LOCAL_GUIDE.md and learned patterns (cost patterns, doc comment requirements, etc.)
+- [ ] `modeling_project/VALIDATION_MATRIX.md` — Populate from existing test assertions in `tests/models/` (power balance accuracy, structural checks, etc.)
 - [ ] `data/traceability_matrix.csv` — Verify/update schema to match architecture (add Knowledge and Requirement columns if missing)
 
 #### New directories to create
@@ -152,7 +152,7 @@ Manual, one-time operation. Must be executed on a branch.
 - [ ] `knowledge/research/pending/`
 - [ ] `knowledge/research/impacts/`
 - [ ] `knowledge/sources/`
-- [ ] `project/intent/`
+- [ ] `modeling_project/intent/`
 - [ ] `work/backlog/` (for epic files)
 - [ ] `work/completed/`
 - [ ] `work/analysis/`
@@ -174,7 +174,7 @@ Manual, one-time operation. Must be executed on a branch.
 
 ### 1.8 CLAUDE.md Updates (fusion-tea)
 
-- [ ] `[REVISE]` Update all `modeling_pm/` references to `knowledge/`, `project/`, `work/`
+- [ ] `[REVISE]` Update all `modeling_pm/` references to `knowledge/`, `modeling_project/`, `work/`
 - [ ] `[REVISE]` Update document descriptions to match new file structure
 - [ ] `[REVISE]` Add descriptions of new files (KNOWLEDGE.md, ARCHITECTURE.md, REQUIREMENTS.md, VALIDATION_MATRIX.md)
 
@@ -234,8 +234,8 @@ For each command: extract embedded knowledge to skill references, reduce to 200-
   - Extract validation guidance to `model-validation` skill reference
   - Extract file structure rules to `project-structure` skill reference
   - Extract citation/source patterns to `source-traceability` skill reference
-  - Add reading of `project/ARCHITECTURE.md` for existing decisions
-  - Add reading of `project/REQUIREMENTS.md` for compliance
+  - Add reading of `modeling_project/ARCHITECTURE.md` for existing decisions
+  - Add reading of `modeling_project/REQUIREMENTS.md` for compliance
   - Add reference to `review.md` as optional output for `/review-model`
 
 - [ ] `[REVISE]` `claude/commands/implement-model.md` (493 lines → target ~250)
@@ -250,7 +250,7 @@ For each command: extract embedded knowledge to skill references, reduce to 200-
   - Extract to `project-structure` skill reference
   - Extract to `source-traceability` skill reference
   - Add reading of `knowledge/KNOWLEDGE.md` for DI-XXX insights
-  - Add reading of `project/OVERVIEW.md` for G-XXX goals and AQ-XXX questions
+  - Add reading of `modeling_project/OVERVIEW.md` for G-XXX goals and AQ-XXX questions
   - Add YAML frontmatter generation for spec.md (Status, Scale, Epic, Owner, Created, Updated)
   - Add SV-XXX entry creation in VALIDATION_MATRIX.md for verification criteria
 
@@ -272,7 +272,7 @@ For each command: extract embedded knowledge to skill references, reduce to 200-
   - Add file save via script (not agent choosing path): `knowledge/research/pending/YYYYMMDD-HHMMSS_topic.md`
 
 - [ ] `[REVISE]` `claude/commands/onboard.md` (577 lines → target ~300)
-  - Add trigger for `/formalize-intent` after initial documents are placed in `project/intent/`
+  - Add trigger for `/formalize-intent` after initial documents are placed in `modeling_project/intent/`
   - Update project structure references to new directories
   - Add initial ARCHITECTURE.md population guidance
 
@@ -292,7 +292,7 @@ For each command: extract embedded knowledge to skill references, reduce to 200-
 - [ ] `[NEW]` `claude/commands/review-model.md` — Design review before implementation. Produces optional `review.md` with verdict (pass/concerns/fail) in YAML frontmatter. Skills: `sysml-conventions`, `model-validation`, `project-structure`, `requirements-tracking`.
 - [ ] `[NEW]` `claude/commands/analyze-models.md` — Model analysis reports to `work/analysis/YYYYMMDD-HHMMSS_topic.md`. Parse model structure, check rules compliance, compute health indicators. Skills: `project-structure`, `model-validation`.
 - [ ] `[NEW]` `claude/commands/status.md` — Thin wrapper: call `agentic-mbse status` script, present dashboard, add interpretation and recommendations. Skills: `epic-decomposition`, `requirements-tracking`.
-- [ ] `[NEW]` `claude/commands/formalize-intent.md` — Extract G-XXX goals and AQ-XXX analysis questions from `project/intent/` documents. User reviews and approves each. Calls AP-7 script to register in OVERVIEW.md. Skills: `project-structure`.
+- [ ] `[NEW]` `claude/commands/formalize-intent.md` — Extract G-XXX goals and AQ-XXX analysis questions from `modeling_project/intent/` documents. User reviews and approves each. Calls AP-7 script to register in OVERVIEW.md. Skills: `project-structure`.
 
 ### 3A.3 Command Registration in `cmd_init()`
 
@@ -347,9 +347,9 @@ Not code changes — verification activities.
 
   - [ ] `close-item`: Move `work/active/{item}/` → `work/completed/YYYYMMDD_{item}/`, update BACKLOG.md YAML frontmatter status, re-render BACKLOG.md body
   - [ ] `trace-element`: Append row to `data/traceability_matrix.csv`. Validate schema, prevent duplicates, validate PR-XXX exists in REQUIREMENTS.md and DI-XXX exists in KNOWLEDGE.md
-  - [ ] `promote-requirement`: Append PR-XXX row to `project/REQUIREMENTS.md`. Validate format, assign ID, record Source (DI-XXX or G-XXX)
-  - [ ] `register-decision`: Append AD-XXX entry to `project/ARCHITECTURE.md`. Validate format, assign ID
-  - [ ] `update-validation`: Update Status column in `project/VALIDATION_MATRIX.md` for specified SV-XXX
+  - [ ] `promote-requirement`: Append PR-XXX row to `modeling_project/REQUIREMENTS.md`. Validate format, assign ID, record Source (DI-XXX or G-XXX)
+  - [ ] `register-decision`: Append AD-XXX entry to `modeling_project/ARCHITECTURE.md`. Validate format, assign ID
+  - [ ] `update-validation`: Update Status column in `modeling_project/VALIDATION_MATRIX.md` for specified SV-XXX
   - [ ] `add-insight` (T1 mechanics, T3 invocation): Assign DI-XXX ID, format entry from agent-supplied fields, append to `knowledge/KNOWLEDGE.md`. Validate all required fields present. Source uses `work-item:{name}/{artifact}` convention
   - [ ] `impact-query`: Given DI-XXX or PR-XXX, traverse `data/traceability_matrix.csv` to find affected model elements and work items. Return structured result
   - [ ] `status` (dashboard): Parse all structured files, produce dashboard markdown

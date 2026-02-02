@@ -207,7 +207,13 @@ For each task in the plan:
    syside check models/path/to/file.sysml
    ```
 
-   If any validations don't pass, you are having trouble resolving parsing issues, or any other modeling challenges arise, make sure of the "sysmlv2-doc-analyzer" subagent!! This agent has full knowledge of the SysMLv2 spec as well as the SysIDE parser, and can help provide guidance as to how to resolve issues. 
+   If any validations don't pass, you are having trouble resolving parsing issues, or any other modeling challenges arise, use the specialized documentation agents:
+   - `sysmlv2-validator` - To check syntax and get error interpretations
+   - `kerml-expert` - For standard library functions (sum, size, etc.) and imports
+   - `sysml-expert` - For modeling patterns and SysML constructs
+   - `syside-expert` - For parser API and tooling questions
+
+   For "why doesn't this work?" questions, spawn `sysmlv2-validator` + the relevant expert agent in parallel. 
    
 5. **IMMEDIATELY Update Progress** - CRITICAL for tracking:
    - **TodoWrite**: Mark current task as completed
@@ -329,6 +335,34 @@ Bash("python /tmp/batch_edit.py models/file.sysml")
    - Use `--level N` to run specific level: `agentic-mbse validate models/ --level 1`
    - Use `--verbose` for detailed output: `agentic-mbse validate models/ --verbose`
 
+   **Regression Testing:**
+
+   After completing model changes in each phase, run regression tests:
+
+   ```bash
+   # Run all model tests
+   pytest tests/models/ -v
+
+   # Run specific test file (if plan specifies)
+   pytest tests/models/test_library.py -v
+   ```
+
+   **Test Phase Deliverables** (from plan):
+   - [ ] New library definitions have structural tests in `tests/models/`
+   - [ ] Modified definitions pass existing tests (no regressions)
+   - [ ] Integration tests verify design-library compatibility
+   - [ ] All tests pass before marking phase complete
+
+   **Test Location Convention:**
+   ```
+   tests/
+   └── models/
+       ├── conftest.py          # Shared fixtures
+       ├── test_example.py      # Example/template
+       ├── test_library.py      # Library definition tests
+       └── test_designs.py      # Design integration tests
+   ```
+
 2. **MANDATORY: Update Plan Document**:
    ```markdown
    ### Phase [N] Completion
@@ -376,10 +410,13 @@ If all phases complete:
 - [ ] **Quality validation passes** (Levels 1-3 with no failures)
 - [ ] All models parse without errors
 - [ ] All definitions have doc comments with sources
+- [ ] **Regression tests pass**: `pytest tests/models/ -v`
+- [ ] No regressions in existing models (verified by test suite)
 - [ ] Traceability check passes
 - [ ] Baseline comparison passes (if applicable)
 - [ ] Constraints properly defined
 - [ ] Naming conventions followed
+- [ ] All spec acceptance criteria met
 - [ ] Epic deliverables marked complete
 - [ ] Quality check warnings reviewed and addressed where appropriate
 

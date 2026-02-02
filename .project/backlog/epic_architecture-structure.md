@@ -13,7 +13,7 @@
 
 Establish the information architecture that the entire redesign depends on: file structure, entity formats, project templates, `cmd_init()` rewiring, YAML frontmatter schemas, and fusion-tea migration. This is the critical path — every subsequent epic (skills, commands, PM engine) references the directory structure and file formats defined here.
 
-**Critical Success Factor**: `agentic-mbse init` on a fresh directory produces the 4-directory structure (`knowledge/`, `project/`, `work/`, `data/`) with all registry files, and fusion-tea has been migrated with all 42 existing tests passing.
+**Critical Success Factor**: `agentic-mbse init` on a fresh directory produces the 4-directory structure (`knowledge/`, `modeling_project/`, `work/`, `data/`) with all registry files, and fusion-tea has been migrated with all 42 existing tests passing.
 
 ---
 
@@ -21,9 +21,9 @@ Establish the information architecture that the entire redesign depends on: file
 
 Every downstream artifact references the file structure:
 
-- **Skills** (Epic 2) reference `knowledge/KNOWLEDGE.md`, `project/REQUIREMENTS.md`, `work/BACKLOG.md`
+- **Skills** (Epic 2) reference `knowledge/KNOWLEDGE.md`, `modeling_project/REQUIREMENTS.md`, `work/BACKLOG.md`
 - **Commands** (Epic 3) read from and write to the new directory paths
-- **PM engine** (Epic 4) parses YAML frontmatter in `work/BACKLOG.md`, `work/active/*/spec.md`, and registries in `project/`
+- **PM engine** (Epic 4) parses YAML frontmatter in `work/BACKLOG.md`, `work/active/*/spec.md`, and registries in `modeling_project/`
 
 If the structure changes after any of those are built, everything downstream must be reworked. This epic settles the structure first.
 
@@ -86,9 +86,9 @@ Element,File,Type,Knowledge,Requirement,Source_Type,Source_Document,Source_Locat
 | Template | Destination | Entity format | Key content |
 |----------|-------------|---------------|-------------|
 | `KNOWLEDGE.md.template` | `knowledge/KNOWLEDGE.md` | DI-XXX entries | Domain insight registry. Empty-state: header + format example in comment. |
-| `ARCHITECTURE.md.template` | `project/ARCHITECTURE.md` | AD-XXX entries | Domain Decomposition, Package Organization table, Key Decisions. Empty-state: section headers + placeholder text. |
-| `REQUIREMENTS.md.template` | `project/REQUIREMENTS.md` | PR-XXX table | Columns: ID, Requirement, Source, Enforcement, Validation Method. Empty-state: header row only. |
-| `VALIDATION_MATRIX.md.template` | `project/VALIDATION_MATRIX.md` | SV-XXX table | Columns: ID, Description, Type, Mechanism, Expected, Tolerance, Source, Test, Status. Empty-state: header row only. |
+| `ARCHITECTURE.md.template` | `modeling_project/ARCHITECTURE.md` | AD-XXX entries | Domain Decomposition, Package Organization table, Key Decisions. Empty-state: section headers + placeholder text. |
+| `REQUIREMENTS.md.template` | `modeling_project/REQUIREMENTS.md` | PR-XXX table | Columns: ID, Requirement, Source, Enforcement, Validation Method. Empty-state: header row only. |
+| `VALIDATION_MATRIX.md.template` | `modeling_project/VALIDATION_MATRIX.md` | SV-XXX table | Columns: ID, Description, Type, Mechanism, Expected, Tolerance, Source, Test, Status. Empty-state: header row only. |
 | `EPIC_GUIDE.md.template` | `work/EPIC_GUIDE.md` | Prose reference | Decomposition guidance: Goldilocks principle, scale taxonomy, anti-patterns. Tool-owned. |
 | `epic_template.md.template` | `work/backlog/epic-{name}.md` | YAML frontmatter | Template for epic files: Status, Priority, Goal, Created, Updated frontmatter + free-form body sections. |
 
@@ -119,7 +119,7 @@ Element,File,Type,Knowledge,Requirement,Source_Type,Source_Document,Source_Locat
 | `OVERVIEW.md.template` | Add Goals Registry table (ID, Goal, Priority, Status, Source, Traced Requirements), Analysis Questions table (ID, Question, Implies, Source, Status), Scope section, Success Criteria section. Per information-architecture.md § 3 Role 3. |
 | `BACKLOG.md.template` | Add YAML frontmatter structure (epics list with items, standalone list). Body becomes a rendered dashboard. Per workflows.md § 3.6. |
 | `MODELING_GUIDE.md.template` | Extract reference/how-to material that will move to skills in Epic 2. What remains: pure rules (definitions vs usages, ADR-002, package structure, naming, documentation standards, validation checklist). |
-| `MODELING_PROCESS.md.template` | Update references to new directory structure (`knowledge/`, `project/`, `work/`), new commands (`/quick-model`, `/review-model`, `/analyze-models`, `/status`, `/formalize-intent`), new documents (KNOWLEDGE.md, ARCHITECTURE.md, REQUIREMENTS.md, VALIDATION_MATRIX.md). |
+| `MODELING_PROCESS.md.template` | Update references to new directory structure (`knowledge/`, `modeling_project/`, `work/`), new commands (`/quick-model`, `/review-model`, `/analyze-models`, `/status`, `/formalize-intent`), new documents (KNOWLEDGE.md, ARCHITECTURE.md, REQUIREMENTS.md, VALIDATION_MATRIX.md). |
 | `README.md.template` | Update directory structure description to match 4-directory model. |
 
 **Exit criteria**:
@@ -179,7 +179,7 @@ knowledge/research/approved/
 knowledge/research/impacts/
 knowledge/sources/
 project/
-project/intent/
+modeling_project/intent/
 work/
 work/backlog/
 work/active/
@@ -190,24 +190,24 @@ data/
 ```
 
 **`USER_OWNED_TEMPLATES`** — update destinations:
-- `OVERVIEW.md.template` → `project/OVERVIEW.md` (was `modeling_pm/OVERVIEW.md`)
+- `OVERVIEW.md.template` → `modeling_project/OVERVIEW.md` (was `modeling_pm/OVERVIEW.md`)
 - `BACKLOG.md.template` → `work/BACKLOG.md` (was `modeling_pm/backlog/BACKLOG.md`)
 - `RAW_LEARNINGS.md.template` → `work/learnings/RAW_LEARNINGS.md` (was `modeling_pm/learnings/RAW_LEARNINGS.md`)
 - Add: `KNOWLEDGE.md.template` → `knowledge/KNOWLEDGE.md`
-- Add: `ARCHITECTURE.md.template` → `project/ARCHITECTURE.md`
-- Add: `REQUIREMENTS.md.template` → `project/REQUIREMENTS.md`
-- Add: `VALIDATION_MATRIX.md.template` → `project/VALIDATION_MATRIX.md`
+- Add: `ARCHITECTURE.md.template` → `modeling_project/ARCHITECTURE.md`
+- Add: `REQUIREMENTS.md.template` → `modeling_project/REQUIREMENTS.md`
+- Add: `VALIDATION_MATRIX.md.template` → `modeling_project/VALIDATION_MATRIX.md`
 - Remove or update: `LOCAL_GUIDE.md.template` (per D1.3 decision)
 - Evaluate: `assumption_register.md.template` (per D1.3 decision)
 
 **`TOOL_OWNED_TEMPLATES`** — update destinations:
-- `MODELING_GUIDE.md.template` → `project/MODELING_GUIDE.md` (was `modeling_pm/MODELING_GUIDE.md`)
-- `MODELING_PROCESS.md.template` → `project/MODELING_PROCESS.md` (was `modeling_pm/MODELING_PROCESS.md`)
+- `MODELING_GUIDE.md.template` → `modeling_project/MODELING_GUIDE.md` (was `modeling_pm/MODELING_GUIDE.md`)
+- `MODELING_PROCESS.md.template` → `modeling_project/MODELING_PROCESS.md` (was `modeling_pm/MODELING_PROCESS.md`)
 - Add: `EPIC_GUIDE.md.template` → `work/EPIC_GUIDE.md`
 
 **`DEV_MODE_GITIGNORE_PATHS`** — update:
-- `modeling_pm/MODELING_GUIDE.md` → `project/MODELING_GUIDE.md`
-- `modeling_pm/MODELING_PROCESS.md` → `project/MODELING_PROCESS.md`
+- `modeling_pm/MODELING_GUIDE.md` → `modeling_project/MODELING_GUIDE.md`
+- `modeling_pm/MODELING_PROCESS.md` → `modeling_project/MODELING_PROCESS.md`
 - Add: `work/EPIC_GUIDE.md`
 
 **SOURCE_INDEX.md** — move creation to `knowledge/SOURCE_INDEX.md` (was project root)
@@ -230,14 +230,14 @@ D1.4 must reconcile these divergences — bring both files to the same component
 **Directory and template changes**:
 - `create_project_structure()` → new directory structure
 - Template copy destinations → new paths
-- `create_overview_md()` → `project/OVERVIEW.md` with Goals Registry and Analysis Questions
+- `create_overview_md()` → `modeling_project/OVERVIEW.md` with Goals Registry and Analysis Questions
 - `create_source_index()` → `knowledge/SOURCE_INDEX.md`
-- Add creation of new files: `knowledge/KNOWLEDGE.md`, `project/ARCHITECTURE.md`, `project/REQUIREMENTS.md`, `project/VALIDATION_MATRIX.md`, `work/BACKLOG.md`
+- Add creation of new files: `knowledge/KNOWLEDGE.md`, `modeling_project/ARCHITECTURE.md`, `modeling_project/REQUIREMENTS.md`, `modeling_project/VALIDATION_MATRIX.md`, `work/BACKLOG.md`
 
 #### Documentation updates (agentic-mbse repo):
 
 **`CLAUDE.md`** — must update in lockstep with `cmd_init()` since it describes what init produces:
-- Directory Clarification table: `modeling_pm/` references → `knowledge/`, `project/`, `work/`
+- Directory Clarification table: `modeling_pm/` references → `knowledge/`, `modeling_project/`, `work/`
 - Architecture section: update init description, directory descriptions
 - `DEV_MODE_GITIGNORE_PATHS` documentation: update paths
 - Add descriptions of new files (KNOWLEDGE.md, ARCHITECTURE.md, REQUIREMENTS.md, VALIDATION_MATRIX.md)
@@ -267,7 +267,7 @@ D1.4 must reconcile these divergences — bring both files to the same component
 **Delta checklist**: § 1.9 (4 items)
 
 **Scope**:
-1. Update `cmd_init()` tests to expect new directories (`knowledge/`, `project/`, `work/`, `data/`)
+1. Update `cmd_init()` tests to expect new directories (`knowledge/`, `modeling_project/`, `work/`, `data/`)
 2. Add tests for new template installation (KNOWLEDGE.md, ARCHITECTURE.md, REQUIREMENTS.md, VALIDATION_MATRIX.md, EPIC_GUIDE.md)
 3. Update path expectations from `modeling_pm/` to new locations
 4. Verify `--dev` mode creates correct symlinks to new paths
@@ -277,11 +277,11 @@ D1.4 must reconcile these divergences — bring both files to the same component
   - `test_creates_source_index` — assert `knowledge/SOURCE_INDEX.md`
   - `test_overwrites_source_index_with_force` — same path fix
   - `test_uses_current_directory_if_no_path` — same path fix
-  - `test_dev_creates_symlinks_for_tool_templates` — assert `project/MODELING_GUIDE.md`
-  - `test_dev_updates_gitignore` — check for `project/` paths in gitignore
+  - `test_dev_creates_symlinks_for_tool_templates` — assert `modeling_project/MODELING_GUIDE.md`
+  - `test_dev_updates_gitignore` — check for `modeling_project/` paths in gitignore
   - `test_init_creates_local_guide` — delete or repurpose (LOCAL_GUIDE.md removed)
   - `test_local_guide_skipped_if_exists` — delete or repurpose
-  - `test_reinit_with_modification_prompts` — use `project/MODELING_GUIDE.md`
+  - `test_reinit_with_modification_prompts` — use `modeling_project/MODELING_GUIDE.md`
   - `test_force_flag_skips_prompts` — same path fix
 - [ ] New tests for new templates (KNOWLEDGE.md, ARCHITECTURE.md, REQUIREMENTS.md, VALIDATION_MATRIX.md, EPIC_GUIDE.md, epic_template.md)
 - [ ] New tests for CSV installation to `data/traceability_matrix.csv`
@@ -303,10 +303,10 @@ D1.4 must reconcile these divergences — bring both files to the same component
 
 | From | To | Notes |
 |------|----|-------|
-| `modeling_pm/OVERVIEW.md` | `project/OVERVIEW.md` | |
-| `modeling_pm/MODELING_GUIDE.md` | `project/MODELING_GUIDE.md` | |
-| `modeling_pm/MODELING_PROCESS.md` | `project/MODELING_PROCESS.md` | |
-| `modeling_pm/LOCAL_GUIDE.md` | Per D1.3 decision | Merge into `project/REQUIREMENTS.md` or keep at `project/LOCAL_GUIDE.md` |
+| `modeling_pm/OVERVIEW.md` | `modeling_project/OVERVIEW.md` | |
+| `modeling_pm/MODELING_GUIDE.md` | `modeling_project/MODELING_GUIDE.md` | |
+| `modeling_pm/MODELING_PROCESS.md` | `modeling_project/MODELING_PROCESS.md` | |
+| `modeling_pm/LOCAL_GUIDE.md` | Per D1.3 decision | Merge into `modeling_project/REQUIREMENTS.md` or keep at `modeling_project/LOCAL_GUIDE.md` |
 | `modeling_pm/backlog/BACKLOG.md` | `work/BACKLOG.md` | |
 | `modeling_pm/active/*` | `work/active/*` | |
 | `modeling_pm/research/*` | `knowledge/research/approved/*` | Existing research was user-reviewed |
@@ -319,14 +319,14 @@ D1.4 must reconcile these divergences — bring both files to the same component
 | File | Source content |
 |------|--------------|
 | `knowledge/KNOWLEDGE.md` | Extract DI-XXX entries from existing research and modeling knowledge |
-| `project/ARCHITECTURE.md` | Extract AD-XXX from OVERVIEW.md and research (domain decomposition, CAS hierarchy) |
-| `project/REQUIREMENTS.md` | Extract PR-XXX from LOCAL_GUIDE.md and learned patterns (cost patterns, doc comments) |
-| `project/VALIDATION_MATRIX.md` | Populate SV-XXX from existing test assertions in `tests/models/` |
+| `modeling_project/ARCHITECTURE.md` | Extract AD-XXX from OVERVIEW.md and research (domain decomposition, CAS hierarchy) |
+| `modeling_project/REQUIREMENTS.md` | Extract PR-XXX from LOCAL_GUIDE.md and learned patterns (cost patterns, doc comments) |
+| `modeling_project/VALIDATION_MATRIX.md` | Populate SV-XXX from existing test assertions in `tests/models/` |
 | `data/traceability_matrix.csv` | Verify/update schema (add Knowledge and Requirement columns if missing) |
 
 #### New directories
 
-`knowledge/research/pending/`, `knowledge/research/impacts/`, `knowledge/sources/`, `project/intent/`, `work/backlog/`, `work/completed/`, `work/analysis/`
+`knowledge/research/pending/`, `knowledge/research/impacts/`, `knowledge/sources/`, `modeling_project/intent/`, `work/backlog/`, `work/completed/`, `work/analysis/`
 
 #### Format changes
 

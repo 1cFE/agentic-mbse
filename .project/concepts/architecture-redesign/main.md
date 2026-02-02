@@ -59,13 +59,13 @@ Mutation scripts (approve-research, close-item, trace-element, promote-requireme
 | Operation | Tier | What the script does |
 |-----------|------|---------------------|
 | Approve research | T2 | Move `knowledge/research/pending/` → `approved/`, generate DI-XXX entries, append to `knowledge/KNOWLEDGE.md` |
-| Register project requirement | T1 | Append PR-XXX row to `project/REQUIREMENTS.md` with correct columns (rare — project-level rules only) |
+| Register project requirement | T1 | Append PR-XXX row to `modeling_project/REQUIREMENTS.md` with correct columns (rare — project-level rules only) |
 | Close work item | T1 | Move `work/active/{WI-XXX}_{name}/` → `work/completed/YYYYMMDD_{WI-XXX}_{name}/`, update `work/BACKLOG.md` status. Agent handles project-document feedback prompt separately (see [workflows.md § 3.5](workflows.md)). |
-| Update validation status | T1 | Update Status column in `project/VALIDATION_MATRIX.md` for specified SV-XXX |
+| Update validation status | T1 | Update Status column in `modeling_project/VALIDATION_MATRIX.md` for specified SV-XXX |
 | Project status query | T1 | Parse all structured files, produce dashboard markdown |
-| Trace element | T1 | Append row to `data/traceability_matrix.csv`. Validates schema, prevents duplicates, validates PR-XXX IDs exist in `project/REQUIREMENTS.md` and DI-XXX IDs exist in `knowledge/KNOWLEDGE.md`. Called by `/implement-model` as elements are created. |
-| Promote requirement | T1 | Append PR-XXX row to `project/REQUIREMENTS.md`. Validates format, assigns ID, records Source (DI-XXX or G-XXX). Called by `/implement-model` when spec.md flags an MR-XXX for promotion. |
-| Register decision | T1 | Append AD-XXX entry to `project/ARCHITECTURE.md`. Validates format, assigns ID. Called by `/audit-models` when user approves a decision promotion. |
+| Trace element | T1 | Append row to `data/traceability_matrix.csv`. Validates schema, prevents duplicates, validates PR-XXX IDs exist in `modeling_project/REQUIREMENTS.md` and DI-XXX IDs exist in `knowledge/KNOWLEDGE.md`. Called by `/implement-model` as elements are created. |
+| Promote requirement | T1 | Append PR-XXX row to `modeling_project/REQUIREMENTS.md`. Validates format, assigns ID, records Source (DI-XXX or G-XXX). Called by `/implement-model` when spec.md flags an MR-XXX for promotion. |
+| Register decision | T1 | Append AD-XXX entry to `modeling_project/ARCHITECTURE.md`. Validates format, assigns ID. Called by `/audit-models` when user approves a decision promotion. |
 | Supersede insight | T2 | Mark old DI-XXX as superseded, create new DI-XXX, query `data/traceability_matrix.csv` for affected elements, produce impact report to `knowledge/research/impacts/`. See [workflows.md § 6.1](workflows.md). |
 | Impact query | T1 | Given a DI-XXX or PR-XXX, traverse `data/traceability_matrix.csv` to find all affected model elements and work items. Returns structured result for agent interpretation. |
 | Add insight (inline) | T1 (T3 invocation) | Assign DI-XXX ID, format entry from agent-supplied fields (title, context, model/analysis implications, source, rationale), append to `knowledge/KNOWLEDGE.md`. All content pre-formed by agent — no LLM call. Source uses `work-item:{WI-XXX}/{artifact}` convention. Called by any command when agent discovers a domain insight mid-workflow. |
@@ -78,7 +78,7 @@ Mutation scripts (approve-research, close-item, trace-element, promote-requireme
 The architecture addresses five concerns, each detailed in its own document:
 
 **Information Architecture** → See [information-architecture.md](information-architecture.md)
-Six information roles flow through the system: Authority Sources, Domain Knowledge, Project Intent, Modeling Requirements, Modeling Decisions, and System Verification. Each role has a producer, consumer, structured home, and entity format. The file structure mirrors the information flow model with four top-level content directories: `knowledge/` (Roles 1-2), `project/` (Roles 3-6), `work/` (execution tracking), and `models/` (artifacts).
+Six information roles flow through the system: Authority Sources, Domain Knowledge, Project Intent, Modeling Requirements, Modeling Decisions, and System Verification. Each role has a producer, consumer, structured home, and entity format. The file structure mirrors the information flow model with four top-level content directories: `knowledge/` (Roles 1-2), `modeling_project/` (Roles 3-6), `work/` (execution tracking), and `models/` (artifacts).
 
 **Downstream Pipeline Boundary** → See [information-architecture.md § 4.1](information-architecture.md#41-downstream-pipeline-boundary)
 The modeling workflow produces models that feed into sysml-codegen and teax. agentic-mbse defines the boundary — not the other side of it. Verification evidence from the downstream pipeline flows back through pytest tests into VALIDATION_MATRIX.md. Level 8 validation is governed by a contract: its checks are derived from sysml-codegen's requirements, and drift between them is a bug.
@@ -130,7 +130,7 @@ Questions resolved during the concept phase are recorded here for traceability, 
 | # | Question | Resolution | Where documented |
 |---|----------|------------|------------------|
 | Q1 | Are six roles right? | Yes — validated against fusion-tea. Every role has real content. | information-architecture.md § 3 |
-| Q2 | Where does Architecture Vision live? | Standalone `project/ARCHITECTURE.md` (Role 5). | information-architecture.md § 3 Role 5 |
+| Q2 | Where does Architecture Vision live? | Standalone `modeling_project/ARCHITECTURE.md` (Role 5). | information-architecture.md § 3 Role 5 |
 | Q3 | Domain insight format? | DI-XXX with 7 fields (Source, Rationale, Context, Model/Analysis implications, Status, Superseded-by/Supersedes). | information-architecture.md § 3 Role 2 |
 | Q4 | How do project-level rules get promoted? | Both paths: `/implement-model` promotes MR-XXX → PR-XXX via `Promote requirement` (AP-7 T1); `/audit-models` proposes pattern-based promotions. | B-002, B-006/B-007, main.md AP-7 table |
 | Q5 | When does a registry file become unwieldy? | ~100 entries. Deferred to experience. | information-architecture.md § 3 Role 2 scaling note |

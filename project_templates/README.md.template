@@ -31,12 +31,12 @@ Each document has **one clear purpose**:
 | **CLAUDE.md** | AI operating rules, environment setup | You |
 | **knowledge/SOURCE_INDEX.md** | Domain knowledge sources | `/manage-sources` |
 | **knowledge/KNOWLEDGE.md** | Curated domain insights | `/research` |
-| **project/OVERVIEW.md** | Project goals and intent | You |
-| **project/ARCHITECTURE.md** | Model architecture decisions | You |
-| **project/REQUIREMENTS.md** | Project-specific modeling rules | You |
-| **project/VALIDATION_MATRIX.md** | System verification criteria | You |
-| **project/MODELING_GUIDE.md** | SysML syntax reference | Static (don't edit) |
-| **project/MODELING_PROCESS.md** | MBSE methodology | Static (don't edit) |
+| **modeling_project/OVERVIEW.md** | Project goals and intent | You |
+| **modeling_project/ARCHITECTURE.md** | Model architecture decisions | You |
+| **modeling_project/REQUIREMENTS.md** | Project-specific modeling rules | You |
+| **modeling_project/VALIDATION_MATRIX.md** | System verification criteria | You |
+| **modeling_project/MODELING_GUIDE.md** | SysML syntax reference | Static (don't edit) |
+| **modeling_project/MODELING_PROCESS.md** | MBSE methodology | Static (don't edit) |
 | **work/BACKLOG.md** | Work item pipeline | `/backlog` |
 | **work/learnings/RAW_LEARNINGS.md** | Captured insights | `/record-learning` |
 
@@ -45,10 +45,10 @@ Each document has **one clear purpose**:
 **You edit directly:**
 - `README.md` - Project-specific setup instructions
 - `CLAUDE.md` - Environment rules (virtualenv, PYTHONPATH, lint)
-- `project/OVERVIEW.md` - Project goals, success criteria
-- `project/ARCHITECTURE.md` - Model architecture decisions
-- `project/REQUIREMENTS.md` - Project-specific modeling rules
-- `project/VALIDATION_MATRIX.md` - System verification criteria
+- `modeling_project/OVERVIEW.md` - Project goals, success criteria
+- `modeling_project/ARCHITECTURE.md` - Model architecture decisions
+- `modeling_project/REQUIREMENTS.md` - Project-specific modeling rules
+- `modeling_project/VALIDATION_MATRIX.md` - System verification criteria
 
 **Commands manage for you:**
 - `knowledge/SOURCE_INDEX.md` - Use `/manage-sources` to add/remove sources
@@ -58,8 +58,8 @@ Each document has **one clear purpose**:
 - `models/**/*.sysml` - Created by `/implement-model`
 
 **Static (from agentic-mbse, don't edit):**
-- `project/MODELING_GUIDE.md` - SysML patterns and syntax
-- `project/MODELING_PROCESS.md` - MBSE methodology and workflow
+- `modeling_project/MODELING_GUIDE.md` - SysML patterns and syntax
+- `modeling_project/MODELING_PROCESS.md` - MBSE methodology and workflow
 
 ---
 
@@ -181,7 +181,7 @@ knowledge/                   # "What do we know?"
     ├── pending/             #     Unapproved research
     └── approved/            #     User-approved research
 
-project/                     # "What are we building and how?"
+modeling_project/                     # "What are we building and how?"
 ├── OVERVIEW.md              #   Project goals and intent
 ├── ARCHITECTURE.md          #   Model architecture decisions
 ├── REQUIREMENTS.md          #   Project-specific rules
@@ -230,9 +230,9 @@ part my_component : 'Component Name' {
 
 ## Resources
 
-- [MBSE Workflow](project/MODELING_PROCESS.md)
-- [SysML Patterns](project/MODELING_GUIDE.md)
+- [MBSE Workflow](modeling_project/MODELING_PROCESS.md)
+- [SysML Patterns](modeling_project/MODELING_GUIDE.md)
 - [Domain Sources](knowledge/SOURCE_INDEX.md)
-- [Project Goals](project/OVERVIEW.md)
+- [Project Goals](modeling_project/OVERVIEW.md)
 - [Work Items](work/BACKLOG.md)
 - [Session Learnings](work/learnings/RAW_LEARNINGS.md)

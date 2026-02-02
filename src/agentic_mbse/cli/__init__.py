@@ -53,20 +53,20 @@ MBSE_HOOKS = [
 # - TOOL_OWNED: Auto-updated on every init (tool manages these)
 USER_OWNED_TEMPLATES = [
     ("README.md.template", "README.md"),
-    ("OVERVIEW.md.template", "project/OVERVIEW.md"),
+    ("OVERVIEW.md.template", "modeling_project/OVERVIEW.md"),
     ("BACKLOG.md.template", "work/BACKLOG.md"),
     ("RAW_LEARNINGS.md.template", "work/learnings/RAW_LEARNINGS.md"),
     ("KNOWLEDGE.md.template", "knowledge/KNOWLEDGE.md"),
-    ("ARCHITECTURE.md.template", "project/ARCHITECTURE.md"),
-    ("REQUIREMENTS.md.template", "project/REQUIREMENTS.md"),
-    ("VALIDATION_MATRIX.md.template", "project/VALIDATION_MATRIX.md"),
+    ("ARCHITECTURE.md.template", "modeling_project/ARCHITECTURE.md"),
+    ("REQUIREMENTS.md.template", "modeling_project/REQUIREMENTS.md"),
+    ("VALIDATION_MATRIX.md.template", "modeling_project/VALIDATION_MATRIX.md"),
     ("test_models_example.py.template", "tests/models/test_example.py"),
     ("conftest.py.template", "tests/conftest.py"),
 ]
 
 TOOL_OWNED_TEMPLATES = [
-    ("MODELING_GUIDE.md.template", "project/MODELING_GUIDE.md"),
-    ("MODELING_PROCESS.md.template", "project/MODELING_PROCESS.md"),
+    ("MODELING_GUIDE.md.template", "modeling_project/MODELING_GUIDE.md"),
+    ("MODELING_PROCESS.md.template", "modeling_project/MODELING_PROCESS.md"),
     ("EPIC_GUIDE.md.template", "work/EPIC_GUIDE.md"),
     ("epic_template.md.template", "work/backlog/epic_template.md"),
 ]
@@ -82,8 +82,8 @@ DEV_MODE_GITIGNORE_PATHS = [
     ".claude/skills/",
     ".claude/hooks/",
     ".claude/.tool-hashes.json",
-    "project/MODELING_GUIDE.md",
-    "project/MODELING_PROCESS.md",
+    "modeling_project/MODELING_GUIDE.md",
+    "modeling_project/MODELING_PROCESS.md",
     "work/EPIC_GUIDE.md",
     "work/backlog/epic_template.md",
 ]
@@ -483,7 +483,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     - .gitignore (standard Python ignores including .env) [user-owned]
     - knowledge/SOURCE_INDEX.md (domain knowledge discovery) [user-owned]
     - knowledge/KNOWLEDGE.md (domain insight registry) [user-owned]
-    - project/ structure (OVERVIEW, ARCHITECTURE, REQUIREMENTS, etc.) [mixed]
+    - modeling_project/ structure (OVERVIEW, ARCHITECTURE, REQUIREMENTS, etc.) [mixed]
     - work/ structure (BACKLOG, EPIC_GUIDE, epic template, active, completed, etc.) [mixed]
     - data/traceability_matrix.csv (element traceability) [user-owned]
     - .claude/commands/ with MBSE commands [tool-owned]
@@ -799,8 +799,8 @@ Edit this file to add your domain-specific sources.
         "knowledge/research/approved",
         "knowledge/research/impacts",
         "knowledge/sources",
-        "project",
-        "project/intent",
+        "modeling_project",
+        "modeling_project/intent",
         "work",
         "work/backlog",
         "work/active",

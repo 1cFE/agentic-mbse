@@ -9,7 +9,7 @@
 # What it does:
 # - Installs .claude/commands/, agents/, skills/, hooks/
 # - Creates .claude/settings.json with docs/ permissions
-# - Creates 4-directory project structure (knowledge/, project/, work/, data/)
+# - Creates 4-directory project structure (knowledge/, modeling_project/, work/, data/)
 # - Creates knowledge/SOURCE_INDEX.md from template
 #
 # What it does NOT do (library owns these):
@@ -112,7 +112,7 @@ create_project_structure() {
     mkdir -p "$REPO_ROOT/knowledge/research/approved"
     mkdir -p "$REPO_ROOT/knowledge/research/impacts"
     mkdir -p "$REPO_ROOT/knowledge/sources"
-    mkdir -p "$REPO_ROOT/project/intent"
+    mkdir -p "$REPO_ROOT/modeling_project/intent"
     mkdir -p "$REPO_ROOT/work/backlog"
     mkdir -p "$REPO_ROOT/work/active"
     mkdir -p "$REPO_ROOT/work/completed"
@@ -124,7 +124,7 @@ create_project_structure() {
     mkdir -p "$REPO_ROOT/tests/models"
 
     log_created "knowledge/{research/{pending,approved,impacts},sources}/"
-    log_created "project/intent/"
+    log_created "modeling_project/intent/"
     log_created "work/{backlog,active,completed,analysis,learnings}/"
     log_created "data/"
     log_created "models/{library,designs}/"
@@ -132,12 +132,12 @@ create_project_structure() {
 
     # Tool-owned templates
     cp "$REPO_ROOT/project_templates/MODELING_GUIDE.md.template" \
-       "$REPO_ROOT/project/MODELING_GUIDE.md"
-    log_created "project/MODELING_GUIDE.md"
+       "$REPO_ROOT/modeling_project/MODELING_GUIDE.md"
+    log_created "modeling_project/MODELING_GUIDE.md"
 
     cp "$REPO_ROOT/project_templates/MODELING_PROCESS.md.template" \
-       "$REPO_ROOT/project/MODELING_PROCESS.md"
-    log_created "project/MODELING_PROCESS.md"
+       "$REPO_ROOT/modeling_project/MODELING_PROCESS.md"
+    log_created "modeling_project/MODELING_PROCESS.md"
 
     cp "$REPO_ROOT/project_templates/EPIC_GUIDE.md.template" \
        "$REPO_ROOT/work/EPIC_GUIDE.md"
@@ -149,8 +149,8 @@ create_project_structure() {
 
     # User-owned templates
     cp "$REPO_ROOT/project_templates/OVERVIEW.md.template" \
-       "$REPO_ROOT/project/OVERVIEW.md"
-    log_created "project/OVERVIEW.md"
+       "$REPO_ROOT/modeling_project/OVERVIEW.md"
+    log_created "modeling_project/OVERVIEW.md"
 
     cp "$REPO_ROOT/project_templates/BACKLOG.md.template" \
        "$REPO_ROOT/work/BACKLOG.md"
@@ -165,16 +165,16 @@ create_project_structure() {
     log_created "knowledge/KNOWLEDGE.md"
 
     cp "$REPO_ROOT/project_templates/ARCHITECTURE.md.template" \
-       "$REPO_ROOT/project/ARCHITECTURE.md"
-    log_created "project/ARCHITECTURE.md"
+       "$REPO_ROOT/modeling_project/ARCHITECTURE.md"
+    log_created "modeling_project/ARCHITECTURE.md"
 
     cp "$REPO_ROOT/project_templates/REQUIREMENTS.md.template" \
-       "$REPO_ROOT/project/REQUIREMENTS.md"
-    log_created "project/REQUIREMENTS.md"
+       "$REPO_ROOT/modeling_project/REQUIREMENTS.md"
+    log_created "modeling_project/REQUIREMENTS.md"
 
     cp "$REPO_ROOT/project_templates/VALIDATION_MATRIX.md.template" \
-       "$REPO_ROOT/project/VALIDATION_MATRIX.md"
-    log_created "project/VALIDATION_MATRIX.md"
+       "$REPO_ROOT/modeling_project/VALIDATION_MATRIX.md"
+    log_created "modeling_project/VALIDATION_MATRIX.md"
 
     # Data templates
     cp "$REPO_ROOT/project_templates/data/traceability_matrix.csv" \
@@ -194,7 +194,7 @@ print_summary() {
     echo "================================"
     echo ""
     echo "Next steps:"
-    echo "  1. Review project/OVERVIEW.md for the project template"
+    echo "  1. Review modeling_project/OVERVIEW.md for the project template"
     echo "  2. Run /spec-model to start modeling"
     echo "  3. Or run /onboard for interactive configuration"
     echo ""

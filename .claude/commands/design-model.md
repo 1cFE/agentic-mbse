@@ -67,14 +67,19 @@ START → OUTLINE → RESEARCH → ADD DETAIL → FINALIZE → PROTOTYPE → VAL
    - Find thermal modules in configured source locations
    - Extract parameters: heat flux, coolant temp, flow rates
 
-3. **SysMLv2 Guidance** (sysmlv2-doc-analyzer agent):
+3. **SysMLv2 Guidance** (kerml-expert + sysml-expert agents in parallel):
    ```
    Task(
+     prompt="What functions exist for aggregation (sum, product)?",
+     subagent_type="kerml-expert"
+   )
+   Task(
      prompt="How to model thermal management with heat generation,
-            coolant flow, temperature limits, heat transfer?"
+            coolant flow, temperature limits, heat transfer?",
+     subagent_type="sysml-expert"
    )
    ```
-   - Returns: Patterns for flow interfaces, constraint modeling
+   - Returns: Function signatures, import patterns, modeling patterns
 
 4. **Web Search:** Material properties, heat transfer correlations
 
@@ -247,6 +252,21 @@ Task(
 )
 
 # Agent 2: SysMLv2 patterns and guidance
+# Agent 2a: KerML expert for standard library functions
+Task(
+    description="Get KerML function patterns",
+    prompt="""What standard library functions exist for:
+    - Aggregation (sum, product)
+    - Sequence operations (size, isEmpty)
+    - Control flow (collect, select, reduce)
+
+    Provide import statements and signatures.
+    """,
+    subagent_type="kerml-expert",
+    model="haiku"  # Fast for pattern retrieval
+)
+
+# Agent 2b: SysML expert for modeling patterns
 Task(
     description="Get SysMLv2 modeling patterns",
     prompt="""How should I model [YOUR SYSTEM DESCRIPTION] in SysMLv2?
@@ -265,7 +285,7 @@ Task(
 
     Provide concrete examples for fusion modeling context.
     """,
-    subagent_type="sysmlv2-doc-analyzer",
+    subagent_type="sysml-expert",
     model="haiku"  # Fast for pattern retrieval
 )
 
@@ -382,7 +402,10 @@ Use WebSearch for:
    - Validation approach (how to verify correctness)
 
 **When evaluating modeling approach alternatives:**
-- Consider using sysmlv2-doc-analyzer to validate approaches against official specs
+- Use specialized agents to validate approaches against official specs:
+  - `kerml-expert` for standard library functions and type system
+  - `sysml-expert` for modeling patterns and constructs
+  - `sysmlv2-validator` to check syntax of proposed code
 - Ask: "What are recommended SysMLv2 patterns for [specific scenario]?"
 - Compare codebase source implementation structure with SysMLv2 best practices
 - Present alternatives that align with both engineering needs AND spec guidance
@@ -1195,21 +1218,52 @@ syside check models/library/[area]/[file].sysml
 - Locate related definitions in models/library/
 - Identify reusable components and conventions
 
-**sysmlv2-doc-analyzer agent:**
-- **INVOKE DURING DESIGN for:**
-  - Component structure decisions (how to decompose systems)
-  - Interface design patterns (what should flow between components)
-  - Constraint modeling (how to represent physics/engineering limits)
-  - Requirement modeling (how to link requirements to design elements)
-  - General SysMLv2 syntax or semantics questions
-- **HOW TO USE:**
-  - Provide: Detailed physical system description + specific modeling question
-  - Returns: Official spec guidance with examples and recommendations
-  - Timing: Before making major structural decisions, during alternatives evaluation
-- **EXAMPLE:**
+**SysMLv2 Documentation Agents:**
+
+Use specialized agents based on question type:
+
+| Question Type | Agent | Example |
+|--------------|-------|---------|
+| Standard library functions | `kerml-expert` | "What's the signature of sum?" |
+| Modeling patterns | `sysml-expert` | "How do I model requirements?" |
+| Parser/tooling | `syside-expert` | "How do I evaluate expressions?" |
+| Syntax validation | `sysmlv2-validator` | "Does this code parse?" |
+
+**For comprehensive answers, spawn multiple agents in parallel:**
+- Cross-cutting questions (function + usage pattern) → kerml-expert + sysml-expert
+- "Why doesn't this work?" → sysmlv2-validator + relevant expert
+
+**kerml-expert:** KerML standard library, type system, language semantics
+- Functions: sum, size, collect, reduce, etc.
+- Types: Real, Integer, Boolean, Anything
+- Import patterns for standard library
+
+**sysml-expert:** SysML v2 modeling patterns and constructs
+- Part/port/attribute definitions
+- Requirements, constraints, connections
+- Actions, state machines, flows
+
+**syside-expert:** Parser and tooling questions
+- Model loading, AST querying
+- Expression evaluation
+- Automator workflows
+
+**sysmlv2-validator:** Syntax validation and model inspection
+- Quick syntax check: `syside check`
+- Deep model analysis with Python scripts
+- Error interpretation and fix suggestions
+
+**EXAMPLE (parallel spawning):**
   ```
+  # Spawn both experts in a SINGLE message for parallel execution
   Task(
-    description="SysMLv2 guidance for magnet system interfaces",
+    description="KerML function signatures for magnet calculations",
+    prompt="What functions exist for numerical aggregation? Need sum, product.
+           How do I import them?",
+    subagent_type="kerml-expert"
+  )
+  Task(
+    description="SysMLv2 patterns for magnet system interfaces",
     prompt="How should I model interfaces between a superconducting magnet
            system and cooling system in SysMLv2? The magnet has:
            - Electrical power input (AC/DC conversion)
@@ -1218,7 +1272,7 @@ syside check models/library/[area]/[file].sysml
            - Structural support forces
            Need patterns for: interface definitions, flow properties,
            constraint propagation across interfaces.",
-    subagent_type="sysmlv2-doc-analyzer"
+    subagent_type="sysml-expert"
   )
   ```
 
@@ -1274,7 +1328,7 @@ syside check models/library/[area]/[file].sysml
 **Related Commands:**
 - Before design → `/research` or `/spec-model`
 - After design (with validation) → `/plan-model` for implementation planning
-- For SysMLv2 guidance → use sysmlv2-doc-analyzer agent
+- For SysMLv2 guidance → use kerml-expert, sysml-expert, syside-expert, sysmlv2-validator agents
 
 **Related Documentation:**
 - **models/README.md** - Directory structure, library reference, common patterns

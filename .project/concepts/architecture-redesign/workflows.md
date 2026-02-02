@@ -396,9 +396,9 @@ No E-XXX ID scheme. No formal state machine beyond these three states. The epic 
 │  CLI Layer: `agentic-mbse status`                │
 │  (Python script — deterministic, testable)       │
 │                                                  │
-│  Reads: work/BACKLOG.md, project/REQUIREMENTS.md,│
+│  Reads: work/BACKLOG.md, modeling_project/REQUIREMENTS.md,│
 │         work/active/, work/completed/,           │
-│         project/VALIDATION_MATRIX.md,            │
+│         modeling_project/VALIDATION_MATRIX.md,            │
 │         models/, tests/                          │
 │                                                  │
 │  Produces: Markdown dashboard with:              │
@@ -446,17 +446,17 @@ The script engine needs to parse structured files. This defines **what it expect
 
 **Backlog state**: The PM engine reads BACKLOG.md YAML frontmatter for epic and item tracking. See § 3.6 for the BACKLOG.md format.
 
-**Project requirements compliance** (derived from `project/REQUIREMENTS.md`):
+**Project requirements compliance** (derived from `modeling_project/REQUIREMENTS.md`):
 
 | Metric | Computed by |
 |--------|-------------|
-| Total project rules | Count rows in `project/REQUIREMENTS.md` |
+| Total project rules | Count rows in `modeling_project/REQUIREMENTS.md` |
 | With validation method | Count rows where Validation Method column is non-empty |
 | Enforceable (machine-checkable) | Count rows where Enforcement = validation rule (vs. design review) |
 
 Note: Per-feature MR-XXX requirements are NOT tracked at the project level. They are ephemeral artifacts of individual work items in `work/active/{WI-XXX}_{name}/spec.md` and are archived with the work item when complete.
 
-**Validation status** (derived from `project/VALIDATION_MATRIX.md`):
+**Validation status** (derived from `modeling_project/VALIDATION_MATRIX.md`):
 
 | Metric | Computed by |
 |--------|-------------|
@@ -534,7 +534,7 @@ Input:  Research question + knowledge/SOURCE_INDEX.md
 
 ```
 Input:  Model files (models/), test files (tests/),
-        project/MODELING_GUIDE.md + project/REQUIREMENTS.md (Role 4 rules)
+        modeling_project/MODELING_GUIDE.md + modeling_project/REQUIREMENTS.md (Role 4 rules)
         │
         v
    Parse model structure: files, definitions, usages, cross-file deps

@@ -298,7 +298,7 @@ standalone: []
 ---
 Status: draft
 Priority: P1
-Goal: G-XXX  # from project/OVERVIEW.md
+Goal: G-XXX  # from modeling_project/OVERVIEW.md
 Created: YYYY-MM-DD
 Updated: YYYY-MM-DD
 ---

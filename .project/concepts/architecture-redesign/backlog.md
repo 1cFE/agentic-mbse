@@ -329,7 +329,7 @@ Every node in this chain is durable. spec.md is where requirements are *discover
 - `/spec-model` writes spec.md with many fine-grained MR-XXX requirements (ephemeral)
 - Some MR-XXX are significant enough to be durable — the agent or user flags these for promotion
 - `/implement-model` calls the `trace-element` AP-7 script, which:
-  1. Promotes flagged MR-XXX to PR-XXX in `project/REQUIREMENTS.md` (if not already there)
+  1. Promotes flagged MR-XXX to PR-XXX in `modeling_project/REQUIREMENTS.md` (if not already there)
   2. Records the model element → PR-XXX link in `data/traceability_matrix.csv`
   3. The PR-XXX entry's `Source` column records the DI-XXX or G-XXX it derives from
 
@@ -489,7 +489,7 @@ Add new operations to the AP-7 operations table:
 | Operation | Tier | What the script does |
 |-----------|------|---------------------|
 | Trace element | T1 | Append row to `traceability_matrix.csv`. Validates schema, prevents duplicates, validates PR-XXX IDs exist in REQUIREMENTS.md and DI-XXX IDs exist in KNOWLEDGE.md. Called by `/implement-model` as elements are created. |
-| Promote requirement | T1 | Append PR-XXX row to `project/REQUIREMENTS.md`. Validates format, assigns ID, records Source (DI-XXX or G-XXX). Called by `/implement-model` when spec.md flags an MR-XXX for promotion. |
+| Promote requirement | T1 | Append PR-XXX row to `modeling_project/REQUIREMENTS.md`. Validates format, assigns ID, records Source (DI-XXX or G-XXX). Called by `/implement-model` when spec.md flags an MR-XXX for promotion. |
 | Supersede insight | T2 | Mark old DI-XXX as superseded, create new DI-XXX, query traceability_matrix.csv for affected elements, produce impact report. |
 | Impact query | T1 | Given a DI-XXX or PR-XXX, traverse traceability_matrix.csv to find all affected model elements and work items. |
 
@@ -510,7 +510,7 @@ Level 6 validation (`level6_traceability.py`) currently only checks doc comment 
 1. **Format check**: Doc comments on definitions contain `Source` and `Reference` fields
 2. **Resolvability check**: Referenced source documents exist in SOURCE_INDEX.md
 3. **Completeness check**: `traceability_matrix.csv` has an entry for each definition (parsed via syside adapter)
-4. **Requirement coverage check**: Every PR-XXX in `project/REQUIREMENTS.md` has at least one satisfying element in `traceability_matrix.csv`
+4. **Requirement coverage check**: Every PR-XXX in `modeling_project/REQUIREMENTS.md` has at least one satisfying element in `traceability_matrix.csv`
 
 Sub-checks 1-3 extend Level 6. Sub-check 4 is a cross-file check that may belong in Level 7 (architectural integrity) or as a standalone `agentic-mbse validate --traceability` flag.
 
@@ -639,7 +639,7 @@ The "investigate" concept actually covers two different activities that the arch
 | Activity | Command | Reads | Produces | Output destination |
 |----------|---------|-------|----------|--------------------|
 | **External research** | `/research` | `knowledge/SOURCE_INDEX.md`, authority sources, raw external data | Domain insights (DI-XXX) | `knowledge/research/pending/` -> `knowledge/research/approved/` -> `knowledge/KNOWLEDGE.md` |
-| **Model analysis** | `/analyze-models` | Existing models, approved `knowledge/KNOWLEDGE.md`, `project/ARCHITECTURE.md`, `project/REQUIREMENTS.md` | Understanding of current model state: what exists, patterns in use, gaps, health | `work/analysis/` (standalone artifact, NOT tied to a work item) |
+| **Model analysis** | `/analyze-models` | Existing models, approved `knowledge/KNOWLEDGE.md`, `modeling_project/ARCHITECTURE.md`, `modeling_project/REQUIREMENTS.md` | Understanding of current model state: what exists, patterns in use, gaps, health | `work/analysis/` (standalone artifact, NOT tied to a work item) |
 
 These are fundamentally different:
 - `/research` builds **domain knowledge** (Role 2) — "what does the physics say?"
@@ -824,8 +824,8 @@ B-001 already resolved the highest-risk case by establishing YAML frontmatter fo
 | `work/active/{item}/spec.md` | Status, Scale, Epic, Owner | YAML frontmatter (B-001) | **Low** |
 | `work/backlog/epic-{name}.md` | Status, Priority, Goal | YAML frontmatter (B-001) | **Low** |
 | `data/traceability_matrix.csv` | Full schema | CSV (B-002) | **Low** |
-| `project/REQUIREMENTS.md` | PR-XXX rows, column values | Markdown table | **Low** — few rows, rarely hand-edited |
-| `project/VALIDATION_MATRIX.md` | SV-XXX rows, Status/Mechanism | Markdown table | **Low** — few rows, script-updated |
+| `modeling_project/REQUIREMENTS.md` | PR-XXX rows, column values | Markdown table | **Low** — few rows, rarely hand-edited |
+| `modeling_project/VALIDATION_MATRIX.md` | SV-XXX rows, Status/Mechanism | Markdown table | **Low** — few rows, script-updated |
 | `knowledge/KNOWLEDGE.md` | DI-XXX entries, Status field | Structured markdown sections | **Low-Medium** — section-based |
 | `work/BACKLOG.md` | Epic sections, item rows, status | Markdown tables + section headers | **Medium** — highest frequency read/write, most complex structure |
 
@@ -980,8 +980,8 @@ When writing `work/active/{item}/design.md`, an engineer makes structural decisi
 Decision promotion does not need its own mechanism. It is one of `/audit-models`' checks — the same command that already handles requirement promotion (Q4). The flow:
 
 ```
-/audit-models reads: models/, project/ARCHITECTURE.md,
-  project/REQUIREMENTS.md, work/completed/
+/audit-models reads: models/, modeling_project/ARCHITECTURE.md,
+  modeling_project/REQUIREMENTS.md, work/completed/
         │
         v
 Among other checks:
@@ -1028,7 +1028,7 @@ But their skill sets overlap heavily (both reference sysml-conventions, model-va
 | Dimension | `/review-model` | `/audit-models` |
 |-----------|-----------------|-----------------|
 | **When** | Pre-implementation (after design, before implement) | Post-implementation (after model artifacts exist) |
-| **Reads** | design.md, prototype, `project/REQUIREMENTS.md`, `project/ARCHITECTURE.md` | `models/`, `tests/`, spec.md (MR-XXX), `project/REQUIREMENTS.md`, `project/ARCHITECTURE.md`, `project/VALIDATION_MATRIX.md`, `data/traceability_matrix.csv`, `work/completed/` |
+| **Reads** | design.md, prototype, `modeling_project/REQUIREMENTS.md`, `modeling_project/ARCHITECTURE.md` | `models/`, `tests/`, spec.md (MR-XXX), `modeling_project/REQUIREMENTS.md`, `modeling_project/ARCHITECTURE.md`, `modeling_project/VALIDATION_MATRIX.md`, `data/traceability_matrix.csv`, `work/completed/` |
 | **Question** | "Will this design work?" | "Did we build it right? Are project docs current?" |
 | **Checks** | Design compliance with project rules, interface consistency, prototype validation (Levels 1-3), feasibility assessment | Spec requirement satisfaction (MR-XXX), source traceability, validation pyramid, requirement promotion (Q4), decision promotion (B-006) |
 | **Output artifact** | `work/active/{item}/review.md` (user-curated findings) | Updates to project docs via AP-7 scripts; backlog entries for gaps |
@@ -1108,11 +1108,11 @@ Body contains the accepted and deferred findings in free-form markdown. The verd
 
 3. **Validation pyramid**: Run `agentic-mbse validate` on the audited models. Report results by level.
 
-4. **Requirement promotion** (Q4): Detect patterns that recur across work items but aren't in `project/REQUIREMENTS.md`. Propose promotion to PR-XXX.
+4. **Requirement promotion** (Q4): Detect patterns that recur across work items but aren't in `modeling_project/REQUIREMENTS.md`. Propose promotion to PR-XXX.
 
-5. **Decision promotion** (B-006): Detect structural decisions that recur across work items but aren't in `project/ARCHITECTURE.md`. Propose promotion to AD-XXX.
+5. **Decision promotion** (B-006): Detect structural decisions that recur across work items but aren't in `modeling_project/ARCHITECTURE.md`. Propose promotion to AD-XXX.
 
-6. **Verification criteria**: Identify model behaviors that should have SV-XXX entries in `project/VALIDATION_MATRIX.md` but don't.
+6. **Verification criteria**: Identify model behaviors that should have SV-XXX entries in `modeling_project/VALIDATION_MATRIX.md` but don't.
 
 **Output**: Not a single artifact file. Instead, `/audit-models` proposes specific updates to project documents:
 
@@ -1153,7 +1153,7 @@ For accepted proposals, the agent calls the appropriate AP-7 script: `register-r
 
 | Operation | Tier | What the script does |
 |-----------|------|---------------------|
-| Register decision | T1 | Append AD-XXX entry to `project/ARCHITECTURE.md`. Validates format, assigns ID. Called by `/audit-models` when user approves a decision promotion. |
+| Register decision | T1 | Append AD-XXX entry to `modeling_project/ARCHITECTURE.md`. Validates format, assigns ID. Called by `/audit-models` when user approves a decision promotion. |
 
 **In workflows.md § 3.3** (Stage Artifacts) — add review.md to the artifact list:
 
@@ -1534,10 +1534,10 @@ B-009 (SOURCE_INDEX.md placement inconsistent) is resolved: SOURCE_INDEX.md move
 | 3.2 | Replace entire file structure diagram with approved structure |
 | 3.3 Role 1 | Update paths: `knowledge/SOURCE_INDEX.md` |
 | 3.3 Role 2 | Update paths: `knowledge/KNOWLEDGE.md`, `knowledge/research/` |
-| 3.3 Role 3 | Update paths: `project/OVERVIEW.md`, `project/intent/*.md` |
-| 3.3 Role 4 | Update paths: `project/REQUIREMENTS.md`, `project/MODELING_GUIDE.md` |
-| 3.3 Role 5 | Update paths: `project/ARCHITECTURE.md` |
-| 3.3 Role 6 | Update paths: `project/VALIDATION_MATRIX.md` |
+| 3.3 Role 3 | Update paths: `modeling_project/OVERVIEW.md`, `project/intent/*.md` |
+| 3.3 Role 4 | Update paths: `modeling_project/REQUIREMENTS.md`, `modeling_project/MODELING_GUIDE.md` |
+| 3.3 Role 5 | Update paths: `modeling_project/ARCHITECTURE.md` |
+| 3.3 Role 6 | Update paths: `modeling_project/VALIDATION_MATRIX.md` |
 | 7.1 | Update research output paths to `knowledge/research/` |
 | 7.2 | Update `/analyze-models` output path to `work/analysis/` |
 | All references to `modeling_pm/` | Replace with `project/` or `work/` as appropriate |
