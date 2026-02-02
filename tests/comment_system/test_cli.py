@@ -2051,3 +2051,213 @@ def test_decisions_command_error_no_git_repo_for_project_root(runner):
 
     # Restore original working directory
     os.chdir(original_cwd)
+
+
+# ============================================================================
+# Concurrency Tests: Automatic Retry on Concurrent Modifications
+# ============================================================================
+
+
+def test_add_concurrent_modification_automatic_retry(runner, git_repo):
+    """Test that add() automatically retries on concurrent modifications."""
+    from unittest.mock import patch
+
+    from comment_system.storage import ConcurrencyConflict, read_sidecar, write_sidecar
+
+    # Create a sample file
+    sample_file = git_repo / "test.txt"
+    sample_file.write_text("Line 1\nLine 2\nLine 3\n")
+
+    # Create initial thread using CLI
+    result = runner.invoke(
+        cli, ["add", "test.txt", "-L", "1:1", "-a", "alice", "First comment"]
+    )
+    assert result.exit_code == 0
+
+    # Track number of write attempts
+    write_attempts = []
+
+    # Patch write_sidecar to simulate concurrent modification on first attempt
+    original_write = write_sidecar
+
+    def mock_write_sidecar(path, sidecar, *, check_hash=True, acquire_lock=True, timeout=5.0):
+        write_attempts.append(1)
+        if len(write_attempts) == 1 and check_hash:
+            # First attempt with hash check - simulate concurrent modification
+            raise ConcurrencyConflict("Simulated concurrent modification")
+        # Subsequent attempts succeed
+        return original_write(path, sidecar, check_hash=check_hash, acquire_lock=acquire_lock, timeout=timeout)
+
+    with patch("comment_system.storage.write_sidecar", side_effect=mock_write_sidecar):
+        # Add second comment - should succeed after automatic retry
+        result = runner.invoke(
+            cli, ["add", "test.txt", "-L", "2:2", "-a", "bob", "Second comment"]
+        )
+        assert result.exit_code == 0
+        assert "Created thread" in result.output
+
+    # Verify we attempted write twice (once failed, once succeeded)
+    assert len(write_attempts) >= 2
+
+    # Verify both threads exist
+    sidecar = read_sidecar(git_repo / ".comments" / "test.txt.json")
+    assert len(sidecar.threads) == 2
+
+
+def test_add_concurrent_modification_max_retries_exceeded(runner, git_repo):
+    """Test that add() fails gracefully when max retries exceeded."""
+    from unittest.mock import patch
+
+    from comment_system.storage import ConcurrencyConflict
+
+    # Create a sample file
+    sample_file = git_repo / "test.txt"
+    sample_file.write_text("Line 1\nLine 2\nLine 3\n")
+
+    # Create initial thread
+    result = runner.invoke(
+        cli, ["add", "test.txt", "-L", "1:1", "-a", "alice", "First comment"]
+    )
+    assert result.exit_code == 0
+
+    # Patch write_sidecar to always fail with ConcurrencyConflict
+    def mock_write_sidecar(path, sidecar, *, check_hash=True, acquire_lock=True, timeout=5.0):
+        if check_hash:
+            raise ConcurrencyConflict("Simulated concurrent modification")
+        # Should not reach here in this test
+        raise AssertionError("Should have failed before this")
+
+    with patch("comment_system.storage.write_sidecar", side_effect=mock_write_sidecar):
+        # Add second comment - should fail after max retries
+        result = runner.invoke(
+            cli, ["add", "test.txt", "-L", "2:2", "-a", "bob", "Second comment"]
+        )
+        assert result.exit_code == 2
+        assert "Error:" in result.output
+
+
+def test_reply_concurrent_modification_automatic_retry(runner, git_repo):
+    """Test that reply() automatically retries on concurrent modifications."""
+    from unittest.mock import patch
+
+    from comment_system.storage import ConcurrencyConflict, read_sidecar, write_sidecar
+
+    # Create a sample file and thread
+    sample_file = git_repo / "test.txt"
+    sample_file.write_text("Line 1\nLine 2\nLine 3\n")
+
+    result = runner.invoke(
+        cli, ["add", "test.txt", "-L", "1:1", "-a", "alice", "Initial comment"]
+    )
+    assert result.exit_code == 0
+
+    # Extract thread ID from output
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Track write attempts
+    write_attempts = []
+    original_write = write_sidecar
+
+    def mock_write_sidecar(path, sidecar, *, check_hash=True, acquire_lock=True, timeout=5.0):
+        write_attempts.append(1)
+        if len(write_attempts) == 1 and check_hash:
+            raise ConcurrencyConflict("Simulated concurrent modification")
+        return original_write(path, sidecar, check_hash=check_hash, acquire_lock=acquire_lock, timeout=timeout)
+
+    with patch("comment_system.storage.write_sidecar", side_effect=mock_write_sidecar):
+        # Reply to thread - should succeed after retry
+        result = runner.invoke(cli, ["reply", thread_id, "-a", "bob", "Reply comment"])
+        assert result.exit_code == 0
+        assert "Added comment" in result.output
+
+    # Verify retry occurred
+    assert len(write_attempts) >= 2
+
+    # Verify reply was added
+    sidecar = read_sidecar(git_repo / ".comments" / "test.txt.json")
+    thread = sidecar.threads[0]
+    assert len(thread.comments) == 2
+
+
+def test_resolve_concurrent_modification_automatic_retry(runner, git_repo):
+    """Test that resolve() automatically retries on concurrent modifications."""
+    from unittest.mock import patch
+
+    from comment_system.storage import ConcurrencyConflict, write_sidecar
+
+    # Create a sample file and thread
+    sample_file = git_repo / "test.txt"
+    sample_file.write_text("Line 1\nLine 2\nLine 3\n")
+
+    result = runner.invoke(
+        cli, ["add", "test.txt", "-L", "1:1", "-a", "alice", "Initial comment"]
+    )
+    assert result.exit_code == 0
+
+    # Extract thread ID
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Track write attempts
+    write_attempts = []
+    original_write = write_sidecar
+
+    def mock_write_sidecar(path, sidecar, *, check_hash=True, acquire_lock=True, timeout=5.0):
+        write_attempts.append(1)
+        if len(write_attempts) == 1 and check_hash:
+            raise ConcurrencyConflict("Simulated concurrent modification")
+        return original_write(path, sidecar, check_hash=check_hash, acquire_lock=acquire_lock, timeout=timeout)
+
+    with patch("comment_system.storage.write_sidecar", side_effect=mock_write_sidecar):
+        # Resolve thread - should succeed after retry
+        result = runner.invoke(
+            cli, ["resolve", thread_id, "--decision", "Fixed in commit abc123"]
+        )
+        assert result.exit_code == 0
+        assert "marked as resolved" in result.output
+
+    # Verify retry occurred
+    assert len(write_attempts) >= 2
+
+
+def test_reopen_concurrent_modification_automatic_retry(runner, git_repo):
+    """Test that reopen() automatically retries on concurrent modifications."""
+    from unittest.mock import patch
+
+    from comment_system.models import ThreadStatus
+    from comment_system.storage import ConcurrencyConflict, read_sidecar, write_sidecar
+
+    # Create and resolve a thread
+    sample_file = git_repo / "test.txt"
+    sample_file.write_text("Line 1\nLine 2\nLine 3\n")
+
+    result = runner.invoke(
+        cli, ["add", "test.txt", "-L", "1:1", "-a", "alice", "Initial comment"]
+    )
+    assert result.exit_code == 0
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    result = runner.invoke(cli, ["resolve", thread_id, "--decision", "Fixed"])
+    assert result.exit_code == 0
+
+    # Track write attempts
+    write_attempts = []
+    original_write = write_sidecar
+
+    def mock_write_sidecar(path, sidecar, *, check_hash=True, acquire_lock=True, timeout=5.0):
+        write_attempts.append(1)
+        if len(write_attempts) == 1 and check_hash:
+            raise ConcurrencyConflict("Simulated concurrent modification")
+        return original_write(path, sidecar, check_hash=check_hash, acquire_lock=acquire_lock, timeout=timeout)
+
+    with patch("comment_system.storage.write_sidecar", side_effect=mock_write_sidecar):
+        # Reopen thread - should succeed after retry
+        result = runner.invoke(cli, ["reopen", thread_id])
+        assert result.exit_code == 0
+        assert "reopened" in result.output
+
+    # Verify retry occurred
+    assert len(write_attempts) >= 2
+
+    # Verify thread is open
+    sidecar = read_sidecar(git_repo / ".comments" / "test.txt.json")
+    assert sidecar.threads[0].status == ThreadStatus.OPEN

@@ -22,12 +22,13 @@ from comment_system.models import (
     ThreadStatus,
 )
 from comment_system.storage import (
+    ConcurrencyConflict,
     compute_source_hash,
     find_project_root,
     get_sidecar_path,
     normalize_path,
     read_sidecar,
-    write_sidecar,
+    write_sidecar_with_retry,
 )
 
 
@@ -324,34 +325,32 @@ def add(
         # Get sidecar path
         sidecar_path = get_sidecar_path(file_path, project_root)
 
-        # Read existing sidecar or create new one
-        if sidecar_path.exists():
-            try:
-                sidecar = read_sidecar(sidecar_path)
-                # Update source hash
-                sidecar.source_hash = compute_source_hash(file_path)
-            except ValueError as e:
-                click.echo(f"Error reading sidecar: {e}", err=True)
-                sys.exit(2)
-        else:
-            # Create new sidecar
-            try:
-                relative_path = file_path.relative_to(project_root)
-                sidecar = SidecarFile(
-                    source_file=relative_path.as_posix(),
-                    source_hash=compute_source_hash(file_path),
-                    threads=[],
-                )
-            except ValueError as e:
-                click.echo(f"Error: {e}", err=True)
-                sys.exit(1)
+        # Define update function for write_sidecar_with_retry
+        def add_thread_to_sidecar(current: SidecarFile | None) -> SidecarFile:
+            if current is not None:
+                # Update existing sidecar
+                current.source_hash = compute_source_hash(file_path)
+                current.threads.append(thread)
+                return current
+            else:
+                # Create new sidecar
+                try:
+                    relative_path = file_path.relative_to(project_root)
+                    return SidecarFile(
+                        source_file=relative_path.as_posix(),
+                        source_hash=compute_source_hash(file_path),
+                        threads=[thread],
+                    )
+                except ValueError as e:
+                    click.echo(f"Error: {e}", err=True)
+                    sys.exit(1)
 
-        # Add thread to sidecar
-        sidecar.threads.append(thread)
-
-        # Write sidecar
+        # Write sidecar with automatic retry on concurrency conflicts
         try:
-            write_sidecar(sidecar_path, sidecar)
+            write_sidecar_with_retry(sidecar_path, add_thread_to_sidecar)
+        except ConcurrencyConflict as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
         except (ValueError, OSError) as e:
             click.echo(f"Error writing sidecar: {e}", err=True)
             sys.exit(2)
@@ -729,9 +728,7 @@ def reply(thread_id: str, author: str, author_type: str, body: str):
             sys.exit(2)
 
         # Find thread in sidecar files
-        found_thread = None
         found_sidecar_path = None
-        found_sidecar = None
 
         comments_dir = project_root / ".comments"
         if comments_dir.exists():
@@ -741,23 +738,17 @@ def reply(thread_id: str, author: str, author_type: str, body: str):
                     sidecar = read_sidecar(sidecar_path)
                     for thread in sidecar.threads:
                         if thread.id == thread_id:
-                            found_thread = thread
                             found_sidecar_path = sidecar_path
-                            found_sidecar = sidecar
                             break
-                    if found_thread:
+                    if found_sidecar_path:
                         break
                 except ValueError:
                     # Skip invalid sidecar files
                     continue
 
-        if not found_thread:
+        if not found_sidecar_path:
             click.echo(f"Error: Thread not found: {thread_id}", err=True)
             sys.exit(1)
-
-        # Type narrowing: if found_thread is not None, the others are also not None
-        assert found_sidecar_path is not None
-        assert found_sidecar is not None
 
         # Create new comment
         new_comment = Comment(
@@ -766,12 +757,33 @@ def reply(thread_id: str, author: str, author_type: str, body: str):
             body=body,
         )
 
-        # Add comment to thread
-        found_thread.comments.append(new_comment)
+        # Define update function for write_sidecar_with_retry
+        def add_comment_to_thread(current: SidecarFile | None) -> SidecarFile:
+            if current is None:
+                click.echo("Error: Sidecar file was deleted", err=True)
+                sys.exit(2)
 
-        # Write updated sidecar
+            # Find thread in current sidecar (may have changed since initial search)
+            target_thread = None
+            for thread in current.threads:
+                if thread.id == thread_id:
+                    target_thread = thread
+                    break
+
+            if target_thread is None:
+                click.echo(f"Error: Thread {thread_id} not found in sidecar", err=True)
+                sys.exit(1)
+
+            # Add comment to thread
+            target_thread.comments.append(new_comment)
+            return current
+
+        # Write updated sidecar with automatic retry
         try:
-            write_sidecar(found_sidecar_path, found_sidecar)
+            write_sidecar_with_retry(found_sidecar_path, add_comment_to_thread)
+        except ConcurrencyConflict as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
         except (ValueError, OSError) as e:
             click.echo(f"Error writing sidecar: {e}", err=True)
             sys.exit(2)
@@ -826,9 +838,7 @@ def resolve(thread_id: str, decision: str | None, decider: str, wontfix: bool):
             sys.exit(2)
 
         # Find thread in sidecar files
-        found_thread = None
         found_sidecar_path = None
-        found_sidecar = None
 
         comments_dir = project_root / ".comments"
         if comments_dir.exists():
@@ -838,57 +848,78 @@ def resolve(thread_id: str, decision: str | None, decider: str, wontfix: bool):
                     sidecar = read_sidecar(sidecar_path)
                     for thread in sidecar.threads:
                         if thread.id == thread_id:
-                            found_thread = thread
                             found_sidecar_path = sidecar_path
-                            found_sidecar = sidecar
                             break
-                    if found_thread:
+                    if found_sidecar_path:
                         break
                 except ValueError:
                     # Skip invalid sidecar files
                     continue
 
-        if not found_thread:
+        if not found_sidecar_path:
             click.echo(f"Error: Thread not found: {thread_id}", err=True)
             sys.exit(1)
 
-        # Type narrowing: if found_thread is not None, the others are also not None
-        assert found_sidecar_path is not None
-        assert found_sidecar is not None
+        # Store decision reference for output message (will be set in update function)
+        decision_ref: dict[str, Decision | None] = {"decision": None}
 
-        # Check if already resolved
-        if found_thread.status != ThreadStatus.OPEN:
-            click.echo(
-                f"Error: Thread is already {found_thread.status.value}. "
-                f"Use 'comment reopen' to reopen it first.",
-                err=True,
-            )
-            sys.exit(1)
+        # Define update function for write_sidecar_with_retry
+        def resolve_thread(current: SidecarFile | None) -> SidecarFile:
+            if current is None:
+                click.echo("Error: Sidecar file was deleted", err=True)
+                sys.exit(2)
 
-        # Update thread status
-        if wontfix:
-            found_thread.status = ThreadStatus.WONTFIX
-            if decision:
-                # Create decision object if decision summary provided
-                found_thread.decision = Decision(
+            # Find thread in current sidecar (may have changed since initial search)
+            target_thread = None
+            for thread in current.threads:
+                if thread.id == thread_id:
+                    target_thread = thread
+                    break
+
+            if target_thread is None:
+                click.echo(f"Error: Thread {thread_id} not found in sidecar", err=True)
+                sys.exit(1)
+
+            # Check if already resolved
+            if target_thread.status != ThreadStatus.OPEN:
+                click.echo(
+                    f"Error: Thread is already {target_thread.status.value}. "
+                    f"Use 'comment reopen' to reopen it first.",
+                    err=True,
+                )
+                sys.exit(1)
+
+            # Update thread status
+            if wontfix:
+                target_thread.status = ThreadStatus.WONTFIX
+                if decision:
+                    # Create decision object if decision summary provided
+                    target_thread.decision = Decision(
+                        summary=decision,
+                        decider=decider,
+                        timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+                    )
+                    decision_ref["decision"] = target_thread.decision
+            else:
+                # Type narrowing: decision is guaranteed to be str here due to earlier validation
+                assert decision is not None
+                target_thread.status = ThreadStatus.RESOLVED
+                # Create decision object (required for resolved status)
+                target_thread.decision = Decision(
                     summary=decision,
                     decider=decider,
                     timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                 )
-        else:
-            # Type narrowing: decision is guaranteed to be str here due to earlier validation
-            assert decision is not None
-            found_thread.status = ThreadStatus.RESOLVED
-            # Create decision object (required for resolved status)
-            found_thread.decision = Decision(
-                summary=decision,
-                decider=decider,
-                timestamp=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-            )
+                decision_ref["decision"] = target_thread.decision
 
-        # Write updated sidecar
+            return current
+
+        # Write updated sidecar with automatic retry
         try:
-            write_sidecar(found_sidecar_path, found_sidecar)
+            write_sidecar_with_retry(found_sidecar_path, resolve_thread)
+        except ConcurrencyConflict as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
         except (ValueError, OSError) as e:
             click.echo(f"Error writing sidecar: {e}", err=True)
             sys.exit(2)
@@ -896,8 +927,8 @@ def resolve(thread_id: str, decision: str | None, decider: str, wontfix: bool):
         # Output success message
         status_str = "wontfix" if wontfix else "resolved"
         click.echo(f"Thread {thread_id} marked as {status_str}")
-        if found_thread.decision:
-            click.echo(f"  Decision: {found_thread.decision.summary}")
+        if decision_ref["decision"]:
+            click.echo(f"  Decision: {decision_ref['decision'].summary}")
 
     except Exception as e:
         click.echo(f"Unexpected error: {e}", err=True)
@@ -923,9 +954,7 @@ def reopen(thread_id: str):
             sys.exit(2)
 
         # Find thread in sidecar files
-        found_thread = None
         found_sidecar_path = None
-        found_sidecar = None
 
         comments_dir = project_root / ".comments"
         if comments_dir.exists():
@@ -935,46 +964,69 @@ def reopen(thread_id: str):
                     sidecar = read_sidecar(sidecar_path)
                     for thread in sidecar.threads:
                         if thread.id == thread_id:
-                            found_thread = thread
                             found_sidecar_path = sidecar_path
-                            found_sidecar = sidecar
                             break
-                    if found_thread:
+                    if found_sidecar_path:
                         break
                 except ValueError:
                     # Skip invalid sidecar files
                     continue
 
-        if not found_thread:
+        if not found_sidecar_path:
             click.echo(f"Error: Thread not found: {thread_id}", err=True)
             sys.exit(1)
 
-        # Type narrowing: if found_thread is not None, the others are also not None
-        assert found_sidecar_path is not None
-        assert found_sidecar is not None
+        # Store previous status for output message (will be set in update function)
+        previous_status_ref: dict[str, str | Decision | None] = {"status": "", "decision": None}
 
-        # Check if already open
-        if found_thread.status == ThreadStatus.OPEN:
-            click.echo("Error: Thread is already open", err=True)
-            sys.exit(1)
+        # Define update function for write_sidecar_with_retry
+        def reopen_thread(current: SidecarFile | None) -> SidecarFile:
+            if current is None:
+                click.echo("Error: Sidecar file was deleted", err=True)
+                sys.exit(2)
 
-        # Store previous status for output message
-        previous_status = found_thread.status.value
+            # Find thread in current sidecar (may have changed since initial search)
+            target_thread = None
+            for thread in current.threads:
+                if thread.id == thread_id:
+                    target_thread = thread
+                    break
 
-        # Reopen thread (decision is preserved)
-        found_thread.status = ThreadStatus.OPEN
+            if target_thread is None:
+                click.echo(f"Error: Thread {thread_id} not found in sidecar", err=True)
+                sys.exit(1)
 
-        # Write updated sidecar
+            # Check if already open
+            if target_thread.status == ThreadStatus.OPEN:
+                click.echo("Error: Thread is already open", err=True)
+                sys.exit(1)
+
+            # Store previous status for output message
+            previous_status_ref["status"] = target_thread.status.value
+            previous_status_ref["decision"] = target_thread.decision
+
+            # Reopen thread (decision is preserved)
+            target_thread.status = ThreadStatus.OPEN
+
+            return current
+
+        # Write updated sidecar with automatic retry
         try:
-            write_sidecar(found_sidecar_path, found_sidecar)
+            write_sidecar_with_retry(found_sidecar_path, reopen_thread)
+        except ConcurrencyConflict as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
         except (ValueError, OSError) as e:
             click.echo(f"Error writing sidecar: {e}", err=True)
             sys.exit(2)
 
         # Output success message
-        click.echo(f"Thread {thread_id} reopened (was {previous_status})")
-        if found_thread.decision:
-            click.echo(f"  Previous decision preserved: {found_thread.decision.summary}")
+        click.echo(f"Thread {thread_id} reopened (was {previous_status_ref['status']})")
+        decision = previous_status_ref["decision"]
+        if decision:
+            # Type narrowing: decision is Decision here
+            assert isinstance(decision, Decision)
+            click.echo(f"  Previous decision preserved: {decision.summary}")
 
     except Exception as e:
         click.echo(f"Unexpected error: {e}", err=True)
