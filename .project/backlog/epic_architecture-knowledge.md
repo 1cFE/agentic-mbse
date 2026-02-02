@@ -213,7 +213,7 @@ Six deliverables with a dependency structure (see [Sequencing](#sequencing) belo
 ### D2.2: Existing Skill Evaluation
 
 **Type**: Evaluation + Implementation
-**Status**: Pending
+**Status**: Complete
 **Dependencies**: D2.1 (new skills establish the patterns)
 **Delta checklist**: § 2.2 (2 items)
 
@@ -250,10 +250,10 @@ Six deliverables with a dependency structure (see [Sequencing](#sequencing) belo
 **Decision gate**: Disposition must be confirmed before D2.3 (registration). If deprecated, remove from MBSE_SKILLS. If kept, update and include.
 
 **Exit criteria**:
-- [ ] `toolkit-awareness` SKILL.md updated with all new commands, paths, and project files
-- [ ] `record-learning` disposition decided with documented rationale
-- [ ] If kept: `record-learning` paths updated, scope clarified, anti-patterns addressed
-- [ ] If deprecated: removal plan documented (what replaces it)
+- [x] `toolkit-awareness` SKILL.md updated with all new commands, paths, and project files
+- [x] `record-learning` disposition decided with documented rationale (KEEP — see design.md § Disposition Rationale)
+- [x] If kept: `record-learning` paths updated, scope clarified, DI-XXX cross-suggestion added
+- [N/A] If deprecated: removal plan documented (what replaces it)
 
 ---
 

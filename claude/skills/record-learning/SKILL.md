@@ -24,6 +24,21 @@ Invoke this skill when you:
 - Identify a pattern worth codifying
 - Learn something that would help future sessions
 
+## Scope: Process Learnings vs Domain Insights
+
+This skill captures **process/tooling learnings** — discoveries about how to use the tools and language correctly. These are distinct from **domain insights**, which capture what the domain teaches us.
+
+| | Process Learnings (this skill) | Domain Insights (`add-insight`) |
+|---|---|---|
+| **What** | SysML syntax, parser behavior, import patterns, workflow patterns | Domain facts, parameter values, design constraints from sources |
+| **Where** | `work/learnings/RAW_LEARNINGS.md` | `knowledge/KNOWLEDGE.md` (as DI-XXX) |
+| **Format** | Append-only, timestamped entries | Structured DI-XXX entities with status tracking |
+| **Consumer** | Future modeling sessions, retrospectives | Model requirements, design decisions, traceability |
+
+### Cross-Suggestion
+
+When a learning has domain implications, **also suggest creating a DI-XXX entry**. Example: "This SysML limitation means we need a different modeling approach for thermal components" is both a process learning (SysML limitation) and a domain insight (modeling approach change). Record the process learning here, then suggest: "This also has domain implications — consider capturing a DI-XXX via `add-insight`."
+
 ## Process
 
 ### If User-Invoked (`/record-learning`)
@@ -47,7 +62,7 @@ Invoke this skill when you:
 
 4. **Get confirmation**: Use AskUserQuestion to let user approve/reject each
 
-5. **Record approved learnings**: Append to `modeling_pm/learnings/RAW_LEARNINGS.md`
+5. **Record approved learnings**: Append to `work/learnings/RAW_LEARNINGS.md`
 
 ### If Agent-Invoked (via Skill tool)
 
@@ -61,7 +76,7 @@ Invoke this skill when you:
    - Category and summary
    - "Should I record this learning?"
 
-4. **If approved**: Record to `modeling_pm/learnings/RAW_LEARNINGS.md`
+4. **If approved**: Record to `work/learnings/RAW_LEARNINGS.md`
 
 5. **If rejected**: Acknowledge and continue without recording
 
@@ -77,7 +92,7 @@ Invoke this skill when you:
 
 ## Entry Format
 
-Append entries to `modeling_pm/learnings/RAW_LEARNINGS.md` using this format:
+Append entries to `work/learnings/RAW_LEARNINGS.md` using this format:
 
 ```markdown
 ---
@@ -143,7 +158,7 @@ in expressions without an import statement.
 
 ## File Location
 
-- **Learnings file**: `modeling_pm/learnings/RAW_LEARNINGS.md`
+- **Learnings file**: `work/learnings/RAW_LEARNINGS.md`
 - **Create if missing**: Initialize with header template
 
 ## Guidelines
@@ -151,5 +166,5 @@ in expressions without an import statement.
 - **Be specific**: Include actual code that works
 - **Be general**: Extract the principle, not just the fix
 - **Be brief**: One learning per entry, not a dissertation
-- **Verify**: Run `syside check` on code examples before recording
+- **Verify**: Run `uv run agentic-mbse validate` on code examples before recording
 - **Don't over-record**: Only genuinely reusable insights, not typo fixes

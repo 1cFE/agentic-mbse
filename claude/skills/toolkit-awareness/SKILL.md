@@ -4,6 +4,8 @@ description: >
   This skill should be used when the user asks about "validation", "validate models",
   "run checks", "quality checks", "codegen readiness", "TEA pipeline", "how to validate",
   "run the pipeline", "toolkit", "available commands", "what tools do we have",
+  "PM operations", "project management", "agentic-mbse pm", "agentic-mbse status",
+  "project files", "directory structure",
   or when answering questions about project workflow, build steps, or CI processes.
   Ensures Claude uses the actual installed toolchain instead of guessing commands.
 allowed-tools: Read, Grep, Glob
@@ -41,7 +43,9 @@ Never guess or fabricate CLI commands, validation steps, or workflow processes. 
    - MBSE workflow steps
    - Domain sources and how to reference them
 
-3. **Do not invent commands.** If a tool or command is not documented in README.md or CLAUDE.md, do not suggest it exists.
+3. **Check the 4-directory architecture** — see the Project Files section below for key files in `knowledge/`, `modeling_project/`, `work/`, and `data/`.
+
+4. **Do not invent commands.** If a tool or command is not documented in README.md or CLAUDE.md, do not suggest it exists.
 
 ### Validation Framework
 
@@ -69,19 +73,76 @@ Do not suggest `uv run syside check` as a standalone validation step. Level 1 of
 The primary CLI tool is `agentic-mbse`. Always invoke via `uv run`:
 ```bash
 uv run agentic-mbse validate models/    # Validation
+uv run agentic-mbse status              # Project status dashboard
+uv run agentic-mbse pm <operation>      # Project management operations
 uv run agentic-mbse --help              # Discover commands
 ```
 
 Never use bare `python`, `pip`, `python3`, or `syside` without `uv run` prefix.
 
+### PM Operations
+
+All PM operations are atomic (mutations succeed fully or not at all) or tolerant (queries return partial results with warnings). Invoke via `uv run agentic-mbse pm <operation> [args]`.
+
+| Operation | Description |
+|-----------|-------------|
+| `close-item <name>` | Archive completed work item from active to completed |
+| `approve-research <file> --insights '<json>'` | Approve pending research and register domain insights |
+| `trace-element --element <name> --file <path> ...` | Record model element traceability to matrix |
+| `promote-requirement --requirement <text> --source <ID>` | Promote per-item requirement to project-wide PR-XXX |
+| `register-decision --title <text> --decision <text> --rationale <text>` | Record architectural decision as AD-XXX |
+| `update-validation <SV-XXX> --status <status>` | Update verification criterion status |
+| `add-insight --title <text> --source <source> ...` | Capture domain insight as DI-XXX during work |
+| `impact-query <ID>` | Find model elements affected by DI-XXX or PR-XXX change |
+| `supersede-insight <DI-XXX> --new-insight '<json>' --reason '<text>'` | Replace domain insight and report impact |
+
 ### Slash Commands
 
-Consult the "Slash Commands" table in `README.md` for the current list. Key workflow commands:
-- `/spec-model`, `/design-model`, `/plan-model`, `/implement-model` — MBSE workflow
-- `/audit-models` — Validate against domain sources
-- `/research` — Deep-dive into domain knowledge
-- `/manage-sources` — Add/remove domain sources
-- `/backlog` — Work item management
+Consult `README.md` for full details. Complete command list grouped by function:
+
+**Modeling Workflow:**
+
+| Command | Purpose |
+|---------|---------|
+| `/spec-model` | Define requirements and success criteria for models |
+| `/design-model` | Make model architecture decisions |
+| `/plan-model` | Create implementation plan with phases |
+| `/implement-model` | Execute plan, write SysML |
+| `/quick-model` | Rapid single-file model creation |
+| `/review-model` | Review model quality and correctness |
+| `/formalize-intent` | Convert informal intent to formal SysML |
+
+**Project Management:**
+
+| Command | Purpose |
+|---------|---------|
+| `/audit-models` | Validate models against domain sources |
+| `/analyze-models` | Analyze model structure and dependencies |
+| `/status` | Project status dashboard |
+| `/backlog` | Work item management |
+| `/onboard` | Initialize new MBSE project |
+
+**Knowledge Management:**
+
+| Command | Purpose |
+|---------|---------|
+| `/research` | Deep-dive into domain knowledge |
+| `/manage-sources` | Add/remove domain sources |
+
+### Project Files
+
+Key project files in the 4-directory architecture:
+
+| File | Directory | Role |
+|------|-----------|------|
+| `SOURCE_INDEX.md` | `knowledge/` | Registry of domain knowledge sources |
+| `KNOWLEDGE.md` | `knowledge/` | Domain insights (DI-XXX) and research findings |
+| `OVERVIEW.md` | `modeling_project/` | Project scope and high-level description |
+| `ARCHITECTURE.md` | `modeling_project/` | Model architecture decisions |
+| `REQUIREMENTS.md` | `modeling_project/` | Project-wide requirements (PR-XXX) |
+| `VALIDATION_MATRIX.md` | `modeling_project/` | Verification criteria (SV-XXX) and status |
+| `BACKLOG.md` | `work/` | Work items, epics, and priorities |
+| `traceability_matrix.csv` | `data/` | Element-to-requirement traceability records |
 
 ### Python Environment
 

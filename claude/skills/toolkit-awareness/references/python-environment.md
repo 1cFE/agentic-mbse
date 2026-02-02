@@ -16,11 +16,11 @@ uv run python -m pytest
 # Installing packages
 uv add package_name
 
-# Running syside (SysML parser)
-uv run syside check models/path/to/file.sysml
+# Running validation (8-level framework via syside)
+uv run agentic-mbse validate models/
 
 # Running agentic-mbse CLI
-uv run agentic-mbse validate models/
+uv run agentic-mbse status
 uv run agentic-mbse --help
 ```
 
