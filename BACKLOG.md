@@ -52,7 +52,7 @@ The `init` command now always creates `.claude/settings.json` with permissions f
 - `Grep(~/agentic-mbse/docs/**)`
 - `Glob(~/agentic-mbse/docs/**)`
 
-This allows the `sysmlv2-doc-analyzer` agent to search/read documentation without permission prompts.
+This allows specialist agents to search/read documentation without permission prompts.
 
 ### Fix Claude settings permission path format (2025-01-05)
 **Status**: COMPLETE

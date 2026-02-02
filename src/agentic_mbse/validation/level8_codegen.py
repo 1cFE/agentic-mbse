@@ -10,12 +10,14 @@ Checks:
 2. Calc def structure - at least one output, direction markers (FR-4, FR-5)
 3. Binding formats - REFERENCE uses ::, CHAIN uses . (FR-6)
 4. Design attr completeness - design attrs have values or bindings (FR-7)
+5. Design attr extractability - expressions produce numeric defaults (FR-8)
 """
 
 import sys
 from pathlib import Path
 from typing import Any
 
+from agentic_mbse.sysml.expression import evaluate_true_static_expression
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import (
     Severity,
@@ -371,12 +373,20 @@ def check_binding_formats(
 
 def check_design_attr_completeness(
     model: Any,
+    design_path_filter: str | None = "designs",
 ) -> tuple[list[ValidationIssue], int]:
     """
     Validate design attributes have values or EXPOSE bindings.
 
     Checks:
     - FR-7: Design attrs in designs/ have feature_value_expression or binding
+    - FR-8: Design attrs with values produce extractable numeric defaults
+
+    Args:
+        model: Parsed SysML model
+        design_path_filter: Path component to filter files by. Only attributes
+            in files whose path contains this component are checked. Use None
+            or empty string to check all files.
 
     Returns:
         Tuple of (list of ValidationIssue, count of design attrs checked)
@@ -396,9 +406,10 @@ def check_design_attr_completeness(
             if not doc or not hasattr(doc, "url"):
                 continue
             doc_path = Path(str(doc.url))
-            # Check if 'designs' is a path component (not just substring)
-            if "designs" not in doc_path.parts:
-                continue  # Skip library attributes
+            # Filter by path component if specified
+            if design_path_filter:
+                if design_path_filter not in doc_path.parts:
+                    continue  # Skip non-matching files
 
             # Skip attributes inside calc usages (those are bindings, not design attrs)
             owner = attr.owner if hasattr(attr, "owner") else None
@@ -420,6 +431,29 @@ def check_design_attr_completeness(
                 and attr.feature_value_expression is not None
             )
 
+            # Check extractability — can codegen get a numeric default?
+            if has_value:
+                try:
+                    evaluate_true_static_expression(attr.feature_value_expression)
+                except (ValueError, TypeError) as e:
+                    issues.append(
+                        ValidationIssue(
+                            level=8,
+                            severity=Severity.ERROR,
+                            code=ValidationCode.L8_DESIGN_ATTR_UNEXTRACTABLE,
+                            message=(
+                                f"Design attribute '{attr_name}' has expression but codegen "
+                                f"cannot extract a numeric default: {e}"
+                            ),
+                            element_name=attr_name,
+                            location=location,
+                            suggestion=(
+                                "Ensure the attribute value is a literal number or "
+                                "static arithmetic expression (no feature references)"
+                            ),
+                        )
+                    )
+
             if not has_value:
                 issues.append(
                     ValidationIssue(
@@ -439,12 +473,18 @@ def check_design_attr_completeness(
     return issues, attrs_checked
 
 
-def validate_codegen_readiness(models_path: str) -> QualityCheckResult:
+def validate_codegen_readiness(
+    models_path: str,
+    design_path_filter: str | None = "designs",
+) -> QualityCheckResult:
     """
     Main entry point for Level 8 validation.
 
     Args:
         models_path: Path to models directory
+        design_path_filter: Path component to filter design attribute checks.
+            Only files whose path contains this component are checked.
+            Use None or empty string to check all files.
 
     Returns:
         QualityCheckResult with codegen readiness issues
@@ -509,7 +549,9 @@ def validate_codegen_readiness(models_path: str) -> QualityCheckResult:
     all_issues.extend(binding_issues)
 
     # Check 4: Design attr completeness (FR-7)
-    design_attr_issues, num_design_attrs = check_design_attr_completeness(model)
+    design_attr_issues, num_design_attrs = check_design_attr_completeness(
+        model, design_path_filter=design_path_filter
+    )
     all_issues.extend(design_attr_issues)
 
     # Build result
@@ -542,6 +584,9 @@ def validate_codegen_readiness(models_path: str) -> QualityCheckResult:
             ),
             "L8_DESIGN_ATTR_INCOMPLETE": len(
                 [i for i in all_issues if i.code == ValidationCode.L8_DESIGN_ATTR_INCOMPLETE]
+            ),
+            "L8_DESIGN_ATTR_UNEXTRACTABLE": len(
+                [i for i in all_issues if i.code == ValidationCode.L8_DESIGN_ATTR_UNEXTRACTABLE]
             ),
         },
     )

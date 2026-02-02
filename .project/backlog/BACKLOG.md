@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-01-23 (ITEM-REGTEST-001 and ITEM-SYMLINK-001 complete)
+**Last Updated**: 2026-01-26 (EPIC-CMDREV-001 created)
 
 ---
 
@@ -29,7 +29,28 @@ Prioritized list of epics and features.
 
 ## P1 - High Priority
 
-*All P1 items complete or in progress*
+### [EPIC-CMDREV-001] MBSE Command System Revision
+
+**Priority**: P1
+**Effort**: 8-10 days (~8 with parallelization)
+**Status**: Ready
+**Epic File**: `.project/backlog/epic_command-revision.md`
+**Research**: `.project/research/20260126-161628_python-vs-mbse-command-comparison.md`
+
+**Problem**: MBSE commands are 2x longer than Python equivalents, lack project management maturity, and have inconsistent structure. Missing key commands like `/review-model` and `/project-status`.
+
+**Goal**: Revise command system to match Python system maturity - lean commands (~300 lines avg), consistent structure, full PM workflow.
+
+**Stages** (4 total, 10 backlog items):
+
+| Stage | Focus | Items | Effort |
+|-------|-------|-------|--------|
+| **1** | Command Harmonization + `/review-model` | 1.1 Template, 1.2 Core cmds, 1.3 Support cmds, 1.4 Review cmd | 4.5 days |
+| **2** | PM Enhancement | 2.1 EPIC_GUIDE + template, 2.2 `/project-status` | 2.5 days |
+| **3** | Design Refactor + Agents | 3.1 design-model refactor, 3.2 Agent consolidation | 2.5 days |
+| **4** | Additional Improvements | 4.1 `/quick-model`, 4.2 Template streamlining | 1.5 days |
+
+**Parallelization**: Stages 2+3 can run in parallel after Stage 1
 
 ---
 

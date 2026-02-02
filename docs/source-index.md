@@ -1,6 +1,6 @@
 # Source Index Guide
 
-The Source Index is a markdown file (`SOURCE_INDEX.md`) that tells MBSE commands where to find domain knowledge for research and validation.
+The Source Index is a markdown file (`knowledge/SOURCE_INDEX.md`) that tells MBSE commands where to find domain knowledge for research and validation.
 
 ## Purpose
 
@@ -56,7 +56,7 @@ Describes how the source is used for baseline validation:
 
 ### When Index Exists with Sources
 
-1. Commands read `SOURCE_INDEX.md` at startup
+1. Commands read `knowledge/SOURCE_INDEX.md` at startup
 2. For research stages:
    - Codebase sources -> Explore agents launched
    - Documentation sources -> Files searched/read

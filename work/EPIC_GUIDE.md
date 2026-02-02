@@ -1,0 +1,184 @@
+# Epic Guide
+
+How to create and decompose epics for modeling work.
+
+An epic is a body of modeling work too large for a single work item, requiring decomposition into independently-executable standard items. Create an epic when the scope spans multiple domain subsystems, depends on multiple authority sources, or requires architectural decisions before work can begin.
+
+---
+
+## When to Use Epics
+
+Not all work needs an epic. Use the scale taxonomy to decide the right entry point.
+
+| Scale | When to use | Entry point | Modeling examples |
+|-------|-------------|-------------|-------------------|
+| Trivial | Single attribute change, doc comment fix, value update | Direct edit + validate (planned: `/quick-model`) | Fix a naming convention violation; add a missing doc comment citing a source; update a constant from an authority source revision |
+| Standard | A cohesive modeling feature: new subsystem, integration, refactor | `/spec-model` | Model a costing subsystem; integrate power balance with a plant subsystem; refactor a cost hierarchy to match an updated standard |
+| Epic | Multiple domain concerns requiring decomposition before execution | `/backlog` | End-to-end costing pipeline across all subsystems; full system model with multiple design configurations; architecture migration to a new domain taxonomy |
+
+**Trivial** work skips the full workflow — the overhead of spec/design/plan would exceed the work itself. **Standard** work is the default: one cohesive modeling concern, handled end-to-end through `/spec-model` → `/design-model` → `/plan-model` → `/implement-model`. **Epic** work must be decomposed into standard items before any execution begins.
+
+---
+
+## The Goldilocks Principle
+
+Work items need to be the right size. Too large and they become unmanageable; too small and the workflow overhead exceeds the value. The indicators below are based on modeling complexity — not time estimates.
+
+### Too Large (needs decomposition into an epic)
+
+- Spans multiple domain subsystems that could be modeled independently
+- Depends on 4+ authority sources
+- Would produce 25+ new definitions (part defs, calc defs, constraint defs)
+- Success criteria mix structural concerns with validation concerns with codegen concerns
+- Cannot describe the scope without referencing multiple architectural decisions (AD-XXX)
+
+### Too Small (doesn't need the full workflow)
+
+- Single definition change or addition
+- No new interfaces or cross-file dependencies
+- Success criteria are a single validation check
+- The spec/design/plan cycle would produce more overhead than value
+
+### Just Right (standard work item)
+
+- Models one domain subsystem or concern end-to-end
+- Depends on 1-3 authority sources
+- Produces 5-20 new definitions
+- Can be validated independently through applicable validation levels
+- If paused and resumed later, the spec.md provides enough context to continue
+- A change to a domain insight (DI-XXX) affecting this item would be localized — not cascading
+
+---
+
+## Decomposition Process
+
+When you have a body of work that exceeds the "Just Right" indicators, decompose it into standard work items using these 5 steps.
+
+### Step 1: Review Epic Scope
+
+What domain concern does this epic address? Which project goals (G-XXX) does it serve? What architectural decisions (AD-XXX) constrain it? Read the relevant entries in `modeling_project/OVERVIEW.md` and `modeling_project/ARCHITECTURE.md` to ground the decomposition in existing decisions.
+
+### Step 2: Identify Authority Source Dependencies
+
+List which sources from `knowledge/SOURCE_INDEX.md` constrain the work. Flag any that are unstable or need `/research` before items can proceed. Authority sources are a first-class constraint in modeling — external data shapes the model from the start, and discovering a source conflict mid-implementation causes rework. Surface these dependencies early.
+
+### Step 3: Sketch Sub-Items by Domain Concern
+
+Decompose by domain subsystem or model package — NOT by workflow phase (spec/design/plan) and NOT by validation level. Each item should produce a complete, independently-validatable piece of the model.
+
+Align with architectural decisions: if AD-001 defines subsystem boundaries, items should respect those boundaries. If a natural item cuts across two packages, that is a signal to revisit the architecture or to split the item.
+
+### Step 4: Check Each Item's Independence
+
+For each candidate item, verify:
+
+- Can it be spec'd, designed, and implemented without waiting for other items (besides declared dependencies)?
+- Does it produce clear deliverables (model files, tests)?
+- Is the scope right-sized per the Goldilocks indicators above?
+
+If an item depends on too many others, it may be mixing concerns. If it has no clear deliverables, it may be too vague to execute.
+
+### Step 5: Define Success Criteria and Sequencing
+
+Each item gets high-level success criteria — MR-XXX candidates that `/spec-model` will refine into detailed requirements. These should reference specific domain constraints, authority source alignment, or verification entries (SV-XXX).
+
+Map dependencies between items: which can run in parallel, which must sequence. Identify the critical path — the longest chain of sequential dependencies determines the minimum number of execution rounds.
+
+---
+
+## Epic File Structure
+
+Epics are stored as markdown files in `work/backlog/` using the naming convention `epic-{name}.md`. Use the epic template (`epic_template.md`) as the starting point.
+
+### YAML Frontmatter
+
+Each epic file begins with YAML frontmatter:
+
+```yaml
+---
+Status: draft | active | completed
+Priority: P0 | P1 | P2 | P3
+Goal: G-XXX
+Created: YYYY-MM-DD
+Updated: YYYY-MM-DD
+---
+```
+
+- **Status**: `draft` while decomposition is in progress, `active` once items are being executed, `completed` when all items are done.
+- **Priority**: P0 (critical) through P3 (low). Matches BACKLOG.md priority scheme.
+- **Goal**: Links to a project goal in `modeling_project/OVERVIEW.md`. Every epic should trace to at least one goal.
+- **Created/Updated**: ISO dates. Updated changes whenever the epic file is modified.
+
+### Body Sections
+
+The template provides these recommended sections:
+
+- **Executive Summary**: 2-3 sentences on what the epic delivers and why it matters.
+- **Context**: Links to goals (G-XXX), domain insights (DI-XXX), and architectural decisions (AD-XXX) that motivate the work. Describes the current state and the desired end state.
+- **Authority Source Dependencies**: Table of external knowledge sources that constrain the work. Surfaces risks and may trigger `/research` tasks.
+- **Success Criteria**: Measurable outcomes as checkboxes. Include quality gates (validation levels pass, no regressions).
+- **Items**: Per-item breakdowns. Each item has scale (always "standard"), dependencies, scope, MR-XXX success criteria candidates, and deliverables. When an item moves to execution, it gets a directory in `work/active/WI-XXX_{name}/`.
+- **Sequencing**: Dependency map showing which items can run in parallel and which must sequence. Identifies the critical path.
+- **Risks**: Risk table with likelihood, impact, and mitigation.
+
+The body is free-form beyond these sections — structure it as the epic requires.
+
+---
+
+## Relationship to BACKLOG.md
+
+BACKLOG.md and epic files serve different purposes:
+
+- **BACKLOG.md** is the dashboard — a summary of all epics and standalone work items with their status and priority. It provides the project-level view.
+- **Epic files** hold the decomposition detail — scope, reasoning, authority source dependencies, per-item breakdowns, and sequencing.
+
+When a sub-item moves to execution, it gets a directory in `work/active/WI-XXX_{name}/`. The `Epic` field in the item's spec.md YAML links back to the epic file, maintaining traceability.
+
+BACKLOG.md is script-managed — agents update item status through workflow transitions rather than editing the file directly. Epic files are user-owned and edited as decomposition evolves.
+
+---
+
+## Anti-Patterns
+
+### 1. Decomposing by Validation Level
+
+"Item 1: Levels 1-3, Item 2: Levels 4-6, Item 3: Levels 7-8."
+
+Validation levels are quality gates applied to model elements, not separable units of work. A model element should be validated through all applicable levels within the item that creates it. Splitting by level creates incomplete items that cannot be independently verified.
+
+### 2. Separating Authority Source Integration
+
+"Item 1: Model the structure. Item 2: Integrate the data from the authority source."
+
+Authority sources constrain the model from the start. Building structure first and integrating data later creates rework when the data contradicts the structural assumptions. Each item should incorporate its authority source data as part of the modeling work.
+
+### 3. Ignoring Architectural Decisions
+
+Decomposition that cuts across AD-XXX boundaries. If the architecture says subsystems A and B are separate packages, putting both in one work item creates coupling that the architecture explicitly separated. Respect package boundaries in the decomposition.
+
+### 4. Phase-as-Item (Waterfall)
+
+"Item 1: Design phase. Item 2: Implementation phase. Item 3: Testing phase."
+
+Each item should go through its own full spec/design/plan/implement cycle. Decomposing by workflow phase recreates waterfall within the epic and defers integration risk to the end.
+
+### 5. Vague Success Criteria
+
+"Models are complete" or "validation passes."
+
+Success criteria should reference specific domain constraints, authority source alignment, or verification entries (SV-XXX). Vague criteria make it impossible to determine when an item is actually done and prevent meaningful validation.
+
+### 6. No Goal Traceability
+
+Epic file doesn't link to project goals (G-XXX) or domain insights (DI-XXX).
+
+Without traceability, the PM dashboard cannot explain why the epic matters. Every epic should trace to at least one goal, and the connection should be explicit in the Context section and the YAML `Goal` field.
+
+---
+
+**References:**
+- `epic_template.md` — Template for new epics
+- `work/backlog/BACKLOG.md` — Where epics are tracked
+- `modeling_project/OVERVIEW.md` — Project goals (G-XXX)
+- `modeling_project/ARCHITECTURE.md` — Architectural decisions (AD-XXX)
+- `knowledge/KNOWLEDGE.md` — Domain insights (DI-XXX)

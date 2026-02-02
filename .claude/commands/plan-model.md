@@ -96,6 +96,46 @@ For each phase, create:
 4. **Checklist of Changes** - Concrete, actionable items with checkboxes
 5. **Validation Checkpoint** - How to validate this phase succeeded
 6. **User Review Point** (optional) - Natural break for user to review models
+7. **Test Requirements** - What tests to write or verify:
+   - **New library definitions**: Create structural tests in `tests/models/`
+   - **Modified definitions**: Verify existing tests still pass
+   - **Design integrations**: Add/update integration tests
+
+**Test Phase Pattern:** For features with multiple phases:
+
+| Phase | Test Activity |
+|-------|---------------|
+| Library definitions | Write structural tests for new defs |
+| Design instances | Write integration tests |
+| Final validation | Run full regression suite |
+
+**Example Phase with Tests:**
+```markdown
+### Phase 2: Motor Definition Refinement
+
+**Deliverables:**
+- [ ] Enhanced Motor part def with complete attributes
+- [ ] Full doc comments with codebase source citations
+- [ ] Structural test: `tests/models/test_actuators.py::test_motor_attributes`
+
+**Validation Checkpoint:**
+- [ ] Parse check passes: `syside check models/library/actuators.sysml`
+- [ ] Regression tests pass: `pytest tests/models/ -v`
+```
+
+**Final Validation Phase Must Include:**
+```markdown
+### Phase N: Integration & Validation
+
+**Validation Steps:**
+1. Parse validation: `agentic-mbse validate models/ --level=1`
+2. Quality validation: `agentic-mbse validate models/ --level=3`
+3. **Regression tests: `pytest tests/models/ -v`**
+4. Manual review checkpoints
+
+**Completion Gate:**
+All tests in `tests/models/` must pass before marking complete.
+```
 
 **Prototype Context**: Files already exist from design phase. Phase descriptions should specify refinements:
 - "Refine file X to add complete doc comments and full constraints"

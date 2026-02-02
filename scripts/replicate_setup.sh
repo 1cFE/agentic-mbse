@@ -9,8 +9,8 @@
 # What it does:
 # - Installs .claude/commands/, agents/, skills/, hooks/
 # - Creates .claude/settings.json with docs/ permissions
-# - Creates modeling_pm/ structure with coffee maker test subject
-# - Creates SOURCE_INDEX.md from template
+# - Creates 4-directory project structure (knowledge/, modeling_project/, work/, data/)
+# - Creates knowledge/SOURCE_INDEX.md from template
 #
 # What it does NOT do (library owns these):
 # - Modify README.md
@@ -52,15 +52,17 @@ install_claude_components() {
     mkdir -p "$REPO_ROOT/.claude/hooks"
 
     # Commands - direct copy
-    for cmd in design-model.md plan-model.md implement-model.md spec-model.md \
-               research.md audit-models.md onboard.md manage-sources.md backlog.md; do
+    for cmd in analyze-models.md audit-models.md backlog.md design-model.md \
+               formalize-intent.md implement-model.md manage-sources.md onboard.md \
+               plan-model.md quick-model.md research.md review-model.md \
+               spec-model.md status.md; do
         cp "$REPO_ROOT/claude/commands/$cmd" "$REPO_ROOT/.claude/commands/$cmd"
         log_created ".claude/commands/$cmd"
     done
 
-    # Agents - copy with placeholder substitution (same technique as init)
-    for agent in python-debugger.md sysmlv2-doc-analyzer.md; do
-        # Read source, substitute placeholders, write to destination
+    # Agents - copy with placeholder substitution
+    for agent in python-debugger.md kerml-expert.md sysml-expert.md \
+                 syside-expert.md sysmlv2-validator.md; do
         sed -e "s|{SYSML_DOCS_PATH}|$DOCS_PATH/sysmlv2|g" \
             -e "s|{SYSIDE_DOCS_PATH}|$DOCS_PATH/syside|g" \
             "$REPO_ROOT/claude/agents/$agent" > "$REPO_ROOT/.claude/agents/$agent"
@@ -68,10 +70,14 @@ install_claude_components() {
     done
 
     # Skills - recursive copy
-    if [[ -d "$REPO_ROOT/claude/skills/python-debugger" ]]; then
-        cp -r "$REPO_ROOT/claude/skills/python-debugger" "$REPO_ROOT/.claude/skills/"
-        log_created ".claude/skills/python-debugger/"
-    fi
+    for skill in epic-decomposition model-validation project-structure \
+                 python-debugger record-learning requirements-tracking \
+                 source-traceability sysml-conventions toolkit-awareness; do
+        if [[ -d "$REPO_ROOT/claude/skills/$skill" ]]; then
+            cp -r "$REPO_ROOT/claude/skills/$skill" "$REPO_ROOT/.claude/skills/"
+            log_created ".claude/skills/$skill/"
+        fi
+    done
 
     # Hooks - copy with permissions
     for hook in ruff-format.sh; do
@@ -105,110 +111,84 @@ EOF
 }
 
 create_project_structure() {
-    # Create directories
-    mkdir -p "$REPO_ROOT/modeling_pm/backlog"
-    mkdir -p "$REPO_ROOT/modeling_pm/active"
-    mkdir -p "$REPO_ROOT/modeling_pm/research"
+    # Create 4-directory structure
+    mkdir -p "$REPO_ROOT/knowledge/research/pending"
+    mkdir -p "$REPO_ROOT/knowledge/research/approved"
+    mkdir -p "$REPO_ROOT/knowledge/research/impacts"
+    mkdir -p "$REPO_ROOT/knowledge/sources"
+    mkdir -p "$REPO_ROOT/modeling_project/intent"
+    mkdir -p "$REPO_ROOT/work/backlog"
+    mkdir -p "$REPO_ROOT/work/active"
+    mkdir -p "$REPO_ROOT/work/completed"
+    mkdir -p "$REPO_ROOT/work/analysis"
+    mkdir -p "$REPO_ROOT/work/learnings"
+    mkdir -p "$REPO_ROOT/data"
     mkdir -p "$REPO_ROOT/models/library"
+    mkdir -p "$REPO_ROOT/models/designs"
+    mkdir -p "$REPO_ROOT/tests/models"
 
-    log_created "modeling_pm/{backlog,active,research}/"
-    log_created "models/library/"
+    log_created "knowledge/{research/{pending,approved,impacts},sources}/"
+    log_created "modeling_project/intent/"
+    log_created "work/{backlog,active,completed,analysis,learnings}/"
+    log_created "data/"
+    log_created "models/{library,designs}/"
+    log_created "tests/models/"
 
-    # Copy methodology guides from templates
+    # Tool-owned templates
     cp "$REPO_ROOT/project_templates/MODELING_GUIDE.md.template" \
-       "$REPO_ROOT/modeling_pm/MODELING_GUIDE.md"
-    log_created "modeling_pm/MODELING_GUIDE.md"
+       "$REPO_ROOT/modeling_project/MODELING_GUIDE.md"
+    log_created "modeling_project/MODELING_GUIDE.md"
 
     cp "$REPO_ROOT/project_templates/MODELING_PROCESS.md.template" \
-       "$REPO_ROOT/modeling_pm/MODELING_PROCESS.md"
-    log_created "modeling_pm/MODELING_PROCESS.md"
+       "$REPO_ROOT/modeling_project/MODELING_PROCESS.md"
+    log_created "modeling_project/MODELING_PROCESS.md"
 
-    # Create pre-filled OVERVIEW.md with coffee maker test subject
-    create_overview_md
-}
+    cp "$REPO_ROOT/project_templates/EPIC_GUIDE.md.template" \
+       "$REPO_ROOT/work/EPIC_GUIDE.md"
+    log_created "work/EPIC_GUIDE.md"
 
-create_overview_md() {
-    cat > "$REPO_ROOT/modeling_pm/OVERVIEW.md" << 'EOF'
-# Project Overview
+    cp "$REPO_ROOT/project_templates/epic_template.md.template" \
+       "$REPO_ROOT/work/backlog/epic_template.md"
+    log_created "work/backlog/epic_template.md"
 
-**Project**: Coffee Maker Test Model
-**Purpose**: Dogfooding agentic-mbse with a simple test subject
-**Start Date**: 2026-01-09
-**Status**: Active
+    # User-owned templates
+    cp "$REPO_ROOT/project_templates/OVERVIEW.md.template" \
+       "$REPO_ROOT/modeling_project/OVERVIEW.md"
+    log_created "modeling_project/OVERVIEW.md"
 
----
+    cp "$REPO_ROOT/project_templates/BACKLOG.md.template" \
+       "$REPO_ROOT/work/BACKLOG.md"
+    log_created "work/BACKLOG.md"
 
-## What We're Building
+    cp "$REPO_ROOT/project_templates/RAW_LEARNINGS.md.template" \
+       "$REPO_ROOT/work/learnings/RAW_LEARNINGS.md"
+    log_created "work/learnings/RAW_LEARNINGS.md"
 
-SysMLv2 models of a simple drip coffee maker that enable:
+    cp "$REPO_ROOT/project_templates/KNOWLEDGE.md.template" \
+       "$REPO_ROOT/knowledge/KNOWLEDGE.md"
+    log_created "knowledge/KNOWLEDGE.md"
 
-1. **Formal Integration** - Connect behavior (brewing process), structure (components), and physics (heat transfer, fluid flow)
-2. **Validation Framework** - Constraint-based checking against physical laws
-3. **Design Exploration** - Parametric studies (capacity, brew time, temperature)
-4. **Workflow Testing** - Exercise the full MBSE command workflow
+    cp "$REPO_ROOT/project_templates/ARCHITECTURE.md.template" \
+       "$REPO_ROOT/modeling_project/ARCHITECTURE.md"
+    log_created "modeling_project/ARCHITECTURE.md"
 
-**Reference Implementation**: N/A (test subject for workflow validation)
-**Validation Baseline**: Common sense physics constraints
+    cp "$REPO_ROOT/project_templates/REQUIREMENTS.md.template" \
+       "$REPO_ROOT/modeling_project/REQUIREMENTS.md"
+    log_created "modeling_project/REQUIREMENTS.md"
 
----
+    cp "$REPO_ROOT/project_templates/VALIDATION_MATRIX.md.template" \
+       "$REPO_ROOT/modeling_project/VALIDATION_MATRIX.md"
+    log_created "modeling_project/VALIDATION_MATRIX.md"
 
-## System Description
-
-A simple drip coffee maker with these components:
-
-**Parts:**
-- Water reservoir (capacity: configurable)
-- Heating element (power: configurable)
-- Pump (flow rate: configurable)
-- Brew basket (filter holder)
-- Carafe (output container)
-- Control panel (on/off, brew button)
-
-**Behaviors:**
-- Fill reservoir -> Heat water -> Pump to brew basket -> Drip into carafe
-- Temperature control (maintain brew temp ~195-205F)
-- Auto-shutoff after brewing complete
-
-**Why this subject:**
-- Familiar to most people
-- 5-7 components (right complexity for testing)
-- Clear data flows (water, heat, control signals)
-- Natural requirements (brew time, temperature, capacity)
-
----
-
-## Technical Approach
-
-For MBSE methodology, see [MODELING_PROCESS.md](MODELING_PROCESS.md).
-For SysML syntax and patterns, see [MODELING_GUIDE.md](MODELING_GUIDE.md).
-
----
-
-## Current Status
-
-**Active Work Item**: Initial setup
-**Status**: Ready to start modeling
-**Next Up**: Run /spec-model to define first feature
-
----
-
-## Getting Started
-
-1. Run `/spec-model coffee-maker-structure` to define requirements
-2. Run `/design-model coffee-maker-structure` to design the model
-3. Run `/implement-model coffee-maker-structure` to create SysML files
-
----
-
-**Last Updated**: 2026-01-09
-EOF
-    log_created "modeling_pm/OVERVIEW.md (coffee maker test subject)"
+    # Data templates
+    cp "$REPO_ROOT/project_templates/data/traceability_matrix.csv" \
+       "$REPO_ROOT/data/traceability_matrix.csv"
+    log_created "data/traceability_matrix.csv"
 }
 
 create_source_index() {
-    # Copy the template as-is
-    cp "$REPO_ROOT/SOURCE_INDEX.md.template" "$REPO_ROOT/SOURCE_INDEX.md"
-    log_created "SOURCE_INDEX.md (from template)"
+    cp "$REPO_ROOT/SOURCE_INDEX.md.template" "$REPO_ROOT/knowledge/SOURCE_INDEX.md"
+    log_created "knowledge/SOURCE_INDEX.md (from template)"
 }
 
 print_summary() {
@@ -218,8 +198,8 @@ print_summary() {
     echo "================================"
     echo ""
     echo "Next steps:"
-    echo "  1. Review modeling_pm/OVERVIEW.md for the test subject"
-    echo "  2. Run /spec-model coffee-maker-structure to start modeling"
+    echo "  1. Review modeling_project/OVERVIEW.md for the project template"
+    echo "  2. Run /spec-model to start modeling"
     echo "  3. Or run /onboard for interactive configuration"
     echo ""
     echo "To update after code changes, re-run:"

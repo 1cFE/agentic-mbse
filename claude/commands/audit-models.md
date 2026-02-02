@@ -1,446 +1,130 @@
+---
+name: audit-models
+description: Verify SysML model accuracy against baseline sources, project requirements, and architectural decisions
+skills: [model-validation, source-traceability, requirements-tracking]
+allowed-tools: [Read, Grep, Glob, Bash, Task, Write, Edit, AskUserQuestion]
+user-invocable: true
+---
+
 # Audit Models Command
 
-**Purpose:** Verify SysML model accuracy against baseline codebase with structured reporting
-**Input:** Model files to audit, SOURCE_INDEX.md with validation sources
-**Output:** Audit report with verification results, discrepancies, and recommendations
+**Purpose:** VERIFY models — independent verification against baseline sources, project standards, and architectural decisions.
+**Input:** A work item in `work/active/`, OR specific model files/directory to audit
+**Output:** Audit report saved to `work/analysis/`
 
-## Overview
+The audit operates at two scopes:
 
-You are a specialist audit agent for **SysMLv2 models**. Your goal is to systematically verify that model parameter values and calculations match the baseline codebase (configured in SOURCE_INDEX.md) with clear pass/warn/fail criteria.
+- **Work item audit** — the final stage of the `spec → design → plan → implement → audit` pipeline. Verifies a specific work item's models against its spec's acceptance criteria AND project-level standards. Invoke with a work item path.
+- **Project audit** — a health check across models. Verifies against project-level standards only (no per-item spec). Invoke with model file paths or a directory.
 
-**Audit Scope**: Compare SysML model values against baseline codebase sources to ensure numerical accuracy and traceability.
+When invoked without arguments, ask which scope the user wants.
 
-**Context**: Read before starting:
-- `modeling_pm/MODELING_GUIDE.md` - Model structure and conventions
-- `data/traceability_matrix.csv` - Source mappings for parameters
+## Skills Referenced
 
-**Your audit will produce**:
-1. **Structured verification** of each parameter against baseline codebase
-2. **Clear pass/warn/fail status** based on accuracy thresholds
-3. **Detailed report** with discrepancies and recommended actions
-4. **Summary statistics** showing overall model quality
+- **model-validation**: Quality pyramid (8 levels), verification thresholds (PASS ≤1%, WARN 1-5%, FAIL >5%), CLI commands. Consult for threshold definitions, validation commands, and interpreting results.
+- **source-traceability**: Citation patterns, confidence assessment, traceability matrix schema. Consult when evaluating doc comment quality and traceability completeness.
+- **requirements-tracking**: PR-XXX format, EARS syntax, compliance checking. Consult when assessing models against project requirements.
 
-When invoked:
-- If model files provided: proceed to audit process
-- If no files: ask "Which models should I audit?" and request file paths
+## Verification Obligations
 
-## Audit Process
+Every audit must evaluate the following against the models in scope. Present the audit scope and applicable obligations to the user before starting.
 
-### Stage 1: Scope Definition
+### Numerical Accuracy
 
-**Goal**: Identify what to audit and establish baseline
+For every parameter value in the audited models, trace back to its baseline source from `knowledge/SOURCE_INDEX.md` and compare. Apply thresholds per the **model-validation** skill. For each parameter, report: model value with file:line, baseline value with source file:line, discrepancy %, and PASS/WARN/FAIL status.
 
-1. **Identify Target Models**:
-   - If user provided file paths: use those
-   - If user provided directory: find all .sysml files
-   - If user provided model name: locate in models/library/ or models/designs/
+Special cases:
+- **Calculated values**: Evaluate the baseline calculation, show steps
+- **Unit mismatches**: Convert and note the conversion
+- **Arrays/lists**: Compare element-by-element, report max discrepancy
+- **Model param not in baseline**: Report as "design-specific"
+- **Baseline param not in model**: Report as "not implemented"
 
-2. **Locate baseline codebase Baseline**:
-   - Read SOURCE_INDEX.md to discover baseline codebase location
-   - Read primary input files for parameter values
-   - Identify calculation modules relevant to audit scope
+### Source Traceability
 
-3. **Define Audit Scope**:
-   Present to user:
+Every definition (part def, calc def, attribute def) in the audited models must have:
+- A doc comment citing its authority source with file:line references (per **source-traceability** skill)
+- An entry in `data/traceability_matrix.csv` linking it to DI-XXX knowledge and/or PR-XXX requirements
+
+Report definitions missing citations and definitions missing traceability matrix entries as separate categories.
+
+### Programmatic Validation
+
+Run `agentic-mbse validate` against the audited models. Report results for all 8 levels. Levels 1-3 failures are critical and must be resolved. Level 4-8 issues are findings to report.
+
+### PR-XXX Compliance
+
+Read `modeling_project/REQUIREMENTS.md`. For **each** PR-XXX that applies to the audited scope, determine whether the models satisfy it. Report pass/fail per requirement with specific evidence — which model elements satisfy or violate, with file:line references.
+
+### AD-XXX Adherence
+
+Read `modeling_project/ARCHITECTURE.md`. For **each** AD-XXX decision relevant to the audited scope, verify the models are consistent. Report deviations with specific evidence — what the decision requires vs what the models actually do.
+
+### SV-XXX Evaluation
+
+Read `modeling_project/VALIDATION_MATRIX.md`. For each SV-XXX criterion the audit can evaluate, determine current status and update it:
+`agentic-mbse pm update-validation <SV-XXX> --status <passing|failing|pending>`
+
+SV-XXX entries with `Mechanism: test` that require the downstream pipeline (codegen → teax) — report as "not yet verifiable" if the pipeline isn't operational.
+
+### Work Item Acceptance (work item audit only)
+
+When auditing a specific work item, also read:
+- `work/active/{WI-XXX}_{name}/spec.md` — MR-XXX requirements and acceptance criteria
+- `work/active/{WI-XXX}_{name}/design.md` — design decisions and validation report
+- `work/active/{WI-XXX}_{name}/plan.md` — implementation plan and completion gates
+
+Verify **each** MR-XXX requirement is satisfied by the implemented models. Verify all spec acceptance criteria are met. Verify all plan completion gates passed. This is the independent verification that implementation is complete.
+
+## Process
+
+1. **Scope** — determine work item audit vs project audit. Identify target models, locate baseline sources, load project standards (REQUIREMENTS.md, ARCHITECTURE.md, VALIDATION_MATRIX.md, traceability_matrix.csv). For work item audits, read the spec/design/plan chain. Present scope and get user confirmation.
+
+2. **Verify** — execute each applicable verification obligation. Use parallel reads for multiple model files. Read baseline source files once and cache values. For large audits, work incrementally by file or subsystem.
+
+3. **Analyze** — for each WARN/FAIL: check doc comments for deviation rationale, check for unit issues, determine if design decision or error. Every FAIL needs a concrete recommendation: correct the value, document the intentional deviation, or confirm it's by design.
+
+4. **Promote patterns** — if the audit reveals a recurring structural pattern worth codifying as an architectural decision, propose it to the user. If approved:
+   `agentic-mbse pm register-decision --title "<title>" --decision "<text>" --rationale "<text>"`
+
+5. **Report** — generate the audit report and save to `work/analysis/YYYYMMDD-HHMMSS_audit_{scope}.md`. Present summary to user with overall status, statistics per category, and critical findings. Offer follow-ups: fix FAILs and re-audit, add traceability for gaps, create work items for significant issues (`/backlog`).
+
+6. **Close offer** (work item audit only) — if the audit verdict is positive (all MR-XXX satisfied, all spec acceptance criteria met, Levels 1-3 passing), ask the user whether they want to close the work item. Use `AskUserQuestion` with options: "Close this work item" (archives to completed, updates all Status fields) and "Keep open" (no state change — user may want further work or re-audit). If the user confirms close:
    ```
-   Audit Scope Identified:
-
-   **Target Models:**
-   - models/designs/{design_name}/magnets.sysml
-   - models/designs/{design_name}/blanket.sysml
-   - models/library/physics/power_balance.sysml
-
-   **Baseline Codebase** (from SOURCE_INDEX.md):
-   - Location: {source_location}
-   - Primary parameters: {input_file}
-   - Calculations: {calculation_modules}
-
-   **Verification Standards:**
-   - ✅ PASS: Within ±1% of baseline codebase
-   - ⚠️ WARN: Within ±5% of baseline codebase
-   - ❌ FAIL: Beyond ±5% of baseline codebase
-
-   Proceed with audit?
+   agentic-mbse pm close-item <WI-XXX>
    ```
-
-4. **Get User Confirmation** before proceeding
-
-### Stage 2: Model Inspection
-
-**Goal**: Extract all parameter values from SysML models with source attribution
-
-1. **Read Target Models**:
-   - Read each .sysml file completely
-   - Extract all attribute definitions with values
-   - Note units if specified
-   - Track file location and line numbers
-
-2. **Catalog Model Parameters**:
-   Create structured inventory:
-   ```markdown
-   ## Model Parameter Inventory
-
-   ### File: models/designs/{design_name}/magnets.sysml
-
-   #### Part: tf_system
-   - **major_radius** = 4.15 [m] (line 23)
-   - **n_coils** = 18 (line 24)
-   - **field_on_axis** = 12.0 [T] (line 25)
-   - **current_total** = 15.2e6 [A] (line 26)
-
-   #### Part: pf_system
-   - **coil_count** = 6 (line 45)
-   - ...
-
-   ### File: models/library/physics/power_balance.sysml
-
-   #### Calc: FusionPowerCalc
-   - **P_fusion** = 2600 [MW] (line 15)
-   - **P_alpha** = 520.6 [MW] (line 16)
-   - ...
-   ```
-
-3. **Extract Traceability**:
-   - Check doc comments for baseline codebase citations
-   - Cross-reference with `data/traceability_matrix.csv`
-   - Note parameters with vs without source citations
-
-### Stage 3: baseline codebase Baseline Verification
-
-**Goal**: Compare each model parameter to baseline codebase baseline value
-
-1. **Read baseline codebase Source Files**:
-   - Read `DefineInputs.py` for input parameters
-   - Read relevant calculation modules for outputs
-   - Extract values with line numbers
-   - Note any calculations that need to be evaluated
-
-2. **Match Parameters**:
-   For each model parameter:
-   - Find corresponding baseline codebase parameter (by name or traceability)
-   - Extract baseline codebase value
-   - Note baseline codebase source location (file:line)
-   - If calculation needed, evaluate it
-
-3. **Calculate Discrepancies**:
-   For each matched parameter:
-   ```python
-   discrepancy_percent = abs((model_value - baseline_value) / baseline_value) * 100
-
-   if discrepancy_percent <= 1.0:
-       status = "PASS"
-   elif discrepancy_percent <= 5.0:
-       status = "WARN"
-   else:
-       status = "FAIL"
-   ```
-
-4. **Generate Verification Table**:
-   ```markdown
-   ## Verification Results
-
-   | Parameter | Model Value | baseline codebase Value | Source | Discrepancy | Status |
-   |-----------|-------------|----------------|--------|-------------|--------|
-   | major_radius | 4.15 m | 4.15 m | DefineInputs.py:45 | 0.00% | ✅ PASS |
-   | n_coils | 18 | 18 | DefineInputs.py:48 | 0.00% | ✅ PASS |
-   | field_on_axis | 12.0 T | 12.2 T | DefineInputs.py:52 | 1.64% | ⚠️ WARN |
-   | P_fusion | 2600 MW | 2600 MW | PowerBalance.py:125 | 0.00% | ✅ PASS |
-   | P_alpha | 520.6 MW | 520.0 MW | PowerBalance.py:130 | 0.12% | ✅ PASS |
-   | blanket_thickness | 0.85 m | 0.80 m | DefineInputs.py:95 | 6.25% | ❌ FAIL |
-   ```
-
-### Stage 4: Discrepancy Analysis & Reporting
-
-**Goal**: Analyze failures and warnings, provide actionable recommendations
-
-1. **Categorize Issues**:
-   - **PASS items**: Document for completeness
-   - **WARN items**: Investigate if intentional deviation
-   - **FAIL items**: Require explanation or correction
-   - **Missing items**: Model parameter not in baseline codebase (or vice versa)
-   - **Unmapped items**: No traceability link established
-
-2. **Investigate Discrepancies**:
-   For each WARN/FAIL:
-   - Check if model has doc comment explaining deviation
-   - Check if units conversion issue
-   - Check if design decision to use different value
-   - Check if baseline codebase value is input vs calculated
-
-3. **Generate Detailed Report**:
-   ```markdown
-   ## Audit Report: [Model Name]
-
-   **Audit Date**: 2025-11-17
-   **Auditor**: Claude (audit-models agent)
-   **Models Audited**: [list]
-   **Baseline Codebase** (from SOURCE_INDEX.md): {source_location} (commit: [hash if available])
-
-   ---
-
-   ## Executive Summary
-
-   **Overall Status**: [PASS / WARN / FAIL]
-
-   **Statistics**:
-   - Total parameters audited: 47
-   - ✅ PASS (≤1%): 42 (89%)
-   - ⚠️ WARN (1-5%): 3 (6%)
-   - ❌ FAIL (>5%): 2 (4%)
-   - ❓ UNMAPPED: 5 (11%)
-
-   **Key Findings**:
-   - 2 critical discrepancies require immediate attention
-   - 3 parameters warrant review
-   - 5 parameters lack traceability mapping
-
-   ---
-
-   ## Detailed Findings
-
-   ### Critical Issues (FAIL)
-
-   #### 1. blanket_thickness discrepancy
-   - **Model value**: 0.85 m (models/designs/{design_name}/blanket.sysml:23)
-   - **baseline codebase value**: 0.80 m (DefineInputs.py:95)
-   - **Discrepancy**: 6.25% (exceeds 5% threshold)
-   - **Traceability**: Cited as DefineInputs.py:95 in doc comment
-   - **Analysis**: Model uses thicker blanket than baseline codebase baseline
-   - **Recommendation**:
-     - If intentional design change, add doc comment explaining rationale
-     - If error, update model to 0.80 m to match baseline
-     - Update traceability matrix with decision
-
-   #### 2. shield_thickness discrepancy
-   - **Model value**: 0.60 m (models/designs/{design_name}/shield.sysml:18)
-   - **baseline codebase value**: 0.55 m (DefineInputs.py:98)
-   - **Discrepancy**: 9.09% (exceeds 5% threshold)
-   - **Traceability**: None - no baseline codebase citation in doc comment
-   - **Analysis**: Significant deviation without documented justification
-   - **Recommendation**:
-     - URGENT: Determine if this is error or intentional
-     - Add doc comment with source or rationale
-     - Update traceability matrix
-
-   ### Warnings (WARN)
-
-   #### 1. field_on_axis discrepancy
-   - **Model value**: 12.0 T (models/designs/{design_name}/magnets.sysml:25)
-   - **baseline codebase value**: 12.2 T (DefineInputs.py:52)
-   - **Discrepancy**: 1.64% (within warning threshold)
-   - **Traceability**: Cited as DefineInputs.py:52
-   - **Analysis**: Minor deviation, may be rounding or design iteration
-   - **Recommendation**: Review if intentional, add doc comment if justified
-
-   [Continue for all WARN items...]
-
-   ### Unmapped Parameters
-
-   Parameters in model without baseline codebase traceability:
-
-   1. **manufacturing_factor** (models/designs/{design_name}/magnets.sysml:35)
-      - Value: 1.15
-      - No baseline codebase source cited
-      - Recommendation: Add traceability or mark as design-specific parameter
-
-   [Continue for all unmapped items...]
-
-   ### Pass Summary
-
-   42 parameters verified within ±1% accuracy:
-   - major_radius: 0.00% discrepancy ✅
-   - minor_radius: 0.00% discrepancy ✅
-   - n_coils: 0.00% discrepancy ✅
-   - P_fusion: 0.00% discrepancy ✅
-   - P_alpha: 0.12% discrepancy ✅
-   [List all or summarize by category]
-
-   ---
-
-   ## Recommendations
-
-   ### Immediate Actions
-   1. **Resolve 2 FAIL items**: Determine if errors or intentional deviations
-   2. **Add traceability for 5 unmapped parameters**: Update doc comments and matrix
-
-   ### Follow-up Actions
-   1. **Review 3 WARN items**: Confirm if deviations are justified
-   2. **Update documentation**: Ensure all intentional deviations explained
-   3. **Sync with baseline codebase**: Consider if baseline codebase baseline needs updating
-
-   ### Traceability Improvements
-   - Add baseline codebase citations to unmapped parameters
-   - Update traceability_matrix.csv with all parameter sources
-   - Document any design decisions that deviate from baseline
-
-   ---
-
-   ## Verification Details
-
-   [Full verification table from Stage 3]
-
-   ---
-
-   ## Audit Metadata
-
-   **Models Audited:**
-   - models/designs/{design_name}/magnets.sysml (commit: [hash])
-   - models/designs/{design_name}/blanket.sysml (commit: [hash])
-   - models/library/physics/power_balance.sysml (commit: [hash])
-
-   **Baseline Codebase** (from SOURCE_INDEX.md):
-   - Location: {source_location}
-   - Commit: [hash if available]
-   - Key files: {input_files}
-
-   **Audit Configuration:**
-   - Pass threshold: ±1%
-   - Warn threshold: ±5%
-   - Fail threshold: >±5%
-
-   **Next Audit**: Recommended after next model update or baseline codebase sync
-   ```
-
-### Stage 5: Summary & Next Steps
-
-**Goal**: Provide clear summary and actionable next steps
-
-1. **Present Summary**:
-   ```
-   Audit Complete!
-
-   **Status**: [PASS / WARN / FAIL]
-   - ✅ 42 parameters pass (≤1%)
-   - ⚠️ 3 parameters warn (1-5%)
-   - ❌ 2 parameters fail (>5%)
-   - ❓ 5 parameters unmapped
-
-   **Critical Issues**: 2 require immediate attention
-   **Report Saved**: modeling_pm/audits/audit_[timestamp].md
-
-   **Next Steps**:
-   1. Review FAIL items and determine corrections
-   2. Add traceability for unmapped parameters
-   3. Review WARN items for justification
-   4. Update models and re-audit
-   ```
-
-2. **Save Audit Report**:
-   - Create directory: `modeling_pm/audits/` (if doesn't exist)
-   - Save report: `modeling_pm/audits/audit_[timestamp]_[model-name].md`
-   - Update latest symlink: `modeling_pm/audits/latest.md`
-
-3. **Offer Follow-up Actions**:
-   ```
-   Would you like me to:
-   [A] Create issues for FAIL items
-   [B] Update traceability matrix for unmapped parameters
-   [C] Generate summary for specific model only
-   [D] Re-audit after corrections
-   [N] Nothing, audit complete
-   ```
+   Then proceed to the project document review trigger questions (same as `/backlog close` and `/status close`):
+   - "Did you discover a modeling pattern that should be a project-wide rule?" → `agentic-mbse pm promote-requirement`
+   - "Did you make a structural decision that future work needs to know?" → `agentic-mbse pm register-decision`
+   - "Should any new verification criteria be added?" → `agentic-mbse pm add-validation`
+   - "Did you learn something about the domain not yet captured?" → `agentic-mbse pm add-insight`
+
+## What Good Output Looks Like
+
+An audit report should contain:
+
+- **Executive Summary** — overall status, statistics per category, key findings
+- **Validation Results** — `agentic-mbse validate` output for all 8 levels
+- **Numerical Verification Table** — every parameter: model value + location, baseline value + source, discrepancy %, status
+- **Critical Issues (FAIL)** — each with: values, locations, discrepancy, analysis, recommendation
+- **Warnings (WARN)** — same structure, lighter analysis
+- **Traceability Gaps** — definitions missing citations, definitions missing traceability matrix entries
+- **PR-XXX Compliance** — per-requirement pass/fail with evidence (file:line)
+- **AD-XXX Adherence** — deviations with evidence
+- **SV-XXX Status Updates** — criteria evaluated, new statuses, criteria not yet verifiable
+- **MR-XXX Verification** (work item audit only) — per-requirement pass/fail, spec acceptance criteria results
+- **Recommendations** — immediate actions, follow-up actions, promotable patterns
+- **Audit Metadata** — models audited with paths, baseline source, thresholds, date
 
 ## Guidelines
 
-### Verification Standards
-
-**Pass Threshold (±1%)**:
-- Exact matches (0% discrepancy)
-- Minor rounding differences
-- Expected precision given engineering tolerances
-- **Action**: Document in pass summary
-
-**Warn Threshold (±5%)**:
-- Small deviations that may be intentional
-- Possible design iterations
-- May warrant review but not blocking
-- **Action**: Flag for review, request justification
-
-**Fail Threshold (>±5%)**:
-- Significant discrepancies requiring explanation
-- Likely errors or undocumented design changes
-- Blocking for production models
-- **Action**: Immediate investigation required
-
-### Special Cases
-
-**Calculated Values**:
-- If baseline codebase value is calculated, evaluate calculation
-- Show calculation steps in report
-- Note any assumptions or dependencies
-
-**Unit Conversions**:
-- Automatically convert between compatible units
-- Note conversion in verification table
-- Flag if units incompatible or unclear
-
-**Missing Parameters**:
-- Model has parameter not in baseline codebase: mark as "design-specific"
-- baseline codebase has parameter not in model: mark as "not implemented"
-- Report both categories separately
-
-**Arrays/Lists**:
-- Compare element-by-element
-- Report max discrepancy
-- Pass if all elements within threshold
-
-### Error Handling
-
-**If baseline codebase not accessible**:
-- STOP and inform user
-- Request baseline codebase location
-- Cannot proceed without baseline
-
-**If model doesn't parse**:
-- Run parse validation first
-- STOP if parse errors
-- Request user fix models before audit
-
-**If traceability missing**:
-- Note as "unmapped"
-- Attempt name-based matching
-- Request user confirm matches
-
-**If unclear which baseline codebase value to use**:
-- Present options to user
-- Get clarification
-- Document decision in report
-
-### Report Quality
-
-**Good audit report has**:
-- Clear executive summary with statistics
-- All FAIL items detailed with recommendations
-- All WARN items noted with analysis
-- Complete verification table
-- Actionable next steps
-- Saved to modeling_pm/audits/ directory
-
-**Poor audit report has**:
-- Vague discrepancies without percentages
-- Missing recommendations
-- No traceability information
-- Unclear which items need attention
-- Not saved for future reference
-
-### Efficiency Tips
-
-**For large audits**:
-- Read baseline codebase files once, cache values
-- Use parallel reads for multiple models
-- Generate verification table incrementally
-- Don't re-read files unnecessarily
-
-**For focused audits**:
-- Audit specific subsystem (e.g., just magnets)
-- Audit specific parameter category (e.g., just geometry)
-- Audit only changed parameters (with git diff)
+- If baseline source is not accessible, stop — cannot verify numerical accuracy without it
+- If models don't parse, stop — request parse error fixes before auditing
+- If traceability is missing for a parameter, attempt name-based matching and ask the user to confirm
+- Unmapped parameters are a traceability gap, not necessarily an accuracy issue — report separately
+- The audit report is evidence — be specific with file paths, line numbers, exact values, percentage discrepancies
+- For work item audits: the spec defines what "done" means. If the spec says it, the audit verifies it.
 
 ---
 
-**Related Commands:**
-- Before audit → Ensure models parse (`syside check models/` or `agentic-mbse validate models/ --level 1`)
-- After audit → Fix issues, update traceability, re-audit
-- Complement with → Full quality validation: `agentic-mbse validate models/`
-
-**Last Updated**: 2025-11-17
+**Related Commands:** Before → `/implement-model` (work item pipeline) or ensure models parse (`agentic-mbse validate --level 1`) | After → fix issues, re-audit | Related → `/research` (knowledge updates may trigger re-audit)
