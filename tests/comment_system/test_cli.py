@@ -2261,3 +2261,225 @@ def test_reopen_concurrent_modification_automatic_retry(runner, git_repo):
     # Verify thread is open
     sidecar = read_sidecar(git_repo / ".comments" / "test.txt.json")
     assert sidecar.threads[0].status == ThreadStatus.OPEN
+
+
+# ============================================================================
+# Rename Detection Integration Tests (Task 3.1)
+# ============================================================================
+
+
+def test_list_auto_detects_rename(runner, git_repo, sample_file):
+    """Test that comment list auto-detects file renames and updates sidecar."""
+    import subprocess
+
+    # Initialize git repo with config
+    subprocess.run(["git", "init"], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Create and commit file
+    subprocess.run(["git", "add", "test.txt"], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Initial commit"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Add a comment
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "3:5", "Test comment"])
+    assert result.exit_code == 0
+
+    # Verify sidecar exists at old location
+    old_sidecar = git_repo / ".comments" / "test.txt.json"
+    assert old_sidecar.exists()
+    old_sidecar_data = read_sidecar(old_sidecar)
+    assert old_sidecar_data.source_file == "test.txt"
+
+    # Rename file in git
+    subprocess.run(
+        ["git", "mv", "test.txt", "renamed.txt"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "Rename file"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Run list command - should detect rename and update sidecar
+    result = runner.invoke(cli, ["list", "--all"])
+    assert result.exit_code == 0
+
+    # Verify sidecar moved to new location
+    new_sidecar = git_repo / ".comments" / "renamed.txt.json"
+    assert new_sidecar.exists()
+    assert not old_sidecar.exists()
+
+    # Verify source_file updated in sidecar
+    new_sidecar_data = read_sidecar(new_sidecar)
+    assert new_sidecar_data.source_file == "renamed.txt"
+
+    # Verify thread preserved
+    assert len(new_sidecar_data.threads) == 1
+    assert new_sidecar_data.threads[0].comments[0].body == "Test comment"
+
+
+def test_show_auto_detects_rename(runner, git_repo, sample_file):
+    """Test that comment show auto-detects file renames and updates sidecar."""
+    import subprocess
+
+    # Initialize git repo with config
+    subprocess.run(["git", "init"], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Create and commit file
+    subprocess.run(["git", "add", "test.txt"], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Initial commit"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Add a comment
+    result = runner.invoke(cli, ["add", str(sample_file), "-L", "3:5", "Test comment"])
+    assert result.exit_code == 0
+
+    # Get thread ID
+    sidecar = read_sidecar(git_repo / ".comments" / "test.txt.json")
+    thread_id = sidecar.threads[0].id
+
+    # Rename file in git
+    subprocess.run(
+        ["git", "mv", "test.txt", "renamed.txt"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "Rename file"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Run show command - should detect rename and update sidecar
+    result = runner.invoke(cli, ["show", thread_id])
+    assert result.exit_code == 0
+
+    # Verify sidecar moved to new location
+    new_sidecar = git_repo / ".comments" / "renamed.txt.json"
+    assert new_sidecar.exists()
+    assert not (git_repo / ".comments" / "test.txt.json").exists()
+
+    # Verify source_file updated in sidecar
+    new_sidecar_data = read_sidecar(new_sidecar)
+    assert new_sidecar_data.source_file == "renamed.txt"
+
+    # Verify thread preserved
+    assert len(new_sidecar_data.threads) == 1
+    assert new_sidecar_data.threads[0].id == thread_id
+
+
+def test_reconcile_all_detects_renames(runner, git_repo):
+    """Test that comment reconcile --all detects all file renames."""
+    import subprocess
+
+    # Initialize git repo with config
+    subprocess.run(["git", "init"], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Create two files
+    file1 = git_repo / "file1.txt"
+    file2 = git_repo / "file2.txt"
+    file1.write_text("Line 1\nLine 2\nLine 3\n")
+    file2.write_text("Line A\nLine B\nLine C\n")
+
+    subprocess.run(["git", "add", "file1.txt", "file2.txt"], cwd=git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Initial commit"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Add comments to both files
+    result = runner.invoke(cli, ["add", str(file1), "-L", "1:2", "Comment on file1"])
+    assert result.exit_code == 0
+    result = runner.invoke(cli, ["add", str(file2), "-L", "2:3", "Comment on file2"])
+    assert result.exit_code == 0
+
+    # Rename both files in git
+    subprocess.run(
+        ["git", "mv", "file1.txt", "renamed1.txt"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "mv", "file2.txt", "renamed2.txt"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "Rename both files"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+    )
+
+    # Run reconcile --all - should detect both renames
+    result = runner.invoke(cli, ["reconcile", "--all"])
+    assert result.exit_code == 0
+    assert "Detected 2 file rename(s)" in result.output
+    assert "file1.txt → renamed1.txt" in result.output
+    assert "file2.txt → renamed2.txt" in result.output
+
+    # Verify both sidecars moved
+    assert (git_repo / ".comments" / "renamed1.txt.json").exists()
+    assert (git_repo / ".comments" / "renamed2.txt.json").exists()
+    assert not (git_repo / ".comments" / "file1.txt.json").exists()
+    assert not (git_repo / ".comments" / "file2.txt.json").exists()
+
+    # Verify source_file fields updated
+    sidecar1 = read_sidecar(git_repo / ".comments" / "renamed1.txt.json")
+    sidecar2 = read_sidecar(git_repo / ".comments" / "renamed2.txt.json")
+    assert sidecar1.source_file == "renamed1.txt"
+    assert sidecar2.source_file == "renamed2.txt"

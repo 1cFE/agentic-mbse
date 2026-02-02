@@ -10,7 +10,12 @@ from pathlib import Path
 import click
 
 from comment_system.anchors import reconcile_sidecar
-from comment_system.git_ops import GitError, is_file_deleted_in_git
+from comment_system.git_ops import (
+    GitError,
+    detect_file_rename,
+    is_file_deleted_in_git,
+    move_sidecar,
+)
 from comment_system.models import (
     Anchor,
     AnchorHealth,
@@ -37,34 +42,62 @@ def compute_content_hash(content: str) -> str:
     return f"sha256:{hashlib.sha256(content.encode('utf-8')).hexdigest()}"
 
 
-def format_source_file(source_file: str, project_root: Path) -> str:
+def format_source_file(source_file: str, project_root: Path, sidecar_path: Path | None = None) -> tuple[str, Path | None]:
     """
-    Format source file path with [deleted] indicator if file no longer exists.
+    Format source file path with status indicators and optionally detect renames.
+
+    If a sidecar_path is provided and the file is missing, this function will:
+    1. Attempt to detect if the file was renamed via git
+    2. If a rename is detected, update the sidecar file automatically
+    3. Return the new path in the formatted string
 
     Args:
         source_file: Relative path to source file from sidecar
         project_root: Project root directory
+        sidecar_path: Optional sidecar path for auto-rename detection
 
     Returns:
-        Formatted string: "path/to/file.py" or "path/to/file.py [deleted]"
+        Tuple of (formatted_string, new_path):
+        - formatted_string: "path/to/file.py", "path/to/file.py [renamed: old.py → new.py]",
+                          "path/to/file.py [deleted]", or "path/to/file.py [missing]"
+        - new_path: New absolute path if rename was detected and sidecar updated, None otherwise
     """
     file_path = project_root / source_file
 
     # If file exists, return path as-is
     if file_path.exists():
-        return source_file
+        return source_file, None
 
-    # File doesn't exist - check if it was deleted in git
+    # File doesn't exist - check for rename if sidecar provided
+    new_path = None
+    if sidecar_path is not None:
+        try:
+            new_path = detect_file_rename(file_path, project_root)
+            if new_path is not None:
+                # Rename detected - update sidecar
+                move_sidecar(file_path, new_path, project_root)
+                # Format as relative path
+                try:
+                    new_relative = new_path.relative_to(project_root)
+                    return f"{source_file} [renamed: {source_file} → {new_relative.as_posix()}]", new_path
+                except ValueError:
+                    # New path outside project root (shouldn't happen, but handle gracefully)
+                    return f"{source_file} [renamed: {source_file} → {new_path.as_posix()}]", new_path
+        except GitError:
+            # Git not available or error during rename detection, continue to check deletion
+            pass
+
+    # No rename detected - check if it was deleted in git
     try:
         if is_file_deleted_in_git(file_path, project_root):
-            return f"{source_file} [deleted]"
+            return f"{source_file} [deleted]", None
     except GitError:
         # Git not available or not a git repo - can't determine deletion status
         # Just show that file is missing
         pass
 
     # File missing but not confirmed deleted (might be renamed or never tracked)
-    return f"{source_file} [missing]"
+    return f"{source_file} [missing]", None
 
 
 def extract_lines(file_path: Path, line_start: int, line_end: int) -> tuple[str, str, str]:
@@ -469,7 +502,7 @@ def list_threads(
                     if author and not any(c.author == author for c in thread.comments):
                         continue
 
-                    matching_threads.append((source_file, thread))
+                    matching_threads.append((source_file, thread, sidecar_path))
             except ValueError:
                 # Skip invalid sidecar files
                 continue
@@ -478,11 +511,21 @@ def list_threads(
         if json_output:
             # JSON output
             output = []
-            for source_file, thread in matching_threads:
+            for source_file, thread, sidecar_path in matching_threads:
+                # Check for renames (will update sidecar if detected)
+                formatted_source, new_path = format_source_file(source_file, project_root, sidecar_path)
+                # If renamed, use new path for output (strip rename message)
+                display_source = source_file
+                if new_path:
+                    try:
+                        display_source = new_path.relative_to(project_root).as_posix()
+                    except ValueError:
+                        display_source = new_path.as_posix()
+
                 output.append(
                     {
                         "id": thread.id,
-                        "source_file": source_file,
+                        "source_file": display_source,
                         "status": thread.status.value,
                         "anchor": {
                             "line_start": thread.anchor.line_start,
@@ -503,7 +546,7 @@ def list_threads(
                 click.echo("No matching threads found.")
                 return
 
-            for source_file, thread in matching_threads:
+            for source_file, thread, sidecar_path in matching_threads:
                 # Format status with color
                 status_str = thread.status.value
                 if use_color:
@@ -524,13 +567,24 @@ def list_threads(
                     else:  # orphaned
                         health_str = click.style(health_str, fg="red")
 
-                # Format source file with deletion indicator
-                formatted_source = format_source_file(source_file, project_root)
+                # Format source file with rename detection/deletion indicator
+                formatted_source, new_path = format_source_file(source_file, project_root, sidecar_path)
+
+                # For display, use new path if renamed (strip brackets for line numbers)
+                display_source = source_file
+                if new_path:
+                    try:
+                        display_source = new_path.relative_to(project_root).as_posix()
+                    except ValueError:
+                        display_source = new_path.as_posix()
+                elif "[" in formatted_source:
+                    # Has status indicator [deleted] or [missing], use formatted_source for display
+                    display_source = formatted_source
 
                 # Print thread info
                 click.echo(
                     f"{thread.id} [{status_str}] [{health_str}] "
-                    f"{formatted_source}:{thread.anchor.line_start}:{thread.anchor.line_end} "
+                    f"{display_source}:{thread.anchor.line_start}:{thread.anchor.line_end} "
                     f"({len(thread.comments)} comments)"
                 )
 
@@ -576,6 +630,7 @@ def show(thread_id: str, json_output: bool, all_files: bool):
         # Find thread in sidecar files
         found_thread = None
         found_source_file = None
+        found_sidecar_path = None
 
         comments_dir = project_root / ".comments"
         if comments_dir.exists():
@@ -587,6 +642,7 @@ def show(thread_id: str, json_output: bool, all_files: bool):
                         if thread.id == thread_id:
                             found_thread = thread
                             found_source_file = sidecar.source_file
+                            found_sidecar_path = sidecar_path
                             break
                     if found_thread:
                         break
@@ -602,13 +658,29 @@ def show(thread_id: str, json_output: bool, all_files: bool):
         assert found_source_file is not None, (
             "found_source_file must be set when found_thread is set"
         )
+        assert found_sidecar_path is not None, (
+            "found_sidecar_path must be set when found_thread is set"
+        )
+
+        # Check for rename (will update sidecar if detected)
+        formatted_source, new_path = format_source_file(found_source_file, project_root, found_sidecar_path)
+        # Update source file path if renamed
+        display_source_file = found_source_file
+        if new_path:
+            try:
+                display_source_file = new_path.relative_to(project_root).as_posix()
+            except ValueError:
+                display_source_file = new_path.as_posix()
+        else:
+            # No rename detected, use formatted_source which may have [deleted] or [missing] markers
+            display_source_file = formatted_source
 
         # Output thread details
         if json_output:
             # JSON output
             output = {
                 "id": found_thread.id,
-                "source_file": found_source_file,
+                "source_file": display_source_file,
                 "status": found_thread.status.value,
                 "anchor": {
                     "line_start": found_thread.anchor.line_start,
@@ -658,13 +730,11 @@ def show(thread_id: str, json_output: bool, all_files: bool):
                 else:  # orphaned
                     health_str = click.style(health_str, fg="red")
 
-            # Format source file with deletion indicator
-            formatted_source = format_source_file(found_source_file, project_root)
-
+            # Use the display_source_file which includes status markers
             click.echo(f"Thread: {found_thread.id}")
             click.echo(f"Status: {status_str}")
             click.echo(
-                f"Location: {formatted_source}:{found_thread.anchor.line_start}:{found_thread.anchor.line_end}"
+                f"Location: {display_source_file}:{found_thread.anchor.line_start}:{found_thread.anchor.line_end}"
             )
             click.echo(f"Anchor Health: {health_str}")
             if found_thread.anchor.drift_distance > 0:
@@ -1111,7 +1181,7 @@ def reconcile(
             comments_dir = project_root / ".comments"
             if not comments_dir.exists():
                 if json_output:
-                    click.echo(json.dumps({"files": [], "total_threads": 0}))
+                    click.echo(json.dumps({"files": [], "total_threads": 0, "renames": []}))
                 else:
                     click.echo("No comment files found in project")
                 return
@@ -1120,12 +1190,41 @@ def reconcile(
             sidecar_paths = list(comments_dir.rglob("*.json"))
             if not sidecar_paths:
                 if json_output:
-                    click.echo(json.dumps({"files": [], "total_threads": 0}))
+                    click.echo(json.dumps({"files": [], "total_threads": 0, "renames": []}))
                 else:
                     click.echo("No comment files found in project")
                 return
 
-            # Reconcile each sidecar
+            # First pass: Detect and apply file renames
+            rename_operations = []
+            for sidecar_path in sidecar_paths:
+                try:
+                    sidecar = read_sidecar(sidecar_path)
+                    source_path = project_root / sidecar.source_file
+
+                    # If source file doesn't exist, try to detect rename
+                    if not source_path.exists():
+                        try:
+                            new_path = detect_file_rename(source_path, project_root)
+                            if new_path is not None:
+                                # Rename detected - update sidecar
+                                if move_sidecar(source_path, new_path, project_root):
+                                    try:
+                                        new_relative = new_path.relative_to(project_root).as_posix()
+                                        rename_operations.append((sidecar.source_file, new_relative))
+                                    except ValueError:
+                                        rename_operations.append((sidecar.source_file, new_path.as_posix()))
+                        except GitError:
+                            # Git not available or error, skip rename detection for this file
+                            pass
+                except (ValueError, OSError):
+                    # Skip invalid sidecar files
+                    continue
+
+            # Refresh sidecar paths after renames
+            sidecar_paths = list(comments_dir.rglob("*.json"))
+
+            # Second pass: Reconcile anchors
             results = []
             total_threads = 0
             total_anchored = 0
@@ -1178,6 +1277,7 @@ def reconcile(
                     json.dumps(
                         {
                             "files": results,
+                            "renames": [{"old": old, "new": new} for old, new in rename_operations],
                             "total_threads": total_threads,
                             "total_anchored": total_anchored,
                             "total_drifted": total_drifted,
@@ -1188,6 +1288,13 @@ def reconcile(
                     )
                 )
             else:
+                # Report renames first
+                if rename_operations:
+                    click.echo(f"Detected {len(rename_operations)} file rename(s):")
+                    for old_renamed, new_renamed in rename_operations:
+                        click.echo(f"  {old_renamed} → {new_renamed}")
+                    click.echo()
+
                 click.echo(f"Reconciled {len(results)} files:")
                 click.echo(f"  Total threads: {total_threads}")
                 click.echo(f"  Anchored: {_format_health('anchored', total_anchored)}")
@@ -1215,6 +1322,33 @@ def reconcile(
                 click.echo(f"Error: No comments found for {file}", err=True)
                 sys.exit(1)
 
+            # Check for rename before reconciling
+            rename_detected = False
+            if not source_path.exists():
+                try:
+                    new_path = detect_file_rename(source_path, project_root)
+                    if new_path is not None:
+                        # Rename detected - update sidecar
+                        if move_sidecar(source_path, new_path, project_root):
+                            rename_detected = True
+                            # Update source_path and sidecar_path for reconciliation
+                            source_path = new_path
+                            sidecar_path = get_sidecar_path(source_path, project_root)
+                            if not json_output:
+                                try:
+                                    old_relative = file.relative_to(project_root).as_posix()
+                                except ValueError:
+                                    old_relative = str(file)
+                                try:
+                                    new_relative = new_path.relative_to(project_root).as_posix()
+                                except ValueError:
+                                    new_relative = new_path.as_posix()
+                                click.echo(f"Detected file rename: {old_relative} → {new_relative}")
+                                click.echo()
+                except GitError:
+                    # Git not available or error, continue without rename detection
+                    pass
+
             # Reconcile
             try:
                 report = reconcile_sidecar(
@@ -1233,23 +1367,21 @@ def reconcile(
                 sys.exit(2)
 
             if json_output:
-                click.echo(
-                    json.dumps(
-                        {
-                            "file": str(file),
-                            "total_threads": report.total_threads,
-                            "anchored": report.anchored_count,
-                            "drifted": report.drifted_count,
-                            "orphaned": report.orphaned_count,
-                            "max_drift": report.max_drift_distance,
-                            "source_hash_before": report.source_hash_before,
-                            "source_hash_after": report.source_hash_after,
-                        },
-                        indent=2,
-                    )
-                )
+                output_dict = {
+                    "file": str(source_path.relative_to(project_root) if source_path.is_relative_to(project_root) else source_path),
+                    "renamed": rename_detected,
+                    "total_threads": report.total_threads,
+                    "anchored": report.anchored_count,
+                    "drifted": report.drifted_count,
+                    "orphaned": report.orphaned_count,
+                    "max_drift": report.max_drift_distance,
+                    "source_hash_before": report.source_hash_before,
+                    "source_hash_after": report.source_hash_after,
+                }
+                click.echo(json.dumps(output_dict, indent=2))
             else:
-                click.echo(f"Reconciled {file}:")
+                display_file = source_path.relative_to(project_root) if source_path.is_relative_to(project_root) else source_path
+                click.echo(f"Reconciled {display_file}:")
                 click.echo(f"  Total threads: {report.total_threads}")
                 click.echo(f"  Anchored: {_format_health('anchored', report.anchored_count)}")
                 click.echo(f"  Drifted: {_format_health('drifted', report.drifted_count)}")
