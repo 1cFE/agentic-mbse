@@ -45,6 +45,11 @@
         "command": "file-native-comments.reconcileFile",
         "title": "Reconcile File",
         "category": "File-Native Comments"
+      },
+      {
+        "command": "file-native-comments.reconcileAll",
+        "title": "Reconcile All Files",
+        "category": "File-Native Comments"
       }
     ],
     "menus": {

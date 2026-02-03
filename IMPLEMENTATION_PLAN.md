@@ -1058,9 +1058,9 @@ Once Phase 3.1 is complete:
 
 ---
 
-### 🔲 Task 3.4.2: Implement "Reconcile All" Command
+### ✅ Task 3.4.2: Implement "Reconcile All" Command (COMPLETED)
 
-**Status**: NOT STARTED
+**Status**: COMPLETE (2026-02-03)
 
 **Priority**: MEDIUM (convenient but not essential)
 
@@ -1068,44 +1068,65 @@ Once Phase 3.1 is complete:
 - REQ-7: "Comment: Reconcile All" (project-wide)
 - `specs/cli-interface.md` (`comment reconcile --all`)
 
-**Files to Create/Modify** (4 files):
-1. **Create** `vscode-extension/src/commands/reconcileAll.ts` (~150 lines)
-   - `reconcileAllCommand()` function handles project-wide reconciliation
-   - Shows confirmation dialog (operation may take time)
-   - Calls Python CLI: `comment reconcile --all`
-   - Shows progress notification (VSCode Progress API)
-   - Parses CLI output to extract aggregate statistics
-   - Shows summary notification with total counts
-   - `registerReconcileAllCommand()` for registration
+**Implementation Summary**:
+- Created `vscode-extension/src/commands/reconcileAll.ts` (186 lines)
+  - `reconcileAllCommand()` executes `comment reconcile --all --json`
+  - Shows modal confirmation dialog before execution
+  - Uses `vscode.window.withProgress()` for progress notification during CLI execution
+  - Parses CLI JSON output to extract reconciliation statistics
+  - Shows success/warning notifications with thread counts (anchored/drifted/orphaned)
+  - Reloads comments for all visible editors after reconciliation
+  - Filters visible editors to only reload files within project
+  - Error handling for user/system errors (exit codes 1/2)
+  - `registerReconcileAllCommand()` for registration with VSCode
 
-2. **Modify** `vscode-extension/src/extension.ts` (~5 lines added)
-   - Import `registerReconcileAllCommand`
-   - Call registration on activation
+- Created `vscode-extension/src/commands/reconcileAll.test.ts` (473 lines)
+  - 23 unit tests covering all functionality
+  - Tests: confirmation dialog (accept/cancel/dismiss), CLI execution, progress notification
+  - Tests: JSON parsing, notifications (success/warning/error), logging
+  - Tests: comment reload (visible editors, non-file URIs, files outside project)
+  - Tests: error handling (malformed JSON, exit codes, stderr parsing)
+  - All tests passing (23/23)
 
-3. **Modify** `vscode-extension/package.json` (~10 lines added)
-   - Command contribution: `file-native-comments.reconcileAll`
-   - Command palette entry: "File-Native Comments: Reconcile All Files"
+- Modified `vscode-extension/src/extension.ts` (+2 lines)
+  - Import `registerReconcileAllCommand`
+  - Call registration on activation with projectRoot and commentProvider
 
-4. **Create** `vscode-extension/src/commands/reconcileAll.test.ts` (~150 lines)
-   - Unit tests for reconcile all logic
-   - Tests: confirmation dialog, CLI execution, progress notification
-   - Tests: output parsing, error handling, cancellation
+- Modified `vscode-extension/package.json` (+5 lines)
+  - Command contribution: `file-native-comments.reconcileAll`
+  - Command palette: "File-Native Comments: Reconcile All Files"
 
-**Acceptance Criteria**:
-- [ ] Command palette shows "File-Native Comments: Reconcile All Files"
-- [ ] Confirmation dialog appears before execution
-- [ ] Progress notification shown during reconciliation
-- [ ] Success notification shows aggregate statistics
-- [ ] All open files refresh after reconciliation
-- [ ] Error notification shown if CLI fails
-- [ ] TypeScript compilation succeeds: `npm run compile`
-- [ ] Unit tests pass: `npm test`
+- Modified `vscode-extension/src/__mocks__/vscode.ts` (+9 lines)
+  - Added `ProgressLocation` enum (SourceControl, Window, Notification)
+  - Added `window.withProgress` mock function
+  - Added `window.showQuickPick` mock function
+
+**Acceptance Criteria** (All Met):
+- ✅ Command palette shows "File-Native Comments: Reconcile All Files"
+- ✅ Modal confirmation dialog appears before execution
+- ✅ Progress notification shown during reconciliation (with title and increments)
+- ✅ Success notification shows aggregate statistics
+- ✅ Warning notification shown if any threads drifted or orphaned
+- ✅ All open files refresh after reconciliation (via loadCommentsForDocument)
+- ✅ Error notification shown if CLI fails (with stderr details)
+- ✅ TypeScript compilation succeeds: `npm run compile`
+- ✅ Unit tests pass: `npm test` (198/198 tests passing)
 
 **Implementation Notes**:
-- CLI output format: Same as single-file reconcile, but aggregates across all files
-- Use `vscode.window.withProgress()` for progress notification
-- Confirmation dialog text: "Reconcile all comment threads in project? This may take a moment for large projects."
-- After reconciliation, reload comments for all open editors
+- **CLI command**: `comment reconcile --all --json` with 10MB maxBuffer for large outputs
+- **Confirmation dialog**: Modal dialog with "Reconcile All" and "Cancel" buttons
+- **Progress notification**: Uses `vscode.window.withProgress()` with `ProgressLocation.Notification`
+  - Reports 0% at start, 100% after CLI completes
+  - Synchronous execution (non-cancellable)
+- **JSON output parsing**: Extracts `total_files`, `total_threads`, `anchored`, `drifted`, `orphaned`
+- **Notification strategy**:
+  - Success (info): All threads anchored (drifted = 0, orphaned = 0)
+  - Warning: Any threads drifted or orphaned
+  - Info: No threads found (total_threads = 0)
+- **Comment reload**: Filters visible editors to only reload files within project
+  - Checks `uri.scheme === 'file'` and path is within project root
+  - Prevents errors from untitled/remote files
+- **Error handling**: Distinguishes exit codes (1 = user error, 2 = system error)
 
 ---
 

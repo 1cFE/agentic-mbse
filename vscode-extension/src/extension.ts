@@ -13,6 +13,7 @@ import { registerReplyCommand } from './commands/replyComment';
 import { registerResolveCommand } from './commands/resolveThread';
 import { registerReopenCommand } from './commands/reopenThread';
 import { registerReconcileFileCommand } from './commands/reconcileFile';
+import { registerReconcileAllCommand } from './commands/reconcileAll';
 
 /**
  * Extension activation entry point.
@@ -118,6 +119,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Register reconcile file command for manual anchor reconciliation
     registerReconcileFileCommand(context, projectRoot);
+
+    // Register reconcile all command for project-wide reconciliation
+    registerReconcileAllCommand(context, projectRoot, commentProvider);
 
     // Register "Focus Thread" command (for programmatic and UI use)
     // This command can be triggered by clicking gutter icons or via command palette

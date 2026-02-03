@@ -127,7 +127,9 @@ export const window = {
         key: 'mock-decoration',
         dispose: jest.fn()
     })),
-    onDidChangeVisibleTextEditors: jest.fn(() => ({ dispose: jest.fn() }))
+    onDidChangeVisibleTextEditors: jest.fn(() => ({ dispose: jest.fn() })),
+    withProgress: jest.fn(),
+    showQuickPick: jest.fn()
 };
 
 export const env = {
@@ -143,4 +145,10 @@ export enum TextEditorRevealType {
     InCenter = 1,
     InCenterIfOutsideViewport = 2,
     AtTop = 3
+}
+
+export enum ProgressLocation {
+    SourceControl = 1,
+    Window = 10,
+    Notification = 15
 }
