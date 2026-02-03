@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { readSidecar, Thread, ThreadStatus, AnchorHealth, Comment as SidecarComment } from './sidecar';
+import { DecorationManager } from './decorations';
 
 /**
  * Provides comment threads for documents by reading from sidecar files.
@@ -23,6 +24,7 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
     private projectRoot: string;
     private commentController: vscode.CommentController;
     private commentThreads: Map<string, vscode.CommentThread[]> = new Map();
+    private decorationManager: DecorationManager;
 
     /**
      * Creates a new CommentProvider.
@@ -33,6 +35,7 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
     constructor(projectRoot: string, commentController: vscode.CommentController) {
         this.projectRoot = projectRoot;
         this.commentController = commentController;
+        this.decorationManager = new DecorationManager();
     }
 
     /**
@@ -74,6 +77,13 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
 
         // Return if no sidecar exists
         if (sidecarData === null) {
+            // Clear decorations for this document
+            const editor = vscode.window.visibleTextEditors.find(
+                e => e.document.uri.toString() === documentKey
+            );
+            if (editor) {
+                this.decorationManager.updateGutterDecorations(editor, []);
+            }
             return;
         }
 
@@ -93,6 +103,14 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
         // Store threads for this document
         if (threads.length > 0) {
             this.commentThreads.set(documentKey, threads);
+        }
+
+        // Update gutter decorations for this document
+        const editor = vscode.window.visibleTextEditors.find(
+            e => e.document.uri.toString() === documentKey
+        );
+        if (editor) {
+            this.decorationManager.updateGutterDecorations(editor, sidecarData.threads);
         }
     }
 
@@ -234,5 +252,21 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
         }
 
         return null;
+    }
+
+    /**
+     * Disposes all resources used by this provider.
+     *
+     * Called when the extension deactivates.
+     */
+    dispose(): void {
+        // Dispose all comment threads
+        for (const threads of this.commentThreads.values()) {
+            threads.forEach(thread => thread.dispose());
+        }
+        this.commentThreads.clear();
+
+        // Dispose decoration manager
+        this.decorationManager.dispose();
     }
 }

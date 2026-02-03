@@ -54,6 +54,11 @@ export function activate(context: vscode.ExtensionContext): void {
     const commentProvider = new CommentProvider(projectRoot, commentController);
     commentController.commentingRangeProvider = commentProvider;
 
+    // Dispose comment provider on deactivation
+    context.subscriptions.push({
+        dispose: () => commentProvider.dispose()
+    });
+
     console.log('CommentProvider registered');
 
     // Load comments for all currently open documents
@@ -65,6 +70,16 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
         vscode.workspace.onDidOpenTextDocument(document => {
             commentProvider.loadCommentsForDocument(document);
+        })
+    );
+
+    // Update decorations when visible editors change (e.g., switching tabs)
+    context.subscriptions.push(
+        vscode.window.onDidChangeVisibleTextEditors(() => {
+            // Refresh decorations for all visible editors
+            vscode.window.visibleTextEditors.forEach(editor => {
+                commentProvider.loadCommentsForDocument(editor.document);
+            });
         })
     );
 

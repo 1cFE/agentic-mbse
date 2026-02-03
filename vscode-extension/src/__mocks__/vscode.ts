@@ -105,11 +105,22 @@ export const workspace = {
     createFileSystemWatcher: jest.fn()
 };
 
+export interface TextEditorDecorationType {
+    key: string;
+    dispose(): void;
+}
+
 export const window = {
     showInformationMessage: jest.fn(),
     showErrorMessage: jest.fn(),
     showInputBox: jest.fn(),
-    activeTextEditor: undefined as any
+    activeTextEditor: undefined as any,
+    visibleTextEditors: [] as any[],
+    createTextEditorDecorationType: jest.fn((options: any): TextEditorDecorationType => ({
+        key: 'mock-decoration',
+        dispose: jest.fn()
+    })),
+    onDidChangeVisibleTextEditors: jest.fn(() => ({ dispose: jest.fn() }))
 };
 
 export const env = {

@@ -1,6 +1,6 @@
 # Implementation Plan: File-Native Comment System
 
-**Status**: Phase 1 & 2 Complete (CLI + MCP Server), Phase 3.1 & 3.2 Complete (VSCode Extension Core)
+**Status**: Phase 1 & 2 Complete (CLI + MCP Server), Phase 3.1 & 3.2 Complete (VSCode Extension Core), Phase 3.3 In Progress (Gutter Indicators & Decorations)
 **Last Updated**: 2026-02-03
 
 ---
@@ -702,11 +702,221 @@ Once Phase 3.1 is complete:
 
 ---
 
-## Appendix: Phases 3.3-3.5 (Future Iterations)
+## 🔄 Phase 3.3: Gutter Indicators & Decorations
 
-### 🔲 Phase 3.3: Gutter Indicators & Decorations
-- Color-coded gutter icons (status-based)
-- Inline text highlights (health-based styling)
+**Goal**: Add visual feedback for comment locations via gutter icons and inline text decorations, making comment anchors immediately visible without opening the comment panel.
+
+**Status**: IN PROGRESS (2026-02-03)
+
+**Spec References**:
+- `specs/vscode-extension.md` REQ-2 (Gutter indicators)
+- `specs/vscode-extension.md` REQ-3 (Inline highlights)
+- `specs/vscode-extension.md` AC-1, AC-4, AC-6 (Visual feedback)
+
+---
+
+### ✅ Task 3.3.1: Implement Gutter Icons with Status-Based Colors (COMPLETED)
+
+**Status**: COMPLETE (2026-02-03)
+
+**Priority**: HIGH (essential visual feedback)
+
+**Spec References**:
+- REQ-2: Color-coded gutter icons (🟡 open, 🟢 resolved, 🔴 orphaned, 🟠 drifted)
+- AC-1: Gutter icons appear at correct line numbers
+- AC-6: Tooltip shows anchor status for orphaned threads
+
+**Files to Create/Modify** (4 files):
+1. **Create** `vscode-extension/src/decorations.ts` (~200 lines)
+   - `DecorationManager` class for managing gutter icons and text highlights
+   - `createGutterDecoration()` creates TextEditorDecorationType for each status
+   - Status-based color mapping:
+     - `anchored` (open) → Yellow circle (⚫)
+     - `resolved` → Green checkmark (✓)
+     - `orphaned` → Red warning (⚠)
+     - `drifted` → Orange drift indicator (⇄)
+   - `updateGutterDecorations(editor, threads)` applies decorations to editor
+   - Hover tooltips with thread count and status
+   - Click handler (future: opens comment panel to thread)
+
+2. **Modify** `vscode-extension/src/commentProvider.ts` (~40 lines added)
+   - Import `DecorationManager`
+   - Instantiate manager in constructor
+   - Call `decorationManager.updateGutterDecorations()` after loading comments
+   - Pass threads array to decoration manager
+   - Dispose decorations on provider disposal
+
+3. **Modify** `vscode-extension/src/extension.ts` (~10 lines added)
+   - Pass `commentController` to `CommentProvider` constructor
+   - Ensure decorations update when file watcher triggers reload
+
+4. **Create** `vscode-extension/src/decorations.test.ts` (~250 lines)
+   - Unit tests for decoration creation and application
+   - Tests: status → color mapping, hover tooltips, multiple threads per line
+   - Tests: decoration disposal, editor changes, line number mapping
+   - Mock VSCode decoration API
+
+**Implementation Summary**:
+- Created `vscode-extension/src/decorations.ts` (343 lines)
+  - `DecorationManager` class for managing gutter icons
+  - `initializeGutterDecorations()` creates 4 decoration types on construction:
+    - `open-anchored`: Yellow circle (⚫)
+    - `open-drifted`: Orange circle with drift arrows (⇄)
+    - `orphaned`: Red warning triangle (⚠)
+    - `resolved`: Green checkmark (✓)
+  - SVG data URIs generated via helper methods (createCircleIconDataUri, etc.)
+  - `updateGutterDecorations(editor, threads)` applies decorations to editor
+  - Priority system: orphaned (4) > drifted (3) > open (2) > resolved (1)
+  - Hover messages with thread ID, status, health, comment count, drift distance
+  - Automatic cleanup on dispose() with tracked editors
+
+- Modified `vscode-extension/src/commentProvider.ts` (added 30 lines)
+  - Import `DecorationManager`
+  - Instantiate `decorationManager` in constructor
+  - Call `updateGutterDecorations()` after loading comments in `loadCommentsForDocument()`
+  - Clear decorations when no sidecar exists
+  - Add `dispose()` method to clean up decorations
+
+- Modified `vscode-extension/src/extension.ts` (added 15 lines)
+  - Register `commentProvider.dispose()` in subscriptions
+  - Add `onDidChangeVisibleTextEditors` listener to refresh decorations when switching tabs
+
+- Modified `vscode-extension/src/__mocks__/vscode.ts` (added 10 lines)
+  - Add `TextEditorDecorationType` interface
+  - Mock `window.createTextEditorDecorationType()`
+  - Mock `window.visibleTextEditors` and `onDidChangeVisibleTextEditors`
+
+- Created `vscode-extension/src/decorations.test.ts` (424 lines)
+  - 17 unit tests covering all functionality
+  - Tests: decoration creation, status/health mapping, priority resolution
+  - Tests: line number conversion, hover messages, multiple threads per line
+  - Tests: disposal, empty thread arrays, metadata in hovers
+
+**Acceptance Criteria** (All Met):
+- ✅ Gutter icons appear at correct line positions for all threads
+- ✅ Icons display correct colors based on thread status and health
+- ✅ Hover tooltip shows thread metadata (ID, status, count, drift distance)
+- ✅ Multiple threads on same line show single icon with highest priority status
+- ✅ Icons update when file watcher detects sidecar changes (via loadCommentsForDocument)
+- ✅ Icons removed when file closed or threads deleted (via dispose)
+- ✅ TypeScript compilation succeeds: `npm run compile` passes
+- ✅ Unit tests pass: `npm test` passes (141/141 tests, 8 suites)
+
+**Implementation Notes**:
+- SVG icons created via data URIs (base64-encoded inline SVG)
+- Color scheme: Yellow (#f0db4f), Orange (#ff9800), Red (#f44336), Green (#4caf50)
+- Line conversion: sidecar (1-indexed) → VSCode Range (0-indexed) via `line_start - 1`
+- Priority resolution: When multiple threads on same line, show highest priority status
+- Hover format: Single thread shows details, multiple threads show summary with emojis
+- Decorations tracked per editor for efficient cleanup on dispose
+- File watcher integration: Decorations auto-update when sidecar changes (2-second debounce)
+
+---
+
+### 🔲 Task 3.3.2: Implement Inline Text Highlights with Health-Based Styling
+
+**Status**: TODO (depends on 3.3.1)
+
+**Priority**: MEDIUM (polish/UX enhancement)
+
+**Spec References**:
+- REQ-3: Health-based styling (solid/dashed/strikethrough)
+- REQ-3: Clear highlights when thread resolved
+- AC-4: Highlights move automatically when file edited
+
+**Files to Modify** (2 files):
+1. **Modify** `vscode-extension/src/decorations.ts` (~80 lines added)
+   - `createTextDecoration()` creates decoration types for each health status
+   - Health-based styling:
+     - `anchored` → Subtle yellow background (`backgroundColor: rgba(255, 255, 0, 0.1)`)
+     - `drifted` → Dashed yellow underline (`textDecoration: 'underline dashed yellow'`)
+     - `orphaned` → Strikethrough red (`textDecoration: 'line-through'`, `color: dimmed`)
+   - `updateTextDecorations(editor, threads)` applies range-based decorations
+   - Use `anchor.char_start` and `char_end` for precise character ranges
+   - Skip decorations for resolved threads (REQ-3)
+   - Handle multi-line anchors (span multiple lines in decoration range)
+
+2. **Modify** `vscode-extension/src/decorations.test.ts` (~120 lines added)
+   - Unit tests for text decoration creation and application
+   - Tests: health → styling mapping, character range accuracy
+   - Tests: multi-line anchors, resolved thread exclusion
+   - Tests: decoration updates on health changes
+
+**Implementation Notes**:
+- Use `editor.setDecorations(decorationType, ranges)` to apply highlights
+- Range creation: `new vscode.Range(line_start - 1, char_start, line_end - 1, char_end)`
+- Resolved threads: Skip text decorations entirely (gutter icon sufficient)
+- Theme compatibility: Use semi-transparent colors to respect user themes
+- Performance: Batch decoration updates (single call per editor)
+
+**Acceptance Criteria**:
+- [ ] Text highlights appear for all unresolved threads
+- [ ] Styling matches health status (solid/dashed/strikethrough)
+- [ ] Multi-line anchors span correct line range
+- [ ] Character offsets align precisely with anchor boundaries
+- [ ] Resolved threads have no text highlights (only gutter icon)
+- [ ] Highlights update when reconciliation changes health status
+- [ ] TypeScript compilation succeeds: `npm run compile`
+- [ ] Unit tests pass: `npm test`
+
+---
+
+### 🔲 Task 3.3.3: Add Click Handler for Gutter Icons
+
+**Status**: TODO (depends on 3.3.1)
+
+**Priority**: LOW (UX enhancement, not blocking)
+
+**Spec References**:
+- REQ-2: Click on gutter icon opens comment panel
+
+**Files to Modify** (2 files):
+1. **Modify** `vscode-extension/src/decorations.ts` (~30 lines added)
+   - Add command registration for gutter icon click
+   - Store thread_id in decoration metadata
+   - Register command: `file-native-comments.focusThread`
+   - Command handler extracts thread_id, finds CommentThread object
+   - Uses VSCode API to focus/reveal thread in comment panel
+
+2. **Modify** `vscode-extension/src/extension.ts` (~5 lines added)
+   - Register `focusThread` command on activation
+   - Pass command handler to decoration manager
+
+**Implementation Notes**:
+- Use `vscode.commands.registerCommand()` for click handler
+- Gutter decoration metadata: Store thread_id for click target
+- Focus API: `commentThread.reveal()` or equivalent (check VSCode API docs)
+- Fallback: If focus API unavailable, show information message
+
+**Acceptance Criteria**:
+- [ ] Clicking gutter icon focuses corresponding thread in comment panel
+- [ ] Works for all thread statuses (open, resolved, orphaned, drifted)
+- [ ] Gracefully handles missing threads (e.g., deleted since decoration created)
+- [ ] TypeScript compilation succeeds: `npm run compile`
+- [ ] Manual testing: Click icons in test file, verify panel focus
+
+---
+
+## Success Metrics for Phase 3.3
+
+**Completion Definition**: When all 3 tasks (3.3.1, 3.3.2, 3.3.3) pass acceptance criteria.
+
+**What Works After Phase 3.3**:
+- Visual indicators show comment locations at a glance
+- Color-coded gutter icons communicate thread status
+- Inline highlights show anchor health (solid/drifted/orphaned)
+- Clicking gutter icons navigates to thread in comment panel
+- Decorations update in real-time with file watcher sync
+
+**What's Still Missing** (Phase 3.4+):
+- Manual reconciliation commands (Phase 3.4)
+- Show decisions command (Phase 3.4)
+- Extension configuration options (Phase 3.5)
+- Conflict handling prompts (Phase 3.5)
+
+---
+
+## Appendix: Phases 3.4-3.5 (Future Iterations)
 
 ### 🔲 Phase 3.4: Reconciliation & Commands
 - Manual reconciliation commands
