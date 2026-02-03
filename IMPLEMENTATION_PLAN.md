@@ -1,1379 +1,410 @@
 # Implementation Plan: File-Native Comment System
 
-**Status**: Phase 1 & 2 Complete (CLI + MCP Server), Phase 3.1 & 3.2 & 3.3 & 3.4 Complete (VSCode Extension with Full Command Set)
+**Status**: Phase 5 - Final Verification & Documentation
 **Last Updated**: 2026-02-03
+**Previous Phases**: 1-4 Complete (Core Python + MCP + VSCode Extension + Testing)
 
 ---
 
-## What's Been Built (Phases 1-2) ✅
+## Executive Summary
 
-### ✅ Core Data Models (`src/comment_system/models.py`)
-- Complete implementation of all spec data structures:
-  - `Thread`, `Comment`, `Anchor`, `Decision`, `SidecarFile`
-  - Enums: `ThreadStatus`, `AuthorType`, `AnchorHealth`
-  - `ReconciliationReport` for reconciliation statistics
-- Full Pydantic validation with field constraints
-- ULID generation, SHA-256 hashing, ISO 8601 timestamps
+**VERIFIED COMPLETE** (as of 2026-02-03):
+- ✅ Full Python implementation (10 modules: models, storage, anchors, fuzzy, git_ops, locking, CLI, MCP, decisions)
+- ✅ Comprehensive test suite (475 tests collected for comment_system, tests passing)
+- ✅ MCP server with 7 tools
+- ✅ VSCode extension with all core features (230 tests passing)
+- ✅ All major specs implemented and tested
 
-### ✅ Storage Layer (`src/comment_system/storage.py`)
-- Atomic write pattern (temp file + rename)
-- Optimistic concurrency control with `source_hash` validation
-- `write_sidecar_with_retry()` with automatic retry (up to 3 attempts)
-- File locking via `locking.py` (flock/LockFileEx)
-- `find_project_root()`, `get_sidecar_path()`, `normalize_path()`
-- Binary file detection and rejection
-
-### ✅ Anchor Reconciliation (`src/comment_system/anchors.py`)
-- Multi-strategy reconciliation algorithm:
-  1. **Exact match at original position** (fast path)
-  2. **Exact match elsewhere** (content moved)
-  3. **Context-based fuzzy matching** (context hashes + fuzzy)
-  4. **Sliding window fuzzy matching** (±500 lines)
-  5. **Orphan marking** (preserves original snippet)
-- `reconcile_anchor()` for single anchor
-- `reconcile_sidecar()` for entire sidecar file
-- Performance: Fast (exact match), Slow (fuzzy fallback - 170x target, accepted)
-
-### ✅ Fuzzy Matching (`src/comment_system/fuzzy.py`)
-- Levenshtein similarity (normalized 0-1)
-- Jaccard similarity on word-level bigrams
-- Combined scoring: `(levenshtein + jaccard) / 2`
-- Context region detection via hash matching
-- Sliding window search with disambiguation rules
-- **Known limitation**: Pure Python Levenshtein is ~170x slower than target (see decision-log.md)
-
-### ✅ Git Operations (`src/comment_system/git_ops.py`)
-- File rename detection via `git log --follow --diff-filter=R`
-- Deletion detection via `git log --diff-filter=D`
-- Sidecar file moving (atomic rename with reconciliation)
-- Graceful degradation when git unavailable
-
-### ✅ File Locking (`src/comment_system/locking.py`)
-- Cross-platform file locking (flock on Unix, LockFileEx on Windows)
-- Shared locks for reads, exclusive locks for writes
-- 5-second timeout with clear error messages
-- Automatic cleanup on process termination
-
-### ✅ CLI (`src/comment_system/cli.py`)
-- **8 commands implemented**:
-  - `comment add` (with `-L` or `--match` anchoring)
-  - `comment list` (with filters: status, health, author, `--all`)
-  - `comment show` (full thread details)
-  - `comment reply`
-  - `comment resolve` (with `--decision` and `--wontfix`)
-  - `comment reopen`
-  - `comment reconcile` (single file or `--all`)
-  - `comment decisions` (generate DECISIONS.md)
-- Color-coded output (respects `NO_COLOR`)
-- JSON output mode (`--json`)
-- Automatic rename detection in `list` and `show`
-- Exit codes: 0 (success), 1 (user error), 2 (system error)
-
-### ✅ MCP Server (`src/comment_system/mcp_server.py`)
-- **7 MCP tools exposed**:
-  - `comment_add`, `comment_list`, `comment_show`
-  - `comment_reply`, `comment_resolve`, `comment_reopen`
-  - `comment_reconcile`
-- Pydantic request/response models for all tools
-- Structured error handling with error codes
-- Project-wide and single-file operations
-
-### ✅ Decision Log (`src/comment_system/decisions.py`)
-- Aggregates resolved threads with decisions
-- Generates `DECISIONS.md` at project root
-- Idempotent (safe to regenerate)
-- Auto-generated warning in header
-
-### ✅ Tests (`tests/comment_system/`)
-- **11,519 total test lines** across 13 test files
-- Coverage for all modules:
-  - `test_models.py` (472 lines) - Pydantic validation
-  - `test_storage.py` (1,285 lines) - Atomic writes, concurrency
-  - `test_anchors.py` (1,067 lines) - Reconciliation strategies
-  - `test_fuzzy.py` (1,106 lines) - Similarity algorithms
-  - `test_cli.py` (2,485 lines) - CLI commands
-  - `test_mcp_server.py` (1,536 lines) - MCP tools
-  - `test_git_ops.py` (1,083 lines) - Git integration
-  - `test_locking.py` (369 lines) - File locking
-  - `test_decisions.py` (933 lines) - Decision log generation
-  - `test_orchestration_scripts.py` (568 lines) - Workflow scripts
-  - Performance tests (3 files, 615 lines total)
-
-### ✅ VSCode Extension Foundation
-- **Sidecar reader module** (`vscode-extension/src/sidecar.ts` - 291 lines)
-  - Full TypeScript type definitions matching Python models
-  - `readSidecar()` function with comprehensive validation
-  - Schema validation for all data structures
-  - Jest tests for sidecar parsing
-- **Extension activation stub** (`vscode-extension/src/extension.ts` - 43 lines)
-  - Basic CommentController registration
-  - Activation/deactivation lifecycle hooks
+**This plan focuses on Phase 5**: Final verification, documentation updates, and polish before release.
 
 ---
 
-## ✅ Phase 3.1 COMPLETE: Core Extension Infrastructure
+## Gap Analysis Summary
 
-**Goal**: Establish the foundation for VSCode comment UI by implementing CommentProvider that reads sidecar files and displays threads as native VSCode CommentThread objects.
+### ✅ Implemented & Tested
 
-**Status**: COMPLETE (2026-02-03) - All 3 tasks (3.1.1, 3.1.2, 3.1.3) finished
+| Component | Implementation | Tests | Specs Covered |
+|-----------|---------------|-------|---------------|
+| **Data Models** | `models.py` (263 lines) | `test_models.py` (42 tests) | `data-model.md` ✅ |
+| **Storage Layer** | `storage.py` | `test_storage.py`, `test_storage_performance.py` | `file-operations.md` ✅, `concurrency.md` ✅ |
+| **Anchor Reconciliation** | `anchors.py` | `test_anchors.py` (22 tests), `test_anchors_performance.py` | `anchor-reconciliation.md` ✅ |
+| **Fuzzy Matching** | `fuzzy.py` | `test_fuzzy.py`, `test_fuzzy_performance.py` | `fuzzy-matching.md` ✅ |
+| **Git Operations** | `git_ops.py` | `test_git_ops.py` | `file-tracking.md` ✅ |
+| **File Locking** | `locking.py` | `test_locking.py` | `concurrency.md` ✅ |
+| **CLI** | `cli.py` | `test_cli.py` | `cli-interface.md` ✅ |
+| **MCP Server** | `mcp_server.py` | `test_mcp_server.py` | `mcp-tools.md` ✅ |
+| **Decisions** | `decisions.py` | `test_decisions.py` | `decision-log.md` ✅ |
+| **Orchestration** | N/A (bash scripts) | `test_orchestration_scripts.py` | `orchestration.md` ✅ |
+| **VSCode Extension** | TypeScript (25 files) | 230 tests passing | `vscode-extension.md` ✅ |
 
-**Files Created/Modified**: 8 files total
-- Created: `commentProvider.ts`, `fileWatcher.ts`, `commands/addComment.ts`
-- Created: `commentProvider.test.ts`, `fileWatcher.test.ts`, `commands/addComment.test.ts`
-- Modified: `extension.ts`, `package.json`
+### ⚠️ Known Limitations (Documented, Accepted)
 
----
+1. **Performance**: Fuzzy matching slower than spec target (~17s vs 100ms for 100 threads)
+   - **Status**: Accepted per archive, fallback only
+   - **Action**: Document in Phase 5
 
-### ✅ Task 3.1.1: Implement CommentProvider with Thread Display (COMPLETED)
+2. **Cursor IDE**: Not yet verified
+   - **Status**: Required by spec CON-1
+   - **Action**: Manual testing in Phase 5
 
-**Status**: COMPLETE (2026-02-03)
+### 🔍 Items Needing Verification
 
-**Implementation Summary**:
-- Created `vscode-extension/src/commentProvider.ts` (210 lines)
-  - `CommentProvider` class implementing `vscode.CommentingRangeProvider`
-  - `loadCommentsForDocument(document)` method for populating threads
-  - `provideCommentingRanges()` returns undefined (allow comments anywhere)
-  - Converts `Thread` → `vscode.CommentThread` objects
-  - Maps `ThreadStatus` → VSCode resolved/unresolved states
-  - Stores metadata (health, drift, status, thread_id) in `contextValue` for future use
-  - Handles missing sidecar files gracefully (no-op)
-  - Clamps line numbers to document bounds
-  - `findProjectRoot()` static method walks up directory tree to find `.git`
-
-- Modified `vscode-extension/src/extension.ts` (added ~20 lines)
-  - Imports and instantiates `CommentProvider`
-  - Registers provider with `commentController.commentingRangeProvider`
-  - Finds project root via `CommentProvider.findProjectRoot()`
-  - Loads comments for all open documents on activation
-  - Subscribes to `onDidOpenTextDocument` to load comments for newly opened files
-
-- Created `vscode-extension/src/commentProvider.test.ts` (370 lines)
-  - 8 unit tests covering all core functionality
-  - Mock VSCode API via `src/__mocks__/vscode.ts`
-  - Tests: sidecar reading, thread conversion, status mapping, multiple threads, line clamping
-  - Tests: project root finding in current/parent directories
-
-- Created `vscode-extension/src/__mocks__/vscode.ts` (95 lines)
-  - Mock implementation of VSCode API for testing
-  - Provides `Range`, `CommentMode`, `CommentThreadState`, `MarkdownString`, `Uri`, `comments`, `workspace`
-
-**Acceptance Criteria** (All Met):
-- ✅ CommentProvider class created with `loadCommentsForDocument()` method
-- ✅ Method reads sidecar file for active document using `readSidecar()`
-- ✅ Each `Thread` converted to `vscode.CommentThread` with:
-  - ✅ Correct line range (1-indexed → 0-indexed conversion)
-  - ✅ Thread ID preserved in `contextValue` JSON
-  - ✅ Resolved state mapped from `status` field
-  - ✅ First comment displayed as thread label
-- ✅ Missing sidecar files handled gracefully (no errors)
-- ✅ Extension compiles without TypeScript errors: `npm run compile` succeeds
-- ✅ Unit tests pass: `npm test` passes (20/20 tests, 2 suites)
-
-**Implementation Notes**:
-- Line conversion: 1-indexed (sidecar) → 0-indexed (VSCode) via `line_start - 1`
-- Metadata storage: `contextValue` contains JSON with `health`, `drift_distance`, `status`, `thread_id`, `has_decision`
-- Thread disposal: Threads tracked in `commentThreads` Map and disposed on reload
-- Mock strategy: VSCode API mocked via Jest manual mock in `__mocks__/` directory
+1. **Test coverage percentage** - Unknown, need coverage report
+2. **Performance documentation** - Not yet written
+3. **Cursor compatibility** - Not yet tested
+4. **README updates** - May need updates for release
 
 ---
 
-### ✅ Task 3.1.2: Implement File Watcher for Real-Time Sync (COMPLETED)
+## Phase 5: Final Verification & Documentation
 
-**Status**: COMPLETE (2026-02-03)
+**Goal**: Verify production readiness, document known limitations, ensure all specs are met.
 
-**Implementation Summary**:
-- Created `vscode-extension/src/fileWatcher.ts` (161 lines)
-  - `FileWatcher` class implementing file system monitoring
-  - Watches `.comments/**/*.json` pattern via `vscode.workspace.createFileSystemWatcher()`
-  - Debounce logic with 2-second delay (configurable via `debounceMs` field)
-  - Handles `onDidCreate`, `onDidChange`, `onDidDelete` events
-  - Methods: `start()`, `stop()`, `onSidecarChanged(callback)`
-  - `extractSourceFilePath()` converts sidecar path → source file path
-  - Tracks pending timers in `Map<string, NodeJS.Timeout>` for cleanup
-  - Graceful error handling in callbacks (catches exceptions, logs to console)
-
-- Modified `vscode-extension/src/extension.ts` (added 18 lines)
-  - Imports `FileWatcher` module
-  - Instantiates `FileWatcher(projectRoot)` on activation
-  - Calls `fileWatcher.start()` to begin monitoring
-  - Registers callback via `onSidecarChanged()` to reload affected documents
-  - Finds open document matching source file path
-  - Calls `commentProvider.loadCommentsForDocument()` on change
-  - Disposes watcher via `context.subscriptions.push()` on deactivation
-
-- Created `vscode-extension/src/fileWatcher.test.ts` (337 lines)
-  - 16 unit tests covering all functionality
-  - Tests: watcher creation, event registration, disposal, timer cleanup
-  - Tests: debounce logic, multiple rapid changes coalesce, callback invocation
-  - Tests: multiple callbacks, error handling, source path extraction
-  - Tests: Windows path handling, invalid paths ignored, create/delete events
-  - Uses Jest fake timers for deterministic debounce testing
-
-- Modified `vscode-extension/src/__mocks__/vscode.ts` (added 10 lines)
-  - Added `RelativePattern` class mock
-  - Added `workspace.createFileSystemWatcher` jest mock function
-
-**Acceptance Criteria** (All Met):
-- ✅ `vscode.workspace.createFileSystemWatcher()` created for `.comments/**/*.json` pattern
-- ✅ File change events debounced with 2-second delay (implemented via `setTimeout()`)
-- ✅ After debounce, callback triggers sidecar reload and UI refresh
-- ✅ Watcher properly disposed on extension deactivation (timers cleared, watcher disposed)
-- ✅ Unit tests pass: 36/36 tests passing (16 new FileWatcher tests + existing tests)
-- ✅ TypeScript compilation succeeds: `npm run compile` passes
-
-**Implementation Notes**:
-- Debounce implementation: Each source file tracks its own timer in `Map<string, NodeJS.Timeout>`
-- When a new event arrives, existing timer is cleared via `clearTimeout()` before creating new one
-- Timer cleanup on `stop()`: All pending timers cleared to prevent memory leaks
-- Source path extraction: Parses `.comments/path/to/file.ext.json` → `path/to/file.ext`
-- Cross-platform: Normalizes path separators (handles Windows backslashes)
-- Only reloads comments for currently open documents (not all documents)
+**Priority Order**:
+1. **Verify test coverage** (HIGH) - Ensure adequate coverage before release
+2. **Document performance** (MEDIUM) - Set user expectations
+3. **Verify Cursor IDE** (MEDIUM) - Required by spec
+4. **Update release docs** (LOW) - Polish for users
 
 ---
 
-### ✅ Task 3.1.3: Implement "Add Comment" Command (COMPLETED)
-
-**Status**: COMPLETE (2026-02-03)
-
-**Priority**: HIGH (basic write operation)
-
-**Spec References**:
-- `specs/vscode-extension.md` REQ-4 (Comment creation with selection)
-- `specs/cli-interface.md` (Anchoring logic reference)
-- `specs/data-model.md` (Thread/Comment/Anchor structures)
-
-**Files to Create/Modify** (4 files):
-1. **Create** `vscode-extension/src/commands/addComment.ts` (~150 lines)
-   - `addCommentCommand()` function
-   - Validates active editor and selection
-   - Captures line_start, line_end from selection (convert 0-indexed → 1-indexed)
-   - Prompts user for comment text (input box)
-   - Calls Python CLI via subprocess: `comment add <file> -L <start>:<end> "<text>"`
-   - Alternative: Direct sidecar write (requires porting anchor creation logic to TypeScript)
-   - Shows success/error notification
-
-2. **Modify** `vscode-extension/src/extension.ts` (~10 lines added)
-   - Import `addCommentCommand`
-   - Register command: `vscode.commands.registerCommand('file-native-comments.addComment', ...)`
-   - Add to `context.subscriptions`
-
-3. **Modify** `vscode-extension/package.json` (~15 lines added)
-   - Add command contribution:
-     ```json
-     "contributes": {
-       "commands": [{
-         "command": "file-native-comments.addComment",
-         "title": "Add Comment",
-         "category": "File-Native Comments"
-       }],
-       "menus": {
-         "editor/context": [{
-           "when": "editorHasSelection",
-           "command": "file-native-comments.addComment",
-           "group": "comments"
-         }]
-       },
-       "keybindings": [{
-         "command": "file-native-comments.addComment",
-         "key": "cmd+k cmd+m",
-         "mac": "cmd+k cmd+m",
-         "win": "ctrl+k ctrl+m",
-         "linux": "ctrl+k ctrl+m",
-         "when": "editorTextFocus"
-       }]
-     }
-     ```
-
-4. **Create** `vscode-extension/src/commands/addComment.test.ts` (~100 lines)
-   - Unit tests for command logic
-   - Mock VSCode editor, selection, input box
-   - Test line number conversion (0-indexed → 1-indexed)
-   - Test error handling (no selection, no active editor)
-
-**Implementation Summary**:
-- Created `vscode-extension/src/commands/addComment.ts` (168 lines)
-  - `addCommentCommand()` function handles end-to-end add comment flow
-  - Validates active editor and non-empty selection
-  - Converts VSCode selection (0-indexed) to sidecar format (1-indexed)
-  - Prompts user for comment text with validation (non-empty)
-  - Builds CLI command: `comment add <file> -L <start>:<end> --author=<user> "<text>"`
-  - Escapes special characters (quotes, backslashes) in comment text
-  - Uses `execSync()` to call Python CLI subprocess
-  - Shows success/error notifications
-  - `registerAddCommentCommand()` for registration with VSCode
-
-- Modified `vscode-extension/src/extension.ts` (added 4 lines)
-  - Imports `registerAddCommentCommand`
-  - Calls registration on activation
-
-- Modified `vscode-extension/package.json` (added 24 lines)
-  - Command contribution: `file-native-comments.addComment`
-  - Context menu: Shows when `editorHasSelection` is true
-  - Keybinding: `Ctrl+K Ctrl+M` (Win/Linux) / `Cmd+K Cmd+M` (Mac)
-
-- Created `vscode-extension/src/commands/addComment.test.ts` (412 lines)
-  - 17 unit tests covering all functionality
-  - Tests: validation (no editor, empty selection, file outside project)
-  - Tests: line number conversion (0-indexed → 1-indexed)
-  - Tests: CLI command generation with proper escaping
-  - Tests: user interaction (input box, cancellation, validation)
-  - Tests: success and error handling (CLI failures, notifications)
-  - All tests use mocked VSCode API and `child_process.execSync()`
-
-**Acceptance Criteria** (All Met):
-- ✅ Context menu shows "Add Comment" when text selected (`when: editorHasSelection`)
-- ✅ Keyboard shortcut `Cmd+K Cmd+M` (Mac) / `Ctrl+K Ctrl+M` (Win/Linux) triggers command
-- ✅ Input box prompts for comment text with validation
-- ✅ Captures correct line range from selection (0-indexed → 1-indexed conversion)
-- ✅ Creates sidecar file via CLI subprocess: `comment add <file> -L <start>:<end> ...`
-- ✅ New CommentThread appears immediately after creation (via file watcher debounce)
-- ✅ Error notification shown if command fails (catches execSync exceptions)
-- ✅ TypeScript compilation succeeds: `npm run compile` passes
-- ✅ Unit tests pass: `npm test` passes (53/53 tests, including 17 new tests)
-
-**Implementation Notes**:
-- **Decision**: Chose Option A (CLI subprocess via `execSync()`)
-  - Reuses validated Python logic for anchor creation and file locking
-  - Requires `comment` CLI in PATH (installed via `uv tool install` or user setup)
-  - Synchronous execution simplifies error handling
-  - Alternative (direct TypeScript sidecar write) deferred to future iteration
-- Author stored as `(vscode.env as any).username` (fallback: `'vscode-user'`)
-  - Type cast needed for VSCode 1.85 compatibility (username added in 1.55+)
-- Author type defaults to "human" (hardcoded in CLI call)
-- CLI command escapes backslashes first, then double quotes (order matters)
-- Relative file paths computed via `path.relative(projectRoot, absolutePath)`
-- Error messages display CLI stderr when available, otherwise generic message
-
----
-
-## Testing Strategy for This Iteration
-
-### Unit Tests (Jest)
-- [ ] `commentProvider.test.ts` - Thread conversion, missing sidecar handling
-- [ ] `fileWatcher.test.ts` - Debounce logic, event coalescing
-- [ ] `addComment.test.ts` - Command logic, line conversion, error cases
-
-### Manual Testing Checklist
-- [ ] Open file with existing sidecar → threads appear in comment panel
-- [ ] Select text → right-click → "Add Comment" → thread created
-- [ ] Use keyboard shortcut `Cmd+K Cmd+M` → comment created
-- [ ] Run `comment add` from CLI → VSCode updates within 2 seconds
-- [ ] Open/close files → correct threads shown for each file
-- [ ] Extension activates without errors in VSCode Extension Host console
-
-### Integration Points to Verify
-- [ ] Sidecar reader (`sidecar.ts`) correctly parses existing files
-- [ ] File watcher detects CLI/MCP changes
-- [ ] CommentThreads display with correct line ranges
-- [ ] New comments persist after VSCode reload
-
----
-
-## ✅ Success Metrics for Phase 3.1 (ALL MET)
-
-**Completion Definition**: When all 3 tasks (3.1.1, 3.1.2, 3.1.3) pass acceptance criteria. ✅ COMPLETE
-
-**What Works After Phase 3.1** (Implemented):
-- ✅ VSCode displays existing comment threads from sidecar files (Task 3.1.1)
-- ✅ Users can create new comments via UI (context menu `Cmd+K Cmd+M`, Task 3.1.3)
-- ✅ Real-time sync between CLI/MCP and VSCode (2-second debounce, Task 3.1.2)
-- ✅ Basic comment viewing with thread status and metadata
-- ✅ Line number conversion (VSCode ↔ sidecar)
-- ✅ Project root detection (.git directory)
-- ✅ Error handling and user notifications
-
-**What's Still Missing** (Phase 3.3+):
-- Gutter icons and text highlights (Phase 3.3)
-- Manual reconciliation commands (Phase 3.4)
-- Conflict handling (read-before-write, Phase 3.5)
-
----
-
-## ✅ Success Metrics for Phase 3.2 (ALL MET)
-
-**Completion Definition**: When all 3 tasks (3.2.1, 3.2.2, 3.2.3) pass acceptance criteria. ✅ COMPLETE
-
-**What Works After Phase 3.2** (Implemented):
-- ✅ Users can reply to threads inline within VSCode UI (Task 3.2.1)
-- ✅ Users can resolve threads with required decision text (Task 3.2.2)
-- ✅ Users can reopen resolved threads (Task 3.2.2)
-- ✅ Comment bodies render with full markdown support:
-  - Bold, italic, and inline code formatting
-  - Code blocks with syntax highlighting
-  - Clickable hyperlinks
-  - Mixed multiline formatting (Task 3.2.3)
-- ✅ Context menus conditionally show Resolve/Reopen based on thread state
-- ✅ All actions provide immediate UI feedback with file watcher sync
-- ✅ Text escaping handles quotes, backslashes, newlines, tabs, carriage returns
-- ✅ Comprehensive test coverage: 123 unit tests passing
-
-**What's Still Missing** (Phase 3.3+):
-- Gutter icons and text highlights (Phase 3.3)
-- Manual reconciliation commands (Phase 3.4)
-- Conflict handling (read-before-write, Phase 3.5)
-
----
-
-## Implementation Order Rationale
-
-**Phase 3.1 (Core Infrastructure)**:
-1. **CommentProvider first**: Foundation for displaying threads, required by all other features
-2. **File watcher second**: Enables real-time sync, validates provider integration
-3. **Add command third**: First write operation, proves end-to-end flow (create → store → display)
-
-**Phase 3.2 (Thread UI)**:
-1. **Reply first**: Most common write operation after creation
-2. **Resolve/reopen second**: Completes the core workflow (open → discuss → resolve)
-3. **Markdown rendering third**: Polish feature, tests verify existing implementation
-
-This order minimizes dependencies while providing incremental value at each step.
-
----
-
-## Dependencies and Prerequisites
-
-### TypeScript (Already Installed)
-- ✅ `@types/node`, `@types/vscode`, `typescript`
-- ✅ `jest`, `ts-jest` (testing framework)
-- ✅ Sidecar reader module (`sidecar.ts`) already complete
-
-### Python CLI (Already Built)
-- ✅ `comment add` command functional
-- ✅ File locking and atomic writes working
-- ✅ Anchor creation logic validated
-
-### Development Environment
-- VSCode 1.85+ (per `package.json` engines requirement)
-- Node.js (for TypeScript compilation and testing)
-- Python 3.9+ with `uv` (for CLI commands)
-
----
-
-## Out of Scope (Not in This Iteration)
-
-- Reply and resolve buttons in CommentThread UI (Phase 3.2)
-- Gutter indicators and decorations (Phase 3.3)
-- Manual reconciliation commands (Phase 3.4)
-- Configuration options (Phase 3.5)
-- Conflict handling prompts (Phase 3.5)
-- Full markdown rendering (Phase 3.2)
-
----
-
-## Risk Mitigation
-
-**Risk 1**: CLI subprocess calls may be slow or require Python in PATH
-- **Mitigation**: Accept this constraint for initial iteration, document Python requirement
-- **Future**: Port anchor creation to TypeScript if performance issues arise
-
-**Risk 2**: File watcher debounce may feel laggy
-- **Mitigation**: 2-second debounce is per spec (REQ-5), user-configurable in future iteration
-- **Testing**: Verify with manual CLI → VSCode sync tests
-
-**Risk 3**: VSCode CommentController API may have undocumented quirks
-- **Mitigation**: Implement minimal provider first, expand based on testing feedback
-- **Reference**: VSCode sample extensions for proven patterns
-
----
-
-## Next Actions After This Iteration
-
-Once Phase 3.1 is complete:
-1. **Phase 3.2**: Implement reply and resolve actions within CommentThread UI
-2. **Phase 3.3**: Add gutter icons and text highlights for visual feedback
-3. **Phase 3.4**: Implement manual reconciliation commands
-4. **Phase 3.5**: Add configuration, conflict handling, and polish
-
----
-
-## Performance Notes
-
-### ✅ Fast Operations (Meeting Targets)
-- Exact content hash matching: < 10ms per anchor (Strategy 1 & 2)
-- File operations: < 100ms for 10,000-line files (hash computation)
-- Reconciliation with no file changes: 0.187s for 100 threads (AC-6 short-circuit)
-
-### ⚠️ Known Slow Operation (Accepted Limitation)
-- **Fuzzy matching (Strategy 5)**: ~17 seconds for 100 threads vs. 100ms target (170x slower)
-  - **Status**: Accepted per git commit 8d15815
-  - **Rationale**: Fallback strategy rarely used in practice (exact match is fast path)
-  - **Tests skipped**: 3 fuzzy performance tests marked `@pytest.mark.skip`
-  - **Future option**: Add `python-Levenshtein` C extension if users report issues
-
----
-
-## ✅ Phase 3.2: Comment Thread UI (COMPLETE)
-
-**Goal**: Enable users to reply to threads and resolve/reopen threads directly from VSCode UI, completing the core comment workflow.
-
-**Status**: COMPLETE (2026-02-03) - All 3 tasks (3.2.1, 3.2.2, 3.2.3) finished
-
----
-
-### ✅ Task 3.2.1: Implement Reply Functionality (COMPLETED)
-
-**Status**: COMPLETE (2026-02-03)
-
-**Priority**: HIGH (core write operation)
-
-**Spec References**:
-- `specs/vscode-extension.md` REQ-6 (Inline reply input within thread)
-- `specs/cli-interface.md` (`comment reply` command reference)
-
-**Implementation Summary**:
-- Created `vscode-extension/src/commands/replyComment.ts` (167 lines)
-  - `handleReply()` function processes CommentReply objects
-  - Extracts thread_id from thread.contextValue JSON
-  - Validates reply text (non-empty, trimmed)
-  - Calls Python CLI: `comment reply <thread_id> "<text>" --author=<user>`
-  - Escapes special characters (backslashes, quotes, newlines, tabs)
-  - Creates temporary comment object for immediate UI feedback
-  - File watcher reloads actual comment from sidecar after CLI completes
-  - `registerReplyCommand()` registers command with VSCode
-
-- Modified `vscode-extension/src/extension.ts` (import + 1 line)
-  - Imports `registerReplyCommand`
-  - Calls registration on activation
-
-- Modified `vscode-extension/package.json` (5 lines)
-  - Command contribution: `file-native-comments.replyNote`
-  - Uses `enablement: !commentIsEmpty` context for conditional activation
-
-- Created `vscode-extension/src/commands/replyComment.test.ts` (393 lines)
-  - 27 unit tests covering all functionality
-  - Tests: reply submission, thread ID extraction, input validation
-  - Tests: text escaping (quotes, backslashes, newlines, tabs)
-  - Tests: error handling (CLI failures, invalid contextValue)
-  - Tests: temporary comment creation, comment preservation
-  - Tests: command registration with correct ID
-
-- Modified `vscode-extension/src/__mocks__/vscode.ts` (added 15 lines)
-  - Added `CommentReply` interface
-  - Added `replyHandler` property to `CommentController`
-  - Added `window`, `env`, `commands` mock objects
-
-**Acceptance Criteria** (All Met):
-- ✅ Reply input box appears at bottom of CommentThread (VSCode handles this automatically)
-- ✅ User can type reply text and press Enter to submit (command invoked on submit)
-- ✅ CLI subprocess called: `comment reply <thread_id> "<text>" --author=<user>`
-- ✅ New comment appears in thread after submission (temporary comment + file watcher reload)
-- ✅ Error notification shown if CLI fails (catches execSync exceptions)
-- ✅ TypeScript compilation succeeds: `npm run compile` passes
-- ✅ Unit tests pass: `npm test` passes (81/81 tests, 5 suites)
-
-**Implementation Notes**:
-- **VSCode API Pattern**: Uses command registration, not CommentController.replyHandler
-  - Registered command: `file-native-comments.replyNote`
-  - VSCode automatically invokes command when user submits reply input
-  - Command receives `vscode.CommentReply` object with thread and text
-- **Temporary Comment**: Provides immediate UI feedback before file watcher reloads
-  - Temporary comment added to thread.comments array synchronously
-  - File watcher (2-second debounce) reloads full thread from sidecar
-  - Prevents UI flicker during CLI execution
-- **Text Escaping**: Handles all shell special characters
-  - Escape order: backslashes → quotes → newlines/tabs
-  - CLI command format: `comment reply <id> "<escaped_text>" --author="<author>"`
-- **Author**: Uses `vscode.env.username` (fallback: `'vscode-user'`)
-  - Type cast needed for VSCode 1.85 compatibility
-
----
-
-### ✅ Task 3.2.2: Implement Resolve/Reopen Actions (COMPLETED)
-
-**Status**: COMPLETE (2026-02-03)
-
-**Priority**: HIGH (core workflow action)
-
-**Spec References**:
-- `specs/vscode-extension.md` REQ-1, AC-5 (Thread status mapping)
-- `specs/cli-interface.md` (`comment resolve`, `comment reopen`)
-
-**Implementation Summary**:
-- Created `vscode-extension/src/commands/resolveThread.ts` (162 lines)
-  - `resolveThread()` function handles thread resolution workflow
-  - Extracts thread_id from thread.contextValue JSON
-  - Prompts user for required decision text (validated input box)
-  - Calls Python CLI: `comment resolve <thread_id> --decision "<text>"`
-  - Escapes special characters (backslashes, quotes, newlines, tabs)
-  - Updates thread state immediately (file watcher reloads with actual data)
-  - Shows success/error notifications
-  - `registerResolveCommand()` for registration with VSCode
-
-- Created `vscode-extension/src/commands/reopenThread.ts` (114 lines)
-  - `reopenThread()` function handles thread reopening workflow
-  - Extracts thread_id from contextValue
-  - Calls Python CLI: `comment reopen <thread_id>`
-  - Updates thread state immediately (file watcher reloads)
-  - Shows success/error notifications
-  - `registerReopenCommand()` for registration with VSCode
-
-- Modified `vscode-extension/src/extension.ts` (added 4 lines)
-  - Imports `registerResolveCommand` and `registerReopenCommand`
-  - Calls registration on activation
-
-- Modified `vscode-extension/package.json` (added 20 lines)
-  - Command contributions: `file-native-comments.resolveThread`, `reopenThread`
-  - Context menu items in `comments/commentThread/context`
-  - Menu shown conditionally based on thread state:
-    - "Resolve" shown when `commentThreadState == 'unresolved'`
-    - "Reopen" shown when `commentThreadState == 'resolved'`
-
-- Created `vscode-extension/src/commands/resolveThread.test.ts` (311 lines)
-  - 20 unit tests covering all resolve functionality
-  - Tests: thread ID extraction, CLI command building, decision validation
-  - Tests: text escaping (quotes, backslashes, newlines, tabs, carriage returns)
-  - Tests: error handling (CLI failures, invalid contextValue, missing thread_id)
-  - Tests: user interaction (input validation, cancellation, state updates)
-  - Tests: command registration
-
-- Created `vscode-extension/src/commands/reopenThread.test.ts` (242 lines)
-  - 15 unit tests covering all reopen functionality
-  - Tests: thread ID extraction, CLI command execution
-  - Tests: error handling (CLI failures, invalid contextValue)
-  - Tests: state updates, notifications, logging
-  - Tests: command registration, working directory handling
-
-**Acceptance Criteria** (All Met):
-- ✅ Context menu on CommentThread shows "Resolve" action (when unresolved)
-- ✅ Context menu shows "Reopen" action (when resolved)
-- ✅ Resolve action prompts for decision text (required by CLI)
-- ✅ CLI subprocess called correctly for both commands
-- ✅ Thread state updates after action (via file watcher debounce)
-- ✅ TypeScript compilation succeeds: `npm run compile` passes
-- ✅ Unit tests pass: `npm test` passes (117/117 tests, 7 suites)
-
-**Implementation Notes**:
-- **Decision Required**: Unlike the spec's "optional decision", the Python CLI requires `--decision` unless using `--wontfix`
-  - Chose to enforce required decision in VSCode UI (input validation)
-  - Future enhancement: Add "Mark as Won't Fix" context menu option for `--wontfix` flag
-- **Immediate State Update**: Thread state changed synchronously for instant UI feedback
-  - File watcher (2-second debounce) reloads full thread from sidecar afterward
-  - Prevents UI flicker during CLI execution
-- **Text Escaping**: Same pattern as reply command
-  - Escape order: backslashes → quotes → newlines/tabs/carriage returns
-  - CLI command format: `comment resolve <id> --decision "<escaped_text>"`
-- **Conditional Menus**: VSCode's `when` clause filters commands based on thread state
-  - `commentThreadState == 'unresolved'` shows "Resolve"
-  - `commentThreadState == 'resolved'` shows "Reopen"
-
----
-
-### ✅ Task 3.2.3: Improve Markdown Rendering (COMPLETED)
-
-**Status**: COMPLETE (2026-02-03)
-
-**Priority**: MEDIUM (polish)
-
-**Spec References**:
-- `specs/vscode-extension.md` REQ-1 (Render comment bodies as markdown)
-
-**Implementation Summary**:
-- Modified `vscode-extension/src/commentProvider.test.ts` (added 240 lines)
-  - 6 new unit tests covering all markdown rendering scenarios
-  - Tests: MarkdownString conversion, bold/italic formatting, inline code
-  - Tests: code blocks with syntax highlighting, clickable links
-  - Tests: multiline markdown with mixed formatting, isTrusted flag
-  - All tests verify that comment.body is `vscode.MarkdownString` with `isTrusted = true`
-
-**Note**: Core markdown rendering implementation was already present in `commentProvider.ts:180-181` from Task 3.1.1. This task added comprehensive test coverage to verify the implementation.
-
-**Acceptance Criteria** (All Met):
-- ✅ Comment bodies render with markdown formatting (bold, italic, code)
-- ✅ Code blocks display with syntax highlighting (via VSCode's MarkdownString)
-- ✅ Links are clickable (enabled by `isTrusted = true`)
-- ✅ TypeScript compilation succeeds: `npm run compile` passes
-- ✅ Unit tests pass: `npm test` passes (123/123 tests, 7 suites)
-
-**Implementation Notes**:
-- **Existing Implementation**: `convertCommentToVSCodeComment()` already creates `vscode.MarkdownString` with `isTrusted = true`
-- **Task Focus**: Added test coverage to verify markdown rendering works correctly
-- **Test Coverage**: 6 new tests cover:
-  1. Basic bold/italic formatting
-  2. Inline code with backticks
-  3. Code blocks with language hints
-  4. Clickable hyperlinks
-  5. Complex multiline markdown with mixed formatting
-  6. `isTrusted` flag verification (enables command URIs and HTML)
-- **VSCode API**: `isTrusted = true` enables all markdown features including:
-  - Syntax highlighting in code blocks
-  - Clickable links
-  - Command URIs
-  - Embedded HTML (if needed)
-
----
-
-## 🔄 Phase 3.3: Gutter Indicators & Decorations
-
-**Goal**: Add visual feedback for comment locations via gutter icons and inline text decorations, making comment anchors immediately visible without opening the comment panel.
-
-**Status**: IN PROGRESS (2026-02-03)
-
-**Spec References**:
-- `specs/vscode-extension.md` REQ-2 (Gutter indicators)
-- `specs/vscode-extension.md` REQ-3 (Inline highlights)
-- `specs/vscode-extension.md` AC-1, AC-4, AC-6 (Visual feedback)
-
----
-
-### ✅ Task 3.3.1: Implement Gutter Icons with Status-Based Colors (COMPLETED)
-
-**Status**: COMPLETE (2026-02-03)
-
-**Priority**: HIGH (essential visual feedback)
-
-**Spec References**:
-- REQ-2: Color-coded gutter icons (🟡 open, 🟢 resolved, 🔴 orphaned, 🟠 drifted)
-- AC-1: Gutter icons appear at correct line numbers
-- AC-6: Tooltip shows anchor status for orphaned threads
-
-**Files to Create/Modify** (4 files):
-1. **Create** `vscode-extension/src/decorations.ts` (~200 lines)
-   - `DecorationManager` class for managing gutter icons and text highlights
-   - `createGutterDecoration()` creates TextEditorDecorationType for each status
-   - Status-based color mapping:
-     - `anchored` (open) → Yellow circle (⚫)
-     - `resolved` → Green checkmark (✓)
-     - `orphaned` → Red warning (⚠)
-     - `drifted` → Orange drift indicator (⇄)
-   - `updateGutterDecorations(editor, threads)` applies decorations to editor
-   - Hover tooltips with thread count and status
-   - Click handler (future: opens comment panel to thread)
-
-2. **Modify** `vscode-extension/src/commentProvider.ts` (~40 lines added)
-   - Import `DecorationManager`
-   - Instantiate manager in constructor
-   - Call `decorationManager.updateGutterDecorations()` after loading comments
-   - Pass threads array to decoration manager
-   - Dispose decorations on provider disposal
-
-3. **Modify** `vscode-extension/src/extension.ts` (~10 lines added)
-   - Pass `commentController` to `CommentProvider` constructor
-   - Ensure decorations update when file watcher triggers reload
-
-4. **Create** `vscode-extension/src/decorations.test.ts` (~250 lines)
-   - Unit tests for decoration creation and application
-   - Tests: status → color mapping, hover tooltips, multiple threads per line
-   - Tests: decoration disposal, editor changes, line number mapping
-   - Mock VSCode decoration API
-
-**Implementation Summary**:
-- Created `vscode-extension/src/decorations.ts` (343 lines)
-  - `DecorationManager` class for managing gutter icons
-  - `initializeGutterDecorations()` creates 4 decoration types on construction:
-    - `open-anchored`: Yellow circle (⚫)
-    - `open-drifted`: Orange circle with drift arrows (⇄)
-    - `orphaned`: Red warning triangle (⚠)
-    - `resolved`: Green checkmark (✓)
-  - SVG data URIs generated via helper methods (createCircleIconDataUri, etc.)
-  - `updateGutterDecorations(editor, threads)` applies decorations to editor
-  - Priority system: orphaned (4) > drifted (3) > open (2) > resolved (1)
-  - Hover messages with thread ID, status, health, comment count, drift distance
-  - Automatic cleanup on dispose() with tracked editors
-
-- Modified `vscode-extension/src/commentProvider.ts` (added 30 lines)
-  - Import `DecorationManager`
-  - Instantiate `decorationManager` in constructor
-  - Call `updateGutterDecorations()` after loading comments in `loadCommentsForDocument()`
-  - Clear decorations when no sidecar exists
-  - Add `dispose()` method to clean up decorations
-
-- Modified `vscode-extension/src/extension.ts` (added 15 lines)
-  - Register `commentProvider.dispose()` in subscriptions
-  - Add `onDidChangeVisibleTextEditors` listener to refresh decorations when switching tabs
-
-- Modified `vscode-extension/src/__mocks__/vscode.ts` (added 10 lines)
-  - Add `TextEditorDecorationType` interface
-  - Mock `window.createTextEditorDecorationType()`
-  - Mock `window.visibleTextEditors` and `onDidChangeVisibleTextEditors`
-
-- Created `vscode-extension/src/decorations.test.ts` (424 lines)
-  - 17 unit tests covering all functionality
-  - Tests: decoration creation, status/health mapping, priority resolution
-  - Tests: line number conversion, hover messages, multiple threads per line
-  - Tests: disposal, empty thread arrays, metadata in hovers
-
-**Acceptance Criteria** (All Met):
-- ✅ Gutter icons appear at correct line positions for all threads
-- ✅ Icons display correct colors based on thread status and health
-- ✅ Hover tooltip shows thread metadata (ID, status, count, drift distance)
-- ✅ Multiple threads on same line show single icon with highest priority status
-- ✅ Icons update when file watcher detects sidecar changes (via loadCommentsForDocument)
-- ✅ Icons removed when file closed or threads deleted (via dispose)
-- ✅ TypeScript compilation succeeds: `npm run compile` passes
-- ✅ Unit tests pass: `npm test` passes (141/141 tests, 8 suites)
-
-**Implementation Notes**:
-- SVG icons created via data URIs (base64-encoded inline SVG)
-- Color scheme: Yellow (#f0db4f), Orange (#ff9800), Red (#f44336), Green (#4caf50)
-- Line conversion: sidecar (1-indexed) → VSCode Range (0-indexed) via `line_start - 1`
-- Priority resolution: When multiple threads on same line, show highest priority status
-- Hover format: Single thread shows details, multiple threads show summary with emojis
-- Decorations tracked per editor for efficient cleanup on dispose
-- File watcher integration: Decorations auto-update when sidecar changes (2-second debounce)
-
----
-
-### ✅ Task 3.3.2: Implement Inline Text Highlights with Health-Based Styling (COMPLETED)
-
-**Status**: COMPLETE (2026-02-03)
-
-**Priority**: MEDIUM (polish/UX enhancement)
-
-**Spec References**:
-- REQ-3: Health-based styling (solid/dashed/strikethrough)
-- REQ-3: Clear highlights when thread resolved
-- AC-4: Highlights move automatically when file edited
-
-**Implementation Summary**:
-- Modified `vscode-extension/src/decorations.ts` (added 98 lines)
-  - `initializeTextDecorations()` creates 3 decoration types for health statuses:
-    - `text-anchored`: Subtle yellow background (`rgba(240, 219, 79, 0.1)`)
-    - `text-drifted`: Dashed orange underline (`underline dashed rgba(255, 152, 0, 0.8)`)
-    - `text-orphaned`: Strikethrough with 50% opacity (`line-through`, `opacity: 0.5`)
-  - `updateTextDecorations(editor, threads)` applies range-based decorations
-    - Skips resolved threads (REQ-3: no text highlights for resolved)
-    - Converts 1-indexed line numbers to 0-indexed VSCode ranges
-    - Clamps ranges to document bounds
-    - Handles multi-line anchors (spans from `line_start` to `line_end`)
-  - `getTextDecorationKey(thread)` maps health status to decoration key
-  - Updated `clearDecorationsForEditor()` to clear both gutter and text decorations
-  - Updated `dispose()` to dispose both gutter and text decoration types
-  - Updated `updateGutterDecorations()` to call `updateTextDecorations()` automatically
-
-- Modified `vscode-extension/src/decorations.test.ts` (added 220 lines)
-  - 12 new unit tests covering all text decoration functionality
-  - Tests: applies decorations for unresolved threads (anchored/drifted/orphaned)
-  - Tests: skips decorations for resolved and wontfix threads
-  - Tests: handles multi-line decorations correctly
-  - Tests: clamps decoration ranges to document bounds
-  - Tests: applies multiple decorations for multiple threads
-  - Tests: converts 1-indexed to 0-indexed line numbers
-  - Tests: disposes text decoration types on cleanup
-
-**Acceptance Criteria** (All Met):
-- ✅ Text highlights appear for all unresolved threads
-- ✅ Styling matches health status (solid background/dashed underline/strikethrough)
-- ✅ Multi-line anchors span correct line range (line_start to line_end)
-- ✅ Resolved threads have no text highlights (only gutter icon)
-- ✅ Highlights update when reconciliation changes health status (via file watcher)
-- ✅ TypeScript compilation succeeds: `npm run compile` passes
-- ✅ Unit tests pass: `npm test` passes (152/152 tests, 8 suites)
-
-**Implementation Notes**:
-- **Line-based ranges**: Anchor structure only has `line_start`/`line_end` (no char positions)
-  - Text decorations span entire lines from `line_start` to `line_end`
-  - Start character: 0 (beginning of line)
-  - End character: `editor.document.lineAt(endLine).text.length` (end of line)
-- **Color scheme**: Matches gutter icon colors for consistency
-  - Yellow (anchored): `rgba(240, 219, 79, 0.1)` - 10% opacity for subtlety
-  - Orange (drifted): `rgba(255, 152, 0, 0.8)` - dashed underline
-  - Red (orphaned): Strikethrough with 50% opacity for dimmed effect
-- **Theme compatibility**: Semi-transparent colors respect user themes
-- **Automatic updates**: Text decorations update when `updateGutterDecorations()` is called
-  - File watcher triggers reload → calls `loadCommentsForDocument()` → updates all decorations
-- **Performance**: Batch updates via single `setDecorations()` call per decoration type
-
----
-
-### ✅ Task 3.3.3: Add Click Handler for Gutter Icons (COMPLETED)
-
-**Status**: COMPLETE (2026-02-03)
-
-**Priority**: LOW (UX enhancement, not blocking)
-
-**Spec References**:
-- REQ-2: Click on gutter icon opens comment panel
-
-**Implementation Summary**:
-- Modified `vscode-extension/src/decorations.ts` (added 50 lines)
-  - Added `threadMap` field to store thread_id → CommentThread mapping
-  - Modified `updateGutterDecorations()` to accept optional `vsThreads` parameter
-  - Added `focusThread(threadId)` method to reveal thread range in editor
-  - Stores CommentThread objects for quick lookup by ID
-  - Clears thread map on dispose
-
-- Modified `vscode-extension/src/commentProvider.ts` (added 20 lines)
-  - Creates `threadMap` during `loadCommentsForDocument()`
-  - Passes thread map to `decorationManager.updateGutterDecorations()`
-  - Added `focusThread()` method to expose decoration manager's focus functionality
-
-- Modified `vscode-extension/src/extension.ts` (added 40 lines)
-  - Registered `file-native-comments.focusThread` command
-  - Command shows quick pick if no threadId provided
-  - Quick pick displays all threads in current file with line numbers and status
-  - Calls `commentProvider.focusThread()` to reveal thread range
-  - Shows warning if thread not found
-
-- Modified `vscode-extension/package.json` (added 10 lines)
-  - Command contribution: `file-native-comments.focusThread`
-  - Keybinding: `Ctrl+K Ctrl+C` (Win/Linux) / `Cmd+K Cmd+C` (Mac)
-
-- Modified `vscode-extension/src/__mocks__/vscode.ts` (added 15 lines)
-  - Fixed `Range` class to use `start`/`end` properties with `line`/`character` fields
-  - Added `TextEditorRevealType` enum for reveal API
-
-- Modified `vscode-extension/src/decorations.test.ts` (added 140 lines)
-  - 5 unit tests for `focusThread` functionality
-  - Tests: focus by ID, reveal range, missing thread handling, error handling, dispose cleanup
-  - Updated existing tests to use `range.start.line` instead of `range.startLine`
-
-- Modified `vscode-extension/src/commentProvider.test.ts` (updated 6 lines)
-  - Updated tests to use `range.start.line` and `range.end.line` instead of `startLine`/`endLine`
-
-**Acceptance Criteria** (All Met):
-- ✅ "Go to Comment Thread" command navigates to thread (via quick pick or direct ID)
-- ✅ Works for all thread statuses (open, resolved, orphaned, drifted)
-- ✅ Gracefully handles missing threads (returns false, shows warning)
-- ✅ TypeScript compilation succeeds: `npm run compile` passes
-- ✅ Unit tests pass: `npm test` passes (157/157 tests, 8 suites)
-
-**Implementation Notes**:
-- **Decision**: VSCode gutter decorations don't support click handlers directly
-  - Implemented command palette command instead: "Go to Comment Thread"
-  - Command can be invoked via keybinding (`Cmd+K Cmd+C`) or command palette
-  - Shows quick pick of all threads in current file when invoked without arguments
-  - Can be called programmatically with thread ID for future integration
-- **Focus mechanism**: Uses `editor.revealRange()` to scroll to thread location
-  - VSCode doesn't provide direct API to "focus" a CommentThread
-  - Revealing the range makes the thread visible in the comment panel
-  - Comment threads are automatically shown by VSCode when in viewport
-- **Thread map**: Stores VSCode CommentThread objects indexed by thread_id
-  - Updated whenever `loadCommentsForDocument()` is called
-  - Allows quick lookup for focus operations
-  - Cleared on dispose to prevent memory leaks
-
----
-
-## Success Metrics for Phase 3.3
-
-**Completion Definition**: When all 3 tasks (3.3.1, 3.3.2, 3.3.3) pass acceptance criteria.
-
-**What Works After Phase 3.3**:
-- Visual indicators show comment locations at a glance
-- Color-coded gutter icons communicate thread status
-- Inline highlights show anchor health (solid/drifted/orphaned)
-- Clicking gutter icons navigates to thread in comment panel
-- Decorations update in real-time with file watcher sync
-
-**What's Still Missing** (Phase 3.4+):
-- Manual reconciliation commands (Phase 3.4)
-- Show decisions command (Phase 3.4)
-- Extension configuration options (Phase 3.5)
-- Conflict handling prompts (Phase 3.5)
-
----
-
-## ✅ Phase 3.4: Reconciliation & Commands (COMPLETE)
-
-**Goal**: Add manual reconciliation commands and decision log viewing to VSCode extension, completing the command palette integration.
-
-**Status**: COMPLETE (2026-02-03)
-
-**Spec References**:
-- `specs/vscode-extension.md` REQ-7 (Commands)
-- `specs/vscode-extension.md` AC-7 (Show Decisions acceptance criteria)
-- `specs/cli-interface.md` (`comment reconcile` command reference)
-
----
-
-### ✅ Task 3.4.1: Implement "Reconcile File" Command (COMPLETED)
-
-**Status**: COMPLETE (2026-02-03)
-
-**Priority**: HIGH (essential for handling drifted/orphaned anchors)
-
-**Spec References**:
-- REQ-7: "Comment: Reconcile File" in command palette
-- `specs/anchor-reconciliation.md` (Reconciliation algorithm)
-- `specs/cli-interface.md` (`comment reconcile <file>`)
-
-**Files to Create/Modify** (4 files):
-1. **Create** `vscode-extension/src/commands/reconcileFile.ts` (~120 lines)
-   - `reconcileFileCommand()` function handles reconciliation workflow
-   - Gets active editor and validates it's within project
-   - Calls Python CLI: `comment reconcile <file>`
-   - Parses CLI output to extract reconciliation statistics
-   - Shows notification with results (e.g., "Reconciled 3 threads: 2 anchored, 1 orphaned")
-   - Triggers comment reload via file watcher (or direct call to commentProvider)
-   - `registerReconcileFileCommand()` for registration
-
-2. **Modify** `vscode-extension/src/extension.ts` (~5 lines added)
-   - Import `registerReconcileFileCommand`
-   - Call registration on activation
-
-3. **Modify** `vscode-extension/package.json` (~10 lines added)
-   - Command contribution: `file-native-comments.reconcileFile`
-   - Command palette entry: "File-Native Comments: Reconcile File"
-   - Keybinding (optional): `Ctrl+K Ctrl+R` / `Cmd+K Ctrl+R`
-
-4. **Create** `vscode-extension/src/commands/reconcileFile.test.ts` (~150 lines)
-   - Unit tests for reconcile logic
-   - Tests: active editor validation, CLI command execution
-   - Tests: output parsing, notifications, error handling
-   - Tests: file outside project handling
-
-**Implementation Summary**:
-- Created `vscode-extension/src/commands/reconcileFile.ts` (168 lines)
-  - `reconcileFileCommand()` executes `comment reconcile <file> --json`
-  - Parses CLI JSON output to extract reconciliation statistics
-  - Shows success/warning notifications with thread counts (anchored/drifted/orphaned)
-  - Handles file rename detection in notifications
-  - Escapes shell arguments for cross-platform compatibility (spaces, backslashes)
-  - Error handling for user/system errors (exit codes 1/2)
-  - `registerReconcileFileCommand()` for registration with VSCode
-
-- Created `vscode-extension/src/commands/reconcileFile.test.ts` (312 lines)
-  - 18 unit tests covering all functionality
-  - Tests: validation (no editor, outside project), CLI execution, path escaping
-  - Tests: JSON parsing, notifications (success/warning/error), logging
-  - Tests: Windows paths, spaces in filenames, rename detection
-  - All tests passing (175/175 total across all suites)
-
-- Modified `vscode-extension/src/extension.ts` (+3 lines)
-  - Import `registerReconcileFileCommand`
-  - Call registration on activation
-
-- Modified `vscode-extension/package.json` (+12 lines)
-  - Command contribution: `file-native-comments.reconcileFile`
-  - Command palette: "File-Native Comments: Reconcile File"
-  - Keybinding: `Ctrl+K Ctrl+R` (Win/Linux) / `Cmd+K Ctrl+R` (Mac)
-
-- Modified `vscode-extension/src/__mocks__/vscode.ts` (+1 line)
-  - Added `showWarningMessage` to window mock
-
-**Acceptance Criteria** (All Met):
-- ✅ Command palette shows "File-Native Comments: Reconcile File"
-- ✅ Command runs on active file, calls `comment reconcile <file>`
-- ✅ Success notification shows reconciliation statistics
-- ✅ Gutter icons and highlights update after reconciliation (via file watcher)
-- ✅ Error notification shown if CLI fails
-- ✅ TypeScript compilation succeeds: `npm run compile`
-- ✅ Unit tests pass: `npm test` (175/175 tests)
-
-**Implementation Notes**:
-- CLI output format (from `cli.py`): Prints JSON with `ReconciliationReport` structure
-- Parse CLI stdout to extract counts (anchored, drifted, orphaned)
-- Notification format: "{total} threads reconciled: {anchored} anchored, {drifted} drifted, {orphaned} orphaned"
-- File watcher will trigger UI update automatically (2-second debounce)
-
----
-
-### ✅ Task 3.4.2: Implement "Reconcile All" Command (COMPLETED)
-
-**Status**: COMPLETE (2026-02-03)
-
-**Priority**: MEDIUM (convenient but not essential)
-
-**Spec References**:
-- REQ-7: "Comment: Reconcile All" (project-wide)
-- `specs/cli-interface.md` (`comment reconcile --all`)
-
-**Implementation Summary**:
-- Created `vscode-extension/src/commands/reconcileAll.ts` (186 lines)
-  - `reconcileAllCommand()` executes `comment reconcile --all --json`
-  - Shows modal confirmation dialog before execution
-  - Uses `vscode.window.withProgress()` for progress notification during CLI execution
-  - Parses CLI JSON output to extract reconciliation statistics
-  - Shows success/warning notifications with thread counts (anchored/drifted/orphaned)
-  - Reloads comments for all visible editors after reconciliation
-  - Filters visible editors to only reload files within project
-  - Error handling for user/system errors (exit codes 1/2)
-  - `registerReconcileAllCommand()` for registration with VSCode
-
-- Created `vscode-extension/src/commands/reconcileAll.test.ts` (473 lines)
-  - 23 unit tests covering all functionality
-  - Tests: confirmation dialog (accept/cancel/dismiss), CLI execution, progress notification
-  - Tests: JSON parsing, notifications (success/warning/error), logging
-  - Tests: comment reload (visible editors, non-file URIs, files outside project)
-  - Tests: error handling (malformed JSON, exit codes, stderr parsing)
-  - All tests passing (23/23)
-
-- Modified `vscode-extension/src/extension.ts` (+2 lines)
-  - Import `registerReconcileAllCommand`
-  - Call registration on activation with projectRoot and commentProvider
-
-- Modified `vscode-extension/package.json` (+5 lines)
-  - Command contribution: `file-native-comments.reconcileAll`
-  - Command palette: "File-Native Comments: Reconcile All Files"
-
-- Modified `vscode-extension/src/__mocks__/vscode.ts` (+9 lines)
-  - Added `ProgressLocation` enum (SourceControl, Window, Notification)
-  - Added `window.withProgress` mock function
-  - Added `window.showQuickPick` mock function
-
-**Acceptance Criteria** (All Met):
-- ✅ Command palette shows "File-Native Comments: Reconcile All Files"
-- ✅ Modal confirmation dialog appears before execution
-- ✅ Progress notification shown during reconciliation (with title and increments)
-- ✅ Success notification shows aggregate statistics
-- ✅ Warning notification shown if any threads drifted or orphaned
-- ✅ All open files refresh after reconciliation (via loadCommentsForDocument)
-- ✅ Error notification shown if CLI fails (with stderr details)
-- ✅ TypeScript compilation succeeds: `npm run compile`
-- ✅ Unit tests pass: `npm test` (198/198 tests passing)
-
-**Implementation Notes**:
-- **CLI command**: `comment reconcile --all --json` with 10MB maxBuffer for large outputs
-- **Confirmation dialog**: Modal dialog with "Reconcile All" and "Cancel" buttons
-- **Progress notification**: Uses `vscode.window.withProgress()` with `ProgressLocation.Notification`
-  - Reports 0% at start, 100% after CLI completes
-  - Synchronous execution (non-cancellable)
-- **JSON output parsing**: Extracts `total_files`, `total_threads`, `anchored`, `drifted`, `orphaned`
-- **Notification strategy**:
-  - Success (info): All threads anchored (drifted = 0, orphaned = 0)
-  - Warning: Any threads drifted or orphaned
-  - Info: No threads found (total_threads = 0)
-- **Comment reload**: Filters visible editors to only reload files within project
-  - Checks `uri.scheme === 'file'` and path is within project root
-  - Prevents errors from untitled/remote files
-- **Error handling**: Distinguishes exit codes (1 = user error, 2 = system error)
-
----
-
-### ✅ Task 3.4.3: Implement "Show Decisions" Command (COMPLETED)
-
-**Status**: COMPLETE (2026-02-03)
-
-**Priority**: LOW (convenience feature)
-
-**Spec References**:
-- REQ-7: "Comment: Show Decisions" (opens DECISIONS.md)
-- AC-7: Given DECISIONS.md exists, when command runs, then file opens in editor
-- `specs/cli-interface.md` (`comment decisions`)
-
-**Implementation Summary**:
-- Created `vscode-extension/src/commands/showDecisions.ts` (66 lines)
-  - `showDecisionsCommand()` function opens DECISIONS.md if it exists
-  - Constructs path: `path.join(projectRoot, "DECISIONS.md")`
-  - Checks file existence via `fs.existsSync()`
-  - Opens file via `vscode.workspace.openTextDocument()` + `vscode.window.showTextDocument()`
-  - Shows informative notification when file doesn't exist
-  - Error handling for file system errors
-  - `registerShowDecisionsCommand()` for registration with VSCode
-
-- Modified `vscode-extension/src/extension.ts` (+3 lines)
-  - Import `registerShowDecisionsCommand`
-  - Call registration on activation
-
-- Modified `vscode-extension/package.json` (+5 lines)
-  - Command contribution: `file-native-comments.showDecisions`
-  - Command palette: "File-Native Comments: Show Decisions"
-
-- Created `vscode-extension/src/commands/showDecisions.test.ts` (267 lines)
-  - 12 unit tests covering all functionality
-  - Tests: opens existing file, shows notification when missing
-  - Tests: error handling (open/show failures, missing error messages)
-  - Tests: path construction, different project roots
-  - Tests: console logging (file path, success, not found, errors)
-  - Tests: command registration
-  - All tests passing (12/12)
-
-- Modified `vscode-extension/src/__mocks__/vscode.ts` (+13 lines)
-  - Added `ViewColumn` enum for mock support
-
-**Acceptance Criteria** (All Met):
-- ✅ Command palette shows "File-Native Comments: Show Decisions"
-- ✅ Opens DECISIONS.md in editor if it exists (AC-7)
-- ✅ Shows informative notification if file doesn't exist
-- ✅ Error notification shown on file system errors
-- ✅ TypeScript compilation succeeds: `npm run compile`
-- ✅ Unit tests pass: `npm test` (210/210 tests passing)
-
-**Implementation Notes**:
-- DECISIONS.md location: Always at project root (same directory as `.git`)
-- Uses `vscode.window.showTextDocument()` with `preview: false` to open in normal editor
-- Opens in active column: `viewColumn: vscode.ViewColumn.Active`
-- Logs all operations to console for debugging
-- Future enhancement: Add button to generate DECISIONS.md if missing (calls `comment decisions` CLI)
-
----
-
-## ✅ Success Metrics for Phase 3.4 (ALL MET)
-
-**Completion Definition**: When all 3 tasks (3.4.1, 3.4.2, 3.4.3) pass acceptance criteria. ✅ COMPLETE
-
-**What Works After Phase 3.4** (Implemented):
-- ✅ Users can manually trigger reconciliation for current file or entire project
-- ✅ Reconciliation statistics shown in notifications
-- ✅ Users can quickly view decision log from command palette
-- ✅ All VSCode extension commands from spec REQ-7 implemented
-
-**What's Still Missing** (Phase 3.5):
-- Extension configuration options (debounce delays, colors, etc.)
-- Conflict handling prompts (read-before-write validation)
-- Cursor IDE compatibility verification
-
----
-
-## 🔄 Phase 3.5: Conflict Handling & Polish
-
-**Goal**: Implement required concurrency safety features and verify compatibility requirements.
-
-**Status**: IN PROGRESS (2026-02-03)
-
-**Priority**: HIGH - Task 3.5.1 addresses data safety requirement from specs/concurrency.md
-
----
-
-### ✅ Task 3.5.1: Implement Conflict Detection and User Prompts (COMPLETED)
-
-**Status**: COMPLETE (2026-02-03)
-
-**Priority**: HIGH (data safety requirement)
-
-**Spec References**:
-- `specs/concurrency.md` REQ-4 (VSCode extension MUST reload before write)
-- `specs/concurrency.md` AC-2 (User prompt: "Reload" or "Overwrite")
-
-**Requirements**:
-1. Extension MUST reload sidecar from disk before any write operation
-2. MUST compare in-memory `source_hash` with on-disk `source_hash`
-3. If hashes differ, MUST prompt user with modal dialog:
-   - "Reload" button: Discard in-memory changes, reload from disk, retry operation
-   - "Overwrite" button: Proceed with write (user accepts data loss risk)
-   - "Cancel" button: Abort operation
-4. Applies to: reply, resolve, reopen commands (all write operations)
-
-**Files to Create/Modify** (6 files estimated):
-1. **Create** `vscode-extension/src/conflictHandler.ts` (~200 lines)
-   - `checkForConflict(sidecarPath)` function
-   - Reads sidecar from disk, compares source_hash with in-memory copy
-   - Returns conflict status (boolean) and on-disk sidecar data
-   - `promptUserForConflictResolution()` shows modal dialog
-   - Returns user choice: "reload" | "overwrite" | "cancel"
-
-2. **Modify** `vscode-extension/src/commands/replyComment.ts` (~30 lines added)
-   - Call `checkForConflict()` before CLI execution
-   - If conflict detected, prompt user
-   - If "reload", reload sidecar and retry operation
-   - If "overwrite", proceed with CLI call
-   - If "cancel", abort and show info message
-
-3. **Modify** `vscode-extension/src/commands/resolveThread.ts` (~30 lines added)
-   - Same conflict handling as reply command
-
-4. **Modify** `vscode-extension/src/commands/reopenThread.ts` (~30 lines added)
-   - Same conflict handling as reply command
-
-5. **Create** `vscode-extension/src/conflictHandler.test.ts` (~250 lines)
-   - Unit tests for conflict detection logic
-   - Tests: hash comparison, user prompt, reload/overwrite/cancel flows
-   - Tests: error handling, missing files, malformed sidecars
-
-6. **Modify** existing command test files (~50 lines total)
-   - Add tests for conflict detection integration
-   - Mock `checkForConflict()` function
-
-**Acceptance Criteria** (All Met):
-- ✅ Conflict detection runs before all write operations (reply, resolve, reopen)
-- ✅ User sees modal dialog when conflict detected: "The comment file was modified externally. What would you like to do?"
-- ✅ "Reload" button reloads sidecar and retries operation
-- ✅ "Overwrite" button proceeds with write (shows warning about data loss)
-- ✅ "Cancel" button aborts operation with no changes
-- ✅ TypeScript compilation succeeds: `npm run compile`
-- ✅ Unit tests pass: `npm test` (230/230 tests passing)
-- ⏸️ Manual test deferred (requires CLI + VSCode integration testing)
-
-**Implementation Summary**:
-- Created `vscode-extension/src/conflictHandler.ts` (222 lines)
-  - `checkForConflict()` compares source_hash between in-memory and on-disk sidecars
-  - `promptUserForConflictResolution()` shows modal warning dialog with 3 options
-  - `handleConflictCheck()` orchestrates detection + user prompt workflow
-  - Exports `ConflictResolution` enum (RELOAD, OVERWRITE, CANCEL)
-  - Option B implementation: Reads sidecar on each check (no in-memory cache)
-
-- Modified `vscode-extension/src/commentProvider.ts` (added 5 lines)
-  - Added `source_hash` to thread `contextValue` JSON
-  - Updated `convertThreadToVSCodeThread()` signature to accept sourceHash parameter
-  - Passes source_hash from sidecar to each thread's contextValue
-
-- Modified `vscode-extension/src/commands/replyComment.ts` (added 40 lines)
-  - Import `handleConflictCheck` and `ConflictResolution`
-  - Added `extractSourceHash()` function
-  - Calls conflict check before CLI execution
-  - Handles RELOAD (inform + exit), CANCEL (inform + exit), OVERWRITE (proceed)
-
-- Modified `vscode-extension/src/commands/resolveThread.ts` (added 50 lines)
-  - Same conflict detection pattern as replyComment
-  - Added `extractSourceHash()` function
-  - Integrates conflict check into resolution workflow
-
-- Modified `vscode-extension/src/commands/reopenThread.ts` (added 50 lines)
-  - Same conflict detection pattern as replyComment and resolveThread
-  - Added `extractSourceHash()` function
-
-- Created `vscode-extension/src/conflictHandler.test.ts` (302 lines)
-  - 26 unit tests covering all conflict detection logic
-  - Tests: checkForConflict (6 tests), promptUserForConflictResolution (5 tests)
-  - Tests: handleConflictCheck (11 tests), edge cases (4 tests)
-  - All tests passing
-
-- Modified command test files (3 files, ~10 lines each)
-  - Added mock for `handleConflictCheck` in replyComment.test.ts
-  - Added mock for `handleConflictCheck` in resolveThread.test.ts
-  - Added mock for `handleConflictCheck` in reopenThread.test.ts
-  - Fixed async test in reopenThread.test.ts (added await)
-  - Added source_hash to mock contextValue objects
-  - All 230 tests passing
-
-**Implementation Notes**:
-- **In-memory state**: Currently, extension doesn't store sidecar in memory (reloads on each display)
-  - Option A: Add in-memory cache to CommentProvider (stores source_hash per file)
-  - Option B: Read sidecar before write, compare with post-CLI read (simpler)
-  - Recommendation: Option B for initial implementation (less state management)
-- **Hash location**: `sidecar.source_hash` field
-- **Modal dialog**: Use `vscode.window.showWarningMessage()` with modal option
-- **Reload logic**: Call `commentProvider.loadCommentsForDocument()` to refresh UI
-
----
-
-### 🔲 Task 3.5.2: Verify Cursor IDE Compatibility (NOT STARTED)
+## Task 5.1: Generate Test Coverage Report
 
 **Status**: NOT STARTED
+**Priority**: **HIGH**
 
-**Priority**: MEDIUM (required by CON-1, but verification only)
+**Goal**: Verify test coverage meets quality thresholds and identify any gaps.
 
 **Spec References**:
-- `specs/vscode-extension.md` CON-1 (MUST work with Cursor)
+- All specs require comprehensive testing
+- Target: > 90% for critical modules (storage, anchors, fuzzy), > 80% for others
 
-**Requirements**:
-1. Install extension in Cursor IDE
-2. Verify all commands work (add, reply, resolve, reopen, reconcile)
-3. Verify gutter icons and text decorations render correctly
-4. Document any Cursor-specific issues or workarounds
+**Files to Examine** (< 5 files):
+1. Run coverage report generation
+2. Review coverage.xml or HTML report
+3. Identify any untested critical paths
 
-**Files to Create/Modify**:
-1. **Create** `vscode-extension/CURSOR_COMPATIBILITY.md` (~50 lines)
-   - Test results for each command
-   - Screenshots of gutter icons and decorations
-   - Known issues and workarounds (if any)
-   - Cursor version tested
+**Commands to Run**:
+```bash
+cd /home/reid/1cfe/agentic-mbse-comment-system
+uv run pytest --cov=src/comment_system --cov-report=html --cov-report=term tests/comment_system/
+uv run pytest --cov=src/comment_system --cov-report=term-missing tests/comment_system/ | grep -A 20 "TOTAL"
+```
 
 **Acceptance Criteria**:
-- [ ] Extension installs in Cursor IDE without errors
-- [ ] All commands functional (add, reply, resolve, reopen, reconcile, show decisions, focus thread)
-- [ ] Gutter icons display with correct colors
-- [ ] Text decorations render (highlights, underlines, strikethrough)
-- [ ] File watcher updates work correctly
-- [ ] Documentation created with test results
+- [ ] Coverage report generated successfully
+- [ ] Critical modules (storage, anchors, fuzzy, locking) have > 90% coverage
+- [ ] All modules have > 80% coverage
+- [ ] If gaps found: Document which lines/branches are untested and why
+
+**Estimated Files Affected**: 0 (analysis only, possibly identify missing tests)
+
+**Backpressure**: Coverage report artifacts, potential gap identification
 
 ---
 
-### 🔲 Task 3.5.3: Add Extension Configuration Settings (OPTIONAL)
+## Task 5.2: Document Performance Characteristics
 
 **Status**: NOT STARTED
+**Priority**: MEDIUM
 
-**Priority**: LOW (nice-to-have, not in spec requirements)
+**Issue**: Archive notes fuzzy matching is 170x slower than spec target (17s vs 100ms for 100 threads). This is **accepted** as fuzzy matching is a fallback when exact hash matching fails. Users need clear documentation.
 
-**Description**:
-Add VSCode settings for user customization:
-- `file-native-comments.debounceMs`: File watcher debounce delay (default: 2000)
-- `file-native-comments.colors.*`: Override gutter icon colors
-- `file-native-comments.enableTextDecorations`: Toggle inline highlights (default: true)
+**Spec References**:
+- `specs/fuzzy-matching.md` REQ-4: < 100ms per anchor on 10,000-line file
+- `specs/anchor-reconciliation.md` AC-5: < 1 second for 100 threads
 
-**Note**: This task is optional and not required by any spec. Consider deferring until user feedback indicates need.
+**Files to Create/Modify** (2 files):
+1. **Create** `docs/performance.md` (~150 lines)
+   - Reconciliation algorithm phases (exact hash → context → fuzzy → orphan)
+   - Performance by phase:
+     - Exact hash match: < 1s for 100 threads ✅
+     - Context-based: < 2s for 100 threads ✅
+     - Fuzzy matching: ~17s for 100 threads (fallback only) ⚠️
+   - When fuzzy matching triggers (content changed, no exact/context match)
+   - Performance recommendations:
+     - Keep anchors fresh (reconcile frequently)
+     - Avoid massive file restructuring without updating comments
+     - Consider adjusting fuzzy threshold if needed
+   - Future optimization path (python-Levenshtein C extension)
+
+2. **Modify** `README.md` (~10 lines added)
+   - Add "Performance" section linking to `docs/performance.md`
+   - Brief note: "Exact and context-based matching are fast (<1s for 100 threads). Fuzzy matching (fallback only) is slower but robust."
+   - Set expectations that typical workflows won't hit fuzzy matching often
+
+**Acceptance Criteria**:
+- [ ] Performance characteristics documented with actual benchmark numbers
+- [ ] Users understand when slowness occurs (fuzzy fallback after content changes)
+- [ ] Workarounds documented (keep anchors fresh, reconcile often)
+- [ ] Future optimization path documented (C extension, algorithm improvements)
+- [ ] README links to performance docs
+
+**Estimated Files**: 2 files (1 new, 1 modified)
+
+**Backpressure**: User feedback, issue reports about performance
+
+---
+
+## Task 5.3: Verify Cursor IDE Compatibility
+
+**Status**: NOT STARTED
+**Priority**: MEDIUM (required by spec)
+
+**Spec References**:
+- `specs/vscode-extension.md` CON-1: "Compatible with VSCode 1.85+ and Cursor"
+
+**Manual Testing Checklist** (no code changes expected):
+
+### Installation
+- [ ] Package extension: `cd vscode-extension && npm run package`
+- [ ] Install in Cursor: Extensions → Install from VSIX
+- [ ] Extension activates without errors
+
+### Core Commands
+- [ ] "Add Comment" works (Ctrl+K Ctrl+M or right-click)
+- [ ] Reply in comment thread works
+- [ ] Resolve thread works (with decision prompt)
+- [ ] Reopen thread works
+- [ ] "Reconcile File" works (updates anchors)
+- [ ] "Reconcile All" works (progress notification shown)
+- [ ] "Show Decisions" opens DECISIONS.md
+- [ ] "Go to Comment Thread" (Ctrl+K Ctrl+C) navigation works
+
+### Visual Elements
+- [ ] Gutter icons display correctly:
+  - 🟡 Yellow for open threads
+  - 🟠 Orange for drifted threads
+  - 🔴 Red for orphaned threads
+  - 🟢 Green for resolved threads
+- [ ] Text decorations render (solid/dashed underlines, strikethrough for orphaned)
+- [ ] Hover tooltips show thread metadata (author, status, health)
+- [ ] Comment panel shows threads for active file
+
+### Integration
+- [ ] File watcher updates UI when CLI modifies sidecar
+- [ ] Conflict detection works (shows reload/overwrite prompts)
+- [ ] Auto-reconciliation triggers on file edits (debounced, 2s)
+- [ ] External sidecar changes reload UI (< 2s)
+
+### Edge Cases
+- [ ] Orphaned threads show original snippet in tooltip
+- [ ] Multiple threads on same line display correctly
+- [ ] Resolved threads appear grayed out with green icon
+- [ ] Comments persist after editor reload
+
+**Files to Create** (1 file):
+1. **Create** `vscode-extension/CURSOR_COMPATIBILITY.md` (~75 lines)
+   - Cursor version tested (e.g., "Cursor 0.42.3")
+   - Checklist results (✅/❌ for each item)
+   - Screenshots of key features:
+     - Gutter icons in various health states
+     - Comment panel with multiple threads
+     - Conflict resolution prompt
+   - Known issues (if any)
+   - Workarounds (if needed)
+
+**Acceptance Criteria**:
+- [ ] All 24 checklist items tested in Cursor IDE
+- [ ] Documentation created with test results
+- [ ] At least 3 screenshots showing:
+  - Gutter icons with different health states
+  - Comment panel with threads
+  - Text decorations (dashed, strikethrough)
+- [ ] No critical bugs (minor issues acceptable if documented)
+
+**Estimated Files**: 1 documentation file (no code changes expected)
+
+**Backpressure**: Manual testing, user acceptance, spec compliance verification
+
+---
+
+## Task 5.4: Update README and Release Documentation
+
+**Status**: NOT STARTED
+**Priority**: LOW
+
+**Goal**: Polish user-facing documentation for initial release.
+
+**Files to Review/Modify** (< 5 files):
+1. **`README.md`**:
+   - Verify installation instructions are current
+   - Add Performance section (link to `docs/performance.md`)
+   - Add Cursor compatibility note (if verified in Task 5.3)
+   - Update feature list if needed
+   - Add badge for test coverage (if > 90%)
+
+2. **`vscode-extension/README.md`**:
+   - Verify command descriptions match implemented features
+   - Add screenshots if not present
+   - Update keybindings documentation
+   - Add Cursor compatibility section
+
+3. **`docs/` directory**:
+   - Ensure all docs are up-to-date
+   - Create index if helpful
+   - Add architecture diagram if useful
+
+**Acceptance Criteria**:
+- [ ] README accurately reflects implemented features
+- [ ] Installation instructions tested and verified
+- [ ] Performance documentation linked
+- [ ] VSCode extension README has screenshots
+- [ ] All command descriptions match implementation
+
+**Estimated Files**: 2-3 files
+
+**Backpressure**: User feedback, first-time user experience
+
+---
+
+## Task 5.5: Run Full Integration Test Suite
+
+**Status**: NOT STARTED
+**Priority**: HIGH
+
+**Goal**: Verify all components work together end-to-end.
+
+**Test Scenarios** (manual verification):
+1. **CLI → VSCode Integration**:
+   - Add comment via CLI
+   - Open file in VSCode
+   - Verify comment appears with correct gutter icon
+   - Reply via VSCode
+   - Verify reply appears in sidecar JSON
+
+2. **MCP → CLI Integration**:
+   - Use MCP tool to add comment
+   - List comments via CLI
+   - Verify JSON output matches MCP response
+
+3. **Reconciliation Workflow**:
+   - Create comment on line 50
+   - Insert 10 lines above
+   - Trigger reconciliation
+   - Verify anchor moved to line 60
+   - Check health status is "anchored"
+
+4. **Git Operations**:
+   - Create comment on `test.py`
+   - Rename file via git to `renamed.py`
+   - Run `comment list`
+   - Verify sidecar moved to `.comments/renamed.py.json`
+
+5. **Conflict Handling**:
+   - Open file with comments in VSCode
+   - Modify sidecar externally via CLI
+   - Verify VSCode shows reload prompt
+   - Select "Reload"
+   - Verify UI updates
+
+6. **Decision Log**:
+   - Resolve 3 threads with decisions
+   - Run `comment decisions`
+   - Verify `DECISIONS.md` generated
+   - Check decisions sorted by timestamp
+
+**Acceptance Criteria**:
+- [ ] All 6 integration scenarios pass
+- [ ] No data loss during conflicts
+- [ ] UI updates reflect backend changes within 2 seconds
+- [ ] Sidecars remain valid JSON after all operations
+
+**Estimated Files**: 0 (testing only)
+
+**Backpressure**: End-to-end workflow verification
+
+---
+
+## Out of Scope for This Plan
+
+The following are complete or explicitly deferred:
+
+### ✅ Complete (Phases 1-4)
+- Core Python modules (all 10 modules implemented and tested)
+- VSCode extension foundation (all commands, UI, conflict handling)
+- MCP server (all 7 tools implemented)
+- Test suite (475 Python tests, 230 VSCode tests)
+
+### ❌ Explicitly Out of Scope (Per Specs)
+- Rich text editor for comments (markdown only)
+- Image/attachment support
+- Comment search within extension (use native VSCode search)
+- Real-time collaboration (local files only)
+- Distributed locking (single-machine only)
+- Automatic conflict merging
+- Bulk comment operations
+- Cross-file rename detection (git-based only)
+
+### 🔮 Future Enhancements (Not in Current Plan)
+- Extension configuration settings (deferred per archive)
+- Python-Levenshtein C extension for performance
+- CI/CD pipeline setup
+- VSCode marketplace packaging
+- Binary file support
+- Predictive anchoring
+
+---
+
+## Success Criteria for Phase 5
+
+**Definition of Done**:
+- [ ] Task 5.1 complete: Test coverage verified > 80% (> 90% for critical modules)
+- [ ] Task 5.2 complete: Performance characteristics documented
+- [ ] Task 5.3 complete: Cursor IDE compatibility verified and documented
+- [ ] Task 5.4 complete: README and release docs updated
+- [ ] Task 5.5 complete: Full integration test scenarios pass
+
+**Release Readiness Checklist**:
+- [ ] All Python tests passing (475 tests)
+- [ ] All VSCode tests passing (230 tests)
+- [ ] Test coverage > 80% across all modules
+- [ ] Performance limitations documented
+- [ ] Cursor compatibility verified
+- [ ] Documentation complete and accurate
+- [ ] No critical bugs in issue tracker
+
+---
+
+## Next Actions
+
+1. **Immediate**: Run Task 5.1 (test coverage report)
+   ```bash
+   cd /home/reid/1cfe/agentic-mbse-comment-system
+   uv run pytest --cov=src/comment_system --cov-report=html --cov-report=term-missing tests/comment_system/
+   ```
+
+2. **If coverage good (> 80%)**: Proceed to Task 5.2 (document performance)
+
+3. **If coverage gaps found**: Decide whether to backfill tests or accept gaps with documentation
+
+4. **Manual testing**: Task 5.3 (Cursor IDE) and Task 5.5 (integration tests) - requires manual execution
+
+---
+
+## Risk Assessment
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| **Test coverage < 80%** | MEDIUM | Identify critical gaps, backfill high-value tests |
+| **Cursor incompatibility found** | LOW | Document workarounds, file issues with Cursor if needed |
+| **Performance unacceptable to users** | LOW | Already accepted limitation, docs set expectations |
+| **Integration tests reveal bugs** | MEDIUM | Fix critical bugs, document known issues |
+
+---
+
+## Notes for Implementer
+
+- **VERIFIED**: All major components are implemented and tested (475 Python tests, 230 VSCode tests)
+- **VERIFIED**: Archive's claim of complete Phases 1-3 is accurate
+- **Phase 4 claim revision**: Tests DO exist (contrary to archive's uncertainty)
+- **Focus**: This plan is about verification and documentation, not implementation
+- **Manual testing required**: Cursor verification and integration tests need human execution
+- **Coverage report first**: Start with Task 5.1 to identify any test gaps
+- **Document everything**: Known limitations, performance characteristics, compatibility notes
+- **Small iterations**: Each task is < 5 files to review/modify
 
 ---
 
 **Last Updated**: 2026-02-03
-**Next Review**: After Phase 3.5.1 completion
+**Next Review**: After Task 5.1 completion (coverage report)
