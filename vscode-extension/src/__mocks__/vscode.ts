@@ -3,12 +3,18 @@
  */
 
 export class Range {
+    public start: { line: number; character: number };
+    public end: { line: number; character: number };
+
     constructor(
-        public startLine: number,
-        public startCharacter: number,
-        public endLine: number,
-        public endCharacter: number
-    ) {}
+        startLine: number,
+        startCharacter: number,
+        endLine: number,
+        endCharacter: number
+    ) {
+        this.start = { line: startLine, character: startCharacter };
+        this.end = { line: endLine, character: endCharacter };
+    }
 }
 
 export class RelativePattern {
@@ -130,3 +136,10 @@ export const env = {
 export const commands = {
     registerCommand: jest.fn()
 };
+
+export enum TextEditorRevealType {
+    Default = 0,
+    InCenter = 1,
+    InCenterIfOutsideViewport = 2,
+    AtTop = 3
+}

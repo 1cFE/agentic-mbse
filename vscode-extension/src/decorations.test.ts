@@ -41,7 +41,8 @@ describe('DecorationManager', () => {
                     text: 'test line content'
                 })
             },
-            setDecorations: mockSetDecorations
+            setDecorations: mockSetDecorations,
+            revealRange: jest.fn()
         } as any;
     });
 
@@ -176,7 +177,7 @@ describe('DecorationManager', () => {
             // Count decorations that have a range at line 29
             const allRanges = mockSetDecorations.mock.calls.flatMap(call => call[1] || []);
             const rangesAtLine29 = allRanges.filter(
-                (range: any) => range.range && range.range.startLine === 29
+                (range: any) => range.range && range.range.start && range.range.start.line === 29
             );
             expect(rangesAtLine29.length).toBe(1);
         });
@@ -221,7 +222,7 @@ describe('DecorationManager', () => {
             // Find the decoration call with ranges at line 49 (0-indexed)
             const allRanges = mockSetDecorations.mock.calls.flatMap(call => call[1] || []);
             const appliedRange = allRanges.find(
-                (range: any) => range.range && range.range.startLine === 49
+                (range: any) => range.range && range.range.start && range.range.start.line === 49
             );
             expect(appliedRange).toBeDefined();
         });
@@ -610,6 +611,152 @@ describe('DecorationManager', () => {
             mockDecorationTypes.forEach(decorationType => {
                 expect(decorationType.dispose).toHaveBeenCalled();
             });
+        });
+    });
+
+    describe('focusThread', () => {
+        beforeEach(() => {
+            // Set active editor for focus tests
+            (vscode.window as any).activeTextEditor = mockEditor;
+        });
+
+        afterEach(() => {
+            (vscode.window as any).activeTextEditor = undefined;
+        });
+
+        it('focuses on thread by ID and reveals range', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST20',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 15,
+                    lineEnd: 17
+                })
+            ];
+
+            // Create mock VSCode CommentThread
+            const mockCommentThread = {
+                uri: mockEditor.document.uri,
+                range: new vscode.Range(14, 0, 16, 10),
+                comments: [],
+                collapsibleState: vscode.CommentThreadCollapsibleState.Expanded,
+                dispose: jest.fn()
+            } as any;
+
+            const threadMap = new Map<string, vscode.CommentThread>();
+            threadMap.set('01HQTEST20', mockCommentThread);
+
+            decorationManager.updateGutterDecorations(mockEditor, threads, threadMap);
+
+            // Focus the thread
+            const success = decorationManager.focusThread('01HQTEST20');
+
+            expect(success).toBe(true);
+            expect(mockEditor.revealRange).toHaveBeenCalledWith(
+                mockCommentThread.range,
+                vscode.TextEditorRevealType.InCenter
+            );
+        });
+
+        it('returns false for non-existent thread ID', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST21',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 20,
+                    lineEnd: 22
+                })
+            ];
+
+            decorationManager.updateGutterDecorations(mockEditor, threads);
+
+            const success = decorationManager.focusThread('NONEXISTENT');
+
+            expect(success).toBe(false);
+            expect(mockEditor.revealRange).not.toHaveBeenCalled();
+        });
+
+        it('handles focus errors gracefully', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST22',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 25,
+                    lineEnd: 27
+                })
+            ];
+
+            // Create mock CommentThread that will throw error
+            const mockCommentThread = {
+                uri: mockEditor.document.uri,
+                range: new vscode.Range(24, 0, 26, 10),
+                comments: [],
+                collapsibleState: vscode.CommentThreadCollapsibleState.Expanded,
+                dispose: jest.fn()
+            } as any;
+
+            const threadMap = new Map<string, vscode.CommentThread>();
+            threadMap.set('01HQTEST22', mockCommentThread);
+
+            decorationManager.updateGutterDecorations(mockEditor, threads, threadMap);
+
+            // Make revealRange throw an error
+            mockEditor.revealRange = jest.fn().mockImplementation(() => {
+                throw new Error('Test error');
+            });
+
+            const success = decorationManager.focusThread('01HQTEST22');
+
+            expect(success).toBe(false);
+        });
+
+        it('logs warning for missing thread', () => {
+            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+            decorationManager.focusThread('MISSING123');
+
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Thread MISSING123 not found')
+            );
+
+            consoleSpy.mockRestore();
+        });
+
+        it('clears thread map on dispose', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST23',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 30,
+                    lineEnd: 32
+                })
+            ];
+
+            const mockCommentThread = {
+                uri: mockEditor.document.uri,
+                range: new vscode.Range(29, 0, 31, 10),
+                comments: [],
+                collapsibleState: vscode.CommentThreadCollapsibleState.Expanded,
+                dispose: jest.fn()
+            } as any;
+
+            const threadMap = new Map<string, vscode.CommentThread>();
+            threadMap.set('01HQTEST23', mockCommentThread);
+
+            decorationManager.updateGutterDecorations(mockEditor, threads, threadMap);
+
+            // Thread should be accessible
+            expect(decorationManager.focusThread('01HQTEST23')).toBe(true);
+
+            // Dispose
+            decorationManager.dispose();
+
+            // Thread should no longer be accessible
+            expect(decorationManager.focusThread('01HQTEST23')).toBe(false);
         });
     });
 });

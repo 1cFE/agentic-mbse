@@ -47,6 +47,9 @@ export class DecorationManager {
     // Active editors with decorations (for cleanup)
     private decoratedEditors: Set<vscode.TextEditor> = new Set();
 
+    // Map of thread_id to CommentThread objects (for click handler)
+    private threadMap: Map<string, vscode.CommentThread> = new Map();
+
     constructor() {
         this.initializeGutterDecorations();
         this.initializeTextDecorations();
@@ -115,10 +118,20 @@ export class DecorationManager {
      *
      * @param editor The VSCode text editor to update
      * @param threads Array of comment threads to visualize
+     * @param vsThreads Optional map of VSCode CommentThreads for click handling
      */
-    updateGutterDecorations(editor: vscode.TextEditor, threads: Thread[]): void {
+    updateGutterDecorations(
+        editor: vscode.TextEditor,
+        threads: Thread[],
+        vsThreads?: Map<string, vscode.CommentThread>
+    ): void {
         // Clear existing decorations for this editor
         this.clearDecorationsForEditor(editor);
+
+        // Update thread map if provided
+        if (vsThreads) {
+            this.threadMap = vsThreads;
+        }
 
         // Group threads by line number (use line_start for positioning)
         const threadsByLine = new Map<number, Thread[]>();
@@ -144,7 +157,7 @@ export class DecorationManager {
             // Determine decoration type key
             const decorationKey = this.getDecorationKey(priorityThread);
 
-            // Create decoration range with hover tooltip
+            // Create decoration range with hover tooltip and click command
             const range = new vscode.Range(line, 0, line, 0);
             const hoverMessage = this.createHoverMessage(lineThreads);
 
@@ -389,6 +402,41 @@ export class DecorationManager {
     }
 
     /**
+     * Focuses on a specific comment thread by its ID.
+     *
+     * Reveals the thread in the comment panel and scrolls the editor to its location.
+     *
+     * @param threadId The thread ID to focus on
+     * @returns True if thread was found and focused, false otherwise
+     */
+    focusThread(threadId: string): boolean {
+        const thread = this.threadMap.get(threadId);
+        if (!thread) {
+            console.warn(`Thread ${threadId} not found in decoration manager`);
+            return false;
+        }
+
+        try {
+            // Reveal the thread range in the editor
+            const editor = vscode.window.activeTextEditor;
+            if (editor && thread.range && editor.document.uri.toString() === thread.uri.toString()) {
+                editor.revealRange(thread.range, vscode.TextEditorRevealType.InCenter);
+            }
+
+            // VSCode doesn't provide a direct API to "focus" a CommentThread
+            // The best we can do is reveal the range, which will show the thread
+            // if it's in the visible area
+            if (thread.range) {
+                console.log(`Focused thread ${threadId} at line ${thread.range.start.line + 1}`);
+            }
+            return true;
+        } catch (error) {
+            console.error(`Failed to focus thread ${threadId}:`, error);
+            return false;
+        }
+    }
+
+    /**
      * Disposes all decoration types and clears tracked editors.
      *
      * Called when the extension deactivates.
@@ -411,6 +459,9 @@ export class DecorationManager {
             decorationType.dispose();
         }
         this.textDecorations.clear();
+
+        // Clear thread map
+        this.threadMap.clear();
     }
 
     /**

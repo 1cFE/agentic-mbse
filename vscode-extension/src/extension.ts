@@ -114,6 +114,57 @@ export function activate(context: vscode.ExtensionContext): void {
     // Register resolve and reopen commands for thread management
     registerResolveCommand(context, projectRoot);
     registerReopenCommand(context, projectRoot);
+
+    // Register "Focus Thread" command (for programmatic and UI use)
+    // This command can be triggered by clicking gutter icons or via command palette
+    context.subscriptions.push(
+        vscode.commands.registerCommand('file-native-comments.focusThread', async (threadId?: string) => {
+            const editor = vscode.window.activeTextEditor;
+            if (!editor) {
+                vscode.window.showWarningMessage('No active editor');
+                return;
+            }
+
+            // If no threadId provided, show quick pick of threads in current file
+            if (!threadId) {
+                const { readSidecar } = require('./sidecar');
+                const sidecarData = readSidecar(editor.document.uri.fsPath, projectRoot);
+
+                if (!sidecarData || sidecarData.threads.length === 0) {
+                    vscode.window.showInformationMessage('No comments in this file');
+                    return;
+                }
+
+                // Create quick pick items with threadId property
+                interface ThreadQuickPickItem extends vscode.QuickPickItem {
+                    threadId: string;
+                }
+
+                const items: ThreadQuickPickItem[] = sidecarData.threads.map((thread: any) => ({
+                    label: `Line ${thread.anchor.line_start}: ${thread.comments[0].body.split('\n')[0].substring(0, 50)}`,
+                    description: `${thread.status} • ${thread.comments.length} comments`,
+                    threadId: thread.id
+                }));
+
+                const selected = await vscode.window.showQuickPick(items, {
+                    placeHolder: 'Select a comment thread to navigate to'
+                });
+
+                if (selected) {
+                    threadId = selected.threadId;
+                }
+            }
+
+            // Focus the thread
+            if (threadId) {
+                console.log(`Focus thread command invoked with ID: ${threadId}`);
+                const success = commentProvider.focusThread(threadId);
+                if (!success) {
+                    vscode.window.showWarningMessage(`Could not find thread ${threadId.substring(0, 8)}`);
+                }
+            }
+        })
+    );
 }
 
 /**

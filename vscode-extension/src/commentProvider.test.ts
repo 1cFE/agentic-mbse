@@ -113,8 +113,8 @@ describe('CommentProvider', () => {
             expect(thread.comments).toHaveLength(1);
 
             // Check range (1-indexed → 0-indexed conversion)
-            expect(thread.range.startLine).toBe(0); // line_start: 1 → 0
-            expect(thread.range.endLine).toBe(1);   // line_end: 2 → 1
+            expect(thread.range.start.line).toBe(0); // line_start: 1 → 0
+            expect(thread.range.end.line).toBe(1);   // line_end: 2 → 1
 
             // Check context value contains metadata
             const contextValue = JSON.parse(thread.contextValue!);
@@ -306,8 +306,8 @@ describe('CommentProvider', () => {
             // Should clamp to document bounds
             // Document has 2 lines: ["line1", ""] so lineCount = 2, max line index = 1
             expect(threads).toHaveLength(1);
-            expect(threads[0].range.startLine).toBe(1); // Clamped from 99 to 1
-            expect(threads[0].range.endLine).toBe(1);   // Clamped from 104 to 1
+            expect(threads[0].range.start.line).toBe(1); // Clamped from 99 to 1
+            expect(threads[0].range.end.line).toBe(1);   // Clamped from 104 to 1
         });
     });
 

@@ -89,11 +89,13 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
 
         // Convert each thread to a VSCode CommentThread
         const threads: vscode.CommentThread[] = [];
+        const threadMap = new Map<string, vscode.CommentThread>();
 
         for (const thread of sidecarData.threads) {
             try {
                 const vsThread = this.convertThreadToVSCodeThread(thread, document);
                 threads.push(vsThread);
+                threadMap.set(thread.id, vsThread);
             } catch (error) {
                 // Log conversion errors but don't fail the entire operation
                 console.error(`Failed to convert thread ${thread.id}:`, error);
@@ -110,7 +112,7 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
             e => e.document.uri.toString() === documentKey
         );
         if (editor) {
-            this.decorationManager.updateGutterDecorations(editor, sidecarData.threads);
+            this.decorationManager.updateGutterDecorations(editor, sidecarData.threads, threadMap);
         }
     }
 
@@ -252,6 +254,16 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
         }
 
         return null;
+    }
+
+    /**
+     * Focuses on a specific comment thread by its ID.
+     *
+     * @param threadId The thread ID to focus on
+     * @returns True if thread was found and focused, false otherwise
+     */
+    focusThread(threadId: string): boolean {
+        return this.decorationManager.focusThread(threadId);
     }
 
     /**
