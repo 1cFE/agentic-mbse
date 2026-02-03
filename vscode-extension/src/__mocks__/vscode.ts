@@ -119,6 +119,7 @@ export interface TextEditorDecorationType {
 export const window = {
     showInformationMessage: jest.fn(),
     showErrorMessage: jest.fn(),
+    showWarningMessage: jest.fn(),
     showInputBox: jest.fn(),
     activeTextEditor: undefined as any,
     visibleTextEditors: [] as any[],

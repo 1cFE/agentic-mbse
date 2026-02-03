@@ -963,18 +963,203 @@ Once Phase 3.1 is complete:
 
 ---
 
-## Appendix: Phases 3.4-3.5 (Future Iterations)
+## 🔄 Phase 3.4: Reconciliation & Commands
 
-### 🔲 Phase 3.4: Reconciliation & Commands
-- Manual reconciliation commands
-- Show decisions command
+**Goal**: Add manual reconciliation commands and decision log viewing to VSCode extension, completing the command palette integration.
 
-### 🔲 Phase 3.5: Configuration & Polish
-- Extension configuration options
-- Conflict handling (read-before-write)
+**Status**: IN PROGRESS (2026-02-03)
+
+**Spec References**:
+- `specs/vscode-extension.md` REQ-7 (Commands)
+- `specs/vscode-extension.md` AC-7 (Show Decisions acceptance criteria)
+- `specs/cli-interface.md` (`comment reconcile` command reference)
+
+---
+
+### 🔄 Task 3.4.1: Implement "Reconcile File" Command
+
+**Status**: IN PROGRESS (2026-02-03)
+
+**Priority**: HIGH (essential for handling drifted/orphaned anchors)
+
+**Spec References**:
+- REQ-7: "Comment: Reconcile File" in command palette
+- `specs/anchor-reconciliation.md` (Reconciliation algorithm)
+- `specs/cli-interface.md` (`comment reconcile <file>`)
+
+**Files to Create/Modify** (4 files):
+1. **Create** `vscode-extension/src/commands/reconcileFile.ts` (~120 lines)
+   - `reconcileFileCommand()` function handles reconciliation workflow
+   - Gets active editor and validates it's within project
+   - Calls Python CLI: `comment reconcile <file>`
+   - Parses CLI output to extract reconciliation statistics
+   - Shows notification with results (e.g., "Reconciled 3 threads: 2 anchored, 1 orphaned")
+   - Triggers comment reload via file watcher (or direct call to commentProvider)
+   - `registerReconcileFileCommand()` for registration
+
+2. **Modify** `vscode-extension/src/extension.ts` (~5 lines added)
+   - Import `registerReconcileFileCommand`
+   - Call registration on activation
+
+3. **Modify** `vscode-extension/package.json` (~10 lines added)
+   - Command contribution: `file-native-comments.reconcileFile`
+   - Command palette entry: "File-Native Comments: Reconcile File"
+   - Keybinding (optional): `Ctrl+K Ctrl+R` / `Cmd+K Ctrl+R`
+
+4. **Create** `vscode-extension/src/commands/reconcileFile.test.ts` (~150 lines)
+   - Unit tests for reconcile logic
+   - Tests: active editor validation, CLI command execution
+   - Tests: output parsing, notifications, error handling
+   - Tests: file outside project handling
+
+**Acceptance Criteria**:
+- [ ] Command palette shows "File-Native Comments: Reconcile File"
+- [ ] Command runs on active file, calls `comment reconcile <file>`
+- [ ] Success notification shows reconciliation statistics
+- [ ] Gutter icons and highlights update after reconciliation
+- [ ] Error notification shown if CLI fails
+- [ ] TypeScript compilation succeeds: `npm run compile`
+- [ ] Unit tests pass: `npm test`
+
+**Implementation Notes**:
+- CLI output format (from `cli.py`): Prints JSON with `ReconciliationReport` structure
+- Parse CLI stdout to extract counts (anchored, drifted, orphaned)
+- Notification format: "{total} threads reconciled: {anchored} anchored, {drifted} drifted, {orphaned} orphaned"
+- File watcher will trigger UI update automatically (2-second debounce)
+
+---
+
+### 🔲 Task 3.4.2: Implement "Reconcile All" Command
+
+**Status**: NOT STARTED
+
+**Priority**: MEDIUM (convenient but not essential)
+
+**Spec References**:
+- REQ-7: "Comment: Reconcile All" (project-wide)
+- `specs/cli-interface.md` (`comment reconcile --all`)
+
+**Files to Create/Modify** (4 files):
+1. **Create** `vscode-extension/src/commands/reconcileAll.ts` (~150 lines)
+   - `reconcileAllCommand()` function handles project-wide reconciliation
+   - Shows confirmation dialog (operation may take time)
+   - Calls Python CLI: `comment reconcile --all`
+   - Shows progress notification (VSCode Progress API)
+   - Parses CLI output to extract aggregate statistics
+   - Shows summary notification with total counts
+   - `registerReconcileAllCommand()` for registration
+
+2. **Modify** `vscode-extension/src/extension.ts` (~5 lines added)
+   - Import `registerReconcileAllCommand`
+   - Call registration on activation
+
+3. **Modify** `vscode-extension/package.json` (~10 lines added)
+   - Command contribution: `file-native-comments.reconcileAll`
+   - Command palette entry: "File-Native Comments: Reconcile All Files"
+
+4. **Create** `vscode-extension/src/commands/reconcileAll.test.ts` (~150 lines)
+   - Unit tests for reconcile all logic
+   - Tests: confirmation dialog, CLI execution, progress notification
+   - Tests: output parsing, error handling, cancellation
+
+**Acceptance Criteria**:
+- [ ] Command palette shows "File-Native Comments: Reconcile All Files"
+- [ ] Confirmation dialog appears before execution
+- [ ] Progress notification shown during reconciliation
+- [ ] Success notification shows aggregate statistics
+- [ ] All open files refresh after reconciliation
+- [ ] Error notification shown if CLI fails
+- [ ] TypeScript compilation succeeds: `npm run compile`
+- [ ] Unit tests pass: `npm test`
+
+**Implementation Notes**:
+- CLI output format: Same as single-file reconcile, but aggregates across all files
+- Use `vscode.window.withProgress()` for progress notification
+- Confirmation dialog text: "Reconcile all comment threads in project? This may take a moment for large projects."
+- After reconciliation, reload comments for all open editors
+
+---
+
+### 🔲 Task 3.4.3: Implement "Show Decisions" Command
+
+**Status**: NOT STARTED
+
+**Priority**: LOW (convenience feature)
+
+**Spec References**:
+- REQ-7: "Comment: Show Decisions" (opens DECISIONS.md)
+- AC-7: Given DECISIONS.md exists, when command runs, then file opens in editor
+- `specs/cli-interface.md` (`comment decisions`)
+
+**Files to Create/Modify** (4 files):
+1. **Create** `vscode-extension/src/commands/showDecisions.ts` (~100 lines)
+   - `showDecisionsCommand()` function handles decision log viewing
+   - Finds project root (reuse existing logic)
+   - Checks if `DECISIONS.md` exists at project root
+   - If exists: Opens in editor via `vscode.workspace.openTextDocument()`
+   - If not exists: Shows notification "No DECISIONS.md found. Run 'Comment: Generate Decisions' first."
+   - Optional: Add "Generate Decisions" button in notification that calls CLI
+   - `registerShowDecisionsCommand()` for registration
+
+2. **Modify** `vscode-extension/src/extension.ts` (~5 lines added)
+   - Import `registerShowDecisionsCommand`
+   - Call registration on activation
+
+3. **Modify** `vscode-extension/package.json` (~10 lines added)
+   - Command contribution: `file-native-comments.showDecisions`
+   - Command palette entry: "File-Native Comments: Show Decisions"
+
+4. **Create** `vscode-extension/src/commands/showDecisions.test.ts` (~100 lines)
+   - Unit tests for show decisions logic
+   - Tests: opens existing DECISIONS.md file
+   - Tests: shows notification when file doesn't exist
+   - Tests: error handling (file system errors)
+   - Tests: project root detection
+
+**Acceptance Criteria**:
+- [ ] Command palette shows "File-Native Comments: Show Decisions"
+- [ ] Opens DECISIONS.md in editor if it exists (AC-7)
+- [ ] Shows informative notification if file doesn't exist
+- [ ] Error notification shown on file system errors
+- [ ] TypeScript compilation succeeds: `npm run compile`
+- [ ] Unit tests pass: `npm test`
+
+**Implementation Notes**:
+- DECISIONS.md location: Always at project root (same directory as `.git`)
+- Use `vscode.window.showTextDocument()` to open file
+- Optional future enhancement: Generate DECISIONS.md if missing (calls `comment decisions` CLI command)
+
+---
+
+## Success Metrics for Phase 3.4
+
+**Completion Definition**: When all 3 tasks (3.4.1, 3.4.2, 3.4.3) pass acceptance criteria.
+
+**What Works After Phase 3.4**:
+- Users can manually trigger reconciliation for current file or entire project
+- Reconciliation statistics shown in notifications
+- Users can quickly view decision log from command palette
+- All VSCode extension commands from spec REQ-7 implemented
+
+**What's Still Missing** (Phase 3.5):
+- Extension configuration options (debounce delays, colors, etc.)
+- Conflict handling prompts (read-before-write validation)
 - Cursor IDE compatibility verification
 
 ---
 
+## 🔲 Phase 3.5: Configuration & Polish
+
+**Goal**: Add configuration options and conflict handling to complete the VSCode extension feature set.
+
+**Status**: NOT STARTED
+
+**Tasks**:
+1. Extension configuration settings (debounce delays, color overrides)
+2. Conflict handling with user prompts (read-before-write validation)
+3. Cursor IDE compatibility testing and fixes
+
+---
+
 **Last Updated**: 2026-02-03
-**Next Review**: After Phase 3.1 completion
+**Next Review**: After Phase 3.4 completion

@@ -40,6 +40,11 @@
         "command": "file-native-comments.focusThread",
         "title": "Go to Comment Thread",
         "category": "File-Native Comments"
+      },
+      {
+        "command": "file-native-comments.reconcileFile",
+        "title": "Reconcile File",
+        "category": "File-Native Comments"
       }
     ],
     "menus": {
@@ -74,6 +79,12 @@
         "command": "file-native-comments.focusThread",
         "key": "ctrl+k ctrl+c",
         "mac": "cmd+k cmd+c",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "file-native-comments.reconcileFile",
+        "key": "ctrl+k ctrl+r",
+        "mac": "cmd+k ctrl+r",
         "when": "editorTextFocus"
       }
     ]
