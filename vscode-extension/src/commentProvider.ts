@@ -93,7 +93,7 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
 
         for (const thread of sidecarData.threads) {
             try {
-                const vsThread = this.convertThreadToVSCodeThread(thread, document);
+                const vsThread = this.convertThreadToVSCodeThread(thread, document, sidecarData.source_hash);
                 threads.push(vsThread);
                 threadMap.set(thread.id, vsThread);
             } catch (error) {
@@ -121,11 +121,13 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
      *
      * @param thread The sidecar thread to convert
      * @param document The VSCode document this thread belongs to
+     * @param sourceHash The source file hash for conflict detection
      * @returns A VSCode CommentThread object
      */
     private convertThreadToVSCodeThread(
         thread: Thread,
-        document: vscode.TextDocument
+        document: vscode.TextDocument,
+        sourceHash: string
     ): vscode.CommentThread {
         // Convert 1-indexed line numbers to 0-indexed VSCode ranges
         // VSCode line numbers are 0-indexed, sidecar line numbers are 1-indexed
@@ -173,14 +175,15 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
             this.convertCommentToVSCodeComment(comment)
         );
 
-        // Store metadata in context for future use (gutter icons, decorations, etc.)
+        // Store metadata in context for future use (gutter icons, decorations, conflict detection)
         // This is a custom property that we can access later
         vsThread.contextValue = JSON.stringify({
             health: thread.anchor.health,
             drift_distance: thread.anchor.drift_distance,
             status: thread.status,
             thread_id: thread.id,
-            has_decision: thread.decision !== null
+            has_decision: thread.decision !== null,
+            source_hash: sourceHash  // For conflict detection (specs/concurrency.md REQ-4)
         });
 
         // Set collapsibility (allow collapse/expand in UI)

@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import { execSync } from 'child_process';
 import { resolveThread, buildResolveCliCommand, extractThreadId, registerResolveCommand } from './resolveThread';
+import { handleConflictCheck, ConflictResolution } from '../conflictHandler';
 
 // Mock child_process
 jest.mock('child_process');
@@ -12,6 +13,10 @@ const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 
 // Mock vscode module
 jest.mock('vscode');
+
+// Mock conflictHandler
+jest.mock('../conflictHandler');
+const mockHandleConflictCheck = handleConflictCheck as jest.MockedFunction<typeof handleConflictCheck>;
 
 describe('resolveThread', () => {
     let mockThread: vscode.CommentThread;
@@ -21,13 +26,17 @@ describe('resolveThread', () => {
         // Reset mocks
         jest.clearAllMocks();
 
+        // Default: no conflict detected (proceed with write)
+        mockHandleConflictCheck.mockResolvedValue(ConflictResolution.OVERWRITE);
+
         // Create mock thread with contextValue
         mockThread = {
             contextValue: JSON.stringify({
                 thread_id: '01HXYZ123456',
                 health: 'anchored',
                 status: 'open',
-                has_decision: false
+                has_decision: false,
+                source_hash: 'sha256:abc123'
             }),
             state: vscode.CommentThreadState.Unresolved,
             comments: [],

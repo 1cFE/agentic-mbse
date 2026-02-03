@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import { handleReply, extractThreadId, buildReplyCliCommand, registerReplyCommand } from './replyComment';
 import * as child_process from 'child_process';
+import { handleConflictCheck, ConflictResolution } from '../conflictHandler';
 
 // Mock child_process
 jest.mock('child_process');
@@ -12,6 +13,10 @@ const mockExecSync = child_process.execSync as jest.MockedFunction<typeof child_
 
 // Mock VSCode API
 jest.mock('vscode');
+
+// Mock conflictHandler
+jest.mock('../conflictHandler');
+const mockHandleConflictCheck = handleConflictCheck as jest.MockedFunction<typeof handleConflictCheck>;
 
 describe('handleReply', () => {
     const projectRoot = '/test/project';
@@ -21,6 +26,9 @@ describe('handleReply', () => {
     beforeEach(() => {
         jest.clearAllMocks();
 
+        // Default: no conflict detected (proceed with write)
+        mockHandleConflictCheck.mockResolvedValue(ConflictResolution.OVERWRITE);
+
         // Mock VSCode environment
         (vscode.env as any) = { username: 'testuser' };
 
@@ -29,7 +37,8 @@ describe('handleReply', () => {
             contextValue: JSON.stringify({
                 thread_id: '01HXYZ123456789ABCDEF',
                 health: 'anchored',
-                status: 'open'
+                status: 'open',
+                source_hash: 'sha256:abc123'
             }),
             uri: vscode.Uri.file('/test/project/src/file.ts'),
             range: new vscode.Range(0, 0, 5, 0),

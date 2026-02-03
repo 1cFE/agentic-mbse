@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 import { execSync } from 'child_process';
 import { reopenThread, extractThreadId, registerReopenCommand } from './reopenThread';
+import { handleConflictCheck, ConflictResolution } from '../conflictHandler';
 
 // Mock child_process
 jest.mock('child_process');
@@ -12,6 +13,10 @@ const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 
 // Mock vscode module
 jest.mock('vscode');
+
+// Mock conflictHandler
+jest.mock('../conflictHandler');
+const mockHandleConflictCheck = handleConflictCheck as jest.MockedFunction<typeof handleConflictCheck>;
 
 describe('reopenThread', () => {
     let mockThread: vscode.CommentThread;
@@ -21,13 +26,17 @@ describe('reopenThread', () => {
         // Reset mocks
         jest.clearAllMocks();
 
+        // Default: no conflict detected (proceed with write)
+        mockHandleConflictCheck.mockResolvedValue(ConflictResolution.OVERWRITE);
+
         // Create mock thread with contextValue
         mockThread = {
             contextValue: JSON.stringify({
                 thread_id: '01HXYZ123456',
                 health: 'anchored',
                 status: 'resolved',
-                has_decision: true
+                has_decision: true,
+                source_hash: 'sha256:abc123'
             }),
             state: vscode.CommentThreadState.Resolved,
             comments: [],
@@ -225,7 +234,7 @@ describe('reopenThread', () => {
             consoleSpy.mockRestore();
         });
 
-        it('should pass projectRoot to command handler', () => {
+        it('should pass projectRoot to command handler', async () => {
             const mockContext = {
                 subscriptions: []
             } as any as vscode.ExtensionContext;
@@ -245,8 +254,8 @@ describe('reopenThread', () => {
             // Verify handler was registered
             expect(registeredHandler).toBeDefined();
 
-            // Call the handler with a mock thread
-            registeredHandler!(mockThread);
+            // Call the handler with a mock thread (and await since it's async)
+            await registeredHandler!(mockThread);
 
             // Verify execSync was called with correct cwd
             expect(mockExecSync).toHaveBeenCalledWith(

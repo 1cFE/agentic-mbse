@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import { execSync } from 'child_process';
+import { handleConflictCheck, ConflictResolution } from '../conflictHandler';
 
 /**
  * Extracts the thread_id from a CommentThread's contextValue.
@@ -16,6 +17,7 @@ import { execSync } from 'child_process';
  *   "thread_id": "01HXYZ...",
  *   "health": "anchored",
  *   "status": "open",
+ *   "source_hash": "sha256:...",
  *   ...
  * }
  *
@@ -37,14 +39,39 @@ export function extractThreadId(thread: vscode.CommentThread): string | null {
 }
 
 /**
+ * Extracts the source_hash from a CommentThread's contextValue.
+ *
+ * The source_hash is used for conflict detection - if the on-disk sidecar
+ * has a different source_hash, it means the sidecar was modified externally.
+ *
+ * @param thread - The VSCode CommentThread
+ * @returns The source hash string, or null if not found
+ */
+export function extractSourceHash(thread: vscode.CommentThread): string | null {
+    try {
+        if (!thread.contextValue) {
+            return null;
+        }
+
+        const context = JSON.parse(thread.contextValue);
+        return context.source_hash || null;
+    } catch (error) {
+        console.error('Failed to parse thread contextValue:', error);
+        return null;
+    }
+}
+
+/**
  * Handles resolving a comment thread.
  *
  * Workflow:
- * 1. Extract thread_id from thread.contextValue
- * 2. Optionally prompt for decision text
- * 3. Call Python CLI: `comment resolve <thread_id> [--decision "<text>"]`
- * 4. Show success/error notification
- * 5. Update thread state (file watcher will reload with actual data)
+ * 1. Extract thread_id and source_hash from thread.contextValue
+ * 2. Prompt for decision text (required)
+ * 3. Check for conflicts (compare source_hash with on-disk version)
+ * 4. If conflict, prompt user (Reload/Overwrite/Cancel)
+ * 5. Call Python CLI: `comment resolve <thread_id> --decision "<text>"`
+ * 6. Show success/error notification
+ * 7. Update thread state (file watcher will reload with actual data)
  *
  * @param thread - The VSCode CommentThread to resolve
  * @param projectRoot - Absolute path to project root
@@ -55,12 +82,14 @@ export async function resolveThread(
     projectRoot: string
 ): Promise<void> {
     try {
-        // Extract thread_id from contextValue
+        // Extract thread_id and source_hash from contextValue
         const threadId = extractThreadId(thread);
         if (!threadId) {
             vscode.window.showErrorMessage('Failed to identify thread for resolution');
             return;
         }
+
+        const sourceHash = extractSourceHash(thread);
 
         // Prompt for decision text (required by CLI unless using --wontfix)
         const decision = await vscode.window.showInputBox({
@@ -83,6 +112,26 @@ export async function resolveThread(
         // Trim the decision text
         const trimmedDecision = decision.trim();
 
+        // Get source file path from thread URI
+        const sourcePath = thread.uri.fsPath;
+
+        // Check for conflicts before writing
+        const resolution = await handleConflictCheck(sourcePath, projectRoot, sourceHash);
+
+        if (resolution === ConflictResolution.CANCEL) {
+            vscode.window.showInformationMessage('Resolution cancelled');
+            return;
+        }
+
+        if (resolution === ConflictResolution.RELOAD) {
+            vscode.window.showInformationMessage(
+                'Comments reloaded. Please retry resolution after reviewing the updated thread.'
+            );
+            // File watcher will trigger reload automatically
+            return;
+        }
+
+        // Resolution is OVERWRITE or no conflict detected - proceed with write
         // Build CLI command (decision is now guaranteed to be non-empty)
         const cliCommand = buildResolveCliCommand(threadId, trimmedDecision);
 
