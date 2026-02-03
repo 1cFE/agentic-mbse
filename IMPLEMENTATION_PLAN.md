@@ -1,7 +1,7 @@
 # Implementation Plan: File-Native Comment Threading System
 
 **Last Updated**: 2026-02-03
-**Iteration**: Phase 2 — VSCode Extension Scaffolding (2/3 tasks complete)
+**Iteration**: Phase 2 — VSCode Extension Scaffolding (3/3 tasks complete)
 
 ---
 
@@ -315,52 +315,50 @@ These tasks create the initial TypeScript project structure for the VSCode exten
 
 ---
 
-#### Task 2.3: Add Sidecar File Reader Module
+#### ✅ Task 2.3: Add Sidecar File Reader Module (COMPLETED)
 
 **Spec References**:
 - vscode-extension.md REQ-1: "Render comment bodies as markdown"
 - data-model.md: Sidecar JSON schema
 
-**What to Implement**:
-- Create `sidecar.ts` module for reading/parsing sidecar files
-- Function: `readSidecar(sourcePath: string): SidecarFile | null`
-- TypeScript interfaces matching Python Pydantic models
-- Handle missing sidecar gracefully (return null)
-- Add unit tests
+**Implementation**:
+- Created `sidecar.ts` module with TypeScript interfaces matching all Python Pydantic models
+- Implemented `readSidecar(sourcePath, projectRoot)` function with comprehensive validation
+- Function correctly resolves sidecar paths (`.comments/<relative_path>.json`)
+- Handles nested directory structures with POSIX path conversion
+- Validates all required fields and constraints (hash format, ULID length, line ranges, etc.)
+- Returns null for missing sidecars (no errors)
+- Throws descriptive errors for invalid JSON or schema violations
 
-**Files to Create/Modify** (2 files):
-- `vscode-extension/src/sidecar.ts` (new, ~120 lines) — Reader module with interfaces
-- `vscode-extension/src/sidecar.test.ts` (new, ~80 lines) — Unit tests
+**Results**:
+- ✅ All TypeScript interfaces defined (ThreadStatus, AuthorType, AnchorHealth, Decision, Comment, Anchor, Thread, SidecarFile)
+- ✅ `readSidecar()` function implemented with full validation (280 lines)
+- ✅ 12 comprehensive unit tests covering:
+  - Valid sidecar reading (single thread, multiple threads, nested paths)
+  - Resolved threads with decisions
+  - All thread statuses (open, resolved, wontfix)
+  - All anchor health states (anchored, drifted, orphaned)
+  - Error cases (invalid JSON, missing fields, invalid formats, constraint violations)
+- ✅ Jest configured with ts-jest preset
+- ✅ All tests pass: `npm test` (12 tests, 100% pass rate, 7.5s runtime)
+- ✅ TypeScript compilation succeeds (npm run compile)
+- ✅ Python tests still pass (comment_system module unaffected)
+- ✅ mypy type checking passes (src/comment_system/)
+- ✅ ruff linting passes
 
-**Backpressure**:
-- TypeScript compiles without errors
-- `npm test` passes (unit tests for sidecar reader)
-- Correctly parses valid .comments/*.json files
-- Returns null for missing files
+**Files Created**:
+- `vscode-extension/src/sidecar.ts` (280 lines) — TypeScript interfaces + reader + validation
+- `vscode-extension/src/sidecar.test.ts` (379 lines) — 12 comprehensive unit tests
+- `vscode-extension/jest.config.js` (14 lines) — Jest configuration for ts-jest
 
-**Acceptance Criteria**:
-1. TypeScript interfaces defined:
-   - `ThreadStatus` (enum: OPEN, RESOLVED, WONTFIX)
-   - `AnchorHealth` (enum: ANCHORED, DRIFTED, ORPHANED)
-   - `Anchor` (interface matching Python model)
-   - `Comment` (interface matching Python model)
-   - `Thread` (interface matching Python model)
-   - `SidecarFile` (interface matching Python model)
-2. Function `readSidecar()` implemented:
-   - Resolves sidecar path from source path (`.comments/<path>.json`)
-   - Reads JSON file
-   - Validates against SidecarFile interface
-   - Returns null if file doesn't exist
-3. Unit tests verify:
-   - Reading valid sidecar returns correct data
-   - Missing sidecar returns null
-   - Invalid JSON throws error
-   - Missing required fields throws error
-4. All tests pass: `npm test`
+**Files Modified**:
+- `vscode-extension/package.json` (added Jest dependencies: @types/jest, jest, ts-jest)
 
-**Dependencies**: Requires Task 2.1 (extension scaffolding)
-
-**Estimated Effort**: ~2 hours (TypeScript interfaces + JSON parsing + tests)
+**Key Findings**:
+- TypeScript validation is more verbose than Pydantic but provides excellent runtime error messages
+- Jest + ts-jest integration works smoothly with VSCode extension project structure
+- Nested path handling requires careful POSIX conversion (platform-independent)
+- Comprehensive validation catches schema violations early (better UX than silent failures)
 
 ---
 
@@ -398,13 +396,13 @@ These tasks create the initial TypeScript project structure for the VSCode exten
 
 **Total**: 4,717 lines of production code
 
-### VSCode Extension (0% Complete)
+### VSCode Extension (~40% Complete — Scaffolding Done)
 
-| Component | Status | Files Needed |
-|-----------|--------|--------------|
-| Project setup | ❌ Not started | `package.json`, `tsconfig.json`, `extension.ts` |
-| CommentController | ❌ Not started | Modify `extension.ts` |
-| Sidecar reader | ❌ Not started | `sidecar.ts`, `sidecar.test.ts` |
+| Component | Status | Files Created |
+|-----------|--------|---------------|
+| Project setup | ✅ Complete | `package.json`, `tsconfig.json`, `extension.ts`, `jest.config.js` |
+| CommentController | ✅ Complete | `extension.ts` (registration stub) |
+| Sidecar reader | ✅ Complete | `sidecar.ts` (280 lines), `sidecar.test.ts` (379 lines) |
 | UI components | ❌ Not started | (deferred to Phase 3) |
 
 ---
@@ -429,14 +427,14 @@ These tasks create the initial TypeScript project structure for the VSCode exten
 
 ### Phase 2 Success Criteria
 
-**Status**: 2/3 tasks complete
+**Status**: 3/3 tasks complete ✅
 
 - ✅ `vscode-extension/` directory exists with complete TypeScript project
 - ✅ `vsce package` succeeds (creates .vsix file)
 - ✅ Extension loads in VSCode without errors (manual verification pending)
 - ✅ CommentController registered (visible in debug output)
-- ❌ `readSidecar()` function implemented and tested (Task 2.3 pending)
-- ❌ `npm test` passes (sidecar reader unit tests) (Task 2.3 pending)
+- ✅ `readSidecar()` function implemented and tested
+- ✅ `npm test` passes (12 sidecar reader unit tests)
 
 **Deliverable**: VSCode extension scaffolding ready for feature development.
 

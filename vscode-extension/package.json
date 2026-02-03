@@ -22,11 +22,13 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
-    "test": "node ./out/test/runTest.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "lint": "eslint src --ext ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
   "devDependencies": {
+    "@types/jest": "^29.5.0",
     "@types/node": "^20.x",
     "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^6.x",
@@ -34,7 +36,9 @@
     "@vscode/test-electron": "^2.3.8",
     "@vscode/vsce": "^3.7.1",
     "eslint": "^8.x",
+    "jest": "^29.7.0",
     "prettier": "^3.x",
+    "ts-jest": "^29.1.0",
     "typescript": "^5.3.0"
   },
   "repository": {
