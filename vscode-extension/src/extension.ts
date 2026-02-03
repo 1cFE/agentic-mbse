@@ -7,6 +7,7 @@
 
 import * as vscode from 'vscode';
 import { CommentProvider } from './commentProvider';
+import { FileWatcher } from './fileWatcher';
 
 /**
  * Extension activation entry point.
@@ -63,8 +64,27 @@ export function activate(context: vscode.ExtensionContext): void {
         })
     );
 
-    // Future: Initialize file watchers for .comments/ directory
-    // Future: Store commentProvider reference for file watcher integration
+    // Initialize file watcher for real-time sync with CLI/MCP changes
+    const fileWatcher = new FileWatcher(projectRoot);
+    fileWatcher.start();
+
+    // When a sidecar file changes, reload comments for the affected source file
+    fileWatcher.onSidecarChanged((sourceFilePath) => {
+        // Find the open document for this source file
+        const document = vscode.workspace.textDocuments.find(
+            doc => doc.uri.fsPath === sourceFilePath
+        );
+
+        if (document) {
+            console.log(`Sidecar changed for ${sourceFilePath}, reloading comments`);
+            commentProvider.loadCommentsForDocument(document);
+        }
+    });
+
+    // Dispose file watcher on deactivation
+    context.subscriptions.push({
+        dispose: () => fileWatcher.stop()
+    });
 }
 
 /**

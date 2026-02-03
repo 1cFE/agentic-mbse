@@ -11,6 +11,13 @@ export class Range {
     ) {}
 }
 
+export class RelativePattern {
+    constructor(
+        public base: string,
+        public pattern: string
+    ) {}
+}
+
 export enum CommentMode {
     Preview = 0,
     Editing = 1
@@ -87,5 +94,6 @@ export const comments = {
 export const workspace = {
     workspaceFolders: undefined as any,
     textDocuments: [] as any[],
-    onDidOpenTextDocument: () => ({ dispose: () => {} })
+    onDidOpenTextDocument: () => ({ dispose: () => {} }),
+    createFileSystemWatcher: jest.fn()
 };
