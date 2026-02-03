@@ -550,9 +550,9 @@ Once Phase 3.1 is complete:
 
 ---
 
-### 🔲 Task 3.2.2: Implement Resolve/Reopen Actions
+### ✅ Task 3.2.2: Implement Resolve/Reopen Actions (COMPLETED)
 
-**Status**: PENDING
+**Status**: COMPLETE (2026-02-03)
 
 **Priority**: HIGH (core workflow action)
 
@@ -560,41 +560,73 @@ Once Phase 3.1 is complete:
 - `specs/vscode-extension.md` REQ-1, AC-5 (Thread status mapping)
 - `specs/cli-interface.md` (`comment resolve`, `comment reopen`)
 
-**Implementation Requirements**:
-1. **Create** `vscode-extension/src/commands/resolveThread.ts` (~120 lines)
-   - `resolveThreadCommand(thread)` function
-   - Extract thread_id from `thread.contextValue` JSON
-   - Prompt user for optional decision text (if unresolved → resolved)
-   - Call CLI: `comment resolve <thread_id> [--decision "<text>"]`
-   - Show success/error notification
+**Implementation Summary**:
+- Created `vscode-extension/src/commands/resolveThread.ts` (162 lines)
+  - `resolveThread()` function handles thread resolution workflow
+  - Extracts thread_id from thread.contextValue JSON
+  - Prompts user for required decision text (validated input box)
+  - Calls Python CLI: `comment resolve <thread_id> --decision "<text>"`
+  - Escapes special characters (backslashes, quotes, newlines, tabs)
+  - Updates thread state immediately (file watcher reloads with actual data)
+  - Shows success/error notifications
+  - `registerResolveCommand()` for registration with VSCode
 
-2. **Create** `vscode-extension/src/commands/reopenThread.ts` (~80 lines)
-   - `reopenThreadCommand(thread)` function
-   - Extract thread_id from contextValue
-   - Call CLI: `comment reopen <thread_id>`
-   - Show success/error notification
+- Created `vscode-extension/src/commands/reopenThread.ts` (114 lines)
+  - `reopenThread()` function handles thread reopening workflow
+  - Extracts thread_id from contextValue
+  - Calls Python CLI: `comment reopen <thread_id>`
+  - Updates thread state immediately (file watcher reloads)
+  - Shows success/error notifications
+  - `registerReopenCommand()` for registration with VSCode
 
-3. **Modify** `vscode-extension/src/extension.ts` (~10 lines)
-   - Register both commands
-   - Add context menu items to CommentThread
+- Modified `vscode-extension/src/extension.ts` (added 4 lines)
+  - Imports `registerResolveCommand` and `registerReopenCommand`
+  - Calls registration on activation
 
-4. **Modify** `vscode-extension/package.json` (~20 lines)
-   - Add command contributions: `file-native-comments.resolveThread`, `reopenThread`
-   - Add to `comments/commentThread/context` menu
+- Modified `vscode-extension/package.json` (added 20 lines)
+  - Command contributions: `file-native-comments.resolveThread`, `reopenThread`
+  - Context menu items in `comments/commentThread/context`
+  - Menu shown conditionally based on thread state:
+    - "Resolve" shown when `commentThreadState == 'unresolved'`
+    - "Reopen" shown when `commentThreadState == 'resolved'`
 
-5. **Create** `vscode-extension/src/commands/resolveThread.test.ts` (~150 lines)
-   - Unit tests for resolve logic
-   - Test with/without decision text
-   - Test reopen logic
+- Created `vscode-extension/src/commands/resolveThread.test.ts` (311 lines)
+  - 20 unit tests covering all resolve functionality
+  - Tests: thread ID extraction, CLI command building, decision validation
+  - Tests: text escaping (quotes, backslashes, newlines, tabs, carriage returns)
+  - Tests: error handling (CLI failures, invalid contextValue, missing thread_id)
+  - Tests: user interaction (input validation, cancellation, state updates)
+  - Tests: command registration
 
-**Acceptance Criteria**:
-- [ ] Context menu on CommentThread shows "Resolve" action (when unresolved)
-- [ ] Context menu shows "Reopen" action (when resolved)
-- [ ] Resolve action prompts for optional decision text
-- [ ] CLI subprocess called correctly for both commands
-- [ ] Thread state updates after action (via file watcher)
-- [ ] TypeScript compilation succeeds
-- [ ] Unit tests pass
+- Created `vscode-extension/src/commands/reopenThread.test.ts` (242 lines)
+  - 15 unit tests covering all reopen functionality
+  - Tests: thread ID extraction, CLI command execution
+  - Tests: error handling (CLI failures, invalid contextValue)
+  - Tests: state updates, notifications, logging
+  - Tests: command registration, working directory handling
+
+**Acceptance Criteria** (All Met):
+- ✅ Context menu on CommentThread shows "Resolve" action (when unresolved)
+- ✅ Context menu shows "Reopen" action (when resolved)
+- ✅ Resolve action prompts for decision text (required by CLI)
+- ✅ CLI subprocess called correctly for both commands
+- ✅ Thread state updates after action (via file watcher debounce)
+- ✅ TypeScript compilation succeeds: `npm run compile` passes
+- ✅ Unit tests pass: `npm test` passes (117/117 tests, 7 suites)
+
+**Implementation Notes**:
+- **Decision Required**: Unlike the spec's "optional decision", the Python CLI requires `--decision` unless using `--wontfix`
+  - Chose to enforce required decision in VSCode UI (input validation)
+  - Future enhancement: Add "Mark as Won't Fix" context menu option for `--wontfix` flag
+- **Immediate State Update**: Thread state changed synchronously for instant UI feedback
+  - File watcher (2-second debounce) reloads full thread from sidecar afterward
+  - Prevents UI flicker during CLI execution
+- **Text Escaping**: Same pattern as reply command
+  - Escape order: backslashes → quotes → newlines/tabs/carriage returns
+  - CLI command format: `comment resolve <id> --decision "<escaped_text>"`
+- **Conditional Menus**: VSCode's `when` clause filters commands based on thread state
+  - `commentThreadState == 'unresolved'` shows "Resolve"
+  - `commentThreadState == 'resolved'` shows "Reopen"
 
 ---
 

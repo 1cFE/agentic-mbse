@@ -25,6 +25,16 @@
         "command": "file-native-comments.replyNote",
         "title": "Reply to Comment",
         "enablement": "!commentIsEmpty"
+      },
+      {
+        "command": "file-native-comments.resolveThread",
+        "title": "Resolve Thread",
+        "category": "File-Native Comments"
+      },
+      {
+        "command": "file-native-comments.reopenThread",
+        "title": "Reopen Thread",
+        "category": "File-Native Comments"
       }
     ],
     "menus": {
@@ -33,6 +43,18 @@
           "when": "editorHasSelection",
           "command": "file-native-comments.addComment",
           "group": "comments"
+        }
+      ],
+      "comments/commentThread/context": [
+        {
+          "command": "file-native-comments.resolveThread",
+          "group": "inline",
+          "when": "commentThreadState == 'unresolved'"
+        },
+        {
+          "command": "file-native-comments.reopenThread",
+          "group": "inline",
+          "when": "commentThreadState == 'resolved'"
         }
       ]
     },

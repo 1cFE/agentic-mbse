@@ -10,6 +10,8 @@ import { CommentProvider } from './commentProvider';
 import { FileWatcher } from './fileWatcher';
 import { registerAddCommentCommand } from './commands/addComment';
 import { registerReplyCommand } from './commands/replyComment';
+import { registerResolveCommand } from './commands/resolveThread';
+import { registerReopenCommand } from './commands/reopenThread';
 
 /**
  * Extension activation entry point.
@@ -93,6 +95,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Register reply command for comment threads
     registerReplyCommand(context, projectRoot);
+
+    // Register resolve and reopen commands for thread management
+    registerResolveCommand(context, projectRoot);
+    registerReopenCommand(context, projectRoot);
 }
 
 /**
