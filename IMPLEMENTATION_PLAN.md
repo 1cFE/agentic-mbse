@@ -88,72 +88,86 @@ These tasks verify that the existing implementation meets performance specs. **A
 
 ---
 
-#### Task 1.2: Benchmark Fuzzy Matching Performance
+#### ❌ Task 1.2: Benchmark Fuzzy Matching Performance (BLOCKED)
 
 **Spec References**:
 - fuzzy-matching.md AC: "< 100ms per anchor on 10,000-line file"
 - fuzzy-matching.md AC: "< 10 seconds for 100 threads requiring fuzzy matching"
 
-**What to Implement**:
-- Create `tests/comment_system/test_fuzzy_performance.py`
-- Generate synthetic 10,000-line file
-- Test 1: Single fuzzy match (`find_best_match()`) — assert < 100ms
-- Test 2: 100 fuzzy matches — assert < 10 seconds
-- Use realistic text modifications (typos, small edits)
+**Status**: **BLOCKED** - Performance target cannot be met with current pure-Python implementation
 
-**Files to Create/Modify** (1 file):
-- `tests/comment_system/test_fuzzy_performance.py` (new, ~100 lines)
+**Performance Gap**:
+- **Target**: < 100ms per fuzzy match on 10,000-line file
+- **Actual**: ~17,000ms (17 seconds) per match with max_window=100
+- **Gap**: ~170x slower than required
 
-**Backpressure**:
-- `uv run pytest tests/comment_system/test_fuzzy_performance.py` must pass
-- Two separate performance thresholds enforced
+**Root Cause**:
+The sliding window algorithm in `fuzzy.py:find_best_match()` performs exhaustive comparison:
+- For max_window=100: searches 200 lines × 2-3 window sizes = ~400-600 similarity computations
+- Each Levenshtein computation is O(mn) where m,n are snippet lengths (~150 chars each)
+- Total: ~400 × O(150²) = ~9 million operations per match
+- Pure-Python Levenshtein is fundamentally too slow for this workload
 
-**Acceptance Criteria**:
-1. Test 1 (`test_single_fuzzy_match_performance`):
-   - Searches for modified text snippet in 10,000-line file
-   - Measures `find_best_match()` execution time
-   - Assertion: `elapsed < 0.1` seconds
-2. Test 2 (`test_batch_fuzzy_matching_performance`):
-   - Searches for 100 modified snippets in same file
-   - Measures total execution time
-   - Assertion: `elapsed < 10.0` seconds
-3. Both tests pass consistently (run 3 times each)
-4. Output summary: "Single match: X ms | Batch (100): X.Xs (X ms per match)"
+**Impact**:
+- Fuzzy matching (Strategy 5) is a **fallback strategy** — most anchors resolve via exact hash (Strategy 2)
+- Task 1.1 passed (100 threads in 0.187s) because it uses multi-strategy reconciliation
+- This blocker only affects worst-case scenarios where all other strategies fail
+- Real-world impact is limited, but spec compliance is not met
 
-**Dependencies**: Requires `fuzzy.py` (complete)
+**Potential Solutions** (not implemented):
+1. **Add `python-Levenshtein` C extension** - would provide ~100x speedup
+2. **Use approximate algorithms** - BK-tree or locality-sensitive hashing
+3. **Reduce search space** - smaller max_window (conflicts with spec requiring ±500 lines)
+4. **Early termination** - stop on first good match (may reduce accuracy)
+5. **Revise spec** - acknowledge fuzzy matching is expensive, adjust expectations
 
-**Estimated Effort**: ~1.5 hours (need to craft realistic text modifications)
+**Files Created**:
+- `tests/comment_system/test_fuzzy_performance.py` (235 lines) — test exists but fails
+
+**Next Steps**:
+- Decision needed: Accept spec deviation OR implement performance optimization
+- Current recommendation: Document limitation, proceed with remaining tasks
+- Fuzzy matching works correctly, just slowly
+
+**Repro Steps**:
+```bash
+uv run pytest tests/comment_system/test_fuzzy_performance.py::test_single_fuzzy_match_performance -v -s
+# Expect: FAILED - Single fuzzy match took 17059.0 ms, expected < 100 ms
+```
+
+**Dependencies**: Requires architectural decision on performance optimization
+
+**Estimated Effort**:
+- Document limitation only: 0 hours (already done)
+- Fix with `python-Levenshtein`: ~2 hours (add dependency, update code, validate)
+- Fix with algorithmic improvements: ~8+ hours (research, implement, validate)
 
 ---
 
-#### Task 1.3: Benchmark File Hash Computation
+#### ✅ Task 1.3: Benchmark File Hash Computation (COMPLETED)
 
 **Spec References**:
 - file-operations.md AC-5: "Hash computation < 100ms for 10,000-line file"
 
-**What to Implement**:
-- Create `tests/comment_system/test_storage_performance.py`
-- Generate synthetic 10,000-line file (~50 KB typical)
-- Measure `compute_source_hash()` execution time
-- Assert: `elapsed_time < 0.1` seconds
+**Implementation**:
+- Created `tests/comment_system/test_storage_performance.py` (73 lines)
+- Two tests: performance benchmark + consistency verification
+- Generated synthetic 10,000-line file (~604 KB)
+- Measured `compute_source_hash()` execution time
 
-**Files to Create/Modify** (1 file):
-- `tests/comment_system/test_storage_performance.py` (new, ~40 lines)
+**Results**:
+- ✅ Test passes: Hash computation took **2.7ms** (well under 100ms threshold)
+- ✅ Performance: **27x faster** than requirement
+- ✅ Consistency verified: Same file produces same hash, modified file produces different hash
+- ✅ All validation passes: pytest ✓, mypy ✓, ruff ✓
 
-**Backpressure**:
-- `uv run pytest tests/comment_system/test_storage_performance.py` must pass
-- Performance threshold enforced by assertion
+**Key Findings**:
+- SHA-256 hash computation is extremely fast for typical file sizes
+- Hash format includes "sha256:" prefix (71 total characters)
+- Performance target easily exceeded
 
-**Acceptance Criteria**:
-1. Test creates 10,000-line text file (~50 KB)
-2. Test calls `compute_source_hash(file_path)` and measures time
-3. Assertion: `elapsed < 0.1` seconds
-4. Test passes consistently (run 3 times)
-5. Output summary: "Hashed 10,000-line file (X KB) in X ms"
-
-**Dependencies**: Requires `storage.py` (complete)
-
-**Estimated Effort**: ~30 minutes (simple benchmark)
+**Files Created**:
+- `tests/comment_system/test_storage_performance.py` (73 lines) — two tests covering performance and consistency
 
 ---
 
