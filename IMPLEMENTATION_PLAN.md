@@ -976,9 +976,9 @@ Once Phase 3.1 is complete:
 
 ---
 
-### 🔄 Task 3.4.1: Implement "Reconcile File" Command
+### ✅ Task 3.4.1: Implement "Reconcile File" Command (COMPLETED)
 
-**Status**: IN PROGRESS (2026-02-03)
+**Status**: COMPLETE (2026-02-03)
 
 **Priority**: HIGH (essential for handling drifted/orphaned anchors)
 
@@ -1012,14 +1012,43 @@ Once Phase 3.1 is complete:
    - Tests: output parsing, notifications, error handling
    - Tests: file outside project handling
 
-**Acceptance Criteria**:
-- [ ] Command palette shows "File-Native Comments: Reconcile File"
-- [ ] Command runs on active file, calls `comment reconcile <file>`
-- [ ] Success notification shows reconciliation statistics
-- [ ] Gutter icons and highlights update after reconciliation
-- [ ] Error notification shown if CLI fails
-- [ ] TypeScript compilation succeeds: `npm run compile`
-- [ ] Unit tests pass: `npm test`
+**Implementation Summary**:
+- Created `vscode-extension/src/commands/reconcileFile.ts` (168 lines)
+  - `reconcileFileCommand()` executes `comment reconcile <file> --json`
+  - Parses CLI JSON output to extract reconciliation statistics
+  - Shows success/warning notifications with thread counts (anchored/drifted/orphaned)
+  - Handles file rename detection in notifications
+  - Escapes shell arguments for cross-platform compatibility (spaces, backslashes)
+  - Error handling for user/system errors (exit codes 1/2)
+  - `registerReconcileFileCommand()` for registration with VSCode
+
+- Created `vscode-extension/src/commands/reconcileFile.test.ts` (312 lines)
+  - 18 unit tests covering all functionality
+  - Tests: validation (no editor, outside project), CLI execution, path escaping
+  - Tests: JSON parsing, notifications (success/warning/error), logging
+  - Tests: Windows paths, spaces in filenames, rename detection
+  - All tests passing (175/175 total across all suites)
+
+- Modified `vscode-extension/src/extension.ts` (+3 lines)
+  - Import `registerReconcileFileCommand`
+  - Call registration on activation
+
+- Modified `vscode-extension/package.json` (+12 lines)
+  - Command contribution: `file-native-comments.reconcileFile`
+  - Command palette: "File-Native Comments: Reconcile File"
+  - Keybinding: `Ctrl+K Ctrl+R` (Win/Linux) / `Cmd+K Ctrl+R` (Mac)
+
+- Modified `vscode-extension/src/__mocks__/vscode.ts` (+1 line)
+  - Added `showWarningMessage` to window mock
+
+**Acceptance Criteria** (All Met):
+- ✅ Command palette shows "File-Native Comments: Reconcile File"
+- ✅ Command runs on active file, calls `comment reconcile <file>`
+- ✅ Success notification shows reconciliation statistics
+- ✅ Gutter icons and highlights update after reconciliation (via file watcher)
+- ✅ Error notification shown if CLI fails
+- ✅ TypeScript compilation succeeds: `npm run compile`
+- ✅ Unit tests pass: `npm test` (175/175 tests)
 
 **Implementation Notes**:
 - CLI output format (from `cli.py`): Prints JSON with `ReconciliationReport` structure
