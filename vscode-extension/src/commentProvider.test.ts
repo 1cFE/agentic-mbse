@@ -311,6 +311,329 @@ describe('CommentProvider', () => {
         });
     });
 
+    describe('markdown rendering', () => {
+        test('renders comment body as MarkdownString', () => {
+            // Create sidecar with markdown content
+            const sourcePath = path.join(projectRoot, 'example.py');
+            fs.writeFileSync(sourcePath, 'print("hello")\n');
+
+            const sidecarPath = path.join(projectRoot, '.comments', 'example.py.json');
+            const sidecarData = {
+                source_file: 'example.py',
+                source_hash: 'sha256:' + 'a'.repeat(64),
+                schema_version: '1.0',
+                threads: [
+                    {
+                        id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2E',
+                        status: ThreadStatus.OPEN,
+                        created_at: '2026-02-01T10:00:00Z',
+                        resolved_at: null,
+                        comments: [
+                            {
+                                id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2F',
+                                author: 'alice',
+                                author_type: AuthorType.HUMAN,
+                                body: 'This is **bold** and *italic* text',
+                                timestamp: '2026-02-01T10:00:00Z'
+                            }
+                        ],
+                        anchor: {
+                            content_hash: 'sha256:' + 'b'.repeat(64),
+                            context_hash_before: 'sha256:' + 'c'.repeat(64),
+                            context_hash_after: 'sha256:' + 'd'.repeat(64),
+                            line_start: 1,
+                            line_end: 1,
+                            content_snippet: 'print("hello")',
+                            health: AnchorHealth.ANCHORED,
+                            drift_distance: 0
+                        },
+                        decision: null
+                    }
+                ]
+            };
+            fs.writeFileSync(sidecarPath, JSON.stringify(sidecarData, null, 2));
+
+            const mockDocument = createMockDocument(sourcePath, 'print("hello")\n');
+            provider.loadCommentsForDocument(mockDocument);
+
+            const threads = (provider as any).commentThreads.get(mockDocument.uri.toString());
+            const comment = threads[0].comments[0];
+
+            // Verify comment body is a MarkdownString
+            expect(comment.body).toBeInstanceOf(vscode.MarkdownString);
+            expect(comment.body.value).toBe('This is **bold** and *italic* text');
+            expect(comment.body.isTrusted).toBe(true);
+        });
+
+        test('handles inline code in markdown', () => {
+            const sourcePath = path.join(projectRoot, 'example.py');
+            fs.writeFileSync(sourcePath, 'x = 42\n');
+
+            const sidecarPath = path.join(projectRoot, '.comments', 'example.py.json');
+            const sidecarData = {
+                source_file: 'example.py',
+                source_hash: 'sha256:' + 'a'.repeat(64),
+                schema_version: '1.0',
+                threads: [
+                    {
+                        id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2E',
+                        status: ThreadStatus.OPEN,
+                        created_at: '2026-02-01T10:00:00Z',
+                        resolved_at: null,
+                        comments: [
+                            {
+                                id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2F',
+                                author: 'bob',
+                                author_type: AuthorType.HUMAN,
+                                body: 'Use `const` instead of `var`',
+                                timestamp: '2026-02-01T10:00:00Z'
+                            }
+                        ],
+                        anchor: {
+                            content_hash: 'sha256:' + 'b'.repeat(64),
+                            context_hash_before: 'sha256:' + 'c'.repeat(64),
+                            context_hash_after: 'sha256:' + 'd'.repeat(64),
+                            line_start: 1,
+                            line_end: 1,
+                            content_snippet: 'x = 42',
+                            health: AnchorHealth.ANCHORED,
+                            drift_distance: 0
+                        },
+                        decision: null
+                    }
+                ]
+            };
+            fs.writeFileSync(sidecarPath, JSON.stringify(sidecarData, null, 2));
+
+            const mockDocument = createMockDocument(sourcePath, 'x = 42\n');
+            provider.loadCommentsForDocument(mockDocument);
+
+            const threads = (provider as any).commentThreads.get(mockDocument.uri.toString());
+            const comment = threads[0].comments[0];
+
+            expect(comment.body).toBeInstanceOf(vscode.MarkdownString);
+            expect(comment.body.value).toBe('Use `const` instead of `var`');
+            expect(comment.body.isTrusted).toBe(true);
+        });
+
+        test('handles code blocks in markdown', () => {
+            const sourcePath = path.join(projectRoot, 'example.py');
+            fs.writeFileSync(sourcePath, 'def func(): pass\n');
+
+            const markdownWithCodeBlock = 'Try this instead:\n\n```python\ndef func():\n    return None\n```';
+
+            const sidecarPath = path.join(projectRoot, '.comments', 'example.py.json');
+            const sidecarData = {
+                source_file: 'example.py',
+                source_hash: 'sha256:' + 'a'.repeat(64),
+                schema_version: '1.0',
+                threads: [
+                    {
+                        id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2E',
+                        status: ThreadStatus.OPEN,
+                        created_at: '2026-02-01T10:00:00Z',
+                        resolved_at: null,
+                        comments: [
+                            {
+                                id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2F',
+                                author: 'charlie',
+                                author_type: AuthorType.AGENT,
+                                body: markdownWithCodeBlock,
+                                timestamp: '2026-02-01T10:00:00Z'
+                            }
+                        ],
+                        anchor: {
+                            content_hash: 'sha256:' + 'b'.repeat(64),
+                            context_hash_before: 'sha256:' + 'c'.repeat(64),
+                            context_hash_after: 'sha256:' + 'd'.repeat(64),
+                            line_start: 1,
+                            line_end: 1,
+                            content_snippet: 'def func(): pass',
+                            health: AnchorHealth.ANCHORED,
+                            drift_distance: 0
+                        },
+                        decision: null
+                    }
+                ]
+            };
+            fs.writeFileSync(sidecarPath, JSON.stringify(sidecarData, null, 2));
+
+            const mockDocument = createMockDocument(sourcePath, 'def func(): pass\n');
+            provider.loadCommentsForDocument(mockDocument);
+
+            const threads = (provider as any).commentThreads.get(mockDocument.uri.toString());
+            const comment = threads[0].comments[0];
+
+            expect(comment.body).toBeInstanceOf(vscode.MarkdownString);
+            expect(comment.body.value).toBe(markdownWithCodeBlock);
+            expect(comment.body.isTrusted).toBe(true);
+        });
+
+        test('handles links in markdown', () => {
+            const sourcePath = path.join(projectRoot, 'example.py');
+            fs.writeFileSync(sourcePath, '# TODO\n');
+
+            const markdownWithLinks = 'See [documentation](https://example.com/docs) for details';
+
+            const sidecarPath = path.join(projectRoot, '.comments', 'example.py.json');
+            const sidecarData = {
+                source_file: 'example.py',
+                source_hash: 'sha256:' + 'a'.repeat(64),
+                schema_version: '1.0',
+                threads: [
+                    {
+                        id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2E',
+                        status: ThreadStatus.OPEN,
+                        created_at: '2026-02-01T10:00:00Z',
+                        resolved_at: null,
+                        comments: [
+                            {
+                                id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2F',
+                                author: 'dave',
+                                author_type: AuthorType.HUMAN,
+                                body: markdownWithLinks,
+                                timestamp: '2026-02-01T10:00:00Z'
+                            }
+                        ],
+                        anchor: {
+                            content_hash: 'sha256:' + 'b'.repeat(64),
+                            context_hash_before: 'sha256:' + 'c'.repeat(64),
+                            context_hash_after: 'sha256:' + 'd'.repeat(64),
+                            line_start: 1,
+                            line_end: 1,
+                            content_snippet: '# TODO',
+                            health: AnchorHealth.ANCHORED,
+                            drift_distance: 0
+                        },
+                        decision: null
+                    }
+                ]
+            };
+            fs.writeFileSync(sidecarPath, JSON.stringify(sidecarData, null, 2));
+
+            const mockDocument = createMockDocument(sourcePath, '# TODO\n');
+            provider.loadCommentsForDocument(mockDocument);
+
+            const threads = (provider as any).commentThreads.get(mockDocument.uri.toString());
+            const comment = threads[0].comments[0];
+
+            expect(comment.body).toBeInstanceOf(vscode.MarkdownString);
+            expect(comment.body.value).toBe(markdownWithLinks);
+            expect(comment.body.isTrusted).toBe(true);
+        });
+
+        test('handles multiline markdown with mixed formatting', () => {
+            const sourcePath = path.join(projectRoot, 'example.py');
+            fs.writeFileSync(sourcePath, 'class Example: pass\n');
+
+            const complexMarkdown = '# Issues Found\n\n' +
+                '1. **Critical**: Use `None` instead of null\n' +
+                '2. *Minor*: Add type hints\n\n' +
+                'See [PEP 484](https://peps.python.org/pep-0484/) for more info.';
+
+            const sidecarPath = path.join(projectRoot, '.comments', 'example.py.json');
+            const sidecarData = {
+                source_file: 'example.py',
+                source_hash: 'sha256:' + 'a'.repeat(64),
+                schema_version: '1.0',
+                threads: [
+                    {
+                        id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2E',
+                        status: ThreadStatus.OPEN,
+                        created_at: '2026-02-01T10:00:00Z',
+                        resolved_at: null,
+                        comments: [
+                            {
+                                id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2F',
+                                author: 'reviewer',
+                                author_type: AuthorType.AGENT,
+                                body: complexMarkdown,
+                                timestamp: '2026-02-01T10:00:00Z'
+                            }
+                        ],
+                        anchor: {
+                            content_hash: 'sha256:' + 'b'.repeat(64),
+                            context_hash_before: 'sha256:' + 'c'.repeat(64),
+                            context_hash_after: 'sha256:' + 'd'.repeat(64),
+                            line_start: 1,
+                            line_end: 1,
+                            content_snippet: 'class Example: pass',
+                            health: AnchorHealth.ANCHORED,
+                            drift_distance: 0
+                        },
+                        decision: null
+                    }
+                ]
+            };
+            fs.writeFileSync(sidecarPath, JSON.stringify(sidecarData, null, 2));
+
+            const mockDocument = createMockDocument(sourcePath, 'class Example: pass\n');
+            provider.loadCommentsForDocument(mockDocument);
+
+            const threads = (provider as any).commentThreads.get(mockDocument.uri.toString());
+            const comment = threads[0].comments[0];
+
+            expect(comment.body).toBeInstanceOf(vscode.MarkdownString);
+            expect(comment.body.value).toBe(complexMarkdown);
+            expect(comment.body.isTrusted).toBe(true);
+        });
+
+        test('isTrusted enables command URIs and HTML', () => {
+            // This test verifies that isTrusted is set correctly
+            // When isTrusted is true, VSCode allows:
+            // - command: URIs
+            // - Embedded HTML
+            // - Script execution in markdown
+            const sourcePath = path.join(projectRoot, 'example.py');
+            fs.writeFileSync(sourcePath, 'x = 1\n');
+
+            const sidecarPath = path.join(projectRoot, '.comments', 'example.py.json');
+            const sidecarData = {
+                source_file: 'example.py',
+                source_hash: 'sha256:' + 'a'.repeat(64),
+                schema_version: '1.0',
+                threads: [
+                    {
+                        id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2E',
+                        status: ThreadStatus.OPEN,
+                        created_at: '2026-02-01T10:00:00Z',
+                        resolved_at: null,
+                        comments: [
+                            {
+                                id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2F',
+                                author: 'system',
+                                author_type: AuthorType.AGENT,
+                                body: 'Plain text comment',
+                                timestamp: '2026-02-01T10:00:00Z'
+                            }
+                        ],
+                        anchor: {
+                            content_hash: 'sha256:' + 'b'.repeat(64),
+                            context_hash_before: 'sha256:' + 'c'.repeat(64),
+                            context_hash_after: 'sha256:' + 'd'.repeat(64),
+                            line_start: 1,
+                            line_end: 1,
+                            content_snippet: 'x = 1',
+                            health: AnchorHealth.ANCHORED,
+                            drift_distance: 0
+                        },
+                        decision: null
+                    }
+                ]
+            };
+            fs.writeFileSync(sidecarPath, JSON.stringify(sidecarData, null, 2));
+
+            const mockDocument = createMockDocument(sourcePath, 'x = 1\n');
+            provider.loadCommentsForDocument(mockDocument);
+
+            const threads = (provider as any).commentThreads.get(mockDocument.uri.toString());
+            const comment = threads[0].comments[0];
+
+            // Verify that isTrusted is set to true, enabling all markdown features
+            expect(comment.body.isTrusted).toBe(true);
+        });
+    });
+
     describe('findProjectRoot', () => {
         test('finds .git directory in current directory', () => {
             // Create .git directory
