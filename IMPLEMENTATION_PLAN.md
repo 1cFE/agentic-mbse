@@ -1,6 +1,6 @@
 # Implementation Plan: File-Native Comment System
 
-**Status**: Phase 1 & 2 Complete (CLI + MCP Server), Phase 3 In Progress (VSCode Extension)
+**Status**: Phase 1 & 2 Complete (CLI + MCP Server), Phase 3.1 & 3.2 Complete (VSCode Extension Core)
 **Last Updated**: 2026-02-03
 
 ---
@@ -382,21 +382,49 @@
 - ✅ Project root detection (.git directory)
 - ✅ Error handling and user notifications
 
-**What's Still Missing** (Phase 3.2+):
-- Reply and resolve actions within VSCode UI (Phase 3.2)
+**What's Still Missing** (Phase 3.3+):
 - Gutter icons and text highlights (Phase 3.3)
 - Manual reconciliation commands (Phase 3.4)
 - Conflict handling (read-before-write, Phase 3.5)
-- Full markdown rendering (Phase 3.2)
-- Decision display (Phase 3.2)
+
+---
+
+## ✅ Success Metrics for Phase 3.2 (ALL MET)
+
+**Completion Definition**: When all 3 tasks (3.2.1, 3.2.2, 3.2.3) pass acceptance criteria. ✅ COMPLETE
+
+**What Works After Phase 3.2** (Implemented):
+- ✅ Users can reply to threads inline within VSCode UI (Task 3.2.1)
+- ✅ Users can resolve threads with required decision text (Task 3.2.2)
+- ✅ Users can reopen resolved threads (Task 3.2.2)
+- ✅ Comment bodies render with full markdown support:
+  - Bold, italic, and inline code formatting
+  - Code blocks with syntax highlighting
+  - Clickable hyperlinks
+  - Mixed multiline formatting (Task 3.2.3)
+- ✅ Context menus conditionally show Resolve/Reopen based on thread state
+- ✅ All actions provide immediate UI feedback with file watcher sync
+- ✅ Text escaping handles quotes, backslashes, newlines, tabs, carriage returns
+- ✅ Comprehensive test coverage: 123 unit tests passing
+
+**What's Still Missing** (Phase 3.3+):
+- Gutter icons and text highlights (Phase 3.3)
+- Manual reconciliation commands (Phase 3.4)
+- Conflict handling (read-before-write, Phase 3.5)
 
 ---
 
 ## Implementation Order Rationale
 
+**Phase 3.1 (Core Infrastructure)**:
 1. **CommentProvider first**: Foundation for displaying threads, required by all other features
 2. **File watcher second**: Enables real-time sync, validates provider integration
 3. **Add command third**: First write operation, proves end-to-end flow (create → store → display)
+
+**Phase 3.2 (Thread UI)**:
+1. **Reply first**: Most common write operation after creation
+2. **Resolve/reopen second**: Completes the core workflow (open → discuss → resolve)
+3. **Markdown rendering third**: Polish feature, tests verify existing implementation
 
 This order minimizes dependencies while providing incremental value at each step.
 
@@ -474,11 +502,11 @@ Once Phase 3.1 is complete:
 
 ---
 
-## 🔄 Phase 3.2: Comment Thread UI (IN PROGRESS)
+## ✅ Phase 3.2: Comment Thread UI (COMPLETE)
 
 **Goal**: Enable users to reply to threads and resolve/reopen threads directly from VSCode UI, completing the core comment workflow.
 
-**Status**: IN PROGRESS
+**Status**: COMPLETE (2026-02-03) - All 3 tasks (3.2.1, 3.2.2, 3.2.3) finished
 
 ---
 
