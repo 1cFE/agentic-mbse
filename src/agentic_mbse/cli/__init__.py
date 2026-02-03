@@ -1163,6 +1163,11 @@ def main() -> int:
 
     register_pm_subcommands(subparsers)
 
+    # extract command (delegated to extract_cli module)
+    from agentic_mbse.cli.extract_cli import register_extract_subcommand
+
+    register_extract_subcommand(subparsers)
+
     args = parser.parse_args()
 
     if not args.command:

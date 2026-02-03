@@ -1,0 +1,306 @@
+"""CLI subcommand for document extraction (PDF / DOCX → structured markdown)."""
+
+from __future__ import annotations
+
+import argparse
+import shutil
+from pathlib import Path
+
+from agentic_mbse.extraction.base import (
+    ExtractionResult,
+    check_processing_needed,
+    get_output_dir,
+    write_summary,
+)
+from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
+
+SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
+
+
+# ---------------------------------------------------------------------------
+# Availability helpers
+# ---------------------------------------------------------------------------
+
+
+def _is_available(backend: str) -> bool:
+    """Check whether *backend* is usable in the current environment."""
+    if backend == "pymupdf":
+        try:
+            import pymupdf4llm  # type: ignore[import-untyped]  # noqa: F401
+
+            return True
+        except ImportError:
+            return False
+    if backend == "docling":
+        try:
+            import docling  # type: ignore[import-untyped]  # noqa: F401
+
+            return True
+        except ImportError:
+            return False
+    if backend == "pandoc":
+        return shutil.which("pandoc") is not None
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Public helpers
+# ---------------------------------------------------------------------------
+
+
+def discover_documents(path: Path) -> list[Path]:
+    """Find all PDF/DOCX files at *path*.
+
+    If *path* is a file, validate its extension and return a one-element
+    list.  If *path* is a directory, do a flat (non-recursive) listing and
+    return matching files sorted by name.  Returns an empty list when
+    *path* does not exist or has an unsupported extension.
+    """
+    if not path.exists():
+        return []
+
+    if path.is_file():
+        if path.suffix.lower() in SUPPORTED_EXTENSIONS:
+            return [path]
+        return []
+
+    # Directory — flat listing, sorted
+    return sorted(
+        f for f in path.iterdir() if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS
+    )
+
+
+def select_backend(file_path: Path, requested: str | None) -> str | None:
+    """Select the extraction backend for *file_path*.
+
+    If *requested* is given, return it directly (caller is responsible for
+    checking availability).  In auto mode, prefer docling, then fall back
+    to pymupdf (PDF) or pandoc (DOCX).  Returns ``None`` when no suitable
+    backend is available.
+    """
+    if requested is not None:
+        return requested
+
+    ext = file_path.suffix.lower()
+
+    # Preference order per format
+    if ext == ".pdf":
+        candidates = ["docling", "pymupdf"]
+    elif ext == ".docx":
+        candidates = ["docling", "pandoc"]
+    else:
+        return None
+
+    for name in candidates:
+        if _is_available(name):
+            return name
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Extraction dispatch
+# ---------------------------------------------------------------------------
+
+_FALLBACK_ORDER: dict[str, list[str]] = {
+    ".pdf": ["docling", "pymupdf"],
+    ".docx": ["docling", "pandoc"],
+}
+
+
+def _run_extraction(
+    file_path: Path,
+    output_dir: Path,
+    backend: str,
+    timeout: int,
+) -> ExtractionResult:
+    """Run the appropriate extraction backend."""
+    if backend == "pymupdf":
+        from agentic_mbse.extraction.pymupdf_backend import extract
+
+        return extract(file_path, output_dir)
+
+    if backend == "docling":
+        from agentic_mbse.extraction.docling_backend import extract
+
+        return extract(file_path, output_dir, timeout=timeout)
+
+    if backend == "pandoc":
+        from agentic_mbse.extraction.pandoc_backend import extract
+
+        return extract(file_path, output_dir, timeout=timeout)
+
+    return ExtractionResult(
+        success=False,
+        output_dir=output_dir,
+        error=f"Unknown backend: {backend}",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Main command handler
+# ---------------------------------------------------------------------------
+
+
+def cmd_extract(args: argparse.Namespace) -> int:
+    """Main ``extract`` command handler."""
+    path = Path(args.path)
+    if not path.exists():
+        print(f"Error: path does not exist: {path}")
+        return EXIT_FAILURE
+
+    docs = discover_documents(path)
+    if not docs:
+        print(f"Error: no PDF or DOCX files found at {path}")
+        return EXIT_FAILURE
+
+    output_base = Path(args.output) if args.output else None
+
+    processed = 0
+    skipped = 0
+    failed = 0
+
+    for doc in docs:
+        output_dir = get_output_dir(doc, output_base=output_base)
+        label = doc.name
+
+        # Skip check
+        if not check_processing_needed(doc, output_dir, force=args.force):
+            print(f"  skip  {label} (already processed, use --force to redo)")
+            skipped += 1
+            continue
+
+        # Backend selection
+        backend = select_backend(doc, requested=args.backend)
+        if backend is None:
+            print(f"  FAIL  {label}: no extraction backend available")
+            print("        Install pymupdf4llm:  uv add agentic-mbse[extract]")
+            print("        Install docling:       uv add agentic-mbse[extract-full]")
+            failed += 1
+            continue
+
+        print(f"  run   {label} → {output_dir.name}/ (backend: {backend})")
+
+        result = _run_extraction(doc, output_dir, backend, timeout=args.timeout)
+
+        # Fallback on failure
+        if not result.success and args.backend is None:
+            ext = doc.suffix.lower()
+            fallbacks = _FALLBACK_ORDER.get(ext, [])
+            for fb in fallbacks:
+                if fb == backend:
+                    continue
+                if not _is_available(fb):
+                    continue
+                print(f"        fallback → {fb}")
+                result = _run_extraction(doc, output_dir, fb, timeout=args.timeout)
+                if result.success:
+                    break
+
+        # Write summary
+        write_summary(doc, output_dir, result, result.backend_used or backend)
+
+        if result.success:
+            stats = []
+            if result.char_count:
+                stats.append(f"{result.char_count:,} chars")
+            if result.image_count:
+                stats.append(f"{result.image_count} images")
+            detail = f" ({', '.join(stats)})" if stats else ""
+            print(f"   ok   {label}{detail}")
+            processed += 1
+
+            # Post-processing: table repair
+            if args.fix_tables and result.markdown_path:
+                from agentic_mbse.extraction.table_repair import repair_tables
+
+                if repair_tables(result.markdown_path):
+                    print("        tables repaired")
+
+            # Post-processing: index generation
+            if args.index and result.markdown_path:
+                from agentic_mbse.extraction.index import generate_index
+
+                idx = generate_index(
+                    result.markdown_path,
+                    summarize=args.summarize,
+                    force=args.force,
+                )
+                if idx:
+                    print(f"        index → {idx.name}")
+        else:
+            print(f"  FAIL  {label}: {result.error}")
+            failed += 1
+
+    # Summary line
+    print()
+    parts = [f"Processed: {processed}"]
+    if skipped:
+        parts.append(f"Skipped: {skipped}")
+    if failed:
+        parts.append(f"Failed: {failed}")
+    print(", ".join(parts))
+
+    return EXIT_FAILURE if failed > 0 else EXIT_SUCCESS
+
+
+# ---------------------------------------------------------------------------
+# Subcommand registration
+# ---------------------------------------------------------------------------
+
+
+def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
+    """Register the ``extract`` subcommand."""
+    p = subparsers.add_parser(
+        "extract",
+        help="Extract PDF/DOCX documents to structured markdown",
+        description=(
+            "Convert PDF and DOCX files into structured markdown with "
+            "images, metadata, and optional section indexes."
+        ),
+    )
+    p.add_argument(
+        "path",
+        help="PDF/DOCX file or directory containing documents",
+    )
+    p.add_argument(
+        "--output",
+        "-o",
+        default=None,
+        metavar="DIR",
+        help="Output base directory (default: alongside input file)",
+    )
+    p.add_argument(
+        "--backend",
+        choices=["docling", "pymupdf", "pandoc"],
+        default=None,
+        help="Force extraction backend (default: auto-detect)",
+    )
+    p.add_argument(
+        "--timeout",
+        type=int,
+        default=600,
+        metavar="SECONDS",
+        help="Timeout for primary extractor in seconds (default: 600)",
+    )
+    p.add_argument(
+        "--force",
+        "-f",
+        action="store_true",
+        help="Reprocess even if already done",
+    )
+    p.add_argument(
+        "--index",
+        action="store_true",
+        help="Generate INDEX.md after extraction",
+    )
+    p.add_argument(
+        "--summarize",
+        action="store_true",
+        help="Include AI summaries in INDEX.md (requires --index)",
+    )
+    p.add_argument(
+        "--fix-tables",
+        action="store_true",
+        help="Run two-pass table repair via Claude headless mode",
+    )
+    p.set_defaults(func=cmd_extract)
