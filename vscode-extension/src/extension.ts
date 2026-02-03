@@ -16,7 +16,17 @@ import * as vscode from 'vscode';
 export function activate(context: vscode.ExtensionContext): void {
     console.log('File-Native Comment System activated');
 
-    // Future: Register CommentController here
+    // Register the comment controller
+    const commentController = vscode.comments.createCommentController(
+        'file-native-comments',
+        'File-Native Comments'
+    );
+
+    // Store controller in context for disposal on deactivation
+    context.subscriptions.push(commentController);
+
+    console.log('CommentController registered');
+
     // Future: Initialize file watchers for .comments/ directory
     // Future: Load sidecar files and display comment threads
 }
