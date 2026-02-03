@@ -139,8 +139,8 @@ def test_single_fuzzy_match_performance(tmp_path: Path) -> None:
     elapsed_ms = elapsed * 1000
     print(f"\nSingle fuzzy match performance: {elapsed_ms:.1f} ms")
     print(f"  File size: {num_lines:,} lines")
-    print(f"  Snippet size: 2 lines")
-    print(f"  Search window: ±100 lines")
+    print("  Snippet size: 2 lines")
+    print("  Search window: ±100 lines")
 
     assert elapsed < 0.1, (
         f"Single fuzzy match took {elapsed_ms:.1f} ms, expected < 100 ms"
@@ -211,13 +211,13 @@ def test_batch_fuzzy_matching_performance(tmp_path: Path) -> None:
     elapsed_s = elapsed
     avg_ms_per_match = (elapsed * 1000) / num_snippets
 
-    print(f"\nBatch fuzzy matching performance:")
+    print("\nBatch fuzzy matching performance:")
     print(f"  Total time: {elapsed_s:.2f} s")
     print(f"  Average per match: {avg_ms_per_match:.1f} ms")
     print(f"  Matches found: {matches_found}/{num_snippets}")
     print(f"  File size: {num_lines:,} lines")
-    print(f"  Snippet size: 2 lines each")
-    print(f"  Search window: ±100 lines")
+    print("  Snippet size: 2 lines each")
+    print("  Search window: ±100 lines")
 
     assert elapsed < 10.0, (
         f"Batch fuzzy matching took {elapsed_s:.2f} s, expected < 10.0 s"
