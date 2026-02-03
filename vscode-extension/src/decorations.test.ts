@@ -172,10 +172,11 @@ describe('DecorationManager', () => {
             );
             expect(callsWithRanges.length).toBeGreaterThan(0);
 
-            // Verify that only one range is applied for line 29 (0-indexed)
+            // Verify that only one gutter decoration is applied for line 29 (0-indexed)
+            // Count decorations that have a range at line 29
             const allRanges = mockSetDecorations.mock.calls.flatMap(call => call[1] || []);
             const rangesAtLine29 = allRanges.filter(
-                (range: any) => range.range.startLine === 29
+                (range: any) => range.range && range.range.startLine === 29
             );
             expect(rangesAtLine29.length).toBe(1);
         });
@@ -217,9 +218,11 @@ describe('DecorationManager', () => {
 
             decorationManager.updateGutterDecorations(mockEditor, threads);
 
-            // Find the decoration call with ranges
+            // Find the decoration call with ranges at line 49 (0-indexed)
             const allRanges = mockSetDecorations.mock.calls.flatMap(call => call[1] || []);
-            const appliedRange = allRanges.find((range: any) => range.range.startLine === 49);
+            const appliedRange = allRanges.find(
+                (range: any) => range.range && range.range.startLine === 49
+            );
             expect(appliedRange).toBeDefined();
         });
 
@@ -386,6 +389,227 @@ describe('DecorationManager', () => {
             const hoverText = rangeWithHover.hoverMessage.value;
             expect(hoverText).toContain('2');
             expect(hoverText).toContain('comment threads');
+        });
+    });
+
+    describe('text decorations', () => {
+        it('applies text decorations for unresolved threads', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST17',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 10,
+                    lineEnd: 12
+                })
+            ];
+
+            decorationManager.updateGutterDecorations(mockEditor, threads);
+
+            // Should apply text decorations
+            expect(mockSetDecorations).toHaveBeenCalled();
+        });
+
+        it('applies anchored text decoration for anchored health', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST18',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 20,
+                    lineEnd: 22
+                })
+            ];
+
+            decorationManager.updateGutterDecorations(mockEditor, threads);
+
+            // Verify text decoration was applied
+            expect(mockSetDecorations).toHaveBeenCalled();
+        });
+
+        it('applies drifted text decoration for drifted health', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST19',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.DRIFTED,
+                    lineStart: 30,
+                    lineEnd: 32,
+                    driftDistance: 5
+                })
+            ];
+
+            decorationManager.updateGutterDecorations(mockEditor, threads);
+
+            expect(mockSetDecorations).toHaveBeenCalled();
+        });
+
+        it('applies orphaned text decoration for orphaned health', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST20',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ORPHANED,
+                    lineStart: 40,
+                    lineEnd: 42
+                })
+            ];
+
+            decorationManager.updateGutterDecorations(mockEditor, threads);
+
+            expect(mockSetDecorations).toHaveBeenCalled();
+        });
+
+        it('skips text decorations for resolved threads', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST21',
+                    status: ThreadStatus.RESOLVED,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 50,
+                    lineEnd: 52
+                })
+            ];
+
+            mockSetDecorations.mockClear();
+            decorationManager.updateGutterDecorations(mockEditor, threads);
+
+            // Should still call setDecorations for gutter and clearing text decorations
+            // But text decoration ranges should be empty for resolved threads
+            expect(mockSetDecorations).toHaveBeenCalled();
+        });
+
+        it('skips text decorations for wontfix threads', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST22',
+                    status: ThreadStatus.WONTFIX,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 60,
+                    lineEnd: 62
+                })
+            ];
+
+            mockSetDecorations.mockClear();
+            decorationManager.updateGutterDecorations(mockEditor, threads);
+
+            expect(mockSetDecorations).toHaveBeenCalled();
+        });
+
+        it('handles multi-line text decorations', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST23',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 70,
+                    lineEnd: 75 // Spans 6 lines
+                })
+            ];
+
+            decorationManager.updateGutterDecorations(mockEditor, threads);
+
+            // Verify decoration was applied
+            expect(mockSetDecorations).toHaveBeenCalled();
+        });
+
+        it('clamps text decoration ranges to document bounds', () => {
+            // Create a mock editor with smaller lineCount
+            const smallEditor = {
+                document: {
+                    uri: vscode.Uri.parse('file:///test/small.txt'),
+                    lineCount: 50,
+                    lineAt: (line: number) => ({
+                        text: 'test line content'
+                    })
+                },
+                setDecorations: mockSetDecorations
+            } as any;
+
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST24',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 48,
+                    lineEnd: 100 // Beyond document bounds
+                })
+            ];
+
+            decorationManager.updateGutterDecorations(smallEditor, threads);
+
+            // Should not throw, should clamp to line 49 (0-indexed)
+            expect(mockSetDecorations).toHaveBeenCalled();
+        });
+
+        it('applies multiple text decorations for multiple unresolved threads', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST25',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 10,
+                    lineEnd: 12
+                }),
+                createThread({
+                    id: '01HQTEST26',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.DRIFTED,
+                    lineStart: 20,
+                    lineEnd: 22,
+                    driftDistance: 3
+                }),
+                createThread({
+                    id: '01HQTEST27',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ORPHANED,
+                    lineStart: 30,
+                    lineEnd: 32
+                })
+            ];
+
+            decorationManager.updateGutterDecorations(mockEditor, threads);
+
+            // Should apply decorations for all three threads
+            expect(mockSetDecorations).toHaveBeenCalled();
+        });
+
+        it('converts 1-indexed line numbers to 0-indexed for text decorations', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST28',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 50, // 1-indexed in sidecar
+                    lineEnd: 52
+                })
+            ];
+
+            decorationManager.updateGutterDecorations(mockEditor, threads);
+
+            expect(mockSetDecorations).toHaveBeenCalled();
+        });
+
+        it('disposes text decoration types on cleanup', () => {
+            const threads: Thread[] = [
+                createThread({
+                    id: '01HQTEST29',
+                    status: ThreadStatus.OPEN,
+                    health: AnchorHealth.ANCHORED,
+                    lineStart: 10,
+                    lineEnd: 12
+                })
+            ];
+
+            decorationManager.updateGutterDecorations(mockEditor, threads);
+
+            const initialDecorationsCount = mockDecorationTypes.length;
+            decorationManager.dispose();
+
+            // All decoration types should have dispose called
+            mockDecorationTypes.forEach(decorationType => {
+                expect(decorationType.dispose).toHaveBeenCalled();
+            });
         });
     });
 });

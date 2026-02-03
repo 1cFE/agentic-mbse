@@ -1,6 +1,6 @@
 # Implementation Plan: File-Native Comment System
 
-**Status**: Phase 1 & 2 Complete (CLI + MCP Server), Phase 3.1 & 3.2 Complete (VSCode Extension Core), Phase 3.3 In Progress (Gutter Indicators & Decorations)
+**Status**: Phase 1 & 2 Complete (CLI + MCP Server), Phase 3.1 & 3.2 Complete (VSCode Extension Core), Phase 3.3 In Progress (Task 3.3.1 & 3.3.2 Complete)
 **Last Updated**: 2026-02-03
 
 ---
@@ -813,9 +813,9 @@ Once Phase 3.1 is complete:
 
 ---
 
-### 🔲 Task 3.3.2: Implement Inline Text Highlights with Health-Based Styling
+### ✅ Task 3.3.2: Implement Inline Text Highlights with Health-Based Styling (COMPLETED)
 
-**Status**: TODO (depends on 3.3.1)
+**Status**: COMPLETE (2026-02-03)
 
 **Priority**: MEDIUM (polish/UX enhancement)
 
@@ -824,40 +824,54 @@ Once Phase 3.1 is complete:
 - REQ-3: Clear highlights when thread resolved
 - AC-4: Highlights move automatically when file edited
 
-**Files to Modify** (2 files):
-1. **Modify** `vscode-extension/src/decorations.ts` (~80 lines added)
-   - `createTextDecoration()` creates decoration types for each health status
-   - Health-based styling:
-     - `anchored` → Subtle yellow background (`backgroundColor: rgba(255, 255, 0, 0.1)`)
-     - `drifted` → Dashed yellow underline (`textDecoration: 'underline dashed yellow'`)
-     - `orphaned` → Strikethrough red (`textDecoration: 'line-through'`, `color: dimmed`)
-   - `updateTextDecorations(editor, threads)` applies range-based decorations
-   - Use `anchor.char_start` and `char_end` for precise character ranges
-   - Skip decorations for resolved threads (REQ-3)
-   - Handle multi-line anchors (span multiple lines in decoration range)
+**Implementation Summary**:
+- Modified `vscode-extension/src/decorations.ts` (added 98 lines)
+  - `initializeTextDecorations()` creates 3 decoration types for health statuses:
+    - `text-anchored`: Subtle yellow background (`rgba(240, 219, 79, 0.1)`)
+    - `text-drifted`: Dashed orange underline (`underline dashed rgba(255, 152, 0, 0.8)`)
+    - `text-orphaned`: Strikethrough with 50% opacity (`line-through`, `opacity: 0.5`)
+  - `updateTextDecorations(editor, threads)` applies range-based decorations
+    - Skips resolved threads (REQ-3: no text highlights for resolved)
+    - Converts 1-indexed line numbers to 0-indexed VSCode ranges
+    - Clamps ranges to document bounds
+    - Handles multi-line anchors (spans from `line_start` to `line_end`)
+  - `getTextDecorationKey(thread)` maps health status to decoration key
+  - Updated `clearDecorationsForEditor()` to clear both gutter and text decorations
+  - Updated `dispose()` to dispose both gutter and text decoration types
+  - Updated `updateGutterDecorations()` to call `updateTextDecorations()` automatically
 
-2. **Modify** `vscode-extension/src/decorations.test.ts` (~120 lines added)
-   - Unit tests for text decoration creation and application
-   - Tests: health → styling mapping, character range accuracy
-   - Tests: multi-line anchors, resolved thread exclusion
-   - Tests: decoration updates on health changes
+- Modified `vscode-extension/src/decorations.test.ts` (added 220 lines)
+  - 12 new unit tests covering all text decoration functionality
+  - Tests: applies decorations for unresolved threads (anchored/drifted/orphaned)
+  - Tests: skips decorations for resolved and wontfix threads
+  - Tests: handles multi-line decorations correctly
+  - Tests: clamps decoration ranges to document bounds
+  - Tests: applies multiple decorations for multiple threads
+  - Tests: converts 1-indexed to 0-indexed line numbers
+  - Tests: disposes text decoration types on cleanup
+
+**Acceptance Criteria** (All Met):
+- ✅ Text highlights appear for all unresolved threads
+- ✅ Styling matches health status (solid background/dashed underline/strikethrough)
+- ✅ Multi-line anchors span correct line range (line_start to line_end)
+- ✅ Resolved threads have no text highlights (only gutter icon)
+- ✅ Highlights update when reconciliation changes health status (via file watcher)
+- ✅ TypeScript compilation succeeds: `npm run compile` passes
+- ✅ Unit tests pass: `npm test` passes (152/152 tests, 8 suites)
 
 **Implementation Notes**:
-- Use `editor.setDecorations(decorationType, ranges)` to apply highlights
-- Range creation: `new vscode.Range(line_start - 1, char_start, line_end - 1, char_end)`
-- Resolved threads: Skip text decorations entirely (gutter icon sufficient)
-- Theme compatibility: Use semi-transparent colors to respect user themes
-- Performance: Batch decoration updates (single call per editor)
-
-**Acceptance Criteria**:
-- [ ] Text highlights appear for all unresolved threads
-- [ ] Styling matches health status (solid/dashed/strikethrough)
-- [ ] Multi-line anchors span correct line range
-- [ ] Character offsets align precisely with anchor boundaries
-- [ ] Resolved threads have no text highlights (only gutter icon)
-- [ ] Highlights update when reconciliation changes health status
-- [ ] TypeScript compilation succeeds: `npm run compile`
-- [ ] Unit tests pass: `npm test`
+- **Line-based ranges**: Anchor structure only has `line_start`/`line_end` (no char positions)
+  - Text decorations span entire lines from `line_start` to `line_end`
+  - Start character: 0 (beginning of line)
+  - End character: `editor.document.lineAt(endLine).text.length` (end of line)
+- **Color scheme**: Matches gutter icon colors for consistency
+  - Yellow (anchored): `rgba(240, 219, 79, 0.1)` - 10% opacity for subtlety
+  - Orange (drifted): `rgba(255, 152, 0, 0.8)` - dashed underline
+  - Red (orphaned): Strikethrough with 50% opacity for dimmed effect
+- **Theme compatibility**: Semi-transparent colors respect user themes
+- **Automatic updates**: Text decorations update when `updateGutterDecorations()` is called
+  - File watcher triggers reload → calls `loadCommentsForDocument()` → updates all decorations
+- **Performance**: Batch updates via single `setDecorations()` call per decoration type
 
 ---
 

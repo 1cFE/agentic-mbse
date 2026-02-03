@@ -41,11 +41,15 @@ export class DecorationManager {
     // Gutter decoration types (created once, reused)
     private gutterDecorations: Map<string, vscode.TextEditorDecorationType> = new Map();
 
+    // Text decoration types for inline highlights (created once, reused)
+    private textDecorations: Map<string, vscode.TextEditorDecorationType> = new Map();
+
     // Active editors with decorations (for cleanup)
     private decoratedEditors: Set<vscode.TextEditor> = new Set();
 
     constructor() {
         this.initializeGutterDecorations();
+        this.initializeTextDecorations();
     }
 
     /**
@@ -80,7 +84,32 @@ export class DecorationManager {
     }
 
     /**
-     * Updates gutter decorations for an editor based on threads.
+     * Creates text decoration types for inline highlights based on health status.
+     *
+     * Called once during construction to pre-create all decoration types.
+     */
+    private initializeTextDecorations(): void {
+        // Anchored - Subtle yellow background
+        this.textDecorations.set('text-anchored', vscode.window.createTextEditorDecorationType({
+            backgroundColor: 'rgba(240, 219, 79, 0.1)', // Yellow with 10% opacity
+            borderRadius: '2px'
+        }));
+
+        // Drifted - Dashed yellow underline
+        this.textDecorations.set('text-drifted', vscode.window.createTextEditorDecorationType({
+            textDecoration: 'underline dashed rgba(255, 152, 0, 0.8)', // Orange dashed underline
+            borderRadius: '2px'
+        }));
+
+        // Orphaned - Strikethrough with dimmed color
+        this.textDecorations.set('text-orphaned', vscode.window.createTextEditorDecorationType({
+            textDecoration: 'line-through',
+            opacity: '0.5'
+        }));
+    }
+
+    /**
+     * Updates gutter decorations and text highlights for an editor based on threads.
      *
      * Aggregates threads by line number and applies appropriate decorations.
      *
@@ -102,9 +131,9 @@ export class DecorationManager {
         }
 
         // Prepare decoration ranges for each type
-        const decorationRanges = new Map<string, vscode.DecorationOptions[]>();
+        const gutterRanges = new Map<string, vscode.DecorationOptions[]>();
         for (const decorationType of this.gutterDecorations.keys()) {
-            decorationRanges.set(decorationType, []);
+            gutterRanges.set(decorationType, []);
         }
 
         // Process each line with threads
@@ -124,19 +153,97 @@ export class DecorationManager {
                 hoverMessage
             };
 
-            decorationRanges.get(decorationKey)?.push(decorationOptions);
+            gutterRanges.get(decorationKey)?.push(decorationOptions);
         }
 
-        // Apply all decorations
-        for (const [decorationKey, ranges] of decorationRanges) {
+        // Apply all gutter decorations
+        for (const [decorationKey, ranges] of gutterRanges) {
             const decorationType = this.gutterDecorations.get(decorationKey);
             if (decorationType && ranges.length > 0) {
                 editor.setDecorations(decorationType, ranges);
             }
         }
 
+        // Update text highlights
+        this.updateTextDecorations(editor, threads);
+
         // Track this editor for cleanup
         this.decoratedEditors.add(editor);
+    }
+
+    /**
+     * Updates text decorations (inline highlights) for an editor based on threads.
+     *
+     * Applies health-based styling to anchored text ranges.
+     * Skips decorations for resolved threads (REQ-3).
+     *
+     * @param editor The VSCode text editor to update
+     * @param threads Array of comment threads to visualize
+     */
+    private updateTextDecorations(editor: vscode.TextEditor, threads: Thread[]): void {
+        // Prepare decoration ranges for each health status
+        const textRanges = new Map<string, vscode.Range[]>();
+        for (const decorationType of this.textDecorations.keys()) {
+            textRanges.set(decorationType, []);
+        }
+
+        // Process each thread
+        for (const thread of threads) {
+            // Skip resolved threads (REQ-3: clear highlights when resolved)
+            if (thread.status === ThreadStatus.RESOLVED || thread.status === ThreadStatus.WONTFIX) {
+                continue;
+            }
+
+            // Determine text decoration key based on health
+            const textDecorationKey = this.getTextDecorationKey(thread);
+            if (!textDecorationKey) {
+                continue; // No decoration for this health status
+            }
+
+            // Create range for the entire anchor (line_start to line_end)
+            // Convert from 1-indexed (sidecar) to 0-indexed (VSCode)
+            const startLine = thread.anchor.line_start - 1;
+            const endLine = thread.anchor.line_end - 1;
+
+            // Clamp to document bounds
+            const maxLine = Math.max(0, editor.document.lineCount - 1);
+            const clampedStartLine = Math.min(startLine, maxLine);
+            const clampedEndLine = Math.min(endLine, maxLine);
+
+            // For multi-line anchors, create a range spanning entire lines
+            const startChar = 0;
+            const endChar = editor.document.lineAt(clampedEndLine).text.length;
+
+            const range = new vscode.Range(clampedStartLine, startChar, clampedEndLine, endChar);
+            textRanges.get(textDecorationKey)?.push(range);
+        }
+
+        // Apply all text decorations
+        for (const [decorationKey, ranges] of textRanges) {
+            const decorationType = this.textDecorations.get(decorationKey);
+            if (decorationType) {
+                editor.setDecorations(decorationType, ranges);
+            }
+        }
+    }
+
+    /**
+     * Determines the text decoration key for a thread based on health status.
+     *
+     * @param thread The thread to get decoration for
+     * @returns Text decoration key (e.g., "text-anchored") or null if no decoration
+     */
+    private getTextDecorationKey(thread: Thread): string | null {
+        switch (thread.anchor.health) {
+            case AnchorHealth.ANCHORED:
+                return 'text-anchored';
+            case AnchorHealth.DRIFTED:
+                return 'text-drifted';
+            case AnchorHealth.ORPHANED:
+                return 'text-orphaned';
+            default:
+                return null;
+        }
     }
 
     /**
@@ -265,12 +372,18 @@ export class DecorationManager {
     }
 
     /**
-     * Clears all decorations for an editor.
+     * Clears all decorations (gutter and text) for an editor.
      *
      * @param editor The editor to clear decorations from
      */
     private clearDecorationsForEditor(editor: vscode.TextEditor): void {
+        // Clear gutter decorations
         for (const decorationType of this.gutterDecorations.values()) {
+            editor.setDecorations(decorationType, []);
+        }
+
+        // Clear text decorations
+        for (const decorationType of this.textDecorations.values()) {
             editor.setDecorations(decorationType, []);
         }
     }
@@ -287,11 +400,17 @@ export class DecorationManager {
         }
         this.decoratedEditors.clear();
 
-        // Dispose all decoration types
+        // Dispose all gutter decoration types
         for (const decorationType of this.gutterDecorations.values()) {
             decorationType.dispose();
         }
         this.gutterDecorations.clear();
+
+        // Dispose all text decoration types
+        for (const decorationType of this.textDecorations.values()) {
+            decorationType.dispose();
+        }
+        this.textDecorations.clear();
     }
 
     /**
