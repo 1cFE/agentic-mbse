@@ -6,6 +6,7 @@
  */
 
 import * as vscode from 'vscode';
+import { CommentProvider } from './commentProvider';
 
 /**
  * Extension activation entry point.
@@ -27,8 +28,43 @@ export function activate(context: vscode.ExtensionContext): void {
 
     console.log('CommentController registered');
 
+    // Find project root (directory containing .git)
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+        console.warn('No workspace folder open, comment system not initialized');
+        return;
+    }
+
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
+    const projectRoot = CommentProvider.findProjectRoot(workspaceRoot);
+
+    if (!projectRoot) {
+        console.warn('No .git directory found, comment system not initialized');
+        return;
+    }
+
+    console.log(`Project root found: ${projectRoot}`);
+
+    // Create and register the comment provider
+    const commentProvider = new CommentProvider(projectRoot, commentController);
+    commentController.commentingRangeProvider = commentProvider;
+
+    console.log('CommentProvider registered');
+
+    // Load comments for all currently open documents
+    vscode.workspace.textDocuments.forEach(document => {
+        commentProvider.loadCommentsForDocument(document);
+    });
+
+    // Load comments when a document is opened
+    context.subscriptions.push(
+        vscode.workspace.onDidOpenTextDocument(document => {
+            commentProvider.loadCommentsForDocument(document);
+        })
+    );
+
     // Future: Initialize file watchers for .comments/ directory
-    // Future: Load sidecar files and display comment threads
+    // Future: Store commentProvider reference for file watcher integration
 }
 
 /**
