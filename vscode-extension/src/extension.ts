@@ -8,6 +8,7 @@
 import * as vscode from 'vscode';
 import { CommentProvider } from './commentProvider';
 import { FileWatcher } from './fileWatcher';
+import { registerAddCommentCommand } from './commands/addComment';
 
 /**
  * Extension activation entry point.
@@ -85,6 +86,9 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push({
         dispose: () => fileWatcher.stop()
     });
+
+    // Register "Add Comment" command
+    registerAddCommentCommand(context, projectRoot);
 }
 
 /**

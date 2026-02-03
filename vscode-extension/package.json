@@ -15,7 +15,30 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": []
+    "commands": [
+      {
+        "command": "file-native-comments.addComment",
+        "title": "Add Comment",
+        "category": "File-Native Comments"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorHasSelection",
+          "command": "file-native-comments.addComment",
+          "group": "comments"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "file-native-comments.addComment",
+        "key": "ctrl+k ctrl+m",
+        "mac": "cmd+k cmd+m",
+        "when": "editorTextFocus"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
