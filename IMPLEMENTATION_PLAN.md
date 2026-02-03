@@ -1,6 +1,6 @@
 # Implementation Plan: File-Native Comment System
 
-**Status**: Phase 1 & 2 Complete (CLI + MCP Server), Phase 3.1 & 3.2 & 3.3 Complete (VSCode Extension with Gutter Icons & Text Highlights)
+**Status**: Phase 1 & 2 Complete (CLI + MCP Server), Phase 3.1 & 3.2 & 3.3 & 3.4 Complete (VSCode Extension with Full Command Set)
 **Last Updated**: 2026-02-03
 
 ---
@@ -963,11 +963,11 @@ Once Phase 3.1 is complete:
 
 ---
 
-## 🔄 Phase 3.4: Reconciliation & Commands
+## ✅ Phase 3.4: Reconciliation & Commands (COMPLETE)
 
 **Goal**: Add manual reconciliation commands and decision log viewing to VSCode extension, completing the command palette integration.
 
-**Status**: IN PROGRESS (2026-02-03)
+**Status**: COMPLETE (2026-02-03)
 
 **Spec References**:
 - `specs/vscode-extension.md` REQ-7 (Commands)
@@ -1130,9 +1130,9 @@ Once Phase 3.1 is complete:
 
 ---
 
-### 🔲 Task 3.4.3: Implement "Show Decisions" Command
+### ✅ Task 3.4.3: Implement "Show Decisions" Command (COMPLETED)
 
-**Status**: NOT STARTED
+**Status**: COMPLETE (2026-02-03)
 
 **Priority**: LOW (convenience feature)
 
@@ -1141,55 +1141,62 @@ Once Phase 3.1 is complete:
 - AC-7: Given DECISIONS.md exists, when command runs, then file opens in editor
 - `specs/cli-interface.md` (`comment decisions`)
 
-**Files to Create/Modify** (4 files):
-1. **Create** `vscode-extension/src/commands/showDecisions.ts` (~100 lines)
-   - `showDecisionsCommand()` function handles decision log viewing
-   - Finds project root (reuse existing logic)
-   - Checks if `DECISIONS.md` exists at project root
-   - If exists: Opens in editor via `vscode.workspace.openTextDocument()`
-   - If not exists: Shows notification "No DECISIONS.md found. Run 'Comment: Generate Decisions' first."
-   - Optional: Add "Generate Decisions" button in notification that calls CLI
-   - `registerShowDecisionsCommand()` for registration
+**Implementation Summary**:
+- Created `vscode-extension/src/commands/showDecisions.ts` (66 lines)
+  - `showDecisionsCommand()` function opens DECISIONS.md if it exists
+  - Constructs path: `path.join(projectRoot, "DECISIONS.md")`
+  - Checks file existence via `fs.existsSync()`
+  - Opens file via `vscode.workspace.openTextDocument()` + `vscode.window.showTextDocument()`
+  - Shows informative notification when file doesn't exist
+  - Error handling for file system errors
+  - `registerShowDecisionsCommand()` for registration with VSCode
 
-2. **Modify** `vscode-extension/src/extension.ts` (~5 lines added)
-   - Import `registerShowDecisionsCommand`
-   - Call registration on activation
+- Modified `vscode-extension/src/extension.ts` (+3 lines)
+  - Import `registerShowDecisionsCommand`
+  - Call registration on activation
 
-3. **Modify** `vscode-extension/package.json` (~10 lines added)
-   - Command contribution: `file-native-comments.showDecisions`
-   - Command palette entry: "File-Native Comments: Show Decisions"
+- Modified `vscode-extension/package.json` (+5 lines)
+  - Command contribution: `file-native-comments.showDecisions`
+  - Command palette: "File-Native Comments: Show Decisions"
 
-4. **Create** `vscode-extension/src/commands/showDecisions.test.ts` (~100 lines)
-   - Unit tests for show decisions logic
-   - Tests: opens existing DECISIONS.md file
-   - Tests: shows notification when file doesn't exist
-   - Tests: error handling (file system errors)
-   - Tests: project root detection
+- Created `vscode-extension/src/commands/showDecisions.test.ts` (267 lines)
+  - 12 unit tests covering all functionality
+  - Tests: opens existing file, shows notification when missing
+  - Tests: error handling (open/show failures, missing error messages)
+  - Tests: path construction, different project roots
+  - Tests: console logging (file path, success, not found, errors)
+  - Tests: command registration
+  - All tests passing (12/12)
 
-**Acceptance Criteria**:
-- [ ] Command palette shows "File-Native Comments: Show Decisions"
-- [ ] Opens DECISIONS.md in editor if it exists (AC-7)
-- [ ] Shows informative notification if file doesn't exist
-- [ ] Error notification shown on file system errors
-- [ ] TypeScript compilation succeeds: `npm run compile`
-- [ ] Unit tests pass: `npm test`
+- Modified `vscode-extension/src/__mocks__/vscode.ts` (+13 lines)
+  - Added `ViewColumn` enum for mock support
+
+**Acceptance Criteria** (All Met):
+- ✅ Command palette shows "File-Native Comments: Show Decisions"
+- ✅ Opens DECISIONS.md in editor if it exists (AC-7)
+- ✅ Shows informative notification if file doesn't exist
+- ✅ Error notification shown on file system errors
+- ✅ TypeScript compilation succeeds: `npm run compile`
+- ✅ Unit tests pass: `npm test` (210/210 tests passing)
 
 **Implementation Notes**:
 - DECISIONS.md location: Always at project root (same directory as `.git`)
-- Use `vscode.window.showTextDocument()` to open file
-- Optional future enhancement: Generate DECISIONS.md if missing (calls `comment decisions` CLI command)
+- Uses `vscode.window.showTextDocument()` with `preview: false` to open in normal editor
+- Opens in active column: `viewColumn: vscode.ViewColumn.Active`
+- Logs all operations to console for debugging
+- Future enhancement: Add button to generate DECISIONS.md if missing (calls `comment decisions` CLI)
 
 ---
 
-## Success Metrics for Phase 3.4
+## ✅ Success Metrics for Phase 3.4 (ALL MET)
 
-**Completion Definition**: When all 3 tasks (3.4.1, 3.4.2, 3.4.3) pass acceptance criteria.
+**Completion Definition**: When all 3 tasks (3.4.1, 3.4.2, 3.4.3) pass acceptance criteria. ✅ COMPLETE
 
-**What Works After Phase 3.4**:
-- Users can manually trigger reconciliation for current file or entire project
-- Reconciliation statistics shown in notifications
-- Users can quickly view decision log from command palette
-- All VSCode extension commands from spec REQ-7 implemented
+**What Works After Phase 3.4** (Implemented):
+- ✅ Users can manually trigger reconciliation for current file or entire project
+- ✅ Reconciliation statistics shown in notifications
+- ✅ Users can quickly view decision log from command palette
+- ✅ All VSCode extension commands from spec REQ-7 implemented
 
 **What's Still Missing** (Phase 3.5):
 - Extension configuration options (debounce delays, colors, etc.)
