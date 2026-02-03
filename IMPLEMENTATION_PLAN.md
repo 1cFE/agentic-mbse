@@ -474,12 +474,159 @@ Once Phase 3.1 is complete:
 
 ---
 
-## Appendix: Phases 3.2-3.5 (Future Iterations)
+## 🔄 Phase 3.2: Comment Thread UI (IN PROGRESS)
 
-### 🔲 Phase 3.2: Comment Thread UI (Next after 3.1)
-- Reply and resolve actions
-- Markdown rendering
-- Decision display
+**Goal**: Enable users to reply to threads and resolve/reopen threads directly from VSCode UI, completing the core comment workflow.
+
+**Status**: IN PROGRESS
+
+---
+
+### ✅ Task 3.2.1: Implement Reply Functionality (COMPLETED)
+
+**Status**: COMPLETE (2026-02-03)
+
+**Priority**: HIGH (core write operation)
+
+**Spec References**:
+- `specs/vscode-extension.md` REQ-6 (Inline reply input within thread)
+- `specs/cli-interface.md` (`comment reply` command reference)
+
+**Implementation Summary**:
+- Created `vscode-extension/src/commands/replyComment.ts` (167 lines)
+  - `handleReply()` function processes CommentReply objects
+  - Extracts thread_id from thread.contextValue JSON
+  - Validates reply text (non-empty, trimmed)
+  - Calls Python CLI: `comment reply <thread_id> "<text>" --author=<user>`
+  - Escapes special characters (backslashes, quotes, newlines, tabs)
+  - Creates temporary comment object for immediate UI feedback
+  - File watcher reloads actual comment from sidecar after CLI completes
+  - `registerReplyCommand()` registers command with VSCode
+
+- Modified `vscode-extension/src/extension.ts` (import + 1 line)
+  - Imports `registerReplyCommand`
+  - Calls registration on activation
+
+- Modified `vscode-extension/package.json` (5 lines)
+  - Command contribution: `file-native-comments.replyNote`
+  - Uses `enablement: !commentIsEmpty` context for conditional activation
+
+- Created `vscode-extension/src/commands/replyComment.test.ts` (393 lines)
+  - 27 unit tests covering all functionality
+  - Tests: reply submission, thread ID extraction, input validation
+  - Tests: text escaping (quotes, backslashes, newlines, tabs)
+  - Tests: error handling (CLI failures, invalid contextValue)
+  - Tests: temporary comment creation, comment preservation
+  - Tests: command registration with correct ID
+
+- Modified `vscode-extension/src/__mocks__/vscode.ts` (added 15 lines)
+  - Added `CommentReply` interface
+  - Added `replyHandler` property to `CommentController`
+  - Added `window`, `env`, `commands` mock objects
+
+**Acceptance Criteria** (All Met):
+- ✅ Reply input box appears at bottom of CommentThread (VSCode handles this automatically)
+- ✅ User can type reply text and press Enter to submit (command invoked on submit)
+- ✅ CLI subprocess called: `comment reply <thread_id> "<text>" --author=<user>`
+- ✅ New comment appears in thread after submission (temporary comment + file watcher reload)
+- ✅ Error notification shown if CLI fails (catches execSync exceptions)
+- ✅ TypeScript compilation succeeds: `npm run compile` passes
+- ✅ Unit tests pass: `npm test` passes (81/81 tests, 5 suites)
+
+**Implementation Notes**:
+- **VSCode API Pattern**: Uses command registration, not CommentController.replyHandler
+  - Registered command: `file-native-comments.replyNote`
+  - VSCode automatically invokes command when user submits reply input
+  - Command receives `vscode.CommentReply` object with thread and text
+- **Temporary Comment**: Provides immediate UI feedback before file watcher reloads
+  - Temporary comment added to thread.comments array synchronously
+  - File watcher (2-second debounce) reloads full thread from sidecar
+  - Prevents UI flicker during CLI execution
+- **Text Escaping**: Handles all shell special characters
+  - Escape order: backslashes → quotes → newlines/tabs
+  - CLI command format: `comment reply <id> "<escaped_text>" --author="<author>"`
+- **Author**: Uses `vscode.env.username` (fallback: `'vscode-user'`)
+  - Type cast needed for VSCode 1.85 compatibility
+
+---
+
+### 🔲 Task 3.2.2: Implement Resolve/Reopen Actions
+
+**Status**: PENDING
+
+**Priority**: HIGH (core workflow action)
+
+**Spec References**:
+- `specs/vscode-extension.md` REQ-1, AC-5 (Thread status mapping)
+- `specs/cli-interface.md` (`comment resolve`, `comment reopen`)
+
+**Implementation Requirements**:
+1. **Create** `vscode-extension/src/commands/resolveThread.ts` (~120 lines)
+   - `resolveThreadCommand(thread)` function
+   - Extract thread_id from `thread.contextValue` JSON
+   - Prompt user for optional decision text (if unresolved → resolved)
+   - Call CLI: `comment resolve <thread_id> [--decision "<text>"]`
+   - Show success/error notification
+
+2. **Create** `vscode-extension/src/commands/reopenThread.ts` (~80 lines)
+   - `reopenThreadCommand(thread)` function
+   - Extract thread_id from contextValue
+   - Call CLI: `comment reopen <thread_id>`
+   - Show success/error notification
+
+3. **Modify** `vscode-extension/src/extension.ts` (~10 lines)
+   - Register both commands
+   - Add context menu items to CommentThread
+
+4. **Modify** `vscode-extension/package.json` (~20 lines)
+   - Add command contributions: `file-native-comments.resolveThread`, `reopenThread`
+   - Add to `comments/commentThread/context` menu
+
+5. **Create** `vscode-extension/src/commands/resolveThread.test.ts` (~150 lines)
+   - Unit tests for resolve logic
+   - Test with/without decision text
+   - Test reopen logic
+
+**Acceptance Criteria**:
+- [ ] Context menu on CommentThread shows "Resolve" action (when unresolved)
+- [ ] Context menu shows "Reopen" action (when resolved)
+- [ ] Resolve action prompts for optional decision text
+- [ ] CLI subprocess called correctly for both commands
+- [ ] Thread state updates after action (via file watcher)
+- [ ] TypeScript compilation succeeds
+- [ ] Unit tests pass
+
+---
+
+### 🔲 Task 3.2.3: Improve Markdown Rendering
+
+**Status**: PENDING
+
+**Priority**: MEDIUM (polish)
+
+**Spec References**:
+- `specs/vscode-extension.md` REQ-1 (Render comment bodies as markdown)
+
+**Implementation Requirements**:
+1. **Modify** `vscode-extension/src/commentProvider.ts` (~20 lines)
+   - Convert comment bodies to `vscode.MarkdownString` with proper sanitization
+   - Handle code blocks, links, emphasis
+   - Set `isTrusted` flag appropriately
+
+2. **Modify** `vscode-extension/src/commentProvider.test.ts` (~50 lines)
+   - Add tests for markdown conversion
+   - Test code blocks, links, emphasis
+
+**Acceptance Criteria**:
+- [ ] Comment bodies render with markdown formatting (bold, italic, code)
+- [ ] Code blocks display with syntax highlighting
+- [ ] Links are clickable
+- [ ] TypeScript compilation succeeds
+- [ ] Unit tests pass
+
+---
+
+## Appendix: Phases 3.3-3.5 (Future Iterations)
 
 ### 🔲 Phase 3.3: Gutter Indicators & Decorations
 - Color-coded gutter icons (status-based)

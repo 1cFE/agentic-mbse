@@ -66,11 +66,18 @@ export interface CommentThread {
     dispose(): void;
 }
 
+export interface CommentReply {
+    thread: CommentThread;
+    text: string;
+}
+
 export interface CommentController {
     id: string;
     label: string;
     commentingRangeProvider?: any;
+    replyHandler?: (reply: CommentReply) => void | Promise<void>;
     createCommentThread(uri: Uri, range: Range, comments: any[]): CommentThread;
+    dispose?(): void;
 }
 
 export const comments = {
@@ -96,4 +103,19 @@ export const workspace = {
     textDocuments: [] as any[],
     onDidOpenTextDocument: () => ({ dispose: () => {} }),
     createFileSystemWatcher: jest.fn()
+};
+
+export const window = {
+    showInformationMessage: jest.fn(),
+    showErrorMessage: jest.fn(),
+    showInputBox: jest.fn(),
+    activeTextEditor: undefined as any
+};
+
+export const env = {
+    username: 'testuser'
+};
+
+export const commands = {
+    registerCommand: jest.fn()
 };

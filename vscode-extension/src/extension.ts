@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import { CommentProvider } from './commentProvider';
 import { FileWatcher } from './fileWatcher';
 import { registerAddCommentCommand } from './commands/addComment';
+import { registerReplyCommand } from './commands/replyComment';
 
 /**
  * Extension activation entry point.
@@ -89,6 +90,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Register "Add Comment" command
     registerAddCommentCommand(context, projectRoot);
+
+    // Register reply command for comment threads
+    registerReplyCommand(context, projectRoot);
 }
 
 /**

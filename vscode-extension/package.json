@@ -20,6 +20,11 @@
         "command": "file-native-comments.addComment",
         "title": "Add Comment",
         "category": "File-Native Comments"
+      },
+      {
+        "command": "file-native-comments.replyNote",
+        "title": "Reply to Comment",
+        "enablement": "!commentIsEmpty"
       }
     ],
     "menus": {
