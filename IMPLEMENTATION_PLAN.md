@@ -171,35 +171,29 @@ uv run pytest tests/comment_system/test_fuzzy_performance.py::test_single_fuzzy_
 
 ---
 
-#### Task 1.4: Test Decision Log File Size Warning
+#### ✅ Task 1.4: Test Decision Log File Size Warning (COMPLETED)
 
 **Spec References**:
 - decision-log.md CON-4: "File size must stay under 1 MB (warn if exceeded)"
 
-**What to Implement**:
-- Extend `tests/comment_system/test_decisions.py`
-- Create scenario with > 1 MB of decisions (many threads with long snippets)
-- Call `write_decisions_file()`
-- Capture stderr output
-- Assert warning message printed
+**Implementation**:
+- Test `test_large_decision_log_warning()` already exists in `tests/comment_system/test_decisions.py`
+- Located at test_decisions.py:703-771 (69 lines)
+- Creates 3,000 threads with detailed decisions to exceed 1 MB
+- Captures stderr output and validates warning message
 
-**Files to Create/Modify** (1 file):
-- `tests/comment_system/test_decisions.py` (add ~50 lines)
+**Results**:
+- ✅ Test passes: Generates DECISIONS.md > 1 MB and warning is printed
+- ✅ Warning validation: Verifies "Warning: DECISIONS.md is X MB (> 1 MB recommended maximum)"
+- ✅ File size displayed: Warning includes actual file size in MB
+- ✅ All assertions pass
 
-**Backpressure**:
-- `uv run pytest tests/comment_system/test_decisions.py` must pass
-- Warning validation enforced by assertion
+**Key Findings**:
+- Test was already implemented during core development
+- Generates ~1.2-1.3 MB DECISIONS.md file with 3,000 decision entries
+- Warning mechanism in `decisions.py` works correctly
 
-**Acceptance Criteria**:
-1. Test function `test_file_size_warning()` added
-2. Creates ~2000 threads with long snippets to exceed 1 MB
-3. Captures stderr during `write_decisions_file()`
-4. Asserts stderr contains: "Warning: DECISIONS.md is X MB (> 1 MB recommended maximum)"
-5. Test passes consistently
-
-**Dependencies**: Requires `decisions.py` (complete)
-
-**Estimated Effort**: ~45 minutes (need to generate large dataset)
+**Note**: This task was completed during initial implementation phase and only needed verification.
 
 ---
 
