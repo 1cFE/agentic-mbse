@@ -18,13 +18,29 @@ import { registerShowDecisionsCommand } from './commands/showDecisions';
 import { registerDeleteCommand } from './commands/deleteThread';
 
 /**
+ * Output channel for extension logging (visible in Output panel).
+ */
+export const outputChannel = vscode.window.createOutputChannel('File-Native Comments');
+
+/**
+ * Log a message to both the output channel and console.
+ */
+export function log(message: string): void {
+    const timestamp = new Date().toISOString();
+    outputChannel.appendLine(`[${timestamp}] ${message}`);
+    console.log(`[File-Native Comments] ${message}`);
+}
+
+/**
  * Extension activation entry point.
  *
  * Called when VSCode starts up (onStartupFinished activation event).
  * Initializes the comment system and registers providers.
  */
 export function activate(context: vscode.ExtensionContext): void {
-    console.log('File-Native Comment System activated');
+  try {
+    outputChannel.show(true); // Show output channel, preserve focus
+    log('Extension activating...');
 
     // Register the comment controller
     const commentController = vscode.comments.createCommentController(
@@ -35,24 +51,25 @@ export function activate(context: vscode.ExtensionContext): void {
     // Store controller in context for disposal on deactivation
     context.subscriptions.push(commentController);
 
-    console.log('CommentController registered');
+    log('CommentController registered');
 
     // Find project root (directory containing .git)
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
-        console.warn('No workspace folder open, comment system not initialized');
+        log('WARNING: No workspace folder open, comment system not initialized');
         return;
     }
 
     const workspaceRoot = workspaceFolders[0].uri.fsPath;
+    log(`Workspace root: ${workspaceRoot}`);
     const projectRoot = CommentProvider.findProjectRoot(workspaceRoot);
 
     if (!projectRoot) {
-        console.warn('No .git directory found, comment system not initialized');
+        log('WARNING: No .git directory found, comment system not initialized. Commands will NOT work.');
         return;
     }
 
-    console.log(`Project root found: ${projectRoot}`);
+    log(`Project root found: ${projectRoot}`);
 
     // Create and register the comment provider
     const commentProvider = new CommentProvider(projectRoot, commentController);
@@ -63,7 +80,7 @@ export function activate(context: vscode.ExtensionContext): void {
         dispose: () => commentProvider.dispose()
     });
 
-    console.log('CommentProvider registered');
+    log('CommentProvider registered');
 
     // Load comments for all currently open documents
     vscode.workspace.textDocuments.forEach(document => {
@@ -99,7 +116,7 @@ export function activate(context: vscode.ExtensionContext): void {
         );
 
         if (document) {
-            console.log(`Sidecar changed for ${sourceFilePath}, reloading comments`);
+            log(`Sidecar changed for ${sourceFilePath}, reloading comments`);
             commentProvider.loadCommentsForDocument(document);
         }
     });
@@ -173,7 +190,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
             // Focus the thread
             if (threadId) {
-                console.log(`Focus thread command invoked with ID: ${threadId}`);
+                log(`Focus thread command invoked with ID: ${threadId}`);
                 const success = commentProvider.focusThread(threadId);
                 if (!success) {
                     vscode.window.showWarningMessage(`Could not find thread ${threadId.substring(0, 8)}`);
@@ -181,6 +198,14 @@ export function activate(context: vscode.ExtensionContext): void {
             }
         })
     );
+
+    log('All commands registered. Extension activation complete.');
+  } catch (error: any) {
+    const msg = error?.message || String(error);
+    log(`FATAL: Extension activation failed: ${msg}`);
+    log(error?.stack || '(no stack trace)');
+    vscode.window.showErrorMessage(`File-Native Comments failed to activate: ${msg}`);
+  }
 }
 
 /**
@@ -190,5 +215,6 @@ export function activate(context: vscode.ExtensionContext): void {
  * Cleanup resources and dispose of registered providers.
  */
 export function deactivate(): void {
-    console.log('File-Native Comment System deactivated');
+    log('File-Native Comment System deactivated');
+    outputChannel.dispose();
 }

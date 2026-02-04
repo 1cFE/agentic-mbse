@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "source_file": ".project/research/20260203-221500_comment-system-audit.md",
+  "source_hash": "sha256:f08c55d35279b092a00c8a8d084a8653f48c10535885b5982332d95cb0b8c5a4",
+  "threads": [
+    {
+      "anchor": {
+        "content_hash": "sha256:b2a808b7a8f374632c879bb76ed711bc1cdceba2784efda96a19571548f5c328",
+        "content_snippet": "# Reconcile - anchor should move down by 2\nuv run comment reconcile test.txt\nuv run comment reconcile test.txt --json",
+        "context_hash_after": "sha256:57cdc29f039ec3a265bc60599f77fc290432996d824dfe09d581b241e83b190f",
+        "context_hash_before": "sha256:ee760a3b8f3dead5d7983f5663fe6a83fbc52ccae1755d06fbc7875fecad4587",
+        "drift_distance": 0,
+        "health": "anchored",
+        "line_end": 173,
+        "line_start": 171
+      },
+      "comments": [
+        {
+          "author": "vscode-user",
+          "author_type": "human",
+          "body": "Does this work?",
+          "id": "01KGKFBZ28B48425QS0ZBFMXQN",
+          "timestamp": "2026-02-04T04:43:01.065033Z"
+        },
+        {
+          "author": "vscode-user",
+          "author_type": "human",
+          "body": "I think it does!",
+          "id": "01KGKFD658A3N8Y6H04ZQXTR24",
+          "timestamp": "2026-02-04T04:43:41.096075Z"
+        }
+      ],
+      "created_at": "2026-02-04T04:43:01.065090Z",
+      "decision": null,
+      "id": "01KGKFBZ29Y910C63BS3QDD44H",
+      "resolved_at": null,
+      "status": "open"
+    }
+  ]
+}

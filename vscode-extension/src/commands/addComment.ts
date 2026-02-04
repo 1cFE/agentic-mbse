@@ -9,6 +9,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { getAuthor, runCliCommand } from '../utils';
+import { log } from '../extension';
 
 /**
  * Executes the "Add Comment" command.
@@ -16,13 +17,16 @@ import { getAuthor, runCliCommand } from '../utils';
  * @param projectRoot - Absolute path to project root (directory containing .git)
  */
 export async function addCommentCommand(projectRoot: string): Promise<void> {
+    log('addComment command invoked');
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
+        log('addComment: No active editor');
         vscode.window.showErrorMessage('No active editor found');
         return;
     }
 
     const selection = editor.selection;
+    log(`addComment: selection empty=${selection.isEmpty}, start=${selection.start.line}, end=${selection.end.line}`);
     if (selection.isEmpty) {
         vscode.window.showErrorMessage('Please select text to comment on');
         return;
@@ -34,14 +38,17 @@ export async function addCommentCommand(projectRoot: string): Promise<void> {
 
     const absoluteFilePath = editor.document.uri.fsPath;
     const relativeFilePath = path.relative(projectRoot, absoluteFilePath);
+    log(`addComment: file=${relativeFilePath}, lines=${lineStart}-${lineEnd}`);
 
     if (relativeFilePath.startsWith('..')) {
+        log(`addComment: file outside project root`);
         vscode.window.showErrorMessage(
             'File is outside project root and cannot be commented on'
         );
         return;
     }
 
+    log('addComment: showing input box...');
     const commentText = await vscode.window.showInputBox({
         prompt: `Add comment to ${relativeFilePath} (lines ${lineStart}-${lineEnd})`,
         placeHolder: 'Enter your comment here...',
@@ -55,28 +62,30 @@ export async function addCommentCommand(projectRoot: string): Promise<void> {
     });
 
     if (commentText === undefined) {
+        log('addComment: user cancelled input');
         return;
     }
 
     const author = getAuthor();
+    log(`addComment: author=${author}, text="${commentText.substring(0, 50)}"`);
 
     try {
-        console.log(`Executing: comment add "${relativeFilePath}" -L ${lineStart}:${lineEnd}`);
+        const args = ['comment', 'add', relativeFilePath, '-L', `${lineStart}:${lineEnd}`, `--author=${author}`, commentText];
+        log(`addComment: executing CLI: ${args.join(' ')}`);
 
-        await runCliCommand(
-            ['comment', 'add', relativeFilePath, '-L', `${lineStart}:${lineEnd}`, `--author=${author}`, commentText],
-            projectRoot
-        );
+        const result = await runCliCommand(args, projectRoot);
+        log(`addComment: CLI result: ${result.substring(0, 200)}`);
 
         vscode.window.showInformationMessage(
             `Comment added to ${relativeFilePath}:${lineStart}-${lineEnd}`
         );
 
-        console.log(`Comment added successfully to ${relativeFilePath}:${lineStart}-${lineEnd}`);
-
     } catch (error: any) {
         const errorMessage = error.stderr?.toString() || error.message || 'Unknown error';
-        console.error(`Failed to add comment: ${errorMessage}`);
+        log(`addComment: FAILED: ${errorMessage}`);
+        if (error.stack) {
+            log(`addComment: stack: ${error.stack}`);
+        }
 
         vscode.window.showErrorMessage(
             `Failed to add comment: ${errorMessage}`
