@@ -54,6 +54,10 @@ export async function reopenThread(
         vscode.window.showInformationMessage(`Thread ${threadId} reopened`);
 
         thread.state = vscode.CommentThreadState.Unresolved;
+        thread.contextValue = 'open';
+        if (thread.label) {
+            thread.label = thread.label.replace(/^\[Resolved\] /, '');
+        }
 
     } catch (error: any) {
         const errorMessage = error.stderr?.toString() || error.message || 'Unknown error';

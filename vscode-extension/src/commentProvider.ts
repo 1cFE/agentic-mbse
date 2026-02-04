@@ -173,7 +173,8 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
         // Update label
         if (thread.comments.length > 0) {
             const firstLine = thread.comments[0].body.split('\n')[0];
-            vsThread.label = firstLine.substring(0, 100);
+            const label = firstLine.substring(0, 100);
+            vsThread.label = thread.status === ThreadStatus.OPEN ? label : `[Resolved] ${label}`;
         }
 
         // Update comments
@@ -230,7 +231,8 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
 
         if (thread.comments.length > 0) {
             const firstLine = thread.comments[0].body.split('\n')[0];
-            vsThread.label = firstLine.substring(0, 100);
+            const label = firstLine.substring(0, 100);
+            vsThread.label = thread.status === ThreadStatus.OPEN ? label : `[Resolved] ${label}`;
         }
 
         vsThread.comments = thread.comments.map(comment =>

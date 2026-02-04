@@ -28,13 +28,24 @@
           "body": "I think it does!",
           "id": "01KGKFD658A3N8Y6H04ZQXTR24",
           "timestamp": "2026-02-04T04:43:41.096075Z"
+        },
+        {
+          "author": "vscode-user",
+          "author_type": "human",
+          "body": "Ok I think I'm good with it for now. ",
+          "id": "01KGKFFD5ZZ29HR3VHVNVN1JAG",
+          "timestamp": "2026-02-04T04:44:53.823439Z"
         }
       ],
       "created_at": "2026-02-04T04:43:01.065090Z",
-      "decision": null,
+      "decision": {
+        "decider": "unknown",
+        "summary": "Tested out fix and working!",
+        "timestamp": "2026-02-04T04:45:13.203960Z"
+      },
       "id": "01KGKFBZ29Y910C63BS3QDD44H",
       "resolved_at": null,
-      "status": "open"
+      "status": "resolved"
     }
   ]
 }

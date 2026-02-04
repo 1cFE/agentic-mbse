@@ -71,6 +71,10 @@ export async function resolveThread(
         vscode.window.showInformationMessage(`Thread ${threadId} resolved`);
 
         thread.state = vscode.CommentThreadState.Resolved;
+        thread.contextValue = 'resolved';
+        if (thread.label && !thread.label.startsWith('[Resolved]')) {
+            thread.label = `[Resolved] ${thread.label}`;
+        }
 
     } catch (error: any) {
         const errorMessage = error.stderr?.toString() || error.message || 'Unknown error';
