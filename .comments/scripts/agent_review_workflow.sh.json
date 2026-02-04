@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "source_file": "scripts/agent_review_workflow.sh",
+  "source_hash": "sha256:7d599adfb77f230a00bef48a11aa57ac661d35b5ac90ff07cefb4ff97a9df086",
+  "threads": [
+    {
+      "anchor": {
+        "content_hash": "sha256:105f2d2894f5c9c9a8c8563561cffe809b1da6296f87b733534f8b0110214c66",
+        "content_snippet": "if ! command -v comment &> /dev/null; then\n    echo \"Error: 'comment' CLI not found. Install agentic-mbse comment system.\" >&2\n    exit 2",
+        "context_hash_after": "sha256:725f848e1a15fa6778d3f9d9dd2ba5c605e529cd5b9ba7944d2887f9501ca150",
+        "context_hash_before": "sha256:e5bb63fc9f4bd695fad81dfbeb673f1e26c196ffc5406859babe225e796a6cbb",
+        "drift_distance": 0,
+        "health": "anchored",
+        "line_end": 25,
+        "line_start": 23
+      },
+      "comments": [
+        {
+          "author": "vscode-user",
+          "author_type": "human",
+          "body": "Does it work for shell scripts?",
+          "id": "01KGKH27AAEVWKHX5N1N15RBSM",
+          "timestamp": "2026-02-04T05:12:38.986204Z"
+        }
+      ],
+      "created_at": "2026-02-04T05:12:38.986273Z",
+      "decision": {
+        "decider": "unknown",
+        "summary": "Verified it worked!",
+        "timestamp": "2026-02-04T05:14:32.566656Z"
+      },
+      "id": "01KGKH27AAXW71ZJ9SCBSDN4AP",
+      "resolved_at": null,
+      "status": "resolved"
+    }
+  ]
+}
