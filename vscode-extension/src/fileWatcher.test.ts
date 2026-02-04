@@ -139,11 +139,11 @@ describe('FileWatcher', () => {
             const uri = { fsPath: '/project/.comments/src/example.py.json' } as vscode.Uri;
             for (let i = 0; i < 5; i++) {
                 onDidChangeHandlers.forEach(handler => handler(uri));
-                jest.advanceTimersByTime(500); // Advance 500ms between events
+                jest.advanceTimersByTime(100); // Advance 100ms between events
             }
 
             // Advance past debounce period
-            jest.advanceTimersByTime(2000);
+            jest.advanceTimersByTime(500);
 
             // Callback should be invoked exactly once
             expect(callback).toHaveBeenCalledTimes(1);

@@ -8,6 +8,7 @@ import * as os from 'os';
 import * as vscode from 'vscode';
 import { CommentProvider } from './commentProvider';
 import { ThreadStatus, AuthorType, AnchorHealth } from './sidecar';
+import { threadMetadataMap } from './utils';
 
 // Mock vscode module for testing
 jest.mock('vscode');
@@ -116,13 +117,17 @@ describe('CommentProvider', () => {
             expect(thread.range.start.line).toBe(0); // line_start: 1 → 0
             expect(thread.range.end.line).toBe(1);   // line_end: 2 → 1
 
-            // Check context value contains metadata
-            const contextValue = JSON.parse(thread.contextValue!);
-            expect(contextValue.health).toBe(AnchorHealth.ANCHORED);
-            expect(contextValue.drift_distance).toBe(0);
-            expect(contextValue.status).toBe(ThreadStatus.OPEN);
-            expect(contextValue.thread_id).toBe('01HN2Z3V4W5X6Y7Z8A9B0C1D2E');
-            expect(contextValue.has_decision).toBe(false);
+            // Check contextValue is simple string for when-clause matching
+            expect(thread.contextValue).toBe('open');
+
+            // Check WeakMap metadata
+            const metadata = threadMetadataMap.get(thread);
+            expect(metadata).toBeDefined();
+            expect(metadata!.health).toBe(AnchorHealth.ANCHORED);
+            expect(metadata!.driftDistance).toBe(0);
+            expect(metadata!.status).toBe(ThreadStatus.OPEN);
+            expect(metadata!.threadId).toBe('01HN2Z3V4W5X6Y7Z8A9B0C1D2E');
+            expect(metadata!.hasDecision).toBe(false);
         });
 
         test('maps resolved status to resolved state', () => {
@@ -171,6 +176,7 @@ describe('CommentProvider', () => {
 
             const threads = (provider as any).commentThreads.get(mockDocument.uri.toString());
             expect(threads[0].state).toBe(vscode.CommentThreadState.Resolved);
+            expect(threads[0].contextValue).toBe('resolved');
         });
 
         test('handles multiple threads', () => {
@@ -246,16 +252,16 @@ describe('CommentProvider', () => {
             const threads = (provider as any).commentThreads.get(mockDocument.uri.toString());
             expect(threads).toHaveLength(2);
 
-            // Check that thread IDs are preserved in context
-            const context1 = JSON.parse(threads[0].contextValue!);
-            const context2 = JSON.parse(threads[1].contextValue!);
-            expect(context1.thread_id).toBe('01HN2Z3V4W5X6Y7Z8A9B0C1D2E');
-            expect(context2.thread_id).toBe('01HN2Z3V4W5X6Y7Z8A9B0C1D2G');
+            // Check that thread IDs are in WeakMap
+            const metadata1 = threadMetadataMap.get(threads[0]);
+            const metadata2 = threadMetadataMap.get(threads[1]);
+            expect(metadata1!.threadId).toBe('01HN2Z3V4W5X6Y7Z8A9B0C1D2E');
+            expect(metadata2!.threadId).toBe('01HN2Z3V4W5X6Y7Z8A9B0C1D2G');
 
             // Check that health metadata is preserved
-            expect(context1.health).toBe(AnchorHealth.ANCHORED);
-            expect(context2.health).toBe(AnchorHealth.DRIFTED);
-            expect(context2.drift_distance).toBe(2);
+            expect(metadata1!.health).toBe(AnchorHealth.ANCHORED);
+            expect(metadata2!.health).toBe(AnchorHealth.DRIFTED);
+            expect(metadata2!.driftDistance).toBe(2);
         });
 
         test('handles line numbers beyond document bounds', () => {
@@ -309,11 +315,66 @@ describe('CommentProvider', () => {
             expect(threads[0].range.start.line).toBe(1); // Clamped from 99 to 1
             expect(threads[0].range.end.line).toBe(1);   // Clamped from 104 to 1
         });
+
+        test('updates threads in-place on reload without disposing', () => {
+            const sourcePath = path.join(projectRoot, 'example.py');
+            fs.writeFileSync(sourcePath, 'def foo():\n    pass\n');
+
+            const sidecarPath = path.join(projectRoot, '.comments', 'example.py.json');
+            const makeSidecar = (body: string) => ({
+                source_file: 'example.py',
+                source_hash: 'sha256:' + 'a'.repeat(64),
+                schema_version: '1.0',
+                threads: [{
+                    id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2E',
+                    status: ThreadStatus.OPEN,
+                    created_at: '2026-02-01T10:00:00Z',
+                    resolved_at: null,
+                    comments: [{
+                        id: '01HN2Z3V4W5X6Y7Z8A9B0C1D2F',
+                        author: 'alice',
+                        author_type: AuthorType.HUMAN,
+                        body: body,
+                        timestamp: '2026-02-01T10:00:00Z'
+                    }],
+                    anchor: {
+                        content_hash: 'sha256:' + 'b'.repeat(64),
+                        context_hash_before: 'sha256:' + 'c'.repeat(64),
+                        context_hash_after: 'sha256:' + 'd'.repeat(64),
+                        line_start: 1,
+                        line_end: 2,
+                        content_snippet: 'def foo():',
+                        health: AnchorHealth.ANCHORED,
+                        drift_distance: 0
+                    },
+                    decision: null
+                }]
+            });
+
+            const mockDocument = createMockDocument(sourcePath, 'def foo():\n    pass\n');
+
+            // First load
+            fs.writeFileSync(sidecarPath, JSON.stringify(makeSidecar('First comment'), null, 2));
+            provider.loadCommentsForDocument(mockDocument);
+            const threads1 = (provider as any).commentThreads.get(mockDocument.uri.toString());
+            const firstThread = threads1[0];
+            const disposeSpy = jest.fn();
+            firstThread.dispose = disposeSpy;
+
+            // Second load — should update in-place, NOT dispose
+            fs.writeFileSync(sidecarPath, JSON.stringify(makeSidecar('Updated comment'), null, 2));
+            provider.loadCommentsForDocument(mockDocument);
+            const threads2 = (provider as any).commentThreads.get(mockDocument.uri.toString());
+
+            // Same thread object reference (in-place update)
+            expect(threads2[0]).toBe(firstThread);
+            // dispose should NOT have been called
+            expect(disposeSpy).not.toHaveBeenCalled();
+        });
     });
 
     describe('markdown rendering', () => {
         test('renders comment body as MarkdownString', () => {
-            // Create sidecar with markdown content
             const sourcePath = path.join(projectRoot, 'example.py');
             fs.writeFileSync(sourcePath, 'print("hello")\n');
 
@@ -359,7 +420,6 @@ describe('CommentProvider', () => {
             const threads = (provider as any).commentThreads.get(mockDocument.uri.toString());
             const comment = threads[0].comments[0];
 
-            // Verify comment body is a MarkdownString
             expect(comment.body).toBeInstanceOf(vscode.MarkdownString);
             expect(comment.body.value).toBe('This is **bold** and *italic* text');
             expect(comment.body.isTrusted).toBe(true);
@@ -579,11 +639,6 @@ describe('CommentProvider', () => {
         });
 
         test('isTrusted enables command URIs and HTML', () => {
-            // This test verifies that isTrusted is set correctly
-            // When isTrusted is true, VSCode allows:
-            // - command: URIs
-            // - Embedded HTML
-            // - Script execution in markdown
             const sourcePath = path.join(projectRoot, 'example.py');
             fs.writeFileSync(sourcePath, 'x = 1\n');
 
@@ -629,14 +684,12 @@ describe('CommentProvider', () => {
             const threads = (provider as any).commentThreads.get(mockDocument.uri.toString());
             const comment = threads[0].comments[0];
 
-            // Verify that isTrusted is set to true, enabling all markdown features
             expect(comment.body.isTrusted).toBe(true);
         });
     });
 
     describe('findProjectRoot', () => {
         test('finds .git directory in current directory', () => {
-            // Create .git directory
             fs.mkdirSync(path.join(projectRoot, '.git'));
 
             const result = CommentProvider.findProjectRoot(projectRoot);
@@ -644,7 +697,6 @@ describe('CommentProvider', () => {
         });
 
         test('finds .git directory in parent directory', () => {
-            // Create nested structure
             const subdir = path.join(projectRoot, 'src', 'module');
             fs.mkdirSync(subdir, { recursive: true });
             fs.mkdirSync(path.join(projectRoot, '.git'));

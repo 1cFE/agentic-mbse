@@ -81,7 +81,6 @@ export interface CommentController {
     id: string;
     label: string;
     commentingRangeProvider?: any;
-    replyHandler?: (reply: CommentReply) => void | Promise<void>;
     createCommentThread(uri: Uri, range: Range, comments: any[]): CommentThread;
     dispose?(): void;
 }

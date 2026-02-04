@@ -6,19 +6,11 @@
  */
 
 import * as vscode from 'vscode';
-import { execSync } from 'child_process';
 import * as path from 'path';
+import { runCliCommand } from '../utils';
 
 /**
  * Reconcile all comment threads in the project.
- *
- * Workflow:
- * 1. Validate project root exists
- * 2. Show confirmation dialog (operation may take time)
- * 3. Execute CLI with progress notification
- * 4. Parse JSON output for statistics
- * 5. Show summary notification
- * 6. Reload comments for all open editors
  *
  * @param projectRoot Absolute path to project root (containing .git)
  * @param commentProvider CommentProvider instance for reloading comments
@@ -26,9 +18,8 @@ import * as path from 'path';
  */
 export async function reconcileAllCommand(
     projectRoot: string,
-    commentProvider: any // Type: CommentProvider, but avoid circular dependency
+    commentProvider: any
 ): Promise<boolean> {
-    // Confirm with user before starting potentially long operation
     const confirmation = await vscode.window.showInformationMessage(
         'Reconcile all comment threads in project? This may take a moment for large projects.',
         { modal: true },
@@ -37,10 +28,9 @@ export async function reconcileAllCommand(
     );
 
     if (confirmation !== 'Reconcile All') {
-        return false; // User cancelled
+        return false;
     }
 
-    // Execute reconciliation with progress notification
     try {
         const result = await vscode.window.withProgress(
             {
@@ -51,21 +41,16 @@ export async function reconcileAllCommand(
             async (progress) => {
                 progress.report({ increment: 0 });
 
-                // Build CLI command
-                const cliCommand = `comment reconcile --all --json`;
-                console.log(`[reconcileAll] Running CLI command: ${cliCommand}`);
+                console.log(`[reconcileAll] Running CLI command: comment reconcile --all --json`);
 
                 try {
-                    // Execute CLI command synchronously (blocking)
-                    const output = execSync(cliCommand, {
-                        cwd: projectRoot,
-                        encoding: 'utf-8',
-                        maxBuffer: 10 * 1024 * 1024 // 10MB buffer for large outputs
-                    });
+                    const output = await runCliCommand(
+                        ['comment', 'reconcile', '--all', '--json'],
+                        projectRoot
+                    );
 
                     console.log(`[reconcileAll] CLI output: ${output}`);
 
-                    // Parse JSON output
                     let jsonData: any;
                     try {
                         jsonData = JSON.parse(output);
@@ -79,17 +64,14 @@ export async function reconcileAllCommand(
                     return { success: true, data: jsonData };
                 } catch (error: any) {
                     if (error.status === 1) {
-                        // User error (exit code 1)
                         const stderr = error.stderr ? error.stderr.toString().trim() : 'Unknown error';
                         console.error('[reconcileAll] CLI user error:', stderr);
                         throw new Error(`Reconciliation failed: ${stderr}`);
                     } else if (error.status === 2) {
-                        // System error (exit code 2)
                         const stderr = error.stderr ? error.stderr.toString().trim() : 'Unknown error';
                         console.error('[reconcileAll] CLI system error:', stderr);
                         throw new Error(`System error during reconciliation: ${stderr}`);
                     } else {
-                        // Unknown error
                         console.error('[reconcileAll] CLI unknown error:', error.message);
                         throw new Error(`Failed to run reconciliation: ${error.message}`);
                     }
@@ -101,7 +83,6 @@ export async function reconcileAllCommand(
             return false;
         }
 
-        // Extract statistics from JSON output
         const stats = result.data;
         const totalFiles = stats.total_files || 0;
         const totalThreads = stats.total_threads || 0;
@@ -117,7 +98,6 @@ export async function reconcileAllCommand(
             orphaned
         });
 
-        // Show summary notification
         let message: string;
         if (totalThreads === 0) {
             message = `No comment threads found in project.`;
@@ -125,14 +105,12 @@ export async function reconcileAllCommand(
             message = `Reconciled ${totalThreads} threads across ${totalFiles} files: ${anchored} anchored, ${drifted} drifted, ${orphaned} orphaned`;
         }
 
-        // Choose notification type based on results
         if (orphaned > 0 || drifted > 0) {
             vscode.window.showWarningMessage(message);
         } else {
             vscode.window.showInformationMessage(message);
         }
 
-        // Reload comments for all open editors
         console.log('[reconcileAll] Reloading comments for all open editors');
         for (const editor of vscode.window.visibleTextEditors) {
             const document = editor.document;
@@ -149,13 +127,6 @@ export async function reconcileAllCommand(
     }
 }
 
-/**
- * Check if a file path is within the project root.
- *
- * @param filePath Absolute file path
- * @param projectRoot Absolute project root path
- * @returns true if filePath is within projectRoot
- */
 function isWithinProject(filePath: string, projectRoot: string): boolean {
     const relativePath = path.relative(projectRoot, filePath);
     return !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
@@ -163,15 +134,11 @@ function isWithinProject(filePath: string, projectRoot: string): boolean {
 
 /**
  * Register the "Reconcile All" command with VSCode.
- *
- * @param context Extension context for subscriptions
- * @param projectRoot Absolute path to project root
- * @param commentProvider CommentProvider instance
  */
 export function registerReconcileAllCommand(
     context: vscode.ExtensionContext,
     projectRoot: string,
-    commentProvider: any // Type: CommentProvider
+    commentProvider: any
 ): void {
     const command = vscode.commands.registerCommand(
         'file-native-comments.reconcileAll',

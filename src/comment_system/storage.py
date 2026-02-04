@@ -252,7 +252,7 @@ def find_project_root(start_path: Path | None = None) -> Path:
     # Walk up directory tree
     for parent in [current] + list(current.parents):
         git_path = parent / ".git"
-        if git_path.exists() and git_path.is_dir():
+        if git_path.exists() and (git_path.is_dir() or git_path.is_file()):
             return parent
 
     raise ValueError(

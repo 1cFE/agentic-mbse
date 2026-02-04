@@ -15,6 +15,7 @@ import { registerReopenCommand } from './commands/reopenThread';
 import { registerReconcileFileCommand } from './commands/reconcileFile';
 import { registerReconcileAllCommand } from './commands/reconcileAll';
 import { registerShowDecisionsCommand } from './commands/showDecisions';
+import { registerDeleteCommand } from './commands/deleteThread';
 
 /**
  * Extension activation entry point.
@@ -126,6 +127,9 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // Register show decisions command to view DECISIONS.md
     registerShowDecisionsCommand(context, projectRoot);
+
+    // Register delete thread command
+    registerDeleteCommand(context, projectRoot);
 
     // Register "Focus Thread" command (for programmatic and UI use)
     // This command can be triggered by clicking gutter icons or via command palette

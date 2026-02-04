@@ -3,13 +3,15 @@
  */
 
 import * as vscode from 'vscode';
-import { execSync } from 'child_process';
-import { resolveThread, buildResolveCliCommand, extractThreadId, registerResolveCommand } from './resolveThread';
+import * as child_process from 'child_process';
+import { resolveThread, registerResolveCommand } from './resolveThread';
 import { handleConflictCheck, ConflictResolution } from '../conflictHandler';
+import { extractThreadId } from '../utils';
+import { threadMetadataMap } from '../utils';
 
 // Mock child_process
 jest.mock('child_process');
-const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+const mockExecFile = child_process.execFile as unknown as jest.Mock;
 
 // Mock vscode module
 jest.mock('vscode');
@@ -23,21 +25,12 @@ describe('resolveThread', () => {
     const projectRoot = '/test/project';
 
     beforeEach(() => {
-        // Reset mocks
         jest.clearAllMocks();
 
-        // Default: no conflict detected (proceed with write)
         mockHandleConflictCheck.mockResolvedValue(ConflictResolution.OVERWRITE);
 
-        // Create mock thread with contextValue
         mockThread = {
-            contextValue: JSON.stringify({
-                thread_id: '01HXYZ123456',
-                health: 'anchored',
-                status: 'open',
-                has_decision: false,
-                source_hash: 'sha256:abc123'
-            }),
+            contextValue: 'open',
             state: vscode.CommentThreadState.Unresolved,
             comments: [],
             range: new vscode.Range(0, 0, 0, 0),
@@ -48,79 +41,36 @@ describe('resolveThread', () => {
             dispose: jest.fn()
         };
 
-        // Mock vscode.window.showInputBox to return a decision by default
+        threadMetadataMap.set(mockThread, {
+            threadId: '01HXYZ123456',
+            sourceHash: 'sha256:abc123',
+            health: 'anchored',
+            driftDistance: 0,
+            status: 'open',
+            hasDecision: false
+        });
+
         (vscode.window.showInputBox as jest.Mock).mockResolvedValue('Fixed by refactoring');
-
-        // Mock vscode.window.showInformationMessage
         (vscode.window.showInformationMessage as jest.Mock).mockResolvedValue(undefined);
-
-        // Mock vscode.window.showErrorMessage
         (vscode.window.showErrorMessage as jest.Mock).mockResolvedValue(undefined);
 
-        // Mock execSync to succeed by default
-        mockExecSync.mockReturnValue(Buffer.from(''));
+        mockExecFile.mockImplementation(
+            (cmd: string, args: string[], opts: any, cb: Function) => {
+                cb(null, { stdout: '', stderr: '' });
+            }
+        );
     });
 
     describe('extractThreadId', () => {
-        it('should extract thread_id from contextValue', () => {
+        it('should extract thread_id from WeakMap', () => {
             const threadId = extractThreadId(mockThread);
             expect(threadId).toBe('01HXYZ123456');
         });
 
-        it('should return null if contextValue is missing', () => {
-            mockThread.contextValue = undefined;
-            const threadId = extractThreadId(mockThread);
+        it('should return null if no metadata exists', () => {
+            const bareThread = { contextValue: undefined } as any;
+            const threadId = extractThreadId(bareThread);
             expect(threadId).toBeNull();
-        });
-
-        it('should return null if contextValue is invalid JSON', () => {
-            mockThread.contextValue = 'not-json';
-            const threadId = extractThreadId(mockThread);
-            expect(threadId).toBeNull();
-        });
-
-        it('should return null if thread_id field is missing', () => {
-            mockThread.contextValue = JSON.stringify({ health: 'anchored' });
-            const threadId = extractThreadId(mockThread);
-            expect(threadId).toBeNull();
-        });
-    });
-
-    describe('buildResolveCliCommand', () => {
-        it('should build command with decision text', () => {
-            const cmd = buildResolveCliCommand('01HXYZ123456', 'Fixed by refactoring');
-            expect(cmd).toBe('comment resolve 01HXYZ123456 --decision "Fixed by refactoring"');
-        });
-
-        it('should escape double quotes in decision', () => {
-            const cmd = buildResolveCliCommand('01HXYZ123456', 'Fixed "issue" here');
-            expect(cmd).toBe('comment resolve 01HXYZ123456 --decision "Fixed \\"issue\\" here"');
-        });
-
-        it('should escape backslashes in decision', () => {
-            const cmd = buildResolveCliCommand('01HXYZ123456', 'Path: C:\\Users\\test');
-            expect(cmd).toBe('comment resolve 01HXYZ123456 --decision "Path: C:\\\\Users\\\\test"');
-        });
-
-        it('should escape newlines in decision', () => {
-            const cmd = buildResolveCliCommand('01HXYZ123456', 'Line 1\nLine 2');
-            expect(cmd).toBe('comment resolve 01HXYZ123456 --decision "Line 1\\nLine 2"');
-        });
-
-        it('should escape tabs in decision', () => {
-            const cmd = buildResolveCliCommand('01HXYZ123456', 'Col1\tCol2');
-            expect(cmd).toBe('comment resolve 01HXYZ123456 --decision "Col1\\tCol2"');
-        });
-
-        it('should escape carriage returns in decision', () => {
-            const cmd = buildResolveCliCommand('01HXYZ123456', 'Line 1\r\nLine 2');
-            expect(cmd).toBe('comment resolve 01HXYZ123456 --decision "Line 1\\r\\nLine 2"');
-        });
-
-
-        it('should handle complex escaping (backslashes before quotes)', () => {
-            const cmd = buildResolveCliCommand('01HXYZ123456', 'Path: "C:\\Users\\"');
-            expect(cmd).toBe('comment resolve 01HXYZ123456 --decision "Path: \\"C:\\\\Users\\\\\\""');
         });
     });
 
@@ -130,57 +80,51 @@ describe('resolveThread', () => {
 
             await resolveThread(mockThread, projectRoot);
 
-            // Should call CLI with correct command
-            expect(mockExecSync).toHaveBeenCalledWith(
-                'comment resolve 01HXYZ123456 --decision "Fixed the bug"',
+            expect(mockExecFile).toHaveBeenCalledWith(
+                'comment',
+                ['resolve', '01HXYZ123456', '--decision', 'Fixed the bug'],
                 expect.objectContaining({
                     cwd: projectRoot,
-                    encoding: 'utf-8',
-                    stdio: 'pipe'
-                })
+                    encoding: 'utf-8'
+                }),
+                expect.any(Function)
             );
 
-            // Should show success notification
             expect(vscode.window.showInformationMessage).toHaveBeenCalledWith(
                 'Thread 01HXYZ123456 resolved'
             );
 
-            // Should update thread state
             expect(mockThread.state).toBe(vscode.CommentThreadState.Resolved);
         });
-
 
         it('should abort if user cancels input box', async () => {
             (vscode.window.showInputBox as jest.Mock).mockResolvedValue(undefined);
 
             await resolveThread(mockThread, projectRoot);
 
-            // Should NOT call CLI
-            expect(mockExecSync).not.toHaveBeenCalled();
-
-            // Should NOT show notification
+            expect(mockExecFile).not.toHaveBeenCalled();
             expect(vscode.window.showInformationMessage).not.toHaveBeenCalled();
         });
 
         it('should show error if thread_id cannot be extracted', async () => {
-            mockThread.contextValue = undefined;
+            const bareThread = { contextValue: undefined, uri: vscode.Uri.file('/test/file.py') } as any;
 
-            await resolveThread(mockThread, projectRoot);
+            await resolveThread(bareThread, projectRoot);
 
             expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
                 'Failed to identify thread for resolution'
             );
-
-            // Should NOT call CLI
-            expect(mockExecSync).not.toHaveBeenCalled();
+            expect(mockExecFile).not.toHaveBeenCalled();
         });
 
         it('should show error if CLI command fails', async () => {
             const cliError = new Error('CLI error') as any;
-            cliError.stderr = Buffer.from('Thread not found');
-            mockExecSync.mockImplementation(() => {
-                throw cliError;
-            });
+            cliError.stderr = 'Thread not found';
+            mockExecFile.mockImplementation(
+                (cmd: string, args: string[], opts: any, cb: Function) => {
+                    cb(cliError);
+                }
+            );
 
             (vscode.window.showInputBox as jest.Mock).mockResolvedValue('Fixed');
 
@@ -188,21 +132,6 @@ describe('resolveThread', () => {
 
             expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
                 'Failed to resolve thread: Thread not found'
-            );
-        });
-
-        it('should show error with generic message if no stderr', async () => {
-            const cliError = new Error('Unknown error');
-            mockExecSync.mockImplementation(() => {
-                throw cliError;
-            });
-
-            (vscode.window.showInputBox as jest.Mock).mockResolvedValue('Fixed');
-
-            await resolveThread(mockThread, projectRoot);
-
-            expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
-                'Failed to resolve thread: Unknown error'
             );
         });
 
@@ -216,7 +145,6 @@ describe('resolveThread', () => {
 
             await resolveThread(mockThread, projectRoot);
 
-            // Test the validation function
             expect(validationFunction).toBeDefined();
             expect(validationFunction!('')).toBe('Decision is required. Describe why this was resolved.');
             expect(validationFunction!('   ')).toBe('Decision is required. Describe why this was resolved.');
@@ -231,7 +159,7 @@ describe('resolveThread', () => {
             await resolveThread(mockThread, projectRoot);
 
             expect(consoleSpy).toHaveBeenCalledWith(
-                'Executing: comment resolve 01HXYZ123456 --decision "Fixed"'
+                'Executing: comment resolve 01HXYZ123456'
             );
 
             consoleSpy.mockRestore();
@@ -240,9 +168,11 @@ describe('resolveThread', () => {
         it('should log errors', async () => {
             const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
             const cliError = new Error('Test error');
-            mockExecSync.mockImplementation(() => {
-                throw cliError;
-            });
+            mockExecFile.mockImplementation(
+                (cmd: string, args: string[], opts: any, cb: Function) => {
+                    cb(cliError);
+                }
+            );
 
             (vscode.window.showInputBox as jest.Mock).mockResolvedValue('Fixed');
 

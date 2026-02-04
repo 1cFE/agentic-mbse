@@ -11,7 +11,7 @@ import * as path from 'path';
 export class FileWatcher {
     private watcher: vscode.FileSystemWatcher | undefined;
     private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
-    private readonly debounceMs: number = 2000;
+    private readonly debounceMs: number = 500;
     private callbacks: Array<(sourceFilePath: string) => void> = [];
     private projectRoot: string;
 

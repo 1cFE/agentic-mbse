@@ -24,16 +24,25 @@
       {
         "command": "file-native-comments.replyNote",
         "title": "Reply to Comment",
+        "icon": "$(reply)",
         "enablement": "!commentIsEmpty"
       },
       {
         "command": "file-native-comments.resolveThread",
         "title": "Resolve Thread",
+        "icon": "$(check)",
         "category": "File-Native Comments"
       },
       {
         "command": "file-native-comments.reopenThread",
         "title": "Reopen Thread",
+        "icon": "$(issues)",
+        "category": "File-Native Comments"
+      },
+      {
+        "command": "file-native-comments.deleteThread",
+        "title": "Delete Thread",
+        "icon": "$(trash)",
         "category": "File-Native Comments"
       },
       {
@@ -67,14 +76,26 @@
       ],
       "comments/commentThread/context": [
         {
-          "command": "file-native-comments.resolveThread",
+          "command": "file-native-comments.replyNote",
           "group": "inline",
-          "when": "commentThreadState == 'unresolved'"
+          "when": "commentController == file-native-comments && !commentThreadIsEmpty"
+        }
+      ],
+      "comments/commentThread/title": [
+        {
+          "command": "file-native-comments.resolveThread",
+          "group": "navigation",
+          "when": "commentController == file-native-comments && commentThread =~ /open/"
         },
         {
           "command": "file-native-comments.reopenThread",
-          "group": "inline",
-          "when": "commentThreadState == 'resolved'"
+          "group": "navigation",
+          "when": "commentController == file-native-comments && commentThread =~ /resolved/"
+        },
+        {
+          "command": "file-native-comments.deleteThread",
+          "group": "navigation",
+          "when": "commentController == file-native-comments"
         }
       ]
     },

@@ -10,6 +10,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { readSidecar, Thread, ThreadStatus, AnchorHealth, Comment as SidecarComment } from './sidecar';
 import { DecorationManager } from './decorations';
+import { threadMetadataMap, ThreadMetadata } from './utils';
 
 /**
  * Provides comment threads for documents by reading from sidecar files.
@@ -18,66 +19,55 @@ import { DecorationManager } from './decorations';
  * - Reads .comments/*.json sidecar files
  * - Converts Thread objects to vscode.CommentThread
  * - Maps thread status to VSCode resolved/unresolved states
- * - Stores metadata (health, author type) in thread context for future use
+ * - Stores metadata in WeakMap for commands to access
+ * - Updates threads in-place to avoid UI flashing
  */
 export class CommentProvider implements vscode.CommentingRangeProvider {
     private projectRoot: string;
     private commentController: vscode.CommentController;
     private commentThreads: Map<string, vscode.CommentThread[]> = new Map();
+    private threadById: Map<string, vscode.CommentThread> = new Map();
     private decorationManager: DecorationManager;
 
-    /**
-     * Creates a new CommentProvider.
-     *
-     * @param projectRoot Absolute path to the project root (containing .git or .comments/)
-     * @param commentController The VSCode comment controller to register threads with
-     */
     constructor(projectRoot: string, commentController: vscode.CommentController) {
         this.projectRoot = projectRoot;
         this.commentController = commentController;
         this.decorationManager = new DecorationManager();
     }
 
-    /**
-     * Provides commenting ranges for a document.
-     *
-     * This method is required by CommentingRangeProvider but we return undefined
-     * since we want to allow comments anywhere in the document.
-     *
-     * @param document The document to provide ranges for
-     * @param token Cancellation token
-     * @returns undefined (allow comments anywhere)
-     */
     provideCommentingRanges(
         document: vscode.TextDocument,
         token: vscode.CancellationToken
     ): vscode.ProviderResult<vscode.Range[]> {
-        // Return undefined to allow commenting anywhere in the document
-        return undefined;
+        const lineCount = document.lineCount;
+        if (lineCount === 0) {
+            return [];
+        }
+        return [new vscode.Range(0, 0, lineCount - 1, 0)];
     }
 
     /**
      * Loads and displays comment threads for a given document.
      *
-     * Called when a document is opened to populate existing comments.
-     *
-     * @param document The VSCode document to load comments for
+     * Uses in-place updates to avoid disposing and recreating threads,
+     * which prevents UI flashing when switching tabs or when the file watcher fires.
      */
     loadCommentsForDocument(document: vscode.TextDocument): void {
-        // Read the sidecar file for this document
         const sidecarData = readSidecar(document.uri.fsPath, this.projectRoot);
-
-        // Clear any existing threads for this document
         const documentKey = document.uri.toString();
-        const existingThreads = this.commentThreads.get(documentKey);
-        if (existingThreads) {
-            existingThreads.forEach(thread => thread.dispose());
-        }
-        this.commentThreads.delete(documentKey);
 
-        // Return if no sidecar exists
         if (sidecarData === null) {
-            // Clear decorations for this document
+            // No sidecar: dispose all existing threads for this document
+            const existingThreads = this.commentThreads.get(documentKey);
+            if (existingThreads) {
+                existingThreads.forEach(thread => {
+                    this.threadById.delete(this.getThreadIdFromMap(thread) || '');
+                    thread.dispose();
+                });
+            }
+            this.commentThreads.delete(documentKey);
+
+            // Clear decorations
             const editor = vscode.window.visibleTextEditors.find(
                 e => e.document.uri.toString() === documentKey
             );
@@ -87,54 +77,134 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
             return;
         }
 
-        // Convert each thread to a VSCode CommentThread
-        const threads: vscode.CommentThread[] = [];
-        const threadMap = new Map<string, vscode.CommentThread>();
-
+        // Build a map of new thread data by ID
+        const newThreadDataById = new Map<string, Thread>();
         for (const thread of sidecarData.threads) {
-            try {
-                const vsThread = this.convertThreadToVSCodeThread(thread, document, sidecarData.source_hash);
-                threads.push(vsThread);
-                threadMap.set(thread.id, vsThread);
-            } catch (error) {
-                // Log conversion errors but don't fail the entire operation
-                console.error(`Failed to convert thread ${thread.id}:`, error);
+            newThreadDataById.set(thread.id, thread);
+        }
+
+        // Build set of existing thread IDs for this document
+        const existingThreads = this.commentThreads.get(documentKey) || [];
+        const existingById = new Map<string, vscode.CommentThread>();
+        for (const vsThread of existingThreads) {
+            const id = this.getThreadIdFromMap(vsThread);
+            if (id) {
+                existingById.set(id, vsThread);
+            }
+        }
+
+        const resultThreads: vscode.CommentThread[] = [];
+        const resultThreadMap = new Map<string, vscode.CommentThread>();
+
+        // Update existing threads in-place or dispose removed ones
+        for (const [id, vsThread] of existingById) {
+            const newData = newThreadDataById.get(id);
+            if (newData) {
+                // Update in-place
+                this.updateThreadInPlace(vsThread, newData, document, sidecarData.source_hash);
+                resultThreads.push(vsThread);
+                resultThreadMap.set(id, vsThread);
+            } else {
+                // Thread removed from sidecar — dispose
+                this.threadById.delete(id);
+                vsThread.dispose();
+            }
+        }
+
+        // Create new threads that don't exist yet
+        for (const [id, threadData] of newThreadDataById) {
+            if (!existingById.has(id)) {
+                try {
+                    const vsThread = this.convertThreadToVSCodeThread(threadData, document, sidecarData.source_hash);
+                    resultThreads.push(vsThread);
+                    resultThreadMap.set(id, vsThread);
+                    this.threadById.set(id, vsThread);
+                } catch (error) {
+                    console.error(`Failed to convert thread ${id}:`, error);
+                }
             }
         }
 
         // Store threads for this document
-        if (threads.length > 0) {
-            this.commentThreads.set(documentKey, threads);
+        if (resultThreads.length > 0) {
+            this.commentThreads.set(documentKey, resultThreads);
+        } else {
+            this.commentThreads.delete(documentKey);
         }
 
-        // Update gutter decorations for this document
+        // Update gutter decorations
         const editor = vscode.window.visibleTextEditors.find(
             e => e.document.uri.toString() === documentKey
         );
         if (editor) {
-            this.decorationManager.updateGutterDecorations(editor, sidecarData.threads, threadMap);
+            this.decorationManager.updateGutterDecorations(editor, sidecarData.threads, resultThreadMap);
         }
     }
 
     /**
-     * Converts a sidecar Thread to a VSCode CommentThread.
-     *
-     * @param thread The sidecar thread to convert
-     * @param document The VSCode document this thread belongs to
-     * @param sourceHash The source file hash for conflict detection
-     * @returns A VSCode CommentThread object
+     * Updates an existing VS Code CommentThread in-place with new sidecar data.
+     * This avoids dispose-and-recreate, preventing UI flashing.
+     */
+    private updateThreadInPlace(
+        vsThread: vscode.CommentThread,
+        thread: Thread,
+        document: vscode.TextDocument,
+        sourceHash: string
+    ): void {
+        // Update range
+        const startLine = Math.max(0, thread.anchor.line_start - 1);
+        const endLine = Math.max(0, thread.anchor.line_end - 1);
+        const documentLineCount = document.lineCount;
+        const safeStartLine = Math.min(startLine, documentLineCount - 1);
+        const safeEndLine = Math.min(endLine, documentLineCount - 1);
+
+        vsThread.range = new vscode.Range(
+            safeStartLine,
+            0,
+            safeEndLine,
+            document.lineAt(safeEndLine).text.length
+        );
+
+        // Update state
+        vsThread.state = (thread.status === ThreadStatus.OPEN)
+            ? vscode.CommentThreadState.Unresolved
+            : vscode.CommentThreadState.Resolved;
+
+        // Update label
+        if (thread.comments.length > 0) {
+            const firstLine = thread.comments[0].body.split('\n')[0];
+            vsThread.label = firstLine.substring(0, 100);
+        }
+
+        // Update comments
+        vsThread.comments = thread.comments.map(comment =>
+            this.convertCommentToVSCodeComment(comment)
+        );
+
+        // Update contextValue (simple string for when-clause matching)
+        vsThread.contextValue = thread.status === ThreadStatus.OPEN ? 'open' : 'resolved';
+
+        // Update WeakMap metadata
+        threadMetadataMap.set(vsThread, {
+            threadId: thread.id,
+            sourceHash: sourceHash,
+            health: thread.anchor.health,
+            driftDistance: thread.anchor.drift_distance,
+            status: thread.status,
+            hasDecision: thread.decision !== null
+        });
+    }
+
+    /**
+     * Converts a sidecar Thread to a new VSCode CommentThread.
      */
     private convertThreadToVSCodeThread(
         thread: Thread,
         document: vscode.TextDocument,
         sourceHash: string
     ): vscode.CommentThread {
-        // Convert 1-indexed line numbers to 0-indexed VSCode ranges
-        // VSCode line numbers are 0-indexed, sidecar line numbers are 1-indexed
         const startLine = Math.max(0, thread.anchor.line_start - 1);
         const endLine = Math.max(0, thread.anchor.line_end - 1);
-
-        // Ensure the range is valid for the document
         const documentLineCount = document.lineCount;
         const safeStartLine = Math.min(startLine, documentLineCount - 1);
         const safeEndLine = Math.min(endLine, documentLineCount - 1);
@@ -146,64 +216,49 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
             document.lineAt(safeEndLine).text.length
         );
 
-        // Create the comment thread
         const vsThread = this.commentController.createCommentThread(
             document.uri,
             range,
             []
         );
 
-        // Set thread properties
         vsThread.canReply = true;
 
-        // Map thread status to VSCode state
-        // "resolved" and "wontfix" both map to resolved state in VSCode
         vsThread.state = (thread.status === ThreadStatus.OPEN)
             ? vscode.CommentThreadState.Unresolved
             : vscode.CommentThreadState.Resolved;
 
-        // Set the label (shown in collapsed state) to the first comment's text
         if (thread.comments.length > 0) {
-            const firstCommentBody = thread.comments[0].body;
-            // Truncate to first line for label
-            const firstLine = firstCommentBody.split('\n')[0];
-            vsThread.label = firstLine.substring(0, 100); // Limit to 100 chars
+            const firstLine = thread.comments[0].body.split('\n')[0];
+            vsThread.label = firstLine.substring(0, 100);
         }
 
-        // Convert comments to VSCode format
         vsThread.comments = thread.comments.map(comment =>
             this.convertCommentToVSCodeComment(comment)
         );
 
-        // Store metadata in context for future use (gutter icons, decorations, conflict detection)
-        // This is a custom property that we can access later
-        vsThread.contextValue = JSON.stringify({
+        // Simple string contextValue for when-clause matching
+        vsThread.contextValue = thread.status === ThreadStatus.OPEN ? 'open' : 'resolved';
+
+        // Store metadata in WeakMap
+        threadMetadataMap.set(vsThread, {
+            threadId: thread.id,
+            sourceHash: sourceHash,
             health: thread.anchor.health,
-            drift_distance: thread.anchor.drift_distance,
+            driftDistance: thread.anchor.drift_distance,
             status: thread.status,
-            thread_id: thread.id,
-            has_decision: thread.decision !== null,
-            source_hash: sourceHash  // For conflict detection (specs/concurrency.md REQ-4)
+            hasDecision: thread.decision !== null
         });
 
-        // Set collapsibility (allow collapse/expand in UI)
-        vsThread.collapsibleState = vscode.CommentThreadCollapsibleState.Expanded;
+        vsThread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed;
 
         return vsThread;
     }
 
-    /**
-     * Converts a sidecar Comment to a VSCode Comment.
-     *
-     * @param comment The sidecar comment to convert
-     * @returns A VSCode Comment object
-     */
     private convertCommentToVSCodeComment(comment: SidecarComment): vscode.Comment {
-        // Create a markdown string for the comment body
         const body = new vscode.MarkdownString(comment.body);
-        body.isTrusted = true; // Allow markdown features
+        body.isTrusted = true;
 
-        // Parse the timestamp to create a Date object
         let timestamp: Date | undefined;
         try {
             timestamp = new Date(comment.timestamp);
@@ -211,14 +266,11 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
             console.warn(`Invalid timestamp for comment ${comment.id}: ${comment.timestamp}`);
         }
 
-        // Create the VSCode comment
         const vsComment: vscode.Comment = {
             body: body,
             mode: vscode.CommentMode.Preview,
             author: {
                 name: comment.author,
-                // Store author type in icon path for future UI differentiation
-                // (e.g., agent comments could have a different icon)
                 iconPath: comment.author_type === 'agent'
                     ? vscode.Uri.parse('https://example.com/agent-icon.png')
                     : undefined
@@ -230,13 +282,13 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
     }
 
     /**
-     * Finds the project root by searching for .git directory.
-     *
-     * Walks up the directory tree from the given path until a .git directory is found.
-     *
-     * @param startPath Absolute path to start searching from
-     * @returns Absolute path to project root, or null if not found
+     * Gets a thread ID from the WeakMap for an existing VS Code thread.
      */
+    private getThreadIdFromMap(vsThread: vscode.CommentThread): string | null {
+        const metadata = threadMetadataMap.get(vsThread);
+        return metadata?.threadId ?? null;
+    }
+
     static findProjectRoot(startPath: string): string | null {
         let currentPath = startPath;
         const root = path.parse(currentPath).root;
@@ -247,10 +299,8 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
                 return currentPath;
             }
 
-            // Move up one directory
             const parentPath = path.dirname(currentPath);
             if (parentPath === currentPath) {
-                // Reached root without finding .git
                 break;
             }
             currentPath = parentPath;
@@ -259,29 +309,16 @@ export class CommentProvider implements vscode.CommentingRangeProvider {
         return null;
     }
 
-    /**
-     * Focuses on a specific comment thread by its ID.
-     *
-     * @param threadId The thread ID to focus on
-     * @returns True if thread was found and focused, false otherwise
-     */
     focusThread(threadId: string): boolean {
         return this.decorationManager.focusThread(threadId);
     }
 
-    /**
-     * Disposes all resources used by this provider.
-     *
-     * Called when the extension deactivates.
-     */
     dispose(): void {
-        // Dispose all comment threads
         for (const threads of this.commentThreads.values()) {
             threads.forEach(thread => thread.dispose());
         }
         this.commentThreads.clear();
-
-        // Dispose decoration manager
+        this.threadById.clear();
         this.decorationManager.dispose();
     }
 }

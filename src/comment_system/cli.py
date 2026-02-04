@@ -1103,6 +1103,118 @@ def reopen(thread_id: str):
         sys.exit(2)
 
 
+@cli.command()
+@click.argument("thread_id", required=True)
+@click.option("--force", is_flag=True, help="Skip confirmation prompt")
+def delete(thread_id: str, force: bool):
+    """
+    Delete a thread permanently.
+
+    Removes the thread and all its comments from the sidecar file.
+    If the sidecar has no remaining threads after deletion, the
+    sidecar file itself is deleted.
+
+    Examples:
+
+        comment delete 01HQABCDEFGHIJKLMNOPQRSTUV
+        comment delete 01HQABCDEFGHIJKLMNOPQRSTUV --force
+    """
+    try:
+        # Find project root
+        try:
+            project_root = find_project_root()
+        except ValueError as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
+
+        # Find thread in sidecar files
+        found_sidecar_path = None
+
+        comments_dir = project_root / ".comments"
+        if comments_dir.exists():
+            sidecar_paths = list(comments_dir.rglob("*.json"))
+            for sidecar_path in sidecar_paths:
+                try:
+                    sidecar = read_sidecar(sidecar_path)
+                    for thread in sidecar.threads:
+                        if thread.id == thread_id:
+                            found_sidecar_path = sidecar_path
+                            break
+                    if found_sidecar_path:
+                        break
+                except ValueError:
+                    # Skip invalid sidecar files
+                    continue
+
+        if not found_sidecar_path:
+            click.echo(f"Error: Thread not found: {thread_id}", err=True)
+            sys.exit(1)
+
+        # Confirm deletion unless --force
+        if not force:
+            click.confirm(
+                f"Delete thread {thread_id}? This cannot be undone.",
+                abort=True,
+            )
+
+        # Track thread info for output message
+        deleted_comment_count = 0
+
+        # Define update function for write_sidecar_with_retry
+        def delete_thread(current: SidecarFile | None) -> SidecarFile:
+            nonlocal deleted_comment_count
+            if current is None:
+                click.echo("Error: Sidecar file was deleted", err=True)
+                sys.exit(2)
+
+            # Find and remove the thread
+            original_count = len(current.threads)
+            current.threads = [t for t in current.threads if t.id != thread_id]
+
+            if len(current.threads) == original_count:
+                click.echo(f"Error: Thread {thread_id} not found in sidecar", err=True)
+                sys.exit(1)
+
+            # Count deleted comments for output message
+            deleted_comment_count = original_count - len(current.threads)
+
+            return current
+
+        # Write updated sidecar with automatic retry
+        try:
+            result = write_sidecar_with_retry(found_sidecar_path, delete_thread)
+        except ConcurrencyConflict as e:
+            click.echo(f"Error: {e}", err=True)
+            sys.exit(2)
+        except (ValueError, OSError) as e:
+            click.echo(f"Error writing sidecar: {e}", err=True)
+            sys.exit(2)
+
+        # If no threads remain, delete the sidecar file
+        if len(result.threads) == 0:
+            try:
+                found_sidecar_path.unlink()
+                # Also clean up empty parent directories under .comments/
+                parent = found_sidecar_path.parent
+                while parent != comments_dir and parent.exists():
+                    try:
+                        parent.rmdir()  # Only removes if empty
+                        parent = parent.parent
+                    except OSError:
+                        break
+            except OSError:
+                pass  # Best-effort cleanup
+
+        click.echo(f"Thread {thread_id} deleted")
+
+    except click.Abort:
+        click.echo("Delete cancelled")
+        sys.exit(0)
+    except Exception as e:
+        click.echo(f"Unexpected error: {e}", err=True)
+        sys.exit(2)
+
+
 def _format_health(health: str, count: int) -> str:
     """Format health status with color coding and count.
 

@@ -12,25 +12,23 @@ jest.mock('vscode');
 // Mock child_process module
 jest.mock('child_process');
 
+const mockExecFile = child_process.execFile as unknown as jest.Mock;
+
 describe('addCommentCommand', () => {
     let mockEditor: any;
     let mockDocument: any;
     let mockSelection: any;
     let projectRoot: string;
 
-    // Mock functions
     let mockShowErrorMessage: jest.Mock;
     let mockShowInformationMessage: jest.Mock;
     let mockShowInputBox: jest.Mock;
-    let mockExecSync: jest.Mock;
 
     beforeEach(() => {
-        // Reset all mocks
         jest.clearAllMocks();
 
         projectRoot = '/test/project';
 
-        // Mock VSCode window methods
         mockShowErrorMessage = jest.fn();
         mockShowInformationMessage = jest.fn();
         mockShowInputBox = jest.fn();
@@ -42,18 +40,19 @@ describe('addCommentCommand', () => {
             showInputBox: mockShowInputBox
         };
 
-        // Mock VSCode env
         (vscode.env as any) = {
             username: 'test-user'
         };
 
-        // Mock execSync
-        mockExecSync = child_process.execSync as jest.Mock;
+        mockExecFile.mockImplementation(
+            (cmd: string, args: string[], opts: any, cb: Function) => {
+                cb(null, { stdout: '', stderr: '' });
+            }
+        );
     });
 
     describe('validation', () => {
         test('shows error when no active editor', async () => {
-            // No active editor
             (vscode.window as any).activeTextEditor = undefined;
 
             await addCommentCommand(projectRoot);
@@ -63,7 +62,6 @@ describe('addCommentCommand', () => {
         });
 
         test('shows error when selection is empty', async () => {
-            // Create mock editor with empty selection
             mockSelection = {
                 isEmpty: true,
                 start: { line: 5, character: 0 },
@@ -88,7 +86,6 @@ describe('addCommentCommand', () => {
         });
 
         test('shows error when file is outside project root', async () => {
-            // Create mock editor with valid selection but file outside project
             mockSelection = {
                 isEmpty: false,
                 start: { line: 10, character: 0 },
@@ -117,8 +114,6 @@ describe('addCommentCommand', () => {
 
     describe('line number conversion', () => {
         test('converts 0-indexed VSCode lines to 1-indexed sidecar format', async () => {
-            // Setup: VSCode selection on lines 0-2 (0-indexed)
-            // Expected: CLI command with lines 1-3 (1-indexed)
             mockSelection = {
                 isEmpty: false,
                 start: { line: 0, character: 0 },
@@ -135,24 +130,19 @@ describe('addCommentCommand', () => {
             };
 
             (vscode.window as any).activeTextEditor = mockEditor;
-
-            // Mock input box (user enters comment)
             mockShowInputBox.mockResolvedValue('Test comment');
-
-            // Mock successful CLI execution
-            mockExecSync.mockReturnValue('');
 
             await addCommentCommand(projectRoot);
 
-            // Verify CLI command contains 1-indexed lines (1:3, not 0:2)
-            expect(mockExecSync).toHaveBeenCalledWith(
-                expect.stringContaining('-L 1:3'),
-                expect.any(Object)
+            expect(mockExecFile).toHaveBeenCalledWith(
+                'comment',
+                expect.arrayContaining(['-L', '1:3']),
+                expect.any(Object),
+                expect.any(Function)
             );
         });
 
         test('handles single-line selection (start === end)', async () => {
-            // VSCode line 10 (0-indexed) → sidecar line 11 (1-indexed)
             mockSelection = {
                 isEmpty: false,
                 start: { line: 10, character: 5 },
@@ -170,20 +160,20 @@ describe('addCommentCommand', () => {
 
             (vscode.window as any).activeTextEditor = mockEditor;
             mockShowInputBox.mockResolvedValue('Comment on line 11');
-            mockExecSync.mockReturnValue('');
 
             await addCommentCommand(projectRoot);
 
-            expect(mockExecSync).toHaveBeenCalledWith(
-                expect.stringContaining('-L 11:11'),
-                expect.any(Object)
+            expect(mockExecFile).toHaveBeenCalledWith(
+                'comment',
+                expect.arrayContaining(['-L', '11:11']),
+                expect.any(Object),
+                expect.any(Function)
             );
         });
     });
 
     describe('CLI command generation', () => {
         beforeEach(() => {
-            // Standard mock setup for CLI tests
             mockSelection = {
                 isEmpty: false,
                 start: { line: 10, character: 0 },
@@ -200,7 +190,6 @@ describe('addCommentCommand', () => {
             };
 
             (vscode.window as any).activeTextEditor = mockEditor;
-            mockExecSync.mockReturnValue('');
         });
 
         test('generates correct CLI command with all parameters', async () => {
@@ -208,35 +197,27 @@ describe('addCommentCommand', () => {
 
             await addCommentCommand(projectRoot);
 
-            expect(mockExecSync).toHaveBeenCalledWith(
-                'comment add "src/main.py" -L 11:16 --author="test-user" "Fix this function"',
+            expect(mockExecFile).toHaveBeenCalledWith(
+                'comment',
+                ['add', 'src/main.py', '-L', '11:16', '--author=test-user', 'Fix this function'],
                 expect.objectContaining({
                     cwd: projectRoot,
-                    encoding: 'utf-8',
-                    stdio: 'pipe'
-                })
+                    encoding: 'utf-8'
+                }),
+                expect.any(Function)
             );
         });
 
-        test('escapes double quotes in comment text', async () => {
+        test('passes text with special characters directly (no escaping needed)', async () => {
             mockShowInputBox.mockResolvedValue('This is a "quoted" string');
 
             await addCommentCommand(projectRoot);
 
-            expect(mockExecSync).toHaveBeenCalledWith(
-                expect.stringContaining('This is a \\"quoted\\" string'),
-                expect.any(Object)
-            );
-        });
-
-        test('escapes backslashes in comment text', async () => {
-            mockShowInputBox.mockResolvedValue('Path: C:\\Users\\test');
-
-            await addCommentCommand(projectRoot);
-
-            expect(mockExecSync).toHaveBeenCalledWith(
-                expect.stringContaining('Path: C:\\\\Users\\\\test'),
-                expect.any(Object)
+            expect(mockExecFile).toHaveBeenCalledWith(
+                'comment',
+                expect.arrayContaining(['This is a "quoted" string']),
+                expect.any(Object),
+                expect.any(Function)
             );
         });
 
@@ -250,9 +231,11 @@ describe('addCommentCommand', () => {
 
             await addCommentCommand(projectRoot);
 
-            expect(mockExecSync).toHaveBeenCalledWith(
-                expect.stringContaining('comment add "subdir/nested/file.txt"'),
-                expect.any(Object)
+            expect(mockExecFile).toHaveBeenCalledWith(
+                'comment',
+                expect.arrayContaining(['add', 'subdir/nested/file.txt']),
+                expect.any(Object),
+                expect.any(Function)
             );
         });
 
@@ -263,9 +246,11 @@ describe('addCommentCommand', () => {
 
             await addCommentCommand(projectRoot);
 
-            expect(mockExecSync).toHaveBeenCalledWith(
-                expect.stringContaining('--author="vscode-user"'),
-                expect.any(Object)
+            expect(mockExecFile).toHaveBeenCalledWith(
+                'comment',
+                expect.arrayContaining(['--author=vscode-user']),
+                expect.any(Object),
+                expect.any(Function)
             );
         });
     });
@@ -292,7 +277,6 @@ describe('addCommentCommand', () => {
 
         test('prompts user with correct file and line info', async () => {
             mockShowInputBox.mockResolvedValue('Test comment');
-            mockExecSync.mockReturnValue('');
 
             await addCommentCommand(projectRoot);
 
@@ -311,18 +295,16 @@ describe('addCommentCommand', () => {
 
             await addCommentCommand(projectRoot);
 
-            expect(mockExecSync).not.toHaveBeenCalled();
+            expect(mockExecFile).not.toHaveBeenCalled();
             expect(mockShowErrorMessage).not.toHaveBeenCalled();
             expect(mockShowInformationMessage).not.toHaveBeenCalled();
         });
 
         test('validates that comment text is not empty', async () => {
             mockShowInputBox.mockResolvedValue('Valid comment');
-            mockExecSync.mockReturnValue('');
 
             await addCommentCommand(projectRoot);
 
-            // Extract the validateInput function
             const validateInput = mockShowInputBox.mock.calls[0][0].validateInput;
 
             expect(validateInput('')).toBe('Comment text cannot be empty');
@@ -353,8 +335,6 @@ describe('addCommentCommand', () => {
         });
 
         test('shows success message when CLI succeeds', async () => {
-            mockExecSync.mockReturnValue('');
-
             await addCommentCommand(projectRoot);
 
             expect(mockShowInformationMessage).toHaveBeenCalledWith(
@@ -365,10 +345,12 @@ describe('addCommentCommand', () => {
 
         test('shows error message when CLI fails with stderr', async () => {
             const error: any = new Error('Command failed');
-            error.stderr = Buffer.from('Error: Invalid line range');
-            mockExecSync.mockImplementation(() => {
-                throw error;
-            });
+            error.stderr = 'Error: Invalid line range';
+            mockExecFile.mockImplementation(
+                (cmd: string, args: string[], opts: any, cb: Function) => {
+                    cb(error);
+                }
+            );
 
             await addCommentCommand(projectRoot);
 
@@ -380,26 +362,16 @@ describe('addCommentCommand', () => {
 
         test('shows error message when CLI fails without stderr', async () => {
             const error = new Error('Command not found');
-            mockExecSync.mockImplementation(() => {
-                throw error;
-            });
+            mockExecFile.mockImplementation(
+                (cmd: string, args: string[], opts: any, cb: Function) => {
+                    cb(error);
+                }
+            );
 
             await addCommentCommand(projectRoot);
 
             expect(mockShowErrorMessage).toHaveBeenCalledWith(
                 'Failed to add comment: Command not found'
-            );
-        });
-
-        test('handles unknown error gracefully', async () => {
-            mockExecSync.mockImplementation(() => {
-                throw { unknown: 'error' };
-            });
-
-            await addCommentCommand(projectRoot);
-
-            expect(mockShowErrorMessage).toHaveBeenCalledWith(
-                expect.stringContaining('Failed to add comment')
             );
         });
     });

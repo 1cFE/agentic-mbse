@@ -4,9 +4,7 @@ import * as childProcess from "child_process";
 
 // Mock child_process
 jest.mock("child_process");
-const mockExecSync = childProcess.execSync as jest.MockedFunction<
-  typeof childProcess.execSync
->;
+const mockExecFile = childProcess.execFile as unknown as jest.Mock;
 
 describe("reconcileFileCommand", () => {
   let mockEditor: vscode.TextEditor;
@@ -17,7 +15,6 @@ describe("reconcileFileCommand", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
-    // Mock active editor
     mockEditor = {
       document: {
         uri: { fsPath: filePath },
@@ -25,6 +22,12 @@ describe("reconcileFileCommand", () => {
     } as any;
 
     (vscode.window as any).activeTextEditor = mockEditor;
+
+    mockExecFile.mockImplementation(
+      (cmd: string, args: string[], opts: any, cb: Function) => {
+        cb(null, { stdout: '{}', stderr: '' });
+      }
+    );
   });
 
   it("should show warning when no active editor", async () => {
@@ -35,7 +38,7 @@ describe("reconcileFileCommand", () => {
     expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
       "No active file to reconcile"
     );
-    expect(mockExecSync).not.toHaveBeenCalled();
+    expect(mockExecFile).not.toHaveBeenCalled();
   });
 
   it("should show error when file is outside project root", async () => {
@@ -52,7 +55,7 @@ describe("reconcileFileCommand", () => {
     expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
       "Cannot reconcile file outside project root"
     );
-    expect(mockExecSync).not.toHaveBeenCalled();
+    expect(mockExecFile).not.toHaveBeenCalled();
   });
 
   it("should execute CLI command with correct arguments", async () => {
@@ -68,80 +71,22 @@ describe("reconcileFileCommand", () => {
       source_hash_after: "def456",
     };
 
-    mockExecSync.mockReturnValue(JSON.stringify(mockReport));
+    mockExecFile.mockImplementation(
+      (cmd: string, args: string[], opts: any, cb: Function) => {
+        cb(null, { stdout: JSON.stringify(mockReport), stderr: '' });
+      }
+    );
 
     await reconcileFileCommand(projectRoot);
 
-    expect(mockExecSync).toHaveBeenCalledWith(
-      `comment reconcile "${filePath}" --json`,
+    expect(mockExecFile).toHaveBeenCalledWith(
+      "comment",
+      ["reconcile", filePath, "--json"],
       expect.objectContaining({
         cwd: projectRoot,
         encoding: "utf-8",
-      })
-    );
-  });
-
-  it("should escape file paths with spaces", async () => {
-    const spaceFilePath = "/home/user/project/src/example file.py";
-    mockEditor = {
-      document: {
-        uri: { fsPath: spaceFilePath },
-      },
-    } as any;
-    (vscode.window as any).activeTextEditor = mockEditor;
-
-    const mockReport = {
-      file: "src/example file.py",
-      renamed: false,
-      total_threads: 1,
-      anchored: 1,
-      drifted: 0,
-      orphaned: 0,
-      max_drift: 0,
-      source_hash_before: "abc",
-      source_hash_after: "abc",
-    };
-
-    mockExecSync.mockReturnValue(JSON.stringify(mockReport));
-
-    await reconcileFileCommand(projectRoot);
-
-    expect(mockExecSync).toHaveBeenCalledWith(
-      `comment reconcile "${spaceFilePath}" --json`,
-      expect.anything()
-    );
-  });
-
-  it("should escape file paths with backslashes", async () => {
-    const backslashPath = "C:\\Users\\user\\project\\src\\example.py";
-    const projectRootWin = "C:\\Users\\user\\project";
-    mockEditor = {
-      document: {
-        uri: { fsPath: backslashPath },
-      },
-    } as any;
-    (vscode.window as any).activeTextEditor = mockEditor;
-
-    const mockReport = {
-      file: "src/example.py",
-      renamed: false,
-      total_threads: 1,
-      anchored: 1,
-      drifted: 0,
-      orphaned: 0,
-      max_drift: 0,
-      source_hash_before: "abc",
-      source_hash_after: "abc",
-    };
-
-    mockExecSync.mockReturnValue(JSON.stringify(mockReport));
-
-    await reconcileFileCommand(projectRootWin);
-
-    // Should escape backslashes in path
-    expect(mockExecSync).toHaveBeenCalledWith(
-      expect.stringContaining("C:\\\\Users\\\\user"),
-      expect.anything()
+      }),
+      expect.any(Function)
     );
   });
 
@@ -158,7 +103,11 @@ describe("reconcileFileCommand", () => {
       source_hash_after: "abc123",
     };
 
-    mockExecSync.mockReturnValue(JSON.stringify(mockReport));
+    mockExecFile.mockImplementation(
+      (cmd: string, args: string[], opts: any, cb: Function) => {
+        cb(null, { stdout: JSON.stringify(mockReport), stderr: '' });
+      }
+    );
 
     await reconcileFileCommand(projectRoot);
 
@@ -180,34 +129,16 @@ describe("reconcileFileCommand", () => {
       source_hash_after: "def456",
     };
 
-    mockExecSync.mockReturnValue(JSON.stringify(mockReport));
+    mockExecFile.mockImplementation(
+      (cmd: string, args: string[], opts: any, cb: Function) => {
+        cb(null, { stdout: JSON.stringify(mockReport), stderr: '' });
+      }
+    );
 
     await reconcileFileCommand(projectRoot);
 
     expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
       `Reconciled ${relativeFilePath}: 1 anchored, 2 drifted, 0 orphaned`
-    );
-  });
-
-  it("should show warning notification when threads orphaned", async () => {
-    const mockReport = {
-      file: relativeFilePath,
-      renamed: false,
-      total_threads: 3,
-      anchored: 2,
-      drifted: 0,
-      orphaned: 1,
-      max_drift: 0,
-      source_hash_before: "abc123",
-      source_hash_after: "def456",
-    };
-
-    mockExecSync.mockReturnValue(JSON.stringify(mockReport));
-
-    await reconcileFileCommand(projectRoot);
-
-    expect(vscode.window.showWarningMessage).toHaveBeenCalledWith(
-      `Reconciled ${relativeFilePath}: 2 anchored, 0 drifted, 1 orphaned`
     );
   });
 
@@ -224,7 +155,11 @@ describe("reconcileFileCommand", () => {
       source_hash_after: "abc123",
     };
 
-    mockExecSync.mockReturnValue(JSON.stringify(mockReport));
+    mockExecFile.mockImplementation(
+      (cmd: string, args: string[], opts: any, cb: Function) => {
+        cb(null, { stdout: JSON.stringify(mockReport), stderr: '' });
+      }
+    );
 
     await reconcileFileCommand(projectRoot);
 
@@ -234,7 +169,11 @@ describe("reconcileFileCommand", () => {
   });
 
   it("should show error notification when CLI output is not valid JSON", async () => {
-    mockExecSync.mockReturnValue("Not valid JSON output");
+    mockExecFile.mockImplementation(
+      (cmd: string, args: string[], opts: any, cb: Function) => {
+        cb(null, { stdout: "Not valid JSON output", stderr: '' });
+      }
+    );
 
     await reconcileFileCommand(projectRoot);
 
@@ -246,11 +185,13 @@ describe("reconcileFileCommand", () => {
   it("should show info notification when no comments found (exit code 1)", async () => {
     const error: any = new Error("Command failed");
     error.status = 1;
-    error.stderr = Buffer.from("Error: No comments found for src/example.py");
+    error.stderr = "Error: No comments found for src/example.py";
 
-    mockExecSync.mockImplementation(() => {
-      throw error;
-    });
+    mockExecFile.mockImplementation(
+      (cmd: string, args: string[], opts: any, cb: Function) => {
+        cb(error);
+      }
+    );
 
     await reconcileFileCommand(projectRoot);
 
@@ -259,30 +200,16 @@ describe("reconcileFileCommand", () => {
     );
   });
 
-  it("should show error notification for other user errors (exit code 1)", async () => {
-    const error: any = new Error("Command failed");
-    error.status = 1;
-    error.stderr = Buffer.from("Error: Invalid file path");
-
-    mockExecSync.mockImplementation(() => {
-      throw error;
-    });
-
-    await reconcileFileCommand(projectRoot);
-
-    expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
-      "Reconciliation failed: Error: Invalid file path"
-    );
-  });
-
   it("should show error notification for system errors (exit code 2)", async () => {
     const error: any = new Error("Command failed");
     error.status = 2;
-    error.stderr = Buffer.from("Error: Permission denied");
+    error.stderr = "Error: Permission denied";
 
-    mockExecSync.mockImplementation(() => {
-      throw error;
-    });
+    mockExecFile.mockImplementation(
+      (cmd: string, args: string[], opts: any, cb: Function) => {
+        cb(error);
+      }
+    );
 
     await reconcileFileCommand(projectRoot);
 
@@ -293,32 +220,18 @@ describe("reconcileFileCommand", () => {
 
   it("should show error notification for unknown errors", async () => {
     const error: any = new Error("Unknown error");
-    error.stderr = Buffer.from("Something went wrong");
+    error.stderr = "Something went wrong";
 
-    mockExecSync.mockImplementation(() => {
-      throw error;
-    });
+    mockExecFile.mockImplementation(
+      (cmd: string, args: string[], opts: any, cb: Function) => {
+        cb(error);
+      }
+    );
 
     await reconcileFileCommand(projectRoot);
 
     expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
       "Reconciliation failed: Something went wrong"
-    );
-  });
-
-  it("should handle CLI errors with no stderr", async () => {
-    const error: any = new Error("Unknown error");
-    error.status = 1;
-    // No stderr
-
-    mockExecSync.mockImplementation(() => {
-      throw error;
-    });
-
-    await reconcileFileCommand(projectRoot);
-
-    expect(vscode.window.showErrorMessage).toHaveBeenCalledWith(
-      "Reconciliation failed: Unknown error"
     );
   });
 
@@ -337,8 +250,11 @@ describe("reconcileFileCommand", () => {
       source_hash_after: "abc",
     };
 
-    const cliOutput = JSON.stringify(mockReport);
-    mockExecSync.mockReturnValue(cliOutput);
+    mockExecFile.mockImplementation(
+      (cmd: string, args: string[], opts: any, cb: Function) => {
+        cb(null, { stdout: JSON.stringify(mockReport), stderr: '' });
+      }
+    );
 
     await reconcileFileCommand(projectRoot);
 

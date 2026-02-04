@@ -2483,3 +2483,97 @@ def test_reconcile_all_detects_renames(runner, git_repo):
     sidecar2 = read_sidecar(git_repo / ".comments" / "renamed2.txt.json")
     assert sidecar1.source_file == "renamed1.txt"
     assert sidecar2.source_file == "renamed2.txt"
+
+
+# ============================================================================
+# Delete Command Tests
+# ============================================================================
+
+
+def test_delete_thread(runner, git_repo):
+    """Test deleting a thread permanently."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "To delete"])
+    assert result.exit_code == 0
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Delete with --force (skip confirmation)
+    result = runner.invoke(cli, ["delete", thread_id, "--force"])
+    assert result.exit_code == 0
+    assert f"Thread {thread_id} deleted" in result.output
+
+    # Verify sidecar file is deleted (was the only thread)
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    assert not sidecar_path.exists()
+
+
+def test_delete_thread_keeps_sidecar_with_remaining_threads(runner, git_repo):
+    """Test that deleting one thread preserves other threads in the sidecar."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\nLine 2\nLine 3\n")
+
+    # Create two threads
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "First thread"])
+    assert result.exit_code == 0
+    thread_id_1 = result.output.split("Created thread ")[1].split("\n")[0]
+
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "2:2", "Second thread"])
+    assert result.exit_code == 0
+    thread_id_2 = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Delete first thread
+    result = runner.invoke(cli, ["delete", thread_id_1, "--force"])
+    assert result.exit_code == 0
+
+    # Verify sidecar still exists with remaining thread
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    assert sidecar_path.exists()
+    sidecar = read_sidecar(sidecar_path)
+    assert len(sidecar.threads) == 1
+    assert sidecar.threads[0].id == thread_id_2
+
+
+def test_delete_thread_not_found(runner, git_repo):
+    """Test delete with non-existent thread."""
+    result = runner.invoke(cli, ["delete", "01HQNONEXISTENT000000000000", "--force"])
+    assert result.exit_code == 1
+    assert "Thread not found" in result.output
+
+
+def test_delete_thread_confirmation_abort(runner, git_repo):
+    """Test that delete without --force prompts for confirmation and can be aborted."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "To delete"])
+    assert result.exit_code == 0
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Try delete without --force, respond with 'n'
+    result = runner.invoke(cli, ["delete", thread_id], input="n\n")
+    assert "Delete cancelled" in result.output
+
+    # Verify thread still exists
+    sidecar_path = git_repo / ".comments" / "test.txt.json"
+    sidecar = read_sidecar(sidecar_path)
+    assert len(sidecar.threads) == 1
+
+
+def test_delete_thread_confirmation_confirm(runner, git_repo):
+    """Test that delete without --force prompts and proceeds on confirmation."""
+    file_path = git_repo / "test.txt"
+    file_path.write_text("Line 1\n")
+
+    # Create thread
+    result = runner.invoke(cli, ["add", str(file_path), "-L", "1:1", "To delete"])
+    assert result.exit_code == 0
+    thread_id = result.output.split("Created thread ")[1].split("\n")[0]
+
+    # Delete without --force, respond with 'y'
+    result = runner.invoke(cli, ["delete", thread_id], input="y\n")
+    assert result.exit_code == 0
+    assert f"Thread {thread_id} deleted" in result.output
