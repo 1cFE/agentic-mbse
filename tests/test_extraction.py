@@ -219,11 +219,12 @@ class TestPymupdfBackend:
 
         assert result.success is True
         assert result.markdown_path == output_dir / "full_document.md"
+        # Content is post-processed but "# Title\n\nSome content\n" is unchanged
         assert (output_dir / "full_document.md").read_text() == "# Title\n\nSome content\n"
         assert (output_dir / "images").is_dir()
         assert result.char_count == len("# Title\n\nSome content\n")
 
-    def test_extract_returns_result_on_success(self, tmp_path, monkeypatch):
+    def test_extract_passes_hdr_info_and_table_strategy(self, tmp_path, monkeypatch):
         from agentic_mbse.extraction import pymupdf_backend
 
         pdf = tmp_path / "report.pdf"
@@ -238,6 +239,30 @@ class TestPymupdfBackend:
         result = pymupdf_backend.extract(pdf, output_dir)
         assert result.success is True
         assert result.backend_used == "pymupdf"
+
+        # Verify hdr_info and table_strategy were passed
+        call_kwargs = mock_to_markdown.call_args[1]
+        assert call_kwargs["hdr_info"] is pymupdf_backend._academic_header_detector
+        assert call_kwargs["table_strategy"] == "lines"
+
+    def test_extract_applies_postprocess(self, tmp_path, monkeypatch):
+        from agentic_mbse.extraction import pymupdf_backend
+
+        pdf = tmp_path / "report.pdf"
+        pdf.write_bytes(b"fake pdf")
+        output_dir = tmp_path / "output"
+
+        # Bold header should be promoted by postprocess
+        mock_to_markdown = MagicMock(return_value="**1 Introduction**\n\nContent.\n")
+        monkeypatch.setattr(
+            pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown
+        )
+
+        result = pymupdf_backend.extract(pdf, output_dir)
+        assert result.success is True
+        written = (output_dir / "full_document.md").read_text()
+        assert "## 1 Introduction" in written
+        assert "**1 Introduction**" not in written
 
     def test_extract_returns_error_on_failure(self, tmp_path, monkeypatch):
         from agentic_mbse.extraction import pymupdf_backend

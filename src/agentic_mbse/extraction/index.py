@@ -77,6 +77,8 @@ def parse_sections(content: str, max_depth: int = 3) -> list[Section]:
         re.compile(r"^#{2,6}\s+\*\*(\d+(?:\.\d+)*)\s+(.+?)\*\*\s*$"),
         # Format C: generic levels
         re.compile(r"^#{2,6}\s+(\d+(?:\.\d+)*)\s+(.+)$"),
+        # Format D: Appendix letter numbering (## A.1 Title)
+        re.compile(r"^#{2,6}\s+([A-Z](?:\.\d+)*)\s+(.+)$"),
     ]
 
     sections: list[Section] = []
@@ -92,6 +94,7 @@ def parse_sections(content: str, max_depth: int = 3) -> list[Section]:
 
         section_num = match.group(1)
         title = match.group(2).strip().rstrip("*").strip()
+        # Depth: count dots + 1 (works for both "7.2.1" and "A.1.2")
         depth = section_num.count(".") + 1
 
         if depth > max_depth:
@@ -291,7 +294,7 @@ def parse_index_sections(index_content: str) -> dict[str, tuple[int, int, str]]:
     """
     sections: dict[str, tuple[int, int, str]] = {}
 
-    header_pattern = re.compile(r"^#{2,}\s+(\d+(?:\.\d+)*)\s+(.+)$", re.MULTILINE)
+    header_pattern = re.compile(r"^#{2,}\s+(\d+(?:\.\d+)*|[A-Z](?:\.\d+)*)\s+(.+)$", re.MULTILINE)
     lines_pattern = re.compile(r"\*\*Lines:\*\*\s*(\d+)-(\d+)")
 
     headers = list(header_pattern.finditer(index_content))

@@ -6,9 +6,11 @@ Fast, reliable fallback. Requires the ``pymupdf4llm`` package
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from agentic_mbse.extraction.base import ExtractionResult
+from agentic_mbse.extraction.postprocess import postprocess
 
 
 def _get_to_markdown():
@@ -16,6 +18,28 @@ def _get_to_markdown():
     import pymupdf4llm  # type: ignore[import-untyped]
 
     return pymupdf4llm.to_markdown
+
+
+def _academic_header_detector(span, page=None):
+    """Custom header detector for academic papers.
+
+    Uses bold flag + section numbering regex instead of font-size heuristics.
+    Passed as the ``hdr_info`` callback to ``pymupdf4llm.to_markdown()``.
+    """
+    text = span["text"].strip()
+    is_bold = bool(span["flags"] & 16)  # bit 4 = bold
+    if not is_bold:
+        return ""
+    # Numbered sections: "1 Introduction", "2.1 Background", "A.1 Appendix"
+    m = re.match(r"^\d+(?:\.\d+)*\.?\s+[A-Z]", text)
+    if m:
+        sec_num = text.split()[0].rstrip(".")
+        depth = sec_num.count(".") + 1
+        return "#" * min(depth + 1, 6) + " "
+    # All-caps short titles (e.g., "ABSTRACT", "REFERENCES")
+    if text.isupper() and len(text) < 60 and len(text.split()) <= 6:
+        return "## "
+    return ""
 
 
 def extract(input_path: Path, output_dir: Path) -> ExtractionResult:
@@ -37,7 +61,12 @@ def extract(input_path: Path, output_dir: Path) -> ExtractionResult:
             image_format="png",
             dpi=150,
             page_chunks=False,
+            hdr_info=_academic_header_detector,
+            table_strategy="lines",
         )
+
+        # Apply deterministic post-processing
+        md_text = postprocess(md_text, images_dir=images_dir)
 
         md_path = output_dir / "full_document.md"
         md_path.write_text(md_text)
