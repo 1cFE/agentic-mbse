@@ -4,16 +4,16 @@ from pathlib import Path
 
 from agentic_mbse.extraction.postprocess import (
     clean_header_artifacts,
+    normalize_image_paths,
     postprocess,
     promote_bold_headers,
     promote_figure_captions,
     promote_plain_headers,
-    normalize_image_paths,
+    reject_noise_headers,
     repair_ligatures,
     strip_page_numbers,
     strip_running_headers,
 )
-
 
 # ---------------------------------------------------------------------------
 # promote_bold_headers
@@ -308,10 +308,7 @@ class TestNormalizeImagePaths:
 
     def test_multiple_replacements(self):
         images_dir = Path("/output/images")
-        md = (
-            "![a](/output/images/fig1.png)\n"
-            "![b](/output/images/fig2.png)\n"
-        )
+        md = "![a](/output/images/fig1.png)\n![b](/output/images/fig2.png)\n"
         result = normalize_image_paths(md, images_dir)
         assert "![a](images/fig1.png)" in result
         assert "![b](images/fig2.png)" in result
@@ -390,6 +387,60 @@ class TestPromoteFigureCaptions:
         md = "![Existing alt](images/fig.png)\nFigure 1: Caption."
         result = promote_figure_captions(md)
         assert "![Existing alt](images/fig.png)" in result
+
+
+# ---------------------------------------------------------------------------
+# reject_noise_headers
+# ---------------------------------------------------------------------------
+
+
+class TestRejectNoiseHeaders:
+    def test_short_title_demoted(self):
+        """Headers with very short title portion (< 4 chars) should be demoted."""
+        md = "## 3 ab"
+        assert reject_noise_headers(md) == "3 ab"
+
+    def test_math_operators_demoted(self):
+        """Headers containing math operators should be demoted."""
+        md = "## 5.2 E[X] = sum"
+        assert reject_noise_headers(md) == "5.2 E[X] = sum"
+
+    def test_brackets_demoted(self):
+        md = "## _[C][AC]_ pattern"
+        assert reject_noise_headers(md) == "_[C][AC]_ pattern"
+
+    def test_table_row_with_pipe_demoted(self):
+        md = "## value | other | third"
+        assert reject_noise_headers(md) == "value | other | third"
+
+    def test_page_number_artifact_demoted(self):
+        """Number + tiny word (page artifact) should be demoted."""
+        md = "## 42 Fig"
+        assert reject_noise_headers(md) == "42 Fig"
+
+    def test_legitimate_header_preserved(self):
+        md = "## 1 Introduction"
+        assert reject_noise_headers(md) == "## 1 Introduction"
+
+    def test_longer_legitimate_header_preserved(self):
+        md = "### 2.1 Global Status of Fusion Energy"
+        assert reject_noise_headers(md) == "### 2.1 Global Status of Fusion Energy"
+
+    def test_curly_braces_demoted(self):
+        md = "## 3 f{x} + g{y}"
+        assert reject_noise_headers(md) == "3 f{x} + g{y}"
+
+    def test_tab_separated_demoted(self):
+        md = "## value\tother\tthird"
+        assert reject_noise_headers(md) == "value\tother\tthird"
+
+    def test_multiline_mixed(self):
+        md = "## 1 Introduction\n\n## 3 = 4\n\n## 2 Methods"
+        result = reject_noise_headers(md)
+        assert "## 1 Introduction" in result
+        assert "## 2 Methods" in result
+        assert "## 3 = 4" not in result
+        assert "3 = 4" in result
 
 
 # ---------------------------------------------------------------------------

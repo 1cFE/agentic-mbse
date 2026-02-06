@@ -203,7 +203,14 @@ def format_index_md(sections: list[Section], metadata: dict) -> str:
 
     # YAML frontmatter
     lines.append("---")
-    for key in ("document", "generated", "source_checksum", "total_lines", "depth", "section_count"):
+    for key in (
+        "document",
+        "generated",
+        "source_checksum",
+        "total_lines",
+        "depth",
+        "section_count",
+    ):
         lines.append(f"{key}: {metadata[key]}")
     lines.append("---")
     lines.append("")
@@ -368,7 +375,9 @@ Examples:
         """,
     )
     parser.add_argument("path", type=Path, help="Path to full_document.md or containing folder")
-    parser.add_argument("--depth", type=int, default=3, help="Max header depth to index (default: 3)")
+    parser.add_argument(
+        "--depth", type=int, default=3, help="Max header depth to index (default: 3)"
+    )
     parser.add_argument("--force", action="store_true", help="Regenerate even if checksum matches")
     parser.add_argument(
         "--dry-run", action="store_true", help="Show sections without generating summaries"
@@ -457,7 +466,9 @@ Examples:
     )
     parser.add_argument("path", type=Path, help="Path to full_document.md or containing folder")
     parser.add_argument("section", type=str, help='Section number (e.g., "7", "7.2", "7.2.1")')
-    parser.add_argument("--context", type=int, default=0, help="Extra lines before/after (default: 0)")
+    parser.add_argument(
+        "--context", type=int, default=0, help="Extra lines before/after (default: 0)"
+    )
     parser.add_argument("--raw", action="store_true", help="Output content only without header")
 
     args = parser.parse_args()

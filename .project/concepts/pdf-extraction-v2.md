@@ -553,6 +553,35 @@ The Layer 1 results shift the priority ranking:
 
 ---
 
+## v2 Phase 2 Results (2026-02-06)
+
+Layer 2 (GMFT) and Layer 3 (AI repair with cross-validation) implemented. Header noise rejection heuristic added to Layer 1.
+
+Full status report and learnings: [Phase 2 Status](../.project/research/20260206_pdf-extraction-v2-phase2-status.md)
+
+### What Was Built
+
+| Component | Module | Tests |
+|-----------|--------|-------|
+| Header noise rejection (Layer 1 refinement) | `postprocess.py` | 10 tests |
+| Quality gates (problem detection) | `quality_gates.py` | 9 tests |
+| GMFT table extraction (Layer 2) | `table_extraction.py` | 9 tests |
+| AI repair + cross-validation (Layer 3) | `ai_repair.py` | 18 tests |
+| CLI flags: `--enhance`, `--no-tables`, `--max-repair-pages` | `extract_cli.py` | existing tests pass |
+
+### Key Decisions Made
+
+1. **Cross-validation is reject-by-default** — Missing numbers in repaired text cause rejection, keeping Layer 1/2 output with an HTML comment marker
+2. **GMFT is optional** — Installed via `agentic-mbse[extract-tables]` or `[extract-full]`; pipeline gracefully skips it when missing
+3. **Layer 3 is opt-in** — Requires `--enhance` flag; doesn't run by default
+4. **Noise header heuristic checks title text length after stripping section number** — Avoids false positives on legitimate short headers like `## 1 Title`
+
+### Status: In Progress → Code Complete (pending corpus benchmark)
+
+GMFT and AI repair modules are implemented and tested with mocks. Next step: install GMFT and benchmark against the 7-doc corpus to produce actual quality scores.
+
+---
+
 ## Relationship to Existing Work Items
 
 | Work Item | Status | Relationship to This Concept |

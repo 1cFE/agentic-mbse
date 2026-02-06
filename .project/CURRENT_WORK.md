@@ -1,12 +1,16 @@
 # Current Work
 
-**Last Updated**: 2026-01-23
+**Last Updated**: 2026-02-06
 
 ---
 
 ## Active Work
 
-*No active work items*
+### PDF Extraction v2 — Phase 2 (Layer 2 + Layer 3)
+Branch: pdf-extract
+Concept: .project/concepts/pdf-extraction-v2.md
+Status report: .project/research/20260206_pdf-extraction-v2-phase2-status.md
+Status: Code complete — Layer 1 refinement (noise headers), Layer 2 (GMFT tables), Layer 3 (AI repair + cross-validation), quality gates, and CLI integration all implemented and tested. Pending: corpus benchmark with GMFT installed.
 
 ---
 

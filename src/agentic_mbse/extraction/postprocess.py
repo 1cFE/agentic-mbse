@@ -271,6 +271,63 @@ _FIGURE_CAPTION_RE = re.compile(
 )
 
 
+# ---------------------------------------------------------------------------
+# 6a. Header noise rejection
+# ---------------------------------------------------------------------------
+
+# Headers that are too short, contain math operators, look like table rows,
+# or are just a number + tiny word (page artifacts from OCR)
+_NOISE_HEADER_RE = re.compile(
+    r"^(#{2,6})\s+(.+)$",
+    re.MULTILINE,
+)
+
+
+def _is_noise_header(header_text: str) -> bool:
+    """Return True if *header_text* (after the ``## `` prefix) looks like noise.
+
+    Noise indicators:
+    - Contains math operators: ``=``, ``+``, ``[``, ``]``, ``{``, ``}``
+    - Looks like a table row (contains ``|`` or tab characters)
+    - Is just a number + short word under 4 chars (page-number artifact)
+    - Very short (< 4 chars after stripping the section number prefix)
+    """
+    text = header_text.strip()
+    if re.search(r"[=+\[\]{}]", text):
+        return True
+    if "|" in text or "\t" in text:
+        return True
+    # Number + single short word: "3 of", "42 Fig", etc.
+    if re.match(r"^\d+(?:\.\d+)*\s+\S{1,3}$", text):
+        return True
+    # Very short: strip any leading section number to check title length
+    title_only = re.sub(r"^\d+(?:\.\d+)*\s*", "", text).strip()
+    if title_only and len(title_only) < 4:
+        return True
+    return False
+
+
+def reject_noise_headers(md: str) -> str:
+    """Demote ``## ``-style headers back to plain text when they look like noise.
+
+    Targets OCR artifacts: equation fragments, table rows, and
+    page-number+word combos that were incorrectly promoted to headers.
+    """
+
+    def _maybe_demote(match: re.Match) -> str:
+        header_text = match.group(2)
+        if _is_noise_header(header_text):
+            return header_text
+        return match.group(0)
+
+    return _NOISE_HEADER_RE.sub(_maybe_demote, md)
+
+
+# ---------------------------------------------------------------------------
+# 7. Figure caption promotion
+# ---------------------------------------------------------------------------
+
+
 def promote_figure_captions(md: str) -> str:
     """Move adjacent figure captions into image alt-text.
 
@@ -303,6 +360,7 @@ def postprocess(md: str, images_dir: Path | None = None) -> str:
     md = promote_bold_headers(md)
     md = promote_plain_headers(md)
     md = clean_header_artifacts(md)
+    md = reject_noise_headers(md)
     md = strip_page_numbers(md)
     md = strip_running_headers(md)
     if images_dir is not None:

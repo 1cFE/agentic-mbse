@@ -25,6 +25,20 @@ class ExtractionResult:
     backend_used: str = ""
 
 
+@dataclass
+class RepairRequest:
+    """A region in the extracted markdown that needs repair.
+
+    Produced by quality gates between extraction layers.
+    """
+
+    page_num: int  # 0-indexed PDF page
+    region_type: str  # "table" | "equation" | "structure"
+    markdown_lines: tuple[int, int]  # (start, end) line range in full_document.md
+    original_text: str  # Layer 1/2 output for cross-validation
+    confidence: float  # 0-1, how confident we are this needs repair
+
+
 def sanitize_filename(name: str) -> str:
     """Create a filesystem-safe name from a document filename.
 

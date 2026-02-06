@@ -209,12 +209,72 @@ def cmd_extract(args: argparse.Namespace) -> int:
             print(f"   ok   {label}{detail}")
             processed += 1
 
-            # Post-processing: table repair
+            # Post-processing: table repair (legacy --fix-tables)
             if args.fix_tables and result.markdown_path:
                 from agentic_mbse.extraction.table_repair import repair_tables
 
                 if repair_tables(result.markdown_path):
-                    print("        tables repaired")
+                    print("        tables repaired (legacy)")
+
+            # Post-processing: Layer 2 + Layer 3 pipeline
+            no_tables = getattr(args, "no_tables", False)
+            enhance = getattr(args, "enhance", False)
+            max_repair_pages = getattr(args, "max_repair_pages", None)
+
+            if result.markdown_path and result.markdown_path.exists():
+                md_text = result.markdown_path.read_text()
+                layer_metadata: dict = {}
+
+                # Quality detection
+                from agentic_mbse.extraction.quality_gates import detect_problems
+
+                problems = detect_problems(md_text)
+
+                # Layer 2: GMFT table extraction (unless --no-tables)
+                remaining_problems = problems
+                if not no_tables:
+                    table_problems = [p for p in problems if p.region_type == "table"]
+                    non_table_problems = [p for p in problems if p.region_type != "table"]
+                    try:
+                        from agentic_mbse.extraction.table_extraction import (
+                            enhance_tables,
+                        )
+
+                        md_text, remaining_table = enhance_tables(md_text, doc, table_problems)
+                        remaining_problems = remaining_table + non_table_problems
+                        fixed_count = len(table_problems) - len(remaining_table)
+                        if fixed_count > 0:
+                            print(f"        tables enhanced: {fixed_count} (GMFT)")
+                            layer_metadata["gmft_tables_fixed"] = fixed_count
+                    except ImportError:
+                        remaining_problems = problems
+
+                # Layer 3: AI repair (only with --enhance)
+                if enhance and remaining_problems:
+                    from agentic_mbse.extraction.ai_repair import repair_document
+
+                    md_text, repair_meta = repair_document(
+                        md_text,
+                        doc,
+                        remaining_problems,
+                        max_pages=max_repair_pages,
+                    )
+                    layer_metadata["ai_repairs"] = repair_meta["repairs"]
+                    layer_metadata["ai_rejections"] = repair_meta["rejections"]
+                    if repair_meta["repairs"] > 0:
+                        print(f"        AI repaired: {repair_meta['repairs']} regions")
+                    if repair_meta["rejections"] > 0:
+                        print(
+                            f"        AI rejected: {repair_meta['rejections']} (cross-validation)"
+                        )
+
+                # Write back if any layer modified the text
+                if layer_metadata:
+                    result.markdown_path.write_text(md_text)
+
+                # Report detected problems
+                if problems and not layer_metadata:
+                    print(f"        {len(problems)} issues detected (use --enhance)")
 
             # Post-processing: index generation
             if args.index and result.markdown_path:
@@ -301,6 +361,23 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument(
         "--fix-tables",
         action="store_true",
-        help="Run two-pass table repair via Claude headless mode",
+        help="Run two-pass table repair via Claude headless mode (legacy)",
+    )
+    p.add_argument(
+        "--enhance",
+        action="store_true",
+        help="Enable Layer 3 AI repair (requires 'claude' CLI, costs $$)",
+    )
+    p.add_argument(
+        "--no-tables",
+        action="store_true",
+        help="Skip GMFT table extraction (Layer 2)",
+    )
+    p.add_argument(
+        "--max-repair-pages",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Limit Layer 3 AI repair to N regions",
     )
     p.set_defaults(func=cmd_extract)
