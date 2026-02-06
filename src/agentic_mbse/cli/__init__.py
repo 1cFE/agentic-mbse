@@ -45,6 +45,7 @@ MBSE_AGENTS = [
 MBSE_SKILLS = [
     "epic-decomposition",
     "model-validation",
+    "pdf-analysis",
     "project-structure",
     "python-debugger",
     "record-learning",
