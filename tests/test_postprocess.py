@@ -4,6 +4,7 @@ from pathlib import Path
 
 from agentic_mbse.extraction.postprocess import (
     _is_noise_header,
+    _is_toc_line,
     clean_header_artifacts,
     normalize_image_paths,
     postprocess,
@@ -83,6 +84,21 @@ class TestPromoteBoldHeaders:
         assert "Regular text stays." in result
         assert "More text." in result
 
+    def test_appendix_physics_variable_not_promoted(self):
+        """Physics notation like **A ≥ 15** should NOT match appendix pattern."""
+        md = "**A ≥ 15**"
+        assert promote_bold_headers(md) == "**A ≥ 15**"
+
+    def test_appendix_symbol_title_not_promoted(self):
+        """Symbol-starting titles like **D µ or T µ** should NOT match."""
+        md = "**D µ or T µ**"
+        assert promote_bold_headers(md) == "**D µ or T µ**"
+
+    def test_appendix_comparison_not_promoted(self):
+        """Comparison notation like **N << Z** should NOT match."""
+        md = "**N << Z**"
+        assert promote_bold_headers(md) == "**N << Z**"
+
     def test_bold_without_number_not_matched(self):
         md = "**Introduction**"
         assert promote_bold_headers(md) == "**Introduction**"
@@ -128,6 +144,24 @@ class TestPromotePlainHeaders:
         md = "Some text\n1 Executive Summary\nMore text"
         result = promote_plain_headers(md)
         assert "##" not in result
+
+    def test_rejects_journal_footer_as_header(self):
+        """Journal footers like '24 IAEA BULLETIN, 4/1995' should NOT be promoted."""
+        md = "\n\n24 IAEA BULLETIN, 4/1995\n\n"
+        result = promote_plain_headers(md)
+        assert "##" not in result
+
+
+class TestIsTocLine:
+    def test_slash_year_pattern(self):
+        """Publication date patterns like '4/1995' should be detected as TOC-like."""
+        assert _is_toc_line("IAEA BULLETIN, 4/1995") is True
+
+    def test_slash_year_modern(self):
+        assert _is_toc_line("Nuclear Fusion Review, 2/2024") is True
+
+    def test_normal_title_not_toc(self):
+        assert _is_toc_line("Global Status of Fusion Energy") is False
 
 
 # ---------------------------------------------------------------------------
@@ -280,6 +314,38 @@ class TestStripRunningHeaders:
         result = strip_running_headers(md, threshold=3)
         assert "Author Name" not in result
         assert "Content paragraph one" in result
+
+    def test_page_marker_does_not_block_detection(self):
+        """A running header on the line after <!-- PAGE:N --> should still be removed."""
+        blocks = [
+            "Content A.\nWith more text.",
+            "<!-- PAGE:2 -->\nAuthor Name",
+            "Content B.\nWith more text.",
+            "<!-- PAGE:3 -->\nAuthor Name",
+            "Content C.\nWith more text.",
+            "<!-- PAGE:4 -->\nAuthor Name",
+        ]
+        md = "\n\n".join(blocks)
+        result = strip_running_headers(md, threshold=3)
+        assert "Author Name" not in result
+        assert "Content A" in result
+        assert "Content C" in result
+
+    def test_page_markers_preserved_after_strip(self):
+        """PAGE markers themselves should not be removed by running header detection."""
+        blocks = [
+            "Content A.\nWith more text.",
+            "<!-- PAGE:2 -->\nAuthor Name",
+            "Content B.\nWith more text.",
+            "<!-- PAGE:3 -->\nAuthor Name",
+            "Content C.\nWith more text.",
+            "<!-- PAGE:4 -->\nAuthor Name",
+        ]
+        md = "\n\n".join(blocks)
+        result = strip_running_headers(md, threshold=3)
+        assert "<!-- PAGE:2 -->" in result
+        assert "<!-- PAGE:3 -->" in result
+        assert "<!-- PAGE:4 -->" in result
 
     def test_multiline_blocks_not_affected(self):
         block = "Line one\nLine two"

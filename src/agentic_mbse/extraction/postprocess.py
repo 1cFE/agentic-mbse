@@ -42,7 +42,7 @@ _SPLIT_BOLD_HEADER_RE = re.compile(
 
 # Appendix letter headers: **A Introduction**, **A.1 Background**
 _APPENDIX_HEADER_RE = re.compile(
-    r"^\*\*([A-Z](?:\.\d+)*)\s+(.+?)\*\*\s*$",
+    r"^\*\*([A-Z](?:\.\d+)*)\s+([A-Z][a-z].+?)\*\*\s*$",
     re.MULTILINE,
 )
 
@@ -90,6 +90,9 @@ def _is_toc_line(text: str) -> bool:
         return True
     # Trailing bare page number (e.g., "Executive Summary 4")
     if re.search(r"\s+\d{1,4}\s*$", text):
+        return True
+    # Publication date patterns: "4/1995", "2/2024" (volume/year in journal refs)
+    if re.search(r"\b\d{1,2}/\d{4}\b", text):
         return True
     return False
 
@@ -201,6 +204,11 @@ def strip_running_headers(md: str, threshold: int = 3) -> str:
     3. If a normalized form appears more than *threshold* times, remove all
        matching paragraphs.
     """
+    # Isolate PAGE markers into their own blocks so adjacent running
+    # headers don't merge into multi-line blocks and escape detection.
+    md = re.sub(r"(<!-- PAGE:\d+ -->)", r"\n\n\1\n\n", md)
+    md = re.sub(r"\n{3,}", "\n\n", md)
+
     # Split into paragraph blocks (separated by blank lines)
     blocks = re.split(r"\n{2,}", md)
 
@@ -357,12 +365,12 @@ def promote_figure_captions(md: str) -> str:
 
 def postprocess(md: str, images_dir: Path | None = None) -> str:
     """Apply all post-processing steps in order. Returns cleaned markdown."""
+    md = strip_page_numbers(md)
+    md = strip_running_headers(md)
     md = promote_bold_headers(md)
     md = promote_plain_headers(md)
     md = clean_header_artifacts(md)
     md = reject_noise_headers(md)
-    md = strip_page_numbers(md)
-    md = strip_running_headers(md)
     if images_dir is not None:
         md = normalize_image_paths(md, images_dir)
     md = repair_ligatures(md)
