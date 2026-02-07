@@ -2,7 +2,7 @@
 
 **Author:** Reid Westwood
 **Date:** 2026-02-06
-**Status:** Concept
+**Status:** PR Ready
 **Branch:** pdf-extract
 
 ---
@@ -698,9 +698,9 @@ The initial fear (29% hit rate from doc 2237 alone) was misleading. Across the f
 
 - [x] ~~Update concept doc success metrics with benchmark data~~
 - [x] ~~Commit Phase 3 bug fixes + benchmark results~~
-- [x] **Layer 3 testing** — `--enhance` with `--max-repair-pages 2` on doc 2237 to validate AI repair + cross-validation on real data
-- [ ] **Skill update** — Wire postprocessing + GMFT into `extract_page.py` so the interactive skill uses the improved backend
-- [ ] **Ship** — Run full test suite, prepare PR to master
+- [x] ~~Layer 3 testing — `--enhance` with `--max-repair-pages 2` on doc 2237 to validate AI repair + cross-validation on real data~~
+- [x] ~~Skill update — Wire postprocessing into `extract_page.py` so the interactive skill uses the improved backend~~
+- [x] ~~Ship — Run full test suite (779 passed, 0 failures), prepare PR to master~~
 
 ---
 
@@ -743,7 +743,7 @@ Both repairs accepted. Previous run rejected both ("AI rejected: 2"). The cross-
 | `test_cross_validation_accepts_after_filtering` | Integration test: original has table + prose numbers, repair has just table — accepted |
 | 8 additional `TestExtractTabularLines` tests | Pipe tables, aligned columns, captions, numeric rows, empty input, edge cases |
 
-All 33 `test_ai_repair.py` tests pass. All 14 `test_quality_gates.py` tests pass. Full suite (779 tests): 1 pre-existing failure in `test_table_extraction.py` (unrelated).
+All 33 `test_ai_repair.py` tests pass. All 14 `test_quality_gates.py` tests pass. Full suite: **779 passed, 0 failures** (pre-existing `test_handles_nan_values` failure fixed — `dataframe_to_pipe_table()` now renders integer-like floats as `"1"` instead of `"1.0"`).
 
 ### Updated Success Metrics
 
