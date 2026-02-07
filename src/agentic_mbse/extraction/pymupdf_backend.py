@@ -54,16 +54,25 @@ def extract(input_path: Path, output_dir: Path) -> ExtractionResult:
         images_dir = output_dir / "images"
         images_dir.mkdir(exist_ok=True)
 
-        md_text: str = to_markdown(
+        chunks = to_markdown(
             str(input_path),
             write_images=True,
             image_path=str(images_dir),
             image_format="png",
             dpi=150,
-            page_chunks=False,
+            page_chunks=True,
             hdr_info=_academic_header_detector,
             table_strategy="lines",
         )
+
+        # Join page chunks with page markers for downstream page resolution
+        page_texts = []
+        for chunk in chunks:
+            page_num = chunk.get("metadata", {}).get("page", None)
+            if page_num is not None:
+                page_texts.append(f"<!-- PAGE:{page_num} -->")
+            page_texts.append(chunk["text"])
+        md_text: str = "\n".join(page_texts)
 
         # Apply deterministic post-processing
         md_text = postprocess(md_text, images_dir=images_dir)

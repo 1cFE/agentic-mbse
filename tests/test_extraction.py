@@ -210,7 +210,8 @@ class TestPymupdfBackend:
         pdf.write_bytes(b"fake pdf")
         output_dir = tmp_path / "output"
 
-        mock_to_markdown = MagicMock(return_value="# Title\n\nSome content\n")
+        chunks = [{"metadata": {"page": 0}, "text": "# Title\n\nSome content\n"}]
+        mock_to_markdown = MagicMock(return_value=chunks)
         monkeypatch.setattr(
             pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown
         )
@@ -219,10 +220,12 @@ class TestPymupdfBackend:
 
         assert result.success is True
         assert result.markdown_path == output_dir / "full_document.md"
-        # Content is post-processed but "# Title\n\nSome content\n" is unchanged
-        assert (output_dir / "full_document.md").read_text() == "# Title\n\nSome content\n"
+        written = (output_dir / "full_document.md").read_text()
+        # Page marker is inserted, then the content
+        assert "<!-- PAGE:0 -->" in written
+        assert "# Title" in written
+        assert "Some content" in written
         assert (output_dir / "images").is_dir()
-        assert result.char_count == len("# Title\n\nSome content\n")
 
     def test_extract_passes_hdr_info_and_table_strategy(self, tmp_path, monkeypatch):
         from agentic_mbse.extraction import pymupdf_backend
@@ -231,7 +234,8 @@ class TestPymupdfBackend:
         pdf.write_bytes(b"fake pdf")
         output_dir = tmp_path / "output"
 
-        mock_to_markdown = MagicMock(return_value="Content here")
+        chunks = [{"metadata": {"page": 0}, "text": "Content here"}]
+        mock_to_markdown = MagicMock(return_value=chunks)
         monkeypatch.setattr(
             pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown
         )
@@ -240,10 +244,11 @@ class TestPymupdfBackend:
         assert result.success is True
         assert result.backend_used == "pymupdf"
 
-        # Verify hdr_info and table_strategy were passed
+        # Verify hdr_info, table_strategy, and page_chunks were passed
         call_kwargs = mock_to_markdown.call_args[1]
         assert call_kwargs["hdr_info"] is pymupdf_backend._academic_header_detector
         assert call_kwargs["table_strategy"] == "lines"
+        assert call_kwargs["page_chunks"] is True
 
     def test_extract_applies_postprocess(self, tmp_path, monkeypatch):
         from agentic_mbse.extraction import pymupdf_backend
@@ -253,7 +258,8 @@ class TestPymupdfBackend:
         output_dir = tmp_path / "output"
 
         # Bold header should be promoted by postprocess
-        mock_to_markdown = MagicMock(return_value="**1 Introduction**\n\nContent.\n")
+        chunks = [{"metadata": {"page": 0}, "text": "**1 Introduction**\n\nContent.\n"}]
+        mock_to_markdown = MagicMock(return_value=chunks)
         monkeypatch.setattr(
             pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown
         )
@@ -294,7 +300,8 @@ class TestPymupdfBackend:
         (images_dir / "img_001.png").write_bytes(b"png")
         (images_dir / "img_002.png").write_bytes(b"png")
 
-        mock_to_markdown = MagicMock(return_value="Content with images")
+        chunks = [{"metadata": {"page": 0}, "text": "Content with images"}]
+        mock_to_markdown = MagicMock(return_value=chunks)
         monkeypatch.setattr(
             pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown
         )

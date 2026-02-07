@@ -11,9 +11,37 @@ raise ``ImportError`` which the caller catches to skip Layer 2.
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 from agentic_mbse.extraction.base import RepairRequest
+
+# ---------------------------------------------------------------------------
+# Singleton model cache — load once, reuse across calls
+# ---------------------------------------------------------------------------
+
+_detector = None
+_formatter = None
+
+
+def _get_detector():
+    """Return the cached ``AutoTableDetector``, creating it on first use."""
+    global _detector
+    if _detector is None:
+        from gmft import AutoTableDetector  # type: ignore[import-untyped]
+
+        _detector = AutoTableDetector()
+    return _detector
+
+
+def _get_formatter():
+    """Return the cached ``AutoTableFormatter``, creating it on first use."""
+    global _formatter
+    if _formatter is None:
+        from gmft import AutoTableFormatter  # type: ignore[import-untyped]
+
+        _formatter = AutoTableFormatter()
+    return _formatter
 
 
 def is_gmft_available() -> bool:
@@ -62,11 +90,10 @@ def extract_tables_from_page(
     list[pd.DataFrame]
         One DataFrame per detected table.  Empty list if no tables found.
     """
-    from gmft import AutoTableDetector, AutoTableFormatter  # type: ignore[import-untyped]
     from gmft.pdf_bindings import PyPDFium2Document  # type: ignore[import-untyped]
 
-    detector = AutoTableDetector()
-    formatter = AutoTableFormatter()
+    detector = _get_detector()
+    formatter = _get_formatter()
 
     doc = PyPDFium2Document(str(pdf_path))
     try:
@@ -88,10 +115,18 @@ def extract_tables_from_page(
         doc.close()
 
 
+# Default timeouts (seconds)
+PER_PAGE_TIMEOUT = 30
+TOTAL_TIMEOUT = 120
+
+
 def enhance_tables(
     md: str,
     pdf_path: Path,
     repair_requests: list[RepairRequest],
+    *,
+    per_page_timeout: int = PER_PAGE_TIMEOUT,
+    total_timeout: int = TOTAL_TIMEOUT,
 ) -> tuple[str, list[RepairRequest]]:
     """Attempt to fix broken tables using GMFT.
 
@@ -107,6 +142,11 @@ def enhance_tables(
         Path to the source PDF.
     repair_requests:
         Table repair requests from quality detection.
+    per_page_timeout:
+        Maximum seconds for a single page extraction. If the first page
+        exceeds this, all remaining requests are skipped.
+    total_timeout:
+        Maximum total seconds for all table enhancements combined.
 
     Returns
     -------
@@ -119,6 +159,7 @@ def enhance_tables(
 
     lines = md.split("\n")
     remaining: list[RepairRequest] = []
+    t_start = time.monotonic()
 
     # Process in reverse order so line indices stay valid
     for req in sorted(repair_requests, key=lambda r: r.markdown_lines[0], reverse=True):
@@ -126,14 +167,36 @@ def enhance_tables(
             remaining.append(req)
             continue
 
+        # Check total time budget
+        elapsed = time.monotonic() - t_start
+        if elapsed > total_timeout:
+            remaining.append(req)
+            continue
+
         page = req.page_num
         if page < 0:
-            # Try to estimate page from position in document
-            # Rough heuristic: 60 lines per page
-            page = req.markdown_lines[0] // 60
+            remaining.append(req)
+            continue
 
         try:
+            t_page_start = time.monotonic()
             dfs = extract_tables_from_page(pdf_path, page)
+            t_page_elapsed = time.monotonic() - t_page_start
+
+            # If first GMFT call took too long, bail on remaining
+            if t_page_elapsed > per_page_timeout:
+                remaining.append(req)
+                # Skip all remaining table requests
+                remaining.extend(
+                    r
+                    for r in sorted(
+                        repair_requests, key=lambda r: r.markdown_lines[0], reverse=True
+                    )
+                    if r.region_type == "table"
+                    and r.markdown_lines[0] < req.markdown_lines[0]
+                    and r not in remaining
+                )
+                break
         except Exception:
             remaining.append(req)
             continue
