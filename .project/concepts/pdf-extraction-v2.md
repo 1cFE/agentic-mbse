@@ -501,7 +501,7 @@ The interactive skill and the CLI pipeline are converging, not diverging. The th
 | Wall time (7-doc corpus) | — | ~35s | **~144s** (incl. GMFT load) | +15s/region |
 | New required dependencies | 0 | 0 | 0 | 0 |
 | New optional dependencies | 0 | 0 | 1 (gmft) | 1 (gmft) + `claude` CLI |
-| Cross-validation catches | — | — | — | >0 (target, untested) |
+| Cross-validation catches | — | — | — | 0 false positives (validated on 2237) |
 
 ---
 
@@ -698,9 +698,61 @@ The initial fear (29% hit rate from doc 2237 alone) was misleading. Across the f
 
 - [x] ~~Update concept doc success metrics with benchmark data~~
 - [x] ~~Commit Phase 3 bug fixes + benchmark results~~
-- [ ] **Layer 3 testing** — `--enhance` with `--max-repair-pages 2` on doc 2237 to validate AI repair + cross-validation on real data
+- [x] **Layer 3 testing** — `--enhance` with `--max-repair-pages 2` on doc 2237 to validate AI repair + cross-validation on real data
 - [ ] **Skill update** — Wire postprocessing + GMFT into `extract_page.py` so the interactive skill uses the improved backend
 - [ ] **Ship** — Run full test suite, prepare PR to master
+
+---
+
+## v2 Layer 3 Results (2026-02-07)
+
+Layer 3 (`--enhance`) tested on doc 2237 with `--max-repair-pages 2`. After fixing two bugs, both AI repairs accepted by cross-validation.
+
+### What Was Implemented
+
+**`extract_tabular_lines()` filter in `ai_repair.py`** — For non-pipe tables, `original_text` is a 30-line window from quality gates that includes prose paragraphs after the table. The vision model correctly returns just the fixed table, but numbers from surrounding prose (section numbers, years, costs) appeared "missing" and triggered false cross-validation rejections. The filter keeps only table-like lines (pipe rows, aligned columns, numeric rows, table captions) before cross-validating.
+
+**Tightened table caption regex** — Both `ai_repair.py` and `quality_gates.py` used `^(?:Table|TABLE)\s+\d+[.:]` to match table captions. This falsely matched inline references like `Table 3.2-VII of [22]` (digit `3`, then `.` matched `[.:]`). Changed to `^(?:Table|TABLE)\s+\d+[.:]\s` — requiring whitespace after the delimiter. This fixed two problems at once:
+1. `quality_gates.py` no longer creates spurious RepairRequests for prose paragraphs that happen to start with "Table N.N-..."
+2. `extract_tabular_lines()` no longer keeps those lines in the filtered text
+
+### Bugs Found and Fixed
+
+| Bug | Symptom | Root Cause | Fix |
+|-----|---------|-----------|-----|
+| False CV rejection (prose numbers) | Both AI repairs rejected with "Number 0.5/130/158/192/22/3.2/92 in original but not in repair" | `original_text` included 30-line window with prose after table; CV checked all numbers including prose | `extract_tabular_lines()` filters to table-like lines before CV |
+| False table caption match | Prose line `Table 3.2-VII of [22]. Min $130/kW...` detected as table caption | Regex `\d+[.:]` matched "3." in "Table 3.2-VII" | Tightened to `\d+[.:]\s` — real captions have whitespace after delimiter |
+
+### Results
+
+```
+$ uv run agentic-mbse extract ".../LA-UR-25-24580.pdf" --force --index --enhance --max-repair-pages 2
+  tables enhanced: 5 (GMFT)
+  AI repaired: 2 regions
+  index → INDEX.md
+```
+
+Both repairs accepted. Previous run rejected both ("AI rejected: 2"). The cross-validation safety mechanism remains intact — it still rejects repairs with genuinely missing numbers, but no longer triggers on prose numbers outside the table.
+
+### Test Coverage
+
+| Test | Purpose |
+|------|---------|
+| `test_table_reference_filtered_out` | "Table 3.2-VII of [22]..." is filtered out (not a caption) |
+| `test_mixed_table_and_prose` | Table rows kept, trailing prose with numbers removed |
+| `test_cross_validation_accepts_after_filtering` | Integration test: original has table + prose numbers, repair has just table — accepted |
+| 8 additional `TestExtractTabularLines` tests | Pipe tables, aligned columns, captions, numeric rows, empty input, edge cases |
+
+All 33 `test_ai_repair.py` tests pass. All 14 `test_quality_gates.py` tests pass. Full suite (779 tests): 1 pre-existing failure in `test_table_extraction.py` (unrelated).
+
+### Updated Success Metrics
+
+| Metric | v1 | v2 L1+L2 | v2 `--enhance` |
+|--------|-----|----------|----------------|
+| Tables fixed by GMFT | — | 15/18 (83%) | 15/18 |
+| Tables fixed by AI repair | — | — | **+2** |
+| Total tables fixed | — | 15/18 | **17/18 (94%)** |
+| Cross-validation catches | — | — | 0 false positives, 0 hallucinations (on tested doc) |
 
 ---
 

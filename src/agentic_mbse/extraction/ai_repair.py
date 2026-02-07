@@ -77,6 +77,41 @@ def cross_validate_numbers(original: str, repaired: str) -> tuple[bool, list[str
 
 
 # ---------------------------------------------------------------------------
+# Tabular line filtering (for cross-validation accuracy)
+# ---------------------------------------------------------------------------
+
+_PIPE_ROW_RE = re.compile(r"^\s*\|")
+_TABLE_CAPTION_FILTER_RE = re.compile(r"^(?:Table|TABLE)\s+\d+[.:]\s")
+_ALIGNED_COLS_RE = re.compile(r"^\S.*?\s{2,}\S.*?\s{2,}\S")
+_NUMERIC_ROW_RE = re.compile(r"^\s*[\d.][\d.]*.*?\s{2,}[\d.]")
+
+
+def extract_tabular_lines(text: str) -> str:
+    """Filter *text* to only table-like lines for cross-validation.
+
+    When ``original_text`` is a broad window (e.g. 30 lines including prose
+    paragraphs after a table), numbers from prose (section numbers, years,
+    costs) cause false cross-validation rejections.  This function keeps
+    only lines that look like table content: pipe rows, aligned columns,
+    numeric rows, and table captions.
+
+    For pipe tables the original_text is already tight, so this is a no-op.
+    """
+    kept: list[str] = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        if (
+            _PIPE_ROW_RE.match(line)
+            or _TABLE_CAPTION_FILTER_RE.match(line)
+            or _ALIGNED_COLS_RE.match(line)
+            or _NUMERIC_ROW_RE.match(line)
+        ):
+            kept.append(line)
+    return "\n".join(kept)
+
+
+# ---------------------------------------------------------------------------
 # Page rendering
 # ---------------------------------------------------------------------------
 
@@ -183,7 +218,12 @@ def repair_region(
 
         # Cross-validate for tables
         if request.region_type == "table":
-            accept, cv_warnings = cross_validate_numbers(request.original_text, repaired)
+            filtered_original = extract_tabular_lines(request.original_text)
+            # Fall back to full text if filter yields no numbers
+            # (prevents vacuous acceptance)
+            if not extract_numbers(filtered_original):
+                filtered_original = request.original_text
+            accept, cv_warnings = cross_validate_numbers(filtered_original, repaired)
             warnings.extend(cv_warnings)
             if not accept:
                 warnings.append("Cross-validation rejected repair: number mismatch")

@@ -49,7 +49,7 @@ _TABLE_ROW_RE = re.compile(r"^\s*\|")
 # Separator row: | --- | --- |
 _SEPARATOR_RE = re.compile(r"^\s*\|[\s:]*-+[\s:]*(\|[\s:]*-+[\s:]*)*\|\s*$")
 # "Table N:" or "Table N." caption pattern
-_TABLE_CAPTION_RE = re.compile(r"^(?:Table|TABLE)\s+\d+[.:]", re.MULTILINE)
+_TABLE_CAPTION_RE = re.compile(r"^(?:Table|TABLE)\s+\d+[.:]\s", re.MULTILINE)
 # Lines with whitespace-aligned columns (≥3 chunks separated by 2+ spaces)
 _ALIGNED_COLUMNS_RE = re.compile(r"^\S.*?\s{2,}\S.*?\s{2,}\S", re.MULTILINE)
 

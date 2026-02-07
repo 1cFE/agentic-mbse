@@ -7,6 +7,7 @@ from agentic_mbse.extraction.ai_repair import (
     build_repair_prompt,
     cross_validate_numbers,
     extract_numbers,
+    extract_tabular_lines,
     repair_document,
     repair_region,
 )
@@ -94,6 +95,79 @@ class TestCrossValidateNumbers:
     def test_both_empty_accept(self):
         accept, warnings = cross_validate_numbers("No numbers", "Also no numbers")
         assert accept is True
+
+
+# ---------------------------------------------------------------------------
+# extract_tabular_lines
+# ---------------------------------------------------------------------------
+
+
+class TestExtractTabularLines:
+    def test_pipe_table_passthrough(self):
+        text = "| Col A | Col B |\n| --- | --- |\n| 42 | 3.14 |"
+        result = extract_tabular_lines(text)
+        assert result == text
+
+    def test_aligned_columns_kept(self):
+        text = "Parameter     Value     Unit\nMass          100       kg\nLength        5.5       m"
+        result = extract_tabular_lines(text)
+        assert "Mass" in result
+        assert "Length" in result
+
+    def test_prose_filtered_out(self):
+        text = (
+            "This paragraph discusses results from the 2019 study "
+            "which found that costs of 686 million dollars were incurred."
+        )
+        result = extract_tabular_lines(text)
+        assert result == ""
+
+    def test_mixed_table_and_prose(self):
+        """The real-world scenario: table rows followed by prose paragraphs."""
+        text = (
+            "Component     Cost     Schedule\n"
+            "Reactor       500      2025\n"
+            "Turbine       200      2026\n"
+            "\n"
+            "Section 21.1 discusses the cost breakdown from the 2019 report.\n"
+            "The total was 686 million dollars over 3 phases."
+        )
+        result = extract_tabular_lines(text)
+        assert "Reactor" in result
+        assert "Turbine" in result
+        assert "21.1" not in result
+        assert "686" not in result
+
+    def test_table_caption_kept(self):
+        text = "Table 1: Summary of reactor costs"
+        result = extract_tabular_lines(text)
+        assert "Table 1" in result
+
+    def test_table_reference_filtered_out(self):
+        """'Table 3.2-VII of [22]' is a reference, not a caption."""
+        text = (
+            "Table 3.2-VII of [22]. Min $130/kW, Average $158/kW, "
+            "Max $192/kW, to give a total of $ 92 M"
+        )
+        result = extract_tabular_lines(text)
+        assert result == ""
+
+    def test_numeric_rows_kept(self):
+        text = "21.01.00   1234   5678"
+        result = extract_tabular_lines(text)
+        assert "21.01.00" in result
+
+    def test_empty_input(self):
+        assert extract_tabular_lines("") == ""
+
+    def test_all_prose_returns_empty(self):
+        text = (
+            "This is a paragraph of text.\n"
+            "It has no table-like structure.\n"
+            "Just flowing prose content."
+        )
+        result = extract_tabular_lines(text)
+        assert result == ""
 
 
 # ---------------------------------------------------------------------------
@@ -197,6 +271,47 @@ class TestRepairRegion:
         repaired, warnings = repair_region(req, Path("test.pdf"))
         assert repaired is None
         assert any("render" in w.lower() for w in warnings)
+
+    @patch("agentic_mbse.extraction.ai_repair.render_page_image")
+    @patch("agentic_mbse.extraction.ai_repair.subprocess.run")
+    def test_cross_validation_accepts_after_filtering(self, mock_run, mock_render):
+        """Reproduces the real bug: original_text has table + prose with extra numbers.
+
+        The repair correctly returns just the table. Without filtering, cross-
+        validation rejects because prose numbers (21.1, 2019, 686) are "missing"
+        from the repair. With filtering, only table numbers are checked.
+        """
+        mock_render.return_value = Path("/tmp/test_page.png")
+        # Repair returns a clean table with just the table numbers
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout=(
+                "| Component | Cost | Schedule |\n"
+                "| --- | --- | --- |\n"
+                "| Reactor | 500 | 2025 |\n"
+                "| Turbine | 200 | 2026 |"
+            ),
+        )
+
+        # original_text includes table rows AND trailing prose with extra numbers
+        original = (
+            "Component     Cost     Schedule\n"
+            "Reactor       500      2025\n"
+            "Turbine       200      2026\n"
+            "\n"
+            "Section 21.1 discusses the cost breakdown from the 2019 report.\n"
+            "The total was 686 million dollars over 3 phases."
+        )
+        req = RepairRequest(
+            page_num=0,
+            region_type="table",
+            markdown_lines=(0, 6),
+            original_text=original,
+            confidence=0.9,
+        )
+        repaired, warnings = repair_region(req, Path("test.pdf"))
+        assert repaired is not None, f"Repair was rejected: {warnings}"
+        assert "Reactor" in repaired
 
 
 # ---------------------------------------------------------------------------
