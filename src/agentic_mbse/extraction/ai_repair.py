@@ -41,8 +41,11 @@ def extract_numbers(text: str) -> set[str]:
     """Extract all numeric tokens from *text*, normalized to canonical form.
 
     Returns a set of string representations so that ``"3.14"`` and ``"3.140"``
-    are treated the same.
+    are treated the same.  Thousand separators (commas and underscores) are
+    stripped before matching so that ``"1,234.56"`` yields ``"1234.56"``.
     """
+    # Strip thousand separators before regex matching
+    text = text.replace(",", "").replace("_", "")
     raw = _NUMBER_RE.findall(text)
     normalized: set[str] = set()
     for s in raw:

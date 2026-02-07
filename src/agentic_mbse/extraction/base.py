@@ -9,7 +9,9 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
+
+RegionType = Literal["table", "equation", "structure"]
 
 
 @dataclass
@@ -33,7 +35,7 @@ class RepairRequest:
     """
 
     page_num: int  # 0-indexed PDF page
-    region_type: str  # "table" | "equation" | "structure"
+    region_type: RegionType  # "table" | "equation" | "structure"
     markdown_lines: tuple[int, int]  # (start, end) line range in full_document.md
     original_text: str  # Layer 1/2 output for cross-validation
     confidence: float  # 0-1, how confident we are this needs repair

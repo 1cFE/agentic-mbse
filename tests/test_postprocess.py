@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from agentic_mbse.extraction.postprocess import (
+    _is_noise_header,
     clean_header_artifacts,
     normalize_image_paths,
     postprocess,
@@ -494,3 +495,32 @@ class TestPostprocess:
 
     def test_empty_string(self):
         assert postprocess("") == ""
+
+
+# ---------------------------------------------------------------------------
+# Edge-case tests (PR readiness item 8)
+# ---------------------------------------------------------------------------
+
+
+class TestEdgeCases:
+    def test_long_header_over_80_chars_not_promoted(self):
+        """Plain header promotion intentionally skips titles >80 chars.
+
+        The regex uses .{2,80} to avoid false-positive promotion of very
+        long lines (e.g., paragraph text that happens to start with a number).
+        A 120-character title should NOT be promoted — this is by design.
+        """
+        long_title = "A" * 120
+        md = f"\n\n1 {long_title}\n\n"
+        result = promote_plain_headers(md)
+        # Should NOT be promoted — too long for the safety heuristic
+        assert f"## 1 {long_title}" not in result
+
+    def test_bracketed_section_title_is_noise(self):
+        """Document whether '5 [Critical Path]' is treated as noise.
+
+        The brackets trigger the math-operator noise check in _is_noise_header,
+        so this IS classified as noise. This is the expected behavior since
+        brackets in headers are more commonly OCR artifacts than real content.
+        """
+        assert _is_noise_header("5 [Critical Path]") is True

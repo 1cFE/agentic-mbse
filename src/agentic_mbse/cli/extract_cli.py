@@ -217,9 +217,9 @@ def cmd_extract(args: argparse.Namespace) -> int:
                     print("        tables repaired (legacy)")
 
             # Post-processing: Layer 2 + Layer 3 pipeline
-            no_tables = getattr(args, "no_tables", False)
-            enhance = getattr(args, "enhance", False)
-            max_repair_pages = getattr(args, "max_repair_pages", None)
+            no_tables = args.no_tables
+            enhance = args.enhance
+            max_repair_pages = args.max_repair_pages
 
             if result.markdown_path and result.markdown_path.exists():
                 md_text = result.markdown_path.read_text()

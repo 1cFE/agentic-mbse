@@ -225,9 +225,25 @@ def detect_problems(md: str) -> list[RepairRequest]:
 
     Automatically builds a page map from ``<!-- PAGE:N -->`` markers if
     present, so that ``RepairRequest.page_num`` values are accurate.
+
+    Emits a :class:`UserWarning` when over 50% of lines lack PAGE
+    markers, since page-specific repairs (Layer 2 GMFT) rely on
+    accurate page numbers.
     """
+    import warnings
+
     lines = md.split("\n")
     page_map = _build_page_map(lines)
+
+    # Warn if most lines lack page markers — GMFT will target wrong pages
+    if lines:
+        missing = sum(1 for p in page_map if p == -1)
+        if missing > len(page_map) * 0.5:
+            warnings.warn(
+                "Over 50% of lines lack PAGE markers; "
+                "page-specific repairs may target wrong pages",
+                stacklevel=2,
+            )
 
     problems: list[RepairRequest] = []
     problems.extend(detect_broken_tables(md, page_map=page_map))

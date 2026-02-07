@@ -55,6 +55,22 @@ class TestExtractNumbers:
         b = extract_numbers("value is 3.14")
         assert a == b
 
+    def test_thousand_separator_comma(self):
+        """Comma thousand separators should be stripped before matching."""
+        nums = extract_numbers("$1,234.56")
+        assert "1234.56" in nums
+
+    def test_thousand_separator_underscore(self):
+        """Underscore thousand separators (Python-style) should be stripped."""
+        nums = extract_numbers("1_000_000")
+        assert "1000000" in nums
+
+    def test_thousand_separator_mixed(self):
+        """Multiple comma-separated groups in a single number."""
+        nums = extract_numbers("Total: $12,345,678.90")
+        # Large decimals normalize to scientific notation via :g format
+        assert "1.23457e+07" in nums
+
 
 # ---------------------------------------------------------------------------
 # cross_validate_numbers

@@ -1,6 +1,9 @@
 """Tests for agentic_mbse.extraction.quality_gates module."""
 
+import warnings
+
 from agentic_mbse.extraction.quality_gates import (
+    _build_page_map,
     detect_broken_tables,
     detect_garbled_equations,
     detect_problems,
@@ -127,3 +130,54 @@ class TestDetectProblems:
             "| value | 42 |\n"
         )
         assert detect_problems(md) == []
+
+    def test_warns_when_no_page_markers(self):
+        """detect_problems emits UserWarning when >50% of lines lack PAGE markers."""
+        md = "Line 1\nLine 2\nLine 3\n"
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            detect_problems(md)
+            assert len(w) == 1
+            assert issubclass(w[0].category, UserWarning)
+            assert "PAGE markers" in str(w[0].message)
+
+    def test_no_warning_with_page_markers(self):
+        """detect_problems does NOT warn when markers are present."""
+        md = "<!-- PAGE:1 -->\nLine 1\nLine 2\n<!-- PAGE:2 -->\nLine 3\n"
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            detect_problems(md)
+            assert len(w) == 0
+
+    def test_warning_does_not_prevent_detection(self):
+        """Warning is informational only — detection still returns results."""
+        md = "| broken | table\n| no separator\n"
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            results = detect_problems(md)
+            assert len(results) > 0
+
+
+# ---------------------------------------------------------------------------
+# _build_page_map edge cases
+# ---------------------------------------------------------------------------
+
+
+class TestBuildPageMap:
+    def test_no_markers_returns_all_negative_one(self):
+        """Lines without any PAGE markers should all get page_num=-1."""
+        lines = ["line1", "line2"]
+        result = _build_page_map(lines)
+        assert result == [-1, -1]
+
+    def test_zero_indexed_marker_handled(self):
+        """<!-- PAGE:0 --> should produce page -1 (0-indexed: 0-1=-1).
+
+        This documents the current behavior: pymupdf4llm uses 1-indexed
+        pages, so PAGE:0 would be anomalous. The function subtracts 1,
+        yielding -1 (unknown page).
+        """
+        lines = ["<!-- PAGE:0 -->", "content line"]
+        result = _build_page_map(lines)
+        assert result[0] == -1  # 0 - 1 = -1
+        assert result[1] == -1  # inherits from marker above

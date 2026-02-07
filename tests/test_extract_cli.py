@@ -130,6 +130,9 @@ class TestCmdExtract:
             index=False,
             summarize=False,
             fix_tables=False,
+            no_tables=False,
+            enhance=False,
+            max_repair_pages=None,
         )
         assert cmd_extract(args) == EXIT_FAILURE
 
@@ -144,6 +147,9 @@ class TestCmdExtract:
             index=False,
             summarize=False,
             fix_tables=False,
+            no_tables=False,
+            enhance=False,
+            max_repair_pages=None,
         )
         assert cmd_extract(args) == EXIT_FAILURE
 
@@ -167,6 +173,9 @@ class TestCmdExtract:
             index=False,
             summarize=False,
             fix_tables=False,
+            no_tables=False,
+            enhance=False,
+            max_repair_pages=None,
         )
 
         # Should succeed (skip is not a failure)
@@ -204,6 +213,9 @@ class TestCmdExtract:
             index=False,
             summarize=False,
             fix_tables=False,
+            no_tables=False,
+            enhance=False,
+            max_repair_pages=None,
         )
 
         with patch(
@@ -230,6 +242,9 @@ class TestCmdExtract:
             index=False,
             summarize=False,
             fix_tables=False,
+            no_tables=False,
+            enhance=False,
+            max_repair_pages=None,
         )
         assert cmd_extract(args) == EXIT_FAILURE
 
@@ -273,6 +288,9 @@ class TestCmdExtract:
             index=False,
             summarize=False,
             fix_tables=False,
+            no_tables=False,
+            enhance=False,
+            max_repair_pages=None,
         )
 
         with patch(
@@ -323,6 +341,9 @@ class TestCmdExtract:
             index=False,
             summarize=False,
             fix_tables=False,
+            no_tables=False,
+            enhance=False,
+            max_repair_pages=None,
         )
 
         with patch(
@@ -363,6 +384,9 @@ class TestCmdExtract:
             index=False,
             summarize=False,
             fix_tables=False,
+            no_tables=False,
+            enhance=False,
+            max_repair_pages=None,
         )
 
         with patch(
@@ -397,6 +421,9 @@ class TestCmdExtract:
             index=False,
             summarize=False,
             fix_tables=True,
+            no_tables=False,
+            enhance=False,
+            max_repair_pages=None,
         )
 
         with (
@@ -437,6 +464,9 @@ class TestCmdExtract:
             index=True,
             summarize=False,
             fix_tables=False,
+            no_tables=False,
+            enhance=False,
+            max_repair_pages=None,
         )
 
         with (

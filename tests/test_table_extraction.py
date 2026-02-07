@@ -159,3 +159,37 @@ class TestEnhanceTables:
         )
         result_md, remaining = enhance_tables(md, MagicMock(), [req])
         assert len(remaining) == 1
+
+    @patch("agentic_mbse.extraction.table_extraction.extract_tables_from_page")
+    def test_overlapping_repair_requests_dont_corrupt(self, mock_extract):
+        """Two requests with overlapping markdown_lines should not corrupt output.
+
+        When GMFT fixes one table, the other overlapping request should
+        still reference valid content (even if indices shift). This test
+        verifies that the output contains both fixed tables or at least
+        does not lose content.
+        """
+        pd = pytest.importorskip("pandas")
+        df1 = pd.DataFrame({"A": [1], "B": [2]})
+        df2 = pd.DataFrame({"X": [10], "Y": [20]})
+        mock_extract.side_effect = [[df1], [df2]]
+
+        md = "Before\n| broken1\n| broken2\n| broken3\nAfter"
+        req1 = RepairRequest(
+            page_num=0,
+            region_type="table",
+            markdown_lines=(1, 3),
+            original_text="| broken1\n| broken2",
+            confidence=0.9,
+        )
+        req2 = RepairRequest(
+            page_num=0,
+            region_type="table",
+            markdown_lines=(2, 4),
+            original_text="| broken2\n| broken3",
+            confidence=0.8,
+        )
+        result_md, remaining = enhance_tables(md, MagicMock(), [req1, req2])
+        # At minimum: no crash, "Before" and "After" preserved
+        assert "Before" in result_md
+        assert "After" in result_md

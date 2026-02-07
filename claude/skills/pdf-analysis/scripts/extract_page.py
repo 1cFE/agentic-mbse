@@ -41,8 +41,14 @@ def extract_markdown(pdf_path: str, page_num: int) -> str:
     """Extract a single page as markdown using pymupdf4llm."""
     import pymupdf4llm
     from agentic_mbse.extraction.postprocess import postprocess
+    from agentic_mbse.extraction.pymupdf_backend import _academic_header_detector
 
-    md = pymupdf4llm.to_markdown(pdf_path, pages=[page_num])
+    md = pymupdf4llm.to_markdown(
+        pdf_path,
+        pages=[page_num],
+        hdr_info=_academic_header_detector,
+        table_strategy="lines",
+    )
     md = postprocess(md, images_dir=None)
     return md
 
