@@ -64,9 +64,16 @@ def dataframe_to_pipe_table(df) -> str:  # pd.DataFrame
     cols = list(df.columns)
     header = "| " + " | ".join(str(c) for c in cols) + " |"
     separator = "| " + " | ".join("---" for _ in cols) + " |"
+    def _fmt(v):
+        if pd.isna(v):
+            return ""
+        if isinstance(v, float) and v == int(v):
+            return str(int(v))
+        return str(v)
+
     rows = []
     for _, row in df.iterrows():
-        cells = "| " + " | ".join(str(v) if pd.notna(v) else "" for v in row) + " |"
+        cells = "| " + " | ".join(_fmt(v) for v in row) + " |"
         rows.append(cells)
 
     return "\n".join([header, separator, *rows])
