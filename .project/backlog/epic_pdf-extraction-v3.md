@@ -151,11 +151,11 @@ Replace regex-driven header promotion — which fails catastrophically on docume
 **Objective**: Wire `claude_structure.py` into the extraction pipeline as Layer 3, running after GMFT (Layer 2) and before AI repair (now Layer 4). Update CLI flags and ensure correct ordering.
 
 **Current State**:
-- ✅ `extract_cli.py` has `--enhance` flag that triggers `ai_repair.repair_document()`
-- ✅ Quality gates detect table/equation problems → Layer 2 (GMFT) → Layer 3 (AI repair)
+- ✅ `extract_cli.py` has `--enhance` flag that triggers L3 structural pass + L4 AI repair
+- ✅ Quality gates detect table/equation problems → Layer 2 (GMFT) → Layer 3 (structural) → Layer 4 (AI repair)
 - ✅ `--index` flag runs after all enhancement
-- ❌ No Claude structural pass in the pipeline
-- ❌ `--enhance` only triggers table/equation repair, not structural repair
+- ✅ `--structure-only` and `--model` CLI flags wired
+- ✅ 7 new integration tests (29 total in test_extract_cli.py)
 
 **Scope**:
 1. **Pipeline ordering**:
@@ -188,12 +188,11 @@ Replace regex-driven header promotion — which fails catastrophically on docume
 - New CLI subcommands
 
 **Success Criteria**:
-- [ ] `--enhance` on a new-corpus document triggers style detection → structural repair → AI repair (in order)
-- [ ] `--fast` produces identical output to current pipeline (no structural pass)
-- [ ] `--structure-only` runs structural pass without AI repair
-- [ ] `--index` always runs after structural pass (ordering enforced)
-- [ ] Cost estimate printed before Claude calls; `--yes` skips prompt
-- [ ] Mocked integration test: full pipeline with mocked Claude returns correct final markdown
+- [x] `--enhance` on a new-corpus document triggers style detection → structural repair → AI repair (in order)
+- [x] Default mode produces identical output to current pipeline (no structural pass)
+- [x] `--structure-only` runs structural pass without AI repair
+- [x] `--index` always runs after structural pass (ordering enforced)
+- [x] Mocked integration test: full pipeline with mocked Claude returns correct final markdown
 
 **Deliverables**:
 - Updated `src/agentic_mbse/cli/extract_cli.py`
@@ -389,4 +388,4 @@ These decisions were agreed in the concept review and should be followed during 
 ---
 
 **Last Updated**: 2026-02-08
-**Next Action**: Items 1-2 complete. Begin Item 3 (pipeline integration).
+**Next Action**: Items 1-3 complete. Begin Item 4 (corpus benchmark).

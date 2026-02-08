@@ -22,6 +22,22 @@ class MockArgs:
             setattr(self, k, v)
 
 
+def _make_extraction_result(tmp_path, md_content="# Test\n\nSome content."):
+    """Create a mock ExtractionResult with a real markdown file on disk."""
+    from agentic_mbse.extraction.base import ExtractionResult
+
+    output_dir = tmp_path / "report"
+    output_dir.mkdir(exist_ok=True)
+    md_path = output_dir / "full_document.md"
+    md_path.write_text(md_content)
+    return ExtractionResult(
+        success=True,
+        output_dir=output_dir,
+        markdown_path=md_path,
+        backend_used="pymupdf",
+    )
+
+
 # ---------------------------------------------------------------------------
 # discover_documents
 # ---------------------------------------------------------------------------
@@ -133,6 +149,8 @@ class TestCmdExtract:
             no_tables=False,
             enhance=False,
             max_repair_pages=None,
+            structure_only=False,
+            model=None,
         )
         assert cmd_extract(args) == EXIT_FAILURE
 
@@ -150,6 +168,8 @@ class TestCmdExtract:
             no_tables=False,
             enhance=False,
             max_repair_pages=None,
+            structure_only=False,
+            model=None,
         )
         assert cmd_extract(args) == EXIT_FAILURE
 
@@ -176,6 +196,8 @@ class TestCmdExtract:
             no_tables=False,
             enhance=False,
             max_repair_pages=None,
+            structure_only=False,
+            model=None,
         )
 
         # Should succeed (skip is not a failure)
@@ -216,6 +238,8 @@ class TestCmdExtract:
             no_tables=False,
             enhance=False,
             max_repair_pages=None,
+            structure_only=False,
+            model=None,
         )
 
         with patch(
@@ -245,6 +269,8 @@ class TestCmdExtract:
             no_tables=False,
             enhance=False,
             max_repair_pages=None,
+            structure_only=False,
+            model=None,
         )
         assert cmd_extract(args) == EXIT_FAILURE
 
@@ -291,6 +317,8 @@ class TestCmdExtract:
             no_tables=False,
             enhance=False,
             max_repair_pages=None,
+            structure_only=False,
+            model=None,
         )
 
         with patch(
@@ -344,6 +372,8 @@ class TestCmdExtract:
             no_tables=False,
             enhance=False,
             max_repair_pages=None,
+            structure_only=False,
+            model=None,
         )
 
         with patch(
@@ -387,6 +417,8 @@ class TestCmdExtract:
             no_tables=False,
             enhance=False,
             max_repair_pages=None,
+            structure_only=False,
+            model=None,
         )
 
         with patch(
@@ -424,6 +456,8 @@ class TestCmdExtract:
             no_tables=False,
             enhance=False,
             max_repair_pages=None,
+            structure_only=False,
+            model=None,
         )
 
         with (
@@ -467,6 +501,8 @@ class TestCmdExtract:
             no_tables=False,
             enhance=False,
             max_repair_pages=None,
+            structure_only=False,
+            model=None,
         )
 
         with (
@@ -484,6 +520,296 @@ class TestCmdExtract:
         mock_index.assert_called_once_with(
             md_path, summarize=False, force=False,
         )
+
+
+# ---------------------------------------------------------------------------
+# Structural pass (L3) integration
+# ---------------------------------------------------------------------------
+
+
+class TestStructuralPass:
+    """Tests for L3 Claude structural pass integration."""
+
+    def test_enhance_triggers_structural_pass(self, tmp_path):
+        """--enhance runs L3 (structure) then L4 (AI repair) in order."""
+        pdf = tmp_path / "report.pdf"
+        pdf.write_bytes(b"fake pdf")
+        mock_result = _make_extraction_result(tmp_path)
+
+        struct_meta = {"headers_inserted": 3, "headers_skipped": 1, "warnings": [], "phase_a": {}}
+        call_order = []
+
+        def mock_enhance(md, pdf_path, out_dir, **kw):
+            call_order.append("enhance_structure")
+            return md, struct_meta
+
+        def mock_repair(md, pdf_path, problems, **kw):
+            call_order.append("repair_document")
+            return md, {"repairs": 1, "rejections": 0}
+
+        args = MockArgs(
+            path=str(pdf),
+            output=None,
+            backend="pymupdf",
+            timeout=600,
+            force=False,
+            index=False,
+            summarize=False,
+            fix_tables=False,
+            no_tables=True,
+            enhance=True,
+            max_repair_pages=None,
+            structure_only=False,
+            model=None,
+        )
+
+        with (
+            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
+            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
+            patch("agentic_mbse.extraction.claude_structure.enhance_structure", side_effect=mock_enhance),
+            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[object()]),
+            patch("agentic_mbse.extraction.ai_repair.repair_document", side_effect=mock_repair),
+        ):
+            result = cmd_extract(args)
+
+        assert result == EXIT_SUCCESS
+        assert call_order == ["enhance_structure", "repair_document"]
+
+    def test_enhance_skips_structure_when_not_needed(self, tmp_path):
+        """--enhance with well-structured doc skips L3, still runs L4."""
+        pdf = tmp_path / "report.pdf"
+        pdf.write_bytes(b"fake pdf")
+        mock_result = _make_extraction_result(tmp_path)
+
+        args = MockArgs(
+            path=str(pdf),
+            output=None,
+            backend="pymupdf",
+            timeout=600,
+            force=False,
+            index=False,
+            summarize=False,
+            fix_tables=False,
+            no_tables=True,
+            enhance=True,
+            max_repair_pages=None,
+            structure_only=False,
+            model=None,
+        )
+
+        with (
+            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
+            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=False),
+            patch("agentic_mbse.extraction.claude_structure.enhance_structure") as mock_enhance,
+            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[object()]),
+            patch(
+                "agentic_mbse.extraction.ai_repair.repair_document",
+                return_value=("fixed", {"repairs": 1, "rejections": 0}),
+            ) as mock_repair,
+        ):
+            result = cmd_extract(args)
+
+        assert result == EXIT_SUCCESS
+        mock_enhance.assert_not_called()
+        mock_repair.assert_called_once()
+
+    def test_structure_only_skips_ai_repair(self, tmp_path):
+        """--structure-only runs L3 without L4."""
+        pdf = tmp_path / "report.pdf"
+        pdf.write_bytes(b"fake pdf")
+        mock_result = _make_extraction_result(tmp_path)
+
+        struct_meta = {"headers_inserted": 2, "headers_skipped": 0, "warnings": [], "phase_a": {}}
+
+        args = MockArgs(
+            path=str(pdf),
+            output=None,
+            backend="pymupdf",
+            timeout=600,
+            force=False,
+            index=False,
+            summarize=False,
+            fix_tables=False,
+            no_tables=True,
+            enhance=False,
+            max_repair_pages=None,
+            structure_only=True,
+            model=None,
+        )
+
+        with (
+            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
+            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
+            patch(
+                "agentic_mbse.extraction.claude_structure.enhance_structure",
+                return_value=("modified", struct_meta),
+            ) as mock_enhance,
+            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[]),
+            patch("agentic_mbse.extraction.ai_repair.repair_document") as mock_repair_fn,
+        ):
+            result = cmd_extract(args)
+
+        assert result == EXIT_SUCCESS
+        mock_enhance.assert_called_once()
+        mock_repair_fn.assert_not_called()
+
+    def test_model_flag_passed_through(self, tmp_path):
+        """--model sonnet overrides both Phase A and Phase B."""
+        pdf = tmp_path / "report.pdf"
+        pdf.write_bytes(b"fake pdf")
+        mock_result = _make_extraction_result(tmp_path)
+
+        struct_meta = {"headers_inserted": 1, "headers_skipped": 0, "warnings": [], "phase_a": {}}
+
+        args = MockArgs(
+            path=str(pdf),
+            output=None,
+            backend="pymupdf",
+            timeout=600,
+            force=False,
+            index=False,
+            summarize=False,
+            fix_tables=False,
+            no_tables=True,
+            enhance=True,
+            max_repair_pages=None,
+            structure_only=False,
+            model="sonnet",
+        )
+
+        with (
+            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
+            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
+            patch(
+                "agentic_mbse.extraction.claude_structure.enhance_structure",
+                return_value=("modified", struct_meta),
+            ) as mock_enhance,
+            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[]),
+            patch("agentic_mbse.extraction.ai_repair.repair_document"),
+        ):
+            result = cmd_extract(args)
+
+        assert result == EXIT_SUCCESS
+        mock_enhance.assert_called_once()
+        _, kwargs = mock_enhance.call_args
+        assert kwargs["phase_a_model"] == "sonnet"
+        assert kwargs["phase_b_model"] == "sonnet"
+
+    def test_structure_failure_continues_pipeline(self, tmp_path):
+        """L3 failure -> warning, pipeline continues to L4."""
+        pdf = tmp_path / "report.pdf"
+        pdf.write_bytes(b"fake pdf")
+        mock_result = _make_extraction_result(tmp_path)
+
+        args = MockArgs(
+            path=str(pdf),
+            output=None,
+            backend="pymupdf",
+            timeout=600,
+            force=False,
+            index=False,
+            summarize=False,
+            fix_tables=False,
+            no_tables=True,
+            enhance=True,
+            max_repair_pages=None,
+            structure_only=False,
+            model=None,
+        )
+
+        with (
+            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
+            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
+            patch(
+                "agentic_mbse.extraction.claude_structure.enhance_structure",
+                side_effect=RuntimeError("Claude subprocess failed"),
+            ),
+            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[object()]),
+            patch(
+                "agentic_mbse.extraction.ai_repair.repair_document",
+                return_value=("fixed", {"repairs": 1, "rejections": 0}),
+            ) as mock_repair,
+        ):
+            result = cmd_extract(args)
+
+        assert result == EXIT_SUCCESS
+        mock_repair.assert_called_once()
+
+    def test_default_mode_no_structural_pass(self, tmp_path):
+        """Default mode (no --enhance/--structure-only) never calls L3 or L4."""
+        pdf = tmp_path / "report.pdf"
+        pdf.write_bytes(b"fake pdf")
+        mock_result = _make_extraction_result(tmp_path)
+
+        args = MockArgs(
+            path=str(pdf),
+            output=None,
+            backend="pymupdf",
+            timeout=600,
+            force=False,
+            index=False,
+            summarize=False,
+            fix_tables=False,
+            no_tables=True,
+            enhance=False,
+            max_repair_pages=None,
+            structure_only=False,
+            model=None,
+        )
+
+        with (
+            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
+            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure") as mock_needs,
+            patch("agentic_mbse.extraction.claude_structure.enhance_structure") as mock_enhance,
+            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[]),
+            patch("agentic_mbse.extraction.ai_repair.repair_document") as mock_repair,
+        ):
+            result = cmd_extract(args)
+
+        assert result == EXIT_SUCCESS
+        mock_needs.assert_not_called()
+        mock_enhance.assert_not_called()
+        mock_repair.assert_not_called()
+
+    def test_enhance_and_structure_only_skips_ai_repair(self, tmp_path):
+        """--enhance --structure-only together: structure_only wins, L4 skipped."""
+        pdf = tmp_path / "report.pdf"
+        pdf.write_bytes(b"fake pdf")
+        mock_result = _make_extraction_result(tmp_path)
+
+        struct_meta = {"headers_inserted": 2, "headers_skipped": 0, "warnings": [], "phase_a": {}}
+
+        args = MockArgs(
+            path=str(pdf),
+            output=None,
+            backend="pymupdf",
+            timeout=600,
+            force=False,
+            index=False,
+            summarize=False,
+            fix_tables=False,
+            no_tables=True,
+            enhance=True,
+            max_repair_pages=None,
+            structure_only=True,
+            model=None,
+        )
+
+        with (
+            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
+            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
+            patch(
+                "agentic_mbse.extraction.claude_structure.enhance_structure",
+                return_value=("modified", struct_meta),
+            ) as mock_enhance,
+            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[object()]),
+            patch("agentic_mbse.extraction.ai_repair.repair_document") as mock_repair,
+        ):
+            result = cmd_extract(args)
+
+        assert result == EXIT_SUCCESS
+        mock_enhance.assert_called_once()
+        mock_repair.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

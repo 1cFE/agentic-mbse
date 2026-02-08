@@ -216,10 +216,14 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 if repair_tables(result.markdown_path):
                     print("        tables repaired (legacy)")
 
-            # Post-processing: Layer 2 + Layer 3 pipeline
+            # Post-processing: Layer 2 + Layer 3 + Layer 4 pipeline
             no_tables = args.no_tables
             enhance = args.enhance
+            structure_only = args.structure_only
             max_repair_pages = args.max_repair_pages
+            run_structural = enhance or structure_only
+            run_ai_repair = enhance and not structure_only
+            model = args.model
 
             if result.markdown_path and result.markdown_path.exists():
                 md_text = result.markdown_path.read_text()
@@ -249,8 +253,48 @@ def cmd_extract(args: argparse.Namespace) -> int:
                     except ImportError:
                         remaining_problems = problems
 
-                # Layer 3: AI repair (only with --enhance)
-                if enhance and remaining_problems:
+                # Layer 3: Claude structural pass (with --enhance or --structure-only)
+                if run_structural:
+                    from agentic_mbse.extraction.claude_structure import (
+                        enhance_structure,
+                        needs_claude_structure,
+                    )
+
+                    if needs_claude_structure(md_text):
+                        phase_a_model = model or "haiku"
+                        phase_b_model = model or "sonnet"
+                        try:
+                            md_text, struct_meta = enhance_structure(
+                                md_text,
+                                doc,
+                                output_dir,
+                                phase_a_model=phase_a_model,
+                                phase_b_model=phase_b_model,
+                            )
+                            layer_metadata["structure"] = struct_meta
+                            inserted = struct_meta.get("headers_inserted", 0)
+                            skipped = struct_meta.get("headers_skipped", 0)
+                            style_info = struct_meta.get("phase_a", {})
+                            style_desc = (
+                                f"{style_info.get('doc_type', '?')} "
+                                f"({style_info.get('heading_convention', '?')})"
+                            )
+                            print(
+                                f"        structure: {style_desc}, "
+                                f"{inserted} headers inserted, "
+                                f"{skipped} skipped"
+                            )
+                            for w in struct_meta.get("warnings", []):
+                                print(f"        warning: {w}")
+                        except Exception as exc:
+                            print(f"        structure: FAILED ({exc}), continuing")
+                    else:
+                        print(
+                            "        structure: skipped (document already well-structured)"
+                        )
+
+                # Layer 4: AI quality repair (only with --enhance, NOT --structure-only)
+                if run_ai_repair and remaining_problems:
                     from agentic_mbse.extraction.ai_repair import repair_document
 
                     md_text, repair_meta = repair_document(
@@ -366,7 +410,7 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument(
         "--enhance",
         action="store_true",
-        help="Enable Layer 3 AI repair (requires 'claude' CLI, costs $$)",
+        help="Enable AI enhancement: structural repair (Layer 3) + quality repair (Layer 4)",
     )
     p.add_argument(
         "--no-tables",
@@ -374,10 +418,21 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         help="Skip GMFT table extraction (Layer 2)",
     )
     p.add_argument(
+        "--structure-only",
+        action="store_true",
+        help="Run structural repair only (Layer 3), skip AI quality repair (Layer 4)",
+    )
+    p.add_argument(
+        "--model",
+        choices=["opus", "sonnet", "haiku"],
+        default=None,
+        help="Override Claude model for structural repair (default: haiku for style detection, sonnet for structure)",
+    )
+    p.add_argument(
         "--max-repair-pages",
         type=int,
         default=None,
         metavar="N",
-        help="Limit Layer 3 AI repair to N regions",
+        help="Limit Layer 4 AI repair to N regions",
     )
     p.set_defaults(func=cmd_extract)
