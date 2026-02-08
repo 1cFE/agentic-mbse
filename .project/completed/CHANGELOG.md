@@ -4,6 +4,80 @@ Historical record of completed work.
 
 ---
 
+## [2026-02-08] - EPIC-PDFV3-001: PDF Extraction v3
+
+**Type**: Epic
+**Duration**: 3 days (2026-02-06 to 2026-02-08)
+**Priority**: P1
+
+### Summary
+
+Built a 4-layer document extraction pipeline that converts PDF/DOCX to structured, indexed markdown. Uses Claude as the structural authority for header detection and repair, solving the heuristic fragility that caused v2 to fail on unseen documents.
+
+### Deliverables
+
+**Extraction Pipeline** (`src/agentic_mbse/extraction/`, 11 modules, ~3,000 lines):
+- Layer 1: Base backends (pymupdf4llm, Docling, Pandoc) with automatic selection and fallback
+- Layer 1.5: Deterministic post-processing (ligature replacement, header promotion, TOC removal, footer detection)
+- Layer 2: GMFT table enhancement (Microsoft Table Transformer for complex tables)
+- Layer 3: Claude-powered structure detection and repair (style detection + text-anchored header insertion)
+- Layer 4: Vision-based AI quality repair with cross-validation safety
+- Quality gates between layers (malformed table/equation/structure detection)
+- INDEX.md generation with section hierarchy and optional AI summaries
+
+**CLI** (`agentic-mbse extract`):
+- `--enhance` for full 4-layer pipeline
+- `--structure-only` for Layer 3 only
+- `--model` to override Claude model
+- `--no-tables` to skip GMFT
+- Backend selection, timeout, force, output flags
+
+**Skill**: `claude/skills/pdf-analysis/` — interactive 3-tier extraction for Claude Code sessions
+
+**Tests**: 9 new test files, 3,824 lines of extraction test coverage
+
+### Benchmark Results
+
+- 12-document corpus: 4/5 new docs produce usable INDEX files (target met)
+- Zero regressions on original 7-document corpus
+- 881 total tests passing
+
+---
+
+## [2026-02-03] - Architecture Redesign (4 Epics)
+
+**Type**: Epic (x4)
+**Duration**: ~8 days (2026-01-27 to 2026-02-03)
+**Priority**: P1
+
+### Summary
+
+Complete toolkit redesign replacing the monolithic command/template system with a layered architecture: Knowledge → Behavioral → Structural → PM Engine.
+
+### EPIC-ARCH-001: Structure (Phase 1A)
+
+4-directory architecture replacing `modeling_pm/`:
+- `knowledge/` — domain insights, research, source index
+- `modeling_project/` — architecture, requirements, overview, guides
+- `work/` — backlog, active/completed work items, learnings
+- `data/` — traceability matrix, structured data
+
+6 new + 5 revised project templates. YAML frontmatter schemas for design artifacts. `cmd_init()` rewired for new structure. 80+ tests updated.
+
+### EPIC-ARCH-002: Knowledge (Phase 2B)
+
+9 new skills: epic-decomposition, model-validation, pdf-analysis, project-structure, record-learning, requirements-tracking, source-traceability, sysml-conventions, toolkit-awareness. Context measurement report and extraction mapping complete.
+
+### EPIC-ARCH-003: Commands (Phase 3C)
+
+All 9 existing commands refactored to lean ~300-line format. 5 new commands: analyze-models, formalize-intent, quick-model, review-model, status. sysmlv2-doc-analyzer agent deprecated. All commands registered in installation pipeline.
+
+### EPIC-ARCH-004: PM Engine (Phase 3D)
+
+8 typed Pydantic parsers for project files. Deterministic state derivation (work item state machine, epic aggregation). Dashboard generator. 14 mutation operations (add-item, close-item, add-validation, trace-element, etc.). CLI subcommands (`agentic-mbse pm`, `agentic-mbse status`). 3,267 lines of PM tests.
+
+---
+
 ## [2026-01-23] - ITEM-SYMLINK-001: Tool-Owned File Safety
 
 **Type**: Item
