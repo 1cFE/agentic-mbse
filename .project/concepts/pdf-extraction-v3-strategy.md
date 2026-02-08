@@ -584,3 +584,146 @@ All four bug fixes from Workstream A are implemented and tested. Changes in `pos
 | A4: Thousand-separator stripping | Already fixed in prior commit (e559be9) | Already covered |
 
 Full test suite: 799 passed, 1 skipped, 0 failures. Next step: re-run on affected docs (hazards-afify, fusion-standards, 2243) to verify improvements, then proceed to Phase 2 (Claude structural module).
+
+---
+
+## Design Review (2026-02-07)
+
+**Reviewer:** Claude (design review pass)
+**Scope:** Full concept review — architecture, feasibility, risks, gaps
+
+### What's Strong
+
+The problem analysis is excellent. The evidence is concrete (0/5 usable indexes on new corpus), the root cause is correctly identified ("is this line a heading?" is semantic, not syntactic), and the "why more regex won't fix this" argument is airtight. The "keep what works" framing is disciplined — body text, images, GMFT, cross-validation are all correctly left alone. The two-phase Claude approach (style detection then structure repair) is a sound architectural instinct: amortizing document understanding across the structural pass.
+
+### Critical Concerns
+
+#### 1. Phase B "Full Document in One Shot" is the Biggest Risk
+
+The strategy proposes sending the FULL extracted markdown + style info + sampled images in Phase B and getting back a structured diff. For a 127-page slide deck (~5000 lines, ~100K tokens), this has three problems:
+
+**Output reliability**: Asking Claude to return `[{line: 15, level: 2, title: "Introduction"}, {line: 842, level: 2, title: "Methodology"}, ...]` across a 5000-line document is fragile. Line numbers drift with blank lines, PAGE markers, and any ambiguity about where content boundaries are. The risk assessment mentions "off-by-one line errors" but the mitigation ("anchor insertions to content markers") is hand-waved — there's no specification of how this anchoring works.
+
+**Context window pressure**: Full document + images + prompt + output could hit 100-150K tokens. This is within Claude's limits but at the scale where response quality degrades and hallucination risk increases.
+
+**Recommendation**: Process in page-range chunks (~20-30 pages each, with 2-3 page overlap for continuity). This is more reliable per-chunk, allows validation at chunk boundaries, can be parallelized, and degrades gracefully (one chunk fails, others still work). The style detection from Phase A provides the shared context each chunk needs.
+
+#### 2. Line-Number Anchoring Will Break
+
+The structured diff uses line numbers: `{line: N, level: 2, title: "..."}`. But Claude miscounts lines regularly, especially in documents with:
+- Consecutive blank lines
+- PAGE marker comments
+- Multi-line table blocks
+- Long lines that visually wrap
+
+**Recommendation**: Use text-based anchoring instead of line numbers. Like the `Edit` tool's approach: `{insert_before: "This paper presents a novel approach...", level: 2, title: "Introduction"}`. Match on a unique text snippet near the insertion point. This is robust to reformatting and doesn't require Claude to count thousands of lines.
+
+#### 3. Workstream C (Quality Sweep) is Scope Creep — Defer It
+
+Workstream C adds two more Claude passes:
+- C1: Page-level quality sampling (every 5th page, render image + compare to text)
+- C2: Full-document quality report (another full-text Claude call)
+
+This is a different problem from "fix the structural backbone." The existing quality_gates + GMFT + ai_repair pipeline already handles tables and equations. Adding a *third* quality mechanism alongside quality_gates and Layer 3 creates architectural mud: three overlapping systems detecting and fixing overlapping problem types, with no clear ownership boundaries.
+
+The cost impact is also significant: C1 alone adds $0.50-1.00/doc, which could double the total cost without proportionate value.
+
+**Recommendation**: Defer Workstream C to a separate v3.1 or v4 concern. Ship the structural backbone (Workstream B) and measure. If documents still have quality issues *after* correct structure + existing GMFT/AI repair, then design a quality sweep with clearer scope.
+
+#### 4. `needs_claude_structure()` Threshold is Too Naive
+
+The fast-path check is:
+```python
+if len(headers) >= 5 and noise_fraction < 0.3:
+    return False  # Skip Claude
+```
+
+This fails on:
+- A 200-page document with 5 headers (should have 30+) — passes the check, produces a mostly flat document
+- A document where regex found 6 correct headers but missed 20 others — passes the check, misses most structure
+- A document where all 5 headers are wrong level (all `##` when some should be `###`) — passes the check
+
+**Recommendation**: Use a ratio-based heuristic: `headers_per_page = len(headers) / page_count`. If `headers_per_page < 0.1` (fewer than 1 header per 10 pages), escalate. Also consider checking header depth distribution — if all headers are `##` with zero `###`, that's suspicious for any document > 10 pages.
+
+### Design Gaps
+
+#### 5. `repair_structure()` Return Type Contradicts the "Structured Diff" Principle
+
+The function signature says `-> str` (returns full markdown), but the design principle says "structured diffs, not full rewrites." If it returns modified markdown, Claude has effectively rewritten the document. If it returns a list of `HeaderInsertion`, the signature is wrong.
+
+**Recommendation**: The function should return `list[HeaderInsertion]`, and a separate `apply_insertions(md_text, insertions)` function should apply them. This keeps the diff auditable and makes it easy to log/review what Claude changed.
+
+#### 6. Running Header Detection Has a Sequencing Problem
+
+Phase A says Claude will identify running headers. But `strip_running_headers()` already runs in Layer 1 (before Claude). Two issues:
+- If L1 catches most running headers, Claude's detection is redundant
+- If L1 misses some (which it does — that's failure mode #4), there's no mechanism for Claude's Phase A findings to trigger post-hoc removal
+
+**Recommendation**: After Phase A returns `DocumentStyle.running_headers`, run a targeted strip on the markdown for any running headers Claude identified that L1 missed. This is a simple string match — not expensive.
+
+#### 7. No Error Recovery or Caching for Claude Failures
+
+If the Claude CLI call fails (network error, rate limit, malformed JSON response, timeout), the strategy doesn't specify what happens. For a $1-2 operation that takes minutes:
+- **Caching**: At minimum, cache the `DocumentStyle` from Phase A. If Phase B fails, the user shouldn't have to re-pay for Phase A on retry.
+- **Response validation**: Claude may return malformed JSON, reference non-existent lines/text, or produce duplicate insertions. Need explicit validation.
+- **Graceful fallback**: If Claude fails, fall back to regex-only output (current behavior) with a clear warning, not a crash.
+
+#### 8. No Model Selection Strategy
+
+The strategy uses "Claude" generically but Haiku, Sonnet, and Opus have dramatically different cost/quality tradeoffs:
+
+| Phase | Needs | Recommended Model | Cost Reduction |
+|-------|-------|-------------------|----------------|
+| A: Style detection | Pattern recognition, classification | Haiku | ~10x cheaper |
+| B: Structure repair | Semantic understanding, precise output | Sonnet | Baseline |
+| C: Quality sampling (if kept) | Comparison, quality judgment | Haiku | ~10x cheaper |
+| Existing Layer 3: Table/equation repair | Vision accuracy, number preservation | Sonnet | Baseline |
+
+Using Haiku for Phase A could reduce style detection cost from ~$0.05 to ~$0.005. At scale (batch processing), this matters.
+
+#### 9. Relationship to Existing `ai_repair.py` is Unclear
+
+The strategy says "Phase C — Targeted Repair (enhanced Layer 3)" but doesn't specify:
+- Does `claude_structure.py` replace or augment `ai_repair.py`?
+- Does `repair_document()` still orchestrate Phase C, or does the new module take over?
+- Do `RepairRequest` types change? Does quality_gates still trigger Phase C?
+
+**Recommendation**: Keep the layers clean. `claude_structure.py` handles Phase A+B (structural repair). `ai_repair.py` continues to handle table/equation repair triggered by quality_gates. They run sequentially: structure first, then quality repair on the structurally-corrected document.
+
+#### 10. INDEX Generation Ordering
+
+The INDEX generation depends on `##` headers. If Claude adds headers via the structural pass, INDEX generation *must* run after the Claude pass. The current CLI runs `--index` as a separate late step, which is correct — but this ordering dependency should be explicitly documented and enforced (not just coincidental).
+
+### Revised Architecture Recommendation
+
+Based on the above, here's a cleaner layered approach:
+
+```
+Layer 1: Deterministic extraction + simplified postprocess (unchanged)
+Layer 2: GMFT table enhancement (unchanged)
+Layer 3: Claude structural pass (NEW — Workstream B)
+  - Phase A: Style detection (3 page thumbnails + first ~200 lines)
+  - Phase B: Structure repair (chunked, text-anchored, not full-doc)
+  - Post-hoc: Strip running headers Claude identified that L1 missed
+Layer 4: Claude quality repair (EXISTING ai_repair.py, unchanged)
+  - Runs on remaining RepairRequests from quality_gates
+  - Cross-validation preserved
+Index generation: After all layers complete
+```
+
+Workstream C deferred. No new quality sweep mechanism until structural backbone is proven.
+
+### Summary of Recommended Changes to This Strategy
+
+| # | Change | Impact |
+|---|--------|--------|
+| 1 | Chunk Phase B into ~20-30 page windows instead of full-document | Reliability, parallelizability |
+| 2 | Use text-based anchoring for insertions, not line numbers | Eliminates the biggest fragility risk |
+| 3 | Defer Workstream C entirely | Scope reduction, cleaner architecture |
+| 4 | Make `needs_claude_structure()` ratio-based (headers/page) | Catches more cases that need Claude |
+| 5 | Return `list[HeaderInsertion]` not `str` from structure repair | Auditability, safety |
+| 6 | Add post-Phase-A running header strip | Closes failure mode #4 properly |
+| 7 | Cache Phase A results; validate Claude JSON responses | Error recovery |
+| 8 | Specify model selection per phase (Haiku for A, Sonnet for B) | Cost reduction without quality loss |
+| 9 | Keep `ai_repair.py` as separate Layer 4, don't merge into Phase C | Architectural clarity |
+| 10 | Enforce INDEX generation ordering (after all Claude passes) | Correctness |
