@@ -295,13 +295,17 @@ def _is_noise_header(header_text: str) -> bool:
     """Return True if *header_text* (after the ``## `` prefix) looks like noise.
 
     Noise indicators:
-    - Contains math operators: ``=``, ``+``, ``[``, ``]``, ``{``, ``}``
+    - Contains math/science operators: ASCII ``=+[]{}`` or Unicode ``≥≤≈∇∆∑∏µ±×÷→←∞•>~``
+    - Contains embedded bold markers (``** **`` or ``****``)
     - Looks like a table row (contains ``|`` or tab characters)
     - Is just a number + short word under 4 chars (page-number artifact)
     - Very short (< 4 chars after stripping the section number prefix)
     """
     text = header_text.strip()
-    if re.search(r"[=+\[\]{}]", text):
+    if re.search(r"[=+\[\]{}>~≥≤≈∇∆∑∏µ±×÷→←∞•]", text):
+        return True
+    # Embedded bold markers from garbled slide transitions
+    if "** **" in text or "****" in text:
         return True
     if "|" in text or "\t" in text:
         return True

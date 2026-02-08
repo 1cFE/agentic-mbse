@@ -60,6 +60,103 @@ class TestParseSections:
         sections = parse_sections("Just plain text\nNo headers here", max_depth=3)
         assert sections == []
 
+    def test_period_numbered_h2(self):
+        content = "## 1. Introduction\nText\n## 2. Methods\nMore text"
+        sections = parse_sections(content, max_depth=3)
+        assert len(sections) == 2
+        assert sections[0].section_num == "1"
+        assert sections[0].title == "Introduction"
+        assert sections[1].section_num == "2"
+        assert sections[1].title == "Methods"
+
+    def test_period_numbered_subsections(self):
+        content = "## 1. Top\n### 2.1. Background\nText"
+        sections = parse_sections(content, max_depth=3)
+        assert len(sections) == 2
+        assert sections[1].section_num == "2.1"
+        assert sections[1].title == "Background"
+
+    def test_mixed_period_and_bare(self):
+        content = "## 1 Introduction\nText\n## 2. Methods\nText\n## 3 Results\nText"
+        sections = parse_sections(content, max_depth=3)
+        assert len(sections) == 3
+        assert sections[0].section_num == "1"
+        assert sections[1].section_num == "2"
+        assert sections[2].section_num == "3"
+
+    # --- Unnumbered header fallback ---
+
+    def test_unnumbered_headers_get_synthetic_nums(self):
+        content = "## Overview\nText\n## Methods\nMore text"
+        sections = parse_sections(content, max_depth=3)
+        assert len(sections) == 2
+        assert sections[0].section_num == "1"
+        assert sections[0].title == "Overview"
+        assert sections[1].section_num == "2"
+        assert sections[1].title == "Methods"
+
+    def test_unnumbered_with_subsections(self):
+        content = "## Introduction\nText\n### Background\nText\n### Prior Work\nText\n## Results\nText"
+        sections = parse_sections(content, max_depth=3)
+        assert len(sections) == 4
+        assert sections[0].section_num == "1"
+        assert sections[1].section_num == "1.1"
+        assert sections[1].title == "Background"
+        assert sections[2].section_num == "1.2"
+        assert sections[2].title == "Prior Work"
+        assert sections[3].section_num == "2"
+
+    def test_unnumbered_fallback_not_used_when_numbered_exist(self):
+        """If ANY numbered header exists, the fallback never runs."""
+        content = "## 1 Introduction\nText\n## Unnumbered\nText"
+        sections = parse_sections(content, max_depth=3)
+        # The numbered pattern matches "## 1 Introduction"; "## Unnumbered" doesn't match
+        assert len(sections) == 1
+        assert sections[0].section_num == "1"
+
+    def test_unnumbered_respects_max_depth(self):
+        content = "## Top\n### Sub\n#### Deep\n##### TooDeep"
+        sections = parse_sections(content, max_depth=2)
+        assert len(sections) == 2
+        assert sections[0].section_num == "1"
+        assert sections[1].section_num == "1.1"
+
+    def test_unnumbered_line_ranges(self):
+        content = "## Overview\nLine 2\nLine 3\n## Details\nLine 5"
+        sections = parse_sections(content, max_depth=3)
+        assert sections[0].line_start == 1
+        assert sections[0].line_end == 3
+        assert sections[1].line_start == 4
+        assert sections[1].line_end == 5
+
+    def test_unnumbered_build_hierarchy(self):
+        content = "## Introduction\nText\n### Background\nText\n### Prior Work\nText"
+        sections = parse_sections(content, max_depth=3)
+        build_hierarchy(sections)
+        assert sections[1].breadcrumb == "1 Introduction"
+        assert sections[0].subsections == ["1.1", "1.2"]
+
+    def test_unnumbered_round_trip(self, tmp_path):
+        """generate_index → read_section round-trip on unnumbered doc."""
+        doc = tmp_path / "full_document.md"
+        doc.write_text("## Overview\nHello world\n## Methods\nGoodbye world")
+        idx = generate_index(doc, summarize=False)
+        assert idx is not None
+
+        result = read_section(tmp_path, "1")
+        assert result is not None
+        assert "Hello world" in result
+
+        result2 = read_section(tmp_path, "2")
+        assert result2 is not None
+        assert "Goodbye world" in result2
+
+    def test_unnumbered_counter_resets(self):
+        """Deeper counters reset when a shallower header appears."""
+        content = "## A\n### A1\n### A2\n## B\n### B1"
+        sections = parse_sections(content, max_depth=3)
+        assert [s.section_num for s in sections] == ["1", "1.1", "1.2", "2", "2.1"]
+
 
 # ---------------------------------------------------------------------------
 # build_hierarchy
@@ -175,6 +272,31 @@ class TestParseIndexSections:
         assert sections["1"] == (1, 10, "Intro")
         assert "2" in sections
         assert sections["2"] == (11, 20, "Body")
+
+    def test_period_numbered_index_sections(self):
+        index_content = (
+            "---\ndocument: test\n---\n\n"
+            "## 1. Intro\n**Lines:** 1-10\n\nSummary.\n\n"
+            "### 1.1. Background\n**Lines:** 3-8\n\nDetails.\n"
+        )
+        sections = parse_index_sections(index_content)
+        assert "1" in sections
+        assert sections["1"] == (1, 10, "Intro")
+        assert "1.1" in sections
+        assert sections["1.1"] == (3, 8, "Background")
+
+    def test_round_trip_period_numbered(self, tmp_path):
+        """generate_index on period-numbered doc → parse_index_sections round-trip."""
+        doc = tmp_path / "full_document.md"
+        doc.write_text("## 1. Introduction\nHello\n## 2. Methods\nWorld")
+        idx = generate_index(doc, summarize=False)
+        assert idx is not None
+        content = idx.read_text()
+        sections = parse_index_sections(content)
+        assert "1" in sections
+        assert "2" in sections
+        assert sections["1"][2] == "Introduction"
+        assert sections["2"][2] == "Methods"
 
 
 class TestReadLines:

@@ -509,6 +509,56 @@ class TestRejectNoiseHeaders:
         assert "## 3 = 4" not in result
         assert "3 = 4" in result
 
+    # --- Unicode math/science symbols ---
+
+    def test_unicode_ge_demoted(self):
+        md = "## T ≥ 10 keV"
+        assert reject_noise_headers(md) == "T ≥ 10 keV"
+
+    def test_unicode_nabla_demoted(self):
+        md = "## ∇B drift instability"
+        assert reject_noise_headers(md) == "∇B drift instability"
+
+    def test_unicode_mu_demoted(self):
+        md = "## µ = 1.2 T·m"
+        assert reject_noise_headers(md) == "µ = 1.2 T·m"
+
+    def test_unicode_tilde_demoted(self):
+        md = "## ~500 MW thermal"
+        assert reject_noise_headers(md) == "~500 MW thermal"
+
+    def test_unicode_bullet_demoted(self):
+        md = "## • Key findings"
+        assert reject_noise_headers(md) == "• Key findings"
+
+    def test_greater_than_demoted(self):
+        md = "## Q > 10 plasma gain"
+        assert reject_noise_headers(md) == "Q > 10 plasma gain"
+
+    # --- Embedded bold markers ---
+
+    def test_embedded_bold_space_demoted(self):
+        md = "## 1000 shots/second** **at 3 MJ"
+        assert reject_noise_headers(md) == "1000 shots/second** **at 3 MJ"
+
+    def test_embedded_bold_no_space_demoted(self):
+        md = "## Design****Overview"
+        assert reject_noise_headers(md) == "Design****Overview"
+
+    # --- Legitimate headers still preserved ---
+
+    def test_tritium_management_preserved(self):
+        md = "## 3 Tritium Management Strategy"
+        assert reject_noise_headers(md) == "## 3 Tritium Management Strategy"
+
+    def test_appendix_letter_preserved(self):
+        md = "## A Safety Requirements"
+        assert reject_noise_headers(md) == "## A Safety Requirements"
+
+    def test_unnumbered_section_preserved(self):
+        md = "## Overview"
+        assert reject_noise_headers(md) == "## Overview"
+
 
 # ---------------------------------------------------------------------------
 # postprocess (full chain)

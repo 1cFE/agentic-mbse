@@ -203,6 +203,25 @@ class TestNeedsClaudeStructure:
         md = "Just some text with no page markers."
         assert needs_claude_structure(md) is True
 
+    def test_corpus_profile_2243_unicode_noise_returns_true(self):
+        # 2243 (127-page slide deck): 12 headers, 8 Unicode noise + 4 valid → noise > 0.3
+        headers = [
+            "## T ≥ 10 keV plasma",  # noise: ≥
+            "## ∇B drift correction",  # noise: ∇
+            "## Real Section Title",  # valid
+            "## µ = 1.2 T·m",  # noise: µ
+            "## ~500 MW thermal",  # noise: ~
+            "## Another Valid Section",  # valid
+            "## • Key findings list",  # noise: •
+            "## Q > 10 gain",  # noise: >
+            "## Third Valid Header",  # valid
+            "## 1000 shots** **3 MJ",  # noise: ** **
+            "## ∆T across blanket",  # noise: ∆
+            "## Fourth Valid Title",  # valid
+        ]
+        md = _build_md(num_pages=30, headers=headers)
+        assert needs_claude_structure(md) is True
+
 
 # ---------------------------------------------------------------------------
 # TestChunking

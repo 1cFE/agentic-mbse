@@ -64,21 +64,25 @@ def parse_sections(content: str, max_depth: int = 3) -> list[Section]:
     """Parse numbered section headers from markdown content.
 
     Supports multiple header formats:
-        Format A (KerML):  ``## 7.2.1 Title``
+        Format A (KerML):  ``## 7.2.1 Title`` or ``## 7.2.1. Title``
         Format B (Part1):  ``### **7 Title**``
         Format C (generic): ``##### 7.2.1 Title``
+        Format D (appendix): ``## A.1 Title``
+
+    Falls back to ``_parse_unnumbered_sections()`` with synthetic section
+    numbers when no numbered headers are found.
     """
     lines = content.split("\n")
 
     patterns = [
-        # Format A: ## 7.2.1 Title
-        re.compile(r"^##\s+(\d+(?:\.\d+)*)\s+(.+)$"),
-        # Format B: ### **7 Title** (bold)
-        re.compile(r"^#{2,6}\s+\*\*(\d+(?:\.\d+)*)\s+(.+?)\*\*\s*$"),
-        # Format C: generic levels
-        re.compile(r"^#{2,6}\s+(\d+(?:\.\d+)*)\s+(.+)$"),
-        # Format D: Appendix letter numbering (## A.1 Title)
-        re.compile(r"^#{2,6}\s+([A-Z](?:\.\d+)*)\s+(.+)$"),
+        # Format A: ## 7.2.1 Title  or  ## 7.2.1. Title
+        re.compile(r"^##\s+(\d+(?:\.\d+)*)\.?\s+(.+)$"),
+        # Format B: ### **7 Title** or ### **7. Title** (bold)
+        re.compile(r"^#{2,6}\s+\*\*(\d+(?:\.\d+)*)\.?\s+(.+?)\*\*\s*$"),
+        # Format C: generic levels (with optional trailing period)
+        re.compile(r"^#{2,6}\s+(\d+(?:\.\d+)*)\.?\s+(.+)$"),
+        # Format D: Appendix letter numbering (## A.1 Title or ## A.1. Title)
+        re.compile(r"^#{2,6}\s+([A-Z](?:\.\d+)*)\.?\s+(.+)$"),
     ]
 
     sections: list[Section] = []
@@ -121,6 +125,65 @@ def parse_sections(content: str, max_depth: int = 3) -> list[Section]:
     # This works because a 1-indexed inclusive value N equals the 0-indexed
     # exclusive bound for the *next* position, neatly skipping the header
     # and stopping before the next section.
+    for i, section in enumerate(sections):
+        if i + 1 < len(sections):
+            section.line_end = sections[i + 1].line_start - 1
+        else:
+            section.line_end = len(lines)
+        section.content = "\n".join(lines[section.line_start : section.line_end])
+
+    if sections:
+        return sections
+
+    # Fallback: unnumbered headers with synthetic section numbers
+    return _parse_unnumbered_sections(lines, max_depth)
+
+
+def _parse_unnumbered_sections(lines: list[str], max_depth: int) -> list[Section]:
+    """Parse unnumbered markdown headers and assign synthetic section numbers.
+
+    Used as a fallback when ``parse_sections`` finds no numbered headers.
+    Generates dot-notation section_nums from depth counters so that
+    ``build_hierarchy``, ``format_index_md``, and ``read_section`` all work
+    unchanged.
+    """
+    _UNNUMBERED_RE = re.compile(r"^(#{2,6})\s+(.+)$")
+
+    # counters[depth] tracks the current counter at each depth (1-indexed depth)
+    counters: list[int] = [0] * (max_depth + 1)
+    sections: list[Section] = []
+
+    for i, line in enumerate(lines):
+        m = _UNNUMBERED_RE.match(line)
+        if not m:
+            continue
+        hashes = m.group(1)
+        title = m.group(2).strip()
+        depth = len(hashes) - 1  # ## = depth 1, ### = depth 2, etc.
+
+        if depth > max_depth:
+            continue
+
+        # Increment counter at this depth, reset deeper counters
+        counters[depth] += 1
+        for d in range(depth + 1, max_depth + 1):
+            counters[d] = 0
+
+        # Build section_num from counters: "1", "1.1", "1.1.2"
+        section_num = ".".join(str(counters[d]) for d in range(1, depth + 1))
+
+        sections.append(
+            Section(
+                section_num=section_num,
+                title=title,
+                depth=depth,
+                line_start=i + 1,  # 1-indexed
+                line_end=0,
+                content="",
+            )
+        )
+
+    # Fill line_end and content (same logic as parse_sections)
     for i, section in enumerate(sections):
         if i + 1 < len(sections):
             section.line_end = sections[i + 1].line_start - 1
@@ -301,7 +364,7 @@ def parse_index_sections(index_content: str) -> dict[str, tuple[int, int, str]]:
     """
     sections: dict[str, tuple[int, int, str]] = {}
 
-    header_pattern = re.compile(r"^#{2,}\s+(\d+(?:\.\d+)*|[A-Z](?:\.\d+)*)\s+(.+)$", re.MULTILINE)
+    header_pattern = re.compile(r"^#{2,}\s+(\d+(?:\.\d+)*|[A-Z](?:\.\d+)*)\.?\s+(.+)$", re.MULTILINE)
     lines_pattern = re.compile(r"\*\*Lines:\*\*\s*(\d+)-(\d+)")
 
     headers = list(header_pattern.finditer(index_content))
