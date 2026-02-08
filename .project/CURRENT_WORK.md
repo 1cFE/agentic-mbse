@@ -1,61 +1,67 @@
 # Current Work
 
-**Last Updated**: 2026-01-23
+**Last Updated**: 2026-02-08
 
 ---
 
 ## Active Work
 
-*No active work items*
+*No items in progress — branch ready for PR.*
 
 ---
 
 ## Recently Completed
 
+### 2026-02-08: EPIC-PDFV3-001 PDF Extraction v3
+
+Claude-powered document structure detection pipeline. 4-layer extraction (pymupdf4llm base → GMFT tables → Claude structure repair → AI quality repair). Benchmarked on 12-doc corpus: 4/5 new docs produce usable INDEX files, zero regressions on original 7 docs. 881 tests passing.
+
+Key deliverables:
+- `src/agentic_mbse/extraction/` — 11 modules, ~3,000 lines
+- `agentic-mbse extract` CLI subcommand with `--enhance`, `--structure-only`, `--model` flags
+- `claude/skills/pdf-analysis/` — interactive PDF extraction skill
+- 9 new test files, 3,824 lines of test coverage
+
+### 2026-02-03: Architecture Redesign (4 Epics)
+
+Complete toolkit redesign across 4 phases:
+
+**EPIC-ARCH-001 Structure** — 4-directory architecture (`knowledge/`, `modeling_project/`, `work/`, `data/`), new/revised project templates, YAML frontmatter schemas, cmd_init rewiring, 80+ tests updated.
+
+**EPIC-ARCH-002 Knowledge** — 9 new skills (epic-decomposition, model-validation, pdf-analysis, project-structure, record-learning, requirements-tracking, source-traceability, sysml-conventions, toolkit-awareness). Context measurement and extraction mapping complete.
+
+**EPIC-ARCH-003 Commands** — All 9 existing commands refactored to lean ~300-line format. 5 new commands (analyze-models, formalize-intent, quick-model, review-model, status). All registered in installation pipeline. sysmlv2-doc-analyzer deprecated.
+
+**EPIC-ARCH-004 PM Engine** — 8 typed parsers, deterministic state derivation, dashboard generator, 14 PM mutation operations, CLI subcommands (`agentic-mbse pm`, `agentic-mbse status`). 3,267 lines of PM tests.
+
 ### 2026-01-23: ITEM-SYMLINK-001 Tool-Owned File Safety
 
-Added hash-based modification detection for tool-owned files. Re-running `init` now warns before overwriting local modifications, with options to skip, backup, or overwrite. Also added `LOCAL_GUIDE.md` template for project-specific customizations.
+Hash-based modification detection for tool-owned files. Re-running `init` warns before overwriting local modifications.
 
 ### 2026-01-23: ITEM-REGTEST-001 Model Regression Testing
 
-Added pytest-compatible testing infrastructure for SysML models. `agentic-mbse init` creates `tests/models/` with example tests. Updated spec/plan/implement commands to include test phases. Validated end-to-end in fusion-tea.
+pytest-compatible testing infrastructure for SysML models. `tests/models/` with example tests.
 
 ### 2026-01-23: ITEM-RENAME-001 Rename `project/` to `modeling_pm/`
 
-Renamed the modeling project management directory from `project/` to `modeling_pm/` for clearer semantic distinction from `.project/` (tool development). Updated CLI, templates, all commands, agents, and documentation across 4 phases.
-
-### 2026-01-16: ITEM-SYSIDE-001 SysIDE v0.8.4 Upgrade
-
-Upgraded syside CLI and Python package from 0.8.1 to 0.8.4. Added versioned documentation structure with compatibility symlinks. 348 new markdown files scraped from docs.sensmetry.com.
-
-### 2026-01-15: ITEM-LEARNING-001 Agent Learning Feedback Loop
-
-Created `/record-learning` skill for capturing session insights to `modeling_pm/learnings/RAW_LEARNINGS.md`. Agents can reflect on conversation and record validated patterns for future reference.
-
-### 2026-01-15: ITEM-DEVMODE-001 Development Mode
-
-Added `--dev` flag to `agentic-mbse init` that creates symlinks for tool-owned files instead of copies. Enables bidirectional editing between agentic-mbse and domain projects.
-
-### 2026-01-15: ITEM-GUIDE-001 Progressive Disclosure Restructure
-
-Restructured MODELING_GUIDE.md.template from 1,497 lines to 205 lines using progressive disclosure pattern. Created 12 pattern docs in `docs/patterns/` with comprehensive reference material.
+Renamed modeling project management directory for clearer semantic distinction.
 
 ---
 
 ## Up Next
 
-1. Review external work tracking (LCOE costing, Visualization in fusion-tea)
-2. Example Store for Modeling Agents (ITEM-EXAMPLES-001)
-3. PDF Extraction Header Consistency (TASK-PDF-001)
+1. Merge `pdf-extract` branch to master (PR pending)
+2. EPIC-LCOE-001: LCOE Costing Patterns (tracking — active in fusion-tea)
+3. EPIC-VIZ-001: Visualization Tool Integration (tracking — active in fusion-tea)
+4. PDF Skill Deployment: Docling MCP setup during init (spec drafted)
 
 ---
 
 ## Session Notes
 
-### 2026-01-23
+### 2026-02-08
 
-- Archived `project-rename` and `syside-084-upgrade` from active to completed
-- Added tracking items for external work in fusion-tea (LCOE, Visualization)
-- Added investigation item for symlink scope (related to fusion-tea overwrite issue)
-- Completed and archived ITEM-REGTEST-001 (Model Regression Testing) - 4 phases
-- Completed and archived ITEM-SYMLINK-001 (Tool-Owned File Safety) - 5 phases
+- Archived 31 completed active work items to `.project/completed/`
+- Updated BACKLOG.md: EPIC-CMDREV-001 superseded, architecture epics complete, PDFV3 complete
+- Added lingering TODOs to backlog (operations.py stubs, TASK-PDF-001 superseded)
+- Prepared PR for pdf-extract → master

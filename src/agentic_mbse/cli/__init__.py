@@ -45,6 +45,7 @@ MBSE_AGENTS = [
 MBSE_SKILLS = [
     "epic-decomposition",
     "model-validation",
+    "pdf-analysis",
     "project-structure",
     "python-debugger",
     "record-learning",
@@ -1162,6 +1163,11 @@ def main() -> int:
     from agentic_mbse.cli.pm_cli import register_pm_subcommands
 
     register_pm_subcommands(subparsers)
+
+    # extract command (delegated to extract_cli module)
+    from agentic_mbse.cli.extract_cli import register_extract_subcommand
+
+    register_extract_subcommand(subparsers)
 
     args = parser.parse_args()
 

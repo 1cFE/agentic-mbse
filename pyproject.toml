@@ -24,9 +24,14 @@ dependencies = [
     "python-dotenv>=1.0",
     "syside>=0.8.4",
     "pyyaml>=6.0",
+    "pymupdf>=1.26.7",
+    "pymupdf4llm>=0.2.9",
 ]
 
 [project.optional-dependencies]
+extract = ["pymupdf4llm>=0.0.17"]
+extract-tables = ["gmft>=0.3"]
+extract-full = ["docling>=2.0", "pymupdf4llm>=0.0.17", "gmft>=0.3"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
