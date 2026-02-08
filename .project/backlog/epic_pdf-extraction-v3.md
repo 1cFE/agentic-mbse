@@ -98,8 +98,8 @@ Replace regex-driven header promotion — which fails catastrophically on docume
 - ✅ `ai_repair.py` exists with `render_page_image()`, `claude -p` invocation pattern, cross-validation infrastructure
 - ✅ `postprocess.py` has header promotion regex (kept for fast-path)
 - ✅ Page markers (`<!-- PAGE:N -->`) provide reliable page-to-content mapping
-- ❌ No `claude_structure.py` module
-- ❌ No style detection or structural repair capability
+- ✅ `claude_structure.py` module implemented (684 lines, 50 tests)
+- ✅ Style detection + structural repair + orchestrator complete
 
 **Scope**:
 1. **`DocumentStyle` dataclass**: `doc_type`, `heading_convention`, `has_toc`, `running_headers`, `page_number_format`
@@ -127,18 +127,18 @@ Replace regex-driven header promotion — which fails catastrophically on docume
 - Documents over 200 pages (chunking handles up to ~200; longer docs noted as future work)
 
 **Success Criteria**:
-- [ ] `detect_document_style()` returns valid `DocumentStyle` for mocked inputs covering all 5 doc types
-- [ ] `repair_structure()` returns `list[HeaderInsertion]` with text-anchored insertions
-- [ ] `apply_insertions()` correctly inserts headers at anchor positions
-- [ ] `needs_claude_structure()` returns True for 4/5 new corpus doc profiles, False for 5/7 original corpus profiles
-- [ ] Style detection result cached to disk; second call loads from cache
-- [ ] All Claude subprocess calls mocked in tests
-- [ ] Malformed JSON response → graceful fallback with warning (tested)
-- [ ] Chunking produces correct windows with overlap (unit tested)
+- [x] `detect_document_style()` returns valid `DocumentStyle` for mocked inputs covering all 5 doc types
+- [x] `repair_structure()` returns `list[HeaderInsertion]` with text-anchored insertions
+- [x] `apply_insertions()` correctly inserts headers at anchor positions
+- [x] `needs_claude_structure()` returns True for 4/5 new corpus doc profiles, False for 5/7 original corpus profiles
+- [x] Style detection result cached to disk; second call loads from cache
+- [x] All Claude subprocess calls mocked in tests
+- [x] Malformed JSON response → graceful fallback with warning (tested)
+- [x] Chunking produces correct windows with overlap (unit tested)
 
 **Deliverables**:
-- `src/agentic_mbse/extraction/claude_structure.py` (~300 lines)
-- `tests/test_claude_structure.py` (~250 lines)
+- `src/agentic_mbse/extraction/claude_structure.py` (684 lines)
+- `tests/test_claude_structure.py` (637 lines, 50 tests)
 
 ---
 
@@ -389,4 +389,4 @@ These decisions were agreed in the concept review and should be followed during 
 ---
 
 **Last Updated**: 2026-02-08
-**Next Action**: Item 1 complete. Begin Item 2 (core implementation) and Item 3 (pipeline integration).
+**Next Action**: Items 1-2 complete. Begin Item 3 (pipeline integration).
