@@ -82,6 +82,21 @@ def expose_pattern_model():
     return model
 
 
+@pytest.fixture
+def formula_pattern_model():
+    """Load model with FORMULA pattern test cases.
+
+    Contains FormulaTestPart with:
+    - length, width, rate (true static inputs)
+    - area = length * width (simple FORMULA)
+    - cost = area * rate (chain FORMULA)
+    - p_net_kw = length * 1000.0 (FORMULA + literal)
+    """
+    files = [Path("tests/fixtures/adr002_violations/v2_formula_pattern.sysml")]
+    model, _ = get_syside().try_load_model([str(f) for f in files])
+    return model
+
+
 # ============================================================================
 # V1 Tests: Calc Def Location
 # ============================================================================
@@ -399,13 +414,13 @@ def true_static_units_model():
 
 
 class TestDerivedExpressionProhibition:
-    """V2 check must reject expressions with feature references (except EXPOSE and std lib).
+    """V2 check must reject expressions with non-sibling feature references.
 
-    Per ADR-002 Amendment (2025-12-22):
-    - Expressions referencing design attributes are DERIVED EXPRESSIONS
-    - Derived expressions are prohibited in design files
-    - Only TRUE STATIC expressions (literals + std lib refs) are allowed
+    Per ADR-002 Rule 3 Amendment (2026-02-09) and ADR-005:
+    - TRUE STATIC expressions (literals + std lib refs) are allowed
     - EXPOSE pattern (single ref to sibling calc output) is exempt
+    - FORMULA pattern (all refs are sibling attributes) is exempt
+    - Only expressions with calc output refs or cross-part refs are violations
     """
 
     def test_true_static_allowed(self, true_static_model):
@@ -428,32 +443,30 @@ class TestDerivedExpressionProhibition:
         v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
         assert len(v2_issues) == 0, f"Unit annotations should pass, got: {v2_issues}"
 
-    def test_single_reference_violation(self, derived_single_model):
-        """Even one reference to a design attribute is a violation.
+    def test_single_reference_formula_exempt(self, derived_single_model):
+        """diameter = radius * 2.0 is FORMULA-exempt per ADR-002 Amendment.
 
-        Input: Model with diameter = radius * 2.0
-        Output: V2 issue for diameter (references design attr 'radius')
+        radius is a sibling attribute on the same part, so this is a FORMULA
+        pattern. Previously this was a violation; now it's correctly exempt.
         """
         issues = check_static_expressions(derived_single_model)
         v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
-        assert len(v2_issues) >= 1, "Expected at least 1 V2 violation for derived expression"
-        # Check the violating attribute is diameter
-        assert any("diameter" in i.element_name for i in v2_issues), (
-            f"Expected 'diameter' in violations, got: {[i.element_name for i in v2_issues]}"
+        diameter_issues = [i for i in v2_issues if "diameter" in i.element_name]
+        assert len(diameter_issues) == 0, (
+            f"FORMULA pattern 'diameter = radius * 2.0' should be exempt, got: {diameter_issues}"
         )
 
-    def test_multi_reference_violation(self, derived_multi_model):
-        """Multiple references are still a single violation per attribute.
+    def test_multi_reference_formula_exempt(self, derived_multi_model):
+        """volume = ... * major_radius * minor_radius * elongation is FORMULA-exempt.
 
-        Input: Model with volume = ... * major_radius * minor_radius * elongation
-        Output: V2 issue for volume (references 3 design attrs)
+        All referenced attributes are siblings on the same part, so this is a
+        FORMULA pattern. Previously this was a violation; now it's correctly exempt.
         """
         issues = check_static_expressions(derived_multi_model)
         v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
-        assert len(v2_issues) >= 1, "Expected at least 1 V2 violation"
-        # Check the violating attribute is volume
-        assert any("volume" in i.element_name for i in v2_issues), (
-            f"Expected 'volume' in violations, got: {[i.element_name for i in v2_issues]}"
+        volume_issues = [i for i in v2_issues if "volume" in i.element_name]
+        assert len(volume_issues) == 0, (
+            f"FORMULA pattern 'volume = ...' should be exempt, got: {volume_issues}"
         )
 
     def test_expose_pattern_still_allowed(self, expose_pattern_model):
@@ -477,16 +490,99 @@ class TestDerivedExpressionProhibition:
         v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
         assert len(v2_issues) >= 1, "Computation on calc output should be V2 violation"
 
-    def test_guidance_includes_calc_def_template(self, derived_single_model):
+    def test_violation_guidance_includes_calc_def_template(self, v2_violation_model):
         """Violation guidance should suggest creating a calc def.
 
-        Input: Model with derived expression
-        Output: V2 issue suggestion mentions calc def
+        Uses v2_violation_model (derived_value = my_calc.output_val * 0.95) which
+        remains a violation (EXPOSE_COMPUTED, not FORMULA). Verifies the suggestion
+        still includes calc def guidance.
         """
-        issues = check_static_expressions(derived_single_model)
+        issues = check_static_expressions(v2_violation_model)
         v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
-        assert len(v2_issues) >= 1
+        assert len(v2_issues) >= 1, "Expected V2 violation for EXPOSE_COMPUTED pattern"
         # Check suggestion mentions calc def
         assert any("calc" in (i.suggestion or "").lower() for i in v2_issues), (
             f"Suggestion should mention calc def, got: {[i.suggestion for i in v2_issues]}"
+        )
+
+
+# ============================================================================
+# FORMULA Pattern Exemption Tests (ADR-002 Amendment 2026-02-09)
+# ============================================================================
+
+
+class TestFormulaPatternExemption:
+    """V2 check must exempt FORMULA patterns (sibling-only refs).
+
+    Per ADR-002 Amendment (2026-02-09) and ADR-005:
+    FORMULA expressions where ALL feature refs resolve to sibling
+    attributes are exempt from V2 check. Expressions with calc output
+    refs or cross-part refs remain violations.
+    """
+
+    def test_simple_formula_exempt(self, formula_pattern_model):
+        """attribute area = length * width → no V2 violation.
+
+        Both length and width are sibling attributes on the same part.
+        This is a FORMULA pattern and should be exempt.
+        """
+        issues = check_static_expressions(formula_pattern_model)
+        v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
+        area_issues = [i for i in v2_issues if "area" in i.element_name]
+        assert len(area_issues) == 0, (
+            f"FORMULA pattern 'area = length * width' should be exempt, got: {area_issues}"
+        )
+
+    def test_chain_formula_exempt(self, formula_pattern_model):
+        """attribute cost = area * rate (area is computed) → no V2 violation.
+
+        Both area and rate are sibling attributes. area is itself computed
+        but that doesn't matter — chain-blindness is a feature.
+        """
+        issues = check_static_expressions(formula_pattern_model)
+        v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
+        cost_issues = [i for i in v2_issues if "cost" in i.element_name]
+        assert len(cost_issues) == 0, (
+            f"FORMULA pattern 'cost = area * rate' should be exempt, got: {cost_issues}"
+        )
+
+    def test_formula_with_literal_exempt(self, formula_pattern_model):
+        """attribute p_net_kw = length * 1000.0 → no V2 violation.
+
+        length is a sibling ref, 1000.0 is a LiteralRational (not a feature ref).
+        extract_feature_refs() returns only [length].
+        """
+        issues = check_static_expressions(formula_pattern_model)
+        v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
+        p_net_issues = [i for i in v2_issues if "p_net_kw" in i.element_name]
+        assert len(p_net_issues) == 0, (
+            f"FORMULA pattern 'p_net_kw = length * 1000.0' should be exempt, got: {p_net_issues}"
+        )
+
+    def test_expose_computed_still_violation(self, v2_violation_model):
+        """attribute derived_value = my_calc.output_val * 0.95 → V2 violation.
+
+        This is EXPOSE_COMPUTED (computation on calc output), not FORMULA.
+        Must remain a violation.
+        """
+        issues = check_static_expressions(v2_violation_model)
+        v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
+        derived_issues = [i for i in v2_issues if "derived_value" in i.element_name]
+        assert len(derived_issues) >= 1, (
+            f"EXPOSE_COMPUTED 'derived_value = calc.output * 0.95' should be V2 violation, "
+            f"but got no violations. All V2 issues: {[i.element_name for i in v2_issues]}"
+        )
+
+    def test_mixed_refs_still_violation(self, expose_pattern_model):
+        """attribute mixed = sibling_a + my_calc.output_val → V2 violation.
+
+        Mixed refs: sibling_a is a sibling attribute but my_calc.output_val
+        is a calc output ref. Any calc output ref disqualifies FORMULA.
+        """
+        issues = check_static_expressions(expose_pattern_model)
+        v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
+        mixed_issues = [i for i in v2_issues if "mixed" in i.element_name]
+        assert len(mixed_issues) >= 1, (
+            f"Mixed-ref 'mixed = sibling_a + calc.output' should be V2 violation, "
+            f"but got no violations. All V2 issues: {[i.element_name for i in v2_issues]}"
         )

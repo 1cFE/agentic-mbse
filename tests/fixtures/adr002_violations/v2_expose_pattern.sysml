@@ -32,4 +32,15 @@ package ExposePatternTest {
         // This SHOULD still be flagged as V2 violation
         attribute combined : Real = calc1.output_val + calc2.output_val;
     }
+
+    part mixed_ref_test {
+        calc my_calc : SimpleCalc { in input_val = 5.0; }
+
+        // Sibling attribute (true static)
+        attribute sibling_a : Real = 10.0;
+
+        // MIXED: sibling ref + calc output ref → SHOULD be V2 violation
+        // _is_formula_pattern rejects because my_calc.output_val is a calc output ref
+        attribute mixed : Real = sibling_a + my_calc.output_val;
+    }
 }

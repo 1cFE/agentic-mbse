@@ -390,6 +390,75 @@ def _is_expose_pattern(
         return False
 
 
+def _is_formula_pattern(
+    attr: Any,
+    expr: Any,
+    refs: list[ExpressionRef],
+    calc_def_qualified_names: set[str],
+) -> bool:
+    """
+    Check if attribute follows FORMULA pattern: all refs are sibling attributes.
+
+    FORMULA pattern per ADR-002 Amendment (2026-02-09) and ADR-005:
+    An expression where ALL feature references resolve to sibling attributes
+    on the same owning part, with no calc output refs and no FeatureChainExpression.
+
+    Examples:
+    - attribute area = length * width  (both siblings) → True
+    - attribute cost = area * rate  (both siblings, area is computed) → True
+    - attribute p = val * 1000.0  (val is sibling, 1000.0 is literal) → True
+    - attribute adj = calc.output * 0.95  (FeatureChainExpression) → False
+    - attribute x = sibling + calc.output  (calc output ref) → False
+
+    Args:
+        attr: The AttributeUsage being analyzed (provides attr.owner)
+        expr: The attribute's feature_value_expression (top-level type check only)
+        refs: Pre-computed list of ExpressionRef from extract_feature_refs()
+        calc_def_qualified_names: Set of calc def qualified names for calc output detection
+
+    Returns:
+        True if FORMULA pattern (exempt from V2), False otherwise
+    """
+    try:
+        # 1. Top-level type check: FeatureChainExpression is not FORMULA
+        #    (e.g., attr = calc.output). Nested chains inside OperatorExpressions
+        #    are caught by the per-ref checks in step 3.
+        type_name = type(expr).__name__
+        if "FeatureChain" in type_name:
+            return False
+
+        # 2. Guard: no refs means true static, not FORMULA (handled upstream)
+        if len(refs) == 0:
+            return False
+
+        # 3. Check each ref: must be a sibling attribute, not a calc output
+        attr_owner = attr.owner if hasattr(attr, "owner") else None
+        if attr_owner is None:
+            return False  # Conservative: can't determine siblings
+
+        for ref in refs:
+            # 3a. Exclude calc output references (FR-2)
+            if _is_calc_output_reference(ref, calc_def_qualified_names):
+                return False
+
+            # 3b. Check sibling relationship via owner identity (FR-1)
+            ref_element = ref.element
+            if ref_element is None:
+                return False  # Conservative: can't classify (FR-4)
+            ref_owner = ref_element.owner if hasattr(ref_element, "owner") else None
+            if ref_owner is None:
+                return False  # Conservative: can't classify (FR-4)
+            if ref_owner is not attr_owner:
+                return False  # Not a sibling
+
+        # 4. All refs are siblings, none are calc outputs → FORMULA
+        return True
+
+    except Exception:
+        # Conservative: don't exempt if we can't analyze (FR-4)
+        return False
+
+
 def _generate_calc_def_guidance(attr_name: str, ref_names: list[str]) -> str:
     """
     Generate actionable guidance for converting derived expression to calc def.
@@ -419,15 +488,13 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
     """
     V2: Validate that design attribute expressions are either:
     - True static (no feature references except standard library), OR
-    - EXPOSE pattern (single reference to sibling calc output)
+    - EXPOSE pattern (single reference to sibling calc output), OR
+    - FORMULA pattern (all references are sibling attributes, no calc outputs)
 
-    Derived expressions (references to design attributes) are VIOLATIONS.
-
-    Per ADR-002 Rule 3 Amendment (2025-12-22):
-    - Expressions with FeatureReferenceExpression nodes are NOT allowed
-      (except references to standard library: SI::, ISQ::, ScalarValues::)
-    - Only expressions composed purely of literals are "true static"
-    - This is a STRUCTURAL check, not a SEMANTIC check
+    Per ADR-002 Rule 3 Amendment (2026-02-09) and ADR-005:
+    - FORMULA expressions (arithmetic on sibling attributes) are exempt
+    - EXPOSE expressions (value propagation from calc outputs) are exempt
+    - Only expressions referencing calc outputs or cross-part elements are violations
 
     Algorithm:
     1. For each AttributeUsage in designs/ with expression:
@@ -435,6 +502,7 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
        - Extract all feature references (std lib filtered by default)
        - If no refs → TRUE STATIC → OK
        - If EXPOSE pattern → OK
+       - If FORMULA pattern → OK (per ADR-002 Amendment)
        - Otherwise → DERIVED EXPRESSION VIOLATION
 
     Args:
@@ -446,7 +514,7 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
 
     # Build catalog of calc output names (still needed for EXPOSE pattern detection)
-    calc_outputs, _ = _build_calc_output_catalog(model)
+    calc_outputs, calc_def_qnames = _build_calc_output_catalog(model)
 
     # Check each attribute in design files
     for attr in SysideAdapter.elements_of_type(model, "AttributeUsage"):
@@ -485,7 +553,11 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
             if _is_expose_pattern(attr, expr, calc_outputs):
                 continue  # OK - EXPOSE pattern exempt
 
-            # DERIVED EXPRESSION VIOLATION: Has feature refs that aren't EXPOSE
+            # FORMULA PATTERN: All refs are sibling attributes (no calc output refs)
+            if _is_formula_pattern(attr, expr, refs, calc_def_qnames):
+                continue  # OK - FORMULA pattern exempt per ADR-002 Amendment
+
+            # DERIVED EXPRESSION VIOLATION: Has feature refs that aren't EXPOSE or FORMULA
             attr_name = get_qualified_name(attr)
             location = get_element_location(attr)
             ref_names = [ref.name for ref in refs]
