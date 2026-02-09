@@ -1,37 +1,11 @@
-# Python
 __pycache__/
 *.py[cod]
-*$py.class
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 *.egg-info/
 dist/
 build/
-.eggs/
-
-# Virtual environments
-.venv/
-venv/
-env/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Testing/Tools
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-
-# Environment
-.env
-.env.local
-
-# OS
 .DS_Store
-Thumbs.db
-
-# Memories
-.project/memories
+ralph-init.log
