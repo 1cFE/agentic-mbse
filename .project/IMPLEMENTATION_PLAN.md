@@ -9,9 +9,9 @@
 
 ## Executive Summary
 
-**Current State**: Foundation + ExtractionOrchestrator + ProvenanceManager complete (11/17 specs + converter infrastructure)
-**Next Milestone**: Complete core orchestration layer (specs 012, 007)
-**Critical Path**: ResultWriter → SourceRouter → CLI → Converters
+**Current State**: Foundation + ExtractionOrchestrator + ProvenanceManager + ResultWriter complete (12/17 specs + converter infrastructure)
+**Next Milestone**: Complete core orchestration layer (spec 007 SourceRouter)
+**Critical Path**: SourceRouter → CLI → Converters
 
 **Technology Stack**: Python 3.11+, UV package manager, pytest, pydantic
 **Verification**: Unit tests + integration tests for each component
@@ -20,7 +20,7 @@
 
 ## Specification Coverage Analysis
 
-### ✅ Completed Specifications (10 specs)
+### ✅ Completed Specifications (11 specs)
 
 | Spec | Component | Implementation | Lines | Tests |
 |------|-----------|----------------|-------|-------|
@@ -33,9 +33,11 @@
 | **008** | ExtractionOrchestrator | `src/doc_ingest/extraction_orchestrator.py` | 207 | ✅ |
 | **009** | ProvenanceManager | `src/doc_ingest/provenance_manager.py` | 168 | ✅ |
 | **010** | ValidationResult | `src/doc_ingest/types.py:152-180` | 29 | ✅ |
+| **012** | ResultWriter | `src/doc_ingest/result_writer.py` | 121 | ✅ |
 | **013** | DiscoveryCache | `src/doc_ingest/discovery_cache.py` | 162 | ✅ |
 | **017** | ConversionError | `src/doc_ingest/types.py:199-216` | 18 | ✅ |
 | N/A | ProvenanceRecord | `src/doc_ingest/types.py:254-295` | 42 | ✅ |
+| N/A | ExtractionResult | `src/doc_ingest/types.py:297-311` | 15 | ✅ |
 | N/A | Converter (protocol) | `src/doc_ingest/converters/base.py` | 91 | ✅ |
 | N/A | ConverterRegistry | `src/doc_ingest/converters/registry.py` | 69 | ✅ |
 
@@ -66,11 +68,20 @@
 - 11 unit tests covering all acceptance criteria (100% pass rate)
 - Files: `provenance_manager.py` (168 lines), `types.py` (ProvenanceRecord), `test_provenance_manager.py`
 
-### ⏳ Pending Specifications (6 specs)
+**TASK-DI-003: ResultWriter Implementation** — Completed 2026-02-09
+- Implemented `ResultWriter` class with atomic markdown and summary.json writes
+- Added `ExtractionResult` dataclass to `types.py` (markdown + provenance)
+- Delegates provenance writing to ProvenanceManager (separation of concerns)
+- Writes output.md and summary.json only for successful extractions
+- Deterministic directory naming using document hash
+- UTF-8 encoding for non-ASCII content (verified with Unicode tests)
+- 11 unit tests covering all acceptance criteria (100% pass rate)
+- Files: `result_writer.py` (121 lines), `types.py` (ExtractionResult), `test_result_writer.py`
+
+### ⏳ Pending Specifications (5 specs)
 
 **Core Pipeline (P0 - Critical Path):**
 - **Spec 007**: SourceRouter — Coordinate discovery → extraction → classification → persistence
-- **Spec 012**: ResultWriter — Write markdown outputs and summary.json
 
 **CLI Layer (P1 - User Interface):**
 - **Spec 011**: CLI interface — `extract`, `extract-batch`, `triage-report`, `retry-failed`, `clear-cache`
@@ -144,45 +155,28 @@
 
 ---
 
-#### TASK-DI-003: ResultWriter Implementation
+#### [DONE] TASK-DI-003: ResultWriter Implementation
 **Addresses**: Spec 012 (result_writer.md)
 **Priority**: P0
-**Complexity**: SMALL (~100 lines, 1 file)
-**Estimated Time**: 0.5 day
+**Complexity**: SMALL (~120 lines, 1 file)
+**Completed**: 2026-02-09
 
-**Problem**: Need to write extracted markdown and legacy summary.json to output directory.
+**Implementation Summary**:
+- ✅ Created `src/doc_ingest/result_writer.py` (121 lines)
+- ✅ Added `ExtractionResult` dataclass to `types.py` (15 lines)
+- ✅ Created `tests/test_result_writer.py` (11 tests, 100% pass)
+- ✅ Delegates provenance writing to ProvenanceManager
+- ✅ Writes output.md and summary.json only for successful extractions
+- ✅ Deterministic directory naming using document hash
+- ✅ UTF-8 encoding for non-ASCII content
+- ✅ All acceptance criteria met and verified via unit tests
 
-**Requirements** (from spec 012):
-- Write `output.md` with extracted markdown (success only)
-- Write `summary.json` with legacy metadata (success only)
-- Delegate provenance writing to ProvenanceManager
-- Create output directory: `output_dir/{document_hash}/`
-- Skip markdown/summary writes on failed extractions
-
-**Implementation Steps**:
-1. Create `src/doc_ingest/result_writer.py`
-2. Implement `ResultWriter.__init__(provenance_manager: ProvenanceManager)`
-3. Implement `write(output_dir, identifiers, result, provenance) -> None`
-4. Add markdown writing logic (success only)
-5. Add summary.json writing logic (success only)
-6. Delegate to `provenance_manager.write()`
-7. Write unit tests for success/failure paths
-
-**Files Created/Modified**:
-- `src/doc_ingest/result_writer.py` (new, ~100 lines)
-- `tests/test_result_writer.py` (new, ~150 lines)
-
-**Acceptance Criteria**:
-- Success → writes output.md, summary.json, provenance.json
-- Failed → writes only provenance.json (no output.md)
-- Directory auto-created at `output_dir/{hash}/`
-- summary.json includes: source_file, processed_at, backend_used, statistics
-
-**Verified By**:
-- Unit tests: `test_write_success`, `test_write_failure_skips_markdown`
-
-**Depends On**:
-- ✅ TASK-DI-002 (ProvenanceManager)
+**Key Design Decisions**:
+- ResultWriter receives ExtractionResult (markdown + provenance), not individual components
+- summary.json structure includes document_hash, source_info, statistics, outcome, backend_used
+- Failed extractions (markdown=None) skip output.md and summary.json writes
+- Directory creation handled by both ProvenanceManager and ResultWriter (defensive programming)
+- Note: ExtractionAttempt doesn't have warnings field, so warnings not included in summary.json
 
 ---
 

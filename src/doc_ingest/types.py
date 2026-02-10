@@ -291,3 +291,23 @@ class ProvenanceRecord:
     created_at: str  # ISO 8601 timestamp
     pipeline_version: str
     total_elapsed_seconds: float
+
+
+@dataclass
+class ExtractionResult:
+    """Result of a document extraction operation.
+
+    Encapsulates the extracted markdown content (if successful) and the complete
+    provenance record of the extraction attempt. Used by SourceRouter to return
+    extraction results to the CLI or calling code.
+
+    Spec 007: ExtractionResult enables structured returns with markdown and
+    provenance for both successful and failed extractions.
+
+    Attributes:
+        markdown: Extracted markdown content (None if extraction failed)
+        provenance: Complete provenance record of the extraction
+    """
+
+    markdown: str | None
+    provenance: ProvenanceRecord

@@ -2,7 +2,7 @@
 
 ## Implementation Status (2026-02-09)
 
-**Phase 1 Foundation Progress: 9/17 specs complete**
+**Phase 1 Foundation Progress: 12/17 specs complete**
 
 Completed:
 - ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
@@ -11,11 +11,14 @@ Completed:
 - ✅ Spec 004: ConversionResult - markdown output, warnings, quality flags, converter provenance
 - ✅ Spec 005: WebFetcher - HTTP(S)/local fetching, protocol validation, size limits, timeouts, typed errors
 - ✅ Spec 006: OutcomeClassifier - extraction outcome determination, failure category assignment, typed classification
+- ✅ Spec 008: ExtractionOrchestrator - quality-ordered extraction, converter registry integration
+- ✅ Spec 009: ProvenanceManager - atomic writes, UTF-8 encoding, hash-based directory naming
 - ✅ Spec 010: ValidationResult - source validation outcomes (paywall, truncation, content detection)
+- ✅ Spec 012: ResultWriter - output.md, summary.json, provenance delegation
 - ✅ Spec 013: DiscoveryCache - TTL-based caching, freshness checks, per-identifier invalidation, bulk clearing
 - ✅ Spec 017: ConversionError - typed exception with FailureCategory, structured details
 
-Next: Provenance manager or base converter interface
+Next: SourceRouter (spec 007)
 
 ## Build & Run
 
@@ -93,6 +96,14 @@ uv run ruff format src/ tests/
 - `ProvenanceManager` is pure persistence (no staleness logic)
 - `DiscoveryCache` handles freshness/staleness checks (injectable, separate class)
 - Triage metadata stored alongside discovery_timestamp for staleness detection
+- Hash computation in ProvenanceManager reused by ResultWriter via `provenance_manager._compute_hash()`
+
+**ResultWriter implementation (spec 012):**
+- Takes ExtractionResult (markdown + provenance), not individual components
+- Delegates provenance writes to ProvenanceManager (separation of concerns)
+- Only writes output.md and summary.json for successful extractions (markdown != None)
+- summary.json does NOT include warnings field (ExtractionAttempt doesn't have warnings)
+- Directory creation defensive: both ProvenanceManager and ResultWriter create dirs (idempotent)
 
 **DiscoveryCache implementation (spec 013):**
 - Cache files stored with SHA-256 hash of identifier key for safe filenames
