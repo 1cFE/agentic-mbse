@@ -3,11 +3,13 @@
 Discovers source candidates for documents using:
 - Local filesystem for direct file paths
 - OpenAlex API for DOI-based discovery
-- arXiv and PMC APIs (future: stubbed for now)
+- arXiv API for arXiv ID-based discovery
+- PMC API (future: stubbed for now)
 """
 
 from pathlib import Path
 
+from doc_ingest.api_clients.arxiv import ArXivClient
 from doc_ingest.api_clients.openalex import OpenAlexClient
 from doc_ingest.discovery_cache import DiscoveryCache
 from doc_ingest.types import DocumentIdentifiers, SourceCandidate
@@ -19,7 +21,7 @@ class SourceDiscoverer:
     Discovers sources from multiple channels:
     - Local file paths → single SourceCandidate with local_path
     - DOI → OpenAlex API (returns PDFs, publisher pages, PMC links)
-    - arXiv ID → stubbed (future: arXiv HTML + PDF)
+    - arXiv ID → arXiv API (returns HTML + PDF sources)
     - PMC ID → stubbed (future: JATS XML)
 
     All discovered sources are cached to avoid redundant API calls.
@@ -33,6 +35,7 @@ class SourceDiscoverer:
         """
         self._cache = cache
         self._openalex_client = OpenAlexClient()
+        self._arxiv_client = ArXivClient()
 
     def discover(self, identifiers: DocumentIdentifiers) -> tuple[list[SourceCandidate], list[str]]:
         """Resolve identifiers to ranked source candidates.
@@ -42,7 +45,7 @@ class SourceDiscoverer:
         1. Check cache first (avoid redundant API calls)
         2. Discover from local filesystem (if local_path provided)
         3. Discover from OpenAlex API (if DOI provided)
-        4. Discover from arXiv API (if arxiv_id provided) - stubbed
+        4. Discover from arXiv API (if arxiv_id provided)
         5. Discover from PMC API (if pmc_id provided) - stubbed
         6. Sort by quality tier and cache result
 
@@ -98,16 +101,11 @@ class SourceDiscoverer:
             sources.extend(openalex_sources)
             errors.extend(openalex_errors)
 
+        # arXiv API discovery for arXiv IDs
         if identifiers.arxiv_id is not None:
-            # Mock arXiv HTML source
-            sources.append(
-                SourceCandidate(
-                    quality_tier=2,
-                    format="arxiv_html",
-                    url=f"https://arxiv.org/html/{identifiers.arxiv_id}",
-                    discovered_via="stub_api",
-                )
-            )
+            arxiv_sources, arxiv_errors = self._arxiv_client.query(identifiers.arxiv_id)
+            sources.extend(arxiv_sources)
+            errors.extend(arxiv_errors)
 
         # Sort by quality tier (lower = better)
         sources.sort()

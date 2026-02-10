@@ -1,7 +1,7 @@
 # Document Ingestion Implementation Plan
 
 **Last Updated**: 2026-02-09
-**Status**: Phase 3 IN PROGRESS — SD-001, SD-002 complete (OpenAlex integrated), ready for SD-003 (arXiv API)
+**Status**: Phase 3 IN PROGRESS — SD-001, SD-002, SD-003 complete (OpenAlex + arXiv integrated), ready for SD-004 (PMC API)
 
 ---
 
@@ -367,32 +367,67 @@ class ExtractionMetrics:
 
 ---
 
-### TASK-SD-003: Implement arXiv API integration
+### [DONE] TASK-SD-003: Implement arXiv API integration
 
-**Files to modify**:
-- `src/doc_ingest/source_discoverer.py`
+**Implementation completed**: 2026-02-09
 
-**Files to create**:
-- `src/doc_ingest/api_clients/arxiv.py` (optional)
+**Changes made**:
+1. Created `src/doc_ingest/api_clients/arxiv.py`:
+   - `ArXivClient.query()` method that resolves arXiv IDs to HTML and PDF sources
+   - HEAD request to check HTML availability at `https://arxiv.org/html/{arxiv_id}`
+   - Normalizes arXiv ID format (removes "arXiv:" prefix, case-insensitive)
+   - Returns sources in quality tier order: HTML (tier 2) → PDF (tier 4)
+   - Implements 100ms rate limiting delay between requests
+   - Includes polite User-Agent header
+   - Handles HTTP errors gracefully (fallback to PDF if HTML check fails)
 
-**Requirements**:
-- Implement `ArXivClient.query(arxiv_id: str) → list[SourceCandidate]`
-- Check if HTML version exists via HEAD request to `https://arxiv.org/html/{arxiv_id}`
-- Return sources in quality order:
-  - HTML version (tier 2) if exists
-  - PDF version (tier 4) always available
-- Normalize arXiv ID format (1234.5678 vs arXiv:1234.5678)
+2. Modified `src/doc_ingest/source_discoverer.py`:
+   - Replaced stubbed arXiv discovery with real ArXivClient integration
+   - Initializes `ArXivClient` in constructor
+   - Propagates arXiv errors to discovery errors list
+   - Maintains existing caching behavior via `DiscoveryCache`
 
-**Verification**:
-```python
-result = discoverer.discover(DocumentIdentifiers(arxiv_id="1234.5678"))
-assert len(result.sources) >= 1  # At least PDF
-html_sources = [s for s in result.sources if s.format == "arxiv_html"]
-# If HTML exists, it should be first (tier 2 < tier 4)
-```
+3. Created `tests/test_arxiv_client.py`:
+   - 15 comprehensive tests covering:
+     - HTML+PDF discovery when HTML available
+     - PDF-only discovery when HTML unavailable
+     - arXiv ID normalization (prefix removal, case-insensitive)
+     - Rate limiting behavior
+     - HEAD request timeout and redirects
+     - User-Agent header inclusion
+     - Error handling (network failures, HTTP errors)
+     - Quality tier sorting
 
-**Size**: ~100 LOC in 1-2 files
-**Dependencies**: TASK-SD-002
+4. Updated `tests/test_source_discoverer.py`:
+   - Modified arXiv test to mock ArXivClient
+   - Added new test for arXiv error propagation
+   - All 14 discoverer tests pass
+
+**Test results**:
+- ✅ 15 new arXiv client tests pass
+- ✅ 14 updated discoverer tests pass
+- ✅ All 29 discovery-related tests pass
+- ✅ Mypy type checking passes (0 errors in new code)
+- ✅ Ruff linting and formatting passes
+
+**API integration details**:
+- HTML endpoint: `https://arxiv.org/html/{arxiv_id}`
+- PDF endpoint: `https://arxiv.org/pdf/{arxiv_id}.pdf`
+- Rate limiting: 100ms delay between requests (courtesy)
+- Timeout: 10 seconds
+- Error handling: HTML check failures → graceful fallback to PDF
+
+**Quality tier mappings**:
+- Tier 2: arXiv HTML5 (high quality, MathML preserved)
+- Tier 4: PDF (standard quality)
+
+**Known features**:
+- HTML availability checked via HEAD request (lightweight, no download)
+- arXiv ID normalization handles "arXiv:1234.5678", "arxiv:1234.5678", "1234.5678" formats
+- PDF always returned as fallback (all valid arXiv IDs have PDF)
+
+**Size**: 129 LOC (arxiv.py), 242 LOC (test_arxiv_client.py), ~50 LOC modified (source_discoverer.py + tests)
+**Dependencies**: TASK-SD-002 ✅
 **Blocks**: TASK-SD-004
 
 ---

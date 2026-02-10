@@ -1,4 +1,4 @@
-"""Unit tests for SourceDiscoverer with OpenAlex integration."""
+"""Unit tests for SourceDiscoverer with OpenAlex and arXiv integration."""
 
 from unittest.mock import Mock, patch
 
@@ -80,18 +80,34 @@ def test_discover_doi_queries_openalex(discoverer):
     assert len(errors) == 0
 
 
-def test_discover_arxiv_returns_stub_source(discoverer):
-    """Test arXiv ID discovery returns stubbed HTML source."""
+def test_discover_arxiv_queries_arxiv_api(discoverer):
+    """Test arXiv ID discovery queries arXiv API."""
     # Arrange
     identifiers = DocumentIdentifiers(arxiv_id="1234.5678")
+    mock_sources = [
+        SourceCandidate(
+            quality_tier=2,
+            format="arxiv_html",
+            url="https://arxiv.org/html/1234.5678",
+            discovered_via="arxiv:html",
+        ),
+        SourceCandidate(
+            quality_tier=4,
+            format="pdf",
+            url="https://arxiv.org/pdf/1234.5678.pdf",
+            discovered_via="arxiv:pdf",
+        ),
+    ]
 
     # Act
-    sources, errors = discoverer.discover(identifiers)
+    with patch.object(discoverer._arxiv_client, "query", return_value=(mock_sources, [])):
+        sources, errors = discoverer.discover(identifiers)
 
     # Assert
-    assert len(sources) >= 1
+    assert len(sources) >= 2
     assert any(s.format == "arxiv_html" for s in sources)
-    assert any("arxiv.org" in (s.url or "") for s in sources)
+    assert any(s.format == "pdf" for s in sources)
+    assert any(s.discovered_via.startswith("arxiv:") for s in sources)
     assert len(errors) == 0
 
 
@@ -251,3 +267,22 @@ def test_discover_doi_propagates_openalex_errors(discoverer):
     assert len(sources) == 0
     assert len(errors) == 1
     assert "not found" in errors[0].lower()
+
+
+def test_discover_arxiv_propagates_arxiv_errors(discoverer):
+    """Test arXiv API errors are propagated in discovery errors."""
+    # Arrange
+    identifiers = DocumentIdentifiers(arxiv_id="invalid-id")
+
+    # Act
+    with patch.object(
+        discoverer._arxiv_client,
+        "query",
+        return_value=([], ["arXiv ID not found: invalid-id"]),
+    ):
+        sources, errors = discoverer.discover(identifiers)
+
+    # Assert
+    assert len(sources) == 0
+    assert len(errors) == 1
+    assert "arxiv" in errors[0].lower() or "not found" in errors[0].lower()
