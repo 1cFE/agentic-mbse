@@ -50,8 +50,9 @@ _APPENDIX_HEADER_RE = re.compile(
 # Matches lines like "1 Executive Summary" or "1. Introduction" that are surrounded by blank lines
 # and do NOT look like TOC entries (no trailing page number, no dot leaders).
 # The \.? allows optional trailing period (e.g., "1." or "1.2.")
+# The lookahead accepts either \n\n (blank line) OR \n[A-Z] (body text starting with uppercase)
 _PLAIN_HEADER_RE = re.compile(
-    r"(?<=\n\n)(\d+(?:\.\d+)*)\.?\s+([A-Z][A-Za-z].{2,80})(?=\n\n)",
+    r"(?<=\n\n)(\d+(?:\.\d+)*)\.?\s+([A-Z][A-Za-z].{2,80})(?=\n\n|\n[A-Z])",
 )
 
 # Unnumbered standalone bold lines that look like section headings.

@@ -154,6 +154,18 @@ class TestPromotePlainHeaders:
         result = promote_plain_headers(md)
         assert "##" not in result
 
+    def test_header_followed_by_body_text(self):
+        """Headings followed directly by body text (no blank line) should be promoted.
+
+        Real-world case from sparc_overview line 440:
+        Line 439: (blank)
+        Line 440: 4. SPARC scenarios and performance projections
+        Line 441: To ensure achievement of the SPARC mission...
+        """
+        md = "\n\n4. SPARC scenarios and performance projections\nTo ensure achievement of the SPARC mission of fusion gain"
+        result = promote_plain_headers(md)
+        assert "## 4 SPARC scenarios and performance projections" in result
+
 
 class TestIsTocLine:
     def test_slash_year_pattern(self):
