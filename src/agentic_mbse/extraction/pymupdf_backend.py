@@ -61,7 +61,9 @@ def extract(input_path: Path, output_dir: Path) -> ExtractionResult:
             image_format="png",
             dpi=150,
             page_chunks=True,
-            hdr_info=_academic_header_detector,
+            # Use default header detector (font-size based) instead of custom bold-only detector
+            # This provides better coverage for papers with non-bold headers
+            # hdr_info=_academic_header_detector,
             table_strategy="lines",
         )
 

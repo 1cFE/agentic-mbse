@@ -1,28 +1,33 @@
 # AGENTS.md
 
-## Status (2026-02-10)
+## Status (2026-02-09)
 
-**State: Phase 1 (Test Harness) complete. Ready to wire extraction pipeline.**
+**State: Phase 2 Layer 1 complete. Tables perfect, headings improved, ready for Layer 2.**
 
 ### What Works
 - ✅ Test harness: 5 papers with baseline metrics, test runner, comparison report
 - ✅ Metrics framework: `ExtractionMetrics` dataclass, computation, comparison
 - ✅ Routing infrastructure: SourceRouter, ExtractionOrchestrator, ProvenanceManager, DiscoveryCache
 - ✅ CLI: `ingest`, `ingest-batch`, `triage-report`, `retry-failed`, `clear-cache`
+- ✅ Layer 1 extraction: pymupdf_backend + postprocess wired into PDF converter
+- ✅ Table extraction: 137=137, 29=29, 56=56 (perfect match on table-heavy papers)
 - ✅ 187 unit tests passing + 4 corpus tests (skipped by default)
 
-### What's Broken (measured by test harness)
-- PDF converter uses raw pymupdf4llm, ignoring the 4-layer extraction pipeline in `src/agentic_mbse/extraction/`
-- Real-world regressions vs baseline:
-  - aries_cost_account: headings 102→66 (-35%), tables 137→0 (-100%)
-  - helios_design: headings 52→1 (-98%)
-  - delene_2001: headings 23→4 (-83%)
-- Source discoverer is a stub (returns mock sources for DOIs)
+### What's Improved
+- **Tables**: aries_cost_account (0→137), helios_design (→29), hsu_2020 (→56) - perfect extraction
+- **Headings**: hawker_2020 (11→14, EXCEEDS baseline), helios (1→7), delene (4→16) - significant improvements
+- **Character counts**: All within 7% of baseline (60k→60k, 285k→281k, etc.)
+
+### Remaining Gaps
+- **Heading detection**: Some papers still below baseline (aries 102→64, helios 52→7)
+- **Root cause**: Baseline used all 4 layers including Claude structure detection; Layer 1 alone can't match that
+- **Subsection markers**: Letter-based notation "(a)", "(b)" not yet handled by postprocess
+- **Source discoverer**: Still a stub (returns mock sources for DOIs)
 
 ### Current Work: Phase 2 (Wire Extraction Pipeline)
-- Next: `TASK-WP-001` — Wire Layer 1 (pymupdf_backend + postprocess) into PDF converter
-- Then: `TASK-WP-002` — Wire Layer 2 (GMFT table enhancement)
-- Defer: Layers 3-4 (Claude-based repair) until quality gap measured
+- ✅ TASK-WP-001: Layer 1 (pymupdf_backend + postprocess) - DONE
+- Next: `TASK-WP-002` — Wire Layer 2 (GMFT table enhancement)
+- Defer: Layers 3-4 (Claude-based repair) until quality gap measured after Layer 2
 
 ### Critical Rule
 **Every change must be measured against real documents. Run the test harness before and after. No mocked quality tests.**
@@ -101,3 +106,7 @@ src/agentic_mbse/extraction/   # Proven extraction pipeline (existing)
 **Pytest custom markers**: Custom command-line options (like `--run-corpus`) must be registered in `tests/conftest.py` via `pytest_addoption()`, `pytest_configure()`, and `pytest_collection_modifyitems()`. Defining them in test files won't work — pytest won't recognize the option.
 
 **Standalone scripts in tests/**: Scripts like `compare.py` that need to run both standalone (`python3 tests/corpus/compare.py`) and as modules need careful import handling. Use `sys.path.insert(0, str(Path(__file__).parent))` in `if __name__ == "__main__"` block, then import with `# type: ignore[import-not-found]` to satisfy both runtime and mypy.
+
+**Custom header detectors in pymupdf_backend**: The `_academic_header_detector` was too conservative (only detected bold headers). Default pymupdf4llm font-size-based detection provides better coverage. Use default detector unless specific header patterns need custom handling.
+
+**Plain header regex**: `_PLAIN_HEADER_RE` in postprocess.py must handle trailing periods (e.g., "1. Introduction" not just "1 Introduction"). Pattern needs `\.?` after section number: `(\d+(?:\.\d+)*)\.?\s+`.

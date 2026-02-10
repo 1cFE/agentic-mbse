@@ -47,10 +47,11 @@ _APPENDIX_HEADER_RE = re.compile(
 )
 
 # Plain-text standalone section headers (no bold, no ##).
-# Matches lines like "1 Executive Summary" that are surrounded by blank lines
+# Matches lines like "1 Executive Summary" or "1. Introduction" that are surrounded by blank lines
 # and do NOT look like TOC entries (no trailing page number, no dot leaders).
+# The \.? allows optional trailing period (e.g., "1." or "1.2.")
 _PLAIN_HEADER_RE = re.compile(
-    r"(?<=\n\n)(\d+(?:\.\d+)*)\s+([A-Z][A-Za-z].{2,80})(?=\n\n)",
+    r"(?<=\n\n)(\d+(?:\.\d+)*)\.?\s+([A-Z][A-Za-z].{2,80})(?=\n\n)",
 )
 
 # Headers with redundant bold: ## **1 Introduction** → ## 1 Introduction
