@@ -93,3 +93,5 @@ src/agentic_mbse/extraction/   # Proven extraction pipeline (existing)
 **Page markers**: pymupdf_backend emits `<!-- PAGE:N -->` markers. quality_gates.py depends on these. Don't strip them.
 
 **Test corpus setup**: PDFs copied from `../fusion-tea/knowledge/raw/`, baselines from `../fusion-tea/knowledge/sources/{dir}/full_document.md`. The fusion-tea directory structure uses long descriptive names; map to short slugs in `papers.jsonl`.
+
+**Pytest custom markers**: Custom command-line options (like `--run-corpus`) must be registered in `tests/conftest.py` via `pytest_addoption()`, `pytest_configure()`, and `pytest_collection_modifyitems()`. Defining them in test files won't work — pytest won't recognize the option.

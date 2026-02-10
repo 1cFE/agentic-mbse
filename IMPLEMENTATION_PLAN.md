@@ -73,23 +73,33 @@ class ExtractionMetrics:
 
 ---
 
-### TASK-TH-002: Implement corpus test runner
+### [DONE] TASK-TH-002: Implement corpus test runner
 
-**Files to create**:
+**Files created**:
 - `tests/test_corpus.py` — Pytest suite with `@pytest.mark.corpus` decorator
+- `tests/conftest.py` — Updated with pytest configuration for --run-corpus flag
 
-**Requirements**:
-- `test_all_papers_extract_successfully()` — Every paper produces non-empty output
-- `test_no_quality_regression_vs_baseline()` — >10% loss on any metric = failure
-- `test_table_heavy_papers_have_tables()` — Papers with `has_tables=true` have `table_row_count > 0`
-- `test_heading_structure_present()` — Every paper has `heading_count >= 3`
-- Tests only run with `pytest tests/test_corpus.py --run-corpus` flag
-- Save extraction results to `tests/corpus/current/{slug}/` with provenance
+**Implementation notes**:
+- Implemented all 4 test functions as specified
+- Tests extract using current pipeline (PyMuPDF4LLMConverter) to establish baseline
+- Pytest configuration moved to conftest.py for proper registration
+- Tests skip by default, run only with `--run-corpus` flag
+- Current extraction results saved to `tests/corpus/current/{slug}/`
 
-**Verification**: `pytest tests/test_corpus.py --run-corpus` runs all 4 tests
+**Verification completed**:
+- ✅ `pytest tests/test_corpus.py --run-corpus` runs all 4 tests
+- ✅ Tests properly detect quality regressions (as expected with current pipeline)
+- ✅ Tests skip without flag: `pytest tests/test_corpus.py` shows 4 skipped
+- ✅ Ruff formatting and linting passed
 
-**Size**: ~200 LOC, 1 file
-**Dependencies**: TASK-TH-001
+**Quality regression results** (baseline evidence that test harness works):
+- aries_cost_account: heading_count 102→66 (-35%), table_row_count 137→0 (-100%)
+- helios_design: heading_count 52→1 (-98%)
+- hsu_2020: heading_count 6→4 (-33%)
+- delene_2001: heading_count 23→4 (-83%)
+
+**Size**: 319 LOC (tests/test_corpus.py)
+**Dependencies**: TASK-TH-001 ✅
 **Blocks**: TASK-TH-003
 
 ---
