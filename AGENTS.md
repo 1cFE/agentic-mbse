@@ -2,23 +2,27 @@
 
 ## Status (2026-02-10)
 
-**State: Extraction quality NOT proven. Routing infrastructure built but converters produce worse results than existing pipeline.**
+**State: Phase 1 (Test Harness) complete. Ready to wire extraction pipeline.**
 
 ### What Works
-- Routing infrastructure: SourceRouter, ExtractionOrchestrator, ProvenanceManager, DiscoveryCache
-- CLI: `ingest`, `ingest-batch`, `triage-report`, `retry-failed`, `clear-cache`
-- 187 unit tests passing (all mocked — no real-world quality validation)
+- ✅ Test harness: 5 papers with baseline metrics, test runner, comparison report
+- ✅ Metrics framework: `ExtractionMetrics` dataclass, computation, comparison
+- ✅ Routing infrastructure: SourceRouter, ExtractionOrchestrator, ProvenanceManager, DiscoveryCache
+- ✅ CLI: `ingest`, `ingest-batch`, `triage-report`, `retry-failed`, `clear-cache`
+- ✅ 187 unit tests passing + 4 corpus tests (skipped by default)
 
-### What's Broken
+### What's Broken (measured by test harness)
 - PDF converter uses raw pymupdf4llm, ignoring the 4-layer extraction pipeline in `src/agentic_mbse/extraction/`
+- Real-world regressions vs baseline:
+  - aries_cost_account: headings 102→66 (-35%), tables 137→0 (-100%)
+  - helios_design: headings 52→1 (-98%)
+  - delene_2001: headings 23→4 (-83%)
 - Source discoverer is a stub (returns mock sources for DOIs)
-- Real-world test: ARIES Cost Account goes from 137 tables → 0 tables. Helios goes from 52 headings → 1.
 
-### Current Work: specs/ directory
-- `specs/00-test-harness.md` — Build real-world test corpus and metrics (DO THIS FIRST)
-- `specs/01-wire-existing-pipeline.md` — Connect extraction layers to converters
-- `specs/02-real-source-discovery.md` — OpenAlex/arXiv API integration
-- `specs/03-fusion-tea-integration.md` — Wire into fusion-tea zotero_ingest
+### Current Work: Phase 2 (Wire Extraction Pipeline)
+- Next: `TASK-WP-001` — Wire Layer 1 (pymupdf_backend + postprocess) into PDF converter
+- Then: `TASK-WP-002` — Wire Layer 2 (GMFT table enhancement)
+- Defer: Layers 3-4 (Claude-based repair) until quality gap measured
 
 ### Critical Rule
 **Every change must be measured against real documents. Run the test harness before and after. No mocked quality tests.**
@@ -95,3 +99,5 @@ src/agentic_mbse/extraction/   # Proven extraction pipeline (existing)
 **Test corpus setup**: PDFs copied from `../fusion-tea/knowledge/raw/`, baselines from `../fusion-tea/knowledge/sources/{dir}/full_document.md`. The fusion-tea directory structure uses long descriptive names; map to short slugs in `papers.jsonl`.
 
 **Pytest custom markers**: Custom command-line options (like `--run-corpus`) must be registered in `tests/conftest.py` via `pytest_addoption()`, `pytest_configure()`, and `pytest_collection_modifyitems()`. Defining them in test files won't work — pytest won't recognize the option.
+
+**Standalone scripts in tests/**: Scripts like `compare.py` that need to run both standalone (`python3 tests/corpus/compare.py`) and as modules need careful import handling. Use `sys.path.insert(0, str(Path(__file__).parent))` in `if __name__ == "__main__"` block, then import with `# type: ignore[import-not-found]` to satisfy both runtime and mypy.
