@@ -1,4 +1,4 @@
-"""Unit tests for SourceDiscoverer with OpenAlex and arXiv integration."""
+"""Unit tests for SourceDiscoverer with OpenAlex, arXiv, and PMC integration."""
 
 from unittest.mock import Mock, patch
 
@@ -286,3 +286,50 @@ def test_discover_arxiv_propagates_arxiv_errors(discoverer):
     assert len(sources) == 0
     assert len(errors) == 1
     assert "arxiv" in errors[0].lower() or "not found" in errors[0].lower()
+
+
+def test_discover_pmc_queries_pmc_api(discoverer):
+    """Test PMC ID discovery queries PMC API."""
+    # Arrange
+    identifiers = DocumentIdentifiers(pmc_id="PMC7463680")
+    mock_sources = [
+        SourceCandidate(
+            quality_tier=1,
+            format="jats_xml",
+            url="https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id=PMC7463680&rettype=xml",
+            discovered_via="pmc:efetch",
+        )
+    ]
+
+    # Act
+    with patch.object(discoverer._pmc_client, "query", return_value=(mock_sources, [])):
+        sources, errors = discoverer.discover(identifiers)
+
+    # Assert
+    assert len(sources) >= 1
+    assert any(s.format == "jats_xml" for s in sources)
+    assert any(s.discovered_via == "pmc:efetch" for s in sources)
+    assert len(errors) == 0
+
+
+def test_discover_pmc_propagates_pmc_errors(discoverer):
+    """Test PMC API errors are propagated in discovery errors."""
+    # Arrange
+    identifiers = DocumentIdentifiers(pmc_id="PMC9999999999")
+
+    # Act
+    with patch.object(
+        discoverer._pmc_client,
+        "query",
+        return_value=([], ["PMC ID not found or invalid: PMC9999999999"]),
+    ):
+        sources, errors = discoverer.discover(identifiers)
+
+    # Assert
+    assert len(sources) == 0
+    assert len(errors) == 1
+    assert (
+        "pmc" in errors[0].lower()
+        or "not found" in errors[0].lower()
+        or "invalid" in errors[0].lower()
+    )

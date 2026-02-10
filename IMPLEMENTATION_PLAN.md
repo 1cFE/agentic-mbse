@@ -1,7 +1,7 @@
 # Document Ingestion Implementation Plan
 
 **Last Updated**: 2026-02-09
-**Status**: Phase 3 IN PROGRESS — SD-001, SD-002, SD-003 complete (OpenAlex + arXiv integrated), ready for SD-004 (PMC API)
+**Status**: Phase 3 IN PROGRESS — SD-001, SD-002, SD-003, SD-004 complete (OpenAlex + arXiv + PMC integrated), ready for SD-005 (quality verification)
 
 ---
 
@@ -24,7 +24,7 @@ This project has **two working halves that need connecting**:
 |------|----------|---------|--------|
 | **00-test-harness.md** | 🔴 FIRST | Real-world test corpus with metrics, baseline comparison | ✅ Complete |
 | **01-wire-existing-pipeline.md** | 🟡 SECOND | Connect extraction layers to PDF converter | ✅ Complete |
-| **02-real-source-discovery.md** | 🟢 THIRD | OpenAlex/arXiv/PMC API integration | Not started |
+| **02-real-source-discovery.md** | 🟢 THIRD | OpenAlex/arXiv/PMC API integration | 🟡 In Progress (SD-001 through SD-004 done, SD-005 pending) |
 | **03-fusion-tea-integration.md** | 🔵 LAST | Replace subprocess calls with Python API | Not started |
 
 **Critical Rule**: Every task must be measured against the test harness. No implementation without verification.
@@ -432,29 +432,68 @@ class ExtractionMetrics:
 
 ---
 
-### TASK-SD-004: Implement PMC API integration
+### [DONE] TASK-SD-004: Implement PMC API integration
 
-**Files to modify**:
-- `src/doc_ingest/source_discoverer.py`
+**Implementation completed**: 2026-02-09
 
-**Files to create**:
-- `src/doc_ingest/api_clients/pmc.py` (optional)
+**Changes made**:
+1. Created `src/doc_ingest/api_clients/pmc.py`:
+   - `PMCClient.query()` method that queries PMC E-utilities API for JATS XML sources
+   - HEAD request to check PMC ID availability before constructing URL
+   - Normalizes PMC ID format (adds "PMC" prefix if missing, case-insensitive)
+   - Implements 3 req/sec rate limiting (0.35s delay, or 10 req/sec with API key)
+   - Includes polite User-Agent header
+   - Handles HTTP errors (400 = invalid ID, 500 = server error, network failures) gracefully
+   - Returns JATS XML source as quality tier 1 (highest quality)
+   - Optional API key support for higher rate limits (10 req/sec vs 3 req/sec)
 
-**Requirements**:
-- Implement `PMCClient.query(pmc_id: str) → list[SourceCandidate]`
-- Use endpoint: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id={pmc_id}&rettype=xml`
-- Return JATS XML source (tier 1 — highest quality)
-- Handle PMC API errors and rate limiting
+2. Modified `src/doc_ingest/source_discoverer.py`:
+   - Replaced stubbed PMC discovery with real PMCClient integration
+   - Added `pmc_api_key` parameter to constructor (optional)
+   - Initializes `PMCClient` with API key if provided
+   - Propagates PMC errors to discovery errors list
+   - Maintains existing caching behavior via `DiscoveryCache`
+   - Updated docstrings to reflect PMC integration
 
-**Verification**:
-```python
-result = discoverer.discover(DocumentIdentifiers(pmc_id="PMC1234567"))
-assert result.sources[0].format == "jats_xml"
-assert result.sources[0].quality_tier == 1  # Structured XML
-```
+3. Created `tests/test_pmc_client.py`:
+   - 17 comprehensive tests covering:
+     - Successful queries and error handling (404, 500, network failures)
+     - PMC ID normalization (adds prefix, case-insensitive, strips whitespace)
+     - Rate limiting behavior (with and without API key)
+     - API key inclusion in URL when provided
+     - User-Agent header and timeout
+     - HEAD request with redirects
+     - Quality tier 1 verification
 
-**Size**: ~80 LOC in 1-2 files
-**Dependencies**: TASK-SD-003
+4. Updated `tests/test_source_discoverer.py`:
+   - Added 2 new tests for PMC discovery
+   - Modified docstring to reflect PMC integration
+   - All 16 discoverer tests pass (including 2 new PMC tests)
+
+**Test results**:
+- ✅ 17 new PMC client tests pass
+- ✅ 16 updated discoverer tests pass (includes 2 new PMC tests)
+- ✅ All 166 doc_ingest tests pass
+- ✅ Mypy type checking passes (0 errors in new code)
+- ✅ Ruff linting and formatting passes
+
+**API integration details**:
+- Endpoint: `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pmc&id={pmc_id}&rettype=xml`
+- Rate limit: 3 requests/second (no API key), 10 requests/second (with API key)
+- Timeout: 10 seconds
+- Rate limiting: 350ms delay between requests (courtesy, no API key) or 110ms (with API key)
+- Error handling: 400 → "PMC ID not found or invalid", other errors → graceful fallback
+
+**Quality tier mapping**:
+- Tier 1: JATS XML (highest quality - structured XML with semantic tags)
+
+**Known features**:
+- PMC ID normalization handles "PMC7463680", "pmc7463680", "7463680" formats
+- HEAD request used to check availability (lightweight, no full XML download)
+- API key support allows higher rate limits for batch processing
+
+**Size**: 129 LOC (pmc.py), 307 LOC (test_pmc_client.py), ~20 LOC modified (source_discoverer.py), ~40 LOC (tests update)
+**Dependencies**: TASK-SD-003 ✅
 **Blocks**: TASK-SD-005
 
 ---
@@ -618,11 +657,11 @@ else:
 - [x] Comparison report shows table quality parity or improvement
 
 ### Phase 3 (Source Discovery) — COMPLETE when:
-- [ ] OpenAlex, arXiv, PMC APIs return real sources
-- [ ] Discovery cache prevents re-querying
-- [ ] Quality-ordered routing attempts structured sources first
-- [ ] Structured sources produce >= PDF quality (measured)
-- [ ] API errors handled gracefully with provenance tracking
+- [x] OpenAlex, arXiv, PMC APIs return real sources — ✅ DONE (all 3 APIs integrated)
+- [x] Discovery cache prevents re-querying — ✅ DONE (existing cache integration preserved)
+- [⏸️] Quality-ordered routing attempts structured sources first — PENDING (SD-005 verification)
+- [⏸️] Structured sources produce >= PDF quality (measured) — PENDING (SD-005 verification)
+- [x] API errors handled gracefully with provenance tracking — ✅ DONE (all clients return errors list)
 
 ### Phase 4 (Fusion-TEA Integration) — COMPLETE when:
 - [ ] `python scripts/zotero_ingest.py --dry-run` runs without errors

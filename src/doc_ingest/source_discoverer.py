@@ -4,13 +4,14 @@ Discovers source candidates for documents using:
 - Local filesystem for direct file paths
 - OpenAlex API for DOI-based discovery
 - arXiv API for arXiv ID-based discovery
-- PMC API (future: stubbed for now)
+- PMC API for PMC ID-based discovery (JATS XML)
 """
 
 from pathlib import Path
 
 from doc_ingest.api_clients.arxiv import ArXivClient
 from doc_ingest.api_clients.openalex import OpenAlexClient
+from doc_ingest.api_clients.pmc import PMCClient
 from doc_ingest.discovery_cache import DiscoveryCache
 from doc_ingest.types import DocumentIdentifiers, SourceCandidate
 
@@ -22,20 +23,22 @@ class SourceDiscoverer:
     - Local file paths → single SourceCandidate with local_path
     - DOI → OpenAlex API (returns PDFs, publisher pages, PMC links)
     - arXiv ID → arXiv API (returns HTML + PDF sources)
-    - PMC ID → stubbed (future: JATS XML)
+    - PMC ID → PMC API (returns JATS XML)
 
     All discovered sources are cached to avoid redundant API calls.
     """
 
-    def __init__(self, cache: DiscoveryCache) -> None:
+    def __init__(self, cache: DiscoveryCache, pmc_api_key: str | None = None) -> None:
         """Initialize discoverer with discovery cache and API clients.
 
         Args:
             cache: DiscoveryCache instance for caching discovered sources
+            pmc_api_key: Optional NCBI API key for PMC (higher rate limits)
         """
         self._cache = cache
         self._openalex_client = OpenAlexClient()
         self._arxiv_client = ArXivClient()
+        self._pmc_client = PMCClient(api_key=pmc_api_key)
 
     def discover(self, identifiers: DocumentIdentifiers) -> tuple[list[SourceCandidate], list[str]]:
         """Resolve identifiers to ranked source candidates.
@@ -46,7 +49,7 @@ class SourceDiscoverer:
         2. Discover from local filesystem (if local_path provided)
         3. Discover from OpenAlex API (if DOI provided)
         4. Discover from arXiv API (if arxiv_id provided)
-        5. Discover from PMC API (if pmc_id provided) - stubbed
+        5. Discover from PMC API (if pmc_id provided)
         6. Sort by quality tier and cache result
 
         Args:
@@ -106,6 +109,12 @@ class SourceDiscoverer:
             arxiv_sources, arxiv_errors = self._arxiv_client.query(identifiers.arxiv_id)
             sources.extend(arxiv_sources)
             errors.extend(arxiv_errors)
+
+        # PMC API discovery for PMC IDs
+        if identifiers.pmc_id is not None:
+            pmc_sources, pmc_errors = self._pmc_client.query(identifiers.pmc_id)
+            sources.extend(pmc_sources)
+            errors.extend(pmc_errors)
 
         # Sort by quality tier (lower = better)
         sources.sort()
