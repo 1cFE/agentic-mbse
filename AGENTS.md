@@ -2,7 +2,7 @@
 
 ## Status (2026-02-09)
 
-**State: Phase 3 IN PROGRESS. OpenAlex API integrated. arXiv/PMC next.**
+**State: Phase 3 NEARLY COMPLETE. OpenAlex + arXiv + PMC APIs integrated. Quality verification (SD-005) next.**
 
 ### What Works
 - ✅ Test harness: 5 papers with baseline metrics, test runner, comparison report
@@ -13,7 +13,9 @@
 - ✅ Layer 2 extraction: GMFT table enhancement integrated (optional, graceful skip if not installed)
 - ✅ Table extraction: 143 (EXCEEDS 137 baseline!), 29=29, 56=56 - perfect or better
 - ✅ OpenAlex API: Real DOI discovery with quality-tier routing
-- ✅ 211 unit tests passing + 4 corpus tests (skipped by default)
+- ✅ arXiv API: HTML+PDF discovery with availability checking
+- ✅ PMC API: JATS XML discovery with PMC E-utilities integration
+- ✅ 183 unit tests passing (17 PMC, 15 arXiv, 15 OpenAlex, 16 discoverer) + 4 corpus tests (skipped by default)
 
 ### What's Improved
 - **Tables**: aries_cost_account (137→143, +6!), helios_design (29→29), hsu_2020 (56→56) - AT OR ABOVE baseline
@@ -24,14 +26,16 @@
 - **Heading detection**: Some papers still below baseline (aries 102→64, helios 52→7)
 - **Root cause**: Baseline used all 4 layers including Claude structure detection; Layer 1+2 alone can't match that
 - **Solution path**: Layer 3 (Claude structure repair) deferred - heading gap acceptable for Phase 2 objectives
-- **arXiv/PMC discovery**: Still stubbed (OpenAlex now works)
+- **Quality verification**: Need to test quality-ordered routing with real papers that have structured alternatives (SD-005)
 
-### Current Work: Phase 3 In Progress
+### Current Work: Phase 3 Nearly Complete
 - ✅ TASK-WP-001: Layer 1 (pymupdf_backend + postprocess) - DONE
 - ✅ TASK-WP-002: Layer 2 (GMFT table enhancement) - DONE
 - ✅ TASK-SD-001: API validation - DONE
 - ✅ TASK-SD-002: OpenAlex API integration - DONE
-- Next: TASK-SD-003 (arXiv API), TASK-SD-004 (PMC API)
+- ✅ TASK-SD-003: arXiv API integration - DONE
+- ✅ TASK-SD-004: PMC API integration - DONE
+- Next: TASK-SD-005 (Quality verification with real papers)
 
 ### Critical Rule
 **Every change must be measured against real documents. Run the test harness before and after. No mocked quality tests.**
@@ -76,7 +80,11 @@ src/doc_ingest/           # Routing/provenance layer (new)
     markdown_converter.py # JATS + DOCX via Pandoc
   provenance_manager.py
   discovery_cache.py
-  source_discoverer.py    # STUB — needs real API clients
+  source_discoverer.py    # Real API integration (OpenAlex, arXiv, PMC)
+  api_clients/
+    openalex.py           # OpenAlex Works API (DOI → PDF/HTML)
+    arxiv.py              # arXiv HTML availability + PDF fallback
+    pmc.py                # PMC E-utilities API (PMC ID → JATS XML)
   web_fetcher.py
   types.py
 
@@ -98,6 +106,12 @@ src/agentic_mbse/extraction/   # Proven extraction pipeline (existing)
 **GMFT availability**: `gmft` is an optional dependency. Check `table_extraction.is_gmft_available()` before attempting Layer 2.
 
 **Claude layers**: Layers 3-4 require the Claude CLI (`claude -p`). Gate behind `--enhance` flag.
+
+**PMC rate limiting**: PMC E-utilities requires courtesy rate limiting (3 req/sec without API key, 10 req/sec with). Use `pmc_api_key` parameter if available.
+
+**arXiv HTML availability**: Not all arXiv papers have HTML versions. Client checks via HEAD request (lightweight). PDF always available as fallback.
+
+**PMC ID normalization**: PMC client normalizes IDs (adds "PMC" prefix if missing, case-insensitive). Accepts "PMC7463680", "pmc7463680", or "7463680".
 
 **postprocess.py is pure functions**: Can be called on any markdown string with zero dependencies. This is the easiest quality win.
 
