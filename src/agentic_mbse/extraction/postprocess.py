@@ -54,6 +54,29 @@ _PLAIN_HEADER_RE = re.compile(
     r"(?<=\n\n)(\d+(?:\.\d+)*)\.?\s+([A-Z][A-Za-z].{2,80})(?=\n\n)",
 )
 
+# Unnumbered standalone bold lines that look like section headings.
+# Matches: **Site Improvements and Facilities, Account 21.01**
+# Also matches bold with trailing text: **Title Here** - Description text
+# Does NOT match: **Table 5...**, **Figure 1...**, short labels, split bold
+_UNNUMBERED_BOLD_HEADER_RE = re.compile(
+    r"^\*\*([A-Z][^*]{14,})\*\*\s*$",
+    re.MULTILINE,
+)
+
+# Same pattern but with trailing text after the bold:
+# **First Wall and Blanket, Account 22.01.01** - This subsystem is the primary
+_UNNUMBERED_BOLD_HEADER_WITH_BODY_RE = re.compile(
+    r"^\*\*([A-Z][^*]{14,})\*\*\s*[-–—]\s*(.+)$",
+    re.MULTILINE,
+)
+
+# All-caps standalone lines between blank lines that look like section headings.
+# Matches: ABSTRACT, REFERENCES, CONTENTS, INTRODUCTION, etc.
+# Must be 4-60 chars, all uppercase letters/spaces/punctuation, between blank lines.
+_ALLCAPS_HEADER_RE = re.compile(
+    r"(?<=\n\n)([A-Z][A-Z &/,]{3,59})(?=\n\n)",
+)
+
 # Headers with redundant bold: ## **1 Introduction** → ## 1 Introduction
 _HEADER_BOLD_CLEANUP_RE = re.compile(
     r"^(#{2,6})\s+\*\*(.+?)\*\*\s*$",
@@ -107,6 +130,75 @@ def _replace_plain_header(match: re.Match) -> str:
     return f"{hashes} {section_num} {title}"
 
 
+def _is_bold_heading_candidate(text: str) -> bool:
+    """Return True if bold text looks like a section heading, not a data label.
+
+    Rejects:
+    - Table/figure captions (``Table 5...``, ``Figure 1...``)
+    - Definitions with equals signs (``LSA = 4``)
+    - Pure punctuation/symbols (``++++++++``)
+    - Split bold patterns that were already handled (contains ``** **``)
+    """
+    t = text.strip()
+    # Table/figure captions
+    if re.match(r"^(Table|Figure|Fig\.?|Note)\s", t, re.IGNORECASE):
+        return False
+    # Contains equals sign (definition, not heading)
+    if "=" in t:
+        return False
+    # Contains internal bold split markers
+    if "** **" in t or "****" in t:
+        return False
+    # Mostly non-alphanumeric (separators like ++++++)
+    alnum = sum(1 for c in t if c.isalnum())
+    if alnum < len(t) * 0.5:
+        return False
+    return True
+
+
+def _replace_unnumbered_bold_header(match: re.Match) -> str:
+    title = match.group(1).strip()
+    if not _is_bold_heading_candidate(title):
+        return match.group(0)
+    return f"### {title}"
+
+
+def _replace_unnumbered_bold_header_with_body(match: re.Match) -> str:
+    title = match.group(1).strip()
+    body = match.group(2).strip()
+    if not _is_bold_heading_candidate(title):
+        return match.group(0)
+    return f"### {title}\n\n{body}"
+
+
+def _is_allcaps_heading_candidate(text: str) -> bool:
+    """Return True if all-caps text looks like a section heading.
+
+    Rejects:
+    - TOC entries (dot leaders, trailing page numbers)
+    - Pure abbreviations (all consonants, <5 chars)
+    - Common non-heading all-caps patterns
+    """
+    t = text.strip()
+    if _is_toc_line(t):
+        return False
+    # Must contain at least one space or be a known single-word heading
+    known_single_word = {"ABSTRACT", "CONTENTS", "REFERENCES", "ACKNOWLEDGMENTS",
+                         "ACKNOWLEDGEMENTS", "INTRODUCTION", "CONCLUSION", "CONCLUSIONS",
+                         "APPENDIX", "BIBLIOGRAPHY", "GLOSSARY", "ACRONYMS", "SUMMARY"}
+    if " " not in t and t not in known_single_word:
+        return False
+    return True
+
+
+def _replace_allcaps_header(match: re.Match) -> str:
+    title = match.group(1).strip()
+    if not _is_allcaps_heading_candidate(title):
+        return match.group(0)
+    # Title-case the heading for readability
+    return f"## {title.title()}"
+
+
 def promote_bold_headers(md: str) -> str:
     """Convert standalone bold lines matching numbered section patterns to markdown headers.
 
@@ -135,6 +227,36 @@ def promote_plain_headers(md: str) -> str:
     page number, no dot leaders).
     """
     return _PLAIN_HEADER_RE.sub(_replace_plain_header, md)
+
+
+def promote_unnumbered_bold_headers(md: str) -> str:
+    """Promote standalone bold lines without section numbers to ``###`` headers.
+
+    Handles:
+    - ``**Site Improvements and Facilities, Account 21.01**`` → ``### Site Improvements...``
+    - ``**Plasma Confinement, Account 22.02** - Description`` → ``### Plasma Confinement...``
+
+    Does NOT match:
+    - ``**Table 5. Comparison...**`` — table captions
+    - ``**LSA = 4** Denotes...`` — definitions
+    - Short bold labels (``**MW**``, ``**Source**``)
+    """
+    # Handle bold-with-body first (more specific pattern)
+    md = _UNNUMBERED_BOLD_HEADER_WITH_BODY_RE.sub(
+        _replace_unnumbered_bold_header_with_body, md
+    )
+    # Then standalone bold lines
+    md = _UNNUMBERED_BOLD_HEADER_RE.sub(_replace_unnumbered_bold_header, md)
+    return md
+
+
+def promote_allcaps_headers(md: str) -> str:
+    """Promote standalone all-caps lines to ``##`` headers.
+
+    Handles: ``ABSTRACT``, ``REFERENCES``, ``LIST OF FIGURES``, etc.
+    Must be between blank lines and not look like TOC entries.
+    """
+    return _ALLCAPS_HEADER_RE.sub(_replace_allcaps_header, md)
 
 
 def clean_header_artifacts(md: str) -> str:
@@ -374,6 +496,8 @@ def postprocess(md: str, images_dir: Path | None = None) -> str:
     md = strip_running_headers(md)
     md = promote_bold_headers(md)
     md = promote_plain_headers(md)
+    md = promote_unnumbered_bold_headers(md)
+    md = promote_allcaps_headers(md)
     md = clean_header_artifacts(md)
     md = reject_noise_headers(md)
     if images_dir is not None:

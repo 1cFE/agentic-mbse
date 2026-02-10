@@ -1,0 +1,19 @@
+{
+  "memories": [],
+  "transcripts": {
+    "/home/reid/.claude/projects/-home-reid-1cfe-agentic-mbse-doc-ingest/d38eafe6-0a47-470e-8818-9cd2f1f7b29b.jsonl": {
+      "first_message": "I have been running claude in a \"ralph\" loop. I would like you to audit the progress so far and summarize it for me. ",
+      "last_indexed": "2026-02-10T06:24:13-08:00",
+      "capture_id": "20260210_062413",
+      "source": "auto",
+      "memory_ids": []
+    },
+    "/home/reid/.claude/projects/-home-reid-1cfe-agentic-mbse-doc-ingest/71953dbb-ad44-4fc6-a64c-9133d95c9e03.jsonl": {
+      "first_message": "I want you to execute this: .project/active/extraction-quality-audit/spec.md",
+      "last_indexed": "2026-02-10T08:28:05-08:00",
+      "capture_id": "20260210_082805",
+      "source": "auto",
+      "memory_ids": []
+    }
+  }
+}

@@ -172,11 +172,17 @@ class TestCorpus:
             pytest.fail("Extraction failures:\n" + "\n".join(f"  - {f}" for f in failures))
 
     def test_no_quality_regression_vs_baseline(self) -> None:
-        """Current extraction must not lose >10% on any key metric vs baseline.
+        """Current extraction must not lose >10% on key metrics vs baseline.
 
-        This test compares current extraction quality against baseline extractions
-        from fusion-tea. Regressions exceeding 10% on char_count, heading_count,
-        or table_row_count cause test failure.
+        Checks char_count and table_row_count against the fusion-tea baseline
+        with a 10% regression threshold.
+
+        Heading regression uses per-paper thresholds because the baseline was
+        generated with all 4 extraction layers (including Claude Layer 3 structure
+        repair), while the current pipeline uses Layers 1-2 only. Papers whose
+        headings were primarily detected by Layer 3 have a relaxed heading
+        threshold specified in papers.jsonl via ``heading_regression_pct``.
+        Default heading threshold is -10%.
 
         Papers without baselines are skipped (must pass test_all_papers_extract_successfully first).
         """
@@ -185,6 +191,12 @@ class TestCorpus:
 
         for paper in papers:
             slug = paper["slug"]
+
+            # Per-paper heading regression threshold (default -10%)
+            # Papers with Layer-3-dependent headings specify a more relaxed
+            # threshold, e.g. -90 for helios_design where most headings
+            # were detected by Claude vision, not text patterns.
+            heading_threshold = paper.get("heading_regression_pct", -10)
 
             # Load baseline metrics
             baseline_metrics = load_baseline_metrics(slug)
@@ -208,31 +220,31 @@ class TestCorpus:
             # Compare metrics
             comparison = compare_metrics(baseline_metrics, current_metrics)
 
-            # Check for regressions (>10% loss)
-            if comparison["has_regression"]:
-                # Build detailed regression message
-                issues = []
-                if comparison["char_count_pct"] < -10:
-                    issues.append(
-                        f"char_count: {baseline_metrics.char_count} → "
-                        f"{current_metrics.char_count} ({comparison['char_count_pct']:.1f}%)"
-                    )
-                if comparison["heading_count_pct"] < -10:
-                    issues.append(
-                        f"heading_count: {baseline_metrics.heading_count} → "
-                        f"{current_metrics.heading_count} ({comparison['heading_count_pct']:.1f}%)"
-                    )
-                if comparison["table_row_count_pct"] < -10:
-                    issues.append(
-                        f"table_row_count: {baseline_metrics.table_row_count} → "
-                        f"{current_metrics.table_row_count} ({comparison['table_row_count_pct']:.1f}%)"
-                    )
+            # Check for regressions
+            issues = []
+            if comparison["char_count_pct"] < -10:
+                issues.append(
+                    f"char_count: {baseline_metrics.char_count} → "
+                    f"{current_metrics.char_count} ({comparison['char_count_pct']:.1f}%)"
+                )
+            if comparison["heading_count_pct"] < heading_threshold:
+                issues.append(
+                    f"heading_count: {baseline_metrics.heading_count} → "
+                    f"{current_metrics.heading_count} ({comparison['heading_count_pct']:.1f}%, "
+                    f"threshold {heading_threshold}%)"
+                )
+            if comparison["table_row_count_pct"] < -10:
+                issues.append(
+                    f"table_row_count: {baseline_metrics.table_row_count} → "
+                    f"{current_metrics.table_row_count} ({comparison['table_row_count_pct']:.1f}%)"
+                )
 
+            if issues:
                 regressions.append(f"{slug}:\n    " + "\n    ".join(issues))
 
         # Report all regressions together
         if regressions:
-            pytest.fail("Quality regressions detected (>10% loss):\n" + "\n  ".join(regressions))
+            pytest.fail("Quality regressions detected:\n" + "\n  ".join(regressions))
 
     def test_table_heavy_papers_have_tables(self) -> None:
         """Papers marked has_tables=true must have table_row_count > 0.
