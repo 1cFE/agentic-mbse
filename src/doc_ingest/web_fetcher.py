@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 import requests
 
-from src.doc_ingest.types import SourceCandidate
+from doc_ingest.types import SourceCandidate
 
 # Fetch error categories
 FetchErrorCategory = Literal[
