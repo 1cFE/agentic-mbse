@@ -2,7 +2,7 @@
 
 ## Implementation Status (2026-02-09)
 
-**Phase 1 Foundation Progress: 8/17 specs complete**
+**Phase 1 Foundation Progress: 9/17 specs complete**
 
 Completed:
 - ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
@@ -12,9 +12,10 @@ Completed:
 - ✅ Spec 005: WebFetcher - HTTP(S)/local fetching, protocol validation, size limits, timeouts, typed errors
 - ✅ Spec 006: OutcomeClassifier - extraction outcome determination, failure category assignment, typed classification
 - ✅ Spec 010: ValidationResult - source validation outcomes (paywall, truncation, content detection)
+- ✅ Spec 013: DiscoveryCache - TTL-based caching, freshness checks, per-identifier invalidation, bulk clearing
 - ✅ Spec 017: ConversionError - typed exception with FailureCategory, structured details
 
-Next: Source router or base converter interface
+Next: Provenance manager or base converter interface
 
 ## Build & Run
 
@@ -92,6 +93,15 @@ uv run ruff format src/ tests/
 - `ProvenanceManager` is pure persistence (no staleness logic)
 - `DiscoveryCache` handles freshness/staleness checks (injectable, separate class)
 - Triage metadata stored alongside discovery_timestamp for staleness detection
+
+**DiscoveryCache implementation (spec 013):**
+- Cache files stored with SHA-256 hash of identifier key for safe filenames
+- JSON format with timestamp, identifier_key, and sources list
+- Atomic writes via temp file (prevents corruption on crash)
+- TTL freshness checks: age_days = (current_time - timestamp) / 86400
+- `get()` returns None for missing or stale entries (transparent to caller)
+- `clear(max_age_days)` supports selective removal (None = remove all)
+- Corrupted cache files treated as missing (no exceptions raised)
 
 **CLI behavior:**
 - `--format` controls routing strategy (jina/readability/auto)
