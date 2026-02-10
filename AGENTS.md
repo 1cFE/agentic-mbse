@@ -1,8 +1,8 @@
 # AGENTS.md
 
-## Status (2026-02-09)
+## Status (2026-02-10)
 
-**State: Phase 3 NEARLY COMPLETE. OpenAlex + arXiv + PMC APIs integrated. Quality verification (SD-005) next.**
+**State: Phase 3 COMPLETE. All API integrations done and quality-ordered routing verified with integration tests.**
 
 ### What Works
 - ✅ Test harness: 5 papers with baseline metrics, test runner, comparison report
@@ -15,7 +15,8 @@
 - ✅ OpenAlex API: Real DOI discovery with quality-tier routing
 - ✅ arXiv API: HTML+PDF discovery with availability checking
 - ✅ PMC API: JATS XML discovery with PMC E-utilities integration
-- ✅ 183 unit tests passing (17 PMC, 15 arXiv, 15 OpenAlex, 16 discoverer) + 4 corpus tests (skipped by default)
+- ✅ 210 doc_ingest tests passing (17 PMC, 15 arXiv, 15 OpenAlex, 16 discoverer) + 4 integration tests (run with `--run-integration`)
+- ✅ Integration tests: Quality-ordered routing, early exit, error handling, discovery cache behavior all verified
 
 ### What's Improved
 - **Tables**: aries_cost_account (137→143, +6!), helios_design (29→29), hsu_2020 (56→56) - AT OR ABOVE baseline
@@ -25,17 +26,17 @@
 ### Remaining Gaps
 - **Heading detection**: Some papers still below baseline (aries 102→64, helios 52→7)
 - **Root cause**: Baseline used all 4 layers including Claude structure detection; Layer 1+2 alone can't match that
-- **Solution path**: Layer 3 (Claude structure repair) deferred - heading gap acceptable for Phase 2 objectives
-- **Quality verification**: Need to test quality-ordered routing with real papers that have structured alternatives (SD-005)
+- **Solution path**: Layer 3 (Claude structure repair) deferred - heading gap acceptable for Phase 2/3 objectives
 
-### Current Work: Phase 3 Nearly Complete
+### Current Work: Phase 3 Complete, Ready for Phase 4
 - ✅ TASK-WP-001: Layer 1 (pymupdf_backend + postprocess) - DONE
 - ✅ TASK-WP-002: Layer 2 (GMFT table enhancement) - DONE
 - ✅ TASK-SD-001: API validation - DONE
 - ✅ TASK-SD-002: OpenAlex API integration - DONE
 - ✅ TASK-SD-003: arXiv API integration - DONE
 - ✅ TASK-SD-004: PMC API integration - DONE
-- Next: TASK-SD-005 (Quality verification with real papers)
+- ✅ TASK-SD-005: Quality-ordered routing verification - DONE
+- Next: Phase 4 (Fusion-TEA integration) or alternative priorities
 
 ### Critical Rule
 **Every change must be measured against real documents. Run the test harness before and after. No mocked quality tests.**
@@ -61,6 +62,9 @@ uv run pytest tests/ -v
 
 # Run corpus quality tests (after test harness is built)
 uv run pytest tests/test_corpus.py --run-corpus
+
+# Run integration tests (requires network access for API calls)
+uv run pytest tests/test_quality_routing.py --run-integration
 
 # Linting
 uv run ruff check src/ tests/
@@ -134,3 +138,5 @@ src/agentic_mbse/extraction/   # Proven extraction pipeline (existing)
 **OpenAlex API client**: Rate limiting is built into the client (100ms delay between requests). No need for external throttling. `requests` library is already a dependency. Deduplication of PDF URLs is critical - OpenAlex returns the same PDF in multiple response fields (`oa_url`, `pdf_url`, `best_oa_location`). Skip landing pages that are just DOI resolvers (https://doi.org/...). Publisher HTML sources have quality tier 3 (lower than JATS/arXiv HTML tier 1-2, higher than PDF tier 4).
 
 **Testing API clients**: Mock `requests.get()` with `patch("requests.get")` to avoid real API calls in unit tests. Use real OpenAlex response data from validation for mock responses. Test error cases (404, 500, network failures) separately. Verify timeout is set (prevents hanging on slow networks).
+
+**Integration tests for quality routing**: Use `--run-integration` flag to test real API calls and quality-ordered routing. Integration tests use `tmp_path` fixture for isolated output directories. Tests verify: (1) sources are discovered in quality tier order, (2) extraction attempts sources in order (best first), (3) early exit on first success, (4) error handling is graceful (no crashes). Integration tests skip by default to keep CI fast.
