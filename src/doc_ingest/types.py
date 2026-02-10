@@ -4,6 +4,26 @@ from dataclasses import dataclass
 
 
 @dataclass
+class QualityFlags:
+    """Quality indicators for document extraction.
+
+    Converters populate these flags to report extraction quality characteristics
+    such as table preservation, math rendering, and structure detection.
+
+    All fields default to False to ensure consistent JSON serialization (all keys
+    present even when features are absent).
+    """
+
+    has_tables: bool = False
+    tables_likely_corrupted: bool = False
+    has_math: bool = False
+    math_preserved: bool = False
+    has_figures: bool = False
+    figure_captions_present: bool = False
+    heading_structure_detected: bool = False
+
+
+@dataclass
 class DocumentIdentifiers:
     """Unique identifier for a document across multiple identifier types.
 
