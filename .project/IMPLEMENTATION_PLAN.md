@@ -134,7 +134,7 @@ These specifications were referenced in completed work but don't have standalone
 
 ### P1: High Priority (Complete In-Progress Work)
 
-#### TASK-001: PDF Skill Deployment — Docling MCP Auto-Setup
+#### [DONE] TASK-001: PDF Skill Deployment — Docling MCP Auto-Setup
 **Addresses**: `.project/active/pdf-skill-deployment/spec.md`, `.project/active/pdf-skill-deployment/design.md`
 **Spec Status**: Draft (FR-1 through FR-11 defined)
 **Design Status**: Draft (8 components specified)
@@ -609,8 +609,10 @@ Based on gap analysis and dependency analysis:
 - **TASK-001**: PDF Skill Deployment (completed 2026-02-09)
   - Phase 1-4: Core integration (markers, setup script, CLI, pyproject.toml)
   - Phase 5: Unit tests (6 new tests, all passing)
-  - Commits: e13c80f, cbf2167
-  - Status: Ready for manual verification (Phase 6)
+  - Phase 6: Code quality checks (linting, formatting)
+  - Commits: e13c80f, cbf2167, 6e2d757
+  - Status: Implementation complete, ready for PR and manual verification
+  - Note: Manual verification requires actual MCP server interaction (claude mcp list)
 
 ### In Progress
 *None*
