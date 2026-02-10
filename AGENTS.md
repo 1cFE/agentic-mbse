@@ -2,7 +2,7 @@
 
 ## Implementation Status (2026-02-09)
 
-**Phase 1 Foundation Progress: 12/17 specs complete**
+**Phase 1 Foundation Progress: 13/17 specs complete**
 
 Completed:
 - ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
@@ -11,6 +11,7 @@ Completed:
 - ✅ Spec 004: ConversionResult - markdown output, warnings, quality flags, converter provenance
 - ✅ Spec 005: WebFetcher - HTTP(S)/local fetching, protocol validation, size limits, timeouts, typed errors
 - ✅ Spec 006: OutcomeClassifier - extraction outcome determination, failure category assignment, typed classification
+- ✅ Spec 007: SourceRouter - top-level orchestrator, resumability, format override, crash-safe provenance
 - ✅ Spec 008: ExtractionOrchestrator - quality-ordered extraction, converter registry integration
 - ✅ Spec 009: ProvenanceManager - atomic writes, UTF-8 encoding, hash-based directory naming
 - ✅ Spec 010: ValidationResult - source validation outcomes (paywall, truncation, content detection)
@@ -18,7 +19,7 @@ Completed:
 - ✅ Spec 013: DiscoveryCache - TTL-based caching, freshness checks, per-identifier invalidation, bulk clearing
 - ✅ Spec 017: ConversionError - typed exception with FailureCategory, structured details
 
-Next: SourceRouter (spec 007)
+Next: CLI (spec 011)
 
 ## Build & Run
 
@@ -124,3 +125,18 @@ uv run ruff format src/ tests/
 - `all_identifiers()` returns merged list (URL + file path + DOI)
 - Cache invalidation targets specific identifier, not all variants
 - Use `primary_identifier()` for deduplication/caching, `display_key()` for user-facing logs
+
+**SourceRouter implementation (spec 007):**
+- Takes WebFetcher as injected dependency alongside other orchestration components
+- Format override creates stub URL (`stub://type/value`) when no local_path present
+- Resumability check uses ProvenanceManager.load() to skip existing successes
+- try/finally ensures provenance written even on crash (best-effort on write failure)
+- Pipeline version tracked in provenance ("0.1.0")
+- Elapsed time includes discovery + all extraction attempts
+
+**SourceDiscoverer stub (MVP):**
+- Local file discovery: infers format from extension (.pdf → pdf, .xml → jats_xml, etc.)
+- Stub API discovery: creates mock sources for DOI/arXiv identifiers (for testing)
+- Cache integration: checks cache first, writes on successful discovery
+- Quality tiers: PDF=4, others=1 (simplified for MVP)
+- Full API integration (OpenAlex, arXiv, PMC) deferred to post-MVP
