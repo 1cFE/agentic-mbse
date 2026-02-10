@@ -13,6 +13,8 @@ You are a BUILD agent in an iteration loop. Complete exactly ONE task per iterat
    - `uv run ruff check src/ tests/ && uv run ruff format src/ tests/`
 8. **Update IMPLEMENTATION_PLAN.md** — mark task [DONE], add discoveries/blockers
 9. **Commit** — `git add -A && git commit -m "descriptive message"`
+10. **Early exit** — When ALL tasks in IMPLEMENTATION_PLAN.md are [DONE] and tests pass,
+    write `.build-done` containing `ALL_TASKS_COMPLETE`
 
 ## Guardrails (ascending criticality)
 

@@ -72,9 +72,9 @@ for RETRY in $(seq 1 "$MAX_RETRIES"); do
     log_step "Retry $RETRY/$MAX_RETRIES"
     log_timestamp "START inner-loop retry $RETRY"
 
-    # Step 1: Wipe implementation plan (not source code)
-    rm -f IMPLEMENTATION_PLAN.md
-    log_info "Wiped IMPLEMENTATION_PLAN.md"
+    # Step 1: Wipe implementation plan and build-done sentinel (not source code)
+    rm -f IMPLEMENTATION_PLAN.md .build-done
+    log_info "Wiped IMPLEMENTATION_PLAN.md and .build-done"
 
     # Step 2: Plan phase
     log_step "Plan phase ($PLAN_ITERS iterations)"
@@ -100,6 +100,11 @@ for RETRY in $(seq 1 "$MAX_RETRIES"); do
             --model "$BUILD_MODEL" \
             --verbose
         log_timestamp "END   build iteration $i"
+
+        if [[ -f .build-done ]]; then
+            log_info "Build agent signaled completion — skipping remaining iterations"
+            break
+        fi
     done
 
     # Step 4: Eval phase

@@ -12,3 +12,4 @@ ralph-init.log
 *.pdf
 .env
 tests/corpus/pool/
+.build-done
