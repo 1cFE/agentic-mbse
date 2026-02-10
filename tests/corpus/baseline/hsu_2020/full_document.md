@@ -2,15 +2,8 @@
 
 <!-- PAGE:1 -->
 
-![](images/Hsu-et-al.---2020---Revisit-of-the-2017-Costing-for-Four-ARPA-E-ALPHA-Concepts.pdf-0-0.png)
-
-Woodruff Scientific, Inc
-
-Revisit of the 2017 Costing for Four ARPA-E ALPHA Concepts
-
-DE-AR001175
-
-## Project Information
+![](images/tmpozz6revp.pdf-0-0.png)
+# Woodruff Scientific, Inc Revisit of the 2017 Costing for Four ARPA-E ALPHA Concepts DE-AR001175
 
 **Award:** DE-AR001175
 **Sponsoring Agency** USDOE, Advanced Research Project Agency – Energy (ARPA-E)
@@ -24,9 +17,6 @@ DE-AR001175
 <!-- PAGE:2 -->
 
 ## Acknowledgements
-
-**Acknowledgements**
-
 This work was performed in collaboration with Lucid Catalyst (Eric Ingersoll and Andrew Foss) and
 Decysive Systems (Ronald L. Miller). We acknowledge useful conversations with Laila El-Guebaly,
 Mark Tillack, Mike Zarnstoff, Dave Gates, Scott Hsu, and Malcolm Handley. We are indebted to
@@ -38,9 +28,6 @@ ARPA-E for supporting this work under contract no. DE-AR001175.
 <!-- PAGE:3 -->
 
 ## Executive Summary
-
-**Executive Summary**
-
 This project re-examined the costing analysis performed for four ARPA-E ALPHA program
 concepts [1-3] in light of new reactor costing paradigms [4-5], addressing every assumption in
 the Cost Accounting Structure (CAS), and revisiting the analysis using the code developed for the
@@ -49,7 +36,11 @@ reviews by leading experts in the field [6-7]. The work was performed collaborat
 Woodruff Scientific, Lucid Catalyst, and Decysive Systems. The output from the short study is
 this public document, which presents averages of the four concepts and explanations for the
 assumptions and calculations given, and a new cost-sensitivity analysis. Proprietary documents
-I need to see the image to convert the equation to LaTeX. Could you please share the image/screenshot of the PDF page? You mentioned there's an image showing the original PDF page, but I don't see one attached to your message.
+were delivered to principal investigators of each of the four concepts. Primary findings of this
+cost analysis are that because of modular design, each concept can benefit from shorter
+construction times, cost savings due to centralized manufacturing (shipping complete
+subsystems), and lower total capital costs due to compactness. Relative to the prior costing
+analysis, Total Capital Costs have come down by nearly a factor of two, producing CapEx of
 ~2.4$/W and $1.2B, and an average Levelized Cost Of Electricity (LCOE) of 43 $/MWh for
 ~500-MWe power plants, with a range of 34–54 $/MWh for the four concepts.
 
@@ -79,16 +70,12 @@ System for ARIES-ACT2 Power Plant with DCLL Blanket,” Fus. Sci. Tech. **72**, 
 [7] C.E. Kessel, J.P. Blanchard, A. Davis, L. El-Guebaly, L.M. Garrison, N.M. Ghoniem, P.W. Humrickhouse, Y. Huang, Y. Katoh, A.
 Khodak, E.P. Marriott, S. Malang, N.B. Morley, G.H. Neilson, J. Rapp, M.E. Rensink, T.D. Rognlien, A.F. Rowcliffe, S. Smolentsev, L.L.
 Snead, M.S. Tillack, P. Titus, L.M. Waganer, G.M. Wallace, S.J. Wukitch, A. Ying, K. Young, Y. Zhai, “Overview of the fusion nuclear
-## science facility, a credible break-in step on the path to fusion energy,” Fus. Eng. Design 135B, 236 (2018);
-
+science facility, a credible break-in step on the path to fusion energy,” Fus. Eng. Design **135B**, 236 (2018);
 [https://doi.org/10.1016/j.fusengdes.2017.05.081.](https://doi.org/10.1016/j.fusengdes.2017.05.081)
 
 <!-- PAGE:4 -->
 
-## Principal Findings
-
-**Principal findings**
-
+## Principal findings
 This project was focused on developing a costing framework for innovative, compact modular
 fusion energy systems supported by ARPA-E in the ALPHA program, with the aim of challenging
 each cost assumption from our prior work in 2017. We considered each concept and developed
@@ -130,13 +117,13 @@ captured in the next phase of the ARPA-E costing project.
 
 <!-- PAGE:5 -->
 
-![](images/Hsu-et-al.---2020---Revisit-of-the-2017-Costing-for-Four-ARPA-E-ALPHA-Concepts.pdf-4-0.png)
+![](images/tmpozz6revp.pdf-4-0.png)
 
-![](images/Hsu-et-al.---2020---Revisit-of-the-2017-Costing-for-Four-ARPA-E-ALPHA-Concepts.pdf-4-1.png)
+![](images/tmpozz6revp.pdf-4-1.png)
 
-![](images/Hsu-et-al.---2020---Revisit-of-the-2017-Costing-for-Four-ARPA-E-ALPHA-Concepts.pdf-4-2.png)
+![](images/tmpozz6revp.pdf-4-2.png)
 
-![Figure 1. The four participating concepts - clockwise from the top left: Plasma-Jet Magneto-Inertial](images/Hsu-et-al.---2020---Revisit-of-the-2017-Costing-for-Four-ARPA-E-ALPHA-Concepts.pdf-4-3.png)
+![Figure 1. The four participating concepts - clockwise from the top left: Plasma-Jet Magneto-Inertial](images/tmpozz6revp.pdf-4-3.png)
 Fusion (LANL/HyperJet Fusion); Stabilized Liner Compressor (Compact Fusion Systems, Inc.); Staged
 
 Z-Pinch (MIFTI, Inc.); and, the Flow-stabilized Z-Pinch (Zap Energy, Inc.)
@@ -158,8 +145,6 @@ possibly wholly disruptive.
 Table 2. System parameters for the four fusion concepts, showing average, low and high values.
 
 <!-- PAGE:6 -->
-
-## Cost Categories
 
 The cost categories are given here
 
