@@ -2,7 +2,7 @@
 
 ## Implementation Status (2026-02-09)
 
-**Phase 1 Foundation Progress: 7/17 specs complete**
+**Phase 1 Foundation Progress: 8/17 specs complete**
 
 Completed:
 - ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
@@ -10,10 +10,11 @@ Completed:
 - ✅ Spec 003: SourceCandidate - format types, quality tiers, sortable prioritization
 - ✅ Spec 004: ConversionResult - markdown output, warnings, quality flags, converter provenance
 - ✅ Spec 005: WebFetcher - HTTP(S)/local fetching, protocol validation, size limits, timeouts, typed errors
+- ✅ Spec 006: OutcomeClassifier - extraction outcome determination, failure category assignment, typed classification
 - ✅ Spec 010: ValidationResult - source validation outcomes (paywall, truncation, content detection)
 - ✅ Spec 017: ConversionError - typed exception with FailureCategory, structured details
 
-Next: Base converter interface or outcome classifier
+Next: Source router or base converter interface
 
 ## Build & Run
 
