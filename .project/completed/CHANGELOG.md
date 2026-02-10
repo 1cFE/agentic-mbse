@@ -4,6 +4,44 @@ Historical record of completed work.
 
 ---
 
+## [2026-02-10] - EPIC-COMPATTR-001: Computed Attribute Integration
+
+**Type**: Epic
+**Duration**: 2 days (2026-02-09 to 2026-02-10)
+**Priority**: P1
+
+### Summary
+
+Integrated sysml-codegen ATTR-EXPR (Phase 2) changes into the agentic-mbse validation layer, pattern documentation, agent commands, and project templates. FORMULA computed attributes (`attribute area = length * width`) are now recognized as valid by the V2 validator, pattern docs guide modelers on the FORMULA vs CalcDef decision, and new projects get updated guidance via templates.
+
+### Deliverables
+
+**Item 1: V2 Validation — FORMULA Exemption** (`src/agentic_mbse/validation/adr002.py`):
+- `_is_formula_pattern()` function with sibling-ref + no-calc-output structural checks
+- Integrated after EXPOSE check in `check_static_expressions()`
+- 7 new test cases: simple FORMULA, chain FORMULA, FORMULA+literal, EXPOSE_COMPUTED violation, mixed-refs violation, plus regression tests
+- All 886 tests passing, zero regressions
+
+**Item 2: Pattern Documentation** (`docs/patterns/`):
+- `adr002-calculations.md`: FORMULA row in taxonomy, decision flow branch, Invalid Pattern amendment, Common Mistakes update, new FORMULA section
+- `expose-pattern.md`: FORMULA vs EXPOSE vs EXPOSE_COMPUTED distinction section
+
+**Item 3: Agent Command Updates** (`claude/commands/`):
+- `implement-model.md`: FORMULA guidance with auto-codegen mention and CalcDef decision criteria
+- `design-model.md`: FORMULA recognition criteria for design analysis
+
+**Item 4: Project Template Updates** (`project_templates/`):
+- `MODELING_GUIDE.md.template`: Updated decision tree with FORMULA branch, new Computed Attributes section
+
+### Authority Sources
+
+All changes trace to:
+- ADR-002 Amendment (Rule 3 relaxation for sibling-only arithmetic)
+- ADR-004 (computed attribute pipeline integration, Option C)
+- ADR-005 (5-way classification: FORMULA, EXPOSE_PURE, EXPOSE_COMPUTED, LITERAL, UNRESOLVABLE)
+
+---
+
 ## [2026-02-08] - EPIC-PDFV3-001: PDF Extraction v3
 
 **Type**: Epic

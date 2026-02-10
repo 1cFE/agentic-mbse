@@ -51,10 +51,24 @@ Consumers bind to `geometry.calculated_area`, not `geometry.dimension_calc.area`
 |-----------------|--------|
 | Literal: `= 3.0 [m]` | OK |
 | Static expr: `= 3.14 * 2.0` | OK |
+| FORMULA: `= length * width` (sibling attrs only) | OK |
 | EXPOSE: `= my_calc.output` | OK |
-| Derived: `= radius * 2.0` | **VIOLATION** - extract to calc def |
+| Derived: `= calc.output * 0.95` (calc output refs) | **VIOLATION** - extract to calc def |
 
 > **Full reference**: [patterns/adr002-calculations.md] - Expression taxonomy, resolution patterns
+
+### Computed Attributes
+
+Simple formulas on sibling attributes can be written directly as attribute expressions (FORMULA pattern, per ADR-002 Amendment). The codegen pipeline auto-generates a module for them.
+
+| Pattern | Example | Valid? | When to Use |
+|---------|---------|--------|-------------|
+| **FORMULA** | `attribute area = length * width` | Yes | One-off formula, all refs are siblings on same part |
+| **EXPOSE** | `attribute x = calc.output` | Yes | Forwarding a calc output as a design attribute |
+| **EXPOSE_COMPUTED** | `attribute x = calc.output * 1.15` | No | Use a CalcDef instead |
+| **CalcDef** | `calc area_calc : AreaCalc { ... }` | Yes | Reusable logic, complex expressions, calc output refs |
+
+> **Full reference**: [patterns/expose-pattern.md] - FORMULA vs EXPOSE distinction
 
 ---
 

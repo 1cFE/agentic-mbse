@@ -63,7 +63,8 @@ This is where the real work happens. Research, draft, refine — iterate until t
 
 **Key architectural constraints** (from MODELING_PROCESS.md):
 - Dataflow must be unidirectional (geometry → structural → physics)
-- Calc defs belong in `library/`; design expressions must be static-evaluable (ADR-002)
+- Calc defs belong in `library/`; design expressions must be static-evaluable or FORMULA (ADR-002 + Amendment)
+- FORMULA attribute expressions (sibling-only arithmetic, e.g., `area = length * width`) are valid in designs; use CalcDef for reusable/complex formulas or calc output references (see `adr002-calculations.md`)
 - Library for reusable definitions, designs for project-specific instances
 - Minimize cross-file coupling; document all bindings
 

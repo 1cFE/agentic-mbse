@@ -55,6 +55,8 @@ EOF
 uv run syside check /tmp/test_snippet.sysml
 ```
 
+**FORMULA vs CalcDef**: When implementing a formula that references only sibling attributes on the same part (e.g., `attribute area = length * width`), it CAN be written as a FORMULA attribute expression — the codegen pipeline auto-generates a module for it. Use a CalcDef instead when: the formula is reused across multiple parts, the logic is complex (multiple intermediates, functions), or the expression references calc outputs. See `adr002-calculations.md` for the full expression taxonomy and decision flow.
+
 **When validation fails**, use specialized agents: `sysmlv2-validator` for error interpretation, `kerml-expert` for standard library questions, `sysml-expert` for modeling patterns. Spawn the validator + relevant expert in parallel for "why doesn't this work?" questions.
 
 **For large plans**, read the full plan once, then work from the relevant phase section. Use Task agents to extract/condense sections from very large documents. For 3+ independent files, consider parallel creation with Task agents (each creates one file, main agent validates the batch).
@@ -73,7 +75,7 @@ At the end of each phase:
 
 1. Run quality validation per the **model-validation** skill. Levels 1-3 must pass. Review Level 4-8 warnings.
 2. Run regression tests: `uv run pytest tests/models/ -v`
-3. Check ADR-002 compliance: no calc defs in `models/designs/`
+3. Check ADR-002 compliance: no calc defs in `models/designs/`; FORMULA attribute expressions (sibling-only arithmetic) are valid per ADR-002 Amendment
 4. Update traceability files (`data/traceability_matrix.csv`, assumption register if applicable)
 
 Document phase completion in plan.md: models created/modified, validation results, issues encountered, deviations from plan.

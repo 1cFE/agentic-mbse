@@ -1,16 +1,28 @@
 # Current Work
 
-**Last Updated**: 2026-02-08
+**Last Updated**: 2026-02-10
 
 ---
 
 ## Active Work
 
-*No items in progress — branch ready for PR.*
+*No items in progress — branch `adr004-005` ready for PR.*
 
 ---
 
 ## Recently Completed
+
+### 2026-02-10: EPIC-COMPATTR-001 Computed Attribute Integration
+
+Integrated sysml-codegen ATTR-EXPR (Phase 2) changes into agentic-mbse. FORMULA computed attributes (`attribute area = length * width`) are now valid per ADR-002 Amendment. 886 tests passing.
+
+Key deliverables:
+- `src/agentic_mbse/validation/adr002.py` — `_is_formula_pattern()` V2 exemption with 4-layer sibling/calc-output checks
+- `docs/patterns/adr002-calculations.md` — Expression taxonomy, decision flow, FORMULA section
+- `docs/patterns/expose-pattern.md` — FORMULA vs EXPOSE distinction
+- `claude/commands/implement-model.md` + `design-model.md` — FORMULA guidance
+- `project_templates/MODELING_GUIDE.md.template` — Updated decision tree + Computed Attributes section
+- 7 new test cases in `tests/test_sysml/test_adr002.py`
 
 ### 2026-02-08: EPIC-PDFV3-001 PDF Extraction v3
 
@@ -50,7 +62,7 @@ Renamed modeling project management directory for clearer semantic distinction.
 
 ## Up Next
 
-1. Merge `pdf-extract` branch to master (PR pending)
+1. Merge `adr004-005` branch to main (PR pending)
 2. EPIC-LCOE-001: LCOE Costing Patterns (tracking — active in fusion-tea)
 3. EPIC-VIZ-001: Visualization Tool Integration (tracking — active in fusion-tea)
 4. PDF Skill Deployment: Docling MCP setup during init (spec drafted)
@@ -58,6 +70,12 @@ Renamed modeling project management directory for clearer semantic distinction.
 ---
 
 ## Session Notes
+
+### 2026-02-10
+
+- EPIC-COMPATTR-001 completed: all 4 items (V2 validation, pattern docs, agent commands, modeling guide)
+- Archived 3 work items to `.project/completed/`: compattr-v2-formula, pattern-docs-formula-taxonomy, formula-guidance-commands-template
+- Epic closed, backlog updated, audit passed (886 tests, zero regressions)
 
 ### 2026-02-08
 

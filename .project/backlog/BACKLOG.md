@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-02-08 (PR cleanup, architecture + PDF epics completed)
+**Last Updated**: 2026-02-10 (EPIC-COMPATTR-001 completed)
 
 ---
 
@@ -17,7 +17,7 @@ Prioritized list of epics and features.
 
 ## In Progress
 
-*No items in progress*
+*No items in progress — branch `adr004-005` ready for PR*
 
 ---
 
@@ -125,6 +125,7 @@ Prioritized list of epics and features.
 
 | Item | Completed | Duration | Notes |
 |------|-----------|----------|-------|
+| EPIC-COMPATTR-001: Computed Attribute Integration | 2026-02-10 | 2 days | FORMULA V2 exemption, pattern docs, agent commands, modeling guide |
 | EPIC-PDFV3-001: PDF Extraction v3 | 2026-02-08 | 3 days | 4-layer pipeline, Claude structure repair, 4/5 new docs pass |
 | EPIC-ARCH-001: Architecture Structure | 2026-02-03 | 3 days | 4-directory architecture, templates, cmd_init rewiring |
 | EPIC-ARCH-002: Architecture Knowledge | 2026-02-03 | 2 days | 9 new skills, context measurement, extraction mapping |

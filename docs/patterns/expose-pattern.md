@@ -264,6 +264,53 @@ attribute exposed_power : Power = my_calc.power;
 
 ---
 
+## FORMULA vs EXPOSE
+
+> **Added 2026-02-09 per ADR-002 Amendment, ADR-005**
+
+Modelers encounter two patterns that look similar — `attribute x = a * b` and `attribute x = calc.output` — but they serve different purposes and receive different pipeline treatment. This section clarifies the distinction.
+
+### Classification
+
+| Pattern | Example | What It Does | Pipeline Treatment | Validation |
+|---------|---------|-------------|-------------------|------------|
+| **FORMULA** | `attribute area = length * width` | Arithmetic on sibling attributes | Generates synthetic pipeline module (ADR-004) | PASS |
+| **EXPOSE (pure)** | `attribute x = calc.output` | Forwards a calc output as a design attribute | Channel alias (no module) | PASS |
+| **EXPOSE_COMPUTED** | `attribute x = calc.output * 2.0` | Calc output + arithmetic | **Not yet supported** | FAIL |
+
+### Key Distinction
+
+- **FORMULA** references **sibling attributes** (same part, no dotted paths). All refs have the same owner.
+- **EXPOSE** references a **calc output** via a dotted path (`calc_usage.output_name`). This is a `FeatureChainExpression` in the AST.
+- **EXPOSE_COMPUTED** mixes both: a calc output ref wrapped in arithmetic. This is deferred — use a CalcDef as a workaround.
+
+### When to Use Each
+
+```sysml
+part plant {
+    attribute length : Real = 10.0;
+    attribute width : Real = 5.0;
+
+    // FORMULA: simple arithmetic on siblings → OK
+    attribute area : Real = length * width;
+
+    calc cost_calc : CostCalc {
+        in area = plant::area;
+    }
+
+    // EXPOSE (pure): forward calc output → OK
+    attribute total_cost : Real = cost_calc.cost;
+
+    // EXPOSE_COMPUTED: calc output + arithmetic → NOT YET SUPPORTED
+    // attribute adjusted_cost : Real = cost_calc.cost * 1.15;
+    // Workaround: create a CalcDef for the adjustment
+}
+```
+
+See [adr002-calculations.md](adr002-calculations.md) for the full expression taxonomy and decision flow.
+
+---
+
 ## Related Patterns
 
 - [cross-file-binding.md](cross-file-binding.md) - Cross-file import patterns
@@ -284,4 +331,4 @@ syside check <file.sysml>
 
 ---
 
-*Last Updated: 2026-01-15*
+*Last Updated: 2026-02-09*

@@ -1,7 +1,7 @@
 # Epic: Computed Attribute Integration — ADR-002 Amendment for FORMULA Patterns
 
 **Epic ID**: EPIC-COMPATTR-001
-**Status**: in-progress
+**Status**: complete
 **Priority**: P1
 **Created**: 2026-02-09
 **Estimated Effort**: ~2-3 days
@@ -56,10 +56,10 @@ These documents from sysml-codegen are the authoritative source for what FORMULA
 - [x] FORMULA exemption uses structural checks consistent with sysml-codegen's `ComputedAttributeClassification.FORMULA` definition (ADR-005)
 - [x] All existing V2 tests pass with zero regressions
 - [x] New tests cover: simple FORMULA pass, chain FORMULA pass, EXPOSE_COMPUTED still fails, mixed (sibling + calc output) still fails
-- [ ] `adr002-calculations.md` expression taxonomy includes FORMULA row, decision flow includes FORMULA branch
-- [ ] `expose-pattern.md` distinguishes FORMULA from EXPOSE
-- [ ] `/implement-model` and `/design-model` commands include FORMULA guidance
-- [ ] `MODELING_GUIDE.md.template` decision tree includes FORMULA branch
+- [x] `adr002-calculations.md` expression taxonomy includes FORMULA row, decision flow includes FORMULA branch
+- [x] `expose-pattern.md` distinguishes FORMULA from EXPOSE
+- [x] `/implement-model` and `/design-model` commands include FORMULA guidance
+- [x] `MODELING_GUIDE.md.template` decision tree includes FORMULA branch
 - [x] All existing tests pass (`uv run pytest tests/`)
 
 ---
@@ -183,13 +183,13 @@ Add a section distinguishing FORMULA from EXPOSE:
 This prevents modelers from conflating FORMULA with EXPOSE.
 
 **Success Criteria**:
-- [ ] `adr002-calculations.md` expression taxonomy has FORMULA row with "PASS" result
-- [ ] `adr002-calculations.md` decision flow includes FORMULA branch
-- [ ] `adr002-calculations.md` "Invalid Pattern" section amended with FORMULA validity note
-- [ ] `adr002-calculations.md` Common Mistakes section updated
-- [ ] `expose-pattern.md` has FORMULA vs EXPOSE distinction section
-- [ ] Both docs reference ADR-002 amendment, ADR-004, and ADR-005 for authoritative details
-- [ ] Examples verified with syside parser where applicable
+- [x] `adr002-calculations.md` expression taxonomy has FORMULA row with "PASS" result
+- [x] `adr002-calculations.md` decision flow includes FORMULA branch
+- [x] `adr002-calculations.md` "Invalid Pattern" section amended with FORMULA validity note
+- [x] `adr002-calculations.md` Common Mistakes section updated
+- [x] `expose-pattern.md` has FORMULA vs EXPOSE distinction section
+- [x] Both docs reference ADR-002 amendment, ADR-004, and ADR-005 for authoritative details
+- [x] Examples verified with syside parser where applicable
 
 **Deliverables**:
 - Modified: `docs/patterns/adr002-calculations.md`
@@ -220,10 +220,10 @@ Add guidance in the design analysis stage:
 - Decision criteria: one-off simple formula on sibling attributes → attribute expression; reusable/complex/calc-output-dependent → CalcDef.
 
 **Success Criteria**:
-- [ ] `implement-model.md` includes FORMULA guidance with examples
-- [ ] `design-model.md` includes FORMULA recognition criteria
-- [ ] Both commands reference `adr002-calculations.md` pattern doc
-- [ ] Guidance is consistent with ADR-002 amendment conditions
+- [x] `implement-model.md` includes FORMULA guidance with examples
+- [x] `design-model.md` includes FORMULA recognition criteria
+- [x] Both commands reference `adr002-calculations.md` pattern doc
+- [x] Guidance is consistent with ADR-002 amendment conditions
 
 **Deliverables**:
 - Modified: `claude/commands/implement-model.md`
@@ -254,10 +254,10 @@ Update `MODELING_GUIDE.md.template` to include FORMULA as a modeling option. Thi
    - When to use CalcDef vs attribute expression
 
 **Success Criteria**:
-- [ ] `MODELING_GUIDE.md.template` decision tree includes FORMULA branch
-- [ ] Computed Attributes section added with FORMULA/EXPOSE/EXPOSE_COMPUTED distinction
-- [ ] Examples show both FORMULA and CalcDef alternatives
-- [ ] Template references pattern docs for detail
+- [x] `MODELING_GUIDE.md.template` decision tree includes FORMULA branch
+- [x] Computed Attributes section added with FORMULA/EXPOSE/EXPOSE_COMPUTED distinction
+- [x] Examples show both FORMULA and CalcDef alternatives
+- [x] Template references pattern docs for detail
 
 **Deliverables**:
 - Modified: `project_templates/MODELING_GUIDE.md.template`
@@ -308,5 +308,5 @@ All work in this epic traces to these upstream documents:
 
 ---
 
-**Last Updated**: 2026-02-09
-**Next Action**: Item 1 complete. Begin Item 2 — update pattern documentation (`adr002-calculations.md`, `expose-pattern.md`)
+**Last Updated**: 2026-02-10
+**Closed**: 2026-02-10 — All 4 items complete, 886 tests passing, audit passed.
