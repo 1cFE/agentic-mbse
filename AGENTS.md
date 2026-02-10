@@ -2,7 +2,7 @@
 
 ## Implementation Status (2026-02-09)
 
-**Phase 1 Foundation Progress: 15/17 specs complete**
+**Phase 1 Foundation Progress: 17/17 specs complete — MVP READY**
 
 Completed:
 - ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
@@ -19,9 +19,11 @@ Completed:
 - ✅ Spec 012: ResultWriter - output.md, summary.json, provenance delegation
 - ✅ Spec 013: DiscoveryCache - TTL-based caching, freshness checks, per-identifier invalidation, bulk clearing
 - ✅ Spec 014: PyMuPDF4LLMConverter - PDF extraction, scanned detection, quality flags
+- ✅ Spec 015: ArXivHTMLConverter & PublisherHTMLConverter - HTML extraction, MathML preservation, paywall detection
+- ✅ Spec 016: JATSPandocConverter & DOCXPandocConverter - Pandoc-based conversion, quality flag detection
 - ✅ Spec 017: ConversionError - typed exception with FailureCategory, structured details
 
-Next: HTML and Markdown converters (specs 015-016)
+Next: Phase 2 enhancements (batch processing, full API integration)
 
 ## Build & Run
 
@@ -107,6 +109,18 @@ uv run ruff format src/ tests/
 - Math detection: Unicode symbols (∫∑√π²³·) + keywords (equation, formula) - pymupdf4llm doesn't preserve LaTeX
 - Test PDFs: Create programmatically with PyMuPDF in fixtures (no need for binary files)
 - Large PDF warning: 100+ pages threshold (to alert about potential incompleteness)
+
+**Pandoc Converters (spec 016 - JATSPandocConverter, DOCXPandocConverter):**
+- Pandoc invoked as subprocess, not Python library (no Python bindings available)
+- Temp file cleanup: Use finally block to ensure cleanup even on exception
+- JATS validation: Regex search for `<article>` and `<body>` tags (case-insensitive)
+- DOCX validation: Check for ZIP magic bytes (b"PK") at start of content
+- Conversion timeout: 60 seconds hardcoded (prevents hangs on malformed documents)
+- ConversionError re-raise: Avoid double-wrapping typed errors (check isinstance before wrapping)
+- Pandoc stderr: Include as warnings even on success (Pandoc often emits non-fatal warnings)
+- Missing Pandoc binary: Raise ConversionError with category="unsupported_format" and details={"missing_dependency": "pandoc"}
+- Quality flag detection: Regex-based on markdown output (tables: `\|.*\|`, headings: `^#{1,6}\s+`, math: `\$.*\$`, figures: `!\[.*?\]\(.*?\)`)
+- Test strategy: Mock subprocess.run to avoid external Pandoc dependency in tests
 
 **Provenance tracking:**
 - `ProvenanceManager` is pure persistence (no staleness logic)
