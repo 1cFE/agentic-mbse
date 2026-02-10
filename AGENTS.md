@@ -2,7 +2,7 @@
 
 ## Implementation Status (2026-02-09)
 
-**Phase 1 Foundation Progress: 17/17 specs complete — MVP READY**
+**Production-Ready MVP: 17 specs + batch CLI — All P0-P2 tasks complete**
 
 Completed:
 - ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
@@ -15,7 +15,7 @@ Completed:
 - ✅ Spec 008: ExtractionOrchestrator - quality-ordered extraction, converter registry integration
 - ✅ Spec 009: ProvenanceManager - atomic writes, UTF-8 encoding, hash-based directory naming
 - ✅ Spec 010: ValidationResult - source validation outcomes (paywall, truncation, content detection)
-- ✅ Spec 011: CLI (minimal) - `agentic-mbse ingest` command with identifier validation, pipeline orchestration
+- ✅ Spec 011: CLI (full) - Single + batch processing, triage reports, retry logic, cache management
 - ✅ Spec 012: ResultWriter - output.md, summary.json, provenance delegation
 - ✅ Spec 013: DiscoveryCache - TTL-based caching, freshness checks, per-identifier invalidation, bulk clearing
 - ✅ Spec 014: PyMuPDF4LLMConverter - PDF extraction, scanned detection, quality flags
@@ -23,7 +23,7 @@ Completed:
 - ✅ Spec 016: JATSPandocConverter & DOCXPandocConverter - Pandoc-based conversion, quality flag detection
 - ✅ Spec 017: ConversionError - typed exception with FailureCategory, structured details
 
-Next: Phase 2 enhancements (batch processing, full API integration)
+Next: Phase 3 enhancements (full API integration with OpenAlex/arXiv/PMC - P3)
 
 ## Build & Run
 
@@ -40,8 +40,22 @@ uv run agentic-mbse ingest 2301.12345 --output-dir data/ingested
 # Run document ingestion with format override
 uv run agentic-mbse ingest 10.1234/example --format pdf
 
-# Directory creation is automatic; CLI exits 0 (success), 2 (fatal error)
-# Command name is 'ingest' (not 'extract' which exists for PDF/DOCX local processing)
+# Directory creation is automatic
+# Exit codes: 0 (success), 1 (partial batch), 2 (fatal error)
+
+# Batch processing from JSONL file
+uv run agentic-mbse ingest-batch input.jsonl --output-dir data/ingested
+
+# Generate triage report for failed extractions
+uv run agentic-mbse triage-report data/ingested
+
+# Retry only failed/partial extractions
+uv run agentic-mbse retry-failed data/ingested
+
+# Cache management
+uv run agentic-mbse clear-cache data/ingested/.cache --identifier doi:10.1234/example
+uv run agentic-mbse clear-cache data/ingested/.cache --max-age-days 30
+uv run agentic-mbse clear-cache data/ingested/.cache  # Clear all
 ```
 
 ## Validation
@@ -113,6 +127,14 @@ uv run ruff format src/ tests/
 - Table corruption: Detected when PyMuPDF finds tables but markdown has none, or inconsistent column counts
 - Math detection: Unicode symbols (∫∑√π²³·) + keywords (equation, formula) - pymupdf4llm doesn't preserve LaTeX
 - Test PDFs: Create programmatically with PyMuPDF in fixtures (no need for binary files)
+
+**Batch CLI implementation (TASK-DI-010):**
+- ProvenanceRecord serialization: Use `asdict(record)` from dataclasses, NOT `model_dump_json()` (not a Pydantic model)
+- FailureCategory type strictness: When assigning to `str` variable, use explicit type annotation to avoid mypy errors
+- Empty line handling: Always skip empty/whitespace lines in JSONL parsing (use `line.strip()`)
+- Triage report generation: Use markdown with bold fields (`**Total documents**:`) for clarity
+- Cache clearing: DiscoveryCache.clear() accepts optional `max_age_days` parameter (no separate clear_all/clear_expired methods)
+- Exit codes: Return EXIT_PARTIAL (1) for partial batch success, not EXIT_FATAL (2)
 - Large PDF warning: 100+ pages threshold (to alert about potential incompleteness)
 
 **Pandoc Converters (spec 016 - JATSPandocConverter, DOCXPandocConverter):**
