@@ -2,16 +2,16 @@
 
 **Date**: 2026-02-09
 **Status**: Active Development
-**Last Updated**: 2026-02-09 20:15
+**Last Updated**: 2026-02-09 22:00
 **Branch**: `ralph/doc-ingest`
 
 ---
 
 ## Executive Summary
 
-**Current State**: CLI + PDF + HTML Converters complete (16/17 specs including full pipeline orchestration)
-**Next Milestone**: Markdown converters (spec 016)
-**Critical Path**: Final Converter → Full Pipeline Testing
+**Current State**: All converters complete (17/17 specs including full pipeline orchestration)
+**Next Milestone**: Batch processing CLI commands (spec 011 full implementation)
+**Critical Path**: MVP complete - ready for integration testing and production features
 
 **Technology Stack**: Python 3.11+, UV package manager, pytest, pydantic
 **Verification**: Unit tests + integration tests for each component
@@ -20,7 +20,7 @@
 
 ## Specification Coverage Analysis
 
-### ✅ Completed Specifications (15 specs)
+### ✅ Completed Specifications (17 specs)
 
 | Spec | Component | Implementation | Lines | Tests |
 |------|-----------|----------------|-------|-------|
@@ -45,6 +45,7 @@
 | N/A | SourceDiscoverer (stub) | `src/doc_ingest/source_discoverer.py` | 132 | ✅ |
 | **014** | PyMuPDF4LLMConverter | `src/doc_ingest/converters/pdf_converter.py` | 235 | ✅ |
 | **015** | ArXiv/PublisherHTMLConverter | `src/doc_ingest/converters/html_converter.py` | 512 | ✅ |
+| **016** | JATS/DOCXPandocConverter | `src/doc_ingest/converters/markdown_converter.py` | 362 | ✅ |
 
 **Evidence**: All classes found via code search, commits 756155d through [current]
 **Note**: `ExtractionAttempt` dataclass exists in `outcome_classifier.py:17-33`, `DocumentOutcome` literal in `types.py:252`
@@ -54,6 +55,16 @@
 *None currently in progress*
 
 ### ✅ Recently Completed
+
+**TASK-DI-008: Markdown Converters Implementation** — Completed 2026-02-09
+- Implemented `JATSPandocConverter` and `DOCXPandocConverter` classes
+- JATS XML validation for article/body tags
+- DOCX validation via ZIP header magic bytes (PK)
+- Pandoc subprocess integration with 60-second timeout
+- Quality flags: tables, math, figures, captions, heading structure
+- Comprehensive error handling: Pandoc failures, timeouts, missing binary
+- 29 unit tests covering all acceptance criteria (100% pass rate)
+- Files: `markdown_converter.py` (362 lines), `test_markdown_converter.py` (29 tests)
 
 **TASK-DI-007: HTML Converters Implementation** — Completed 2026-02-09
 - Implemented `ArXivHTMLConverter` and `PublisherHTMLConverter` classes
@@ -112,10 +123,9 @@
 - 24 unit tests covering validation and command execution (100% pass rate)
 - Files: `cli.py` (328 lines), `doc_ingest_cli.py` (54 lines), `test_doc_ingest_cli.py` (24 tests)
 
-### ⏳ Pending Specifications (1 spec)
+### ⏳ Pending Specifications (0 specs)
 
-**Converters (P1 - Format Support):**
-- **Spec 016**: Markdown Converters (JATSPandocConverter, DOCXPandocConverter) — Pandoc-based conversion
+*All converter specifications complete - MVP ready for integration testing*
 
 ---
 
@@ -339,50 +349,36 @@
 
 ---
 
-#### TASK-DI-008: Markdown Converters Implementation
+#### [DONE] TASK-DI-008: Markdown Converters Implementation
 **Addresses**: Spec 016 (markdown_converter.md)
 **Priority**: P1
 **Complexity**: MEDIUM (~300 lines, 2 classes)
-**Estimated Time**: 1.5-2 days
+**Completed**: 2026-02-09
 
-**Problem**: Need JATS XML and DOCX conversion via Pandoc.
+**Implementation Summary**:
+- ✅ Created `src/doc_ingest/converters/markdown_converter.py` (362 lines)
+- ✅ Created `tests/test_markdown_converter.py` (29 tests, 100% pass)
+- ✅ Updated `src/doc_ingest/converters/__init__.py` to export both converters
+- ✅ Implemented `JATSPandocConverter` with article/body tag validation
+- ✅ Implemented `DOCXPandocConverter` with ZIP header validation
+- ✅ Pandoc subprocess integration with proper error handling
+- ✅ Quality flags: tables, math, figures, captions, headings
+- ✅ Comprehensive error handling: timeouts, missing binary, conversion failures
+- ✅ All acceptance criteria met and verified via unit tests
 
-**Requirements** (from spec 016):
-- JATSPandocConverter: Convert JATS XML to markdown
-- DOCXPandocConverter: Convert DOCX to markdown
-- Validate for body content in JATS (`<article>`, `<body>` tags)
-- Validate DOCX for binary format (ZIP header magic bytes)
-- Use Pandoc subprocess for conversion
-- Handle Pandoc errors gracefully
+**Key Design Decisions**:
+- JATS validation: regex search for `<article>` and `<body>` tags
+- DOCX validation: check for ZIP magic bytes (b"PK")
+- Temp file cleanup: finally block ensures cleanup even on exception
+- Pandoc timeout: 60 seconds for both JATS and DOCX
+- ConversionError re-raise: avoid double-wrapping typed errors
+- Quality detection: regex-based detection in markdown output
 
-**Implementation Steps**:
-1. Create `src/doc_ingest/converters/markdown_converter.py`
-2. Implement `JATSPandocConverter` class
-3. Implement `DOCXPandocConverter` class
-4. Add JATS body content validation
-5. Add DOCX binary format validation
-6. Add Pandoc subprocess wrapper
-7. Handle Pandoc errors gracefully
-8. Write unit tests with sample files
-9. Add to ConverterRegistry
-
-**Files Created/Modified**:
-- `src/doc_ingest/converters/markdown_converter.py` (new, ~300 lines)
-- `tests/test_markdown_converter.py` (new, ~300 lines)
-- `tests/fixtures/sample.jats.xml`, `tests/fixtures/sample.docx`
-
-**Acceptance Criteria**:
-- Valid JATS XML → ConversionResult
-- JATS missing body → ValidationResult.has_body_content=False
-- Valid DOCX → ConversionResult
-- Pandoc failure → raises ConversionError
-
-**Verified By**:
-- Unit tests: `test_jats_conversion`, `test_docx_conversion`
-
-**Depends On**:
-- ✅ Spec 004, 010, 017
-- External: Pandoc binary installed
+**Test Coverage**:
+- JATS: 15 tests covering validation, conversion, math, figures, error handling
+- DOCX: 14 tests covering validation, conversion, quality flags, error handling
+- All edge cases: Pandoc failures, timeouts, missing binary, unexpected errors
+- 100% pass rate (29/29 tests)
 
 ---
 

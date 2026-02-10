@@ -2,6 +2,7 @@
 
 from doc_ingest.converters.base import Converter
 from doc_ingest.converters.html_converter import ArXivHTMLConverter, PublisherHTMLConverter
+from doc_ingest.converters.markdown_converter import DOCXPandocConverter, JATSPandocConverter
 from doc_ingest.converters.pdf_converter import PyMuPDF4LLMConverter
 from doc_ingest.converters.registry import ConverterRegistry
 
@@ -11,4 +12,6 @@ __all__ = [
     "PyMuPDF4LLMConverter",
     "ArXivHTMLConverter",
     "PublisherHTMLConverter",
+    "JATSPandocConverter",
+    "DOCXPandocConverter",
 ]
