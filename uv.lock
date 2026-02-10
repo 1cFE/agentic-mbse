@@ -25,11 +25,13 @@ name = "agentic-mbse"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "beautifulsoup4" },
     { name = "pydantic" },
     { name = "pymupdf" },
     { name = "pymupdf4llm" },
     { name = "python-dotenv" },
     { name = "pyyaml" },
+    { name = "requests" },
     { name = "syside" },
 ]
 
@@ -60,6 +62,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "docling", marker = "extra == 'extract-full'", specifier = ">=2.0" },
     { name = "gmft", marker = "extra == 'extract-full'", specifier = ">=0.3" },
     { name = "gmft", marker = "extra == 'extract-tables'", specifier = ">=0.3" },
@@ -73,6 +76,7 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0" },
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "pyyaml", specifier = ">=6.0" },
+    { name = "requests", specifier = ">=2.31" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1" },
     { name = "syside", specifier = ">=0.8.4" },
 ]

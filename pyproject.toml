@@ -26,6 +26,8 @@ dependencies = [
     "pyyaml>=6.0",
     "pymupdf>=1.26.7",
     "pymupdf4llm>=0.2.9",
+    "requests>=2.31",
+    "beautifulsoup4>=4.12",
 ]
 
 [project.optional-dependencies]

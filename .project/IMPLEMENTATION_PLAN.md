@@ -9,9 +9,9 @@
 
 ## Executive Summary
 
-**Current State**: CLI + PDF Converter complete (15/17 specs including full pipeline orchestration)
-**Next Milestone**: HTML and Markdown converters (specs 015-016)
-**Critical Path**: Converters → Full Pipeline Testing
+**Current State**: CLI + PDF + HTML Converters complete (16/17 specs including full pipeline orchestration)
+**Next Milestone**: Markdown converters (spec 016)
+**Critical Path**: Final Converter → Full Pipeline Testing
 
 **Technology Stack**: Python 3.11+, UV package manager, pytest, pydantic
 **Verification**: Unit tests + integration tests for each component
@@ -20,7 +20,7 @@
 
 ## Specification Coverage Analysis
 
-### ✅ Completed Specifications (14 specs)
+### ✅ Completed Specifications (15 specs)
 
 | Spec | Component | Implementation | Lines | Tests |
 |------|-----------|----------------|-------|-------|
@@ -44,6 +44,7 @@
 | N/A | ConverterRegistry | `src/doc_ingest/converters/registry.py` | 69 | ✅ |
 | N/A | SourceDiscoverer (stub) | `src/doc_ingest/source_discoverer.py` | 132 | ✅ |
 | **014** | PyMuPDF4LLMConverter | `src/doc_ingest/converters/pdf_converter.py` | 235 | ✅ |
+| **015** | ArXiv/PublisherHTMLConverter | `src/doc_ingest/converters/html_converter.py` | 512 | ✅ |
 
 **Evidence**: All classes found via code search, commits 756155d through [current]
 **Note**: `ExtractionAttempt` dataclass exists in `outcome_classifier.py:17-33`, `DocumentOutcome` literal in `types.py:252`
@@ -53,6 +54,16 @@
 *None currently in progress*
 
 ### ✅ Recently Completed
+
+**TASK-DI-007: HTML Converters Implementation** — Completed 2026-02-09
+- Implemented `ArXivHTMLConverter` and `PublisherHTMLConverter` classes
+- MathML preservation for arXiv HTML (math_preserved=True flag)
+- Paywall detection with 8 common markers
+- Truncation detection (< 1KB threshold)
+- Quality flags: tables, math, figures, captions, heading structure
+- Added beautifulsoup4 dependency
+- 28 comprehensive unit tests covering all acceptance criteria (100% pass rate)
+- Files: `html_converter.py` (512 lines), `test_html_converter.py` (28 tests)
 
 **TASK-DI-006: PDF Converter Implementation** — Completed 2026-02-09
 - Implemented `PyMuPDF4LLMConverter` class with full converter interface
@@ -101,10 +112,9 @@
 - 24 unit tests covering validation and command execution (100% pass rate)
 - Files: `cli.py` (328 lines), `doc_ingest_cli.py` (54 lines), `test_doc_ingest_cli.py` (24 tests)
 
-### ⏳ Pending Specifications (2 specs)
+### ⏳ Pending Specifications (1 spec)
 
 **Converters (P1 - Format Support):**
-- **Spec 015**: HTML Converters (ArXivHTMLConverter, PublisherHTMLConverter) — Parse structured HTML
 - **Spec 016**: Markdown Converters (JATSPandocConverter, DOCXPandocConverter) — Pandoc-based conversion
 
 ---
@@ -293,47 +303,39 @@
 
 ---
 
-#### TASK-DI-007: HTML Converters Implementation
+#### [DONE] TASK-DI-007: HTML Converters Implementation
 **Addresses**: Spec 015 (html_converter.md)
 **Priority**: P1
 **Complexity**: MEDIUM (~300 lines, 2 classes)
-**Estimated Time**: 1.5-2 days
+**Completed**: 2026-02-09
 
-**Problem**: Need ArXiv and Publisher HTML extraction with paywall detection.
+**Implementation Summary**:
+- ✅ Created `src/doc_ingest/converters/html_converter.py` (512 lines)
+- ✅ Created `tests/test_html_converter.py` (28 tests, 100% pass)
+- ✅ Updated `src/doc_ingest/converters/__init__.py` to export both converters
+- ✅ Added `beautifulsoup4>=4.12` dependency to `pyproject.toml`
+- ✅ Implemented `ArXivHTMLConverter` with MathML preservation
+- ✅ Implemented `PublisherHTMLConverter` with paywall detection
+- ✅ Truncation detection (< 1KB threshold)
+- ✅ Paywall detection (8 common markers: "login required", "access denied", etc.)
+- ✅ Body content validation for both converter types
+- ✅ Quality flags: tables, math, figures, captions, headings
+- ✅ All acceptance criteria met and verified via unit tests
 
-**Requirements** (from spec 015):
-- ArXivHTMLConverter: Parse arXiv HTML5 with MathML preservation
-- PublisherHTMLConverter: Parse publisher HTML with paywall detection
-- Detect paywalls, truncation, missing body content
-- Return ValidationResult with is_paywall, is_truncated flags
-- Preserve MathML in arXiv (set `quality_flags.has_math=True`, `math_preserved=True`)
+**Key Design Decisions**:
+- BeautifulSoup HTML parser used for both converters (permissive parsing)
+- ArXiv: searches for `ltx_page_content` class or article/section tags
+- Publisher: searches for article/main/section elements with class patterns
+- MathML detection via `<math>` tags (ArXiv), math_preserved flag set to True
+- Publisher math detected but math_preserved=False (varies by publisher)
+- Markdown table extraction via pipe syntax with header separators
+- Heading structure detection via `h1-h6` tags
 
-**Implementation Steps**:
-1. Create `src/doc_ingest/converters/html_converter.py`
-2. Implement `ArXivHTMLConverter` class
-3. Implement `PublisherHTMLConverter` class
-4. Add paywall detection (common markers: "access-denied", "subscribe")
-5. Add truncation detection (content_length < 1KB)
-6. Add body content detection
-7. Add MathML preservation logic for arXiv
-8. Write unit tests with mock HTML
-9. Add to ConverterRegistry
-
-**Files Created/Modified**:
-- `src/doc_ingest/converters/html_converter.py` (new, ~300 lines)
-- `tests/test_html_converter.py` (new, ~350 lines)
-
-**Acceptance Criteria**:
-- Valid ArXiv HTML → ConversionResult with MathML preserved
-- Publisher HTML with paywall → ValidationResult.is_paywall=True
-- Truncated response → ValidationResult.is_truncated=True
-- Missing body → ValidationResult.has_body_content=False
-
-**Verified By**:
-- Unit tests: `test_arxiv_html`, `test_paywall_detection`, `test_truncation`
-
-**Depends On**:
-- ✅ Spec 004, 010, 017
+**Test Coverage**:
+- ArXiv: 12 tests covering validation, conversion, MathML, tables, figures, errors
+- Publisher: 16 tests covering validation, paywall detection, conversion, quality flags
+- All edge cases: truncation, invalid HTML, missing content, empty extraction
+- 100% pass rate (28/28 tests)
 
 ---
 
