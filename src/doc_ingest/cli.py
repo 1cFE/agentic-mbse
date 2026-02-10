@@ -12,7 +12,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
-from doc_ingest.converters.registry import ConverterRegistry
+from doc_ingest.converters import (
+    ArXivHTMLConverter,
+    ConverterRegistry,
+    DOCXPandocConverter,
+    JATSPandocConverter,
+    PublisherHTMLConverter,
+    PyMuPDF4LLMConverter,
+)
 from doc_ingest.discovery_cache import DiscoveryCache
 from doc_ingest.extraction_orchestrator import ExtractionOrchestrator
 from doc_ingest.outcome_classifier import OutcomeClassifier
@@ -203,6 +210,11 @@ def create_pipeline(
     discoverer = SourceDiscoverer(cache=cache)
     fetcher = WebFetcher()
     registry = ConverterRegistry()
+    registry.register("pdf", PyMuPDF4LLMConverter())
+    registry.register("jats_xml", JATSPandocConverter())
+    registry.register("arxiv_html", ArXivHTMLConverter())
+    registry.register("publisher_html", PublisherHTMLConverter())
+    registry.register("docx", DOCXPandocConverter())
     orchestrator = ExtractionOrchestrator(registry=registry)
     classifier = OutcomeClassifier()
     provenance_manager = ProvenanceManager()

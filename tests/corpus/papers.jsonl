@@ -1,0 +1,5 @@
+{"slug": "hawker_2020", "pdf_path": "tests/corpus/pdfs/hawker_2020.pdf", "source": "fusion-tea", "has_tables": false, "has_math": true, "pages": 14}
+{"slug": "aries_cost_account", "pdf_path": "tests/corpus/pdfs/aries_cost_account.pdf", "source": "fusion-tea", "has_tables": true, "has_math": false, "pages": 100}
+{"slug": "helios_design", "pdf_path": "tests/corpus/pdfs/helios_design.pdf", "source": "fusion-tea", "has_tables": true, "has_math": true, "pages": 30}
+{"slug": "hsu_2020", "pdf_path": "tests/corpus/pdfs/hsu_2020.pdf", "source": "fusion-tea", "has_tables": true, "has_math": false, "pages": 9}
+{"slug": "delene_2001", "pdf_path": "tests/corpus/pdfs/delene_2001.pdf", "source": "fusion-tea", "has_tables": false, "has_math": false, "pages": 39}
