@@ -1,6 +1,19 @@
 """Core data model types for document ingestion."""
 
 from dataclasses import dataclass
+from typing import Literal
+
+# Source format types
+SourceFormat = Literal["jats_xml", "arxiv_html", "publisher_html", "pdf", "docx"]
+
+# Quality tier mapping (lower number = better quality)
+QUALITY_TIERS: dict[SourceFormat, int] = {
+    "jats_xml": 1,  # Structured XML, semantic tags, tables preserved
+    "arxiv_html": 2,  # HTML5 with MathML, clean structure
+    "publisher_html": 3,  # Varies by publisher, often good tables
+    "pdf": 4,  # Visual rendering, table/heading detection fragile
+    "docx": 5,  # Legacy, rare in academic corpus
+}
 
 
 @dataclass
@@ -79,3 +92,44 @@ class DocumentIdentifiers:
         """
         id_type, id_value = self.primary_identifier()
         return f"{id_type}:{id_value}"
+
+
+@dataclass(order=True)
+class SourceCandidate:
+    """A candidate source for document extraction.
+
+    Represents a discovered source with format type, location, quality ranking,
+    and discovery provenance. Sources are sortable by quality tier for deterministic
+    prioritization (lower tier = better quality).
+
+    Exactly one of url or local_path must be present (mutually exclusive).
+    """
+
+    # Primary sort key (lower = better quality)
+    quality_tier: int
+
+    # Secondary sort key for deterministic ordering within same tier
+    # Using url if present, else local_path
+    _sort_key: str = ""
+
+    # Source identification
+    format: SourceFormat = "pdf"
+    url: str | None = None
+    local_path: str | None = None
+    discovered_via: str = "unknown"
+
+    # Optional metadata from discovery
+    http_content_type: str | None = None
+    publisher: str | None = None
+    license: str | None = None
+
+    def __post_init__(self) -> None:
+        """Validate location and set sort key."""
+        # Validate exactly one of url or local_path
+        if self.url is None and self.local_path is None:
+            raise ValueError("Either url or local_path must be provided")
+        if self.url is not None and self.local_path is not None:
+            raise ValueError("url and local_path are mutually exclusive")
+
+        # Set sort key for secondary sorting (url preferred, fallback to local_path)
+        self._sort_key = self.url if self.url is not None else (self.local_path or "")
