@@ -1,11 +1,11 @@
-"""Unit tests for SourceDiscoverer stub implementation."""
+"""Unit tests for SourceDiscoverer with OpenAlex integration."""
 
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
 from doc_ingest.source_discoverer import SourceDiscoverer
-from doc_ingest.types import DocumentIdentifiers
+from doc_ingest.types import DocumentIdentifiers, SourceCandidate
 
 
 @pytest.fixture
@@ -56,19 +56,27 @@ def test_discover_local_file_not_found(discoverer, tmp_path):
     assert "not found" in errors[0].lower()
 
 
-def test_discover_doi_returns_stub_sources(discoverer):
-    """Test DOI discovery returns stubbed sources."""
+def test_discover_doi_queries_openalex(discoverer):
+    """Test DOI discovery queries OpenAlex API."""
     # Arrange
     identifiers = DocumentIdentifiers(doi="10.1234/test")
+    mock_sources = [
+        SourceCandidate(
+            quality_tier=4,
+            format="pdf",
+            url="https://example.com/paper.pdf",
+            discovered_via="openalex:open_access.oa_url",
+        )
+    ]
 
     # Act
-    sources, errors = discoverer.discover(identifiers)
+    with patch.object(discoverer._openalex_client, "query", return_value=(mock_sources, [])):
+        sources, errors = discoverer.discover(identifiers)
 
     # Assert
-    assert len(sources) >= 2  # At least JATS and PDF
-    assert any(s.format == "jats_xml" for s in sources)
+    assert len(sources) >= 1
     assert any(s.format == "pdf" for s in sources)
-    assert all(s.discovered_via == "stub_api" for s in sources)
+    assert any(s.discovered_via.startswith("openalex:") for s in sources)
     assert len(errors) == 0
 
 
@@ -105,9 +113,18 @@ def test_discover_caches_result(discoverer, mock_cache):
     """Test discovery result is cached."""
     # Arrange
     identifiers = DocumentIdentifiers(doi="10.1234/test")
+    mock_sources = [
+        SourceCandidate(
+            quality_tier=4,
+            format="pdf",
+            url="https://example.com/paper.pdf",
+            discovered_via="openalex:open_access.oa_url",
+        )
+    ]
 
     # Act
-    sources, errors = discoverer.discover(identifiers)
+    with patch.object(discoverer._openalex_client, "query", return_value=(mock_sources, [])):
+        sources, errors = discoverer.discover(identifiers)
 
     # Assert
     # Verify cache.put was called with the sources
@@ -198,11 +215,39 @@ def test_discover_primary_identifier_used_for_cache_key(discoverer, mock_cache):
     """Test primary identifier is used for cache key."""
     # Arrange
     identifiers = DocumentIdentifiers(doi="10.1234/test", arxiv_id="1234.5678")
+    mock_sources = [
+        SourceCandidate(
+            quality_tier=4,
+            format="pdf",
+            url="https://example.com/paper.pdf",
+            discovered_via="openalex:open_access.oa_url",
+        )
+    ]
 
     # Act
-    sources, errors = discoverer.discover(identifiers)
+    with patch.object(discoverer._openalex_client, "query", return_value=(mock_sources, [])):
+        sources, errors = discoverer.discover(identifiers)
 
     # Assert
     # DOI has higher priority, so cache key should be "doi:10.1234/test"
     cache_key = mock_cache.get.call_args[0][0]
     assert cache_key == "doi:10.1234/test"
+
+
+def test_discover_doi_propagates_openalex_errors(discoverer):
+    """Test OpenAlex API errors are propagated in discovery errors."""
+    # Arrange
+    identifiers = DocumentIdentifiers(doi="10.9999/nonexistent")
+
+    # Act
+    with patch.object(
+        discoverer._openalex_client,
+        "query",
+        return_value=([], ["DOI not found in OpenAlex: 10.9999/nonexistent"]),
+    ):
+        sources, errors = discoverer.discover(identifiers)
+
+    # Assert
+    assert len(sources) == 0
+    assert len(errors) == 1
+    assert "not found" in errors[0].lower()

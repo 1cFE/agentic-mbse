@@ -1,12 +1,14 @@
 """Source discovery for document extraction.
 
-Minimal stub implementation of SourceDiscoverer for MVP. Provides basic discovery
-for local files and stubbed discovery for identifiers. Full API integration with
-OpenAlex, arXiv, and PMC APIs deferred to post-MVP.
+Discovers source candidates for documents using:
+- Local filesystem for direct file paths
+- OpenAlex API for DOI-based discovery
+- arXiv and PMC APIs (future: stubbed for now)
 """
 
 from pathlib import Path
 
+from doc_ingest.api_clients.openalex import OpenAlexClient
 from doc_ingest.discovery_cache import DiscoveryCache
 from doc_ingest.types import DocumentIdentifiers, SourceCandidate
 
@@ -14,27 +16,35 @@ from doc_ingest.types import DocumentIdentifiers, SourceCandidate
 class SourceDiscoverer:
     """Discover source candidates for document extraction.
 
-    Stub implementation that handles:
+    Discovers sources from multiple channels:
     - Local file paths → single SourceCandidate with local_path
-    - DOI/arXiv/PMC identifiers → stubbed mock sources for testing
+    - DOI → OpenAlex API (returns PDFs, publisher pages, PMC links)
+    - arXiv ID → stubbed (future: arXiv HTML + PDF)
+    - PMC ID → stubbed (future: JATS XML)
 
-    Full API integration with OpenAlex, arXiv, and PMC is deferred to post-MVP.
+    All discovered sources are cached to avoid redundant API calls.
     """
 
     def __init__(self, cache: DiscoveryCache) -> None:
-        """Initialize discoverer with discovery cache.
+        """Initialize discoverer with discovery cache and API clients.
 
         Args:
             cache: DiscoveryCache instance for caching discovered sources
         """
         self._cache = cache
+        self._openalex_client = OpenAlexClient()
 
     def discover(self, identifiers: DocumentIdentifiers) -> tuple[list[SourceCandidate], list[str]]:
         """Resolve identifiers to ranked source candidates.
 
         Returns cached sources if available, otherwise performs discovery and caches
-        the result. For MVP, only supports local file discovery; API discovery is
-        stubbed with mock sources.
+        the result. Discovery strategy:
+        1. Check cache first (avoid redundant API calls)
+        2. Discover from local filesystem (if local_path provided)
+        3. Discover from OpenAlex API (if DOI provided)
+        4. Discover from arXiv API (if arxiv_id provided) - stubbed
+        5. Discover from PMC API (if pmc_id provided) - stubbed
+        6. Sort by quality tier and cache result
 
         Args:
             identifiers: Document identifiers to resolve
@@ -82,26 +92,11 @@ class SourceDiscoverer:
             else:
                 errors.append(f"Local file not found: {identifiers.local_path}")
 
-        # Stubbed API discovery for identifiers
-        # For MVP, create mock sources to enable testing
+        # OpenAlex API discovery for DOIs
         if identifiers.doi is not None:
-            # Mock JATS XML source for DOI
-            sources.append(
-                SourceCandidate(
-                    quality_tier=1,
-                    format="jats_xml",
-                    url=f"https://api.stub/jats/{identifiers.doi}",
-                    discovered_via="stub_api",
-                )
-            )
-            sources.append(
-                SourceCandidate(
-                    quality_tier=4,
-                    format="pdf",
-                    url=f"https://api.stub/pdf/{identifiers.doi}",
-                    discovered_via="stub_api",
-                )
-            )
+            openalex_sources, openalex_errors = self._openalex_client.query(identifiers.doi)
+            sources.extend(openalex_sources)
+            errors.extend(openalex_errors)
 
         if identifiers.arxiv_id is not None:
             # Mock arXiv HTML source

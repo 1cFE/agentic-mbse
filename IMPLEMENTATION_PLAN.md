@@ -1,7 +1,7 @@
 # Document Ingestion Implementation Plan
 
 **Last Updated**: 2026-02-09
-**Status**: Phase 3 STARTED — SD-001 complete (API validation), ready for SD-002 (OpenAlex integration)
+**Status**: Phase 3 IN PROGRESS — SD-001, SD-002 complete (OpenAlex integrated), ready for SD-003 (arXiv API)
 
 ---
 
@@ -303,35 +303,66 @@ class ExtractionMetrics:
 
 ---
 
-### TASK-SD-002: Implement OpenAlex API integration
+### [DONE] TASK-SD-002: Implement OpenAlex API integration
 
-**Files to modify**:
-- `src/doc_ingest/source_discoverer.py`
+**Implementation completed**: 2026-02-09
 
-**Files to create**:
-- `src/doc_ingest/api_clients/openalex.py` (optional, could inline in discoverer)
+**Changes made**:
+1. Created `src/doc_ingest/api_clients/openalex.py`:
+   - `OpenAlexClient.query()` method that queries OpenAlex API for DOI sources
+   - Parses multiple response fields: `open_access.oa_url`, `primary_location.pdf_url`, `primary_location.landing_page_url`, `best_oa_location`
+   - Deduplicates PDF URLs across different response fields
+   - Skips DOI resolver landing pages (e.g., https://doi.org/...)
+   - Implements 100ms rate limiting delay between requests
+   - Includes polite User-Agent header
+   - Handles HTTP errors (404, 500, network failures) gracefully
+   - Returns sources sorted by quality tier
 
-**Requirements**:
-- Implement `OpenAlexClient.query(doi: str) → list[SourceCandidate]`
-- Parse OpenAlex response:
-  - `open_access.oa_url` (primary structured source)
-  - `primary_location.landing_page_url` (publisher page)
-  - `host_venue.url` (journal homepage)
-  - `best_oa_location` (fallback)
-- Return sources sorted by quality tier (JATS XML=1, HTML=3, PDF=4)
-- Handle API errors gracefully (return empty list + error message)
-- Add 100ms delay between API calls (rate limiting courtesy)
-- Cache results via existing `DiscoveryCache`
+2. Modified `src/doc_ingest/source_discoverer.py`:
+   - Replaced stub DOI discovery with real OpenAlex API integration
+   - Initializes `OpenAlexClient` in constructor
+   - Propagates OpenAlex errors to discovery errors list
+   - Maintains existing caching behavior via `DiscoveryCache`
 
-**Verification**:
-```python
-result = discoverer.discover(DocumentIdentifiers(doi="10.1098/rsta.2020.0053"))
-assert len(result.sources) > 0
-assert result.sources[0].quality_tier <= 4  # At least PDF
-```
+3. Created `tests/test_openalex_client.py`:
+   - 15 comprehensive tests covering:
+     - Successful queries and error handling
+     - Rate limiting behavior
+     - Response parsing for all fields
+     - Deduplication logic
+     - License metadata preservation
+     - API endpoint construction
+     - User-Agent header and timeout
 
-**Size**: ~150 LOC in 1-2 files
-**Dependencies**: TASK-SD-001
+4. Updated `tests/test_source_discoverer.py`:
+   - Modified 3 existing tests to mock OpenAlex client
+   - Added 1 new test for error propagation
+   - All 13 discoverer tests pass
+
+**Test results**:
+- ✅ 15 new OpenAlex client tests pass
+- ✅ 13 updated discoverer tests pass
+- ✅ All 127 doc_ingest tests pass
+- ✅ Mypy type checking passes (0 errors in new code)
+- ✅ Ruff linting and formatting passes
+
+**API integration details**:
+- Endpoint: `https://api.openalex.org/works/doi:{doi}`
+- Rate limit: 100K requests/day (free tier, very generous)
+- Timeout: 10 seconds
+- Rate limiting: 100ms delay between requests (courtesy)
+- Error handling: 404 → "DOI not found", other errors → graceful fallback
+
+**Quality tier mappings**:
+- Tier 3: Publisher HTML (from `landing_page_url`)
+- Tier 4: PDF (from `oa_url`, `pdf_url`, or `best_oa_location`)
+
+**Known limitations**:
+- Does not yet extract PMC IDs from OpenAlex response (deferred to TASK-SD-004)
+- Publisher HTML sources may not always have structured full text (requires validation at conversion time)
+
+**Size**: 167 LOC (openalex.py), 289 LOC (test_openalex_client.py), ~50 LOC modified (source_discoverer.py + tests)
+**Dependencies**: TASK-SD-001 ✅
 **Blocks**: TASK-SD-003
 
 ---

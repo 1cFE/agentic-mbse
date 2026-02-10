@@ -2,7 +2,7 @@
 
 ## Status (2026-02-09)
 
-**State: Phase 2 COMPLETE. Layers 1+2 wired. Tables exceed baseline. Ready for Phase 3 (Source Discovery).**
+**State: Phase 3 IN PROGRESS. OpenAlex API integrated. arXiv/PMC next.**
 
 ### What Works
 - ✅ Test harness: 5 papers with baseline metrics, test runner, comparison report
@@ -12,7 +12,8 @@
 - ✅ Layer 1 extraction: pymupdf_backend + postprocess wired into PDF converter
 - ✅ Layer 2 extraction: GMFT table enhancement integrated (optional, graceful skip if not installed)
 - ✅ Table extraction: 143 (EXCEEDS 137 baseline!), 29=29, 56=56 - perfect or better
-- ✅ 196 unit tests passing + 4 corpus tests (skipped by default)
+- ✅ OpenAlex API: Real DOI discovery with quality-tier routing
+- ✅ 211 unit tests passing + 4 corpus tests (skipped by default)
 
 ### What's Improved
 - **Tables**: aries_cost_account (137→143, +6!), helios_design (29→29), hsu_2020 (56→56) - AT OR ABOVE baseline
@@ -23,12 +24,14 @@
 - **Heading detection**: Some papers still below baseline (aries 102→64, helios 52→7)
 - **Root cause**: Baseline used all 4 layers including Claude structure detection; Layer 1+2 alone can't match that
 - **Solution path**: Layer 3 (Claude structure repair) deferred - heading gap acceptable for Phase 2 objectives
-- **Source discoverer**: Still a stub (returns mock sources for DOIs)
+- **arXiv/PMC discovery**: Still stubbed (OpenAlex now works)
 
-### Current Work: Phase 2 Complete → Starting Phase 3
+### Current Work: Phase 3 In Progress
 - ✅ TASK-WP-001: Layer 1 (pymupdf_backend + postprocess) - DONE
 - ✅ TASK-WP-002: Layer 2 (GMFT table enhancement) - DONE
-- Next: Phase 3 - Real Source Discovery (OpenAlex, arXiv, PMC API integration)
+- ✅ TASK-SD-001: API validation - DONE
+- ✅ TASK-SD-002: OpenAlex API integration - DONE
+- Next: TASK-SD-003 (arXiv API), TASK-SD-004 (PMC API)
 
 ### Critical Rule
 **Every change must be measured against real documents. Run the test harness before and after. No mocked quality tests.**
@@ -113,3 +116,7 @@ src/agentic_mbse/extraction/   # Proven extraction pipeline (existing)
 **Plain header regex**: `_PLAIN_HEADER_RE` in postprocess.py must handle trailing periods (e.g., "1. Introduction" not just "1 Introduction"). Pattern needs `\.?` after section number: `(\d+(?:\.\d+)*)\.?\s+`.
 
 **GMFT integration**: Layer 2 should be optional and graceful. Check `is_gmft_available()` before use. Wrap `enhance_tables()` call in try-except to prevent GMFT failures from breaking entire conversion. GMFT adds ~10-15% processing time but provides insurance for complex table layouts where line-based extraction fails.
+
+**OpenAlex API client**: Rate limiting is built into the client (100ms delay between requests). No need for external throttling. `requests` library is already a dependency. Deduplication of PDF URLs is critical - OpenAlex returns the same PDF in multiple response fields (`oa_url`, `pdf_url`, `best_oa_location`). Skip landing pages that are just DOI resolvers (https://doi.org/...). Publisher HTML sources have quality tier 3 (lower than JATS/arXiv HTML tier 1-2, higher than PDF tier 4).
+
+**Testing API clients**: Mock `requests.get()` with `patch("requests.get")` to avoid real API calls in unit tests. Use real OpenAlex response data from validation for mock responses. Test error cases (404, 500, network failures) separately. Verify timeout is set (prevents hanging on slow networks).
