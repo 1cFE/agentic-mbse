@@ -91,3 +91,5 @@ src/agentic_mbse/extraction/   # Proven extraction pipeline (existing)
 **pymupdf_backend.extract() takes a Path**: The doc_ingest converter receives `bytes`. Must write to temp file first, then call the backend.
 
 **Page markers**: pymupdf_backend emits `<!-- PAGE:N -->` markers. quality_gates.py depends on these. Don't strip them.
+
+**Test corpus setup**: PDFs copied from `../fusion-tea/knowledge/raw/`, baselines from `../fusion-tea/knowledge/sources/{dir}/full_document.md`. The fusion-tea directory structure uses long descriptive names; map to short slugs in `papers.jsonl`.
