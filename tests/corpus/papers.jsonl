@@ -4,3 +4,4 @@
 {"slug": "hsu_2020", "pdf_path": "tests/corpus/pdfs/hsu_2020.pdf", "source": "fusion-tea", "has_tables": true, "has_math": false, "pages": 9, "heading_regression_pct": -50, "heading_note": "2 of 6 baseline headings from Claude Layer 3 detection"}
 {"slug": "delene_2001", "pdf_path": "tests/corpus/pdfs/delene_2001.pdf", "source": "fusion-tea", "has_tables": false, "has_math": false, "pages": 39}
 {"slug": "sparc_overview", "pdf_path": "tests/corpus/pdfs/sparc_overview.pdf", "source": "pool", "has_tables": true, "has_math": true, "pages": 25}
+{"slug": "energy_amplifier", "pdf_path": "tests/corpus/pdfs/energy_amplifier.pdf", "source": "pool", "has_tables": true, "has_math": true, "pages": 241}
