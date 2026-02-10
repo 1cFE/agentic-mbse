@@ -1,7 +1,7 @@
 # Document Ingestion Implementation Plan
 
 **Last Updated**: 2026-02-09
-**Status**: Planning iteration complete — ready to start Phase 1 (Test Harness)
+**Status**: Phase 1 (Test Harness) complete — ready to start Phase 2 (Wire Extraction Pipeline)
 
 ---
 
@@ -22,7 +22,7 @@ This project has **two working halves that need connecting**:
 
 | Spec | Priority | Purpose | Status |
 |------|----------|---------|--------|
-| **00-test-harness.md** | 🔴 FIRST | Real-world test corpus with metrics, baseline comparison | Not started |
+| **00-test-harness.md** | 🔴 FIRST | Real-world test corpus with metrics, baseline comparison | ✅ Complete |
 | **01-wire-existing-pipeline.md** | 🟡 SECOND | Connect extraction layers to PDF converter | Not started |
 | **02-real-source-discovery.md** | 🟢 THIRD | OpenAlex/arXiv/PMC API integration | Not started |
 | **03-fusion-tea-integration.md** | 🔵 LAST | Replace subprocess calls with Python API | Not started |
@@ -104,28 +104,37 @@ class ExtractionMetrics:
 
 ---
 
-### TASK-TH-003: Create comparison report CLI
+### [DONE] TASK-TH-003: Create comparison report CLI
 
-**Files to create**:
+**Files created**:
 - `tests/corpus/compare.py` — Standalone script for human-readable comparison
 
-**Requirements**:
-- Load baseline metrics from `tests/corpus/baseline/{slug}/metrics.json`
-- Compute current metrics from `tests/corpus/current/{slug}/full_document.md`
-- Generate table:
-  ```
-  Document              Headings    Tables      Chars       Time
-                        base→curr   base→curr   base→curr
-  hawker_2020           11→14 (+3)  0→0 (=)     60k→60k     9.3s
-  aries_cost_account    102→66 (-35%) 137→0 (!!!) 286k→263k  22.6s
-  ```
-- Flag regressions: `(!!!)` for >35% loss, `(%)` for quantified loss
-- Section at end: `REGRESSIONS:` listing flagged problems
+**Implementation notes**:
+- Implemented `ComparisonRow` dataclass with formatting methods
+- `format_delta()` handles regression flagging: `(!!!)` for >35% loss or 100% loss
+- `format_chars()` provides compact character count display (60k, 286k)
+- `has_regression()` detects severe quality losses
+- `describe_regressions()` generates human-readable problem descriptions
+- Report includes markdown table with all papers + regressions section
+- Supports both standalone execution (`python3 tests/corpus/compare.py`) and module import
 
-**Verification**: `python tests/corpus/compare.py` produces readable markdown report
+**Verification completed**:
+- ✅ `python3 tests/corpus/compare.py` produces readable markdown report
+- ✅ Report correctly flags regressions (aries_cost_account, helios_design, delene_2001)
+- ✅ Ruff formatting and linting passed
+- ✅ Mypy type checking passed
+- ✅ All doc_ingest tests still pass (113 passed, 4 skipped)
 
-**Size**: ~150 LOC, 1 file
-**Dependencies**: TASK-TH-001, TASK-TH-002
+**Example output**:
+```
+| Document              | Headings      | Tables        | Chars         | Time    |
+|----------------------|---------------|---------------|---------------|---------|
+| hawker_2020          | 11→14 (+3)    | 0→0 (=)       | 60k→59k (~)   | 8.5s    |
+| aries_cost_account   | 102→66 (!!!)  | 137→0 (!!!)   | 285k→262k (-8.2%) | 21.1s   |
+```
+
+**Size**: 289 LOC
+**Dependencies**: TASK-TH-001 ✅, TASK-TH-002 ✅
 **Blocks**: TASK-WP-001
 
 ---
@@ -494,11 +503,11 @@ else:
 
 ## Success Criteria Summary
 
-### Phase 1 (Test Harness) — COMPLETE when:
-- [ ] 5 test papers in corpus with baseline extractions
-- [ ] `pytest tests/test_corpus.py --run-corpus` runs successfully
-- [ ] `python tests/corpus/compare.py` produces readable report
-- [ ] Metrics computation validates against known baseline
+### Phase 1 (Test Harness) — ✅ COMPLETE
+- [x] 5 test papers in corpus with baseline extractions
+- [x] `pytest tests/test_corpus.py --run-corpus` runs successfully
+- [x] `python tests/corpus/compare.py` produces readable report
+- [x] Metrics computation validates against known baseline
 
 ### Phase 2 (Extraction Pipeline) — COMPLETE when:
 - [ ] Step 1 (Backend + Postprocess): Headings match/exceed baseline, chars within 5%
