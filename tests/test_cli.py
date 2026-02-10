@@ -1,4 +1,5 @@
 """Tests for CLI module."""
+
 import shutil
 import subprocess
 import tempfile
@@ -12,6 +13,7 @@ from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
 
 class MockArgs:
     """Mock argparse namespace."""
+
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -58,7 +60,7 @@ package TestPackage {
         """Runs only specified level when --level provided."""
         model_file = tmp_path / "test.sysml"
         model_file.write_text("package Empty {}")
-        
+
         args = MockArgs(
             path=str(tmp_path),
             complete=False,
@@ -74,7 +76,7 @@ class TestCmdInit:
 
     def test_creates_source_index(self, tmp_path):
         """Creates SOURCE_INDEX.md file."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
@@ -85,7 +87,7 @@ class TestCmdInit:
 
     def test_creates_claude_directory(self, tmp_path):
         """Creates .claude/commands/ directory."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
 
         claude_dir = tmp_path / ".claude" / "commands"
@@ -99,7 +101,7 @@ class TestCmdInit:
         source_index = knowledge_dir / "SOURCE_INDEX.md"
         source_index.write_text("existing: content")
 
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         result = cmd_init(args)
 
         # Should succeed (just skip overwriting)
@@ -114,7 +116,7 @@ class TestCmdInit:
         source_index = knowledge_dir / "SOURCE_INDEX.md"
         source_index.write_text("old: content")
 
-        args = MockArgs(path=str(tmp_path), force=True)
+        args = MockArgs(path=str(tmp_path), force=True, no_docling=True)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
@@ -124,7 +126,7 @@ class TestCmdInit:
     def test_uses_current_directory_if_no_path(self, tmp_path, monkeypatch):
         """Uses current directory if no path specified."""
         monkeypatch.chdir(tmp_path)
-        args = MockArgs(path=None, force=False)
+        args = MockArgs(path=None, force=False, no_docling=True)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
@@ -132,7 +134,7 @@ class TestCmdInit:
 
     def test_creates_agents_directory(self, tmp_path):
         """agentic-mbse init creates .claude/agents/ with agent files."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
@@ -143,14 +145,20 @@ class TestCmdInit:
 
     def test_creates_skills_directory(self, tmp_path):
         """agentic-mbse init creates .claude/skills/ with skill subdirs."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
         all_skills = [
-            "epic-decomposition", "model-validation", "project-structure",
-            "python-debugger", "record-learning", "requirements-tracking",
-            "source-traceability", "sysml-conventions", "toolkit-awareness",
+            "epic-decomposition",
+            "model-validation",
+            "project-structure",
+            "python-debugger",
+            "record-learning",
+            "requirements-tracking",
+            "source-traceability",
+            "sysml-conventions",
+            "toolkit-awareness",
         ]
         skills_dir = tmp_path / ".claude" / "skills"
         for skill in all_skills:
@@ -159,7 +167,7 @@ class TestCmdInit:
 
     def test_creates_hooks_directory(self, tmp_path):
         """agentic-mbse init creates .claude/hooks/ with hook scripts."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
@@ -170,7 +178,7 @@ class TestCmdInit:
 
     def test_agent_path_substitution(self, tmp_path):
         """Agent files have documentation paths substituted during install."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
 
         agent_content = (tmp_path / ".claude" / "agents" / "syside-expert.md").read_text()
@@ -181,7 +189,7 @@ class TestCmdInit:
 
     def test_init_creates_tests_models_directory(self, tmp_path):
         """Init creates tests/models/ directory."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
@@ -189,7 +197,7 @@ class TestCmdInit:
 
     def test_init_creates_example_test_file(self, tmp_path):
         """Init creates example test file in tests/models/."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
 
         test_file = tmp_path / "tests" / "models" / "test_example.py"
@@ -198,7 +206,7 @@ class TestCmdInit:
 
     def test_init_creates_conftest(self, tmp_path):
         """Init creates conftest.py in tests/."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
 
         conftest = tmp_path / "tests" / "conftest.py"
@@ -211,7 +219,7 @@ class TestCmdInit:
         test_file.parent.mkdir(parents=True)
         test_file.write_text("# custom tests")
 
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
 
         assert test_file.read_text() == "# custom tests"
@@ -219,7 +227,7 @@ class TestCmdInit:
     def test_force_overwrites_agents(self, tmp_path):
         """--force flag overwrites existing agents."""
         # First init
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
 
         # Modify an agent file
@@ -227,7 +235,7 @@ class TestCmdInit:
         agent_path.write_text("modified content")
 
         # Second init with force
-        args = MockArgs(path=str(tmp_path), force=True)
+        args = MockArgs(path=str(tmp_path), force=True, no_docling=True)
         cmd_init(args)
 
         # Should be overwritten (agents are tool-owned, always updated on re-init)
@@ -311,18 +319,14 @@ class TestMain:
         """Validate subcommand is registered and works."""
         model_file = tmp_path / "test.sysml"
         model_file.write_text("package Test {}")
-        
-        monkeypatch.setattr("sys.argv", [
-            "agentic-mbse", "validate", str(tmp_path)
-        ])
+
+        monkeypatch.setattr("sys.argv", ["agentic-mbse", "validate", str(tmp_path)])
         result = main()
         assert result in [EXIT_SUCCESS, EXIT_FAILURE]
 
     def test_init_subcommand_exists(self, monkeypatch, tmp_path):
         """Init subcommand is registered and works."""
-        monkeypatch.setattr("sys.argv", [
-            "agentic-mbse", "init", str(tmp_path)
-        ])
+        monkeypatch.setattr("sys.argv", ["agentic-mbse", "init", str(tmp_path)])
         result = main()
         assert result == EXIT_SUCCESS
 
@@ -389,7 +393,7 @@ class TestCmdInitDevMode:
 
     def test_dev_creates_symlinks_for_commands(self, tmp_path):
         """--dev creates symlinks for command files."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
@@ -400,7 +404,7 @@ class TestCmdInitDevMode:
 
     def test_dev_creates_symlinks_for_agents(self, tmp_path):
         """--dev creates symlinks for agent files."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
         cmd_init(args)
 
         agent_path = tmp_path / ".claude" / "agents" / "python-debugger.md"
@@ -408,13 +412,19 @@ class TestCmdInitDevMode:
 
     def test_dev_creates_symlinks_for_skills(self, tmp_path):
         """--dev creates symlinks for skill directories."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
         cmd_init(args)
 
         all_skills = [
-            "epic-decomposition", "model-validation", "project-structure",
-            "python-debugger", "record-learning", "requirements-tracking",
-            "source-traceability", "sysml-conventions", "toolkit-awareness",
+            "epic-decomposition",
+            "model-validation",
+            "project-structure",
+            "python-debugger",
+            "record-learning",
+            "requirements-tracking",
+            "source-traceability",
+            "sysml-conventions",
+            "toolkit-awareness",
         ]
         for skill in all_skills:
             skill_path = tmp_path / ".claude" / "skills" / skill
@@ -423,7 +433,7 @@ class TestCmdInitDevMode:
 
     def test_dev_creates_symlinks_for_hooks(self, tmp_path):
         """--dev creates symlinks for hook files."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
         cmd_init(args)
 
         hook_path = tmp_path / ".claude" / "hooks" / "ruff-format.sh"
@@ -431,7 +441,7 @@ class TestCmdInitDevMode:
 
     def test_dev_creates_symlinks_for_tool_templates(self, tmp_path):
         """--dev creates symlinks for tool-owned templates."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
         cmd_init(args)
 
         guide_path = tmp_path / "modeling_project" / "MODELING_GUIDE.md"
@@ -439,7 +449,7 @@ class TestCmdInitDevMode:
 
     def test_dev_copies_user_owned_files(self, tmp_path):
         """--dev still copies (not symlinks) user-owned files."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
         cmd_init(args)
 
         # User-owned files should be regular files, not symlinks
@@ -450,7 +460,7 @@ class TestCmdInitDevMode:
 
     def test_dev_idempotent(self, tmp_path):
         """Running --dev twice succeeds and updates symlinks."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
 
         # First run
         result1 = cmd_init(args)
@@ -467,21 +477,21 @@ class TestCmdInitDevMode:
     def test_dev_replaces_regular_file_with_symlink(self, tmp_path):
         """--dev replaces existing regular files with symlinks."""
         # First init without dev
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, no_docling=True)
         cmd_init(args)
 
         cmd_path = tmp_path / ".claude" / "commands" / "design-model.md"
         assert not cmd_path.is_symlink()  # Regular file
 
         # Second init with dev
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
         cmd_init(args)
 
         assert cmd_path.is_symlink()  # Now a symlink
 
     def test_without_dev_copies_files(self, tmp_path):
         """Init without --dev still copies files (regression test)."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, no_docling=True)
         cmd_init(args)
 
         cmd_path = tmp_path / ".claude" / "commands" / "design-model.md"
@@ -490,11 +500,11 @@ class TestCmdInitDevMode:
 
     @pytest.mark.skipif(
         __import__("platform").system() == "Windows",
-        reason="Windows test not applicable on non-Windows"
+        reason="Windows test not applicable on non-Windows",
     )
     def test_dev_agents_keep_placeholders(self, tmp_path):
         """--dev mode agents are symlinked with placeholders intact."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
         cmd_init(args)
 
         agent_path = tmp_path / ".claude" / "agents" / "syside-expert.md"
@@ -505,7 +515,7 @@ class TestCmdInitDevMode:
 
     def test_dev_updates_gitignore(self, tmp_path):
         """--dev adds tool-owned paths to .gitignore."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
         cmd_init(args)
 
         gitignore_path = tmp_path / ".gitignore"
@@ -522,7 +532,7 @@ class TestCmdInitDevMode:
 
     def test_dev_gitignore_idempotent(self, tmp_path):
         """Running --dev twice doesn't duplicate .gitignore entries."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
 
         # First run
         cmd_init(args)
@@ -541,7 +551,7 @@ class TestCmdInitDevMode:
 
     def test_without_dev_no_gitignore_update(self, tmp_path):
         """Init without --dev doesn't add dev mode paths to .gitignore."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, no_docling=True)
         cmd_init(args)
 
         gitignore_path = tmp_path / ".gitignore"
@@ -560,22 +570,19 @@ class TestHashUtilities:
         test_file.write_text("hello world")
 
         from agentic_mbse.cli import _compute_file_hash
+
         hash1 = _compute_file_hash(test_file)
         hash2 = _compute_file_hash(test_file)
 
         assert hash1 == hash2  # Deterministic
         assert len(hash1) == 64  # SHA256 hex length
-        assert all(c in '0123456789abcdef' for c in hash1)
+        assert all(c in "0123456789abcdef" for c in hash1)
 
     def test_load_save_tool_hashes_roundtrip(self, tmp_path):
         """Hash file can be saved and loaded."""
         from agentic_mbse.cli import _load_tool_hashes, _save_tool_hashes
 
-        hashes = {
-            "version": "1.0.0",
-            "commit": "abc1234",
-            "files": {"test.md": "deadbeef" * 8}
-        }
+        hashes = {"version": "1.0.0", "commit": "abc1234", "files": {"test.md": "deadbeef" * 8}}
         _save_tool_hashes(tmp_path, hashes)
         loaded = _load_tool_hashes(tmp_path)
 
@@ -584,8 +591,8 @@ class TestHashUtilities:
     def test_load_tool_hashes_returns_none_if_missing(self, tmp_path):
         """Returns None if hash file doesn't exist."""
         from agentic_mbse.cli import _load_tool_hashes
-        assert _load_tool_hashes(tmp_path) is None
 
+        assert _load_tool_hashes(tmp_path) is None
 
 
 class TestModificationDetection:
@@ -683,42 +690,47 @@ class TestPromptForModifiedFile:
     def test_prompt_returns_skip(self, monkeypatch):
         """Returns 'skip' when user enters 's'."""
         from agentic_mbse.cli import _prompt_for_modified_file
-        monkeypatch.setattr('builtins.input', lambda _: 's')
+
+        monkeypatch.setattr("builtins.input", lambda _: "s")
 
         result = _prompt_for_modified_file("test.md")
-        assert result == 'skip'
+        assert result == "skip"
 
     def test_prompt_returns_backup(self, monkeypatch):
         """Returns 'backup' when user enters 'b'."""
         from agentic_mbse.cli import _prompt_for_modified_file
-        monkeypatch.setattr('builtins.input', lambda _: 'b')
+
+        monkeypatch.setattr("builtins.input", lambda _: "b")
 
         result = _prompt_for_modified_file("test.md")
-        assert result == 'backup'
+        assert result == "backup"
 
     def test_prompt_returns_overwrite(self, monkeypatch):
         """Returns 'overwrite' when user enters 'o'."""
         from agentic_mbse.cli import _prompt_for_modified_file
-        monkeypatch.setattr('builtins.input', lambda _: 'o')
+
+        monkeypatch.setattr("builtins.input", lambda _: "o")
 
         result = _prompt_for_modified_file("test.md")
-        assert result == 'overwrite'
+        assert result == "overwrite"
 
     def test_prompt_returns_skip_all(self, monkeypatch):
         """Returns 'skip_all' when user enters 'S'."""
         from agentic_mbse.cli import _prompt_for_modified_file
-        monkeypatch.setattr('builtins.input', lambda _: 'S')
+
+        monkeypatch.setattr("builtins.input", lambda _: "S")
 
         result = _prompt_for_modified_file("test.md")
-        assert result == 'skip_all'
+        assert result == "skip_all"
 
     def test_prompt_returns_overwrite_all(self, monkeypatch):
         """Returns 'overwrite_all' when user enters 'O'."""
         from agentic_mbse.cli import _prompt_for_modified_file
-        monkeypatch.setattr('builtins.input', lambda _: 'O')
+
+        monkeypatch.setattr("builtins.input", lambda _: "O")
 
         result = _prompt_for_modified_file("test.md")
-        assert result == 'overwrite_all'
+        assert result == "overwrite_all"
 
 
 class TestInstallFileWithHash:
@@ -760,8 +772,7 @@ class TestInstallFileWithHash:
         dst.write_text("old content")
 
         action, content_hash = _install_file_with_hash(
-            src, dst, is_dev_mode=False,
-            was_modified=True, user_action='skip'
+            src, dst, is_dev_mode=False, was_modified=True, user_action="skip"
         )
 
         assert action == "skipped"
@@ -778,8 +789,7 @@ class TestInstallFileWithHash:
         dst.write_text("old content")
 
         action, content_hash = _install_file_with_hash(
-            src, dst, is_dev_mode=False,
-            was_modified=True, user_action='backup'
+            src, dst, is_dev_mode=False, was_modified=True, user_action="backup"
         )
 
         assert action == "backed_up_and_updated"
@@ -792,13 +802,14 @@ class TestModificationDetectionIntegration:
 
     def test_init_creates_hash_file(self, tmp_path):
         """Normal mode init creates .tool-hashes.json."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, no_docling=True)
         cmd_init(args)
 
         hash_file = tmp_path / ".claude" / ".tool-hashes.json"
         assert hash_file.exists()
 
         import json
+
         hashes = json.loads(hash_file.read_text())
         assert "version" in hashes
         assert "commit" in hashes
@@ -807,7 +818,7 @@ class TestModificationDetectionIntegration:
 
     def test_dev_mode_no_hash_file(self, tmp_path):
         """Dev mode does not create hash file."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        args = MockArgs(path=str(tmp_path), force=False, dev=True, no_docling=True)
         cmd_init(args)
 
         hash_file = tmp_path / ".claude" / ".tool-hashes.json"
@@ -817,13 +828,15 @@ class TestModificationDetectionIntegration:
         """Re-init without modifications doesn't prompt."""
         # Track if input() was called
         input_called = []
+
         def fake_input(prompt):
             input_called.append(prompt)
-            return 'o'
-        monkeypatch.setattr('builtins.input', fake_input)
+            return "o"
+
+        monkeypatch.setattr("builtins.input", fake_input)
 
         # First init
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, no_docling=True)
         cmd_init(args)
 
         # Re-init without modifying anything
@@ -834,7 +847,7 @@ class TestModificationDetectionIntegration:
     def test_reinit_with_modification_prompts(self, tmp_path, monkeypatch):
         """Re-init with modification prompts user."""
         # First init
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, no_docling=True)
         cmd_init(args)
 
         # Modify a tool-owned file
@@ -843,10 +856,12 @@ class TestModificationDetectionIntegration:
 
         # Track prompts
         prompted_files = []
+
         def fake_input(prompt):
             prompted_files.append(prompt)
-            return 's'  # Skip
-        monkeypatch.setattr('builtins.input', fake_input)
+            return "s"  # Skip
+
+        monkeypatch.setattr("builtins.input", fake_input)
 
         # Re-init
         cmd_init(args)
@@ -857,7 +872,7 @@ class TestModificationDetectionIntegration:
     def test_force_flag_skips_prompts(self, tmp_path, monkeypatch):
         """--force overwrites without prompting."""
         # First init
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, no_docling=True)
         cmd_init(args)
 
         # Modify
@@ -866,10 +881,10 @@ class TestModificationDetectionIntegration:
 
         # Track if prompted
         prompted = []
-        monkeypatch.setattr('builtins.input', lambda _: prompted.append(1) or 'o')
+        monkeypatch.setattr("builtins.input", lambda _: prompted.append(1) or "o")
 
         # Re-init with force
-        args = MockArgs(path=str(tmp_path), force=True, dev=False)
+        args = MockArgs(path=str(tmp_path), force=True, dev=False, no_docling=True)
         cmd_init(args)
 
         assert len(prompted) == 0
@@ -877,7 +892,7 @@ class TestModificationDetectionIntegration:
 
     def test_hash_file_in_gitignore(self, tmp_path):
         """Hash file path added to generated .gitignore."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, no_docling=True)
         cmd_init(args)
 
         gitignore = tmp_path / ".gitignore"
@@ -890,43 +905,43 @@ class TestNewTemplates:
 
     def test_init_creates_knowledge_registry(self, tmp_path):
         """Init creates KNOWLEDGE.md in knowledge/."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
         assert (tmp_path / "knowledge" / "KNOWLEDGE.md").exists()
 
     def test_init_creates_architecture(self, tmp_path):
         """Init creates ARCHITECTURE.md in modeling_project/."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
         assert (tmp_path / "modeling_project" / "ARCHITECTURE.md").exists()
 
     def test_init_creates_requirements(self, tmp_path):
         """Init creates REQUIREMENTS.md in modeling_project/."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
         assert (tmp_path / "modeling_project" / "REQUIREMENTS.md").exists()
 
     def test_init_creates_validation_matrix(self, tmp_path):
         """Init creates VALIDATION_MATRIX.md in modeling_project/."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
         assert (tmp_path / "modeling_project" / "VALIDATION_MATRIX.md").exists()
 
     def test_init_creates_epic_guide(self, tmp_path):
         """Init creates EPIC_GUIDE.md in work/ (tool-owned)."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
         assert (tmp_path / "work" / "EPIC_GUIDE.md").exists()
 
     def test_init_creates_epic_template(self, tmp_path):
         """Init creates epic_template.md in work/backlog/."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
         assert (tmp_path / "work" / "backlog" / "epic_template.md").exists()
 
     def test_user_owned_templates_skipped_on_reinit(self, tmp_path):
         """User-owned new templates are preserved on re-init."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
 
         # Modify a user-owned template
@@ -939,7 +954,7 @@ class TestNewTemplates:
 
     def test_tool_owned_templates_updated_on_reinit_without_force(self, tmp_path):
         """Tool-owned templates are silently updated on re-init when unmodified."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, no_docling=True)
         cmd_init(args)
 
         # Read the original content and hash
@@ -956,7 +971,7 @@ class TestNewTemplates:
 
     def test_tool_owned_templates_force_overwrites_modified(self, tmp_path):
         """--force overwrites modified tool-owned templates without prompting."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, no_docling=True)
         cmd_init(args)
 
         # Modify a tool-owned template
@@ -964,7 +979,7 @@ class TestNewTemplates:
         epic_guide.write_text("# Modified")
 
         # Re-init with force
-        args_force = MockArgs(path=str(tmp_path), force=True, dev=False)
+        args_force = MockArgs(path=str(tmp_path), force=True, dev=False, no_docling=True)
         cmd_init(args_force)
         assert epic_guide.read_text() != "# Modified"
 
@@ -974,7 +989,7 @@ class TestDataTemplates:
 
     def test_init_creates_traceability_csv(self, tmp_path):
         """Init creates traceability_matrix.csv in data/."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
         csv_path = tmp_path / "data" / "traceability_matrix.csv"
         assert csv_path.exists()
@@ -984,7 +999,7 @@ class TestDataTemplates:
 
     def test_csv_skipped_on_reinit(self, tmp_path):
         """CSV is user-owned, skipped on re-init."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
 
         csv_path = tmp_path / "data" / "traceability_matrix.csv"
@@ -999,7 +1014,7 @@ class TestDirectoryStructure:
 
     def test_init_creates_full_directory_structure(self, tmp_path):
         """Init creates all expected directories."""
-        args = MockArgs(path=str(tmp_path), force=False)
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
         cmd_init(args)
         expected_dirs = [
             "knowledge",
@@ -1021,3 +1036,146 @@ class TestDirectoryStructure:
         ]
         for d in expected_dirs:
             assert (tmp_path / d).is_dir(), f"Missing directory: {d}"
+
+
+class TestDoclingSetup:
+    """Tests for Docling MCP setup functions."""
+
+    def test_read_docling_tier_parses_env_report(self, tmp_path, monkeypatch):
+        """_read_docling_tier() correctly parses tier from environment report."""
+        from agentic_mbse.cli import _read_docling_tier
+
+        # Mock home directory
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+        # Create mock environment report
+        env_report = tmp_path / ".docling-mcp-env.md"
+        env_report.write_text("""
+# Docling MCP Environment Report
+
+System Resources:
+- RAM: 16GB
+- Tier: **moderate**
+- GPU: none
+""")
+
+        tier = _read_docling_tier()
+        assert tier == "moderate"
+
+    def test_read_docling_tier_returns_none_if_not_found(self, tmp_path, monkeypatch):
+        """_read_docling_tier() returns None if file doesn't exist."""
+        from agentic_mbse.cli import _read_docling_tier
+
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        tier = _read_docling_tier()
+        assert tier is None
+
+    def test_patch_skill_for_tier_removes_docling_sections(self, tmp_path):
+        """_patch_skill_for_tier(None) removes Docling content."""
+        from agentic_mbse.cli import _patch_skill_for_tier
+
+        skill_dir = tmp_path / "pdf-analysis"
+        skill_dir.mkdir()
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text("""---
+description: 3-tier pipeline (pymupdf4llm → Docling MCP → image fallback)
+---
+
+<!-- TIER_HINT_START -->
+**System tier: {DOCLING_TIER} — Max {MAX_PAGES} pages per Docling call.**
+<!-- TIER_HINT_END -->
+
+### Tier 1: Fast extraction
+
+<!-- DOCLING_START -->
+### Tier 2: Docling MCP
+Use mcp__docling__* tools.
+<!-- DOCLING_END -->
+
+### Tier 3: Image fallback
+""")
+
+        _patch_skill_for_tier(skill_dir, None)
+
+        content = skill_md.read_text()
+        assert "Docling MCP" not in content
+        assert "mcp__docling__" not in content
+        assert "{DOCLING_TIER}" not in content
+        assert "2-tier pipeline" in content
+        assert "(pymupdf4llm → image fallback)" in content
+
+    def test_patch_skill_for_tier_substitutes_placeholders(self, tmp_path):
+        """_patch_skill_for_tier() substitutes tier placeholders."""
+        from agentic_mbse.cli import _patch_skill_for_tier
+
+        skill_dir = tmp_path / "pdf-analysis"
+        skill_dir.mkdir()
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text("""---
+description: 3-tier pipeline
+---
+
+<!-- TIER_HINT_START -->
+**System tier: {DOCLING_TIER} — Max {MAX_PAGES} pages per Docling call.**
+<!-- TIER_HINT_END -->
+
+### Tier 1: Fast
+
+<!-- DOCLING_START -->
+### Tier 2: Docling
+<!-- DOCLING_END -->
+
+### Tier 3: Image
+""")
+
+        _patch_skill_for_tier(skill_dir, "constrained")
+
+        content = skill_md.read_text()
+        assert "constrained" in content
+        assert "Max 1 pages" in content
+        assert "{DOCLING_TIER}" not in content
+        assert "{MAX_PAGES}" not in content
+        assert "<!-- DOCLING_START -->" not in content
+
+    def test_patch_skill_for_tier_patches_details_md(self, tmp_path):
+        """_patch_skill_for_tier() also patches references/extraction-details.md."""
+        from agentic_mbse.cli import _patch_skill_for_tier
+
+        skill_dir = tmp_path / "pdf-analysis"
+        skill_dir.mkdir()
+        refs_dir = skill_dir / "references"
+        refs_dir.mkdir()
+
+        skill_md = skill_dir / "SKILL.md"
+        skill_md.write_text("content")
+
+        details_md = refs_dir / "extraction-details.md"
+        details_md.write_text("""
+## Details
+
+<!-- DOCLING_START -->
+### Docling MCP Section
+Content about Docling
+<!-- DOCLING_END -->
+
+### Other Section
+""")
+
+        _patch_skill_for_tier(skill_dir, None)
+
+        content = details_md.read_text()
+        assert "Docling MCP Section" not in content
+        assert "Other Section" in content
+
+    def test_init_with_no_docling_flag(self, tmp_path):
+        """Init with --no-docling skips Docling setup and patches skill."""
+        args = MockArgs(path=str(tmp_path), force=False, no_docling=True)
+        result = cmd_init(args)
+
+        assert result == EXIT_SUCCESS
+        # Skill should be installed but with no Docling references
+        skill_md = tmp_path / ".claude" / "skills" / "pdf-analysis" / "SKILL.md"
+        if skill_md.exists():
+            content = skill_md.read_text()
+            # Should not contain Docling MCP tier content
+            assert "mcp__docling__" not in content or "2-tier" in content
