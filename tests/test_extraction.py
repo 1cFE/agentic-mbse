@@ -225,7 +225,7 @@ class TestPymupdfBackend:
         assert "Some content" in written
         assert (output_dir / "images").is_dir()
 
-    def test_extract_passes_hdr_info_and_table_strategy(self, tmp_path, monkeypatch):
+    def test_extract_passes_table_strategy_and_page_chunks(self, tmp_path, monkeypatch):
         from agentic_mbse.extraction import pymupdf_backend
 
         pdf = tmp_path / "report.pdf"
@@ -240,11 +240,12 @@ class TestPymupdfBackend:
         assert result.success is True
         assert result.backend_used == "pymupdf"
 
-        # Verify hdr_info, table_strategy, and page_chunks were passed
+        # Verify table_strategy and page_chunks were passed
+        # Note: hdr_info is not passed - we use default font-size based detection
         call_kwargs = mock_to_markdown.call_args[1]
-        assert call_kwargs["hdr_info"] is pymupdf_backend._academic_header_detector
         assert call_kwargs["table_strategy"] == "lines"
         assert call_kwargs["page_chunks"] is True
+        assert "hdr_info" not in call_kwargs  # Using default detector
 
     def test_extract_applies_postprocess(self, tmp_path, monkeypatch):
         from agentic_mbse.extraction import pymupdf_backend

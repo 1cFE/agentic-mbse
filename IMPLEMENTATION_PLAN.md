@@ -6,6 +6,11 @@ Iteration 1 complete. All specs satisfied. No active tasks.
 
 Create `iteration-brief.md` for next iteration to continue.
 
+## Maintenance
+
+### Bug Fixes
+- [DONE] Fixed test_extraction.py failing test - Updated `test_extract_passes_table_strategy_and_page_chunks` to match current implementation (no longer using `_academic_header_detector`)
+
 ---
 
 ## Archive: Iteration 1 (Complete ✅)
