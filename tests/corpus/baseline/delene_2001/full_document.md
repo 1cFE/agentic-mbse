@@ -3,15 +3,12 @@
 <!-- PAGE:1 -->
 
 ## ORNL/TM-1999-243
-**An Assessment of the Economics**
-**of Future Electric Power Generation**
-**Options and the Implications**
-**for Fusion**
+# **An Assessment of the Economics** **of Future Electric Power Generation** **Options and the Implications** **for Fusion**
 
 **Project Lead**
 **J. G. Delene**
 
-**Contributing Authors**
+### Contributing Authors
 **J. Sheffield**
 **K. A. Williams**
 **R. L. Reid**
@@ -27,8 +24,7 @@ National Technical Information Service
 5285 Port Royal Road
 Springfield, VA 22161
 **Telephone** 703-605-6000 (1-800-553-6847)
-## TDD 703-487-4639
-
+**TDD** 703-487-4639
 **Fax** 703-605-6900
 **E-mail** orders@ntis.fedworld.gov
 **Web site** http://www.ntis.gov/ordering.htm
@@ -60,14 +56,12 @@ reflect those of the United States Government or any agency thereof.
 
 ORNL/TM-1999-243
 
-**Engineering Technology Division**
-
-**AN ASSESSMENT OF THE ECONOMICS OF FUTURE ELECTRIC**
-POWER GENERATION OPTIONS AND THE** **IMPLICATIONS FOR FUSION
+### Engineering Technology Division
+AN ASSESSMENT OF THE ECONOMICS OF FUTURE ELECTRIC** **POWER GENERATION OPTIONS AND THE** **IMPLICATIONS FOR FUSION
 **Project Lead**
 J. G. Delene*
 
-**Contributing Authors**
+### Contributing Authors
 J. Sheffield [†]
 K. A. Williams
 R. L. Reid
@@ -94,7 +88,8 @@ under contract DE-AC05-96OR22464
 
 <!-- PAGE:5 -->
 
-## CONTENTS
+**CONTENTS**
+
 **Page**
 
 LIST OF FIGURES...................................................................................................................... v
@@ -124,7 +119,7 @@ iv
 
 <!-- PAGE:7 -->
 
-## LIST OF FIGURES
+### LIST OF FIGURES
 **Figure** **Page**
 
 1 Historic cost of coal to electric utilities.......................................................................... 12
@@ -149,7 +144,8 @@ vi
 
 <!-- PAGE:9 -->
 
-## LIST OF TABLES
+**LIST OF TABLES**
+
 **Table** **Page**
 
 1 Technical and financial parameters............................................................................... 4
@@ -172,7 +168,8 @@ viii
 
 <!-- PAGE:11 -->
 
-## ACRONYMS
+**ACRONYMS**
+
 AFUDC allowance for funds used during construction
 ALMR advanced liquid-metal reactor
 ALWR advanced light-water reactor
@@ -222,13 +219,13 @@ x
 
 <!-- PAGE:13 -->
 
-**AN ASSESSMENT OF THE ECONOMICS OF FUTURE ELECTRIC**
-POWER GENERATION OPTIONS AND THE** **IMPLICATIONS FOR FUSION
+AN ASSESSMENT OF THE ECONOMICS OF FUTURE ELECTRIC** **POWER GENERATION OPTIONS AND THE** **IMPLICATIONS FOR FUSION
 J. G. Delene J. Sheffield
 K. A. Williams R. L. Reid
 S. Hadley
 
-## ABSTRACT
+**ABSTRACT**
+
 This study examines the potential range of electric power costs for some major alternatives
 to fusion electric power generation when it is ultimately deployed in the middle of the 21st century and, thus, offers a perspective on the cost levels that fusion must achieve to be competitive.
 The alternative technologies include coal burning, coal gasification, natural gas, nuclear fission,
@@ -240,7 +237,7 @@ worst-case scenario for cost uncertainty. The reference COE range for fusion was
 and/or alternative concepts devised before fusion will be competitive with the alternatives for the
 future production of electricity. Fortunately, there are routes to achieve this goal.
 
-## 1. INTRODUCTION
+## 1 INTRODUCTION
 The ultimate viability of the fusion option will depend on its economic competitiveness with
 other options available in the same time frame. The purpose of this study is to examine the potential range of electric power costs for some major alternatives to fusion in the time frame where
 fusion will be available and, thus, offer a perspective on the cost levels that fusion must achieve
@@ -282,7 +279,7 @@ and ALMR nuclear fission plants, a combined cycle natural gas-fired combustion t
 renewables. The cost estimates from these technologies are compared with projected costs for
 fusion power.
 
-## 2. ANALYSIS PROCEDURES
+## 2 ANALYSIS PROCEDURES
 The basic data used to derive plant costs were obtained from published information and from
 industry sources. These data were adjusted for consistency with Oak Ridge National Laboratory
 (ORNL) methodologies and cost factors as given in the “Nuclear Energy Cost Data Base” [4]
@@ -296,7 +293,7 @@ cost information available is often in differing years’ dollars. All costs wer
 1999 dollars to provide a consistent comparison.
 Bottom-line capital investment costs and the unit COE are compared for all plant types considered. The resulting COE in mills per kilowatt hour is quoted in constant 1999 dollars.
 
-## 3. PLANT DESIGNS
+## 3 PLANT DESIGNS
 **Fossil.** The fossil-fired plants are of advanced design. It is expected that the PC-FGD plant
 of today will give way to the more efficient PFBC plant in the future. The PFBC plant is more
 efficient, but it will still have large CO2 emissions. To reduce or even eliminate CO2 emissions in
@@ -351,11 +348,13 @@ capacity factor into the 70% to 90% range considered for the other technologies.
 CCCT technology is assumed to provide such a backup when applicable.
 
 <!-- PAGE:16 -->
-I notice you mentioned an image showing the original PDF page, but no image was actually provided in your message. Could you please share the image or PDF so I can see the equation you'd like converted to LaTeX?
-1. Provide the file path to the image/PDF, or
-2. Share the image so I can view the original equation?
 
-Without seeing the actual rendered equation, I can only see the table text you pasted, which doesn't appear to contain a garbled equation — it looks like a plain table with "Capacity factor" data for wind (35%, range 25–45).
+**Table 1. Technical and financial parameters**
+_________________________________________________________________
+Parameter Reference value Range
+_________________________________________________________________
+Capacity factor, %
+Wind 35 25–45
 Other than wind 80 70–90
 
 Design and construction time, years
@@ -389,7 +388,11 @@ Effective cost of money (discount rate), % 8.18 (5.02) _[a]_
 
 Income tax rates, %
 Federal 35
-I need to see the image to convert the equation to LaTeX. Could you please share the image of the original PDF page? You mentioned an image but none was attached to your message.
+State 6
+Combined 38.9
+__________________________________________________________________
+_a_ Real (inflation adjusted) parameters in parentheses.
+
 The design and construction times shown for nuclear plants are shorter than past experience,
 but are consistent with foreign experience, such as in Japan and Korea, and with improved regulatory practices. Fossil plant heat rates have improved and could continue to improve. The
 reference heat rates shown are from the EPRI-TAG [TM] . The low-end range values are consistent
@@ -397,7 +400,7 @@ with DOE program goals. [21]
 
 <!-- PAGE:17 -->
 
-## 4. COST MODELS
+## 4 COST MODELS
 ### 4.1 FINANCE COSTS
 The financial parameters, which form the economic basis for the COE estimates, are also
 shown in Table 1. Consistent with other past studies, a 30-year plant cost recovery period is
@@ -422,44 +425,62 @@ technologies reflects DOE cost goals, while the upper end includes a bias of 5% 
 10% for the PFBC, and 15% for the GCC. The upper end of the uncertainty range generally
 reflects the maturity of each concept. The CCCT cost range considers a 200-MW(e) plant to
 derive the high-end costs and a 400-MW(e) plant to derive the low-range costs.
-I don't see any image attached to your message. You mentioned that "the image shows the original PDF page," but no image or PDF file was provided.
 
-Could you please share the image or PDF file so I can see the original equation and convert it to LaTeX notation?
+**Table 2. Coal-fired plant construction costs**
+_________________________________________________________________________
+Capital investment cost (1999 $M)
+_____________________________________
+Account PC-FGD PFBC
+Units × [MW(e) per unit]
 
-$$\frac{\text{Capital investment cost (1999 \$M)}}{\text{Account} \quad \text{PC-FGD} \quad \text{PFBC}}$$
-
-However, this looks more like a table header than an equation. If you could share the actual PDF image file path, I can read it directly and provide a more accurate LaTeX conversion. Could you provide the path to the image or PDF file?
-Let me look at this more carefully. Based on the garbled text, this appears to be a fraction/equation where the numbers are arranged as a numerator and denominator.
-
-The garbled text shows:
-- A numerator: `2 × 600`
-- A denominator: `3 × 400`
-
-This is a simple fraction:
-
-$$\frac{2 \times 600}{3 \times 400}$$
+2 × 600 3 × 400
+_________________________________________________________________________
+Land and land rights 2 2
+Steam generator 563 552
 Turbine generator 339 204
 Coal handling equipment 119 108
 Balance of plant 120 218
 Environmental capital 207 0
 General facilities and engineering 187 202
 Base construction cost 1538 1287
-I need to see the image to accurately convert the equation to LaTeX. You mentioned an image shows the original PDF page, but no image was attached to your message.
+[1282 $/kW(e)] [1072 $/kW(e)]
+Range, $/kW(e) 800–1350 800–1180
+_________________________________________________________________________
 
-Could you please share the image or PDF file so I can see the original equation and convert it accurately to LaTeX?
-Based on the text you provided, this appears to be a table header rather than an equation. However, you mentioned there's an image of the original PDF page that I should look at. Could you share the image/screenshot so I can see the actual equation you need converted to LaTeX?
+<!-- PAGE:18 -->
+
+**Table 3. GCC plant capital cost** _**[a]**_
+______________________________________________________________
+Capital investment cost
+Account (1999 $M)
+______________________________________________________________
+Land and land rights 2
+Air separation 172
+Gasification/gas cooling 412
 Gas cleanup 50
 Combined cycle 523
 Other balance of plant 102
 General facilities and engineering 240
-I need to see the image to accurately convert the equation to LaTeX notation. Could you please share the image of the original PDF page? Without seeing the actual rendered equation/table, I can only work with the garbled text you've provided, which appears to be a table row rather than an equation.
+Base construction cost 1502 [1252 $/kW(e)]
+Range, $/kW(e) 800–1440
+______________________________________________________________
+_a_ Two units × 600 MW(e) per unit.
 
-If you have an image file, please share its path so I can view it.
+**Table 4. CCCT plant capital cost** _**[a]**_
+_______________________________________________________________
+Capital investment cost
+Account (1999 $M)
+_______________________________________________________________
+Land and land rights 1
+Combustion turbine and auxiliaries 193
+Heat recovery steam generator 78
 Steam turbine, generator, and auxiliaries 73
 General facilities and engineering 245
-Looking at this, the garbled text appears to be from a table rather than an equation. Let me request the image to see what's actually shown.
+Base construction cost 590 [492 $/kW(e)]
+Range, $/kW(e) 480–550
+_______________________________________________________________
+_a_ Four units × 300 MW(e) per unit.
 
-Could you please share the image/screenshot of the PDF page? You mentioned "The image shows the original PDF page" but I don't see an attached image. Please provide the file path or attach the image so I can accurately convert the equation to LaTeX.
 **Fission.** Capital investment costs for the ALWR and ALMR were derived from nuclear
 industry sources. The cost estimates are for Nth-of-a-kind (NOAK) plants. An NOAK plant is an
 equilibrium commercial plant of identical design to previous plants of its type. NOAK plant costs
@@ -477,17 +498,19 @@ not reflect potential institutional problems, which could negate the nuclear opt
 the ALWR, the nominal uncertainty adds about 15% to the cost on the high end and subtracts
 
 <!-- PAGE:19 -->
-I don't see any image attached to your message. You mentioned "The image shows the original PDF page," but no image or PDF file path was provided.
 
-Could you please share the image or provide the file path so I can view the original equation and convert it to LaTeX?
-The garbled text you've provided appears to be a table header rather than an equation, showing columns for "Capital investment cost" with "Account", "ALWR", and "ALMR" categories. Without seeing the actual PDF image, I can't determine what the original equation looks like.
+**Table 5. Advanced fission plant base construction costs**
+_______________________________________________________________________
+Capital investment cost
+(1999 $M)
+_______________________________________
+Account ALWR ALMR
+Units × [MW(e) per unit]
 
-Please attach the image so I can provide the correct LaTeX conversion.
-Let me look at this more carefully. The garbled text appears to be a table or equation from a PDF, but without the actual image to reference, I need to work with what's provided.
-
-Based on the garbled text showing what appears to be a fraction or ratio structure, the LaTeX equation is:
-
-$$\frac{1 \times 1300}{3 \times 496}$$
+1 × 1300 3 × 496
+_______________________________________________________________________
+Land and land rights 5 5
+Structures and improvements 339 360
 Reactor plant equipment 349 865
 Turbine plant equipment 331 263
 Electric plant equipment 97 115
@@ -498,7 +521,11 @@ Construction services 291 170
 Home office engineering and services 74 125
 Field office engineering and services 108 83
 Base construction cost 1728 2063
-I need to see the image to accurately convert the equation. You mentioned an image shows the original PDF page, but no image was attached to your message. Could you please share the image so I can provide the correct LaTeX notation?
+[1329 $/kW(e)] [1386 $/kW(e)]
+Range, $/kW(e) 1200–1530 1200–1730
+_______________________________________________________________________
+
+about 10% on the low end. For the ALMR, the cost is the same dollar per kilowatt hour cost as
 the ALWR on the low end and 25% above the reference ALMR cost for the high end of the
 uncertainty range.
 **Wind.** Wind was chosen for this study as a stand-in for the other renewable energy sources
@@ -525,23 +552,35 @@ studies [19,20] for IFE for which the costing approach differs. These IFE studie
 than those given in the ARIES studies for the structures and improvements, turbine plant equipment and electric plant equipment accounts for the same electric output plants. In the future,
 
 <!-- PAGE:20 -->
-I don't see any image attached to your message. You mentioned "The image shows the original PDF page," but no image or PDF file path was provided.
 
-Could you please share the image or provide the file path so I can view the original equation and convert it to LaTeX?
-Could you please share the image of the PDF page containing the equation?
+**Table 6. Wind turbine electric generation plant capital cost** _**[a]**_
+**___________________________________________________________**
+Capital investment cost
+Account (1999 $M)
+**___________________________________________________________**
+Land and land rights 1
+Rotor assembly 14.1
 Tower 23.7
 Generator 4.1
 Electrical 6.6
 Transmission and drive train 3.0
 Balance of system _[b]_ 12.6
-$$65.2 \left[\frac{650\ \$/kW(e)}{}\right]$$
+Base construction cost 65.2 [650 $/kW(e)]
+Range, $/kW(e) 530–790
+___________________________________________________________
+_a_ 100 units × 1 MW(e) per unit.
+_b_ Includes facilities, engineering, and owner’s cost.
 
-I need to see the actual PDF image to accurately convert the equation. Could you share the image of the original PDF page? The text you've provided appears to be a table rather than an equation, and without seeing the original rendering, I can only guess at what the garbled portion represents.
+**Table 7. Magnetic fusion base construction costs**
+________________________________________________________________________________
+Construction cost _[a]_
 
-If you can share the image file path, I'll read it and provide the exact LaTeX conversion.
-I need to see the image to convert the equation to LaTeX. Could you please share the image/screenshot of the PDF page? You mentioned "The image shows the original PDF page" but no image was attached to your message.
-
-Could you please share the image or PDF file so I can see the original equation and convert it to LaTeX?
+(1999 $M)
+_______________________________________
+Account ARIES-RS ARIES-ST
+________________________________________________________________________________
+Land and land rights 5 5
+Structures and improvements 399.7 432.3
 Reactor plant equipment 1600.0 1534.9
 Turbine plant equipment 344.2 410.5
 Electric plant equipment 130.4 147.9
@@ -550,9 +589,11 @@ Heat rejection system _b_ 69.5
 Special materials 13.1 128.4
 Total direct costs 2558.6 2820.3
 Construction and engineering services 562.9 620.5
-I don't see an equation in the text you've provided. The content you shared appears to be a table showing construction cost data for a 1000-MW(e) plant, with dollar-per-kilowatt figures and ranges. There are no mathematical equations present — just tabular data with costs, ranges, and footnotes.
-
-Could you share the PDF image so I can see the original page? That would help me identify which equation you're referring to. Or if you have a different garbled text snippet containing the actual equation, please share that instead.
+Total base construction cost 3121.5 [3120 $/kW(e)] 3440.8 [3440 $/kW(e)]
+Range, _[c]_ $/kW(e) 2700–3120 3045–3440
+________________________________________________________________________________
+_a_ 1000-MW(e) plant size.
+_b_ Included with reactor plant equipment.
 _c_ Range for 1000- to 1300-MW(e) plant sizes.
 
 <!-- PAGE:21 -->
@@ -601,14 +642,14 @@ The DOE–EIA makes projections of the future price of fossil fuels as part of i
 energy outlook report. [2] These projections currently run through 2020. The average projected
 
 <!-- PAGE:22 -->
-I need to see the image to convert the equation to LaTeX. Could you please share the image/screenshot of the PDF page? You mentioned an image shows the original PDF page, but I don't see one attached to your message.
-That said, the text you've provided doesn't appear to be a garbled equation — it looks like a table of data comparing costs across different energy technologies (coal, nuclear, gas, renewable, and magnetic fusion).
 
-Could you please:
-1. Attach the image of the original PDF page so I can see the actual equation?
-2. Clarify which specific equation you'd like converted to LaTeX?
-
-If the table itself is what you need in LaTeX, let me know and I can format it as a LaTeX table instead.
+**Table 8. Total capitalized cost**
+______________________________________________________________________________________________________
+Coal technologies Nuclear fission Gas Renewable Magnetic fusion
+PC-FGD PFBC GCC ALWR ALMR CCCT Wind ARIES-RS ARIES-ST
+______________________________________________________________________________________________________
+Base construction cost 1538 1287 1502 1728 2063 590 65.2 3121 3441
+Owners’ cost 132 69 87 240 264 17 _a_ 400 440
 Contingency 167 207 238 295 406 61 6.5 704 776
 Overnight cost 1837 1559 1827 2263 2734 668 71.7 4225 4657
 AFUDC cost 305 248 304 387 398 70 3.8 722 796
@@ -617,32 +658,40 @@ Millions of 1999 dollars 2142 1807 2131 2650 3132 738 75.5 4947 5453
 Dollars per
 kilowatt electric 1785 1506 1776 2038 2105 615 755 4947 5453
 Range, $/kW(e)
-I need to see the image to convert the equation to LaTeX. Could you please share the PDF page image? I don't see any image attached to your message.
-
-Also, the text you've shared appears to be a data table with footnotes rather than a mathematical equation. If you could share the image, I can identify the actual equation and convert it to proper LaTeX notation.
+Low 1140 1125 1135 1835 1835 580 620 4275 _[b]_ 4380 _[b]_
+High 1875 1665 2040 2345 2630 670 920 4950 _[c]_ 5450 _[c]_
+_______________________________________________________________________________________________________
+_a_ Included in base construction cost.
+_b_ Low based on 1300-MW(e) plant size.
 _c_ High based on 1000-MW(e) plant size.
 
 <!-- PAGE:23 -->
-I don't see any image attached to your message. You mentioned "The image shows the original PDF page," but no image or PDF file path was provided.
 
-Could you please either:
-1. Provide the file path to the PDF or image, or
-2. Share the image so I can view the original equation?
+**Table 9. Nonfuel O&M costs**
+_____________________________________________________________________
+Fixed cost Variable cost O&M cost _[a]_
 
-Without seeing the actual equation, I can only see the table header text you pasted, which doesn't contain a garbled equation — it appears to be a table caption for "Nonfuel O&M costs" with column headers (Fixed cost, Variable cost, O&M cost).
-
-Could you please either:
-1. Provide the file path to the PDF or image, or
-2. Share more context about which equation you'd like converted to LaTeX?
-
-The text you shared appears to be a table rather than an equation. If you want the table converted to LaTeX, or if there's a specific equation elsewhere on the page, please clarify.
+Plant type [$/kW(e) per year] (mill/kWh) (mill/kWh)
+_____________________________________________________________________
+ALWR 57.6 0.4 8.6
+ALMR 70.2 0.4 10.4
 PC-FGD coal 36.7 3.2 8.5
 PFBC 36.8 2.0 7.2
 GCC—coal gasification 54.8 1.6 9.4
 CCCT—natural gas 28.1 0.5 4.5
-I need to see the image to convert the equation to LaTeX. Could you please share the image/screenshot of the PDF page containing the equation? The text you've provided appears to be a table with data about wind turbines and fusion, not a garbled equation.
+Wind turbine 14.2 0.0 4.6
+Fusion 60.0 0.4 9.0
+_____________________________________________________________________
+_a_ At reference plant size and capacity factors.
 
-Please attach the image so I can accurately convert the equation to LaTeX notation.
+**Table 10. Fuel costs for plant startups in year 2050**
+______________________________________________________________
+1999 dollars
+
+Reference Range
+______________________________________________________________
+Nuclear fuel prices
+Uranium, $/lb U3O8 25 15–145
 Conversion, $/kg uranium 7 4–7
 Enrichment, $/SWU 80 40–100
 Low-enriched uranium (LEU)
@@ -657,11 +706,15 @@ Natural gas 3.85 2.90–5.05
 CO2 capture and sequestration costs
 Energy penalty, %
 PC-FGD and PFBC 15 12–18
-I need to see the image to convert the equation to LaTeX. Could you please share the image/screenshot of the original PDF page? You mentioned "The image shows the original PDF page" but no image was attached to your message.
+CCG and CCCT 10 8–12
+Other costs, $/tonne CO2 10 5–15
+______________________________________________________________
+
+<!-- PAGE:24 -->
 
 ORNL 99-1407 EFG
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-23-0.png)
+![](images/tmp303vi1st.pdf-23-0.png)
 
 1980 1982 1984 1986 1988 1990 1992 1994 1996 1998
 
@@ -669,7 +722,7 @@ Year
 
 **Fig. 1. Historic cost of coal to electric utilities.**
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-23-1.png)
+![](images/tmp303vi1st.pdf-23-1.png)
 
 <!-- PAGE:25 -->
 
@@ -696,11 +749,11 @@ fuel components, such as U3O8 to UF6 conversion and LEU fuel fabrication, have r
 For the reference value, we assume that the uranium price will recover to $25/lb of U3O8
 in 1999 dollars by the year 2050. The lower end of the price range assumes that uranium will
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-24-0.png)
+![](images/tmp303vi1st.pdf-24-0.png)
 
 <!-- PAGE:26 -->
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-25-0.png)
+![](images/tmp303vi1st.pdf-25-0.png)
 
 recover from the depressed prices of today, and it will be economic to open new mines but that
 new ore finds and mining technology improvements will provide an adequate supply of uranium
@@ -777,7 +830,7 @@ and for transportation and ultimate storage of the CO2.
 
 <!-- PAGE:28 -->
 
-## 5. RESULTS
+## 5 RESULTS
 Table 11 shows the baseline estimated levelized COE in mills per kilowatt hour, including
 the estimated cost of CO2 capture and disposal for each concept for plant start-up in the year
 2050. The capital-related portion of the COE is proportional to the capital investment cost and
@@ -821,7 +874,11 @@ parameters is about 45 mills/kWh for the ALWR and about 51 mills/kWh for the ALM
 COE range at reference fuel prices is about 40–50 mills/kWh for the ALWR and about
 
 <!-- PAGE:29 -->
-I don't see an image attached to your message. Could you please share the PDF page image so I can see the original equation and convert it to LaTeX? You can paste or attach the image directly in the chat.
+
+**Table 11. Levelized COE**
+**__________________________________________________________________________________________________**
+COE (1999$ mill/kWh)                        _____
+
 Magnetic fusion
 PC-FGD   PFBC     CCG     CCCT  ALWR   ALMR  Wind _
 Aries-RS  Aries-ST
@@ -831,11 +888,11 @@ Fuel 9.4      8.1       8.1      26.6      5.6      8.8            5.4 _[d      
 
 Decommissioning 0.8      1.5            0.9       0.9
 Other 20.0 _[a]_ 18.9 _[a]_ 15.3 _[a     ]_ 8.7
-$$\text{Total COE} \quad 64.6 \quad 50.8 \quad 59.3 \quad 48.6 \quad 44.7 \quad 51.3 \quad 29.3^{b} \quad 87.4 \quad 93.2$$
-
-I need to see the image to accurately convert the equation. Could you please share the PDF image so I can see the original formatting? The text you've provided appears to be a table row rather than an equation, and the garbled portions (like `_[b]_`, `_[f]_`) likely correspond to superscript footnote markers. Without the image, I can only guess at the intended layout.
-
-If you can share the image, I'll provide an exact LaTeX conversion.
+Total COE 64.6     50.8      59.3      48.6     44.7     51.3 29.3 _[b   ]_ 87.4      93.2
+Range 47–82    39–74    42–76     30–65    38–62   45–62  18–62   69–99 _[f    ]_ 74–106 _[f ]_
+**___________________________________________________________________________________________________**
+_a_ Cost of CO2 sequestering or emissions charge.
+_b_ Full capacity credit for wind turbine; add 17.8 mills/kWh if full backup CCCT plant is included to obtain reference 80% capacity factor.
 _c_ From procedure used to calculate O&M costs for passively safe ALWRs.
 _d_ Includes blanket replacement.
 _e_ No separate provision made for target replacement, included with O&M costs in source document.
@@ -855,9 +912,9 @@ _f_ Range for fusion includes capacity factor range (70%–90%) and plant size r
 
 0
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-29-0.png)
+![](images/tmp303vi1st.pdf-29-0.png)
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-29-1.png)
+![](images/tmp303vi1st.pdf-29-1.png)
 
 **Fig. 6. Range of COE for coal gasification plants.**
 
@@ -883,9 +940,9 @@ ORNL 99-1412 EFG
 
 0
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-30-0.png)
+![](images/tmp303vi1st.pdf-30-0.png)
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-30-1.png)
+![](images/tmp303vi1st.pdf-30-1.png)
 
 **Fig. 8. Range of COE for nuclear plants.**
 
@@ -928,13 +985,13 @@ the calculated COE range between the ARIES-RS and the ARIES-ST at the reference 
 
 ## 0 ORNL 99-1415 EFG
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-31-0.png)
+![](images/tmp303vi1st.pdf-31-0.png)
 
 **Fig. 9. Range of COE for wind.**
 
 <!-- PAGE:33 -->
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-32-0.png)
+![](images/tmp303vi1st.pdf-32-0.png)
 
 capacity factor. The second bar shows the effect of increasing the plant size to 1300 MW(e).
 It is estimated that the COE is reduced by about 10 mills/kWh by this 30% increase in unit size.
@@ -943,7 +1000,7 @@ range assumes a 1000-MW(e) plant size and 70% capacity factor. The low end of th
 assumes a 1300-MW(e) plant size and 90% capacity factor. This COE range of approximately
 70–100 mills/kWh is the reference cost range for fusion for this study.
 
-## 6. DISCUSSION OF RESULTS
+## 6 DISCUSSION OF RESULTS
 The COE ranges for each of the concepts considered in this study are shown in Figs. 11 and
 12. Figure 11 excludes the cost associated with carbon sequestration, whereas Fig. 12 includes
 these costs. The COEs at reference parameters are marked for each concept.
@@ -960,9 +1017,9 @@ about 4–9 mills/kWh.
 
 <!-- PAGE:34 -->
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-33-0.png)
+![](images/tmp303vi1st.pdf-33-0.png)
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-33-1.png)
+![](images/tmp303vi1st.pdf-33-1.png)
 
 <!-- PAGE:35 -->
 
@@ -989,7 +1046,7 @@ investment and fixed O&M) are less than for fusion; the effect on COE is less fo
 The results from this study are summarized in Fig. 13. Here the COE range for fusion is
 compared with the COE range for the alternatives using different sets of assumptions. For
 
-![](images/Delene-et-al.---2001---An-Assessment-of-the-Economics-of-Future-Electric-Power-Generation-Options-and-the-Implications-for.pdf-34-0.png)
+![](images/tmp303vi1st.pdf-34-0.png)
 
 <!-- PAGE:36 -->
 
@@ -1005,7 +1062,7 @@ range. If carbon sequestration is required, the COE range based on reference par
 about 30–59 mills/kWh or about 18–76 mills/kWh, if the full range of cost parameter uncertainties is included. The low-end cost includes wind generation with full credit for the capacity on the
 grid. If wind is excluded, the low end is about 30 mills/kWh.
 
-## 7. CONCLUSION
+## 7 CONCLUSION
 If fusion is to become a viable electric energy supplier in the future, ways must be found to
 reduce its costs. Technology advancements and cost reductions are projected for the technologies
 that fusion will be competing against when it is ultimately deployed in the middle of the next
@@ -1023,7 +1080,8 @@ such as building larger plants.
 
 <!-- PAGE:37 -->
 
-## REFERENCES
+**REFERENCES**
+
 1. Electric Power Annual 1998 Volume 1, U.S. Department of Energy, Energy Information
 Administration, DOE/EIA-0348 (98)/1.
 2. Annual Energy Outlook 1998, U.S. Department of Energy, Energy Information Administration, DOE/EIA-0383 (1999), December 1998.
@@ -1101,7 +1159,8 @@ April 1999.
 
 <!-- PAGE:39 -->
 
-ORNL/TM-1999-243** **INTERNAL DISTRIBUTION
+### ORNL/TM-1999-243
+### INTERNAL DISTRIBUTION
 1. D. B. Batchelor 24. S. L. Milora
 2. L. A. Berry 25. P. K. Mioduszewski
 3. M. A. Brown 26. D. A. Rasmussen
@@ -1116,7 +1175,7 @@ ORNL/TM-1999-243** **INTERNAL DISTRIBUTION
 22. G. T. Mays 44–45. ORNL Laboratory Records–OSTI
 23. G. E. Michaels
 
-## EXTERNAL DISTRIBUTION
+### EXTERNAL DISTRIBUTION
 46. W. F. Dove, SC-55, U.S. Department of Energy, 19901 Germantown Rd., Room G-255,
 Germantown, MD 20874
 47. B. G. Logan, Lawrence Livermore National Laboratory, P.O. Box 808, L-644, Livermore,
