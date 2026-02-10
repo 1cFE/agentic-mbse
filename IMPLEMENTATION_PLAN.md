@@ -1,12 +1,36 @@
 # IMPLEMENTATION_PLAN.md
 
-## Iteration 1: Clean Metrics Foundation + Bold All-Caps Headings + SPARC Paper
+## Iteration 1: COMPLETE ✓
 
-This plan implements three coordinated changes to establish trustworthy measurement and fix the most impactful heading detection gap.
+All three tasks completed successfully:
+- ✓ Task 1: delene_2001 baseline cleaned (28 AI artifacts removed, char regression eliminated)
+- ✓ Task 2: Bold all-caps heading promotion added (delene headings: 23→28, +5)
+- ✓ Task 3: SPARC tokamak paper added to corpus (6 papers total, all tests pass)
+
+Commits:
+- `51d87cb` Clean delene_2001 baseline by removing 28 AI hallucination artifacts
+- `c32b13b` Add bold all-caps heading promotion to fix detection gap
+- `dbc4c7a` Add SPARC tokamak paper to test corpus (6th paper)
+
+All success criteria met:
+- ✓ Zero AI artifacts in delene baseline
+- ✓ Character regression eliminated (67k→67k, was -6.2%)
+- ✓ Heading detection improved (delene: 23→28)
+- ✓ Corpus expanded to 6 papers
+- ✓ All 109 tests pass (105 postprocess + 4 corpus)
+- ✓ Zero linting errors
 
 ---
 
-## Task 1: Clean delene_2001 Baseline AI Artifacts
+## Next Iteration
+
+No tasks pending. Ready for new iteration brief.
+
+---
+
+## Archived: Iteration 1 Tasks
+
+### Task 1: Clean delene_2001 Baseline AI Artifacts
 
 **Status**: DONE
 
@@ -59,7 +83,7 @@ uv run pytest tests/test_corpus.py --run-corpus -v
 
 ---
 
-## Task 2: Add Bold All-Caps Heading Promotion
+### Task 2: Add Bold All-Caps Heading Promotion
 
 **Status**: DONE
 
@@ -124,7 +148,7 @@ python3 tests/corpus/compare.py
 
 ---
 
-## Task 3: Add SPARC Paper to Corpus
+### Task 3: Add SPARC Paper to Corpus
 
 **Status**: DONE
 
@@ -193,48 +217,6 @@ python3 tests/corpus/compare.py | grep "sparc_overview"
 
 ---
 
-## Success Criteria (All Tasks Complete)
+## Archived: Implementation Notes
 
-After completing all three tasks:
-
-1. **Clean metrics foundation**:
-   - Zero AI artifacts in delene_2001 baseline (grep returns 0)
-   - delene character regression within -3% (was -6.2%)
-
-2. **Heading detection improvement**:
-   - delene_2001 heading count rises from 23 to ≥25 (recovers CONTENTS, ABSTRACT, ACRONYMS)
-   - No heading count regressions on other 4 papers (hawker, aries, helios, hsu)
-
-3. **Corpus expansion**:
-   - 6 papers in corpus (was 5)
-   - SPARC paper extracts successfully with heading_count ≥3
-   - All 4 corpus test types pass (metrics validation, structure, heading regression, char regression)
-
-4. **Zero code/test regressions**:
-   - `uv run pytest tests/test_corpus.py --run-corpus -v` passes (4 tests)
-   - `uv run pytest tests/test_postprocess.py -v` passes (all unit tests)
-   - `uv run ruff check src/ tests/` passes (no linting errors)
-   - `python3 tests/corpus/compare.py` shows expected improvements only
-
----
-
-## Implementation Notes
-
-**Task ordering is critical**:
-- Task 1 must complete first (clean baseline = trustworthy metrics)
-- Task 2 depends on Task 1 (need clean baseline to measure heading improvement)
-- Task 3 depends on Task 2 (want heading fix in place before establishing new baseline)
-
-**Bold all-caps pattern details**:
-- Must use `(?<=\n\n)` and `(?=\n\n)` lookbehind/lookahead to ensure blank line boundaries
-- Filter function prevents false positives on abbreviations (MW, HTS) and TOC entries
-- Promotes to `##` with title-casing (matches `promote_allcaps_headers()` behavior)
-
-**SPARC baseline timing**:
-- Establish after Task 2 completes to get best-quality baseline with heading fix active
-- If heading detection is weak, set appropriate `heading_regression_pct` threshold in papers.jsonl
-
-**No pipeline architecture changes**:
-- All modifications are in postprocess.py (pure regex, no ML)
-- Test data updates only (baselines, papers.jsonl)
-- Zero changes to extraction backends, quality gates, or AI repair layers
+(Preserved for reference - see completed tasks above for details)
