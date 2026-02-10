@@ -47,3 +47,22 @@
 ### Key Learnings
 _(to be filled by eval agent)_
 
+
+---
+
+## Iteration 1 — 2026-02-10
+**Brief:** # Iteration 1 Brief
+**Specs:** add-bold-allcaps-heading-promotion.md,add-sparc-to-corpus.md,fix-delene-baseline-artifacts.md
+**Outcome:** PASS
+**Key Learnings:**
+- Key observations:
+  - All 5 shell scripts (experiment-init.sh, outer-loop.sh, inner-loop.sh, lib.sh) are implemented and functional
+  - All 4 prompt templates (iteration_spec, eval, plan, build) are present and well-formed
+  - Artifact conventions (FR-7) fully implemented — all expected files exist with correct formats
+  - Progressive challenge mechanism works (corpus 5→6 papers)
+  - Cleanup of old Ralph artifacts complete (FR-9)
+  - IterationSpecAgent successfully produces quantitative specs from qualitative goals
+  - EvalAgent successfully produces evidence-based verdicts
+  - Inner loop plan→build→eval cycle works (3 commits made, eval report generated)
+  - Corpus tests pass (4/4), demonstrating the iteration improved doc-ingest quality
+**Corpus:** hawker_2020, aries_cost_account, helios_design, hsu_2020, delene_2001, sparc_overview, 
