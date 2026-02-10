@@ -77,6 +77,13 @@ _ALLCAPS_HEADER_RE = re.compile(
     r"(?<=\n\n)([A-Z][A-Z &/,]{3,59})(?=\n\n)",
 )
 
+# Bold all-caps standalone lines between blank lines: **ABSTRACT**, **CONTENTS**
+# Catches short bold all-caps that fall through both _ALLCAPS_HEADER_RE (no bold)
+# and _UNNUMBERED_BOLD_HEADER_RE (requires 15+ chars)
+_BOLD_ALLCAPS_HEADER_RE = re.compile(
+    r"(?<=\n\n)\*\*([A-Z][A-Z ]{2,59})\*\*(?=\n\n)",
+)
+
 # Headers with redundant bold: ## **1 Introduction** → ## 1 Introduction
 _HEADER_BOLD_CLEANUP_RE = re.compile(
     r"^(#{2,6})\s+\*\*(.+?)\*\*\s*$",
@@ -183,9 +190,21 @@ def _is_allcaps_heading_candidate(text: str) -> bool:
     if _is_toc_line(t):
         return False
     # Must contain at least one space or be a known single-word heading
-    known_single_word = {"ABSTRACT", "CONTENTS", "REFERENCES", "ACKNOWLEDGMENTS",
-                         "ACKNOWLEDGEMENTS", "INTRODUCTION", "CONCLUSION", "CONCLUSIONS",
-                         "APPENDIX", "BIBLIOGRAPHY", "GLOSSARY", "ACRONYMS", "SUMMARY"}
+    known_single_word = {
+        "ABSTRACT",
+        "CONTENTS",
+        "REFERENCES",
+        "ACKNOWLEDGMENTS",
+        "ACKNOWLEDGEMENTS",
+        "INTRODUCTION",
+        "CONCLUSION",
+        "CONCLUSIONS",
+        "APPENDIX",
+        "BIBLIOGRAPHY",
+        "GLOSSARY",
+        "ACRONYMS",
+        "SUMMARY",
+    }
     if " " not in t and t not in known_single_word:
         return False
     return True
@@ -196,6 +215,23 @@ def _replace_allcaps_header(match: re.Match) -> str:
     if not _is_allcaps_heading_candidate(title):
         return match.group(0)
     # Title-case the heading for readability
+    return f"## {title.title()}"
+
+
+def _is_bold_allcaps_heading_candidate(text: str) -> bool:
+    """Return True if bold all-caps text looks like a section heading.
+
+    Uses the same logic as _is_allcaps_heading_candidate but for bold patterns.
+    Rejects TOC entries and requires either spaces or known single-word headings.
+    """
+    return _is_allcaps_heading_candidate(text)
+
+
+def _replace_bold_allcaps_header(match: re.Match) -> str:
+    title = match.group(1).strip()
+    if not _is_bold_allcaps_heading_candidate(title):
+        return match.group(0)
+    # Title-case the heading for readability (matches promote_allcaps_headers)
     return f"## {title.title()}"
 
 
@@ -242,9 +278,7 @@ def promote_unnumbered_bold_headers(md: str) -> str:
     - Short bold labels (``**MW**``, ``**Source**``)
     """
     # Handle bold-with-body first (more specific pattern)
-    md = _UNNUMBERED_BOLD_HEADER_WITH_BODY_RE.sub(
-        _replace_unnumbered_bold_header_with_body, md
-    )
+    md = _UNNUMBERED_BOLD_HEADER_WITH_BODY_RE.sub(_replace_unnumbered_bold_header_with_body, md)
     # Then standalone bold lines
     md = _UNNUMBERED_BOLD_HEADER_RE.sub(_replace_unnumbered_bold_header, md)
     return md
@@ -257,6 +291,19 @@ def promote_allcaps_headers(md: str) -> str:
     Must be between blank lines and not look like TOC entries.
     """
     return _ALLCAPS_HEADER_RE.sub(_replace_allcaps_header, md)
+
+
+def promote_bold_allcaps_headers(md: str) -> str:
+    """Promote bold all-caps standalone lines to ``##`` headers.
+
+    Handles: ``**ABSTRACT**``, ``**CONTENTS**``, ``**ACRONYMS**``, etc.
+    Catches short bold all-caps headings that fall through both:
+    - ``_ALLCAPS_HEADER_RE`` (requires no bold markers)
+    - ``_UNNUMBERED_BOLD_HEADER_RE`` (requires 15+ chars)
+
+    Must be between blank lines and not look like TOC entries or abbreviations.
+    """
+    return _BOLD_ALLCAPS_HEADER_RE.sub(_replace_bold_allcaps_header, md)
 
 
 def clean_header_artifacts(md: str) -> str:
@@ -497,6 +544,7 @@ def postprocess(md: str, images_dir: Path | None = None) -> str:
     md = promote_bold_headers(md)
     md = promote_plain_headers(md)
     md = promote_unnumbered_bold_headers(md)
+    md = promote_bold_allcaps_headers(md)
     md = promote_allcaps_headers(md)
     md = clean_header_artifacts(md)
     md = reject_noise_headers(md)

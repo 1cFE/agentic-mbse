@@ -8,9 +8,12 @@ from agentic_mbse.extraction.postprocess import (
     clean_header_artifacts,
     normalize_image_paths,
     postprocess,
+    promote_allcaps_headers,
+    promote_bold_allcaps_headers,
     promote_bold_headers,
     promote_figure_captions,
     promote_plain_headers,
+    promote_unnumbered_bold_headers,
     reject_noise_headers,
     repair_ligatures,
     strip_page_numbers,
@@ -558,6 +561,127 @@ class TestRejectNoiseHeaders:
     def test_unnumbered_section_preserved(self):
         md = "## Overview"
         assert reject_noise_headers(md) == "## Overview"
+
+
+# ---------------------------------------------------------------------------
+# promote_bold_allcaps_headers (learning test + unit tests)
+# ---------------------------------------------------------------------------
+
+
+class TestBoldAllCapsLearningTest:
+    """Learning test demonstrating the gap between existing promoters.
+
+    Bold all-caps headings like **ABSTRACT** fall through:
+    - _ALLCAPS_HEADER_RE (requires no bold markers)
+    - _UNNUMBERED_BOLD_HEADER_RE (requires 15+ chars)
+    """
+
+    def test_bold_abstract_fails_allcaps_promoter(self):
+        """**ABSTRACT** not promoted by promote_allcaps_headers (requires no bold)."""
+        md = "\n\n**ABSTRACT**\n\n"
+        result = promote_allcaps_headers(md)
+        # Should NOT be promoted - pattern requires no bold markers
+        assert result == "\n\n**ABSTRACT**\n\n"
+
+    def test_bold_abstract_fails_unnumbered_bold_promoter(self):
+        """**ABSTRACT** not promoted by promote_unnumbered_bold_headers (too short)."""
+        md = "**ABSTRACT**"
+        result = promote_unnumbered_bold_headers(md)
+        # Should NOT be promoted - only 8 chars, needs 15+
+        assert result == "**ABSTRACT**"
+
+    def test_bold_abstract_promoted_by_new_function(self):
+        """**ABSTRACT** IS promoted by promote_bold_allcaps_headers."""
+        md = "\n\n**ABSTRACT**\n\n"
+        result = promote_bold_allcaps_headers(md)
+        # Should be promoted to ## heading with title-casing
+        assert result == "\n\n## Abstract\n\n"
+
+
+class TestPromoteBoldAllCapsHeaders:
+    """Unit tests for promote_bold_allcaps_headers function."""
+
+    def test_single_word_known_heading(self):
+        """Single-word known headings are promoted."""
+        md = "\n\n**ABSTRACT**\n\n"
+        assert promote_bold_allcaps_headers(md) == "\n\n## Abstract\n\n"
+
+    def test_contents_heading(self):
+        md = "\n\n**CONTENTS**\n\n"
+        assert promote_bold_allcaps_headers(md) == "\n\n## Contents\n\n"
+
+    def test_acronyms_heading(self):
+        md = "\n\n**ACRONYMS**\n\n"
+        assert promote_bold_allcaps_headers(md) == "\n\n## Acronyms\n\n"
+
+    def test_references_heading(self):
+        md = "\n\n**REFERENCES**\n\n"
+        assert promote_bold_allcaps_headers(md) == "\n\n## References\n\n"
+
+    def test_multi_word_heading(self):
+        """Multi-word all-caps headings are promoted."""
+        md = "\n\n**LIST OF TABLES**\n\n"
+        assert promote_bold_allcaps_headers(md) == "\n\n## List Of Tables\n\n"
+
+    def test_introduction_heading(self):
+        md = "\n\n**INTRODUCTION**\n\n"
+        assert promote_bold_allcaps_headers(md) == "\n\n## Introduction\n\n"
+
+    def test_requires_blank_lines(self):
+        """Must be between blank lines - no promotion without boundaries."""
+        md = "text\n**ABSTRACT**\nmore text"
+        # No blank lines before/after, should not promote
+        assert promote_bold_allcaps_headers(md) == md
+
+    def test_rejects_toc_entries_with_dot_leaders(self):
+        """TOC entries with dot leaders are rejected."""
+        md = "\n\n**ABSTRACT . . . . . 5**\n\n"
+        assert promote_bold_allcaps_headers(md) == md
+
+    def test_rejects_short_abbreviations(self):
+        """Short all-caps abbreviations without spaces are rejected."""
+        md = "\n\n**MW**\n\n"
+        # Not a known single-word heading, no spaces, should not promote
+        assert promote_bold_allcaps_headers(md) == md
+
+    def test_rejects_short_abbreviation_hts(self):
+        md = "\n\n**HTS**\n\n"
+        assert promote_bold_allcaps_headers(md) == md
+
+    def test_multiple_headings_in_document(self):
+        """Multiple bold all-caps headings are all promoted."""
+        md = (
+            "Some text.\n"
+            "\n"
+            "**CONTENTS**\n"
+            "\n"
+            "Table of contents text.\n"
+            "\n"
+            "**ABSTRACT**\n"
+            "\n"
+            "Abstract text.\n"
+            "\n"
+            "**REFERENCES**\n"
+            "\n"
+            "References here.\n"
+        )
+        result = promote_bold_allcaps_headers(md)
+        assert "## Contents" in result
+        assert "## Abstract" in result
+        assert "## References" in result
+
+    def test_preserves_surrounding_content(self):
+        """Content around promoted headings is preserved."""
+        md = "Before\n\n**ABSTRACT**\n\nAfter"
+        result = promote_bold_allcaps_headers(md)
+        assert result == "Before\n\n## Abstract\n\nAfter"
+
+    def test_title_casing_applied(self):
+        """Headings are title-cased for readability."""
+        md = "\n\n**LIST OF FIGURES**\n\n"
+        result = promote_bold_allcaps_headers(md)
+        # Should be title-cased
+        assert "## List Of Figures" in result
 
 
 # ---------------------------------------------------------------------------

@@ -30,3 +30,20 @@
 - All corpus tests must pass after every change
 - Per-paper heading thresholds accommodate known limitations of text-based detection
 
+---
+
+## Iteration 1
+
+### Starting State
+- Corpus: 5 papers (hawker_2020, aries_cost_account, helios_design, hsu_2020, delene_2001)
+- All 4 corpus tests pass (188 doc_ingest tests total)
+- Comparison report: helios_design headings 52→7 (-87%, expected — baseline from Claude Layer 3 vision), delene chars -6.2% (baseline contaminated with AI artifacts)
+
+### Specs
+1. **fix-delene-baseline-artifacts** — Clean 25+ Claude Layer 3 hallucination artifacts from delene_2001 baseline (AI conversation text injected during failed equation repair). Eliminates phantom -6.2% char regression.
+2. **add-bold-allcaps-heading-promotion** — Fix heading detection gap: bold all-caps single-word headings (`**ABSTRACT**`, `**CONTENTS**`) fall through both allcaps promoter (no bold markers) and unnumbered bold promoter (14-char minimum). Target: delene headings 23→25+.
+3. **add-sparc-to-corpus** — Add SPARC tokamak paper (25 pages, tables + math) from pool. Progressive challenge: corpus 5→6 papers.
+
+### Key Learnings
+_(to be filled by eval agent)_
+

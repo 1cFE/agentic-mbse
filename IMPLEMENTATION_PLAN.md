@@ -61,7 +61,7 @@ uv run pytest tests/test_corpus.py --run-corpus -v
 
 ## Task 2: Add Bold All-Caps Heading Promotion
 
-**Status**: PENDING
+**Status**: DONE
 
 **Spec**: [add-bold-allcaps-heading-promotion]
 
@@ -110,6 +110,17 @@ python3 tests/corpus/compare.py
 ```
 
 **Depends on**: Task 1 (clean baseline needed for accurate regression measurement)
+
+**Completion notes**:
+- Added `_BOLD_ALLCAPS_HEADER_RE` pattern to match bold all-caps between blank lines
+- Created `_is_bold_allcaps_heading_candidate()` filter (reuses `_is_allcaps_heading_candidate()` logic)
+- Added `promote_bold_allcaps_headers()` function, inserted in orchestrator after unnumbered bold and before allcaps
+- Wrote learning test demonstrating the gap: `**ABSTRACT**` fails both existing promoters but works with new one
+- Added 13 unit tests covering single-word, multi-word, rejection cases, and title-casing
+- delene_2001 heading count improved from 23 → 28 (+5 headings: CONTENTS, LIST OF TABLES, ACRONYMS, ABSTRACT, REFERENCES)
+- All 109 tests pass (105 postprocess + 4 corpus tests)
+- No regressions on other papers (hawker, aries, helios, hsu all within thresholds)
+- Files modified: `src/agentic_mbse/extraction/postprocess.py` (+33 lines), `tests/test_postprocess.py` (+108 lines)
 
 ---
 
