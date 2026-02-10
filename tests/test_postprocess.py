@@ -12,6 +12,7 @@ from agentic_mbse.extraction.postprocess import (
     promote_bold_allcaps_headers,
     promote_bold_headers,
     promote_figure_captions,
+    promote_italic_numbered_headers,
     promote_plain_headers,
     promote_unnumbered_bold_headers,
     reject_noise_headers,
@@ -165,6 +166,96 @@ class TestPromotePlainHeaders:
         md = "\n\n4. SPARC scenarios and performance projections\nTo ensure achievement of the SPARC mission of fusion gain"
         result = promote_plain_headers(md)
         assert "## 4 SPARC scenarios and performance projections" in result
+
+
+# ---------------------------------------------------------------------------
+# promote_italic_numbered_headers
+# ---------------------------------------------------------------------------
+
+
+class TestPromoteItalicNumberedHeaders:
+    """Tests for italic numbered section header promotion.
+
+    Handles patterns like: 4.1. _Full-performance H-mode discharge_
+    which appear in the sparc_overview paper.
+    """
+
+    def test_basic_promotion(self):
+        """Single italic numbered header between blank lines."""
+        md = "\n\n4.1. _Full-performance H-mode discharge_\n\n"
+        result = promote_italic_numbered_headers(md)
+        assert "### 4.1 Full-performance H-mode discharge" in result
+
+    def test_without_trailing_dot(self):
+        """Italic header without trailing dot after section number."""
+        md = "\n\n4.1 _Full-performance H-mode discharge_\n\n"
+        result = promote_italic_numbered_headers(md)
+        assert "### 4.1 Full-performance H-mode discharge" in result
+
+    def test_depth_mapping(self):
+        """Heading depth should be based on section number (4.1 = 1 dot = ###)."""
+        md = "\n\n4.1. _Full-performance H-mode discharge_\n\n"
+        result = promote_italic_numbered_headers(md)
+        # 4.1 has 1 dot, so _header_depth returns 3 (###)
+        assert result.strip() == "### 4.1 Full-performance H-mode discharge"
+
+    def test_multiple_headers(self):
+        """Multiple italic headers in same document."""
+        md = (
+            "scenarios are as follows.\n"
+            "\n"
+            "4.1. _Full-performance H-mode discharge_\n"
+            "\n"
+            "Since the full-performance H-mode scenario is the most demanding.\n"
+            "\n"
+            "4.2. _Full-performance L-mode discharge_\n"
+            "\n"
+            "The full-performance L-mode scenario.\n"
+        )
+        result = promote_italic_numbered_headers(md)
+        assert "### 4.1 Full-performance H-mode discharge" in result
+        assert "### 4.2 Full-performance L-mode discharge" in result
+
+    def test_preserves_non_italic_text(self):
+        """Should not affect regular italic text."""
+        md = "This is _italic text_ in a paragraph.\n\n4.1. _Header Text_\n\n"
+        result = promote_italic_numbered_headers(md)
+        assert "This is _italic text_ in a paragraph." in result
+        assert "### 4.1 Header Text" in result
+
+    def test_requires_blank_lines(self):
+        """Italic headers must be between blank lines."""
+        # No blank line before
+        md = "text before\n4.1. _Header Text_\n\ntext after"
+        result = promote_italic_numbered_headers(md)
+        assert "4.1. _Header Text_" in result
+        assert "###" not in result
+
+    def test_requires_uppercase_start(self):
+        """Header title must start with uppercase letter."""
+        md = "\n\n4.1. _lowercase header_\n\n"
+        result = promote_italic_numbered_headers(md)
+        # Should NOT match because title starts with lowercase
+        assert "4.1. _lowercase header_" in result
+        assert "###" not in result
+
+    def test_sparc_overview_learning_test(self):
+        """Learning test from sparc_overview corpus paper.
+
+        Tests the exact pattern seen at lines 692, 784, 802 of
+        tests/corpus/current/sparc_overview/full_document.md
+        """
+        md = (
+            "scenarios are as follows.\n"
+            "\n"
+            "4.1. _Full-performance H-mode discharge_\n"
+            "\n"
+            "Since the full-performance H-mode scenario is the most demanding on many of the\n"
+        )
+        result = promote_italic_numbered_headers(md)
+        assert "### 4.1 Full-performance H-mode discharge" in result
+        # Original italic formatting should be gone
+        assert "_Full-performance H-mode discharge_" not in result
 
 
 class TestIsTocLine:

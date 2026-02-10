@@ -85,6 +85,13 @@ _BOLD_ALLCAPS_HEADER_RE = re.compile(
     r"(?<=\n\n)\*\*([A-Z][A-Z ]{2,59})\*\*(?=\n\n)",
 )
 
+# Italic numbered section headers: 4.1. _Full-performance H-mode discharge_
+# Matches numbered section headers with italic formatting between blank lines.
+# Pattern: {number}.{subnumber}. _Title text with uppercase start_
+_ITALIC_NUMBERED_HEADER_RE = re.compile(
+    r"(?<=\n\n)(\d+\.\d+)\.?\s+_([A-Z][^_]+)_(?=\n\n)",
+)
+
 # Headers with redundant bold: ## **1 Introduction** → ## 1 Introduction
 _HEADER_BOLD_CLEANUP_RE = re.compile(
     r"^(#{2,6})\s+\*\*(.+?)\*\*\s*$",
@@ -236,6 +243,18 @@ def _replace_bold_allcaps_header(match: re.Match) -> str:
     return f"## {title.title()}"
 
 
+def _replace_italic_numbered_header(match: re.Match) -> str:
+    """Replace italic numbered header with markdown heading.
+
+    Converts: 4.1. _Full-performance H-mode discharge_
+    To: ### 4.1 Full-performance H-mode discharge
+    """
+    section_num = match.group(1)
+    title = match.group(2).strip()
+    hashes = "#" * _header_depth(section_num)
+    return f"{hashes} {section_num} {title}"
+
+
 def promote_bold_headers(md: str) -> str:
     """Convert standalone bold lines matching numbered section patterns to markdown headers.
 
@@ -305,6 +324,18 @@ def promote_bold_allcaps_headers(md: str) -> str:
     Must be between blank lines and not look like TOC entries or abbreviations.
     """
     return _BOLD_ALLCAPS_HEADER_RE.sub(_replace_bold_allcaps_header, md)
+
+
+def promote_italic_numbered_headers(md: str) -> str:
+    """Promote italic numbered section headers to markdown headings.
+
+    Handles: ``4.1. _Full-performance H-mode discharge_`` → ``### 4.1 Full-performance H-mode discharge``
+
+    The pattern matches numbered subsection headers with italic formatting
+    that appear between blank lines. Heading level is determined by the
+    section number depth (e.g., 4.1 has 1 dot → ###).
+    """
+    return _ITALIC_NUMBERED_HEADER_RE.sub(_replace_italic_numbered_header, md)
 
 
 def clean_header_artifacts(md: str) -> str:
@@ -544,6 +575,7 @@ def postprocess(md: str, images_dir: Path | None = None) -> str:
     md = strip_running_headers(md)
     md = promote_bold_headers(md)
     md = promote_plain_headers(md)
+    md = promote_italic_numbered_headers(md)
     md = promote_unnumbered_bold_headers(md)
     md = promote_bold_allcaps_headers(md)
     md = promote_allcaps_headers(md)
