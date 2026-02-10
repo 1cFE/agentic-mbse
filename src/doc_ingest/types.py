@@ -133,3 +133,21 @@ class SourceCandidate:
 
         # Set sort key for secondary sorting (url preferred, fallback to local_path)
         self._sort_key = self.url if self.url is not None else (self.local_path or "")
+
+
+@dataclass
+class ConversionResult:
+    """Output of a successful document conversion.
+
+    Encapsulates the extracted markdown text, non-fatal warnings (e.g., "table possibly
+    malformed"), quality flags indicating extraction characteristics, and the name of
+    the converter that produced the result.
+
+    All converters must return a ConversionResult on success, providing provenance
+    and quality metadata for downstream processing.
+    """
+
+    markdown: str
+    warnings: list[str]
+    quality_flags: QualityFlags
+    converter_name: str

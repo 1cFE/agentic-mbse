@@ -2,14 +2,15 @@
 
 ## Implementation Status (2026-02-09)
 
-**Phase 1 Foundation Progress: 3/17 specs complete**
+**Phase 1 Foundation Progress: 4/17 specs complete**
 
 Completed:
 - ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
 - ✅ Spec 002: QualityFlags - extraction quality indicators (tables, math, figures, structure)
 - ✅ Spec 003: SourceCandidate - format types, quality tiers, sortable prioritization
+- ✅ Spec 004: ConversionResult - markdown output, warnings, quality flags, converter provenance
 
-Next: Spec 004 (ConversionResult), Spec 017 (ConversionError), then base converter interface
+Next: Spec 017 (ConversionError), then base converter interface
 
 ## Build & Run
 
