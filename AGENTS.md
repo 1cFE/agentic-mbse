@@ -2,16 +2,17 @@
 
 ## Implementation Status (2026-02-09)
 
-**Phase 1 Foundation Progress: 5/17 specs complete**
+**Phase 1 Foundation Progress: 6/17 specs complete**
 
 Completed:
 - ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
 - ✅ Spec 002: QualityFlags - extraction quality indicators (tables, math, figures, structure)
 - ✅ Spec 003: SourceCandidate - format types, quality tiers, sortable prioritization
 - ✅ Spec 004: ConversionResult - markdown output, warnings, quality flags, converter provenance
+- ✅ Spec 005: WebFetcher - HTTP(S)/local fetching, protocol validation, size limits, timeouts, typed errors
 - ✅ Spec 017: ConversionError - typed exception with FailureCategory, structured details
 
-Next: Spec 005 (WebFetcher) or base converter interface
+Next: Spec 010 (ValidationDetails) or base converter interface
 
 ## Build & Run
 
@@ -69,6 +70,15 @@ uv run ruff format src/ tests/
 - No circular dependencies (converters → base, orchestrator → converters)
 
 ## Known Gotchas
+
+**WebFetcher implementation (spec 005):**
+- Fetch method supports both URLs and local paths via single interface
+- Protocol validation happens early (allowlist: http, https only)
+- Size limits enforced twice: from Content-Length header AND during streaming (defense in depth)
+- Streaming download prevents memory exhaustion on large files
+- All network errors mapped to typed FetchError categories for proper orchestrator handling
+- requests.get uses stream=True + iter_content for chunked reading
+- Timeout applies to entire request, not per chunk
 
 **Converter implementation:**
 - MUST set `self.name` and populate `converter_name` in result
