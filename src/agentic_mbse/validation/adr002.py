@@ -9,6 +9,7 @@ Implements validation rules from ADR-002 (Calculation Architecture):
 
 These checks are integrated into Level 2 structural validation.
 """
+
 from typing import Any
 
 from agentic_mbse.sysml.expression import extract_feature_refs, extract_operators
@@ -113,10 +114,7 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
                 continue  # Skip library files (calc defs have different rules)
 
             # Check if attribute has an expression
-            if (
-                not hasattr(attr, "feature_value_expression")
-                or not attr.feature_value_expression
-            ):
+            if not hasattr(attr, "feature_value_expression") or not attr.feature_value_expression:
                 continue
 
             expr = attr.feature_value_expression
@@ -466,10 +464,7 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
                 continue  # Skip library files
 
             # Check if attribute has an expression
-            if (
-                not hasattr(attr, "feature_value_expression")
-                or not attr.feature_value_expression
-            ):
+            if not hasattr(attr, "feature_value_expression") or not attr.feature_value_expression:
                 continue
 
             expr = attr.feature_value_expression
@@ -495,9 +490,7 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
                     level=2,
                     severity=Severity.ERROR,
                     code=ValidationCode.V2_DYNAMIC_EXPRESSION,
-                    message=(
-                        f"Derived expression references design attributes: {ref_names}"
-                    ),
+                    message=(f"Derived expression references design attributes: {ref_names}"),
                     element_name=attr_name,
                     location=location,
                     suggestion=_generate_calc_def_guidance(attr_name, ref_names),

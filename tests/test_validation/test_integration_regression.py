@@ -82,8 +82,7 @@ def test_level2_output_matches_baseline():
     baseline_path = BASELINE_DIR / "level2_baseline.txt"
     if not baseline_path.exists():
         raise FileNotFoundError(
-            f"Baseline not found: {baseline_path}. "
-            "Run Phase 1 setup to capture baselines first."
+            f"Baseline not found: {baseline_path}. Run Phase 1 setup to capture baselines first."
         )
 
     baseline = baseline_path.read_text()
@@ -105,9 +104,7 @@ def test_level2_output_matches_baseline():
     )
 
     # Compare key patterns detected
-    assert set(current_metrics["key_patterns"]) == set(
-        baseline_metrics["key_patterns"]
-    ), (
+    assert set(current_metrics["key_patterns"]) == set(baseline_metrics["key_patterns"]), (
         f"Key patterns changed: baseline={baseline_metrics['key_patterns']}, "
         f"current={current_metrics['key_patterns']}"
     )
@@ -122,8 +119,7 @@ def test_level3_output_matches_baseline():
     baseline_path = BASELINE_DIR / "level3_baseline.txt"
     if not baseline_path.exists():
         raise FileNotFoundError(
-            f"Baseline not found: {baseline_path}. "
-            "Run Phase 1 setup to capture baselines first."
+            f"Baseline not found: {baseline_path}. Run Phase 1 setup to capture baselines first."
         )
 
     baseline = baseline_path.read_text()
@@ -133,9 +129,7 @@ def test_level3_output_matches_baseline():
     current_metrics = _extract_metrics(current)
 
     # Compare circular dependency count
-    assert current_metrics.get("circular_deps", 0) == baseline_metrics.get(
-        "circular_deps", 0
-    ), (
+    assert current_metrics.get("circular_deps", 0) == baseline_metrics.get("circular_deps", 0), (
         f"Circular dependency count changed: "
         f"baseline={baseline_metrics.get('circular_deps', 0)}, "
         f"current={current_metrics.get('circular_deps', 0)}"

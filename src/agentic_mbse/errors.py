@@ -11,6 +11,7 @@ __all__ = [
 
 class AgenticMBSEError(Exception):
     """Base error for agentic-mbse package."""
+
     pass
 
 

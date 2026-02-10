@@ -5,10 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 from agentic_mbse.pm.dashboard import (
-    _format_date,
-    _format_item_line,
-    _format_item_status,
-    _has_file_not_found,
     _render_header,
     _render_requirements,
     _render_validation,
@@ -20,7 +16,6 @@ from agentic_mbse.pm.types import (
     DerivedEpicState,
     DerivedWorkItemState,
     EpicStatus,
-    ParseWarning,
     Priority,
     ProjectState,
     RequirementEntry,
@@ -72,7 +67,9 @@ def _write_requirements(mp_dir: Path, rows: list[tuple[str, str, str, str, str]]
     (mp_dir / "REQUIREMENTS.md").write_text("\n".join(lines) + "\n")
 
 
-def _write_validation_matrix(mp_dir: Path, rows: list[tuple[str, str, str, str, str, str, str, str, str]]) -> None:
+def _write_validation_matrix(
+    mp_dir: Path, rows: list[tuple[str, str, str, str, str, str, str, str, str]]
+) -> None:
     """Write VALIDATION_MATRIX.md with table rows."""
     mp_dir.mkdir(parents=True, exist_ok=True)
     lines = [
@@ -81,7 +78,9 @@ def _write_validation_matrix(mp_dir: Path, rows: list[tuple[str, str, str, str, 
         "|----|-------------|------|-----------|----------|-----------|--------|------|--------|",
     ]
     for row in rows:
-        lines.append(f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]} | {row[5]} | {row[6]} | {row[7]} | {row[8]} |")
+        lines.append(
+            f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]} | {row[5]} | {row[6]} | {row[7]} | {row[8]} |"
+        )
     (mp_dir / "VALIDATION_MATRIX.md").write_text("\n".join(lines) + "\n")
 
 
@@ -117,7 +116,11 @@ def _item(
     completed_date: str | None = None,
 ) -> DerivedWorkItemState:
     return DerivedWorkItemState(
-        id=wi_id, name=name, state=state, stage=stage, completed_date=completed_date,
+        id=wi_id,
+        name=name,
+        state=state,
+        stage=stage,
+        completed_date=completed_date,
     )
 
 
@@ -159,7 +162,9 @@ class TestRenderWorkItems:
             declared_status=EpicStatus.ACTIVE,
             priority=Priority.P0,
             file="epics/core.md",
-            items=[_item("WI-001", "foundation", WorkItemStatus.ACTIVE, stage=WorkItemStage.SPECCING)],
+            items=[
+                _item("WI-001", "foundation", WorkItemStatus.ACTIVE, stage=WorkItemStage.SPECCING)
+            ],
             total=1,
             done=0,
         )
@@ -173,7 +178,9 @@ class TestRenderWorkItems:
             total=1,
             done=0,
         )
-        standalone = [_item("WI-050", "one-off", WorkItemStatus.ACTIVE, stage=WorkItemStage.IMPLEMENTING)]
+        standalone = [
+            _item("WI-050", "one-off", WorkItemStatus.ACTIVE, stage=WorkItemStage.IMPLEMENTING)
+        ]
         state = ProjectState(epics=[epic1, epic2], standalone=standalone)
         result = _render_work_items(state)
         assert "Epic: Core" in result
@@ -235,9 +242,19 @@ class TestRenderRequirements:
 
     def test_populated(self) -> None:
         entries = [
-            RequirementEntry(id="PR-001", requirement="r1", source="s1", enforcement="model", validation_method="test"),
-            RequirementEntry(id="PR-002", requirement="r2", source="s2", enforcement="-", validation_method="-"),
-            RequirementEntry(id="PR-003", requirement="r3", source="s3", enforcement="test", validation_method=""),
+            RequirementEntry(
+                id="PR-001",
+                requirement="r1",
+                source="s1",
+                enforcement="model",
+                validation_method="test",
+            ),
+            RequirementEntry(
+                id="PR-002", requirement="r2", source="s2", enforcement="-", validation_method="-"
+            ),
+            RequirementEntry(
+                id="PR-003", requirement="r3", source="s3", enforcement="test", validation_method=""
+            ),
         ]
         result = _render_requirements(entries, has_file=True)
         assert "Total: 3" in result
@@ -318,7 +335,9 @@ class TestGenerateDashboard:
     def test_full_project(self, tmp_path: Path) -> None:
         """Project with all three sections populated."""
         work = tmp_path / "work"
-        _write_backlog_raw(work, """\
+        _write_backlog_raw(
+            work,
+            """\
 epics:
   - name: Core
     goal: G-001
@@ -335,21 +354,28 @@ epics:
         name: types
         scale: standard
         status: active
-standalone: []""")
+standalone: []""",
+        )
         _make_completed(work, "20260205_WI-001_foundation")
         d = _make_active(work, "WI-002_types")
         _write_spec(d, "Active")
         (d / "design.md").write_text("design")
 
         mp = tmp_path / "modeling_project"
-        _write_requirements(mp, [
-            ("PR-001", "req1", "src1", "model", "test"),
-            ("PR-002", "req2", "src2", "-", "-"),
-        ])
-        _write_validation_matrix(mp, [
-            ("SV-001", "check1", "reasonableness", "test", "x", "0", "s", "t", "passing"),
-            ("SV-002", "check2", "reasonableness", "test", "x", "0", "s", "t", "failing"),
-        ])
+        _write_requirements(
+            mp,
+            [
+                ("PR-001", "req1", "src1", "model", "test"),
+                ("PR-002", "req2", "src2", "-", "-"),
+            ],
+        )
+        _write_validation_matrix(
+            mp,
+            [
+                ("SV-001", "check1", "reasonableness", "test", "x", "0", "s", "t", "passing"),
+                ("SV-002", "check2", "reasonableness", "test", "x", "0", "s", "t", "failing"),
+            ],
+        )
 
         result = generate_dashboard(tmp_path)
         assert "Epic: Core" in result.markdown
@@ -360,7 +386,9 @@ standalone: []""")
     def test_missing_structured_files(self, tmp_path: Path) -> None:
         """Project with work items but no REQUIREMENTS.md or VALIDATION_MATRIX.md."""
         work = tmp_path / "work"
-        _write_backlog_raw(work, """\
+        _write_backlog_raw(
+            work,
+            """\
 epics:
   - name: Core
     priority: P0
@@ -371,7 +399,8 @@ epics:
         name: foundation
         scale: standard
         status: backlog
-standalone: []""")
+standalone: []""",
+        )
 
         result = generate_dashboard(tmp_path)
         assert "Epic: Core" in result.markdown

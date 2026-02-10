@@ -240,8 +240,7 @@ def detect_problems(md: str) -> list[RepairRequest]:
         missing = sum(1 for p in page_map if p == -1)
         if missing > len(page_map) * 0.5:
             warnings.warn(
-                "Over 50% of lines lack PAGE markers; "
-                "page-specific repairs may target wrong pages",
+                "Over 50% of lines lack PAGE markers; page-specific repairs may target wrong pages",
                 stacklevel=2,
             )
 

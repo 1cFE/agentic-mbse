@@ -96,7 +96,9 @@ class TestParseSections:
         assert sections[1].title == "Methods"
 
     def test_unnumbered_with_subsections(self):
-        content = "## Introduction\nText\n### Background\nText\n### Prior Work\nText\n## Results\nText"
+        content = (
+            "## Introduction\nText\n### Background\nText\n### Prior Work\nText\n## Results\nText"
+        )
         sections = parse_sections(content, max_depth=3)
         assert len(sections) == 4
         assert sections[0].section_num == "1"

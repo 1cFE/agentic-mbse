@@ -3,20 +3,20 @@
 Tests the V1, V2, V4 checks from agentic_mbse.validation.adr002
 using the test fixtures in tests/fixtures/adr002_violations/.
 """
-import pytest
+
 from pathlib import Path
 
-from agentic_mbse.sysml.syside_adapter import get_syside
+import pytest
 
+from agentic_mbse.sysml.syside_adapter import get_syside
 from agentic_mbse.sysml.types import Severity, ValidationCode
 from agentic_mbse.validation.adr002 import (
-    check_calc_def_locations,
-    check_supported_operators,
-    check_static_expressions,
-    _is_expose_pattern,
     _build_calc_output_catalog,
+    _is_expose_pattern,
+    check_calc_def_locations,
+    check_static_expressions,
+    check_supported_operators,
 )
-
 
 # ============================================================================
 # Fixtures
@@ -316,16 +316,16 @@ def test_real_model_expose_patterns_exempt():
     # Verify known EXPOSE attributes are NOT in any violations
     # (EXPOSE pattern exemption still works)
     known_expose_attrs = [
-        "wall_plug_power",    # heating.sysml
-        "cooling_power",      # magnets.sysml
-        "pump_power",         # blanket.sysml, vacuum.sysml
-        "cryo_power",         # vacuum.sysml
-        "processing_power",   # tritium.sysml
-        "auxiliary_power",    # system.sysml
-        "p_alpha_out",        # physics.sysml
-        "p_thermal_out",      # physics.sysml
-        "q_sci_out",          # physics.sysml
-        "eta_plant_out",      # physics.sysml
+        "wall_plug_power",  # heating.sysml
+        "cooling_power",  # magnets.sysml
+        "pump_power",  # blanket.sysml, vacuum.sysml
+        "cryo_power",  # vacuum.sysml
+        "processing_power",  # tritium.sysml
+        "auxiliary_power",  # system.sysml
+        "p_alpha_out",  # physics.sysml
+        "p_thermal_out",  # physics.sysml
+        "q_sci_out",  # physics.sysml
+        "eta_plant_out",  # physics.sysml
     ]
 
     for attr_name in known_expose_attrs:

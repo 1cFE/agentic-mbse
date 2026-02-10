@@ -44,12 +44,8 @@ class TestExtractabilityValidation:
 
     def test_valid_design_passes_extractability(self, valid_model):
         """Literal defaults (10.0, 5.0) should produce no UNEXTRACTABLE issues."""
-        issues, count = check_design_attr_completeness(
-            valid_model, design_path_filter="designs"
-        )
-        unextractable = [
-            i for i in issues if i.code == ValidationCode.L8_DESIGN_ATTR_UNEXTRACTABLE
-        ]
+        issues, count = check_design_attr_completeness(valid_model, design_path_filter="designs")
+        unextractable = [i for i in issues if i.code == ValidationCode.L8_DESIGN_ATTR_UNEXTRACTABLE]
         assert count > 0, "Expected at least one design attr to be checked"
         assert len(unextractable) == 0, (
             f"Valid literals should not produce UNEXTRACTABLE issues: {unextractable}"
@@ -60,9 +56,7 @@ class TestExtractabilityValidation:
         issues, count = check_design_attr_completeness(
             unextractable_model, design_path_filter="designs"
         )
-        unextractable = [
-            i for i in issues if i.code == ValidationCode.L8_DESIGN_ATTR_UNEXTRACTABLE
-        ]
+        unextractable = [i for i in issues if i.code == ValidationCode.L8_DESIGN_ATTR_UNEXTRACTABLE]
         assert len(unextractable) > 0, "Expected UNEXTRACTABLE issues for area = length * width"
         for issue in unextractable:
             assert issue.severity == Severity.ERROR
@@ -91,14 +85,18 @@ class TestPathFilter:
         assert result.metrics["Design attrs checked"] > 0
         # Should be more than designs-only
         designs_result = validate_codegen_readiness(FIXTURE_DIR, design_path_filter="designs")
-        assert result.metrics["Design attrs checked"] > designs_result.metrics["Design attrs checked"]
+        assert (
+            result.metrics["Design attrs checked"] > designs_result.metrics["Design attrs checked"]
+        )
 
     def test_none_filter_checks_all_files(self):
         """filter=None should check all files regardless of directory."""
         result = validate_codegen_readiness(FIXTURE_DIR, design_path_filter=None)
         assert result.metrics["Design attrs checked"] > 0
         designs_result = validate_codegen_readiness(FIXTURE_DIR, design_path_filter="designs")
-        assert result.metrics["Design attrs checked"] > designs_result.metrics["Design attrs checked"]
+        assert (
+            result.metrics["Design attrs checked"] > designs_result.metrics["Design attrs checked"]
+        )
 
 
 class TestMetricsAndRegression:

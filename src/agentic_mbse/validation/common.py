@@ -115,7 +115,7 @@ def load_sysml_model(files: list[Path]) -> tuple[Any, Any]:
 
 def print_header(title: str, level: int) -> None:
     """Print formatted section header"""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Level {level}: {title}")
     print("=" * 60)
 
@@ -157,11 +157,7 @@ def print_result(result: QualityCheckResult) -> None:
 def get_qualified_name(element: Any) -> str:
     """Get qualified name of element for error reporting"""
     try:
-        return (
-            str(element.qualified_name)
-            if hasattr(element, "qualified_name")
-            else str(element)
-        )
+        return str(element.qualified_name) if hasattr(element, "qualified_name") else str(element)
     except Exception:
         return f"<unnamed {type(element).__name__}>"
 

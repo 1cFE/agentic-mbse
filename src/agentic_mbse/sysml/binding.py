@@ -119,11 +119,7 @@ def _is_parameter_member(member: Any) -> bool:
         return True
     # Try isinstance method (syside pattern)
     type_name = type(member).__name__
-    return (
-        "AttributeUsage" in type_name
-        or "ReferenceUsage" in type_name
-        or "Member" in type_name
-    )
+    return "AttributeUsage" in type_name or "ReferenceUsage" in type_name or "Member" in type_name
 
 
 def _get_document_url(element: Any) -> str | None:

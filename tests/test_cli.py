@@ -1,8 +1,6 @@
 """Tests for CLI module."""
 
-import shutil
 import subprocess
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -621,7 +619,7 @@ class TestModificationDetection:
 
     def test_check_modification_hash_matches(self, tmp_path):
         """Returns False when file matches stored hash."""
-        from agentic_mbse.cli import _compute_file_hash, _check_modification
+        from agentic_mbse.cli import _check_modification, _compute_file_hash
 
         test_file = tmp_path / "test.md"
         test_file.write_text("content")
@@ -738,7 +736,7 @@ class TestInstallFileWithHash:
 
     def test_install_file_returns_hash_on_copy(self, tmp_path):
         """Returns content hash when copying file."""
-        from agentic_mbse.cli import _install_file_with_hash, _compute_file_hash
+        from agentic_mbse.cli import _compute_file_hash, _install_file_with_hash
 
         src = tmp_path / "src.md"
         dst = tmp_path / "dst.md"

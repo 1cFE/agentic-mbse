@@ -147,14 +147,14 @@ def _parse_unnumbered_sections(lines: list[str], max_depth: int) -> list[Section
     ``build_hierarchy``, ``format_index_md``, and ``read_section`` all work
     unchanged.
     """
-    _UNNUMBERED_RE = re.compile(r"^(#{2,6})\s+(.+)$")
+    unnumbered_re = re.compile(r"^(#{2,6})\s+(.+)$")
 
     # counters[depth] tracks the current counter at each depth (1-indexed depth)
     counters: list[int] = [0] * (max_depth + 1)
     sections: list[Section] = []
 
     for i, line in enumerate(lines):
-        m = _UNNUMBERED_RE.match(line)
+        m = unnumbered_re.match(line)
         if not m:
             continue
         hashes = m.group(1)
@@ -364,7 +364,9 @@ def parse_index_sections(index_content: str) -> dict[str, tuple[int, int, str]]:
     """
     sections: dict[str, tuple[int, int, str]] = {}
 
-    header_pattern = re.compile(r"^#{2,}\s+(\d+(?:\.\d+)*|[A-Z](?:\.\d+)*)\.?\s+(.+)$", re.MULTILINE)
+    header_pattern = re.compile(
+        r"^#{2,}\s+(\d+(?:\.\d+)*|[A-Z](?:\.\d+)*)\.?\s+(.+)$", re.MULTILINE
+    )
     lines_pattern = re.compile(r"\*\*Lines:\*\*\s*(\d+)-(\d+)")
 
     headers = list(header_pattern.finditer(index_content))

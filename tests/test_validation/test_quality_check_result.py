@@ -3,8 +3,8 @@
 Validates that new structured_issues field works alongside legacy issues.
 """
 
-from agentic_mbse.validation.common import QualityCheckResult
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
+from agentic_mbse.validation.common import QualityCheckResult
 
 
 def test_quality_check_result_has_structured_issues():

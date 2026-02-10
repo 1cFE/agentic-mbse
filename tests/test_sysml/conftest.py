@@ -20,9 +20,7 @@ class MockElement:
     not Python's isinstance(element, TypeName). We simulate this.
     """
 
-    def __init__(
-        self, name: str = "", qualified_name: str = "", doc_path: str = ""
-    ) -> None:
+    def __init__(self, name: str = "", qualified_name: str = "", doc_path: str = "") -> None:
         self.name = name
         self.qualified_name = qualified_name
         self._doc_path = doc_path
@@ -268,9 +266,7 @@ def create_mock_calc_usage_with_expression_binding(
     Returns:
         MockCalculationUsage with one expression-bound parameter
     """
-    operands = [
-        MockFeatureReferenceExpression(name=ref, doc_path=usage_file) for ref in refs
-    ]
+    operands = [MockFeatureReferenceExpression(name=ref, doc_path=usage_file) for ref in refs]
     expr = MockOperatorExpression(operator="+", operands=operands)
 
     member = MockMember(name=param_name, feature_value_expression=expr)

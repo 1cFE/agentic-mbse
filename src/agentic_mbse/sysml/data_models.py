@@ -3,6 +3,7 @@
 These types are imported by downstream packages (sysml-codegen).
 Changes here may require updates to dependent packages.
 """
+
 from dataclasses import dataclass
 from typing import Any
 
@@ -31,6 +32,7 @@ class AttributeInfo:
         is_input: True if marked as input (direction In)
         is_output: True if marked as output (direction Out/Return)
     """
+
     name: str
     sysml_type: str | None = None
     default_value: Any = None

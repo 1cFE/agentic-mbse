@@ -92,9 +92,7 @@ def main() -> int:
     import argparse
 
     parser = argparse.ArgumentParser(description="Level 4: Constraint Satisfaction")
-    parser.add_argument(
-        "path", nargs="?", default="models", help="Path to models directory"
-    )
+    parser.add_argument("path", nargs="?", default="models", help="Path to models directory")
     args = parser.parse_args()
 
     result = analyze_constraints(args.path)

@@ -89,13 +89,13 @@ def run_all_checks(
     else:
         checks_to_run = QUALITY_CHECKS
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("SysML Quality Validation")
     print(f"Models path: {models_path}")
     print(f"Mode: {'Fail-fast' if fail_fast else 'Complete'}")
     if specific_level:
         print(f"Running: Level {specific_level} only")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     # Run checks
     for name, check_func in checks_to_run:
@@ -135,9 +135,9 @@ def run_all_checks(
     )
 
     # Print summary
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("Summary")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"Checks run: {aggregated.total_checks}")
     print(f"✅ Passed: {aggregated.passed}")
     print(f"❌ Failed: {aggregated.failed}")

@@ -2,6 +2,7 @@
 
 Public API for the sysml module.
 """
+
 from agentic_mbse.sysml.binding import (
     classify_binding,
     extract_bindings,

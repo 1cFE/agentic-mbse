@@ -1,6 +1,8 @@
 """Tests for SysideAdapter."""
+
 import pytest
-from agentic_mbse.sysml.syside_adapter import SysideAdapter, DiagnosticSeverity
+
+from agentic_mbse.sysml.syside_adapter import DiagnosticSeverity, SysideAdapter
 
 
 class TestTypeMap:
@@ -41,6 +43,7 @@ class TestIsInstance:
 
     def test_is_instance_with_mock_matching_name(self):
         """is_instance returns True for mocks with matching type name."""
+
         class MockCalculationDefinition:
             pass
 
@@ -49,6 +52,7 @@ class TestIsInstance:
 
     def test_is_instance_with_mock_non_matching_name(self):
         """is_instance returns False for mocks without matching type name."""
+
         class MockOtherThing:
             pass
 
@@ -71,6 +75,7 @@ class TestSourceLocation:
 
     def test_source_location_with_no_document(self):
         """get_source_location returns None for elements without document."""
+
         class MockElement:
             document = None
 
@@ -78,6 +83,7 @@ class TestSourceLocation:
 
     def test_source_location_with_document(self):
         """get_source_location extracts path and line."""
+
         class MockStartPoint:
             line = 41  # 0-indexed
 
@@ -115,6 +121,7 @@ class TestDocumentUrl:
 
     def test_document_url_direct(self):
         """get_document_url returns URL from element's document."""
+
         class MockDocument:
             url = "file:///path/to/model.sysml"
 
@@ -127,6 +134,7 @@ class TestDocumentUrl:
 
     def test_document_url_from_owner(self):
         """get_document_url traverses up ownership chain."""
+
         class MockDocument:
             url = "file:///owner/path.sysml"
 
@@ -143,6 +151,7 @@ class TestDocumentUrl:
 
     def test_document_url_not_found(self):
         """get_document_url returns None when no document found."""
+
         class MockElement:
             document = None
             owner = None

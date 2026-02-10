@@ -336,9 +336,7 @@ class TestParseKnowledge:
     def test_missing_required_fields(self, tmp_path):
         f = tmp_path / "KNOWLEDGE.md"
         f.write_text(
-            "### DI-001: Partial Entry\n"
-            "- **Source**: only source\n"
-            "- **Status**: captured\n"
+            "### DI-001: Partial Entry\n- **Source**: only source\n- **Status**: captured\n"
         )
         result = parse_knowledge(f)
         assert len(result.data) == 1
@@ -439,11 +437,7 @@ class TestParseArchitecture:
 
     def test_missing_required_fields(self, tmp_path):
         f = tmp_path / "ARCHITECTURE.md"
-        f.write_text(
-            "## Key Decisions\n\n"
-            "### AD-001: Sparse\n"
-            "**Status**: active\n"
-        )
+        f.write_text("## Key Decisions\n\n### AD-001: Sparse\n**Status**: active\n")
         result = parse_architecture(f)
         assert len(result.data) == 1
         assert result.data[0].decision == ""
@@ -564,7 +558,7 @@ class TestParseTraceability:
         f.write_text(
             "Element,File,Type,Knowledge,Requirement,Source_Type,"
             "Source_Document,Source_Location,Confidence,Assumptions,Last_Verified\n"
-            'MagnetCostCalc,models/lib/magnet.sysml,calc def,'
+            "MagnetCostCalc,models/lib/magnet.sysml,calc def,"
             '"DI-003, DI-012",PR-005,codebase,PyFECONS,magnet.py:94,'
             "High,2024 costs,2026-01-28\n"
         )
@@ -576,9 +570,7 @@ class TestParseTraceability:
         assert result.warnings == []
 
     def test_template_empty_state(self):
-        result = parse_traceability(
-            TEMPLATES / "data" / "traceability_matrix.csv"
-        )
+        result = parse_traceability(TEMPLATES / "data" / "traceability_matrix.csv")
         assert result.data == []
         assert result.warnings == []
 
@@ -622,9 +614,7 @@ class TestAP1EmptyState:
         assert result.warnings == []
 
     def test_validation_matrix_template(self):
-        result = parse_validation_matrix(
-            TEMPLATES / "VALIDATION_MATRIX.md.template"
-        )
+        result = parse_validation_matrix(TEMPLATES / "VALIDATION_MATRIX.md.template")
         assert result.data == []
         assert result.warnings == []
 
@@ -644,8 +634,6 @@ class TestAP1EmptyState:
         assert result.warnings == []
 
     def test_traceability_template(self):
-        result = parse_traceability(
-            TEMPLATES / "data" / "traceability_matrix.csv"
-        )
+        result = parse_traceability(TEMPLATES / "data" / "traceability_matrix.csv")
         assert result.data == []
         assert result.warnings == []

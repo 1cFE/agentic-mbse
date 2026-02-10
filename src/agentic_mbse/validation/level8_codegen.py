@@ -327,7 +327,9 @@ def check_binding_formats(
                     continue
 
                 bindings_checked += 1
-                param_name = str(member.name) if hasattr(member, "name") and member.name else "<unnamed>"
+                param_name = (
+                    str(member.name) if hasattr(member, "name") and member.name else "<unnamed>"
+                )
 
                 # Determine binding type using SysideAdapter
                 # FeatureChainExpression = instance.attribute path

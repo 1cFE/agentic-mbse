@@ -13,6 +13,7 @@ NOTE: syside is imported lazily to allow CLI operations (like `init`)
 to work without a syside license key. The license check only happens
 when actually using syside parsing functionality.
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -208,9 +209,7 @@ class SysideAdapter:
         """
         type_map = cls._get_type_map()
         if type_name not in type_map:
-            raise KeyError(
-                f"Unknown type '{type_name}'. Valid types: {list(type_map.keys())}"
-            )
+            raise KeyError(f"Unknown type '{type_name}'. Valid types: {list(type_map.keys())}")
         return model.elements(type_map[type_name])
 
     @classmethod

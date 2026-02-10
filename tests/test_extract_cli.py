@@ -101,16 +101,12 @@ class TestSelectBackend:
         assert result == "pymupdf"
 
     def test_auto_prefers_docling_for_pdf(self, monkeypatch):
-        monkeypatch.setattr(
-            "agentic_mbse.cli.extract_cli._is_available", lambda name: True
-        )
+        monkeypatch.setattr("agentic_mbse.cli.extract_cli._is_available", lambda name: True)
         result = select_backend(Path("x.pdf"), requested=None)
         assert result == "docling"
 
     def test_auto_prefers_docling_for_docx(self, monkeypatch):
-        monkeypatch.setattr(
-            "agentic_mbse.cli.extract_cli._is_available", lambda name: True
-        )
+        monkeypatch.setattr("agentic_mbse.cli.extract_cli._is_available", lambda name: True)
         result = select_backend(Path("x.docx"), requested=None)
         assert result == "docling"
 
@@ -123,9 +119,7 @@ class TestSelectBackend:
         assert result == "pandoc"
 
     def test_returns_none_when_nothing_available(self, monkeypatch):
-        monkeypatch.setattr(
-            "agentic_mbse.cli.extract_cli._is_available", lambda name: False
-        )
+        monkeypatch.setattr("agentic_mbse.cli.extract_cli._is_available", lambda name: False)
         result = select_backend(Path("x.pdf"), requested=None)
         assert result is None
 
@@ -253,9 +247,7 @@ class TestCmdExtract:
         pdf = tmp_path / "report.pdf"
         pdf.write_bytes(b"fake pdf content")
 
-        monkeypatch.setattr(
-            "agentic_mbse.cli.extract_cli._is_available", lambda name: False
-        )
+        monkeypatch.setattr("agentic_mbse.cli.extract_cli._is_available", lambda name: False)
 
         args = MockArgs(
             path=str(pdf),
@@ -356,9 +348,7 @@ class TestCmdExtract:
                 return fail_result
             return success_result
 
-        monkeypatch.setattr(
-            "agentic_mbse.cli.extract_cli._is_available", lambda name: True
-        )
+        monkeypatch.setattr("agentic_mbse.cli.extract_cli._is_available", lambda name: True)
 
         args = MockArgs(
             path=str(pdf),
@@ -518,7 +508,9 @@ class TestCmdExtract:
             result = cmd_extract(args)
         assert result == EXIT_SUCCESS
         mock_index.assert_called_once_with(
-            md_path, summarize=False, force=False,
+            md_path,
+            summarize=False,
+            force=False,
         )
 
 
@@ -565,8 +557,13 @@ class TestStructuralPass:
 
         with (
             patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
-            patch("agentic_mbse.extraction.claude_structure.enhance_structure", side_effect=mock_enhance),
+            patch(
+                "agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True
+            ),
+            patch(
+                "agentic_mbse.extraction.claude_structure.enhance_structure",
+                side_effect=mock_enhance,
+            ),
             patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[object()]),
             patch("agentic_mbse.extraction.ai_repair.repair_document", side_effect=mock_repair),
         ):
@@ -599,7 +596,10 @@ class TestStructuralPass:
 
         with (
             patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=False),
+            patch(
+                "agentic_mbse.extraction.claude_structure.needs_claude_structure",
+                return_value=False,
+            ),
             patch("agentic_mbse.extraction.claude_structure.enhance_structure") as mock_enhance,
             patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[object()]),
             patch(
@@ -639,7 +639,9 @@ class TestStructuralPass:
 
         with (
             patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
+            patch(
+                "agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True
+            ),
             patch(
                 "agentic_mbse.extraction.claude_structure.enhance_structure",
                 return_value=("modified", struct_meta),
@@ -679,7 +681,9 @@ class TestStructuralPass:
 
         with (
             patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
+            patch(
+                "agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True
+            ),
             patch(
                 "agentic_mbse.extraction.claude_structure.enhance_structure",
                 return_value=("modified", struct_meta),
@@ -719,7 +723,9 @@ class TestStructuralPass:
 
         with (
             patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
+            patch(
+                "agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True
+            ),
             patch(
                 "agentic_mbse.extraction.claude_structure.enhance_structure",
                 side_effect=RuntimeError("Claude subprocess failed"),
@@ -797,7 +803,9 @@ class TestStructuralPass:
 
         with (
             patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
+            patch(
+                "agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True
+            ),
             patch(
                 "agentic_mbse.extraction.claude_structure.enhance_structure",
                 return_value=("modified", struct_meta),

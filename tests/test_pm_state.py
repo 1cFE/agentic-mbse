@@ -27,6 +27,7 @@ from agentic_mbse.pm.types import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _write_backlog_raw(work_dir: Path, yaml_body: str) -> None:
     """Write a BACKLOG.md with raw YAML frontmatter body."""
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -288,7 +289,9 @@ class TestDeriveProjectState:
 
     def test_backlog_only(self, tmp_path: Path) -> None:
         work = tmp_path / "work"
-        _write_backlog_raw(work, """\
+        _write_backlog_raw(
+            work,
+            """\
 epics:
   - name: Core
     goal: G-001
@@ -304,7 +307,8 @@ epics:
         name: types
         scale: trivial
         status: backlog
-standalone: []""")
+standalone: []""",
+        )
 
         result = derive_project_state(tmp_path)
         assert len(result.data.epics) == 1
@@ -314,7 +318,9 @@ standalone: []""")
 
     def test_mixed_states(self, tmp_path: Path) -> None:
         work = tmp_path / "work"
-        _write_backlog_raw(work, """\
+        _write_backlog_raw(
+            work,
+            """\
 epics:
   - name: Core
     goal: G-001
@@ -335,7 +341,8 @@ epics:
         name: future
         scale: trivial
         status: backlog
-standalone: []""")
+standalone: []""",
+        )
 
         # Create completed dir for WI-001
         _make_completed(work, "20260205_WI-001_foundation")
@@ -365,7 +372,9 @@ standalone: []""")
 
     def test_backlog_spec_conflict(self, tmp_path: Path) -> None:
         work = tmp_path / "work"
-        _write_backlog_raw(work, """\
+        _write_backlog_raw(
+            work,
+            """\
 epics:
   - name: Core
     priority: P0
@@ -376,7 +385,8 @@ epics:
         name: foundation
         scale: standard
         status: active
-standalone: []""")
+standalone: []""",
+        )
         d = _make_active(work, "WI-001_foundation")
         _write_spec(d, "paused")
 
@@ -387,7 +397,9 @@ standalone: []""")
 
     def test_epic_state_derivation(self, tmp_path: Path) -> None:
         work = tmp_path / "work"
-        _write_backlog_raw(work, """\
+        _write_backlog_raw(
+            work,
+            """\
 epics:
   - name: Core
     priority: P0
@@ -404,7 +416,8 @@ epics:
         scale: standard
         status: completed
         completed: "2026-02-06"
-standalone: []""")
+standalone: []""",
+        )
         _make_completed(work, "20260205_WI-001_foundation")
         _make_completed(work, "20260206_WI-002_types")
 
@@ -413,7 +426,9 @@ standalone: []""")
 
     def test_epic_status_mismatch(self, tmp_path: Path) -> None:
         work = tmp_path / "work"
-        _write_backlog_raw(work, """\
+        _write_backlog_raw(
+            work,
+            """\
 epics:
   - name: Core
     priority: P0
@@ -424,12 +439,16 @@ epics:
         name: foundation
         scale: standard
         status: backlog
-standalone: []""")
+standalone: []""",
+        )
 
         result = derive_project_state(tmp_path)
         assert result.data.epics[0].derived_status == EpicStatus.DRAFT
         assert result.data.epics[0].declared_status == EpicStatus.COMPLETED
-        assert any("declared status='completed' but derived status='draft'" in w.message for w in result.warnings)
+        assert any(
+            "declared status='completed' but derived status='draft'" in w.message
+            for w in result.warnings
+        )
 
     def test_empty_backlog(self, tmp_path: Path) -> None:
         work = tmp_path / "work"

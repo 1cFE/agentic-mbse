@@ -51,7 +51,9 @@ def has_doc_comment(element) -> bool:
     if hasattr(element, "owned_elements"):
         for owned in element.owned_elements:
             # Check if it's a Comment or Documentation element
-            if SysideAdapter.is_instance(owned, "Comment") or SysideAdapter.is_instance(owned, "Documentation"):
+            if SysideAdapter.is_instance(owned, "Comment") or SysideAdapter.is_instance(
+                owned, "Documentation"
+            ):
                 return True
     return False
 

@@ -136,9 +136,7 @@ def validate_architecture(models_path: str) -> QualityCheckResult:
         if manifest:
             missing = check_subsystem_composition(model, manifest)
             for subsystem in missing:
-                issues.append(
-                    f"Missing subsystem '{subsystem}' in {manifest_path.parent.name}"
-                )
+                issues.append(f"Missing subsystem '{subsystem}' in {manifest_path.parent.name}")
 
     return QualityCheckResult(
         level=7,

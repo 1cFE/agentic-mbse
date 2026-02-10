@@ -76,9 +76,7 @@ def traverse_expression(
         # Fallback: check for operands attribute directly (mock pattern)
         try:
             for operand in expr.operands:
-                child_results = traverse_expression(
-                    operand, visitor, max_depth, _current_depth + 1
-                )
+                child_results = traverse_expression(operand, visitor, max_depth, _current_depth + 1)
                 results.extend(child_results)
         except (TypeError, AttributeError):
             pass
@@ -111,9 +109,7 @@ def _is_standard_library_ref(ref: ExpressionRef) -> bool:
     """
     if not ref.qualified_name:
         return False
-    return any(
-        ref.qualified_name.startswith(prefix) for prefix in STANDARD_LIBRARY_PREFIXES
-    )
+    return any(ref.qualified_name.startswith(prefix) for prefix in STANDARD_LIBRARY_PREFIXES)
 
 
 def extract_feature_refs(
@@ -468,9 +464,7 @@ def evaluate_true_static_expression(expr: Any) -> float:
                     )
                 return left / right
 
-        raise ValueError(
-            f"Operator '{operator}' with unexpected operand count: {len(operands)}"
-        )
+        raise ValueError(f"Operator '{operator}' with unexpected operand count: {len(operands)}")
 
     raise TypeError(f"Cannot evaluate expression of type: {type(expr).__name__}")
 

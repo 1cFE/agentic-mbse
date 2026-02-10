@@ -212,9 +212,7 @@ class TestPymupdfBackend:
 
         chunks = [{"metadata": {"page": 0}, "text": "# Title\n\nSome content\n"}]
         mock_to_markdown = MagicMock(return_value=chunks)
-        monkeypatch.setattr(
-            pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown
-        )
+        monkeypatch.setattr(pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown)
 
         result = pymupdf_backend.extract(pdf, output_dir)
 
@@ -236,9 +234,7 @@ class TestPymupdfBackend:
 
         chunks = [{"metadata": {"page": 0}, "text": "Content here"}]
         mock_to_markdown = MagicMock(return_value=chunks)
-        monkeypatch.setattr(
-            pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown
-        )
+        monkeypatch.setattr(pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown)
 
         result = pymupdf_backend.extract(pdf, output_dir)
         assert result.success is True
@@ -260,9 +256,7 @@ class TestPymupdfBackend:
         # Bold header should be promoted by postprocess
         chunks = [{"metadata": {"page": 0}, "text": "**1 Introduction**\n\nContent.\n"}]
         mock_to_markdown = MagicMock(return_value=chunks)
-        monkeypatch.setattr(
-            pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown
-        )
+        monkeypatch.setattr(pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown)
 
         result = pymupdf_backend.extract(pdf, output_dir)
         assert result.success is True
@@ -278,9 +272,7 @@ class TestPymupdfBackend:
         output_dir = tmp_path / "output"
 
         mock_to_markdown = MagicMock(side_effect=RuntimeError("parse error"))
-        monkeypatch.setattr(
-            pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown
-        )
+        monkeypatch.setattr(pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown)
 
         result = pymupdf_backend.extract(pdf, output_dir)
         assert result.success is False
@@ -302,9 +294,7 @@ class TestPymupdfBackend:
 
         chunks = [{"metadata": {"page": 0}, "text": "Content with images"}]
         mock_to_markdown = MagicMock(return_value=chunks)
-        monkeypatch.setattr(
-            pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown
-        )
+        monkeypatch.setattr(pymupdf_backend, "_get_to_markdown", lambda: mock_to_markdown)
 
         result = pymupdf_backend.extract(pdf, output_dir)
         assert result.success is True

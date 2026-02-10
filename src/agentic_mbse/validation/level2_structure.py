@@ -241,7 +241,8 @@ def _extract_input_features(calc_def: Any) -> list[Any]:
         # Check if this is a feature (attribute or reference)
         # Note: calc def parameters can be ReferenceUsage or AttributeUsage
         if not (
-            SysideAdapter.is_instance(member, "AttributeUsage") or SysideAdapter.is_instance(member, "ReferenceUsage")
+            SysideAdapter.is_instance(member, "AttributeUsage")
+            or SysideAdapter.is_instance(member, "ReferenceUsage")
         ):
             continue
 
@@ -414,7 +415,11 @@ def validate_structure(models_path: str) -> QualityCheckResult:
             [i for i in result.structured_issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
         ),
         "V4 violations (unsupported operator)": len(
-            [i for i in result.structured_issues if i.code == ValidationCode.V4_UNSUPPORTED_OPERATOR]
+            [
+                i
+                for i in result.structured_issues
+                if i.code == ValidationCode.V4_UNSUPPORTED_OPERATOR
+            ]
         ),
     }
 

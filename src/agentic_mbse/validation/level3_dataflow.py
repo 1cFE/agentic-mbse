@@ -133,9 +133,7 @@ def main() -> int:
     import argparse
 
     parser = argparse.ArgumentParser(description="Level 3: Dataflow Integrity")
-    parser.add_argument(
-        "path", nargs="?", default="models", help="Path to models directory"
-    )
+    parser.add_argument("path", nargs="?", default="models", help="Path to models directory")
     args = parser.parse_args()
 
     result = validate_dataflow(args.path)

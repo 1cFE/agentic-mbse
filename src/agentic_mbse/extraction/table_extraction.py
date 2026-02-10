@@ -64,6 +64,7 @@ def dataframe_to_pipe_table(df) -> str:  # pd.DataFrame
     cols = list(df.columns)
     header = "| " + " | ".join(str(c) for c in cols) + " |"
     separator = "| " + " | ".join("---" for _ in cols) + " |"
+
     def _fmt(v):
         if pd.isna(v):
             return ""

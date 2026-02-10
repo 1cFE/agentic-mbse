@@ -1204,9 +1204,7 @@ class TestCloseItemStandalone:
         active_dir.mkdir(parents=True)
         item_dir = active_dir / "WI-001_fix-redefines"
         item_dir.mkdir()
-        (item_dir / "spec.md").write_text(
-            "---\nStatus: active\n---\n# Spec\n", encoding="utf-8"
-        )
+        (item_dir / "spec.md").write_text("---\nStatus: active\n---\n# Spec\n", encoding="utf-8")
 
         data = BacklogData(
             epics=[],

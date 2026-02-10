@@ -76,11 +76,7 @@ class TestRepairTables:
         import agentic_mbse.extraction.table_repair as mod
 
         md_path = tmp_path / "full_document.md"
-        md_path.write_text(
-            "Some text\n\n"
-            "| A | B |\n|---|---|\n| 1 | 2 | 3 |\n\n"
-            "More text\n"
-        )
+        md_path.write_text("Some text\n\n| A | B |\n|---|---|\n| 1 | 2 | 3 |\n\nMore text\n")
 
         # Mock subprocess.run for claude -p
         fixed_table = "| A | B |\n|---|---|\n| 1 | 2 |"

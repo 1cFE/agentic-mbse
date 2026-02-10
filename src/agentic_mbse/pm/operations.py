@@ -144,7 +144,9 @@ def _render_backlog_body(data: BacklogData) -> str:
             notes = ""
             if sa.completed:
                 notes = f"Completed {sa.completed}"
-            parts.append(f"| {sa.id} | {sa.name} | {scale_val} | {priority_val} | {status_val} | {notes} |")
+            parts.append(
+                f"| {sa.id} | {sa.name} | {scale_val} | {priority_val} | {status_val} | {notes} |"
+            )
         parts.append("")
 
     return "\n".join(parts)

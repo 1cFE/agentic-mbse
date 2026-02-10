@@ -289,9 +289,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
                         except Exception as exc:
                             print(f"        structure: FAILED ({exc}), continuing")
                     else:
-                        print(
-                            "        structure: skipped (document already well-structured)"
-                        )
+                        print("        structure: skipped (document already well-structured)")
 
                 # Layer 4: AI quality repair (only with --enhance, NOT --structure-only)
                 if run_ai_repair and remaining_problems:

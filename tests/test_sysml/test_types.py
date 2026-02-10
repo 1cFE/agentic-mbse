@@ -44,7 +44,9 @@ def test_validation_code_is_string_enum():
     assert ValidationCode.V1_CALC_DEF_LOCATION == "V1_CALC_DEF_LOCATION"
     assert ValidationCode.UNBOUND_INPUT == "UNBOUND_INPUT"
     # Can be used as dict key
-    assert {ValidationCode.V1_CALC_DEF_LOCATION: "test"}[ValidationCode.V1_CALC_DEF_LOCATION] == "test"
+    assert {ValidationCode.V1_CALC_DEF_LOCATION: "test"}[
+        ValidationCode.V1_CALC_DEF_LOCATION
+    ] == "test"
 
 
 def test_severity_values():

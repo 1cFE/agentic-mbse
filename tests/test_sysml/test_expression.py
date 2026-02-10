@@ -303,9 +303,7 @@ class TestStandardLibraryFilter:
         Input: FeatureReferenceExpression with qualified_name="SI::metre"
         Output: Empty list with default filtering; 1 ref when filter disabled
         """
-        mock_expr = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
+        mock_expr = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
 
         # Default behavior filters SI::
         refs = extract_feature_refs(mock_expr)
@@ -322,9 +320,7 @@ class TestStandardLibraryFilter:
         Input: FeatureReferenceExpression with qualified_name="ISQ::Length"
         Output: Empty list when filtered
         """
-        mock_expr = MockFeatureReferenceExpression(
-            name="Length", qualified_name="ISQ::Length"
-        )
+        mock_expr = MockFeatureReferenceExpression(name="Length", qualified_name="ISQ::Length")
 
         refs = extract_feature_refs(mock_expr)
         assert len(refs) == 0, "ISQ::Length should be filtered by default"
@@ -338,9 +334,7 @@ class TestStandardLibraryFilter:
         Input: FeatureReferenceExpression with qualified_name="ScalarValues::Real"
         Output: Empty list when filtered
         """
-        mock_expr = MockFeatureReferenceExpression(
-            name="Real", qualified_name="ScalarValues::Real"
-        )
+        mock_expr = MockFeatureReferenceExpression(name="Real", qualified_name="ScalarValues::Real")
 
         refs = extract_feature_refs(mock_expr)
         assert len(refs) == 0, "ScalarValues::Real should be filtered by default"
@@ -378,9 +372,7 @@ class TestStandardLibraryFilter:
         Input: OperatorExpression with SI::metre and RadialBuild::radius
         Output: Only RadialBuild::radius returned (SI::metre filtered)
         """
-        mock_unit = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
+        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
         mock_design = MockFeatureReferenceExpression(
             name="radius", qualified_name="RadialBuild::radius"
         )
@@ -405,9 +397,7 @@ class TestStandardLibraryFilter:
         Input: Expression with SI::metre reference
         Output: 1 reference when filter disabled
         """
-        mock_expr = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
+        mock_expr = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
 
         # With filter disabled, std lib refs are included
         refs = extract_feature_refs(mock_expr, ignore_std_lib=False)
@@ -426,12 +416,8 @@ class TestStandardLibraryFilter:
         #   operand[0]: LiteralRational (3.0)
         #   operand[1]: FeatureReferenceExpression → SI::metre
         mock_literal = MockLiteralRational(value=3.0)
-        mock_unit = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
-        mock_expr = MockOperatorExpression(
-            operator="[", operands=[mock_literal, mock_unit]
-        )
+        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_expr = MockOperatorExpression(operator="[", operands=[mock_literal, mock_unit])
 
         refs = extract_feature_refs(mock_expr)
         assert len(refs) == 0, "Unit annotation should yield zero refs after filtering"
@@ -487,12 +473,8 @@ class TestIsTrueStaticExpression:
         Output: True (SI::metre is filtered, only literal remains)
         """
         mock_literal = MockLiteralRational(value=3.0)
-        mock_unit = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
-        mock_expr = MockOperatorExpression(
-            operator="[", operands=[mock_literal, mock_unit]
-        )
+        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_expr = MockOperatorExpression(operator="[", operands=[mock_literal, mock_unit])
 
         assert is_true_static_expression(mock_expr) is True
 
@@ -537,20 +519,12 @@ class TestIsTrueStaticExpression:
         Output: True (all refs are SI:: which are filtered)
         """
         mock_lit1 = MockLiteralRational(value=3.0)
-        mock_unit1 = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
-        mock_unit_expr1 = MockOperatorExpression(
-            operator="[", operands=[mock_lit1, mock_unit1]
-        )
+        mock_unit1 = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit_expr1 = MockOperatorExpression(operator="[", operands=[mock_lit1, mock_unit1])
 
         mock_lit2 = MockLiteralRational(value=2.0)
-        mock_unit2 = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
-        mock_unit_expr2 = MockOperatorExpression(
-            operator="[", operands=[mock_lit2, mock_unit2]
-        )
+        mock_unit2 = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit_expr2 = MockOperatorExpression(operator="[", operands=[mock_lit2, mock_unit2])
 
         mock_expr = MockOperatorExpression(
             operator="+", operands=[mock_unit_expr1, mock_unit_expr2]
@@ -565,20 +539,14 @@ class TestIsTrueStaticExpression:
         Output: False (major_radius is a design ref)
         """
         mock_lit = MockLiteralRational(value=3.0)
-        mock_unit = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
-        mock_unit_expr = MockOperatorExpression(
-            operator="[", operands=[mock_lit, mock_unit]
-        )
+        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit_expr = MockOperatorExpression(operator="[", operands=[mock_lit, mock_unit])
 
         mock_design = MockFeatureReferenceExpression(
             name="major_radius", qualified_name="RadialBuild::major_radius"
         )
 
-        mock_expr = MockOperatorExpression(
-            operator="+", operands=[mock_unit_expr, mock_design]
-        )
+        mock_expr = MockOperatorExpression(operator="+", operands=[mock_unit_expr, mock_design])
 
         assert is_true_static_expression(mock_expr) is False
 
@@ -831,9 +799,7 @@ class TestEvaluateTrueStaticExpression:
         """
         from agentic_mbse.sysml.expression import evaluate_true_static_expression
 
-        inner = MockOperatorExpression(
-            "+", [MockLiteralRational(3.0), MockLiteralRational(4.0)]
-        )
+        inner = MockOperatorExpression("+", [MockLiteralRational(3.0), MockLiteralRational(4.0)])
         expr = MockOperatorExpression("*", [inner, MockLiteralRational(2.0)])
         assert evaluate_true_static_expression(expr) == 14.0
 

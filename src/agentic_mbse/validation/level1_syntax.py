@@ -100,9 +100,7 @@ def main() -> int:
     import argparse
 
     parser = argparse.ArgumentParser(description="Level 1: Syntax Validation")
-    parser.add_argument(
-        "path", nargs="?", default="models", help="Path to models directory"
-    )
+    parser.add_argument("path", nargs="?", default="models", help="Path to models directory")
     parser.add_argument("--verbose", action="store_true", help="Verbose output")
 
     args = parser.parse_args()
