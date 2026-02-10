@@ -1326,6 +1326,11 @@ def main() -> int:
 
     register_extract_subcommand(subparsers)
 
+    # ingest command (delegated to doc_ingest_cli module)
+    from agentic_mbse.cli.doc_ingest_cli import register_doc_ingest_subcommand
+
+    register_doc_ingest_subcommand(subparsers)
+
     args = parser.parse_args()
 
     if not args.command:
