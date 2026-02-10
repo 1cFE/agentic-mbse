@@ -1125,16 +1125,180 @@ def supersede_insight(
     new_insight: dict,
     reason: str,
 ) -> OperationResult:
-    """Supersede a domain insight (not yet implemented).
+    """Supersede a domain insight (D4.4 workflows.md § 6.1).
 
-    Full implementation would:
-    1. Mark old DI-XXX as superseded in KNOWLEDGE.md (Status → superseded, add Superseded-by)
-    2. Assign new DI-XXX ID, create new entry with Supersedes field
-    3. Query traceability_matrix.csv for affected elements
-    4. Produce impact report to knowledge/research/impacts/DI-XXX_superseded.md
+    Marks the old insight as superseded, creates a new insight that supersedes it,
+    queries the traceability matrix for affected elements, and generates an impact
+    report to knowledge/research/impacts/.
+
+    Args:
+        project_root: Project root directory
+        old_id: ID of the insight to supersede (e.g., "DI-003")
+        new_insight: Dictionary with fields for the new insight (title, source,
+                     context, model_implications, analysis_implications, rationale)
+        reason: Reason for supersession (used in impact report)
+
+    Returns:
+        OperationResult with success status, new DI-XXX ID, and impact report path
     """
-    # TODO: D4.4 stretch — implement full supersession flow per workflows.md § 6.1
-    raise NotImplementedError(
-        "supersede-insight is not yet implemented. "
-        "See workflows.md § 6.1 for the full supersession flow."
+    # Validate old_id format
+    if not re.match(r"^DI-\d+$", old_id):
+        return OperationResult(
+            success=False,
+            message=f"Invalid old_id '{old_id}', expected DI-XXX pattern",
+        )
+
+    # Validate new_insight required fields
+    required_fields = ["title", "source", "context", "model_implications", "analysis_implications"]
+    for field in required_fields:
+        if field not in new_insight or not new_insight[field].strip():
+            return OperationResult(
+                success=False,
+                message=f"Required field '{field}' missing or empty in new_insight",
+            )
+
+    knowledge_path = project_root / "knowledge" / "KNOWLEDGE.md"
+    k_result = parse_knowledge(knowledge_path)
+
+    # Find the old insight
+    old_entry = None
+    for entry in k_result.data:
+        if entry.id == old_id:
+            old_entry = entry
+            break
+
+    if old_entry is None:
+        return OperationResult(
+            success=False,
+            message=f"Insight {old_id} not found in KNOWLEDGE.md",
+            warnings=k_result.warnings,
+        )
+
+    if old_entry.status == InsightStatus.SUPERSEDED:
+        return OperationResult(
+            success=False,
+            message=f"Insight {old_id} is already superseded by {old_entry.superseded_by}",
+            warnings=k_result.warnings,
+        )
+
+    # Assign new DI-XXX ID
+    existing_ids = [e.id for e in k_result.data]
+    new_id = _next_id("DI", existing_ids)
+
+    # Update old entry
+    old_entry.status = InsightStatus.SUPERSEDED
+    old_entry.superseded_by = new_id
+
+    # Create new entry
+    new_entry = InsightEntry(
+        id=new_id,
+        title=new_insight["title"].strip(),
+        source=new_insight["source"].strip(),
+        rationale=new_insight.get("rationale", "").strip() or None,
+        context=new_insight["context"].strip(),
+        model_implications=new_insight["model_implications"].strip(),
+        analysis_implications=new_insight["analysis_implications"].strip(),
+        status=InsightStatus.CAPTURED,
+        supersedes=old_id,
+    )
+
+    # Regenerate KNOWLEDGE.md with updated and new entries
+    entries_by_id = {e.id: e for e in k_result.data}
+    entries_by_id[old_id] = old_entry  # Update old entry
+    entries_by_id[new_id] = new_entry  # Add new entry
+
+    # Sort by DI-XXX numeric part
+    def _sort_key(entry: InsightEntry) -> int:
+        m = re.match(r"DI-(\d+)", entry.id)
+        return int(m.group(1)) if m else 0
+
+    sorted_entries = sorted(entries_by_id.values(), key=_sort_key)
+
+    # Regenerate file content
+    lines = []
+    if knowledge_path.exists():
+        content = knowledge_path.read_text(encoding="utf-8")
+        # Preserve everything before the first DI-XXX section
+        m = re.search(r"^### DI-\d+:", content, re.MULTILINE)
+        if m:
+            lines.append(content[: m.start()].rstrip())
+        else:
+            lines.append(content.rstrip())
+
+    # Append all DI-XXX entries
+    for entry in sorted_entries:
+        lines.append(_format_insight_entry(entry))
+
+    knowledge_path.write_text("\n\n".join(lines) + "\n", encoding="utf-8")
+
+    # Query traceability matrix for impact
+    impact = impact_query(project_root, query_id=old_id)
+
+    # Generate impact report
+    impacts_dir = project_root / "knowledge" / "research" / "impacts"
+    impacts_dir.mkdir(parents=True, exist_ok=True)
+    impact_file = impacts_dir / f"{old_id}_superseded.md"
+
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    report_lines = [
+        f"# Impact Report: {old_id} Superseded",
+        "",
+        f"**Date**: {today}",
+        f"**Superseded by**: {new_id}",
+        f"**Reason**: {reason}",
+        "",
+        "## Old Insight",
+        "",
+        f"**{old_entry.title}**",
+        "",
+        f"- **Source**: {old_entry.source}",
+        f"- **Context**: {old_entry.context}",
+        "",
+        "## New Insight",
+        "",
+        f"**{new_entry.title}**",
+        "",
+        f"- **Source**: {new_entry.source}",
+        f"- **Context**: {new_entry.context}",
+        "",
+        "## Affected Model Elements",
+        "",
+    ]
+
+    if impact.affected_elements:
+        report_lines.append("| Element | File | Requirement | Knowledge |")
+        report_lines.append("|---------|------|-------------|-----------|")
+        for elem in impact.affected_elements:
+            report_lines.append(
+                f"| {elem.element} | {elem.file or 'N/A'} | {elem.requirement or 'N/A'} | {elem.knowledge} |"
+            )
+    else:
+        report_lines.append("*No model elements traced to this insight.*")
+
+    report_lines.extend(["", "## Affected Work Items", ""])
+
+    if impact.affected_work_items:
+        for item in impact.affected_work_items:
+            report_lines.append(f"- {item}")
+    else:
+        report_lines.append("*No work items traced to this insight.*")
+
+    report_lines.extend(
+        [
+            "",
+            "## Recommended Action",
+            "",
+            f"Review affected model elements and consider creating a work item to update "
+            f"assumptions based on {new_id}.",
+        ]
+    )
+
+    impact_file.write_text("\n".join(report_lines) + "\n", encoding="utf-8")
+
+    return OperationResult(
+        success=True,
+        message=f"Superseded {old_id} with {new_id}. Impact report: {impact_file.relative_to(project_root)}",
+        ids_assigned={"DI": new_id},
+        files_modified=[str(knowledge_path), str(impact_file)],
+        warnings=k_result.warnings + impact.warnings,
     )

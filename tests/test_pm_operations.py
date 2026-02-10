@@ -2,8 +2,6 @@
 
 from pathlib import Path
 
-import pytest
-
 from agentic_mbse.pm import (
     BacklogData,
     parse_architecture,
@@ -1168,11 +1166,261 @@ class TestGetStatus:
 
 
 class TestSupersedeInsight:
-    def test_raises_not_implemented(self, tmp_path):
+    """Tests for supersede_insight() operation (TASK-003)."""
+
+    def _setup_knowledge_with_insights(self, root: Path) -> None:
+        """Create KNOWLEDGE.md with test insights."""
+        knowledge_dir = root / "knowledge"
+        knowledge_dir.mkdir(parents=True)
+        knowledge_path = knowledge_dir / "KNOWLEDGE.md"
+
+        content = """# Domain Knowledge
+
+## Domain Insights
+
+### DI-001: HTS magnets cost more than LTS
+- **Source**: CATF 2024 report
+- **Context**: Cost modeling assumptions
+- **Model implications**: Need separate cost models for HTS vs LTS
+- **Analysis implications**: Cost sensitivity analysis must account for magnet type
+- **Status**: captured
+
+### DI-002: Blanket lifetime drives maintenance
+- **Source**: Engineering analysis
+- **Context**: Operational planning
+- **Model implications**: Blanket replacement schedule affects uptime
+- **Analysis implications**: Maintenance costs are significant
+- **Status**: captured
+
+### DI-003: Uniform magnet costing is incorrect
+- **Source**: PyFECONS assumptions
+- **Context**: Legacy cost model treats all magnets uniformly
+- **Model implications**: Single cost multiplier is insufficient
+- **Analysis implications**: LCOE estimates may be optimistic by 15-20%
+- **Status**: captured
+"""
+        knowledge_path.write_text(content, encoding="utf-8")
+
+    def _setup_traceability(self, root: Path) -> None:
+        """Create traceability matrix with DI-003 references."""
+        data_dir = root / "data"
+        data_dir.mkdir(parents=True)
+        csv_path = data_dir / "traceability_matrix.csv"
+
+        content = """Element,File,Type,Requirement,Knowledge
+MagnetSystemCostCalc,models/library/magnet_cost.sysml,calc def,PR-005,DI-003
+TFCoilCostCalc,models/library/tf_coil_cost.sysml,calc def,PR-005,DI-003
+PFCoilCostCalc,models/library/pf_coil_cost.sysml,calc def,PR-012,DI-003
+BlanketLifetime,models/library/blanket.sysml,attribute,PR-008,DI-002
+"""
+        csv_path.write_text(content, encoding="utf-8")
+
+    def test_supersede_basic_flow(self, tmp_path):
+        """Supersession updates old insight, creates new insight, and generates impact report."""
         from agentic_mbse.pm.operations import supersede_insight
 
-        with pytest.raises(NotImplementedError, match="supersede-insight"):
-            supersede_insight(tmp_path, old_id="DI-001", new_insight={}, reason="test")
+        root = tmp_path / "project"
+        root.mkdir()
+        self._setup_knowledge_with_insights(root)
+        self._setup_traceability(root)
+
+        new_insight = {
+            "title": "HTS vs LTS cost differentiation required",
+            "source": "Updated CATF 2024 data with HTS/LTS breakdown",
+            "context": "New research shows 3x cost difference between HTS and LTS at scale",
+            "model_implications": "Cost models must split HTS and LTS paths",
+            "analysis_implications": "Scenario analysis should vary magnet technology choice",
+        }
+
+        result = supersede_insight(
+            root,
+            old_id="DI-003",
+            new_insight=new_insight,
+            reason="New research on HTS vs LTS cost structures",
+        )
+
+        assert result.success
+        assert "DI" in result.ids_assigned
+        assert result.ids_assigned["DI"] == "DI-004"
+
+        # Check KNOWLEDGE.md updated
+        knowledge_path = root / "knowledge" / "KNOWLEDGE.md"
+        knowledge_content = knowledge_path.read_text(encoding="utf-8")
+
+        # Old insight marked as superseded
+        assert "### DI-003:" in knowledge_content
+        assert "**Status**: superseded" in knowledge_content
+        assert "**Superseded-by**: DI-004" in knowledge_content
+
+        # New insight created
+        assert "### DI-004: HTS vs LTS cost differentiation required" in knowledge_content
+        assert "**Supersedes**: DI-003" in knowledge_content
+        assert "**Status**: captured" in knowledge_content
+
+        # Check impact report generated
+        impact_path = root / "knowledge" / "research" / "impacts" / "DI-003_superseded.md"
+        assert impact_path.exists()
+        impact_content = impact_path.read_text(encoding="utf-8")
+
+        assert "Impact Report: DI-003 Superseded" in impact_content
+        assert "Superseded by**: DI-004" in impact_content
+        assert "New research on HTS vs LTS cost structures" in impact_content
+        assert "MagnetSystemCostCalc" in impact_content
+        assert "TFCoilCostCalc" in impact_content
+        assert "PFCoilCostCalc" in impact_content
+
+    def test_invalid_old_id_format(self, tmp_path):
+        """Reject invalid old_id format."""
+        from agentic_mbse.pm.operations import supersede_insight
+
+        result = supersede_insight(
+            tmp_path,
+            old_id="INVALID",
+            new_insight={"title": "test"},
+            reason="test",
+        )
+
+        assert not result.success
+        assert "Invalid old_id" in result.message
+
+    def test_missing_required_fields_in_new_insight(self, tmp_path):
+        """Reject new_insight with missing required fields."""
+        from agentic_mbse.pm.operations import supersede_insight
+
+        root = tmp_path / "project"
+        root.mkdir()
+        self._setup_knowledge_with_insights(root)
+
+        # Missing model_implications
+        new_insight = {
+            "title": "test",
+            "source": "test",
+            "context": "test",
+            "analysis_implications": "test",
+        }
+
+        result = supersede_insight(
+            root,
+            old_id="DI-001",
+            new_insight=new_insight,
+            reason="test",
+        )
+
+        assert not result.success
+        assert "model_implications" in result.message
+
+    def test_old_id_not_found(self, tmp_path):
+        """Reject supersession of non-existent insight."""
+        from agentic_mbse.pm.operations import supersede_insight
+
+        root = tmp_path / "project"
+        root.mkdir()
+        self._setup_knowledge_with_insights(root)
+
+        new_insight = {
+            "title": "test",
+            "source": "test",
+            "context": "test",
+            "model_implications": "test",
+            "analysis_implications": "test",
+        }
+
+        result = supersede_insight(
+            root,
+            old_id="DI-999",
+            new_insight=new_insight,
+            reason="test",
+        )
+
+        assert not result.success
+        assert "DI-999 not found" in result.message
+
+    def test_already_superseded(self, tmp_path):
+        """Reject supersession of already-superseded insight."""
+        from agentic_mbse.pm.operations import supersede_insight
+
+        root = tmp_path / "project"
+        root.mkdir()
+        knowledge_dir = root / "knowledge"
+        knowledge_dir.mkdir(parents=True)
+        knowledge_path = knowledge_dir / "KNOWLEDGE.md"
+
+        # DI-001 already superseded by DI-002
+        content = """# Domain Knowledge
+
+## Domain Insights
+
+### DI-001: Old insight
+- **Source**: test
+- **Context**: test
+- **Model implications**: test
+- **Analysis implications**: test
+- **Status**: superseded
+- **Superseded-by**: DI-002
+
+### DI-002: New insight
+- **Source**: test
+- **Context**: test
+- **Model implications**: test
+- **Analysis implications**: test
+- **Status**: captured
+- **Supersedes**: DI-001
+"""
+        knowledge_path.write_text(content, encoding="utf-8")
+
+        new_insight = {
+            "title": "test",
+            "source": "test",
+            "context": "test",
+            "model_implications": "test",
+            "analysis_implications": "test",
+        }
+
+        result = supersede_insight(
+            root,
+            old_id="DI-001",
+            new_insight=new_insight,
+            reason="test",
+        )
+
+        assert not result.success
+        assert "already superseded" in result.message
+        assert "DI-002" in result.message
+
+    def test_no_affected_elements(self, tmp_path):
+        """Impact report shows 'No model elements' when traceability empty."""
+        from agentic_mbse.pm.operations import supersede_insight
+
+        root = tmp_path / "project"
+        root.mkdir()
+        self._setup_knowledge_with_insights(root)
+
+        # Empty traceability
+        data_dir = root / "data"
+        data_dir.mkdir(parents=True)
+        csv_path = data_dir / "traceability_matrix.csv"
+        csv_path.write_text("Element,File,Type,Requirement,Knowledge\n", encoding="utf-8")
+
+        new_insight = {
+            "title": "test",
+            "source": "test",
+            "context": "test",
+            "model_implications": "test",
+            "analysis_implications": "test",
+        }
+
+        result = supersede_insight(
+            root,
+            old_id="DI-001",
+            new_insight=new_insight,
+            reason="test",
+        )
+
+        assert result.success
+
+        impact_path = root / "knowledge" / "research" / "impacts" / "DI-001_superseded.md"
+        impact_content = impact_path.read_text(encoding="utf-8")
+        assert "No model elements traced" in impact_content
 
 
 # ---------------------------------------------------------------------------
