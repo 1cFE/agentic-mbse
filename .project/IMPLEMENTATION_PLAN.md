@@ -9,8 +9,8 @@
 
 ## Executive Summary
 
-**Current State**: CLI interface complete (14/17 specs including full pipeline orchestration)
-**Next Milestone**: Converter implementations (specs 014-016)
+**Current State**: CLI + PDF Converter complete (15/17 specs including full pipeline orchestration)
+**Next Milestone**: HTML and Markdown converters (specs 015-016)
 **Critical Path**: Converters → Full Pipeline Testing
 
 **Technology Stack**: Python 3.11+, UV package manager, pytest, pydantic
@@ -20,7 +20,7 @@
 
 ## Specification Coverage Analysis
 
-### ✅ Completed Specifications (13 specs)
+### ✅ Completed Specifications (14 specs)
 
 | Spec | Component | Implementation | Lines | Tests |
 |------|-----------|----------------|-------|-------|
@@ -43,6 +43,7 @@
 | N/A | Converter (protocol) | `src/doc_ingest/converters/base.py` | 91 | ✅ |
 | N/A | ConverterRegistry | `src/doc_ingest/converters/registry.py` | 69 | ✅ |
 | N/A | SourceDiscoverer (stub) | `src/doc_ingest/source_discoverer.py` | 132 | ✅ |
+| **014** | PyMuPDF4LLMConverter | `src/doc_ingest/converters/pdf_converter.py` | 235 | ✅ |
 
 **Evidence**: All classes found via code search, commits 756155d through [current]
 **Note**: `ExtractionAttempt` dataclass exists in `outcome_classifier.py:17-33`, `DocumentOutcome` literal in `types.py:252`
@@ -52,6 +53,15 @@
 *None currently in progress*
 
 ### ✅ Recently Completed
+
+**TASK-DI-006: PDF Converter Implementation** — Completed 2026-02-09
+- Implemented `PyMuPDF4LLMConverter` class with full converter interface
+- Scanned PDF detection via text extraction from first 3 pages
+- Quality flags: table detection, heading structure, math indicators
+- ConversionError with category="needs_ocr" for scanned PDFs
+- Warnings for large PDFs (100+ pages) and images
+- 17 comprehensive unit tests covering all acceptance criteria (100% pass rate)
+- Files: `pdf_converter.py` (235 lines), `test_pdf_converter.py` (17 tests)
 
 **TASK-DI-001: ExtractionOrchestrator Implementation** — Completed 2026-02-09
 - Implemented `ExtractionOrchestrator` class with full orchestration logic
@@ -91,10 +101,9 @@
 - 24 unit tests covering validation and command execution (100% pass rate)
 - Files: `cli.py` (328 lines), `doc_ingest_cli.py` (54 lines), `test_doc_ingest_cli.py` (24 tests)
 
-### ⏳ Pending Specifications (3 specs)
+### ⏳ Pending Specifications (2 specs)
 
 **Converters (P1 - Format Support):**
-- **Spec 014**: PDF Converter (PyMuPDF4LLMConverter) — Extract scanned/native PDFs
 - **Spec 015**: HTML Converters (ArXivHTMLConverter, PublisherHTMLConverter) — Parse structured HTML
 - **Spec 016**: Markdown Converters (JATSPandocConverter, DOCXPandocConverter) — Pandoc-based conversion
 
@@ -259,56 +268,28 @@
 
 ---
 
-#### TASK-DI-006: PDF Converter Implementation
+#### [DONE] TASK-DI-006: PDF Converter Implementation
 **Addresses**: Spec 014 (pdf_converter.md)
 **Priority**: P1
 **Complexity**: MEDIUM (~200 lines, 1 file)
-**Estimated Time**: 1-2 days
+**Completed**: 2026-02-09
 
-**Problem**: Need PDF extraction with scanned document detection.
+**Implementation Summary**:
+- ✅ Created `src/doc_ingest/converters/pdf_converter.py` (235 lines)
+- ✅ Updated `src/doc_ingest/converters/__init__.py` to export PyMuPDF4LLMConverter
+- ✅ Created `tests/test_pdf_converter.py` (17 tests, 100% pass)
+- ✅ Scanned PDF detection: Check first 3 pages for <50 chars of text
+- ✅ Quality flags: table detection (markdown + PyMuPDF find_tables), heading structure (markdown headings), math indicators (Unicode symbols + keywords)
+- ✅ ConversionError with category="needs_ocr" for scanned PDFs
+- ✅ Warnings: Large PDFs (100+ pages), images present
+- ✅ All acceptance criteria met and verified via unit tests
 
-**Requirements** (from spec 014):
-- Implement `Converter` interface with `can_convert()`, `validate_source()`, `convert()`, `name`
-- Validate for extractable text (detect scanned PDFs)
-- Raise `ConversionError(category="needs_ocr")` for scanned documents
-- Report QualityFlags: tables, table_corruption, heading_structure
-- Converter name: "PyMuPDF4LLMConverter"
-- Use pymupdf4llm library for extraction
-
-**Implementation Steps**:
-1. Create `src/doc_ingest/converters/` directory
-2. Create `src/doc_ingest/converters/base.py` with `Converter` protocol/ABC
-3. Create `src/doc_ingest/converters/pdf_converter.py`
-4. Define `PyMuPDF4LLMConverter` class
-5. Implement `validate_source(content: bytes) -> ValidationResult`
-6. Implement `convert(content: bytes) -> ConversionResult`
-7. Add scanned PDF detection (text extraction check)
-8. Add QualityFlags population
-9. Write unit tests with sample PDFs
-10. Create `src/doc_ingest/converters/registry.py` for converter registry
-
-**Files Created/Modified**:
-- `src/doc_ingest/converters/__init__.py` (new)
-- `src/doc_ingest/converters/base.py` (new, ~50 lines - Converter interface)
-- `src/doc_ingest/converters/pdf_converter.py` (new, ~200 lines)
-- `src/doc_ingest/converters/registry.py` (new, ~50 lines)
-- `tests/test_pdf_converter.py` (new, ~250 lines)
-- `tests/fixtures/sample.pdf` (test fixture)
-
-**Acceptance Criteria**:
-- Native PDF → ConversionResult with markdown
-- Scanned PDF → raises `ConversionError(category="needs_ocr")`
-- ValidationResult reports content_length, has_body_content
-- QualityFlags reports tables, heading_structure
-
-**Verified By**:
-- Unit tests: `test_convert_native_pdf`, `test_convert_scanned_pdf_raises`
-- Integration tests: `test_pdf_in_full_pipeline`
-
-**Depends On**:
-- ✅ Spec 004 (ConversionResult)
-- ✅ Spec 010 (ValidationResult)
-- ✅ Spec 017 (ConversionError)
+**Key Design Decisions**:
+- Scanned PDF threshold: <50 characters across first 3 pages (heuristic)
+- Table corruption detection: PyMuPDF find_tables vs. markdown table markers, inconsistent column counts
+- Math detection: Unicode math symbols (∫∑√π²³·) + keywords (equation, formula) - heuristic since pymupdf4llm doesn't preserve LaTeX
+- Unexpected exceptions wrapped as ConversionError(category="unknown")
+- Type ignore comments for pymupdf/pymupdf4llm (no type stubs)
 
 ---
 

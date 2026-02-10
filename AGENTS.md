@@ -1,8 +1,8 @@
 # AGENTS.md
 
-## Implementation Status (2026-02-09 20:15)
+## Implementation Status (2026-02-09)
 
-**Phase 1 Foundation Progress: 14/17 specs complete**
+**Phase 1 Foundation Progress: 15/17 specs complete**
 
 Completed:
 - ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
@@ -18,9 +18,10 @@ Completed:
 - ✅ Spec 011: CLI (minimal) - `agentic-mbse ingest` command with identifier validation, pipeline orchestration
 - ✅ Spec 012: ResultWriter - output.md, summary.json, provenance delegation
 - ✅ Spec 013: DiscoveryCache - TTL-based caching, freshness checks, per-identifier invalidation, bulk clearing
+- ✅ Spec 014: PyMuPDF4LLMConverter - PDF extraction, scanned detection, quality flags
 - ✅ Spec 017: ConversionError - typed exception with FailureCategory, structured details
 
-Next: Converters (specs 014-016)
+Next: HTML and Markdown converters (specs 015-016)
 
 ## Build & Run
 
@@ -97,6 +98,15 @@ uv run ruff format src/ tests/
 - Validation logic goes in `validate_source()`, NOT in orchestrator
 - Raise typed `ConversionError(category="source_validation_failed")`, never bare exceptions
 - Category must be from FailureCategory literal (needs_ocr, table_corruption, no_source_found, source_validation_failed, conversion_timeout, unsupported_format, api_error, network_error, unknown)
+
+**PyMuPDF4LLMConverter (spec 014):**
+- pymupdf and pymupdf4llm require `# type: ignore[import-untyped]` (no stubs)
+- Scanned PDF detection: Check first 3 pages for <50 chars of text (heuristic threshold)
+- Table detection: Use both PyMuPDF `find_tables()` AND markdown table markers (`|...|`)
+- Table corruption: Detected when PyMuPDF finds tables but markdown has none, or inconsistent column counts
+- Math detection: Unicode symbols (∫∑√π²³·) + keywords (equation, formula) - pymupdf4llm doesn't preserve LaTeX
+- Test PDFs: Create programmatically with PyMuPDF in fixtures (no need for binary files)
+- Large PDF warning: 100+ pages threshold (to alert about potential incompleteness)
 
 **Provenance tracking:**
 - `ProvenanceManager` is pure persistence (no staleness logic)
