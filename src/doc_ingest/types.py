@@ -1,7 +1,10 @@
 """Core data model types for document ingestion."""
 
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    pass
 
 # Source format types
 SourceFormat = Literal["jats_xml", "arxiv_html", "publisher_html", "pdf", "docx"]
@@ -246,3 +249,45 @@ class ConversionError(Exception):
         """Return detailed representation including category and details."""
         details_str = f", details={self.details}" if self.details else ""
         return f"ConversionError(category={self.category!r}{details_str}, message={str(self)!r})"
+
+
+# Document outcome types (from spec 006)
+DocumentOutcome = Literal["success", "partial", "failed"]
+
+
+@dataclass
+class ProvenanceRecord:
+    """Complete provenance record for a document extraction.
+
+    Captures the complete decision trail: what sources were discovered, what was
+    attempted, what worked, what failed and why. Enables debugging, triage reporting,
+    and resumability.
+
+    Spec 009: ProvenanceRecord structure supports atomic persistence, UTF-8 encoding,
+    and structured metadata for triage analysis.
+
+    Attributes:
+        document_id: Document identifiers (DOI, arXiv ID, etc.)
+        discovered_sources: List of SourceCandidate found during discovery
+        discovery_errors: API failures or timeout messages from discovery phase
+        discovery_cached: Whether discovery result came from cache
+        attempts: List of ExtractionAttempt records (one per source tried)
+        outcome: Final document extraction result
+        final_converter: Name of converter that produced output (if success/partial)
+        failure_category: Typed category if extraction failed
+        created_at: ISO 8601 timestamp of extraction
+        pipeline_version: Version of agentic-mbse pipeline
+        total_elapsed_seconds: Total time for extraction (discovery + all attempts)
+    """
+
+    document_id: "DocumentIdentifiers"
+    discovered_sources: list["SourceCandidate"]
+    discovery_errors: list[str]
+    discovery_cached: bool
+    attempts: list[Any]  # List of ExtractionAttempt, but avoid circular import
+    outcome: DocumentOutcome
+    final_converter: str | None
+    failure_category: FailureCategory | None
+    created_at: str  # ISO 8601 timestamp
+    pipeline_version: str
+    total_elapsed_seconds: float

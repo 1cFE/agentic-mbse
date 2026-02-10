@@ -9,9 +9,9 @@
 
 ## Executive Summary
 
-**Current State**: Foundation + ExtractionOrchestrator complete (10/17 specs + converter infrastructure)
-**Next Milestone**: Complete core orchestration layer (specs 009, 012, 007)
-**Critical Path**: ProvenanceManager → ResultWriter → SourceRouter → CLI → Converters
+**Current State**: Foundation + ExtractionOrchestrator + ProvenanceManager complete (11/17 specs + converter infrastructure)
+**Next Milestone**: Complete core orchestration layer (specs 012, 007)
+**Critical Path**: ResultWriter → SourceRouter → CLI → Converters
 
 **Technology Stack**: Python 3.11+, UV package manager, pytest, pydantic
 **Verification**: Unit tests + integration tests for each component
@@ -20,7 +20,7 @@
 
 ## Specification Coverage Analysis
 
-### ✅ Completed Specifications (9 specs)
+### ✅ Completed Specifications (10 specs)
 
 | Spec | Component | Implementation | Lines | Tests |
 |------|-----------|----------------|-------|-------|
@@ -31,20 +31,22 @@
 | **005** | WebFetcher | `src/doc_ingest/web_fetcher.py` | 134 | ✅ |
 | **006** | OutcomeClassifier | `src/doc_ingest/outcome_classifier.py` | 134 | ✅ |
 | **008** | ExtractionOrchestrator | `src/doc_ingest/extraction_orchestrator.py` | 207 | ✅ |
+| **009** | ProvenanceManager | `src/doc_ingest/provenance_manager.py` | 168 | ✅ |
 | **010** | ValidationResult | `src/doc_ingest/types.py:152-180` | 29 | ✅ |
 | **013** | DiscoveryCache | `src/doc_ingest/discovery_cache.py` | 162 | ✅ |
 | **017** | ConversionError | `src/doc_ingest/types.py:199-216` | 18 | ✅ |
+| N/A | ProvenanceRecord | `src/doc_ingest/types.py:254-295` | 42 | ✅ |
 | N/A | Converter (protocol) | `src/doc_ingest/converters/base.py` | 91 | ✅ |
 | N/A | ConverterRegistry | `src/doc_ingest/converters/registry.py` | 69 | ✅ |
 
-**Evidence**: All classes found via code search, commits 756155d, 7648660, 2dc70c1, 3626798, 1261e47, [current]
-**Note**: `ExtractionAttempt` dataclass exists in `outcome_classifier.py:17-33`
+**Evidence**: All classes found via code search, commits 756155d, 7648660, 2dc70c1, 3626798, 1261e47, ef5a718, [current]
+**Note**: `ExtractionAttempt` dataclass exists in `outcome_classifier.py:17-33`, `DocumentOutcome` literal in `types.py:252`
 
 ### 🚧 In Progress Specifications (0 specs)
 
 *None currently in progress*
 
-### ✅ Recently Completed (TASK-DI-001)
+### ✅ Recently Completed
 
 **TASK-DI-001: ExtractionOrchestrator Implementation** — Completed 2026-02-09
 - Implemented `ExtractionOrchestrator` class with full orchestration logic
@@ -55,11 +57,19 @@
 - 11 unit tests covering all acceptance criteria (100% pass rate)
 - Files: `extraction_orchestrator.py`, `converters/base.py`, `converters/registry.py`, `test_extraction_orchestrator.py`
 
-### ⏳ Pending Specifications (7 specs)
+**TASK-DI-002: ProvenanceManager Implementation** — Completed 2026-02-09
+- Implemented `ProvenanceManager` class with atomic writes and load functionality
+- Added `ProvenanceRecord` dataclass to `types.py` with complete provenance structure
+- Atomic writes via temp file + rename pattern (crash-safe)
+- UTF-8 encoding for non-ASCII identifiers (verified with Chinese characters)
+- Deterministic JSON key ordering for reproducibility
+- 11 unit tests covering all acceptance criteria (100% pass rate)
+- Files: `provenance_manager.py` (168 lines), `types.py` (ProvenanceRecord), `test_provenance_manager.py`
+
+### ⏳ Pending Specifications (6 specs)
 
 **Core Pipeline (P0 - Critical Path):**
 - **Spec 007**: SourceRouter — Coordinate discovery → extraction → classification → persistence
-- **Spec 009**: ProvenanceManager — Atomic provenance persistence
 - **Spec 012**: ResultWriter — Write markdown outputs and summary.json
 
 **CLI Layer (P1 - User Interface):**
@@ -109,52 +119,28 @@
 
 ---
 
-#### TASK-DI-002: ProvenanceManager Implementation
+#### [DONE] TASK-DI-002: ProvenanceManager Implementation
 **Addresses**: Spec 009 (provenance_manager.md)
 **Priority**: P0
 **Complexity**: SMALL (~150 lines, 1 file)
-**Estimated Time**: 0.5-1 day
+**Completed**: 2026-02-09
 
-**Problem**: Need atomic persistence for provenance records to enable resumability and crash safety.
+**Implementation Summary**:
+- ✅ Created `src/doc_ingest/provenance_manager.py` (168 lines)
+- ✅ Added `ProvenanceRecord` dataclass to `types.py` (42 lines)
+- ✅ Created `tests/test_provenance_manager.py` (11 tests, 100% pass)
+- ✅ Atomic writes via temp file + rename pattern (crash-safe)
+- ✅ Load by document hash with None on missing/corrupted files
+- ✅ UTF-8 encoding with Unicode identifier test coverage
+- ✅ Deterministic JSON key ordering (sort_keys=True)
+- ✅ Directory auto-creation (mkdir -p)
+- ✅ All acceptance criteria met and verified via unit tests
 
-**Requirements** (from spec 009):
-- Write provenance to `output_dir/{document_hash}/provenance.json`
-- Use temp file + atomic rename pattern (crash-safe)
-- Load existing provenance by document hash
-- Return None if provenance doesn't exist
-- Include pipeline version and timestamps
-- UTF-8 encoding for non-ASCII identifiers
-
-**Implementation Steps**:
-1. Create `src/doc_ingest/provenance_manager.py`
-2. Define `ProvenanceRecord` dataclass in `types.py` (or import if exists)
-3. Implement `ProvenanceManager.__init__()`
-4. Implement `write(output_dir, record) -> None` with atomic write
-5. Implement `load(output_dir, document_hash) -> ProvenanceRecord | None`
-6. Add UTF-8 encoding for non-ASCII identifiers
-7. Add directory auto-creation (mkdir -p)
-8. Write unit tests for write/load cycle
-9. Write crash simulation test (interrupted write)
-
-**Files Created/Modified**:
-- `src/doc_ingest/provenance_manager.py` (new, ~150 lines)
-- `src/doc_ingest/types.py` (add ProvenanceRecord if not exists)
-- `tests/test_provenance_manager.py` (new, ~200 lines)
-
-**Acceptance Criteria**:
-- Provenance written to correct path: `output_dir/{hash}/provenance.json`
-- Atomic writes prevent partial JSON (temp file → rename)
-- Load returns ProvenanceRecord with all fields
-- Load missing file returns None
-- Unicode identifiers preserved (UTF-8 encoding)
-
-**Verified By**:
-- Unit tests: `test_write_and_load`, `test_atomic_write`, `test_unicode_support`
-- Integration tests: `test_crash_during_write_leaves_old_intact`
-
-**Depends On**:
-- ✅ Spec 001 (DocumentIdentifiers for hash)
-- ✅ Spec 006 (OutcomeClassifier for outcome field)
+**Key Design Decisions**:
+- Hash computation uses primary identifier (doi > arxiv_id > pmc_id > local_path)
+- Temp file created in same directory as target (ensures same filesystem for atomic rename)
+- Corrupted JSON files treated as missing (return None) for resilience
+- ProvenanceRecord uses `list[Any]` for attempts field to avoid circular import
 
 ---
 
