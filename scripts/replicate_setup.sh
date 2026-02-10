@@ -207,6 +207,28 @@ print_summary() {
     echo "  ./scripts/replicate_setup.sh"
 }
 
+setup_docling_mcp() {
+    if [[ "${NO_DOCLING:-false}" == "true" ]]; then
+        echo -e "${YELLOW}.${NC} Docling MCP setup skipped (NO_DOCLING=true)"
+        return
+    fi
+
+    local setup_script="$REPO_ROOT/scripts/setup-docling.sh"
+    if [[ ! -f "$setup_script" ]]; then
+        echo -e "${YELLOW}Warning:${NC} Docling setup script not found at $setup_script"
+        return
+    fi
+
+    echo ""
+    echo "Setting up Docling MCP server..."
+
+    if bash "$setup_script"; then
+        log_created "Docling MCP server (see ~/.docling-mcp-env.md)"
+    else
+        echo -e "${YELLOW}Warning:${NC} Docling MCP setup failed — pdf-analysis will use Tier 1 + 3 only"
+    fi
+}
+
 main() {
     cd "$REPO_ROOT"
 
@@ -215,6 +237,7 @@ main() {
 
     check_prerequisites
     install_claude_components
+    setup_docling_mcp
     create_settings_json
     create_project_structure
     create_source_index

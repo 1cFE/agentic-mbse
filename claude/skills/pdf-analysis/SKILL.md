@@ -22,6 +22,10 @@ The extraction script is at `.claude/skills/pdf-analysis/scripts/extract_page.py
 
 Try each tier in order. Advance to the next only when the current tier produces inadequate results.
 
+<!-- TIER_HINT_START -->
+**System tier: {DOCLING_TIER} — Max {MAX_PAGES} pages per Docling call.**
+<!-- TIER_HINT_END -->
+
 ### Tier 1: pymupdf4llm (Fast, Default)
 
 Extract page content as markdown using pymupdf4llm. This is the fastest method and works well for text-heavy pages.
@@ -35,6 +39,7 @@ uv run python .claude/skills/pdf-analysis/scripts/extract_page.py <pdf_path> <pa
 - Column text is interleaved
 - Layout-dependent content is unreadable
 
+<!-- DOCLING_START -->
 ### Tier 2: Docling MCP (High-Fidelity Tables)
 
 For pages with complex tables or layouts, use the Docling MCP server. **Critical memory constraint: never send a multi-page PDF to Docling.**
@@ -51,6 +56,8 @@ Use `mcp__docling__convert_document_into_docling_document` with source `/tmp/pag
 Use `mcp__docling__export_docling_document_to_markdown` with the document key.
 
 **Timeout/failure** — If Docling is slow (>30s) or unresponsive, fall back to Tier 3. Do not retry.
+
+<!-- DOCLING_END -->
 
 ### Tier 3: Image + Vision (Universal Fallback)
 
@@ -81,7 +88,9 @@ Then read the image with the Read tool and reconstruct the content as markdown. 
 | Situation | Start At |
 |-----------|----------|
 | Text-heavy page, no tables | Tier 1 |
+<!-- DOCLING_START -->
 | Page with important tables | Tier 1, escalate to Tier 2 if garbled |
+<!-- DOCLING_END -->
 | Scanned PDF (no text layer) | Tier 3 directly |
 | Diagrams or figures to describe | Tier 3 directly |
 | Equations or math notation | Tier 3 directly |

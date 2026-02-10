@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -155,6 +156,11 @@ def get_hooks_dir() -> Path:
 def get_docs_dir() -> Path:
     """Get path to bundled docs directory."""
     return _get_data_root() / "docs"
+
+
+def get_scripts_dir() -> Path:
+    """Get path to bundled scripts directory."""
+    return _get_data_root() / "scripts"
 
 
 def get_project_templates_dir() -> Path:
@@ -547,6 +553,87 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS if result.overall_success else EXIT_FAILURE
 
 
+def _read_docling_tier() -> str | None:
+    """Read Docling tier from environment report.
+
+    Returns:
+        Tier string ("constrained", "moderate", "comfortable") or None if not found.
+    """
+    env_report = Path.home() / ".docling-mcp-env.md"
+    if not env_report.exists():
+        return None
+    for line in env_report.read_text().splitlines():
+        if line.startswith("- Tier: **"):
+            # Parse "- Tier: **constrained**" → "constrained"
+            return line.split("**")[1]
+    return None
+
+
+def _patch_skill_for_tier(
+    skill_dir: Path,
+    docling_tier: str | None,
+) -> None:
+    """Patch pdf-analysis SKILL.md based on Docling tier.
+
+    Args:
+        skill_dir: Path to installed .claude/skills/pdf-analysis/
+        docling_tier: "constrained", "moderate", "comfortable", or None (no docling)
+    """
+    skill_md = skill_dir / "SKILL.md"
+    if not skill_md.exists():
+        return
+
+    content = skill_md.read_text()
+
+    if docling_tier is None:
+        # Remove everything between DOCLING markers (inclusive)
+        content = re.sub(
+            r"<!-- DOCLING_START -->.*?<!-- DOCLING_END -->\n*",
+            "",
+            content,
+            flags=re.DOTALL,
+        )
+        # Remove tier hint block
+        content = re.sub(
+            r"<!-- TIER_HINT_START -->.*?<!-- TIER_HINT_END -->\n*",
+            "",
+            content,
+            flags=re.DOTALL,
+        )
+        # Update description to reflect 2-tier pipeline
+        content = content.replace(
+            "(pymupdf4llm → Docling MCP → image fallback)",
+            "(pymupdf4llm → image fallback)",
+        )
+        content = content.replace("3-tier", "2-tier")
+    else:
+        # Keep Docling sections, substitute tier placeholders
+        max_pages = {"constrained": "1", "moderate": "5", "comfortable": "20"}
+        content = content.replace("{DOCLING_TIER}", docling_tier)
+        content = content.replace("{MAX_PAGES}", max_pages.get(docling_tier, "1"))
+        # Strip marker comments (they served their purpose)
+        for marker in ["DOCLING_START", "DOCLING_END", "TIER_HINT_START", "TIER_HINT_END"]:
+            content = content.replace(f"<!-- {marker} -->\n", "")
+
+    skill_md.write_text(content)
+
+    # Also patch references/extraction-details.md with same logic
+    details_md = skill_dir / "references" / "extraction-details.md"
+    if details_md.exists():
+        details_content = details_md.read_text()
+        if docling_tier is None:
+            details_content = re.sub(
+                r"<!-- DOCLING_START -->.*?<!-- DOCLING_END -->\n*",
+                "",
+                details_content,
+                flags=re.DOTALL,
+            )
+        else:
+            for marker in ["DOCLING_START", "DOCLING_END"]:
+                details_content = details_content.replace(f"<!-- {marker} -->\n", "")
+        details_md.write_text(details_content)
+
+
 def cmd_init(args: argparse.Namespace) -> int:
     """Initialize project with agentic-mbse configuration.
 
@@ -831,6 +918,71 @@ Edit this file to add your domain-specific sources.
                 updated.append(f".claude/skills/{skill}/")
             else:
                 created.append(f".claude/skills/{skill}/")
+
+    # === Setup Docling MCP (default, opt-out with --no-docling) ===
+    docling_tier = None  # None means no-docling; "constrained"/"moderate"/"comfortable" otherwise
+
+    if not getattr(args, "no_docling", False):
+        setup_script = get_scripts_dir() / "setup-docling.sh"
+        if setup_script.exists():
+            print("\nSetting up Docling MCP server...")
+            print("  (This may take a few minutes on first run — downloading ~500MB of models)")
+            try:
+                setup_cmd = ["bash", str(setup_script)]
+                if args.force:
+                    setup_cmd.append("--force")
+                result = subprocess.run(
+                    setup_cmd,
+                    timeout=600,  # 10 minutes for first-run model download
+                )
+                if result.returncode == 0:
+                    docling_tier = _read_docling_tier()  # Parse from ~/.docling-mcp-env.md
+                    if docling_tier:
+                        print(f"  Docling MCP configured (tier: {docling_tier})")
+                        created.append(f"Docling MCP (tier: {docling_tier})")
+                    else:
+                        print(
+                            "  Warning: Could not read Docling tier from environment report",
+                            file=sys.stderr,
+                        )
+                        print(
+                            "  pdf-analysis skill will use Tier 1 + Tier 3 only.", file=sys.stderr
+                        )
+                else:
+                    # Setup failed — fall back to no-docling skill variant
+                    print(
+                        f"\n  Warning: Docling setup failed (exit {result.returncode})",
+                        file=sys.stderr,
+                    )
+                    print("  pdf-analysis skill will use Tier 1 + Tier 3 only.", file=sys.stderr)
+                    docling_tier = None
+            except subprocess.TimeoutExpired:
+                print("\n  Warning: Docling setup timed out (>10 min)", file=sys.stderr)
+                print("  pdf-analysis skill will use Tier 1 + Tier 3 only.", file=sys.stderr)
+                docling_tier = None
+            except Exception as e:
+                print(f"\n  Warning: Docling setup error: {e}", file=sys.stderr)
+                docling_tier = None
+        else:
+            print("  Warning: Docling setup script not found — skipping", file=sys.stderr)
+    else:
+        print("\nSkipping Docling MCP setup (--no-docling)")
+
+    # === Post-process pdf-analysis skill for tier ===
+    pdf_skill_dst = skills_dir / "pdf-analysis"
+    if pdf_skill_dst.exists() and not is_dev_mode:
+        _patch_skill_for_tier(pdf_skill_dst, docling_tier)
+
+    # === Check pymupdf4llm availability (needed for Tier 1 + Tier 3) ===
+    try:
+        subprocess.run(
+            [sys.executable, "-c", "import pymupdf4llm"],
+            capture_output=True,
+            timeout=10,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, Exception):
+        print("\n  Note: pymupdf4llm not found. PDF extraction (Tier 1 + 3) requires it.")
+        print("  Install with: uv pip install pymupdf4llm")
 
     # === Install hooks (TOOL-OWNED) ===
     hooks_dir = target / ".claude" / "hooks"
@@ -1120,6 +1272,11 @@ def main() -> int:
         "--dev",
         action="store_true",
         help="Development mode: symlink tool-owned files instead of copying (requires source checkout)",
+    )
+    init_parser.add_argument(
+        "--no-docling",
+        action="store_true",
+        help="Skip Docling MCP server setup (pdf-analysis skill will use Tier 1 + Tier 3 only)",
     )
     init_parser.set_defaults(func=cmd_init)
 

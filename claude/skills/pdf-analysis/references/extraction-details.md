@@ -29,6 +29,7 @@ After pymupdf4llm extraction, verify:
 
 If any check fails, escalate to the next backend in the fallback chain.
 
+<!-- DOCLING_START -->
 ## Docling MCP Details
 
 The Docling MCP server provides high-fidelity document conversion with table structure preservation.
@@ -75,6 +76,8 @@ If Docling does not respond within ~30 seconds or returns an error:
 1. Do not retry the same page — fall back to image mode
 2. Note the failure for the user
 3. Render the page as PNG and use visual analysis
+
+<!-- DOCLING_END -->
 
 ## Image Fallback Details
 
