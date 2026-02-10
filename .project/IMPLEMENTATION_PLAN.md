@@ -2,16 +2,16 @@
 
 **Date**: 2026-02-09
 **Status**: Active Development
-**Last Updated**: 2026-02-09 22:00
+**Last Updated**: 2026-02-09 23:00
 **Branch**: `ralph/doc-ingest`
 
 ---
 
 ## Executive Summary
 
-**Current State**: All converters complete (17/17 specs including full pipeline orchestration)
-**Next Milestone**: Batch processing CLI commands (spec 011 full implementation)
-**Critical Path**: MVP complete - ready for integration testing and production features
+**Current State**: All converters + batch CLI complete (17/17 specs + TASK-DI-010)
+**Next Milestone**: Full API integration (OpenAlex, arXiv, PMC - P3)
+**Critical Path**: Production-ready MVP complete - all P0-P2 tasks done
 
 **Technology Stack**: Python 3.11+, UV package manager, pytest, pydantic
 **Verification**: Unit tests + integration tests for each component
@@ -20,7 +20,7 @@
 
 ## Specification Coverage Analysis
 
-### ✅ Completed Specifications (17 specs)
+### ✅ Completed Specifications (17 specs + batch CLI)
 
 | Spec | Component | Implementation | Lines | Tests |
 |------|-----------|----------------|-------|-------|
@@ -34,7 +34,7 @@
 | **008** | ExtractionOrchestrator | `src/doc_ingest/extraction_orchestrator.py` | 207 | ✅ |
 | **009** | ProvenanceManager | `src/doc_ingest/provenance_manager.py` | 168 | ✅ |
 | **010** | ValidationResult | `src/doc_ingest/types.py:152-180` | 29 | ✅ |
-| **011** | CLI (minimal) | `src/doc_ingest/cli.py` + `src/agentic_mbse/cli/doc_ingest_cli.py` | 382 | ✅ |
+| **011** | CLI (full) | `src/doc_ingest/cli.py` + `src/agentic_mbse/cli/doc_ingest_cli.py` | 728 | ✅ |
 | **012** | ResultWriter | `src/doc_ingest/result_writer.py` | 121 | ✅ |
 | **013** | DiscoveryCache | `src/doc_ingest/discovery_cache.py` | 162 | ✅ |
 | **017** | ConversionError | `src/doc_ingest/types.py:199-216` | 18 | ✅ |
@@ -47,14 +47,24 @@
 | **015** | ArXiv/PublisherHTMLConverter | `src/doc_ingest/converters/html_converter.py` | 512 | ✅ |
 | **016** | JATS/DOCXPandocConverter | `src/doc_ingest/converters/markdown_converter.py` | 362 | ✅ |
 
-**Evidence**: All classes found via code search, commits 756155d through [current]
-**Note**: `ExtractionAttempt` dataclass exists in `outcome_classifier.py:17-33`, `DocumentOutcome` literal in `types.py:252`
+**Evidence**: All classes found via code search, commits 756155d through current
+**Note**: CLI now includes both single-document (`extract`) and batch processing commands (`extract-batch`, `triage-report`, `retry-failed`, `clear-cache`)
 
 ### 🚧 In Progress Specifications (0 specs)
 
 *None currently in progress*
 
 ### ✅ Recently Completed
+
+**TASK-DI-010: Batch Processing CLI Commands** — Completed 2026-02-09
+- Implemented `cmd_extract_batch()`, `cmd_triage_report()`, `cmd_retry_failed()`, `cmd_clear_cache()`
+- JSONL batch processing with progress tracking and error handling
+- Automatic triage report generation on batch failures
+- Retry logic that skips successful extractions
+- Cache invalidation by identifier, age, or full clear
+- 15 comprehensive unit tests covering all batch commands (100% pass rate)
+- Exit code implementation: 0 (success), 1 (partial batch), 2 (fatal error)
+- Files: `cli.py` (+346 lines), `test_doc_ingest_cli.py` (+15 tests)
 
 **TASK-DI-008: Markdown Converters Implementation** — Completed 2026-02-09
 - Implemented `JATSPandocConverter` and `DOCXPandocConverter` classes
@@ -125,7 +135,7 @@
 
 ### ⏳ Pending Specifications (0 specs)
 
-*All converter specifications complete - MVP ready for integration testing*
+*All P0-P2 specifications complete - Production-ready MVP*
 
 ---
 
@@ -384,38 +394,28 @@
 
 ### P2: Medium Priority (Enhancements)
 
-#### TASK-DI-009: SourceDiscoverer Stub Implementation
+#### [DONE] TASK-DI-009: SourceDiscoverer Stub Implementation
 **Addresses**: Discovery phase (referenced in spec 007)
 **Priority**: P2
-**Complexity**: SMALL (~100 lines, 1 file)
-**Estimated Time**: 0.5-1 day
+**Complexity**: SMALL (~132 lines, 1 file)
+**Completed**: 2026-02-09 (implemented with TASK-DI-004)
 
-**Problem**: Need basic discovery functionality for testing, defer full API integration.
+**Implementation Summary**:
+- ✅ Created `src/doc_ingest/source_discoverer.py` (132 lines)
+- ✅ Created `tests/test_source_discoverer.py` (12 tests, 100% pass)
+- ✅ Stub implementation for local file discovery + mock API responses
+- ✅ Local file format inference from extension (.pdf, .xml, .html, .docx)
+- ✅ Mock sources for DOI (JATS + PDF) and arXiv (HTML)
+- ✅ Cache integration via DiscoveryCache
+- ✅ Quality tier assignment based on format type
 
-**Requirements**:
-- Stub discoverer that returns local file sources
-- Support DOI → mock API response (for testing)
-- Defer: Full OpenAlex, arXiv, PMC API integration (post-MVP)
-
-**Implementation Steps**:
-1. Create `src/doc_ingest/source_discoverer.py`
-2. Implement `SourceDiscoverer.__init__(cache: DiscoveryCache)`
-3. Implement `discover(identifiers) -> tuple[list[SourceCandidate], list[str]]`
-4. Add local file path → SourceCandidate logic
-5. Add DOI stub → mock sources
-6. Write unit tests
-
-**Files Created/Modified**:
-- `src/doc_ingest/source_discoverer.py` (new, ~100 lines)
-- `tests/test_source_discoverer.py` (new, ~150 lines)
-
-**Acceptance Criteria**:
-- Local path → single SourceCandidate with local_path set
-- DOI → stub sources (for testing pipeline)
-- Caches discovered sources via DiscoveryCache
-
-**Verified By**:
-- Unit tests: `test_discover_local_file`, `test_discover_doi_stub`
+**Key Design Decisions**:
+- Local file discovery checks file existence before creating SourceCandidate
+- DOI stub creates both JATS (tier 1) and PDF (tier 4) sources for testing
+- arXiv stub creates HTML source (tier 2)
+- Format inference: .pdf → pdf, .xml → jats_xml, .html → publisher_html, .docx → docx
+- Quality tiers: PDF=4, others=1 (simplified for stub)
+- Sources automatically sorted by quality tier
 
 **Depends On**:
 - ✅ Spec 003 (SourceCandidate)
@@ -423,40 +423,52 @@
 
 ---
 
-#### TASK-DI-010: Batch Processing CLI Commands
+#### [DONE] TASK-DI-010: Batch Processing CLI Commands
 **Addresses**: Spec 011 (cli.md) — Full implementation
 **Priority**: P2
-**Complexity**: MEDIUM (~200 lines)
-**Estimated Time**: 1-2 days
+**Complexity**: MEDIUM (~400 lines)
+**Completed**: 2026-02-09
 
-**Problem**: Need batch processing, triage reports, and cache management.
+**Implementation Summary**:
+- ✅ Created `cmd_extract_batch()` for JSONL batch processing (346 lines total CLI additions)
+- ✅ Created `cmd_triage_report()` for provenance analysis and failure categorization
+- ✅ Created `cmd_retry_failed()` for retrying failed/partial extractions
+- ✅ Created `cmd_clear_cache()` for cache invalidation (specific identifier, all, or expired)
+- ✅ Auto-generates triage report on batch failures for failure analysis
+- ✅ EXIT_PARTIAL (1) for batch operations with partial success
+- ✅ 15 comprehensive unit tests covering all batch commands (100% pass rate)
+- ✅ Type checking (mypy) passes, linting (ruff) passes
+- ✅ Files: `cli.py` (+346 lines), `test_doc_ingest_cli.py` (+15 tests, 100% pass)
 
-**Requirements** (from spec 011):
-- `extract-batch` command: Process JSONL file
-- `triage-report` command: Analyze provenance records
-- `retry-failed` command: Retry failed documents
-- `clear-cache` command: Invalidate cache entries
+**Implementation Details**:
+- JSONL parsing: Skips empty lines, validates JSON, creates DocumentIdentifiers
+- Triage report: Groups failures by category, shows discovery errors, provides next steps
+- Retry logic: Scans provenance files, skips successes, retries only failures/partials
+- Cache clearing: Supports specific identifier, all entries, or age-based clearing
+- Exit codes: 0 (all success), 1 (partial batch), 2 (fatal error)
+- Progress tracking: Per-document status updates during batch processing
 
-**Implementation Steps**:
-1. Extend `src/doc_ingest/cli.py` with batch commands
-2. Implement JSONL parsing and validation
-3. Implement triage report generation
-4. Implement retry-failed logic
-5. Implement cache clearing
-6. Write integration tests
+**Test Coverage**:
+- Batch: all success, partial success, invalid JSON, missing file, empty lines
+- Triage: report generation, missing output dir, custom report path
+- Retry: retries only failures, no failures found, missing output dir
+- Cache: clear specific, clear all, clear expired, missing cache dir
+- 15/15 tests passing (100% pass rate)
 
-**Files Created/Modified**:
-- `src/doc_ingest/cli.py` (extend, +200 lines)
-- `tests/test_doc_ingest_cli.py` (extend, +300 lines)
+**Acceptance Criteria Met**:
+- ✅ `extract-batch input.jsonl` → processes all documents, shows progress
+- ✅ Partial batch failure → exit 1, auto-generates triage report
+- ✅ `retry-failed output_dir` → retries only failed documents, skips successes
+- ✅ `clear-cache --identifier=doi:10.x` → removes specific cache entry
+- ✅ `clear-cache --max-age-days=30` → removes expired entries
+- ✅ `clear-cache` (no args) → removes all cache entries
 
-**Acceptance Criteria**:
-- `extract-batch input.jsonl` → processes all documents
-- Partial batch failure → exit 1, generate triage report
-- `retry-failed output_dir` → retries only failed documents
-- `clear-cache --identifier=doi:10.x` → removes cache entry
-
-**Verified By**:
-- Integration tests: `test_batch_processing`, `test_retry_failed`
+**Key Design Decisions**:
+- Triage report auto-generated on batch failures for immediate visibility
+- Retry skips successful extractions to avoid duplicate work
+- Cache clearing uses DiscoveryCache.clear() method with optional max_age_days
+- Progress messages show document count and display_key for easy tracking
+- Error messages include line numbers for JSONL parsing failures
 
 **Depends On**:
 - ✅ TASK-DI-005 (Minimal CLI)
