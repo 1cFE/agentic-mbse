@@ -1,5 +1,16 @@
 # AGENTS.md
 
+## Implementation Status (2026-02-09)
+
+**Phase 1 Foundation Progress: 3/17 specs complete**
+
+Completed:
+- ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
+- ✅ Spec 002: QualityFlags - extraction quality indicators (tables, math, figures, structure)
+- ✅ Spec 003: SourceCandidate - format types, quality tiers, sortable prioritization
+
+Next: Spec 004 (ConversionResult), Spec 017 (ConversionError), then base converter interface
+
 ## Build & Run
 
 ```bash
