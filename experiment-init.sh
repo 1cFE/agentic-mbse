@@ -178,9 +178,13 @@ log_timestamp "END   cleanup"
 log_step "Step 2: Creating workspace artifacts"
 log_timestamp "START workspace creation"
 
-# Copy goals
-cp "$GOALS_FILE" GOALS.md
-log_info "Created: GOALS.md (from $GOALS_FILE)"
+# Copy goals (skip if same file)
+if [[ "$(realpath "$GOALS_FILE")" != "$(realpath GOALS.md 2>/dev/null)" ]]; then
+    cp "$GOALS_FILE" GOALS.md
+    log_info "Created: GOALS.md (from $GOALS_FILE)"
+else
+    log_info "GOALS.md already in place"
+fi
 
 # Create experiment-log.md
 cat > experiment-log.md << EOF

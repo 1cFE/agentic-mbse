@@ -9,3 +9,6 @@ dist/
 build/
 .DS_Store
 ralph-init.log
+*.pdf
+.env
+tests/corpus/pool/

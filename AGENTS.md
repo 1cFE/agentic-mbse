@@ -1,52 +1,5 @@
 # AGENTS.md
 
-## Status (2026-02-10)
-
-**State: Heading gap CLOSED for postprocessor-detectable patterns. All corpus tests passing.**
-
-### What Works
-- ✅ Test harness: 5 papers with baseline metrics, test runner, comparison report
-- ✅ Metrics framework: `ExtractionMetrics` dataclass, computation, comparison
-- ✅ Routing infrastructure: SourceRouter, ExtractionOrchestrator, ProvenanceManager, DiscoveryCache
-- ✅ CLI: `ingest`, `ingest-batch`, `triage-report`, `retry-failed`, `clear-cache`
-- ✅ Layer 1 extraction: pymupdf_backend + postprocess wired into PDF converter
-- ✅ Layer 2 extraction: GMFT table enhancement integrated (optional, graceful skip if not installed)
-- ✅ Table extraction: 143 (EXCEEDS 137 baseline!), 29=29, 56=56 - perfect or better
-- ✅ Heading extraction: aries 102→139 (EXCEEDS baseline!), delene 23=23, hawker 11→15
-- ✅ OpenAlex API: Real DOI discovery with quality-tier routing
-- ✅ arXiv API: HTML+PDF discovery with availability checking
-- ✅ PMC API: JATS XML discovery with PMC E-utilities integration
-- ✅ 210+ doc_ingest tests passing + 4 integration tests + 4 corpus tests ALL GREEN
-- ✅ Integration tests: Quality-ordered routing, early exit, error handling, discovery cache behavior all verified
-
-### What's Improved (latest)
-- **Headings**: Major improvement via new postprocessor patterns:
-  - aries_cost_account: 64→139 (+117%, EXCEEDS 102 baseline!) — unnumbered bold headers now promoted
-  - delene_2001: 16→23 (MATCHES baseline exactly) — all-caps section headings now detected
-  - hawker_2020: 14→15 (+1, already exceeded baseline)
-- **Tables**: aries_cost_account (137→143, +6!), helios_design (29→29), hsu_2020 (56→56) - AT OR ABOVE baseline
-- **Character counts**: All within 7% of baseline (60k→60k, 285k→281k, etc.)
-
-### Remaining Gaps
-- **helios_design headings**: 52→7 (-87%) — subsection headings exist only visually in PDF, no text formatting markers. Only Layer 3 (Claude vision) can detect these.
-- **hsu_2020 headings**: 6→4 (-33%) — 2 of 6 baseline headings from Claude Layer 3 detection
-- **Root cause**: These papers' heading structure is invisible to text-based detection. The baseline was generated with all 4 layers including Claude structure repair.
-- **Corpus test**: Per-paper heading thresholds in papers.jsonl accommodate known Layer-3 gaps
-
-### Current Work: Heading Gap Closed, Corpus Tests Passing
-- ✅ TASK-WP-001: Layer 1 (pymupdf_backend + postprocess) - DONE
-- ✅ TASK-WP-002: Layer 2 (GMFT table enhancement) - DONE
-- ✅ TASK-WP-003: Postprocessor heading improvements - DONE (unnumbered bold + all-caps)
-- ✅ TASK-SD-001: API validation - DONE
-- ✅ TASK-SD-002: OpenAlex API integration - DONE
-- ✅ TASK-SD-003: arXiv API integration - DONE
-- ✅ TASK-SD-004: PMC API integration - DONE
-- ✅ TASK-SD-005: Quality-ordered routing verification - DONE
-- Next: Phase 4 (Fusion-TEA integration) or alternative priorities
-
-### Critical Rule
-**Every change must be measured against real documents. Run the test harness before and after. No mocked quality tests.**
-
 ## Build & Run
 
 ```bash
