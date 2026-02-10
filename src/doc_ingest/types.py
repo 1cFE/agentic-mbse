@@ -149,6 +149,36 @@ class SourceCandidate:
 
 
 @dataclass
+class ValidationResult:
+    """Validation result for source content checks.
+
+    Provides structured validation outcomes from converter `validate_source()` calls,
+    including content length, format detection, paywall detection, and truncation checks.
+
+    Used by converters to report validation failures with specific reasons (e.g.,
+    paywall detected, content truncated) before attempting conversion.
+
+    Spec 010: ValidationResult enables structured outcome classification and supports
+    provenance tracking of validation failures.
+
+    Attributes:
+        is_valid: Whether the source passed validation checks
+        content_length: Size of the content in bytes
+        has_body_content: Whether body/article content is present (format-specific)
+        detected_content_type: MIME type or format detected during validation
+        is_paywall: Whether a paywall marker was detected
+        is_truncated: Whether the content appears truncated (e.g., < 1KB for expected full document)
+    """
+
+    is_valid: bool
+    content_length: int
+    has_body_content: bool | None = None
+    detected_content_type: str | None = None
+    is_paywall: bool | None = None
+    is_truncated: bool | None = None
+
+
+@dataclass
 class ConversionResult:
     """Output of a successful document conversion.
 
