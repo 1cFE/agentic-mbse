@@ -37,13 +37,23 @@ while [[ $# -gt 0 ]]; do
             BUILD_ITERS="$2"
             shift 2
             ;;
+        --plan-model)
+            PLAN_MODEL="$2"
+            shift 2
+            ;;
+        --build-model)
+            BUILD_MODEL="$2"
+            shift 2
+            ;;
         --help|-h)
-            echo "Usage: $(basename "$0") [--max-retries N] [--plan-iters N] [--build-iters N]"
+            echo "Usage: $(basename "$0") [--max-retries N] [--plan-iters N] [--build-iters N] [--plan-model <model>] [--build-model <model>]"
             echo ""
             echo "Options:"
-            echo "  --max-retries N   Max eval→retry cycles (default: 2)"
-            echo "  --plan-iters N    Plan iterations per retry (default: 2)"
-            echo "  --build-iters N   Build iterations per retry (default: 8)"
+            echo "  --max-retries N      Max eval→retry cycles (default: 2)"
+            echo "  --plan-iters N       Plan iterations per retry (default: 2)"
+            echo "  --build-iters N      Build iterations per retry (default: 8)"
+            echo "  --plan-model <m>     Override model for plan phase (default: $PLAN_MODEL)"
+            echo "  --build-model <m>    Override model for build phase (default: $BUILD_MODEL)"
             exit 0
             ;;
         *)
@@ -59,6 +69,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  Max retries:    $MAX_RETRIES"
 echo "  Plan iters:     $PLAN_ITERS"
 echo "  Build iters:    $BUILD_ITERS"
+echo "  Plan model:     $PLAN_MODEL"
 echo "  Build model:    $BUILD_MODEL"
 echo "  Eval model:     $EVAL_MODEL"
 echo "  Branch:         $CURRENT_BRANCH"
@@ -84,7 +95,7 @@ for RETRY in $(seq 1 "$MAX_RETRIES"); do
         cat PROMPT_plan.md | claude -p \
             --dangerously-skip-permissions \
             --output-format stream-json \
-            --model "$BUILD_MODEL" \
+            --model "$PLAN_MODEL" \
             --verbose
         log_timestamp "END   plan iteration $i"
     done

@@ -9,15 +9,21 @@ set -euo pipefail
 #   ./run.sh <project> <goals_file> [options]   # First run (init + run)
 #   ./run.sh [options]                           # Subsequent runs (resume)
 #
-# Options (passed through to outer-loop.sh):
-#   --max N          Max outer iterations
-#   --dry-run        Show what would happen without executing
-#   --model <model>  Override spec model
+# Options:
+#   --max N              Max outer iterations
+#   --build-iters N      Build iterations per inner-loop retry (default: 8)
+#   --plan-iters N       Plan iterations per inner-loop retry (default: 2)
+#   --model <model>      Override spec model
+#   --plan-model <model> Override plan model (default: sonnet)
+#   --build-model <model> Override build model (default: sonnet)
+#   --dry-run            Show what would happen without executing
 #
 # Examples:
-#   ./run.sh doc-ingest GOALS.md --max 3   # Init + 3 iterations
-#   ./run.sh --max 5                       # Resume, 5 more iterations
-#   ./run.sh --dry-run                     # Resume, dry-run
+#   ./run.sh doc-ingest GOALS.md --max 3              # Init + 3 iterations
+#   ./run.sh --max 5                                  # Resume, 5 more iterations
+#   ./run.sh --max 1 --build-iters 4                  # 1 iteration, 4 build passes
+#   ./run.sh --max 1 --plan-model opus                # Use opus for planning
+#   ./run.sh --dry-run                                # Resume, dry-run
 #
 # =============================================================================
 
@@ -38,7 +44,7 @@ OUTER_ARGS=()
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --max|--model)
+        --max|--model|--plan-model|--build-model|--build-iters|--plan-iters)
             OUTER_ARGS+=("$1" "$2")
             shift 2
             ;;
@@ -52,14 +58,19 @@ Usage:
   ./run.sh <project> <goals_file> [options]   # First run (init + run)
   ./run.sh [options]                           # Subsequent runs (resume)
 
-Options (passed through to outer-loop.sh):
-  --max N          Max outer iterations (default: unlimited)
-  --dry-run        Show what would happen without executing
-  --model <model>  Override spec model
+Options:
+  --max N              Max outer iterations (default: unlimited)
+  --build-iters N      Build iterations per retry (default: 8)
+  --plan-iters N       Plan iterations per retry (default: 2)
+  --model <model>      Override spec model
+  --plan-model <m>     Override plan model (default: sonnet)
+  --build-model <m>    Override build model (default: sonnet)
+  --dry-run            Show what would happen without executing
 
 Examples:
   ./run.sh doc-ingest GOALS.md --max 3
-  ./run.sh --max 5
+  ./run.sh --max 1 --build-iters 4
+  ./run.sh --max 1 --plan-model opus
   ./run.sh --dry-run
 EOF
             exit 0
@@ -107,4 +118,4 @@ fi
 # Run outer loop
 # -----------------------------------------------------------------------------
 
-exec "$SCRIPT_DIR/outer-loop.sh" "${OUTER_ARGS[@]}"
+exec "$SCRIPT_DIR/outer-loop.sh" ${OUTER_ARGS[@]+"${OUTER_ARGS[@]}"}

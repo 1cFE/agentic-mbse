@@ -19,6 +19,7 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 MAX_ITERATIONS=0  # 0 = unlimited
 DRY_RUN=false
+INNER_ARGS=()
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -34,13 +35,26 @@ while [[ $# -gt 0 ]]; do
             SPEC_MODEL="$2"
             shift 2
             ;;
+        --plan-model|--build-model)
+            INNER_ARGS+=("$1" "$2")
+            shift 2
+            ;;
+        --build-iters|--plan-iters|--max-retries)
+            INNER_ARGS+=("$1" "$2")
+            shift 2
+            ;;
         --help|-h)
-            echo "Usage: $(basename "$0") [--max N] [--dry-run] [--model <model>]"
+            echo "Usage: $(basename "$0") [--max N] [--dry-run] [--model <model>] [--plan-model <model>] [--build-model <model>] [--build-iters N] [--plan-iters N]"
             echo ""
             echo "Options:"
-            echo "  --max N          Max outer iterations (default: 0 = unlimited)"
-            echo "  --dry-run        Show what would happen without executing"
-            echo "  --model <model>  Override model for IterationSpecAgent (default: $SPEC_MODEL)"
+            echo "  --max N              Max outer iterations (default: 0 = unlimited)"
+            echo "  --dry-run            Show what would happen without executing"
+            echo "  --model <model>      Override model for IterationSpecAgent (default: $SPEC_MODEL)"
+            echo "  --plan-model <m>     Override model for plan phase (default: $PLAN_MODEL)"
+            echo "  --build-model <m>    Override model for build phase (default: $BUILD_MODEL)"
+            echo "  --build-iters N      Build iterations per inner-loop retry (default: 8)"
+            echo "  --plan-iters N       Plan iterations per inner-loop retry (default: 2)"
+            echo "  --max-retries N      Max eval→retry cycles in inner loop (default: 2)"
             exit 0
             ;;
         *)
@@ -217,7 +231,7 @@ EOF
     log_timestamp "START inner-loop"
 
     INNER_EXIT=0
-    ./inner-loop.sh || INNER_EXIT=$?
+    ./inner-loop.sh ${INNER_ARGS[@]+"${INNER_ARGS[@]}"} || INNER_EXIT=$?
 
     if [[ "$INNER_EXIT" -ne 0 ]]; then
         log_info "WARNING: inner loop exited with status $INNER_EXIT (max retries exhausted)"

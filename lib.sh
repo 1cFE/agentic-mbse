@@ -13,6 +13,7 @@
 # -----------------------------------------------------------------------------
 
 SPEC_MODEL="${EXPERIMENT_SPEC_MODEL:-opus}"
+PLAN_MODEL="${EXPERIMENT_PLAN_MODEL:-sonnet}"
 BUILD_MODEL="${EXPERIMENT_BUILD_MODEL:-sonnet}"
 EVAL_MODEL="${EXPERIMENT_EVAL_MODEL:-sonnet}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

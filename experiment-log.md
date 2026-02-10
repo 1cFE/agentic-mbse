@@ -1,68 +1,47 @@
-# Experiment Log — doc-ingest
+# Experiment Log — extraction
 
 ## Goals
-# Goals — Document Ingestion Quality
+# Goals — Extracted Semantic Fidelity
 
-## Table Extraction
-- Tables in academic papers should extract with correct row/column structure
+We are building an end-to-end PDF-to-markdown pipeline that maximizes **extracted semantic fidelity** — the degree to which the output faithfully represents the source document's meaning and structure. Ground truth doesn't exist (if it did, we wouldn't need this). Goals stay qualitative because the IterationSpecAgent's job is to investigate the corpus and produce specific, measurable specs.
+
+## Priority 1: Document Structure
+
+Sections and headings must faithfully represent the PDF's logical hierarchy. A missed heading means a lost section boundary downstream. A phantom heading pollutes the structure. The mapping from PDF formatting (bold, font-size, numbering, all-caps) to markdown heading levels must be reliable across academic paper styles.
+
+- Numbered headings (1.1, 1.2.3) should preserve hierarchy
+- Unnumbered headings (bold, all-caps, font-size changes) should be promoted to proper markdown headings
+- Table of contents entries should NOT be promoted to headings
+- No phantom headings — every heading in output should correspond to a real section in the PDF
+
+## Priority 2: Text Content Fidelity
+
+Extracted text must be semantically faithful to the source. Equations, numeric values, units, and special characters are critical — errors here propagate directly to downstream reasoning.
+
+- High-severity: values like "beta = 5.7" becoming "b = 5.7", or "10^6" becoming "106"
+- High-severity: ligatures (fi, fl, ff) not resolved to component characters
+- High-severity: unicode characters replaced with placeholders or dropped
+- Low-severity: extra whitespace, formatting inconsistencies, minor stylistic differences
+
+## Priority 3: Tables and Structured Data
+
+Tables carry quantitative data (parameters, costs, specifications) that downstream consumers parse. Row/column structure must be preserved.
+
+- Missing rows or scrambled columns corrupt data — these are high-severity
 - Multi-page tables should be detected and merged where possible
 - Table captions should be preserved and associated with their tables
 - Complex layouts (merged cells, nested headers) should degrade gracefully
 
-## Heading Detection
-- Section headings should be detected accurately across different formatting styles
-- Numbered headings (1.1, 1.2.3) should preserve hierarchy
-- Unnumbered headings (bold, all-caps, underlined) should be promoted to proper markdown headings
-- Table of contents entries should NOT be promoted to headings
+## Priority 4: Regression Safety
 
-## Multi-Format Support
-- PDF extraction should work reliably across different academic paper layouts
-- The extraction pipeline should handle single-column and two-column layouts
-- Papers with heavy mathematical notation should not break the pipeline
+No change should degrade what already works. The corpus tests are the gate.
 
-## Character Fidelity
-- Extracted text should preserve the original content with minimal loss
-- Ligatures (fi, fl, ff, etc.) should be resolved to their component characters
-- Unicode characters should be preserved, not replaced with placeholders
-
-## Regression Safety
-- No change should regress existing corpus metrics below established thresholds
 - All corpus tests must pass after every change
 - Per-paper heading thresholds accommodate known limitations of text-based detection
 
----
+## Lower Priority (don't optimize ahead of the above)
 
-## Iteration 1
+- **Image extraction** — currently reliable, but should not regress
+- **Visual formatting** — bold/italic preservation is nice-to-have, not a fidelity concern
+- **Whitespace and readability** — output shouldn't be junk, but extra blank lines and minor inconsistencies are not worth spending iterations on when higher-priority gaps remain
 
-### Starting State
-- Corpus: 5 papers (hawker_2020, aries_cost_account, helios_design, hsu_2020, delene_2001)
-- All 4 corpus tests pass (188 doc_ingest tests total)
-- Comparison report: helios_design headings 52→7 (-87%, expected — baseline from Claude Layer 3 vision), delene chars -6.2% (baseline contaminated with AI artifacts)
-
-### Specs
-1. **fix-delene-baseline-artifacts** — Clean 25+ Claude Layer 3 hallucination artifacts from delene_2001 baseline (AI conversation text injected during failed equation repair). Eliminates phantom -6.2% char regression.
-2. **add-bold-allcaps-heading-promotion** — Fix heading detection gap: bold all-caps single-word headings (`**ABSTRACT**`, `**CONTENTS**`) fall through both allcaps promoter (no bold markers) and unnumbered bold promoter (14-char minimum). Target: delene headings 23→25+.
-3. **add-sparc-to-corpus** — Add SPARC tokamak paper (25 pages, tables + math) from pool. Progressive challenge: corpus 5→6 papers.
-
-### Key Learnings
-_(to be filled by eval agent)_
-
-
----
-
-## Iteration 1 — 2026-02-10
-**Brief:** # Iteration 1 Brief
-**Specs:** add-bold-allcaps-heading-promotion.md,add-sparc-to-corpus.md,fix-delene-baseline-artifacts.md
-**Outcome:** PASS
-**Key Learnings:**
-- Key observations:
-  - All 5 shell scripts (experiment-init.sh, outer-loop.sh, inner-loop.sh, lib.sh) are implemented and functional
-  - All 4 prompt templates (iteration_spec, eval, plan, build) are present and well-formed
-  - Artifact conventions (FR-7) fully implemented — all expected files exist with correct formats
-  - Progressive challenge mechanism works (corpus 5→6 papers)
-  - Cleanup of old Ralph artifacts complete (FR-9)
-  - IterationSpecAgent successfully produces quantitative specs from qualitative goals
-  - EvalAgent successfully produces evidence-based verdicts
-  - Inner loop plan→build→eval cycle works (3 commits made, eval report generated)
-  - Corpus tests pass (4/4), demonstrating the iteration improved doc-ingest quality
-**Corpus:** hawker_2020, aries_cost_account, helios_design, hsu_2020, delene_2001, sparc_overview, 
