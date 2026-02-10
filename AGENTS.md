@@ -2,15 +2,16 @@
 
 ## Implementation Status (2026-02-09)
 
-**Phase 1 Foundation Progress: 4/17 specs complete**
+**Phase 1 Foundation Progress: 5/17 specs complete**
 
 Completed:
 - ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
 - ✅ Spec 002: QualityFlags - extraction quality indicators (tables, math, figures, structure)
 - ✅ Spec 003: SourceCandidate - format types, quality tiers, sortable prioritization
 - ✅ Spec 004: ConversionResult - markdown output, warnings, quality flags, converter provenance
+- ✅ Spec 017: ConversionError - typed exception with FailureCategory, structured details
 
-Next: Spec 017 (ConversionError), then base converter interface
+Next: Spec 005 (WebFetcher) or base converter interface
 
 ## Build & Run
 
@@ -72,7 +73,8 @@ uv run ruff format src/ tests/
 **Converter implementation:**
 - MUST set `self.name` and populate `converter_name` in result
 - Validation logic goes in `validate_source()`, NOT in orchestrator
-- Raise typed `ConversionError(category=FailureCategory.PAYWALL)`, never bare exceptions
+- Raise typed `ConversionError(category="source_validation_failed")`, never bare exceptions
+- Category must be from FailureCategory literal (needs_ocr, table_corruption, no_source_found, source_validation_failed, conversion_timeout, unsupported_format, api_error, network_error, unknown)
 
 **Provenance tracking:**
 - `ProvenanceManager` is pure persistence (no staleness logic)

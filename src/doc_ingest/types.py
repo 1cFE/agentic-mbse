@@ -1,10 +1,23 @@
 """Core data model types for document ingestion."""
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 # Source format types
 SourceFormat = Literal["jats_xml", "arxiv_html", "publisher_html", "pdf", "docx"]
+
+# Failure categories for conversion errors (spec 006)
+FailureCategory = Literal[
+    "needs_ocr",
+    "table_corruption",
+    "no_source_found",
+    "source_validation_failed",
+    "conversion_timeout",
+    "unsupported_format",
+    "api_error",
+    "network_error",
+    "unknown",
+]
 
 # Quality tier mapping (lower number = better quality)
 QUALITY_TIERS: dict[SourceFormat, int] = {
@@ -151,3 +164,55 @@ class ConversionResult:
     warnings: list[str]
     quality_flags: QualityFlags
     converter_name: str
+
+
+class ConversionError(Exception):
+    """Typed exception for converter failures with structured failure categories.
+
+    Raised by converters to signal conversion failures with explicit categorization,
+    enabling outcome classification without string parsing. Supports optional structured
+    details for converter-specific metadata.
+
+    Spec 017: ConversionError provides typed failure categories to the orchestrator
+    for proper outcome classification and provenance tracking.
+
+    Attributes:
+        category: The failure category (e.g., "needs_ocr", "unsupported_format")
+        details: Optional dict of converter-specific metadata (e.g., {"pages": 0})
+
+    Examples:
+        >>> raise ConversionError(
+        ...     "No text detected in PDF",
+        ...     category="needs_ocr",
+        ...     details={"pages": 120}
+        ... )
+        >>> try:
+        ...     convert_document()
+        ... except Exception as e:
+        ...     raise ConversionError(
+        ...         f"Unexpected failure: {e}",
+        ...         category="unknown"
+        ...     ) from e
+    """
+
+    def __init__(
+        self,
+        message: str,
+        category: FailureCategory,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        """Initialize ConversionError with message, category, and optional details.
+
+        Args:
+            message: Human-readable error message for logging
+            category: Typed failure category from FailureCategory literal
+            details: Optional dict of converter-specific metadata
+        """
+        super().__init__(message)
+        self.category = category
+        self.details = details or {}
+
+    def __repr__(self) -> str:
+        """Return detailed representation including category and details."""
+        details_str = f", details={self.details}" if self.details else ""
+        return f"ConversionError(category={self.category!r}{details_str}, message={str(self)!r})"
