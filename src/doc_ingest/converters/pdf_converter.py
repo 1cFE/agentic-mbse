@@ -1,11 +1,17 @@
 """PDF document converter using the proven extraction pipeline.
 
-Uses the 4-layer extraction pipeline from agentic_mbse.extraction:
-- Layer 1: pymupdf_backend with academic header detector
-- Layer 1b: postprocess (header promotion, noise rejection, ligatures)
+Uses the extraction pipeline from agentic_mbse.extraction:
+- Layer 1: pymupdf_backend with font-size header detection + postprocess
+  - Academic header detection via font sizing
+  - Header promotion, noise rejection, ligature repair
+  - Page markers (<!-- PAGE:N -->) for downstream processing
+- Layer 2 (optional): GMFT table enhancement
+  - Quality gates detect broken/missing tables
+  - Microsoft Table Transformer extracts tables from page images
+  - Gracefully skips if gmft not installed
 
 This replaces the previous raw pymupdf4llm approach, dramatically improving
-heading detection and preserving page markers for downstream processing.
+heading detection, table extraction, and providing quality metadata.
 """
 
 import re
@@ -14,7 +20,9 @@ from pathlib import Path
 
 import pymupdf  # type: ignore[import-untyped]
 
+from agentic_mbse.extraction import quality_gates
 from agentic_mbse.extraction.pymupdf_backend import extract
+from agentic_mbse.extraction.table_extraction import enhance_tables, is_gmft_available
 from doc_ingest.types import (
     ConversionError,
     ConversionResult,
@@ -100,10 +108,15 @@ class PyMuPDF4LLMConverter:
         """Convert PDF to markdown using the proven extraction pipeline.
 
         Uses Layer 1 (pymupdf_backend + postprocess) which provides:
-        - Academic header detection (section numbering)
+        - Font-size-based header detection
         - Header promotion from bold text
         - Noise rejection and ligature repair
         - Page markers for downstream processing
+
+        Then applies optional Layer 2 (GMFT table enhancement):
+        - Detects broken/missing tables via quality gates
+        - Extracts tables from PDF page images using Microsoft Table Transformer
+        - Gracefully skips if gmft not installed
 
         Args:
             content: Raw PDF bytes
@@ -147,6 +160,9 @@ class PyMuPDF4LLMConverter:
                 md_path = tmp_out_path / "full_document.md"
                 md_text = md_path.read_text()
 
+                # Layer 2: GMFT table enhancement (optional)
+                md_text = self._apply_layer2_gmft(md_text, tmp_pdf_path)
+
                 # Open PDF for quality flag detection
                 doc = pymupdf.open(stream=content, filetype="pdf")
 
@@ -181,6 +197,52 @@ class PyMuPDF4LLMConverter:
                 category="unknown",
                 details={"error_type": type(e).__name__},
             ) from e
+
+    def _apply_layer2_gmft(self, markdown: str, pdf_path: Path) -> str:
+        """Apply Layer 2 (GMFT) table enhancement if available.
+
+        Detects broken tables using quality gates and attempts to repair them
+        using GMFT. This layer is optional and gracefully skips if GMFT is not
+        installed.
+
+        Args:
+            markdown: Extracted markdown from Layer 1 (pymupdf_backend + postprocess)
+            pdf_path: Path to source PDF (needed for GMFT extraction)
+
+        Returns:
+            Enhanced markdown with repaired tables, or original markdown if GMFT
+            unavailable or no repairs needed
+        """
+        # Check if GMFT is available
+        if not is_gmft_available():
+            return markdown
+
+        try:
+            # Detect problems using quality gates
+            repair_requests = quality_gates.detect_problems(markdown)
+
+            # Filter for table repair requests only
+            table_requests = [r for r in repair_requests if r.region_type == "table"]
+
+            if not table_requests:
+                # No table problems detected
+                return markdown
+
+            # Attempt to enhance tables using GMFT
+            enhanced_md, remaining = enhance_tables(
+                md=markdown,
+                pdf_path=pdf_path,
+                repair_requests=table_requests,
+                per_page_timeout=30,
+                total_timeout=120,
+            )
+
+            return enhanced_md
+
+        except Exception:
+            # If GMFT fails, return original markdown
+            # Don't fail the entire conversion due to optional enhancement
+            return markdown
 
     def _compute_quality_flags_from_output(
         self, doc: pymupdf.Document, markdown: str, images_dir: Path
