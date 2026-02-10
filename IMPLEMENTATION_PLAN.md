@@ -126,7 +126,7 @@ python3 tests/corpus/compare.py
 
 ## Task 3: Add SPARC Paper to Corpus
 
-**Status**: PENDING
+**Status**: DONE
 
 **Spec**: [add-sparc-to-corpus]
 
@@ -179,6 +179,17 @@ python3 tests/corpus/compare.py | grep "sparc_overview"
 ```
 
 **Depends on**: Task 2 (heading promotion should be working before establishing new baseline)
+
+**Completion notes**:
+- Copied PDF from pool to `tests/corpus/pdfs/sparc_overview.pdf`
+- Added entry to papers.jsonl with slug="sparc_overview", pages=25, has_tables=true, has_math=true, source="pool"
+- Extracted with PyMuPDF4LLMConverter using current pipeline (Layer 1 + postprocess)
+- Baseline saved: 88,549 chars, 6 headings (1× H1 + 5× H2), 5 table rows, 18 math symbols, 25 figure refs
+- Generated metrics.json with heading_count=6 (exceeds >=3 requirement)
+- All 4 corpus tests pass (metrics validation, structure, heading regression, char regression)
+- Comparison report shows SPARC with no regressions: 6→6 headings, 5→5 tables, 88k→88k chars
+- Total corpus expanded from 5 to 6 papers per progressive challenge rule
+- Files modified: papers.jsonl (+1 line), pdfs/sparc_overview.pdf (new), baseline/sparc_overview/ (2 new files)
 
 ---
 
