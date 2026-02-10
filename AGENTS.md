@@ -1,8 +1,8 @@
 # AGENTS.md
 
-## Implementation Status (2026-02-09)
+## Implementation Status (2026-02-09 20:15)
 
-**Phase 1 Foundation Progress: 13/17 specs complete**
+**Phase 1 Foundation Progress: 14/17 specs complete**
 
 Completed:
 - ✅ Spec 001: DocumentIdentifiers - priority resolution, display_key, cache keying
@@ -15,11 +15,12 @@ Completed:
 - ✅ Spec 008: ExtractionOrchestrator - quality-ordered extraction, converter registry integration
 - ✅ Spec 009: ProvenanceManager - atomic writes, UTF-8 encoding, hash-based directory naming
 - ✅ Spec 010: ValidationResult - source validation outcomes (paywall, truncation, content detection)
+- ✅ Spec 011: CLI (minimal) - `agentic-mbse ingest` command with identifier validation, pipeline orchestration
 - ✅ Spec 012: ResultWriter - output.md, summary.json, provenance delegation
 - ✅ Spec 013: DiscoveryCache - TTL-based caching, freshness checks, per-identifier invalidation, bulk clearing
 - ✅ Spec 017: ConversionError - typed exception with FailureCategory, structured details
 
-Next: CLI (spec 011)
+Next: Converters (specs 014-016)
 
 ## Build & Run
 
@@ -27,13 +28,17 @@ Next: CLI (spec 011)
 # Install dependencies
 uv sync
 
-# Run extraction (single source)
-uv run python -m src.doc_ingest.cli extract <source> --output out/
+# Run document ingestion (DOI)
+uv run agentic-mbse ingest 10.1234/example --output-dir data/ingested
 
-# Run extraction (batch)
-uv run python -m src.doc_ingest.cli extract-batch sources.txt --output out/
+# Run document ingestion (arXiv)
+uv run agentic-mbse ingest 2301.12345 --output-dir data/ingested
 
-# Directory creation is automatic; CLI exits 0 (success), 1 (failures), 2 (invalid input)
+# Run document ingestion with format override
+uv run agentic-mbse ingest 10.1234/example --format pdf
+
+# Directory creation is automatic; CLI exits 0 (success), 2 (fatal error)
+# Command name is 'ingest' (not 'extract' which exists for PDF/DOCX local processing)
 ```
 
 ## Validation
@@ -98,6 +103,19 @@ uv run ruff format src/ tests/
 - `DiscoveryCache` handles freshness/staleness checks (injectable, separate class)
 - Triage metadata stored alongside discovery_timestamp for staleness detection
 - Hash computation in ProvenanceManager reused by ResultWriter via `provenance_manager._compute_hash()`
+
+**CLI implementation (spec 011):**
+- Command name: `ingest` (avoids collision with existing `extract` for local PDF/DOCX)
+- Identifier parsing priority: DOI > arXiv > PMC > local path (matches DocumentIdentifiers)
+- DOI regex: `^10\.\d+/.+$` (strict validation)
+- arXiv regex: `^\d{4}\.\d{4,5}(v\d+)?$` (handles versioned IDs)
+- PMC regex: `^PMC\d+$` (case-insensitive, normalized to uppercase)
+- Local paths: validated via Path.exists() and is_file() checks
+- ExtractionOrchestrator.__init__ takes only `registry` parameter (no fetcher)
+- ProvenanceManager.__init__ takes no parameters (not base_dir)
+- ResultWriter.write signature: `write(output_dir: Path, result: ExtractionResult)`
+- DiscoveryCache requires `ttl_days` parameter in __init__
+- Document hash computed via: `sha256(f"{id_type}:{id_value}".encode()).hexdigest()[:16]`
 
 **ResultWriter implementation (spec 012):**
 - Takes ExtractionResult (markdown + provenance), not individual components
