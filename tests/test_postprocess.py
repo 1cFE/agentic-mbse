@@ -16,6 +16,7 @@ from agentic_mbse.extraction.postprocess import (
     promote_plain_headers,
     promote_unnumbered_bold_headers,
     reject_noise_headers,
+    repair_broken_ligatures,
     repair_ligatures,
     strip_page_numbers,
     strip_running_headers,
@@ -526,6 +527,66 @@ class TestRepairLigatures:
     def test_no_ligatures_unchanged(self):
         md = "Normal text without ligatures."
         assert repair_ligatures(md) == md
+
+
+# ---------------------------------------------------------------------------
+# repair_broken_ligatures
+# ---------------------------------------------------------------------------
+
+
+class TestRepairBrokenLigatures:
+    def test_feld_to_field(self):
+        md = "|Magnetic feld on-axis|_B_0|6 T|"
+        result = repair_broken_ligatures(md)
+        assert result == "|Magnetic field on-axis|_B_0|6 T|"
+        assert "feld" not in result
+
+    def test_confnement_to_confinement(self):
+        md = "Energy confnement time is critical."
+        result = repair_broken_ligatures(md)
+        assert result == "Energy confinement time is critical."
+        assert "confnement" not in result
+
+    def test_efciency_to_efficiency(self):
+        md = "Thermal conversion efciency is 40%."
+        result = repair_broken_ligatures(md)
+        assert result == "Thermal conversion efficiency is 40%."
+        assert "efciency" not in result
+
+    def test_coefcient_to_coefficient(self):
+        md = "Pearson correlation coefcient"
+        result = repair_broken_ligatures(md)
+        assert result == "Pearson correlation coefficient"
+        assert "coefcient" not in result
+
+    def test_multiple_broken_words(self):
+        md = "The magnetic feld and confnement parameters show good efciency."
+        result = repair_broken_ligatures(md)
+        assert result == "The magnetic field and confinement parameters show good efficiency."
+        assert "feld" not in result
+        assert "confnement" not in result
+        assert "efciency" not in result
+
+    def test_author_names_preserved(self):
+        """Verify author names like Cosfeld, Guttenfelder, Zehrfeld are NOT changed."""
+        md = "J. Coenen, J. Cosfeld, A. Dinklage, W. Guttenfelder, and H. P. Zehrfeld"
+        result = repair_broken_ligatures(md)
+        assert result == md  # Should be unchanged
+        assert "Cosfeld" in result
+        assert "Guttenfelder" in result
+        assert "Zehrfeld" in result
+
+    def test_word_boundary_matching(self):
+        """Whole-word matching prevents false positives in compound words."""
+        md = "Newfeld and Greenfeld are locations, not fields."
+        result = repair_broken_ligatures(md)
+        # Should NOT change "feld" in Newfeld/Greenfeld as they're not whole-word matches
+        assert result == md
+
+    def test_no_broken_ligatures_unchanged(self):
+        md = "Normal text with field, confinement, efficiency, coefficient."
+        result = repair_broken_ligatures(md)
+        assert result == md
 
 
 # ---------------------------------------------------------------------------

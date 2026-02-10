@@ -472,6 +472,38 @@ def repair_ligatures(md: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# 5b. Broken ligature dictionary repair
+# ---------------------------------------------------------------------------
+
+# Dictionary of broken ligatures where PyMuPDF drops the second character
+# of fi/fl ligatures (font-encoding issues)
+_BROKEN_LIGATURE_DICT: dict[str, str] = {
+    "feld": "field",
+    "confnement": "confinement",
+    "efciency": "efficiency",
+    "coefcient": "coefficient",
+}
+
+# Build regex pattern with word boundaries to avoid false positives
+_BROKEN_LIGATURE_RE = re.compile(
+    r"\b(" + "|".join(re.escape(k) for k in _BROKEN_LIGATURE_DICT) + r")\b"
+)
+
+
+def repair_broken_ligatures(md: str) -> str:
+    """Repair broken ligatures where PyMuPDF drops the second character.
+
+    Some PDFs have font encodings where PyMuPDF drops the second character
+    of fi/fl ligatures, producing broken words like "feld" (field),
+    "confnement" (confinement), "efciency" (efficiency), etc.
+
+    Uses a dictionary of known broken→fixed word pairs with whole-word matching
+    to avoid false positives (e.g., preserves author names like "Cosfeld").
+    """
+    return _BROKEN_LIGATURE_RE.sub(lambda m: _BROKEN_LIGATURE_DICT[m.group()], md)
+
+
+# ---------------------------------------------------------------------------
 # 6. Figure caption promotion
 # ---------------------------------------------------------------------------
 
@@ -584,5 +616,6 @@ def postprocess(md: str, images_dir: Path | None = None) -> str:
     if images_dir is not None:
         md = normalize_image_paths(md, images_dir)
     md = repair_ligatures(md)
+    md = repair_broken_ligatures(md)
     md = promote_figure_captions(md)
     return md
