@@ -86,6 +86,11 @@ uv run ruff format src/ tests/
 
 ## Known Gotchas
 
+**Type checking dependencies:**
+- Third-party libraries without inline types need stub packages for mypy
+- `requests` library requires `types-requests` in dev dependencies
+- Install via: `uv add --dev types-{package-name}`
+
 **WebFetcher implementation (spec 005):**
 - Fetch method supports both URLs and local paths via single interface
 - Protocol validation happens early (allowlist: http, https only)

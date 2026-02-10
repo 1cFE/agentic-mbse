@@ -1,10 +1,7 @@
 """Tests for document ingestion CLI."""
 
-import json
 from pathlib import Path
 from unittest.mock import Mock, patch
-
-import pytest
 
 from doc_ingest.cli import (
     EXIT_FATAL,
@@ -17,7 +14,6 @@ from doc_ingest.cli import (
     validate_pmc_id,
 )
 from doc_ingest.types import DocumentIdentifiers, ExtractionResult, ProvenanceRecord
-
 
 # -------------------------------------------------------------------------
 # Test Helpers
