@@ -17,7 +17,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from agentic_mbse.sysml.expression import evaluate_true_static_expression
+from agentic_mbse.sysml.expression import (
+    evaluate_true_static_expression,
+    extract_feature_refs,
+)
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import (
     Severity,
@@ -371,6 +374,43 @@ def check_binding_formats(
     return issues, bindings_checked
 
 
+def _is_codegen_handled_pattern(
+    attr: Any, expr: Any, refs: list[Any]
+) -> bool:
+    """Check if expression is a FORMULA or EXPOSE pattern handled by codegen.
+
+    FORMULA: all refs are sibling attributes (same owner) — codegen generates
+    a synthetic pipeline module (ADR-004).
+    EXPOSE: FeatureChainExpression forwarding a calc output — codegen creates
+    a channel alias.
+
+    This is a lightweight L8 check; the authoritative classification lives
+    in adr002.py. Conservative: returns False if uncertain.
+    """
+    try:
+        # EXPOSE: top-level FeatureChainExpression (e.g., attr = calc.output)
+        type_name = type(expr).__name__
+        if "FeatureChain" in type_name:
+            return True  # EXPOSE pattern — codegen handles via channel alias
+
+        # FORMULA: all refs are sibling attributes on the same part
+        attr_owner = attr.owner if hasattr(attr, "owner") else None
+        if attr_owner is None:
+            return False
+
+        for ref in refs:
+            ref_element = ref.element
+            if ref_element is None:
+                return False
+            ref_owner = ref_element.owner if hasattr(ref_element, "owner") else None
+            if ref_owner is not attr_owner:
+                return False  # Cross-part or calc output ref
+
+        return True  # All refs are siblings — FORMULA pattern
+    except Exception:
+        return False
+
+
 def check_design_attr_completeness(
     model: Any,
     design_path_filter: str | None = "designs",
@@ -432,9 +472,17 @@ def check_design_attr_completeness(
             )
 
             # Check extractability — can codegen get a numeric default?
+            # FORMULA patterns (sibling-only refs) and EXPOSE patterns (calc output
+            # refs) are handled by codegen via synthetic modules / channel aliases,
+            # so they don't need to be statically evaluable (ADR-002 Amendment).
             if has_value:
+                expr = attr.feature_value_expression
+                refs = extract_feature_refs(expr)
+                if len(refs) > 0 and _is_codegen_handled_pattern(attr, expr, refs):
+                    continue  # FORMULA or EXPOSE — codegen handles this
+
                 try:
-                    evaluate_true_static_expression(attr.feature_value_expression)
+                    evaluate_true_static_expression(expr)
                 except (ValueError, TypeError) as e:
                     issues.append(
                         ValidationIssue(
@@ -448,8 +496,9 @@ def check_design_attr_completeness(
                             element_name=attr_name,
                             location=location,
                             suggestion=(
-                                "Ensure the attribute value is a literal number or "
-                                "static arithmetic expression (no feature references)"
+                                "Ensure the attribute value is a literal number, "
+                                "static arithmetic expression, FORMULA (sibling refs), "
+                                "or EXPOSE pattern (calc output ref)"
                             ),
                         )
                     )
