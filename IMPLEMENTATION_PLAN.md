@@ -31,7 +31,9 @@ Two heading fidelity fixes targeting Priority 1 (Document Structure):
 
 ### Task 2: Promote italic-wrapped numbered headers [spec: promote-italic-wrapped-numbered-headers]
 
-- **Status**: PENDING
+- **Status**: DONE
+- **Implementation**: Successfully added pattern for italic-wrapped numbered headers. Added `_ITALIC_WRAPPED_NUMBERED_HEADER_RE` regex, `_replace_italic_wrapped_numbered_header()`, and `promote_italic_wrapped_numbered_headers()` function to `postprocess.py`. Wired into `postprocess()` orchestrator after `promote_italic_numbered_headers()`. Added 10 comprehensive tests in new `TestPromoteItalicWrappedNumberedHeaders` class.
+- **Results**: helios_design now has 20 headings (7 H2 + 13 H3), up from 7 total (target: ≥20). All 145 postprocess tests pass. No regressions in other papers (sparc_overview: 11→11, hawker_2020: 15→15, aries_cost_account: 140→140, hsu_2020: 27→27, delene_2001: 29→28 = -3.4% within threshold).
 - **What**: Add a new regex and public function in `src/agentic_mbse/extraction/postprocess.py` for the pattern where the section number is INSIDE italic markers: `_N.M. Title text_` (as opposed to the existing `N.M. _Title text_` handled by `_ITALIC_NUMBERED_HEADER_RE`)
 - **Why**: helios_design has 14 subsection headings like `_3.1. The stellarator equilibrium_` that the existing `_ITALIC_NUMBERED_HEADER_RE` (line 91) misses because it expects the number OUTSIDE italic markers. These missed headings leave helios_design with only 7 H2 headings and no H3/H4 hierarchy.
 - **Files to modify**:
@@ -59,6 +61,7 @@ Two heading fidelity fixes targeting Priority 1 (Document Structure):
 - **Depends on**: nothing (independent of Task 1)
 - **Constraint**: Do NOT modify `_ITALIC_NUMBERED_HEADER_RE` or `promote_italic_numbered_headers()` — add alongside them
 - **Edge case**: `_3.4.1. A note on the e_ ff _ects of an abrupt plasma termi-_` has a broken italic due to ligature split. Accept as known limitation (ligature repair runs after heading promotion in the pipeline, and the broken italic boundary makes regex matching unreliable for this specific line).
+- **Discovery**: The regex pattern `(?<=\n\n)_(\d+(?:\.\d+)+)\.\s+(.+?)_(?=\n\n)` with `re.DOTALL` successfully handles multi-line continuations. The replacement function uses `re.sub(r"_\s*\n\s*_", " ", title)` to join multi-line italic text across line breaks. The edge case at 3.4.1 wasn't promoted because it doesn't have blank lines around it (it's inline text in a paragraph), which is correct behavior to avoid false positives.
 
 ### Task 3: Rebase baselines and verify zero regressions [spec: both]
 

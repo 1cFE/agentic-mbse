@@ -92,6 +92,15 @@ _ITALIC_NUMBERED_HEADER_RE = re.compile(
     r"(?<=\n\n)(\d+\.\d+)\.?\s+_([A-Z][^_]+)_(?=\n\n)",
 )
 
+# Italic-wrapped numbered section headers: _3.1. The stellarator equilibrium_
+# Matches section headers where the number is INSIDE italic markers.
+# Pattern: _N.M. Title text_ or _N.M.K. Title text_ (handles 2-3 level depth)
+# Must be between blank lines to avoid false positives.
+_ITALIC_WRAPPED_NUMBERED_HEADER_RE = re.compile(
+    r"(?<=\n\n)_(\d+(?:\.\d+)+)\.\s+(.+?)_(?=\n\n)",
+    re.DOTALL,  # Allow . to match newlines for multi-line continuations
+)
+
 # Headers with redundant bold: ## **1 Introduction** → ## 1 Introduction
 _HEADER_BOLD_CLEANUP_RE = re.compile(
     r"^(#{2,6})\s+\*\*(.+?)\*\*\s*$",
@@ -255,6 +264,30 @@ def _replace_italic_numbered_header(match: re.Match) -> str:
     return f"{hashes} {section_num} {title}"
 
 
+def _replace_italic_wrapped_numbered_header(match: re.Match) -> str:
+    """Replace italic-wrapped numbered header with markdown heading.
+
+    Converts: _3.1. The stellarator equilibrium_
+    To: ### 3.1 The stellarator equilibrium
+
+    Handles multi-line continuations:
+    _3.1. Scoping studies, heating and fueling, and dynamic_
+    _accessibility_
+    → ### 3.1 Scoping studies, heating and fueling, and dynamic accessibility
+    """
+    section_num = match.group(1)
+    title = match.group(2).strip()
+
+    # Clean up multi-line continuations (remove embedded italic markers and newlines)
+    # Pattern: "text_\n_text" → "text text"
+    title = re.sub(r"_\s*\n\s*_", " ", title)
+    # Remove any remaining newlines
+    title = re.sub(r"\s*\n\s*", " ", title)
+
+    hashes = "#" * _header_depth(section_num)
+    return f"{hashes} {section_num} {title}"
+
+
 def promote_bold_headers(md: str) -> str:
     """Convert standalone bold lines matching numbered section patterns to markdown headers.
 
@@ -336,6 +369,25 @@ def promote_italic_numbered_headers(md: str) -> str:
     section number depth (e.g., 4.1 has 1 dot → ###).
     """
     return _ITALIC_NUMBERED_HEADER_RE.sub(_replace_italic_numbered_header, md)
+
+
+def promote_italic_wrapped_numbered_headers(md: str) -> str:
+    """Promote italic-wrapped numbered section headers to markdown headings.
+
+    Handles: ``_3.1. The stellarator equilibrium_`` → ``### 3.1 The stellarator equilibrium``
+
+    This variant handles headers where the section number is INSIDE the italic markers,
+    as opposed to ``promote_italic_numbered_headers()`` which handles numbers OUTSIDE.
+
+    Also handles multi-line wrapped continuations:
+    ``_3.1. Scoping studies, heating and fueling, and dynamic_``
+    ``_accessibility_``
+    → ``### 3.1 Scoping studies, heating and fueling, and dynamic accessibility``
+
+    The pattern matches numbered section headers (2+ levels: N.M or N.M.K) between
+    blank lines. Heading level is determined by section number depth.
+    """
+    return _ITALIC_WRAPPED_NUMBERED_HEADER_RE.sub(_replace_italic_wrapped_numbered_header, md)
 
 
 def clean_header_artifacts(md: str) -> str:
@@ -609,6 +661,7 @@ def postprocess(md: str, images_dir: Path | None = None) -> str:
     md = promote_bold_headers(md)
     md = promote_plain_headers(md)
     md = promote_italic_numbered_headers(md)
+    md = promote_italic_wrapped_numbered_headers(md)
     md = promote_unnumbered_bold_headers(md)
     md = promote_bold_allcaps_headers(md)
     md = promote_allcaps_headers(md)

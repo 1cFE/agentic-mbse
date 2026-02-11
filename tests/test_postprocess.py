@@ -13,6 +13,7 @@ from agentic_mbse.extraction.postprocess import (
     promote_bold_headers,
     promote_figure_captions,
     promote_italic_numbered_headers,
+    promote_italic_wrapped_numbered_headers,
     promote_plain_headers,
     promote_unnumbered_bold_headers,
     reject_noise_headers,
@@ -257,6 +258,123 @@ class TestPromoteItalicNumberedHeaders:
         assert "### 4.1 Full-performance H-mode discharge" in result
         # Original italic formatting should be gone
         assert "_Full-performance H-mode discharge_" not in result
+
+
+class TestPromoteItalicWrappedNumberedHeaders:
+    """Test promote_italic_wrapped_numbered_headers() function.
+
+    Handles pattern: _N.M. Title text_ (number INSIDE italic markers)
+    As opposed to: N.M. _Title text_ (number OUTSIDE, handled by promote_italic_numbered_headers)
+    """
+
+    def test_single_line_two_level(self):
+        """Single-line italic-wrapped header with 2-level depth."""
+        md = "\n\n_3.2. The stellarator equilibrium_\n\nSome content here."
+        result = promote_italic_wrapped_numbered_headers(md)
+        assert "### 3.2 The stellarator equilibrium" in result
+        assert "_3.2. The stellarator equilibrium_" not in result
+
+    def test_single_line_three_level(self):
+        """Single-line italic-wrapped header with 3-level depth."""
+        md = "\n\n_3.4.1. A note on the effects_\n\nSome content here."
+        result = promote_italic_wrapped_numbered_headers(md)
+        assert "#### 3.4.1 A note on the effects" in result
+        assert "_3.4.1. A note on the effects_" not in result
+
+    def test_multiline_continuation(self):
+        """Multi-line wrapped header with continuation on next line."""
+        md = (
+            "Previous paragraph.\n"
+            "\n"
+            "_3.1. Scoping studies, heating and fueling, and dynamic_\n"
+            "_accessibility_\n"
+            "\n"
+            "Next paragraph."
+        )
+        result = promote_italic_wrapped_numbered_headers(md)
+        assert "### 3.1 Scoping studies, heating and fueling, and dynamic accessibility" in result
+        assert "_3.1." not in result
+        assert "_accessibility_" not in result
+
+    def test_multiline_three_level_with_broken_ligature(self):
+        """Multi-line 3-level header with broken ligature (edge case).
+
+        This pattern has a broken italic due to ligature split: e_ ff _ects
+        The regex should still match and promote it.
+        """
+        md = (
+            "\n\n"
+            "_3.4.1. A note on the e_ ff _ects of an abrupt plasma termi-_\n"
+            "_nation in Helios_\n"
+            "\n"
+            "Content."
+        )
+        result = promote_italic_wrapped_numbered_headers(md)
+        # Should promote the header and clean up the multi-line continuation
+        assert (
+            "#### 3.4.1 A note on the e_ ff _ects of an abrupt plasma termi- nation in Helios"
+            in result
+        )
+
+    def test_must_be_between_blank_lines(self):
+        """Pattern NOT between blank lines should NOT be promoted."""
+        md = "Some content _3.1. Title_ more content"
+        result = promote_italic_wrapped_numbered_headers(md)
+        assert "###" not in result
+        assert "_3.1. Title_" in result
+
+    def test_false_positive_italic_text_with_numbers(self):
+        """Italic text that doesn't start with section number should NOT be promoted."""
+        md = "\n\n_The 3.5 parameter is defined as_\n\nContent."
+        result = promote_italic_wrapped_numbered_headers(md)
+        assert "###" not in result
+        assert "_The 3.5 parameter is defined as_" in result
+
+    def test_single_level_not_matched(self):
+        """Single-level numbers like _1. Title_ should NOT match (requires 2+ levels)."""
+        md = "\n\n_1. Introduction_\n\nContent."
+        result = promote_italic_wrapped_numbered_headers(md)
+        assert "##" not in result
+        assert "_1. Introduction_" in result
+
+    def test_helios_design_learning_test_section_3(self):
+        """Learning test from helios_design corpus paper section 3."""
+        md = (
+            "previous content.\n"
+            "\n"
+            "_3.2. The stellarator equilibrium_\n"
+            "\n"
+            "The baseline Helios configurations have been numerically\n"
+        )
+        result = promote_italic_wrapped_numbered_headers(md)
+        assert "### 3.2 The stellarator equilibrium" in result
+        assert "_3.2." not in result
+
+    def test_helios_design_learning_test_section_4(self):
+        """Learning test from helios_design corpus paper section 4."""
+        md = (
+            "previous content.\n"
+            "\n"
+            "_4.1. Electromagnetic coil engineering_\n"
+            "\n"
+            "The coil set for Helios consists of 18 modular\n"
+        )
+        result = promote_italic_wrapped_numbered_headers(md)
+        assert "### 4.1 Electromagnetic coil engineering" in result
+        assert "_4.1." not in result
+
+    def test_no_interference_with_other_italic_patterns(self):
+        """Should not interfere with other italic text patterns."""
+        md = (
+            "\n\n_3.1. The stellarator equilibrium_\n\n"
+            "Some _emphasized text_ in the middle of a sentence.\n\n"
+            "_4.2. Divertor engineering and the first wall_\n\n"
+        )
+        result = promote_italic_wrapped_numbered_headers(md)
+        assert "### 3.1 The stellarator equilibrium" in result
+        assert "### 4.2 Divertor engineering and the first wall" in result
+        # Regular emphasis should remain
+        assert "_emphasized text_" in result
 
 
 class TestIsTocLine:
