@@ -177,6 +177,30 @@ claude_generate() {
 }
 
 # -----------------------------------------------------------------------------
+# Build-done detection
+# -----------------------------------------------------------------------------
+
+# Check if all tasks in IMPLEMENTATION_PLAN.md are marked [DONE].
+# If so, write .build-done sentinel and return 0; otherwise return 1.
+check_build_done() {
+    [[ -f IMPLEMENTATION_PLAN.md ]] || return 1
+
+    local total done remaining
+    total=$(grep -cE '^\*\*Task [0-9]+' IMPLEMENTATION_PLAN.md 2>/dev/null || echo 0)
+    [[ "$total" -gt 0 ]] || return 1
+
+    done=$(grep -cE '^\*\*Task [0-9]+.*\[DONE\]' IMPLEMENTATION_PLAN.md 2>/dev/null || echo 0)
+    remaining=$((total - done))
+
+    if [[ "$remaining" -eq 0 ]]; then
+        echo "ALL_TASKS_COMPLETE" > .build-done
+        log_info "check_build_done: all $total tasks complete — wrote .build-done"
+        return 0
+    fi
+    return 1
+}
+
+# -----------------------------------------------------------------------------
 # Spec parsing
 # -----------------------------------------------------------------------------
 

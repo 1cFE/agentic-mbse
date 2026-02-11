@@ -89,9 +89,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 # Outer loop
 # -----------------------------------------------------------------------------
 
+ITER=$(cat iteration-count)  # Read once; shell var is authoritative
+
 while true; do
     # Step 1: Increment iteration counter
-    ITER=$(cat iteration-count)
     ITER=$((ITER + 1))
 
     # Max iterations check
@@ -268,9 +269,17 @@ EOF
     fi
 
     # Extract Key Learnings from eval report (design review fix #2)
+    # Try multiple section header patterns used by EvalAgent
     KEY_LEARNINGS=""
     if [[ -f eval-report.md ]]; then
-        KEY_LEARNINGS=$(sed -n '/Key observations:/,/^$/p' eval-report.md | head -10)
+        KEY_LEARNINGS=$(sed -n '/^[#]*\s*Key [Oo]bservations/,/^$/p' eval-report.md | head -10)
+        if [[ -z "$KEY_LEARNINGS" ]]; then
+            KEY_LEARNINGS=$(sed -n '/^[#]*\s*Key [Ll]earnings/,/^$/p' eval-report.md | head -10)
+        fi
+        if [[ -z "$KEY_LEARNINGS" ]]; then
+            # Fallback: grab bullet points from ## Summary section
+            KEY_LEARNINGS=$(sed -n '/^## Summary/,/^## /p' eval-report.md | grep '^\s*-' | head -10)
+        fi
     fi
     if [[ -z "$KEY_LEARNINGS" ]]; then
         if [[ "$INNER_EXIT" -ne 0 ]]; then

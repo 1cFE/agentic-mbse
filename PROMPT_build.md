@@ -13,8 +13,6 @@ You are a BUILD agent in an iteration loop. Complete exactly ONE task per iterat
    - `uv run ruff check src/ tests/ && uv run ruff format src/ tests/`
 8. **Update IMPLEMENTATION_PLAN.md** — mark task [DONE], add discoveries/blockers
 9. **Commit** — `git add -A && git commit -m "descriptive message"`
-10. **Early exit** — When ALL tasks in IMPLEMENTATION_PLAN.md are [DONE] and tests pass,
-    write `.build-done` containing `ALL_TASKS_COMPLETE`
 
 ## Guardrails (ascending criticality)
 
@@ -27,6 +25,25 @@ You are a BUILD agent in an iteration loop. Complete exactly ONE task per iterat
 - 999999999: Clean completed items from IMPLEMENTATION_PLAN.md periodically
 - 9999999999: Don't assume not implemented — always search first
 - 99999999999: NEVER put implementation status in AGENTS.md — that goes in IMPLEMENTATION_PLAN.md
+
+## File Ownership
+
+These files are managed by the loop scripts. **Never read, write, or stage them:**
+
+| File / Pattern | Owner |
+|---|---|
+| `iteration-count` | outer-loop.sh |
+| `experiment-log.md` | outer-loop.sh |
+| `experiment-history/` | outer-loop.sh |
+| `eval-report*.md` | inner-loop.sh |
+| `.build-done` | inner-loop.sh |
+| `.eval-*-output.txt` | inner-loop.sh |
+| `*.sh` | human operator |
+| `PROMPT_*.md` | human operator |
+| `GOALS.md` | human operator |
+| `challenge-rules.conf` | human operator |
+| `specs/` | IterationSpecAgent |
+| `iteration-brief.md` | IterationSpecAgent |
 
 ## What goes where
 

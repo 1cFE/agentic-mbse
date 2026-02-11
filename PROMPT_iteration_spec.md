@@ -13,7 +13,6 @@ You are the IterationSpecAgent. Your job is to evaluate the current state of the
 7. **Study the tools** — read source code for available options, parameters, and features that might be underutilized (see Tool Investigation below)
 8. **Evaluate against goals** — how close are we? What's the biggest gap?
 9. **Apply progressive challenge rules** — see CHALLENGE RULES section appended below
-10. **Backfill previous iteration's Key Learnings** — if `eval-report.md` exists and `experiment-log.md` has a latest iteration entry without Key Learnings populated, extract the "Key observations" section from the eval report and update the experiment-log entry in-place
 
 ## Verification Tools (Backpressure)
 

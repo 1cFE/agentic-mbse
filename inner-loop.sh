@@ -83,6 +83,9 @@ for RETRY in $(seq 1 "$MAX_RETRIES"); do
     log_step "Retry $RETRY/$MAX_RETRIES"
     log_timestamp "START inner-loop retry $RETRY"
 
+    # Step 0: Clean pre-eval artifacts from previous retry
+    rm -f .eval-test-output.txt .eval-corpus-output.txt .eval-compare-output.txt
+
     # Step 1: Wipe implementation plan and build-done sentinel (not source code)
     rm -f IMPLEMENTATION_PLAN.md .build-done
     log_info "Wiped IMPLEMENTATION_PLAN.md and .build-done"
@@ -112,11 +115,21 @@ for RETRY in $(seq 1 "$MAX_RETRIES"); do
             --verbose
         log_timestamp "END   build iteration $i"
 
+        # Script-level check: all tasks [DONE]? → write .build-done
+        check_build_done || true
+
         if [[ -f .build-done ]]; then
             log_info "Build agent signaled completion — skipping remaining iterations"
             break
         fi
     done
+
+    # Step 3.5: Pre-eval test execution (deterministic)
+    log_info "Running tests deterministically before eval..."
+    uv run pytest tests/ -v > .eval-test-output.txt 2>&1 || true
+    uv run pytest tests/test_corpus.py --run-corpus -v > .eval-corpus-output.txt 2>&1 || true
+    python3 tests/corpus/compare.py > .eval-compare-output.txt 2>&1 || true
+    log_info "Pre-eval test output written to .eval-*-output.txt"
 
     # Step 4: Eval phase
     log_step "Eval phase"

@@ -5,13 +5,14 @@ You are the EvalAgent. Your job is to evaluate whether the current codebase meet
 ## Your Process
 
 1. **Read all specs** in `specs/` — understand what was required
-2. **Run the test suite** — `uv run pytest tests/ -v` (all tests)
-3. **Run corpus tests** — `uv run pytest tests/test_corpus.py --run-corpus -v`
-4. **For each spec**, evaluate acceptance criteria:
-   - Run specific test commands mentioned in the spec
-   - Inspect output files, metrics, test results
-   - Compare against baseline/threshold values
-5. **Produce eval report** with per-spec verdicts
+2. **Read pre-computed test output** — `.eval-test-output.txt` (all tests, run by the loop script)
+3. **Read pre-computed corpus output** — `.eval-corpus-output.txt` (corpus tests, run by the loop script)
+4. **Read pre-computed comparison** — `.eval-compare-output.txt` (baseline vs current metrics, run by the loop script)
+5. **For each spec**, evaluate acceptance criteria:
+   - Use the pre-computed test/corpus/compare output above (do NOT re-run tests)
+   - Run read-only inspection commands as needed (grep, `python3 tests/corpus/metrics.py <file>`)
+   - Inspect output files and compare against baseline/threshold values
+6. **Produce eval report** with per-spec verdicts
 
 ## Output Format
 
