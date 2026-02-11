@@ -44,10 +44,10 @@ Every paper except energy_amplifier has a stale baseline (generated with Claude 
   - Verified by: `uv run pytest tests/test_corpus.py --run-corpus` passes 4/4; for each rebased paper, `diff tests/corpus/baseline/{slug}/metrics.json tests/corpus/current/{slug}/metrics.json` shows no differences. ✓
   - Depends on: nothing
 
-- **Task 2: Tighten heading regression thresholds in papers.jsonl** [broken-ligature-dictionary-repair]
+- **Task 2 [DONE]: Tighten heading regression thresholds in papers.jsonl** [broken-ligature-dictionary-repair]
   - What: After rebasing baselines, remove the `heading_regression_pct` and `heading_note` overrides from helios_design (currently `-90`) and hsu_2020 (currently `-50`) in `papers.jsonl`. These were only needed because baselines reflected Claude Layer 3 output. With rebased baselines matching current L1-2 output, the default `-10%` threshold is appropriate for all papers.
   - Why: Relaxed thresholds mask real regressions. With baselines matching current output, standard thresholds will catch actual heading losses in future iterations.
-  - Verified by: `uv run pytest tests/test_corpus.py --run-corpus` passes 4/4; `grep heading_regression_pct tests/corpus/papers.jsonl` returns nothing.
+  - Verified by: `uv run pytest tests/test_corpus.py --run-corpus` passes 4/4; `grep heading_regression_pct tests/corpus/papers.jsonl` returns nothing. ✓
   - Depends on: Task 1
 
 - **Task 3: Write corrected eval report** [all specs]
