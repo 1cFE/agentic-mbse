@@ -2,8 +2,7 @@
 
 <!-- PAGE:1 -->
 
-Overview of the Helios Design: A Practical Planar Coil Stellarator Fusion Power
-Plant
+## Overview of the Helios Design: A Practical Planar Coil Stellarator Fusion Power Plant
 
 C.P.S. Swanson [a], S.T.A. Kumar [a], D.W. Dudt [a], E.R. Flom [a], W.B. Kalb [a], T.G. Kruger [a], M.F. Martin [a], J.R. Olatunji [a],
 S. Pasmann [a], L.Z. Tang [a], J. von der Linden [a], J. Wasserman [a], M. Avida [a], A.S. Basurto [a], M. Dickerson [a], N. de Boer [a],
@@ -34,7 +33,7 @@ a primary driver of the design; maintenance is performed on entire toroidal sect
 the encircling coils. A biennial maintenance cycle is estimated to take approximately 84 days, resulting in an 88%
 capacity factor. In all systems, rigorous engineering constraints such as temperature and stress limits are enforced.
 
-## 1. Introduction
+## 1 Introduction
 Thea Energy, Inc. has developed the preconceptual
 design for “Helios,” a fusion power plant based on the
 planar coil stellarator architecture [1, 2, 3, 4, 5]. In this
@@ -48,8 +47,6 @@ m), high-field ( _B_ 0 > 1 T) stellarator experiments in the
 International Stellarator Database [25], spanning four
 
 decades and many countries. Critical performance parameters such as stability and transport may now be predicted with reasonable accuracy.
-
-## Stellarator Advantages
 
 From a power plant basis, stellarators are recognized
 as having practical advantages over other architectures.
@@ -66,8 +63,6 @@ is no Greenwald density limit in stellarators, permitting them to operate at hig
 
 stellarator-based pilot plant architectures have favored
 the latter [28].
-## Historical Challenges
-
 However, stellarators initially lagged behind tokamaks in this area. The earliest power plant design studies used what would now be called un-optimized stellarators such as the torsatron and the heliac [29, 30].
 Consequently these designs were predicted to lose significant fractions (> 40%) of the fusion-product alpha
 particles. These designs had to make compromises to
@@ -94,8 +89,6 @@ were designed to implement these optimized stellarators: HSX, NCSX, and W7-X [40
 three exhibited cost and schedule overruns, and identified significant practical difficulty in designing, manufacturing, and assembling complexly curved, 3D coils
 to the required precision [43, 44, 45, 46]. NCSX was
 canceled partway through manufacturing.
-## Recent Breakthroughs
-
 Recent breakthroughs led to the possibility of a practical, compact stellarator power plant. The first was
 the development of quasi-axisymmetric (“QA”) stellarator equilibria. This type of equilibrium can be more
 compact, their boundaries can be less strongly magnetically shaped, their coils can consequently be further away from the boundary [41, 47, 48]. The second
@@ -104,7 +97,7 @@ manufactured conventionally by winding in tension, and
 individually controllable planar field-shaping coils that
 can both correct for hardware defects or assembly er
 
-![Figure 1: The Helios equilibrium and coil set. The coils (silver) are](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-1-0.png)
+![Figure 1: The Helios equilibrium and coil set. The coils (silver) are](images/tmpsebdq10u.pdf-1-0.png)
 planar and convex. The quasi-axisymmetric plasma equilibrium (red
 to blue) is shaded by the magnetic field amplitude on the surface produced by that coil set. Very good quasi-symmetry is visible.
 
@@ -124,8 +117,6 @@ proposed fusion power plants; nor does it have the highest magnetic field or bet
 Rather, it combines engineering constraints that are either known (temperature, stress) or extrapolated (neutron damage thresholds, heat flux) with achieved normalized plasma performance (confinement, stability),
 into an integrated power plant design. Practicality, conservatism, and engineering margin are primary design
 drivers.
-## Comparison to ARIES-CS
-
 An important touchstone in the field of stellarator
 power plant design is the ARIES-CS study [52, 47]. Helios bears a resemblance to that design. The size and
 magnetic field strength are similar. However, the assumed plasma beta and confinement multiplier are significantly less aggressive. These changes are informed
@@ -178,18 +169,14 @@ Together, these considerations result in a design
 which is significantly more practical than a plant based
 on an approach similar to ARIES-CS.
 
-![Figure 2: Helios architecture, cut-away view. From interior to exterior, the plasma (green), the blanket (black and blue), the shaping coils](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-2-0.png)
+![Figure 2: Helios architecture, cut-away view. From interior to exterior, the plasma (green), the blanket (black and blue), the shaping coils](images/tmpsebdq10u.pdf-2-0.png)
 (orange), the encircling coils (gray). The cryostat surrounds all with
 removable panels. The divertor pump ducts, cryogen delivery manifold, and microwave waveguides are also shown.
 
-## 2. Summary of the design
-### Global Parameters
-
+## 2 Summary of the design
 The most important global parameters of the Helios
 facility are tabulated in Table 1. A rendering of the stellarator itself, including many of the key features, can be
 seen in Figure 2.
-### Plasma Configuration
-
 Helios has an 8 m major radius, aspect ratio 4.5, and 6
 T axial magnetic field. It is a two-field-period QA stellarator. Its plasma is a mixture of deuterium and tritium
 and undergoes thermonuclear fusion at a rate sufficient
@@ -199,8 +186,6 @@ the edge and pellet fueling of the core. Operating in
 steady state it is essentially ignited, self-heating via the
 fusion reaction. The stability and confinement of the
 Helios plasma was targeted using the normalized performance of existing stellarators and verified using highfidelity, 3D models of the relevant phenomena.
-### Divertor System
-
 Helios has a novel toroidally continuous nonresonant X-point divertor like that of a tokamak, a first
 for a stellarator power plant design. This divertor can
 be expected to exhaust gas 10 times more effectively
@@ -214,22 +199,22 @@ practical tokamak experience and permitting more conservative vacuum-pumping sol
 |Major radius|_R_|8 m|
 |Aspect ratio|_A_|4.5|
 |Minor radius|_a_|1.8 m|
-|Magnetic feld on-axis|_B_0|6 T|
+|Magnetic field on-axis|_B_0|6 T|
 |Auxiliary ECRH heating power|_Paux_|10 MW (startup)<br><1 MW (ignited)|
 |Volume-averaged beta|⟨β⟩_V_|2.7 %|
 |Rotational transform at 2/3 surface|ι2/3|0.46|
-|ISS04 confnement enhancement factor|_HIS S_ 04|1.4|
-|Energy confnement time|τ_E_|1.8 s<br>|
+|ISS04 confinement enhancement factor|_HIS S_ 04|1.4|
+|Energy confinement time|τ_E_|1.8 s<br>|
 |Peak electron density|_ne_0|2.1 × 10~~20 ~~/m~~3~~|
 |Peak ion temperature|_Ti_0|20 keV|
 |Sudo density limit multiplication factor|_fS udo_|1.25 (startup)<br>1.1 (ignited)|
 |Plasma volume|_V_|500 m~~3~~|
 |Fusion power|_Pfus_|958 MW|
 |Total thermal power|_Ptherm_|1.1 GW|
-|Thermal conversion efciency|η|40 %|
+|Thermal conversion efficiency|η|40 %|
 |Net electric power|_Pnet_,_e_|390 MW_e_|
 |Magnet operating temperature|_Tcoil_|20 K|
-|Maximum magnetic feld on-coil|_Bmax_|20 T|
+|Maximum magnetic field on-coil|_Bmax_|20 T|
 |Minimum plasma-coil distance||1.2 m|
 |Idealized tritium breeding ratio|_T BR_|1.3|
 |Coil minimum lifetime||40 years|
@@ -238,8 +223,6 @@ practical tokamak experience and permitting more conservative vacuum-pumping sol
 Table 1: A Summary of Helios’s key geometric, physics, and engineering properties
 
 <!-- PAGE:5 -->
-
-### Radial Build and Neutronics
 
 Helios is designed with a minimum of 1.2 m between
 the plasma and any part of a coil. This permits a uniform
@@ -259,8 +242,6 @@ of net electric power is produced via a steam Rankine
 cycle. Around 1-2 kg of tritium is required to start up
 the plant; thereafter it is self-sufficient with respect to
 tritium.
-### Superconducting Coils
-
 The coils are HTS operated at 20 K. All coils are
 planar and convex. 12 plasma-encircling coils act similar to tokamak toroidal field coils. The 324 fieldshaping coils are individually controllable, permitting
 good quasi-symmetry and divertor strike point control
@@ -288,15 +269,13 @@ coil are modeled using multi-physics COMSOL. The
 coil support structure is modeled using a commercial
 3D CAD/FEA package.
 
-### Maintenance Approach
-
 The Helios maintenance operation occurs during one
 planned outage of approximately 84 days every two
 years, enabling an 88% capacity factor. Entire toroidal
 sectors of the radial build are removed from between the
 encircling coils.
 
-## 3. Plasma design and simulation
+## 3 Plasma design and simulation
 In this section, the design of the Helios equilibrium,
 plasma, operational scenario, and divertor is discussed
 in more detail. Each subsection discusses a plasma
@@ -311,8 +290,6 @@ shown.
 
 _3.1. Scoping studies, heating and fueling, and dynamic_
 _accessibility_
-
-### 0D and 1D Scoping Models
 
 Before detailed equilibrium design and plasma
 physics analysis, reduced 0D scoping models were used
@@ -335,7 +312,7 @@ volume-averaged quantities [66, 67]. Impurity and ash
 
 <!-- PAGE:6 -->
 
-![Figure 3: POPCON plot of the plasma operational trajectory (red)](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-5-0.png)
+![Figure 3: POPCON plot of the plasma operational trajectory (red)](images/tmpsebdq10u.pdf-5-0.png)
 from zero plasma pressure through an ignited state. 10 MW of ECH
 power is required to start up. No operational constraints are violated.
 
@@ -343,8 +320,6 @@ dilution is included based on an assumed fraction. Thermal conversion and auxili
 with this level of detail. This systems model was used
 to widely explore the design space of possible scales,
 magnetic field strengths, and equilibrium types.
-### Startup Scenario Development
-
 Next, the 1D BP3 code was used to further explore
 the available operational scenarios [68, 69]. This includes 1D profiles that are self-consistent with respect to
 an assumed W7-X-like thermal diffusivity profile shape,
@@ -371,8 +346,6 @@ from a typical POPCON plot because only the thermally
 stable branch is shown. Typically, POPCON plots include an unstable cooler, denser branch, but this branch
 does not appear in the initial-value BP3 code because it
 is thermally unstable.
-### Heating and Fueling Systems
-
 Heating occurs via ECRH at 170 GHz using ITERspec gyrotron tubes [70]. The microwaves are launched
 from the high-field side in the X1 polarization. 10 MW
 of heating is required during startup operation, then only
@@ -387,8 +360,6 @@ and fueling, and dynamic accessibility of Helios, see the
 dedicated companion paper in this special issue: [6].
 
 _3.2. The stellarator equilibrium_
-
-### Equilibrium Optimization
 
 A two-field-period, quasi-axisymmetric equilibrium
 was developed to serve as the reference equilibrium for
@@ -405,8 +376,6 @@ A shell of scalar current potential [78, 79] was cooptimized, standing in for th
 manner, metrics of coil feasibility were directly targeted
 in the equilibrium, including proxies for magnetic field
 strength, stress, and total coil cost.
-### Equilibrium Properties
-
 The resultant equilibrium is shown in 3D rendering in
 Figure 1, and four toroidal cross-sections of the boundary can be seen in Figure 4. It has 8 m major radius, an
 aspect ratio 4.5, and 6.0 T magnetic field strength onaxis. The value of beta is 2.7%. The maximum value
@@ -417,9 +386,9 @@ aspect ratio 4.5, and 6.0 T magnetic field strength onaxis. The value of beta is
 
 1
 
-![](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-6-8.png)
+![](images/tmpsebdq10u.pdf-6-8.png)
 
-![Figure 4: Four toroidal cross-sections of the boundary of the Helios plasma equilibrium. The equilibrium was optimized for several](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-6-9.png)
+![Figure 4: Four toroidal cross-sections of the boundary of the Helios plasma equilibrium. The equilibrium was optimized for several](images/tmpsebdq10u.pdf-6-9.png)
 techno-economic figures of merit including proxies for coil cost and
 complexity.
 
@@ -444,8 +413,6 @@ paper in this special issue: [7].
 
 _3.3. Energetic particle confinement_
 
-### Energetic Particle Simulation
-
 Confinement of energetic fusion products is not guaranteed in stellarators; rather it must be directly optimized for via one of several proxies [22, 80, 81]. For
 Helios, quasi-symmetry was found to be the most effective at producing equilibria which confine energetic
 particles.
@@ -464,8 +431,6 @@ For more information on the confinement of the energetic fusion products, see th
 
 _3.4. Magnetohydrodynamic stability and evolution_
 
-### MHD Stability Analysis
-
 The magnetohydrodynamic (“MHD”) properties of
 the Helios plasma have been evaluated using the ideal,
 linear, spectral stability code TERPSICHORE [84, 85]
@@ -474,8 +439,6 @@ M3D-C1 [86, 87, 88]. The TERPSICHORE results are
 generally consistent with stability, though interpretation
 is required. No large-scale unstable mode is seen in the
 M3D-C1 simulations.
-### TERPSICHORE Results
-
 The growth rate of the most unstable mode found by
 TERPSICHORE is positive at the operating beta, with
 a value of γ/ω _A_ = 1.42% where ω _A_ is the Alfvén frequency. The interpretation of TERPSICHORE results
@@ -486,8 +449,6 @@ rate exceeds 2% of the Alfvén frequency. The Helios
 equilibrium at the operational beta has a most-unstable
 growth rate below this value, thus we move on to a
 higher-fidelity code to further characterize the MHD behavior.
-### M3D-C1 Nonlinear Evolution
-
 M3D-C1 is a resistive, nonlinear, time-domain, MHD
 evolution code first developed for tokamaks [86] and
 later extended to stellarators [87]. We have recently
@@ -495,7 +456,7 @@ added a model of stellarator bootstrap current to the
 
 <!-- PAGE:8 -->
 
-![Figure 5: M3D-C1 simulation results. Poincaré sections of the magnetic field at ϕ = 0 (a-e), π/4 (f-j), and π/2 (k-o) shown as a function of time](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-7-0.png)
+![Figure 5: M3D-C1 simulation results. Poincaré sections of the magnetic field at ϕ = 0 (a-e), π/4 (f-j), and π/2 (k-o) shown as a function of time](images/tmpsebdq10u.pdf-7-0.png)
 for 0 ≤ _t_ ≤ 1600τ _A_ (left to right). Perfect stability would be indicated by nested flux surface of different colors, and little change between times.
 Small island chains do appear. Stochastic regions occur at the edge but do not result in pressure profile flattening. No large-scale unstable modes
 are in evidence.
@@ -557,15 +518,11 @@ in this special issue: [9].
 
 _3.5. Turbulence, transport, and profile prediction_
 
-### Transport Assumptions
-
 For the purposes of scoping and scenario development (see Section 3.1), transport in Helios was assumed
 to follow the ISS04 scaling [25], with a confinement enhancement multiplier of _HIS S_ 04 = 1.4. This value has
 been achieved in the W7-X stellarator[62, 63]. However
 this level of turbulent transport should also be justified
 via high-fidelity, first-principles simulation.
-
-### Gyrokinetic Simulations
 
 The GENE code was used to simulate electrostatic
 gyrokinetic evolution within a flux tube [92]. This analysis produces the local plasma heat flux. This calculation was coupled to the Trinity 3D (“T3D”) code [93],
@@ -595,13 +552,11 @@ profile prediction in Helios, see the dedicated companion paper in this special 
 
 <!-- PAGE:10 -->
 
-![Figure 6: Rendering of the planar coil set of Helios, shaded by the](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-9-0.png)
+![Figure 6: Rendering of the planar coil set of Helios, shaded by the](images/tmpsebdq10u.pdf-9-0.png)
 magnetic field strength | _B_ | on the winding pack. No superconductor is
 subjected to a magnetic field stronger than 20 T.
 
 _3.6. Electromagnetic coil physics design_
-
-### Planar Coil Architecture
 
 Helios uses a novel planar coil architecture consisting of 12 planar, plasma-encircling coils similar to the
 toroidal field coils of a tokamak, and 324 smaller, planar, field-shaping coils that surround the plasma boundary. All shaping coils are circular and have the same
@@ -614,8 +569,6 @@ be tuned out during operation by controlling the coil
 currents. The large gaps between the encircling coils
 permit entire toroidal sectors of the radial build to be
 removed for maintenance.
-### Coil Optimization Procedure
-
 As discussed in Section 3.2, the process of singlestage stellarator equilibrium optimization also produces
 an initial guess for a set of encircling coils, and a shell
 of scalar current potential that approximates a set of
@@ -650,8 +603,6 @@ paper in this special issue: [11].
 
 _3.7. Divertor physics_
 
-### Tokamak-like X-point Divertor
-
 Helios features a novel toroidally continuous nonresonant X-point divertor, like that of a tokamak. For
 a tutorial approach to the tokamak poloidal divertor, see
 Chapter 5 of Stangeby’s textbook [100]. This type of
@@ -662,8 +613,6 @@ a divertor, and the first time that a power-plant-relevant
 equilibrium with finite beta and bootstrap current has
 been paired with such a divertor. It is the most detailed
 exploration of the practicality of such a divertor.
-### Divertor Performance Comparison
-
 This novel divertor type has the potential to resolve
 an outstanding problem in stellarator design. Several
 divertor types have been proposed, well summarized in
@@ -676,7 +625,7 @@ In tokamaks, the X-point divertor has been modeled to compress plasma density at
 
 <!-- PAGE:11 -->
 
-![Figure 7: Poincaré section (black) and connection length (shaded)](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-10-0.png)
+![Figure 7: Poincaré section (black) and connection length (shaded)](images/tmpsebdq10u.pdf-10-0.png)
 plots for a toroidal cross-section of the equilibrium. Features isomorphic to a tokamak poloidal divertor topology are present, including
 divertor legs and a private flux region. The divertor stays on the bottom of the plasma for the entire toroidal domain.
 
@@ -691,8 +640,6 @@ From a practical standpoint, the tokamak-like X-point
 divertor is simpler in that it lies on the bottom of the
 plasma and does not multiply link it as do competing
 divertor designs.
-
-### Divertor Topology Modeling
 
 The FLARE code [106] has been used to explore the
 topology and behavior of this novel divertor in Helios.
@@ -714,7 +661,7 @@ For more information on the magnetic topology and
 early plasma physics modeling of this tokamak-like Xpoint divertor, see the dedicated companion paper in this
 special issue: [12].
 
-## 4. Engineering design of systems
+## 4 Engineering design of systems
 In this section, the engineering design of the systems
 that generate the plasma and receive the fusion power
 are discussed in more detail. A strong driver of the
@@ -733,8 +680,6 @@ and facility.
 
 _4.1. Electromagnetic coil engineering_
 
-### Coil Structure and Materials
-
 As described in Section 3.6, Helios uses a set of planar, plasma-encircling coils and planar, field-shaping
 coils.
 The 12 encircling coils are composed of pancakes of
@@ -752,12 +697,10 @@ is shown in Figure 8.
 
 <!-- PAGE:12 -->
 
-![Figure 8: Finite element analysis of the von Mises stress distribution](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-11-1.png)
+![Figure 8: Finite element analysis of the von Mises stress distribution](images/tmpsebdq10u.pdf-11-1.png)
 within the encircling coil structure. Red: 800 MPa. The coil cases,
 central support structure, and inter-coil trusses are visible and below
 acceptable stress limits. The trusses can be removed to access components for maintenance.
-
-### Shaping Coil Design
 
 The 324 shaping coils are composed of pancakes
 of partially insulated HTS tape stacks, operated at
@@ -773,8 +716,6 @@ coils [13].
 
 _4.2. Divertor engineering and the first wall_
 
-### Divertor Target Design
-
 As described in Section 3.7, Helios has a novel
 toroidally continuous non-resonant X-point divertor like
 that of a tokamak, a first for the design of an optimized stellarator. The divertor system consists of
@@ -786,7 +727,7 @@ the plasma, as is common in tokamak configurations
 in width, cooled with a closed system of helium impingement jets. Their location within the system can
 be seen in Figure 9. An assumed 10 MW/m [2] of heat
 
-![Figure 9: Rendering of the divertor system. Left: Postion of the](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-11-0.png)
+![Figure 9: Rendering of the divertor system. Left: Postion of the](images/tmpsebdq10u.pdf-11-0.png)
 plasma (green) within the first wall (blue), with the targets and dome
 (grey). Right: Detail of the targets and dome. Pump ducts are not
 pictured.
@@ -794,8 +735,6 @@ pictured.
 flux is incident on the targets, using Siemens Simcenter Amesim for thermofluid modeling to design tiles
 that remain within acceptable temperature limits. The
 hexagonal tiles are mounted to a vanadium alloy support structure. The helium coolant enters from the blanket, where it has been pre-heated to above the ductileto-brittle transition temperature of tungsten.
-### Vacuum Pumping System
-
 The vacuum pumping system uses turbomolecular
 pumps rather than cryosorption pumps due to their efficiency at pumping helium and steady-state operation
 without regeneration. The pumps themselves must be
@@ -805,8 +744,6 @@ longer pump ducts than a cryopump based design. The
 high neutral compression of the tokamak-like X-point
 divertor enables this design. The dimensions and performance of the pump ducts were designed using lumpedelement conductances of choked molecular, transitional,
 and fluid flow [114].
-### First Wall Materials
-
 The first wall is 2 cm thick with integrated helium
 cooling channels. It is composed of a vanadium alloy
 layer with a thin layer of tungsten armor. Specifically
@@ -830,8 +767,6 @@ For more information on the design of the Helios divertor systems and the first 
 
 _4.3. Neutronics, blanket, shield, and bioshield_
 
-### Lead-Lithium Blanket Design
-
 The reference design for the tritium breeding blanket uses a lead-lithium breeding medium. This is one
 of the more common types of blanket architectures. It
 is the choice of the ARIES-CS, EU-DEMO, and recent
@@ -854,8 +789,6 @@ lead-lithium and the EUROFER97 structure, reducing
 the MHD pressure drop and pumping power to a reasonable level. The tritium breeding blanket is split into
 sectors that fit between the encircling coils and allow for
 sector-based maintenance, as discussed in Section 4.5.
-### Neutronic Simulations
-
 The OpenMC Monte Carlo neutron and photon transport simulation code was used to calculate the neutronic
 properties of the blanket [123]; A novel implementation of the cell-under-voxel algorithm was written and
 contributed to OpenMC in order to perform volumeresolved simulations [124]. OpenMC was used to predict the neutron flux, damage rate, tritium yield, material activation, nuclear heating, photon activity, and effective dose in the first wall, blanket, shield, coils, and
@@ -864,12 +797,10 @@ The idealized (homogenized, no penetrations) tritium
 breeding ratio (“TBR”) is 1.3, a good target for this level
 of fidelity to allow for non-ideal reductions [54]. Fuel
 cycle modeling indicates that a final TBR of 1.1 is sufficient for tritium self-sufficiency of the facility.
-### Neutron Shield Design
-
 As discussed in Section 3.6, a minimum distance of
 1.2 m between the plasma and coils was rigorously en
 
-![Figure 10: Cutaway of volume-resolved nuclear heating density as](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-12-0.png)
+![Figure 10: Cutaway of volume-resolved nuclear heating density as](images/tmpsebdq10u.pdf-12-0.png)
 simulated by OpenMC. The heating is highest at the first wall and
 decays through the breeding zone and shield.
 
@@ -894,8 +825,6 @@ blanket, shield, and bioshield, see the dedicated companion paper in this specia
 
 _4.4. Thermal cycle, power flows, and fuel cycle_
 
-### Thermal Conversion Cycle
-
 A Rankine cycle for power generation has been designed for Helios. 1.1 GW of thermal power is generated in Helios, both from the fusion reaction itself (958
 MW) and from the exothermic [6] Li + n → [3] H + [4] He
 breeding reaction within the blanket. Temperatures inside the stellarator are carefully controlled to maximize performance and remain within material capabilities. Power from the blanket, first wall, and divertor
@@ -914,8 +843,6 @@ of 438 MW _e_ from the thermodynamic cycle. The combined efficiency of the Ranki
 40.2%. If instead the efficiency is computed using the
 total generated power, as in some fusion power plant
 design studies, the efficiency is approximately 42.2%.
-### Facility Power Balance
-
 The global facility power flow is represented by a
 Sankey diagram in Figure 11. During steady-state, ignited, power-producing operation, 958 MW of power
 is released within the plasma via deuterium-tritium
@@ -941,8 +868,6 @@ MW is budgeted for a nominal amount of ECRH (1
 MW) for plasma control and to expel impurities from
 the core. This leaves approximately 390 MW of net
 electric power available to deliver to the grid.
-### Tritium Fuel Cycle
-
 The fuel cycle returns un-fused tritium to storage and
 extracts tritium bred in the blanket, thence to re-inject
 into the fusing plasma. We have performed preconceptual design and modeling of a tritium fuel cycle.
@@ -967,8 +892,6 @@ flows, and fuel cycle of Helios, see the dedicated companion paper in this speci
 
 _4.5. Cryostat, maintenance, and cryogenic system_
 
-### Cryostat Design
-
 The stellarator is encased in a stainless-steel cryostat,
 maintaining a vacuum to limit heat leak into the cryogenic components. The cryostat has large removable radial ports through which components are removed and
 maintained, in accordance with the sector maintenance
@@ -980,8 +903,6 @@ K system if low-temperature superconducting magnets
 are used for the gyrotron tubes; these are handled locally. A large expander cycle cryogenic plant to cool
 these loads would require 10 MW of electrical power,
 taking a plausible 25% of the Carnot efficiency.
-### Sector-Based Maintenance
-
 Helios has a practical maintenance strategy where entire sectors of the radial build are removed, including
 first wall, blanket, shield, plasma vessel, and shaping
 coils, from between the encircling coils. This is depicted in Figure 12. This permits rapid removal and
@@ -991,11 +912,11 @@ outage every two years.
 
 <!-- PAGE:15 -->
 
-![Figure 11: Sankey diagram of the facility power flows during ignited operation.](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-14-0.png)
+![Figure 11: Sankey diagram of the facility power flows during ignited operation.](images/tmpsebdq10u.pdf-14-0.png)
 
 <!-- PAGE:16 -->
 
-![Figure 12: Two views of the ground based remote handling platform grappling a sector of the plasma vessel for removal and maintenance. The](images/Swanson-et-al.---2026---Overview-of-the-Helios-Design-A-Practical-Planar-Coil-Stellarator-Fusion-Power-Plant.pdf-15-0.png)
+![Figure 12: Two views of the ground based remote handling platform grappling a sector of the plasma vessel for removal and maintenance. The](images/tmpsebdq10u.pdf-15-0.png)
 remote handling platform is extended through a side panel port, with overhead manipulators inserted through adjacent upper dome ports.
 
 This is in contrast to alternative stellarator maintenance schemes proposed. ARIES-CS considered a portbased scheme, in which 222 parts are extracted through
@@ -1024,8 +945,6 @@ cryostat, and cryogenic systems of Helios, see the dedicated companion paper in 
 
 _4.6. Electrical systems and power supplies_
 
-### Electrical Distribution System
-
 The electrical systems of Helios supply internal plant
 loads and provide the grid interface. Steady-state operation requires ∼70 MW of auxiliary power, mainly
 for thermal-hydraulics, tritium processing, cryogenics,
@@ -1040,8 +959,6 @@ sequences energize controls, cryogenics, fueling, and
 ECRH with ramp-rate limits, after which the plant delivers up to 390 MW _e_ net electric power to the grid.
 This integrated architecture ensures reliable auxiliary
 supply, smooth import-to-export transitions, and highquality grid delivery.
-### Magnet Power Supplies
-
 The power supplies of Helios sustain the stellarator’s
 magnetic configuration and heating through three families: encircling coil, shaping coil and ECRH. Encircling
 
@@ -1061,8 +978,6 @@ paper in this special issue: [19].
 
 _4.7. Instrumentation and control_
 
-### Control Architecture
-
 The control and instrumentation systems of Helios
 enable safe, reliable, and continuous operation through
 a hierarchical architecture. At the top, the Main Control Unit (“MCU”) combines Graphics Processing Units
@@ -1081,9 +996,7 @@ For more information on the instrumentation and
 control of Helios, see the dedicated companion paper
 in this special issue: [20].
 
-## 5. Conclusion
-## Summary and Future Work
-
+## 5 Conclusion
 Helios combines the natural steady-state and low recirculating power operation of the stellarator approach
 
 with simpler, programmable magnets. The design is intended to overcome the outstanding concerns around existing stellarator approaches, which include the complex
@@ -1107,12 +1020,8 @@ architecture will be rigorously demonstrated. A subsequent operational phase is 
 The first plasma in Eos is targeted for 2030. The first
 plasma in Helios is targeted in the mid 2030s.
 
-## 6. Acknowledgments
-## Acknowledgments
-
+## 6 Acknowledgments
 This research was funded by Thea Energy and performed as part of the DOE Milestone-Based Fusion Development Program (DE-SC0024881).
-
-### Computing Resources
 
 This research used resources of the National Energy
 Research Scientific Computing Center (“NERSC”), a
@@ -1654,8 +1563,6 @@ M. Jakubowski, C. Killer, M. Krychowiak,
 S. Kwak, S. Lazerson, A. Langenberg,
 
 <!-- PAGE:23 -->
-
-## References
 
 R. Lunsford, N. Pablant, E. Pasch, A. Pavone,
 F. Reimold, T. Romba, A. v. Stechow, H. M.

@@ -2,7 +2,7 @@
 
 <!-- PAGE:1 -->
 
-![](images/tmpozz6revp.pdf-0-0.png)
+![](images/tmpkrtbtk10.pdf-0-0.png)
 # Woodruff Scientific, Inc Revisit of the 2017 Costing for Four ARPA-E ALPHA Concepts DE-AR001175
 
 **Award:** DE-AR001175
@@ -117,13 +117,13 @@ captured in the next phase of the ARPA-E costing project.
 
 <!-- PAGE:5 -->
 
-![](images/tmpozz6revp.pdf-4-0.png)
+![](images/tmpkrtbtk10.pdf-4-0.png)
 
-![](images/tmpozz6revp.pdf-4-1.png)
+![](images/tmpkrtbtk10.pdf-4-1.png)
 
-![](images/tmpozz6revp.pdf-4-2.png)
+![](images/tmpkrtbtk10.pdf-4-2.png)
 
-![Figure 1. The four participating concepts - clockwise from the top left: Plasma-Jet Magneto-Inertial](images/tmpozz6revp.pdf-4-3.png)
+![Figure 1. The four participating concepts - clockwise from the top left: Plasma-Jet Magneto-Inertial](images/tmpkrtbtk10.pdf-4-3.png)
 Fusion (LANL/HyperJet Fusion); Stabilized Liner Compressor (Compact Fusion Systems, Inc.); Staged
 
 Z-Pinch (MIFTI, Inc.); and, the Flow-stabilized Z-Pinch (Zap Energy, Inc.)
@@ -148,80 +148,80 @@ Table 2. System parameters for the four fusion concepts, showing average, low an
 
 The cost categories are given here
 
-20. Land/Rights
+## 20 Land/Rights
 Purchase of land of requisite size.
 
-21. Structures/Site
+## 21 Structures/Site
 Site preparation and all buildings.
 
-22. Reactor Plant Equip.
+## 22 Reactor Plant Equip.
 All equipment needed to provide steam to turbines.
 
-22.1 Reactor Equip.
+### 22.1 Reactor Equip.
 The fusion power core and all components necessary to sustain continuous operation.
 
-22.2 Main Heat Transfer
+### 22.2 Main Heat Transfer
 Coolant loops from the fusion power core to the steam generators.
 
-22.3 Auxiliary Cooling
+### 22.3 Auxiliary Cooling
 All components needed to drive coolant, or provide cooling to other systems outside the reactor
 core.
 
-22.4 Rad. Waste Treat.
+### 22.4 Rad. Waste Treat.
 Disposal facility for solid, liquid and gaseous waste.
 
-22.5 Fuel Processing
+### 22.5 Fuel Processing
 Tritium handling and production systems, including fuel injection and recovery systems.
 
-22.6 Other plant equipment
+### 22.6 Other plant equipment
 Maintenance systems for all reactor plant equipment.
 
-22.7 Instrumentation and control
+### 22.7 Instrumentation and control
 Primary systems for monitoring and controlling power core performance.
 
-23. Turbine Plant Equip.
+## 23 Turbine Plant Equip.
 All systems for converting steam into mechanical motion of the turbines, up to and including the
 electrical generator..
 
-24. Electric Plant Equip.
+## 24 Electric Plant Equip.
 All systems for delivering generator power to the grid.
 
-25. Misc. Plant Equip.
+## 25 Misc. Plant Equip.
 Everything not included in prior categories, which can include, for example, transportation, lifting
 equipment, communications equipment.
 
-26. Heat Rejection
+## 26 Heat Rejection
 Primarily the cooling towers, but also includes any mechanical equipment such as water intake and
 
 <!-- PAGE:7 -->
 
 circulating water systems.
 
-27. Special Materials
+## 27 Special Materials
 Primarily this cost category consists of the primary liquid metal coolant.
 
-90. Total Direct Cost
+## 90 Total Direct Cost
 Total direct costs consists of the sum of all prior cost categories.
 
-91. Construction Services and Equipment
+## 91 Construction Services and Equipment
 Construction management, temporary buildings, and equipment rental.
 
-92. Home Office Engineering Services
+## 92 Home Office Engineering Services
 Engineering services provided by off-site engineers for specific development projects.
 
-93. Field Office Engineering Services
+## 93 Field Office Engineering Services
 Engineering services in the field, cost of facilities.
 
-94. Owners Cost
+## 94 Owners Cost
 Site permits, plant studies and licenses, staff recruitment, training and housing during construction.
 
-96. Contingency
+## 96 Contingency
 Mark up to lower capital risk to construction contractor.
 
-97. Interest During Construction
+## 97 Interest During Construction
 Fixed interest rate applied to capital costs on per annum basis.
 
-99. Total Capital Cost:
+## 99 Total Capital Cost:
 Consists of the sum of all cost categories.
 
 <!-- PAGE:8 -->

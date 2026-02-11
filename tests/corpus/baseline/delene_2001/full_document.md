@@ -88,7 +88,7 @@ under contract DE-AC05-96OR22464
 
 <!-- PAGE:5 -->
 
-**CONTENTS**
+## Contents
 
 **Page**
 
@@ -144,7 +144,7 @@ vi
 
 <!-- PAGE:9 -->
 
-**LIST OF TABLES**
+## List Of Tables
 
 **Table** **Page**
 
@@ -168,7 +168,7 @@ viii
 
 <!-- PAGE:11 -->
 
-**ACRONYMS**
+## Acronyms
 
 AFUDC allowance for funds used during construction
 ALMR advanced liquid-metal reactor
@@ -224,7 +224,7 @@ J. G. Delene J. Sheffield
 K. A. Williams R. L. Reid
 S. Hadley
 
-**ABSTRACT**
+## Abstract
 
 This study examines the potential range of electric power costs for some major alternatives
 to fusion electric power generation when it is ultimately deployed in the middle of the 21st century and, thus, offers a perspective on the cost levels that fusion must achieve to be competitive.
@@ -714,7 +714,7 @@ ______________________________________________________________
 
 ORNL 99-1407 EFG
 
-![](images/tmp303vi1st.pdf-23-0.png)
+![](images/tmp7bnq6rwg.pdf-23-0.png)
 
 1980 1982 1984 1986 1988 1990 1992 1994 1996 1998
 
@@ -722,7 +722,7 @@ Year
 
 **Fig. 1. Historic cost of coal to electric utilities.**
 
-![](images/tmp303vi1st.pdf-23-1.png)
+![](images/tmp7bnq6rwg.pdf-23-1.png)
 
 <!-- PAGE:25 -->
 
@@ -749,11 +749,11 @@ fuel components, such as U3O8 to UF6 conversion and LEU fuel fabrication, have r
 For the reference value, we assume that the uranium price will recover to $25/lb of U3O8
 in 1999 dollars by the year 2050. The lower end of the price range assumes that uranium will
 
-![](images/tmp303vi1st.pdf-24-0.png)
+![](images/tmp7bnq6rwg.pdf-24-0.png)
 
 <!-- PAGE:26 -->
 
-![](images/tmp303vi1st.pdf-25-0.png)
+![](images/tmp7bnq6rwg.pdf-25-0.png)
 
 recover from the depressed prices of today, and it will be economic to open new mines but that
 new ore finds and mining technology improvements will provide an adequate supply of uranium
@@ -912,9 +912,9 @@ _f_ Range for fusion includes capacity factor range (70%–90%) and plant size r
 
 0
 
-![](images/tmp303vi1st.pdf-29-0.png)
+![](images/tmp7bnq6rwg.pdf-29-0.png)
 
-![](images/tmp303vi1st.pdf-29-1.png)
+![](images/tmp7bnq6rwg.pdf-29-1.png)
 
 **Fig. 6. Range of COE for coal gasification plants.**
 
@@ -940,9 +940,9 @@ ORNL 99-1412 EFG
 
 0
 
-![](images/tmp303vi1st.pdf-30-0.png)
+![](images/tmp7bnq6rwg.pdf-30-0.png)
 
-![](images/tmp303vi1st.pdf-30-1.png)
+![](images/tmp7bnq6rwg.pdf-30-1.png)
 
 **Fig. 8. Range of COE for nuclear plants.**
 
@@ -985,13 +985,13 @@ the calculated COE range between the ARIES-RS and the ARIES-ST at the reference 
 
 ## 0 ORNL 99-1415 EFG
 
-![](images/tmp303vi1st.pdf-31-0.png)
+![](images/tmp7bnq6rwg.pdf-31-0.png)
 
 **Fig. 9. Range of COE for wind.**
 
 <!-- PAGE:33 -->
 
-![](images/tmp303vi1st.pdf-32-0.png)
+![](images/tmp7bnq6rwg.pdf-32-0.png)
 
 capacity factor. The second bar shows the effect of increasing the plant size to 1300 MW(e).
 It is estimated that the COE is reduced by about 10 mills/kWh by this 30% increase in unit size.
@@ -1017,9 +1017,9 @@ about 4–9 mills/kWh.
 
 <!-- PAGE:34 -->
 
-![](images/tmp303vi1st.pdf-33-0.png)
+![](images/tmp7bnq6rwg.pdf-33-0.png)
 
-![](images/tmp303vi1st.pdf-33-1.png)
+![](images/tmp7bnq6rwg.pdf-33-1.png)
 
 <!-- PAGE:35 -->
 
@@ -1046,7 +1046,7 @@ investment and fixed O&M) are less than for fusion; the effect on COE is less fo
 The results from this study are summarized in Fig. 13. Here the COE range for fusion is
 compared with the COE range for the alternatives using different sets of assumptions. For
 
-![](images/tmp303vi1st.pdf-34-0.png)
+![](images/tmp7bnq6rwg.pdf-34-0.png)
 
 <!-- PAGE:36 -->
 
@@ -1080,9 +1080,9 @@ such as building larger plants.
 
 <!-- PAGE:37 -->
 
-**REFERENCES**
+## References
 
-1. Electric Power Annual 1998 Volume 1, U.S. Department of Energy, Energy Information
+## 1 Electric Power Annual 1998 Volume 1, U.S. Department of Energy, Energy Information
 Administration, DOE/EIA-0348 (98)/1.
 2. Annual Energy Outlook 1998, U.S. Department of Energy, Energy Information Administration, DOE/EIA-0383 (1999), December 1998.
 3. U.S. Coal Reserves: 1997 Update, U.S. Department of Energy, Energy Information

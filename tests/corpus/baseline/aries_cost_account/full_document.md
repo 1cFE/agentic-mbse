@@ -2,37 +2,29 @@
 
 <!-- PAGE:1 -->
 
-## University of California, San Diego UCSD-CER-13-01
-ARIES Cost Account Documentation
+**University of California, San Diego** **UCSD-CER-13-01**
 
-**L. M. Waganer**
+## ARIES Cost Account Documentation
 
-**June 2013**
-
-**Center for Energy Research**
+L. M. Waganer** **June 2013
+### Center for Energy Research
 University of California, San Diego
 9500 Gilman Drive
 La Jolla, CA 92093-0417
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-0-0.png)
+![](images/tmpvr93ky9_.pdf-0-0.png)
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-0-1.png)
+![](images/tmpvr93ky9_.pdf-0-1.png)
 
 <!-- PAGE:2 -->
 
-**ARIES Cost Account Documentation**
+# **ARIES Cost Account Documentation**
 
-**Purpose**
-
-## Purpose
-
+### Purpose
 The purpose of this paper is to document the historical economic basis for the ARIES Systems
 Code costing analyses and develop/document an updated economic model for use in the Systems
 Code for future systems studies.
-**Background**
-
-## Background
-
+### Background
 The costing information in prior fusion studies are used in this analysis to help understand and
 develop a better costing basis for the current and future fusion conceptual power plant studies.
 The Starfire conceptual design [1] (1980) is the most detailed and best documented conceptual
@@ -52,10 +44,7 @@ the prior costing guidelines and bases for their usage, primarily from the Starf
 studies. The ARIES designs are fairly consistent, design to design, but the level of detail and
 documentation of the cost basis has been somewhat lacking. ARIES-SPPS [7] final report provided
 some additional costing algorithms that were applied to the ARIES series of designs.
-**Historical Cost Escalation**
-
-## Historical Cost Escalation
-
+### Historical Cost Escalation
 Every cost estimate has to be relative to some particular time frame. All fusion conceptual
 studies with an associated cost estimate always related their estimate to a particular calendar
 year. Any prior estimate that was used for a cost scaling by analogy or similarity has been
@@ -91,7 +80,7 @@ The value assumed for 2012 is presently estimated to be a 2.0% increase by the a
 
 **Table 1. U.S. Gross Domestic Product Implicit Price Deflator** **[8]**
 
-## Year IPD
+**Year** **IPD**
 1970 24.337
 1971 25.554
 1972 26.657
@@ -138,10 +127,7 @@ The value assumed for 2012 is presently estimated to be a 2.0% increase by the a
 
 <!-- PAGE:5 -->
 
-**General Cost Account Information**
-
-## General Cost Account Information
-
+### General Cost Account Information
 Predating the early fusion power plant conceptual designs, DOE commissioned Pacific
 Northwest Laboratory to define the standard cost accounts to be used to provide consistent data
 for the future power plant designs. This report, “Fusion Reactor Design Studies – Standard Cost
@@ -152,11 +138,7 @@ capital costs, operating costs and busbar electricity costs. All the cost accoun
 including the direct and the indirect costs, the operating costs and the cost of electricity (COE)
 elements. This cost account format has been used in all the MFE and IFE power plant design
 studies since this report was published.
-
-**Direct and Indirect Capital Costs**
-
-### Direct and Indirect Capital Costs
-
+#### Direct and Indirect Capital Costs
 The direct capital cost categories originally included in PNL report [9] only had Accounts 20-26 as
 shown in Table 2, however the ARIES project [6] felt the Heat Rejection Equipment account
 needed to be elevated to a higher level and included it as Account 25 with elevation of
@@ -214,11 +196,7 @@ Recommended Cost Accounts.xls”.
 In addition to the major direct, indirect and annual cost accounts, there are a few other general
 cost elements that need to be clarified, such as Spare Parts, Contingency and Level of Safety
 Assurance, which are discussed below.
-
-**Spare Parts**
-
-### Spare Parts
-
+#### Spare Parts
 The PNL report [9] included provisions for spare parts at each major cost account level. No amount
 guidelines were provided, however the report did provide example spare parts allowances at
 0.5% and 1% for the major accounts. The Starfire economic section [1] provided an overall spare
@@ -236,14 +214,11 @@ allowance. Subsequent conceptual designs did not consider such additional spare 
 |<br>recommended that|<br> ARIES include the nominal initial spare parts allowance in each of the major|<br> ARIES include the nominal initial spare parts allowance in each of the major|<br> ARIES include the nominal initial spare parts allowance in each of the major|
 |<br>cost element|<br>cost element|<br>cost element|<br>cost element|
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-5-0.png)
+![](images/tmpvr93ky9_.pdf-5-0.png)
 
 <!-- PAGE:7 -->
 
-**Contingency**
-
-### Contingency
-
+#### Contingency
 The PNL report [9] included provisions for contingency at each major cost account level, however
 its example the report included 10% for every account. Starfire [1] and EBTR [10] followed the same
 procedure and used a value 15% as a contingency allowance at each major cost account level.
@@ -252,11 +227,7 @@ indirect accounts, Account 95, Process Contingency, at 5% of total direct cost (
 Account 96, Project Contingency, at 10% of TDC. In later ARIES studies, the Process
 Contingency was set to zero to reflect that all the process risk had been mitigated as the design
 should be representative of a 10 [th ] OAK.
-
-**Level of Safety Assurance**
-
-### Level of Safety Assurance
-
+#### Level of Safety Assurance
 The ESECOM [11] and Generomak [12] reports introduced the concept of Safety Assurance credits for
 buildings, power plant components, and indirect cost factors. As a cost basis, the Generomak
 study used much of the Starfire report [1] cost estimates, primarily because it was the most
@@ -267,17 +238,17 @@ different levels of inherent safety and hazards with respect to radioactive mate
 of LSA were created as defined below for the direct capital costs in Table 3.
 
 **Table 3. Level of Safety Assurance (LSA) Definitions** **[11,12]**
-LSA = 4 Denotes active protection (i.e., active engineered safety systems are required); the
 
+**LSA = 4** Denotes **active protection** (i.e., active engineered safety systems are required); the
 system does not meet minimum requirements for inherent safety.
-LSA = 3 Safety is assured by passive mechanisms of release limitation as long as severe
 
+**LSA = 3** Safety is assured by **passive mechanisms** of release limitation as long as severe
 violations of small-scale geometry are avoided (e.g., large coolant pipe breaks).
-LSA = 2 Safety is assured by passive mechanisms as long as severe reconfiguration of
 
+**LSA = 2** Safety is assured by **passive mechanisms** as long as severe reconfiguration of
 large-scale geometry is avoided.
-LSA = 1 Safety is assured by passive mechanisms of release limitation for any accident
 
+**LSA = 1** Safety is assured by **passive mechanisms** of release limitation for any accident
 sequence; radioactive inventories and material properties preclude fatal release regardless of
 power plant’s condition.
 
@@ -339,11 +310,7 @@ the prior Starfire cost database, supplemented with the LSA methodology.
 
 When historical ARIES and Generomak algorithms are identified in the text, they are considered
 to be for an LSA of 4, unless specifically noted.
-
-**Detailed Capital Cost Accounts**
-
-## Detailed Capital Cost Accounts
-
+#### Detailed Capital Cost Accounts
 The cost accounting format used henceforth in the ARIES design studies conforms to the
 updated cost accounts shown in Appendix A of this document. This cost account systems is
 similar in content to that used by MFE in the most recent design studies, ARIES studies and
@@ -360,10 +327,7 @@ considered.
 The following sections will present a synopsis and rationale of the supporting cost basis for the
 presented costs. At the end of each algorithm discussion, a resultant cost will be provided to help
 validate the ARIES Systems Code using the ARIES-AT [14] parameters.
-**Land and Land Rights, Account 20**
-
-## Land and Land Rights, Account 20
-
+### Land and Land Rights, Account 20
 The cost of the land, land rights, and relocation of buildings are the major costs in this account.
 The reference plant site was chosen to be 1000 acres in a Midwestern location, see the PNL
 report [9], Appendix A, for more site details including topography, site access, population density,
@@ -409,10 +373,7 @@ C20 = $24.0 M
 
 <!-- PAGE:10 -->
 
-**Structures and Site Facilities, Account 21**
-
-## Structures and Site Facilities, Account 21
-
+### Structures and Site Facilities, Account 21
 This account covers all direct costs associated with the dedicated physical plant buildings such as
 power core, turbine, electrical equipment, cooling system structures, site improvements and
 facilities, miscellaneous structures and building work, and ventilation stack. All provisions for
@@ -464,7 +425,7 @@ received.
 Electrical and piping quantities were estimated from the single-line diagram, flow
 diagrams, and building layouts.
 
-3. Pricing of bulk materials is based on the Kansas City, Missouri location.
+## 3 Pricing of bulk materials is based on the Kansas City, Missouri location.
 
 <!-- PAGE:11 -->
 
@@ -505,10 +466,7 @@ greatly impacts the overall facility cost. The Hot Cell is another facility whic
 PWR system. Because of the large sizes of the components and large number of components
 handled within the Hot Cell, a large building is required.
 
-**Site Improvements and Facilities, Account 21.01**
-
 ### Site Improvements and Facilities, Account 21.01
-
 This account includes all site improvements and facilities necessary for the complete power
 plant. This includes the general site improvements including site work, fencing, storm sewer,
 earth moving equipment, tank and pump foundations, fire protection, and sanitary sewers.
@@ -530,10 +488,7 @@ cost elements under this account are available in the Starfire or Prometheus rep
 
 C21.01 = $27.00 M.
 
-**Power Core Building, Account 21.02**
-
 ### Power Core Building, Account 21.02
-
 The ARIES-AT Power Core Building (previously the Reactor Building) is a reasonably compact
 building design, namely a right circular cylinder that is 25.4 m inner radius, 28.0 m outer radius
 and a height of 54.3 m, with an inner volume of 110,000 m [3 ] including a lower level coolant drain
@@ -591,14 +546,11 @@ power core building design. LSA factors will not be used.
 
 C21.02 = $157.98 M
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-12-0.png)
+![](images/tmpvr93ky9_.pdf-12-0.png)
 
 <!-- PAGE:14 -->
 
-**Turbine – Generator Building, Account 21.03**
-
 ### Turbine – Generator Building, Account 21.03
-
 The Turbine-Generator Building may be the largest building in the facility complex, except for
 the Power Core Building. It houses the turbines and all the auxiliary equipment for the turbines.
 The surface condenser may be located on the sub-grade level, the feed-water heaters on the
@@ -649,10 +601,7 @@ C21.03 = $76.44 M
 
 **+++++++++++++++++++++++++++++++++++++++++**
 
-**Heat Rejection Structures and Facilities (Account 21.04)**
-
 ### Heat Rejection Structures and Facilities (Account 21.04)
-
 This account has also been referred to as the Cooling Systems Structures. These structures
 support the heat rejection systems. The Cooling Towers are not included in this account, rather
 are covered in Account 23.03, Heat Rejection Systems. The main elements in this account are the
@@ -679,10 +628,7 @@ Or, C21.04 =$16.804 M x (thermal power –gross electrical power)/1860) [0.5 ]
 
 C21.04 = $11.11 M
 
-**Electrical Equipment and Power Supply Building (Account 21.05)**
-
 ### Electrical Equipment and Power Supply Building (Account 21.05)
-
 This building is a multi-story structure that houses the power supplies for all the magnetic coils,
 heating, current drive, and other power core equipment requiring large power supplies. Included
 are a small maintenance, repair and storage area and a small office and control room for the
@@ -703,10 +649,7 @@ yields $22.878 M for a 1000 MWe power plant.
 
 C21.05 = $22.88 M
 
-**Plant Auxiliary Systems Building (Account 21.06)**
-
 ### Plant Auxiliary Systems Building (Account 21.06)
-
 The Plant Auxiliary Systems Building houses the HX pumps for the closed loop cooling water
 systems. Also located on the ground level are the chillers, pumps, instrument air equipment and a
 maintenance area. The upper levels might contain the air handling equipment, plenums and the
@@ -722,10 +665,7 @@ gross [/1246)][0.3 ][(in 2009$), for a total of $21.55 M for the ARIES-AT gross 
 
 C21.06 = $21.55 M
 
-**Hot Cell Building (Account 21.07)**
-
 ### Hot Cell Building (Account 21.07)
-
 The Hot Cell Building is the second most expensive building in the facility and this is related to
 the design, safety and maintenance approach adopted and to the high level of detail involving the
 hot cell operations. The safety aspects require a carbon-steel lined, concrete-hardened structure
@@ -771,10 +711,7 @@ the higher Prometheus percentage of 41% ratio would result in an estimate of $64
 
 C21.07 = $53.71 M
 
-**Power Core Service Building (Account 21.08)**
-
 ### Power Core Service Building (Account 21.08)
-
 The Power Core Service Building is a ground-level high-bay area in close proximity to the Hot
 Cell, the Turbine - Generator Building and the Plant Auxiliary Building. The building is a steel
 framed building with concrete floors supported on steel framing. A railroad spur passes through
@@ -792,10 +729,7 @@ identical around $4.309 M (in 2009$) for Starfire, Generomak, and Prometheus. Pr
 
 C21.08 = $4.31 M
 
-**Service Water Building (Account 21.09)**
-
 ### Service Water Building (Account 21.09)
-
 The Service Water Buildings (fire water storage tank pump house) and the circulating water
 pump house are contained in this account. These buildings contain the pumps and the
 chlorinating facilities. The circulating water pump house is a steel framed structure with a truss
@@ -813,10 +747,7 @@ C21.09 = $1.51 M
 
 <!-- PAGE:18 -->
 
-**Fuel Handling and Storage Building (Account 21.10)**
-
 ### Fuel Handling and Storage Building (Account 21.10)
-
 The Fuel Handling and Storage (FHS) Building, also referred to as the Tritium Reprocessing
 Building, houses the process equipment to reclaim and purify the tritium. Deuterium is also
 stored in this building and the two fuels are mixed and sent to the power core. The FHS Building
@@ -845,10 +776,7 @@ direct cost for the building is C21.10 = $25 M x (Pfusion/1759) [0.3] (in 2009$)
 
 C21.10 = $25.00 M
 
-**Control Room Building (Account 21.11)**
-
 ### Control Room Building (Account 21.11)
-
 The Control Room Building is located near the Administration Building and the Site Service
 Building. It thought to be a separate two-level hardened structure, capable of withstanding DBE
 seismic loads and tornado induced pressures and tornado missiles. The lower area houses the
@@ -866,10 +794,7 @@ C21.11 = $7.11 M
 
 <!-- PAGE:19 -->
 
-**On-Site AC Power Supply Building (Account 21.12)**
-
 ### On-Site AC Power Supply Building (Account 21.12)
-
 The onsite AC power is provided by two gas turbine generators housed in a one-story, hardened
 building. Each unit has a control room and battery room. Additional hardening is provided in the
 walls to stop turbine generated missiles. An adjacent two story building is required for the
@@ -882,10 +807,7 @@ power of 1000 MWe and weakly scale to that power level, $4.70 M x (Pe net/1000 [
 
 C21.12 = $4.70 M
 
-**Administrative Building (Account 21.13)**
-
 ### Administrative Building (Account 21.13)
-
 The Administration Building is a two-story structure designed to accommodate up to 60 people.
 It consists of a reception area, conference/display room, offices, lunchroom, electrical and
 HVAC equipment for both this building and the Site Service Building. It is a steel framed
@@ -899,10 +821,7 @@ over the size of the plant.
 
 C21.13 = $2.00 M
 
-**Site Service Building (Account 21.14)**
-
 ### Site Service Building (Account 21.14)
-
 The Site Service Building is divided into a maintenance shop and a warehouse, both servicing
 the balance of plant functions. The building is combined with the Administration and the Control
 Room Buildings and share some building services.
@@ -915,10 +834,7 @@ over the size of the plant.
 
 C21.14 = $2.00 M
 
-**Cryogenic and Inert Gas Storage Building (Account 21.15)**
-
 ### Cryogenic and Inert Gas Storage Building (Account 21.15)
-
 The steel-framed structure is constructed with precast concrete panel walls that contains the
 helium and nitrogen compressors. The remainder of the cryogenics equipment is located in a
 fenced-in yard adjacent to the building. An enclosed mezzanine provides space for an electrical
@@ -934,10 +850,7 @@ C21.15 = $2.09 M
 
 <!-- PAGE:20 -->
 
-**Security Building (Account 21.16)**
-
 ### Security Building (Account 21.16)
-
 The Security Building is a single-level steel- framed structure similar to the Administration
 Building.
 
@@ -949,10 +862,7 @@ plant unless the fusion power is drastically changed.
 
 C21.16 = $0.71 M
 
-**Ventilation Stack (Account 21.17)**
-
 ### Ventilation Stack (Account 21.17)
-
 The Ventilation Stack provides for disposal of low-level radioactive gases above ground level. It
 is a steel-lined, reinforced concrete outer shell structure, 100-m high and 14 m in diameter at the
 base. The concrete shell is slip-formed and is supported on an octagonal foundation. In light of
@@ -965,11 +875,7 @@ tightening regulations of release of radioactive gases, this account may disappe
 size of the plant unless the fusion power is drastically changed.
 
 C21.17 = $4.15 M
-
-**Summary of Structures and Site Facilities, Account 21**
-
-### Summary of Structures and Site Facilities, Account 21
-
+#### Summary of Structures and Site Facilities, Account 21
 The new estimate results for the ARIES-AT revised cost estimating algorithms were summed to
 provide a total account cost of $424.25 M (in 2009$), which seems to be reasonable. This result
 is lower than Starfire, slightly lower than Generomak, and about midway between LSA 1 and 2
@@ -996,11 +902,7 @@ C21 = $424.25 M
 
 <!-- PAGE:21 -->
 
-**Power Core Equipment, Account 22, Formerly the Reactor Plant**
-**Equipment**
-
-## Power Core Equipment, Account 22, Formerly the Reactor Plant Equipment
-
+Power Core Equipment, Account 22, Formerly the Reactor Plant** **Equipment
 This account is the heart of the fusion power facility, the power core, and includes most of the
 expensive capital equipment. It is comprised of both equipment that is unique to the magnetic
 confinement concept (e.g., first wall/blanket and magnets) and the common equipment that can
@@ -1016,10 +918,7 @@ the more expensive and routinely replaced component replacement parts, such as t
 blanket, shield, and divertor modules are included in Operating Cost Accounts, specifically the
 Scheduled Component Replacement costs.
 
-**Fusion Energy Capture and Conversion, Account 22.01**
-
 ### Fusion Energy Capture and Conversion, Account 22.01
-
 This account contains the core systems needed for the capture, conversion, and containment of
 the fusion reaction products. The innermost power core components are the first wall/blankets
 and the divertor assemblies. These components, with today’s material knowledge, will likely be
@@ -1079,7 +978,9 @@ The cost of ARIES-AT Fusion Energy Capture and Conversion subsystem, Account 21.
 reported by Najmabadi [14], et. al., to be $137.78 M (LSA = 1 and 1992$) or $197.01 M in 2009$.
 These data are for the FW/B, shield and divertor (impurity control).
 
-**First Wall and Blanket, Replaceable, Account 22.01.01** - This subsystem is the primary
+### First Wall and Blanket, Replaceable, Account 22.01.01
+
+This subsystem is the primary
 energy capture and conversion subsystem for the power core. The first wall and blanket (FWB)
 covers the majority of the surface of the tokamak power chamber, both on the inner and the outer
 regions of the chamber. The FWB is typically constructed in modular form to allow thermal
@@ -1102,8 +1003,6 @@ breeding material is probably lithium or a lithium compound or mixture, either i
 form. If liquid, it may be nearly stagnant (breeder only) or moving (breeder and heat transfer
 
 <!-- PAGE:23 -->
-
-## First Wall and Blanket Materials and Design
 
 media). The blanket material will likely be FS or SiC/SiC because they are low activation
 materials that will provide the longest operating lifetime while producing only low-level
@@ -1171,7 +1070,9 @@ component element times the unit cost of that element material.
 
 C22.01.02 = sum of products of unit cost per mass times the mass of the component element
 
-**Divertor Assembly, Replaceable, Account 22.01.03** - This divertor subsystem is located in the
+### Divertor Assembly, Replaceable, Account 22.01.03
+
+This divertor subsystem is located in the
 upper and lower regions of the plasma chamber (for a double null divertor system) where the
 magnetic field lines cross, sweeping out the highly charged ionized fusion products onto the
 divertor plates. The thermal heat flux and particle erosion is much higher than on the first wall
@@ -1195,7 +1096,9 @@ viable and validated, representative cost bases will be developed.
 |---|---|
 |x 1.5|<br>|
 
-**High Temperature Shielding, Both Replaceable and Life of Plant, Account 22.01.04** - This
+### High Temperature Shielding, Both Replaceable and Life of Plant, Account 22.01.04
+
+This
 shielding subsystem provides shielding for the complete plasma chamber. The FWB and divertor
 modules intercept the majority of the neutron energy; however there is still a significant quantity
 of neutrons that pass through the blanket modules and into the shield region. The intent is to
@@ -1235,7 +1138,9 @@ component element times the unit cost of that element material.
 
 C22.01.04 = sum of products of unit cost per mass times the mass of the component element
 
-**Low Temperature Shielding, Life of Plant, Account 22.01.05** - In some fusion plant designs,
+### Low Temperature Shielding, Life of Plant, Account 22.01.05
+
+In some fusion plant designs,
 the high temperature shield(s) does (do) not sufficiently lower the neutron flux to adequately
 protect the outboard chamber elements and additional shielding is needed. At this low level of
 neutron flux, the energy level is insufficient for high temperature operation, thus a low
@@ -1252,7 +1157,7 @@ that element material.
 
 C22.01.05 = sum of products of unit cost per mass times the mass of the component element
 
-**Penetration Shielding, Life of Plant, Low Temperature, Active and Passive, Account**
+### Penetration Shielding, Life of Plant, Low Temperature, Active and Passive, Account
 **22.01.06** - In addition to the shielding around the bulk of the plasma chamber, there are a
 multitude of openings, ducts, and pipes that could allow neutrons to escape past the blankets and
 shielding. These neutrons, if not intercepted, would cause damage to equipment and injury to
@@ -1273,15 +1178,16 @@ that element material.
 
 C22.01.06 = sum of products of unit cost per mass times the mass of the component element
 
-**Plasma Confinement, Account 22.02**
-
+### Plasma Confinement, Account 22.02
 This account was previously considered to be the Accounts 22.01.03, Magnets. The functionality
 remains the same, namely the coils necessary to contain, confine and shape the plasma. The
 scope of these accounts has been increased to include the conductors and windings, cases,
 structural and anti-torque supports, cryogenic supplies and lines, cryostats, thermal shields and
 power supplies.
 
-**Toroidal Field Coils, Account 22.02.01** - The toroidal field (TF) coils create the magnetic
+### Toroidal Field Coils, Account 22.02.01
+
+The toroidal field (TF) coils create the magnetic
 fields to confine the plasma. There are typically 12-18 toroidal field coils in generally a modified
 "D"-shape geometry (straight inner leg with smooth curve top, bottom and outer legs). The coils
 for power plants are not close fitting to the power core, but are much larger to allow access space
@@ -1310,11 +1216,9 @@ winding technique, and structural support method. Further, the cost will be para
 determined by the field strength and the current density. This sub-element cost element structure
 may change when the costing algorithms are documented.
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-25-0.png)
+![](images/tmpvr93ky9_.pdf-25-0.png)
 
 <!-- PAGE:27 -->
-
-### Toroidal Field Coil Components
 
 Conductor and Cable, Account 22.02.01.01 - Both low temperature (around 4 K) and “high”
 temperature (around 70 K) superconducting (SC) coils are being considered for the TF coils.
@@ -1455,7 +1359,9 @@ C22.02.02 = determined by SC material, cooling, winding, structure, cryostat, an
 and is proportional to field strength, current density, and perhaps some volume or stored energy
 term.
 
-**Feedback Control Coils, Account 22.02.03** - The Feedback Control coils are active control
+### Feedback Control Coils, Account 22.02.03
+
+The Feedback Control coils are active control
 coils that are likely to be normally conducting coils. It is intended these coils are usually
 quiescent, but when abnormal plasma conditions are sensed, these coils can quickly ramp up
 currents and fields to effectively control the plasma. Therefore, instantaneous power demands are
@@ -1473,7 +1379,9 @@ C22.02.03 = determined by conducting material, cooling, winding, structure, and 
 proportional to field strength, current density, and perhaps some instantaneous power
 requirement term.
 
-**Cryogenics for Plasma Confinement Account 22.02.04** - This common account includes the
+### Cryogenics for Plasma Confinement Account 22.02.04
+
+This common account includes the
 cryogenics for the TF and PF coils. This would include helium and/or nitrogen refrigeration and
 liquefaction process equipment. Starfire [1] had helium compressors, heat exchangers, expansion
 engines, and purifiers to deliver 20 kW of refrigeration at 4.2 K to 4.5 K at the supply rate of
@@ -1492,7 +1400,9 @@ for the Snowmass cost assessment.
 C22.02.04 = determined by cooling capacity times the number of cryogenic supply units times unit
 cost.
 
-**Power Supplies for Plasma Confinement, Account 22.02.05** - This account includes the
+### Power Supplies for Plasma Confinement, Account 22.02.05
+
+This account includes the
 conditioned power supplies, controls, and wiring for both SC and the normal coils. These power
 supplies provide a low voltage, high current conditioned electrical supply. Starfire [1] estimated the
 cost of the TF power supplies to be $183/kW (in 2009$) including component costs, installation,
@@ -1504,8 +1414,7 @@ protective circuitry is included in the coil costs.
 
 C22.02.05 = determined by power supply capacity times the number of units times unit cost.
 
-**Plasma Formation and Sustainment, Account 22.03**
-
+### Plasma Formation and Sustainment, Account 22.03
 The components in this subsystem account are associated with the initial formation of the plasma
 and the continued sustainment of the proper plasma condition for the steady-state productive
 output of the plasma. These subsystems can be various types of radio frequency (RF) or neutral
@@ -1516,7 +1425,9 @@ control. These will be further subdivided into types of subsystems that can acco
 functionality. Each subsystem contains sources, amplifiers, power supplies, transmission,
 windows, launchers, and cooling provisions
 
-**Heating and Current Drive, Account 22.03.01** - This subsystem or a combination of
+### Heating and Current Drive, Account 22.03.01
+
+This subsystem or a combination of
 subsystems provides continuous heating and current drive for the plasma to sustain the nominal
 plasma condition for proper operation. This subsystem nominally operates in steady-state
 
@@ -1539,8 +1450,6 @@ updating of the cost algorithms. This table and related text does not indicate w
 components are included in these unit costs, but it is presumed it includes both the amplifiers and
 the delivery components (cooled waveguides and launchers, etc). Each subsystem contains
 sources, amplifiers, power supplies, transmission, windows, launchers, and cooling provisions.
-
-### Current Drive and Heating System Cost Basis
 
 **Table 7. Current Drive Subsystem Unit Costs** **[16]** **, (Table 2.2-XII)**
 
@@ -1678,40 +1587,19 @@ Several of the ARIES design concepts evaluated the NBI option for heating and cu
 but only ARIES-III chose implement that option. The ARIES-II-IV Systems Studies [16] did
 document a cost for the NBI subsystem at $4.93/W in 2009$ subsystem as shown in Table 7.
 
-**Summary of Heating and Current Drive, Account 22.03.01** - There was a great deal of
+### Summary of Heating and Current Drive, Account 22.03.01
+
+There was a great deal of
 differing and conflicting information available regarding the power delivered to the plasma and
 the wall plug efficiencies. Also, the ARIES cost data was thought to be calculated for each type
 of heating and current drive, but only reported at the top level, which did not allow a more
 detailed analysis of the subsystem costs. A summary of the subsystem costs is shown below in
-Table 8. The first eight lines are a repeat of the data from Table 7. These data supposedly were
-used on all the ARIES cost estimates, however using these data would not reproduce the reported
-subsystem costs for any of the ARIES designs. This needs to be confirmed for accuracy.
-
-Table 8 also contains the ARIES subsystem heating and current drive summary data including
-the types of heating and CD, the delivered power and the cost data available. The reported cost
-estimates were escalated from the original data to 2009$ and converted to unit costs for
-comparison (LSA = 4). Neutral particle beam heating and current drive is significantly more
-expensive and is used infrequently. ICRF is used in the lower frequencies as it is the least
-expensive. Lower Hybrid is somewhat more expensive, but is used usually in combination with
-ICRF. The power levels were around 90 MW with Starfire and ARIES-I and then the power
-level increased to ARIES-I at 202 MW, and decreased for the second stability plasmas of ARIES
-III, II, and IV at 163 MW, 66 MW, and 68 MW. ARIES-RS slightly increased to 81 MW, but
-ARIES-AT significantly decreased to 37 MW with the lowest subsystem cost of $62.32 M in
-2009$ (LSA = 4). The ORNL ITER RF team provided an unofficial estimate of $5-6/W for
-ICRF, however this estimate includes R&D, personnel salaries, and contingency, all of which
-should be removed for inclusion in the direct capital cost algorithms. For future algorithm
-definition, each heating and CD subsystem option should be defined regarding type, frequency,
-source, and delivery components. Most of the ARIES designs described the launchers and other
-means to deliver the power, but it is not evident what was actually estimated.
-
-<!-- PAGE:35 -->
-
-## Historical Heating and Current Drive Cost Analysis
-
-**Table 8. Summary of Heating and Current Drive Subsystem Costs**
-
-Type, Del Pwr, Rptd Cost, LSA4 Cost, LSA4 Cost, $/W, $/W,** **Source Frequency MW 92M$ 92M$ 2009M$ 1992$ 2009$
-ARIES Sys Studies NBI, 2 MeV NA $3.45 $4.93
+|  |  |
+| --- | --- |
+| Neutral Particle Beam Plasma Heating, Current Drive and Rotation, Account 22.03.01.04 Several of the ARIES design concepts evaluated the NBI option for heating and current but only ARIES-III chose implement that option. The ARIES-II-IV Systems Studies16 document a cost for the NBI subsystem at $4.93/W in 2009$ subsystem as shown in | drive, did Table 7. |
+| Summary of Heating and Current Drive, Account 22.03.01 - There was a great deal differing and conflicting information available regarding the power delivered to the the wall plug efficiencies. Also, the ARIES cost data was thought to be calculated for of heating and current drive, but only reported at the top level, which did not allow a detailed analysis of the subsystem costs. A summary of the subsystem costs is shown Table 8. The first eight lines are a repeat of the data from Table 7. These data used on all the ARIES cost estimates, however using these data would not reproduce the subsystem costs for any of the ARIES designs. This needs to be confirmed for accuracy. | of plasma and each type more below in supposedly were reported |
+| Table 8 also contains the ARIES subsystem heating and current drive summary data | including |
+| the types of heating and CD, the delivered power and the cost data available. The estimates were escalated from the original data to 2009$ and converted to unit costs for comparison (LSA = 4). Neutral particle beam heating and current drive is significantly expensive and is used infrequently. ICRF is used in the lower frequencies as it is the expensive. Lower Hybrid is somewhat more expensive, but is used usually in ICRF. The power levels were around 90 MW with Starfire and ARIES-I and then the level increased to ARIES-I at 202 MW, and decreased for the second stability plasmas III, II, and IV at 163 MW, 66 MW, and 68 MW. ARIES-RS slightly increased to 81 ARIES-AT significantly decreased to 37 MW with the lowest subsystem cost of $62.32 2009$ (LSA = 4). The ORNL ITER RF team provided an unofficial estimate of $5-6/W ICRF, however this estimate includes R&D, personnel salaries, and contingency, all of should be removed for inclusion in the direct capital cost algorithms. For future definition, each heating and CD subsystem option should be defined regarding type, source, and delivery components. Most of the ARIES designs described the launchers means to deliver the power, but it is not evident what was actually estimated. | reported cost more least combination with power of ARIES MW, but M in for which algorithm frequency, and other |
 ARIES Sys Studies LH, 80 MHz? NA $1.49 $2.13
 ARIES Sys Studies ICRF, 80 MHz NA $1.15 $1.64
 ARIES Sys Studies ICRF, 158 MHz NA $1.15 $1.64
@@ -1733,17 +1621,15 @@ US ITER Team ICRF Not specified First of a kind including R&D, salaries, and con
 
 **Del Pwr,**
 
-MW
+**MW**
+
 **Rptd Cost,**
 
-92M$
 **LSA4 Cost,**
 
-92M$
 **LSA4 Cost,**
 
-2009M$
-## $/W,
+**$/W,**
 **1992$**
 
 **Source**
@@ -1751,7 +1637,9 @@ MW
 **Type,**
 **Frequency**
 
-**Startup, Account 22.03.02** - The startup subsystems are dedicated to bringing the plasma from
+### Startup, Account 22.03.02
+
+The startup subsystems are dedicated to bringing the plasma from
 inert plasma conditions up to full power, steady-state operation plasma conditions. This
 subsystem also may be used when transitioning from a partial power condition up to a higher
 level of power output. The candidate subsystems include Electron Cyclotron Resonance
@@ -1777,11 +1665,9 @@ then the conversion is still incorrect and perhaps the quoted LSA factors for th
 
 <!-- PAGE:36 -->
 
-### ECRF Plasma Breakdown Cost History
-
 **Table 9 ECRF Plasma Breakdown Subsystem Costs (M$) from ARIES Studies** **[6,16]**
 
-## ECRF Del Power, MW 1992$,LSA 1, 2 1992$, LSA4 2009$, LSA4 Unit Cost, $/W
+**ECRF** **Del Power, MW** **1992$,LSA 1, 2** **1992$, LSA4** **2009$, LSA4** **Unit Cost, $/W**
 ARIES Sys Studies, A-1 to A-RS $2.60 (Constant)
 ARIES Sys Studies, A-AT $2.78 (Constant)
 ARIES-I' (LSA=2) Data Not Found $3.900 $4.149 $5.933 TBD
@@ -1808,7 +1694,9 @@ If these startup systems are additional costs above the steady-state heating and
 anticipated these subsystems would use the same costing algorithms as the steady-state
 subsystems. To conserve first wall space, it is hoped they can share the launcher components.
 
-**Stability Control, Account 22.03.03** - This subsystem is to ensure the stability of the steadystate plasma and is primarily a transient operation, with fast acting, high power feedback to the
+### Stability Control, Account 22.03.03
+
+This subsystem is to ensure the stability of the steadystate plasma and is primarily a transient operation, with fast acting, high power feedback to the
 subsystems to actively control the plasma conditions. The candidate subsystems are Electron
 Cyclotron Resonance Frequency (ECRF) and Neutron Particle Beams. This is a new function
 added to the Plasma Formation and Sustainment account and it needs further investigation and
@@ -1822,7 +1710,9 @@ Electron Cyclotron Resonance Frequency (ECRF) Wave Plasma Control, Account 22.03
 
 Neutral Beam (NB) Wave Plasma Control, Account 22.03.03.02 - TBD
 
-**Plasma Fueling and Constituent Control, Account 22.03.04** - These are the subsystems that
+### Plasma Fueling and Constituent Control, Account 22.03.04
+
+These are the subsystems that
 provide the fueling, both steady-state as well as transient, to maintain the desired plasma fuel
 mixture. In addition to providing the nominal mix of deutritium and tritium, there may need to be
 some adjustment of the D-T mixture to fine tune the fuel mix in the plasma. There also may be
@@ -1863,9 +1753,7 @@ Neutral (Particle) Beam Injection (NBI) Fueling and Constituent Control, Account
 If neutral beams are used in the current drive subsystem, altering the fuel mix in the particle
 beam may be a convenient and low or no cost way to fuel the plasma. These costs can be unit
 costs times the number of units or a nominal unit cost scaled to fuelling rate.
-
-**Vacuum, Power Core, Account 22.04**
-
+#### Vacuum, Power Core, Account 22.04
 This account provides all the equipment and plumbing necessary to provide a high quality
 vacuum for the power core. It includes the vacuum vessel, refrigerators, primary high vacuum
 and roughing pumps, and vacuum ducts. It also includes the shielding materials in the vacuum
@@ -1912,8 +1800,6 @@ mass of the vessel as shown in Table 10. Ron Miller [15] documented and updated 
 coefficient for the AT power plant due to a revised escalation basis as shown in Table 10, last
 line.
 
-### Historical Vacuum Vessel Cost Algorithms
-
 **Table 10. Older ARIES Vacuum Vessel Algorithms**
 
 ARIES Designs 1992$ (LSA = 4) 2009$ (LSA = 4)
@@ -1948,8 +1834,6 @@ water and tungsten carbide (WC) spheres as additional shielding materials. (Note
 water in the vacuum vessel with a liquid metal-cooled power core is not favored presently.) The
 detailed costing results are listed in Table 11 for the vessel components. The cost estimate was
 prepared with the assumption that the construction corresponded with a LSA = 1 criteria.
-
-### Detailed Vacuum Vessel Cost Analysis
 
 **Table 11. ARIES-AT Vacuum Vessel Detailed Costing Study Results** **[4]**
 
@@ -2006,10 +1890,7 @@ testing to decrease the interest and escalation charges.
 C22.04.01 = $43.37 x mass of vacuum vessel + sum of products of shielding material unit costs per
 mass times the mass of shielding materials. No LSA factors should be applied.
 
-## Vacuum Pumping Systems Overview
-
-**General Discussion of the Remainder of Account 22.04 (22.04.02 to 22.04.06)**
-
+### General Discussion of the Remainder of Account 22.04 (22.04.02 to 22.04.06)
 This account includes all the vacuum pumping equipment, including helium
 liquefier/refrigerators, primary vacuum pumps, roughing/backing pumps, vacuum pumping ducts
 and plumbing and storage for all vacuum cryogenic systems. The cryogenic systems for the
@@ -2020,10 +1901,10 @@ on the mass flow rate of the pumped gases. Ron Miller [15] documented and update
 coefficient for the AT power plant due to a revised escalation basis as shown in Table 12. Note
 that these data do not include the vacuum vessel costs contained in Account 22.04.01.
 
-### Vacuum System Cost Algorithm Evolution
-
 **Table 12. Previous Vacuum Systems Algorithms** **[15,16]**
-ARIES Designs 1992$ (LSA = 4) 2009$ (LSA = 4)
+
+**ARIES Designs** **1992$ (LSA = 4)** **2009$ (LSA = 4)**
+
 II-IV, SPPS, RS $4.09 x mass flow rate in kg/d  $5.85 x mass flow rate in kg/d
 
 AT $4.37 x mass flow rate in kg/d  $6.25 x mass flow rate in kg/d
@@ -2061,7 +1942,9 @@ the pumping ducts should be added.
 
 C22.04.02-.04 = sum of the products of the pumping parameters times the component unit costs.
 
-**Helium Liquefier-Refrigerators, Account 22.04.02** - This subsystem is the helium
+### Helium Liquefier-Refrigerators, Account 22.04.02
+
+This subsystem is the helium
 refrigeration and liquefaction process equipment. Starfire [1] had helium compressors, heat
 exchangers, expansion engines, and purifiers to deliver 20 kW of refrigeration at 4.2K to 4.5K at
 the supply rate of 26,500 liter/hr. The cost of the Starfire helium refrigeration and liquefaction
@@ -2079,7 +1962,9 @@ They only allocated $2.04 M for both liquid nitrogen and helium subsystems and p
 
 This subsystem needs to be revisited to get current requirements and new cost estimates.
 
-**Primary Vacuum Pumps, Account 22.04.03** - These primary vacuum pumps could either be
+### Primary Vacuum Pumps, Account 22.04.03
+
+These primary vacuum pumps could either be
 cryogenic pumps or turbo-molecular pumps. Starfire [1] had a distributed vacuum subsystem with
 vacuum pumps located at each sector. It required 48 active cryopumps with a combined pumping
 speed of 125,000 liter/sec for helium and 200,000 liter/sec total gas load. In the 1980s, these
@@ -2096,11 +1981,15 @@ If gyrotrons are used, they may need liquid hydrogen cooling. Starfire [1 ] had 
 cryopumps, which were commercially available as 1000 liter/sec units for $3,000 ($6,875 in
 2009$). The total for 24 pumps and installation would be around $165,000 in 2009$.
 
-**Roughing or Backing Pumps, Account 22.04.04** - Starfire [1 ] had a single roughing pump system
+### Roughing or Backing Pumps, Account 22.04.04
+
+Starfire [1 ] had a single roughing pump system
 that served the complete torus. The then current cost was $120K (in 1980$) or $275 K (in 2009$)
 including installation.
 
-**Vacuum Ducts, Account 22.04.05** –The ARIES designs usually have multiple long vacuum
+### Vacuum Ducts, Account 22.04.05
+
+The ARIES designs usually have multiple long vacuum
 ducts connecting the power core chamber with the cryogenic vacuum pumps. The details of the
 exterior vacuum pump design are not shown. These ducts will be cooled with chilled water or
 liquid nitrogen. A good approximation for the vacuum duct cost algorithm is $28.02/kg in 2009$,
@@ -2113,15 +2002,15 @@ shielding, which added to this account.
 C22.04.05 = $28.02/kg x mass of vacuum ducts + unit shielding material cost times the shielding
 mass.
 
-**Plumbing, Cryogenic, Account 22.04.06** - Starfire [1 ] only provided some insight in to the
+### Plumbing, Cryogenic, Account 22.04.06
+
+Starfire [1 ] only provided some insight in to the
 plumbing for the vacuum subsystem. A small amount of liquid helium storage would be included
 in this account. None of the ARIES cost estimates included this account.
 
 C22.04.06 = The cryogenic plumbing and temporary storage should be estimated based on the size
 and length of pipes and capacity and number of pumps.
-
-**Primary Structure and Support, Power Core, Account 22.05**
-
+#### Primary Structure and Support, Power Core, Account 22.05
 This account defines the cost of the primary structure and support for the power core, which is
 very massive. Several of the main power core elements support each other. This subsystem
 transfers the gravity and seismic loads to the building support structures.
@@ -2169,7 +2058,9 @@ volume.
 C22.05= sum of products of unit cost per mass times the mass of the structural component
 element.
 
-**Carry-Through Structure, Account 22.05.01** - Starfire [1] identified this account but never
+### Carry-Through Structure, Account 22.05.01
+
+Starfire [1] identified this account but never
 actually had any components fitting into this category. It is probably a transition support
 structure that transmits loads from internal, high- or low-temperature, power core component
 down to the shield pedestal.
@@ -2178,7 +2069,9 @@ It is recommended ARIES do not define costing algorithms for this carry –throu
 such a common carry-through structural design is adopted. This component may indeed be used
 once the structural design is better defined.
 
-**Structural Pedestal, Account 22.05.02** - The structural pedestal is a structural element that
+### Structural Pedestal, Account 22.05.02
+
+The structural pedestal is a structural element that
 supports the entire power core. It may be a single monolithic element or it may be a set of
 elements all attached to the building concrete floor. A single piece may be more efficient to deal
 with seismic events. The Starfire [1 ] report used a non-magnetic steel, NonMagne 30, for the
@@ -2188,14 +2081,14 @@ It is recommended ARIES does not define costing algorithms for this pedestal str
 such a structural pedestal design is adopted. This component may indeed be used once the
 structural design is better defined.
 
-**Equipment Support Structure, Account 22.05.03** - This is a general set of structural support
+### Equipment Support Structure, Account 22.05.03
+
+This is a general set of structural support
 elements for the ancillary equipment. This structure will include large support structures for
 neutral beam equipment and diagnostic equipment as well as small instrumentation equipment
 and wiring. It is unrealistic to catalog all the ancillary equipment, so there will probably be a
 nominal allowance for this category.
-
-**Main Heat Transfer and Transport, Account 22.06**
-
+#### Main Heat Transfer and Transport, Account 22.06
 This account includes all the heat transfer piping, fluid circulation subsystem, intermediate heat
 exchangers, steam generators (if used), pressurizing or cover gas subsystem, and in-systems
 instrumentation and metering. This system interfaces between the high-temperature heat
@@ -2230,8 +2123,6 @@ factors for an LSA = 1 was either 0.9 with water or OC or 0.6 with He or LM with
 intermediate heat exchanger [or intermediate loop]. For all other LSA values, the factor would
 revert to 1.0.
 
-### Heat Transfer System Cost Algorithms
-
 **Table 13. ARIES-AT Main Heat Transfer and Transport Cost Algorithms** **[15]**
 
 Primary loop
@@ -2254,16 +2145,14 @@ the system cost when the algorithm was used. The data is graphically illustrated
 
 <!-- PAGE:45 -->
 
-### Heat Transfer Cost Comparison Analysis
-
 **Table 14. Comparison of Main Heat Transfer and Transport Reported Costs with the**
 **Updated ARIES-AT Cost Algorithms** **[15 ]** **in M$**
 
 **Figure 2. Main Heat Transfer and Transport System Costing Algorithms and Data**
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-44-0.png)
+![](images/tmpvr93ky9_.pdf-44-0.png)
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-44-1.png)
+![](images/tmpvr93ky9_.pdf-44-1.png)
 
 <!-- PAGE:46 -->
 
@@ -2283,8 +2172,6 @@ lithium from the steam turbine loop.
 The single (no intermediate loop) high efficiency, high temperature coolant, such as helium or
 liquid metal, is represented by ARIES-AT (LiPb) or ARIES-I’ and ARIES-IV (helium). All three
 designs were considered to be very low activation designs and were assumed to be LSA=1,
-## Analysis of Dual-Coolant Systems
-
 hence a LSA cost factor of 0.6 was applied. The ARIES-AT did not use an intermediate loop and
 the two helium-cooled ARIES designs probably did not use double-walled heat exchangers.
 From an unpublished ARIES-AT cost estimate, the estimate included primary, intermediate, and
@@ -2330,8 +2217,6 @@ environmentally friendly designs. However all the recent designs and, hopefully,
 designs will integrate these design features. Thus there is no advantage to use these LSA cost
 factors and their use should be discontinued.
 
-## Revised MHTT Cost Algorithms
-
 After examining the MHTT subsystem costs from the prior designs having a wide variety of
 fluid options, it is evident the trend is away from high pressure, low temperature water systems
 and toward much higher temperature fluids, such as helium and liquid metals. Some of the
@@ -2362,8 +2247,6 @@ would be estimated using the sum of the appropriate algorithms and the respectiv
 handled in each loop. It is recommended that this subsystem cost be defined in better detail to
 reflect the technologies being utilized.
 
-### Updated Heat Transfer Cost Algorithms
-
 **Table 15. Revised ARIES Main Heat Transfer and Transport Cost Algorithms**
 
 |Primary and diverter loops|Col2|Col3|
@@ -2379,7 +2262,9 @@ reflect the technologies being utilized.
 
 <!-- PAGE:48 -->
 
-**Primary (Water or Liquid Metal) Heat Transfer Loop, Account 22.06.01** - This primary
+### Primary (Water or Liquid Metal) Heat Transfer Loop, Account 22.06.01
+
+This primary
 loop account includes all the pumps and motor drives, insulated piping, tanks (dump, make-up,
 and clean-up), pressurizing equipment, interfaces with tritium extraction components, fluid
 clean-up system, and in-systems instrumentation and metering. The high-temperature heat
@@ -2405,8 +2290,6 @@ loop (3800 MWth) would be $145.97 M including steam generators. The four water/s
 generators are estimated at $41.25 M, total. EBTR [10] used a similar pressurized water to steam
 system with similar estimates.
 
-### Liquid Metal and Helium Primary Loop Systems
-
 Liquid metals (lithium, lithium lead, and flibe) and helium are higher temperature primary loop
 coolants that were used in recent ARIES designs, with and without an intermediate coolant loop,
 depending on the concern about tritium and other power core contaminants migrating to the
@@ -2421,8 +2304,6 @@ to helium for the Brayton cycle turbines. In 2009$, the Prometheus-L primary liq
 at $43.24 M in 2009$ or $90.51 M for the total LM subsystem cost. See Account 22.06.02 for
 the helium primary loop.
 
-### Recent Dual-Cooled Design Applications
-
 ARIES-ST and ARIES–CS were more recent dual-cooled designs with LiPb and helium primary
 coolants. Neither of these designs used an intermediate loop, instead they relied on vacuum
 permeators in the primary LiPb loop and refractory or SiC HX tubes to limit tritium migration to
@@ -2431,7 +2312,9 @@ the turbine loop.
 For C22.06.01, Primary (Water or Liquid Metal) Heat Transfer Loop, see Account 22.06, Table 15
 for applicable primary coolant algorithms.
 
-**Primary (Helium) Heat Transfer Loop, Account 22.06.02** - This helium primary loop account
+### Primary (Helium) Heat Transfer Loop, Account 22.06.02
+
+This helium primary loop account
 includes all the pumps and motor drives, insulated piping, tanks (dump, make-up, and clean-up),
 
 <!-- PAGE:49 -->
@@ -2458,7 +2341,9 @@ power core and turbine.
 For C22.06.02, Primary (Helium) Heat Transfer Loop **,** see Account 22.06, Table 15 for applicable
 primary coolant algorithms.
 
-**Limiter or Divertor Primary Heat Transfer Loop, Account 22.06.03** - This account is used if
+### Limiter or Divertor Primary Heat Transfer Loop, Account 22.06.03
+
+This account is used if
 the divertor is a completely separate heat transfer loop from the primary loop. Although the
 divertor heat transfer loop may use the same heat transfer media as the blanket primary loop, if it
 is separate, it will have its own set of piping, pumps and other plumbing subsystems. It probably
@@ -2500,17 +2385,11 @@ coolant loop with either liquid metal or helium coolants scaled to the appropria
 
 **[Auxiliary Cooling System, Old Account 22.03]**
 
-## Deprecated Auxiliary Cooling System Account
-
 This old account generally was considered to be the cooling system for the cryogenic cooling for
 the magnets, reference Schulte [9] . It has been recommended that all cooling services be associated
 directly with the requiring account, in this case Account 22.02.04, Cryogenics for Plasma
 Confinement.
-
-**Radioactive Materials Treatment and Management, Account 22.07**
-
-## Radioactive Materials Treatment System Overview
-
+#### Radioactive Materials Treatment and Management, Account 22.07
 This account includes all the equipment to treat and manage all the produced radioactive
 materials in off-line processes. This system would work in coordination with the handling and
 processing of radioactive materials in the Hot Cell. This system will also accept the gaseous,
@@ -2542,8 +2421,6 @@ well defined at this time. The present functional definition is shown above, but
 handling interfaces may change and the functionality of equipment will likely significantly be
 modified and improved over the next few decades.
 
-### Historical Cost Algorithms and Recommendations
-
 ARIES has used the same algorithm for calculating this subsystem since ARIES-I. The latest
 algorithm [15] was updated for ARIES-AT. Using the updated algorithm for ARIES-AT would be
 approximately $5.9 M in 2009$ or with the 0.85 factor applied for LSA-1, the cost falls to
@@ -2557,30 +2434,32 @@ the system is strongly dependent on fusion power.
 
 C22.07 = $15 M x (Pfusion/ 1758)^0.8 Recommend obtaining a more current estimate.
 
-**Liquid Materials Processing Equipment, Account 22.07.01** - Radioactive liquids for
+### Liquid Materials Processing Equipment, Account 22.07.01
+
+Radioactive liquids for
 processing and/or disposal will be obtained from liquid streams, either as a steady stream or in a
 batch process and sent to the liquid materials processing system for separation, purification,
 and/or treatment. The sources could be the liquid breeders, Fuel Handling and Storage system,
 Hot Cell, vacuum pumping for the power core or Heat Transfer and Transport systems.
 
-**Gaseous Materials Processing Equipment, Account 22.07.02** - Radioactive gases for
+### Gaseous Materials Processing Equipment, Account 22.07.02
+
+Radioactive gases for
 processing and/or disposal will be obtained from gaseous streams, either as a steady stream or in
 a batch process and sent to the gaseous materials processing system for separation and treatment.
 The sources could be the Fuel Handling and Storage system, Hot Cell, vacuum pumping for the
 power core during operation, shutdown, or bake-out, and Heat Transfer and Transport systems.
 This might include a line to recover activated cover gases around or within the power core.
 
-**Solid Materials Processing Equipment, Account 22.07.03** - Radioactive solids or mixes
+### Solid Materials Processing Equipment, Account 22.07.03
+
+Radioactive solids or mixes
 solids/liquids for processing and disposal will be obtained primarily from the Hot Cell in a batch
 process and sent to the solids materials processing system for separation, detritiation, and
 treatment. Radioactive solids can be generated in the power core by erosion and retrieved the
 vacuum pumps or during maintenance periods or within the breeder and heat transfer systems
 that can be removed with traps or filters.
-
-**Fuel Handling and Storage, Account 22.08**
-
-## Fuel Handling and Storage System Overview
-
+#### Fuel Handling and Storage, Account 22.08
 This account is the on-line processing for the extraction, recovery, purification, preparation, and
 storage of the fuel isotopes. Fuel injection is handled in a separate account (22.03.04). The
 sources of the liquids and gases for processing are the liquid breeders, chamber gases, purge and
@@ -2599,8 +2478,6 @@ The set of function subaccounts are revised from prior versions. Some cost escal
 due to higher reliability requirements for power plant applications, but learning curve effects for
 10th of a kind will tend to compensate. The previously recommended LSA factors for all
 accounts are 0.85 (LSA1) and 0.94 (LSA 2).
-
-### Cost Comparison with Prior Designs
 
 Comparisons with prior designs are difficult because of the lack of definition of the system
 although the overall function is the same. The available Fuel Handling and Storage cost
@@ -2628,51 +2505,59 @@ C22.08 = $70 M x (fusion power/1758 MW) [0.80] (normalized to ARIES-AT fusion po
 **Table 16. Comparison of Fuel Handling and Storage Reported Costs in M$ with the**
 **Updated ARIES-AT Cost Algorithms** **[15]**
 
-**Chamber Exhaust Gas Handling and Processing Equipment, Account 22.08.01** –This
+### Chamber Exhaust Gas Handling and Processing Equipment, Account 22.08.01
+
+This
 account is responsible for transferring the exhaust gases to a purification and isotope separation
 system to recover the fuel elements from the exhaust stream and send the remaining gases to the
 Radioactive Materials Treatment and Management system.
 
-**Purge and Cover Gas Handling and Processing Equipment, Account 22.08.02** - This
+### Purge and Cover Gas Handling and Processing Equipment, Account 22.08.02
+
+This
 account is responsible for transferring the purge and cover gases to a purification and isotope
 separation system to recover the fuel elements from the exhaust stream and send the remaining
 gases to the Radioactive Materials Treatment and Management system.
 
-**Primary Coolant Stream Handling and Processing Equipment, Account 22.08.03** - This
+### Primary Coolant Stream Handling and Processing Equipment, Account 22.08.03
+
+This
 account is responsible for removing the fuel elements and compounds from all the primary and
 intermediate coolant streams to a purification and isotope separation system to recover the fuel
 element from the exhaust stream and send the remaining gases to the Radioactive Materials
 Treatment and Management system.
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-51-2.png)
+![](images/tmpvr93ky9_.pdf-51-2.png)
 
 <!-- PAGE:53 -->
 
-**Other Liquid and Gaseous Coolant Stream Handling and Processing Equipment, Account**
+### Other Liquid and Gaseous Coolant Stream Handling and Processing Equipment, Account
 **22.08.04 -** This account is responsible for removing the fuel elements and compounds from the
 remainder of the plant coolant streams to a purification and isotope separation system to recover
 the fuel element from the exhaust stream and send the remaining gases to the Radioactive
 Materials Treatment and Management system.
 
-**Purification and Isotope Separation Equipment, Account 22.08.05** –This account is
+### Purification and Isotope Separation Equipment, Account 22.08.05
+
+This account is
 responsible for purification of the separated tritium and deuterium gas and fluid streams. The
 purified streams are then introduced into an isotope separation system to produce streams of
 tritium and deuterium.
 
-**Tritium, Deuterium, and DT Storage Equipment, Account 22.08.06** - This account is
+### Tritium, Deuterium, and DT Storage Equipment, Account 22.08.06
+
+This account is
 responsible for the storage of the tritium, deuterium and a mixture of DT gases or liquids for use
 in the plasma fueling subsystem.
 
-**Atmospheric Tritium Recovery Equipment, Account 22.08.07** –This account is responsible
+### Atmospheric Tritium Recovery Equipment, Account 22.08.07
+
+This account is responsible
 for the atmospheric tritium recovery subsystems in the Power Core, Hot Cell and the Fuel
 Handling buildings. This subsystem is responsible to maintain an acceptable tritium partial
 pressure in normal operations as will as rapid detritiation of the building atmospheres in the case
 of a tritium leak.
-
-**Maintenance Equipment, Account 22.09**
-
-## Maintenance Equipment Overview
-
+#### Maintenance Equipment, Account 22.09
 This account includes all the remote maintenance equipment necessary to install, service, remove
 and disassemble all the radioactive components and assemblies in the power plant for both
 routine and non-routine service needs. The maintenance equipment is subdivided into categories
@@ -2680,8 +2565,6 @@ associated with the primary area where significant radioactivity will be present
 power core, hot cell, fuel handling and storage and other miscellaneous areas with lower
 activation levels. General purpose building cranes and hoists are included in the Account 26.01,
 Transportation and Lifting.
-
-### Historical Maintenance Equipment Costs
 
 Maintenance equipment and processes have always been a key design and performance issue for
 fusion power plants that generate high energy neutrons. This is due to the high activation levels
@@ -2705,8 +2588,6 @@ magnitude more than the algorithm predicted. The ARIES algorithm is deemed to be
 
 `
 
-### Equipment Requirements and Cost Recommendations
-
 The radiation-hardened remote handling maintenance equipment is crucial to achieve high levels
 of availability, which is directly related to plant profitability. It would be wise to provide many
 sets of robust maintenance equipment, but the amount of maintenance equipment has to be
@@ -2717,7 +2598,9 @@ a better estimate can be obtained.
 
 C22.09 = $100 M x (Pe net/1000) [0.80]
 
-**Power Core Maintenance Equipment, Account 22.09.01** - This subaccount includes the
+### Power Core Maintenance Equipment, Account 22.09.01
+
+This subaccount includes the
 overhead manipulators supported by the building cranes, mobile casks, transporters, servomanipulators, hoists, handling machines, end-effectors, inspection and surface metrology
 equipment, leak detection equipment, cutting/welding/cleanup tools, fixtures, supports and
 lighting equipment. These equipment classes will service all subsystems contained within the
@@ -2726,7 +2609,9 @@ operational service and repair/replacement, and end-of-life disassembly and deco
 Presently, much of the equipment is remote-servo manipulators, but it is likely these will be
 replaced with fully automated and autonomous equipment.
 
-**Hot Cell Maintenance Equipment, Account 22.09.02** - This subaccount includes the overhead
+### Hot Cell Maintenance Equipment, Account 22.09.02
+
+This subaccount includes the overhead
 manipulators supported by the building cranes, mobile casks, transporters, servo-manipulators,
 hoists, handling machines, end-effectors, inspection and surface metrology equipment, leak
 detection equipment, cutting/welding/cleanup tools, fixtures, supports and lighting equipment.
@@ -2746,21 +2631,19 @@ decommissioning. Presently, much of the equipment is remote-servo manipulators a
 enclosures, but it is likely these will be replaced with fully automated and autonomous
 equipment.
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-53-0.png)
+![](images/tmpvr93ky9_.pdf-53-0.png)
 
 <!-- PAGE:55 -->
 
-**Other Plant Maintenance Equipment, Account 22.09.04** - This subaccount is a catch-all
+### Other Plant Maintenance Equipment, Account 22.09.04
+
+This subaccount is a catch-all
 account to include all other maintenance equipment to accomplish remote or hands-on
 maintenance. This might include special equipment for turbines, generators, electric plant and
 other miscellaneous systems and subsystems. This equipment will be used in the initial
 assembly, operational service and repair/replacement, and end-of-life disassembly and
 decommissioning.
-
-**Instrumentation and Control, Account 22.10**
-
-## Instrumentation and Control System Overview
-
+#### Instrumentation and Control, Account 22.10
 This account includes all the power core instrumentation and control (I&C). This would include
 plasma diagnostics. However for the 10 [th] of a kind plant, plasma diagnostics should be a mature
 understanding of the plasma behavior and its control aspects. Therefore, all those diagnostic
@@ -2771,8 +2654,6 @@ monitoring equipment, isolated indicating and recording equipment, data acquisit
 recording, and communication equipment. The overall control function for the power plant
 probably will be included in this account although the WBS would indicate it is just for the
 power core.
-
-### I&C Cost Analysis and Recommendations
 
 The Instrumentation and Control (I&C) is notionally described, but the exact equipment content
 will not be known until the Demo has operated successfully. Significant technology advances are
@@ -2792,37 +2673,43 @@ C22.10= $60 M.
 
 **Table 18. Comparison of Instrumentation and Control Costs, In M$**
 
-**Power Core Instrumentation and Control Equipment, Account 22.10.01** - This subaccount
+### Power Core Instrumentation and Control Equipment, Account 22.10.01
+
+This subaccount
 includes all the instrumentation and control equipment to monitor and manage the plasma and all
 its related functional equipment contained in the Power Core (includes all equipment in Account
 22). There is also a high degree of linkage to all I&C functions for the remainder of the plant and
 this system may serve as the primary plant control system (to be determined).
 
-**Radiation Monitoring Equipment, Account 22.10.02** - Monitoring of all forms of radiation
+### Radiation Monitoring Equipment, Account 22.10.02
+
+Monitoring of all forms of radiation
 within and outside the plant is a critical function that is the responsibility of the equipment in this
 account. This monitoring equipment will insure that safe levels of radiation are maintained
 during routine plant operations, determining the tritium inventories in all plant components, and
 analyze/report any fault or accidental release of radioactive materials.
 
-**Isolated Indicating and Recording Equipment, Account 22.10.03** - This account includes all
+### Isolated Indicating and Recording Equipment, Account 22.10.03
+
+This account includes all
 indicating and recording equipment that is physically isolated from the main power core, yet is
 necessary to monitor the performance and health of the power core and its related equipment.
 
-**Data Acquisition and Recording Equipment, Account 22.10.04** - The fusion power core is a
+### Data Acquisition and Recording Equipment, Account 22.10.04
+
+The fusion power core is a
 highly complex facility, which generates enormous amounts of data to be acquired and recorded
 for analysis to properly control the fusion plasma and the plant. The access rate for the data
 acquisition will be very high to be able to adequately control the plasma real time. The data
 storage needs will be extremely high, necessitating the need for the most current data storage
 capabilities.
 
-**Communications Equipment, Account 22.10.05** - This communication equipment will handle
+### Communications Equipment, Account 22.10.05
+
+This communication equipment will handle
 all forms of communication both inter-and intra-plant. Communication will include audio, video,
 electronic forms.
-
-**Other Power Core Equipment, Account 22.11**
-
-## Other Power Core Equipment Overview
-
+#### Other Power Core Equipment, Account 22.11
 This account encompasses all other power core equipment not specifically identified elsewhere.
 This includes the special heating systems, special cooling systems (low temperature shielding,
 vacuum vessel, and other systems), coolant receiving/storage/makeup system, gas systems and
@@ -2848,12 +2735,16 @@ C22.11 = $8 M x (Pe net/1000) [0.80 ]
 
 **Table 19. Comparison of Other Power Core Costs, in M$**
 
-**Special Heating Equipment, Account 22.11.01** - Special heating systems are used for heating
+### Special Heating Equipment, Account 22.11.01
+
+Special heating systems are used for heating
 or preheating power core or plant equipment to clean plasma chamber surfaces or heat
 components up to operating temperatures. It will also prevent liquid metals from solidifying in
 the piping.
 
-**Special Cooling Equipment, Account 22.11.02** - Most of the nuclear energy will be captured in
+### Special Cooling Equipment, Account 22.11.02
+
+Most of the nuclear energy will be captured in
 the high temperature components in the power core. However, some of the energy and heat will
 be captured in non-power producing elements, such as the vacuum vessel and low temperature
 shield. Other plant components will have to be cooled to remove waste heat or maintain proper
@@ -2862,47 +2753,44 @@ equipment will provide heat removal for these systems. There is some possibility
 migration into the supported systems, therefore there probably be some monitoring and removal
 capability for tritium in this system.
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-56-1.png)
+![](images/tmpvr93ky9_.pdf-56-1.png)
 
 <!-- PAGE:58 -->
 
-**Coolant Receiving, Storage, and Makeup Equipment, Account 22.11.03** - This account will
+### Coolant Receiving, Storage, and Makeup Equipment, Account 22.11.03
+
+This account will
 include the receiving, storage, and makeup equipment for all the power core systems. This would
 include the primary heat transfer fluid (water, helium, CO2, lithium, lead, lithium-lead or other
 fluid), secondary heat transfer fluid (helium or sodium), cryogenic fluids (helium, nitrogen, or
 argon), and specially treated waters.
 
-**Gas Systems Equipment, Account 22.11.04** - This account would include any gas not
+### Gas Systems Equipment, Account 22.11.04
+
+This account would include any gas not
 specifically associated with another system. This would include purge and cover gases in the
 power core and inert gas systems for the power core building.
 
-**Inert Atmosphere Equipment, Account 22.11.05** - The equipment in this system is intended to
+### Inert Atmosphere Equipment, Account 22.11.05
+
+The equipment in this system is intended to
 provide a sub-atmospheric pressure, inert gas environment in the buildings that have a potential
 to have a tritium leak. This would include the fans for maintaining the pressure differential,
 valves to seal the building, and monitoring equipment. When significant tritium concentrations
 are detected, the Atmospheric Tritium Recovery System will commence.
-
-**Summary of Power Core Equipment, Account 22**
-
-## Power Core Equipment Summary
-
+#### Summary of Power Core Equipment, Account 22
 Many of the accounts within the Power Core Equipment, Account 22, have been revised and
 updated. However, not all Account 22 cost accounts are known to the author. So only those
 defined can be analyzed and compared to the published ARIES-AT cost estimates.
 
 <!-- PAGE:59 -->
 
-**Turbine-Generator Plant Equipment, Account 23**
-
-## Turbine-Generator Plant Equipment Overview
-
+### Turbine-Generator Plant Equipment, Account 23
 This account defines the costs associated with the Turbine-Generator Plant Equipment (TPE),
 which takes the thermal energy from the fusion power core and other high temperature power
 plant facilities (e.g. inertial confinement driver systems) via the main heat transfer and transport
 system and converts it to electrical energy. The remaining thermal energy is transferred back to
 the fusion power core or to the Heat Rejection System.
-
-### Historical TPE Cost Development
 
 In the earlier fusion plant designs, the turbine-generator plant has been based on the Rankine
 (steam) cycle. However, the search for higher efficiency energy conversion systems has
@@ -2932,8 +2820,6 @@ choice of primary loop coolant should not be used to estimate the cost of the TP
 prior studies were researched, but it is not relevant to show that data. The reported plant TPE
 system costs ranged from $350 M to $490 M in 2009$.
 
-### Interim Cost Algorithms
-
 General Atomics agreed to provide new algorithms for the TPE account. In lieu of obtaining
 these new algorithms, it is recommended to temporarily use these approximate algorithms to
 estimate the Turbine-Generator Plant Equipment.
@@ -2959,50 +2845,37 @@ C23 = $350 M x (Pth gross/2620) [0.70                    ] Rankine
 **Figure 3. Cost of Turbine – Generator Plant Equipment for Rankine and Brayton Cycles**
 **over a Range of Thermal Conversion Efficiencies**
 
-**Turbine – Generators and Accessories, Account 23.01**
-
+#### Turbine – Generators and Accessories, Account 23.01
 This account includes turbines and generator sets and all the associated structure and support
 equipment.
-
-**Main Steam or Other Main Heat Transfer Fluid, Account 23.02**
-
+#### Main Steam or Other Main Heat Transfer Fluid, Account 23.02
 This account includes all the heat transfer piping, valves, pumps and fluid circulation subsystem,
 between the heat generation source (power core components) or the intermediate heat exchanger
 (perhaps needed to isolate the primary coolant form the turbine plant heat transfer fluid or
 provide additional tritium migration).
-
-**Condensing or Heat Sink Heat Exchanger, Account 23.03**
-
+#### Condensing or Heat Sink Heat Exchanger, Account 23.03
 This account includes the condenser (for the steam system) or the heat sink heat exchanger (for
 the gas system) and the associated support subsystems, including all the heat transfer piping,
 fluid circulation subsystem, valves and structural supports.
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-59-0.png)
+![](images/tmpvr93ky9_.pdf-59-0.png)
 
 <!-- PAGE:61 -->
 
-**Feedwater Heating or Heat Recovery System, Account 23.04**
-
+#### Feedwater Heating or Heat Recovery System, Account 23.04
 This account is associated with the recovery of lower grade heat to provide greater system
 efficiency with feedwater heating or heat recovery with a recuperator or reheater. This account
 will include heat exchangers, piping, valves, and support equipment.
-
-**Other Turbine Plant Equipment, Account 23.05**
-
+#### Other Turbine Plant Equipment, Account 23.05
 This account includes the turbine and generator auxiliaries, associated cooling systems, fluid
 makeup, chemical treatment and purification, and central lubrication systems.
-
-**Turbine Plant Instrumentation and Control, Account 23.06**
-
+#### Turbine Plant Instrumentation and Control, Account 23.06
 This account includes the process instrumentation and control, automatic monitoring and control
 and the isolated indicating and recording instruments for the turbine plant.
 
 <!-- PAGE:62 -->
 
-**Electrical Plant Equipment, Account 24**
-
-## Electrical Plant Equipment Overview
-
+### Electrical Plant Equipment, Account 24
 This account defines the costs associated with the Electric Plant Equipment (EPE), which takes
 the electrical energy from the turbine-generator sets and distributes to the plant power systems
 and to the grid connection.
@@ -3010,8 +2883,6 @@ and to the grid connection.
 The subaccounts in this account are switchgear, stations service equipment, switchboards, trace
 heating, protective equipment, electrical structures, wiring containers, power and control wiring,
 and electrical wiring. The power and control wiring are the largest cost component.
-
-### EPE Cost History and Algorithm Development
 
 The EPE costs for Starfire [1] and EBTR [10] were developed by their A&E contractors based on prior
 bids for similar equipment, so the cost basis should be sound, but very dated. Beginning in the
@@ -3030,59 +2901,41 @@ is not influenced by the nuclear characteristics. If the LSA factor is disregard
 EPE cost for a 1200 WMe gross plant would be $183 M in 2009$.
 
 C24 = $182.98 M x (Pe gross/1200) [0.50 ]
-
-**Switchgear, Account 24.01**
-
+#### Switchgear, Account 24.01
 This account includes the cost of the switchgear for the generator circuits and the station service.
 The generator circuit switchgear includes the generator circuit breaker, grounding transformer,
 current limiting reactor, disconnect switch and outdoor oil circuit breaker. The station service
 switchgear includes switchgear lines for the electrical busses and all the major facility buildings
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-61-1.png)
+![](images/tmpvr93ky9_.pdf-61-1.png)
 
 <!-- PAGE:63 -->
 
-**Station Service Equipment, Account 24.02**
-
+#### Station Service Equipment, Account 24.02
 The Station Service Equipment includes the service and lighting transformer, the 480V load
 center and motor control center, the DC and UPS systems, battery systems for the Turbine
 Generator and the computer systems for the Electric Plant equipment.
-
-**Switchboards, including Heat Tracing, Account 24.03**
-
+#### Switchboards, including Heat Tracing, Account 24.03
 This account includes the main control boards for the electrical systems, the auxiliary power and
 signal boards, electric heat tracing systems, and constant voltage regulation transformer.
-
-**Protective Equipment, Account 24.04**
-
+#### Protective Equipment, Account 24.04
 This account includes the cathodic grounding systems with grounding rods, lightning protection
 and miscellaneous cables, connector and supports.
-
-**Electrical Structures and Wiring Containers, Account 24.05**
-
+#### Electrical Structures and Wiring Containers, Account 24.05
 This account includes cable trays, metallic conduits, and supporting structures.
-
-**Power and Control Wiring, Account 24.06**
-
+#### Power and Control Wiring, Account 24.06
 This account is largely a labor intensive activity associated with the wiring and wiring
 installation for the generator circuits, the station service and control wiring, the instrument
 wiring and connections, the containment penetrations, and interconnections with the DC power
 supplies and coils.
-
-**Electrical Lighting, Account 24.07**
-
+#### Electrical Lighting, Account 24.07
 This account is a subcontracted effort, which includes electrical lighting for the complete facility.
-**Heat Rejection Equipment, Account 25**
-
-## Heat Rejection Equipment Overview
-
+### Heat Rejection Equipment, Account 25
 This account defines the costs associated with the Heat Rejection Equipment, which takes the
 lower grade heat rejected from the turbine plant equipment and the closed coolant systems,
 turbine plant cooling systems, electrical component cooling loads, cryogenic systems and the
 I&C systems. This system dissipates this heat to the local environment. The ultimate heat sink is
 commonly a wet or dry cooling tower and/or groundwater.
-
-### Heat Rejection Cost Algorithm Development
 
 The early fusion plant studies, Starfire [1], EBTR [10], and Prometheus-L [4] relied on A&E estimates,
 which were quite high, as shown in Table 21. These studies as well as the early ARIES studies
@@ -3113,37 +2966,27 @@ C25 = $87.52 M x (Pth rej /2300)
 
 **Table 21. Comparison of Heat Rejection Equipment Costs, in M$**
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-63-1.png)
+![](images/tmpvr93ky9_.pdf-63-1.png)
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-63-2.png)
+![](images/tmpvr93ky9_.pdf-63-2.png)
 
-**Water Intake Common Facilities, Account 25.01**
-
+#### Water Intake Common Facilities, Account 25.01
 This account includes facilities necessary to provide cooling and miscellaneous water needs for
 the entire plant. The plant is typically located near a large body of water to provide the necessary
 supply and release of the water. Environmental restrictions will apply to this system.
-
-**Circulating Water Systems, Account 25.02**
-
+#### Circulating Water Systems, Account 25.02
 This account includes piping, pumps, and heat exchangers for the circulating water systems
 throughout the plant.
-
-**Cooling Towers, Account 25.03**
-
+#### Cooling Towers, Account 25.03
 This account includes the natural draft cooling tower structures and the tower foundations. This
 does not include the heat rejection cooling tubes, which are included in Account 23.03,
 Condensing or Heat Sink Heat Exchanger.
-
-**Other Heat Rejection Equipment, Account 25.04**
-
+#### Other Heat Rejection Equipment, Account 25.04
 This account includes other miscellaneous equipment associated with the heat rejection system.
 
 <!-- PAGE:65 -->
 
-**Miscellaneous Plant Equipment, Account 26**
-
-## Miscellaneous Plant Equipment Overview
-
+### Miscellaneous Plant Equipment, Account 26
 This account defines the general equipment costs associated with all parts of the plant, including
 transportation and lifting equipment, air and water service systems, communication equipment,
 and furnishing and facilities.
@@ -3164,38 +3007,27 @@ factor. C26 = $88.89 M x (Pe gross/1200) [0.6 ]
 
 **Table 22. Comparison of Miscellaneous Plant Equipment Costs, in M$**
 
-**Transportation and Lifting Equipment, Account 26.01**
-
+#### Transportation and Lifting Equipment, Account 26.01
 This account includes the transportation and lifting equipment for the entire plant. This account
 includes all the non-dedicated maintenance cranes and transportation systems. The cranes and
 some other equipment in high radiation areas (such as the power core, hot cell, and fuel handling
 and storage) will have to be radiation hardened.
-
-**Air and Water Service Equipment, Account 26.02**
-
+#### Air and Water Service Equipment, Account 26.02
 This account includes all the air and water service equipment not specifically required for other
 systems
-
-**Communications Equipment, Account 26.03**
-
+#### Communications Equipment, Account 26.03
 This account includes all the communication equipment and wiring for the entire plant.
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-64-0.png)
+![](images/tmpvr93ky9_.pdf-64-0.png)
 
 <!-- PAGE:66 -->
 
-**Furnishing and Fixtures, Account 26.04**
-
+#### Furnishing and Fixtures, Account 26.04
 This account includes all the furnishing and fixtures for the entire plant.
 
 <!-- PAGE:67 -->
 
-**Special Materials, Account 27**
-
-## Special Materials, Account 27
-
-## Special Materials Overview
-
+### Special Materials, Account 27
 This account covers the special materials added to the fusion power plant just before testing and
 validation commences. The common categories for these materials are heat transfer fluids, cover
 gases for material handling systems and buildings, breathing air, and specialty gases or liquids
@@ -3204,8 +3036,6 @@ not be procured with the various plant systems and not subject to construction l
 Replenishment of these materials is considered to be an operational expense. The special
 materials will include specially treated water, liquid metals, cryogenic liquids, gases, and perhaps
 some solid materials.
-
-### Historical Special Materials Costs
 
 As seen in Table 23, Starfire [1] and EBTR [10] (with H2O primary coolant) set aside a $0.57 M (in
 2009$) allowance for Special Materials. Prometheus-L [4] estimate was $1.93 M (in 2009$) for Pb
@@ -3226,10 +3056,6 @@ algorithms are provided in a following paragraph.
 **Table 23. Comparison of Previous Special Material Costs, in M$**
 
 <!-- PAGE:68 -->
-
-### Natural Lithium Pricing
-
-### Current Lithium Market Pricing
 
 The demand for natural lithium has increased quite a bit since the 1980’s due to the glass making
 industry, alloying of structural metals, and the emergence of high capacity lithium battery
@@ -3259,13 +3085,9 @@ present.
 **$2555/tonne for lead conforming to 99.97% purity minimum conforming to BS EN**
 **12659:1999** .
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-67-0.png)
+![](images/tmpvr93ky9_.pdf-67-0.png)
 
 <!-- PAGE:69 -->
-
-### Enriched Lithium Costs
-
-### Enriched Lithium Production Costs
 
 The cost of large-scale production of enriched of natural lithium to a various levels of [6] Li is a
 complete unknown at this point as there are no demands for large quantities of enriched lithium
@@ -3304,7 +3126,7 @@ at $1000/kg in 2009$. To better estimate the scaling relationship between natura
 
 <!-- PAGE:70 -->
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-69-0.png)
+![](images/tmpvr93ky9_.pdf-69-0.png)
 
 **Figure 5. Notional Lithium Enrichment Cost Curve**
 
@@ -3315,11 +3137,9 @@ at $1000/kg in 2009$. To better estimate the scaling relationship between natura
 |<br>the turbine loop) and Argon (Acct 22.06) (for cover gases) at fixed values of $0.62 M and $0.31|<br>the turbine loop) and Argon (Acct 22.06) (for cover gases) at fixed values of $0.62 M and $0.31|<br>the turbine loop) and Argon (Acct 22.06) (for cover gases) at fixed values of $0.62 M and $0.31|<br>the turbine loop) and Argon (Acct 22.06) (for cover gases) at fixed values of $0.62 M and $0.31|
 |<br>M, respectively, in 2009$. These values seem|<br>    reasonable as allowances pending required|<br>    reasonable as allowances pending required|<br>    reasonable as allowances pending required|
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-69-1.png)
+![](images/tmpvr93ky9_.pdf-69-1.png)
 
 <!-- PAGE:71 -->
-
-### Total Special Materials Calculation
 
 masses. The total Special Material account can be obtained by summing the liquid metals, argon
 and other special materials that are loaded just before startup.
@@ -3341,10 +3161,7 @@ plant concepts among themselves and to the current and future competing power so
 
 <!-- PAGE:72 -->
 
-**Indirect Costs, Accounts 91-99**
-
-## Indirect Costs, Accounts 91-99
-
+### Indirect Costs, Accounts 91-99
 As a part of defining all the fusion power plant cost accounts, Schulte, et. al. [9 ] prescribed the
 definition of the indirect cost accounts and recommended values for use in conceptual fusion
 power plant studies. The specific indirect cost accounts are shown below with suggested
@@ -3359,15 +3176,10 @@ Acct 93, Owners Cost 5% of Total Direct Cost\
 In addition to these indirect cost accounts, other indirect costs will include contingency and the
 time-related indirect costs, such as interest and escalation costs accumulated over the
 construction period
-
-**Construction Facilities, Equipment, and Services; Engineering and**
-**Construction Management Services and Owners Costs, Accounts 91, 92 and**
-93 (+ new Account 94)
+Construction Facilities, Equipment, and Services; Engineering and** **Construction Management Services and Owners Costs, Accounts 91, 92 and** **93 (+ new Account 94)
 The Schulte report [9] referenced a prior Mc Donnell Douglas Astronautics report [30] that compiled
 indirect cost data from several then recent fission plants, namely TFTR, GA EPR, Wash 1230,
 and the UWMAK studies.
-
-### Evolution of Indirect Cost Methodologies
 
 L. Waganer, in the 1980 Starfire conceptual design [1 ] study, developed a total plant cost estimate
 for a more modular approach and standardized design to make the plant more affordable and
@@ -3397,8 +3209,6 @@ for the three indirect cost accounts (91, 92, and 93).
 <!-- PAGE:73 -->
 
 **Table 25. Early Plant Studies Estimates of Indirect Costs (% of Total Direct Cost)**
-
-### LSA-Based Indirect Cost Factors
 
 Later, the Delene 1990 Generomak Cost Model Update [31] further modified the indirect accounts
 by subdividing into four accounts and linking the values to the Level of Safety Assurance (LSA)
@@ -3458,17 +3268,17 @@ airplane crash, etc.)
 structural integrity during disruption/VDE/ELMs in fusion, etc.).
 
 By definition:
-LSA = 4 Denotes active protection (i.e., active engineered safety systems are required); the
 
+**LSA = 4** Denotes **active protection** (i.e., active engineered safety systems are required); the
 system does not meet minimum requirements for inherent safety.
-LSA = 3 Safety is assured by passive mechanisms of release limitation as long as severe
 
+**LSA = 3** Safety is assured by **passive mechanisms** of release limitation as long as severe
 violations of small-scale geometry are avoided (e.g., large coolant pipe breaks).
-LSA = 2 Safety is assured by passive mechanisms as long as severe reconfiguration of
 
+**LSA = 2** Safety is assured by **passive mechanisms** as long as severe reconfiguration of
 large-scale geometry is avoided.
-LSA = 1 Safety is assured by passive mechanisms of release limitation for any accident
 
+**LSA = 1** Safety is assured by **passive mechanisms** of release limitation for any accident
 sequence; radioactive inventories and material properties preclude fatal release regardless of
 power plant’s condition.
 
@@ -3522,10 +3332,7 @@ C94, Process Owners Cost = see below,
 
 <!-- PAGE:76 -->
 
-**Contingency, Accounts 95 and 96**
-
-## Contingency, Accounts 95 and 96
-
+#### Contingency, Accounts 95 and 96
 Per Schulte, et al [9], the contingency allowance is for unforeseen and/or unpredictable expenses
 that might be incurred during facility construction and startup. Contingency should reflect any
 cost uncertainty resulting from potential acts of nature and non-design related construction
@@ -3598,10 +3405,7 @@ C95, **Process (Design) Contingency** = Zero for a 10 OAK power plant cost estim
 
 <!-- PAGE:78 -->
 
-**Financial Assumptions and Methodologies for Plant Construction**
-
-## Financial Assumptions and Methodologies for Plant Construction
-
+### Financial Assumptions and Methodologies for Plant Construction
 The prior sections addressed the methodologies and algorithms for developing the direct and
 indirect capital costs for a fusion power plant. Those total costs are considered to be the total
 overnight costs (OC), thus no time-related interest or escalation (aka, inflation) effects are
@@ -3610,11 +3414,7 @@ with the financing of the procurement and construction of the plant and its faci
 factors consider the cash flow necessary to procure and construct the facility, any inflationary
 effects on the cash flow and the accrual of interest and other factors charged to the incremental
 cash flow.
-
-**Cash flow**
-
-### Cash Flow
-
+#### Cash flow
 First, the expected distribution of the cash flow during the construction period must be
 established. In actual practice, this expenditure curve would not be a continuous function; rather
 it would be composed of many unequal step functions depending on the timing of long lead
@@ -3690,9 +3490,9 @@ assumption. This Starfire assumption has also been adopted for most magnetic fus
 plant design studies since the 1990’s. The EBTR [10] study construction period is one exception at
 5 years as it was felt its highly modular design would allow a more expedited construction.
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-78-13.png)
+![](images/tmpvr93ky9_.pdf-78-13.png)
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-78-14.png)
+![](images/tmpvr93ky9_.pdf-78-14.png)
 
 <!-- PAGE:80 -->
 
@@ -3713,11 +3513,7 @@ approximations. Moreover, the entire curve can be skewed to the right or the lef
 to approximate the integral functions. It is recommended the midpoint of the spending is defined
 to be at the 60% of the construction. The ESC code can be used to determine the spending profile
 with any skewness and construction duration.
-
-**Time Value of Money**
-
-### Time Value of Money
-
+#### Time Value of Money
 At the start of plant construction, the total overnight costs have been estimated that are necessary
 to procure and construct the plant. However, the plant cannot be procured or constructed
 overnight and requires some time for this process to be financed and completed. The prior
@@ -3779,11 +3575,11 @@ Phung [34] further formulated the equations that separated the EDC and the IDC i
 and provided tabular data that identified the relationships between the construction time (B), the
 interest rate (x) and the escalation rate (y).
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-80-0.png)
+![](images/tmpvr93ky9_.pdf-80-0.png)
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-80-1.png)
+![](images/tmpvr93ky9_.pdf-80-1.png)
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-80-2.png)
+![](images/tmpvr93ky9_.pdf-80-2.png)
 
 <!-- PAGE:82 -->
 
@@ -3831,10 +3627,7 @@ current dollars can be included if desired.
 
 <!-- PAGE:83 -->
 
-**Evaluating Interest and Escalation, Accounts 97 and 98**
-
-## Evaluating Interest and Escalation, Accounts 97 and 98
-
+#### Evaluating Interest and Escalation, Accounts 97 and 98
 In 1978, Pacific Northwest Laboratory issued a report [9] authored by S. Shulte, et.al., “Fusion
 Reactor Design Studies – Standard Accounts for Cost Estimates,”. This report established a
 methodology for handling time-related costs using the constant and then-current dollar analyses.
@@ -3912,16 +3705,13 @@ C97 = 0.1303 times the sum of Total Direct Costs and the subtotal of prior indir
 
 **Table 30. Recommended ARIES-AT Interest During Construction (IDC) Cost Factors**
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-83-0.png)
+![](images/tmpvr93ky9_.pdf-83-0.png)
 
-![](images/Waganer---ARIES-Cost-Account-Documentation.pdf-83-1.png)
+![](images/tmpvr93ky9_.pdf-83-1.png)
 
 <!-- PAGE:85 -->
 
-**Financial Assumptions and Methodologies for Annual Costs**
-
-## Financial Assumptions and Methodologies for Annual Costs
-
+### Financial Assumptions and Methodologies for Annual Costs
 The busbar cost of electricity is the most important consideration for utilities or independent
 power producers in choosing an electrical generating power plant. The plant must be an
 affordable, reliable, maintainable energy source and all of these factors are contained in the cost
@@ -3948,19 +3738,12 @@ the construction and startup period to determine the cost at the beginning of el
 production. This yields the advertized COE. However during the life of the plant, all costs,
 except for the initial capital cost, may continue to gradually increase due to inflationary effects.
 This effect is not considered.
-
-**Annual Capital Cost Charge, CAC**
-
-### Annual Capital Cost Charge, CAC
-
+#### Annual Capital Cost Charge, CAC
 The annual capital cost charge is determined by applying a fixed charge rate (FCR) to the total
 capital cost of the power plant including all direct and indirect costs as determined at the
 beginning of construction.
 
-**Fixed Charge Rate**
-
 ### Fixed Charge Rate
-
 The genesis of the fusion definition of a fixed charge rate (FCR) stems from the NUS Guide for
 Economic Evaluation of Nuclear Power Plant Design [33] . Schulte [9] elaborated on the fixed charge
 rate in the Fusion Reactor Design Studies – Standard Accounts for Cost Estimates report
@@ -4044,10 +3827,7 @@ the FCR.
 
 <!-- PAGE:88 -->
 
-**Operations and Maintenance Costs, CO&M or Accounts 40-47**
-
-## Operations and Maintenance Costs, CO&M or Accounts 40-47
-
+### Operations and Maintenance Costs, CO&M or Accounts 40-47
 In the Fusion Reactor Design Studies – Standard Accounts for Cost Estimates report in 1978,
 Schulte [9] established the standard accounts for the fusion power plant including the annual O&M
 accounts. The O&M accounts included salaries, supplies and equipment, outside support
@@ -4061,10 +3841,7 @@ general O&M approaches - a detailed bottoms-up with projected staffing and maint
 as compared to a top-down approach at the upper O&M level. Neither approach has much
 validity, so the estimates have a sizable margin of error
 
-**Detailed O&M Estimate Approach**
-
 ### Detailed O&M Estimate Approach
-
 Waganer, in Starfire [1], adopted the Schulte accounting scheme, but chose to estimate the costs
 associated with each O&M cost category in a bottoms-up approach as shown in Table 32. It was
 felt that the fusion plant would be more highly automated than traditional fission plants, thus a
@@ -4117,12 +3894,7 @@ plant capacity, availability and so on). This report suggested a general O&M sca
 
 CO&M (mills/kWh) = 7.7 * (1200/Pe net) [0.5] .
 
-## High-Level O&M Estimate Approach
-
-**High-Level O&M Estimate Approach**
-
 ### High-Level O&M Estimate Approach
-
 As illustrated in the Generomak approach, Sheffield, et.al., started with the detailed O&M
 estimate, but to parametrically model the plant, they adopted a higher-level cost estimating
 approach. In the subsequent refinement of the Generomak cost modeling, Delene [31] updated the
@@ -4211,12 +3983,7 @@ prevail in all future fusion plants with a continuing trend to minimize human la
 assumptions, the following O&M algorithm should be adopted for ARIES:
 
 CO&M = $80 M x (Pe net/1200) [0.5] in 2009$.
-## Scheduled Component Replacement Costs
-
-**Scheduled Component Replacement Costs, CSCR**
-
-## Scheduled Component Replacement Costs, CSCR
-
+### Scheduled Component Replacement Costs, CSCR
 Schulte [9], in the Fusion Reactor Design Studies – Standard Accounts for Cost Studies report,
 foresaw the need to identify and monitor the cost of those high cost power core components that
 have a life much less than the economic life of the plant. He especially identified the first wall
@@ -4324,10 +4091,7 @@ levelized cost of the borrowed capital and divide by the annual power production
 
 <!-- PAGE:94 -->
 
-## Fuel Cost
-
-**Fuel Cost, CF**
-
+### Fuel Cost, CF
 This fuel cost account is quite analogous to the SCR account. Schulte [9] identified the fusion fuel
 elements to be considered in the fuel account. Schulte postulated that this is a 10 [th] of a kind
 plant, which would indicate that the supply and demand of tritium from other operating fusion
@@ -4376,10 +4140,7 @@ x $546/kg (for 70% enriched Li) = ~$546/day or $200,000/yr.
 
 <!-- PAGE:95 -->
 
-## Decontamination and Decommissioning
-
-**Decontamination and Decommissioning, CD&D**
-
+### Decontamination and Decommissioning, CD&D
 Schulte [9] and Waganer [1] (Starfire) did not identify any annual cost charge for decontamination and
 decommissioning and this was an oversight that needed to be corrected. Sheffield [2], et al, in the
 Cost Assessment of a Generic Reactor did add this cost item as a separate annual cost as a 0.5
@@ -4435,10 +4196,7 @@ purposes. It is convenient to have all ARIES reports in 1992$, but it is a bit d
 
 suggested that 2009 be adopted as a reference year or one that is associated with the next major
 ARIES project.
-## Cost Document Summary
-
-**Cost Document Summary**
-
+### Cost Document Summary
 As stated in the initial paragraph, Purpose, the intent of this document is to provide a historical
 record of how the ARIES costing analysis has evolved from the early conceptual power plant
 studies and the costing experts that contributed to this body of knowledge. Each study had a
@@ -4465,10 +4223,7 @@ experiences.
 
 <!-- PAGE:97 -->
 
-## References
-
-**References**
-
+#### References
 1. C. C. Baker, et al., “STARFIRE – A Commercial Tokamak Fusion Power Plant Study,”
 Argonne National Laboratory report ANL/FPP-80-1 (September 1980).
 
@@ -4510,7 +4265,7 @@ Reactors, Fusion Technology Journal, 19(3), 807 (1991).
 13. S. C. Schulte, et. al., “Fusion Reactor Design Studies – Standard Unit Costs and Cost Scaling
 Rules,” Pacific Northwest Laboratory report, PNL-2987, September 1979.
 
-14. Farrokh Najmabadi, et. al., “The ARIES-AT Advanced Tokamak,
+## 14 Farrokh Najmabadi, et. al., “The ARIES-AT Advanced Tokamak,
 Advanced Technology Fusion Power Plant,” Fusion Engineering and Design 80 (2006) 3–23.
 
 15. R. L. Miller, _Decysive Systems,_ Informal Memo, “ARIES Systems Code (ASC) Cost
@@ -4607,16 +4362,10 @@ http://fti.neep.wisc.edu/pdf/fdm1330.pdf.
 
 <!-- PAGE:100 -->
 
-## Appendix A: Recommended Cost Accounts
-
-**Appendix A. Recommended Cost Accounts**
-
+### Appendix A. Recommended Cost Accounts
 Refer to separate Excel file, New Recommended Cost Accounts Rev K.xls
 
-## Appendix B: Power Core Component and Material Cost Basis
-
-**Appendix B of Power Core Component and Material Cost Basis**
-
+### Appendix B of Power Core Component and Material Cost Basis
 Refer to separate Excel Spreadsheet on Fabrication Costs per kg Ref R.xlsx
 
 The details and logic for most accounts are documented in an Excel spreadsheet (Cost Algorm

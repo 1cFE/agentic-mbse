@@ -220,7 +220,7 @@ progress in fusion gain over the last 20 years. The pace and cost of such large,
 
 [https://doi.org/10.1017/S0022377820001257 Published online by Cambridge University Press](https://doi.org/10.1017/S0022377820001257)
 
-![](images/tmp_ha2ar4v.pdf-3-4.png)
+![](images/tmp7a0ae_mb.pdf-3-4.png)
 
 <!-- PAGE:5 -->
 
@@ -386,7 +386,7 @@ and a symmetric pair of off-midplane ports above and below.
 
 [https://doi.org/10.1017/S0022377820001257 Published online by Cambridge University Press](https://doi.org/10.1017/S0022377820001257)
 
-![](images/tmp_ha2ar4v.pdf-7-3.png)
+![](images/tmp7a0ae_mb.pdf-7-3.png)
 
 <!-- PAGE:9 -->
 
@@ -437,7 +437,7 @@ of SPARC mean that volumetric neutron heating of various components is of partic
 importance, though as stated above, detailed engineering analysis is beyond the scope of
 the work presented here.
 
-4. SPARC scenarios and performance projections
+## 4 SPARC scenarios and performance projections
 To ensure achievement of the SPARC mission of fusion gain _Q >_ 2, several scenarios
 are being analysed to demonstrate both the feasibility of the mission and necessary
 
@@ -530,7 +530,7 @@ toroidal magnetic field on axis (in T).
 
 [https://doi.org/10.1017/S0022377820001257 Published online by Cambridge University Press](https://doi.org/10.1017/S0022377820001257)
 
-![](images/tmp_ha2ar4v.pdf-10-4.png)
+![](images/tmp7a0ae_mb.pdf-10-4.png)
 
 <!-- PAGE:12 -->
 
@@ -552,17 +552,17 @@ _et al._ (2007) is for the electron density, and some of this may be due to impu
 
 [https://doi.org/10.1017/S0022377820001257 Published online by Cambridge University Press](https://doi.org/10.1017/S0022377820001257)
 
-![](images/tmp_ha2ar4v.pdf-11-2.png)
+![](images/tmp7a0ae_mb.pdf-11-2.png)
 
-![](images/tmp_ha2ar4v.pdf-11-3.png)
+![](images/tmp7a0ae_mb.pdf-11-3.png)
 
-![](images/tmp_ha2ar4v.pdf-11-9.png)
+![](images/tmp7a0ae_mb.pdf-11-9.png)
 
-![](images/tmp_ha2ar4v.pdf-11-10.png)
+![](images/tmp7a0ae_mb.pdf-11-10.png)
 
-![](images/tmp_ha2ar4v.pdf-11-11.png)
+![](images/tmp7a0ae_mb.pdf-11-11.png)
 
-![](images/tmp_ha2ar4v.pdf-11-12.png)
+![](images/tmp7a0ae_mb.pdf-11-12.png)
 
 <!-- PAGE:13 -->
 
@@ -689,7 +689,7 @@ differences in _β_, etc.), as calculated with the FreeGS Grad-Shafranov solver.
 Using the methodology outlined here, the performance projections for the three
 scenarios are as follows.
 
-4.1. _Full-performance H-mode discharge_
+### 4.1 Full-performance H-mode discharge
 
 Since the full-performance H-mode scenario is the most demanding on many of the
 SPARC engineering systems, it has been the focus of the majority of the analysis to
@@ -781,7 +781,7 @@ power depends on absolute density and temperature, so SPARC’s fusion power and
 will be considerably larger than those of the devices included in this database, including
 JET.
 
-4.2. _Full-performance L-mode discharge_
+### 4.2 Full-performance L-mode discharge
 
 In addition to the full-field H-mode discharge, the performance of SPARC in L-mode
 at full machine parameters has also been considered. Operation in L-mode avoids some
@@ -799,7 +799,7 @@ exhaust.
 
 <!-- PAGE:17 -->
 
-4.3. _Reduced field and current H-mode discharge_
+### 4.3 Reduced field and current H-mode discharge
 
 In addition to full-field and full-current scenarios, performance at reduced field and current
 has also been considered. Of particular interest has been performance at 2/3 of the toroidal
@@ -932,7 +932,7 @@ Community Planning Process 2020) and SPARC will expand upon earlier work from
 TFTR (Strachan _et al._ 1997; Zweben _et al._ 1997; Hawryluk 1998) and JET (Keilhacker
 1999).
 
-6. Conclusions
+## 6 Conclusions
 SPARC is a compact, _Q >_ 2 tokamak and is the next step on the path to timely and
 economical fusion energy. It is well into the conceptual design phase and is on track
 to begin construction in 2021. As shown using the conservative physics methodology

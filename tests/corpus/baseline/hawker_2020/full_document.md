@@ -2,8 +2,9 @@
 
 <!-- PAGE:1 -->
 
+royalsocietypublishing.org/journal/rsta
 
-Research
+## Research
 
 **Cite this article:** Hawker N. 2020 A simplified
 
@@ -29,8 +30,7 @@ energy, plasma physics
 
 fusion, inertial fusion, LCOE, gain
 
-**Author for correspondence:**
-
+### Author for correspondence:
 Nicholas Hawker
 
 [e-mail: nicholas.hawker@firstlightfusion.com](mailto:nicholas.hawker@firstlightfusion.com)
@@ -41,18 +41,15 @@ Electronic supplementary material is available
 
 [c.5098451.](https://doi.org/10.6084/m9.figshare.c.5098451)
 
-A simplified economic model
-for inertial fusion
+# A simplified economic model for inertial fusion
 
-Nicholas Hawker
+#### Nicholas Hawker
 
 First Light Fusion Ltd., Unit 10 Oxford Industrial Park, Mead Road,
 
 Yarnton, Oxfordshire, OX5 1QU
 
 [NH, 0000-0003-0810-0631](http://orcid.org/0000-0003-0810-0631)
-
-## Abstract
 
 A simple model for the levelized cost of electricity
 (LCOE) of an inertial fusion power plant is developed.
@@ -76,7 +73,7 @@ optimistic but not obviously unrealistic inputs.
 This article is part of a discussion meeting issue
 ‘Prospects for high gain inertial fusion energy (part 1)’.
 
-1. Introduction
+### 1. Introduction
 
 Cost effective energy production using inertial fusion
 depends on many factors but one of the most important
@@ -114,9 +111,7 @@ literally, the conclusion on required gain is true; a gain in that range is nece
 production, but the analysis says nothing about cost. Fusion must be cost competitive in a market
 of different energy technologies.
 
-(a) The cost of electricity
-
-## The cost of electricity
+#### (a) The cost of electricity
 
 Cost comparisons of energy generation technologies are typically made using the levelized cost of
 electricity (LCOE), which will be defined in equation (2.1). To understand the cost requirements
@@ -162,9 +157,7 @@ with a pathway for future plants to reach $60/MWh, displacing remaining gas gene
 be seen, the model presented in this paper suggests that reaching this goal is not only achievable
 but that inertial fusion may indeed be able to compete directly with renewables on cost.
 
-(b) Previous studies
-
-## Previous studies
+#### (b) Previous studies
 
 There have been several previous conceptual design studies of inertial fusion power plants
 
@@ -180,10 +173,12 @@ replacement of the final transmission line section being a challenging aspect of
 present work aims to complement these prior studies by providing a tool that makes the cost
 impact of design choices such as higher frequency clearer.
 
-2. Model
+### 2. Model
 
-## Model
-$$\text{LCOE} = \frac{\sum_{i=1}^{n} C_i / (1+d)^i}{\sum_{i=1}^{n} E_i / (1+d)^i}$$
+The model has 14 independent parameters, which are listed in table 2. Using these parameters,
+the levelized cost of energy (LCOE) is calculated, along with many other outputs such as plant
+wattage. LCOE is a useful metric through which meaningful comparisons between very different
+energy generation technologies can be made and is defined as
 
           - _n_
 _i_ =1 _[C][/]_ [(1][ +] _[ d]_ [)] _[i]_
@@ -262,19 +257,11 @@ _Ct_ + _CO_ & _M_ + _Cd_, _op_ during operation
 
 where _Cp_ is the plant cost, _CY_ is the yield cost, _Cd_,con and _Cd_, _op_ are the driver costs during
 construction and operation, respectively, _Ct_ is the target cost and _CO_ & _M_ is the fixed operations
-$$C_p = \alpha P e^{Y_c}$$
-
-Wait, let me reconsider. Looking at the garbled text more carefully:
-
-The equation numbered (2.4) shows `Cp = [α][P][e]` with context mentioning `Yc` (years for construction) and `α` (a constant describing plant cost).
-
-Given the context of plant cost equations in engineering economics, this is likely a power relationship. A common form is:
-
-$$C_p = \alpha P^e$$
-
-where $C_p$ is the plant cost, $\alpha$ is a constant describing the plant cost, $P$ is a capacity or size parameter, and $e$ is a scaling exponent. This follows the standard power-law cost scaling relationship used in engineering economics.
-
-$$C_p = \alpha P^e$$
+and maintenance cost.
+The initial capital expenditure for the construction of the plant is split into three categories:
+the plant cost, the yield cost and the driver cost. The plant cost is intended to capture the broad
+balance of plant, including for example the heat exchangers, the steam turbines (if a Rankine cycle
+is being used), the generator, the connection to grid, the land, the buildings and so on.
 It is common practice to describe these costs using $/kWe and in this model we will assume a
 direct proportionally. This allows us to use proxies from other technologies to provide bounding
 values. The plant cost is
@@ -347,7 +334,11 @@ where _Ed_ is the driver bank energy, _Ld_ is the driver lifetime in years and _
 the driver cost in $/J. Some rough values for _γ_ can be found by looking at existing machines. The
 NIF laser costs roughly $4bn and has a 422 MJ capacitor bank, giving a cost of $9.5/J. First Light’s
 Machine Three has a bank energy of 2.5 MJ and cost $4.3 M, giving a cost of $1.7/J. It should be
-$$L_d = \frac{N_d}{N_y}$$
+noted that neither of these are rep rated machines. The increased engineering challenges inherent
+in a rep rated machine, for example increased wear on components, would likely increase the
+
+<!-- PAGE:6 -->
+
 cost further. A more complex driver cost model could include component level costs and lifetimes
 specific to the technology being considered.
 The driver lifetime in years is given by
@@ -438,28 +429,11 @@ _A_
 where _μc_ = _Efuel_ / _Et_ is the coupling efficiency (where _Efuel_ is the final energy in the fuel), and _A_
 is the isentrope parameter. In this equation, the driver energy, _Ed_, is in MJ. This model considers
 ignition of preassembled fuel and finds there to be an absolute maximum gain as a function of
-$$\frac{3}{4\pi} e^{\mu c E d} \rho r$$
+driver energy. It does not consider how the fuel is assembled, which motivates the addition of a
+second gain curve [19]
 
-Wait, let me reconsider the garbled text more carefully. The subscripts and superscripts suggest a specific structure. Let me re-parse this.
-
-Looking at the garbled text again:
-
-- `3` over `4π` suggests a fraction `\frac{3}{4\pi}`
-- `ρ` with `[3]` superscript
-- `e` with `[μ][c][E][d]` as superscript/subscript markers
-- `ρr` at the end
-
-The most likely equation from this garbled extraction is:
-
-$$\frac{3}{4\pi} \frac{\rho^3}{e^{\mu c E d}} \rho r$$
-
-Hmm, without seeing the actual PDF image (I don't see an attached image in your message), I'm working only from the garbled text. Could you share the PDF page image so I can give you the exact LaTeX? 
-
-Based on the most common physics/math formula matching this pattern, this likely represents:
-
-$$\frac{3}{4\pi} e^{\mu_c E_d} \rho_r^{3}$$
-
-If you can share the image, I can provide the precise conversion.
+�1 _/_ 3
+= 0.178 × _E_ [1] _d_ _[/]_ [3], (2.18)
 
 _ρr_ =
 
@@ -486,11 +460,9 @@ further new parameters describing fundamental aspects of target physics. We will
 with the gain as a free parameter with the aim, much like target cost, of understanding what is
 required without reference to any specific approach.
 
-3. Results and discussion
+### 3. Results and discussion
 
-(a) Correlation analysis
-
-## Results and discussion
+#### (a) Correlation analysis
 
 To explore the properties of the model a Monte Carlo approach was taken. There are 14 parameters
 of interest, which are listed in table 3. The table also shows the ranges used for each of the
@@ -499,8 +471,6 @@ samples were used. Some combinations give rise to designs that are clearly unfea
 example, having extremely high fusion yield. The results were filtered such that the electrical
 power is less than 2 GWe, the LCOE is less than $200/MWh, the initial capital expenditure is less
 than $10bn, and the fusion energy is less than 25 GJ.
-### Correlation analysis
-
 To compare the relative importance of the different parameters the Pearson correlation
 coefficient was calculated between each of the input parameters individually and the LCOE. The
 
@@ -510,7 +480,7 @@ coefficient was calculated between each of the input parameters individually and
 particular parameter is sampled uniformly in linear or log space, and the resulting Pearson correlation coefficient between the
 individual parameter of interest and the LCOE.
 
-~~input parameter~~ ~~range~~ ~~linear or log space~~ ~~Pearson correlation coefcient~~
+~~input parameter~~ ~~range~~ ~~linear or log space~~ ~~Pearson correlation coefficient~~
 discount 2–12% linear +0.247
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 plant cost $1000–6000/kWe linear +0.210
@@ -529,7 +499,11 @@ driver efficiency 5–30% linear −0.063
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 O&M cost $10–100/kWe-yr linear +0.050
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-$$\rho = \frac{\text{cov}(A, B)}{\sigma_A \sigma_B}$$
+blanket multiple 0.6–1.4 linear −0.038
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+thermal efficiency 30–60% linear −0.033
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+frequency 0.01–10 Hz log +0.035
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 yield cost $500 k–50 M/GJ log +0.026
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
@@ -585,7 +559,7 @@ target cost ($/target)
 
 ~~**9**~~
 
-![](images/Hawker---2020---A-simplified-economic-model-for-inertial-fusion.pdf-8-0.png)
+![](images/tmpmc0pj5x0.pdf-8-0.png)
 
 10 [2]
 
@@ -602,9 +576,7 @@ electrical power. To explain this dependence, we need to look at the recirculati
 fraction of the total. The correlation between this and LCOE is +0.171, which confirms the instinct
 that the recirculating power must be a small fraction of the total.
 
-(b) Dependence on individual parameters
-
-### Dependence on individual parameters
+#### (b) Dependence on individual parameters
 
 In the following, unless otherwise stated, the default values are: availability = 70%;
 driver lifetime = 50 M shots, which at 0.2 Hz is about 8 years; thermal efficiency = 40%;
@@ -644,7 +616,7 @@ lifetime is as expected, with a longer lifespan naturally being better. It is in
 
 ~~**10**~~
 
-![](images/Hawker---2020---A-simplified-economic-model-for-inertial-fusion.pdf-9-0.png)
+![](images/tmpmc0pj5x0.pdf-9-0.png)
 
 200 400 600
 gain
@@ -684,9 +656,7 @@ that the energy per event has a profound, although indirect, influence on the op
 point for ICF. Higher yield enables lower LCOE through reduced target cost and reduced plant
 cost, while high gain ensures that recirculating power is minimized.
 
-(c) Addition of gain curves
-
-### Addition of gain curves
+#### (c) Addition of gain curves
 
 The first gain curve [1], the limiting gain curve for a spherical, isobaric hot spot fuel configuration,
 given in equation (2.17), replaces gain as an independent parameter with two new physics
@@ -702,7 +672,7 @@ parameters: _μc_, the coupling efficiency, and _A_, the isentrope parameter. Th
 
 50
 
-![](images/Hawker---2020---A-simplified-economic-model-for-inertial-fusion.pdf-10-0.png)
+![](images/tmpmc0pj5x0.pdf-10-0.png)
 
 ~~**11**~~
 
@@ -732,9 +702,7 @@ compromise also depends on the actual cost levels, which in figure 4 remain at t
 Broader exploration of the results shows low-cost design points remain even with the more
 stringent limit on gain.
 
-(d) Minimum cost design point
-
-### Minimum cost design point
+#### (d) Minimum cost design point
 
 We will now return to the scan over all parameters but with the intention of understanding the
 lowest cost design points. Figure 5 shows a histogram of all calculated values for LCOE and
@@ -765,7 +733,7 @@ Rankine cycle and the associated space and infrastructure is required, can be le
 
 ~~**12**~~
 
-![](images/Hawker---2020---A-simplified-economic-model-for-inertial-fusion.pdf-11-0.png)
+![](images/tmpmc0pj5x0.pdf-11-0.png)
 
 50 100 150 200
 gain
@@ -805,16 +773,14 @@ Clearly, design points of this type are worth further exploration, but the autho
 It is the role of a simple model to indicate interesting parts of parameter space, but much more
 detailed study is required to substantiate the findings.
 
-4. Conclusion
-
-## Conclusion
+### 4. Conclusion
 
 The aim of this work was to build a simple model for LCOE of an inertial fusion power plant. The
 core physics has been described in a technology agnostic manner that allows broad application
 across different inertial fusion approaches. The model for the wider system has been built to
 maximize the use of proxies from existing technology, allowing a comparative approach. The
 
-![](images/Hawker---2020---A-simplified-economic-model-for-inertial-fusion.pdf-11-1.png)
+![](images/tmpmc0pj5x0.pdf-11-1.png)
 
 <!-- PAGE:13 -->
 
@@ -855,15 +821,13 @@ To conclude, there remains much to be understood about the ultimate potential of
 fusion to deliver cost competitive electricity, but the results presented here show that it has the
 potential to be a very attractive option.
 
-## Acknowledgements and References
-
 Data accessibility. The source code for the work is included in the electronic supplementary material.
 Competing interests. The author notes that he has a financial interest in First Light Fusion Ltd.
 Funding. I received no funding for this study.
 Acknowledgements. The author would like to thank Dave Chapman and Tom Clayson for reviewing the
 manuscript, and Dave Chapman and David Bryon for helpful conversations whilst building the model.
 
-References
+### References
 
 1. Atzeni S, Meyer-ter-Vehn J. 2004 _The physics of inertial fusion: beam plasma interaction,_
 _hydrodynamics, hot dense matter_ . Oxford, UK: Clarendon Press.
