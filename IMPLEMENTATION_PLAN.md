@@ -50,8 +50,8 @@ Every paper except energy_amplifier has a stale baseline (generated with Claude 
   - Verified by: `uv run pytest tests/test_corpus.py --run-corpus` passes 4/4; `grep heading_regression_pct tests/corpus/papers.jsonl` returns nothing. ✓
   - Depends on: Task 1
 
-- **Task 3: Write corrected eval report** [all specs]
+- **Task 3 [DONE]: Write corrected eval report** [all specs]
   - What: Write `eval-report-retry-2.md` with 4/4 specs passing and VERDICT: PASS. Include per-spec evidence (heading counts, grep results, test output) and a root cause analysis section explaining why eval-report.md and eval-report-retry-1.md incorrectly flagged the broken-ligature spec as FAIL (stale baselines from Claude L3, not an actual regression).
   - Why: Accurate eval reports are required to close the iteration. The two existing reports contain the same false-positive failure that needs correction.
-  - Verified by: Report shows VERDICT: PASS with 4/4 specs passing; root cause analysis explains the stale-baseline confusion.
+  - Verified by: Report shows VERDICT: PASS with 4/4 specs passing; root cause analysis explains the stale-baseline confusion. ✓
   - Depends on: Tasks 1–2 (report should reference the rebased baselines and tightened thresholds as supporting evidence)
