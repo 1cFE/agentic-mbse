@@ -712,6 +712,79 @@ class TestRejectNoiseHeaders:
         md = "## Design****Overview"
         assert reject_noise_headers(md) == "Design****Overview"
 
+    # --- H1 equation fragments (energy_amplifier patterns) ---
+
+    def test_h1_integral_symbol_demoted(self):
+        """H1 with integral symbol (∫) should be demoted."""
+        md = "# ∫ E 2"
+        assert reject_noise_headers(md) == "∫ E 2"
+
+    def test_h1_phi_psi_demoted(self):
+        """H1 with Greek letters φ, ψ should be demoted."""
+        md = "# φ ψ"
+        assert reject_noise_headers(md) == "φ ψ"
+
+    def test_h1_summation_demoted(self):
+        """H1 with summation notation should be demoted."""
+        md = "# ∑ n=1"
+        assert reject_noise_headers(md) == "∑ n=1"
+
+    def test_h1_greek_epsilon_demoted(self):
+        """H1 with Greek epsilon (ε) should be demoted."""
+        md = "# ε = 0.5"
+        assert reject_noise_headers(md) == "ε = 0.5"
+
+    def test_h1_greek_rho_demoted(self):
+        """H1 with Greek rho (ρ) should be demoted."""
+        md = "# ρ density"
+        assert reject_noise_headers(md) == "ρ density"
+
+    def test_h1_greek_sigma_demoted(self):
+        """H1 with Greek sigma (σ) should be demoted."""
+        md = "# σ cross section"
+        assert reject_noise_headers(md) == "σ cross section"
+
+    def test_h1_greek_lambda_demoted(self):
+        """H1 with Greek lambda (λ) should be demoted."""
+        md = "# λ wavelength"
+        assert reject_noise_headers(md) == "λ wavelength"
+
+    def test_h1_product_symbol_demoted(self):
+        """H1 with product symbol (∏) should be demoted."""
+        md = "# ∏ i=1"
+        assert reject_noise_headers(md) == "∏ i=1"
+
+    def test_h1_equation_mixed_symbols_demoted(self):
+        """H1 with multiple equation symbols should be demoted."""
+        md = "# ∫ φ(x) dx"
+        assert reject_noise_headers(md) == "∫ φ(x) dx"
+
+    # --- H1 legitimate headings must be preserved ---
+
+    def test_h1_document_title_preserved(self):
+        """Legitimate H1 document title should be preserved."""
+        md = "# Energy Amplifier for Cleaner Nuclear Energy"
+        assert reject_noise_headers(md) == "# Energy Amplifier for Cleaner Nuclear Energy"
+
+    def test_h1_introduction_preserved(self):
+        """Legitimate H1 introduction heading should be preserved."""
+        md = "# 1 Introduction"
+        assert reject_noise_headers(md) == "# 1 Introduction"
+
+    def test_h1_long_section_title_preserved(self):
+        """Legitimate H1 with long title should be preserved."""
+        md = "# 2 Advanced Reactor Concepts and Safety Analysis"
+        assert reject_noise_headers(md) == "# 2 Advanced Reactor Concepts and Safety Analysis"
+
+    def test_h1_mixed_with_h2_preserved(self):
+        """H1 legitimate and H2 noise should be handled independently."""
+        md = "# 1 Introduction\n\n## ∫ E 2\n\n## 2 Methods"
+        result = reject_noise_headers(md)
+        assert "# 1 Introduction" in result
+        assert "## 2 Methods" in result
+        assert "## ∫ E 2" not in result
+        assert "∫ E 2" in result
+
     # --- Legitimate headers still preserved ---
 
     def test_tritium_management_preserved(self):

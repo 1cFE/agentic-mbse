@@ -520,23 +520,23 @@ _FIGURE_CAPTION_RE = re.compile(
 # Headers that are too short, contain math operators, look like table rows,
 # or are just a number + tiny word (page artifacts from OCR)
 _NOISE_HEADER_RE = re.compile(
-    r"^(#{2,6})\s+(.+)$",
+    r"^(#{1,6})\s+(.+)$",
     re.MULTILINE,
 )
 
 
 def _is_noise_header(header_text: str) -> bool:
-    """Return True if *header_text* (after the ``## `` prefix) looks like noise.
+    """Return True if *header_text* (after the ``# `` prefix) looks like noise.
 
     Noise indicators:
-    - Contains math/science operators: ASCII ``=+[]{}`` or Unicode ``≥≤≈∇∆∑∏µ±×÷→←∞•>~``
+    - Contains math/science operators: ASCII ``=+[]{}`` or Unicode ``≥≤≈∇∆∑∏∫µ±×÷→←∞•>~`` or Greek ``φψερσλ``
     - Contains embedded bold markers (``** **`` or ``****``)
     - Looks like a table row (contains ``|`` or tab characters)
     - Is just a number + short word under 4 chars (page-number artifact)
     - Very short (< 4 chars after stripping the section number prefix)
     """
     text = header_text.strip()
-    if re.search(r"[=+\[\]{}>~≥≤≈∇∆∑∏µ±×÷→←∞•]", text):
+    if re.search(r"[=+\[\]{}>~≥≤≈∇∆∑∏∫µ±×÷→←∞•φψερσλ]", text):
         return True
     # Embedded bold markers from garbled slide transitions
     if "** **" in text or "****" in text:
@@ -554,10 +554,11 @@ def _is_noise_header(header_text: str) -> bool:
 
 
 def reject_noise_headers(md: str) -> str:
-    """Demote ``## ``-style headers back to plain text when they look like noise.
+    """Demote ``# ``-style headers back to plain text when they look like noise.
 
     Targets OCR artifacts: equation fragments, table rows, and
     page-number+word combos that were incorrectly promoted to headers.
+    Applies to all heading levels (H1–H6).
     """
 
     def _maybe_demote(match: re.Match) -> str:
