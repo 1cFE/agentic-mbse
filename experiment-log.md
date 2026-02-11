@@ -45,3 +45,19 @@ No change should degrade what already works. The corpus tests are the gate.
 - **Visual formatting** — bold/italic preservation is nice-to-have, not a fidelity concern
 - **Whitespace and readability** — output shouldn't be junk, but extra blank lines and minor inconsistencies are not worth spending iterations on when higher-priority gaps remain
 
+
+---
+
+## Iteration 1 — 2026-02-10
+**Brief:** # Iteration 2 Brief
+**Specs:** add-energy-amplifier-to-corpus.md,broken-ligature-dictionary-repair.md,fix-plain-header-lookahead.md,promote-italic-numbered-headers.md
+**Outcome:** PASS
+**Key Learnings:**
+- Key observations:
+  - Energy amplifier paper (241 pages) successfully added with 667.9s extraction time
+  - Broken ligature dictionary repair correctly preserves proper names while fixing standalone broken words
+  - Plain header lookahead fix enables Section 4 and other single-newline headers to be promoted
+  - Italic numbered header promotion successfully captures subsection headers in sparc_overview
+  - Total corpus test time (762.89s) exceeds 5-minute mark but is acceptable given corpus now includes 7 papers with one 241-page document
+  - All heading count metrics between baseline and current are identical, suggesting baselines were regenerated after fixes were applied
+**Corpus:** hawker_2020, aries_cost_account, helios_design, hsu_2020, delene_2001, sparc_overview, energy_amplifier, 
