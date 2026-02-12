@@ -148,7 +148,10 @@ class AcademicHeaderDetector:
                     return "#### "  # Sub-subsection (1.1.1) → H4
 
         # Pattern 2: All-caps headers (ABSTRACT, REFERENCES, etc.)
-        if text.isupper() and len(text) < 60:
+        # Guard: Require minimum alphabetic characters to reject sparse-letter fragments
+        # like ", D. M. 2002" (only 2 letters) or "(3P1), 1050–1055." (only 1 letter)
+        alpha_count = sum(c.isalpha() for c in text)
+        if alpha_count >= 4 and text.isupper() and len(text) < 60:
             # Single-word all-caps must be in known set
             words = text.split()
             if len(words) == 1:

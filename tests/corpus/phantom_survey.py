@@ -110,7 +110,9 @@ class InstrumentedHeaderDetector(AcademicHeaderDetector):
                 return result
 
         # Pattern 2: All-caps headers
-        if text.isupper() and len(text) < 60:
+        # Guard: Require minimum alphabetic characters to reject sparse-letter fragments
+        alpha_count = sum(c.isalpha() for c in text)
+        if alpha_count >= 4 and text.isupper() and len(text) < 60:
             words = text.split()
             if len(words) == 1:
                 if text in self._KNOWN_ALLCAPS_HEADERS:

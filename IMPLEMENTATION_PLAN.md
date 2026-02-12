@@ -54,12 +54,17 @@ The corpus regression test (`test_no_quality_regression_vs_baseline`) compares c
   - Pattern 1 phantoms eliminated: absurd section numbers (140, 2020, 5285), footnotes without font_differs
   - Remaining Pattern 1 phantoms: mostly footnotes with periods ("2. Text") that have font_differs=True (may be legitimate)
 
-## Task 3: Fix AcademicHeaderDetector Pattern 2 — minimum alphabetic characters [spec-01]
+## Task 3: Fix AcademicHeaderDetector Pattern 2 — minimum alphabetic characters [spec-01] [DONE]
 
 - **What**: In `pymupdf_backend.py` `__call__()` method (lines 134-143), before the `text.isupper()` check, add: `alpha_count = sum(c.isalpha() for c in text)`. Wrap the existing `if text.isupper() and len(text) < 60:` block with `if alpha_count >= 4:` so Pattern 2 only fires when there are enough real letters.
 - **Why**: Spec 01 requirement — `isupper()` returns True for sparse-letter fragments like ", D. M. 2002" because the only cased characters (D, M) are uppercase. Requiring >= 4 alphabetic characters rejects these.
 - **Verified by**: `uv run pytest tests/ -v`; re-run survey showing sparc_overview page 23 phantom headings eliminated.
 - **Depends on**: Task 1
+- **Results**:
+  - sparc_overview: 19 → 15 phantoms (4 fewer from Pattern 2)
+  - delene_2001: 40 → 32 phantoms (8 fewer from Pattern 2)
+  - Pattern 2 matches: sparc 26→22, delene 28→20
+  - Eliminated sparse-letter fragments: "(3P1), 1050–1055.", "A 357,", "(1999 $M)", "CA 94550"
 
 ## Task 4: Corpus validation after spec-01 fixes + threshold updates [spec-01]
 
