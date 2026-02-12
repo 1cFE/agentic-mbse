@@ -240,12 +240,15 @@ class TestPymupdfBackend:
         assert result.success is True
         assert result.backend_used == "pymupdf"
 
-        # Verify table_strategy and page_chunks were passed
-        # Note: hdr_info is not passed - we use default font-size based detection
+        # Verify table_strategy, page_chunks, and hdr_info were passed
         call_kwargs = mock_to_markdown.call_args[1]
         assert call_kwargs["table_strategy"] == "lines"
         assert call_kwargs["page_chunks"] is True
-        assert "hdr_info" not in call_kwargs  # Using default detector
+        # Verify custom header detector is used
+        assert "hdr_info" in call_kwargs
+        from agentic_mbse.extraction.pymupdf_backend import AcademicHeaderDetector
+
+        assert isinstance(call_kwargs["hdr_info"], AcademicHeaderDetector)
 
     def test_extract_applies_postprocess(self, tmp_path, monkeypatch):
         from agentic_mbse.extraction import pymupdf_backend
