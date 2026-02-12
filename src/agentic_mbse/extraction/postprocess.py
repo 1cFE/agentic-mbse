@@ -314,6 +314,8 @@ def _is_noise_header(header_text: str) -> bool:
     - Looks like a table row (contains ``|`` or tab characters)
     - Is just a number + short word under 4 chars (page-number artifact)
     - Very short (< 4 chars after stripping the section number prefix)
+    - Report/figure labels (e.g., "ORNL 99-1407 EFG", "DOE/ER-1234")
+    - Numbered sentences that reference figures/tables (e.g., "12. Figure 11 excludes...")
     """
     text = header_text.strip()
     if re.search(r"[=+\[\]{}>~≥≤≈∇∆∑∏µ±×÷→←∞•]", text):
@@ -330,6 +332,40 @@ def _is_noise_header(header_text: str) -> bool:
     title_only = re.sub(r"^\d+(?:\.\d+)*\s*", "", text).strip()
     if title_only and len(title_only) < 4:
         return True
+
+    # Report/figure labels: "ORNL 99-1407 EFG", "DOE/ER-1234", "ANL-2020-42"
+    # Pattern 1: 2-5 uppercase letters, space/slash/hyphen, then digits with hyphens/slashes
+    if re.match(r"^[A-Z]{2,5}[\s/-]+\d{2,}[-/]\d+", text):
+        return True
+    # Pattern 2: "DOE/ER-1234" where there's a second acronym after slash
+    if re.match(r"^[A-Z]{2,5}/[A-Z]{2,5}-\d+", text):
+        return True
+
+    # Numbered sentences referencing figures/tables: "12. Figure 11 excludes..."
+    # These start with a number, then mention Figure/Fig./Table/Equation
+    if re.match(r"^\d+\.\s+(Figure|Fig\.|Table|Equation)\s+\d", text, re.IGNORECASE):
+        return True
+
+    # Reference entries: numbered items with bibliographic indicators
+    # Pattern: "N. Title..." where N is 1-3 digits
+    if re.match(r"^\d{1,3}\.\s+", text):
+        # Check for bibliographic indicators
+        # - Journal abbreviations: "Nucl. Fusion", "Phys. Rev.", "J. Appl. Phys."
+        if re.search(r"\b[A-Z][a-z]*\.\s+[A-Z]", text):
+            return True
+        # - Author initials: "J. Smith", "R. W. Moir"
+        if re.search(r"\b[A-Z]\.\s+[A-Z]", text):
+            return True
+        # - Publisher names: "U.S. Department", "Oak Ridge"
+        if re.search(r"\bU\.S\.\s+(Department|Energy)", text):
+            return True
+        # - Conference/institution indicators
+        if re.search(r"\b(presented at|University of|National Laboratory)", text, re.IGNORECASE):
+            return True
+        # - Year in parentheses: "(1998)", "(2020)"
+        if re.search(r"\(\d{4}\)", text):
+            return True
+
     return False
 
 

@@ -158,8 +158,10 @@ class AcademicHeaderDetector:
                 if text in self._KNOWN_ALLCAPS_HEADERS:
                     return "## "
             elif len(words) <= 6:
-                # Multi-word all-caps likely a section header
-                return "## "
+                # Multi-word all-caps: require font differentiation
+                # Body-font all-caps are likely reference entries (e.g., "AHN, J.-W., GRAY, T., et al. 2017")
+                if font_differs:
+                    return "## "
 
         # Pattern 3: Title on first page (largest font)
         # This is conservative - only promote if significantly larger than body (>= 14pt)

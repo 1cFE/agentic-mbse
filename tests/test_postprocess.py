@@ -585,9 +585,80 @@ class TestRejectNoiseHeaders:
         md = "## 1000 shots/second** **at 3 MJ"
         assert reject_noise_headers(md) == "1000 shots/second** **at 3 MJ"
 
+    # --- Report/figure labels ---
+
+    def test_ornl_report_label_demoted(self):
+        """ORNL figure labels like 'ORNL 99-1407 EFG' should be demoted."""
+        md = "## ORNL 99-1407 EFG"
+        assert reject_noise_headers(md) == "ORNL 99-1407 EFG"
+
+    def test_doe_report_label_demoted(self):
+        """DOE report labels should be demoted."""
+        md = "## DOE/ER-1234"
+        assert reject_noise_headers(md) == "DOE/ER-1234"
+
+    def test_anl_report_label_demoted(self):
+        """ANL report labels should be demoted."""
+        md = "## ANL-2020-42"
+        assert reject_noise_headers(md) == "ANL-2020-42"
+
+    # --- Numbered sentences referencing figures/tables ---
+
+    def test_numbered_figure_reference_demoted(self):
+        """Numbered sentences like '12. Figure 11 excludes...' should be demoted."""
+        md = "## 12. Figure 11 excludes the cost"
+        assert reject_noise_headers(md) == "12. Figure 11 excludes the cost"
+
+    def test_numbered_table_reference_demoted(self):
+        """Numbered table references should be demoted."""
+        md = "## 5. Table 3 shows the results"
+        assert reject_noise_headers(md) == "5. Table 3 shows the results"
+
+    def test_numbered_equation_reference_demoted(self):
+        """Numbered equation references should be demoted."""
+        md = "## 8. Equation 2 defines the relationship"
+        assert reject_noise_headers(md) == "8. Equation 2 defines the relationship"
+
     def test_embedded_bold_no_space_demoted(self):
         md = "## Design****Overview"
         assert reject_noise_headers(md) == "Design****Overview"
+
+    # --- Reference entries (bibliographic citations) ---
+
+    def test_reference_with_journal_abbrev_demoted(self):
+        """Reference with journal abbreviation should be demoted."""
+        md = "## 1. Control. Fusion 51 (12), 124017."
+        assert reject_noise_headers(md) == "1. Control. Fusion 51 (12), 124017."
+
+    def test_reference_with_author_initials_demoted(self):
+        """Reference with author initials should be demoted."""
+        md = "## 5. J.G. Delene and C.R. Hudson, Cost Estimate Guidelines"
+        assert reject_noise_headers(md) == "5. J.G. Delene and C.R. Hudson, Cost Estimate Guidelines"
+
+    def test_reference_with_us_department_demoted(self):
+        """Reference with U.S. Department should be demoted."""
+        md = "## 2. Annual Energy Outlook 1998, U.S. Department of Energy"
+        assert reject_noise_headers(md) == "2. Annual Energy Outlook 1998, U.S. Department of Energy"
+
+    def test_reference_with_university_demoted(self):
+        """Reference with university name should be demoted."""
+        md = "## 17. Personal communication from R. Miller, University of California"
+        assert reject_noise_headers(md) == "17. Personal communication from R. Miller, University of California"
+
+    def test_reference_with_year_in_parens_demoted(self):
+        """Reference with year in parentheses should be demoted."""
+        md = "## 10. Advanced Design Nuclear Power Plants (2001)"
+        assert reject_noise_headers(md) == "10. Advanced Design Nuclear Power Plants (2001)"
+
+    def test_legitimate_numbered_section_preserved(self):
+        """Legitimate section 1-10 without bibliographic indicators preserved."""
+        md = "## 1. Introduction"
+        assert reject_noise_headers(md) == "## 1. Introduction"
+
+    def test_legitimate_subsection_preserved(self):
+        """Subsections like '4.1 Methods' should be preserved."""
+        md = "## 4.1 Research Methods"
+        assert reject_noise_headers(md) == "## 4.1 Research Methods"
 
     # --- Legitimate headers still preserved ---
 
