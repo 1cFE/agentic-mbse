@@ -151,6 +151,50 @@ class TestPromotePlainHeaders:
         result = promote_plain_headers(md)
         assert "##" not in result
 
+    def test_rejects_high_section_number(self):
+        """Addresses like '5285 Port Royal Road' should NOT be promoted (year numbers, etc)."""
+        md = "\n\n5285 Port Royal Road\n\n"
+        result = promote_plain_headers(md)
+        assert "##" not in result
+        # Should preserve original text
+        assert "5285 Port Royal Road" in result
+
+    def test_rejects_year_as_section(self):
+        """Year numbers like '2050 The capital-related...' should NOT be promoted."""
+        md = "\n\n2050 The capital-related portion\n\n"
+        result = promote_plain_headers(md)
+        assert "##" not in result
+        assert "2050 The capital-related portion" in result
+
+    def test_rejects_figure_table_caption(self):
+        """Figure/Table references like '52 Table 2.2 - Averaged...' should NOT be promoted."""
+        test_cases = [
+            "\n\n52 Table 2.2 - Averaged cross sections\n\n",
+            "\n\n12 Figure 11 excludes the cost\n\n",
+            "\n\n5 Fig. 2 shows the results\n\n",
+            "\n\n8 Equation 3 demonstrates\n\n",
+        ]
+        for md in test_cases:
+            result = promote_plain_headers(md)
+            assert "##" not in result, f"Failed for: {md.strip()}"
+
+    def test_valid_subsection_still_promoted(self):
+        """Subsections like '2.1 Background' should still work."""
+        md = "\n\n2.1 Background\n\n"
+        result = promote_plain_headers(md)
+        assert "### 2.1 Background" in result
+
+    def test_legitimate_sections_below_100_still_promoted(self):
+        """Legitimate section numbers ≤ 99 should still be promoted."""
+        test_cases = [
+            ("\n\n21 Account Summary\n\n", "## 21 Account Summary"),
+            ("\n\n99 Final Chapter\n\n", "## 99 Final Chapter"),
+            ("\n\n1 Introduction\n\n", "## 1 Introduction"),
+        ]
+        for md, expected in test_cases:
+            result = promote_plain_headers(md)
+            assert expected in result, f"Failed for: {md.strip()}"
+
 
 class TestIsTocLine:
     def test_slash_year_pattern(self):

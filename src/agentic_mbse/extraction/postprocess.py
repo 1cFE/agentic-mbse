@@ -103,7 +103,20 @@ def _replace_plain_header(match: re.Match) -> str:
     title = match.group(2).strip()
     if _is_toc_line(title):
         return match.group(0)
-    hashes = "#" * _header_depth(section_num)
+
+    # Cap section numbers: reject top-level sections > 99 (year numbers, addresses)
+    depth = _header_depth(section_num)
+    if depth == 2:  # depth==2 means top-level (##)
+        # Extract the leading integer from section_num
+        leading_num = section_num.split(".")[0]
+        if int(leading_num) > 99:
+            return match.group(0)  # Don't promote
+
+    # Reject figure/table/equation references
+    if re.match(r"^(?:Figure|Fig\.|Table|Equation)\s", title):
+        return match.group(0)  # Don't promote
+
+    hashes = "#" * depth
     return f"{hashes} {section_num} {title}"
 
 

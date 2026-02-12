@@ -88,7 +88,7 @@ The corpus regression test (`test_no_quality_regression_vs_baseline`) compares c
   - All extraction pipeline tests pass (test_postprocess.py, test_quality_gates.py)
   - Linting passes (ruff check, ruff format)
 
-## Task 5: Fix postprocess `promote_plain_headers` — cap section numbers and reject figure/table refs [spec-02]
+## Task 5: Fix postprocess `promote_plain_headers` — cap section numbers and reject figure/table refs [spec-02] [DONE]
 
 - **What**: In `postprocess.py`, modify `_replace_plain_header()` (line 101-107):
   1. Parse `section_num`, compute depth. If `depth == 1` and `int(section_num) > 99`, return `match.group(0)` (don't promote).
@@ -97,6 +97,17 @@ The corpus regression test (`test_no_quality_regression_vs_baseline`) compares c
 - **Why**: Spec 02 requirement — `_PLAIN_HEADER_RE` matches "5285 Port Royal Road", "2050 The capital-related portion", "52 Table 2.2 - Averaged cross sections" as section headers.
 - **Verified by**: `uv run pytest tests/test_postprocess.py -v` (all existing tests pass); new unit tests for the guards.
 - **Depends on**: Task 4 (spec 02 measures "no regressions from values after spec 01")
+- **Results**:
+  - Modified `_replace_plain_header()` function to add two guards before promotion
+  - Guard 1: Reject top-level sections (depth==2 → ##) with numbers > 99
+  - Guard 2: Reject titles starting with "Figure", "Fig.", "Table", or "Equation"
+  - Added 6 new unit tests covering all phantom patterns from spec
+  - All 102 postprocess tests pass; all 24 quality_gates tests pass
+  - Linting passes (ruff check, ruff format)
+  - Implementation notes:
+    - Used `depth == 2` check (not `depth == 1`) because `_header_depth()` returns markdown level (## = 2)
+    - Computed depth once and reused for both guard and hash generation
+    - Used `re.match()` for Figure/Table detection (more efficient than startswith for multi-pattern OR)
 
 ## Task 6: Strengthen `_is_noise_header` for structural phantoms [spec-02]
 
