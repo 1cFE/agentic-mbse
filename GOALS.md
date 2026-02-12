@@ -2,14 +2,28 @@
 
 We are building an end-to-end PDF-to-markdown pipeline that maximizes **extracted semantic fidelity** — the degree to which the output faithfully represents the source document's meaning and structure. Ground truth doesn't exist (if it did, we wouldn't need this). Goals stay qualitative because the IterationSpecAgent's job is to investigate the corpus and produce specific, measurable specs.
 
+## Overarching Goal: Robust Generalization
+
+The pipeline must work well on papers it has never seen. This is the most important property of the system. A fix that improves one paper but requires another fix for the next paper is not converging — it's accumulating maintenance burden.
+
+**Think about it this way:** if someone drops 50 new PDFs from different publishers, journals, and decades into the corpus tomorrow, how many of them will extract well without code changes? That number is the real measure of pipeline quality. Every improvement should increase it.
+
+This means:
+- Fixes that leverage the extraction tools' built-in capabilities (library parameters, ML models, backend selection) are high-value because they generalize by design
+- Fixes that add format-specific pattern matching (this publisher uses italic headers, that paper uses bold-allcaps) are low-value because each new format needs another pattern
+- When the extraction layer already has the information needed (font size, weight, position) but produces bad output, the right fix is upstream — adjusting how the tool is called, not patching its output with string manipulation
+- The codebase already contains multiple extraction backends, ML-based table detection, vision-based structure detection, and quality gates. Investigate what's available and underutilized before writing new code.
+
 ## Priority 1: Document Structure
 
-Sections and headings must faithfully represent the PDF's logical hierarchy. A missed heading means a lost section boundary downstream. A phantom heading pollutes the structure. The mapping from PDF formatting (bold, font-size, numbering, all-caps) to markdown heading levels must be reliable across academic paper styles.
+Sections and headings must faithfully represent the PDF's logical hierarchy. A missed heading means a lost section boundary downstream. A phantom heading pollutes the structure.
 
 - Numbered headings (1.1, 1.2.3) should preserve hierarchy
 - Unnumbered headings (bold, all-caps, font-size changes) should be promoted to proper markdown headings
 - Table of contents entries should NOT be promoted to headings
 - No phantom headings — every heading in output should correspond to a real section in the PDF
+
+The extraction tools (pymupdf4llm, Docling) have font metadata, layout analysis, and ML models that can identify headings. The question is whether we're using them well, not whether we can regex-match another formatting variant after the fact.
 
 ## Priority 2: Text Content Fidelity
 

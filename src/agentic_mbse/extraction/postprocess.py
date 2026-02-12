@@ -50,55 +50,8 @@ _APPENDIX_HEADER_RE = re.compile(
 # Matches lines like "1 Executive Summary" or "1. Introduction" that are surrounded by blank lines
 # and do NOT look like TOC entries (no trailing page number, no dot leaders).
 # The \.? allows optional trailing period (e.g., "1." or "1.2.")
-# The lookahead accepts either \n\n (blank line) OR \n[A-Z] (body text starting with uppercase)
 _PLAIN_HEADER_RE = re.compile(
-    r"(?<=\n\n)(\d+(?:\.\d+)*)\.?\s+([A-Z][A-Za-z].{2,80})(?=\n\n|\n[A-Z])",
-)
-
-# Unnumbered standalone bold lines that look like section headings.
-# Matches: **Site Improvements and Facilities, Account 21.01**
-# Also matches bold with trailing text: **Title Here** - Description text
-# Does NOT match: **Table 5...**, **Figure 1...**, short labels, split bold
-_UNNUMBERED_BOLD_HEADER_RE = re.compile(
-    r"^\*\*([A-Z][^*]{14,})\*\*\s*$",
-    re.MULTILINE,
-)
-
-# Same pattern but with trailing text after the bold:
-# **First Wall and Blanket, Account 22.01.01** - This subsystem is the primary
-_UNNUMBERED_BOLD_HEADER_WITH_BODY_RE = re.compile(
-    r"^\*\*([A-Z][^*]{14,})\*\*\s*[-–—]\s*(.+)$",
-    re.MULTILINE,
-)
-
-# All-caps standalone lines between blank lines that look like section headings.
-# Matches: ABSTRACT, REFERENCES, CONTENTS, INTRODUCTION, etc.
-# Must be 4-60 chars, all uppercase letters/spaces/punctuation, between blank lines.
-_ALLCAPS_HEADER_RE = re.compile(
-    r"(?<=\n\n)([A-Z][A-Z &/,]{3,59})(?=\n\n)",
-)
-
-# Bold all-caps standalone lines between blank lines: **ABSTRACT**, **CONTENTS**
-# Catches short bold all-caps that fall through both _ALLCAPS_HEADER_RE (no bold)
-# and _UNNUMBERED_BOLD_HEADER_RE (requires 15+ chars)
-_BOLD_ALLCAPS_HEADER_RE = re.compile(
-    r"(?<=\n\n)\*\*([A-Z][A-Z ]{2,59})\*\*(?=\n\n)",
-)
-
-# Italic numbered section headers: 4.1. _Full-performance H-mode discharge_
-# Matches numbered section headers with italic formatting between blank lines.
-# Pattern: {number}.{subnumber}. _Title text with uppercase start_
-_ITALIC_NUMBERED_HEADER_RE = re.compile(
-    r"(?<=\n\n)(\d+\.\d+)\.?\s+_([A-Z][^_]+)_(?=\n\n)",
-)
-
-# Italic-wrapped numbered section headers: _3.1. The stellarator equilibrium_
-# Matches section headers where the number is INSIDE italic markers.
-# Pattern: _N.M. Title text_ or _N.M.K. Title text_ (handles 2-3 level depth)
-# Must be between blank lines to avoid false positives.
-_ITALIC_WRAPPED_NUMBERED_HEADER_RE = re.compile(
-    r"(?<=\n\n)_(\d+(?:\.\d+)+)\.\s+(.+?)_(?=\n\n)",
-    re.DOTALL,  # Allow . to match newlines for multi-line continuations
+    r"(?<=\n\n)(\d+(?:\.\d+)*)\.?\s+([A-Z][A-Za-z].{2,80})(?=\n\n)",
 )
 
 # Headers with redundant bold: ## **1 Introduction** → ## 1 Introduction
@@ -154,140 +107,6 @@ def _replace_plain_header(match: re.Match) -> str:
     return f"{hashes} {section_num} {title}"
 
 
-def _is_bold_heading_candidate(text: str) -> bool:
-    """Return True if bold text looks like a section heading, not a data label.
-
-    Rejects:
-    - Table/figure captions (``Table 5...``, ``Figure 1...``)
-    - Definitions with equals signs (``LSA = 4``)
-    - Pure punctuation/symbols (``++++++++``)
-    - Split bold patterns that were already handled (contains ``** **``)
-    """
-    t = text.strip()
-    # Table/figure captions
-    if re.match(r"^(Table|Figure|Fig\.?|Note)\s", t, re.IGNORECASE):
-        return False
-    # Contains equals sign (definition, not heading)
-    if "=" in t:
-        return False
-    # Contains internal bold split markers
-    if "** **" in t or "****" in t:
-        return False
-    # Mostly non-alphanumeric (separators like ++++++)
-    alnum = sum(1 for c in t if c.isalnum())
-    if alnum < len(t) * 0.5:
-        return False
-    return True
-
-
-def _replace_unnumbered_bold_header(match: re.Match) -> str:
-    title = match.group(1).strip()
-    if not _is_bold_heading_candidate(title):
-        return match.group(0)
-    return f"### {title}"
-
-
-def _replace_unnumbered_bold_header_with_body(match: re.Match) -> str:
-    title = match.group(1).strip()
-    body = match.group(2).strip()
-    if not _is_bold_heading_candidate(title):
-        return match.group(0)
-    return f"### {title}\n\n{body}"
-
-
-def _is_allcaps_heading_candidate(text: str) -> bool:
-    """Return True if all-caps text looks like a section heading.
-
-    Rejects:
-    - TOC entries (dot leaders, trailing page numbers)
-    - Pure abbreviations (all consonants, <5 chars)
-    - Common non-heading all-caps patterns
-    """
-    t = text.strip()
-    if _is_toc_line(t):
-        return False
-    # Must contain at least one space or be a known single-word heading
-    known_single_word = {
-        "ABSTRACT",
-        "CONTENTS",
-        "REFERENCES",
-        "ACKNOWLEDGMENTS",
-        "ACKNOWLEDGEMENTS",
-        "INTRODUCTION",
-        "CONCLUSION",
-        "CONCLUSIONS",
-        "APPENDIX",
-        "BIBLIOGRAPHY",
-        "GLOSSARY",
-        "ACRONYMS",
-        "SUMMARY",
-    }
-    if " " not in t and t not in known_single_word:
-        return False
-    return True
-
-
-def _replace_allcaps_header(match: re.Match) -> str:
-    title = match.group(1).strip()
-    if not _is_allcaps_heading_candidate(title):
-        return match.group(0)
-    # Title-case the heading for readability
-    return f"## {title.title()}"
-
-
-def _is_bold_allcaps_heading_candidate(text: str) -> bool:
-    """Return True if bold all-caps text looks like a section heading.
-
-    Uses the same logic as _is_allcaps_heading_candidate but for bold patterns.
-    Rejects TOC entries and requires either spaces or known single-word headings.
-    """
-    return _is_allcaps_heading_candidate(text)
-
-
-def _replace_bold_allcaps_header(match: re.Match) -> str:
-    title = match.group(1).strip()
-    if not _is_bold_allcaps_heading_candidate(title):
-        return match.group(0)
-    # Title-case the heading for readability (matches promote_allcaps_headers)
-    return f"## {title.title()}"
-
-
-def _replace_italic_numbered_header(match: re.Match) -> str:
-    """Replace italic numbered header with markdown heading.
-
-    Converts: 4.1. _Full-performance H-mode discharge_
-    To: ### 4.1 Full-performance H-mode discharge
-    """
-    section_num = match.group(1)
-    title = match.group(2).strip()
-    hashes = "#" * _header_depth(section_num)
-    return f"{hashes} {section_num} {title}"
-
-
-def _replace_italic_wrapped_numbered_header(match: re.Match) -> str:
-    """Replace italic-wrapped numbered header with markdown heading.
-
-    Converts: _3.1. The stellarator equilibrium_
-    To: ### 3.1 The stellarator equilibrium
-
-    Handles multi-line continuations:
-    _3.1. Scoping studies, heating and fueling, and dynamic_
-    _accessibility_
-    → ### 3.1 Scoping studies, heating and fueling, and dynamic accessibility
-    """
-    section_num = match.group(1)
-    title = match.group(2).strip()
-
-    # Clean up multi-line continuations (remove embedded italic markers and newlines)
-    # Pattern: "text_\n_text" → "text text"
-    title = re.sub(r"_\s*\n\s*_", " ", title)
-    # Remove any remaining newlines
-    title = re.sub(r"\s*\n\s*", " ", title)
-
-    hashes = "#" * _header_depth(section_num)
-    return f"{hashes} {section_num} {title}"
-
-
 def promote_bold_headers(md: str) -> str:
     """Convert standalone bold lines matching numbered section patterns to markdown headers.
 
@@ -316,78 +135,6 @@ def promote_plain_headers(md: str) -> str:
     page number, no dot leaders).
     """
     return _PLAIN_HEADER_RE.sub(_replace_plain_header, md)
-
-
-def promote_unnumbered_bold_headers(md: str) -> str:
-    """Promote standalone bold lines without section numbers to ``###`` headers.
-
-    Handles:
-    - ``**Site Improvements and Facilities, Account 21.01**`` → ``### Site Improvements...``
-    - ``**Plasma Confinement, Account 22.02** - Description`` → ``### Plasma Confinement...``
-
-    Does NOT match:
-    - ``**Table 5. Comparison...**`` — table captions
-    - ``**LSA = 4** Denotes...`` — definitions
-    - Short bold labels (``**MW**``, ``**Source**``)
-    """
-    # Handle bold-with-body first (more specific pattern)
-    md = _UNNUMBERED_BOLD_HEADER_WITH_BODY_RE.sub(_replace_unnumbered_bold_header_with_body, md)
-    # Then standalone bold lines
-    md = _UNNUMBERED_BOLD_HEADER_RE.sub(_replace_unnumbered_bold_header, md)
-    return md
-
-
-def promote_allcaps_headers(md: str) -> str:
-    """Promote standalone all-caps lines to ``##`` headers.
-
-    Handles: ``ABSTRACT``, ``REFERENCES``, ``LIST OF FIGURES``, etc.
-    Must be between blank lines and not look like TOC entries.
-    """
-    return _ALLCAPS_HEADER_RE.sub(_replace_allcaps_header, md)
-
-
-def promote_bold_allcaps_headers(md: str) -> str:
-    """Promote bold all-caps standalone lines to ``##`` headers.
-
-    Handles: ``**ABSTRACT**``, ``**CONTENTS**``, ``**ACRONYMS**``, etc.
-    Catches short bold all-caps headings that fall through both:
-    - ``_ALLCAPS_HEADER_RE`` (requires no bold markers)
-    - ``_UNNUMBERED_BOLD_HEADER_RE`` (requires 15+ chars)
-
-    Must be between blank lines and not look like TOC entries or abbreviations.
-    """
-    return _BOLD_ALLCAPS_HEADER_RE.sub(_replace_bold_allcaps_header, md)
-
-
-def promote_italic_numbered_headers(md: str) -> str:
-    """Promote italic numbered section headers to markdown headings.
-
-    Handles: ``4.1. _Full-performance H-mode discharge_`` → ``### 4.1 Full-performance H-mode discharge``
-
-    The pattern matches numbered subsection headers with italic formatting
-    that appear between blank lines. Heading level is determined by the
-    section number depth (e.g., 4.1 has 1 dot → ###).
-    """
-    return _ITALIC_NUMBERED_HEADER_RE.sub(_replace_italic_numbered_header, md)
-
-
-def promote_italic_wrapped_numbered_headers(md: str) -> str:
-    """Promote italic-wrapped numbered section headers to markdown headings.
-
-    Handles: ``_3.1. The stellarator equilibrium_`` → ``### 3.1 The stellarator equilibrium``
-
-    This variant handles headers where the section number is INSIDE the italic markers,
-    as opposed to ``promote_italic_numbered_headers()`` which handles numbers OUTSIDE.
-
-    Also handles multi-line wrapped continuations:
-    ``_3.1. Scoping studies, heating and fueling, and dynamic_``
-    ``_accessibility_``
-    → ``### 3.1 Scoping studies, heating and fueling, and dynamic accessibility``
-
-    The pattern matches numbered section headers (2+ levels: N.M or N.M.K) between
-    blank lines. Heading level is determined by section number depth.
-    """
-    return _ITALIC_WRAPPED_NUMBERED_HEADER_RE.sub(_replace_italic_wrapped_numbered_header, md)
 
 
 def clean_header_artifacts(md: str) -> str:
@@ -524,38 +271,6 @@ def repair_ligatures(md: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# 5b. Broken ligature dictionary repair
-# ---------------------------------------------------------------------------
-
-# Dictionary of broken ligatures where PyMuPDF drops the second character
-# of fi/fl ligatures (font-encoding issues)
-_BROKEN_LIGATURE_DICT: dict[str, str] = {
-    "feld": "field",
-    "confnement": "confinement",
-    "efciency": "efficiency",
-    "coefcient": "coefficient",
-}
-
-# Build regex pattern with word boundaries to avoid false positives
-_BROKEN_LIGATURE_RE = re.compile(
-    r"\b(" + "|".join(re.escape(k) for k in _BROKEN_LIGATURE_DICT) + r")\b"
-)
-
-
-def repair_broken_ligatures(md: str) -> str:
-    """Repair broken ligatures where PyMuPDF drops the second character.
-
-    Some PDFs have font encodings where PyMuPDF drops the second character
-    of fi/fl ligatures, producing broken words like "feld" (field),
-    "confnement" (confinement), "efciency" (efficiency), etc.
-
-    Uses a dictionary of known broken→fixed word pairs with whole-word matching
-    to avoid false positives (e.g., preserves author names like "Cosfeld").
-    """
-    return _BROKEN_LIGATURE_RE.sub(lambda m: _BROKEN_LIGATURE_DICT[m.group()], md)
-
-
-# ---------------------------------------------------------------------------
 # 6. Figure caption promotion
 # ---------------------------------------------------------------------------
 
@@ -572,23 +287,23 @@ _FIGURE_CAPTION_RE = re.compile(
 # Headers that are too short, contain math operators, look like table rows,
 # or are just a number + tiny word (page artifacts from OCR)
 _NOISE_HEADER_RE = re.compile(
-    r"^(#{1,6})\s+(.+)$",
+    r"^(#{2,6})\s+(.+)$",
     re.MULTILINE,
 )
 
 
 def _is_noise_header(header_text: str) -> bool:
-    """Return True if *header_text* (after the ``# `` prefix) looks like noise.
+    """Return True if *header_text* (after the ``## `` prefix) looks like noise.
 
     Noise indicators:
-    - Contains math/science operators: ASCII ``=+[]{}`` or Unicode ``≥≤≈∇∆∑∏∫µ±×÷→←∞•>~`` or Greek ``φψερσλ``
+    - Contains math/science operators: ASCII ``=+[]{}`` or Unicode ``≥≤≈∇∆∑∏µ±×÷→←∞•>~``
     - Contains embedded bold markers (``** **`` or ``****``)
     - Looks like a table row (contains ``|`` or tab characters)
     - Is just a number + short word under 4 chars (page-number artifact)
     - Very short (< 4 chars after stripping the section number prefix)
     """
     text = header_text.strip()
-    if re.search(r"[=+\[\]{}>~≥≤≈∇∆∑∏∫µ±×÷→←∞•φψερσλ]", text):
+    if re.search(r"[=+\[\]{}>~≥≤≈∇∆∑∏µ±×÷→←∞•]", text):
         return True
     # Embedded bold markers from garbled slide transitions
     if "** **" in text or "****" in text:
@@ -606,11 +321,10 @@ def _is_noise_header(header_text: str) -> bool:
 
 
 def reject_noise_headers(md: str) -> str:
-    """Demote ``# ``-style headers back to plain text when they look like noise.
+    """Demote ``## ``-style headers back to plain text when they look like noise.
 
     Targets OCR artifacts: equation fragments, table rows, and
     page-number+word combos that were incorrectly promoted to headers.
-    Applies to all heading levels (H1–H6).
     """
 
     def _maybe_demote(match: re.Match) -> str:
@@ -660,16 +374,10 @@ def postprocess(md: str, images_dir: Path | None = None) -> str:
     md = strip_running_headers(md)
     md = promote_bold_headers(md)
     md = promote_plain_headers(md)
-    md = promote_italic_numbered_headers(md)
-    md = promote_italic_wrapped_numbered_headers(md)
-    md = promote_unnumbered_bold_headers(md)
-    md = promote_bold_allcaps_headers(md)
-    md = promote_allcaps_headers(md)
     md = clean_header_artifacts(md)
     md = reject_noise_headers(md)
     if images_dir is not None:
         md = normalize_image_paths(md, images_dir)
     md = repair_ligatures(md)
-    md = repair_broken_ligatures(md)
     md = promote_figure_captions(md)
     return md
