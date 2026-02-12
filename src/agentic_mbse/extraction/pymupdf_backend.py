@@ -119,11 +119,27 @@ class AcademicHeaderDetector:
             sec_num = m.group(1)
             title_text = m.group(2)
 
+            # Map section depth to heading level
+            depth = sec_num.count(".") + 1
+
+            # Guard 1: Reject absurd top-level section numbers (e.g., year 2020, address 5285)
+            # Real academic papers don't have section "140" or "2020"
+            if depth == 1 and int(sec_num) > 99:
+                return ""
+
+            # Guard 2: Distinguish footnotes from real section headers
+            # For single-digit top-level sections without a trailing period,
+            # require font_differs to reject footnotes like "1 The heat produced..."
+            # Exception: if the original text has "1. Title" (with period), allow it
+            has_period = bool(re.match(r"^\d+\.\s", text))
+            if depth == 1 and int(sec_num) <= 9 and not has_period:
+                # Footnotes use body font; real section headers differ
+                if not font_differs:
+                    return ""
+
             # Require either font differentiation OR title starts with capital letter
             # (some papers use same font for headers but rely on capitalization)
             if font_differs or (title_text and title_text[0].isupper()):
-                # Map section depth to heading level
-                depth = sec_num.count(".") + 1
                 if depth == 1:
                     return "## "  # Top-level section (1, 2, 3) → H2
                 elif depth == 2:

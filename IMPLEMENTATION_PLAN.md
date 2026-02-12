@@ -40,7 +40,7 @@ The corpus regression test (`test_no_quality_regression_vs_baseline`) compares c
   - All Pattern 2 phantoms in sparc_overview had `font_differs=False`
   - energy_amplifier (241 pages) skipped due to processing time; sparc+delene provide sufficient evidence
 
-## Task 2: Fix AcademicHeaderDetector Pattern 1 — cap section numbers and require font_differs for footnotes [spec-01]
+## Task 2: Fix AcademicHeaderDetector Pattern 1 — cap section numbers and require font_differs for footnotes [spec-01] [DONE]
 
 - **What**: In `pymupdf_backend.py` `__call__()` method (lines 114-132), add two guards inside the Pattern 1 branch:
   1. After extracting `sec_num` and computing `depth`, if `depth == 1` and `int(sec_num) > 99`, return `""` (reject absurd top-level numbers like 2020, 5285).
@@ -48,6 +48,11 @@ The corpus regression test (`test_no_quality_regression_vs_baseline`) compares c
 - **Why**: Spec 01 requirement — Pattern 1 treats year numbers (2020) and footnotes (1, 13) as section numbers. The cap eliminates year numbers; the font_differs guard eliminates footnotes.
 - **Verified by**: `uv run pytest tests/ -v` (all unit tests pass); re-run Task 1 script showing reduced phantom count for sparc_overview and energy_amplifier.
 - **Depends on**: Task 1 (to have before counts for comparison)
+- **Results**:
+  - sparc_overview: 54 → 19 phantoms (65% reduction)
+  - delene_2001: 47 → 40 phantoms (15% reduction)
+  - Pattern 1 phantoms eliminated: absurd section numbers (140, 2020, 5285), footnotes without font_differs
+  - Remaining Pattern 1 phantoms: mostly footnotes with periods ("2. Text") that have font_differs=True (may be legitimate)
 
 ## Task 3: Fix AcademicHeaderDetector Pattern 2 — minimum alphabetic characters [spec-01]
 
