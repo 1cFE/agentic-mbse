@@ -287,7 +287,7 @@ _FIGURE_CAPTION_RE = re.compile(
 # Headers that are too short, contain math operators, look like table rows,
 # or are just a number + tiny word (page artifacts from OCR)
 _NOISE_HEADER_RE = re.compile(
-    r"^(#{2,6})\s+(.+)$",
+    r"^(#{1,6})\s+(.+)$",
     re.MULTILINE,
 )
 

@@ -559,6 +559,49 @@ class TestRejectNoiseHeaders:
         md = "## Overview"
         assert reject_noise_headers(md) == "## Overview"
 
+    # --- H1 noise rejection ---
+
+    def test_h1_math_symbol_demoted(self):
+        """H1 headers with math symbols should be demoted (energy_amplifier use case)."""
+        md = "# ∫ E·dl = 0"
+        assert reject_noise_headers(md) == "∫ E·dl = 0"
+
+    def test_h1_equation_fragment_demoted(self):
+        """H1 equation fragments with equals signs should be demoted."""
+        md = "# T = ½mv²"
+        assert reject_noise_headers(md) == "T = ½mv²"
+
+    def test_h1_sum_symbol_demoted(self):
+        """H1 with summation symbol should be demoted."""
+        md = "# ∑ᵢ xᵢ"
+        assert reject_noise_headers(md) == "∑ᵢ xᵢ"
+
+    def test_h1_brackets_demoted(self):
+        """H1 with brackets (math notation) should be demoted."""
+        md = "# [x, y] = xy - yx"
+        assert reject_noise_headers(md) == "[x, y] = xy - yx"
+
+    def test_h1_short_fragment_demoted(self):
+        """H1 with very short text should be demoted."""
+        md = "# 42 x"
+        assert reject_noise_headers(md) == "42 x"
+
+    def test_h1_legitimate_title_preserved(self):
+        """Legitimate H1 document titles should be preserved."""
+        md = "# Fusion Energy Research and Development"
+        assert reject_noise_headers(md) == "# Fusion Energy Research and Development"
+
+    def test_h1_mixed_with_h2_noise(self):
+        """Mixed H1 and H2 noise headers should be demoted appropriately."""
+        md = "# ∇×B = µ₀J\n\n## 1 Introduction\n\n# E = mc²\n\n## 2 Methods"
+        result = reject_noise_headers(md)
+        assert "## 1 Introduction" in result
+        assert "## 2 Methods" in result
+        assert "# ∇×B = µ₀J" not in result
+        assert "∇×B = µ₀J" in result
+        assert "# E = mc²" not in result
+        assert "E = mc²" in result
+
 
 # ---------------------------------------------------------------------------
 # postprocess (full chain)
