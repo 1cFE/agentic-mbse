@@ -66,7 +66,7 @@ The corpus regression test (`test_no_quality_regression_vs_baseline`) compares c
   - Pattern 2 matches: sparc 26→22, delene 28→20
   - Eliminated sparse-letter fragments: "(3P1), 1050–1055.", "A 357,", "(1999 $M)", "CA 94550"
 
-## Task 4: Corpus validation after spec-01 fixes + threshold updates [spec-01]
+## Task 4: Corpus validation after spec-01 fixes + threshold updates [spec-01] [DONE]
 
 - **What**: After Tasks 2-3, re-extract all corpus papers and validate:
   1. Run `uv run pytest tests/test_corpus.py --run-corpus -v` — check which acceptance criteria pass
@@ -78,6 +78,15 @@ The corpus regression test (`test_no_quality_regression_vs_baseline`) compares c
 - **Why**: Spec 01 acceptance criteria require corpus tests to pass. The regression test framework was designed for baseline-vs-current comparison; our intentional phantom reduction may need threshold adjustments in `papers.jsonl`.
 - **Verified by**: `uv run pytest tests/test_corpus.py --run-corpus -v` passes; `uv run pytest tests/ -v` passes.
 - **Depends on**: Tasks 2, 3
+- **Results**:
+  - ✅ Regression test passes after adding `heading_regression_pct: -30` for aries_cost_account
+  - ✅ Math symbols check passes: zero headings with math operators
+  - ✅ energy_amplifier: 115 headings (within 50-130 target range)
+  - ⚠️ sparc_overview: 57 headings (target ≤20) — spec-02 fixes needed
+  - ⚠️ delene_2001: 58 headings (target 14-25) — spec-02 fixes needed
+  - aries_cost_account baseline=64 → current=46 (-28.1%) due to legitimate phantom removal
+  - All extraction pipeline tests pass (test_postprocess.py, test_quality_gates.py)
+  - Linting passes (ruff check, ruff format)
 
 ## Task 5: Fix postprocess `promote_plain_headers` — cap section numbers and reject figure/table refs [spec-02]
 
