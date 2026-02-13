@@ -1,0 +1,22 @@
+# Test Corpus Extraction Comparison
+
+Comparing baseline (fusion-tea) vs current (agentic-mbse) extractions.
+
+| Document              | Headings      | Tables        | Chars         | Time    |
+|----------------------|---------------|---------------|---------------|---------|
+| hawker_2020          | 14→7 (!!!)    | 0→0 (=)       | 60k→59k (~)   | 9.1s    |
+| aries_cost_account   | 64→16 (!!!)   | 143→143 (=)   | 281k→281k (=) | 53.4s   |
+| helios_design        | 7→26 (+19)    | 29→29 (=)     | 142k→142k (=) | 7.6s    |
+| hsu_2020             | 4→17 (+13)    | 56→64 (+8)    | 13k→13k (=)   | 2.0s    |
+| delene_2001          | 16→24 (+8)    | 0→0 (=)       | 67k→67k (=)   | 7.4s    |
+| sparc_overview       | 5→14 (+9)     | 5→5 (=)       | 88k→88k (=)   | 16.6s   |
+| energy_amplifier     | 96→85 (-11%)  | 464→464 (=)   | 397k→397k (=) | 703.6s  |
+
+## REGRESSIONS
+
+**hawker_2020**:
+  - headings dropped from 14 to 7 (-50%)
+
+**aries_cost_account**:
+  - headings dropped from 64 to 16 (-75%)
+

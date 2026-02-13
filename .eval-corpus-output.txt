@@ -1,0 +1,14 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0 -- /home/reid/1cfe/agentic-mbse_doc-ingest/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/reid/1cfe/agentic-mbse_doc-ingest
+configfile: pyproject.toml
+plugins: Faker-40.4.0, cov-7.0.0
+collecting ... collected 4 items
+
+tests/test_corpus.py::TestCorpus::test_all_papers_extract_successfully PASSED [ 25%]
+tests/test_corpus.py::TestCorpus::test_no_quality_regression_vs_baseline PASSED [ 50%]
+tests/test_corpus.py::TestCorpus::test_table_heavy_papers_have_tables PASSED [ 75%]
+tests/test_corpus.py::TestCorpus::test_heading_structure_present PASSED  [100%]
+
+======================== 4 passed in 799.81s (0:13:19) =========================
