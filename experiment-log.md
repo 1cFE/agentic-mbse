@@ -116,3 +116,15 @@ No change should degrade what already works. The corpus tests are the gate.
   - All 7 corpus papers extract successfully with no quality regressions
   - Math symbol noise completely eliminated from headings across all papers
 **Corpus:** hawker_2020, aries_cost_account, helios_design, hsu_2020, delene_2001, sparc_overview, energy_amplifier, 
+
+---
+
+## Iteration 2 — 2026-02-13
+**Brief:** # Iteration 2 Brief
+**Specs:** 01-fix-phantom-headings-detector.md,02-fix-phantom-headings-postprocess.md
+**Outcome:** CONVERGED
+**Key Learnings:**
+- Specs passed: 2/2 ✅
+- Critical failures: None
+- Key observations:
+**Corpus:** hawker_2020, aries_cost_account, helios_design, hsu_2020, delene_2001, sparc_overview, energy_amplifier, 
