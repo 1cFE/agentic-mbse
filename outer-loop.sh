@@ -91,46 +91,72 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 ITER=$(cat iteration-count)  # Read once; shell var is authoritative
 
+# -----------------------------------------------------------------------------
+# Detect incomplete iteration (started but never archived)
+# -----------------------------------------------------------------------------
+# If iteration-count > 0, specs exist, but the archive directory doesn't,
+# the previous run was interrupted mid-iteration. Resume it instead of
+# starting a new one.
+
+RESUMING=false
+if [[ "$ITER" -gt 0 ]]; then
+    ITER_PADDED_CHECK=$(printf "%03d" "$ITER")
+    SPEC_COUNT_CHECK=$(find specs -maxdepth 1 -name '*.md' -not -name '_*' -size +0c 2>/dev/null | wc -l)
+    if [[ ! -d "experiment-history/iteration-${ITER_PADDED_CHECK}" ]] && [[ "$SPEC_COUNT_CHECK" -gt 0 ]]; then
+        RESUMING=true
+        log_step "Resuming incomplete iteration $ITER ($SPEC_COUNT_CHECK specs found, not yet archived)"
+    fi
+fi
+
 while true; do
-    # Step 1: Increment iteration counter
-    ITER=$((ITER + 1))
 
-    # Max iterations check
-    if [[ "$MAX_ITERATIONS" -gt 0 ]] && [[ "$ITER" -gt "$MAX_ITERATIONS" ]]; then
-        log_step "Max iterations reached ($MAX_ITERATIONS) — stopping"
-        break
-    fi
+    if [[ "$RESUMING" = true ]]; then
+        # Resume: keep current ITER, keep existing specs, skip spec generation
+        RESUMING=false
+        ITER_PADDED=$(printf "%03d" "$ITER")
+        log_step "Outer Iteration $ITER (resumed)"
+        log_timestamp "START outer iteration $ITER (resumed)"
+    else
+        # Normal: increment and generate new specs
+        # Step 1: Increment iteration counter
+        ITER=$((ITER + 1))
 
-    echo "$ITER" > iteration-count
-    ITER_PADDED=$(printf "%03d" "$ITER")
+        # Max iterations check
+        if [[ "$MAX_ITERATIONS" -gt 0 ]] && [[ "$ITER" -gt "$MAX_ITERATIONS" ]]; then
+            log_step "Max iterations reached ($MAX_ITERATIONS) — stopping"
+            break
+        fi
 
-    log_step "Outer Iteration $ITER"
-    log_timestamp "START outer iteration $ITER"
+        echo "$ITER" > iteration-count
+        ITER_PADDED=$(printf "%03d" "$ITER")
 
-    # Dry-run mode
-    if [[ "$DRY_RUN" = true ]]; then
-        echo "  [DRY RUN] Would:"
-        echo "    1. Wipe specs/ and iteration-brief.md"
-        echo "    2. Run IterationSpecAgent (model: $SPEC_MODEL)"
-        echo "    3. Validate specs output"
-        echo "    4. Check for CONVERGED signal"
-        echo "    5. Run inner-loop.sh"
-        echo "    6. Archive to experiment-history/iteration-${ITER_PADDED}/"
-        echo "    7. Append to experiment-log.md"
-        echo "    8. Git commit and push"
-        echo ""
-        # Reset counter since we didn't actually do anything
-        echo "$((ITER - 1))" > iteration-count
-        break
-    fi
+        log_step "Outer Iteration $ITER"
+        log_timestamp "START outer iteration $ITER"
 
-    # Step 2: Wipe specs and previous iteration brief
-    rm -f specs/*.md iteration-brief.md
-    mkdir -p specs
-    log_info "Wiped specs/ and iteration-brief.md"
+        # Dry-run mode
+        if [[ "$DRY_RUN" = true ]]; then
+            echo "  [DRY RUN] Would:"
+            echo "    1. Wipe specs/ and iteration-brief.md"
+            echo "    2. Run IterationSpecAgent (model: $SPEC_MODEL)"
+            echo "    3. Validate specs output"
+            echo "    4. Check for CONVERGED signal"
+            echo "    5. Run inner-loop.sh"
+            echo "    6. Archive to experiment-history/iteration-${ITER_PADDED}/"
+            echo "    7. Append to experiment-log.md"
+            echo "    8. Git commit and push"
+            echo ""
+            # Reset counter since we didn't actually do anything
+            echo "$((ITER - 1))" > iteration-count
+            break
+        fi
 
-    # Step 3: Build IterationSpecAgent prompt via string concatenation
-    PROMPT="$(cat PROMPT_iteration_spec.md)
+        # Step 2: Wipe specs and previous iteration brief
+        rm -f specs/*.md iteration-brief.md
+        mkdir -p specs
+        log_info "Wiped specs/ and iteration-brief.md"
+
+        # Step 3: Build IterationSpecAgent prompt via string concatenation
+        PROMPT="$(cat PROMPT_iteration_spec.md)
 
 ---
 
@@ -187,6 +213,8 @@ $(cat challenge-rules.conf)"
         log_info "WARNING: IterationSpecAgent did not produce iteration-brief.md"
         echo "Iteration $ITER — specs generated but no brief provided" > iteration-brief.md
     fi
+
+    fi  # end of: if RESUMING ... else (new iteration spec generation)
 
     # Step 4b: Check for CONVERGED signal (design review fix #1)
     if grep -rq '^CONVERGED:' specs/ 2>/dev/null; then
