@@ -795,6 +795,72 @@ class TestRejectNoiseHeaders:
         assert "# E = mc²" not in result
         assert "E = mc²" in result
 
+    # --- Address line rejection (Task 2) ---
+
+    def test_address_with_zip_and_road_demoted(self):
+        """Address with ZIP code and street keyword should be demoted."""
+        # From delene_2001 corpus
+        md = "## 5285 Port Royal Road"
+        assert reject_noise_headers(md) == "5285 Port Royal Road"
+
+    def test_address_with_numbered_street_demoted(self):
+        """Numbered street address should be demoted."""
+        md = "## 1000 Independence Avenue SW"
+        assert reject_noise_headers(md) == "1000 Independence Avenue SW"
+
+    def test_address_with_suite_demoted(self):
+        """Address with suite number should be demoted."""
+        md = "## 1234 Corporate Blvd Suite 200"
+        assert reject_noise_headers(md) == "1234 Corporate Blvd Suite 200"
+
+    def test_address_with_state_abbrev_and_street_demoted(self):
+        """Address with state abbreviation and street keyword should be demoted."""
+        md = "## Springfield Street, VA 22150"
+        assert reject_noise_headers(md) == "Springfield Street, VA 22150"
+
+    def test_address_with_state_and_zip_demoted(self):
+        """Address with state abbreviation and ZIP should be demoted."""
+        md = "## Oak Ridge, TN 37831"
+        assert reject_noise_headers(md) == "Oak Ridge, TN 37831"
+
+    def test_zip_without_street_keyword_preserved(self):
+        """ZIP code alone without street keywords preserved (avoid false positive)."""
+        # Could be a section number like "10000 Iterations Analysis"
+        md = "## 10000 Iterations Analysis"
+        assert reject_noise_headers(md) == "## 10000 Iterations Analysis"
+
+    def test_street_keyword_without_number_preserved(self):
+        """Street keyword without numbered address pattern preserved."""
+        # Could be legitimate like "Highway Safety Analysis"
+        md = "## Highway Safety Analysis"
+        assert reject_noise_headers(md) == "## Highway Safety Analysis"
+
+    def test_state_abbrev_alone_preserved(self):
+        """State abbreviation alone without address context preserved."""
+        md = "## VA Requirements"
+        assert reject_noise_headers(md) == "## VA Requirements"
+
+    def test_legitimate_section_with_abbreviation_preserved(self):
+        """Legitimate section with abbreviation that happens to match street pattern preserved."""
+        # "Dr." is a street abbreviation but in context it's "Doctor"
+        md = "## 3 Dr. Smith's Research"
+        assert reject_noise_headers(md) == "## 3 Dr. Smith's Research"
+
+    def test_building_address_with_parkway_demoted(self):
+        """Building address with Parkway should be demoted."""
+        md = "## 456 Research Parkway"
+        assert reject_noise_headers(md) == "456 Research Parkway"
+
+    def test_address_with_directional_demoted(self):
+        """Address with directional indicator (SW/NW/etc) should be demoted."""
+        md = "## 789 Technology Drive NW"
+        assert reject_noise_headers(md) == "789 Technology Drive NW"
+
+    def test_address_with_abbreviated_street_demoted(self):
+        """Address with abbreviated street type should be demoted."""
+        md = "## 2020 Main St."
+        assert reject_noise_headers(md) == "2020 Main St."
+
 
 # ---------------------------------------------------------------------------
 # postprocess (full chain)

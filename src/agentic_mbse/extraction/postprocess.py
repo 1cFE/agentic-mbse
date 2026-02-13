@@ -408,6 +408,44 @@ def _is_noise_header(header_text: str) -> bool:
     if has_journal_abbrev and (has_volume_issue or has_page_range or has_year_parens):
         return True
 
+    # Address line rejection (spec-02 requirement #3)
+    # Reject headings that look like postal addresses or building locations
+    # Common patterns:
+    # - ZIP codes: 5-digit sequences (e.g., "5285 Port Royal Road")
+    # - Street addresses: number + street keywords (Road, Avenue, Street, etc.)
+    # - State abbreviations: 2-letter uppercase after comma (e.g., ", VA")
+
+    # Street keywords that commonly appear in addresses
+    street_keywords = (
+        r"Road|Avenue|Ave\.?|Street|St\.?|Boulevard|Blvd\.?|Drive|Dr\.?|"
+        r"Highway|Hwy\.?|Suite|Parkway|Pkwy\.?|Lane|Ln\.?|Circle|"
+        r"SW|NW|SE|NE"
+    )
+
+    # Pattern 1: Contains 5-digit ZIP code (not at start, to avoid false positive with section numbers)
+    # Combined with street keyword for precision
+    has_zip = re.search(r"\b\d{5}\b", text) is not None
+    has_street_keyword = re.search(street_keywords, text, re.IGNORECASE) is not None
+
+    # Pattern 2: Number followed by street keyword (e.g., "5285 Port Royal Road")
+    # Requires multi-digit number to avoid false positives with "3 Main Ideas"
+    # Allow one or more words between the number and street keyword (e.g., "Port Royal" Road)
+    has_numbered_street = (
+        re.search(r"\b\d{2,}\s+(?:\w+\s+)*(" + street_keywords + r")", text, re.IGNORECASE)
+        is not None
+    )
+
+    # Pattern 3: State abbreviation pattern (2 uppercase letters after comma)
+    has_state_abbrev = re.search(r",\s+[A-Z]{2}\b", text) is not None
+
+    # Reject if we have strong address indicators
+    if has_zip and has_street_keyword:
+        return True
+    if has_numbered_street:
+        return True
+    if has_state_abbrev and (has_street_keyword or has_zip):
+        return True
+
     return False
 
 

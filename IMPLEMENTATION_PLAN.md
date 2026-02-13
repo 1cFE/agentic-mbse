@@ -44,15 +44,20 @@ Specs 01 and 02 are **partially implemented**. The core detector guards (section
   - `tests/test_postprocess.py`: Added 14 new tests, all passing
 - **Verification**: All 54 noise header tests pass. Next step is corpus validation to measure impact on sparc_overview heading count.
 
-### Task 2: Add address-line rejection to `_is_noise_header()` [spec-02]
-- **What**: In `_is_noise_header()` in `postprocess.py`, add patterns to reject headings that look like address lines, as specified in spec 02 requirement #3:
-  - ZIP code pattern: `\b\d{5}\b` (5 consecutive digits not at start-of-line section position)
-  - Street keywords: match if heading contains a street keyword ("Road", "Avenue", "Ave", "Street", "Boulevard", "Blvd", "Drive", "Highway", "Hwy", "Suite", "SW", "NW", "SE", "NE") AND a multi-digit number
-  - State abbreviation: 2-letter uppercase after comma (`, [A-Z]{2}\b`) combined with ZIP or street keyword
-  - **Implementation**: A single combined check — reject if heading matches `\b\d{5}\b` AND contains a street/state keyword, OR if heading matches `\d+\s+\w+\s+(Road|Avenue|Street|Boulevard|Drive|Highway|Suite)` pattern
-- **Why**: Spec 02 explicitly requires address rejection. delene_2001 has "5285 Port Royal Road" and similar address fragments surviving as headings.
-- **Verified by**: New unit tests in `tests/test_postprocess.py` for address patterns. delene_2001 heading count should drop toward 10–25 range.
-- **Depends on**: None (independent of Task 1)
+### Task 2 [DONE]: Add address-line rejection to `_is_noise_header()` [spec-02]
+- **Implementation**: Added address-line detection logic to `_is_noise_header()` in `postprocess.py` (lines 412-447) with three independent patterns:
+  - Pattern 1: ZIP code (`\b\d{5}\b`) combined with street keywords for precision
+  - Pattern 2: Multi-digit number followed by street keywords (e.g., "5285 Port Royal Road"). The pattern `\b\d{2,}\s+(?:\w+\s+)*()` allows flexible word count between number and street keyword to match addresses like "Port Royal Road"
+  - Pattern 3: State abbreviation (`, [A-Z]{2}\b`) combined with ZIP or street keyword
+  - Street keywords include: Road, Avenue, Street, Boulevard, Drive, Highway, Suite, Parkway, Lane, Circle, plus directional indicators (SW, NW, SE, NE) and abbreviations (Ave., St., Blvd., etc.)
+- **Tests**: Added 12 new unit tests in `tests/test_postprocess.py::TestRejectNoiseHeaders` (lines 800-850) covering:
+  - Positive cases: ZIP+road, numbered streets, suite numbers, state+street, state+ZIP, directionals, abbreviations
+  - Negative cases: ZIP without street context, street keyword without number, state abbrev alone, legitimate sections with abbreviations
+  - Edge cases: Single-digit section numbers (preserved), "Dr." as title vs street abbreviation (preserved)
+- **Files modified**:
+  - `src/agentic_mbse/extraction/postprocess.py`: Added address rejection logic (lines 412-447)
+  - `tests/test_postprocess.py`: Added 12 new tests, all passing
+- **Verification**: All 182 extraction-related tests pass. Ruff check and format clean. Next step is corpus validation to measure impact on delene_2001 heading count.
 
 ### Task 3: Recalibrate baselines and regression thresholds [spec-01, spec-02]
 - **What**: After Tasks 1 and 2 are implemented, recalibrate the test infrastructure:
