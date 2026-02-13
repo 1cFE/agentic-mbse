@@ -678,6 +678,43 @@ class TestRejectNoiseHeaders:
         md = "## 10. Advanced Design Nuclear Power Plants (2001)"
         assert reject_noise_headers(md) == "10. Advanced Design Nuclear Power Plants (2001)"
 
+    def test_reference_with_year_in_date_demoted(self):
+        """Reference with year in a date (not just parentheses) should be demoted."""
+        # Real example from delene_2001: "36. Nucleonics Week, p. 15 (March 18, 1999)."
+        md = "## 36. Nucleonics Week, p. 15 (March 18, 1999)."
+        assert reject_noise_headers(md) == "36. Nucleonics Week, p. 15 (March 18, 1999)."
+
+    def test_reference_with_volume_issue_demoted(self):
+        """Reference with volume/issue pattern should be demoted."""
+        # Real example from delene_2001: "13. Nuclear Fuel, 23 (21), 14 (October 19, 1998)."
+        md = "## 13. Nuclear Fuel, 23 (21), 14 (October 19, 1998)."
+        assert reject_noise_headers(md) == "13. Nuclear Fuel, 23 (21), 14 (October 19, 1998)."
+
+    def test_reference_with_page_range_demoted(self):
+        """Reference with page range pattern should be demoted."""
+        md = "## 8. Smith et al., Journal Name, pp. 124-130 (2020)"
+        assert reject_noise_headers(md) == "8. Smith et al., Journal Name, pp. 124-130 (2020)"
+
+    def test_reference_with_year_in_title_preserved(self):
+        """Legitimate section with year in title (not in parens) should be preserved."""
+        md = "## 3. Energy Policy Analysis 2015"
+        # Year not in parentheses AND no author initials, so this is likely a legitimate section
+        assert reject_noise_headers(md) == "## 3. Energy Policy Analysis 2015"
+
+    def test_reference_with_author_initials_and_year_demoted(self):
+        """Reference with author initials (≥2) + bare year should be demoted."""
+        # Real example from hawker_2020: author surnames with single initial + year
+        md = "## 1. Atzeni S, Meyer-ter-Vehn J. 2004 The physics of inertial fusion"
+        assert (
+            reject_noise_headers(md)
+            == "1. Atzeni S, Meyer-ter-Vehn J. 2004 The physics of inertial fusion"
+        )
+
+    def test_reference_with_acronym_and_year_demoted(self):
+        """Reference with organization acronym + year should be demoted."""
+        md = "## 2. IRENA. 2019 Renewable Power Generation Costs in 2018"
+        assert reject_noise_headers(md) == "2. IRENA. 2019 Renewable Power Generation Costs in 2018"
+
     def test_legitimate_numbered_section_preserved(self):
         """Legitimate section 1-10 without bibliographic indicators preserved."""
         md = "## 1. Introduction"

@@ -90,7 +90,8 @@ def _is_toc_line(text: str) -> bool:
     if ". . ." in text or "......" in text:
         return True
     # Trailing bare page number (e.g., "Executive Summary 4")
-    if re.search(r"\s+\d{1,4}\s*$", text):
+    # Limit to 1-3 digits to avoid matching years (4 digits)
+    if re.search(r"\s+\d{1,3}\s*$", text):
         return True
     # Publication date patterns: "4/1995", "2/2024" (volume/year in journal refs)
     if re.search(r"\b\d{1,2}/\d{4}\b", text):
@@ -369,8 +370,32 @@ def _is_noise_header(header_text: str) -> bool:
         # - Conference/institution indicators
         if re.search(r"\b(presented at|University of|National Laboratory)", text, re.IGNORECASE):
             return True
-        # - Year in parentheses: "(1998)", "(2020)"
-        if re.search(r"\(\d{4}\)", text):
+        # - Year in parentheses: "(1998)", "(2020)", or dates like "(March 18, 1999)"
+        # Match parentheses containing a 4-digit year (possibly with other text)
+        if re.search(r"\([^)]*\b(19|20)\d{2}\b[^)]*\)", text):
+            return True
+        # - Volume/issue pattern: "23 (21)", "51(12)"
+        if re.search(r"\d+\s*\(\d+\)", text):
+            return True
+        # - Page range pattern: "124-130", "S404-S413"
+        if re.search(r"\b\d+[–-]\d+\b", text):
+            return True
+        # - Author initials (single capital + comma/period) + year pattern
+        # Match entries like "1. Smith J, Brown A. 2020 Title..." or "2. Atzeni S, Meyer-ter-Vehn J. 2004..."
+        author_initials = re.findall(r"\b[A-Z][\.,]", text)
+        has_year = re.search(r"\b(19|20)\d{2}\b", text) is not None
+        if len(author_initials) >= 2 and has_year:
+            return True
+        # - Acronym/organization + year pattern (e.g., "IRENA. 2019", "DOE. 2015")
+        if re.search(r"\b[A-Z]{2,}\.\s+(19|20)\d{2}\b", text):
+            return True
+        # - Word ending in period + year (e.g., "Commission. 2017", "SystemIQ. 2019")
+        # This catches organization names or journal titles followed by publication year
+        # Negative lookbehind ensures we don't match the leading section number "N."
+        if re.search(r"(?<!\d)\b[A-Za-z]\w+\.\s+(19|20)\d{2}\b", text):
+            return True
+        # - "et al." indicator (strong bibliographic signal)
+        if re.search(r"\bet al\.", text, re.IGNORECASE):
             return True
 
     # Combined REFERENCES section + numbered entry (e.g., "**REFERENCES** 1. Title...")
