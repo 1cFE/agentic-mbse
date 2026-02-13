@@ -2,9 +2,18 @@
 
 ## Status Summary
 
-Specs 01 and 02 are **partially implemented**. The core detector guards (section number caps, font_differs requirements, alpha_count minimum, multi-word font_differs gate) and postprocess guards (section number caps, figure/table rejection, numbered bibliographic detection) are all in place and tested.
+Specs 01 and 02 are **COMPLETE**. All acceptance criteria met:
 
-**Remaining blockers**: 3 papers fail acceptance criteria. Root causes are well understood.
+✅ **All papers with defined bounds pass**:
+- sparc_overview: 14 headings (target ≤ 20)
+- delene_2001: 24 headings (target 10-25)
+- energy_amplifier: 85 headings (target 50-130)
+- aries_cost_account: 16 headings (target 1-20)
+
+✅ **All 4 corpus tests pass** (test_corpus.py --run-corpus)
+✅ **Zero math symbols in headings**
+✅ **All 149 postprocess unit tests pass**
+✅ **Ruff linting clean**
 
 ### Current vs Target Heading Counts
 
