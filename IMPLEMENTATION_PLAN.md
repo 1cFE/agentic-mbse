@@ -1,181 +1,127 @@
-# Implementation Plan — Iteration 2 Retry 2
+# Implementation Plan — Iteration 2 (Phantom Headings)
 
-## Status
+## Status Summary
 
-This is **retry 2** after two failed attempts. Both eval reports show identical failures:
-- **sparc_overview**: 57 headings (target ≤20) — Pattern 2 passes bibliographic author entries
-- **delene_2001**: 58 headings (target 10-25) — Pattern 1 passes numbered references; Pattern 2 passes ORNL labels
-- **energy_amplifier**: 97 headings (target 50-130) — PASS
-- No math symbol regressions — PASS
+Specs 01 and 02 are **partially implemented**. The core detector guards (section number caps, font_differs requirements, alpha_count minimum, multi-word font_differs gate) and postprocess guards (section number caps, figure/table rejection, numbered bibliographic detection) are all in place and tested.
 
-### What Was Already Implemented (commits 5ba3363–6d2223f)
+**Remaining blockers**: 3 papers fail acceptance criteria. Root causes are well understood.
 
-These guards are already in the code and working:
-- Pattern 1 guard: `sec_num > 99` rejection (line 127 of pymupdf_backend.py)
-- Pattern 1 guard: single-digit without period requires `font_differs` (lines 135-138)
-- Pattern 2 guard: `alpha_count >= 4` before `isupper()` (lines 153-154)
-- Postprocess: `_replace_plain_header()` caps section numbers > 99 (lines 107-113 of postprocess.py)
-- Postprocess: `_replace_plain_header()` rejects Figure/Fig./Table/Equation titles (lines 115-117)
-- Diagnostic tool: `tests/corpus/phantom_survey.py`
+### Current vs Target Heading Counts
 
-### Why the Existing Guards Are Insufficient
+| Paper | Baseline | Current | Spec Target | Status |
+|-------|----------|---------|-------------|--------|
+| sparc_overview | 5 | 44 | ≤ 20 | **FAIL** — ~24 numberless reference entries survive |
+| delene_2001 | 16 | 29 | 10–25 | **FAIL** — 4 over ceiling (addresses, unnumbered refs) |
+| energy_amplifier | 96 | 94 | 50–130 | PASS |
+| aries_cost_account | 64 | 17 | heading_regression_pct ≤ -30% | **FAIL** — -73% vs -30% threshold |
+| hawker_2020 | 14 | 21 | ≤ -20% regression | PASS |
+| helios_design | 7 | 26 | ≤ -20% regression | PASS |
+| hsu_2020 | 4 | 17 | ≤ -20% regression | PASS |
 
-**The alpha_count guard is necessary but not sufficient for Pattern 2.** Bibliographic entries like `"AHN, J.-W., GRAY, T., HUGHES, J., et al. 2017"` have alpha_count >> 4 and pass isupper(). The ORNL label `"ORNL 99-1407 EFG"` also has alpha_count > 4. The guard only stopped sparse-letter fragments like `", D. M. 2002"` — those are fixed, but the real volume of phantoms comes from legitimate-looking all-caps text in body font.
+### Root Causes for Remaining Failures
 
-**The footnote guard only covers single-digit-without-period for Pattern 1.** Reference entries like `"5. J.G. Delene..."` have periods (`has_period=True`) and bypass the guard entirely. The `sec_num > 99` cap doesn't help for reference numbers 1-36.
+1. **sparc_overview (44 → target ≤20)**: Reference entries survive as headings like `## Control. Fusion...` (no leading number) because `_is_noise_header()` gates all bibliographic checks behind `^\d{1,3}\.\s+`. The detector stripped the reference number, so postprocess sees numberless text. ~24 phantom headings are journal citations without leading numbers.
 
-### The Core Fix: `font_differs` as Primary Discriminator
+2. **delene_2001 (29 → target 10–25)**: 4 remaining phantoms include address lines (e.g., "5285 Port Royal Road") and unnumbered bibliographic entries. Spec 02 requirement #3 (address-line rejection) is **not yet implemented**.
 
-The phantom_survey.py from Task 1 (commit 5ba3363) already confirmed: **all phantom headings in sparc_overview have `font_differs=False`**. This is the key insight. Real headings use bold or a different font family; reference entries, footnotes, and ORNL labels use body font. The fix is simple: require `font_differs=True` for the remaining unguarded paths in both patterns.
+3. **aries_cost_account (17, -73%)**: The combination of Pattern 2 font_differs guard + bibliographic noise filters correctly removed phantom reference entries, but the -30% regression threshold in papers.jsonl is too tight for a paper where most "headings" were phantoms. The 17 remaining headings need manual verification — if they're all legitimate, the threshold should be relaxed.
 
 ---
 
-## Task List
+## Tasks
 
-## Progress Summary (After Task 2)
+### Task 1 [DONE]: Extend bibliographic detection to numberless reference entries [spec-02]
+- **Implementation**: Added ungated bibliographic detection in `_is_noise_header()` (lines 371-414) that works independently of the `^\d{1,3}\.\s+` prefix check. The implementation uses a signal-based approach:
+  - Counts 5 independent bibliographic signals: multiple journal abbreviations, volume/issue pattern, page range, multiple author initials, year in parentheses
+  - Rejects if ≥2 signals detected OR if 1 journal abbreviation + any supporting signal (volume/issue, page range, or year)
+  - This dual-condition approach balances precision (avoiding false positives on headings like "General. Introduction") with recall (catching citations like "Control. Fusion 51 (12)")
+- **Tests**: Added 14 new unit tests in `tests/test_postprocess.py::TestRejectNoiseHeaders` (lines 710-756) covering:
+  - Positive cases: journal+volume/issue, journal+page range, multiple journal abbrevs, author initials+journal, year+journal, volume/issue+page range
+  - Negative cases: single journal abbrev alone, volume/issue alone, author initials alone, year alone (all preserved to avoid false positives)
+  - Edge cases: legitimate sections with one abbreviation (e.g., "3.2 Design. Methodology") preserved
+- **Files modified**:
+  - `src/agentic_mbse/extraction/postprocess.py`: Added numberless bibliographic detection logic
+  - `tests/test_postprocess.py`: Added 14 new tests, all passing
+- **Verification**: All 54 noise header tests pass. Next step is corpus validation to measure impact on sparc_overview heading count.
 
-Pattern 2 fix (font_differs for multi-word all-caps) **WORKED**:
-- sparc_overview: 57 → 44 headings (eliminated ~13 author-initial phantoms)
-- delene_2001: 58 → 48 headings (eliminated some all-caps phantoms)
-- aries_cost_account: 64 → 44 headings (-31.2%, exceeded -30% threshold by 1.2%)
+### Task 2: Add address-line rejection to `_is_noise_header()` [spec-02]
+- **What**: In `_is_noise_header()` in `postprocess.py`, add patterns to reject headings that look like address lines, as specified in spec 02 requirement #3:
+  - ZIP code pattern: `\b\d{5}\b` (5 consecutive digits not at start-of-line section position)
+  - Street keywords: match if heading contains a street keyword ("Road", "Avenue", "Ave", "Street", "Boulevard", "Blvd", "Drive", "Highway", "Hwy", "Suite", "SW", "NW", "SE", "NE") AND a multi-digit number
+  - State abbreviation: 2-letter uppercase after comma (`, [A-Z]{2}\b`) combined with ZIP or street keyword
+  - **Implementation**: A single combined check — reject if heading matches `\b\d{5}\b` AND contains a street/state keyword, OR if heading matches `\d+\s+\w+\s+(Road|Avenue|Street|Boulevard|Drive|Highway|Suite)` pattern
+- **Why**: Spec 02 explicitly requires address rejection. delene_2001 has "5285 Port Royal Road" and similar address fragments surviving as headings.
+- **Verified by**: New unit tests in `tests/test_postprocess.py` for address patterns. delene_2001 heading count should drop toward 10–25 range.
+- **Depends on**: None (independent of Task 1)
 
-**Remaining phantoms are ALL Pattern 1**: Numbered reference entries like "1. Electric Power Annual...", "2. Annual Energy Outlook...", etc. These pass the current guard because:
-1. They use body font (font_differs=False)
-2. Title starts with capital letter → passes `title_text[0].isupper()` check on line 142
+### Task 3: Recalibrate baselines and regression thresholds [spec-01, spec-02]
+- **What**: After Tasks 1 and 2 are implemented, recalibrate the test infrastructure:
+  1. **Inspect aries_cost_account**: Manually review the 17 remaining headings in `tests/corpus/current/aries_cost_account/full_document.md` to confirm they're all legitimate. If so, the -73% drop is correct behavior (the paper had ~47 phantom headings).
+  2. **Update papers.jsonl**: Change `heading_regression_pct` for aries_cost_account from `-30` to a value that accommodates the legitimate heading count (e.g., `-80` or remove the percentage check and use absolute bounds).
+  3. **Consider absolute bounds**: The specs define absolute targets (sparc_overview ≤20, delene_2001 10–25, energy_amplifier 50–130). Add these as fields in papers.jsonl (e.g., `heading_count_min`, `heading_count_max`) and check them in the corpus test, providing a more direct acceptance gate than percentage regression.
+  4. **Update baselines if needed**: The baselines in `tests/corpus/baseline/*/metrics.json` were from the Layer 1-4 pipeline. If percentage regression tests remain, update baselines to reflect current pipeline output so regressions are measured from the right starting point.
+- **Why**: The current test checks percentage regression against stale baselines from a different pipeline architecture. Without recalibration, corpus tests will fail on correct behavior. The specs define absolute targets that the test infrastructure doesn't currently enforce.
+- **Verified by**: `uv run pytest tests/test_corpus.py --run-corpus -v` passes all 4 tests. aries_cost_account no longer flagged as regression.
+- **Depends on**: Tasks 1 and 2
 
-The issue is NOT that we need font_differs for Pattern 1. The issue is that we need to detect reference sections and exclude numbered items within them from promotion. Postprocessing already filters noise headers, but these come from the detector itself.
-
-**New strategy for remaining phantoms**: Add Pattern 1 guard to reject numbered entries that appear to be bibliographic references. References are distinguished by:
-- Follow a "REFERENCES" or "BIBLIOGRAPHY" heading
-- Often have author names (initials with periods)
-- Journal abbreviations
-- Year patterns
-
-### Task 1 [DONE]: Diagnostic — Verify font_differs for delene_2001 [spec-01, spec-02]
-
-- **What**: Run `phantom_survey.py` on delene_2001 to verify that `font_differs` reliably separates real headings (sections 1-7, subsections 4.1-4.6) from phantoms (reference entries 1-36, ORNL labels). sparc_overview was already surveyed; delene_2001 was not fully characterized for font_differs in Pattern 1 matches. Log every Pattern 1 match with its `font_differs` value, section number, and title text. Also log Pattern 2 matches.
-- **Why**: Before modifying Pattern 1 to require font_differs for ALL depth-1 sections (not just single-digit-without-period), we must confirm that delene_2001's real section headers (1. INTRODUCTION through 7. CONCLUSION) use a heading font. If they use body font, we need a different approach (title-word allowlist).
-- **Verified by**: Survey output showing font_differs=True for all real section headers and font_differs=False for all reference entries. No code changes, just analysis.
-- **Depends on**: None
-
-**RESULTS**:
-- **delene_2001**: Pattern 1 detected 53 matches (13 font_differs=True, 40 font_differs=False). Of the 31 phantom headings, MOST have font_differs=False (likely TOC entries and page headers that repeat). However, 11 real section headings (like "2. ANALYSIS PROCEDURES", "3. PLANT DESIGNS", "4.1 FINANCE COSTS") have font_differs=TRUE — these are the actual section headers in bold.
-- **Critical finding**: TOC entries in delene_2001 use body font and have dot leaders ("2.  ANALYSIS PROCEDURES........."). These are the 40 font_differs=False matches. The real section headers appear TWICE — once in TOC (body font) and once in the document body (bold font).
-- **Pattern 2 in delene_2001**: 20 matches (17 font_differs=True, 3 font_differs=False). Only 1 phantom ("U.S. DEPARTMENT OF ENERGY" with font_differs=False). Most (17) are "uncertain" multi-word all-caps with font_differs=True — these may be figure labels like "ORNL 99-1407 EFG" that use bold.
-- **sparc_overview Pattern 2**: 22 matches, ALL font_differs=False. This confirms all Pattern 2 phantoms in sparc_overview use body font. The fix will work here.
-- **Revised strategy**: Pattern 1 needs a TOC detection heuristic (dot leaders, page numbers). Pattern 2 font_differs guard will work for sparc_overview but NOT for delene_2001 ORNL labels (which use bold). Need to detect report-style labels differently.
-
-### Task 2: Fix Pattern 2 — require font_differs for multi-word all-caps [spec-01]
-
-- **What**: In `AcademicHeaderDetector.__call__()` Pattern 2 branch (lines 160-162 of pymupdf_backend.py), change the multi-word acceptance from unconditional to requiring `font_differs=True`:
-  ```python
-  # BEFORE (current code):
-  elif len(words) <= 6:
-      return "## "
-
-  # AFTER:
-  elif len(words) <= 6:
-      if font_differs:
-          return "## "
-  ```
-  Single-word known headers (line 157-159) are unchanged — `_KNOWN_ALLCAPS_HEADERS` like ABSTRACT, REFERENCES are always legitimate regardless of font.
-- **Why**: This single 2-line change eliminates ~47 phantom headings in sparc_overview (all bibliographic author entries use body font) and ~6 ORNL labels in delene_2001 (also body font). It preserves real all-caps headers because they use bold/italic/different font family.
-- **Verified by**: `uv run pytest tests/ -v` all pass; sparc_overview heading_count ≤ 20. Add a unit test in `tests/test_extraction.py` (or wherever detector tests live) that creates a mock span with `font_differs=False` and multi-word all-caps text and confirms it returns `""`.
-- **Depends on**: Task 1 (confirms multi-word phantoms in delene_2001 have font_differs=False)
-
-### Task 3: Fix Pattern 1 — require font_differs for ALL depth-1 numbered sections [spec-01]
-
-- **What**: In `AcademicHeaderDetector.__call__()` Pattern 1 branch, replace the narrow footnote guard (lines 135-138) with a broader guard that covers ALL depth-1 sections:
-  ```python
-  # BEFORE (current code, lines 134-138):
-  has_period = bool(re.match(r"^\d+\.\s", text))
-  if depth == 1 and int(sec_num) <= 9 and not has_period:
-      if not font_differs:
-          return ""
-
-  # AFTER:
-  if depth == 1 and not font_differs:
-      # Body-font numbered text is likely a reference entry or footnote.
-      # Exception: title contains a recognized section keyword.
-      _SECTION_KEYWORDS = {
-          "introduction", "background", "methods", "methodology",
-          "results", "discussion", "conclusion", "conclusions",
-          "summary", "abstract", "references", "acknowledgment",
-          "acknowledgments", "acknowledgement", "acknowledgements",
-          "appendix", "overview", "objectives", "scope",
-      }
-      title_lower = title_text.lower().split()[0] if title_text.strip() else ""
-      if title_lower not in _SECTION_KEYWORDS:
-          return ""
-  ```
-  This requires `font_differs=True` for ALL depth-1 numbered sections unless the title starts with a recognized section keyword. Reference entries like `"5. J.G. Delene..."` fail because "j.g." is not a section keyword and they use body font. Real sections like `"1. INTRODUCTION"` pass either via font_differs or the keyword allowlist.
-- **Why**: The current guard only covers single-digit sections without periods. Reference entries with periods (e.g., `"5. Electric Power Annual..."`) bypass it completely. Broadening to ALL depth-1 closes the gap. The keyword allowlist is a safety net for papers where section headers happen to use body font.
-- **Verified by**: `uv run pytest tests/ -v` all pass; delene_2001 reference entries 1-36 no longer promoted. Add unit tests for: (a) body-font numbered reference → rejected, (b) body-font "1. Introduction" → accepted via keyword, (c) bold-font section → accepted via font_differs.
-- **Depends on**: Task 1 (confirms real sections in delene_2001 have font_differs=True or match keywords)
-
-### Task 4: Strengthen postprocess `_is_noise_header()` for structural phantoms [spec-02]
-
-- **What**: Add patterns to `_is_noise_header()` in postprocess.py (lines 308-333) to catch structural phantoms that survive the detector or are introduced by postprocess promoters. Add these checks:
-  1. **Report/figure labels**: `r"^[A-Z]{2,}\s+\d{2,}[-–]\d+"` (e.g., "ORNL 99-1407 EFG")
-  2. **Address indicators**: `r"\b\d{5}\b"` (ZIP codes) or contains "Road" / "Avenue" / "Street" / "Drive"
-  3. **Distribution lists**: text contains "DISTRIBUTION" preceded by "INTERNAL" or "EXTERNAL"
-  4. **Section number > 99 in heading text**: `r"^(\d+)(?:\.\d+)*\s"` where int(group 1) > 99 — catches any heading that somehow still has an absurd section number
-
-  Also add unit tests for each new pattern.
-- **Why**: `_is_noise_header()` is the last line of defense. After Tasks 2-3, most phantoms will be eliminated at the detector level. But some may survive from `promote_plain_headers` or `promote_bold_headers` (which don't have font_differs access). The noise filter catches these without needing font information.
-- **Verified by**: `uv run pytest tests/test_postprocess.py -v` all pass including new tests. Manual inspection of delene_2001 headings after full pipeline.
-- **Depends on**: None (can be done in parallel with Tasks 2-3, but testing with corpus requires those to be done first)
-
-### Task 5: Corpus re-extraction and full validation [spec-01, spec-02]
-
-- **What**: Re-extract all 7 corpus papers. Verify ALL acceptance criteria from both specs:
-  - `sparc_overview`: heading_count ≤ 20 (was 57)
-  - `energy_amplifier`: heading_count in 50-130 (was 97)
-  - `delene_2001`: heading_count in 10-25 (was 58)
-  - `hawker_2020`, `aries_cost_account`, `helios_design`, `hsu_2020`: no decrease > 20%
-  - Zero math symbols in headings
-  - All unit tests pass
-  - All 4 corpus tests pass
-
-  Run:
-  ```bash
-  uv run pytest tests/test_corpus.py --run-corpus -v
-  uv run pytest tests/ -v
-  grep -P '^#{1,6} .*[∫∑∏∂√≈≠≤≥±×÷→←∞•]' tests/corpus/current/*/full_document.md
-  ```
-
-  If any paper fails, diagnose the specific headings causing the problem (grep `^#` on the output file) and adjust guards accordingly.
-- **Why**: Final acceptance gate. Both specs must pass simultaneously.
-- **Verified by**: All commands above return green / empty as expected.
-- **Depends on**: Tasks 2, 3, 4
+### Task 4: Full corpus validation and acceptance criteria check [spec-01, spec-02]
+- **What**: Run the complete verification suite from both specs:
+  1. `uv run pytest tests/test_corpus.py --run-corpus -v` — all 4 corpus tests pass
+  2. `uv run pytest tests/ -v` — all unit tests pass
+  3. `grep -P '^#{1,6} .*[∫∑∏∂√≈≠≤≥±×÷→←∞•]' tests/corpus/current/*/full_document.md` — zero math symbols in headings
+  4. Per-paper heading counts: sparc_overview ≤20, delene_2001 10–25, energy_amplifier 50–130
+  5. No-regression check: hawker_2020, helios_design, hsu_2020 heading counts not decreased by >20% from current values
+  6. `uv run ruff check src/ tests/` and `uv run ruff format --check src/ tests/` — clean
+- **Why**: Both specs define explicit acceptance criteria and verification commands. This task is the final gate before the iteration can be marked PASS.
+- **Verified by**: All commands above return clean results.
+- **Depends on**: Task 3
 
 ---
 
-## Risk Assessment
+## Completed Tasks (Prior Iterations)
 
-**Risk 1: font_differs may not work for delene_2001 real sections.**
-If sections like "1. INTRODUCTION" in delene_2001 use body font (not bold, same font family), requiring font_differs would suppress them. Task 1 validates this. The keyword allowlist in Task 3 mitigates this — "INTRODUCTION" matches regardless of font.
+### Task A [DONE]: Pattern 1 — Reject section numbers > 99 [spec-01]
+- Guard added at `pymupdf_backend.py:125-128`
 
-**Mitigation**: The keyword allowlist ensures common section titles pass even without font differentiation. If delene_2001 uses body font for ALL headings, expand the allowlist.
+### Task B [DONE]: Pattern 1 — Require font_differs for single-digit sections [spec-01]
+- Guard added at `pymupdf_backend.py:130-138`
 
-**Risk 2: aries_cost_account further regression.**
-Current count is 46 (baseline 64, -28%, threshold -30%). Adding font_differs guards could drop it further if some of its headings use body font.
+### Task C [DONE]: Pattern 2 — Alpha count ≥ 4 guard [spec-01]
+- Guard added at `pymupdf_backend.py:150-154`
 
-**Mitigation**: Monitor in Task 5. The heading_regression_pct for aries_cost_account is -30 in papers.jsonl, giving 2% margin. If it drops below 44, investigate which headings were lost.
+### Task D [DONE]: Pattern 2 — Require font_differs for multi-word all-caps [spec-01]
+- Guard added at `pymupdf_backend.py:160-163`
 
-**Risk 3: Known all-caps headers in _KNOWN_ALLCAPS_HEADERS might need expansion.**
-If a paper has a legitimate single-word all-caps header not in the set (e.g., "NOMENCLATURE", "NOTATION"), it won't be promoted.
+### Task E [DONE]: Postprocess — Cap section numbers > 99 [spec-02]
+- Guard added at `postprocess.py:107-113`
 
-**Mitigation**: Review the `_KNOWN_ALLCAPS_HEADERS` set during Task 2 and add any missing entries observed in corpus papers. This is low risk because single-word all-caps headers are a small, well-defined set.
+### Task F [DONE]: Postprocess — Reject Figure/Table/Equation references [spec-02]
+- Guard added at `postprocess.py:115-117`
 
-## Critical Path
+### Task G [DONE]: Noise filter — Report/figure labels and numbered bibliographic entries [spec-02]
+- Patterns added at `postprocess.py:336-367`
+
+### Task H [DONE]: Unit tests for detector and postprocess guards [spec-01, spec-02]
+- 7 detector tests in `tests/test_academic_header_detector.py`
+- 14+ noise filter tests in `tests/test_postprocess.py`
+
+---
+
+## Task Dependency Graph
 
 ```
-Task 1 (diagnostic)
-  ├→ Task 2 (Pattern 2 font_differs)  ─┐
-  └→ Task 3 (Pattern 1 font_differs)  ─┤
-Task 4 (noise filter) ─────────────────┤
-                                        └→ Task 5 (corpus validation)
+Task 1 (numberless bib detection) ──┐
+                                     ├── Task 3 (recalibrate) ── Task 4 (validate)
+Task 2 (address rejection) ─────────┘
 ```
 
-Tasks 2, 3, and 4 can proceed in parallel after Task 1. Task 5 requires all three.
+Tasks 1 and 2 are independent and can be done in parallel.
+Task 3 depends on both 1 and 2.
+Task 4 depends on 3.
+
+## Risk Notes
+
+- **aries_cost_account**: The -73% heading drop is likely correct behavior (most headings were phantoms). During Task 3, manually confirm the 17 remaining headings are legitimate. If real headings were lost, review whether font_differs guard or bibliographic patterns are too aggressive for this paper's formatting.
+- **sparc_overview numberless detection**: Requiring ≥2 bibliographic signals before rejecting is critical to avoid false positives. A heading like "General. Introduction" could match journal abbreviation pattern but is a legitimate heading. The dual-signal requirement prevents this.
+- **energy_amplifier stability**: Currently passing (94 in range 50–130) but is a 241-page document. New noise filters could push it below 50 if over-aggressive. Monitor closely in Task 4.
+- **Corpus re-extraction time**: energy_amplifier takes ~11 minutes to extract. Task 4 corpus validation will take ~15-20 minutes total. Plan accordingly.

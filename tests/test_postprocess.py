@@ -633,17 +633,24 @@ class TestRejectNoiseHeaders:
     def test_reference_with_author_initials_demoted(self):
         """Reference with author initials should be demoted."""
         md = "## 5. J.G. Delene and C.R. Hudson, Cost Estimate Guidelines"
-        assert reject_noise_headers(md) == "5. J.G. Delene and C.R. Hudson, Cost Estimate Guidelines"
+        assert (
+            reject_noise_headers(md) == "5. J.G. Delene and C.R. Hudson, Cost Estimate Guidelines"
+        )
 
     def test_reference_with_us_department_demoted(self):
         """Reference with U.S. Department should be demoted."""
         md = "## 2. Annual Energy Outlook 1998, U.S. Department of Energy"
-        assert reject_noise_headers(md) == "2. Annual Energy Outlook 1998, U.S. Department of Energy"
+        assert (
+            reject_noise_headers(md) == "2. Annual Energy Outlook 1998, U.S. Department of Energy"
+        )
 
     def test_reference_with_university_demoted(self):
         """Reference with university name should be demoted."""
         md = "## 17. Personal communication from R. Miller, University of California"
-        assert reject_noise_headers(md) == "17. Personal communication from R. Miller, University of California"
+        assert (
+            reject_noise_headers(md)
+            == "17. Personal communication from R. Miller, University of California"
+        )
 
     def test_reference_with_year_in_parens_demoted(self):
         """Reference with year in parentheses should be demoted."""
@@ -705,6 +712,77 @@ class TestRejectNoiseHeaders:
         """Legitimate H1 document titles should be preserved."""
         md = "# Fusion Energy Research and Development"
         assert reject_noise_headers(md) == "# Fusion Energy Research and Development"
+
+    # --- Numberless bibliographic entries (Task 1) ---
+
+    def test_numberless_journal_citation_with_volume_issue_demoted(self):
+        """Numberless journal citation with journal abbrev + volume/issue should be demoted."""
+        # Example: "Control. Fusion 51 (12), 124017."
+        md = "## Control. Fusion 51 (12), 124017."
+        assert reject_noise_headers(md) == "Control. Fusion 51 (12), 124017."
+
+    def test_numberless_journal_with_page_range_demoted(self):
+        """Journal citation with journal abbrev + page range should be demoted."""
+        md = "## Nucl. Fusion 45(3), S404-S413."
+        assert reject_noise_headers(md) == "Nucl. Fusion 45(3), S404-S413."
+
+    def test_numberless_multiple_journal_abbrevs_demoted(self):
+        """Multiple journal abbreviations signal a bibliographic entry."""
+        md = "## J. Appl. Phys. Lett. 89 (2006)"
+        assert reject_noise_headers(md) == "J. Appl. Phys. Lett. 89 (2006)"
+
+    def test_numberless_author_initials_with_journal_demoted(self):
+        """Multiple author initials combined with journal pattern should be demoted."""
+        md = "## R. W. Moir, Phys. Plasmas 15 (2008)"
+        assert reject_noise_headers(md) == "R. W. Moir, Phys. Plasmas 15 (2008)"
+
+    def test_numberless_year_parens_with_journal_demoted(self):
+        """Year in parentheses combined with journal abbreviation should be demoted."""
+        md = "## Plasma Phys. Control. Fusion (2020)"
+        assert reject_noise_headers(md) == "Plasma Phys. Control. Fusion (2020)"
+
+    def test_numberless_volume_issue_with_page_range_demoted(self):
+        """Volume/issue pattern + page range is strong bibliographic signal."""
+        md = "## 51(12), 124-130."
+        assert reject_noise_headers(md) == "51(12), 124-130."
+
+    def test_single_journal_abbrev_alone_preserved(self):
+        """Single journal abbreviation alone should NOT trigger rejection (avoid false positive)."""
+        # Example: "General. Introduction" could match pattern but is legitimate
+        md = "## General. Introduction"
+        assert reject_noise_headers(md) == "## General. Introduction"
+
+    def test_single_volume_issue_alone_preserved(self):
+        """Volume/issue pattern alone is not enough (need 2 signals)."""
+        md = "## Section 51(12) Analysis"
+        assert reject_noise_headers(md) == "## Section 51(12) Analysis"
+
+    def test_author_initials_alone_preserved(self):
+        """Author initials alone without other bibliographic signals preserved."""
+        md = "## R. W. Requirements"
+        assert reject_noise_headers(md) == "## R. W. Requirements"
+
+    def test_year_alone_preserved(self):
+        """Year in parentheses alone is not enough."""
+        md = "## Planning (2020) Framework"
+        assert reject_noise_headers(md) == "## Planning (2020) Framework"
+
+    def test_complex_numberless_reference_demoted(self):
+        """Complex reference with multiple signals should be demoted."""
+        # Has: journal abbrevs (Nucl. Eng.), volume/issue (40(2)), page range (201-215)
+        md = "## Nucl. Eng. Des. 40(2), 201-215"
+        assert reject_noise_headers(md) == "Nucl. Eng. Des. 40(2), 201-215"
+
+    def test_sparc_overview_phantom_example_demoted(self):
+        """Actual phantom from sparc_overview corpus paper."""
+        md = "## Control. Fusion Energy 51 (2009), 124017."
+        assert reject_noise_headers(md) == "Control. Fusion Energy 51 (2009), 124017."
+
+    def test_legitimate_section_with_abbrev_preserved(self):
+        """Legitimate section that happens to have one abbreviation is preserved."""
+        # Only one signal (single abbrev), not enough for rejection
+        md = "## 3.2 Design. Methodology"
+        assert reject_noise_headers(md) == "## 3.2 Design. Methodology"
 
     def test_h1_mixed_with_h2_noise(self):
         """Mixed H1 and H2 noise headers should be demoted appropriately."""

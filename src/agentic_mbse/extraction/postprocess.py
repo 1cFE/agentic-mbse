@@ -316,6 +316,8 @@ def _is_noise_header(header_text: str) -> bool:
     - Very short (< 4 chars after stripping the section number prefix)
     - Report/figure labels (e.g., "ORNL 99-1407 EFG", "DOE/ER-1234")
     - Numbered sentences that reference figures/tables (e.g., "12. Figure 11 excludes...")
+    - Bibliographic entries (numbered or numberless): requires ≥2 signals from journal
+      abbreviations, volume/issue patterns, page ranges, author initials, or year patterns
     """
     text = header_text.strip()
     if re.search(r"[=+\[\]{}>~≥≤≈∇∆∑∏µ±×÷→←∞•]", text):
@@ -365,6 +367,46 @@ def _is_noise_header(header_text: str) -> bool:
         # - Year in parentheses: "(1998)", "(2020)"
         if re.search(r"\(\d{4}\)", text):
             return True
+
+    # Numberless bibliographic entries: detect journal citations without leading numbers
+    # Require at least 2 independent bibliographic signals to avoid false positives
+    # This catches references where the detector stripped the leading number
+    bib_signal_count = 0
+
+    # Signal 1: Journal abbreviation pattern (e.g., "Control. Fusion", "Nucl. Fusion")
+    # Match pattern: abbreviated word (capital + lowercase + period) followed by space and capital
+    journal_abbrev_matches = re.findall(r"\b[A-Z][a-z]+\.\s+[A-Z]", text)
+    has_journal_abbrev = len(journal_abbrev_matches) >= 1
+    if len(journal_abbrev_matches) >= 2:
+        bib_signal_count += 1
+
+    # Signal 2: Volume/issue pattern (e.g., "51 (12)", "45(3)")
+    has_volume_issue = re.search(r"\d+\s*\(\d+\)", text) is not None
+    if has_volume_issue:
+        bib_signal_count += 1
+
+    # Signal 3: Page range pattern (e.g., "124-130", "S404-S413")
+    has_page_range = re.search(r"\b\d+[–-]\d+\b", text) is not None
+    if has_page_range:
+        bib_signal_count += 1
+
+    # Signal 4: Multiple author initials (e.g., "J. W.", "R. W.")
+    # Count sequences of capital letter + period + space/capital
+    author_initial_matches = re.findall(r"\b[A-Z]\.\s*(?:[A-Z]\.?)", text)
+    if len(author_initial_matches) >= 2:
+        bib_signal_count += 1
+
+    # Signal 5: Year in parentheses
+    has_year_parens = re.search(r"\(\d{4}\)", text) is not None
+    if has_year_parens:
+        bib_signal_count += 1
+
+    # Reject if we have at least 2 bibliographic signals
+    # OR if we have 1 strong signal (journal abbrev) + 1 supporting signal (volume/issue, page range, or year)
+    if bib_signal_count >= 2:
+        return True
+    if has_journal_abbrev and (has_volume_issue or has_page_range or has_year_parens):
+        return True
 
     return False
 
