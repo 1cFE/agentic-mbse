@@ -227,12 +227,29 @@ class TestCorpus:
                     f"char_count: {baseline_metrics.char_count} → "
                     f"{current_metrics.char_count} ({comparison['char_count_pct']:.1f}%)"
                 )
-            if comparison["heading_count_pct"] < heading_threshold:
+
+            # Check heading count: use absolute bounds if specified, otherwise use percentage regression
+            heading_min = paper.get("heading_count_min")
+            heading_max = paper.get("heading_count_max")
+
+            if heading_min is not None or heading_max is not None:
+                # Absolute bounds specified - check them instead of percentage regression
+                if heading_min is not None and current_metrics.heading_count < heading_min:
+                    issues.append(
+                        f"heading_count: {current_metrics.heading_count} < {heading_min} (minimum)"
+                    )
+                if heading_max is not None and current_metrics.heading_count > heading_max:
+                    issues.append(
+                        f"heading_count: {current_metrics.heading_count} > {heading_max} (maximum)"
+                    )
+            elif comparison["heading_count_pct"] < heading_threshold:
+                # No absolute bounds - check percentage regression
                 issues.append(
                     f"heading_count: {baseline_metrics.heading_count} → "
                     f"{current_metrics.heading_count} ({comparison['heading_count_pct']:.1f}%, "
                     f"threshold {heading_threshold}%)"
                 )
+
             if comparison["table_row_count_pct"] < -10:
                 issues.append(
                     f"table_row_count: {baseline_metrics.table_row_count} → "

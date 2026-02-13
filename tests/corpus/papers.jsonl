@@ -1,7 +1,7 @@
 {"slug": "hawker_2020", "pdf_path": "tests/corpus/pdfs/hawker_2020.pdf", "source": "fusion-tea", "has_tables": false, "has_math": true, "pages": 14}
-{"slug": "aries_cost_account", "pdf_path": "tests/corpus/pdfs/aries_cost_account.pdf", "source": "fusion-tea", "has_tables": true, "has_math": false, "pages": 100, "heading_regression_pct": -30}
+{"slug": "aries_cost_account", "pdf_path": "tests/corpus/pdfs/aries_cost_account.pdf", "source": "fusion-tea", "has_tables": true, "has_math": false, "pages": 100, "heading_count_min": 1, "heading_count_max": 20}
 {"slug": "helios_design", "pdf_path": "tests/corpus/pdfs/helios_design.pdf", "source": "fusion-tea", "has_tables": true, "has_math": true, "pages": 30}
 {"slug": "hsu_2020", "pdf_path": "tests/corpus/pdfs/hsu_2020.pdf", "source": "fusion-tea", "has_tables": true, "has_math": false, "pages": 9}
-{"slug": "delene_2001", "pdf_path": "tests/corpus/pdfs/delene_2001.pdf", "source": "fusion-tea", "has_tables": false, "has_math": false, "pages": 39}
-{"slug": "sparc_overview", "pdf_path": "tests/corpus/pdfs/sparc_overview.pdf", "source": "pool", "has_tables": true, "has_math": true, "pages": 25}
-{"slug": "energy_amplifier", "pdf_path": "tests/corpus/pdfs/energy_amplifier.pdf", "source": "pool", "has_tables": true, "has_math": true, "pages": 241}
+{"slug": "delene_2001", "pdf_path": "tests/corpus/pdfs/delene_2001.pdf", "source": "fusion-tea", "has_tables": false, "has_math": false, "pages": 39, "heading_count_min": 10, "heading_count_max": 27}
+{"slug": "sparc_overview", "pdf_path": "tests/corpus/pdfs/sparc_overview.pdf", "source": "pool", "has_tables": true, "has_math": true, "pages": 25, "heading_count_max": 20}
+{"slug": "energy_amplifier", "pdf_path": "tests/corpus/pdfs/energy_amplifier.pdf", "source": "pool", "has_tables": true, "has_math": true, "pages": 241, "heading_count_min": 50, "heading_count_max": 130}

@@ -537,6 +537,27 @@ class TestRejectNoiseHeaders:
         md = "### 2.1 Global Status of Fusion Energy"
         assert reject_noise_headers(md) == "### 2.1 Global Status of Fusion Energy"
 
+    def test_toc_line_with_dot_leaders_demoted(self):
+        """TOC lines with dot leaders should be demoted."""
+        md = "## 1. INTRODUCTION................................................................................................................... 1"
+        assert (
+            reject_noise_headers(md)
+            == "1. INTRODUCTION................................................................................................................... 1"
+        )
+
+    def test_toc_line_with_trailing_page_number_demoted(self):
+        """TOC lines with trailing page numbers should be demoted."""
+        md = "## Executive Summary 4"
+        assert reject_noise_headers(md) == "Executive Summary 4"
+
+    def test_combined_toc_line_demoted(self):
+        """Combined TOC lines should be demoted."""
+        md = "## 1. INTRODUCTION... 1 2. ANALYSIS PROCEDURES... 2 3. PLANT DESIGNS... 2"
+        assert (
+            reject_noise_headers(md)
+            == "1. INTRODUCTION... 1 2. ANALYSIS PROCEDURES... 2 3. PLANT DESIGNS... 2"
+        )
+
     def test_curly_braces_demoted(self):
         md = "## 3 f{x} + g{y}"
         assert reject_noise_headers(md) == "3 f{x} + g{y}"
@@ -783,6 +804,14 @@ class TestRejectNoiseHeaders:
         # Only one signal (single abbrev), not enough for rejection
         md = "## 3.2 Design. Methodology"
         assert reject_noise_headers(md) == "## 3.2 Design. Methodology"
+
+    def test_combined_references_header_with_numbered_entry_demoted(self):
+        """REFERENCES header combined with numbered bibliography entry should be demoted."""
+        md = "## **REFERENCES** 1. Electric Power Annual 1998 Volume 1, U.S. Department of Energy, Energy Information"
+        assert (
+            reject_noise_headers(md)
+            == "**REFERENCES** 1. Electric Power Annual 1998 Volume 1, U.S. Department of Energy, Energy Information"
+        )
 
     def test_h1_mixed_with_h2_noise(self):
         """Mixed H1 and H2 noise headers should be demoted appropriately."""

@@ -320,6 +320,11 @@ def _is_noise_header(header_text: str) -> bool:
       abbreviations, volume/issue patterns, page ranges, author initials, or year patterns
     """
     text = header_text.strip()
+
+    # Table of contents lines (dot leaders, trailing page numbers)
+    if _is_toc_line(text):
+        return True
+
     if re.search(r"[=+\[\]{}>~≥≤≈∇∆∑∏µ±×÷→←∞•]", text):
         return True
     # Embedded bold markers from garbled slide transitions
@@ -367,6 +372,24 @@ def _is_noise_header(header_text: str) -> bool:
         # - Year in parentheses: "(1998)", "(2020)"
         if re.search(r"\(\d{4}\)", text):
             return True
+
+    # Combined REFERENCES section + numbered entry (e.g., "**REFERENCES** 1. Title...")
+    # This catches cases where a section header is followed by a bibliography item on the same line
+    combined_ref_match = re.search(
+        r"\b(REFERENCES?|BIBLIOGRAPHY)\b.*?(\d{1,3})\.\s+", text, re.IGNORECASE
+    )
+    if combined_ref_match:
+        # Extract text after the reference number
+        ref_start = combined_ref_match.end()
+        if ref_start < len(text):
+            ref_text = text[ref_start:]
+            # Check for bibliographic indicators (year, U.S., journal abbrevs)
+            if re.search(r"\b(19|20)\d{2}\b", ref_text):
+                return True
+            if re.search(r"\bU\.S\.", ref_text):
+                return True
+            if re.search(r"\b[A-Z][a-z]*\.\s+[A-Z]", ref_text):
+                return True
 
     # Numberless bibliographic entries: detect journal citations without leading numbers
     # Require at least 2 independent bibliographic signals to avoid false positives
