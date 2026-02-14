@@ -5,3 +5,4 @@
 {"slug": "delene_2001", "pdf_path": "tests/corpus/pdfs/delene_2001.pdf", "source": "fusion-tea", "has_tables": false, "has_math": false, "pages": 39, "heading_count_min": 10, "heading_count_max": 25}
 {"slug": "sparc_overview", "pdf_path": "tests/corpus/pdfs/sparc_overview.pdf", "source": "pool", "has_tables": true, "has_math": true, "pages": 25, "heading_count_max": 20}
 {"slug": "energy_amplifier", "pdf_path": "tests/corpus/pdfs/energy_amplifier.pdf", "source": "pool", "has_tables": true, "has_math": true, "pages": 241, "heading_count_min": 50, "heading_count_max": 130}
+{"slug": "woodruff_2026", "pdf_path": "tests/corpus/pdfs/woodruff_2026.pdf", "source": "pool", "has_tables": false, "has_math": false, "pages": 25, "heading_count_min": 30, "heading_count_max": 100}

@@ -127,14 +127,15 @@ class AcademicHeaderDetector:
             if depth == 1 and int(sec_num) > 99:
                 return ""
 
-            # Guard 2: Distinguish footnotes from real section headers
-            # For single-digit top-level sections without a trailing period,
-            # require font_differs to reject footnotes like "1 The heat produced..."
-            # Exception: if the original text has "1. Title" (with period), allow it
-            has_period = bool(re.match(r"^\d+\.\s", text))
-            if depth == 1 and int(sec_num) <= 9 and not has_period:
-                # Footnotes use body font; real section headers differ
-                if not font_differs:
+            # Guard 2: Distinguish footnotes/bib entries from real section headers
+            # For top-level sections, require font_differs to reject body-font numbered text
+            # Exception: single-digit sections with trailing period (1-9) are allowed
+            # (handles papers with "1. Introduction" format in body font)
+            if depth == 1:
+                has_period = bool(re.match(r"^\d+\.\s", text))
+                single_digit_with_period = int(sec_num) <= 9 and has_period
+                if not single_digit_with_period and not font_differs:
+                    # Body-font numbered text (footnotes, captions, bib entries) rejected
                     return ""
 
             # Require either font differentiation OR title starts with capital letter
@@ -199,7 +200,7 @@ def extract(input_path: Path, output_dir: Path) -> ExtractionResult:
             dpi=150,
             page_chunks=True,
             hdr_info=detector,
-            table_strategy="lines",
+            table_strategy="lines_strict",
         )
 
         # Join page chunks with page markers for downstream page resolution
