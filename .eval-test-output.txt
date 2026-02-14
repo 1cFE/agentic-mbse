@@ -373,7 +373,7 @@ tests/test_extraction.py::TestWriteSummary::test_writes_valid_json PASSED [ 27%]
 tests/test_extraction.py::TestWriteSummary::test_writes_error_summary PASSED [ 27%]
 tests/test_extraction.py::TestWriteSummary::test_detects_docx_format PASSED [ 27%]
 tests/test_extraction.py::TestPymupdfBackend::test_extract_produces_markdown_and_images PASSED [ 27%]
-tests/test_extraction.py::TestPymupdfBackend::test_extract_passes_table_strategy_and_page_chunks PASSED [ 27%]
+tests/test_extraction.py::TestPymupdfBackend::test_extract_passes_table_strategy_and_page_chunks FAILED [ 27%]
 tests/test_extraction.py::TestPymupdfBackend::test_extract_applies_postprocess PASSED [ 28%]
 tests/test_extraction.py::TestPymupdfBackend::test_extract_returns_error_on_failure PASSED [ 28%]
 tests/test_extraction.py::TestPymupdfBackend::test_counts_images PASSED  [ 28%]
@@ -1866,6 +1866,13 @@ tests/test_claude_structure.py:149: in test_dense_headers_returns_false
     assert needs_claude_structure(md) is False
 E   AssertionError: assert True is False
 E    +  where True = needs_claude_structure('<!-- PAGE:1 -->\n\nBody text for page 1.\n\n<!-- PAGE:2 -->\n\n## Section 1\n\nBody text for page 2.\n\n<!-- PAGE:3 -->\n\n### Subsection 1.1\n\nBody text for page 3.\n\n<!-- PAGE:4 -->\n\n## Section 2\n\nBody text for page 4.\n\n<!-- PAGE:5 -->\n\n### Subsection 2.1\n\nBody text for page 5.\n\n<!-- PAGE:6 -->\n\n## Section 3\n\nBody text for page 6.\n\n<!-- PAGE:7 -->\n\n### Subsection 3.1\n\nBody text for page 7.\n\n<!-- PAGE:8 -->\n\n## Section 4\n\nBody text for page 8.\n\n<!-- PAGE:9 -->\n\n### Subsection 4.1\n\nBody text for page 9.\n\n<!-- PAGE:10 -->\n\n## Section 5\n\nBody text for page 10.\n\n<!-- PAGE:11 -->\n\n### Subsection 5.1\n\nBody text for page 11.\n\n<!-- PAGE:12 -->\n\nBody text for page 12.\n\n<!-- PAGE:13 -->\n\nBody text for page 13.\n\n<!-- PAGE:14 -->\n\nBody text for page 14.\n\n<!-- PAGE:15 -->\n\nBody text for page 15.\n\n<!-- PAGE:16 -->\n\nBody text for page 16.\n\n<!-- PAGE:17 -->\n\nBody text for page 17.\n\n<!-- PAGE:18 -->\n\nBody text for page 18.\n\n<!-- PAGE:19 -->\n\nBody text for page 19.\n\n<!-- PAGE:20 -->\n\nBody text for page 20.\n')
+____ TestPymupdfBackend.test_extract_passes_table_strategy_and_page_chunks _____
+tests/test_extraction.py:245: in test_extract_passes_table_strategy_and_page_chunks
+    assert call_kwargs["table_strategy"] == "lines"
+E   AssertionError: assert 'lines_strict' == 'lines'
+E     
+E     - lines
+E     + lines_strict
 ________ TestPathFilter.test_default_filter_skips_non_designs_directory ________
 tests/test_l8_extractability.py:75: in test_default_filter_skips_non_designs_directory
     assert result.metrics["Design attrs checked"] == 10
@@ -2063,7 +2070,7 @@ _______________ TestLevel2Structure.test_literal_binding_warning _______________
 tests/test_sysml_quality_checks.py:390: in test_literal_binding_warning
     assert any("WARN" in issue and "literal value" in issue for issue in result.issues)
 E   assert False
-E    +  where False = any(<generator object TestLevel2Structure.test_literal_binding_warning.<locals>.<genexpr> at 0x74b3fa330860>)
+E    +  where False = any(<generator object TestLevel2Structure.test_literal_binding_warning.<locals>.<genexpr> at 0x7d70c44fc860>)
 ----------------------------- Captured stdout call -----------------------------
 
 ============================================================
@@ -2202,7 +2209,7 @@ tests/test_extraction.py::TestRunWithTimeout::test_returns_exception_on_error
 tests/test_extraction.py::TestDoclingBackend::test_extract_returns_error_on_timeout
 tests/test_extraction.py::TestDoclingBackend::test_extract_returns_error_on_exception
 tests/test_extraction.py::TestDoclingBackend::test_extract_returns_result_on_success
-  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=917905) is multi-threaded, use of fork() may lead to deadlocks in the child.
+  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=968819) is multi-threaded, use of fork() may lead to deadlocks in the child.
     self.pid = os.fork()
 
 tests/test_quality_gates.py::TestDetectProblems::test_combines_detectors
@@ -2225,6 +2232,10 @@ FAILED tests/test_adapter.py::TestTypeMap::test_type_map_has_relationship_types 
 FAILED tests/test_adapter.py::TestElementsOfType::test_unknown_type_raises_key_error - ImportError: syside requires a license key. Set SYSIDE_LICENSE_KEY environment variable or configure via keyring. See syside documentation.
 FAILED tests/test_claude_structure.py::TestNeedsClaudeStructure::test_dense_headers_returns_false - AssertionError: assert True is False
  +  where True = needs_claude_structure('<!-- PAGE:1 -->\n\nBody text for page 1.\n\n<!-- PAGE:2 -->\n\n## Section 1\n\nBody text for page 2.\n\n<!-- PAGE:3 -->\n\n### Subsection 1.1\n\nBody text for page 3.\n\n<!-- PAGE:4 -->\n\n## Section 2\n\nBody text for page 4.\n\n<!-- PAGE:5 -->\n\n### Subsection 2.1\n\nBody text for page 5.\n\n<!-- PAGE:6 -->\n\n## Section 3\n\nBody text for page 6.\n\n<!-- PAGE:7 -->\n\n### Subsection 3.1\n\nBody text for page 7.\n\n<!-- PAGE:8 -->\n\n## Section 4\n\nBody text for page 8.\n\n<!-- PAGE:9 -->\n\n### Subsection 4.1\n\nBody text for page 9.\n\n<!-- PAGE:10 -->\n\n## Section 5\n\nBody text for page 10.\n\n<!-- PAGE:11 -->\n\n### Subsection 5.1\n\nBody text for page 11.\n\n<!-- PAGE:12 -->\n\nBody text for page 12.\n\n<!-- PAGE:13 -->\n\nBody text for page 13.\n\n<!-- PAGE:14 -->\n\nBody text for page 14.\n\n<!-- PAGE:15 -->\n\nBody text for page 15.\n\n<!-- PAGE:16 -->\n\nBody text for page 16.\n\n<!-- PAGE:17 -->\n\nBody text for page 17.\n\n<!-- PAGE:18 -->\n\nBody text for page 18.\n\n<!-- PAGE:19 -->\n\nBody text for page 19.\n\n<!-- PAGE:20 -->\n\nBody text for page 20.\n')
+FAILED tests/test_extraction.py::TestPymupdfBackend::test_extract_passes_table_strategy_and_page_chunks - AssertionError: assert 'lines_strict' == 'lines'
+  
+  - lines
+  + lines_strict
 FAILED tests/test_l8_extractability.py::TestPathFilter::test_default_filter_skips_non_designs_directory - KeyError: 'Design attrs checked'
 FAILED tests/test_l8_extractability.py::TestPathFilter::test_custom_filter_checks_tests_directory - KeyError: 'Design attrs checked'
 FAILED tests/test_l8_extractability.py::TestPathFilter::test_empty_filter_checks_all_files - KeyError: 'Design attrs checked'
@@ -2259,7 +2270,7 @@ FAILED tests/test_sysml_quality_checks.py::TestLevel1Syntax::test_valid_syntax_p
 FAILED tests/test_sysml_quality_checks.py::TestLevel1Syntax::test_invalid_syntax_fails - AssertionError: assert 'bad.sysml' in 'Failed to load model: syside requires a license key. Set SYSIDE_LICENSE_KEY environment variable or configure via keyring. See syside documentation.'
 FAILED tests/test_sysml_quality_checks.py::TestLevel2Structure::test_unbound_input_detected_basic - ImportError: syside requires a license key. Set SYSIDE_LICENSE_KEY environment variable or configure via keyring. See syside documentation.
 FAILED tests/test_sysml_quality_checks.py::TestLevel2Structure::test_literal_binding_warning - assert False
- +  where False = any(<generator object TestLevel2Structure.test_literal_binding_warning.<locals>.<genexpr> at 0x74b3fa330860>)
+ +  where False = any(<generator object TestLevel2Structure.test_literal_binding_warning.<locals>.<genexpr> at 0x7d70c44fc860>)
 FAILED tests/test_sysml_quality_checks.py::TestLevel2Structure::test_valid_binding_no_issues - AssertionError: assert False
  +  where False = QualityCheckResult(level=2, level_name='Structural Completeness', success=False, file_path=None, issues=['Failed to load model: syside requires a license key. Set SYSIDE_LICENSE_KEY environment variable or configure via keyring. See syside documentation.'], warnings=[], metrics={}, structured_issues=[]).success
 FAILED tests/test_sysml_quality_checks.py::TestLevel2Structure::test_complex_expression_undefined_attribute - KeyError: 'Undefined bindings'
@@ -2301,4 +2312,4 @@ ERROR tests/test_sysml/test_adr002.py::TestDerivedExpressionProhibition::test_mu
 ERROR tests/test_sysml/test_adr002.py::TestDerivedExpressionProhibition::test_expose_pattern_still_allowed - ImportError: syside requires a license key. Set SYSIDE_LICENSE_KEY environment variable or configure via keyring. See syside documentation.
 ERROR tests/test_sysml/test_adr002.py::TestDerivedExpressionProhibition::test_computation_on_calc_output_still_violation - ImportError: syside requires a license key. Set SYSIDE_LICENSE_KEY environment variable or configure via keyring. See syside documentation.
 ERROR tests/test_sysml/test_adr002.py::TestDerivedExpressionProhibition::test_guidance_includes_calc_def_template - ImportError: syside requires a license key. Set SYSIDE_LICENSE_KEY environment variable or configure via keyring. See syside documentation.
-= 35 failed, 1252 passed, 10 skipped, 9 warnings, 19 errors in 61.44s (0:01:01) =
+= 36 failed, 1251 passed, 10 skipped, 9 warnings, 19 errors in 61.83s (0:01:01) =

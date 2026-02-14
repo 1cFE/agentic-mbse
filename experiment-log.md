@@ -59,3 +59,20 @@ No change should degrade what already works. The corpus tests are the gate.
 - **Visual formatting** — bold/italic preservation is nice-to-have, not a fidelity concern
 - **Whitespace and readability** — output shouldn't be junk, but extra blank lines and minor inconsistencies are not worth spending iterations on when higher-priority gaps remain
 
+
+---
+
+## Iteration 1 — 2026-02-13
+**Brief:** # Iteration 1 Brief
+**Specs:** 01-switch-table-strategy-to-lines-strict.md,02-extend-guard2-all-depth1-sections.md,03-add-corpus-pdf-woodruff-2026.md
+**Outcome:** CONVERGED
+**Key Learnings:**
+- Specs passed: 3/3
+- Critical failures: none
+- Key observations:
+  - `lines_strict` completely eliminated false-positive table detections (252 `<br>` tags → 0) while preserving all real ruled tables
+  - Guard 2 extension successfully rejected both false positives in hawker_2020 without affecting legitimate numbered sections
+  - woodruff_2026 extraction demonstrates pipeline handles deeply-nested heading structures (82 headings across H2/H3/H4)
+  - All quality metrics stable across the 8-paper corpus with zero regressions
+  - Extraction performance acceptable (8-672s depending on paper complexity)
+**Corpus:** hawker_2020, aries_cost_account, helios_design, hsu_2020, delene_2001, sparc_overview, energy_amplifier, woodruff_2026, 

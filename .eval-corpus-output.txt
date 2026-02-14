@@ -11,4 +11,4 @@ tests/test_corpus.py::TestCorpus::test_no_quality_regression_vs_baseline PASSED 
 tests/test_corpus.py::TestCorpus::test_table_heavy_papers_have_tables PASSED [ 75%]
 tests/test_corpus.py::TestCorpus::test_heading_structure_present PASSED  [100%]
 
-======================== 4 passed in 799.81s (0:13:19) =========================
+======================== 4 passed in 755.65s (0:12:35) =========================
