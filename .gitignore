@@ -33,5 +33,10 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Document extraction corpus
+*.pdf
+tests/corpus/pool/
+tests/corpus/current/
+
 # Memories
 .project/memories
