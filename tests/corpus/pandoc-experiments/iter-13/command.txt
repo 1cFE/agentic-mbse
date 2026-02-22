@@ -1,0 +1,1 @@
+Command: pandoc ... -f html-native_divs-native_spans -t markdown --wrap=none --markdown-headings=atx

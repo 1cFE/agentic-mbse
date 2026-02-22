@@ -1,0 +1,2 @@
+Command: pandoc tests/corpus/html/paischer_2025.html -f html -t markdown+tex_math_single_backslash
+Exit code: 0

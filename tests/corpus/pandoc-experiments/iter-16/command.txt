@@ -1,0 +1,1 @@
+Command: pandoc (pre-processed: figure/transform stripped) -f html-native_divs-native_spans -t markdown-header_attributes --wrap=none --markdown-headings=atx

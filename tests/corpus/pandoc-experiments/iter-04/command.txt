@@ -1,0 +1,2 @@
+Command: pandoc tests/corpus/html/paischer_2025.html -f html -t markdown --markdown-headings=atx
+Exit code: 0
