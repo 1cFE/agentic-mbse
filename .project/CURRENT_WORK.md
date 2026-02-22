@@ -1,16 +1,36 @@
 # Current Work
 
-**Last Updated**: 2026-02-08
+**Last Updated**: 2026-02-22
 
 ---
 
 ## Active Work
 
-*No items in progress — branch ready for PR.*
+### Doc Ingest Clean — Stage 1A pymupdf4llm Deep-Dive: **COMPLETE**
+
+**Branch:** `doc-ingest-clean`
+**Work item:** `.project/active/pymupdf4llm-deep-dive/`
+
+All 4 phases complete. Findings:
+- CompositeHeaderDetector (font-size + bold union) is the best `hdr_info` — zero regressions, +10/13 docs improved
+- `ignore_code=True` eliminates code fence spam in patent/monospace docs
+- `table_strategy="lines"` is correct — `lines_strict` kills real tables
+- `pymupdf_backend.py` and `extract_page.py` updated with best config + rationale comments
+- Full findings in `.project/active/pymupdf4llm-deep-dive/findings.md`
+
+**Next:** Move to Stage 1B (Docling) or 1C (Pandoc). Pandoc deep-dive spec/plan already drafted (staged).
+
+### Doc Ingest Clean — Stage 1C Pandoc Deep-Dive: **DRAFTED**
+
+Spec, plan, and 16 experiment iterations already staged. Not yet committed.
 
 ---
 
 ## Recently Completed
+
+### 2026-02-22: pymupdf4llm Deep-Dive (Stage 1A)
+
+Systematic evaluation of pymupdf4llm API parameters across 14-document corpus (9 configs tested). Discovered CompositeHeaderDetector as clear winner. Updated `pymupdf_backend.py` with evidence-backed config. Fixed stale test. Full findings report in `.project/active/pymupdf4llm-deep-dive/findings.md`.
 
 ### 2026-02-08: EPIC-PDFV3-001 PDF Extraction v3
 
@@ -50,14 +70,24 @@ Renamed modeling project management directory for clearer semantic distinction.
 
 ## Up Next
 
-1. Merge `pdf-extract` branch to master (PR pending)
-2. EPIC-LCOE-001: LCOE Costing Patterns (tracking — active in fusion-tea)
-3. EPIC-VIZ-001: Visualization Tool Integration (tracking — active in fusion-tea)
-4. PDF Skill Deployment: Docling MCP setup during init (spec drafted)
+1. Commit Stage 1A + 1C work on `doc-ingest-clean` branch
+2. Stage 1B: Docling deep-dive (evaluate Docling for math, tables, headings that pymupdf4llm misses)
+3. Stage 1C: Pandoc deep-dive (experiment iterations already run, needs synthesis)
+4. Stage 2: Quality gates and pipeline assembly
+5. EPIC-LCOE-001: LCOE Costing Patterns (tracking — active in fusion-tea)
 
 ---
 
 ## Session Notes
+
+### 2026-02-22
+
+- Completed Phase 3 (Synthesize) of pymupdf4llm deep-dive
+- Added Final Recommendation section to findings.md
+- Fixed stale test `test_extract_passes_hdr_info_and_table_strategy` — was asserting old `_academic_header_detector`
+- Re-ran best config on full 15-PDF corpus, confirmed reproducibility (1 char diff in 109k chars)
+- 3 heading regressions vs fusion-tea baseline are inherent pymupdf4llm limitations, documented
+- `uv sync` without `--extra dev` strips pytest — use `uv sync --extra dev` to get test deps back
 
 ### 2026-02-08
 
