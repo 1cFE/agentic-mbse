@@ -109,7 +109,11 @@ Docling is the ML-based heavy hitter; GMFT is the fast table-specific extractor.
 
 **Evidence:** `.project/active/docling-deep-dive/findings.md`, `tests/corpus/runs/{docling_baseline,docling_no_ocr,gmft_baseline,...}/`
 
-### 1D: Claude Headless Direct Extraction — STATUS: IN PROGRESS
+### 1D: Claude Headless Direct Extraction — STATUS: COMPLETE
+
+> **Findings:** `.project/active/claude-headless-deep-dive/findings.md`
+>
+> **Key results:** Claude pure vision produces clean LaTeX equations (the only tool to do so), accurate tables (no false positives), and reliable headings. Cost is $0.078/page (Sonnet). General repair and focused synthesis approaches showed no improvement over pure vision — supplemental text is ignored. Recommended pipeline: pymupdf4llm primary + Claude vision on targeted equation/table/heading-failure pages. Total experiment spend: $15.30.
 
 **Depends on:** 1A, 1B, 1C (for baseline comparison)
 

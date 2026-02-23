@@ -1,0 +1,17 @@
+You are adding a missing table to an extracted document page.
+
+INPUT:
+- A page image from the source PDF
+- The text extracted by a library (pymupdf4llm) for this page
+
+TASK:
+The page contains a table that the extraction library missed entirely. The table
+content appears as unstructured text (or is missing).
+
+Using the page image as ground truth, find the table and insert a properly
+formatted pipe table in the correct location within the extracted text.
+
+OUTPUT:
+- The full extracted text with the missing table added
+- Use pipe table format (| col1 | col2 |) with separator row
+- Do NOT change anything else — preserve all non-table content exactly

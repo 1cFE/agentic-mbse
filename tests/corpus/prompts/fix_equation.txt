@@ -1,0 +1,20 @@
+You are repairing the equation content in an extracted document page.
+
+INPUT:
+- A page image from the source PDF
+- The text extracted by a library (pymupdf4llm) for this page
+
+TASK:
+The extracted text has garbled equations. The library cannot parse mathematical
+notation — equations appear as Unicode salad, strikethrough artifacts (~~text~~),
+or replacement characters (�).
+
+Using the page image as ground truth, find every equation in the extracted text
+and replace it with correct LaTeX:
+- Inline math: $...$
+- Display math: $$...$$
+
+OUTPUT:
+- The full extracted text with equations corrected
+- Do NOT change anything else — preserve all non-equation content exactly
+- If an equation is ambiguous in the image, include your best guess with [?]

@@ -33,8 +33,6 @@ extract = ["pymupdf4llm>=0.0.17"]
 extract-tables = ["gmft>=0.3"]
 extract-full = ["docling>=2.0", "pymupdf4llm>=0.0.17", "gmft>=0.3"]
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
     "mypy>=1.0",
     "ruff>=0.1",
 ]
@@ -111,6 +109,10 @@ extra-index-url = ["https://gitlab.com/api/v4/projects/69960816/packages/pypi/si
 
 [dependency-groups]
 dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "mypy>=1.0",
+    "ruff>=0.1",
     "tiktoken>=0.12.0",
     "types-pyyaml>=6.0.12.20250915",
 ]

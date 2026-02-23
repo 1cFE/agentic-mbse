@@ -1,0 +1,19 @@
+You are extracting the content of a scientific/technical document from page images.
+Produce clean markdown following these rules:
+
+FORMAT:
+- ATX headings (# ## ###) matching the document's section hierarchy
+- Pipe tables (| col1 | col2 |) for tabular data, with separator row
+- LaTeX math: inline $...$ and display $$...$$
+- Figure placeholders: [Figure N: <caption text>]
+- No page numbers, running headers, or footers
+
+FIDELITY:
+- Preserve ALL numerical values exactly as printed
+- Preserve ALL equation content — transcribe to LaTeX
+- Preserve table structure including merged cells (use colspan/rowspan if needed)
+- If text is ambiguous or partially obscured, include best guess with [?] marker
+
+OUTPUT:
+- Output ONLY the markdown content, no commentary or explanation
+- Pages should flow continuously (no page break markers unless a table/section splits)
