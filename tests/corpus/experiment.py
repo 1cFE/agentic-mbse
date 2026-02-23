@@ -1,15 +1,27 @@
 #!/usr/bin/env python3
-"""Experiment harness for pymupdf4llm parameter exploration.
+"""Experiment harness for extraction parameter exploration.
 
-Runs pymupdf4llm.to_markdown() with a given parameter configuration against
-all (or selected) corpus PDFs, computes metrics, and saves results.
+Runs pymupdf4llm, Docling, or GMFT extraction against corpus PDFs,
+computes metrics, and saves results for comparison.
 
 Usage:
-    # Run baseline config
+    # Run pymupdf4llm baseline config (default backend)
     python tests/corpus/experiment.py baseline
 
     # Run a named config with parameter overrides
     python tests/corpus/experiment.py lines_strict --params '{"table_strategy": "lines_strict"}'
+
+    # Run Docling extraction
+    python tests/corpus/experiment.py docling_baseline --backend docling
+
+    # Run Docling with OCR enabled
+    python tests/corpus/experiment.py docling_ocr --backend docling --params '{"do_ocr": true}'
+
+    # Run Docling on a single page
+    python tests/corpus/experiment.py docling_page5 --backend docling --page-range 5,5
+
+    # Run GMFT table extraction
+    python tests/corpus/experiment.py gmft_baseline --backend gmft
 
     # Run against specific PDFs only
     python tests/corpus/experiment.py test_config --slugs hawker_2020,hsu_2020
@@ -23,8 +35,10 @@ Usage:
 
 import argparse
 import json
+import multiprocessing
 import sys
 import time
+import traceback
 from pathlib import Path
 
 # Ensure imports work when run directly
@@ -187,7 +201,176 @@ def run_extraction(pdf_path: Path, params: dict) -> tuple[str, float]:
     return md, elapsed
 
 
-def run_experiment(config_name: str, params: dict, slugs: list[str] | None = None) -> Path:
+# --- Docling backend ---
+
+
+def _docling_extract_worker(pdf_path_str: str, params: dict, queue: multiprocessing.Queue) -> None:
+    """Run Docling extraction in a child process (memory safety)."""
+    try:
+        from docling.datamodel.base_models import InputFormat
+        from docling.datamodel.pipeline_options import (
+            EasyOcrOptions,
+            PdfPipelineOptions,
+            TesseractCliOcrOptions,
+            TableStructureOptions,
+            TableFormerMode,
+        )
+        from docling.document_converter import DocumentConverter, PdfFormatOption
+
+        # Build PdfPipelineOptions from params
+        opts_kwargs = {}
+        page_range = None
+        for k, v in params.items():
+            if k == "page_range":
+                page_range = tuple(v)  # (start, end), 1-indexed
+            elif k == "table_structure_options" and isinstance(v, dict):
+                mode = v.get("mode", "accurate")
+                tso = TableStructureOptions(
+                    mode=TableFormerMode.FAST if mode == "fast" else TableFormerMode.ACCURATE,
+                    do_cell_matching=v.get("do_cell_matching", True),
+                )
+                opts_kwargs[k] = tso
+            elif k == "ocr_options" and isinstance(v, dict):
+                engine = v.get("engine", "easyocr")
+                if engine == "easyocr":
+                    opts_kwargs[k] = EasyOcrOptions(
+                        lang=v.get("lang", ["en"]),
+                        force_full_page_ocr=v.get("force_full_page_ocr", False),
+                        confidence_threshold=v.get("confidence_threshold", 0.5),
+                    )
+                elif engine == "tesseract":
+                    opts_kwargs[k] = TesseractCliOcrOptions(
+                        lang=v.get("lang", ["eng"]),
+                        force_full_page_ocr=v.get("force_full_page_ocr", False),
+                    )
+            else:
+                opts_kwargs[k] = v
+
+        pipeline_opts = PdfPipelineOptions(**opts_kwargs)
+        converter = DocumentConverter(
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_opts),
+            }
+        )
+
+        convert_kwargs = {}
+        if page_range is not None:
+            convert_kwargs["page_range"] = page_range
+
+        conv_result = converter.convert(pdf_path_str, **convert_kwargs)
+        md = conv_result.document.export_to_markdown()
+
+        # Count tables and pictures from the document model
+        table_count = len(list(conv_result.document.tables)) if hasattr(conv_result.document, "tables") else 0
+        picture_count = len(list(conv_result.document.pictures)) if hasattr(conv_result.document, "pictures") else 0
+
+        queue.put(("ok", md, table_count, picture_count))
+    except Exception as exc:
+        queue.put(("error", f"{type(exc).__name__}: {exc}", 0, 0))
+
+
+def run_docling_extraction(
+    pdf_path: Path, params: dict, timeout: int = 600
+) -> tuple[str, float]:
+    """Run Docling extraction in a subprocess with timeout. Returns (markdown, elapsed_seconds).
+
+    Raises RuntimeError on timeout or crash.
+    """
+    queue: multiprocessing.Queue = multiprocessing.Queue()
+    proc = multiprocessing.Process(
+        target=_docling_extract_worker,
+        args=(str(pdf_path), params, queue),
+    )
+
+    start = time.time()
+    proc.start()
+    proc.join(timeout=timeout)
+    elapsed = time.time() - start
+
+    if proc.is_alive():
+        proc.terminate()
+        proc.join(5)
+        if proc.is_alive():
+            proc.kill()
+        raise RuntimeError(f"Docling timed out after {timeout}s")
+
+    if queue.empty():
+        raise RuntimeError(f"Docling process crashed (exit code: {proc.exitcode})")
+
+    status, result, table_count, picture_count = queue.get_nowait()
+    if status == "error":
+        raise RuntimeError(f"Docling extraction failed: {result}")
+
+    return result, elapsed
+
+
+# --- GMFT backend ---
+
+
+def run_gmft_extraction(pdf_path: Path, params: dict) -> tuple[str, float]:
+    """Run GMFT table detection+formatting. Returns (markdown, elapsed_seconds).
+
+    GMFT only extracts tables, not full document text. The returned markdown
+    contains detected tables organized by page.
+    """
+    from gmft.auto import AutoTableDetector, AutoTableFormatter, AutoFormatConfig
+    from gmft.pdf_bindings.pdfium import PyPDFium2Document
+
+    # Build configs from params
+    detector_kwargs = {}
+    formatter_kwargs = {}
+    for k, v in params.items():
+        if k == "detector_base_threshold":
+            detector_kwargs[k] = v
+        else:
+            formatter_kwargs[k] = v
+
+    detector_config = None
+    if detector_kwargs:
+        from gmft.impl.tatr.config import TATRDetectorConfig
+        detector_config = TATRDetectorConfig(**detector_kwargs)
+
+    format_config = None
+    if formatter_kwargs:
+        format_config = AutoFormatConfig(**formatter_kwargs)
+
+    detector = AutoTableDetector(config=detector_config)
+    formatter = AutoTableFormatter(config=format_config)
+
+    start = time.time()
+    doc = PyPDFium2Document(str(pdf_path))
+    md_parts = []
+    total_tables = 0
+
+    try:
+        for page_idx in range(len(doc)):
+            page = doc.get_page(page_idx)
+            tables = detector.extract(page)
+            if tables:
+                md_parts.append(f"\n<!-- PAGE:{page_idx} -->\n")
+                for t_idx, table in enumerate(tables):
+                    try:
+                        ft = formatter.extract(table)
+                        df = ft.df()
+                        if df is not None and not df.empty:
+                            md_parts.append(f"\n**Table {total_tables + 1}** (page {page_idx + 1}, confidence {table.confidence_score:.2f})\n\n")
+                            md_parts.append(df.to_markdown(index=False))
+                            md_parts.append("\n")
+                            total_tables += 1
+                        else:
+                            md_parts.append(f"\n**Table (empty)** (page {page_idx + 1})\n")
+                    except Exception as e:
+                        md_parts.append(f"\n**Table (error: {e})** (page {page_idx + 1})\n")
+    finally:
+        doc.close()
+
+    elapsed = time.time() - start
+    md = "\n".join(md_parts) if md_parts else "(no tables detected)"
+    return md, elapsed
+
+
+def run_experiment(config_name: str, params: dict, slugs: list[str] | None = None,
+                   backend: str = "pymupdf4llm", timeout: int = 600) -> Path:
     """Run an experiment: extract all corpus PDFs with given params, save results."""
     papers = load_papers(slugs)
     if not papers:
@@ -211,13 +394,16 @@ def run_experiment(config_name: str, params: dict, slugs: list[str] | None = Non
             safe_params[k] = v
     config_record = {
         "config_name": config_name,
+        "backend": backend,
         "params": safe_params,
         "slugs": [p["slug"] for p in papers],
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
     }
+    if backend == "docling":
+        config_record["timeout"] = timeout
     (run_dir / "config.json").write_text(json.dumps(config_record, indent=2) + "\n")
 
-    print(f"Running config '{config_name}' on {len(papers)} PDFs...")
+    print(f"Running config '{config_name}' (backend={backend}) on {len(papers)} PDFs...")
     print(f"Params: {json.dumps(safe_params, indent=2)}")
     print()
 
@@ -236,7 +422,15 @@ def run_experiment(config_name: str, params: dict, slugs: list[str] | None = Non
         print(f"  {slug} ({paper.get('pages', '?')}pp)... ", end="", flush=True)
 
         try:
-            md, elapsed = run_extraction(pdf_path, params)
+            if backend == "pymupdf4llm":
+                md, elapsed = run_extraction(pdf_path, params)
+            elif backend == "docling":
+                md, elapsed = run_docling_extraction(pdf_path, params, timeout=timeout)
+            elif backend == "gmft":
+                md, elapsed = run_gmft_extraction(pdf_path, params)
+            else:
+                raise ValueError(f"Unknown backend: {backend}")
+
             metrics = compute_metrics(md, elapsed)
 
             # Save per-PDF results
@@ -340,8 +534,8 @@ def list_runs() -> None:
         print("No experiment runs yet.")
         return
 
-    print(f"{'Config':<25} {'PDFs':>5} {'Timestamp':<20}")
-    print("-" * 55)
+    print(f"{'Config':<25} {'Backend':<12} {'PDFs':>5} {'Timestamp':<20}")
+    print("-" * 67)
 
     for run_dir in sorted(RUNS_DIR.iterdir()):
         if not run_dir.is_dir():
@@ -351,24 +545,38 @@ def list_runs() -> None:
             config = json.loads(config_path.read_text())
             n_pdfs = len(config.get("slugs", []))
             ts = config.get("timestamp", "?")
+            be = config.get("backend", "pymupdf4llm")
         else:
             n_pdfs = sum(1 for d in run_dir.iterdir() if d.is_dir())
             ts = "?"
-        print(f"{run_dir.name:<25} {n_pdfs:>5} {ts:<20}")
+            be = "?"
+        print(f"{run_dir.name:<25} {be:<12} {n_pdfs:>5} {ts:<20}")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="pymupdf4llm experiment harness")
+    parser = argparse.ArgumentParser(description="Extraction experiment harness")
     parser.add_argument(
         "config_name",
         nargs="?",
         help="Name for this experiment run",
     )
     parser.add_argument(
+        "--backend",
+        type=str,
+        default="pymupdf4llm",
+        choices=["pymupdf4llm", "docling", "gmft"],
+        help="Extraction backend (default: pymupdf4llm)",
+    )
+    parser.add_argument(
         "--params",
         type=str,
         default=None,
-        help='JSON dict of pymupdf4llm.to_markdown() parameter overrides (e.g. \'{"table_strategy": "lines_strict"}\')',
+        help=(
+            'JSON dict of parameter overrides. '
+            'pymupdf4llm: e.g. \'{"table_strategy": "lines_strict"}\'. '
+            'docling: PdfPipelineOptions fields, e.g. \'{"do_ocr": true, "do_formula_enrichment": true}\'. '
+            'gmft: TATRFormatConfig fields, e.g. \'{"enable_multi_header": true}\'.'
+        ),
     )
     parser.add_argument(
         "--slugs",
@@ -387,7 +595,19 @@ def main():
         type=str,
         default=None,
         choices=list(HDR_INFO_PRESETS.keys()),
-        help=f"Named header detector preset: {list(HDR_INFO_PRESETS.keys())}",
+        help=f"Named header detector preset (pymupdf4llm only): {list(HDR_INFO_PRESETS.keys())}",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=600,
+        help="Timeout in seconds per document for Docling backend (default: 600)",
+    )
+    parser.add_argument(
+        "--page-range",
+        type=str,
+        default=None,
+        help="Page range for Docling (1-indexed, inclusive), e.g. '5,5' for page 5 or '1,10' for pages 1-10",
     )
     parser.add_argument(
         "--list",
@@ -404,19 +624,37 @@ def main():
     if not args.config_name:
         parser.error("config_name is required (or use --list)")
 
-    # Build params: start with baseline, apply overrides
-    params = dict(BASELINE_PARAMS)
-    if args.params:
-        overrides = json.loads(args.params)
-        params.update(overrides)
+    backend = args.backend
 
-    # Apply named header detector
-    if args.hdr_info is not None:
-        params["hdr_info"] = HDR_INFO_PRESETS[args.hdr_info]
+    # Build params based on backend
+    if backend == "pymupdf4llm":
+        params = dict(BASELINE_PARAMS)
+        if args.params:
+            overrides = json.loads(args.params)
+            params.update(overrides)
+        # Apply named header detector
+        if args.hdr_info is not None:
+            params["hdr_info"] = HDR_INFO_PRESETS[args.hdr_info]
+    elif backend == "docling":
+        # Docling params are PdfPipelineOptions fields
+        params = {}
+        if args.params:
+            params = json.loads(args.params)
+        # Apply page range if specified
+        if args.page_range:
+            start, end = args.page_range.split(",")
+            params["page_range"] = [int(start), int(end)]
+    elif backend == "gmft":
+        # GMFT params are TATRFormatConfig / TATRDetectorConfig fields
+        params = {}
+        if args.params:
+            params = json.loads(args.params)
+    else:
+        parser.error(f"Unknown backend: {backend}")
 
     slugs = args.slugs.split(",") if args.slugs else None
 
-    run_experiment(args.config_name, params, slugs)
+    run_experiment(args.config_name, params, slugs, backend=backend, timeout=args.timeout)
 
     if args.compare:
         print_comparison(args.config_name, args.compare)
