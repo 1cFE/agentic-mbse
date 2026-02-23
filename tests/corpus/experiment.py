@@ -211,6 +211,7 @@ def _docling_extract_worker(pdf_path_str: str, params: dict, queue: multiprocess
         from docling.datamodel.pipeline_options import (
             EasyOcrOptions,
             PdfPipelineOptions,
+            RapidOcrOptions,
             TesseractCliOcrOptions,
             TableStructureOptions,
             TableFormerMode,
@@ -243,6 +244,17 @@ def _docling_extract_worker(pdf_path_str: str, params: dict, queue: multiprocess
                         lang=v.get("lang", ["eng"]),
                         force_full_page_ocr=v.get("force_full_page_ocr", False),
                     )
+                elif engine == "rapidocr":
+                    rapidocr_kwargs = {
+                        "force_full_page_ocr": v.get("force_full_page_ocr", False),
+                    }
+                    if "det_model_path" in v:
+                        rapidocr_kwargs["det_model_path"] = v["det_model_path"]
+                    if "rec_model_path" in v:
+                        rapidocr_kwargs["rec_model_path"] = v["rec_model_path"]
+                    if "cls_model_path" in v:
+                        rapidocr_kwargs["cls_model_path"] = v["cls_model_path"]
+                    opts_kwargs[k] = RapidOcrOptions(**rapidocr_kwargs)
             else:
                 opts_kwargs[k] = v
 
