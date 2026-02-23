@@ -1,7 +1,7 @@
 # Development Strategy: Clean Document Extraction Infrastructure
 
 **Created:** 2026-02-22
-**Status:** Draft (revised 2026-02-22)
+**Status:** Active (revised 2026-02-22)
 **Branch:** `doc-ingest-clean` (fresh from `main`)
 
 ---
@@ -88,7 +88,7 @@ Pandoc is the converter for structured formats (HTML, JATS XML, DOCX). Not viabl
 
 **Evidence:** `.project/active/pandoc-deep-dive/findings.md`, `tests/corpus/pandoc-experiments/iter-01..16/`
 
-### 1C: Docling & GMFT — STATUS: IN PROGRESS (Phase 1 baseline + OCR investigation)
+### 1C: Docling & GMFT — STATUS: COMPLETE
 
 Docling is the ML-based heavy hitter; GMFT is the fast table-specific extractor.
 
@@ -214,9 +214,24 @@ Same metrics as 1A-1C (via `compute_metrics()`), plus: token usage, equation acc
 
 ---
 
-## Stage 2: Head-to-Head Comparison and Ground Truth
+## Stage 2: Head-to-Head Comparison and Ground Truth — STATUS: COMPLETE
 
 **Goal:** Consolidate all Stage 1 results into a single head-to-head comparison, establish ground truth for the test corpus, and produce a definitive scorecard that Stage 3's pipeline experiments optimize against.
+
+**Completed:** 2026-02-22
+
+**Deliverables:**
+- `tests/corpus/ground_truth.jsonl` — Machine-readable ground truth for 7 documents (4 full, 3 partial)
+- `tests/corpus/comparison_report.md` — 189-line head-to-head comparison with definitive scorecard
+- `tests/corpus/metrics.py` — Extended with `GroundTruth`, `AccuracyScore`, `load_ground_truth()`, `score_against_ground_truth()`
+
+**Key results:**
+- Claude vision is the accuracy ceiling: ~12% heading error, ~1% table error
+- pymupdf4llm best_v1 has heading over-detection on bold-heavy docs (+45 on paischer_2025) and misses gridless tables
+- GMFT is exact for grid-lined tables but over-detects TOC/lists
+- Docling is accurate where it completes but times out on 67% of corpus
+- Pandoc from arXiv HTML is perfect but only available for ~50% of papers
+- Recommended Stage 3 pipeline: Pandoc first → pymupdf4llm base → quality gate → Claude vision targeted → GMFT table fix
 
 ### Why This Stage Exists
 

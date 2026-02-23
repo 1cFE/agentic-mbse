@@ -165,6 +165,145 @@ def compare_metrics(baseline: ExtractionMetrics, current: ExtractionMetrics) -> 
     return result
 
 
+@dataclass
+class GroundTruth:
+    """Human-verified ground truth for a corpus document."""
+
+    slug: str
+    pages: int
+    headings: int | None
+    heading_levels: dict[int, int] | None
+    data_tables: int | None
+    table_data_rows: int | None
+    expected_metric_table_rows: int | None
+    display_equations: int | None
+    has_inline_math: bool | None
+    notes: str
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "GroundTruth":
+        """Create from dictionary (for loading from JSONL)."""
+        # Convert string keys to int for heading_levels
+        hl = data.get("heading_levels")
+        if hl is not None:
+            hl = {int(k): v for k, v in hl.items()}
+        return cls(
+            slug=data["slug"],
+            pages=data["pages"],
+            headings=data.get("headings"),
+            heading_levels=hl,
+            data_tables=data.get("data_tables"),
+            table_data_rows=data.get("table_data_rows"),
+            expected_metric_table_rows=data.get("expected_metric_table_rows"),
+            display_equations=data.get("display_equations"),
+            has_inline_math=data.get("has_inline_math"),
+            notes=data.get("notes", ""),
+        )
+
+
+def load_ground_truth(path: Path | None = None) -> dict[str, GroundTruth]:
+    """Load ground truth from JSONL file.
+
+    Args:
+        path: Path to ground_truth.jsonl. Defaults to tests/corpus/ground_truth.jsonl.
+
+    Returns:
+        Dictionary mapping slug to GroundTruth.
+    """
+    import json
+
+    if path is None:
+        path = Path(__file__).parent / "ground_truth.jsonl"
+    result = {}
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                data = json.loads(line)
+                gt = GroundTruth.from_dict(data)
+                result[gt.slug] = gt
+    return result
+
+
+@dataclass
+class AccuracyScore:
+    """Accuracy score for one method on one dimension against ground truth."""
+
+    detected: int
+    ground_truth: int
+    delta: int  # detected - ground_truth (positive = over-detection)
+    error_pct: float  # abs(delta) / ground_truth * 100
+    category: str  # "exact", "close" (<=10%), "over", "under", "miss" (0 detected)
+
+
+def score_against_ground_truth(
+    metrics: ExtractionMetrics, gt: GroundTruth
+) -> dict[str, AccuracyScore | None]:
+    """Score extraction metrics against human-verified ground truth.
+
+    Computes accuracy scores for headings and table rows by comparing
+    the tool's metric output against the expected values from ground truth.
+
+    Args:
+        metrics: Extraction metrics from a tool run.
+        gt: Human-verified ground truth for the same document.
+
+    Returns:
+        Dictionary with keys "headings" and "table_rows", each mapping to
+        an AccuracyScore or None if ground truth is not available for that dimension.
+    """
+    result: dict[str, AccuracyScore | None] = {"headings": None, "table_rows": None}
+
+    if gt.headings is not None:
+        delta = metrics.heading_count - gt.headings
+        error_pct = (abs(delta) / gt.headings * 100) if gt.headings > 0 else (
+            0.0 if metrics.heading_count == 0 else 100.0
+        )
+        if delta == 0:
+            cat = "exact"
+        elif error_pct <= 10:
+            cat = "close"
+        elif metrics.heading_count == 0 and gt.headings > 0:
+            cat = "miss"
+        elif delta > 0:
+            cat = "over"
+        else:
+            cat = "under"
+        result["headings"] = AccuracyScore(
+            detected=metrics.heading_count,
+            ground_truth=gt.headings,
+            delta=delta,
+            error_pct=error_pct,
+            category=cat,
+        )
+
+    if gt.expected_metric_table_rows is not None:
+        expected = gt.expected_metric_table_rows
+        delta = metrics.table_row_count - expected
+        error_pct = (abs(delta) / expected * 100) if expected > 0 else (
+            0.0 if metrics.table_row_count == 0 else 100.0
+        )
+        if delta == 0:
+            cat = "exact"
+        elif error_pct <= 10:
+            cat = "close"
+        elif metrics.table_row_count == 0 and expected > 0:
+            cat = "miss"
+        elif delta > 0:
+            cat = "over"
+        else:
+            cat = "under"
+        result["table_rows"] = AccuracyScore(
+            detected=metrics.table_row_count,
+            ground_truth=expected,
+            delta=delta,
+            error_pct=error_pct,
+            category=cat,
+        )
+
+    return result
+
+
 if __name__ == "__main__":
     # Test metrics computation on a sample markdown file
     import json

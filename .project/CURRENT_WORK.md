@@ -6,27 +6,30 @@
 
 ## Active Work
 
-### Doc Ingest Clean — Stage 1A pymupdf4llm Deep-Dive: **COMPLETE**
+### Doc Ingest Clean — Stage 2 Head-to-Head Comparison: **COMPLETE**
 
 **Branch:** `doc-ingest-clean`
-**Work item:** `.project/active/pymupdf4llm-deep-dive/`
+**Report:** `tests/corpus/comparison_report.md`
+**Ground truth:** `tests/corpus/ground_truth.jsonl`
 
-All 4 phases complete. Findings:
-- CompositeHeaderDetector (font-size + bold union) is the best `hdr_info` — zero regressions, +10/13 docs improved
-- `ignore_code=True` eliminates code fence spam in patent/monospace docs
-- `table_strategy="lines"` is correct — `lines_strict` kills real tables
-- `pymupdf_backend.py` and `extract_page.py` updated with best config + rationale comments
-- Full findings in `.project/active/pymupdf4llm-deep-dive/findings.md`
+Consolidated all Stage 1 results (pymupdf4llm, Docling, GMFT, Claude vision, Pandoc) into a head-to-head comparison. Established ground truth for 7 documents via manual PDF review. Added `score_against_ground_truth()` to `tests/corpus/metrics.py`.
 
-**Next:** Move to Stage 1B (Docling) or 1C (Pandoc). Pandoc deep-dive spec/plan already drafted (staged).
+Key findings:
+- Claude vision is the accuracy ceiling (~12% heading error, ~1% table error)
+- pymupdf4llm best_v1 over-detects headings on bold-heavy docs (+45 on paischer) and misses gridless tables
+- GMFT is exact for grid-lined tables but over-detects TOC/lists
+- Docling times out on 67% of corpus; accurate where it completes
+- Recommended pipeline: Pandoc first → pymupdf4llm base → quality gate → Claude vision targeted → GMFT table fix
 
-### Doc Ingest Clean — Stage 1C Pandoc Deep-Dive: **DRAFTED**
-
-Spec, plan, and 16 experiment iterations already staged. Not yet committed.
+**Next:** Stage 3 — Pipeline experimentation (test compositions against ground truth)
 
 ---
 
 ## Recently Completed
+
+### 2026-02-22: Stage 2 Head-to-Head Comparison and Ground Truth
+
+Consolidated all Stage 1 results into a definitive comparison. Established ground truth for 7 corpus documents (4 fully reviewed, 3 partial) via manual PDF review. Produced `tests/corpus/comparison_report.md` (scorecard + pipeline recommendations), `tests/corpus/ground_truth.jsonl` (machine-readable), and `score_against_ground_truth()` in `tests/corpus/metrics.py`. Updated development strategy with Stage 2 completion status.
 
 ### 2026-02-22: pymupdf4llm Deep-Dive (Stage 1A)
 
@@ -70,11 +73,8 @@ Renamed modeling project management directory for clearer semantic distinction.
 
 ## Up Next
 
-1. Commit Stage 1A + 1C work on `doc-ingest-clean` branch
-2. Stage 1B: Docling deep-dive (evaluate Docling for math, tables, headings that pymupdf4llm misses)
-3. Stage 1C: Pandoc deep-dive (experiment iterations already run, needs synthesis)
-4. Stage 2: Quality gates and pipeline assembly
-5. EPIC-LCOE-001: LCOE Costing Patterns (tracking — active in fusion-tea)
+1. Stage 3: Pipeline experimentation — test compositions against Stage 2 ground truth
+2. EPIC-LCOE-001: LCOE Costing Patterns (tracking — active in fusion-tea)
 
 ---
 
