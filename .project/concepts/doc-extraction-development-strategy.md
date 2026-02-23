@@ -336,7 +336,7 @@ To keep this practical, the human review focuses on cases where tools disagree. 
 | pymupdf4llm findings | `.project/active/pymupdf4llm-deep-dive/findings.md` | Per-document metrics for 9 configs |
 | Docling findings | `.project/active/docling-deep-dive/findings.md` | Per-document metrics, quality notes |
 | Pandoc findings | `.project/active/pandoc-deep-dive/findings.md` | arXiv HTML metrics (paischer_2025) |
-| Claude headless findings | (Stage 1D, in progress) | Per-document metrics from Claude extraction |
+| Claude headless findings | `.project/active/claude-headless-deep-dive/findings.md` | Per-document metrics from Claude extraction |
 | Experiment runs | `tests/corpus/runs/*/` | Raw metrics.json for every run |
 | Test corpus PDFs | `tests/corpus/pdfs/` | The actual documents for manual review |
 
@@ -351,133 +351,54 @@ To keep this practical, the human review focuses on cases where tools disagree. 
 
 ---
 
-## Stage 3: Pipeline Experimentation
+## Stage 3: Pipeline Experimentation — STATUS: COMPLETE
 
 **Goal:** Discover how the extraction methods compose into a pipeline by scripting combinations and testing them against the corpus. Let the right abstractions emerge from what actually works, rather than designing interfaces upfront.
 
-### Why This Stage Exists
+**Completed:** 2026-02-23
 
-After Stage 1, we know what each tool does individually. But we don't yet know:
-- What calls what, at what granularity (full doc vs page vs region)?
-- What data flows between layers (bytes? markdown? images? quality scores)?
-- What decisions the quality gate needs to make, and what info it needs?
-- Which settings should be pipeline-level config vs per-invocation?
-- Whether the pipeline shape is even what we assumed (maybe Claude headless changes everything)
+**Deliverables:**
+- `tests/corpus/pipelines/` — 6 Python modules: `shared.py`, `quality_gate.py`, `h1_pymupdf_gmft.py`, `h3_pymupdf_claude_eq.py`, `h5_quality_gated.py`, `h6_pandoc_shortcut.py`
+- `tests/corpus/pipeline_comparison.md` — Side-by-side comparison of all 4 pipelines + 3 baselines
+- `tests/corpus/runs/pipeline_{h1,h3,h5,h6}/` — Per-slug output.md, metrics.json, decisions.json, cost.json
+- `.project/active/pipeline-experimentation/findings.md` — Comprehensive findings with pipeline shape, component descriptions, quality gate logic, cost/time profiles, emergent abstractions, and Stage 4 recommendations
+- `.project/active/pipeline-experimentation/spec.md` — Full spec with all acceptance criteria met
+- `.project/active/pipeline-experimentation/plan.md` — 4-phase plan with completion notes
 
-Writing clean `PyMuPDFExtractor` / `DoclingExtractor` / etc. classes before answering these questions would force us to guess the interfaces — and we'd almost certainly guess wrong. This stage is where we figure it out empirically.
+**Key results:**
+- **Winner: H5 (quality-gated multi-layer)** — pymupdf4llm base → quality gate → GMFT (free) or Claude (paid) per page. 70% heading avg error, 8% table avg error, $0.12/doc average.
+- **H1 (pymupdf + GMFT)** is the best free option — 1% table avg error, $0.00, fast.
+- **H6 (Pandoc shortcut)** gives perfect headings/math for arXiv papers — 0% heading error, $0.00, <1s.
+- Quality gate is highly selective: only 10.7% of pages routed to Claude, 12% to GMFT-only, 77% kept as-is.
+- Total experiment Claude spend: ~$4.30.
+- Hold-out validation (3 papers, 380 pages): no catastrophic failures, budget enforcement holds at scale.
 
-### Approach
+**Hypotheses tested:**
 
-Build pipeline experiments as **scripts in `tests/corpus/`** (like `experiment.py`). These scripts are allowed to be messy — the goal is rapid iteration on composition hypotheses, not production code. But as patterns stabilize, reasonable abstractions will start to emerge organically.
+| Hypothesis | Tested? | Result |
+|------------|---------|--------|
+| H1: pymupdf + GMFT tables | Yes | Best free option for tables (1% avg error) |
+| H2: pymupdf + Docling headings | **Deferred** | Docling is redundant given Claude vision; per-page Docling heading detection could still help for non-arXiv papers if heading accuracy matters (see caveats) |
+| H3: pymupdf + Claude equations | Yes | Fixes math garbling, $0.86 for 4-paper dev set |
+| H4: Claude-primary extractor | **Deferred** | $0.078/page is prohibitive at corpus scale; targeted use via H5 is the right approach |
+| H5: Quality-gated multi-layer | Yes | **Winner** — composes H1 + H3, improves both headings AND tables |
+| H6: Pandoc arXiv shortcut | Yes | Perfect headings/math for arXiv papers, poor tables |
 
-Each experiment:
-1. Scripts a specific pipeline composition (e.g., "pymupdf4llm → quality check → GMFT for broken tables")
-2. Runs it against the corpus (or a subset)
-3. Measures results with `compute_metrics()` and scores against Stage 2's ground truth
-4. Records what worked, what didn't, and what the pipeline needed from each component
-
-### Hypotheses to Test
-
-These are the pipeline compositions we want to try. Listed roughly in order of complexity.
-
-#### H1: pymupdf4llm + GMFT table replacement
-
-**Composition:** Run pymupdf4llm (best_v1 config) on full doc. Run GMFT on full doc. For pages where pymupdf4llm's tables have `<br>` artifacts or failed validation, replace with GMFT's table output.
-
-**What we learn:** Does GMFT's table output cleanly substitute into pymupdf4llm's markdown? What's the merge logic? How do we detect "this table needs replacement"?
-
-**Expected outcome:** Eliminates the 333 `<br>` artifacts from 1A while keeping pymupdf4llm's text/heading quality.
-
-#### H2: pymupdf4llm + Docling per-page for headings
-
-**Composition:** Run pymupdf4llm on full doc. For documents where heading count is suspiciously low (e.g., sparc_overview at 1 heading), run Docling on first 5 pages to get heading structure. Graft Docling's heading hierarchy onto pymupdf4llm's text.
-
-**What we learn:** Can we use Docling's superior heading detection (hansen_2025: 18 vs 0) without replacing the full text? What does "grafting headings" actually look like in practice?
-
-**Expected outcome:** Fixes heading-deficient documents without Docling's timeouts or text quality issues.
-
-#### H3: pymupdf4llm + Claude headless for equations
-
-**Composition:** Run pymupdf4llm on full doc. Detect pages with math garbling (Unicode salad patterns). Render those pages as images. Send to Claude with "transcribe the equations on this page to LaTeX" prompt. Splice the LaTeX equations back into pymupdf4llm's text.
-
-**What we learn:** Is equation splicing practical? Can we reliably detect garbled equations? Does Claude produce correct LaTeX? What's the cost per equation-heavy page?
-
-**Expected outcome:** Fixes the #1 gap from 1A (math garbling) on papers like hawker_2020, energy_amplifier.
-
-#### H4: Claude headless as primary extractor
-
-**Composition:** Skip library extraction entirely. Render all pages to images. Send to Claude in batches of N pages. Concatenate output.
-
-**What we learn:** Is this actually viable as the main extraction path? What's the cost/quality tradeoff vs the library-based approach? Does it eliminate the need for GMFT/Docling entirely?
-
-**Expected outcome:** If Stage 1D shows Claude produces superior output, this tests whether a Claude-primary pipeline is practical at corpus scale.
-
-#### H5: Quality-gated multi-layer pipeline
-
-**Composition:** Run pymupdf4llm. Score each page on multiple quality dimensions (heading presence, table validity, math integrity, text density). Route pages to different enhancement paths based on scores:
-- Low heading score → Docling heading detection
-- Bad tables → GMFT replacement
-- Math garbling → Claude equation transcription
-- Low text density → Claude OCR / vision extraction
-
-**What we learn:** What does the quality scoring function actually look like? Is per-page routing practical? What's the overhead of running quality assessment?
-
-**Expected outcome:** A composite pipeline that matches or beats any single tool on every paper in the corpus.
-
-#### H6: Structured source shortcut (arXiv HTML → Pandoc)
-
-**Composition:** For papers with arXiv IDs (detected via pdftotext page 1), fetch HTML from arxiv.org, run through Pandoc with best config from 1B. Fall back to the PDF pipeline for papers without arXiv HTML.
-
-**What we learn:** Does the structured source path integrate cleanly with the PDF pipeline? How do we handle the format difference in output (Pandoc markdown vs pymupdf4llm markdown)? Is it worth the complexity?
-
-**Expected outcome:** Dramatically better output for the ~50% of recent papers that have arXiv HTML.
-
-### What Emerges From This Stage
-
-As we script these experiments, certain patterns will keep recurring:
-- "Every pipeline needs to render pages to images" → page rendering utility
-- "Every pipeline needs to detect quality issues" → quality assessment interface
-- "Every pipeline needs to merge outputs from different sources" → merge/splice abstraction
-- "Every pipeline records what it did" → provenance tracking shape
-- "Some tools need full-doc input, others per-page" → two calling conventions
-
-These recurring patterns become the natural interfaces for Stage 4's production code. We don't have to guess what a `Converter` protocol should look like — we'll have 6+ pipeline scripts showing us exactly what each component needs to provide and consume.
-
-### Practical Setup
-
-**Directory:** `tests/corpus/pipelines/` (new)
-**Scripts:** One Python script per hypothesis (e.g., `h1_pymupdf_gmft.py`, `h2_pymupdf_docling_headings.py`)
-**Results:** Output to `tests/corpus/runs/pipeline_h1/`, `pipeline_h2/`, etc.
-**Comparison:** Use existing `compare.py` infrastructure + manual quality review
-
-Each script should:
-- Be runnable standalone: `python tests/corpus/pipelines/h1_pymupdf_gmft.py --slugs hawker_2020,hsu_2020`
-- Save output in the same format as `experiment.py` (per-slug `output.md` + `metrics.json`)
-- Log decisions made (e.g., "page 5: GMFT table replacement applied, 3 tables replaced")
-
-### Stage 3 References
-
-| Resource | Location | What It Tells Us |
-|----------|----------|------------------|
-| **Stage 2 ground truth** | `tests/corpus/ground_truth.jsonl` | **The optimization target — what "correct" looks like** |
-| Stage 2 scorecard | `tests/corpus/comparison_report.md` | Per-method accuracy, where each tool wins/loses |
-| Stage 1A findings | `.project/active/pymupdf4llm-deep-dive/findings.md` | Baseline metrics, known gaps per document |
-| Stage 1C findings | `.project/active/docling-deep-dive/findings.md` | Where Docling adds value, per-page viability |
-| Stage 1D findings | (in progress) | Claude headless quality ceiling, cost profile |
-| Experiment harness | `tests/corpus/experiment.py` | Pattern for scripting experiments |
-| Old quality_gates.py | Worktree: `src/agentic_mbse/extraction/quality_gates.py` | Broken table detection heuristics |
-| Old table_extraction.py | Worktree: `src/agentic_mbse/extraction/table_extraction.py` | GMFT integration pattern |
-| Old ai_repair.py | Worktree: `src/agentic_mbse/extraction/ai_repair.py` | Cross-validation safety pattern |
-| Old claude_structure.py | Worktree: `src/agentic_mbse/extraction/claude_structure.py` | Claude heading detection approach |
+**Known limitations / deferred work for Stage 4:**
+1. **Heading over-detection on non-arXiv papers** — paischer_2025: 55 vs GT 23 (139% error). Quality gate detects but only boosts existing Claude severity; doesn't fix headings on non-Claude pages. H2 (Docling per-page headings) or Pandoc+GMFT hybrid could address this.
+2. **Missing table detection** — quality gate catches bad tables, not absent ones. Space-aligned tables without grid lines (aries_cost_account: 120 vs GT 280) are undetectable by both pymupdf4llm and GMFT.
+3. **GMFT over-detection on non-journal docs** — delene_2001: 255 vs GT 150. False-positive filter thresholds may need tuning.
+4. **Pandoc+GMFT hybrid untested** — for arXiv papers, Pandoc headings + GMFT tables could give best-of-both. Noted in findings but not experimentally validated.
+5. **H6 fallback is a no-op** — currently saves empty result for non-arXiv papers. Stage 4 should compose Pandoc pre-check with H5 fallback properly.
 
 ### Stage 3 Definition of Done
 
-- At least 3 pipeline hypotheses tested and **scored against Stage 2 ground truth**
-- A clear winner (or hybrid) identified for the PDF extraction pipeline
-- The quality assessment logic is sketched and tested (what triggers enhancement, what doesn't)
-- We have a concrete understanding of: calling conventions, data flow, merge logic, decision points
-- A written summary: "This is the pipeline shape that works. Here's what each component needs to do."
-- Cost/time budget understood: how much does the full pipeline cost per document?
+- [x] At least 3 pipeline hypotheses tested and **scored against Stage 2 ground truth** — 4 tested (H1, H3, H5, H6)
+- [x] A clear winner (or hybrid) identified for the PDF extraction pipeline — H5 with H6 pre-check
+- [x] The quality assessment logic is sketched and tested (what triggers enhancement, what doesn't)
+- [x] We have a concrete understanding of: calling conventions, data flow, merge logic, decision points
+- [x] A written summary: "This is the pipeline shape that works. Here's what each component needs to do."
+- [x] Cost/time budget understood: how much does the full pipeline cost per document? — $0.12/doc avg
 
 ---
 
@@ -546,6 +467,8 @@ The porting decisions depend on Stage 3 outcomes, but likely candidates:
 | Resource | Location | What It Tells Us |
 |----------|----------|------------------|
 | Stage 3 results | `tests/corpus/pipelines/`, `tests/corpus/runs/pipeline_*/` | What compositions work, what interfaces emerged |
+| Stage 3 findings | `.project/active/pipeline-experimentation/findings.md` | Winning pipeline shape, component descriptions, emergent abstractions, Stage 4 recommendations |
+| Stage 3 comparison | `tests/corpus/pipeline_comparison.md` | All pipelines scored side-by-side against ground truth |
 | Old types.py | Worktree: `src/doc_ingest/types.py` | Type system reference |
 | Old converters/base.py | Worktree: `src/doc_ingest/converters/base.py` | Converter Protocol reference |
 | Old provenance_manager.py | Worktree: `src/doc_ingest/provenance_manager.py` | Atomic persistence pattern |
