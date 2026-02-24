@@ -1,0 +1,7 @@
+Extract this table as a markdown pipe table.
+Rules:
+- Use | column headers | separated | by pipes |
+- Include separator row (|---|---|---|)
+- Preserve ALL numerical values exactly as printed
+- Preserve merged/spanning cells by repeating values
+- Output ONLY the markdown table, no commentary

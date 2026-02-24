@@ -373,6 +373,23 @@ To keep this practical, the human review focuses on cases where tools disagree. 
 - Total experiment Claude spend: ~$4.30.
 - Hold-out validation (3 papers, 380 pages): no catastrophic failures, budget enforcement holds at scale.
 
+**Table image spike (2026-02-23):** Before finalizing Stage 4 design, a targeted spike tested whether cropped table images improve extraction quality. Four tracks across 5 papers (40 GT tables, ~444 rows):
+
+- **Claude + cropped images achieves exact GT match on 4/5 papers** — best table accuracy observed in any stage
+- **The bottleneck is detection, not extraction** — on aries_cost_account, GMFT detects 15/28 tables; Claude extracts 2.1x more rows than GMFT-DF from the same detections (162 vs 76)
+- **Multi-pass (vote/resolve, sequential review) adds no value** — anchors Claude to GMFT's mistakes, costs 41% more, zero accuracy gain on non-aries papers
+- **PyMuPDF `find_tables()` does not complement GMFT** — over-detects prose as tables on report-style docs, zero real tables on aries
+- **Cost is accuracy, not savings** — $0.076/table ≈ $0.078/page (full-page rate)
+- **Evidence:** `.project/active/table-image-spike/findings.md`
+
+**Table detection follow-up (2026-02-23):** The original spike concluded "the detection gap remains open." A follow-up investigation (`.project/active/table-image-spike/findingsv2.md`) found **the gap was largely self-inflicted** — the 0.98 confidence threshold was rejecting 7 real tables, and Img2Table (an available alternative detector) was never tested:
+
+- **Removing the GMFT confidence threshold recovers 7 tables** — 46% → 71% recall, 58% → 99.3% row coverage for detected tables. 10 of 11 filtered detections were real tables. Claude handles FP rejection perfectly (caught all 5 FPs across both confidence ranges).
+- **Img2Table (borderless) finds 4 tables GMFT misses entirely** — p35, p37, p39, p94 on aries_cost_account. Uses OpenCV text-alignment heuristics vs GMFT's deep learning detector. Combined GMFT + Img2Table: 24/28 tables = 86% recall.
+- **Docling detects 34 tables** (vs 28 GT) — likely near-complete coverage as a third-pass safety net.
+- **Impact on Stage 4 design:** Ship as ensemble detector: GMFT (no confidence filter, keep secondary filters) → Img2Table (on GMFT-empty pages) → Claude FP filter + extraction. The confidence threshold is redundant when Claude validates each detection. Docling available as optional third pass for maximum recall. Do not invest in multi-pass review, PyMuPDF detection, or new detection research — available tools already achieve 86-100% recall.
+- **Evidence:** `.project/active/table-image-spike/findingsv2.md`
+
 **Hypotheses tested:**
 
 | Hypothesis | Tested? | Result |
@@ -386,8 +403,8 @@ To keep this practical, the human review focuses on cases where tools disagree. 
 
 **Known limitations / deferred work for Stage 4:**
 1. **Heading over-detection on non-arXiv papers** — paischer_2025: 55 vs GT 23 (139% error). Quality gate detects but only boosts existing Claude severity; doesn't fix headings on non-Claude pages. H2 (Docling per-page headings) or Pandoc+GMFT hybrid could address this.
-2. **Missing table detection** — quality gate catches bad tables, not absent ones. Space-aligned tables without grid lines (aries_cost_account: 120 vs GT 280) are undetectable by both pymupdf4llm and GMFT.
-3. **GMFT over-detection on non-journal docs** — delene_2001: 255 vs GT 150. False-positive filter thresholds may need tuning.
+2. **Remaining missing table detection** — The follow-up investigation closed the detection gap from 46% to 86% recall (GMFT no-confidence-filter + Img2Table), with Docling providing ~100%. The remaining 4/28 aries tables not found by GMFT+Img2Table are likely borderless tables too small for either detector. Docling (34 detections on aries) is the safety net for these. This is no longer the critical gap — it's a diminishing-returns problem addressable by adding Docling as a third detection pass.
+3. **GMFT over-detection on non-journal docs** — delene_2001: 255 vs GT 150. With the confidence threshold removed, more false positives will pass through GMFT's secondary filters. The follow-up investigation proved Claude is a perfect FP filter — it correctly rejected all 5 false positives across aries (3 from the newly-recovered 0.90-0.98 range plus 2 from the original set). This makes over-detection a cost concern (more Claude calls per table), not an accuracy concern.
 4. **Pandoc+GMFT hybrid untested** — for arXiv papers, Pandoc headings + GMFT tables could give best-of-both. Noted in findings but not experimentally validated.
 5. **H6 fallback is a no-op** — currently saves empty result for non-arXiv papers. Stage 4 should compose Pandoc pre-check with H5 fallback properly.
 
@@ -439,6 +456,7 @@ Based on what Stage 3 reveals, the design will likely cover:
 - **Clean extraction module** in `src/agentic_mbse/extraction/` — the interfaces and implementations that emerged from Stage 3
 - **Quality assessment** — deterministic checks on extraction output
 - **Pipeline orchestrator** — the composition logic from the winning Stage 3 hypothesis
+- **Ensemble table detection** — GMFT (no confidence filter, secondary filters only) + Img2Table (on GMFT-empty pages) + Claude FP filter/extraction (from table detection follow-up). Optional Docling third pass for maximum recall.
 - **Type system** — extraction results, quality flags, failure categories
 - **Tests** — unit tests for each component, integration tests against corpus
 - **CLI integration** — wire into `agentic-mbse extract`
@@ -469,6 +487,8 @@ The porting decisions depend on Stage 3 outcomes, but likely candidates:
 | Stage 3 results | `tests/corpus/pipelines/`, `tests/corpus/runs/pipeline_*/` | What compositions work, what interfaces emerged |
 | Stage 3 findings | `.project/active/pipeline-experimentation/findings.md` | Winning pipeline shape, component descriptions, emergent abstractions, Stage 4 recommendations |
 | Stage 3 comparison | `tests/corpus/pipeline_comparison.md` | All pipelines scored side-by-side against ground truth |
+| Table spike findings (v1) | `.project/active/table-image-spike/findings.md` | Claude cropped-image accuracy, detection coverage, multi-pass results |
+| Table spike findings (v2) | `.project/active/table-image-spike/findingsv2.md` | Confidence threshold removal, Img2Table complement, Docling safety net, ensemble strategy |
 | Old types.py | Worktree: `src/doc_ingest/types.py` | Type system reference |
 | Old converters/base.py | Worktree: `src/doc_ingest/converters/base.py` | Converter Protocol reference |
 | Old provenance_manager.py | Worktree: `src/doc_ingest/provenance_manager.py` | Atomic persistence pattern |
