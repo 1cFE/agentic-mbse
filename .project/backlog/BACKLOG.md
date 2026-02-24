@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-02-08 (PR cleanup, architecture + PDF epics completed)
+**Last Updated**: 2026-02-23
 
 ---
 
@@ -17,7 +17,17 @@ Prioritized list of epics and features.
 
 ## In Progress
 
-*No items in progress*
+### [EPIC-PDFV4-001] PDF Extraction Pipeline v4 — Quality-Gated Per-Page Pipeline
+
+**Priority**: P1
+**Effort**: 5.5 days (4 items)
+**Status**: Ready
+**Epic**: `.project/backlog/epic_pdf-extraction-v4.md`
+**Design**: `.project/concepts/doc-extraction/design.md`
+
+**Problem**: v3 pipeline operates at document level with pattern-based structure repair. Stage 3/4 experiments proved per-page quality-gated routing with ensemble table detection is superior (70% heading error reduction, 86% table recall).
+
+**Goal**: Replace v3 with per-page pipeline: `extract_pdf()` → quality gate → route each page to best available enhancer within budget. Remove 5 deprecated modules.
 
 ---
 
