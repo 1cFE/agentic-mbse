@@ -14,6 +14,7 @@ from pathlib import Path
 
 from agentic_mbse.extraction.base import ExtractionResult
 from agentic_mbse.extraction.postprocess import postprocess
+from agentic_mbse.extraction.types import PageResult
 
 
 def _get_to_markdown():
@@ -118,6 +119,42 @@ class CompositeHeaderDetector:
 
 # Singleton instance reused across calls; re-initializes per document.
 _composite_header_detector = CompositeHeaderDetector()
+
+
+def extract_pages(pdf_path: Path) -> list[PageResult]:
+    """Extract per-page markdown using pymupdf4llm with BEST_V1 config.
+
+    Uses ``page_chunks=True`` for per-page output with full-document header
+    calibration (IdentifyHeaders scans all pages for font statistics).
+
+    Does NOT call ``postprocess()`` — the pipeline applies enhancements
+    on the raw per-page output (see design.md §2.4 for rationale).
+
+    Adds ``force_text=True`` (matching Stage 3 BEST_V1_PARAMS) to include
+    text from form fields and annotations.  The legacy ``extract()``
+    function is preserved as-is for backward compatibility.
+
+    Returns list of PageResult, 0-indexed page numbers.
+    """
+    to_markdown = _get_to_markdown()
+
+    chunks = to_markdown(
+        str(pdf_path),
+        write_images=False,
+        dpi=150,
+        page_chunks=True,
+        hdr_info=_composite_header_detector,
+        table_strategy="lines",
+        ignore_code=True,
+        force_text=True,
+    )
+
+    results = []
+    for chunk in chunks:
+        page_num = chunk["metadata"]["page"] - 1  # Convert 1-indexed to 0-indexed
+        results.append(PageResult(page_num=page_num, markdown=chunk["text"]))
+
+    return results
 
 
 def extract(input_path: Path, output_dir: Path) -> ExtractionResult:

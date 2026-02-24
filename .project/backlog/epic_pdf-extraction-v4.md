@@ -109,9 +109,10 @@ Replace the v3 full-document extraction pipeline with a per-page quality-gated p
 
 ---
 
-### Item 2: Enhancement Components [1.5 days]
+### Item 2: Enhancement Components [1.5 days] — COMPLETE
 
 **Type**: Implementation
+**Status**: Complete (audited 2026-02-23)
 **Effort**: 1.5 days (spec 0h, design 0h, plan 1h, execute 10h)
 **Dependencies**: Item 1 (imports `types.py` data types)
 
@@ -139,15 +140,15 @@ Replace the v3 full-document extraction pipeline with a per-page quality-gated p
 - Docling MCP integration beyond stub (requires MCP server)
 
 **Success Criteria**:
-- [ ] `extract_pages()` returns `list[PageResult]` with per-page markdown from pymupdf4llm
-- [ ] `detect_tables_ensemble()` calls GMFT → Img2Table (on GMFT-empty pages) → Docling (optional) in sequence
-- [ ] `filter_tables()` rejects prose blocks (avg_cell_length > 80) and layout artifacts (1 row, >4 cols)
-- [ ] `assess_table_quality()` flags extraction-failed tables for Claude enhancement
-- [ ] `enhance_table_with_claude()` returns `DetectedTable` with `source="claude_cropped"` (mocked)
-- [ ] `validate_claude_output()` rejects empty output, >50% character drop, and prompt leaks
-- [ ] `detect_arxiv_id()` extracts arXiv IDs from page 1 text
-- [ ] `convert_arxiv_html()` strips `<figure>` tags and `\hspace{0pt}` artifacts
-- [ ] All graceful degradation works: `ImportError` for GMFT/Img2Table → empty dict; missing Pandoc → None
+- [x] `extract_pages()` returns `list[PageResult]` with per-page markdown from pymupdf4llm
+- [x] `detect_tables_ensemble()` calls GMFT → Img2Table (on GMFT-empty pages) → Docling (optional) in sequence
+- [x] `filter_tables()` rejects prose blocks (avg_cell_length > 80) and layout artifacts (1 row, >4 cols)
+- [x] `assess_table_quality()` flags extraction-failed tables for Claude enhancement
+- [x] `enhance_table_with_claude()` returns `DetectedTable` with `source="claude_cropped"` (mocked)
+- [x] `validate_claude_output()` rejects empty output, >50% character drop, and prompt leaks
+- [x] `detect_arxiv_id()` extracts arXiv IDs from page 1 text
+- [x] `convert_arxiv_html()` strips `<figure>` tags and `\hspace{0pt}` artifacts
+- [x] All graceful degradation works: `ImportError` for GMFT/Img2Table → empty dict; missing Pandoc → None
 
 **Deliverables**:
 - Updated `src/agentic_mbse/extraction/pymupdf_backend.py` (extract_pages added)
@@ -314,4 +315,4 @@ Item 2 (Enhancement Components) ┘
 ---
 
 **Last Updated**: 2026-02-23
-**Next Action**: Begin Item 2 (Enhancement Components)
+**Next Action**: Begin Item 3 (Pipeline Orchestration + CLI)

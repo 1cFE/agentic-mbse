@@ -26,6 +26,7 @@ dependencies = [
     "pyyaml>=6.0",
     "pymupdf>=1.26.7",
     "pymupdf4llm>=0.2.9",
+    "img2table>=1.4.2",
 ]
 
 [project.optional-dependencies]
