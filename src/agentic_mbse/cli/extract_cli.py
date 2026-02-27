@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 from pathlib import Path
 
@@ -12,6 +13,8 @@ from agentic_mbse.extraction.base import (
     get_output_dir,
     write_summary,
 )
+from agentic_mbse.extraction.pipeline import PipelineConfig, extract_pdf
+from agentic_mbse.extraction.types import CostRecord, PageDecision, PipelineResult
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
 
 SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
@@ -98,7 +101,7 @@ def select_backend(file_path: Path, requested: str | None) -> str | None:
 
 
 # ---------------------------------------------------------------------------
-# Extraction dispatch
+# Extraction dispatch (DOCX only)
 # ---------------------------------------------------------------------------
 
 _FALLBACK_ORDER: dict[str, list[str]] = {
@@ -137,6 +140,44 @@ def _run_extraction(
 
 
 # ---------------------------------------------------------------------------
+# Pipeline serialization helpers
+# ---------------------------------------------------------------------------
+
+
+def _decision_to_dict(d: PageDecision) -> dict:
+    return {
+        "page_num": d.page_num,
+        "action": d.action.value,
+        "reasons": d.reasons,
+        "details": d.details,
+    }
+
+
+def _cost_to_dict(c: CostRecord) -> dict:
+    return {
+        "page_num": c.page_num,
+        "cost_usd": c.cost_usd,
+        "input_tokens": c.input_tokens,
+        "output_tokens": c.output_tokens,
+        "model": c.model,
+        "elapsed_seconds": c.elapsed_seconds,
+        "table_index": c.table_index,
+    }
+
+
+def _print_pipeline_summary(label: str, result: PipelineResult) -> None:
+    stats = [f"{result.metrics.char_count:,} chars"]
+    if result.metrics.heading_count:
+        stats.append(f"{result.metrics.heading_count} headings")
+    if result.metrics.table_row_count:
+        stats.append(f"{result.metrics.table_row_count} table rows")
+    if result.total_cost_usd > 0:
+        stats.append(f"${result.total_cost_usd:.3f}")
+    stats.append(f"{result.elapsed_seconds:.1f}s")
+    print(f"   ok   {label} [{result.source}] ({', '.join(stats)})")
+
+
+# ---------------------------------------------------------------------------
 # Main command handler
 # ---------------------------------------------------------------------------
 
@@ -163,7 +204,64 @@ def cmd_extract(args: argparse.Namespace) -> int:
         output_dir = get_output_dir(doc, output_base=output_base)
         label = doc.name
 
-        # Skip check
+        # ----- PDF: use pipeline -----
+        if doc.suffix.lower() == ".pdf":
+            # Skip check: output.md exists and not forced
+            if not args.force and (output_dir / "output.md").exists():
+                print(f"  skip  {label} (already processed, use --force to redo)")
+                skipped += 1
+                continue
+
+            config = PipelineConfig(
+                claude_budget_usd=args.budget,
+                claude_model=args.model,
+                enable_tables=not args.no_tables,
+                enable_img2table=not args.no_img2table,
+                enable_docling=args.docling,
+                arxiv_html_path=Path(args.html_path) if args.html_path else None,
+                dry_run=args.dry_run,
+            )
+            result = extract_pdf(doc, config=config)
+
+            if result.error:
+                print(f"  FAIL  {label}: {result.error}")
+                failed += 1
+                continue
+
+            # Write output artifacts (only on success — avoids blocking retry)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            (output_dir / "output.md").write_text(result.markdown)
+            (output_dir / "metrics.json").write_text(json.dumps(
+                result.metrics.to_dict(), indent=2
+            ))
+            (output_dir / "decisions.json").write_text(json.dumps(
+                [_decision_to_dict(d) for d in result.decisions], indent=2
+            ))
+            if result.cost:
+                (output_dir / "cost.json").write_text(json.dumps(
+                    [_cost_to_dict(c) for c in result.cost], indent=2
+                ))
+
+            _print_pipeline_summary(label, result)
+            processed += 1
+
+            # Index generation
+            if args.index:
+                md_path = output_dir / "output.md"
+                if md_path.exists():
+                    from agentic_mbse.extraction.index import generate_index
+
+                    idx = generate_index(
+                        md_path, summarize=args.summarize, force=args.force
+                    )
+                    if idx:
+                        print(f"        index → {idx.name}")
+
+            continue
+
+        # ----- DOCX: existing backend path -----
+
+        # Skip check (DOCX uses summary.json-based check)
         if not check_processing_needed(doc, output_dir, force=args.force):
             print(f"  skip  {label} (already processed, use --force to redo)")
             skipped += 1
@@ -180,10 +278,10 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
         print(f"  run   {label} → {output_dir.name}/ (backend: {backend})")
 
-        result = _run_extraction(doc, output_dir, backend, timeout=args.timeout)
+        docx_result = _run_extraction(doc, output_dir, backend, timeout=args.timeout)
 
         # Fallback on failure
-        if not result.success and args.backend is None:
+        if not docx_result.success and args.backend is None:
             ext = doc.suffix.lower()
             fallbacks = _FALLBACK_ORDER.get(ext, [])
             for fb in fallbacks:
@@ -192,147 +290,36 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 if not _is_available(fb):
                     continue
                 print(f"        fallback → {fb}")
-                result = _run_extraction(doc, output_dir, fb, timeout=args.timeout)
-                if result.success:
+                docx_result = _run_extraction(doc, output_dir, fb, timeout=args.timeout)
+                if docx_result.success:
                     break
 
         # Write summary
-        write_summary(doc, output_dir, result, result.backend_used or backend)
+        write_summary(doc, output_dir, docx_result, docx_result.backend_used or backend)
 
-        if result.success:
+        if docx_result.success:
             stats = []
-            if result.char_count:
-                stats.append(f"{result.char_count:,} chars")
-            if result.image_count:
-                stats.append(f"{result.image_count} images")
+            if docx_result.char_count:
+                stats.append(f"{docx_result.char_count:,} chars")
+            if docx_result.image_count:
+                stats.append(f"{docx_result.image_count} images")
             detail = f" ({', '.join(stats)})" if stats else ""
             print(f"   ok   {label}{detail}")
             processed += 1
 
-            # Post-processing: table repair (legacy --fix-tables)
-            if args.fix_tables and result.markdown_path:
-                from agentic_mbse.extraction.table_repair import repair_tables
-
-                if repair_tables(result.markdown_path):
-                    print("        tables repaired (legacy)")
-
-            # Post-processing: Layer 2 + Layer 3 + Layer 4 pipeline
-            no_tables = args.no_tables
-            enhance = args.enhance
-            structure_only = args.structure_only
-            max_repair_pages = args.max_repair_pages
-            run_structural = enhance or structure_only
-            run_ai_repair = enhance and not structure_only
-            model = args.model
-
-            if result.markdown_path and result.markdown_path.exists():
-                md_text = result.markdown_path.read_text()
-                layer_metadata: dict = {}
-
-                # Quality detection
-                from agentic_mbse.extraction.quality_gates import detect_problems
-
-                problems = detect_problems(md_text)
-
-                # Layer 2: GMFT table extraction (unless --no-tables)
-                remaining_problems = problems
-                if not no_tables:
-                    table_problems = [p for p in problems if p.region_type == "table"]
-                    non_table_problems = [p for p in problems if p.region_type != "table"]
-                    try:
-                        from agentic_mbse.extraction.table_extraction import (
-                            enhance_tables,
-                        )
-
-                        md_text, remaining_table = enhance_tables(md_text, doc, table_problems)
-                        remaining_problems = remaining_table + non_table_problems
-                        fixed_count = len(table_problems) - len(remaining_table)
-                        if fixed_count > 0:
-                            print(f"        tables enhanced: {fixed_count} (GMFT)")
-                            layer_metadata["gmft_tables_fixed"] = fixed_count
-                    except ImportError:
-                        remaining_problems = problems
-
-                # Layer 3: Claude structural pass (with --enhance or --structure-only)
-                if run_structural:
-                    from agentic_mbse.extraction.claude_structure import (
-                        enhance_structure,
-                        needs_claude_structure,
-                    )
-
-                    if needs_claude_structure(md_text):
-                        phase_a_model = model or "haiku"
-                        phase_b_model = model or "sonnet"
-                        try:
-                            md_text, struct_meta = enhance_structure(
-                                md_text,
-                                doc,
-                                output_dir,
-                                phase_a_model=phase_a_model,
-                                phase_b_model=phase_b_model,
-                            )
-                            layer_metadata["structure"] = struct_meta
-                            inserted = struct_meta.get("headers_inserted", 0)
-                            skipped = struct_meta.get("headers_skipped", 0)
-                            style_info = struct_meta.get("phase_a", {})
-                            style_desc = (
-                                f"{style_info.get('doc_type', '?')} "
-                                f"({style_info.get('heading_convention', '?')})"
-                            )
-                            print(
-                                f"        structure: {style_desc}, "
-                                f"{inserted} headers inserted, "
-                                f"{skipped} skipped"
-                            )
-                            for w in struct_meta.get("warnings", []):
-                                print(f"        warning: {w}")
-                        except Exception as exc:
-                            print(f"        structure: FAILED ({exc}), continuing")
-                    else:
-                        print(
-                            "        structure: skipped (document already well-structured)"
-                        )
-
-                # Layer 4: AI quality repair (only with --enhance, NOT --structure-only)
-                if run_ai_repair and remaining_problems:
-                    from agentic_mbse.extraction.ai_repair import repair_document
-
-                    md_text, repair_meta = repair_document(
-                        md_text,
-                        doc,
-                        remaining_problems,
-                        max_pages=max_repair_pages,
-                    )
-                    layer_metadata["ai_repairs"] = repair_meta["repairs"]
-                    layer_metadata["ai_rejections"] = repair_meta["rejections"]
-                    if repair_meta["repairs"] > 0:
-                        print(f"        AI repaired: {repair_meta['repairs']} regions")
-                    if repair_meta["rejections"] > 0:
-                        print(
-                            f"        AI rejected: {repair_meta['rejections']} (cross-validation)"
-                        )
-
-                # Write back if any layer modified the text
-                if layer_metadata:
-                    result.markdown_path.write_text(md_text)
-
-                # Report detected problems
-                if problems and not layer_metadata:
-                    print(f"        {len(problems)} issues detected (use --enhance)")
-
             # Post-processing: index generation
-            if args.index and result.markdown_path:
+            if args.index and docx_result.markdown_path:
                 from agentic_mbse.extraction.index import generate_index
 
                 idx = generate_index(
-                    result.markdown_path,
+                    docx_result.markdown_path,
                     summarize=args.summarize,
                     force=args.force,
                 )
                 if idx:
                     print(f"        index → {idx.name}")
         else:
-            print(f"  FAIL  {label}: {result.error}")
+            print(f"  FAIL  {label}: {docx_result.error}")
             failed += 1
 
     # Summary line
@@ -377,14 +364,14 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         "--backend",
         choices=["docling", "pymupdf", "pandoc"],
         default=None,
-        help="Force extraction backend (default: auto-detect)",
+        help="Force extraction backend (DOCX only; PDFs always use pipeline)",
     )
     p.add_argument(
         "--timeout",
         type=int,
         default=600,
         metavar="SECONDS",
-        help="Timeout for primary extractor in seconds (default: 600)",
+        help="Timeout for DOCX backend in seconds (default: 600)",
     )
     p.add_argument(
         "--force",
@@ -402,37 +389,44 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         action="store_true",
         help="Include AI summaries in INDEX.md (requires --index)",
     )
+    # Pipeline flags (PDF)
     p.add_argument(
-        "--fix-tables",
-        action="store_true",
-        help="Run two-pass table repair via Claude headless mode (legacy)",
-    )
-    p.add_argument(
-        "--enhance",
-        action="store_true",
-        help="Enable AI enhancement: structural repair (Layer 3) + quality repair (Layer 4)",
+        "--budget",
+        type=float,
+        default=2.0,
+        metavar="USD",
+        help="Claude budget in USD (default: 2.0, 0 = no Claude)",
     )
     p.add_argument(
         "--no-tables",
         action="store_true",
-        help="Skip GMFT table extraction (Layer 2)",
+        help="Disable all table detection",
     )
     p.add_argument(
-        "--structure-only",
+        "--no-img2table",
         action="store_true",
-        help="Run structural repair only (Layer 3), skip AI quality repair (Layer 4)",
+        help="Disable Img2Table second-pass table detection",
+    )
+    p.add_argument(
+        "--docling",
+        action="store_true",
+        help="Enable Docling third-pass table detection",
+    )
+    p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show quality gate decisions without calling Claude",
     )
     p.add_argument(
         "--model",
         choices=["opus", "sonnet", "haiku"],
-        default=None,
-        help="Override Claude model for structural repair (default: haiku for style detection, sonnet for structure)",
+        default="sonnet",
+        help="Claude model for enhancement (default: sonnet)",
     )
     p.add_argument(
-        "--max-repair-pages",
-        type=int,
+        "--html-path",
         default=None,
-        metavar="N",
-        help="Limit Layer 4 AI repair to N regions",
+        metavar="PATH",
+        help="arXiv HTML file path for Pandoc shortcut (overrides auto-detect)",
     )
     p.set_defaults(func=cmd_extract)

@@ -1,7 +1,5 @@
-"""Tests for agentic_mbse.cli.extract_cli — Phase 2."""
+"""Tests for agentic_mbse.cli.extract_cli — Phase 2 (pipeline + CLI rewrite)."""
 
-import hashlib
-import json
 import subprocess
 from pathlib import Path
 from unittest.mock import patch
@@ -11,30 +9,56 @@ from agentic_mbse.cli.extract_cli import (
     discover_documents,
     select_backend,
 )
+from agentic_mbse.extraction.metrics import compute_metrics
+from agentic_mbse.extraction.types import (
+    CostRecord,
+    PageAction,
+    PageDecision,
+    PipelineResult,
+)
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
 
 
 class MockArgs:
-    """Mock argparse namespace."""
+    """Mock argparse namespace with new pipeline flags."""
 
     def __init__(self, **kwargs):
-        for k, v in kwargs.items():
+        # Set defaults for all expected attributes
+        defaults = dict(
+            path="/nonexistent",
+            output=None,
+            backend=None,
+            timeout=600,
+            force=False,
+            index=False,
+            summarize=False,
+            budget=2.0,
+            no_tables=False,
+            no_img2table=False,
+            docling=False,
+            model="sonnet",
+            html_path=None,
+            dry_run=False,
+        )
+        defaults.update(kwargs)
+        for k, v in defaults.items():
             setattr(self, k, v)
 
 
-def _make_extraction_result(tmp_path, md_content="# Test\n\nSome content."):
-    """Create a mock ExtractionResult with a real markdown file on disk."""
-    from agentic_mbse.extraction.base import ExtractionResult
-
-    output_dir = tmp_path / "report"
-    output_dir.mkdir(exist_ok=True)
-    md_path = output_dir / "full_document.md"
-    md_path.write_text(md_content)
-    return ExtractionResult(
-        success=True,
-        output_dir=output_dir,
-        markdown_path=md_path,
-        backend_used="pymupdf",
+def _make_pipeline_result(
+    markdown: str = "# Test\n\nSome content.",
+    error: str | None = None,
+    cost: list[CostRecord] | None = None,
+) -> PipelineResult:
+    """Create a mock PipelineResult."""
+    return PipelineResult(
+        markdown=markdown,
+        metrics=compute_metrics(markdown),
+        decisions=[PageDecision(page_num=0, action=PageAction.KEEP)],
+        cost=cost or [],
+        total_cost_usd=sum(c.cost_usd for c in (cost or [])),
+        source="pdf_pipeline",
+        error=error,
     )
 
 
@@ -131,379 +155,36 @@ class TestSelectBackend:
 
 
 # ---------------------------------------------------------------------------
-# cmd_extract
+# cmd_extract — basic dispatch
 # ---------------------------------------------------------------------------
 
 
 class TestCmdExtract:
     def test_returns_failure_for_nonexistent_path(self):
-        args = MockArgs(
-            path="/nonexistent/does/not/exist",
-            output=None,
-            backend=None,
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=False,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
-        )
+        args = MockArgs(path="/nonexistent/does/not/exist")
         assert cmd_extract(args) == EXIT_FAILURE
 
     def test_returns_failure_when_no_documents_found(self, tmp_path):
         (tmp_path / "readme.txt").touch()
-        args = MockArgs(
-            path=str(tmp_path),
-            output=None,
-            backend=None,
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=False,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
-        )
+        args = MockArgs(path=str(tmp_path))
         assert cmd_extract(args) == EXIT_FAILURE
 
-    def test_skips_already_processed(self, tmp_path):
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf content")
-        output_dir = tmp_path / "report"
-        output_dir.mkdir()
-
-        # Write summary.json with matching hash
-        file_hash = "md5:" + hashlib.md5(b"fake pdf content").hexdigest()
-        summary = {"file_hash": file_hash, "processing_completed": True}
-        (output_dir / "summary.json").write_text(json.dumps(summary))
-
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=False,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
-        )
-
-        # Should succeed (skip is not a failure)
-        with patch("agentic_mbse.cli.extract_cli._run_extraction") as mock_run:
-            result = cmd_extract(args)
-            mock_run.assert_not_called()
-        assert result == EXIT_SUCCESS
-
-    def test_extracts_when_forced(self, tmp_path):
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf content")
-        output_dir = tmp_path / "report"
-        output_dir.mkdir()
-
-        # Write summary.json with matching hash
-        file_hash = "md5:" + hashlib.md5(b"fake pdf content").hexdigest()
-        summary = {"file_hash": file_hash, "processing_completed": True}
-        (output_dir / "summary.json").write_text(json.dumps(summary))
-
+    def test_index_post_processing_for_docx(self, tmp_path):
+        """--index calls generate_index on successful DOCX extraction."""
         from agentic_mbse.extraction.base import ExtractionResult
 
-        mock_result = ExtractionResult(
-            success=True,
-            output_dir=output_dir,
-            markdown_path=output_dir / "full_document.md",
-            backend_used="pymupdf",
-        )
-
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=True,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=False,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
-        )
-
-        with patch(
-            "agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result
-        ) as mock_run:
-            result = cmd_extract(args)
-            mock_run.assert_called_once()
-        assert result == EXIT_SUCCESS
-
-    def test_returns_failure_when_no_backend_available(self, tmp_path, monkeypatch):
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf content")
-
-        monkeypatch.setattr(
-            "agentic_mbse.cli.extract_cli._is_available", lambda name: False
-        )
-
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend=None,
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=False,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
-        )
-        assert cmd_extract(args) == EXIT_FAILURE
-
-    def test_partial_failure_returns_failure(self, tmp_path):
-        """When some docs succeed and some fail, exit code is FAILURE."""
-        from agentic_mbse.extraction.base import ExtractionResult
-
-        pdf1 = tmp_path / "good.pdf"
-        pdf1.write_bytes(b"fake pdf 1")
-        pdf2 = tmp_path / "bad.pdf"
-        pdf2.write_bytes(b"fake pdf 2")
-
-        success_result = ExtractionResult(
-            success=True,
-            output_dir=tmp_path / "good",
-            markdown_path=tmp_path / "good" / "full_document.md",
-            backend_used="pymupdf",
-        )
-        fail_result = ExtractionResult(
-            success=False,
-            output_dir=tmp_path / "bad",
-            error="extraction failed",
-            backend_used="pymupdf",
-        )
-
-        call_count = 0
-
-        def mock_run_extraction(file_path, output_dir, backend, timeout):
-            nonlocal call_count
-            call_count += 1
-            if file_path.name == "good.pdf":
-                return success_result
-            return fail_result
-
-        args = MockArgs(
-            path=str(tmp_path),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=False,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
-        )
-
-        with patch(
-            "agentic_mbse.cli.extract_cli._run_extraction",
-            side_effect=mock_run_extraction,
-        ):
-            result = cmd_extract(args)
-        assert result == EXIT_FAILURE
-
-    def test_fallback_on_primary_failure(self, tmp_path, monkeypatch):
-        """When primary backend fails and no --backend specified, tries fallback."""
-        from agentic_mbse.extraction.base import ExtractionResult
-
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf content")
-
-        fail_result = ExtractionResult(
-            success=False,
-            output_dir=tmp_path / "report",
-            error="docling failed",
-            backend_used="docling",
-        )
-        success_result = ExtractionResult(
-            success=True,
-            output_dir=tmp_path / "report",
-            markdown_path=tmp_path / "report" / "full_document.md",
-            backend_used="pymupdf",
-        )
-
-        calls = []
-
-        def mock_run_extraction(file_path, output_dir, backend, timeout):
-            calls.append(backend)
-            if backend == "docling":
-                return fail_result
-            return success_result
-
-        monkeypatch.setattr(
-            "agentic_mbse.cli.extract_cli._is_available", lambda name: True
-        )
-
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend=None,  # auto — allows fallback
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=False,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
-        )
-
-        with patch(
-            "agentic_mbse.cli.extract_cli._run_extraction",
-            side_effect=mock_run_extraction,
-        ):
-            result = cmd_extract(args)
-        assert result == EXIT_SUCCESS
-        assert "docling" in calls
-        assert "pymupdf" in calls
-
-    def test_no_fallback_when_backend_forced(self, tmp_path, monkeypatch):
-        """When --backend is specified, no fallback is attempted."""
-        from agentic_mbse.extraction.base import ExtractionResult
-
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf content")
-
-        fail_result = ExtractionResult(
-            success=False,
-            output_dir=tmp_path / "report",
-            error="docling failed",
-            backend_used="docling",
-        )
-
-        calls = []
-
-        def mock_run_extraction(file_path, output_dir, backend, timeout):
-            calls.append(backend)
-            return fail_result
-
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend="docling",  # forced — no fallback
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=False,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
-        )
-
-        with patch(
-            "agentic_mbse.cli.extract_cli._run_extraction",
-            side_effect=mock_run_extraction,
-        ):
-            result = cmd_extract(args)
-        assert result == EXIT_FAILURE
-        assert calls == ["docling"]  # no pymupdf fallback
-
-    def test_fix_tables_post_processing(self, tmp_path):
-        """--fix-tables calls repair_tables on successful extraction."""
-        from agentic_mbse.extraction.base import ExtractionResult
-
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf content")
+        docx = tmp_path / "report.docx"
+        docx.write_bytes(b"fake docx content")
         md_path = tmp_path / "report" / "full_document.md"
 
         mock_result = ExtractionResult(
             success=True,
             output_dir=tmp_path / "report",
             markdown_path=md_path,
-            backend_used="pymupdf",
+            backend_used="pandoc",
         )
 
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=True,
-            no_tables=False,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
-        )
-
-        with (
-            patch(
-                "agentic_mbse.cli.extract_cli._run_extraction",
-                return_value=mock_result,
-            ),
-            patch(
-                "agentic_mbse.extraction.table_repair.repair_tables",
-                return_value=True,
-            ) as mock_repair,
-        ):
-            result = cmd_extract(args)
-        assert result == EXIT_SUCCESS
-        mock_repair.assert_called_once_with(md_path)
-
-    def test_index_post_processing(self, tmp_path):
-        """--index calls generate_index on successful extraction."""
-        from agentic_mbse.extraction.base import ExtractionResult
-
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf content")
-        md_path = tmp_path / "report" / "full_document.md"
-
-        mock_result = ExtractionResult(
-            success=True,
-            output_dir=tmp_path / "report",
-            markdown_path=md_path,
-            backend_used="pymupdf",
-        )
-
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=False,
-            index=True,
-            summarize=False,
-            fix_tables=False,
-            no_tables=False,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
-        )
+        args = MockArgs(path=str(docx), backend="pandoc", index=True)
 
         with (
             patch(
@@ -523,293 +204,291 @@ class TestCmdExtract:
 
 
 # ---------------------------------------------------------------------------
-# Structural pass (L3) integration
+# PDF pipeline path
 # ---------------------------------------------------------------------------
 
 
-class TestStructuralPass:
-    """Tests for L3 Claude structural pass integration."""
+class TestCmdExtractPdf:
+    """Verify PDF files route through extract_pdf() with correct config."""
 
-    def test_enhance_triggers_structural_pass(self, tmp_path):
-        """--enhance runs L3 (structure) then L4 (AI repair) in order."""
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf")
-        mock_result = _make_extraction_result(tmp_path)
-
-        struct_meta = {"headers_inserted": 3, "headers_skipped": 1, "warnings": [], "phase_a": {}}
-        call_order = []
-
-        def mock_enhance(md, pdf_path, out_dir, **kw):
-            call_order.append("enhance_structure")
-            return md, struct_meta
-
-        def mock_repair(md, pdf_path, problems, **kw):
-            call_order.append("repair_document")
-            return md, {"repairs": 1, "rejections": 0}
-
-        args = MockArgs(
+    def _make_args(self, tmp_path, **overrides):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        defaults = dict(
             path=str(pdf),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=True,
-            enhance=True,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
+            output=str(tmp_path / "out"),
         )
+        defaults.update(overrides)
+        return MockArgs(**defaults)
+
+    def test_pdf_uses_pipeline(self, tmp_path):
+        """PDF file calls extract_pdf(), not old backend path."""
+        args = self._make_args(tmp_path)
+        mock_result = _make_pipeline_result()
 
         with (
-            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
-            patch("agentic_mbse.extraction.claude_structure.enhance_structure", side_effect=mock_enhance),
-            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[object()]),
-            patch("agentic_mbse.extraction.ai_repair.repair_document", side_effect=mock_repair),
+            patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline,
+            patch("agentic_mbse.cli.extract_cli._run_extraction") as mock_run,
         ):
-            result = cmd_extract(args)
+            rc = cmd_extract(args)
+        assert rc == EXIT_SUCCESS
+        mock_pipeline.assert_called_once()
+        mock_run.assert_not_called()
 
-        assert result == EXIT_SUCCESS
-        assert call_order == ["enhance_structure", "repair_document"]
+    def test_pdf_budget_flag(self, tmp_path):
+        """--budget 0 maps to PipelineConfig(claude_budget_usd=0)."""
+        args = self._make_args(tmp_path, budget=0)
+        mock_result = _make_pipeline_result()
 
-    def test_enhance_skips_structure_when_not_needed(self, tmp_path):
-        """--enhance with well-structured doc skips L3, still runs L4."""
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf")
-        mock_result = _make_extraction_result(tmp_path)
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+            cmd_extract(args)
+        _, kwargs = mock_pipeline.call_args
+        assert kwargs["config"].claude_budget_usd == 0
 
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=True,
-            enhance=True,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
-        )
+    def test_pdf_dry_run_flag(self, tmp_path):
+        """--dry-run maps to PipelineConfig(dry_run=True)."""
+        args = self._make_args(tmp_path, dry_run=True)
+        mock_result = _make_pipeline_result()
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+            cmd_extract(args)
+        _, kwargs = mock_pipeline.call_args
+        assert kwargs["config"].dry_run is True
+
+    def test_pdf_no_tables_flag(self, tmp_path):
+        """--no-tables maps to enable_tables=False."""
+        args = self._make_args(tmp_path, no_tables=True)
+        mock_result = _make_pipeline_result()
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+            cmd_extract(args)
+        _, kwargs = mock_pipeline.call_args
+        assert kwargs["config"].enable_tables is False
+
+    def test_pdf_no_img2table_flag(self, tmp_path):
+        """--no-img2table maps to enable_img2table=False."""
+        args = self._make_args(tmp_path, no_img2table=True)
+        mock_result = _make_pipeline_result()
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+            cmd_extract(args)
+        _, kwargs = mock_pipeline.call_args
+        assert kwargs["config"].enable_img2table is False
+
+    def test_pdf_docling_flag(self, tmp_path):
+        """--docling maps to enable_docling=True."""
+        args = self._make_args(tmp_path, docling=True)
+        mock_result = _make_pipeline_result()
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+            cmd_extract(args)
+        _, kwargs = mock_pipeline.call_args
+        assert kwargs["config"].enable_docling is True
+
+    def test_pdf_model_flag(self, tmp_path):
+        """--model sonnet maps to claude_model='sonnet'."""
+        args = self._make_args(tmp_path, model="sonnet")
+        mock_result = _make_pipeline_result()
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+            cmd_extract(args)
+        _, kwargs = mock_pipeline.call_args
+        assert kwargs["config"].claude_model == "sonnet"
+
+    def test_pdf_html_path_flag(self, tmp_path):
+        """--html-path /tmp/a.html maps to arxiv_html_path."""
+        args = self._make_args(tmp_path, html_path="/tmp/a.html")
+        mock_result = _make_pipeline_result()
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+            cmd_extract(args)
+        _, kwargs = mock_pipeline.call_args
+        assert kwargs["config"].arxiv_html_path == Path("/tmp/a.html")
+
+    def test_pdf_output_files(self, tmp_path):
+        """Pipeline writes output.md, metrics.json, decisions.json."""
+        args = self._make_args(tmp_path)
+        mock_result = _make_pipeline_result()
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result):
+            cmd_extract(args)
+
+        out_dir = tmp_path / "out" / "paper"
+        assert (out_dir / "output.md").exists()
+        assert (out_dir / "metrics.json").exists()
+        assert (out_dir / "decisions.json").exists()
+
+    def test_pdf_cost_json_only_when_claude_used(self, tmp_path):
+        """cost.json present iff result.cost non-empty."""
+        # No cost
+        args = self._make_args(tmp_path)
+        mock_result = _make_pipeline_result()
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result):
+            cmd_extract(args)
+
+        out_dir = tmp_path / "out" / "paper"
+        assert not (out_dir / "cost.json").exists()
+
+        # With cost
+        cost = [CostRecord(page_num=0, cost_usd=0.05, model="sonnet")]
+        mock_result2 = _make_pipeline_result(cost=cost)
+        args2 = self._make_args(tmp_path, force=True)
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result2):
+            cmd_extract(args2)
+
+        assert (out_dir / "cost.json").exists()
+
+    def test_pdf_error_reports_failure(self, tmp_path):
+        """PipelineResult(error=...) → FAIL in output, exit FAILURE, no artifacts written."""
+        args = self._make_args(tmp_path)
+        mock_result = _make_pipeline_result(error="corrupt PDF")
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result):
+            rc = cmd_extract(args)
+        assert rc == EXIT_FAILURE
+        # No output.md written on error — allows automatic retry on next run
+        out_dir = tmp_path / "out" / "paper"
+        assert not (out_dir / "output.md").exists()
+
+    def test_pdf_skip_when_output_exists(self, tmp_path):
+        """PDF skip check: existing output.md → skip unless --force."""
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        out_dir = tmp_path / "out" / "paper"
+        out_dir.mkdir(parents=True)
+        (out_dir / "output.md").write_text("# Old output")
+
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"))
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf") as mock_pipeline:
+            rc = cmd_extract(args)
+        mock_pipeline.assert_not_called()
+        assert rc == EXIT_SUCCESS
+
+    def test_pdf_force_reprocesses(self, tmp_path):
+        """--force processes even if output.md exists."""
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        out_dir = tmp_path / "out" / "paper"
+        out_dir.mkdir(parents=True)
+        (out_dir / "output.md").write_text("# Old output")
+
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"), force=True)
+        mock_result = _make_pipeline_result()
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+            rc = cmd_extract(args)
+        mock_pipeline.assert_called_once()
+        assert rc == EXIT_SUCCESS
+
+    def test_pdf_index_post_processing(self, tmp_path):
+        """--index runs generate_index on pipeline output."""
+        args = self._make_args(tmp_path, index=True)
+        mock_result = _make_pipeline_result()
 
         with (
-            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=False),
-            patch("agentic_mbse.extraction.claude_structure.enhance_structure") as mock_enhance,
-            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[object()]),
+            patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result),
             patch(
-                "agentic_mbse.extraction.ai_repair.repair_document",
-                return_value=("fixed", {"repairs": 1, "rejections": 0}),
-            ) as mock_repair,
+                "agentic_mbse.extraction.index.generate_index",
+                return_value=tmp_path / "out" / "paper" / "INDEX.md",
+            ) as mock_index,
         ):
-            result = cmd_extract(args)
+            cmd_extract(args)
+        mock_index.assert_called_once()
 
-        assert result == EXIT_SUCCESS
-        mock_enhance.assert_not_called()
-        mock_repair.assert_called_once()
 
-    def test_structure_only_skips_ai_repair(self, tmp_path):
-        """--structure-only runs L3 without L4."""
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf")
-        mock_result = _make_extraction_result(tmp_path)
+# ---------------------------------------------------------------------------
+# DOCX path (preserved behavior)
+# ---------------------------------------------------------------------------
 
-        struct_meta = {"headers_inserted": 2, "headers_skipped": 0, "warnings": [], "phase_a": {}}
 
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=True,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=True,
-            model=None,
+class TestCmdExtractDocx:
+    """Verify DOCX files still use backend selection path."""
+
+    def test_docx_uses_backend_selection(self, tmp_path):
+        """DOCX still goes through select_backend() + _run_extraction()."""
+        from agentic_mbse.extraction.base import ExtractionResult
+
+        docx = tmp_path / "report.docx"
+        docx.write_bytes(b"fake docx content")
+        mock_result = ExtractionResult(
+            success=True,
+            output_dir=tmp_path / "report",
+            markdown_path=tmp_path / "report" / "full_document.md",
+            backend_used="pandoc",
         )
 
+        args = MockArgs(path=str(docx), backend="pandoc")
+
         with (
-            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
-            patch(
-                "agentic_mbse.extraction.claude_structure.enhance_structure",
-                return_value=("modified", struct_meta),
-            ) as mock_enhance,
-            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[]),
-            patch("agentic_mbse.extraction.ai_repair.repair_document") as mock_repair_fn,
+            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result) as mock_run,
+            patch("agentic_mbse.cli.extract_cli.extract_pdf") as mock_pipeline,
         ):
-            result = cmd_extract(args)
+            rc = cmd_extract(args)
+        assert rc == EXIT_SUCCESS
+        mock_run.assert_called_once()
+        mock_pipeline.assert_not_called()
 
-        assert result == EXIT_SUCCESS
-        mock_enhance.assert_called_once()
-        mock_repair_fn.assert_not_called()
+    def test_backend_flag_applies_to_docx(self, tmp_path):
+        """--backend pandoc works for DOCX."""
+        from agentic_mbse.extraction.base import ExtractionResult
 
-    def test_model_flag_passed_through(self, tmp_path):
-        """--model sonnet overrides both Phase A and Phase B."""
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf")
-        mock_result = _make_extraction_result(tmp_path)
-
-        struct_meta = {"headers_inserted": 1, "headers_skipped": 0, "warnings": [], "phase_a": {}}
-
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=True,
-            enhance=True,
-            max_repair_pages=None,
-            structure_only=False,
-            model="sonnet",
+        docx = tmp_path / "report.docx"
+        docx.write_bytes(b"fake docx content")
+        mock_result = ExtractionResult(
+            success=True,
+            output_dir=tmp_path / "report",
+            markdown_path=tmp_path / "report" / "full_document.md",
+            backend_used="pandoc",
         )
 
-        with (
-            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
-            patch(
-                "agentic_mbse.extraction.claude_structure.enhance_structure",
-                return_value=("modified", struct_meta),
-            ) as mock_enhance,
-            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[]),
-            patch("agentic_mbse.extraction.ai_repair.repair_document"),
-        ):
-            result = cmd_extract(args)
+        args = MockArgs(path=str(docx), backend="pandoc")
 
-        assert result == EXIT_SUCCESS
-        mock_enhance.assert_called_once()
-        _, kwargs = mock_enhance.call_args
-        assert kwargs["phase_a_model"] == "sonnet"
-        assert kwargs["phase_b_model"] == "sonnet"
+        with patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result) as mock_run:
+            rc = cmd_extract(args)
+        assert rc == EXIT_SUCCESS
+        # _run_extraction(file_path, output_dir, backend, timeout) — positional args
+        call_args = mock_run.call_args[0]
+        assert call_args[2] == "pandoc"
 
-    def test_structure_failure_continues_pipeline(self, tmp_path):
-        """L3 failure -> warning, pipeline continues to L4."""
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf")
-        mock_result = _make_extraction_result(tmp_path)
 
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=True,
-            enhance=True,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
+# ---------------------------------------------------------------------------
+# Legacy flags removed
+# ---------------------------------------------------------------------------
+
+
+class TestLegacyFlagsRemoved:
+    """Verify legacy flags are not recognized."""
+
+    def test_fix_tables_not_in_help(self):
+        result = subprocess.run(
+            ["uv", "run", "agentic-mbse", "extract", "--help"],
+            capture_output=True, text=True,
         )
+        assert "--fix-tables" not in result.stdout
 
-        with (
-            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
-            patch(
-                "agentic_mbse.extraction.claude_structure.enhance_structure",
-                side_effect=RuntimeError("Claude subprocess failed"),
-            ),
-            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[object()]),
-            patch(
-                "agentic_mbse.extraction.ai_repair.repair_document",
-                return_value=("fixed", {"repairs": 1, "rejections": 0}),
-            ) as mock_repair,
-        ):
-            result = cmd_extract(args)
-
-        assert result == EXIT_SUCCESS
-        mock_repair.assert_called_once()
-
-    def test_default_mode_no_structural_pass(self, tmp_path):
-        """Default mode (no --enhance/--structure-only) never calls L3 or L4."""
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf")
-        mock_result = _make_extraction_result(tmp_path)
-
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=True,
-            enhance=False,
-            max_repair_pages=None,
-            structure_only=False,
-            model=None,
+    def test_enhance_not_in_help(self):
+        result = subprocess.run(
+            ["uv", "run", "agentic-mbse", "extract", "--help"],
+            capture_output=True, text=True,
         )
+        assert "--enhance" not in result.stdout
 
-        with (
-            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure") as mock_needs,
-            patch("agentic_mbse.extraction.claude_structure.enhance_structure") as mock_enhance,
-            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[]),
-            patch("agentic_mbse.extraction.ai_repair.repair_document") as mock_repair,
-        ):
-            result = cmd_extract(args)
-
-        assert result == EXIT_SUCCESS
-        mock_needs.assert_not_called()
-        mock_enhance.assert_not_called()
-        mock_repair.assert_not_called()
-
-    def test_enhance_and_structure_only_skips_ai_repair(self, tmp_path):
-        """--enhance --structure-only together: structure_only wins, L4 skipped."""
-        pdf = tmp_path / "report.pdf"
-        pdf.write_bytes(b"fake pdf")
-        mock_result = _make_extraction_result(tmp_path)
-
-        struct_meta = {"headers_inserted": 2, "headers_skipped": 0, "warnings": [], "phase_a": {}}
-
-        args = MockArgs(
-            path=str(pdf),
-            output=None,
-            backend="pymupdf",
-            timeout=600,
-            force=False,
-            index=False,
-            summarize=False,
-            fix_tables=False,
-            no_tables=True,
-            enhance=True,
-            max_repair_pages=None,
-            structure_only=True,
-            model=None,
+    def test_structure_only_not_in_help(self):
+        result = subprocess.run(
+            ["uv", "run", "agentic-mbse", "extract", "--help"],
+            capture_output=True, text=True,
         )
+        assert "--structure-only" not in result.stdout
 
-        with (
-            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result),
-            patch("agentic_mbse.extraction.claude_structure.needs_claude_structure", return_value=True),
-            patch(
-                "agentic_mbse.extraction.claude_structure.enhance_structure",
-                return_value=("modified", struct_meta),
-            ) as mock_enhance,
-            patch("agentic_mbse.extraction.quality_gates.detect_problems", return_value=[object()]),
-            patch("agentic_mbse.extraction.ai_repair.repair_document") as mock_repair,
-        ):
-            result = cmd_extract(args)
-
-        assert result == EXIT_SUCCESS
-        mock_enhance.assert_called_once()
-        mock_repair.assert_not_called()
+    def test_max_repair_pages_not_in_help(self):
+        result = subprocess.run(
+            ["uv", "run", "agentic-mbse", "extract", "--help"],
+            capture_output=True, text=True,
+        )
+        assert "--max-repair-pages" not in result.stdout
 
 
 # ---------------------------------------------------------------------------
@@ -830,3 +509,9 @@ class TestCLIIntegration:
         assert "--force" in result.stdout
         assert "--timeout" in result.stdout
         assert "--index" in result.stdout
+        # New flags
+        assert "--budget" in result.stdout
+        assert "--dry-run" in result.stdout
+        assert "--no-img2table" in result.stdout
+        assert "--docling" in result.stdout
+        assert "--html-path" in result.stdout

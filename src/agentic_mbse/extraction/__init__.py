@@ -7,6 +7,8 @@ from agentic_mbse.extraction.base import (
     sanitize_filename,
     write_summary,
 )
+from agentic_mbse.extraction.pipeline import PipelineConfig, extract_pdf
+from agentic_mbse.extraction.types import PipelineResult
 
 __all__ = [
     "ExtractionResult",
@@ -14,4 +16,7 @@ __all__ = [
     "get_output_dir",
     "sanitize_filename",
     "write_summary",
+    "extract_pdf",
+    "PipelineConfig",
+    "PipelineResult",
 ]

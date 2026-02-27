@@ -46,14 +46,14 @@ Replace the v3 full-document extraction pipeline with a per-page quality-gated p
 
 - [ ] `extract_pdf()` produces non-empty markdown for all 7 corpus PDFs with `claude_budget_usd=0` (no Claude, no network)
 - [ ] Quality gate correctly identifies math garbling, table anomalies, and text density issues on synthetic test pages (unit tests)
-- [ ] Routing logic covers all 6 `PageAction` paths with unit tests (KEEP, GMFT_REPLACE, GMFT_APPEND, STRIP_FALSE, STRIP_BROKEN, CLAUDE_REPLACE)
+- [x] Routing logic covers all 6 `PageAction` paths with unit tests (KEEP, GMFT_REPLACE, GMFT_APPEND, STRIP_FALSE, STRIP_BROKEN, CLAUDE_REPLACE)
 - [ ] Table filter passes real tables, rejects prose blocks and layout artifacts (unit tests matching Stage 2 ground truth)
 - [ ] Claude sanity check rejects empty, truncated (>50% drop), and prompt-leaked outputs (unit tests)
-- [ ] Budget allocation selects highest-severity pages first, respects dollar cap (unit tests)
-- [ ] Pipeline degrades gracefully: no GMFT → skip tables; no Pandoc → skip arXiv; no Claude → GMFT fallback or keep
+- [x] Budget allocation selects highest-severity pages first, respects dollar cap (unit tests)
+- [x] Pipeline degrades gracefully: no GMFT → skip tables; no Pandoc → skip arXiv; no Claude → GMFT fallback or keep
 - [ ] Deprecated modules removed: `ai_repair.py`, `claude_structure.py`, `table_repair.py`, old `quality_gates.py`, old `table_extraction.py`
 - [ ] All existing tests updated or replaced; full test suite passes
-- [ ] CLI: `agentic-mbse extract paper.pdf` uses new pipeline by default; `--backend pymupdf` preserves old path
+- [x] CLI: `agentic-mbse extract paper.pdf` uses new pipeline by default; `--backend pymupdf` preserves old path
 
 ---
 
@@ -161,9 +161,10 @@ Replace the v3 full-document extraction pipeline with a per-page quality-gated p
 
 ---
 
-### Item 3: Pipeline Orchestration + CLI [1.5 days]
+### Item 3: Pipeline Orchestration + CLI [1.5 days] — COMPLETE
 
 **Type**: Integration
+**Status**: Complete (audited 2026-02-26)
 **Effort**: 1.5 days (spec 0h, design 0h, plan 1h, execute 10h)
 **Dependencies**: Items 1 and 2
 
@@ -187,15 +188,15 @@ Replace the v3 full-document extraction pipeline with a per-page quality-gated p
 - Batch processing (Stage 6)
 
 **Success Criteria**:
-- [ ] `extract_pdf()` produces `PipelineResult` with markdown, metrics, decisions, and cost
-- [ ] arXiv shortcut fires for arXiv PDFs, returns `source="pandoc_arxiv"`
-- [ ] Table enhancement deducts from shared budget before page-level Claude
-- [ ] Error in table detection → pipeline continues with pymupdf4llm only (no crash)
-- [ ] Error in Claude → page falls back to GMFT or keep (no crash)
-- [ ] `--dry-run` shows decisions without calling Claude
-- [ ] `agentic-mbse extract paper.pdf` uses new pipeline; `--backend pymupdf` uses old path
-- [ ] `decisions.json` and `cost.json` written alongside output markdown
-- [ ] All pipeline unit tests pass with mocked components
+- [x] `extract_pdf()` produces `PipelineResult` with markdown, metrics, decisions, and cost
+- [x] arXiv shortcut fires for arXiv PDFs, returns `source="pandoc_arxiv"`
+- [x] Table enhancement deducts from shared budget before page-level Claude
+- [x] Error in table detection → pipeline continues with pymupdf4llm only (no crash)
+- [x] Error in Claude → page falls back to GMFT or keep (no crash)
+- [x] `--dry-run` shows decisions without calling Claude
+- [x] `agentic-mbse extract paper.pdf` uses new pipeline; `--backend pymupdf` uses old path
+- [x] `decisions.json` and `cost.json` written alongside output markdown
+- [x] All pipeline unit tests pass with mocked components
 
 **Deliverables**:
 - `src/agentic_mbse/extraction/pipeline.py`
@@ -314,5 +315,5 @@ Item 2 (Enhancement Components) ┘
 
 ---
 
-**Last Updated**: 2026-02-23
-**Next Action**: Begin Item 3 (Pipeline Orchestration + CLI)
+**Last Updated**: 2026-02-26
+**Next Action**: Begin Item 4 (Integration Tests, Cleanup & Ship)
