@@ -93,6 +93,9 @@ ignore_errors = true
 testpaths = ["tests"]
 python_files = "test_*.py"
 addopts = "-v --tb=short"
+markers = [
+    "corpus: integration tests against real corpus PDFs (may cost money)",
+]
 
 [tool.coverage.run]
 source = ["src/agentic_mbse"]

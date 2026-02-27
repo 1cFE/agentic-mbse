@@ -1,6 +1,7 @@
 """Tests for agentic_mbse.cli.extract_cli — Phase 2 (pipeline + CLI rewrite)."""
 
 import subprocess
+import warnings
 from pathlib import Path
 from unittest.mock import patch
 
@@ -117,19 +118,10 @@ class TestSelectBackend:
         result = select_backend(Path("x.pdf"), requested="pymupdf")
         assert result == "pymupdf"
 
-    def test_auto_selects_pymupdf_for_pdf_when_only_pymupdf(self, monkeypatch):
-        monkeypatch.setattr(
-            "agentic_mbse.cli.extract_cli._is_available", lambda name: name == "pymupdf"
-        )
+    def test_pdf_auto_returns_none(self):
+        """select_backend() returns None for .pdf — pipeline handles PDFs."""
         result = select_backend(Path("x.pdf"), requested=None)
-        assert result == "pymupdf"
-
-    def test_auto_prefers_docling_for_pdf(self, monkeypatch):
-        monkeypatch.setattr(
-            "agentic_mbse.cli.extract_cli._is_available", lambda name: True
-        )
-        result = select_backend(Path("x.pdf"), requested=None)
-        assert result == "docling"
+        assert result is None
 
     def test_auto_prefers_docling_for_docx(self, monkeypatch):
         monkeypatch.setattr(
@@ -150,7 +142,7 @@ class TestSelectBackend:
         monkeypatch.setattr(
             "agentic_mbse.cli.extract_cli._is_available", lambda name: False
         )
-        result = select_backend(Path("x.pdf"), requested=None)
+        result = select_backend(Path("x.docx"), requested=None)
         assert result is None
 
 
@@ -489,6 +481,70 @@ class TestLegacyFlagsRemoved:
             capture_output=True, text=True,
         )
         assert "--max-repair-pages" not in result.stdout
+
+
+# ---------------------------------------------------------------------------
+# Deprecation warnings for legacy flags
+# ---------------------------------------------------------------------------
+
+
+class TestDeprecationWarnings:
+    """Legacy flags emit deprecation warnings pointing to new pipeline."""
+
+    def _make_args(self, tmp_path, **overrides):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        defaults = dict(
+            path=str(pdf),
+            output=str(tmp_path / "out"),
+            fix_tables=False,
+            enhance=False,
+            structure_only=False,
+        )
+        defaults.update(overrides)
+        return MockArgs(**defaults)
+
+    def test_fix_tables_emits_warning(self, tmp_path):
+        """--fix-tables emits deprecation warning."""
+        args = self._make_args(tmp_path, fix_tables=True)
+        mock_result = _make_pipeline_result()
+
+        with (
+            patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result),
+            warnings.catch_warnings(record=True) as w,
+        ):
+            warnings.simplefilter("always")
+            cmd_extract(args)
+        dep_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+        assert any("--fix-tables" in str(x.message) for x in dep_warnings)
+
+    def test_enhance_emits_warning(self, tmp_path):
+        """--enhance emits deprecation warning."""
+        args = self._make_args(tmp_path, enhance=True)
+        mock_result = _make_pipeline_result()
+
+        with (
+            patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result),
+            warnings.catch_warnings(record=True) as w,
+        ):
+            warnings.simplefilter("always")
+            cmd_extract(args)
+        dep_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+        assert any("--enhance" in str(x.message) for x in dep_warnings)
+
+    def test_structure_only_emits_warning(self, tmp_path):
+        """--structure-only emits deprecation warning."""
+        args = self._make_args(tmp_path, structure_only=True)
+        mock_result = _make_pipeline_result()
+
+        with (
+            patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result),
+            warnings.catch_warnings(record=True) as w,
+        ):
+            warnings.simplefilter("always")
+            cmd_extract(args)
+        dep_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
+        assert any("--structure-only" in str(x.message) for x in dep_warnings)
 
 
 # ---------------------------------------------------------------------------

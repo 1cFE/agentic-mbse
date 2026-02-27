@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import warnings
 from pathlib import Path
 
 from agentic_mbse.extraction.base import (
@@ -74,22 +75,20 @@ def discover_documents(path: Path) -> list[Path]:
 
 
 def select_backend(file_path: Path, requested: str | None) -> str | None:
-    """Select the extraction backend for *file_path*.
+    """Select the extraction backend for *file_path* (DOCX only).
 
     If *requested* is given, return it directly (caller is responsible for
-    checking availability).  In auto mode, prefer docling, then fall back
-    to pymupdf (PDF) or pandoc (DOCX).  Returns ``None`` when no suitable
-    backend is available.
+    checking availability).  In auto mode for DOCX, prefer docling then
+    pandoc.  Returns ``None`` for PDFs (pipeline handles them) and when
+    no suitable backend is available.
     """
     if requested is not None:
         return requested
 
     ext = file_path.suffix.lower()
 
-    # Preference order per format
-    if ext == ".pdf":
-        candidates = ["docling", "pymupdf"]
-    elif ext == ".docx":
+    # PDFs always use the pipeline (extract_pdf) — no backend auto-selection
+    if ext == ".docx":
         candidates = ["docling", "pandoc"]
     else:
         return None
@@ -105,7 +104,6 @@ def select_backend(file_path: Path, requested: str | None) -> str | None:
 # ---------------------------------------------------------------------------
 
 _FALLBACK_ORDER: dict[str, list[str]] = {
-    ".pdf": ["docling", "pymupdf"],
     ".docx": ["docling", "pandoc"],
 }
 
@@ -184,6 +182,29 @@ def _print_pipeline_summary(label: str, result: PipelineResult) -> None:
 
 def cmd_extract(args: argparse.Namespace) -> int:
     """Main ``extract`` command handler."""
+    # Deprecation warnings for legacy flags
+    if getattr(args, "fix_tables", False):
+        warnings.warn(
+            "--fix-tables is deprecated. PDFs now use the quality-gated pipeline. "
+            "Use --no-tables to disable table detection.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    if getattr(args, "enhance", False):
+        warnings.warn(
+            "--enhance is deprecated. PDFs now use the quality-gated pipeline. "
+            "Use --budget to control Claude spending.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    if getattr(args, "structure_only", False):
+        warnings.warn(
+            "--structure-only is deprecated. PDFs now use the quality-gated pipeline. "
+            "Use --dry-run to preview quality gate decisions.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     path = Path(args.path)
     if not path.exists():
         print(f"Error: path does not exist: {path}")
@@ -429,4 +450,8 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         metavar="PATH",
         help="arXiv HTML file path for Pandoc shortcut (overrides auto-detect)",
     )
+    # Hidden legacy flags — emit deprecation warnings when used
+    p.add_argument("--fix-tables", action="store_true", default=False, help=argparse.SUPPRESS)
+    p.add_argument("--enhance", action="store_true", default=False, help=argparse.SUPPRESS)
+    p.add_argument("--structure-only", action="store_true", default=False, help=argparse.SUPPRESS)
     p.set_defaults(func=cmd_extract)
