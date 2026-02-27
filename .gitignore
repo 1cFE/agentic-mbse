@@ -41,6 +41,7 @@ tests/corpus/current/
 tests/corpus/runs/
 tests/corpus/pandoc-experiments/*/paischer_2025.md
 tests/corpus/pandoc-experiments/*/stderr.txt
+tests/corpus/page_images/
 
 # Memories
 .project/memories
