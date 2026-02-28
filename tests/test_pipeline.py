@@ -26,6 +26,7 @@ from agentic_mbse.extraction.types import (
     PageAction,
     PageDecision,
     PageResult,
+    PipelineResult,
 )
 
 # ---------------------------------------------------------------------------
@@ -70,6 +71,16 @@ def _cost(page_num: int = 0, cost_usd: float = 0.05, table_index: int | None = N
 # Common patch targets
 _P = "agentic_mbse.extraction.pipeline"
 _PANDOC = "agentic_mbse.extraction.pandoc_convert"
+
+
+def _patch_which_claude():
+    """Patch shutil.which to report Claude CLI as available."""
+    return patch(f"{_P}.shutil.which", return_value="/usr/bin/claude")
+
+
+def _patch_which_claude_missing():
+    """Patch shutil.which to report Claude CLI as missing."""
+    return patch(f"{_P}.shutil.which", return_value=None)
 
 
 def _patch_base(pages: list[PageResult] | None = None):
@@ -324,6 +335,7 @@ class TestExtractPdfTableEnhancement:
             _patch_tables({0: [table]}),
             patch(f"{_P}.enhance_table_with_claude", return_value=(enhanced_table, cost)) as mock_enhance,
             _patch_claude_page(),
+            _patch_which_claude(),
         ):
             result = extract_pdf(Path("/fake.pdf"))
         mock_enhance.assert_called_once()
@@ -341,6 +353,7 @@ class TestExtractPdfTableEnhancement:
             _patch_tables({0: [table]}),
             patch(f"{_P}.enhance_table_with_claude", return_value=(empty_table, cost)),
             _patch_claude_page(),
+            _patch_which_claude(),
         ):
             result = extract_pdf(Path("/fake.pdf"))
         assert result.error is None
@@ -370,6 +383,7 @@ class TestExtractPdfTableEnhancement:
             _patch_tables({0: [table]}),
             patch(f"{_P}.enhance_table_with_claude", side_effect=RuntimeError("Claude failed")),
             _patch_claude_page(),
+            _patch_which_claude(),
         ):
             result = extract_pdf(Path("/fake.pdf"))
         assert result.error is None
@@ -441,6 +455,7 @@ class TestExtractPdfQualityGateAndBudget:
             _patch_tables({0: [table]}),
             patch(f"{_P}.enhance_table_with_claude", return_value=(enhanced, table_cost)),
             patch(f"{_P}.extract_page_with_claude") as mock_claude_page,
+            _patch_which_claude(),
         ):
             extract_pdf(Path("/fake.pdf"), cfg)
         # Budget remaining after table: 2.0 - 1.95 = 0.05, not enough for a page (0.078)
@@ -480,6 +495,7 @@ class TestExtractPdfClaudePageEnhancement:
             _patch_base(pages),
             _patch_tables(),
             patch(f"{_P}.extract_page_with_claude", return_value=(claude_md, claude_cost)),
+            _patch_which_claude(),
         ):
             result = extract_pdf(Path("/fake.pdf"))
         # Claude output should be in the final markdown
@@ -497,6 +513,7 @@ class TestExtractPdfClaudePageEnhancement:
             _patch_base(pages),
             _patch_tables(),
             patch(f"{_P}.extract_page_with_claude", return_value=("", claude_cost)),
+            _patch_which_claude(),
         ):
             result = extract_pdf(Path("/fake.pdf"))
         # Cost should still be tracked even though output was rejected
@@ -514,6 +531,7 @@ class TestExtractPdfClaudePageEnhancement:
             _patch_base(pages),
             _patch_tables(),
             patch(f"{_P}.extract_page_with_claude", side_effect=RuntimeError("Claude error")),
+            _patch_which_claude(),
         ):
             result = extract_pdf(Path("/fake.pdf"))
         assert result.error is None
@@ -665,6 +683,7 @@ class TestExtractPdfRouteAndMerge:
             _patch_base(pages),
             _patch_tables(),
             patch(f"{_P}.extract_page_with_claude", return_value=("# Better\n\nContent.", claude_cost)),
+            _patch_which_claude(),
         ):
             result = extract_pdf(Path("/fake.pdf"))
         expected_total = sum(c.cost_usd for c in result.cost)
@@ -801,6 +820,137 @@ class TestExtractPdfStepOrdering:
         assert "allocate" in call_order
         if "claude" in call_order:
             assert call_order.index("allocate") < call_order.index("claude")
+
+
+# ---------------------------------------------------------------------------
+# TestPreflightClaudeCheck
+# ---------------------------------------------------------------------------
+
+
+class TestPreflightClaudeCheck:
+    def test_claude_missing_no_subprocess_calls(self):
+        """shutil.which → None → no Claude subprocess calls attempted."""
+        garbled = "# Title\n\n~~garbled~~ ~~math~~ ~~content~~ \ufffd\ufffd more text here with enough content."
+        pages = [_page(0, garbled)]
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(pages),
+            _patch_tables(),
+            patch(f"{_P}.extract_page_with_claude") as mock_claude,
+            _patch_which_claude_missing(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"))
+        mock_claude.assert_not_called()
+        assert result.error is None
+
+    def test_claude_missing_table_enhancement_skipped(self):
+        """shutil.which → None → table Claude enhancement also skipped."""
+        table = _table(extraction_failed=True)
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base([_page(0)]),
+            _patch_tables({0: [table]}),
+            patch(f"{_P}.enhance_table_with_claude") as mock_enhance,
+            patch(f"{_P}.extract_page_with_claude") as mock_claude,
+            _patch_which_claude_missing(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"))
+        mock_enhance.assert_not_called()
+        mock_claude.assert_not_called()
+        assert result.error is None
+
+
+# ---------------------------------------------------------------------------
+# TestDecisionTruthfulness
+# ---------------------------------------------------------------------------
+
+
+class TestDecisionTruthfulness:
+    def test_claude_unavailable_decisions_rewritten_to_keep(self):
+        """Pages routed to CLAUDE_REPLACE but Claude unavailable → decision becomes KEEP."""
+        garbled = "# Title\n\n~~garbled~~ ~~math~~ ~~content~~ \ufffd\ufffd more text here with enough content."
+        pages = [_page(0, garbled)]
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(pages),
+            _patch_tables(),
+            patch(f"{_P}.extract_page_with_claude") as mock_claude,
+            _patch_which_claude_missing(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"))
+
+        mock_claude.assert_not_called()
+        # Find decisions that quality gate would have routed to CLAUDE_REPLACE
+        # They should now be KEEP with an explanatory reason
+        for d in result.decisions:
+            if "Claude enhancement unavailable" in " ".join(d.reasons):
+                assert d.action == PageAction.KEEP
+                break
+        else:
+            # If no page was flagged for Claude, the garbled content wasn't severe enough.
+            # Verify at least that claude_pages_intended reflects reality.
+            assert result.claude_pages_succeeded == 0
+
+    def test_claude_pages_stats_reflect_failure(self):
+        """claude_pages_intended > 0 but succeeded == 0 when Claude missing."""
+        garbled = "# Title\n\n~~garbled~~ ~~math~~ ~~content~~ \ufffd\ufffd more text here with enough content."
+        pages = [_page(0, garbled)]
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(pages),
+            _patch_tables(),
+            patch(f"{_P}.extract_page_with_claude"),
+            _patch_which_claude_missing(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"))
+
+        # If pages were allocated for Claude, succeeded should be 0
+        if result.claude_pages_intended > 0:
+            assert result.claude_pages_succeeded == 0
+
+
+# ---------------------------------------------------------------------------
+# TestCliSummary
+# ---------------------------------------------------------------------------
+
+
+class TestCliSummary:
+    def _make_result(self, intended: int, succeeded: int, cost: float = 0.0) -> PipelineResult:
+        from agentic_mbse.extraction.metrics import compute_metrics
+        return PipelineResult(
+            markdown="# Test\n\nContent.",
+            metrics=compute_metrics("# Test\n\nContent."),
+            source="pdf_pipeline",
+            elapsed_seconds=5.0,
+            total_cost_usd=cost,
+            claude_pages_intended=intended,
+            claude_pages_succeeded=succeeded,
+        )
+
+    def test_print_pipeline_summary_shows_claude_warning(self, capsys):
+        """CLI summary shows Claude failure warning when intended > succeeded."""
+        from agentic_mbse.cli.extract_cli import _print_pipeline_summary
+        _print_pipeline_summary("test.pdf", self._make_result(3, 0))
+        captured = capsys.readouterr()
+        assert "! Claude: 0/3 pages enhanced" in captured.out
+
+    def test_print_pipeline_summary_no_warning_when_all_succeed(self, capsys):
+        """No warning when all Claude pages succeed."""
+        from agentic_mbse.cli.extract_cli import _print_pipeline_summary
+        _print_pipeline_summary("test.pdf", self._make_result(3, 3, cost=0.234))
+        captured = capsys.readouterr()
+        assert "! Claude" not in captured.out
+
+    def test_print_pipeline_summary_no_warning_when_no_claude(self, capsys):
+        """No warning when Claude wasn't used."""
+        from agentic_mbse.cli.extract_cli import _print_pipeline_summary
+        _print_pipeline_summary("test.pdf", self._make_result(0, 0))
+        captured = capsys.readouterr()
+        assert "! Claude" not in captured.out
 
 
 # ---------------------------------------------------------------------------

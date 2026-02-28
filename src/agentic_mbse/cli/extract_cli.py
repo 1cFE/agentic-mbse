@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import sys
 import warnings
 from pathlib import Path
 
@@ -173,6 +174,14 @@ def _print_pipeline_summary(label: str, result: PipelineResult) -> None:
         stats.append(f"${result.total_cost_usd:.3f}")
     stats.append(f"{result.elapsed_seconds:.1f}s")
     print(f"   ok   {label} [{result.source}] ({', '.join(stats)})")
+    if (
+        result.claude_pages_intended > 0
+        and result.claude_pages_succeeded < result.claude_pages_intended
+    ):
+        print(
+            f"        ! Claude: {result.claude_pages_succeeded}/"
+            f"{result.claude_pages_intended} pages enhanced"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -205,6 +214,57 @@ def cmd_extract(args: argparse.Namespace) -> int:
             stacklevel=2,
         )
 
+    # --check-json implies --check
+    if args.check_json:
+        args.check = True
+
+    # Handle --check with no path: use built-in corpus
+    if args.check and args.path is None:
+        from agentic_mbse.extraction.check import (
+            OverallStatus,
+            format_check_json,
+            get_check_corpus,
+            merge_check_results,
+            print_check_table,
+            run_check,
+        )
+
+        corpus = get_check_corpus()
+        if not corpus:
+            print("Error: built-in test corpus not found", file=sys.stderr)
+            return EXIT_FAILURE
+
+        print(
+            f"Using built-in test corpus ({len(corpus)} PDFs)",
+            file=sys.stderr,
+        )
+
+        results = []
+        for i, pdf in enumerate(corpus):
+            # Only spend Claude budget on first PDF
+            budget = args.budget if i == 0 else 0
+            results.append(
+                run_check(pdf, claude_model=args.model, claude_budget=budget)
+            )
+
+        check_result = merge_check_results(results)
+
+        if args.check_json:
+            print(format_check_json(check_result))
+        else:
+            print_check_table(check_result)
+
+        if check_result.overall == OverallStatus.FAIL:
+            return 2
+        elif check_result.overall == OverallStatus.DEGRADED:
+            return EXIT_FAILURE
+        return EXIT_SUCCESS
+
+    # All non-check paths require a path argument
+    if args.path is None:
+        print("Error: path is required (unless using --check)")
+        return EXIT_FAILURE
+
     path = Path(args.path)
     if not path.exists():
         print(f"Error: path does not exist: {path}")
@@ -214,6 +274,41 @@ def cmd_extract(args: argparse.Namespace) -> int:
     if not docs:
         print(f"Error: no PDF or DOCX files found at {path}")
         return EXIT_FAILURE
+
+    if args.check:
+        from agentic_mbse.extraction.check import (
+            OverallStatus,
+            format_check_json,
+            print_check_table,
+            run_check,
+        )
+
+        if len(docs) > 1:
+            print(f"Error: --check operates on a single PDF, got {len(docs)} files")
+            print("       Provide a single PDF file path, not a directory")
+            return EXIT_FAILURE
+
+        pdf = docs[0]
+        if pdf.suffix.lower() != ".pdf":
+            print("Error: --check only works with PDF files")
+            return EXIT_FAILURE
+
+        check_result = run_check(
+            pdf,
+            claude_model=args.model,
+            claude_budget=args.budget,
+        )
+
+        if args.check_json:
+            print(format_check_json(check_result))
+        else:
+            print_check_table(check_result)
+
+        if check_result.overall == OverallStatus.FAIL:
+            return 2
+        elif check_result.overall == OverallStatus.DEGRADED:
+            return EXIT_FAILURE
+        return EXIT_SUCCESS
 
     output_base = Path(args.output) if args.output else None
 
@@ -372,6 +467,8 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
     )
     p.add_argument(
         "path",
+        nargs="?",
+        default=None,
         help="PDF/DOCX file or directory containing documents",
     )
     p.add_argument(
@@ -449,6 +546,18 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         default=None,
         metavar="PATH",
         help="arXiv HTML file path for Pandoc shortcut (overrides auto-detect)",
+    )
+    # Check flags
+    p.add_argument(
+        "--check",
+        action="store_true",
+        help="Probe pipeline components against the PDF without extracting",
+    )
+    p.add_argument(
+        "--check-json",
+        action="store_true",
+        dest="check_json",
+        help="Output machine-readable JSON (implies --check)",
     )
     # Hidden legacy flags — emit deprecation warnings when used
     p.add_argument("--fix-tables", action="store_true", default=False, help=argparse.SUPPRESS)

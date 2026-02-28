@@ -79,3 +79,5 @@ class PipelineResult:
     source: str = ""
     elapsed_seconds: float = 0.0
     error: str | None = None
+    claude_pages_intended: int = 0
+    claude_pages_succeeded: int = 0

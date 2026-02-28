@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-02-23
+**Last Updated**: 2026-02-27
 
 ---
 
@@ -151,6 +151,74 @@ Prioritized list of epics and features.
 | ITEM-SYMLINK-001: Tool-Owned File Safety | 2026-01-23 | 1 day | Hash-based modification detection |
 | ~~EPIC-CMDREV-001: Command System Revision~~ | — | — | **Superseded** by EPIC-ARCH-002 + EPIC-ARCH-003 |
 | ~~TASK-PDF-001: Header Consistency~~ | — | — | **Superseded** by EPIC-PDFV3-001 (Claude structure repair handles this) |
+
+---
+
+### [ITEM-QUALREG-001] v4 Pipeline Output Quality Regressions
+
+**Priority**: P2
+**Effort**: 1-2 days
+**Status**: Spec drafted
+**Spec**: `.project/active/v4-output-quality-regressions/spec.md`
+**Branch**: `doc-ingest-clean`
+**Parent**: EPIC-PDFV4-001
+
+**Problem**: Two regressions in v4 output vs the old pipeline: (1) Running headers and bare page numbers not stripped — 22 noise lines in a 12-page document (old pipeline had zero). (2) GMFT_APPEND pages contain table data twice — once as flat text from pymupdf4llm, once as pipe table appended by GMFT. Wastes LLM context tokens and creates ambiguity.
+
+**Goal**: Apply `strip_running_headers()`, `strip_page_numbers()`, and `repair_ligatures()` to v4 output. Remove flat-text table renderings on GMFT_APPEND pages when a proper pipe table is appended. Output should be ≤ old pipeline line count for equivalent content.
+
+---
+
+## P2 - Medium Priority (continued)
+
+### [ITEM-IMGEXT-001] Persist Table Crop Images in Extraction Output
+
+**Priority**: P2
+**Effort**: 0.5-1 day
+**Status**: Idea
+
+**Problem**: The table detection ensemble (GMFT/Img2Table) already crops table regions as PNG images and stores them in `DetectedTable.image_path`, but these are written to temp directories and discarded after Claude enhancement. When table extraction is imperfect (garbled columns, merged cells), users have no visual reference to compare against.
+
+**Goal**: Add a `--save-images` flag (or config option) to persist table crop images to an `images/` subdirectory alongside the output markdown. Optionally embed `![Table N](images/page_NNN_table_M.png)` references in the output alongside the markdown pipe table.
+
+**Notes**:
+- Plumbing is mostly there — `DetectedTable.image_path` already exists
+- Main work is: copy temp images to output dir, add image refs to markdown, add CLI flag
+- Consider whether images should replace or supplement the text table
+
+---
+
+### [ITEM-IMGEXT-002] Equation Region Detection and Image Extraction
+
+**Priority**: P2
+**Effort**: 2-3 days (needs research)
+**Status**: Idea
+
+**Problem**: Equations have no region-level detection. The pipeline relies on pymupdf4llm's text rendering (often garbled Unicode) and Claude's whole-page LaTeX transcription. When transcription is imperfect, there's no source image to fall back on or review.
+
+**Goal**: Detect equation regions on PDF pages, crop them as images, and save alongside the output markdown. For pages routed through Claude, provide equation crops as supplementary visual evidence.
+
+**Key questions**:
+- Which equation detector to use? (pix2tex, YOLO-based layout detection, Nougat region proposals, or pymupdf's own block classification)
+- Should this be a new detector in the ensemble alongside GMFT/Img2Table, or a separate pipeline stage?
+- Inline vs display equations — detect both or only display?
+- How to associate cropped equation images with their LaTeX transcription in the output?
+
+**Dependencies**: Benefits from ITEM-IMGEXT-001 (shared image persistence infrastructure)
+
+---
+
+### [ITEM-IMGEXT-003] Figure Image Extraction in v4 Pipeline
+
+**Priority**: P2
+**Effort**: 0.5-1 day
+**Status**: Idea
+
+**Problem**: The v4 `extract_pages()` pipeline hardcodes `write_images=False` in `pymupdf_backend.py`, silently dropping all figures. The legacy `extract()` path and Docling backend both support figure images, but the main pipeline does not.
+
+**Goal**: Enable figure image extraction in the v4 pipeline behind the same `--save-images` flag from ITEM-IMGEXT-001. Wire up `write_images=True`, configure an output `image_path`, and invoke `promote_figure_captions()` post-processing (already implemented in `postprocess.py` but not called in the v4 path).
+
+**Dependencies**: ITEM-IMGEXT-001 (shared image persistence + CLI flag)
 
 ---
 

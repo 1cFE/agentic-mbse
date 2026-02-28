@@ -92,9 +92,10 @@ ignore_errors = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
-addopts = "-v --tb=short"
+addopts = "-v --tb=short -m 'not slow'"
 markers = [
     "corpus: integration tests against real corpus PDFs (may cost money)",
+    "slow: tests that take >5s (corpus PDF extraction); run with: pytest -m slow",
 ]
 
 [tool.coverage.run]

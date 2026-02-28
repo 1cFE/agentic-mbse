@@ -40,6 +40,8 @@ class MockArgs:
             model="sonnet",
             html_path=None,
             dry_run=False,
+            check=False,
+            check_json=False,
         )
         defaults.update(kwargs)
         for k, v in defaults.items():

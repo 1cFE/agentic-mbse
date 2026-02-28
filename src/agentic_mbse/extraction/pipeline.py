@@ -7,6 +7,7 @@ PipelineConfig, and extract_pdf() (Item 3 orchestrator).
 from __future__ import annotations
 
 import logging
+import shutil
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -163,7 +164,7 @@ def _try_detect_tables(
             enable_docling=config.enable_docling,
         )
     except Exception:
-        logger.debug("Table detection failed, continuing without tables", exc_info=True)
+        logger.warning("Table detection failed, continuing without tables", exc_info=True)
         return {}
 
 
@@ -223,6 +224,19 @@ def extract_pdf(
     # ------------------------------------------------------------------
     # Step 3b: Table filtering and enhancement
     # ------------------------------------------------------------------
+    # Pre-flight: check Claude availability once for both table and page loops
+    claude_available = bool(
+        config.enable_claude
+        and not config.dry_run
+        and shutil.which("claude")
+    )
+    if (
+        config.enable_claude
+        and not config.dry_run
+        and not claude_available
+    ):
+        logger.warning("Claude CLI not found on PATH; Claude enhancement disabled")
+
     table_claude_spend = 0.0
     # Final tables per page after filtering/enhancement
     final_tables: dict[int, list[DetectedTable]] = {}
@@ -237,7 +251,7 @@ def extract_pdf(
         for i, table in enumerate(kept):
             needs_enhance, _assess_reasons = assess_table_quality(table)
 
-            if needs_enhance and config.enable_claude and not config.dry_run:
+            if needs_enhance and claude_available:
                 remaining = config.claude_budget_usd - table_claude_spend
                 if remaining >= config.claude_cost_per_page_usd:
                     try:
@@ -255,7 +269,7 @@ def extract_pdf(
                         enhanced.append(etable)
                         continue
                     except Exception:
-                        logger.debug(
+                        logger.warning(
                             "Table enhancement failed for page %d table %d, skipping",
                             page_num, i, exc_info=True,
                         )
@@ -302,7 +316,12 @@ def extract_pdf(
     # ------------------------------------------------------------------
     claude_results: dict[int, str] = {}  # page_num -> claude markdown
 
-    if config.enable_claude and not config.dry_run:
+    if claude_available and claude_pages:
+        if len(claude_pages) > 0:
+            logger.info(
+                "Claude enhancement: processing %d pages (budget $%.2f remaining)",
+                len(claude_pages), remaining_budget,
+            )
         for page_num in sorted(claude_pages):
             page = pages[page_num]
             image_path = None
@@ -327,12 +346,34 @@ def extract_pdf(
                 if accept:
                     claude_results[page_num] = claude_md
                 else:
-                    logger.debug("Claude output rejected for page %d: %s", page_num, reason)
+                    logger.warning("Claude output rejected for page %d: %s", page_num, reason)
             except Exception:
-                logger.debug(
+                logger.warning(
                     "Claude page enhancement failed for page %d, skipping",
                     page_num, exc_info=True,
                 )
+    elif claude_pages and not claude_available:
+        logger.warning(
+            "Claude unavailable; %d pages flagged for enhancement will use fallback",
+            len(claude_pages),
+        )
+
+    # Post-loop summary
+    if claude_pages:
+        succeeded = len(claude_results)
+        total = len(claude_pages)
+        if succeeded == total:
+            logger.info("Claude enhancement: %d/%d pages succeeded", succeeded, total)
+        elif succeeded > 0:
+            failed = sorted(claude_pages - set(claude_results.keys()))
+            logger.warning(
+                "Claude enhancement: %d/%d pages succeeded (pages %s failed)",
+                succeeded, total, failed,
+            )
+        else:
+            logger.warning(
+                "Claude enhancement: 0/%d pages succeeded", total,
+            )
 
     # ------------------------------------------------------------------
     # Step 7: Route and merge per page
@@ -357,6 +398,11 @@ def extract_pdf(
         # Apply the decision
         if decision.action == PageAction.CLAUDE_REPLACE and pnum in claude_results:
             merged_pages.append(claude_results[pnum])
+        elif decision.action == PageAction.CLAUDE_REPLACE and pnum not in claude_results:
+            # Claude was intended but failed/unavailable — record the truth
+            decision.action = PageAction.KEEP
+            decision.reasons.append("Claude enhancement unavailable — kept original")
+            merged_pages.append(page.markdown)
         elif decision.action == PageAction.GMFT_REPLACE and page_tables:
             merged_pages.append(replace_tables(page.markdown, page_tables))
         elif decision.action == PageAction.GMFT_APPEND and page_tables:
@@ -366,7 +412,7 @@ def extract_pdf(
         elif decision.action == PageAction.STRIP_BROKEN:
             merged_pages.append(strip_pipe_tables(page.markdown))
         else:
-            # KEEP or fallback (CLAUDE_REPLACE without result, etc.)
+            # KEEP
             merged_pages.append(page.markdown)
 
     # ------------------------------------------------------------------
@@ -385,4 +431,6 @@ def extract_pdf(
         total_cost_usd=total_cost,
         source="pdf_pipeline",
         elapsed_seconds=elapsed,
+        claude_pages_intended=len(claude_pages),
+        claude_pages_succeeded=len(claude_results),
     )

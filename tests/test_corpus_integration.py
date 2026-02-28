@@ -30,6 +30,7 @@ EXTRACTION_DIR = Path(__file__).parent.parent / "src" / "agentic_mbse" / "extrac
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.slow
 @pytest.mark.corpus
 @pytest.mark.parametrize("pdf_path", ALL_PDFS, ids=lambda p: p.stem)
 def test_offline_extraction(pdf_path: Path) -> None:
@@ -45,6 +46,7 @@ def test_offline_extraction(pdf_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.slow
 @pytest.mark.corpus
 @pytest.mark.parametrize("pdf_path", ALL_PDFS, ids=lambda p: p.stem)
 def test_claude_extraction(pdf_path: Path) -> None:
@@ -60,6 +62,7 @@ def test_claude_extraction(pdf_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.slow
 @pytest.mark.corpus
 def test_ground_truth_scoring() -> None:
     """Ground truth documents score within acceptable thresholds on non-null fields."""

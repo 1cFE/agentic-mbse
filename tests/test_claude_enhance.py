@@ -1,13 +1,147 @@
 """Tests for claude_enhance module."""
 
+import json
+import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from agentic_mbse.extraction.claude_enhance import (
+    _extract_result_event,
     extract_page_with_claude,
+    invoke_claude,
     validate_claude_output,
 )
 from agentic_mbse.extraction.types import CostRecord
+
+
+# ---------------------------------------------------------------------------
+# Fixtures: actual JSON payloads from Claude Code 2.1.62
+# ---------------------------------------------------------------------------
+
+_JSON_ARRAY_PAYLOAD = [
+    {"type": "system", "subtype": "init", "apiKeySource": "env"},
+    {
+        "type": "assistant",
+        "message": {
+            "id": "msg_abc",
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "text", "text": "# Extracted Content"}],
+        },
+    },
+    {
+        "type": "result",
+        "subtype": "success",
+        "result": "# Extracted Content\n\nSome markdown.",
+        "total_cost_usd": 0.015,
+        "usage": {"input_tokens": 3000, "output_tokens": 150},
+        "model": "claude-sonnet-4-20250514",
+    },
+]
+
+_JSON_DICT_PAYLOAD = {
+    "result": "# Old Format\n\nText.",
+    "total_cost_usd": 0.012,
+    "usage": {"input_tokens": 2000, "output_tokens": 100},
+    "model": "claude-sonnet-4-20250514",
+}
+
+
+# ---------------------------------------------------------------------------
+# TestExtractResultEvent — unit tests for _extract_result_event
+# ---------------------------------------------------------------------------
+
+
+class TestExtractResultEvent:
+    def test_json_array_format(self):
+        """New format (JSON array) → extracts the result event."""
+        result = _extract_result_event(_JSON_ARRAY_PAYLOAD)
+        assert result["result"] == "# Extracted Content\n\nSome markdown."
+        assert result["total_cost_usd"] == 0.015
+        assert result["usage"]["input_tokens"] == 3000
+
+    def test_json_dict_format(self):
+        """Old format (single dict) → returned as-is."""
+        result = _extract_result_event(_JSON_DICT_PAYLOAD)
+        assert result["result"] == "# Old Format\n\nText."
+        assert result["total_cost_usd"] == 0.012
+
+    def test_error_event_raises(self):
+        """Result event with is_error=true → RuntimeError."""
+        payload = [
+            {"type": "result", "is_error": True, "result": "Rate limit exceeded"},
+        ]
+        with pytest.raises(RuntimeError, match="Rate limit exceeded"):
+            _extract_result_event(payload)
+
+    def test_empty_array_raises(self):
+        with pytest.raises(RuntimeError, match="unexpected JSON structure"):
+            _extract_result_event([])
+
+    def test_no_result_event_raises(self):
+        """Array with no type=result entry → RuntimeError."""
+        payload = [
+            {"type": "system", "subtype": "init"},
+            {"type": "assistant", "message": {}},
+        ]
+        with pytest.raises(RuntimeError, match="no result event"):
+            _extract_result_event(payload)
+
+    def test_non_list_non_dict_raises(self):
+        with pytest.raises(RuntimeError, match="unexpected JSON structure"):
+            _extract_result_event("not a dict or list")  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
+# TestInvokeClaude — integration test with subprocess mock
+# ---------------------------------------------------------------------------
+
+
+class TestInvokeClaude:
+    @patch("agentic_mbse.extraction.claude_enhance.subprocess.run")
+    def test_parses_json_array(self, mock_run):
+        """invoke_claude handles the JSON array format from Claude Code >=2.1."""
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0,
+            stdout=json.dumps(_JSON_ARRAY_PAYLOAD), stderr="",
+        )
+        result = invoke_claude("test prompt")
+        assert result["result"] == "# Extracted Content\n\nSome markdown."
+        assert result["total_cost_usd"] == 0.015
+
+    @patch("agentic_mbse.extraction.claude_enhance.subprocess.run")
+    def test_parses_json_dict(self, mock_run):
+        """invoke_claude handles the old single-dict format."""
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0,
+            stdout=json.dumps(_JSON_DICT_PAYLOAD), stderr="",
+        )
+        result = invoke_claude("test prompt")
+        assert result["result"] == "# Old Format\n\nText."
+
+    @patch("agentic_mbse.extraction.claude_enhance.subprocess.run")
+    def test_non_zero_returncode_raises(self, mock_run):
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=1, stdout="", stderr="auth error",
+        )
+        with pytest.raises(RuntimeError, match="rc=1"):
+            invoke_claude("test prompt")
+
+    @patch("agentic_mbse.extraction.claude_enhance.subprocess.run")
+    def test_timeout_raises(self, mock_run):
+        mock_run.side_effect = subprocess.TimeoutExpired(cmd="claude", timeout=120)
+        with pytest.raises(RuntimeError, match="timed out"):
+            invoke_claude("test prompt")
+
+    @patch("agentic_mbse.extraction.claude_enhance.subprocess.run")
+    def test_invalid_json_raises(self, mock_run):
+        mock_run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="not json", stderr="",
+        )
+        with pytest.raises(RuntimeError, match="non-JSON"):
+            invoke_claude("test prompt")
 
 
 class TestValidateClaudeOutput:

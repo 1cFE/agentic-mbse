@@ -47,6 +47,34 @@ OUTPUT:
 # ---------------------------------------------------------------------------
 
 
+def _extract_result_event(data: dict | list) -> dict:
+    """Extract the result event from ``claude -p --output-format json`` output.
+
+    Claude Code >=2.1 returns a JSON array of typed events::
+
+        [{"type":"system",...}, {"type":"assistant",...}, {"type":"result",...}]
+
+    Older versions returned a single dict with ``result``, ``total_cost_usd``,
+    etc. directly.  This function handles both formats.
+    """
+    if isinstance(data, dict):
+        return data
+
+    if not isinstance(data, list) or not data:
+        raise RuntimeError("claude -p returned unexpected JSON structure")
+
+    for event in data:
+        if isinstance(event, dict) and event.get("type") == "result":
+            if event.get("is_error"):
+                msg = event.get("result", "unknown error")
+                raise RuntimeError(f"claude -p returned error: {msg}")
+            return event
+
+    raise RuntimeError(
+        "claude -p JSON output contained no result event"
+    )
+
+
 def invoke_claude(
     prompt: str,
     model: str = "sonnet",
@@ -94,7 +122,7 @@ def invoke_claude(
             f"claude -p returned non-JSON output: {result.stdout[:300]}"
         )
 
-    return data
+    return _extract_result_event(data)
 
 
 # ---------------------------------------------------------------------------

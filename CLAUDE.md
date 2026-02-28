@@ -55,8 +55,14 @@ This project uses **uv** for dependency management. All commands should be run v
 # Install dependencies and set up development environment
 uv sync
 
-# Run all tests
+# Run tests (skips slow corpus tests by default)
 uv run pytest tests/
+
+# Run ALL tests including slow corpus integration tests
+uv run pytest tests/ -m ""
+
+# Run only the slow corpus tests
+uv run pytest tests/ -m slow
 
 # Run a single test file
 uv run pytest tests/test_cli.py
