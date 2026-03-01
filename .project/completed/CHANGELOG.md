@@ -4,6 +4,63 @@ Historical record of completed work.
 
 ---
 
+## [2026-03-01] - Validation Stack Restructuring (8 → 6 Levels)
+
+**Type**: Item
+**Duration**: 3 days (2026-02-27 to 2026-03-01)
+
+### Summary
+
+Restructured the validation pyramid from 8 levels to 6 by deleting stubs (L5 Semantic, L7 Architecture), merging application-specific checks into L6, and renumbering L6 Traceability to L5. Aligns implementation with the published blog post's 6-level narrative while preserving all validation logic. Post-implementation audit found and fixed 7 stale "8-level" references, and added 8 new L6 negative tests. Final: 895 tests passing.
+
+---
+
+## [2026-02-27] - EPIC-PDFV4-001: PDF Extraction v4 Pipeline
+
+**Type**: Epic
+**Duration**: ~2 weeks (2026-02-06 to 2026-02-27)
+**Priority**: P0
+
+### Summary
+
+Complete rewrite of the PDF extraction pipeline from the v3 4-layer post-processing chain to a quality-gated, per-page orchestrated pipeline. The new system assesses each page independently, routes to appropriate enhancement actions (GMFT tables, Claude vision, Pandoc for arXiv), tracks budgets, and logs decisions. Includes comprehensive `extract --check` CLI feature for environment readiness verification.
+
+### Research Phase (Stages 1-3)
+
+**Stage 0 — Prerequisites** (`doc-extract-prerequisites`): Migrated 8 test corpus PDFs (~28MB), corpus metadata, and extraction infrastructure from worktree to `doc-ingest-clean` branch.
+
+**Stage 1A — pymupdf4llm Deep-Dive** (`pymupdf4llm-deep-dive`): Systematic investigation of pymupdf4llm configuration across 7 PDFs. Found CompositeHeaderDetector outperforms baseline, `ignore_code=True` eliminates code fence spam.
+
+**Stage 1B — Pandoc Deep-Dive** (`pandoc-deep-dive`): Evaluated Pandoc for arXiv HTML→markdown. Key finding: pre-processing HTML to strip `<figure>` tags enables table/figure conversion.
+
+**Stage 1C — Docling Deep-Dive** (`docling-deep-dive`): Investigated Docling & GMFT. Found Docling best for heading detection in single-page mode; GMFT best for fast clean table extraction.
+
+**Stage 1D — Claude Headless Deep-Dive** (`claude-headless-deep-dive`): Tested Claude vision for PDF page→markdown. Key finding: Claude's equation→LaTeX transcription is irreplaceable. Recommended as selective enhancement at $0.39-$1.17/doc.
+
+**Stage 3 — Pipeline Experimentation** (`pipeline-experimentation`): Tested 6 pipeline hypotheses (H1-H6) against ground truth. Identified winning composition for production.
+
+**Table Image Spike** (`table-image-spike`): Tested cropped table images vs full-page for extraction quality. Claude achieves exact match on 4/5 papers from crops.
+
+### Implementation Phase (Items 1-4)
+
+**Item 1 — Types, Metrics & Quality Gate** (`types-metrics-quality-gate`): Foundation layer — `PageAction`, `PageResult`, `PageAssessment`, `PageDecision` types, quality metrics, quality gate routing, budget allocation. 47+ tests.
+
+**Item 2 — Enhancement Modules** (`pdf-extraction-v4-item2`): Four modules — `tables.py` (GMFT+Img2Table+Docling ensemble), `claude_enhance.py` (vision with validation), `pandoc_convert.py` (arXiv detection), refactored `pymupdf_backend.py`. ~850 lines of new code.
+
+**Item 3 — Pipeline Orchestration & CLI** (`pipeline-orchestration-cli`): Wired 8-step pipeline into `extract_pdf()` entry point, rewrote `extract_cli.py`, replaced legacy 4-layer chain.
+
+**Item 4 — Integration Tests & Cleanup** (`integration-tests-cleanup-ship`): Deleted 10 deprecated files, added deprecation stubs for legacy CLI flags, wrote integration tests with AST analysis for dormant code detection.
+
+### Bug Fixes & Polish
+
+**Claude Invocation & Logging** (`v4-claude-invocation-and-logging`): Fixed silent `invoke_claude()` failures from Claude Code output format change, added pre-flight availability checks, escalated logging.
+
+**Extract --check** (`extract-check`): New `agentic-mbse extract --check` CLI feature probing all 6 pipeline components with human-readable table + JSON output. 44 tests.
+
+**Built-in Test Corpus** (`check-pdfs`): Bundled 2 purpose-built PDFs exercising all 6 validation probes so `extract --check` works without user-provided PDFs. 177 tests passing.
+
+---
+
 ## [2026-02-08] - EPIC-PDFV3-001: PDF Extraction v3
 
 **Type**: Epic

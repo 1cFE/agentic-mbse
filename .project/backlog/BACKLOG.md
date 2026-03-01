@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-02-27
+**Last Updated**: 2026-03-01
 
 ---
 
@@ -17,17 +17,18 @@ Prioritized list of epics and features.
 
 ## In Progress
 
-### [EPIC-PDFV4-001] PDF Extraction Pipeline v4 — Quality-Gated Per-Page Pipeline
+### [EPIC-PDFV4-002] PDF Extraction Quality & Features
 
 **Priority**: P1
-**Effort**: 5.5 days (4 items)
-**Status**: Ready
-**Epic**: `.project/backlog/epic_pdf-extraction-v4.md`
-**Design**: `.project/concepts/doc-extraction/design.md`
+**Effort**: ~4.5 days (4 items)
+**Status**: In Progress (Item 1 Phase 1 complete)
+**Epic**: `.project/backlog/epic_pdf-extraction-improvements.md`
 
-**Problem**: v3 pipeline operates at document level with pattern-based structure repair. Stage 3/4 experiments proved per-page quality-gated routing with ensemble table detection is superior (70% heading error reduction, 86% table recall).
+**Problem**: v4 pipeline shipped with quality regressions (running headers, GMFT routing, equation detection) and no image output (figures, table crops all discarded). These are the "last mile" issues before production-quality extraction.
 
-**Goal**: Replace v3 with per-page pipeline: `extract_pdf()` → quality gate → route each page to best available enhancer within budget. Remove 5 deprecated modules.
+**Goal**: Fix quality regressions, build unified image output pipeline (figures + table crops + future equation crops via single ImageCollector mechanism), add OCR for scanned PDFs.
+
+**Items**: (1) Quality gate+routing fixes, (2) Unified image output, (3) Equation region detection, (4) OCR integration
 
 ---
 
@@ -39,7 +40,16 @@ Prioritized list of epics and features.
 
 ## P1 - High Priority
 
-*No P1 epics*
+### [ITEM-DOCLING-002] PDF Skill Deployment — Docling MCP Setup in Init
+
+**Priority**: P1
+**Effort**: 2-3 days
+**Status**: Needs design revision (spec+design from Feb 6, pre-v4)
+**Active**: `.project/active/pdf-skill-deployment/`
+
+**Problem**: The `pdf-analysis` skill ships a 3-tier extraction pipeline but Tier 2 (Docling MCP) requires manual setup. Users get references to `mcp__docling__*` tools that don't exist out of the box.
+
+**Goal**: `agentic-mbse init` auto-configures Docling MCP server. Revisit design to align with v4 pipeline architecture and current best practices.
 
 ---
 
@@ -61,19 +71,6 @@ Prioritized list of epics and features.
 - What metadata is needed? (context, constraints solved, related learnings)
 - How do agents query the store during workflows?
 - Should examples be curated or auto-captured?
-
----
-
-### [ITEM-DOCLING-001] PDF Skill Deployment — Docling MCP Setup in Init
-
-**Priority**: P2
-**Effort**: 2-3 days
-**Status**: Spec drafted
-**Spec**: `.project/active/pdf-skill-deployment/spec.md`
-
-**Problem**: The `pdf-analysis` skill ships a 3-tier extraction pipeline but Tier 2 (Docling MCP) requires manual setup. Users get references to `mcp__docling__*` tools that don't exist out of the box.
-
-**Goal**: `agentic-mbse init` auto-configures Docling MCP server with tier-appropriate resource limits. Adaptive skill prompt based on system capabilities.
 
 ---
 
@@ -149,76 +146,9 @@ Prioritized list of epics and features.
 | ITEM-RENAME-001: Rename `project/` to `modeling_pm/` | 2026-01-23 | 1 day | CLI, templates, commands, agents all updated |
 | ITEM-REGTEST-001: Model Regression Testing | 2026-01-23 | 1 day | pytest infrastructure for SysML models |
 | ITEM-SYMLINK-001: Tool-Owned File Safety | 2026-01-23 | 1 day | Hash-based modification detection |
+| EPIC-PDFV4-001: PDF Extraction v4 | 2026-02-27 | ~5 days | Quality-gated per-page pipeline, 4 items, extract --check |
 | ~~EPIC-CMDREV-001: Command System Revision~~ | — | — | **Superseded** by EPIC-ARCH-002 + EPIC-ARCH-003 |
 | ~~TASK-PDF-001: Header Consistency~~ | — | — | **Superseded** by EPIC-PDFV3-001 (Claude structure repair handles this) |
-
----
-
-### [ITEM-QUALREG-001] v4 Pipeline Output Quality Regressions
-
-**Priority**: P2
-**Effort**: 1-2 days
-**Status**: Spec drafted
-**Spec**: `.project/active/v4-output-quality-regressions/spec.md`
-**Branch**: `doc-ingest-clean`
-**Parent**: EPIC-PDFV4-001
-
-**Problem**: Two regressions in v4 output vs the old pipeline: (1) Running headers and bare page numbers not stripped — 22 noise lines in a 12-page document (old pipeline had zero). (2) GMFT_APPEND pages contain table data twice — once as flat text from pymupdf4llm, once as pipe table appended by GMFT. Wastes LLM context tokens and creates ambiguity.
-
-**Goal**: Apply `strip_running_headers()`, `strip_page_numbers()`, and `repair_ligatures()` to v4 output. Remove flat-text table renderings on GMFT_APPEND pages when a proper pipe table is appended. Output should be ≤ old pipeline line count for equivalent content.
-
----
-
-## P2 - Medium Priority (continued)
-
-### [ITEM-IMGEXT-001] Persist Table Crop Images in Extraction Output
-
-**Priority**: P2
-**Effort**: 0.5-1 day
-**Status**: Idea
-
-**Problem**: The table detection ensemble (GMFT/Img2Table) already crops table regions as PNG images and stores them in `DetectedTable.image_path`, but these are written to temp directories and discarded after Claude enhancement. When table extraction is imperfect (garbled columns, merged cells), users have no visual reference to compare against.
-
-**Goal**: Add a `--save-images` flag (or config option) to persist table crop images to an `images/` subdirectory alongside the output markdown. Optionally embed `![Table N](images/page_NNN_table_M.png)` references in the output alongside the markdown pipe table.
-
-**Notes**:
-- Plumbing is mostly there — `DetectedTable.image_path` already exists
-- Main work is: copy temp images to output dir, add image refs to markdown, add CLI flag
-- Consider whether images should replace or supplement the text table
-
----
-
-### [ITEM-IMGEXT-002] Equation Region Detection and Image Extraction
-
-**Priority**: P2
-**Effort**: 2-3 days (needs research)
-**Status**: Idea
-
-**Problem**: Equations have no region-level detection. The pipeline relies on pymupdf4llm's text rendering (often garbled Unicode) and Claude's whole-page LaTeX transcription. When transcription is imperfect, there's no source image to fall back on or review.
-
-**Goal**: Detect equation regions on PDF pages, crop them as images, and save alongside the output markdown. For pages routed through Claude, provide equation crops as supplementary visual evidence.
-
-**Key questions**:
-- Which equation detector to use? (pix2tex, YOLO-based layout detection, Nougat region proposals, or pymupdf's own block classification)
-- Should this be a new detector in the ensemble alongside GMFT/Img2Table, or a separate pipeline stage?
-- Inline vs display equations — detect both or only display?
-- How to associate cropped equation images with their LaTeX transcription in the output?
-
-**Dependencies**: Benefits from ITEM-IMGEXT-001 (shared image persistence infrastructure)
-
----
-
-### [ITEM-IMGEXT-003] Figure Image Extraction in v4 Pipeline
-
-**Priority**: P2
-**Effort**: 0.5-1 day
-**Status**: Idea
-
-**Problem**: The v4 `extract_pages()` pipeline hardcodes `write_images=False` in `pymupdf_backend.py`, silently dropping all figures. The legacy `extract()` path and Docling backend both support figure images, but the main pipeline does not.
-
-**Goal**: Enable figure image extraction in the v4 pipeline behind the same `--save-images` flag from ITEM-IMGEXT-001. Wire up `write_images=True`, configure an output `image_path`, and invoke `promote_figure_captions()` post-processing (already implemented in `postprocess.py` but not called in the v4 path).
-
-**Dependencies**: ITEM-IMGEXT-001 (shared image persistence + CLI flag)
 
 ---
 

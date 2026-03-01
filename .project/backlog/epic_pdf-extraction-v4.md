@@ -1,10 +1,11 @@
 # Epic: PDF Extraction Pipeline v4 — Quality-Gated Per-Page Pipeline
 
 **Epic ID**: EPIC-PDFV4-001
-**Status**: Draft
+**Status**: Complete
 **Priority**: P1
 **Created**: 2026-02-23
-**Estimated Effort**: 5-6 days
+**Completed**: 2026-02-27
+**Actual Effort**: ~5 days
 
 **Concept Documents**:
 - **Strategy**: `.project/concepts/doc-extraction-development-strategy.md` (Stages 1-4 experiment results, pipeline evolution rationale)
@@ -206,9 +207,10 @@ Replace the v3 full-document extraction pipeline with a per-page quality-gated p
 
 ---
 
-### Item 4: Integration Tests, Cleanup & Ship [1 day]
+### Item 4: Integration Tests, Cleanup & Ship [1 day] — COMPLETE
 
 **Type**: Testing
+**Status**: Complete (2026-02-26)
 **Effort**: 1 day (spec 0h, design 0h, plan 0.5h, execute 7h)
 **Dependencies**: Item 3
 
@@ -315,5 +317,5 @@ Item 2 (Enhancement Components) ┘
 
 ---
 
-**Last Updated**: 2026-02-26
-**Next Action**: Begin Item 4 (Integration Tests, Cleanup & Ship)
+**Last Updated**: 2026-03-01
+**Status**: All 4 items complete. Epic shipped on `doc-ingest-clean` branch.
