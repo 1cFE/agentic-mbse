@@ -2,7 +2,7 @@
 """
 Master Quality Check Orchestrator
 
-Runs all 8 quality levels in sequence with configurable behavior.
+Runs all 6 quality levels in sequence with configurable behavior.
 """
 
 import argparse
@@ -21,10 +21,8 @@ try:
     from .level2_structure import validate_structure
     from .level3_dataflow import validate_dataflow
     from .level4_constraints import analyze_constraints
-    from .level5_semantic import validate_semantic
-    from .level6_traceability import validate_traceability
-    from .level7_architecture import validate_architecture
-    from .level8_codegen import validate_codegen_readiness
+    from .level5_traceability import validate_traceability
+    from .level6_architecture import validate_architecture
 except ImportError:
     # Handle direct execution (not as package)
     from common import (
@@ -37,23 +35,19 @@ except ImportError:
     from level2_structure import validate_structure
     from level3_dataflow import validate_dataflow
     from level4_constraints import analyze_constraints
-    from level5_semantic import validate_semantic
-    from level6_traceability import validate_traceability
-    from level7_architecture import validate_architecture
-    from level8_codegen import validate_codegen_readiness
+    from level5_traceability import validate_traceability
+    from level6_architecture import validate_architecture
 
 
 # Registry of all quality checks
-# Levels 1-8 implemented (complete quality pyramid + codegen readiness)
+# Levels 1-6 implemented (complete quality pyramid)
 QUALITY_CHECKS = [
     ("Level 1: Syntax Validation", validate_syntax),
     ("Level 2: Structural Completeness", validate_structure),
-    ("Level 3: Dataflow Integrity", validate_dataflow),
-    ("Level 4: Constraint Satisfaction", analyze_constraints),
-    ("Level 5: Semantic Consistency", validate_semantic),
-    ("Level 6: Traceability & Documentation", validate_traceability),
-    ("Level 7: Architectural Integrity", validate_architecture),
-    ("Level 8: Codegen Readiness", validate_codegen_readiness),
+    ("Level 3: Dependency Integrity", validate_dataflow),
+    ("Level 4: Constraint Coverage", analyze_constraints),
+    ("Level 5: Traceability & Documentation", validate_traceability),
+    ("Level 6: Architecture & Pipeline Readiness", validate_architecture),
 ]
 
 
@@ -69,7 +63,7 @@ def run_all_checks(
     Args:
         models_path: Path to models directory
         fail_fast: Stop at first failure (default True)
-        specific_level: Run only this level (1-8), or None for all
+        specific_level: Run only this level (1-6), or None for all
         verbose: Show detailed output
 
     Returns:
@@ -79,8 +73,8 @@ def run_all_checks(
 
     # Determine which checks to run
     if specific_level is not None:
-        if specific_level < 1 or specific_level > 8:
-            raise ValueError(f"Level must be 1-8, got {specific_level}")
+        if specific_level < 1 or specific_level > 6:
+            raise ValueError(f"Level must be 1-6, got {specific_level}")
         if specific_level > len(QUALITY_CHECKS):
             raise ValueError(
                 f"Level {specific_level} not yet implemented (only {len(QUALITY_CHECKS)} levels available)"
@@ -154,7 +148,7 @@ def run_all_checks(
 def main() -> int:
     """Entry point"""
     parser = argparse.ArgumentParser(
-        description="SysML Quality Validation - Run all 8 quality levels",
+        description="SysML Quality Validation - Run all 6 quality levels",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -188,9 +182,9 @@ Examples:
     parser.add_argument(
         "--level",
         type=int,
-        choices=range(1, 9),
+        choices=range(1, 7),
         metavar="N",
-        help="Run only level N (1-8)",
+        help="Run only level N (1-6)",
     )
 
     parser.add_argument(

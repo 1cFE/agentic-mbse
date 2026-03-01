@@ -7,7 +7,7 @@ Implements validation rules from ADR-002 (Calculation Architecture):
 - V2: Design expressions must be statically evaluable
 - V4: Only supported operators in static expressions
 
-These checks are integrated into Level 2 structural validation.
+These checks are integrated into Level 6 architecture validation.
 """
 from typing import Any
 
@@ -60,7 +60,7 @@ def check_calc_def_locations(model: Any) -> list[ValidationIssue]:
 
                 issues.append(
                     ValidationIssue(
-                        level=2,
+                        level=6,
                         severity=Severity.ERROR,
                         code=ValidationCode.V1_CALC_DEF_LOCATION,
                         message=f"Calc def '{def_name}' is in designs/ instead of library/",
@@ -132,7 +132,7 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
 
                     issues.append(
                         ValidationIssue(
-                            level=2,
+                            level=6,
                             severity=Severity.ERROR,
                             code=ValidationCode.V4_UNSUPPORTED_OPERATOR,
                             message=f"Unsupported operator '{op}' in attribute '{attr_name}'",
@@ -492,7 +492,7 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
 
             issues.append(
                 ValidationIssue(
-                    level=2,
+                    level=6,
                     severity=Severity.ERROR,
                     code=ValidationCode.V2_DYNAMIC_EXPRESSION,
                     message=(

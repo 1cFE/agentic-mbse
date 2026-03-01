@@ -18,7 +18,7 @@ When invoked without a work item, ask which item in `work/active/` to plan.
 
 ## Skills Referenced
 
-- **model-validation**: Quality pyramid, CLI usage, regression testing patterns. Consult for validation checkpoints (which levels per phase vs final), test phase planning, and interpreting Level 4-8 issues from the design validation report.
+- **model-validation**: Quality pyramid, CLI usage, regression testing patterns. Consult for validation checkpoints (which levels per phase vs final), test phase planning, and interpreting Level 4-6 issues from the design validation report.
 - **sysml-conventions**: Syntax rules, naming, pitfalls. Consult when checking feasibility of planned syntax patterns (constraints, cross-file bindings, refactoring).
 - **project-structure**: Library vs designs, file organization. Consult when determining phase ordering (library before instances) and file placement.
 
@@ -27,7 +27,7 @@ When invoked without a work item, ask which item in `work/active/` to plan.
 ### 1. Understand
 
 Read the design, spec, and prototype files:
-- `work/active/{WI-XXX}_{name}/design.md` — primary input. Understand all model elements, dependencies, traceability sources, and the validation report (prototype files, Level 4-8 issues to address).
+- `work/active/{WI-XXX}_{name}/design.md` — primary input. Understand all model elements, dependencies, traceability sources, and the validation report (prototype files, Level 4-6 issues to address).
 - `work/active/{WI-XXX}_{name}/spec.md` — acceptance criteria, SV-XXX verification entries, scope boundaries.
 - Prototype files listed in the design's validation report — understand what already works and what needs refinement.
 - `modeling_project/MODELING_PROCESS.md` — project methodology context.
@@ -50,9 +50,9 @@ If phasing is unclear, present 2-3 options to the user with trade-offs.
 Before presenting the plan, validate that planned refinements are sound:
 
 1. **Review planned changes** — identify new calc defs, structural changes, complex constraints, cross-file bindings. Check syntax patterns against the **sysml-conventions** skill. Verify calc defs are planned for `library/` not `designs/`.
-2. **Check against design validation report** — the design flagged Level 4-8 issues. Map each issue to a specific phase that addresses it (e.g., Level 6 documentation gaps → Phase N, Level 7 architectural concerns → Phase M).
+2. **Check against design validation report** — the design flagged Level 4-6 issues. Map each issue to a specific phase that addresses it (e.g., Level 5 documentation gaps → Phase N, Level 6 architectural concerns → Phase M).
 3. **Flag risks** — circular dependency risks from cross-file bindings, breaking changes to existing usages, patterns that might fail validation. Include mitigations for each.
-4. **Document prototype baseline** — list prototype files from design phase, their current validation status (Levels 1-3 passing), and specific refinement needs from Levels 4-8.
+4. **Document prototype baseline** — list prototype files from design phase, their current validation status (Levels 1-3 passing), and specific refinement needs from Levels 4-6.
 
 ### 4. Write the Plan
 
@@ -80,9 +80,9 @@ A plan.md should contain:
 - **YAML Frontmatter** — Status, Created, Updated, Related Artifacts (Spec, Design)
 - **Source Documents** — links to design (primary), spec, epic file
 - **Design Summary** — 2-3 sentences only. Reference design doc for rationale, sources, and alternatives — do NOT repeat them.
-- **Prototype Baseline** — files from design phase, current validation status, specific Level 4-8 issues to address with phase mapping
+- **Prototype Baseline** — files from design phase, current validation status, specific Level 4-6 issues to address with phase mapping
 - **Phasing Approach** — why work is broken into these specific phases
-- **Validation Strategy** — per-phase (Levels 1-3 after each phase), optional user review points, final (comprehensive Levels 1-8)
+- **Validation Strategy** — per-phase (Levels 1-3 after each phase), optional user review points, final (comprehensive Levels 1-6)
 
 **Per-Phase Sections** — each phase must include:
 

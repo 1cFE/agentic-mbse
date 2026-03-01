@@ -85,14 +85,14 @@ class ValidationCode(str, Enum):
     # Dataflow Issues
     CIRCULAR_IMPORT = "CIRCULAR_IMPORT"
 
-    # Level 8: Codegen Readiness
-    L8_MISSING_QUALIFIED_NAME = "L8_MISSING_QUALIFIED_NAME"
-    L8_INVALID_QUALIFIED_NAME = "L8_INVALID_QUALIFIED_NAME"
-    L8_CALC_DEF_NO_OUTPUT = "L8_CALC_DEF_NO_OUTPUT"
-    L8_CALC_DEF_NO_DIRECTION = "L8_CALC_DEF_NO_DIRECTION"
-    L8_INVALID_BINDING_FORMAT = "L8_INVALID_BINDING_FORMAT"
-    L8_DESIGN_ATTR_INCOMPLETE = "L8_DESIGN_ATTR_INCOMPLETE"
-    L8_DESIGN_ATTR_UNEXTRACTABLE = "L8_DESIGN_ATTR_UNEXTRACTABLE"
+    # Level 6: Architecture & Pipeline Readiness
+    L6_MISSING_QUALIFIED_NAME = "L6_MISSING_QUALIFIED_NAME"
+    L6_INVALID_QUALIFIED_NAME = "L6_INVALID_QUALIFIED_NAME"
+    L6_CALC_DEF_NO_OUTPUT = "L6_CALC_DEF_NO_OUTPUT"
+    L6_CALC_DEF_NO_DIRECTION = "L6_CALC_DEF_NO_DIRECTION"
+    L6_INVALID_BINDING_FORMAT = "L6_INVALID_BINDING_FORMAT"
+    L6_DESIGN_ATTR_INCOMPLETE = "L6_DESIGN_ATTR_INCOMPLETE"
+    L6_DESIGN_ATTR_UNEXTRACTABLE = "L6_DESIGN_ATTR_UNEXTRACTABLE"
 
 
 class ExpressionRef(BaseModel):
@@ -129,7 +129,7 @@ class ValidationIssue(BaseModel):
     Replaces unstructured string issues with typed, machine-readable data.
 
     Attributes:
-        level: Validation level where issue was found (1-8)
+        level: Validation level where issue was found (1-6)
         severity: ERROR, WARNING, or INFO
         code: Machine-readable issue code from ValidationCode enum
         message: Human-readable description

@@ -1,0 +1,4 @@
+design_name: "Bad Manifest Test"
+expected_subsystems:
+  - nonexistent_subsystem_alpha
+  - nonexistent_subsystem_beta

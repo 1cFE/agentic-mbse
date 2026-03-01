@@ -71,7 +71,7 @@ Each document has **one clear purpose**:
 # Initialize a new project
 agentic-mbse init [path]
 
-# Validate SysML models (8-level quality checks)
+# Validate SysML models (6-level quality checks)
 agentic-mbse validate [models/]
 
 # Just install/update slash commands
@@ -98,18 +98,16 @@ Additional commands may be available in later toolkit versions.
 
 ### Validation Framework
 
-Models are validated at 8 levels:
+Models are validated at 6 levels:
 
 | Level | Check | Blocking? |
 |-------|-------|-----------|
 | 1 | Syntax - SysML parses correctly | Yes |
-| 2 | Structure - No unused definitions | Yes |
-| 3 | Dataflow - No circular dependencies | Yes |
-| 4 | Constraints - Physics/engineering limits | No |
-| 5 | Semantics - Naming, organization | No |
-| 6 | Traceability - Doc comments cite sources | No |
-| 7 | Architecture - Follows project patterns | No |
-| 8 | Codegen - Ready for code generation | No |
+| 2 | Structure - No unused definitions, unbound inputs | Yes |
+| 3 | Dependencies - No circular imports | Yes |
+| 4 | Constraints - Coverage metrics (WIP) | No |
+| 5 | Traceability - Doc comments on definitions (WIP) | No |
+| 6 | Architecture - ADR-002, manifests, codegen readiness | Configurable |
 
 ```bash
 # Run all validation

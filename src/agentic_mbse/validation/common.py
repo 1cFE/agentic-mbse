@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class QualityCheckResult:
     """Base result class for all quality checks"""
 
-    level: int  # 1-8
+    level: int  # 1-6
     level_name: str  # "Syntax Validation", "Structural Completeness", etc.
     success: bool
     file_path: Path | None = None

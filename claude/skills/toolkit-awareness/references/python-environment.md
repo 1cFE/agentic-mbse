@@ -16,7 +16,7 @@ uv run python -m pytest
 # Installing packages
 uv add package_name
 
-# Running validation (8-level framework via syside)
+# Running validation (6-level framework via syside)
 uv run agentic-mbse validate models/
 
 # Running agentic-mbse CLI

@@ -1,5 +1,5 @@
 """
-Tests for Level 8: Design Attribute Extractability Validation (FR-8).
+Tests for Level 6: Design Attribute Extractability Validation (FR-8).
 
 Verifies that codegen can extract numeric defaults from design attribute
 expressions, and that the configurable path filter works correctly.
@@ -11,9 +11,9 @@ import pytest
 
 from agentic_mbse.sysml.types import Severity, ValidationCode
 from agentic_mbse.validation.common import discover_sysml_files, load_sysml_model
-from agentic_mbse.validation.level8_codegen import (
+from agentic_mbse.validation.level6_architecture import (
     check_design_attr_completeness,
-    validate_codegen_readiness,
+    validate_architecture,
 )
 
 FIXTURE_DIR = str(Path(__file__).parent / "fixtures" / "l8_extractability")
@@ -48,7 +48,7 @@ class TestExtractabilityValidation:
             valid_model, design_path_filter="designs"
         )
         unextractable = [
-            i for i in issues if i.code == ValidationCode.L8_DESIGN_ATTR_UNEXTRACTABLE
+            i for i in issues if i.code == ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE
         ]
         assert count > 0, "Expected at least one design attr to be checked"
         assert len(unextractable) == 0, (
@@ -61,7 +61,7 @@ class TestExtractabilityValidation:
             unextractable_model, design_path_filter="designs"
         )
         unextractable = [
-            i for i in issues if i.code == ValidationCode.L8_DESIGN_ATTR_UNEXTRACTABLE
+            i for i in issues if i.code == ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE
         ]
         assert len(unextractable) > 0, "Expected UNEXTRACTABLE issues for area = length * width"
         for issue in unextractable:
@@ -74,7 +74,7 @@ class TestPathFilter:
 
     def test_default_filter_skips_non_designs_directory(self):
         """Default filter='designs' should skip files in tests/ directory."""
-        result = validate_codegen_readiness(FIXTURE_DIR, design_path_filter="designs")
+        result = validate_architecture(FIXTURE_DIR, design_path_filter="designs")
         # The tests/test_design.sysml has 4 attrs — if filter works,
         # count should reflect only designs/ files
         # With both design files loaded: 10 attrs from designs/
@@ -82,22 +82,22 @@ class TestPathFilter:
 
     def test_custom_filter_checks_tests_directory(self):
         """filter='tests' should check only files in tests/ directory."""
-        result = validate_codegen_readiness(FIXTURE_DIR, design_path_filter="tests")
+        result = validate_architecture(FIXTURE_DIR, design_path_filter="tests")
         assert result.metrics["Design attrs checked"] > 0
 
     def test_empty_filter_checks_all_files(self):
         """filter='' should check all files regardless of directory."""
-        result = validate_codegen_readiness(FIXTURE_DIR, design_path_filter="")
+        result = validate_architecture(FIXTURE_DIR, design_path_filter="")
         assert result.metrics["Design attrs checked"] > 0
         # Should be more than designs-only
-        designs_result = validate_codegen_readiness(FIXTURE_DIR, design_path_filter="designs")
+        designs_result = validate_architecture(FIXTURE_DIR, design_path_filter="designs")
         assert result.metrics["Design attrs checked"] > designs_result.metrics["Design attrs checked"]
 
     def test_none_filter_checks_all_files(self):
         """filter=None should check all files regardless of directory."""
-        result = validate_codegen_readiness(FIXTURE_DIR, design_path_filter=None)
+        result = validate_architecture(FIXTURE_DIR, design_path_filter=None)
         assert result.metrics["Design attrs checked"] > 0
-        designs_result = validate_codegen_readiness(FIXTURE_DIR, design_path_filter="designs")
+        designs_result = validate_architecture(FIXTURE_DIR, design_path_filter="designs")
         assert result.metrics["Design attrs checked"] > designs_result.metrics["Design attrs checked"]
 
 
@@ -105,14 +105,14 @@ class TestMetricsAndRegression:
     """Tests for metrics reporting and backward compatibility."""
 
     def test_metrics_include_unextractable_count(self):
-        """Metrics should include L8_DESIGN_ATTR_UNEXTRACTABLE count."""
-        result = validate_codegen_readiness(DESIGNS_DIR, design_path_filter="designs")
-        assert "L8_DESIGN_ATTR_UNEXTRACTABLE" in result.metrics
-        assert result.metrics["L8_DESIGN_ATTR_UNEXTRACTABLE"] > 0
+        """Metrics should include L6_DESIGN_ATTR_UNEXTRACTABLE count."""
+        result = validate_architecture(DESIGNS_DIR, design_path_filter="designs")
+        assert "L6_DESIGN_ATTR_UNEXTRACTABLE" in result.metrics
+        assert result.metrics["L6_DESIGN_ATTR_UNEXTRACTABLE"] > 0
 
-    def test_existing_l8_behavior_preserved(self):
-        """Existing L8 checks on sample_models/ should still work."""
-        result = validate_codegen_readiness(SAMPLE_MODELS_DIR)
+    def test_existing_l6_behavior_preserved(self):
+        """Existing L6 checks on sample_models/ should still work."""
+        result = validate_architecture(SAMPLE_MODELS_DIR)
         # sample_models has no designs/ dir, so design attr count should be 0
         assert "Design attrs checked" in result.metrics
-        assert "L8_DESIGN_ATTR_UNEXTRACTABLE" in result.metrics
+        assert "L6_DESIGN_ATTR_UNEXTRACTABLE" in result.metrics
