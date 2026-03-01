@@ -2,21 +2,21 @@
 name: model-validation
 description: >
   Use when asking about "validate", "validation levels", "quality checks", "run checks",
-  "test models", "regression test", "Level 1", "Level 8", "validation pyramid",
+  "test models", "regression test", "Level 1", "Level 6", "validation pyramid",
   "model quality", "parse error", "verification thresholds", "PASS WARN FAIL",
   or when deciding what validation to run and how to interpret results.
-  Provides the 8-level validation methodology, timing, thresholds, and regression testing patterns.
+  Provides the 6-level validation methodology, timing, thresholds, and regression testing patterns.
 allowed-tools: Read, Grep, Glob, Bash
 user-invocable: false
 ---
 
 # Model Validation
 
-The 8-level validation pyramid, when to validate, how to interpret results, and regression testing patterns.
+The 6-level validation pyramid, when to validate, how to interpret results, and regression testing patterns.
 
 ## Core Principle
 
-Validate early and often. Every modeling phase ends with a validation checkpoint. Levels 1-3 are blocking (must pass before proceeding); Levels 4-8 are informational (guide improvements but don't block progress).
+Validate early and often. Every modeling phase ends with a validation checkpoint. Levels 1-3 are blocking (must pass before proceeding); Levels 4-5 are informational WIP (guide improvements but don't block progress); Level 6 is application-specific (ADR-002, manifests, codegen readiness).
 
 ## When to Reference
 
@@ -26,18 +26,16 @@ Validate early and often. Every modeling phase ends with a validation checkpoint
 - `/audit-models` — comprehensive verification against baselines
 - `/spec-model` — defining evaluatable success criteria
 
-## The 8-Level Validation Pyramid
+## The 6-Level Validation Pyramid
 
 | Level | Name | Checks | Blocking |
 |-------|------|--------|----------|
-| 1 | Syntax | Parser errors (via syside) | Yes |
+| 1 | Syntax Validation | Parser errors (via syside) | Yes |
 | 2 | Structural Completeness | Unused definitions, unbound inputs | Yes |
-| 3 | Dataflow Integrity | Circular dependencies | Yes |
-| 4 | Constraint Satisfaction | Constraint coverage metrics | No |
-| 5 | Semantic Consistency | Unit consistency, type matching | No |
-| 6 | Traceability & Documentation | Missing doc comments, source citations | No |
-| 7 | Architectural Integrity | Manifest validation, subsystem boundaries | No |
-| 8 | Codegen Readiness | Qualified names, calc def structure for codegen | No |
+| 3 | Dependency Integrity | Circular dependencies | Yes |
+| 4 | Constraint Coverage | Constraint counts, coverage metrics | No (WIP) |
+| 5 | Traceability & Documentation | Doc comment presence on definitions | No (WIP) |
+| 6 | Architecture & Pipeline Readiness | ADR-002 rules, manifest subsystems, codegen readiness | Configurable |
 
 ## CLI Invocation
 
@@ -63,7 +61,7 @@ uv run agentic-mbse validate --verbose models/
 |--------|--------|---------|
 | After prototype (design phase) | 1-3 | Verify architecture works |
 | After each implementation phase | 1-5 | Catch issues early |
-| Final validation | All (1-8) | Full quality assessment |
+| Final validation | All (1-6) | Full quality assessment |
 | After audit | Focused (specific levels) | Verify fixes |
 | ADR-002 compliance check | Manual | `grep -r "calc def" models/designs/` should return empty |
 
@@ -84,12 +82,10 @@ For baseline comparison audits (comparing model values to authority source value
 - **Structural issues** (L2): Definitions declared but never used, unbound inputs
 - **Dataflow errors** (L3): Circular dependencies between files
 
-**Level 4-8 provide insights** — guide improvements:
+**Level 4-6 provide insights** — guide improvements:
 - **Constraint gaps** (L4): Constraint coverage metrics
-- **Semantic issues** (L5): Unit inconsistency, type mismatches
-- **Documentation gaps** (L6): Missing doc comments, incomplete source citations
-- **Architecture violations** (L7): Cross-boundary violations
-- **Codegen issues** (L8): Elements not ready for code generation
+- **Documentation gaps** (L5): Missing doc comments, incomplete source citations
+- **Architecture & codegen** (L6): ADR-002 rules, manifest subsystems, codegen readiness
 
 Use `--complete` to see all issues across all levels (default stops at first blocking failure). Use `--verbose` for detailed diagnostic output.
 
@@ -168,7 +164,7 @@ def test_codegen_output():
 | Instead of | Do |
 |------------|-----|
 | Skipping validation until the end | Validate after every phase (L1-3 minimum) |
-| Ignoring Level 4-8 warnings | Review and document — they guide improvements |
+| Ignoring Level 4-6 warnings | Review and document — they guide improvements |
 | Running `syside check` directly | Use `uv run agentic-mbse validate` (wraps syside + more) |
 | Proceeding when L1-3 fail | Stop, fix blocking errors before continuing |
 | Writing tests after all implementation | Write tests alongside each phase |

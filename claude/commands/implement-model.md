@@ -71,7 +71,7 @@ uv run syside check /tmp/test_snippet.sysml
 
 At the end of each phase:
 
-1. Run quality validation per the **model-validation** skill. Levels 1-3 must pass. Review Level 4-8 warnings.
+1. Run quality validation per the **model-validation** skill. Levels 1-3 must pass. Review Level 4-6 warnings.
 2. Run regression tests: `uv run pytest tests/models/ -v`
 3. Check ADR-002 compliance: no calc defs in `models/designs/`
 4. Update traceability files (`data/traceability_matrix.csv`, assumption register if applicable)

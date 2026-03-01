@@ -34,7 +34,7 @@ Never guess or fabricate CLI commands, validation steps, or workflow processes. 
 
 1. **Read `README.md`** at the project root. This is the authoritative source for:
    - CLI commands and their flags
-   - The 8-level validation framework
+   - The 6-level validation framework
    - Slash commands available in Claude Code
    - Project setup and environment requirements
 
@@ -49,7 +49,7 @@ Never guess or fabricate CLI commands, validation steps, or workflow processes. 
 
 ### Validation Framework
 
-The project uses `agentic-mbse validate` with 8 quality levels. For complete details including level descriptions and blocking status, read the "Validation Framework" section of `README.md`.
+The project uses `agentic-mbse validate` with 6 quality levels. For complete details including level descriptions and blocking status, read the "Validation Framework" section of `README.md`.
 
 Invocation patterns:
 ```bash
@@ -66,7 +66,7 @@ uv run agentic-mbse validate --level=N models/
 uv run agentic-mbse validate --verbose models/
 ```
 
-Do not suggest `uv run syside check` as a standalone validation step. Level 1 of `agentic-mbse validate` already runs syntax validation via syside. The 8-level framework is the correct entry point.
+Do not suggest `uv run syside check` as a standalone validation step. Level 1 of `agentic-mbse validate` already runs syntax validation via syside. The 6-level framework is the correct entry point.
 
 ### CLI Tools
 

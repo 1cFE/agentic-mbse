@@ -81,7 +81,7 @@ uv run ruff format src/ tests/
 # Validate SysML models (default path: models/)
 uv run agentic-mbse validate models/
 
-# Run specific validation level (1-8)
+# Run specific validation level (1-6)
 uv run agentic-mbse validate --level=3 models/
 
 # Initialize new MBSE project with templates and commands
@@ -97,15 +97,13 @@ uv run agentic-mbse install-commands --list
 
 - **cli/**: CLI entry point (`agentic-mbse` command). Handles `validate`, `init`, and `install-commands` subcommands. The `init` command installs Claude commands, agents, skills, and project templates.
 
-- **validation/**: 8-level quality validation pyramid for SysML models:
+- **validation/**: 6-level quality validation pyramid for SysML models:
   - Level 1: Syntax validation (via syside parser)
-  - Level 2: Structural completeness (parts, ports, connections)
-  - Level 3: Dataflow integrity (binding consistency)
-  - Level 4: Constraint satisfaction (assert/require statements)
-  - Level 5: Semantic consistency (unit compatibility, type matching)
-  - Level 6: Traceability & documentation (requirements linking)
-  - Level 7: Architectural integrity (subsystem boundaries)
-  - Level 8: Code generation readiness (completeness for codegen)
+  - Level 2: Structural completeness (unused defs, unbound inputs)
+  - Level 3: Dependency integrity (circular package imports)
+  - Level 4: Constraint coverage (constraint counts, coverage metrics)
+  - Level 5: Traceability & documentation (doc comment presence)
+  - Level 6: Architecture & pipeline readiness (ADR-002, manifests, codegen)
 
 - **sysml/**: SysML model analysis utilities:
   - `syside_adapter.py`: Wrapper around syside library for parsing SysML v2

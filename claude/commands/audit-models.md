@@ -21,7 +21,7 @@ When invoked without arguments, ask which scope the user wants.
 
 ## Skills Referenced
 
-- **model-validation**: Quality pyramid (8 levels), verification thresholds (PASS ≤1%, WARN 1-5%, FAIL >5%), CLI commands. Consult for threshold definitions, validation commands, and interpreting results.
+- **model-validation**: Quality pyramid (6 levels), verification thresholds (PASS ≤1%, WARN 1-5%, FAIL >5%), CLI commands. Consult for threshold definitions, validation commands, and interpreting results.
 - **source-traceability**: Citation patterns, confidence assessment, traceability matrix schema. Consult when evaluating doc comment quality and traceability completeness.
 - **requirements-tracking**: PR-XXX format, EARS syntax, compliance checking. Consult when assessing models against project requirements.
 
@@ -50,7 +50,7 @@ Report definitions missing citations and definitions missing traceability matrix
 
 ### Programmatic Validation
 
-Run `agentic-mbse validate` against the audited models. Report results for all 8 levels. Levels 1-3 failures are critical and must be resolved. Level 4-8 issues are findings to report.
+Run `agentic-mbse validate` against the audited models. Report results for all 6 levels. Levels 1-3 failures are critical and must be resolved. Level 4-6 issues are findings to report.
 
 ### PR-XXX Compliance
 
@@ -104,7 +104,7 @@ Verify **each** MR-XXX requirement is satisfied by the implemented models. Verif
 An audit report should contain:
 
 - **Executive Summary** — overall status, statistics per category, key findings
-- **Validation Results** — `agentic-mbse validate` output for all 8 levels
+- **Validation Results** — `agentic-mbse validate` output for all 6 levels
 - **Numerical Verification Table** — every parameter: model value + location, baseline value + source, discrepancy %, status
 - **Critical Issues (FAIL)** — each with: values, locations, discrepancy, analysis, recommendation
 - **Warnings (WARN)** — same structure, lighter analysis

@@ -71,7 +71,7 @@ This is where the real work happens. Research, draft, refine — iterate until t
 
 Prototype the design in actual .sysml files — enough to confirm the architecture works, not production-polished.
 
-Run validation per the **model-validation** skill. Levels 1-3 must pass. Check that cross-file imports resolve and no circular dependencies exist. Note Level 4-8 issues for implementation.
+Run validation per the **model-validation** skill. Levels 1-3 must pass. Check that cross-file imports resolve and no circular dependencies exist. Note Level 4-6 issues for implementation.
 
 If validation fails, fix the design and re-validate. Document what you found and changed.
 
