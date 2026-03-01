@@ -1090,9 +1090,9 @@ def main() -> int:
     validate_parser.add_argument(
         "--level",
         type=int,
-        choices=range(1, 9),
+        choices=range(1, 7),
         metavar="N",
-        help="Run only level N (1-8)",
+        help="Run only level N (1-6)",
     )
     validate_parser.add_argument(
         "--verbose",

@@ -22,19 +22,6 @@ from agentic_mbse.sysml.types import (
 )
 
 try:
-    from .adr002 import (
-        check_calc_def_locations,
-        check_static_expressions,
-        check_supported_operators,
-    )
-except ImportError:
-    from adr002 import (
-        check_calc_def_locations,
-        check_static_expressions,
-        check_supported_operators,
-    )
-
-try:
     from .common import (
         EXIT_FAILURE,
         EXIT_SUCCESS,
@@ -375,11 +362,6 @@ def validate_structure(models_path: str) -> QualityCheckResult:
     all_issues.extend(check_unbound_inputs(model))
     all_issues.extend(check_orphaned_elements(model))
 
-    # ADR-002 checks (V1, V2, V4)
-    all_issues.extend(check_calc_def_locations(model))
-    all_issues.extend(check_static_expressions(model))
-    all_issues.extend(check_supported_operators(model))
-
     # Create result and use add_issue() to populate both lists
     result = QualityCheckResult(
         level=2,
@@ -406,16 +388,6 @@ def validate_structure(models_path: str) -> QualityCheckResult:
             [i for i in result.structured_issues if i.code == ValidationCode.LITERAL_BINDING]
         ),
         "Orphaned elements": 0,  # No orphan check implemented yet
-        # ADR-002 metrics
-        "V1 violations (calc def location)": len(
-            [i for i in result.structured_issues if i.code == ValidationCode.V1_CALC_DEF_LOCATION]
-        ),
-        "V2 violations (dynamic expression)": len(
-            [i for i in result.structured_issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
-        ),
-        "V4 violations (unsupported operator)": len(
-            [i for i in result.structured_issues if i.code == ValidationCode.V4_UNSUPPORTED_OPERATOR]
-        ),
     }
 
     return result

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Level 6: Traceability & Documentation
+Level 5: Traceability & Documentation
 
 Verifies documentation coverage and source citations.
 Checks that major elements (calc defs, part defs) have doc comments.
@@ -101,12 +101,12 @@ def check_documentation_coverage(model: Any) -> tuple[list, dict]:
 
 def validate_traceability(models_path: str) -> QualityCheckResult:
     """Validate traceability and documentation"""
-    print_header("Traceability & Documentation", 6)
+    print_header("Traceability & Documentation", 5)
 
     files = discover_sysml_files(models_path)
     if not files:
         return QualityCheckResult(
-            level=6,
+            level=5,
             level_name="Traceability & Documentation",
             success=True,
             warnings=["No SysML files found"],
@@ -116,7 +116,7 @@ def validate_traceability(models_path: str) -> QualityCheckResult:
         model, diagnostics = load_sysml_model(files)
     except Exception as e:
         return QualityCheckResult(
-            level=6,
+            level=5,
             level_name="Traceability & Documentation",
             success=False,
             issues=[f"Failed to load model: {e}"],
@@ -127,7 +127,7 @@ def validate_traceability(models_path: str) -> QualityCheckResult:
     # Documentation is informational - don't fail on missing docs
     # Report as warnings instead of issues
     return QualityCheckResult(
-        level=6,
+        level=5,
         level_name="Traceability & Documentation",
         success=True,
         warnings=missing_docs[:10] if missing_docs else [],  # Show first 10
@@ -138,7 +138,7 @@ def validate_traceability(models_path: str) -> QualityCheckResult:
 def main() -> int:
     import argparse
 
-    parser = argparse.ArgumentParser(description="Level 6: Traceability & Documentation")
+    parser = argparse.ArgumentParser(description="Level 5: Traceability & Documentation")
     parser.add_argument("path", nargs="?", default="models", help="Path to models directory")
     parser.add_argument("--verbose", action="store_true", help="Verbose output")
     args = parser.parse_args()
