@@ -69,19 +69,19 @@ class TestEquationFragments:
 
 #### 1. Test File
 **File:** `tests/test_quality_gate.py`
-- [ ] Add `TestEquationFragments` class with 4 tests per stencil above
+- [x] Add `TestEquationFragments` class with 4 tests per stencil above
 
 #### 2. Quality Gate
 **File:** `src/agentic_mbse/extraction/quality_gate.py`
-- [ ] Add `_EQUATION_NUMBER_RE` and `_ITALIC_MARKER_RE` regex patterns (see `design.md#component-3`)
-- [ ] Add `_assess_equation_fragments(md: str) -> tuple[float, list[str]]` function
-- [ ] Call `_assess_equation_fragments()` from `assess_page()` after existing signals (~line 299), following the same pattern as `_assess_math_garbling`
+- [x] Add `_EQUATION_NUMBER_RE` and `_ITALIC_MARKER_RE` regex patterns (see `design.md#component-3`)
+- [x] Add `_assess_equation_fragments(md: str) -> tuple[float, list[str]]` function
+- [x] Call `_assess_equation_fragments()` from `assess_page()` after existing signals (~line 299), following the same pattern as `_assess_math_garbling`
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_quality_gate.py::TestEquationFragments -v` → All pass
-- [ ] `uv run pytest tests/ -x` → No regressions
+- [x] `uv run pytest tests/test_quality_gate.py::TestEquationFragments -v` → All pass
+- [x] `uv run pytest tests/ -x` → No regressions
 
 **What We Know Works After This Phase:**
 Equation fragment patterns produce severity >= 1.0 and set `needs_claude=True`. Normal italic text and inline equation references do not trigger false positives.
@@ -126,29 +126,29 @@ class TestGmftCrossReference:
 
 #### 1. Test Files
 **File:** `tests/test_pipeline.py`
-- [ ] Add `TestGmftCrossReference` class with 5 tests per stencil
-- [ ] Add `_patch_has_pipe_tables()` helper if needed for isolation
+- [x] Add `TestGmftCrossReference` class with 5 tests per stencil
+- [x] ~~Add `_patch_has_pipe_tables()` helper if needed for isolation~~ — not needed, tested directly
 
 **File:** `tests/test_quality_gate.py`
-- [ ] Update imports if `has_pipe_tables` is now public — add test for it
+- [x] Update imports if `has_pipe_tables` is now public — add `TestHasPipeTables` class (3 tests)
 
 #### 2. Quality Gate Config
 **File:** `src/agentic_mbse/extraction/quality_gate.py`
-- [ ] Add `gmft_xref_severity_boost: float = 1.5` to `QualityGateConfig` (with docstring noting cross-module usage)
-- [ ] Rename `_has_pipe_tables()` → `has_pipe_tables()` (drop underscore, now public API)
-- [ ] Update all internal call sites of `_has_pipe_tables` (rules 3 and 5 in `route_page()`)
+- [x] Add `gmft_xref_severity_boost: float = 1.5` to `QualityGateConfig` (with docstring noting cross-module usage)
+- [x] Rename `_has_pipe_tables()` → `has_pipe_tables()` (drop underscore, now public API)
+- [x] Update all internal call sites of `_has_pipe_tables` (rules 3 and 5 in `route_page()`)
 
 #### 3. Pipeline
 **File:** `src/agentic_mbse/extraction/pipeline.py`
-- [ ] Import `has_pipe_tables` from `quality_gate`
-- [ ] Add `_cross_reference_gmft()` function (see `design.md#component-2` for signature)
-- [ ] Call `_cross_reference_gmft()` between step 4 (quality gate) and step 5 (budget allocation), after heading anomaly check (~line 303)
+- [x] Import `has_pipe_tables` from `quality_gate`
+- [x] Add `_cross_reference_gmft()` function (see `design.md#component-2` for signature)
+- [x] Call `_cross_reference_gmft()` between step 4 (quality gate) and step 5 (budget allocation), after heading anomaly check (~line 303)
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_pipeline.py::TestGmftCrossReference -v` → All pass
-- [ ] `uv run pytest tests/ -x` → No regressions
+- [x] `uv run pytest tests/test_pipeline.py::TestGmftCrossReference -v` → All pass
+- [x] `uv run pytest tests/ -x` → No regressions (1042 passed)
 
 **What We Know Works After This Phase:**
 Pages where GMFT found tables but pymupdf missed them get boosted severity and `needs_claude=True`. Budget allocation considers them alongside character-garbling pages. Routing produces CLAUDE_REPLACE (within budget) or GMFT_REPLACE (over budget) instead of GMFT_APPEND.
@@ -191,89 +191,33 @@ class TestPostprocessCleanup:
 
 #### 1. Test File
 **File:** `tests/test_pipeline.py`
-- [ ] Add `TestPostprocessCleanup` class with 5 tests per stencil
+- [x] Add `TestPostprocessCleanup` class with 5 tests per stencil
 
 #### 2. Pipeline
 **File:** `src/agentic_mbse/extraction/pipeline.py`
-- [ ] Import `strip_page_numbers`, `strip_running_headers`, `repair_ligatures` from `postprocess`
-- [ ] Add `_postprocess_final(markdown: str, extracted_images_dir: Path | None = None) -> str` function
-- [ ] Call `_postprocess_final()` on line 421 (after `"\n\n".join(merged_pages)`, before `compute_metrics()`)
+- [x] Import `strip_page_numbers`, `strip_running_headers`, `repair_ligatures` from `postprocess`
+- [x] Add `_postprocess_final(markdown: str) -> str` function (no images_dir — Phase 4 superseded)
+- [x] Call `_postprocess_final()` as step 7b (after `"\n\n".join(merged_pages)`, before `compute_metrics()`)
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_pipeline.py::TestPostprocessCleanup -v` → All pass
-- [ ] `uv run pytest tests/ -x` → No regressions
+- [x] `uv run pytest tests/test_pipeline.py::TestPostprocessCleanup -v` → All pass
+- [x] `uv run pytest tests/ -x` → No regressions (1047 passed)
 
 **What We Know Works After This Phase:**
 Pipeline output has zero running headers, zero bare page numbers, and no Unicode ligatures. Existing header formatting (## H2, ### H3) is preserved unchanged.
 
 ---
 
-## Phase 4: Image Extraction
+## ~~Phase 4: Image Extraction~~ — SUPERSEDED
 
-### Goal
-Re-enable image extraction in `extract_pages()` by adding `extracted_images_dir` parameter. Wire through `PipelineConfig`, CLI, and postprocess step for path normalization.
-
-### Test Stencil (Write This First)
-```python
-# test_pipeline.py
-class TestImageExtraction:
-    def test_extract_pages_with_images_dir(self):
-        """extract_pages() with extracted_images_dir passes write_images=True."""
-
-    def test_extract_pages_without_images_dir(self):
-        """extract_pages() without extracted_images_dir passes write_images=False (backward compat)."""
-
-    def test_postprocess_normalizes_image_paths(self):
-        """Absolute image paths → relative images/ paths."""
-
-    def test_config_has_extracted_images_dir(self):
-        """PipelineConfig.extracted_images_dir defaults to None."""
-```
-
-### Changes Required
-
-**See `design.md#component-4-image-extraction-fr-5-fr-6` for:**
-- `extract_pages()` parameter changes
-- `PipelineConfig.extracted_images_dir` field (distinct from `page_image_dir`)
-- Image path flow diagram
-- Claude-replaced page orphan image rationale
-
-**Specific file changes:**
-
-#### 1. Test Files
-**File:** `tests/test_pipeline.py`
-- [ ] Add `TestImageExtraction` class with 4 tests per stencil
-
-**File:** `tests/test_extract_cli.py`
-- [ ] Add test verifying `PipelineConfig.extracted_images_dir` is set when output dir exists
-
-#### 2. Backend
-**File:** `src/agentic_mbse/extraction/pymupdf_backend.py:124-157`
-- [ ] Add `extracted_images_dir: Path | None = None` parameter to `extract_pages()`
-- [ ] Pass `write_images=extracted_images_dir is not None` and `image_path=str(extracted_images_dir)` to `to_markdown()`
-
-#### 3. Pipeline Config
-**File:** `src/agentic_mbse/extraction/pipeline.py`
-- [ ] Add `extracted_images_dir: Path | None = None` to `PipelineConfig`
-- [ ] Pass `config.extracted_images_dir` to `extract_pages()` call (~line 207)
-- [ ] Update `_postprocess_final()` to call `normalize_image_paths()` when `extracted_images_dir` is set
-
-#### 4. CLI
-**File:** `src/agentic_mbse/cli/extract_cli.py`
-- [ ] Create `output_dir / "images"` before calling `extract_pdf()` (~line 300)
-- [ ] Set `extracted_images_dir=images_dir` in `PipelineConfig` constructor
-
-### Validation
-
-**Automated:**
-- [ ] `uv run pytest tests/test_pipeline.py::TestImageExtraction -v` → All pass
-- [ ] `uv run pytest tests/test_extract_cli.py -v` → All pass
-- [ ] `uv run pytest tests/ -x` → No regressions
-
-**What We Know Works After This Phase:**
-`extract_pages()` saves embedded images when `extracted_images_dir` is provided. Image paths are normalized to relative `images/` paths in the final output. CLI creates the images directory and wires it through config.
+> **Moved to EPIC-PDFV4-002 Item 2 (Unified Image Output Pipeline).**
+> The original Phase 4 only re-enabled pymupdf4llm figure extraction. The unified
+> design handles figures, table crops, and future equation crops through a single
+> ImageCollector mechanism. See `epic_pdf-extraction-improvements.md` Item 2.
+>
+> The design.md Component 4 remains as reference material for the unified item.
 
 ---
 
@@ -297,34 +241,43 @@ uv run ruff format src/ tests/   # Formatting
 - **Phase 1**: Low risk. False positive mitigation built into heuristic (requires ≥2 short italic lines + standalone equation number).
 - **Phase 2**: Medium risk. GMFT xref could over-allocate Claude budget. Mitigated by moderate 1.5 severity boost competing fairly with existing signals.
 - **Phase 3**: Low risk. `strip_running_headers()` uses threshold=3, same proven function from old pipeline.
-- **Phase 4**: Low risk. `write_images` is a well-tested pymupdf4llm parameter. Backward compatible (default None = no change).
 
 ## Implementation Notes
 
 ### Phase 1 Completion
-**Completed:**
+**Completed:** 2026-03-01
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Added `_EQUATION_NUMBER_RE`, `_ITALIC_MARKER_RE` regex patterns to `quality_gate.py`
+- Added `_assess_equation_fragments(md: str) -> tuple[float, list[str]]` function
+- Integrated into `assess_page()` between math garbling and text density signals, using `EQ_FRAG:` prefix for reasons
+- Added `TestEquationFragments` class with 4 tests to `test_quality_gate.py`
+**Issues:** None
+**Deviations:** Used `EQ_FRAG:` prefix (consistent with `MATH:`, `TABLE:`, `DENSITY:` pattern) instead of no prefix
 
 ### Phase 2 Completion
-**Completed:**
+**Completed:** 2026-03-01
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Renamed `_has_pipe_tables` → `has_pipe_tables` in `quality_gate.py` (3 call sites updated via replace_all)
+- Added `gmft_xref_severity_boost: float = 1.5` to `QualityGateConfig` with cross-module usage docstring
+- Added `_cross_reference_gmft()` function to `pipeline.py`
+- Wired as step 4b between heading anomaly check and budget allocation
+- Added `TestGmftCrossReference` (5 tests) to `test_pipeline.py`
+- Added `TestHasPipeTables` (3 tests) to `test_quality_gate.py`
+**Issues:** E2E test initially failed — mock Claude output too short, rejected by `validate_claude_output` (>50% char drop). Fixed by making mock output comparable length.
+**Deviations:** None — implementation matches design exactly
 
 ### Phase 3 Completion
-**Completed:**
+**Completed:** 2026-03-01
 **Actual Changes:**
-**Issues:**
-**Deviations:**
+- Imported `strip_page_numbers`, `strip_running_headers`, `repair_ligatures` from `postprocess` in `pipeline.py`
+- Added `_postprocess_final(markdown: str) -> str` private function
+- Wired as step 7b between `"\n\n".join(merged_pages)` and `compute_metrics()`
+- Added `TestPostprocessCleanup` (5 tests) to `test_pipeline.py`: running headers, page numbers, ligatures, header preservation (FR-4), bold header non-promotion (FR-4)
+**Issues:** Initial test used `## Section N` headings which all normalized to `## Section` and were caught by the running header stripper (threshold=3). Fixed by using unique section titles.
+**Deviations:** Simplified `_postprocess_final()` signature — no `extracted_images_dir` param since Phase 4 was superseded. `normalize_image_paths()` will be added when unified image pipeline is implemented.
 
-### Phase 4 Completion
-**Completed:**
-**Actual Changes:**
-**Issues:**
-**Deviations:**
+### ~~Phase 4~~ — Superseded by EPIC-PDFV4-002 Item 2
 
 ---
 
-**Status**: Draft → In Progress → Complete
+**Status**: Complete (Phases 1-3; Phase 4 superseded → EPIC-PDFV4-002) (Phases 1-3 only; Phase 4 moved to EPIC-PDFV4-002)

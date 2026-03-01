@@ -17,12 +17,18 @@ from agentic_mbse.extraction.claude_enhance import (
     validate_claude_output,
 )
 from agentic_mbse.extraction.metrics import compute_metrics
+from agentic_mbse.extraction.postprocess import (
+    repair_ligatures,
+    strip_page_numbers,
+    strip_running_headers,
+)
 from agentic_mbse.extraction.pymupdf_backend import extract_pages
 from agentic_mbse.extraction.quality_gate import (
     QualityGateConfig,
     assess_heading_anomaly,
     assess_page,
     count_headings,
+    has_pipe_tables,
     route_page,
 )
 from agentic_mbse.extraction.tables import (
@@ -39,6 +45,7 @@ from agentic_mbse.extraction.types import (
     DetectedTable,
     PageAction,
     PageAssessment,
+    PageResult,
     PipelineResult,
 )
 
@@ -166,6 +173,49 @@ def _try_detect_tables(
     except Exception:
         logger.warning("Table detection failed, continuing without tables", exc_info=True)
         return {}
+
+
+def _postprocess_final(markdown: str) -> str:
+    """Apply deterministic cleanup to the final merged markdown.
+
+    Selectively applies ONLY the safe str→str transforms from
+    postprocess.py. Does NOT apply header promotion/demotion (FR-4).
+    """
+    markdown = strip_page_numbers(markdown)
+    markdown = strip_running_headers(markdown)
+    markdown = repair_ligatures(markdown)
+    return markdown
+
+
+def _cross_reference_gmft(
+    assessments: list[PageAssessment],
+    pages: list[PageResult],
+    detected_tables: dict[int, list[DetectedTable]],
+    severity_boost: float = 1.5,
+) -> None:
+    """Boost severity on pages where GMFT found tables pymupdf missed.
+
+    Mutates assessments in-place. When GMFT detected tables on a page
+    but pymupdf4llm produced no pipe tables, this is a strong signal of
+    structural failure (table rendered as flowing paragraphs). Sets
+    needs_claude=True and needs_gmft=True so the page competes for
+    Claude budget and falls back to GMFT_REPLACE if over budget.
+    """
+    for assessment in assessments:
+        pnum = assessment.page_num
+        if pnum not in detected_tables:
+            continue
+        page_md = pages[pnum].markdown
+        if has_pipe_tables(page_md):
+            continue  # pymupdf produced pipe tables — no structural failure
+        # GMFT found tables but pymupdf produced only flat text
+        assessment.needs_claude = True
+        assessment.needs_gmft = True  # fallback if Claude over budget
+        assessment.severity += severity_boost
+        assessment.reasons.append(
+            f"GMFT_XREF: GMFT found {len(detected_tables[pnum])} table(s) "
+            f"but pymupdf produced no pipe tables (severity +{severity_boost})"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -302,6 +352,17 @@ def extract_pdf(
                 a.severity += config.quality_gate.heading_anomaly_boost
 
     # ------------------------------------------------------------------
+    # Step 4b: GMFT cross-reference (boost pages where GMFT found
+    #          tables that pymupdf missed)
+    # ------------------------------------------------------------------
+    _cross_reference_gmft(
+        assessments,
+        pages,
+        final_tables,
+        severity_boost=config.quality_gate.gmft_xref_severity_boost,
+    )
+
+    # ------------------------------------------------------------------
     # Step 5: Budget allocation (remaining budget after table spend)
     # ------------------------------------------------------------------
     remaining_budget = max(0.0, config.claude_budget_usd - table_claude_spend)
@@ -416,9 +477,14 @@ def extract_pdf(
             merged_pages.append(page.markdown)
 
     # ------------------------------------------------------------------
-    # Step 8: Assemble final result
+    # Step 7b: Postprocess cleanup (running headers, page numbers, ligatures)
     # ------------------------------------------------------------------
     final_markdown = "\n\n".join(merged_pages)
+    final_markdown = _postprocess_final(final_markdown)
+
+    # ------------------------------------------------------------------
+    # Step 8: Assemble final result
+    # ------------------------------------------------------------------
     elapsed = time.time() - start_time
     metrics = compute_metrics(final_markdown, elapsed=elapsed)
     total_cost = sum(c.cost_usd for c in all_costs)

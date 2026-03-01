@@ -32,6 +32,10 @@ class QualityGateConfig:
     text_density_min_chars: int = 200
     heading_density_max: float = 3.0
     heading_anomaly_boost: float = 0.5
+    # Consumed by _cross_reference_gmft() in pipeline.py, not by quality_gate.py
+    # itself. Lives here because it's a quality-assessment threshold alongside
+    # the other gate thresholds.
+    gmft_xref_severity_boost: float = 1.5
 
 
 # ---------------------------------------------------------------------------
@@ -147,6 +151,55 @@ def _assess_math_garbling(md: str) -> tuple[float, list[str]]:
     return score, reasons
 
 
+# Equation-fragment detection patterns
+# Standalone equation number on its own line, e.g. "(2.2)" or "(3.1.4)"
+_EQUATION_NUMBER_RE = re.compile(r"^\s*\((\d+(?:\.\d+)?)\)\s*$")
+
+# Short italic fragment lines: contains _..._ markers
+_ITALIC_MARKER_RE = re.compile(r"_[^_]+_")
+
+
+def _assess_equation_fragments(md: str) -> tuple[float, list[str]]:
+    """Detect equation-fragment rendering failures.
+
+    Looks for isolated equation numbers (e.g., "(2.2)") preceded by
+    short lines with heavy italic content — a pattern pymupdf4llm
+    produces when it fails to render equations as LaTeX.
+
+    Returns (severity_score, reasons).
+    """
+    lines = md.split("\n")
+    score = 0.0
+    reasons: list[str] = []
+
+    for i, line in enumerate(lines):
+        if not _EQUATION_NUMBER_RE.match(line.strip()):
+            continue
+
+        # Look at preceding non-blank lines (up to 5)
+        italic_short_count = 0
+        checked = 0
+        for j in range(i - 1, -1, -1):
+            prev = lines[j].strip()
+            if not prev:
+                continue
+            checked += 1
+            if checked > 5:
+                break
+            if len(prev) < 60 and _ITALIC_MARKER_RE.search(prev):
+                italic_short_count += 1
+
+        if italic_short_count >= 2:
+            eq_num = line.strip()
+            score += 1.0
+            reasons.append(
+                f"equation fragment: {italic_short_count} short italic lines "
+                f"before {eq_num}"
+            )
+
+    return score, reasons
+
+
 def _assess_table_anomaly(md: str) -> tuple[bool, list[str]]:
     """Detect table anomalies on a page.
 
@@ -222,8 +275,12 @@ def _has_br_in_tables(md: str) -> bool:
     return False
 
 
-def _has_pipe_tables(md: str) -> bool:
-    """Check if the markdown contains any pipe table rows."""
+def has_pipe_tables(md: str) -> bool:
+    """Check if the markdown contains any pipe table rows.
+
+    Public API — consumed by quality_gate.py routing rules and by
+    _cross_reference_gmft() in pipeline.py.
+    """
     return any(line.strip().startswith("|") and line.count("|") >= 2 for line in md.split("\n"))
 
 
@@ -287,6 +344,13 @@ def assess_page(
         assessment.needs_gmft = True
         assessment.severity += 1.0
         assessment.reasons.extend([f"TABLE: {r}" for r in table_reasons])
+
+    # --- Equation fragments ---
+    eq_score, eq_reasons = _assess_equation_fragments(page_markdown)
+    if eq_score > 0:
+        assessment.needs_claude = True
+        assessment.severity += eq_score
+        assessment.reasons.extend([f"EQ_FRAG: {r}" for r in eq_reasons])
 
     # --- Text density ---
     low_density, density_reasons = _assess_text_density(
@@ -384,7 +448,7 @@ def route_page(
 
     # 3. Table issues with GMFT available
     if assessment.needs_gmft and has_tables:
-        has_existing_tables = _has_pipe_tables(page_markdown)
+        has_existing_tables = has_pipe_tables(page_markdown)
         if has_existing_tables:
             return PageDecision(assessment.page_num, PageAction.GMFT_REPLACE, reasons)
         else:
@@ -409,7 +473,7 @@ def route_page(
     # budget-constrained operation becomes important, consider dropping the
     # `not needs_claude` guard to allow partial table recovery on those pages.
     if has_tables and not assessment.needs_gmft and not assessment.needs_claude:
-        has_existing_tables = _has_pipe_tables(page_markdown)
+        has_existing_tables = has_pipe_tables(page_markdown)
         if not has_existing_tables:
             reasons.append("GMFT found tables not in pymupdf4llm output")
             return PageDecision(assessment.page_num, PageAction.GMFT_APPEND, reasons)

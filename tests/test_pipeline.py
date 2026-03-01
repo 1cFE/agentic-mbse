@@ -954,6 +954,207 @@ class TestCliSummary:
 
 
 # ---------------------------------------------------------------------------
+# TestPostprocessCleanup
+# ---------------------------------------------------------------------------
+
+
+class TestPostprocessCleanup:
+    def test_running_headers_stripped(self):
+        """Repeated short lines across pages are removed from merged output."""
+        # Running header appears 4 times (threshold=3) across separate pages
+        header = "_L.S. Author and K. Coauthor ... Applied Energy 401 (2025) 126567_"
+        titles = ["Introduction", "Background", "Methodology", "Results"]
+        pages = [_page(i, f"{header}\n\n## {titles[i]}\n\nContent for page about {titles[i]}. " + "Filler. " * 20) for i in range(4)]
+        cfg = PipelineConfig(claude_budget_usd=0)
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(pages),
+            _patch_tables(),
+            _patch_claude_page(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg)
+
+        assert header not in result.markdown
+        # Actual unique content should survive
+        assert "Introduction" in result.markdown
+        assert "Results" in result.markdown
+
+    def test_page_numbers_stripped(self):
+        """Bare page numbers between blank lines are removed."""
+        pages = [
+            _page(0, "## Introduction\n\nFirst page content. " + "Filler. " * 20),
+            _page(1, "2\n\n## Methods\n\nSecond page content. " + "Filler. " * 20),
+            _page(2, "3\n\n## Results\n\nThird page content. " + "Filler. " * 20),
+        ]
+        cfg = PipelineConfig(claude_budget_usd=0)
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(pages),
+            _patch_tables(),
+            _patch_claude_page(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg)
+
+        # Page numbers should be stripped (they appear between \n\n...\n\n in merged output)
+        # Content should survive
+        assert "Introduction" in result.markdown
+        assert "Methods" in result.markdown
+        assert "Results" in result.markdown
+
+    def test_ligatures_repaired(self):
+        """Unicode ligatures (U+FB00-FB04) replaced with ASCII."""
+        pages = [_page(0, "The e\ufb00ect of \ufb01ltering on e\ufb03ciency. " + "Filler. " * 20)]
+        cfg = PipelineConfig(claude_budget_usd=0)
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(pages),
+            _patch_tables(),
+            _patch_claude_page(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg)
+
+        assert "effect" in result.markdown
+        assert "filtering" in result.markdown
+        assert "efficiency" in result.markdown
+        assert "\ufb00" not in result.markdown
+        assert "\ufb01" not in result.markdown
+        assert "\ufb03" not in result.markdown
+
+    def test_header_formatting_preserved(self):
+        """Existing ## headers are NOT modified (FR-4 compliance)."""
+        pages = [_page(0, "## 1 Introduction\n\n### 1.1 Background\n\nContent here. " + "Filler. " * 20)]
+        cfg = PipelineConfig(claude_budget_usd=0)
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(pages),
+            _patch_tables(),
+            _patch_claude_page(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg)
+
+        # Headers should remain exactly as-is (no promotion/demotion)
+        assert "## 1 Introduction" in result.markdown
+        assert "### 1.1 Background" in result.markdown
+
+    def test_bold_headers_not_promoted(self):
+        """Bold numbered lines are NOT promoted to ## headers (FR-4 compliance)."""
+        pages = [_page(0, "**1 Introduction**\n\nContent here. " + "Filler. " * 20)]
+        cfg = PipelineConfig(claude_budget_usd=0)
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(pages),
+            _patch_tables(),
+            _patch_claude_page(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg)
+
+        # Bold line should remain as-is, NOT promoted to ## header
+        assert "**1 Introduction**" in result.markdown
+
+
+# ---------------------------------------------------------------------------
+# TestGmftCrossReference
+# ---------------------------------------------------------------------------
+
+
+class TestGmftCrossReference:
+    def test_gmft_tables_no_pipe_tables_boosts_severity(self):
+        """GMFT found tables + pymupdf has no pipe tables → needs_claude, severity boosted."""
+        from agentic_mbse.extraction.pipeline import _cross_reference_gmft
+        from agentic_mbse.extraction.types import PageAssessment
+
+        # Page with text but no pipe tables
+        pages = [_page(0, "Just text, no tables at all. " * 10)]
+        assessments = [PageAssessment(page_num=0, severity=0.0)]
+        detected_tables = {0: [_table()]}
+
+        _cross_reference_gmft(assessments, pages, detected_tables)
+
+        assert assessments[0].needs_claude is True
+        assert assessments[0].needs_gmft is True
+        assert assessments[0].severity >= 1.5
+        assert any("GMFT_XREF" in r for r in assessments[0].reasons)
+
+    def test_gmft_tables_with_pipe_tables_no_change(self):
+        """GMFT found tables + pymupdf has pipe tables → no change."""
+        from agentic_mbse.extraction.pipeline import _cross_reference_gmft
+        from agentic_mbse.extraction.types import PageAssessment
+
+        # Page WITH pipe tables
+        pages = [_page(0, "Text.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\nMore text.")]
+        assessments = [PageAssessment(page_num=0, severity=0.0)]
+        detected_tables = {0: [_table()]}
+
+        _cross_reference_gmft(assessments, pages, detected_tables)
+
+        assert assessments[0].needs_claude is False
+        assert assessments[0].severity == 0.0
+
+    def test_no_gmft_tables_no_change(self):
+        """No GMFT tables on page → no change."""
+        from agentic_mbse.extraction.pipeline import _cross_reference_gmft
+        from agentic_mbse.extraction.types import PageAssessment
+
+        pages = [_page(0, "Just text. " * 20)]
+        assessments = [PageAssessment(page_num=0, severity=0.0)]
+        detected_tables = {}  # No tables detected
+
+        _cross_reference_gmft(assessments, pages, detected_tables)
+
+        assert assessments[0].needs_claude is False
+        assert assessments[0].severity == 0.0
+
+    def test_e2e_gmft_missed_within_budget_claude_replace(self):
+        """End-to-end: GMFT-missed-table page within budget → CLAUDE_REPLACE."""
+        # Page with enough text to avoid low-density, but no pipe tables
+        page_md = "This is a page with garbled table text rendered as paragraphs. " * 5
+        pages = [_page(0, page_md)]
+        table = _table()
+        # Claude output must be comparable length to pass validate_claude_output
+        claude_md = "# Better\n\nClean table content with proper formatting. " * 5
+        claude_cost = _cost(page_num=0, cost_usd=0.078)
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(pages),
+            _patch_tables({0: [table]}),
+            patch(f"{_P}.extract_page_with_claude", return_value=(claude_md, claude_cost)),
+            _patch_which_claude(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"))
+
+        # The page should be routed to CLAUDE_REPLACE due to GMFT xref
+        page_decision = result.decisions[0]
+        assert page_decision.action == PageAction.CLAUDE_REPLACE
+        assert "Clean table content" in result.markdown
+
+    def test_e2e_gmft_missed_over_budget_gmft_replace(self):
+        """End-to-end: GMFT-missed-table page over budget → GMFT_REPLACE fallback."""
+        # Page with enough text, no pipe tables
+        page_md = "This is a page with garbled table text rendered as paragraphs. " * 5
+        pages = [_page(0, page_md)]
+        table = _table()
+        cfg = PipelineConfig(claude_budget_usd=0)  # Zero budget forces over-budget
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(pages),
+            _patch_tables({0: [table]}),
+            _patch_claude_page(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg)
+
+        # Over budget → GMFT_REPLACE fallback (needs_claude + needs_gmft + has_tables)
+        page_decision = result.decisions[0]
+        assert page_decision.action == PageAction.GMFT_REPLACE
+
+
+# ---------------------------------------------------------------------------
 # Package exports
 # ---------------------------------------------------------------------------
 

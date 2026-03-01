@@ -6,6 +6,7 @@ from agentic_mbse.extraction.quality_gate import (
     assess_heading_anomaly,
     assess_page,
     count_headings,
+    has_pipe_tables,
     prioritize_pages,
     route_page,
 )
@@ -54,6 +55,62 @@ class TestMathGarbling:
 
 
 # ---------------------------------------------------------------------------
+# Equation-fragment detection
+# ---------------------------------------------------------------------------
+
+
+class TestEquationFragments:
+    def test_equation_fragment_pattern(self):
+        """Short italic lines + standalone equation number → severity >= 1.0."""
+        md = (
+            "Some preceding text.\n\n"
+            "_Pnew_\n"
+            "_C_ = _CEEDB_\n"
+            "\n"
+            "(2.2)\n"
+            "\n"
+            "More text follows here." + " Padding." * 30
+        )
+        a = assess_page(md, 0)
+        assert a.needs_claude
+        assert a.severity >= 1.0
+
+    def test_normal_italic_no_signal(self):
+        """Long italic paragraph → no equation fragment signal."""
+        md = (
+            "_This is a normal italic sentence that is quite long and in a paragraph._ "
+            * 5
+        )
+        a = assess_page(md, 0)
+        assert a.math_garble_score == 0.0
+        # Should not have equation fragment reason
+        assert not any("EQ_FRAG" in r for r in a.reasons)
+
+    def test_inline_equation_number_no_signal(self):
+        """Equation number inline in paragraph → no signal."""
+        md = (
+            "The result follows from equation (2.2) in the text above. " * 5
+        )
+        a = assess_page(md, 0)
+        assert a.math_garble_score == 0.0
+        assert not any("EQ_FRAG" in r for r in a.reasons)
+
+    def test_equation_number_without_italic_fragments(self):
+        """Standalone equation number but no preceding italic fragments → no signal."""
+        md = (
+            "Normal text line one.\n"
+            "Another normal line.\n"
+            "\n"
+            "(2.2)\n"
+            "\n"
+            "More normal text." + " Padding." * 30
+        )
+        a = assess_page(md, 0)
+        # equation number alone is not enough
+        assert not any("EQ_FRAG" in r for r in a.reasons)
+
+
+# ---------------------------------------------------------------------------
 # Table anomaly detection
 # ---------------------------------------------------------------------------
 
@@ -70,6 +127,25 @@ class TestTableAnomaly:
         a = assess_page(md, 0)
         assert a.needs_gmft
         assert a.table_anomaly
+
+
+# ---------------------------------------------------------------------------
+# has_pipe_tables (public API)
+# ---------------------------------------------------------------------------
+
+
+class TestHasPipeTables:
+    def test_has_tables(self):
+        md = "Text.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\nMore."
+        assert has_pipe_tables(md) is True
+
+    def test_no_tables(self):
+        md = "Just plain text with no tables at all."
+        assert has_pipe_tables(md) is False
+
+    def test_single_pipe_not_table(self):
+        md = "Use cmd | grep to filter output."
+        assert has_pipe_tables(md) is False
 
 
 # ---------------------------------------------------------------------------
