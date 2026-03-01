@@ -121,7 +121,10 @@ class CompositeHeaderDetector:
 _composite_header_detector = CompositeHeaderDetector()
 
 
-def extract_pages(pdf_path: Path) -> list[PageResult]:
+def extract_pages(
+    pdf_path: Path,
+    extracted_images_dir: Path | None = None,
+) -> list[PageResult]:
     """Extract per-page markdown using pymupdf4llm with BEST_V1 config.
 
     Uses ``page_chunks=True`` for per-page output with full-document header
@@ -134,13 +137,17 @@ def extract_pages(pdf_path: Path) -> list[PageResult]:
     text from form fields and annotations.  The legacy ``extract()``
     function is preserved as-is for backward compatibility.
 
+    When *extracted_images_dir* is provided, embedded figures are saved
+    to that directory and referenced in the per-page markdown.
+
     Returns list of PageResult, 0-indexed page numbers.
     """
     to_markdown = _get_to_markdown()
 
     chunks = to_markdown(
         str(pdf_path),
-        write_images=False,
+        write_images=extracted_images_dir is not None,
+        image_path=str(extracted_images_dir) if extracted_images_dir else None,
         dpi=150,
         page_chunks=True,
         hdr_info=_composite_header_detector,

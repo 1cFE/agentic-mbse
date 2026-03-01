@@ -13,13 +13,16 @@ Mocking strategy:
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from agentic_mbse.extraction.pipeline import (
     EnhancerBudget,
+    ImageCollector,
     PipelineConfig,
+    _postprocess_final,
     extract_pdf,
 )
+from agentic_mbse.extraction.pymupdf_backend import extract_pages
 from agentic_mbse.extraction.types import (
     CostRecord,
     DetectedTable,
@@ -333,7 +336,9 @@ class TestExtractPdfTableEnhancement:
             _patch_pandoc_unavailable(),
             _patch_base([_page(0)]),
             _patch_tables({0: [table]}),
-            patch(f"{_P}.enhance_table_with_claude", return_value=(enhanced_table, cost)) as mock_enhance,
+            patch(
+                f"{_P}.enhance_table_with_claude", return_value=(enhanced_table, cost)
+            ) as mock_enhance,
             _patch_claude_page(),
             _patch_which_claude(),
         ):
@@ -418,7 +423,12 @@ class TestExtractPdfQualityGateAndBudget:
             _patch_base(pages),
             _patch_tables(),
             _patch_claude_page(),
-            patch(f"{_P}.assess_page", wraps=__import__("agentic_mbse.extraction.quality_gate", fromlist=["assess_page"]).assess_page) as mock_assess,
+            patch(
+                f"{_P}.assess_page",
+                wraps=__import__(
+                    "agentic_mbse.extraction.quality_gate", fromlist=["assess_page"]
+                ).assess_page,
+            ) as mock_assess,
         ):
             extract_pdf(Path("/fake.pdf"))
         assert mock_assess.call_count == 2
@@ -426,7 +436,9 @@ class TestExtractPdfQualityGateAndBudget:
     def test_heading_anomaly_boosts_severity(self):
         """Document-level heading anomaly boosts severity on needs_claude pages."""
         # 10 pages, no headings at all → heading anomaly
-        pages = [_page(i, f"Page {i} text content without any headings whatsoever.") for i in range(10)]
+        pages = [
+            _page(i, f"Page {i} text content without any headings whatsoever.") for i in range(10)
+        ]
         cfg = PipelineConfig(claude_budget_usd=0)  # budget 0 so we just check decisions
         with (
             _patch_pandoc_unavailable(),
@@ -562,7 +574,10 @@ class TestExtractPdfRouteAndMerge:
     def test_keep_action_for_clean_page(self):
         """Clean page with no issues → KEEP action, original markdown preserved."""
         # Use enough text to avoid low text density trigger (200 char threshold)
-        long_text = "# Clean Page\n\n" + ("This is a normal paragraph with enough content to avoid the low text density trigger. " * 3)
+        long_text = "# Clean Page\n\n" + (
+            "This is a normal paragraph with enough content to avoid the low text density trigger. "
+            * 3
+        )
         pages = [_page(0, long_text)]
         with (
             _patch_pandoc_unavailable(),
@@ -682,7 +697,9 @@ class TestExtractPdfRouteAndMerge:
             _patch_pandoc_unavailable(),
             _patch_base(pages),
             _patch_tables(),
-            patch(f"{_P}.extract_page_with_claude", return_value=("# Better\n\nContent.", claude_cost)),
+            patch(
+                f"{_P}.extract_page_with_claude", return_value=("# Better\n\nContent.", claude_cost)
+            ),
             _patch_which_claude(),
         ):
             result = extract_pdf(Path("/fake.pdf"))
@@ -793,7 +810,9 @@ class TestExtractPdfStepOrdering:
 
     def test_budget_allocation_before_claude_pages(self):
         """Budget allocation runs before Claude page enhancement."""
-        garbled = "# Title\n\n~~garbled~~ ~~math~~ ~~content~~ \ufffd\ufffd more text here with enough."
+        garbled = (
+            "# Title\n\n~~garbled~~ ~~math~~ ~~content~~ \ufffd\ufffd more text here with enough."
+        )
         pages = [_page(0, garbled)]
         call_order = []
 
@@ -921,6 +940,7 @@ class TestDecisionTruthfulness:
 class TestCliSummary:
     def _make_result(self, intended: int, succeeded: int, cost: float = 0.0) -> PipelineResult:
         from agentic_mbse.extraction.metrics import compute_metrics
+
         return PipelineResult(
             markdown="# Test\n\nContent.",
             metrics=compute_metrics("# Test\n\nContent."),
@@ -934,6 +954,7 @@ class TestCliSummary:
     def test_print_pipeline_summary_shows_claude_warning(self, capsys):
         """CLI summary shows Claude failure warning when intended > succeeded."""
         from agentic_mbse.cli.extract_cli import _print_pipeline_summary
+
         _print_pipeline_summary("test.pdf", self._make_result(3, 0))
         captured = capsys.readouterr()
         assert "! Claude: 0/3 pages enhanced" in captured.out
@@ -941,6 +962,7 @@ class TestCliSummary:
     def test_print_pipeline_summary_no_warning_when_all_succeed(self, capsys):
         """No warning when all Claude pages succeed."""
         from agentic_mbse.cli.extract_cli import _print_pipeline_summary
+
         _print_pipeline_summary("test.pdf", self._make_result(3, 3, cost=0.234))
         captured = capsys.readouterr()
         assert "! Claude" not in captured.out
@@ -948,6 +970,7 @@ class TestCliSummary:
     def test_print_pipeline_summary_no_warning_when_no_claude(self, capsys):
         """No warning when Claude wasn't used."""
         from agentic_mbse.cli.extract_cli import _print_pipeline_summary
+
         _print_pipeline_summary("test.pdf", self._make_result(0, 0))
         captured = capsys.readouterr()
         assert "! Claude" not in captured.out
@@ -964,7 +987,14 @@ class TestPostprocessCleanup:
         # Running header appears 4 times (threshold=3) across separate pages
         header = "_L.S. Author and K. Coauthor ... Applied Energy 401 (2025) 126567_"
         titles = ["Introduction", "Background", "Methodology", "Results"]
-        pages = [_page(i, f"{header}\n\n## {titles[i]}\n\nContent for page about {titles[i]}. " + "Filler. " * 20) for i in range(4)]
+        pages = [
+            _page(
+                i,
+                f"{header}\n\n## {titles[i]}\n\nContent for page about {titles[i]}. "
+                + "Filler. " * 20,
+            )
+            for i in range(4)
+        ]
         cfg = PipelineConfig(claude_budget_usd=0)
 
         with (
@@ -1025,7 +1055,9 @@ class TestPostprocessCleanup:
 
     def test_header_formatting_preserved(self):
         """Existing ## headers are NOT modified (FR-4 compliance)."""
-        pages = [_page(0, "## 1 Introduction\n\n### 1.1 Background\n\nContent here. " + "Filler. " * 20)]
+        pages = [
+            _page(0, "## 1 Introduction\n\n### 1.1 Background\n\nContent here. " + "Filler. " * 20)
+        ]
         cfg = PipelineConfig(claude_budget_usd=0)
 
         with (
@@ -1166,3 +1198,234 @@ def test_package_exports():
     assert callable(extract_pdf)
     assert PipelineConfig is not None
     assert PipelineResult is not None
+
+
+# ---------------------------------------------------------------------------
+# ImageCollector (Phase 1: Unified Image Output)
+# ---------------------------------------------------------------------------
+
+
+class TestImageCollector:
+    def test_add_returns_markdown_ref(self):
+        """add() returns ![](images/rel_name) string."""
+        collector = ImageCollector(output_dir=Path("/fake/images"))
+        ref = collector.add(Path("/tmp/src.png"), "page_001_table_0.png", "table_crop", 1)
+        assert ref == "![](images/page_001_table_0.png)"
+        assert len(collector.entries) == 1
+
+    def test_persist_copies_files(self, tmp_path):
+        """persist() copies source files to output_dir."""
+        src = tmp_path / "src.png"
+        src.write_bytes(b"fake png")
+        out = tmp_path / "images"
+        collector = ImageCollector(output_dir=out)
+        collector.add(src, "table.png", "table_crop", 0)
+        count = collector.persist()
+        assert count == 1
+        assert (out / "table.png").exists()
+
+    def test_persist_empty_collector(self, tmp_path):
+        """persist() with zero entries returns 0 without error."""
+        collector = ImageCollector(output_dir=tmp_path / "images")
+        assert collector.persist() == 0
+
+    def test_persist_missing_source_warns(self, tmp_path, caplog):
+        """persist() skips missing files with warning, doesn't raise."""
+        collector = ImageCollector(output_dir=tmp_path / "images")
+        collector.add(Path("/nonexistent/file.png"), "ghost.png", "table_crop", 0)
+        count = collector.persist()
+        assert count == 0
+        assert "Failed to persist" in caplog.text
+
+    def test_total_image_count_includes_all_files(self, tmp_path):
+        """total_image_count scans directory (includes pre-existing files)."""
+        out = tmp_path / "images"
+        out.mkdir()
+        (out / "figure.png").write_bytes(b"fig")
+        (out / "table.png").write_bytes(b"tab")
+        collector = ImageCollector(output_dir=out)
+        assert collector.total_image_count == 2
+
+    def test_total_image_count_no_dir(self, tmp_path):
+        """total_image_count returns 0 when output_dir doesn't exist."""
+        collector = ImageCollector(output_dir=tmp_path / "nope")
+        assert collector.total_image_count == 0
+
+
+# ---------------------------------------------------------------------------
+# Figure Extraction (Phase 2: Unified Image Output)
+# ---------------------------------------------------------------------------
+
+_PYMUPDF = "agentic_mbse.extraction.pymupdf_backend"
+
+
+class TestFigureExtraction:
+    def test_extract_pages_with_images_dir(self):
+        """extract_pages passes write_images=True when dir provided."""
+        mock_to_md = MagicMock(return_value=[{"metadata": {"page": 1}, "text": "# Page"}])
+        with patch(f"{_PYMUPDF}._get_to_markdown", return_value=mock_to_md):
+            extract_pages(Path("/fake.pdf"), extracted_images_dir=Path("/out/images"))
+            call_kwargs = mock_to_md.call_args[1]
+            assert call_kwargs["write_images"] is True
+            assert call_kwargs["image_path"] == "/out/images"
+
+    def test_extract_pages_without_images_dir(self):
+        """extract_pages passes write_images=False when dir is None."""
+        mock_to_md = MagicMock(return_value=[{"metadata": {"page": 1}, "text": "# Page"}])
+        with patch(f"{_PYMUPDF}._get_to_markdown", return_value=mock_to_md):
+            extract_pages(Path("/fake.pdf"))
+            call_kwargs = mock_to_md.call_args[1]
+            assert call_kwargs["write_images"] is False
+            assert call_kwargs["image_path"] is None
+
+
+# ---------------------------------------------------------------------------
+# Postprocess with Images (Phase 2: Unified Image Output)
+# ---------------------------------------------------------------------------
+
+
+class TestPostprocessWithImages:
+    def test_normalizes_absolute_paths(self):
+        """_postprocess_final normalizes absolute image paths when dir provided."""
+        md = "![](/tmp/out/images/fig-0-0.png)\n\nSome text."
+        result = _postprocess_final(md, extracted_images_dir=Path("/tmp/out/images"))
+        assert "![](images/fig-0-0.png)" in result
+        assert "/tmp/out/images" not in result
+
+    def test_promotes_figure_captions(self):
+        """_postprocess_final promotes captions after normalizing paths."""
+        md = "![](/tmp/out/images/fig.png)\nFigure 1: A diagram."
+        result = _postprocess_final(md, extracted_images_dir=Path("/tmp/out/images"))
+        assert "![Figure 1: A diagram.](images/fig.png)" in result
+
+    def test_no_images_dir_no_normalization(self):
+        """_postprocess_final with None dir skips image processing."""
+        md = "![](/absolute/path/images/fig.png)\n\nText."
+        result = _postprocess_final(md)
+        assert "/absolute/path/images/fig.png" in result
+
+
+# ---------------------------------------------------------------------------
+# Table Crop Persistence (Phase 3: Unified Image Output)
+# ---------------------------------------------------------------------------
+
+
+class TestTableCropPersistence:
+    def test_table_crops_registered_with_collector(self, tmp_path):
+        """Tables with image_path get registered and image ref prepended to markdown."""
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+
+        # Create a real temp file for the table crop
+        crop_file = tmp_path / "crop.png"
+        crop_file.write_bytes(b"fake crop png")
+
+        table = DetectedTable(
+            markdown="| A | B |\n|---|---|\n| 1 | 2 |",
+            confidence=0.9,
+            num_rows=1,
+            num_cols=2,
+            avg_cell_length=3.0,
+            image_path=crop_file,
+        )
+        # Zero Claude budget so page routes to GMFT (not CLAUDE_REPLACE)
+        cfg = PipelineConfig(
+            extracted_images_dir=images_dir,
+            enable_claude=False,
+            claude_budget_usd=0,
+        )
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base([_page(0)]),
+            _patch_tables({0: [table]}),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg)
+
+        # Table crop should be persisted to images dir
+        assert (images_dir / "page_000_table_0.png").exists()
+        # Image reference should appear in output markdown
+        assert "![](images/page_000_table_0.png)" in result.markdown
+
+    def test_no_collector_when_images_dir_none(self):
+        """Pipeline with extracted_images_dir=None produces no image refs."""
+        table = _table()
+        cfg = PipelineConfig()
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base([_page(0)]),
+            _patch_tables({0: [table]}),
+            _patch_claude_page(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg)
+
+        assert "![](images/" not in result.markdown
+        assert result.image_count == 0
+
+    def test_table_without_image_path_skipped(self, tmp_path):
+        """Tables with image_path=None don't get image refs."""
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+
+        table = DetectedTable(
+            markdown="| A | B |\n|---|---|\n| 1 | 2 |",
+            confidence=0.9,
+            num_rows=1,
+            num_cols=2,
+            avg_cell_length=3.0,
+            image_path=None,  # No crop image
+        )
+        cfg = PipelineConfig(extracted_images_dir=images_dir)
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base([_page(0)]),
+            _patch_tables({0: [table]}),
+            _patch_claude_page(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg)
+
+        assert "![](images/" not in result.markdown
+
+    def test_image_count_in_result(self, tmp_path):
+        """PipelineResult.image_count reflects total images in dir."""
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+
+        # Pre-place a "figure" file (simulating pymupdf write_images)
+        (images_dir / "doc-0-0.png").write_bytes(b"figure")
+
+        crop_file = tmp_path / "crop.png"
+        crop_file.write_bytes(b"crop")
+
+        table = DetectedTable(
+            markdown="| A | B |\n|---|---|\n| 1 | 2 |",
+            confidence=0.9,
+            num_rows=1,
+            num_cols=2,
+            avg_cell_length=3.0,
+            image_path=crop_file,
+        )
+        cfg = PipelineConfig(extracted_images_dir=images_dir)
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base([_page(0)]),
+            _patch_tables({0: [table]}),
+            _patch_claude_page(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg)
+
+        # 1 pre-existing figure + 1 table crop = 2
+        assert result.image_count == 2
+
+    def test_backward_compat_no_images_dir(self):
+        """Pipeline output identical when extracted_images_dir=None."""
+        cfg_default = PipelineConfig(enable_claude=False)
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base([_page(0, "# Hello\n\nWorld.")]),
+            _patch_tables(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg_default)
+
+        assert result.error is None
+        assert result.image_count == 0
+        assert "Hello" in result.markdown

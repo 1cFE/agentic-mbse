@@ -9,6 +9,14 @@ from pathlib import Path
 from agentic_mbse.extraction.metrics import ExtractionMetrics
 
 
+@dataclass
+class ImageEntry:
+    source_path: Path  # temp file that needs copying
+    rel_name: str  # "page_003_table_1.png"
+    kind: str  # "table_crop" | "equation_crop"
+    page_num: int
+
+
 class PageAction(str, Enum):
     KEEP = "keep"
     GMFT_REPLACE = "gmft_replace"
@@ -81,3 +89,4 @@ class PipelineResult:
     error: str | None = None
     claude_pages_intended: int = 0
     claude_pages_succeeded: int = 0
+    image_count: int = 0

@@ -1,10 +1,10 @@
 # Epic: PDF Extraction Quality & Features
 
 **Epic ID**: EPIC-PDFV4-002
-**Status**: In Progress (Item 1 Phase 1 complete)
+**Status**: In Progress (Item 1 Phase 1 complete, Item 2 complete)
 **Priority**: P1
 **Created**: 2026-03-01
-**Estimated Effort**: ~4.5 days
+**Estimated Effort**: ~5.5 days
 
 **Parent**: Builds on EPIC-PDFV4-001 (complete)
 **Branch**: `doc-ingest-clean`
@@ -113,7 +113,9 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 ### Item 2: Unified Image Output Pipeline [1 day]
 
 **Type**: Feature (replaces IMGEXT-001 + IMGEXT-003 + quality regressions Phase 4)
-**Status**: Needs design
+**Status**: Complete
+**Active work**: `.project/active/unified-image-output/` (spec, design, plan — all complete)
+**Completed**: 2026-03-01
 
 **Objective**: Build the image collector pattern and enable all current image sources — pymupdf4llm figures and GMFT/Img2Table table crops — in a single pass.
 
@@ -127,21 +129,62 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 7. **Tests**: figure extraction (mock pymupdf), table crop persistence, path normalization, collector unit tests
 
 **Success Criteria**:
-- [ ] Embedded figures saved to `images/` with inline `![](images/...)` references
-- [ ] Table crop PNGs from GMFT/Img2Table saved alongside figures in `images/`
-- [ ] Table crops referenced in markdown near their pipe tables
-- [ ] Figure captions promoted from separate paragraphs to alt-text
-- [ ] Image paths are relative in final output
-- [ ] `PipelineResult.image_count` reflects total images
-- [ ] No images saved when `extracted_images_dir` is None (backward compat)
-- [ ] Claude-replaced pages: orphan figure files are acceptable; table crops for those pages still saved
+- [x] Embedded figures saved to `images/` with inline `![](images/...)` references
+- [x] Table crop PNGs from GMFT/Img2Table saved alongside figures in `images/`
+- [x] Table crops referenced in markdown near their pipe tables
+- [x] Figure captions promoted from separate paragraphs to alt-text
+- [x] Image paths are relative in final output
+- [x] `PipelineResult.image_count` reflects total images
+- [x] No images saved when `extracted_images_dir` is None (backward compat)
+- [x] Claude-replaced pages: orphan figure files are acceptable; table crops for those pages still saved
 
 **Dependencies**: Item 1 (uses `_postprocess_final()` established in Phase 3)
 **Deliverables**: types.py (ImageCollector), updated pymupdf_backend.py, pipeline.py, extract_cli.py, tests
 
 ---
 
-### Item 3: Equation Region Detection [2 days]
+### Item 3: Pipeline Profiling & Route Instrumentation [1 day]
+
+**Type**: Tooling / Observability
+**Status**: Needs design
+
+**Objective**: Build a profiling utility that runs the pipeline on a diverse corpus and produces a report showing per-page routing decisions and per-step timing. Answers: "how long does each step take?", "are routes being engaged as expected?", and "what's the time profile for different document types?"
+
+**Scope**:
+1. **Corpus selection** (~10 PDFs, diverse): clean born-digital, two-column academic, messy scanned/OCR, older non-digital, table-heavy, equation-heavy, short (2-5pp), long (30+pp). Draw from existing test corpus + add 2-3 new specimens if gaps exist.
+2. **Timing instrumentation**: Add lightweight `time.perf_counter()` around each pipeline step (base extraction, table detection, table filter/enhance, quality gate, GMFT xref, budget allocation, Claude enhancement, route+merge, postprocess). Return per-step durations in `PipelineResult` or a separate `PipelineProfile` dataclass.
+3. **Route summary**: Aggregate per-page `PageDecision.action` counts into a distribution (e.g., `{KEEP: 8, CLAUDE_REPLACE: 3, GMFT_REPLACE: 1}`). Already available in `decisions` — just needs summarization.
+4. **Profiling CLI or script**: `agentic-mbse extract --profile` flag (or standalone script) that runs the corpus, collects profiles, and produces a summary table:
+
+   ```
+   Document                  Pages  KEEP  CLAUDE  GMFT  Time(s)  Base  Tables  Gate  Claude  Post
+   ────────────────────────  ─────  ────  ──────  ────  ───────  ────  ──────  ────  ──────  ────
+   araiinejad_2024 (clean)      12     3       6     3    14.2   1.1     2.3   0.1     9.8   0.2
+   schulte_1978 (scanned)        8     8       0     0     3.1   2.8     0.1   0.1     0.0   0.1
+   paischer_2025 (2-col)        15     5       7     3    22.1   1.5     3.1   0.1    16.2   0.3
+   ...
+   ```
+
+5. **Tests**: Unit test for timing instrumentation (mock steps, verify profile has expected keys). Integration test optional (corpus-dependent).
+
+**Out of Scope**:
+- Performance optimization (this item measures; optimization is future work)
+- Memory profiling
+- Parallel/async pipeline execution
+
+**Success Criteria**:
+- [ ] Timing data captured for each of the ~8 pipeline steps, per document
+- [ ] Route distribution summarized per document (count of each `PageAction`)
+- [ ] Summary table produced for ~10 diverse PDFs covering clean, scanned, 2-column, table-heavy, equation-heavy, short, and long documents
+- [ ] Results identify which steps dominate wall-clock time (expected: Claude enhancement)
+- [ ] Profiling adds negligible overhead when disabled (no timing in default path, or < 1ms)
+
+**Dependencies**: Item 2 (image pipeline should be in place so profile reflects final pipeline shape)
+**Deliverables**: Timing instrumentation in pipeline.py, profile summary script/CLI flag, corpus run report
+
+---
+
+### Item 4: Equation Region Detection [2 days]
 
 **Type**: Research + Implementation (was IMGEXT-002)
 **Status**: Needs research
@@ -169,7 +212,7 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 
 ---
 
-### Item 4: OCR Integration [0.5 days]
+### Item 5: OCR Integration [0.5 days]
 
 **Type**: Implementation
 **Status**: Ready (findings from Docling deep-dive Phase 2B)
@@ -203,14 +246,16 @@ Item 1 (Quality: gate + routing + postprocess)
     v
 Item 2 (Unified image output: figures + table crops)
     │
+    ├──> Item 3 (Pipeline profiling & route instrumentation)
+    │
     v
-Item 3 (Equation region detection + crops)
+Item 4 (Equation region detection + crops)
 
-Item 4 (OCR) ← independent, can run in parallel with any item
+Item 5 (OCR) ← independent, can run in parallel with any item
 ```
 
-**Critical Path**: Item 1 → Item 2 → Item 3 (4 days)
-**Parallel**: Item 4 can start anytime
+**Critical Path**: Item 1 → Item 2 → Item 3 → Item 4 (6 days)
+**Parallel**: Item 5 can start anytime. Item 3 and Item 4 are independent of each other (both depend on Item 2 only).
 
 ---
 

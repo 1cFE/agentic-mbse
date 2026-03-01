@@ -243,9 +243,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
         for i, pdf in enumerate(corpus):
             # Only spend Claude budget on first PDF
             budget = args.budget if i == 0 else 0
-            results.append(
-                run_check(pdf, claude_model=args.model, claude_budget=budget)
-            )
+            results.append(run_check(pdf, claude_model=args.model, claude_budget=budget))
 
         check_result = merge_check_results(results)
 
@@ -328,6 +326,12 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 skipped += 1
                 continue
 
+            # Create output + images dirs early (pymupdf needs images dir
+            # to exist before write_images=True)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            images_dir = output_dir / "images"
+            images_dir.mkdir(exist_ok=True)
+
             config = PipelineConfig(
                 claude_budget_usd=args.budget,
                 claude_model=args.model,
@@ -336,6 +340,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 enable_docling=args.docling,
                 arxiv_html_path=Path(args.html_path) if args.html_path else None,
                 dry_run=args.dry_run,
+                extracted_images_dir=images_dir,
             )
             result = extract_pdf(doc, config=config)
 
@@ -344,19 +349,16 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 failed += 1
                 continue
 
-            # Write output artifacts (only on success — avoids blocking retry)
-            output_dir.mkdir(parents=True, exist_ok=True)
+            # Write output artifacts (output_dir already created above)
             (output_dir / "output.md").write_text(result.markdown)
-            (output_dir / "metrics.json").write_text(json.dumps(
-                result.metrics.to_dict(), indent=2
-            ))
-            (output_dir / "decisions.json").write_text(json.dumps(
-                [_decision_to_dict(d) for d in result.decisions], indent=2
-            ))
+            (output_dir / "metrics.json").write_text(json.dumps(result.metrics.to_dict(), indent=2))
+            (output_dir / "decisions.json").write_text(
+                json.dumps([_decision_to_dict(d) for d in result.decisions], indent=2)
+            )
             if result.cost:
-                (output_dir / "cost.json").write_text(json.dumps(
-                    [_cost_to_dict(c) for c in result.cost], indent=2
-                ))
+                (output_dir / "cost.json").write_text(
+                    json.dumps([_cost_to_dict(c) for c in result.cost], indent=2)
+                )
 
             _print_pipeline_summary(label, result)
             processed += 1
@@ -367,9 +369,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 if md_path.exists():
                     from agentic_mbse.extraction.index import generate_index
 
-                    idx = generate_index(
-                        md_path, summarize=args.summarize, force=args.force
-                    )
+                    idx = generate_index(md_path, summarize=args.summarize, force=args.force)
                     if idx:
                         print(f"        index → {idx.name}")
 

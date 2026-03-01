@@ -18,6 +18,8 @@ from agentic_mbse.extraction.claude_enhance import (
 )
 from agentic_mbse.extraction.metrics import compute_metrics
 from agentic_mbse.extraction.postprocess import (
+    normalize_image_paths,
+    promote_figure_captions,
     repair_ligatures,
     strip_page_numbers,
     strip_running_headers,
@@ -43,6 +45,7 @@ from agentic_mbse.extraction.tables import (
 from agentic_mbse.extraction.types import (
     CostRecord,
     DetectedTable,
+    ImageEntry,
     PageAction,
     PageAssessment,
     PageResult,
@@ -50,6 +53,46 @@ from agentic_mbse.extraction.types import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Image collector
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class ImageCollector:
+    """Accumulate images from temp directories and copy to output."""
+
+    output_dir: Path
+    entries: list[ImageEntry] = field(default_factory=list)
+
+    def add(self, source_path: Path, rel_name: str, kind: str, page_num: int) -> str:
+        """Register an image for persistence. Returns markdown ref."""
+        self.entries.append(ImageEntry(source_path, rel_name, kind, page_num))
+        return f"![](images/{rel_name})"
+
+    def persist(self) -> int:
+        """Copy all registered images to output_dir. Returns count."""
+        if not self.entries:
+            return 0
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        count = 0
+        for entry in self.entries:
+            dest = self.output_dir / entry.rel_name
+            try:
+                shutil.copy2(entry.source_path, dest)
+                count += 1
+            except (FileNotFoundError, OSError) as exc:
+                logger.warning("Failed to persist %s: %s", entry.rel_name, exc)
+        return count
+
+    @property
+    def total_image_count(self) -> int:
+        """Count all image files in output_dir (figures + collected)."""
+        if not self.output_dir.exists():
+            return 0
+        return sum(1 for f in self.output_dir.iterdir() if f.is_file())
 
 
 # ---------------------------------------------------------------------------
@@ -111,6 +154,7 @@ class PipelineConfig:
     arxiv_html_path: Path | None = None
     dry_run: bool = False
     page_image_dir: Path | None = None
+    extracted_images_dir: Path | None = None
     quality_gate: QualityGateConfig = field(default_factory=QualityGateConfig)
 
 
@@ -119,9 +163,7 @@ class PipelineConfig:
 # ---------------------------------------------------------------------------
 
 
-def _try_arxiv_shortcut(
-    pdf_path: Path, config: PipelineConfig
-) -> PipelineResult | None:
+def _try_arxiv_shortcut(pdf_path: Path, config: PipelineConfig) -> PipelineResult | None:
     """Attempt arXiv HTML shortcut via Pandoc.
 
     Returns PipelineResult with source="pandoc_arxiv" on success, None on failure.
@@ -160,9 +202,7 @@ def _try_arxiv_shortcut(
         return None
 
 
-def _try_detect_tables(
-    pdf_path: Path, config: PipelineConfig
-) -> dict[int, list[DetectedTable]]:
+def _try_detect_tables(pdf_path: Path, config: PipelineConfig) -> dict[int, list[DetectedTable]]:
     """Detect tables with error isolation. Returns {} on failure."""
     try:
         return detect_tables_ensemble(
@@ -175,15 +215,24 @@ def _try_detect_tables(
         return {}
 
 
-def _postprocess_final(markdown: str) -> str:
+def _postprocess_final(
+    markdown: str,
+    extracted_images_dir: Path | None = None,
+) -> str:
     """Apply deterministic cleanup to the final merged markdown.
 
     Selectively applies ONLY the safe str→str transforms from
     postprocess.py. Does NOT apply header promotion/demotion (FR-4).
+
+    When *extracted_images_dir* is provided, normalizes absolute image
+    paths to relative ``images/`` and promotes figure captions to alt-text.
     """
     markdown = strip_page_numbers(markdown)
     markdown = strip_running_headers(markdown)
     markdown = repair_ligatures(markdown)
+    if extracted_images_dir is not None:
+        markdown = normalize_image_paths(markdown, extracted_images_dir)
+        markdown = promote_figure_captions(markdown)
     return markdown
 
 
@@ -242,6 +291,11 @@ def extract_pdf(
     start_time = time.time()
     all_costs: list[CostRecord] = []
 
+    # Create collector if images dir is configured
+    collector: ImageCollector | None = None
+    if config.extracted_images_dir:
+        collector = ImageCollector(output_dir=config.extracted_images_dir)
+
     # ------------------------------------------------------------------
     # Step 1: arXiv shortcut (early return)
     # ------------------------------------------------------------------
@@ -254,7 +308,7 @@ def extract_pdf(
     # Step 2: Base extraction (only step that propagates errors)
     # ------------------------------------------------------------------
     try:
-        pages = extract_pages(pdf_path)
+        pages = extract_pages(pdf_path, extracted_images_dir=config.extracted_images_dir)
     except Exception as exc:
         return PipelineResult(
             markdown="",
@@ -275,16 +329,8 @@ def extract_pdf(
     # Step 3b: Table filtering and enhancement
     # ------------------------------------------------------------------
     # Pre-flight: check Claude availability once for both table and page loops
-    claude_available = bool(
-        config.enable_claude
-        and not config.dry_run
-        and shutil.which("claude")
-    )
-    if (
-        config.enable_claude
-        and not config.dry_run
-        and not claude_available
-    ):
+    claude_available = bool(config.enable_claude and not config.dry_run and shutil.which("claude"))
+    if config.enable_claude and not config.dry_run and not claude_available:
         logger.warning("Claude CLI not found on PATH; Claude enhancement disabled")
 
     table_claude_spend = 0.0
@@ -305,9 +351,7 @@ def extract_pdf(
                 remaining = config.claude_budget_usd - table_claude_spend
                 if remaining >= config.claude_cost_per_page_usd:
                     try:
-                        etable, ecost = enhance_table_with_claude(
-                            table, model=config.claude_model
-                        )
+                        etable, ecost = enhance_table_with_claude(table, model=config.claude_model)
                         ecost.page_num = page_num
                         ecost.table_index = i
                         all_costs.append(ecost)
@@ -321,7 +365,9 @@ def extract_pdf(
                     except Exception:
                         logger.warning(
                             "Table enhancement failed for page %d table %d, skipping",
-                            page_num, i, exc_info=True,
+                            page_num,
+                            i,
+                            exc_info=True,
                         )
 
             # No Claude enhancement (budget/dry_run/disabled/not needed/failed)
@@ -329,6 +375,14 @@ def extract_pdf(
                 # Can't use this table without Claude
                 continue
             enhanced.append(table)
+
+        # Register table crop images with the collector
+        if collector is not None:
+            for j, etbl in enumerate(enhanced):
+                if etbl.image_path is not None:
+                    rel_name = f"page_{page_num:03d}_table_{j}.png"
+                    img_ref = collector.add(etbl.image_path, rel_name, "table_crop", page_num)
+                    etbl.markdown = f"{img_ref}\n\n{etbl.markdown}"
 
         if enhanced:
             final_tables[page_num] = enhanced
@@ -381,7 +435,8 @@ def extract_pdf(
         if len(claude_pages) > 0:
             logger.info(
                 "Claude enhancement: processing %d pages (budget $%.2f remaining)",
-                len(claude_pages), remaining_budget,
+                len(claude_pages),
+                remaining_budget,
             )
         for page_num in sorted(claude_pages):
             page = pages[page_num]
@@ -401,9 +456,7 @@ def extract_pdf(
                 cost.page_num = page_num
                 all_costs.append(cost)
 
-                accept, reason = validate_claude_output(
-                    claude_md, page.markdown, page_num
-                )
+                accept, reason = validate_claude_output(claude_md, page.markdown, page_num)
                 if accept:
                     claude_results[page_num] = claude_md
                 else:
@@ -411,7 +464,8 @@ def extract_pdf(
             except Exception:
                 logger.warning(
                     "Claude page enhancement failed for page %d, skipping",
-                    page_num, exc_info=True,
+                    page_num,
+                    exc_info=True,
                 )
     elif claude_pages and not claude_available:
         logger.warning(
@@ -429,11 +483,14 @@ def extract_pdf(
             failed = sorted(claude_pages - set(claude_results.keys()))
             logger.warning(
                 "Claude enhancement: %d/%d pages succeeded (pages %s failed)",
-                succeeded, total, failed,
+                succeeded,
+                total,
+                failed,
             )
         else:
             logger.warning(
-                "Claude enhancement: 0/%d pages succeeded", total,
+                "Claude enhancement: 0/%d pages succeeded",
+                total,
             )
 
     # ------------------------------------------------------------------
@@ -479,8 +536,13 @@ def extract_pdf(
     # ------------------------------------------------------------------
     # Step 7b: Postprocess cleanup (running headers, page numbers, ligatures)
     # ------------------------------------------------------------------
+    if collector is not None:
+        collector.persist()
+
     final_markdown = "\n\n".join(merged_pages)
-    final_markdown = _postprocess_final(final_markdown)
+    final_markdown = _postprocess_final(
+        final_markdown, extracted_images_dir=config.extracted_images_dir
+    )
 
     # ------------------------------------------------------------------
     # Step 8: Assemble final result
@@ -488,6 +550,7 @@ def extract_pdf(
     elapsed = time.time() - start_time
     metrics = compute_metrics(final_markdown, elapsed=elapsed)
     total_cost = sum(c.cost_usd for c in all_costs)
+    image_count = collector.total_image_count if collector else 0
 
     return PipelineResult(
         markdown=final_markdown,
@@ -499,4 +562,5 @@ def extract_pdf(
         elapsed_seconds=elapsed,
         claude_pages_intended=len(claude_pages),
         claude_pages_succeeded=len(claude_results),
+        image_count=image_count,
     )
