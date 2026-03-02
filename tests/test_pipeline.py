@@ -1429,3 +1429,75 @@ class TestTableCropPersistence:
         assert result.error is None
         assert result.image_count == 0
         assert "Hello" in result.markdown
+
+
+# ---------------------------------------------------------------------------
+# TestPipelineProfiling
+# ---------------------------------------------------------------------------
+
+
+class TestPipelineProfiling:
+    def test_profile_populated_when_enabled(self):
+        """All 11 step fields >= 0.0 when profile=True."""
+        from dataclasses import asdict
+
+        config = PipelineConfig(enable_claude=False, profile=True)
+        with _patch_pandoc_unavailable(), _patch_base(), _patch_tables():
+            result = extract_pdf(Path("/fake.pdf"), config=config)
+
+        assert result.profile is not None
+        profile_dict = asdict(result.profile)
+        assert len(profile_dict) == 11
+        for name, value in profile_dict.items():
+            assert value >= 0.0, f"{name} should be >= 0.0, got {value}"
+        # Sum of step timings should not wildly exceed elapsed
+        total = sum(profile_dict.values())
+        assert total <= result.elapsed_seconds + 0.1
+
+    def test_profile_none_when_disabled(self):
+        """profile=False (default) returns None."""
+        with _patch_pandoc_unavailable(), _patch_base(), _patch_tables():
+            result = extract_pdf(Path("/fake.pdf"))
+        assert result.profile is None
+
+    def test_profile_arxiv_early_return(self):
+        """arXiv shortcut produces partial profile with only arxiv_shortcut > 0."""
+        from dataclasses import asdict
+
+        config = PipelineConfig(profile=True)
+        with (
+            _patch_pandoc_available(),
+            patch(f"{_PANDOC}.detect_arxiv_id", return_value="2301.12345"),
+            patch(
+                f"{_PANDOC}.check_arxiv_html",
+                return_value="https://arxiv.org/html/2301.12345",
+            ),
+            patch(
+                f"{_PANDOC}.convert_arxiv_html",
+                return_value="# arXiv Paper\n\nContent.",
+            ),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), config=config)
+
+        assert result.source == "pandoc_arxiv"
+        assert result.profile is not None
+        assert result.profile.arxiv_shortcut >= 0.0
+        # All other steps should be 0.0 (never ran)
+        d = asdict(result.profile)
+        for name, value in d.items():
+            if name != "arxiv_shortcut":
+                assert value == 0.0, f"{name} should be 0.0 on arXiv shortcut"
+
+    def test_profile_error_early_return(self):
+        """extract_pages failure produces partial profile with base_extraction timing."""
+        config = PipelineConfig(profile=True)
+        with (
+            _patch_pandoc_unavailable(),
+            patch(f"{_P}.extract_pages", side_effect=RuntimeError("corrupt PDF")),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), config=config)
+
+        assert result.error is not None
+        assert result.profile is not None
+        assert result.profile.arxiv_shortcut >= 0.0
+        assert result.profile.base_extraction >= 0.0

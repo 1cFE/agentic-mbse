@@ -49,6 +49,7 @@ from agentic_mbse.extraction.types import (
     PageAction,
     PageAssessment,
     PageResult,
+    PipelineProfile,
     PipelineResult,
 )
 
@@ -156,6 +157,7 @@ class PipelineConfig:
     page_image_dir: Path | None = None
     extracted_images_dir: Path | None = None
     quality_gate: QualityGateConfig = field(default_factory=QualityGateConfig)
+    profile: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -289,6 +291,7 @@ def extract_pdf(
         config = PipelineConfig()
 
     start_time = time.time()
+    prof = PipelineProfile() if config.profile else None
     all_costs: list[CostRecord] = []
 
     # Create collector if images dir is configured
@@ -299,35 +302,53 @@ def extract_pdf(
     # ------------------------------------------------------------------
     # Step 1: arXiv shortcut (early return)
     # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
     arxiv_result = _try_arxiv_shortcut(pdf_path, config)
+    if prof:
+        prof.arxiv_shortcut = time.perf_counter() - _t
     if arxiv_result is not None:
         arxiv_result.elapsed_seconds = time.time() - start_time
+        arxiv_result.profile = prof
         return arxiv_result
 
     # ------------------------------------------------------------------
     # Step 2: Base extraction (only step that propagates errors)
     # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
     try:
         pages = extract_pages(pdf_path, extracted_images_dir=config.extracted_images_dir)
     except Exception as exc:
+        if prof:
+            prof.base_extraction = time.perf_counter() - _t
         return PipelineResult(
             markdown="",
             metrics=compute_metrics(""),
             error=str(exc),
             elapsed_seconds=time.time() - start_time,
+            profile=prof,
         )
+    if prof:
+        prof.base_extraction = time.perf_counter() - _t
 
     # ------------------------------------------------------------------
     # Step 3: Ensemble table detection (error-isolated)
     # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
     if config.enable_tables:
         detected_tables = _try_detect_tables(pdf_path, config)
     else:
         detected_tables = {}
+    if prof:
+        prof.table_detection = time.perf_counter() - _t
 
     # ------------------------------------------------------------------
     # Step 3b: Table filtering and enhancement
     # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
     # Pre-flight: check Claude availability once for both table and page loops
     claude_available = bool(config.enable_claude and not config.dry_run and shutil.which("claude"))
     if config.enable_claude and not config.dry_run and not claude_available:
@@ -387,9 +408,14 @@ def extract_pdf(
         if enhanced:
             final_tables[page_num] = enhanced
 
+    if prof:
+        prof.table_filter_enhance = time.perf_counter() - _t
+
     # ------------------------------------------------------------------
     # Step 4: Quality gate per page + document-level heading anomaly
     # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
     assessments: list[PageAssessment] = []
     for page in pages:
         assessment = assess_page(page.markdown, page.page_num, config.quality_gate)
@@ -405,30 +431,43 @@ def extract_pdf(
             if a.needs_claude:
                 a.severity += config.quality_gate.heading_anomaly_boost
 
+    if prof:
+        prof.quality_gate = time.perf_counter() - _t
+
     # ------------------------------------------------------------------
     # Step 4b: GMFT cross-reference (boost pages where GMFT found
     #          tables that pymupdf missed)
     # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
     _cross_reference_gmft(
         assessments,
         pages,
         final_tables,
         severity_boost=config.quality_gate.gmft_xref_severity_boost,
     )
+    if prof:
+        prof.gmft_xref = time.perf_counter() - _t
 
     # ------------------------------------------------------------------
     # Step 5: Budget allocation (remaining budget after table spend)
     # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
     remaining_budget = max(0.0, config.claude_budget_usd - table_claude_spend)
     page_budget = EnhancerBudget(
         total_usd=remaining_budget,
         cost_per_page_usd=config.claude_cost_per_page_usd,
     )
     claude_pages = allocate_budget(assessments, page_budget)
+    if prof:
+        prof.budget_allocation = time.perf_counter() - _t
 
     # ------------------------------------------------------------------
     # Step 6: Claude page enhancement
     # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
     claude_results: dict[int, str] = {}  # page_num -> claude markdown
 
     if claude_available and claude_pages:
@@ -493,9 +532,14 @@ def extract_pdf(
                 total,
             )
 
+    if prof:
+        prof.claude_enhancement = time.perf_counter() - _t
+
     # ------------------------------------------------------------------
     # Step 7: Route and merge per page
     # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
     decisions = []
     merged_pages: list[str] = []
 
@@ -533,9 +577,14 @@ def extract_pdf(
             # KEEP
             merged_pages.append(page.markdown)
 
+    if prof:
+        prof.route_merge = time.perf_counter() - _t
+
     # ------------------------------------------------------------------
     # Step 7b: Postprocess cleanup (running headers, page numbers, ligatures)
     # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
     if collector is not None:
         collector.persist()
 
@@ -543,14 +592,20 @@ def extract_pdf(
     final_markdown = _postprocess_final(
         final_markdown, extracted_images_dir=config.extracted_images_dir
     )
+    if prof:
+        prof.postprocess = time.perf_counter() - _t
 
     # ------------------------------------------------------------------
     # Step 8: Assemble final result
     # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
     elapsed = time.time() - start_time
     metrics = compute_metrics(final_markdown, elapsed=elapsed)
     total_cost = sum(c.cost_usd for c in all_costs)
     image_count = collector.total_image_count if collector else 0
+    if prof:
+        prof.assemble_result = time.perf_counter() - _t
 
     return PipelineResult(
         markdown=final_markdown,
@@ -563,4 +618,5 @@ def extract_pdf(
         claude_pages_intended=len(claude_pages),
         claude_pages_succeeded=len(claude_results),
         image_count=image_count,
+        profile=prof,
     )

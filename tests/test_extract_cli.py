@@ -40,6 +40,7 @@ class MockArgs:
             model="sonnet",
             html_path=None,
             dry_run=False,
+            profile=False,
             check=False,
             check_json=False,
         )

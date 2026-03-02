@@ -78,6 +78,23 @@ class CostRecord:
 
 
 @dataclass
+class PipelineProfile:
+    """Per-step wall-clock timing from a pipeline run."""
+
+    arxiv_shortcut: float = 0.0
+    base_extraction: float = 0.0
+    table_detection: float = 0.0
+    table_filter_enhance: float = 0.0
+    quality_gate: float = 0.0
+    gmft_xref: float = 0.0
+    budget_allocation: float = 0.0
+    claude_enhancement: float = 0.0
+    route_merge: float = 0.0
+    postprocess: float = 0.0
+    assemble_result: float = 0.0
+
+
+@dataclass
 class PipelineResult:
     markdown: str
     metrics: ExtractionMetrics
@@ -90,3 +107,4 @@ class PipelineResult:
     claude_pages_intended: int = 0
     claude_pages_succeeded: int = 0
     image_count: int = 0
+    profile: PipelineProfile | None = None

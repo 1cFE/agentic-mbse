@@ -8,6 +8,10 @@ import shutil
 import sys
 import warnings
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from agentic_mbse.extraction.profile import ProfileEntry
 
 from agentic_mbse.extraction.base import (
     ExtractionResult,
@@ -313,6 +317,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
     processed = 0
     skipped = 0
     failed = 0
+    profile_entries: list[ProfileEntry] = []
 
     for doc in docs:
         output_dir = get_output_dir(doc, output_base=output_base)
@@ -341,6 +346,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 arxiv_html_path=Path(args.html_path) if args.html_path else None,
                 dry_run=args.dry_run,
                 extracted_images_dir=images_dir,
+                profile=args.profile,
             )
             result = extract_pdf(doc, config=config)
 
@@ -358,6 +364,26 @@ def cmd_extract(args: argparse.Namespace) -> int:
             if result.cost:
                 (output_dir / "cost.json").write_text(
                     json.dumps([_cost_to_dict(c) for c in result.cost], indent=2)
+                )
+
+            if args.profile and result.profile:
+                from agentic_mbse.extraction.profile import ProfileEntry, profile_to_dict
+
+                profile_data = profile_to_dict(
+                    result.profile,
+                    result.decisions,
+                    page_count=len(result.decisions),
+                    elapsed_seconds=result.elapsed_seconds,
+                )
+                (output_dir / "profile.json").write_text(json.dumps(profile_data, indent=2))
+                profile_entries.append(
+                    ProfileEntry(
+                        document=doc.stem,
+                        pages=len(result.decisions),
+                        route_dist=profile_data["route_distribution"],
+                        elapsed=result.elapsed_seconds,
+                        profile=result.profile,
+                    )
                 )
 
             _print_pipeline_summary(label, result)
@@ -437,6 +463,13 @@ def cmd_extract(args: argparse.Namespace) -> int:
         else:
             print(f"  FAIL  {label}: {docx_result.error}")
             failed += 1
+
+    # Profile summary table
+    if args.profile and profile_entries:
+        from agentic_mbse.extraction.profile import format_profile_table
+
+        print(file=sys.stderr)
+        print(format_profile_table(profile_entries), file=sys.stderr)
 
     # Summary line
     print()
@@ -534,6 +567,11 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         "--dry-run",
         action="store_true",
         help="Show quality gate decisions without calling Claude",
+    )
+    p.add_argument(
+        "--profile",
+        action="store_true",
+        help="Enable per-step timing and route distribution profiling",
     )
     p.add_argument(
         "--model",

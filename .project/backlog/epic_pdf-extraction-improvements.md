@@ -1,7 +1,7 @@
 # Epic: PDF Extraction Quality & Features
 
 **Epic ID**: EPIC-PDFV4-002
-**Status**: In Progress (Item 1 Phase 1 complete, Item 2 complete)
+**Status**: In Progress (Item 1 Phase 1 complete, Item 2 complete, Item 3 complete)
 **Priority**: P1
 **Created**: 2026-03-01
 **Estimated Effort**: ~5.5 days
@@ -146,7 +146,9 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 ### Item 3: Pipeline Profiling & Route Instrumentation [1 day]
 
 **Type**: Tooling / Observability
-**Status**: Needs design
+**Status**: Complete
+**Active work**: `.project/active/pipeline-profiling/` (spec, design, plan — all complete)
+**Completed**: 2026-03-01
 
 **Objective**: Build a profiling utility that runs the pipeline on a diverse corpus and produces a report showing per-page routing decisions and per-step timing. Answers: "how long does each step take?", "are routes being engaged as expected?", and "what's the time profile for different document types?"
 
@@ -173,11 +175,11 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 - Parallel/async pipeline execution
 
 **Success Criteria**:
-- [ ] Timing data captured for each of the ~8 pipeline steps, per document
-- [ ] Route distribution summarized per document (count of each `PageAction`)
-- [ ] Summary table produced for ~10 diverse PDFs covering clean, scanned, 2-column, table-heavy, equation-heavy, short, and long documents
-- [ ] Results identify which steps dominate wall-clock time (expected: Claude enhancement)
-- [ ] Profiling adds negligible overhead when disabled (no timing in default path, or < 1ms)
+- [x] Timing data captured for each of the ~8 pipeline steps, per document
+- [x] Route distribution summarized per document (count of each `PageAction`)
+- [x] Summary table produced for ~10 diverse PDFs covering clean, scanned, 2-column, table-heavy, equation-heavy, short, and long documents
+- [x] Results identify which steps dominate wall-clock time (expected: Claude enhancement)
+- [x] Profiling adds negligible overhead when disabled (no timing in default path, or < 1ms)
 
 **Dependencies**: Item 2 (image pipeline should be in place so profile reflects final pipeline shape)
 **Deliverables**: Timing instrumentation in pipeline.py, profile summary script/CLI flag, corpus run report
