@@ -97,6 +97,18 @@ uv run agentic-mbse init [path]
 uv run agentic-mbse install-commands --list
 ```
 
+### Extract commands inside Claude Code
+
+Commands that invoke the Claude CLI as a subprocess (`extract --check`, `extract --budget > 0`) may produce blank output when run from Claude Code's Bash tool. The Claude CLI's status line rendering writes directly to `/dev/tty`, which can interfere with output capture.
+
+**Workaround:** redirect to a temp file and read it back:
+```bash
+uv run agentic-mbse extract --check paper.pdf > /tmp/extract-out.txt 2>&1
+cat /tmp/extract-out.txt
+```
+
+This only affects agent-invoked commands. Running the same commands directly in a terminal works normally.
+
 ## Architecture
 
 ### Core Modules (`src/agentic_mbse/`)

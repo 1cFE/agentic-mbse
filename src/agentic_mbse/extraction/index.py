@@ -242,6 +242,9 @@ def generate_summary(title: str, content: str, section_num: str) -> str:
             text=True,
             check=True,
             timeout=60,
+            # Detach child from controlling terminal so claude CLI's status
+            # line rendering (writes to /dev/tty) can't corrupt parent output.
+            start_new_session=True,
         )
         return " ".join(result.stdout.strip().split())
     except subprocess.CalledProcessError as exc:

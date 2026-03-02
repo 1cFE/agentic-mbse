@@ -107,6 +107,9 @@ def invoke_claude(
             text=True,
             timeout=timeout,
             env=env,
+            # Detach child from controlling terminal so claude CLI's status
+            # line rendering (writes to /dev/tty) can't corrupt parent output.
+            start_new_session=True,
         )
     except subprocess.TimeoutExpired:
         raise RuntimeError(f"claude -p timed out after {timeout}s")

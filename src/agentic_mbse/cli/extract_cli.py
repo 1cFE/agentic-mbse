@@ -493,9 +493,19 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
     p = subparsers.add_parser(
         "extract",
         help="Extract PDF/DOCX documents to structured markdown",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         description=(
             "Convert PDF and DOCX files into structured markdown with "
             "images, metadata, and optional section indexes."
+        ),
+        epilog=(
+            "Claude Code agent note:\n"
+            "  Commands that invoke Claude (--check, --budget > 0) write to\n"
+            "  /dev/tty for status rendering, which can blank agent-captured\n"
+            "  output. Workaround: redirect to a file and read it back:\n"
+            "\n"
+            "    uv run agentic-mbse extract --check f.pdf > /tmp/out.txt 2>&1\n"
+            "    cat /tmp/out.txt"
         ),
     )
     p.add_argument(
