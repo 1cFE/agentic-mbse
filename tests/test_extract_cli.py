@@ -36,6 +36,7 @@ class MockArgs:
             budget=2.0,
             no_tables=False,
             no_img2table=False,
+            no_equations=False,
             docling=False,
             model="sonnet",
             html_path=None,
@@ -269,6 +270,16 @@ class TestCmdExtractPdf:
             cmd_extract(args)
         _, kwargs = mock_pipeline.call_args
         assert kwargs["config"].enable_img2table is False
+
+    def test_pdf_no_equations_flag(self, tmp_path):
+        """--no-equations maps to enable_equations=False."""
+        args = self._make_args(tmp_path, no_equations=True)
+        mock_result = _make_pipeline_result()
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+            cmd_extract(args)
+        _, kwargs = mock_pipeline.call_args
+        assert kwargs["config"].enable_equations is False
 
     def test_pdf_docling_flag(self, tmp_path):
         """--docling maps to enable_docling=True."""

@@ -17,6 +17,15 @@ class ImageEntry:
     page_num: int
 
 
+@dataclass
+class DetectedEquation:
+    confidence: float
+    bbox: tuple[float, float, float, float] | None = None  # (l, t, r, b) in pixels at render DPI
+    image_path: Path | None = None
+    y_fraction: float = 0.0  # vertical center as fraction of page height (0=top, 1=bottom)
+    is_display: bool = True  # always True — model at threshold 0.5 returns only display equations
+
+
 class PageAction(str, Enum):
     KEEP = "keep"
     GMFT_REPLACE = "gmft_replace"
@@ -85,6 +94,7 @@ class PipelineProfile:
     base_extraction: float = 0.0
     table_detection: float = 0.0
     table_filter_enhance: float = 0.0
+    equation_detection: float = 0.0
     quality_gate: float = 0.0
     gmft_xref: float = 0.0
     budget_allocation: float = 0.0

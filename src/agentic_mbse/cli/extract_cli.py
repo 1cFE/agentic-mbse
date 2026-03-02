@@ -343,6 +343,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 enable_tables=not args.no_tables,
                 enable_img2table=not args.no_img2table,
                 enable_docling=args.docling,
+                enable_equations=not args.no_equations,
                 arxiv_html_path=Path(args.html_path) if args.html_path else None,
                 dry_run=args.dry_run,
                 extracted_images_dir=images_dir,
@@ -567,6 +568,11 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         "--no-img2table",
         action="store_true",
         help="Disable Img2Table second-pass table detection",
+    )
+    p.add_argument(
+        "--no-equations",
+        action="store_true",
+        help="Disable equation region detection",
     )
     p.add_argument(
         "--docling",

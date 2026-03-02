@@ -237,6 +237,7 @@ class _MockArgs:
             budget=0,
             no_tables=False,
             no_img2table=False,
+            no_equations=False,
             docling=False,
             model="sonnet",
             html_path=None,

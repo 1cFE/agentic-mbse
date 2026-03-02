@@ -16,6 +16,7 @@ from agentic_mbse.extraction.claude_enhance import (
     extract_page_with_claude,
     validate_claude_output,
 )
+from agentic_mbse.extraction.equations import detect_equations
 from agentic_mbse.extraction.metrics import compute_metrics
 from agentic_mbse.extraction.postprocess import (
     normalize_image_paths,
@@ -44,6 +45,7 @@ from agentic_mbse.extraction.tables import (
 )
 from agentic_mbse.extraction.types import (
     CostRecord,
+    DetectedEquation,
     DetectedTable,
     ImageEntry,
     PageAction,
@@ -151,6 +153,7 @@ class PipelineConfig:
     enable_tables: bool = True
     enable_img2table: bool = True
     enable_docling: bool = False
+    enable_equations: bool = True
     enable_claude: bool = True
     arxiv_html_path: Path | None = None
     dry_run: bool = False
@@ -215,6 +218,57 @@ def _try_detect_tables(pdf_path: Path, config: PipelineConfig) -> dict[int, list
     except Exception:
         logger.warning("Table detection failed, continuing without tables", exc_info=True)
         return {}
+
+
+def _try_detect_equations(pdf_path: Path, config: PipelineConfig) -> dict[int, list[DetectedEquation]]:
+    """Detect equations with error isolation. Returns {} on failure."""
+    try:
+        return detect_equations(pdf_path)
+    except Exception:
+        logger.warning("Equation detection failed, continuing without equations", exc_info=True)
+        return {}
+
+
+def _insert_equation_refs(
+    page_md: str,
+    equations: list[DetectedEquation],
+    page_num: int,
+    collector: ImageCollector,
+) -> str:
+    """Insert equation crop image references into page markdown.
+
+    Places each equation's image reference at the line closest to its
+    vertical position on the original page, preferring insertion after
+    blank lines to avoid breaking paragraphs.
+    """
+    lines = page_md.split("\n")
+    if not lines:
+        return page_md
+
+    # Process equations sorted by y_fraction (top to bottom).
+    # Track insertions so later offsets account for earlier inserts.
+    offset = 0
+    for eq_idx, eq in enumerate(sorted(equations, key=lambda e: e.y_fraction)):
+        if eq.image_path is None:
+            continue
+
+        rel_name = f"page_{page_num:03d}_eq_{eq_idx}.png"
+        ref = collector.add(eq.image_path, rel_name, "equation_crop", page_num)
+
+        target = int(eq.y_fraction * len(lines)) + offset
+        target = max(0, min(target, len(lines) - 1))
+
+        # Search forward from target for nearest blank line (within 5 lines)
+        insert_at = target
+        for scan in range(target, min(target + 5, len(lines))):
+            if not lines[scan].strip():
+                insert_at = scan
+                break
+
+        lines.insert(insert_at + 1, ref)
+        offset += 1
+
+    return "\n".join(lines)
 
 
 def _postprocess_final(
@@ -412,6 +466,17 @@ def extract_pdf(
         prof.table_filter_enhance = time.perf_counter() - _t
 
     # ------------------------------------------------------------------
+    # Step 3c: Equation detection (error-isolated)
+    # ------------------------------------------------------------------
+    if prof:
+        _t = time.perf_counter()
+    detected_equations: dict[int, list[DetectedEquation]] = {}
+    if config.enable_equations and config.extracted_images_dir:
+        detected_equations = _try_detect_equations(pdf_path, config)
+    if prof:
+        prof.equation_detection = time.perf_counter() - _t
+
+    # ------------------------------------------------------------------
     # Step 4: Quality gate per page + document-level heading anomaly
     # ------------------------------------------------------------------
     if prof:
@@ -559,23 +624,29 @@ def extract_pdf(
 
         # Apply the decision
         if decision.action == PageAction.CLAUDE_REPLACE and pnum in claude_results:
-            merged_pages.append(claude_results[pnum])
+            page_md = claude_results[pnum]
         elif decision.action == PageAction.CLAUDE_REPLACE and pnum not in claude_results:
             # Claude was intended but failed/unavailable — record the truth
             decision.action = PageAction.KEEP
             decision.reasons.append("Claude enhancement unavailable — kept original")
-            merged_pages.append(page.markdown)
+            page_md = page.markdown
         elif decision.action == PageAction.GMFT_REPLACE and page_tables:
-            merged_pages.append(replace_tables(page.markdown, page_tables))
+            page_md = replace_tables(page.markdown, page_tables)
         elif decision.action == PageAction.GMFT_APPEND and page_tables:
-            merged_pages.append(insert_tables_at_end(page.markdown, page_tables))
+            page_md = insert_tables_at_end(page.markdown, page_tables)
         elif decision.action == PageAction.STRIP_FALSE:
-            merged_pages.append(strip_pipe_tables(page.markdown))
+            page_md = strip_pipe_tables(page.markdown)
         elif decision.action == PageAction.STRIP_BROKEN:
-            merged_pages.append(strip_pipe_tables(page.markdown))
+            page_md = strip_pipe_tables(page.markdown)
         else:
             # KEEP
-            merged_pages.append(page.markdown)
+            page_md = page.markdown
+
+        # Insert equation crop references
+        if collector is not None and pnum in detected_equations:
+            page_md = _insert_equation_refs(page_md, detected_equations[pnum], pnum, collector)
+
+        merged_pages.append(page_md)
 
     if prof:
         prof.route_merge = time.perf_counter() - _t

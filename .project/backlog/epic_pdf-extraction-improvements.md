@@ -1,7 +1,7 @@
 # Epic: PDF Extraction Quality & Features
 
 **Epic ID**: EPIC-PDFV4-002
-**Status**: In Progress (Item 1 Phase 1 complete, Item 2 complete, Item 3 complete)
+**Status**: In Progress (Item 1 Phase 1 complete, Items 2-4 complete)
 **Priority**: P1
 **Created**: 2026-03-01
 **Estimated Effort**: ~5.5 days
@@ -189,28 +189,28 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 ### Item 4: Equation Region Detection [2 days]
 
 **Type**: Research + Implementation (was IMGEXT-002)
-**Status**: Needs research
+**Status**: Complete
+**Active work**: `.project/active/equation-region-detection/` (spec, design, plan, learning tests — all complete)
+**Completed**: 2026-03-01
 
 **Objective**: Detect equation regions on PDF pages, crop as images, feed into the image collector.
 
+**Approach**: Docling's `LayoutPredictor` (docling-ibm-models) with confidence threshold 0.5, NMS at IoU 0.3. Research evaluated pymupdf block classification, pix2tex, YOLO-based detectors, and Docling's layout model — LayoutPredictor won on accuracy (100% recall/precision on test corpus) and zero additional dependencies.
+
 **Scope**:
-1. **Research** (~0.5 day): evaluate equation detection approaches:
-   - pymupdf block classification (`block["type"] == 1` for images — do equations get classified?)
-   - pix2tex / LaTeX-OCR region proposals
-   - YOLO-based layout detection (e.g., publaynet, doclaynet models)
-   - Docling's layout model (already installed — does it detect equation regions?)
-2. **Implement detector** (~1 day): build `detect_equations()` returning equation bounding boxes + crops
-3. **Integrate** (~0.5 day): plug into image collector (step 3c), associate crops with LaTeX transcription in output
+1. ~~**Research** (~0.5 day)~~ — **DONE**: LayoutPredictor selected, learning tests validated thresholds
+2. ~~**Implement detector** (~1 day)~~ — **DONE**: `equations.py` with `detect_equations()`, NMS, crop saving
+3. ~~**Integrate** (~0.5 day)~~ — **DONE**: Pipeline Step 3c, `_insert_equation_refs()` inline placement, `--no-equations` CLI flag
 
 **Success Criteria**:
-- [ ] Display equations detected on math-heavy corpus pages (hawker_2020, araiinejad TEA)
-- [ ] Equation crops saved to `images/` via collector
-- [ ] Crops associated with corresponding LaTeX in output markdown
-- [ ] No false positives on non-equation content
-- [ ] Graceful degradation if detector dependencies missing
+- [x] Display equations detected on math-heavy corpus pages (hawker_2020: 21/21, paischer_2025: 23/23)
+- [x] Equation crops saved to `images/` via collector
+- [x] Crops placed inline near corresponding equation text in output markdown
+- [x] No false positives on non-equation content (hansen_2025: 0 detections)
+- [x] Graceful degradation if detector dependencies missing (ImportError returns {})
 
 **Dependencies**: Item 2 (image collector infrastructure)
-**Deliverables**: New equation detection module, integration into pipeline, tests
+**Deliverables**: `equations.py` detector module, pipeline integration, `--no-equations` CLI flag, 17 new tests
 
 ---
 

@@ -1438,7 +1438,7 @@ class TestTableCropPersistence:
 
 class TestPipelineProfiling:
     def test_profile_populated_when_enabled(self):
-        """All 11 step fields >= 0.0 when profile=True."""
+        """All 12 step fields >= 0.0 when profile=True."""
         from dataclasses import asdict
 
         config = PipelineConfig(enable_claude=False, profile=True)
@@ -1447,7 +1447,7 @@ class TestPipelineProfiling:
 
         assert result.profile is not None
         profile_dict = asdict(result.profile)
-        assert len(profile_dict) == 11
+        assert len(profile_dict) == 12
         for name, value in profile_dict.items():
             assert value >= 0.0, f"{name} should be >= 0.0, got {value}"
         # Sum of step timings should not wildly exceed elapsed
@@ -1501,3 +1501,146 @@ class TestPipelineProfiling:
         assert result.profile is not None
         assert result.profile.arxiv_shortcut >= 0.0
         assert result.profile.base_extraction >= 0.0
+
+
+# ---------------------------------------------------------------------------
+# Equation detection helpers
+# ---------------------------------------------------------------------------
+
+
+def _patch_equations(equations: dict | None = None):
+    """Patch detect_equations in pipeline module."""
+    if equations is None:
+        equations = {}
+    return patch(f"{_P}.detect_equations", return_value=equations)
+
+
+# ---------------------------------------------------------------------------
+# TestEquationDetection
+# ---------------------------------------------------------------------------
+
+
+class TestEquationDetection:
+    def test_disabled_skips_detection(self):
+        """enable_equations=False → detect_equations never called."""
+        config = PipelineConfig(enable_equations=False, extracted_images_dir=Path("/tmp/img"))
+        with _patch_pandoc_unavailable(), _patch_base(), _patch_tables(), _patch_equations() as mock_eq:
+            extract_pdf(Path("/fake.pdf"), config=config)
+            mock_eq.assert_not_called()
+
+    def test_no_images_dir_skips_detection(self):
+        """extracted_images_dir=None → detect_equations never called."""
+        config = PipelineConfig(enable_equations=True, extracted_images_dir=None)
+        with _patch_pandoc_unavailable(), _patch_base(), _patch_tables(), _patch_equations() as mock_eq:
+            extract_pdf(Path("/fake.pdf"), config=config)
+            mock_eq.assert_not_called()
+
+    def test_error_isolated(self):
+        """detect_equations raises → pipeline completes without equations."""
+        config = PipelineConfig(extracted_images_dir=Path("/tmp/img"))
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(),
+            _patch_tables(),
+            patch(f"{_P}.detect_equations", side_effect=RuntimeError("model failed")),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), config=config)
+        assert result.error is None
+        assert result.markdown  # pipeline still produces output
+
+    def test_crops_registered_with_collector(self, tmp_path):
+        """Mock detector returns 1 equation → collector has equation_crop entry."""
+        from agentic_mbse.extraction.types import DetectedEquation
+
+        img_file = tmp_path / "eq.png"
+        img_file.write_bytes(b"fake png")
+
+        eq = DetectedEquation(confidence=0.95, image_path=img_file, y_fraction=0.5)
+        config = PipelineConfig(extracted_images_dir=tmp_path / "images")
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base(),
+            _patch_tables(),
+            _patch_equations({0: [eq]}),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), config=config)
+
+        assert result.error is None
+        assert "_eq_" in result.markdown
+
+    def test_refs_in_merged_markdown(self, tmp_path):
+        """Verify output contains equation image reference."""
+        from agentic_mbse.extraction.types import DetectedEquation
+
+        img_file = tmp_path / "eq.png"
+        img_file.write_bytes(b"fake png")
+
+        eq = DetectedEquation(confidence=0.9, image_path=img_file, y_fraction=0.3)
+        config = PipelineConfig(extracted_images_dir=tmp_path / "images")
+
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base([_page(0, "# Title\n\nSome text\n\nMore text\n\nEnd")]),
+            _patch_tables(),
+            _patch_equations({0: [eq]}),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), config=config)
+
+        assert "![](images/page_000_eq_0.png)" in result.markdown
+
+
+class TestInsertEquationRefs:
+    def test_inserts_at_blank_line(self, tmp_path):
+        """Equation ref inserted after nearest blank line to target."""
+        from agentic_mbse.extraction.pipeline import ImageCollector, _insert_equation_refs
+        from agentic_mbse.extraction.types import DetectedEquation
+
+        img_file = tmp_path / "eq.png"
+        img_file.write_bytes(b"fake")
+
+        collector = ImageCollector(output_dir=tmp_path / "images")
+        eq = DetectedEquation(confidence=0.9, image_path=img_file, y_fraction=0.5)
+        page_md = "Line 1\nLine 2\n\nLine 4\nLine 5"
+
+        result = _insert_equation_refs(page_md, [eq], 0, collector)
+        lines = result.split("\n")
+        # Should insert after the blank line (line index 2)
+        assert any("_eq_" in line for line in lines)
+        assert len(collector.entries) == 1
+        assert collector.entries[0].kind == "equation_crop"
+
+    def test_multiple_equations_ordered(self, tmp_path):
+        """Multiple equations inserted top-to-bottom without disrupting each other."""
+        from agentic_mbse.extraction.pipeline import ImageCollector, _insert_equation_refs
+        from agentic_mbse.extraction.types import DetectedEquation
+
+        img1 = tmp_path / "eq1.png"
+        img1.write_bytes(b"fake")
+        img2 = tmp_path / "eq2.png"
+        img2.write_bytes(b"fake")
+
+        collector = ImageCollector(output_dir=tmp_path / "images")
+        eqs = [
+            DetectedEquation(confidence=0.9, image_path=img2, y_fraction=0.8),
+            DetectedEquation(confidence=0.9, image_path=img1, y_fraction=0.2),
+        ]
+        page_md = "Line 1\n\nLine 3\nLine 4\n\nLine 6\nLine 7\n\nLine 9"
+
+        result = _insert_equation_refs(page_md, eqs, 0, collector)
+        assert result.count("_eq_") == 2
+        # eq_0 should come before eq_1 in output (sorted by y_fraction)
+        assert result.index("eq_0") < result.index("eq_1")
+
+    def test_no_image_path_skipped(self, tmp_path):
+        """Equation with no image_path is skipped."""
+        from agentic_mbse.extraction.pipeline import ImageCollector, _insert_equation_refs
+        from agentic_mbse.extraction.types import DetectedEquation
+
+        collector = ImageCollector(output_dir=tmp_path / "images")
+        eq = DetectedEquation(confidence=0.9, image_path=None, y_fraction=0.5)
+        page_md = "Line 1\n\nLine 3"
+
+        result = _insert_equation_refs(page_md, [eq], 0, collector)
+        assert result == page_md
+        assert len(collector.entries) == 0
