@@ -4,7 +4,7 @@
 **Status**: In Progress (Item 1 Phase 1 complete, Items 2-4 complete)
 **Priority**: P1
 **Created**: 2026-03-01
-**Estimated Effort**: ~5.5 days
+**Estimated Effort**: ~6 days
 
 **Parent**: Builds on EPIC-PDFV4-001 (complete)
 **Branch**: `doc-ingest-clean`
@@ -240,6 +240,33 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 
 ---
 
+### Item 6: Summarize Hallucination on Near-Empty Sections [< 0.5 day]
+
+**Type**: Bug fix
+**Status**: Ready
+**Priority**: P2
+
+**Problem**: When `--summarize` generates INDEX.md, top-level sections that have almost no body text (just a heading before subsections begin) produce hallucinated conversational responses instead of summaries. The prompt sends near-empty content to Claude, which responds with things like "Which document are you referring to?" or "I don't see a specific document referenced."
+
+**Observed in**: `Araiinejad_and_Shirvan___2025` INDEX.md — Sections 2 (Methods), 3 (Results), and 4 (Discussion) all have hallucination text. These are umbrella headings with 1-2 lines before subsections.
+
+**Root Cause**: `generate_summary()` in `extraction/index.py` sends the section content to Claude regardless of length. When content is just a title or near-empty, the prompt lacks substance and Claude hallucinates.
+
+**Scope**:
+1. **Guard in `generate_summary()`**: If content (after stripping whitespace and the title itself) is below a minimum threshold (e.g., < 50 chars of actual body text), skip the Claude call and return an empty string or a brief structural note like the subsection list.
+2. **Optional — prompt hardening**: Add explicit instruction to the prompt: "If the section content is too short to summarize, respond with only a dash character (-)."
+3. **Validation**: Re-run `--summarize` on Araiinejad paper and confirm zero hallucination lines.
+
+**Success Criteria**:
+- [ ] Sections with minimal body text (< ~50 chars excluding heading) produce no hallucinated text
+- [ ] Sections with real content still get proper summaries
+- [ ] No regression on the other 5 test corpus INDEX.md files
+
+**Dependencies**: None
+**Deliverables**: Updated `extraction/index.py` (`generate_summary()`), test for short-content guard
+
+---
+
 ## Item Dependency Graph
 
 ```
@@ -254,10 +281,12 @@ Item 2 (Unified image output: figures + table crops)
 Item 4 (Equation region detection + crops)
 
 Item 5 (OCR) ← independent, can run in parallel with any item
+
+Item 6 (Summarize hallucination fix) ← independent, can run in parallel with any item
 ```
 
 **Critical Path**: Item 1 → Item 2 → Item 3 → Item 4 (6 days)
-**Parallel**: Item 5 can start anytime. Item 3 and Item 4 are independent of each other (both depend on Item 2 only).
+**Parallel**: Items 5 and 6 can start anytime. Item 3 and Item 4 are independent of each other (both depend on Item 2 only).
 
 ---
 
