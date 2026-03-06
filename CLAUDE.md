@@ -55,8 +55,14 @@ This project uses **uv** for dependency management. All commands should be run v
 # Install dependencies and set up development environment
 uv sync
 
-# Run all tests
+# Run tests (skips slow corpus tests by default)
 uv run pytest tests/
+
+# Run ALL tests including slow corpus integration tests
+uv run pytest tests/ -m ""
+
+# Run only the slow corpus tests
+uv run pytest tests/ -m slow
 
 # Run a single test file
 uv run pytest tests/test_cli.py
@@ -90,6 +96,18 @@ uv run agentic-mbse init [path]
 # List available MBSE commands
 uv run agentic-mbse install-commands --list
 ```
+
+### Extract commands inside Claude Code
+
+Commands that invoke the Claude CLI as a subprocess (`extract --check`, `extract --budget > 0`) may produce blank output when run from Claude Code's Bash tool. The Claude CLI's status line rendering writes directly to `/dev/tty`, which can interfere with output capture.
+
+**Workaround:** redirect to a temp file and read it back:
+```bash
+uv run agentic-mbse extract --check paper.pdf > /tmp/extract-out.txt 2>&1
+cat /tmp/extract-out.txt
+```
+
+This only affects agent-invoked commands. Running the same commands directly in a terminal works normally.
 
 ## Architecture
 

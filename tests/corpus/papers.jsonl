@@ -1,0 +1,15 @@
+{"slug": "hawker_2020", "pdf_path": "tests/corpus/pdfs/hawker_2020.pdf", "source": "fusion-tea", "has_tables": false, "has_math": true, "pages": 14, "heading_count_min": 5, "heading_count_max": 10}
+{"slug": "aries_cost_account", "pdf_path": "tests/corpus/pdfs/aries_cost_account.pdf", "source": "fusion-tea", "has_tables": true, "has_math": false, "pages": 100, "heading_count_min": 1, "heading_count_max": 20}
+{"slug": "helios_design", "pdf_path": "tests/corpus/pdfs/helios_design.pdf", "source": "fusion-tea", "has_tables": true, "has_math": true, "pages": 30}
+{"slug": "hsu_2020", "pdf_path": "tests/corpus/pdfs/hsu_2020.pdf", "source": "fusion-tea", "has_tables": true, "has_math": false, "pages": 9}
+{"slug": "delene_2001", "pdf_path": "tests/corpus/pdfs/delene_2001.pdf", "source": "fusion-tea", "has_tables": false, "has_math": false, "pages": 39, "heading_count_min": 10, "heading_count_max": 25}
+{"slug": "sparc_overview", "pdf_path": "tests/corpus/pdfs/sparc_overview.pdf", "source": "pool", "has_tables": true, "has_math": true, "pages": 25, "heading_count_max": 20}
+{"slug": "energy_amplifier", "pdf_path": "tests/corpus/pdfs/energy_amplifier.pdf", "source": "pool", "has_tables": true, "has_math": true, "pages": 241, "heading_count_min": 50, "heading_count_max": 130}
+{"slug": "woodruff_2026", "pdf_path": "tests/corpus/pdfs/woodruff_2026.pdf", "source": "pool", "has_tables": false, "has_math": false, "pages": 25, "heading_count_min": 30, "heading_count_max": 100}
+{"slug": "araiinejad_2024", "pdf_path": "tests/corpus/pdfs/araiinejad_2024.pdf", "source": "zotero", "has_tables": false, "has_math": false, "pages": 50, "characteristics": ["text-heavy", "TEA"]}
+{"slug": "paischer_2025", "pdf_path": "tests/corpus/pdfs/paischer_2025.pdf", "html_path": "tests/corpus/html/paischer_2025.html", "arxiv_id": "2510.07314v1", "source": "zotero", "has_tables": true, "has_math": true, "pages": 24, "characteristics": ["table-heavy", "math-heavy", "ML-physics"]}
+{"slug": "hansen_2025", "pdf_path": "tests/corpus/pdfs/hansen_2025.pdf", "source": "zotero", "has_tables": false, "has_math": true, "pages": 28, "characteristics": ["math-heavy", "text-heavy", "multi-dimensional"]}
+{"slug": "seo_2024", "pdf_path": "tests/corpus/pdfs/seo_2024.pdf", "source": "zotero", "has_tables": false, "has_math": true, "pages": 19, "characteristics": ["figure-heavy", "math-heavy", "short"]}
+{"slug": "woodruff_2026b", "pdf_path": "tests/corpus/pdfs/woodruff_2026b.pdf", "source": "zotero", "has_tables": false, "has_math": true, "pages": 25, "characteristics": ["math-heavy", "text-heavy", "costing"]}
+{"slug": "tajima", "pdf_path": "tests/corpus/pdfs/tajima.pdf", "source": "zotero", "has_tables": false, "has_math": false, "pages": 16, "characteristics": ["text-heavy", "older-formatting"]}
+{"slug": "schulte_1978", "pdf_path": "tests/corpus/pdfs/schulte_1978.pdf", "source": "zotero", "has_tables": false, "has_math": false, "pages": 10, "characteristics": ["text-heavy", "1978-era", "trimmed"]}

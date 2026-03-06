@@ -1,0 +1,8 @@
+A library tool extracted the following table from this image:
+
+{gmft_markdown}
+
+Review the extracted table against the image. Correct any errors:
+- Wrong numbers, missing rows, extra rows, garbled text
+- Output ONLY the corrected markdown table, no commentary
+- If the table is correct, output it unchanged

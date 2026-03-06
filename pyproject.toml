@@ -26,6 +26,7 @@ dependencies = [
     "pyyaml>=6.0",
     "pymupdf>=1.26.7",
     "pymupdf4llm>=0.2.9",
+    "img2table>=1.4.2",
 ]
 
 [project.optional-dependencies]
@@ -33,8 +34,6 @@ extract = ["pymupdf4llm>=0.0.17"]
 extract-tables = ["gmft>=0.3"]
 extract-full = ["docling>=2.0", "pymupdf4llm>=0.0.17", "gmft>=0.3"]
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
     "mypy>=1.0",
     "ruff>=0.1",
 ]
@@ -93,7 +92,11 @@ ignore_errors = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
-addopts = "-v --tb=short"
+addopts = "-v --tb=short -m 'not slow'"
+markers = [
+    "corpus: integration tests against real corpus PDFs (may cost money)",
+    "slow: tests that take >5s (corpus PDF extraction); run with: pytest -m slow",
+]
 
 [tool.coverage.run]
 source = ["src/agentic_mbse"]
@@ -111,6 +114,10 @@ extra-index-url = ["https://gitlab.com/api/v4/projects/69960816/packages/pypi/si
 
 [dependency-groups]
 dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "mypy>=1.0",
+    "ruff>=0.1",
     "tiktoken>=0.12.0",
     "types-pyyaml>=6.0.12.20250915",
 ]

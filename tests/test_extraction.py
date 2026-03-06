@@ -244,10 +244,11 @@ class TestPymupdfBackend:
         assert result.success is True
         assert result.backend_used == "pymupdf"
 
-        # Verify hdr_info, table_strategy, and page_chunks were passed
+        # Verify hdr_info, table_strategy, ignore_code, and page_chunks were passed
         call_kwargs = mock_to_markdown.call_args[1]
-        assert call_kwargs["hdr_info"] is pymupdf_backend._academic_header_detector
+        assert call_kwargs["hdr_info"] is pymupdf_backend._composite_header_detector
         assert call_kwargs["table_strategy"] == "lines"
+        assert call_kwargs["ignore_code"] is True
         assert call_kwargs["page_chunks"] is True
 
     def test_extract_applies_postprocess(self, tmp_path, monkeypatch):

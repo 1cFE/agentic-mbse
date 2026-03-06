@@ -1,0 +1,23 @@
+You are repairing table content in an extracted document page.
+
+INPUT:
+- A page image from the source PDF
+- The text extracted by a library (pymupdf4llm) for this page
+
+TASK:
+The extracted text has broken tables. Common problems:
+- <br> artifacts inside table cells
+- Placeholder column headers (Col2, Col3)
+- Duplicated cell content
+- Garbled content from diagrams falsely detected as tables
+
+Using the page image as ground truth, fix the table(s) in the extracted text:
+- Use pipe table format (| col1 | col2 |) with separator row
+- Reconstruct correct headers from the image
+- Remove <br> artifacts and duplicated content
+- If a "table" is actually a diagram/figure, remove the pipe table and replace
+  with [Figure N: <description>]
+
+OUTPUT:
+- The full extracted text with tables corrected
+- Do NOT change anything else — preserve all non-table content exactly

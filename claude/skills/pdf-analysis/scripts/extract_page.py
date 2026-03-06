@@ -40,14 +40,16 @@ def get_info(pdf_path: str) -> dict:
 def extract_markdown(pdf_path: str, page_num: int) -> str:
     """Extract a single page as markdown using pymupdf4llm."""
     import pymupdf4llm
+
     from agentic_mbse.extraction.postprocess import postprocess
-    from agentic_mbse.extraction.pymupdf_backend import _academic_header_detector
+    from agentic_mbse.extraction.pymupdf_backend import CompositeHeaderDetector
 
     md = pymupdf4llm.to_markdown(
         pdf_path,
         pages=[page_num],
-        hdr_info=_academic_header_detector,
+        hdr_info=CompositeHeaderDetector(),
         table_strategy="lines",
+        ignore_code=True,
     )
     md = postprocess(md, images_dir=None)
     return md

@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-02-08 (PR cleanup, architecture + PDF epics completed)
+**Last Updated**: 2026-03-06
 
 ---
 
@@ -17,7 +17,18 @@ Prioritized list of epics and features.
 
 ## In Progress
 
-*No items in progress*
+### [EPIC-PDFV4-002] PDF Extraction Quality & Features
+
+**Priority**: P1
+**Effort**: ~6 days (6 items)
+**Status**: In Progress (Items 1-4 complete, Items 5-6 remaining)
+**Epic**: `.project/backlog/epic_pdf-extraction-improvements.md`
+
+**Problem**: v4 pipeline shipped with quality regressions (running headers, GMFT routing, equation detection) and no image output (figures, table crops all discarded). These are the "last mile" issues before production-quality extraction.
+
+**Goal**: Fix quality regressions, build unified image output pipeline (figures + table crops + future equation crops via single ImageCollector mechanism), add OCR for scanned PDFs.
+
+**Items**: ~~(1) Quality gate+routing fixes~~ ✅, ~~(2) Unified image output~~ ✅, ~~(3) Pipeline profiling~~ ✅, ~~(4) Equation region detection~~ ✅, (5) OCR integration, (6) Summarize hallucination fix
 
 ---
 
@@ -29,7 +40,16 @@ Prioritized list of epics and features.
 
 ## P1 - High Priority
 
-*No P1 epics*
+### [ITEM-DOCLING-002] PDF Skill Deployment — Docling MCP Setup in Init
+
+**Priority**: P1
+**Effort**: 2-3 days
+**Status**: Needs design revision (spec+design from Feb 6, pre-v4)
+**Active**: `.project/active/pdf-skill-deployment/`
+
+**Problem**: The `pdf-analysis` skill ships a 3-tier extraction pipeline but Tier 2 (Docling MCP) requires manual setup. Users get references to `mcp__docling__*` tools that don't exist out of the box.
+
+**Goal**: `agentic-mbse init` auto-configures Docling MCP server. Revisit design to align with v4 pipeline architecture and current best practices.
 
 ---
 
@@ -51,19 +71,6 @@ Prioritized list of epics and features.
 - What metadata is needed? (context, constraints solved, related learnings)
 - How do agents query the store during workflows?
 - Should examples be curated or auto-captured?
-
----
-
-### [ITEM-DOCLING-001] PDF Skill Deployment — Docling MCP Setup in Init
-
-**Priority**: P2
-**Effort**: 2-3 days
-**Status**: Spec drafted
-**Spec**: `.project/active/pdf-skill-deployment/spec.md`
-
-**Problem**: The `pdf-analysis` skill ships a 3-tier extraction pipeline but Tier 2 (Docling MCP) requires manual setup. Users get references to `mcp__docling__*` tools that don't exist out of the box.
-
-**Goal**: `agentic-mbse init` auto-configures Docling MCP server with tier-appropriate resource limits. Adaptive skill prompt based on system capabilities.
 
 ---
 
@@ -109,6 +116,32 @@ Prioritized list of epics and features.
 
 ## P3 - Low Priority
 
+### [ITEM-ITERATION-LOOP] Experiment Iteration Loop
+
+**Priority**: P3
+**Effort**: TBD (spec exists, needs design)
+**Status**: Shelved
+**Active**: `.project/active/iteration-loop/`
+
+**Problem**: Running unattended iterative experiments (e.g., PDF extraction quality improvement) requires manual orchestration of fresh-context cycles, prompt templates, and result comparison.
+
+**Goal**: Build an outer-loop + inner-loop shell script system with prompt templates and an IterationSpecAgent for running unattended iterative experiments with fresh context per cycle.
+
+---
+
+### [ITEM-ARTIFACT-SCAFFOLD] Artifact Scaffolding via PM Script
+
+**Priority**: P2
+**Effort**: 1-2 days
+**Status**: Spec complete
+**Active**: `.project/active/artifact-scaffolding/`
+
+**Problem**: 5 commands tell agents to manually fill in YAML frontmatter templates. Agents don't reliably follow these: they skip fields, use wrong formats, or invent non-standard fields, silently breaking PM automation.
+
+**Goal**: Single `agentic-mbse pm create-artifact --type <type>` command that creates files with correctly populated frontmatter and scaffolded body sections. Commands change from "write this frontmatter" to "run this script, then fill in the body."
+
+---
+
 ### [ITEM-ARCH-WALKTHROUGHS] Architecture Validation Walkthroughs
 
 **Priority**: P3
@@ -139,6 +172,14 @@ Prioritized list of epics and features.
 | ITEM-RENAME-001: Rename `project/` to `modeling_pm/` | 2026-01-23 | 1 day | CLI, templates, commands, agents all updated |
 | ITEM-REGTEST-001: Model Regression Testing | 2026-01-23 | 1 day | pytest infrastructure for SysML models |
 | ITEM-SYMLINK-001: Tool-Owned File Safety | 2026-01-23 | 1 day | Hash-based modification detection |
+| EPIC-PDFV4-001: PDF Extraction v4 | 2026-02-27 | ~5 days | Quality-gated per-page pipeline, 4 items, extract --check |
+| EPIC-PDFV4-002 Item 1: Quality Regressions | 2026-03-01 | 3 days | Equation fragment detection, GMFT xref routing, postprocess cleanup |
+| EPIC-PDFV4-002 Item 2: Unified Image Output | 2026-03-01 | 1 day | ImageCollector/ImageEntry pattern, figure+table crop pipeline |
+| EPIC-PDFV4-002 Item 3: Pipeline Profiling | 2026-03-01 | 0.5 days | PipelineProfile dataclass, --profile flag, profile.json output |
+| EPIC-PDFV4-002 Item 4: Equation Region Detection | 2026-03-01 | 1 day | LayoutPredictor integration, NMS, --no-equations flag |
+| Subprocess TTY Fix | 2026-03-01 | 0.5 days | start_new_session=True for Claude CLI subprocess calls |
+| Docling Deep-Dive | 2026-03-06 | — | Research complete (Phases 0-2). Phases 3-4 not needed. |
+| Pandoc Deep-Dive | 2026-03-06 | — | Research complete (Phases 1-4). Findings integrated into v4. |
 | ~~EPIC-CMDREV-001: Command System Revision~~ | — | — | **Superseded** by EPIC-ARCH-002 + EPIC-ARCH-003 |
 | ~~TASK-PDF-001: Header Consistency~~ | — | — | **Superseded** by EPIC-PDFV3-001 (Claude structure repair handles this) |
 

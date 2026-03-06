@@ -33,5 +33,15 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
+# Document extraction corpus
+*.pdf
+tests/corpus/html/
+tests/corpus/pool/
+tests/corpus/current/
+tests/corpus/runs/
+tests/corpus/pandoc-experiments/*/paischer_2025.md
+tests/corpus/pandoc-experiments/*/stderr.txt
+tests/corpus/page_images/
+
 # Memories
 .project/memories

@@ -1,67 +1,78 @@
 # Current Work
 
-**Last Updated**: 2026-02-08
+**Last Updated**: 2026-03-01
 
 ---
 
 ## Active Work
 
-*No items in progress — branch ready for PR.*
+### PDF Skill Deployment (ITEM-DOCLING-002)
+
+**Branch:** `doc-ingest-clean`
+**Active:** `.project/active/pdf-skill-deployment/`
+
+Integrate Docling MCP server setup into `agentic-mbse init`. Spec and design exist from Feb 6 but predate the v4 pipeline — need design revision before implementation.
+
+**Next:** Revisit design against v4 architecture, then plan and implement.
+
+### PDF Extraction Quality & Features (EPIC-PDFV4-002)
+
+**Branch:** `doc-ingest-clean`
+**Epic:** `.project/backlog/epic_pdf-extraction-improvements.md`
+
+Four items, ~4.5 days:
+1. **Quality regressions** (Item 1) — Phase 1 (equation fragments) DONE. Phases 2-3 remaining: GMFT xref, postprocess cleanup.
+2. **Unified image output** (Item 2) — ImageCollector pattern: figures + table crops in one system. Absorbs IMGEXT-001 + IMGEXT-003 + quality regressions Phase 4.
+3. **Equation region detection** (Item 3) — Research + implement detector, plug into image collector.
+4. **OCR integration** (Item 4) — EasyOCR via Docling, independent.
+
+**Next:** Finish Item 1 (Phases 2-3), then Item 2 design.
+
+---
+
+## Remaining Active Items (Under Review)
+
+| Item | Status | Decision Needed |
+|------|--------|-----------------|
+| `docling-deep-dive` | Phases 3-4 not started | Fold remaining work into new epic? |
+| `pandoc-deep-dive` | Phases 5-6 not started | Close as research-complete? |
+| `iteration-loop` | Spec draft only | Still relevant or shelve? |
 
 ---
 
 ## Recently Completed
 
+### 2026-03-01: Validation Stack Restructuring (8 → 6 Levels)
+
+Restructured validation pyramid from 8 to 6 levels. Deleted stubs (L5 Semantic, L7 Architecture), merged into L6, renumbered. Post-audit fixed 7 stale references, added 8 L6 negative tests. 895 tests passing.
+
+### 2026-02-27: EPIC-PDFV4-001 PDF Extraction Pipeline v4
+
+Complete rewrite of extraction pipeline. Per-page quality-gated orchestration replacing v3 document-level approach. Includes:
+- Research phase: 4 tool deep-dives (pymupdf4llm, Docling/GMFT, Claude vision, Pandoc) + pipeline experimentation + table image spike
+- Implementation: Types/metrics/quality-gate → enhancement modules → pipeline orchestration/CLI → integration tests/cleanup
+- Bug fixes: Claude invocation silent failures, `extract --check` with built-in test corpus
+- All 4 epic items complete, 13 work items archived
+
 ### 2026-02-08: EPIC-PDFV3-001 PDF Extraction v3
 
-Claude-powered document structure detection pipeline. 4-layer extraction (pymupdf4llm base → GMFT tables → Claude structure repair → AI quality repair). Benchmarked on 12-doc corpus: 4/5 new docs produce usable INDEX files, zero regressions on original 7 docs. 881 tests passing.
-
-Key deliverables:
-- `src/agentic_mbse/extraction/` — 11 modules, ~3,000 lines
-- `agentic-mbse extract` CLI subcommand with `--enhance`, `--structure-only`, `--model` flags
-- `claude/skills/pdf-analysis/` — interactive PDF extraction skill
-- 9 new test files, 3,824 lines of test coverage
-
-### 2026-02-03: Architecture Redesign (4 Epics)
-
-Complete toolkit redesign across 4 phases:
-
-**EPIC-ARCH-001 Structure** — 4-directory architecture (`knowledge/`, `modeling_project/`, `work/`, `data/`), new/revised project templates, YAML frontmatter schemas, cmd_init rewiring, 80+ tests updated.
-
-**EPIC-ARCH-002 Knowledge** — 9 new skills (epic-decomposition, model-validation, pdf-analysis, project-structure, record-learning, requirements-tracking, source-traceability, sysml-conventions, toolkit-awareness). Context measurement and extraction mapping complete.
-
-**EPIC-ARCH-003 Commands** — All 9 existing commands refactored to lean ~300-line format. 5 new commands (analyze-models, formalize-intent, quick-model, review-model, status). All registered in installation pipeline. sysmlv2-doc-analyzer deprecated.
-
-**EPIC-ARCH-004 PM Engine** — 8 typed parsers, deterministic state derivation, dashboard generator, 14 PM mutation operations, CLI subcommands (`agentic-mbse pm`, `agentic-mbse status`). 3,267 lines of PM tests.
-
-### 2026-01-23: ITEM-SYMLINK-001 Tool-Owned File Safety
-
-Hash-based modification detection for tool-owned files. Re-running `init` warns before overwriting local modifications.
-
-### 2026-01-23: ITEM-REGTEST-001 Model Regression Testing
-
-pytest-compatible testing infrastructure for SysML models. `tests/models/` with example tests.
-
-### 2026-01-23: ITEM-RENAME-001 Rename `project/` to `modeling_pm/`
-
-Renamed modeling project management directory for clearer semantic distinction.
-
----
-
-## Up Next
-
-1. Merge `pdf-extract` branch to master (PR pending)
-2. EPIC-LCOE-001: LCOE Costing Patterns (tracking — active in fusion-tea)
-3. EPIC-VIZ-001: Visualization Tool Integration (tracking — active in fusion-tea)
-4. PDF Skill Deployment: Docling MCP setup during init (spec drafted)
+Claude-powered document structure detection pipeline. 4-layer extraction, 12-doc corpus benchmarked.
 
 ---
 
 ## Session Notes
 
-### 2026-02-08
+### 2026-03-01
 
-- Archived 31 completed active work items to `.project/completed/`
-- Updated BACKLOG.md: EPIC-CMDREV-001 superseded, architecture epics complete, PDFV3 complete
-- Added lingering TODOs to backlog (operations.py stubs, TASK-PDF-001 superseded)
-- Prepared PR for pdf-extract → master
+- Archived 13 completed work items from `.project/active/` to `.project/completed/`
+- Marked EPIC-PDFV4-001 as complete in epic file and backlog
+- Updated CHANGELOG with v4 epic and validation restructuring entries
+- Cleaned up BACKLOG.md: PDFV4-001 → completed, QUALREG-001 folded into new epic, DOCLING-001 promoted to P1
+- 5 active items remain: pdf-skill-deployment, v4-output-quality-regressions, docling-deep-dive, pandoc-deep-dive, iteration-loop
+
+### 2026-02-22
+
+- Completed Phase 3 (Synthesize) of pymupdf4llm deep-dive
+- Added Final Recommendation section to findings.md
+- Fixed stale test `test_extract_passes_hdr_info_and_table_strategy`
+- `uv sync` without `--extra dev` strips pytest — use `uv sync --extra dev`
