@@ -4,6 +4,33 @@ Historical record of completed work.
 
 ---
 
+## [2026-03-06] - EPIC-PDFV4-002 Items 1-4: Quality & Features
+
+**Type**: Items (from EPIC-PDFV4-002)
+**Duration**: ~3 days (2026-02-27 to 2026-03-01)
+
+### Summary
+
+Four items completing the quality regression fixes and new features for the v4 extraction pipeline. Items 5 (OCR integration) and 6 (summarize hallucination fix) remain in the backlog.
+
+**Item 1 — Quality Regressions** (`v4-output-quality-regressions`): Three phases — equation-fragment detection in quality gate, GMFT cross-reference routing (boost severity when GMFT finds tables pymupdf missed), postprocess cleanup (strip running headers, page numbers, ligatures). Phase 4 (image extraction) superseded by Item 2.
+
+**Item 2 — Unified Image Output** (`unified-image-output`): `ImageCollector`/`ImageEntry` pattern for figures and table crops. Three phases: pymupdf4llm `write_images=True`, table crop persistence via collector, CLI wiring with `output_dir/images/` creation.
+
+**Item 3 — Pipeline Profiling** (`pipeline-profiling`): `PipelineProfile` dataclass with 11-step timing, `--profile` CLI flag, `profile.json` per-document output, 5-group summary table to stderr.
+
+**Item 4 — Equation Region Detection** (`equation-region-detection`): `detect_equations()` via `docling-ibm-models` `LayoutPredictor` with lazy import, NMS, crop saving, `--no-equations` CLI flag.
+
+**Bug Fix — Subprocess TTY** (`subprocess-tty-fix`): Added `start_new_session=True` to Claude CLI subprocess calls fixing terminal blanking from Claude Code's Bash tool.
+
+### Research Closed
+
+**Docling Deep-Dive** (`docling-deep-dive`): Phases 0-2 complete (API evaluation, experiment harness, OCR comparison). Phases 3-4 deemed unnecessary — findings sufficient for OCR integration item.
+
+**Pandoc Deep-Dive** (`pandoc-deep-dive`): Phases 1-4 complete (HTML acquisition, 15 experiments, best config found). Findings already integrated into v4 arXiv shortcut.
+
+---
+
 ## [2026-03-01] - Validation Stack Restructuring (8 → 6 Levels)
 
 **Type**: Item
