@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Article With Hidden Injections</title>
+</head>
+<body>
+<article>
+    <h1>Legitimate Article Title</h1>
+    <p>This is the real article content that should be preserved.</p>
+
+    <!-- Category 1: Dangerous tags -->
+    <script>document.write("INJECTION_SCRIPT")</script>
+    <style>.hidden { display: block; }</style>
+    <noscript>INJECTION_NOSCRIPT</noscript>
+    <iframe src="about:blank">INJECTION_IFRAME</iframe>
+
+    <!-- Category 2: CSS-hidden elements -->
+    <span style="display:none">INJECTION_DISPLAY_NONE</span>
+    <span style="visibility:hidden">INJECTION_VISIBILITY</span>
+    <span style="opacity:0">INJECTION_OPACITY</span>
+    <span style="font-size:0px">INJECTION_FONTSIZE</span>
+    <div style="position:absolute; left:-9999px">INJECTION_OFFSCREEN</div>
+
+    <!-- Category 3: Attribute-hidden -->
+    <div hidden>INJECTION_HIDDEN_ATTR</div>
+    <span aria-hidden="true">INJECTION_ARIA</span>
+
+    <!-- Category 4: Zero-width characters -->
+    <p>Clean&#x200B;Text&#x200C;Here</p>
+
+    <p>This concluding paragraph should also be preserved.</p>
+</article>
+</body>
+</html>

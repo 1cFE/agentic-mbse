@@ -44,6 +44,9 @@ class MockArgs:
             profile=False,
             check=False,
             check_json=False,
+            urls_from=None,
+            no_sanitize=False,
+            raw_html=False,
         )
         defaults.update(kwargs)
         for k, v in defaults.items():
@@ -128,9 +131,7 @@ class TestSelectBackend:
         assert result is None
 
     def test_auto_prefers_docling_for_docx(self, monkeypatch):
-        monkeypatch.setattr(
-            "agentic_mbse.cli.extract_cli._is_available", lambda name: True
-        )
+        monkeypatch.setattr("agentic_mbse.cli.extract_cli._is_available", lambda name: True)
         result = select_backend(Path("x.docx"), requested=None)
         assert result == "docling"
 
@@ -143,9 +144,7 @@ class TestSelectBackend:
         assert result == "pandoc"
 
     def test_returns_none_when_nothing_available(self, monkeypatch):
-        monkeypatch.setattr(
-            "agentic_mbse.cli.extract_cli._is_available", lambda name: False
-        )
+        monkeypatch.setattr("agentic_mbse.cli.extract_cli._is_available", lambda name: False)
         result = select_backend(Path("x.docx"), requested=None)
         assert result is None
 
@@ -195,7 +194,9 @@ class TestCmdExtract:
             result = cmd_extract(args)
         assert result == EXIT_SUCCESS
         mock_index.assert_called_once_with(
-            md_path, summarize=False, force=False,
+            md_path,
+            summarize=False,
+            force=False,
         )
 
 
@@ -223,7 +224,9 @@ class TestCmdExtractPdf:
         mock_result = _make_pipeline_result()
 
         with (
-            patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline,
+            patch(
+                "agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result
+            ) as mock_pipeline,
             patch("agentic_mbse.cli.extract_cli._run_extraction") as mock_run,
         ):
             rc = cmd_extract(args)
@@ -236,7 +239,9 @@ class TestCmdExtractPdf:
         args = self._make_args(tmp_path, budget=0)
         mock_result = _make_pipeline_result()
 
-        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result
+        ) as mock_pipeline:
             cmd_extract(args)
         _, kwargs = mock_pipeline.call_args
         assert kwargs["config"].claude_budget_usd == 0
@@ -246,7 +251,9 @@ class TestCmdExtractPdf:
         args = self._make_args(tmp_path, dry_run=True)
         mock_result = _make_pipeline_result()
 
-        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result
+        ) as mock_pipeline:
             cmd_extract(args)
         _, kwargs = mock_pipeline.call_args
         assert kwargs["config"].dry_run is True
@@ -256,7 +263,9 @@ class TestCmdExtractPdf:
         args = self._make_args(tmp_path, no_tables=True)
         mock_result = _make_pipeline_result()
 
-        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result
+        ) as mock_pipeline:
             cmd_extract(args)
         _, kwargs = mock_pipeline.call_args
         assert kwargs["config"].enable_tables is False
@@ -266,7 +275,9 @@ class TestCmdExtractPdf:
         args = self._make_args(tmp_path, no_img2table=True)
         mock_result = _make_pipeline_result()
 
-        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result
+        ) as mock_pipeline:
             cmd_extract(args)
         _, kwargs = mock_pipeline.call_args
         assert kwargs["config"].enable_img2table is False
@@ -276,7 +287,9 @@ class TestCmdExtractPdf:
         args = self._make_args(tmp_path, no_equations=True)
         mock_result = _make_pipeline_result()
 
-        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result
+        ) as mock_pipeline:
             cmd_extract(args)
         _, kwargs = mock_pipeline.call_args
         assert kwargs["config"].enable_equations is False
@@ -286,7 +299,9 @@ class TestCmdExtractPdf:
         args = self._make_args(tmp_path, docling=True)
         mock_result = _make_pipeline_result()
 
-        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result
+        ) as mock_pipeline:
             cmd_extract(args)
         _, kwargs = mock_pipeline.call_args
         assert kwargs["config"].enable_docling is True
@@ -296,7 +311,9 @@ class TestCmdExtractPdf:
         args = self._make_args(tmp_path, model="sonnet")
         mock_result = _make_pipeline_result()
 
-        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result
+        ) as mock_pipeline:
             cmd_extract(args)
         _, kwargs = mock_pipeline.call_args
         assert kwargs["config"].claude_model == "sonnet"
@@ -306,7 +323,9 @@ class TestCmdExtractPdf:
         args = self._make_args(tmp_path, html_path="/tmp/a.html")
         mock_result = _make_pipeline_result()
 
-        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result
+        ) as mock_pipeline:
             cmd_extract(args)
         _, kwargs = mock_pipeline.call_args
         assert kwargs["config"].arxiv_html_path == Path("/tmp/a.html")
@@ -384,7 +403,9 @@ class TestCmdExtractPdf:
         args = MockArgs(path=str(pdf), output=str(tmp_path / "out"), force=True)
         mock_result = _make_pipeline_result()
 
-        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result) as mock_pipeline:
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result
+        ) as mock_pipeline:
             rc = cmd_extract(args)
         mock_pipeline.assert_called_once()
         assert rc == EXIT_SUCCESS
@@ -429,7 +450,9 @@ class TestCmdExtractDocx:
         args = MockArgs(path=str(docx), backend="pandoc")
 
         with (
-            patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result) as mock_run,
+            patch(
+                "agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result
+            ) as mock_run,
             patch("agentic_mbse.cli.extract_cli.extract_pdf") as mock_pipeline,
         ):
             rc = cmd_extract(args)
@@ -452,7 +475,9 @@ class TestCmdExtractDocx:
 
         args = MockArgs(path=str(docx), backend="pandoc")
 
-        with patch("agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result) as mock_run:
+        with patch(
+            "agentic_mbse.cli.extract_cli._run_extraction", return_value=mock_result
+        ) as mock_run:
             rc = cmd_extract(args)
         assert rc == EXIT_SUCCESS
         # _run_extraction(file_path, output_dir, backend, timeout) — positional args
@@ -471,28 +496,32 @@ class TestLegacyFlagsRemoved:
     def test_fix_tables_not_in_help(self):
         result = subprocess.run(
             ["uv", "run", "agentic-mbse", "extract", "--help"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert "--fix-tables" not in result.stdout
 
     def test_enhance_not_in_help(self):
         result = subprocess.run(
             ["uv", "run", "agentic-mbse", "extract", "--help"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert "--enhance" not in result.stdout
 
     def test_structure_only_not_in_help(self):
         result = subprocess.run(
             ["uv", "run", "agentic-mbse", "extract", "--help"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert "--structure-only" not in result.stdout
 
     def test_max_repair_pages_not_in_help(self):
         result = subprocess.run(
             ["uv", "run", "agentic-mbse", "extract", "--help"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert "--max-repair-pages" not in result.stdout
 
@@ -585,3 +614,165 @@ class TestCLIIntegration:
         assert "--no-img2table" in result.stdout
         assert "--docling" in result.stdout
         assert "--html-path" in result.stdout
+        # Web extraction flags
+        assert "--urls-from" in result.stdout
+        assert "--no-sanitize" in result.stdout
+        assert "--raw-html" in result.stdout
+
+
+# ---------------------------------------------------------------------------
+# URL dispatch
+# ---------------------------------------------------------------------------
+
+
+class TestURLDispatch:
+    """Verify URL inputs route through web backend."""
+
+    def test_url_dispatches_to_web_backend(self):
+        """HTTP URL calls _extract_url, not discover_documents."""
+        from agentic_mbse.extraction.base import ExtractionResult
+
+        mock_result = ExtractionResult(
+            success=True,
+            output_dir=Path("/tmp/out"),
+            markdown_path=Path("/tmp/out/article.md"),
+            char_count=500,
+            backend_used="trafilatura",
+        )
+
+        args = MockArgs(path="https://example.com/article")
+        with (
+            patch("agentic_mbse.cli.extract_cli.discover_documents") as mock_discover,
+            patch(
+                "agentic_mbse.extraction.web_backend.check_web_deps",
+            ),
+            patch(
+                "agentic_mbse.extraction.web_backend.classify_url",
+                return_value="html",
+            ),
+            patch(
+                "agentic_mbse.extraction.web_backend.extract_web_content",
+                return_value=mock_result,
+            ),
+        ):
+            rc = cmd_extract(args)
+        assert rc == EXIT_SUCCESS
+        mock_discover.assert_not_called()
+
+    def test_url_pdf_routes_to_pdf_pipeline(self):
+        """PDF URL downloads and routes to cmd_extract with temp file."""
+        from agentic_mbse.extraction.http import FetchResult
+
+        mock_fetch = FetchResult(
+            content=b"%PDF-1.4 fake",
+            final_url="https://example.com/paper.pdf",
+            content_type="application/pdf",
+        )
+
+        args = MockArgs(path="https://example.com/paper.pdf")
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="pdf"),
+            patch("agentic_mbse.extraction.http.fetch_url", return_value=mock_fetch),
+            # Patch cmd_extract at the recursive call to avoid real PDF extraction
+            patch(
+                "agentic_mbse.cli.extract_cli.cmd_extract", return_value=EXIT_SUCCESS
+            ) as mock_cmd,
+        ):
+            from agentic_mbse.cli.extract_cli import _extract_pdf_url
+
+            rc = _extract_pdf_url("https://example.com/paper.pdf", args)
+        assert rc == EXIT_SUCCESS
+        mock_cmd.assert_called_once()
+
+    def test_url_unsupported_type_fails(self):
+        """Unknown content type returns EXIT_FAILURE."""
+        args = MockArgs(path="https://example.com/image.png")
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="image/png"),
+        ):
+            rc = cmd_extract(args)
+        assert rc == EXIT_FAILURE
+
+    def test_url_missing_deps_fails(self):
+        """Missing web deps gives clear error."""
+        args = MockArgs(path="https://example.com/article")
+        with patch(
+            "agentic_mbse.extraction.web_backend.check_web_deps",
+            side_effect=ImportError("Install with: pip install agentic-mbse[web]"),
+        ):
+            rc = cmd_extract(args)
+        assert rc == EXIT_FAILURE
+
+    def test_urls_from_processes_batch(self, tmp_path):
+        """--urls-from processes multiple URLs."""
+        from agentic_mbse.extraction.base import ExtractionResult
+
+        urls_file = tmp_path / "urls.txt"
+        urls_file.write_text("https://example.com/a\nhttps://example.com/b\n")
+
+        mock_result = ExtractionResult(
+            success=True,
+            output_dir=tmp_path,
+            markdown_path=tmp_path / "article.md",
+            char_count=500,
+            backend_used="trafilatura",
+        )
+
+        args = MockArgs(urls_from=str(urls_file))
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="html"),
+            patch(
+                "agentic_mbse.extraction.web_backend.extract_web_content",
+                return_value=mock_result,
+            ),
+        ):
+            rc = cmd_extract(args)
+        assert rc == EXIT_SUCCESS
+
+    def test_urls_from_skips_comments(self, tmp_path):
+        """Lines starting with # are skipped in URL files."""
+        from agentic_mbse.extraction.base import ExtractionResult
+
+        urls_file = tmp_path / "urls.txt"
+        urls_file.write_text("# This is a comment\nhttps://example.com/a\n\n")
+
+        mock_result = ExtractionResult(
+            success=True,
+            output_dir=tmp_path,
+            markdown_path=tmp_path / "article.md",
+            char_count=500,
+            backend_used="trafilatura",
+        )
+
+        args = MockArgs(urls_from=str(urls_file))
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="html"),
+            patch(
+                "agentic_mbse.extraction.web_backend.extract_web_content",
+                return_value=mock_result,
+            ) as mock_extract,
+        ):
+            cmd_extract(args)
+        # Only 1 URL should be processed (comment and blank line skipped)
+        mock_extract.assert_called_once()
+
+    def test_urls_from_file_not_found(self, tmp_path):
+        """Missing URLs file returns EXIT_FAILURE."""
+        args = MockArgs(urls_from=str(tmp_path / "nonexistent.txt"))
+        rc = cmd_extract(args)
+        assert rc == EXIT_FAILURE
+
+    def test_file_path_still_works(self, tmp_path):
+        """Regular file paths still route to file-based extraction."""
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"))
+        mock_result = _make_pipeline_result()
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result):
+            rc = cmd_extract(args)
+        assert rc == EXIT_SUCCESS

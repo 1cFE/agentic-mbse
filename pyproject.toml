@@ -33,6 +33,7 @@ dependencies = [
 extract = ["pymupdf4llm>=0.0.17"]
 extract-tables = ["gmft>=0.3"]
 extract-full = ["docling>=2.0", "pymupdf4llm>=0.0.17", "gmft>=0.3"]
+web = ["trafilatura>=2.0", "beautifulsoup4>=4.12", "lxml>=5.0"]
 dev = [
     "mypy>=1.0",
     "ruff>=0.1",

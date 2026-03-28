@@ -13,6 +13,8 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
+from agentic_mbse.extraction.http import USER_AGENT
+
 # ---------------------------------------------------------------------------
 # Pandoc availability
 # ---------------------------------------------------------------------------
@@ -112,9 +114,7 @@ def check_arxiv_html(arxiv_id: str) -> str | None:
     """Check if arXiv HTML is available.  Returns URL or None."""
     url = f"https://arxiv.org/html/{arxiv_id}"
     req = urllib.request.Request(url, method="HEAD")
-    req.add_header(
-        "User-Agent", "agentic-mbse/0.1 (PDF extraction pipeline)"
-    )
+    req.add_header("User-Agent", USER_AGENT)
     try:
         with urllib.request.urlopen(req, timeout=5) as resp:
             if resp.status == 200:
@@ -156,9 +156,7 @@ def convert_arxiv_html(
     # Download URL to temp file if needed
     if html_source_str.startswith(("http://", "https://")):
         req = urllib.request.Request(html_source_str)
-        req.add_header(
-            "User-Agent", "agentic-mbse/0.1 (PDF extraction pipeline)"
-        )
+        req.add_header("User-Agent", USER_AGENT)
         with urllib.request.urlopen(req, timeout=30) as resp:
             raw_html = resp.read().decode("utf-8")
     else:

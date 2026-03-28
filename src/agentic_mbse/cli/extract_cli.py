@@ -189,6 +189,119 @@ def _print_pipeline_summary(label: str, result: PipelineResult) -> None:
 
 
 # ---------------------------------------------------------------------------
+# URL dispatch helpers
+# ---------------------------------------------------------------------------
+
+
+def _extract_url(url: str, args: argparse.Namespace) -> int:
+    """Handle a single URL extraction."""
+    from agentic_mbse.extraction.web_backend import (
+        check_web_deps,
+        classify_url,
+        extract_web_content,
+    )
+
+    # Check dependencies early
+    try:
+        check_web_deps()
+    except ImportError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return EXIT_FAILURE
+
+    # Classify URL content type
+    url_type = classify_url(url)
+
+    if url_type == "pdf":
+        # Download PDF to temp file, run through PDF pipeline
+        return _extract_pdf_url(url, args)
+
+    if url_type not in ("html",):
+        print(f"Error: unsupported content type '{url_type}' for {url}")
+        return EXIT_FAILURE
+
+    output_base = Path(args.output) if getattr(args, "output", None) else None
+    result = extract_web_content(
+        url,
+        output_dir=output_base,
+        sanitize=not getattr(args, "no_sanitize", False),
+        save_raw_html=getattr(args, "raw_html", False),
+        timeout=args.timeout,
+    )
+
+    if result.success:
+        stats = []
+        if result.char_count:
+            stats.append(f"{result.char_count:,} chars")
+        stats.append(f"backend: {result.backend_used}")
+        print(f"   ok   {url} ({', '.join(stats)})")
+        if result.markdown_path:
+            print(f"        → {result.markdown_path}")
+        return EXIT_SUCCESS
+    else:
+        print(f"  FAIL  {url}: {result.error}")
+        return EXIT_FAILURE
+
+
+def _extract_pdf_url(url: str, args: argparse.Namespace) -> int:
+    """Download a PDF from URL and extract via the PDF pipeline."""
+    import copy
+    import tempfile
+
+    from agentic_mbse.extraction.http import fetch_url
+
+    print(f"  fetch {url} (PDF detected)")
+    try:
+        fetched = fetch_url(url, timeout=args.timeout)
+    except Exception as exc:
+        print(f"  FAIL  Download failed: {exc}")
+        return EXIT_FAILURE
+
+    # Write to temp file, then extract as normal PDF
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as f:
+        f.write(fetched.content)
+        tmp_pdf = Path(f.name)
+
+    try:
+        # Shallow-copy args to avoid corrupting shared state in batch mode
+        pdf_args = copy.copy(args)
+        pdf_args.path = str(tmp_pdf)
+        return cmd_extract(pdf_args)
+    finally:
+        tmp_pdf.unlink(missing_ok=True)
+
+
+def _extract_urls_from_file(args: argparse.Namespace) -> int:
+    """Process URLs from a text file (one per line)."""
+    urls_file = Path(args.urls_from)
+    if not urls_file.exists():
+        print(f"Error: URLs file not found: {urls_file}")
+        return EXIT_FAILURE
+
+    urls = [
+        line.strip()
+        for line in urls_file.read_text().splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
+
+    if not urls:
+        print(f"Error: no URLs found in {urls_file}")
+        return EXIT_FAILURE
+
+    print(f"Processing {len(urls)} URLs from {urls_file}")
+    ok = 0
+    fail = 0
+    for url in urls:
+        rc = _extract_url(url, args)
+        if rc == EXIT_SUCCESS:
+            ok += 1
+        else:
+            fail += 1
+
+    print(f"\nProcessed: {ok}, Failed: {fail}")
+    return EXIT_FAILURE if fail > 0 else EXIT_SUCCESS
+
+
+# ---------------------------------------------------------------------------
 # Main command handler
 # ---------------------------------------------------------------------------
 
@@ -261,6 +374,18 @@ def cmd_extract(args: argparse.Namespace) -> int:
         elif check_result.overall == OverallStatus.DEGRADED:
             return EXIT_FAILURE
         return EXIT_SUCCESS
+
+    # ---- URL and batch-URL dispatch ----
+
+    # Batch URL mode
+    if getattr(args, "urls_from", None):
+        return _extract_urls_from_file(args)
+
+    # Single URL mode
+    if args.path and args.path.startswith(("http://", "https://")):
+        return _extract_url(args.path, args)
+
+    # ---- Existing file-based path (unchanged) ----
 
     # All non-check paths require a path argument
     if args.path is None:
@@ -493,11 +618,14 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
     """Register the ``extract`` subcommand."""
     p = subparsers.add_parser(
         "extract",
-        help="Extract PDF/DOCX documents to structured markdown",
+        help="Extract PDF/DOCX/URL documents to structured markdown",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=(
-            "Convert PDF and DOCX files into structured markdown with "
-            "images, metadata, and optional section indexes."
+            "Convert PDF, DOCX files, and URLs into structured markdown with "
+            "images, metadata, and optional section indexes.\n\n"
+            "URLs (http:// or https://) are auto-detected and routed by content type:\n"
+            "  HTML → web extraction via trafilatura (requires agentic-mbse[web])\n"
+            "  PDF  → downloaded and routed through the PDF pipeline"
         ),
         epilog=(
             "Claude Code agent note:\n"
@@ -513,7 +641,7 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         "path",
         nargs="?",
         default=None,
-        help="PDF/DOCX file or directory containing documents",
+        help="PDF/DOCX file, directory, or URL to extract",
     )
     p.add_argument(
         "--output",
@@ -600,6 +728,23 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         default=None,
         metavar="PATH",
         help="arXiv HTML file path for Pandoc shortcut (overrides auto-detect)",
+    )
+    # Web extraction flags
+    p.add_argument(
+        "--urls-from",
+        default=None,
+        metavar="FILE",
+        help="Read URLs from FILE (one per line) for batch extraction",
+    )
+    p.add_argument(
+        "--no-sanitize",
+        action="store_true",
+        help="Skip HTML sanitization pre-pass (web extraction only)",
+    )
+    p.add_argument(
+        "--raw-html",
+        action="store_true",
+        help="Save raw HTML alongside extracted markdown (web extraction only)",
     )
     # Check flags
     p.add_argument(
