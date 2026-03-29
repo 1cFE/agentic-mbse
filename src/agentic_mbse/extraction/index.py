@@ -8,13 +8,14 @@ wrappers that delegate here.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import re
 import subprocess
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+
+from agentic_mbse.extraction.base import compute_source_hash
 
 # ---------------------------------------------------------------------------
 # Data types
@@ -39,11 +40,6 @@ class Section:
 # ---------------------------------------------------------------------------
 # Checksum helpers
 # ---------------------------------------------------------------------------
-
-
-def _get_file_checksum(path: Path) -> str:
-    """Calculate SHA256 checksum of a file."""
-    return f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
 
 
 def _parse_existing_checksum(index_path: Path) -> str | None:
@@ -325,7 +321,7 @@ def generate_index(
 
     index_path = doc_path.parent / "INDEX.md"
 
-    current_checksum = _get_file_checksum(doc_path)
+    current_checksum = f"sha256:{compute_source_hash(doc_path)}"
     existing_checksum = _parse_existing_checksum(index_path)
 
     if not force and existing_checksum == current_checksum:
@@ -493,7 +489,7 @@ Examples:
 
     # Check freshness
     index_path = doc_path.parent / "INDEX.md"
-    current_checksum = _get_file_checksum(doc_path)
+    current_checksum = f"sha256:{compute_source_hash(doc_path)}"
     existing_checksum = _parse_existing_checksum(index_path)
 
     if not args.force and existing_checksum == current_checksum:

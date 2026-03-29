@@ -65,10 +65,26 @@ def get_output_dir(input_path: Path, output_base: Path | None = None) -> Path:
     return input_path.parent / dir_name
 
 
-def _compute_file_hash(path: Path) -> str:
-    """Return ``md5:<hex>`` hash of a file's contents."""
-    h = hashlib.md5(path.read_bytes())
-    return f"md5:{h.hexdigest()}"
+_CHUNK_SIZE = 65_536  # 64 KiB
+
+
+def compute_source_hash(source: Path | bytes) -> str:
+    """Return SHA-256 hex digest of source content.
+
+    Accepts a file path (reads in 64 KiB chunks to avoid loading
+    large files into memory) or raw bytes.
+    """
+    h = hashlib.sha256()
+    if isinstance(source, bytes):
+        h.update(source)
+    else:
+        with open(source, "rb") as f:
+            while True:
+                chunk = f.read(_CHUNK_SIZE)
+                if not chunk:
+                    break
+                h.update(chunk)
+    return h.hexdigest()
 
 
 def check_processing_needed(
@@ -98,7 +114,7 @@ def check_processing_needed(
     if not summary.get("processing_completed", False):
         return True
 
-    current_hash = _compute_file_hash(input_path)
+    current_hash = f"sha256:{compute_source_hash(input_path)}"
     return summary.get("file_hash") != current_hash
 
 
@@ -118,7 +134,7 @@ def write_summary(
         "processed_at": datetime.now(timezone.utc).isoformat(),
         "backend_used": backend,
         "processing_completed": result.success,
-        "file_hash": _compute_file_hash(input_path),
+        "file_hash": f"sha256:{compute_source_hash(input_path)}",
         "statistics": {
             "total_images": result.image_count,
             "total_characters": result.char_count,

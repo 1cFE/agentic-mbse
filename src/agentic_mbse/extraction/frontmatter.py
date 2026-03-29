@@ -6,11 +6,9 @@ consistent provenance metadata in output.md files.
 
 from __future__ import annotations
 
-import hashlib
 from datetime import datetime, timezone
-from pathlib import Path
 
-_CHUNK_SIZE = 65_536  # 64 KiB
+from agentic_mbse.extraction.base import compute_source_hash  # noqa: F401
 
 
 def _sanitize_yaml_value(value: str) -> str:
@@ -57,22 +55,3 @@ def build_frontmatter(
         lines.append(f'author: "{_sanitize_yaml_value(author)}"')
     lines.append("---")
     return "\n".join(lines)
-
-
-def compute_source_hash(source: Path | bytes) -> str:
-    """Return SHA-256 hex digest of source content.
-
-    Accepts a file path (reads in 64 KiB chunks to avoid loading
-    large PDFs into memory) or raw bytes.
-    """
-    h = hashlib.sha256()
-    if isinstance(source, bytes):
-        h.update(source)
-    else:
-        with open(source, "rb") as f:
-            while True:
-                chunk = f.read(_CHUNK_SIZE)
-                if not chunk:
-                    break
-                h.update(chunk)
-    return h.hexdigest()

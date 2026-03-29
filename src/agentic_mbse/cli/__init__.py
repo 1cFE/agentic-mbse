@@ -1,7 +1,6 @@
 """Command-line interface for agentic-mbse."""
 
 import argparse
-import hashlib
 import json
 import platform
 import shutil
@@ -12,6 +11,7 @@ from pathlib import Path
 import tomllib
 from dotenv import load_dotenv
 
+from agentic_mbse.extraction.base import compute_source_hash
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS, run_all_checks
 
 # Commands available for installation
@@ -297,11 +297,6 @@ def _check_dev_mode_prerequisites(data_root: Path) -> tuple[bool, str | None]:
     return True, None
 
 
-def _compute_file_hash(path: Path) -> str:
-    """Compute SHA256 hash of file content."""
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def _get_git_commit() -> str:
     """Get short git commit hash of agentic-mbse source.
 
@@ -352,7 +347,7 @@ def _check_modification(path: Path, stored_hashes: dict | None, relative_path: s
     if stored_hash is None:
         # File not in hash store - new file type, treat as not modified
         return False
-    current_hash = _compute_file_hash(path)
+    current_hash = compute_source_hash(path)
     return current_hash != stored_hash
 
 
@@ -441,7 +436,7 @@ def _install_file_with_hash(
         return ("re-symlinked" if existed else "symlinked", None)
     else:
         shutil.copy(src, dst)
-        content_hash = _compute_file_hash(dst)
+        content_hash = compute_source_hash(dst)
         if was_modified and user_action == "backup":
             return ("backed_up_and_updated", content_hash)
         return ("updated" if existed else "created", content_hash)
@@ -806,7 +801,7 @@ Edit this file to add your domain-specific sources.
                 dst.write_text(content)
 
                 # Compute and store hash
-                new_hashes[rel_path] = _compute_file_hash(dst)
+                new_hashes[rel_path] = compute_source_hash(dst)
 
                 if was_modified and user_action == "backup":
                     backed_up.append(rel_path)
