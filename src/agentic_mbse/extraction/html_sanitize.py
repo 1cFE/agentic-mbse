@@ -66,6 +66,8 @@ def strip_hidden_content(html: str) -> str:
 
     # Layer 2: Remove CSS-hidden elements
     for tag in soup.find_all(style=True):
+        if tag.attrs is None:
+            continue
         style = tag.get("style", "")
 
         # Check simple hiding patterns
