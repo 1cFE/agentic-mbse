@@ -161,6 +161,7 @@ class PipelineConfig:
     extracted_images_dir: Path | None = None
     quality_gate: QualityGateConfig = field(default_factory=QualityGateConfig)
     profile: bool = False
+    save_source: bool = False  # carry raw bytes on PipelineResult for --save-source
 
 
 # ---------------------------------------------------------------------------
@@ -173,6 +174,7 @@ def _try_arxiv_shortcut(pdf_path: Path, config: PipelineConfig) -> PipelineResul
 
     Returns PipelineResult with source="pandoc_arxiv" on success, None on failure.
     """
+    from agentic_mbse.extraction.frontmatter import compute_source_hash
     from agentic_mbse.extraction.pandoc_convert import (
         _pandoc_available,
         check_arxiv_html,
@@ -195,12 +197,16 @@ def _try_arxiv_shortcut(pdf_path: Path, config: PipelineConfig) -> PipelineResul
                 return None
             html_source = html_url
 
-        markdown = convert_arxiv_html(html_source)
+        markdown, raw_bytes = convert_arxiv_html(html_source)
         metrics = compute_metrics(markdown)
+        content_hash = compute_source_hash(raw_bytes)
         return PipelineResult(
             markdown=markdown,
             metrics=metrics,
             source="pandoc_arxiv",
+            source_url=html_source if html_source.startswith("http") else None,
+            content_hash=content_hash,
+            raw_source_bytes=raw_bytes if config.save_source else None,
         )
     except Exception:
         logger.debug("arXiv shortcut failed, falling through to PDF extraction", exc_info=True)

@@ -9,14 +9,13 @@ Requires trafilatura and beautifulsoup4. Install via:
 
 from __future__ import annotations
 
-import hashlib
 import json
 import shutil
 import tempfile
-from datetime import datetime, timezone
 from pathlib import Path
 
 from agentic_mbse.extraction.base import ExtractionResult, sanitize_filename
+from agentic_mbse.extraction.frontmatter import build_frontmatter, compute_source_hash
 from agentic_mbse.extraction.http import FetchResult, fetch_url, head_content_type
 from agentic_mbse.extraction.metrics import ExtractionMetrics, compute_metrics
 
@@ -78,37 +77,6 @@ def classify_url(url: str) -> str:
     if ct in _PDF_CONTENT_TYPES:
         return "pdf"
     return ct
-
-
-def _sanitize_yaml_value(value: str) -> str:
-    """Escape a string for use as a double-quoted YAML value."""
-    # Strip newlines/carriage returns, collapse whitespace, escape quotes
-    value = value.replace("\r", "").replace("\n", " ")
-    value = " ".join(value.split())  # collapse runs of whitespace
-    value = value.replace('"', "'")
-    return value
-
-
-def _build_frontmatter(
-    *,
-    source_url: str,
-    content_hash: str,
-    title: str | None,
-    author: str | None,
-    tool_version: str,
-) -> str:
-    """Build YAML frontmatter string."""
-    lines = ["---"]
-    lines.append(f'source_url: "{_sanitize_yaml_value(source_url)}"')
-    lines.append(f'access_date: "{datetime.now(timezone.utc).isoformat()}"')
-    lines.append(f'content_hash_sha256: "{content_hash}"')
-    if title:
-        lines.append(f'title: "{_sanitize_yaml_value(title)}"')
-    if author:
-        lines.append(f'author: "{_sanitize_yaml_value(author)}"')
-    lines.append(f'extraction_tool: "{tool_version}"')
-    lines.append("---")
-    return "\n".join(lines)
 
 
 def _extract_with_trafilatura(
@@ -195,7 +163,8 @@ def extract_web_content(
     *,
     output_dir: Path | None = None,
     sanitize: bool = True,
-    save_raw_html: bool = False,
+    save_source: bool = False,
+    no_frontmatter: bool = False,
     timeout: int = 30,
 ) -> ExtractionResult:
     """Extract web page content to structured markdown.
@@ -207,8 +176,9 @@ def extract_web_content(
         output_dir: Where to write output files. If None, creates a
             directory alongside CWD based on the page title/domain.
         sanitize: If True, run HTML sanitization pre-pass (default True).
-        save_raw_html: If True, save the original (pre-sanitization) HTML
+        save_source: If True, save the original (pre-sanitization) HTML
             alongside the extracted markdown as ``raw.html``.
+        no_frontmatter: If True, suppress YAML frontmatter in output.
         timeout: HTTP request timeout in seconds.
 
     Returns:
@@ -265,23 +235,21 @@ def extract_web_content(
 
     # Step 4: Build output
     title = metadata.get("title") or ""
-    content_hash = hashlib.sha256(markdown.encode("utf-8")).hexdigest()
+    content_hash = compute_source_hash(fetched.content)  # hash raw HTML bytes
 
-    # Determine trafilatura version for frontmatter
-    import trafilatura as _traf
-
-    traf_version = getattr(_traf, "__version__", "unknown")
-    tool_str = f"trafilatura {traf_version}" if backend == "trafilatura" else "pandoc (fallback)"
-
-    frontmatter = _build_frontmatter(
-        source_url=final_url,
-        content_hash=content_hash,
-        title=title or None,
-        author=metadata.get("author"),
-        tool_version=tool_str,
-    )
-
-    full_markdown = f"{frontmatter}\n\n{markdown}"
+    if no_frontmatter:
+        full_markdown = markdown
+    else:
+        backend_str = "trafilatura" if backend == "trafilatura" else "pandoc-fallback"
+        frontmatter = build_frontmatter(
+            source=final_url,
+            source_type="url",
+            backend=backend_str,
+            content_hash=content_hash,
+            title=title or None,
+            author=metadata.get("author"),
+        )
+        full_markdown = f"{frontmatter}\n\n{markdown}"
 
     # Determine output directory name from title or URL
     dir_name = sanitize_filename(title) if title else sanitize_filename(final_url)
@@ -310,8 +278,8 @@ def extract_web_content(
     metrics: ExtractionMetrics = compute_metrics(markdown, elapsed)
     (output_dir / "metrics.json").write_text(json.dumps(metrics.to_dict(), indent=2))
 
-    # Optionally save raw HTML
-    if save_raw_html:
+    # Optionally save raw source HTML
+    if save_source:
         (output_dir / "raw.html").write_text(fetched.text(), encoding="utf-8")
 
     return ExtractionResult(

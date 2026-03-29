@@ -1,5 +1,6 @@
 """Tests for agentic_mbse.extraction.web_backend — web content extraction pipeline."""
 
+import hashlib
 from pathlib import Path
 from unittest.mock import patch
 
@@ -8,8 +9,6 @@ import pytest
 from agentic_mbse.extraction.base import ExtractionResult
 from agentic_mbse.extraction.http import FetchResult
 from agentic_mbse.extraction.web_backend import (
-    _build_frontmatter,
-    _sanitize_yaml_value,
     check_web_deps,
     classify_url,
     extract_web_content,
@@ -68,55 +67,8 @@ def test_classify_url_unknown_type():
 
 
 # ---------------------------------------------------------------------------
-# _sanitize_yaml_value
+# Frontmatter (via shared module — unit tests in test_frontmatter.py)
 # ---------------------------------------------------------------------------
-
-
-def test_sanitize_yaml_value_strips_newlines():
-    assert "\n" not in _sanitize_yaml_value("line1\nline2\rline3")
-
-
-def test_sanitize_yaml_value_escapes_quotes():
-    assert '"' not in _sanitize_yaml_value('He said "hello"')
-
-
-def test_sanitize_yaml_value_collapses_whitespace():
-    assert "  " not in _sanitize_yaml_value("too   many   spaces")
-
-
-# ---------------------------------------------------------------------------
-# _build_frontmatter
-# ---------------------------------------------------------------------------
-
-
-def test_build_frontmatter_has_required_fields():
-    fm = _build_frontmatter(
-        source_url="https://example.com",
-        content_hash="abc123",
-        title="Test Title",
-        author="Author",
-        tool_version="trafilatura 2.0",
-    )
-    assert "source_url:" in fm
-    assert "access_date:" in fm
-    assert "content_hash_sha256:" in fm
-    assert "title:" in fm
-    assert "author:" in fm
-    assert "extraction_tool:" in fm
-    assert fm.startswith("---")
-    assert fm.endswith("---")
-
-
-def test_build_frontmatter_omits_none_fields():
-    fm = _build_frontmatter(
-        source_url="https://example.com",
-        content_hash="abc123",
-        title=None,
-        author=None,
-        tool_version="trafilatura 2.0",
-    )
-    assert "title:" not in fm
-    assert "author:" not in fm
 
 
 # ---------------------------------------------------------------------------
@@ -135,21 +87,27 @@ def test_extract_produces_markdown_with_frontmatter(tmp_path):
     assert len(md_files) == 1
     content = md_files[0].read_text()
     assert content.startswith("---")
-    assert "source_url:" in content
+    assert "source:" in content
 
 
-def test_frontmatter_fields(tmp_path):
+def test_frontmatter_uses_new_field_names(tmp_path):
     mock_fetch = _make_fetch_result()
     with patch("agentic_mbse.extraction.web_backend.fetch_url", return_value=mock_fetch):
         result = extract_web_content("https://example.com/article", output_dir=tmp_path)
     assert result.success
     md_files = list(tmp_path.glob("*.md"))
     content = md_files[0].read_text()
-    assert "source_url:" in content
-    assert "access_date:" in content
+    # New field names
+    assert "source:" in content
+    assert "extracted_at:" in content
     assert "content_hash_sha256:" in content
+    assert "backend:" in content
     # Title should be extracted by trafilatura from the fixture
     assert "title:" in content
+    # Old field names must NOT appear
+    assert "source_url:" not in content
+    assert "access_date:" not in content
+    assert "extraction_tool:" not in content
 
 
 def test_extraction_result_type(tmp_path):
@@ -219,11 +177,11 @@ def test_no_sanitize_flag(tmp_path):
         san_mod.strip_hidden_content = original_fn
 
 
-def test_raw_html_saved(tmp_path):
+def test_save_source_saves_raw_html(tmp_path):
     mock_fetch = _make_fetch_result()
     with patch("agentic_mbse.extraction.web_backend.fetch_url", return_value=mock_fetch):
         result = extract_web_content(
-            "https://example.com/article", output_dir=tmp_path, save_raw_html=True
+            "https://example.com/article", output_dir=tmp_path, save_source=True
         )
     assert result.success
     assert (tmp_path / "raw.html").exists()
@@ -253,6 +211,31 @@ def test_char_count_populated(tmp_path):
         result = extract_web_content("https://example.com/article", output_dir=tmp_path)
     assert result.success
     assert result.char_count > 0
+
+
+def test_no_frontmatter_flag(tmp_path):
+    mock_fetch = _make_fetch_result()
+    with patch("agentic_mbse.extraction.web_backend.fetch_url", return_value=mock_fetch):
+        result = extract_web_content(
+            "https://example.com/article", output_dir=tmp_path, no_frontmatter=True
+        )
+    assert result.success
+    md_files = list(tmp_path.glob("*.md"))
+    content = md_files[0].read_text()
+    assert not content.startswith("---")
+
+
+def test_content_hash_uses_raw_bytes(tmp_path):
+    """content_hash_sha256 should hash the raw fetched HTML bytes, not extracted markdown."""
+    raw_html = "<html><body><p>Test content for hashing verification.</p></body></html>"
+    expected_hash = hashlib.sha256(raw_html.encode("utf-8")).hexdigest()
+    mock_fetch = _make_fetch_result(html=raw_html)
+    with patch("agentic_mbse.extraction.web_backend.fetch_url", return_value=mock_fetch):
+        result = extract_web_content("https://example.com/article", output_dir=tmp_path)
+    assert result.success
+    md_files = list(tmp_path.glob("*.md"))
+    content = md_files[0].read_text()
+    assert expected_hash in content
 
 
 # ---------------------------------------------------------------------------

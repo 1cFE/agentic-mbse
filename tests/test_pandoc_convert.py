@@ -182,9 +182,10 @@ class TestConvertArxivHtml:
         html_file = tmp_path / "test.html"
         html_file.write_text("<h1>Heading</h1><p>Content</p>")
 
-        result = convert_arxiv_html(html_file)
+        markdown, raw_bytes = convert_arxiv_html(html_file)
 
-        assert "Converted content" in result
+        assert "Converted content" in markdown
+        assert raw_bytes == b"<h1>Heading</h1><p>Content</p>"
         mock_run.assert_called_once()
         # Verify Pandoc flags
         cmd = mock_run.call_args[0][0]
@@ -228,10 +229,10 @@ class TestConvertArxivHtml:
         html_file = tmp_path / "test.html"
         html_file.write_text("<p>content</p>")
 
-        result = convert_arxiv_html(html_file)
+        markdown, _raw_bytes = convert_arxiv_html(html_file)
 
-        assert "\\hspace{0pt}" not in result
-        assert "`<!-- -->`{=html}" not in result
+        assert "\\hspace{0pt}" not in markdown
+        assert "`<!-- -->`{=html}" not in markdown
 
     @patch("agentic_mbse.extraction.pandoc_convert._pandoc_available")
     def test_pandoc_not_available(self, mock_available, tmp_path):

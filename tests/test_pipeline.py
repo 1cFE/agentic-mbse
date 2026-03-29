@@ -155,7 +155,7 @@ class TestExtractPdfArxivShortcut:
             _patch_pandoc_available(),
             patch(f"{_PANDOC}.detect_arxiv_id", return_value="2301.12345"),
             patch(f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2301.12345"),
-            patch(f"{_PANDOC}.convert_arxiv_html", return_value="# arXiv Paper\n\nContent."),
+            patch(f"{_PANDOC}.convert_arxiv_html", return_value=("# arXiv Paper\n\nContent.", b"<html>raw</html>")),
             _patch_base() as mock_base,
         ):
             result = extract_pdf(Path("/fake.pdf"))
@@ -211,7 +211,7 @@ class TestExtractPdfArxivShortcut:
             _patch_pandoc_available(),
             patch(f"{_PANDOC}.detect_arxiv_id") as mock_detect,
             patch(f"{_PANDOC}.check_arxiv_html") as mock_check,
-            patch(f"{_PANDOC}.convert_arxiv_html", return_value="# From HTML\n\nText."),
+            patch(f"{_PANDOC}.convert_arxiv_html", return_value=("# From HTML\n\nText.", b"<html>raw</html>")),
             _patch_base(),
         ):
             result = extract_pdf(Path("/fake.pdf"), cfg)
@@ -743,7 +743,7 @@ class TestExtractPdfStepOrdering:
             _patch_pandoc_available(),
             patch(f"{_PANDOC}.detect_arxiv_id", side_effect=track_arxiv),
             patch(f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2301.12345"),
-            patch(f"{_PANDOC}.convert_arxiv_html", return_value="# Paper"),
+            patch(f"{_PANDOC}.convert_arxiv_html", return_value=("# Paper", b"<html>raw</html>")),
             patch(f"{_P}.extract_pages", side_effect=track_base),
             _patch_tables(),
         ):
@@ -1474,7 +1474,7 @@ class TestPipelineProfiling:
             ),
             patch(
                 f"{_PANDOC}.convert_arxiv_html",
-                return_value="# arXiv Paper\n\nContent.",
+                return_value=("# arXiv Paper\n\nContent.", b"<html>raw</html>"),
             ),
         ):
             result = extract_pdf(Path("/fake.pdf"), config=config)

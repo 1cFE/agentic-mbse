@@ -132,14 +132,15 @@ def check_arxiv_html(arxiv_id: str) -> str | None:
 def convert_arxiv_html(
     html_source: str | Path,
     pandoc_path: str = "pandoc",
-) -> str:
+) -> tuple[str, bytes]:
     """Convert arXiv HTML to markdown via Pandoc.
 
     Args:
         html_source: URL (``https://...``) or local file path.
         pandoc_path: Path to pandoc binary.
 
-    Returns clean markdown.
+    Returns:
+        ``(markdown, raw_html_bytes)`` — raw bytes before preprocessing.
 
     Raises:
         ``subprocess.CalledProcessError`` on Pandoc failure.
@@ -158,9 +159,12 @@ def convert_arxiv_html(
         req = urllib.request.Request(html_source_str)
         req.add_header("User-Agent", USER_AGENT)
         with urllib.request.urlopen(req, timeout=30) as resp:
-            raw_html = resp.read().decode("utf-8")
+            raw_bytes = resp.read()
+            raw_html = raw_bytes.decode("utf-8")
     else:
-        raw_html = Path(html_source_str).read_text(encoding="utf-8")
+        p = Path(html_source_str)
+        raw_bytes = p.read_bytes()
+        raw_html = raw_bytes.decode("utf-8")
 
     # Pre-process
     processed_html = _preprocess_html(raw_html)
@@ -201,4 +205,4 @@ def convert_arxiv_html(
         tmp_path.unlink(missing_ok=True)
 
     # Post-process
-    return _postprocess_markdown(markdown)
+    return _postprocess_markdown(markdown), raw_bytes

@@ -1,5 +1,6 @@
 """Tests for agentic_mbse.cli.extract_cli — Phase 2 (pipeline + CLI rewrite)."""
 
+import hashlib
 import subprocess
 import warnings
 from pathlib import Path
@@ -171,6 +172,8 @@ class TestCmdExtract:
         docx = tmp_path / "report.docx"
         docx.write_bytes(b"fake docx content")
         md_path = tmp_path / "report" / "full_document.md"
+        md_path.parent.mkdir(parents=True, exist_ok=True)
+        md_path.write_text("# Fake content\n")
 
         mock_result = ExtractionResult(
             success=True,
@@ -440,10 +443,13 @@ class TestCmdExtractDocx:
 
         docx = tmp_path / "report.docx"
         docx.write_bytes(b"fake docx content")
+        md_path = tmp_path / "report" / "full_document.md"
+        md_path.parent.mkdir(parents=True, exist_ok=True)
+        md_path.write_text("# Fake content\n")
         mock_result = ExtractionResult(
             success=True,
             output_dir=tmp_path / "report",
-            markdown_path=tmp_path / "report" / "full_document.md",
+            markdown_path=md_path,
             backend_used="pandoc",
         )
 
@@ -466,10 +472,13 @@ class TestCmdExtractDocx:
 
         docx = tmp_path / "report.docx"
         docx.write_bytes(b"fake docx content")
+        md_path = tmp_path / "report" / "full_document.md"
+        md_path.parent.mkdir(parents=True, exist_ok=True)
+        md_path.write_text("# Fake content\n")
         mock_result = ExtractionResult(
             success=True,
             output_dir=tmp_path / "report",
-            markdown_path=tmp_path / "report" / "full_document.md",
+            markdown_path=md_path,
             backend_used="pandoc",
         )
 
@@ -617,7 +626,10 @@ class TestCLIIntegration:
         # Web extraction flags
         assert "--urls-from" in result.stdout
         assert "--no-sanitize" in result.stdout
-        assert "--raw-html" in result.stdout
+        assert "--save-source" in result.stdout
+        assert "--no-frontmatter" in result.stdout
+        # --raw-html is now hidden (deprecated)
+        assert "--raw-html" not in result.stdout
 
 
 # ---------------------------------------------------------------------------
@@ -776,3 +788,177 @@ class TestURLDispatch:
         with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result):
             rc = cmd_extract(args)
         assert rc == EXIT_SUCCESS
+
+
+# ---------------------------------------------------------------------------
+# Phase 4: Network provenance & raw source saving
+# ---------------------------------------------------------------------------
+
+
+class TestArxivShortcutProvenance:
+    """Verify arXiv shortcut populates provenance fields on PipelineResult."""
+
+    def _make_args(self, tmp_path, **overrides):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        defaults = dict(path=str(pdf), output=str(tmp_path / "out"))
+        defaults.update(overrides)
+        return MockArgs(**defaults)
+
+    def test_arxiv_frontmatter_has_url_and_backend(self, tmp_path):
+        """arXiv shortcut: frontmatter has source_type 'url' and backend 'pandoc_arxiv'."""
+        raw_html = b"<html><body><p>arXiv paper</p></body></html>"
+        content_hash = hashlib.sha256(raw_html).hexdigest()
+        mock_result = PipelineResult(
+            markdown="# arXiv Paper\n\nContent.",
+            metrics=compute_metrics("# arXiv Paper\n\nContent."),
+            decisions=[],
+            source="pandoc_arxiv",
+            source_url="https://arxiv.org/html/2411.06644v1",
+            content_hash=content_hash,
+        )
+        args = self._make_args(tmp_path)
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result):
+            rc = cmd_extract(args)
+
+        assert rc == EXIT_SUCCESS
+        out_dir = tmp_path / "out" / "paper"
+        content = (out_dir / "output.md").read_text()
+        assert content.startswith("---")
+        assert 'source: "https://arxiv.org/html/2411.06644v1"' in content
+        assert 'source_type: "url"' in content
+        assert 'backend: "pandoc_arxiv"' in content
+        assert f'content_hash_sha256: "{content_hash}"' in content
+
+    def test_arxiv_content_hash_matches_raw_bytes(self, tmp_path):
+        """Content hash for arXiv uses raw HTML bytes, not markdown."""
+        raw_html = b"<html><body><p>Specific content</p></body></html>"
+        expected_hash = hashlib.sha256(raw_html).hexdigest()
+        mock_result = PipelineResult(
+            markdown="# Paper",
+            metrics=compute_metrics("# Paper"),
+            decisions=[],
+            source="pandoc_arxiv",
+            source_url="https://arxiv.org/html/1234.56789v1",
+            content_hash=expected_hash,
+        )
+        args = self._make_args(tmp_path)
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result):
+            cmd_extract(args)
+
+        out_dir = tmp_path / "out" / "paper"
+        content = (out_dir / "output.md").read_text()
+        assert expected_hash in content
+
+    def test_save_source_arxiv_writes_raw_html(self, tmp_path):
+        """--save-source with arXiv shortcut saves raw.html."""
+        raw_bytes = b"<html><body><p>arXiv HTML</p></body></html>"
+        mock_result = PipelineResult(
+            markdown="# Paper",
+            metrics=compute_metrics("# Paper"),
+            decisions=[],
+            source="pandoc_arxiv",
+            source_url="https://arxiv.org/html/2411.06644v1",
+            content_hash=hashlib.sha256(raw_bytes).hexdigest(),
+            raw_source_bytes=raw_bytes,
+        )
+        args = self._make_args(tmp_path, save_source=True)
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result):
+            rc = cmd_extract(args)
+
+        assert rc == EXIT_SUCCESS
+        out_dir = tmp_path / "out" / "paper"
+        assert (out_dir / "raw.html").exists()
+        assert (out_dir / "raw.html").read_bytes() == raw_bytes
+
+    def test_save_source_local_pdf_no_raw_copy(self, tmp_path):
+        """--save-source on a local PDF should NOT create raw.pdf."""
+        mock_result = _make_pipeline_result()
+        args = self._make_args(tmp_path, save_source=True)
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=mock_result):
+            rc = cmd_extract(args)
+
+        assert rc == EXIT_SUCCESS
+        out_dir = tmp_path / "out" / "paper"
+        assert not (out_dir / "raw.pdf").exists()
+        assert not (out_dir / "raw.html").exists()
+
+
+class TestPdfUrlProvenance:
+    """Verify PDF-from-URL threads source URL and saves raw PDF."""
+
+    def test_pdf_url_sets_source_url_override(self):
+        """_extract_pdf_url sets source_url_override on the args namespace."""
+        from agentic_mbse.extraction.http import FetchResult
+
+        mock_fetch = FetchResult(
+            content=b"%PDF-1.4 fake",
+            final_url="https://example.com/final.pdf",
+            content_type="application/pdf",
+        )
+
+        args = MockArgs(path="https://example.com/paper.pdf")
+
+        with (
+            patch("agentic_mbse.extraction.http.fetch_url", return_value=mock_fetch),
+            patch(
+                "agentic_mbse.cli.extract_cli.cmd_extract", return_value=EXIT_SUCCESS
+            ) as mock_cmd,
+        ):
+            from agentic_mbse.cli.extract_cli import _extract_pdf_url
+
+            rc = _extract_pdf_url("https://example.com/paper.pdf", args)
+
+        assert rc == EXIT_SUCCESS
+        # Verify the args passed to cmd_extract have source_url_override
+        call_args = mock_cmd.call_args[0][0]
+        assert call_args.source_url_override == "https://example.com/final.pdf"
+
+    def test_save_source_pdf_url_writes_raw_pdf(self, tmp_path):
+        """--save-source with PDF URL saves raw.pdf in output dir."""
+        from agentic_mbse.extraction.http import FetchResult
+
+        pdf_bytes = b"%PDF-1.4 fake pdf content for save test"
+        mock_fetch = FetchResult(
+            content=pdf_bytes,
+            final_url="https://example.com/paper.pdf",
+            content_type="application/pdf",
+        )
+
+        args = MockArgs(
+            path="https://example.com/paper.pdf",
+            output=str(tmp_path / "out"),
+            save_source=True,
+        )
+
+        def fake_cmd_extract(pdf_args):
+            # Simulate what cmd_extract does: create the output dir
+            from agentic_mbse.extraction.base import get_output_dir
+
+            doc = Path(pdf_args.path)
+            output_base = Path(pdf_args.output) if pdf_args.output else None
+            output_dir = get_output_dir(doc, output_base=output_base)
+            output_dir.mkdir(parents=True, exist_ok=True)
+            (output_dir / "output.md").write_text("# Extracted")
+            return EXIT_SUCCESS
+
+        with (
+            patch("agentic_mbse.extraction.http.fetch_url", return_value=mock_fetch),
+            patch(
+                "agentic_mbse.cli.extract_cli.cmd_extract", side_effect=fake_cmd_extract
+            ),
+        ):
+            from agentic_mbse.cli.extract_cli import _extract_pdf_url
+
+            rc = _extract_pdf_url("https://example.com/paper.pdf", args)
+
+        assert rc == EXIT_SUCCESS
+        # Find the output dir (based on temp file name)
+        out_dirs = list((tmp_path / "out").iterdir())
+        assert len(out_dirs) == 1
+        assert (out_dirs[0] / "raw.pdf").exists()
+        assert (out_dirs[0] / "raw.pdf").read_bytes() == pdf_bytes

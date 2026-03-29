@@ -118,3 +118,7 @@ class PipelineResult:
     claude_pages_succeeded: int = 0
     image_count: int = 0
     profile: PipelineProfile | None = None
+    # Provenance fields (populated by arXiv shortcut; None for normal PDF path)
+    source_url: str | None = None
+    content_hash: str | None = None
+    raw_source_bytes: bytes | None = None

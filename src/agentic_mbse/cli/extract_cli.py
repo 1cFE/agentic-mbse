@@ -224,7 +224,8 @@ def _extract_url(url: str, args: argparse.Namespace) -> int:
         url,
         output_dir=output_base,
         sanitize=not getattr(args, "no_sanitize", False),
-        save_raw_html=getattr(args, "raw_html", False),
+        save_source=getattr(args, "save_source", False),
+        no_frontmatter=getattr(args, "no_frontmatter", False),
         timeout=args.timeout,
     )
 
@@ -265,7 +266,17 @@ def _extract_pdf_url(url: str, args: argparse.Namespace) -> int:
         # Shallow-copy args to avoid corrupting shared state in batch mode
         pdf_args = copy.copy(args)
         pdf_args.path = str(tmp_pdf)
-        return cmd_extract(pdf_args)
+        pdf_args.source_url_override = fetched.final_url
+        rc = cmd_extract(pdf_args)
+
+        # Save raw PDF if requested
+        if getattr(args, "save_source", False) and rc == EXIT_SUCCESS:
+            output_base = Path(pdf_args.output) if getattr(pdf_args, "output", None) else None
+            output_dir = get_output_dir(tmp_pdf, output_base=output_base)
+            if output_dir.exists():
+                shutil.copy2(tmp_pdf, output_dir / "raw.pdf")
+
+        return rc
     finally:
         tmp_pdf.unlink(missing_ok=True)
 
@@ -330,6 +341,13 @@ def cmd_extract(args: argparse.Namespace) -> int:
             DeprecationWarning,
             stacklevel=2,
         )
+    if getattr(args, "raw_html", False):
+        warnings.warn(
+            "--raw-html is deprecated. Use --save-source instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        args.save_source = True
 
     # --check-json implies --check
     if args.check_json:
@@ -473,6 +491,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 dry_run=args.dry_run,
                 extracted_images_dir=images_dir,
                 profile=args.profile,
+                save_source=getattr(args, "save_source", False),
             )
             result = extract_pdf(doc, config=config)
 
@@ -481,8 +500,30 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 failed += 1
                 continue
 
+            # Build frontmatter for output
+            markdown = result.markdown
+            if not getattr(args, "no_frontmatter", False):
+                from agentic_mbse.extraction.frontmatter import (
+                    build_frontmatter,
+                    compute_source_hash,
+                )
+
+                source_url = getattr(args, "source_url_override", None) or result.source_url
+                if result.content_hash:
+                    content_hash = result.content_hash
+                else:
+                    content_hash = compute_source_hash(doc)
+
+                fm = build_frontmatter(
+                    source=source_url or doc.name,
+                    source_type="url" if source_url else "local_file",
+                    backend=result.source,
+                    content_hash=content_hash,
+                )
+                markdown = f"{fm}\n\n{markdown}"
+
             # Write output artifacts (output_dir already created above)
-            (output_dir / "output.md").write_text(result.markdown)
+            (output_dir / "output.md").write_text(markdown)
             (output_dir / "metrics.json").write_text(json.dumps(result.metrics.to_dict(), indent=2))
             (output_dir / "decisions.json").write_text(
                 json.dumps([_decision_to_dict(d) for d in result.decisions], indent=2)
@@ -491,6 +532,10 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 (output_dir / "cost.json").write_text(
                     json.dumps([_cost_to_dict(c) for c in result.cost], indent=2)
                 )
+
+            # Save raw source if requested (arXiv shortcut populates raw_source_bytes)
+            if getattr(args, "save_source", False) and result.raw_source_bytes:
+                (output_dir / "raw.html").write_bytes(result.raw_source_bytes)
 
             if args.profile and result.profile:
                 from agentic_mbse.extraction.profile import ProfileEntry, profile_to_dict
@@ -564,6 +609,24 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
         # Write summary
         write_summary(doc, output_dir, docx_result, docx_result.backend_used or backend)
+
+        # Prepend frontmatter to DOCX output
+        if (
+            not getattr(args, "no_frontmatter", False)
+            and docx_result.success
+            and docx_result.markdown_path
+        ):
+            from agentic_mbse.extraction.frontmatter import build_frontmatter, compute_source_hash
+
+            content_hash = compute_source_hash(doc)
+            fm = build_frontmatter(
+                source=doc.name,
+                source_type="local_file",
+                backend=docx_result.backend_used or backend,
+                content_hash=content_hash,
+            )
+            existing = docx_result.markdown_path.read_text(encoding="utf-8")
+            docx_result.markdown_path.write_text(f"{fm}\n\n{existing}", encoding="utf-8")
 
         if docx_result.success:
             stats = []
@@ -742,10 +805,17 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         help="Skip HTML sanitization pre-pass (web extraction only)",
     )
     p.add_argument(
-        "--raw-html",
+        "--save-source",
         action="store_true",
-        help="Save raw HTML alongside extracted markdown (web extraction only)",
+        help="Save raw source artifacts for network-fetched content",
     )
+    p.add_argument(
+        "--no-frontmatter",
+        action="store_true",
+        help="Suppress YAML frontmatter in output markdown",
+    )
+    # Deprecated: use --save-source instead
+    p.add_argument("--raw-html", action="store_true", default=False, help=argparse.SUPPRESS)
     # Check flags
     p.add_argument(
         "--check",
