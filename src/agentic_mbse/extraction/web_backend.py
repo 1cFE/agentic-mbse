@@ -3,6 +3,11 @@
 Fetches HTML pages, strips hidden content, extracts article text
 via trafilatura, and writes markdown with YAML frontmatter metadata.
 
+arXiv HTML URLs are detected and routed through the Pandoc-based arXiv
+pipeline (pandoc_convert.py) which produces far better output for
+scientific content (tables with subscripts/superscripts, MathML equations,
+proper structure).
+
 Requires trafilatura and beautifulsoup4. Install via:
     pip install agentic-mbse[web]
 """
@@ -10,6 +15,7 @@ Requires trafilatura and beautifulsoup4. Install via:
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -120,6 +126,66 @@ def _extract_with_trafilatura(
     return text, metadata
 
 
+_ARXIV_HTML_RE = re.compile(r"https?://arxiv\.org/html/\d{4}\.\d{4,5}")
+
+
+def _is_arxiv_html_url(url: str) -> bool:
+    """Check if URL is an arXiv HTML page."""
+    return bool(_ARXIV_HTML_RE.match(url))
+
+
+def _extract_with_arxiv_pandoc(html: str) -> str | None:
+    """Convert arXiv/LaTeXML HTML to markdown via Pandoc with arXiv-specific
+    pre/post-processing.
+
+    Reuses the proven pipeline from pandoc_convert.py that the PDF
+    extraction arXiv shortcut uses. Returns None on failure.
+    """
+    from agentic_mbse.extraction.pandoc_convert import (
+        _pandoc_available,
+        _postprocess_markdown,
+        _preprocess_html,
+    )
+
+    if not _pandoc_available():
+        return None
+
+    import subprocess
+
+    processed = _preprocess_html(html)
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".html", delete=False, encoding="utf-8"
+    ) as f:
+        f.write(processed)
+        tmp = Path(f.name)
+
+    try:
+        # Pandoc flags match convert_arxiv_html() in pandoc_convert.py (:180-188).
+        result = subprocess.run(
+            [
+                "pandoc",
+                str(tmp),
+                "-f",
+                "html-native_divs-native_spans",
+                "-t",
+                "markdown-header_attributes",
+                "--wrap=none",
+                "--markdown-headings=atx",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return _postprocess_markdown(result.stdout)
+        return None
+    except Exception:
+        return None
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
 def _fallback_pandoc(html: str) -> str | None:
     """Fallback: convert HTML to markdown via Pandoc if available."""
     if not shutil.which("pandoc"):
@@ -210,9 +276,26 @@ def extract_web_content(
 
         html = strip_hidden_content(html)
 
-    # Step 3: Extract with trafilatura
-    markdown, metadata = _extract_with_trafilatura(html, final_url)
+    # Step 3: Extract — route arXiv HTML through Pandoc (proven pipeline),
+    # everything else through trafilatura with Pandoc fallback.
+    markdown: str | None = None
+    metadata: dict = {}
     backend = "trafilatura"
+
+    if _is_arxiv_html_url(final_url):
+        log.info("arXiv HTML detected, using Pandoc extraction pipeline")
+        markdown = _extract_with_arxiv_pandoc(html)
+        if markdown and len(markdown) >= _MIN_CONTENT_LENGTH:
+            backend = "pandoc-arxiv"
+            # Still grab metadata from trafilatura (title, author, date)
+            _, metadata = _extract_with_trafilatura(html, final_url)
+        else:
+            log.warning("Pandoc arXiv extraction failed/short, falling back to trafilatura")
+            markdown = None  # fall through to trafilatura below
+
+    if markdown is None:
+        markdown, metadata = _extract_with_trafilatura(html, final_url)
+        backend = "trafilatura"
 
     # Step 3b: Fallback to pandoc if trafilatura returned too little
     if not markdown or len(markdown) < _MIN_CONTENT_LENGTH:
@@ -240,7 +323,7 @@ def extract_web_content(
     if no_frontmatter:
         full_markdown = markdown
     else:
-        backend_str = "trafilatura" if backend == "trafilatura" else "pandoc-fallback"
+        backend_str = backend  # "trafilatura", "pandoc-arxiv", or "pandoc-fallback"
         frontmatter = build_frontmatter(
             source=final_url,
             source_type="url",

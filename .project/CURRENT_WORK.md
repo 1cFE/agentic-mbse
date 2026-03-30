@@ -1,10 +1,24 @@
 # Current Work
 
-**Last Updated**: 2026-03-01
+**Last Updated**: 2026-03-29
 
 ---
 
 ## Active Work
+
+### Web Extraction Quality (SOURCE-FIX Item 1)
+
+**Branch:** `webfetch-tools`
+**Upstream epic:** `fusion-tea/.project/backlog/epic_source_extraction_fix.md`
+**Active:** `.project/active/web-extraction-quality/`
+
+arXiv HTML URL extraction now routes through the proven Pandoc pipeline instead of trafilatura. Tables, equations, and scientific notation all preserved correctly. Spec and design docs exist but the design was over-scoped — the actual fix was routing, not preprocessing.
+
+**Done:** arXiv URL → Pandoc routing in `web_backend.py` (lines 129-186, 285-298)
+**Remaining (future work):**
+- Image downloading for web extraction (all paths still return `image_count=0`)
+- Non-arXiv scientific HTML quality (still goes through trafilatura)
+- Re-extraction of fusion-tea sources (epic Item 2, depends on this)
 
 ### PDF Skill Deployment (ITEM-DOCLING-002)
 
@@ -41,6 +55,14 @@ Four items, ~4.5 days:
 ---
 
 ## Recently Completed
+
+### 2026-03-29: arXiv HTML Routing Fix
+
+arXiv HTML URLs (`arxiv.org/html/...`) extracted via `agentic-mbse extract <url>` were going through trafilatura, producing broken tables and lost equations. Fixed by detecting arXiv URLs and routing through the existing Pandoc pipeline from `pandoc_convert.py` (same one the PDF arXiv shortcut uses). ~50 lines in `web_backend.py`. Verified on arxiv-2411-06644: Table 3 now has all parameter names, scientific notation, and correct alignment.
+
+### 2026-03-28–29: Web Source Capture
+
+Added URL-to-markdown extraction to `agentic-mbse extract`. Trafilatura backend with Pandoc fallback, HTML sanitization (CSS-hidden content stripping), batch mode via `--urls-from`, frontmatter provenance, and `--save-source` flag. Four commits on `webfetch-tools` branch.
 
 ### 2026-03-01: Validation Stack Restructuring (8 → 6 Levels)
 
