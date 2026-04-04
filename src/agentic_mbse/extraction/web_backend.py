@@ -15,10 +15,13 @@ Requires trafilatura and beautifulsoup4. Install via:
 from __future__ import annotations
 
 import json
+import logging
 import re
 import shutil
 import tempfile
+import urllib.request
 from pathlib import Path
+from urllib.parse import urljoin, urlparse
 
 from agentic_mbse.extraction.base import ExtractionResult, sanitize_filename
 from agentic_mbse.extraction.frontmatter import build_frontmatter, compute_source_hash
@@ -41,6 +44,100 @@ _PDF_CONTENT_TYPES = frozenset(
         "application/pdf",
     }
 )
+
+
+_MD_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)(\{[^}]*\})?")
+
+log = logging.getLogger(__name__)
+
+
+def _download_arxiv_images(
+    markdown: str,
+    page_url: str,
+    output_dir: Path,
+    *,
+    max_image_bytes: int = 10 * 1024 * 1024,
+    timeout: int = 15,
+) -> tuple[str, int]:
+    """Download images from arXiv markdown and rewrite refs to local paths.
+
+    Returns (rewritten_markdown, download_count).
+    """
+    from agentic_mbse.extraction.http import USER_AGENT
+
+    matches = list(_MD_IMAGE_RE.finditer(markdown))
+    if not matches:
+        return markdown, 0
+
+    images_dir = output_dir / "images"
+    download_count = 0
+    used_filenames: dict[str, int] = {}  # basename -> times seen
+
+    # Process replacements in reverse order to preserve string positions
+    replacements: list[tuple[int, int, str]] = []
+
+    for m in matches:
+        alt, img_url, attr_block = m.group(1), m.group(2), m.group(3) or ""
+        attr_str = attr_block
+
+        # Skip data: URIs
+        if img_url.startswith("data:"):
+            continue
+
+        # Resolve URL
+        if img_url.startswith("/"):
+            # Root-relative: resolve against arxiv.org
+            abs_url = f"https://arxiv.org{img_url}"
+        elif img_url.startswith(("http://", "https://")):
+            abs_url = img_url
+        else:
+            # Relative to page URL
+            abs_url = urljoin(page_url, img_url)
+
+        # Extract filename
+        parsed_path = urlparse(abs_url).path
+        basename = Path(parsed_path).name
+        if not basename:
+            continue
+
+        # Handle duplicate filenames
+        if basename in used_filenames:
+            used_filenames[basename] += 1
+            stem = Path(basename).stem
+            suffix = Path(basename).suffix
+            local_name = f"{stem}_{used_filenames[basename]}{suffix}"
+        else:
+            used_filenames[basename] = 1
+            local_name = basename
+
+        # Download
+        try:
+            req = urllib.request.Request(abs_url)
+            req.add_header("User-Agent", USER_AGENT)
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = resp.read(max_image_bytes + 1)
+                if len(data) > max_image_bytes:
+                    log.warning("Image too large (%d bytes), skipping: %s", len(data), abs_url)
+                    continue
+        except Exception:
+            log.warning("Failed to download image: %s", abs_url, exc_info=True)
+            continue
+
+        # Save
+        images_dir.mkdir(parents=True, exist_ok=True)
+        (images_dir / local_name).write_bytes(data)
+        download_count += 1
+
+        # Record replacement
+        new_ref = f"![{alt}](images/{local_name}){attr_str}"
+        replacements.append((m.start(), m.end(), new_ref))
+
+    # Apply replacements in reverse order
+    result = markdown
+    for start, end, new_text in reversed(replacements):
+        result = result[:start] + new_text + result[end:]
+
+    return result, download_count
 
 
 def check_web_deps() -> None:
@@ -250,10 +347,8 @@ def extract_web_content(
     Returns:
         ExtractionResult with success status, output paths, and metrics.
     """
-    import logging
     import time
 
-    log = logging.getLogger(__name__)
     t0 = time.monotonic()
 
     # Step 1: Fetch
@@ -338,8 +433,6 @@ def extract_web_content(
     dir_name = sanitize_filename(title) if title else sanitize_filename(final_url)
     if not dir_name or dir_name.startswith("https___") or dir_name.startswith("http___"):
         # Fallback: use domain + path fragment
-        from urllib.parse import urlparse
-
         parsed = urlparse(final_url)
         dir_name = sanitize_filename(f"{parsed.netloc}{parsed.path}")
 
@@ -347,6 +440,13 @@ def extract_web_content(
     if output_dir is None:
         output_dir = Path.cwd() / dir_name
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Step 4a: Download images (pandoc-arxiv only)
+    image_count = 0
+    if backend == "pandoc-arxiv":
+        full_markdown, image_count = _download_arxiv_images(
+            full_markdown, final_url, output_dir
+        )
 
     # Write markdown — when the caller provides output_dir (e.g., batch mode
     # with --output), use "output.md" to avoid filename collisions between
@@ -369,7 +469,7 @@ def extract_web_content(
         success=True,
         output_dir=output_dir,
         markdown_path=md_path,
-        image_count=0,
+        image_count=image_count,
         char_count=metrics.char_count,
         backend_used=backend,
     )
