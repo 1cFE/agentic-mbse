@@ -237,6 +237,10 @@ def _extract_url(url: str, args: argparse.Namespace) -> int:
         print(f"   ok   {url} ({', '.join(stats)})")
         if result.markdown_path:
             print(f"        → {result.markdown_path}")
+        if result.warnings:
+            print(f"        ⚠ {len(result.warnings)} warning(s):")
+            for w in result.warnings:
+                print(f"          - {w}")
         return EXIT_SUCCESS
     else:
         print(f"  FAIL  {url}: {result.error}")

@@ -31,11 +31,12 @@ class TestDownloadArxivImages:
 
         with patch("agentic_mbse.extraction.web_backend.urllib.request.urlopen") as mock_open:
             mock_open.return_value = _fake_urlopen(fake_png)
-            result_md, count = _download_arxiv_images(
+            result_md, count, warnings = _download_arxiv_images(
                 md, "https://arxiv.org/html/2411.06644v1", tmp_path
             )
 
         assert count == 2
+        assert warnings == []
         assert (tmp_path / "images" / "fig1.png").exists()
         assert (tmp_path / "images" / "fig2.png").exists()
         assert (tmp_path / "images" / "fig1.png").read_bytes() == fake_png
@@ -51,7 +52,7 @@ class TestDownloadArxivImages:
 
         with patch("agentic_mbse.extraction.web_backend.urllib.request.urlopen") as mock_open:
             mock_open.return_value = _fake_urlopen(fake_png)
-            result_md, count = _download_arxiv_images(
+            result_md, count, warnings = _download_arxiv_images(
                 md, "https://arxiv.org/html/2411.06644v1", tmp_path
             )
 
@@ -77,7 +78,7 @@ class TestDownloadArxivImages:
             return _fake_urlopen(fake_png)
 
         with patch("agentic_mbse.extraction.web_backend.urllib.request.urlopen", side_effect=side_effect):
-            result_md, count = _download_arxiv_images(
+            result_md, count, warnings = _download_arxiv_images(
                 md, "https://arxiv.org/html/2411.06644v1", tmp_path
             )
 
@@ -85,6 +86,8 @@ class TestDownloadArxivImages:
         assert "![Good](images/good.png)" in result_md
         # Bad ref left unchanged
         assert "![Bad](/html/2411.06644v1/figures/bad.png)" in result_md
+        assert len(warnings) == 1
+        assert "bad.png" in warnings[0]
 
     def test_data_uri_skipped(self, tmp_path: Path):
         """data: URI left unchanged, not downloaded."""
@@ -93,7 +96,7 @@ class TestDownloadArxivImages:
 
         with patch("agentic_mbse.extraction.web_backend.urllib.request.urlopen") as mock_open:
             mock_open.return_value = _fake_urlopen(fake_png)
-            result_md, count = _download_arxiv_images(
+            result_md, count, warnings = _download_arxiv_images(
                 md, "https://arxiv.org/html/2411.06644v1", tmp_path
             )
 
@@ -110,7 +113,7 @@ class TestDownloadArxivImages:
 
         with patch("agentic_mbse.extraction.web_backend.urllib.request.urlopen") as mock_open:
             mock_open.return_value = _fake_urlopen(big_data)
-            result_md, count = _download_arxiv_images(
+            result_md, count, warnings = _download_arxiv_images(
                 md, "https://arxiv.org/html/2411.06644v1", tmp_path,
                 max_image_bytes=100,
             )
@@ -119,6 +122,8 @@ class TestDownloadArxivImages:
         # Original ref preserved
         assert "/html/2411.06644v1/figures/big.png" in result_md
         assert not (tmp_path / "images").exists()
+        assert len(warnings) == 1
+        assert "too large" in warnings[0].lower()
 
     def test_duplicate_filenames_deduped(self, tmp_path: Path):
         """Two images with same filename get _2 suffix."""
@@ -140,11 +145,12 @@ class TestDownloadArxivImages:
             return _fake_urlopen(fake_a)
 
         with patch("agentic_mbse.extraction.web_backend.urllib.request.urlopen", side_effect=side_effect):
-            result_md, count = _download_arxiv_images(
+            result_md, count, warnings = _download_arxiv_images(
                 md, "https://arxiv.org/html/2411.06644v1", tmp_path
             )
 
         assert count == 2
+        assert warnings == []
         assert (tmp_path / "images" / "fig.png").exists()
         assert (tmp_path / "images" / "fig_2.png").exists()
         assert (tmp_path / "images" / "fig.png").read_bytes() == fake_a
@@ -152,12 +158,31 @@ class TestDownloadArxivImages:
         assert "![A](images/fig.png)" in result_md
         assert "![B](images/fig_2.png)" in result_md
 
+    def test_double_slash_in_path_normalized(self, tmp_path: Path):
+        """LaTeXML paths with // are normalized to single slash."""
+        md = "![Fig](/html/2503.18960v1//fig_canis.png)"
+        fake_png = b"\x89PNG"
+
+        with patch("agentic_mbse.extraction.web_backend.urllib.request.urlopen") as mock_open:
+            mock_open.return_value = _fake_urlopen(fake_png)
+            result_md, count, warnings = _download_arxiv_images(
+                md, "https://arxiv.org/html/2503.18960v1", tmp_path
+            )
+
+        assert count == 1
+        assert warnings == []
+        # Verify the request URL was normalized (no double slash)
+        req = mock_open.call_args[0][0]
+        assert "//" not in req.full_url.split("://")[1]
+        assert "![Fig](images/fig_canis.png)" in result_md
+
     def test_no_images_is_noop(self, tmp_path: Path):
         """Markdown with no image refs → unchanged, count 0."""
         md = "# Hello\n\nJust text, no images."
-        result_md, count = _download_arxiv_images(
+        result_md, count, warnings = _download_arxiv_images(
             md, "https://arxiv.org/html/2411.06644v1", tmp_path
         )
         assert count == 0
+        assert warnings == []
         assert result_md == md
         assert not (tmp_path / "images").exists()

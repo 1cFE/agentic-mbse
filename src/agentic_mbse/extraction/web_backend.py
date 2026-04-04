@@ -58,19 +58,20 @@ def _download_arxiv_images(
     *,
     max_image_bytes: int = 10 * 1024 * 1024,
     timeout: int = 15,
-) -> tuple[str, int]:
+) -> tuple[str, int, list[str]]:
     """Download images from arXiv markdown and rewrite refs to local paths.
 
-    Returns (rewritten_markdown, download_count).
+    Returns (rewritten_markdown, download_count, warnings).
     """
     from agentic_mbse.extraction.http import USER_AGENT
 
     matches = list(_MD_IMAGE_RE.finditer(markdown))
     if not matches:
-        return markdown, 0
+        return markdown, 0, []
 
     images_dir = output_dir / "images"
     download_count = 0
+    warnings: list[str] = []
     used_filenames: dict[str, int] = {}  # basename -> times seen
 
     # Process replacements in reverse order to preserve string positions
@@ -84,10 +85,11 @@ def _download_arxiv_images(
         if img_url.startswith("data:"):
             continue
 
-        # Resolve URL
+        # Resolve URL (normalize repeated slashes from LaTeXML paths)
         if img_url.startswith("/"):
             # Root-relative: resolve against arxiv.org
-            abs_url = f"https://arxiv.org{img_url}"
+            normalized = re.sub(r"/+", "/", img_url)
+            abs_url = f"https://arxiv.org{normalized}"
         elif img_url.startswith(("http://", "https://")):
             abs_url = img_url
         else:
@@ -117,10 +119,14 @@ def _download_arxiv_images(
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 data = resp.read(max_image_bytes + 1)
                 if len(data) > max_image_bytes:
-                    log.warning("Image too large (%d bytes), skipping: %s", len(data), abs_url)
+                    msg = f"Image too large ({len(data)} bytes), skipping: {abs_url}"
+                    log.warning(msg)
+                    warnings.append(msg)
                     continue
-        except Exception:
-            log.warning("Failed to download image: %s", abs_url, exc_info=True)
+        except Exception as exc:
+            msg = f"Failed to download image: {abs_url} ({exc})"
+            log.warning(msg)
+            warnings.append(msg)
             continue
 
         # Save
@@ -137,7 +143,7 @@ def _download_arxiv_images(
     for start, end, new_text in reversed(replacements):
         result = result[:start] + new_text + result[end:]
 
-    return result, download_count
+    return result, download_count, warnings
 
 
 def check_web_deps() -> None:
@@ -443,8 +449,9 @@ def extract_web_content(
 
     # Step 4a: Download images (pandoc-arxiv only)
     image_count = 0
+    extraction_warnings: list[str] = []
     if backend == "pandoc-arxiv":
-        full_markdown, image_count = _download_arxiv_images(
+        full_markdown, image_count, extraction_warnings = _download_arxiv_images(
             full_markdown, final_url, output_dir
         )
 
@@ -459,7 +466,10 @@ def extract_web_content(
     # Write metrics
     elapsed = time.monotonic() - t0
     metrics: ExtractionMetrics = compute_metrics(markdown, elapsed)
-    (output_dir / "metrics.json").write_text(json.dumps(metrics.to_dict(), indent=2))
+    metrics_dict = metrics.to_dict()
+    if extraction_warnings:
+        metrics_dict["warnings"] = extraction_warnings
+    (output_dir / "metrics.json").write_text(json.dumps(metrics_dict, indent=2))
 
     # Optionally save raw source HTML
     if save_source:
@@ -472,4 +482,5 @@ def extract_web_content(
         image_count=image_count,
         char_count=metrics.char_count,
         backend_used=backend,
+        warnings=extraction_warnings,
     )
