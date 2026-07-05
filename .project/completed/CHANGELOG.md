@@ -4,6 +4,39 @@ Historical record of completed work.
 
 ---
 
+## [2026-07-05] - Web Source Capture + arXiv Extraction Pipeline
+
+**Type**: Items (5, standalone — shipped together in PR #6, `webfetch-tools` → `main`)
+**Duration**: episodic, 2026-03-28 to 2026-07-05
+
+### Summary
+
+Built out `agentic-mbse extract` for the web: URL-to-markdown capture with injection-safe sanitization, consistent provenance across all pipelines, and an arXiv path that produces clean, current papers. Five standalone work items that landed as one branch.
+
+**Web Source Capture** (`web-source-capture`): `extract <url>` fetches, sanitizes, and extracts web content to markdown using the same CLI, output format, and type system as PDF/DOCX. trafilatura backend with Pandoc fallback; an HTML sanitization pre-pass strips CSS-hidden content (the indirect-prompt-injection vector); batch mode and `--save-source`. Optional dependency extra to keep the base install light.
+
+**Extraction Provenance** (`extraction-provenance`): universal YAML frontmatter (source, backend, content hash) across the three extraction pipelines, which previously recorded provenance inconsistently; `--no-frontmatter` and `--save-source`.
+
+**Hash Consolidation** (`hash-consolidation`): replaced three divergent hash implementations (MD5 vs SHA256, differing output formats) with a single SHA256 `compute_source_hash` in `base.py`.
+
+**Web Extraction Quality** (`web-extraction-quality`): arXiv HTML URLs route through the proven Pandoc pipeline instead of trafilatura, preserving tables, equations, and scientific notation; arXiv figures are downloaded locally with markdown refs rewritten, and image-download failures surface as `ExtractionResult` warnings. Remaining scope (non-arXiv scientific HTML quality, fusion-tea source re-extraction) was dropped from this item at close.
+
+**arXiv Latest-Version** (`arxiv-latest-version`): a version-pinned arXiv id/URL now resolves to the newest version arXiv serves (the bare `/html/{id}` URL) instead of fetching a stale v1, across both the web and PDF-derived paths; the served version is recorded in frontmatter `source`, with a fallback to the requested version if the bare fetch fails. **Certified** (`audit.md`) — all four spec criteria met, verified live (`1706.03762v1` → recorded `v7`).
+
+### Deliverables
+
+- `web-source-capture`: spec, design, plan
+- `extraction-provenance`: spec, design, plan
+- `hash-consolidation`: spec, plan
+- `web-extraction-quality`: spec, design, plan (+ arXiv-images sub-spec/design/plan)
+- `arxiv-latest-version`: spec, design, plan, **audit**
+
+### Lessons Learned
+
+[TODO: Add lessons learned]
+
+---
+
 ## [2026-03-06] - EPIC-PDFV4-002 Items 1-4: Quality & Features
 
 **Type**: Items (from EPIC-PDFV4-002)

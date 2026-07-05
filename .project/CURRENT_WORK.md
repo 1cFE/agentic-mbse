@@ -1,37 +1,10 @@
 # Current Work
 
-**Last Updated**: 2026-03-29
+**Last Updated**: 2026-07-05
 
 ---
 
 ## Active Work
-
-### Fetch Latest arXiv Version
-
-**Branch:** `webfetch-tools`
-**Active:** `.project/active/arxiv-latest-version/`
-
-Resolve version-pinned arXiv ids/URLs to the latest version before extracting,
-across both the web path (`web_backend.py`) and the PDF-derived path
-(`pandoc_convert.py`). **Certified** 2026-07-05 (`audit.md`) — all 4 spec
-criteria met, verified live: `…/1706.03762v1` → recorded `…v7`. One non-blocking
-finding: new mypy `no-any-return` at `pandoc_convert.py:161` (fix:
-`return bool(resp.status == 200)`). Not yet committed. Next: fix mypy nit, then
-`/_my_pre_pr`.
-
-### Web Extraction Quality (SOURCE-FIX Item 1)
-
-**Branch:** `webfetch-tools`
-**Upstream epic:** `fusion-tea/.project/backlog/epic_source_extraction_fix.md`
-**Active:** `.project/active/web-extraction-quality/`
-
-arXiv HTML URL extraction now routes through the proven Pandoc pipeline instead of trafilatura. Tables, equations, and scientific notation all preserved correctly. Spec and design docs exist but the design was over-scoped — the actual fix was routing, not preprocessing.
-
-**Done:** arXiv URL → Pandoc routing in `web_backend.py` (lines 129-186, 285-298)
-**Remaining (future work):**
-- Image downloading for web extraction (all paths still return `image_count=0`)
-- Non-arXiv scientific HTML quality (still goes through trafilatura)
-- Re-extraction of fusion-tea sources (epic Item 2, depends on this)
 
 ### PDF Skill Deployment (ITEM-DOCLING-002)
 
@@ -68,6 +41,23 @@ Four items, ~4.5 days:
 ---
 
 ## Recently Completed
+
+### 2026-07-05: Web Source Capture + arXiv Extraction Pipeline (PR #6, merged)
+
+Five standalone items shipped together on `webfetch-tools` → `main` and archived
+to `.project/completed/20260705_*`:
+
+- **Web Source Capture** — `extract <url>` → sanitized markdown (trafilatura +
+  Pandoc fallback, CSS-hidden-content stripping, batch mode, `--save-source`).
+- **Extraction Provenance** — universal frontmatter (source/backend/hash),
+  `--no-frontmatter`.
+- **Hash Consolidation** — single SHA256 `compute_source_hash` in `base.py`.
+- **Web Extraction Quality** — arXiv HTML routed through Pandoc; figures
+  downloaded locally; download failures surfaced as warnings. (Remaining
+  non-arXiv-HTML-quality and fusion-tea re-extraction scope dropped at close.)
+- **arXiv Latest-Version** — pinned ids/URLs resolve to newest version; served
+  version recorded in `source`. **Certified** (`audit.md`), verified live
+  (`1706.03762v1` → `v7`).
 
 ### 2026-03-29: arXiv HTML Routing Fix
 
