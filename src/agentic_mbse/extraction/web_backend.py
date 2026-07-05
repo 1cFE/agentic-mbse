@@ -27,6 +27,10 @@ from agentic_mbse.extraction.base import ExtractionResult, sanitize_filename
 from agentic_mbse.extraction.frontmatter import build_frontmatter, compute_source_hash
 from agentic_mbse.extraction.http import FetchResult, fetch_url, head_content_type
 from agentic_mbse.extraction.metrics import ExtractionMetrics, compute_metrics
+from agentic_mbse.extraction.pandoc_convert import (
+    resolve_fetched_version,
+    strip_arxiv_version,
+)
 
 # Minimum extracted content length before trying fallback
 _MIN_CONTENT_LENGTH = 100
@@ -230,6 +234,8 @@ def _extract_with_trafilatura(
 
 
 _ARXIV_HTML_RE = re.compile(r"https?://arxiv\.org/html/\d{4}\.\d{4,5}")
+# Captures the bare arXiv id (without version) from an arXiv HTML URL.
+_ARXIV_ID_IN_URL_RE = re.compile(r"/html/(\d{4}\.\d{4,5})")
 
 
 def _is_arxiv_html_url(url: str) -> bool:
@@ -357,15 +363,31 @@ def extract_web_content(
 
     t0 = time.monotonic()
 
-    # Step 1: Fetch
-    try:
-        fetched: FetchResult = fetch_url(url, timeout=timeout)
-    except Exception as exc:
+    # Step 1: Fetch. A version-pinned arXiv HTML URL is fetched at its bare
+    # (unversioned) URL so arXiv serves the latest version; if that fetch fails,
+    # fall back to the exact requested URL (design.md D5).
+    requested_version: int | None = None
+    fetch_target = url
+    if _is_arxiv_html_url(url):
+        fetch_target, requested_version = strip_arxiv_version(url)
+
+    candidates = [fetch_target] if fetch_target == url else [fetch_target, url]
+    fetched: FetchResult | None = None
+    last_exc: Exception | None = None
+    for candidate in candidates:
+        try:
+            fetched = fetch_url(candidate, timeout=timeout)
+            break
+        except Exception as exc:
+            last_exc = exc
+            if candidate != url:
+                log.warning("Latest-version fetch failed (%s); retrying %s", exc, url)
+    if fetched is None:
         out = output_dir or Path(".")
         return ExtractionResult(
             success=False,
             output_dir=out,
-            error=f"Failed to fetch {url}: {exc}",
+            error=f"Failed to fetch {url}: {last_exc}",
         )
 
     html = fetched.text()
@@ -421,12 +443,29 @@ def extract_web_content(
     title = metadata.get("title") or ""
     content_hash = compute_source_hash(fetched.content)  # hash raw HTML bytes
 
+    # For arXiv, record the version arXiv actually served (bare URL = latest) in
+    # the source, so provenance names the fetched version, not the pinned one.
+    source_url = final_url
+    if backend == "pandoc-arxiv":
+        m = _ARXIV_ID_IN_URL_RE.search(final_url)
+        if m:
+            bare_id = m.group(1)
+            version = resolve_fetched_version(html, bare_id)
+            if version is not None:
+                source_url = f"https://arxiv.org/html/{bare_id}v{version}"
+                if requested_version is not None and requested_version != version:
+                    log.info(
+                        "arXiv version upgrade: requested v%d → fetched v%d",
+                        requested_version,
+                        version,
+                    )
+
     if no_frontmatter:
         full_markdown = markdown
     else:
         backend_str = backend  # "trafilatura", "pandoc-arxiv", or "pandoc-fallback"
         frontmatter = build_frontmatter(
-            source=final_url,
+            source=source_url,
             source_type="url",
             backend=backend_str,
             content_hash=content_hash,

@@ -180,12 +180,15 @@ def _try_arxiv_shortcut(pdf_path: Path, config: PipelineConfig) -> PipelineResul
         check_arxiv_html,
         convert_arxiv_html,
         detect_arxiv_id,
+        resolve_fetched_version,
+        strip_arxiv_version,
     )
 
     try:
         if not _pandoc_available():
             return None
 
+        arxiv_id = None
         if config.arxiv_html_path is not None:
             html_source = str(config.arxiv_html_path)
         else:
@@ -200,11 +203,21 @@ def _try_arxiv_shortcut(pdf_path: Path, config: PipelineConfig) -> PipelineResul
         markdown, raw_bytes = convert_arxiv_html(html_source)
         metrics = compute_metrics(markdown)
         content_hash = compute_source_hash(raw_bytes)
+
+        # Record the version arXiv actually served (bare URL = latest), so
+        # provenance names the fetched version rather than the pinned one.
+        source_url = html_source if html_source.startswith("http") else None
+        if arxiv_id is not None:
+            bare_id, _ = strip_arxiv_version(arxiv_id)
+            version = resolve_fetched_version(raw_bytes.decode("utf-8", "replace"), bare_id)
+            if version is not None:
+                source_url = f"https://arxiv.org/html/{bare_id}v{version}"
+
         return PipelineResult(
             markdown=markdown,
             metrics=metrics,
             source="pandoc_arxiv",
-            source_url=html_source if html_source.startswith("http") else None,
+            source_url=source_url,
             content_hash=content_hash,
             raw_source_bytes=raw_bytes if config.save_source else None,
         )

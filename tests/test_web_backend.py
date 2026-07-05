@@ -276,3 +276,81 @@ def test_check_web_deps_missing_bs4():
     with patch("builtins.__import__", side_effect=mock_import):
         with pytest.raises(ImportError, match="pip install agentic-mbse"):
             check_web_deps()
+
+
+# ---------------------------------------------------------------------------
+# arXiv latest-version resolution
+# ---------------------------------------------------------------------------
+
+
+def test_versioned_arxiv_url_normalized_before_fetch(tmp_path):
+    """A version-pinned arXiv URL is fetched at its bare (latest) URL."""
+    seen = []
+
+    def fake_fetch(u, **kwargs):
+        seen.append(u)
+        return _make_fetch_result(html="<p>irrelevant</p>", url=u)
+
+    with patch("agentic_mbse.extraction.web_backend.fetch_url", side_effect=fake_fetch):
+        extract_web_content("https://arxiv.org/html/2401.00001v1", output_dir=tmp_path)
+
+    assert seen == ["https://arxiv.org/html/2401.00001"]  # stripped, single fetch
+
+
+def test_non_arxiv_url_untouched(tmp_path):
+    """A non-arXiv URL is fetched verbatim — no version stripping."""
+    seen = []
+
+    def fake_fetch(u, **kwargs):
+        seen.append(u)
+        return _make_fetch_result(url=u)
+
+    with patch("agentic_mbse.extraction.web_backend.fetch_url", side_effect=fake_fetch):
+        extract_web_content("https://example.com/article/1234.56789v2", output_dir=tmp_path)
+
+    assert seen == ["https://example.com/article/1234.56789v2"]
+
+
+def test_bare_fetch_failure_falls_back_to_requested(tmp_path):
+    """If the bare (latest) fetch fails, retry the exact requested URL (D5)."""
+    seen = []
+
+    def fake_fetch(u, **kwargs):
+        seen.append(u)
+        if u == "https://arxiv.org/html/2401.00001":
+            raise OSError("bare unavailable")
+        return _make_fetch_result(html="<p>irrelevant</p>", url=u)
+
+    with patch("agentic_mbse.extraction.web_backend.fetch_url", side_effect=fake_fetch):
+        result = extract_web_content("https://arxiv.org/html/2401.00001v1", output_dir=tmp_path)
+
+    assert result.success
+    assert seen == [
+        "https://arxiv.org/html/2401.00001",       # bare first (fails)
+        "https://arxiv.org/html/2401.00001v1",     # requested fallback
+    ]
+
+
+def test_arxiv_source_records_fetched_version(tmp_path):
+    """Frontmatter source names the version arXiv actually served, not the pinned one."""
+    html = (FIXTURES / "arxiv_1706.03762_latest.html").read_text()
+
+    def fake_fetch(u, **kwargs):
+        # Bare URL serves latest; final_url comes back bare (arXiv, no redirect).
+        return _make_fetch_result(html=html, url=u)
+
+    with (
+        patch("agentic_mbse.extraction.web_backend.fetch_url", side_effect=fake_fetch),
+        patch(
+            "agentic_mbse.extraction.web_backend._extract_with_arxiv_pandoc",
+            return_value="A" * 200,  # non-empty, no image refs (skips downloads)
+        ),
+    ):
+        result = extract_web_content(
+            "https://arxiv.org/html/1706.03762v1", output_dir=tmp_path
+        )
+
+    assert result.success
+    assert result.backend_used == "pandoc-arxiv"
+    md_text = (tmp_path / "output.md").read_text()
+    assert 'source: "https://arxiv.org/html/1706.03762v7"' in md_text

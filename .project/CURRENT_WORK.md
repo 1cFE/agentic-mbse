@@ -6,6 +6,19 @@
 
 ## Active Work
 
+### Fetch Latest arXiv Version
+
+**Branch:** `webfetch-tools`
+**Active:** `.project/active/arxiv-latest-version/`
+
+Resolve version-pinned arXiv ids/URLs to the latest version before extracting,
+across both the web path (`web_backend.py`) and the PDF-derived path
+(`pandoc_convert.py`). **Certified** 2026-07-05 (`audit.md`) — all 4 spec
+criteria met, verified live: `…/1706.03762v1` → recorded `…v7`. One non-blocking
+finding: new mypy `no-any-return` at `pandoc_convert.py:161` (fix:
+`return bool(resp.status == 200)`). Not yet committed. Next: fix mypy nit, then
+`/_my_pre_pr`.
+
 ### Web Extraction Quality (SOURCE-FIX Item 1)
 
 **Branch:** `webfetch-tools`
