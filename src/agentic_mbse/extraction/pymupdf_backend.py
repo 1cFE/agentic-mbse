@@ -158,7 +158,9 @@ def extract_pages(
 
     results = []
     for chunk in chunks:
-        page_num = chunk["metadata"]["page"] - 1  # Convert 1-indexed to 0-indexed
+        # pymupdf4llm uses 'page' in older versions and 'page_number' in newer ones
+        meta = chunk["metadata"]
+        page_num = (meta.get("page") or meta.get("page_number", 1)) - 1  # Convert 1-indexed to 0-indexed
         results.append(PageResult(page_num=page_num, markdown=chunk["text"]))
 
     return results
