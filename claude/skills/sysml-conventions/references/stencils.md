@@ -36,9 +36,7 @@ calc def 'Calculation Name' {
 
     in attribute input_a : Real;
     in attribute input_b : Real;
-    return attribute result : Real;
-
-    result = input_a * input_b;
+    return result : Real = input_a * input_b;   // inline expression -> auto-implemented
 }
 ```
 
