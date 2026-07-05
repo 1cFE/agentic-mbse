@@ -12,7 +12,53 @@ from agentic_mbse.extraction.pandoc_convert import (
     check_arxiv_html,
     convert_arxiv_html,
     detect_arxiv_id,
+    resolve_fetched_version,
+    strip_arxiv_version,
 )
+
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+class TestStripArxivVersion:
+    def test_versioned_id(self):
+        assert strip_arxiv_version("2401.12345v3") == ("2401.12345", 3)
+
+    def test_bare_id_unchanged(self):
+        assert strip_arxiv_version("2401.12345") == ("2401.12345", None)
+
+    def test_versioned_html_url(self):
+        assert strip_arxiv_version("https://arxiv.org/html/2401.12345v2") == (
+            "https://arxiv.org/html/2401.12345",
+            2,
+        )
+
+    def test_bare_html_url_unchanged(self):
+        url = "https://arxiv.org/html/2401.12345"
+        assert strip_arxiv_version(url) == (url, None)
+
+    def test_multi_digit_version(self):
+        assert strip_arxiv_version("1706.03762v11") == ("1706.03762", 11)
+
+    def test_four_digit_id(self):
+        assert strip_arxiv_version("1706.0376v2") == ("1706.0376", 2)
+
+
+class TestResolveFetchedVersion:
+    def test_recovers_from_asset_path(self):
+        html = '<img src="1706.03762v7/x1.png">'
+        assert resolve_fetched_version(html, "1706.03762") == 7
+
+    def test_none_when_no_asset_path(self):
+        assert resolve_fetched_version("<p>no figures here</p>", "1706.03762") is None
+
+    def test_id_with_dot_is_escaped(self):
+        # The '.' in the id must be treated literally, not as a regex wildcard.
+        html = '<img src="1706X03762v7/x1.png">'
+        assert resolve_fetched_version(html, "1706.03762") is None
+
+    def test_recovers_from_real_fixture(self):
+        html = (FIXTURES / "arxiv_1706.03762_latest.html").read_text()
+        assert resolve_fetched_version(html, "1706.03762") == 7
 
 
 class TestPreprocessHtml:
@@ -121,24 +167,46 @@ class TestDetectArxivId:
         assert result is None
 
 
+def _mock_head(status):
+    """Build a mock HEAD response context manager with the given status."""
+    resp = MagicMock()
+    resp.status = status
+    resp.__enter__ = MagicMock(return_value=resp)
+    resp.__exit__ = MagicMock(return_value=False)
+    return resp
+
+
 class TestCheckArxivHtml:
     @patch("agentic_mbse.extraction.pandoc_convert.urllib.request.urlopen")
-    def test_returns_url_on_200(self, mock_urlopen):
-        mock_resp = MagicMock()
-        mock_resp.status = 200
-        mock_resp.__enter__ = MagicMock(return_value=mock_resp)
-        mock_resp.__exit__ = MagicMock(return_value=False)
-        mock_urlopen.return_value = mock_resp
+    def test_strips_to_bare_and_returns_bare(self, mock_urlopen):
+        # Bare URL is available → a version-pinned id upgrades to latest.
+        mock_urlopen.return_value = _mock_head(200)
+
+        result = check_arxiv_html("2510.07314v1")
+
+        assert result == "https://arxiv.org/html/2510.07314"  # was v1
+        # Verify HEAD method, target URL, User-Agent, timeout.
+        call_args = mock_urlopen.call_args
+        req = call_args[0][0]
+        assert req.get_method() == "HEAD"
+        assert req.full_url == "https://arxiv.org/html/2510.07314"
+        assert "agentic-mbse" in req.get_header("User-agent")
+        assert call_args[1]["timeout"] == 5
+
+    @patch("agentic_mbse.extraction.pandoc_convert.urllib.request.urlopen")
+    def test_falls_back_to_versioned_when_bare_unavailable(self, mock_urlopen):
+        # Bare 404 → retry the requested version, which is available.
+        mock_urlopen.side_effect = [_mock_head(404), _mock_head(200)]
 
         result = check_arxiv_html("2510.07314v1")
 
         assert result == "https://arxiv.org/html/2510.07314v1"
-        # Verify HEAD method and User-Agent
-        call_args = mock_urlopen.call_args
-        req = call_args[0][0]
-        assert req.get_method() == "HEAD"
-        assert "agentic-mbse" in req.get_header("User-agent")
-        assert call_args[1]["timeout"] == 5
+        # Two HEADs: bare first, then versioned.
+        urls = [c.args[0].full_url for c in mock_urlopen.call_args_list]
+        assert urls == [
+            "https://arxiv.org/html/2510.07314",
+            "https://arxiv.org/html/2510.07314v1",
+        ]
 
     @patch("agentic_mbse.extraction.pandoc_convert.urllib.request.urlopen")
     def test_returns_none_on_non_200(self, mock_urlopen):
@@ -182,9 +250,10 @@ class TestConvertArxivHtml:
         html_file = tmp_path / "test.html"
         html_file.write_text("<h1>Heading</h1><p>Content</p>")
 
-        result = convert_arxiv_html(html_file)
+        markdown, raw_bytes = convert_arxiv_html(html_file)
 
-        assert "Converted content" in result
+        assert "Converted content" in markdown
+        assert raw_bytes == b"<h1>Heading</h1><p>Content</p>"
         mock_run.assert_called_once()
         # Verify Pandoc flags
         cmd = mock_run.call_args[0][0]
@@ -228,10 +297,10 @@ class TestConvertArxivHtml:
         html_file = tmp_path / "test.html"
         html_file.write_text("<p>content</p>")
 
-        result = convert_arxiv_html(html_file)
+        markdown, _raw_bytes = convert_arxiv_html(html_file)
 
-        assert "\\hspace{0pt}" not in result
-        assert "`<!-- -->`{=html}" not in result
+        assert "\\hspace{0pt}" not in markdown
+        assert "`<!-- -->`{=html}" not in markdown
 
     @patch("agentic_mbse.extraction.pandoc_convert._pandoc_available")
     def test_pandoc_not_available(self, mock_available, tmp_path):

@@ -13,6 +13,8 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
+from agentic_mbse.extraction.http import USER_AGENT
+
 # ---------------------------------------------------------------------------
 # Pandoc availability
 # ---------------------------------------------------------------------------
@@ -104,23 +106,76 @@ def detect_arxiv_id(pdf_path: Path) -> str | None:
 
 
 # ---------------------------------------------------------------------------
+# arXiv version normalization
+# ---------------------------------------------------------------------------
+
+# Matches an arXiv id (NNNN.NNNNN) followed by a version suffix (vN), wherever
+# it appears in a bare id or an HTML URL. The id and version are captured so we
+# can strip the suffix and report the requested version.
+_ARXIV_VERSION_RE = re.compile(r"(\d{4}\.\d{4,5})v(\d+)")
+
+
+def strip_arxiv_version(id_or_url: str) -> tuple[str, int | None]:
+    """Strip an arXiv version suffix from an id or HTML URL.
+
+    Handles both forms uniformly, since ``NNNN.NNNNNvN`` appears verbatim in
+    each: ``2401.12345v3`` -> ``("2401.12345", 3)`` and
+    ``https://arxiv.org/html/2401.12345v3`` ->
+    ``("https://arxiv.org/html/2401.12345", 3)``. A bare id/URL with no version
+    is returned unchanged with ``None``.
+    """
+    m = _ARXIV_VERSION_RE.search(id_or_url)
+    if m is None:
+        return id_or_url, None
+    stripped = id_or_url[: m.start()] + m.group(1) + id_or_url[m.end() :]
+    return stripped, int(m.group(2))
+
+
+def resolve_fetched_version(html: str, bare_id: str) -> int | None:
+    """Recover the version arXiv actually served from the HTML's asset paths.
+
+    LaTeXML asset references are prefixed ``{id}vN/`` (e.g.
+    ``1706.03762v7/x1.png``), so the served version is readable from the markup.
+    Returns the version number, or ``None`` when no such path is present (e.g. a
+    figure-less paper).
+    """
+    m = re.search(re.escape(bare_id) + r"v(\d+)/", html)
+    return int(m.group(1)) if m else None
+
+
+# ---------------------------------------------------------------------------
 # arXiv HTML check
 # ---------------------------------------------------------------------------
 
 
-def check_arxiv_html(arxiv_id: str) -> str | None:
-    """Check if arXiv HTML is available.  Returns URL or None."""
-    url = f"https://arxiv.org/html/{arxiv_id}"
+def _arxiv_html_head_ok(url: str) -> bool:
+    """Return True if a HEAD request to ``url`` returns 200.
+
+    Any failure (404, timeout, network error) counts as "not available" — this
+    is a reachability probe, not an invariant check.
+    """
     req = urllib.request.Request(url, method="HEAD")
-    req.add_header(
-        "User-Agent", "agentic-mbse/0.1 (PDF extraction pipeline)"
-    )
+    req.add_header("User-Agent", USER_AGENT)
     try:
         with urllib.request.urlopen(req, timeout=5) as resp:
-            if resp.status == 200:
-                return url
+            return bool(resp.status == 200)
     except Exception:
-        pass
+        return False
+
+
+def check_arxiv_html(arxiv_id: str) -> str | None:
+    """Return the URL of the latest available arXiv HTML, or None.
+
+    Prefers the bare (latest) URL so a version-pinned id upgrades to the newest
+    version arXiv serves. If the bare URL is unavailable, falls back to the exact
+    requested version so a pinned id still resolves.
+    """
+    bare_id, _ = strip_arxiv_version(arxiv_id)
+    bare_url = f"https://arxiv.org/html/{bare_id}"
+    if _arxiv_html_head_ok(bare_url):
+        return bare_url
+    if bare_id != arxiv_id and _arxiv_html_head_ok(f"https://arxiv.org/html/{arxiv_id}"):
+        return f"https://arxiv.org/html/{arxiv_id}"
     return None
 
 
@@ -132,14 +187,15 @@ def check_arxiv_html(arxiv_id: str) -> str | None:
 def convert_arxiv_html(
     html_source: str | Path,
     pandoc_path: str = "pandoc",
-) -> str:
+) -> tuple[str, bytes]:
     """Convert arXiv HTML to markdown via Pandoc.
 
     Args:
         html_source: URL (``https://...``) or local file path.
         pandoc_path: Path to pandoc binary.
 
-    Returns clean markdown.
+    Returns:
+        ``(markdown, raw_html_bytes)`` — raw bytes before preprocessing.
 
     Raises:
         ``subprocess.CalledProcessError`` on Pandoc failure.
@@ -156,13 +212,14 @@ def convert_arxiv_html(
     # Download URL to temp file if needed
     if html_source_str.startswith(("http://", "https://")):
         req = urllib.request.Request(html_source_str)
-        req.add_header(
-            "User-Agent", "agentic-mbse/0.1 (PDF extraction pipeline)"
-        )
+        req.add_header("User-Agent", USER_AGENT)
         with urllib.request.urlopen(req, timeout=30) as resp:
-            raw_html = resp.read().decode("utf-8")
+            raw_bytes = resp.read()
+            raw_html = raw_bytes.decode("utf-8")
     else:
-        raw_html = Path(html_source_str).read_text(encoding="utf-8")
+        p = Path(html_source_str)
+        raw_bytes = p.read_bytes()
+        raw_html = raw_bytes.decode("utf-8")
 
     # Pre-process
     processed_html = _preprocess_html(raw_html)
@@ -203,4 +260,4 @@ def convert_arxiv_html(
         tmp_path.unlink(missing_ok=True)
 
     # Post-process
-    return _postprocess_markdown(markdown)
+    return _postprocess_markdown(markdown), raw_bytes

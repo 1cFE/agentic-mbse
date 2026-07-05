@@ -89,7 +89,7 @@ class TestCheckProcessingNeeded:
         output_dir.mkdir()
 
         # Write summary.json with matching hash
-        file_hash = "md5:" + hashlib.md5(b"fake pdf content").hexdigest()
+        file_hash = "sha256:" + hashlib.sha256(b"fake pdf content").hexdigest()
         summary = {"file_hash": file_hash, "processing_completed": True}
         (output_dir / "summary.json").write_text(json.dumps(summary))
 
@@ -101,7 +101,7 @@ class TestCheckProcessingNeeded:
         output_dir = tmp_path / "report"
         output_dir.mkdir()
 
-        summary = {"file_hash": "md5:oldhash", "processing_completed": True}
+        summary = {"file_hash": "sha256:oldhash", "processing_completed": True}
         (output_dir / "summary.json").write_text(json.dumps(summary))
 
         assert check_processing_needed(pdf, output_dir) is True
@@ -112,7 +112,7 @@ class TestCheckProcessingNeeded:
         output_dir = tmp_path / "report"
         output_dir.mkdir()
 
-        file_hash = "md5:" + hashlib.md5(b"fake pdf content").hexdigest()
+        file_hash = "sha256:" + hashlib.sha256(b"fake pdf content").hexdigest()
         summary = {"file_hash": file_hash, "processing_completed": True}
         (output_dir / "summary.json").write_text(json.dumps(summary))
 
@@ -124,7 +124,7 @@ class TestCheckProcessingNeeded:
         output_dir = tmp_path / "report"
         output_dir.mkdir()
 
-        file_hash = "md5:" + hashlib.md5(b"fake pdf content").hexdigest()
+        file_hash = "sha256:" + hashlib.sha256(b"fake pdf content").hexdigest()
         summary = {"file_hash": file_hash, "processing_completed": False}
         (output_dir / "summary.json").write_text(json.dumps(summary))
 
@@ -160,7 +160,7 @@ class TestWriteSummary:
         assert summary["source_format"] == "pdf"
         assert summary["backend_used"] == "pymupdf"
         assert summary["processing_completed"] is True
-        assert summary["file_hash"].startswith("md5:")
+        assert summary["file_hash"].startswith("sha256:")
         assert summary["statistics"]["total_images"] == 5
         assert summary["statistics"]["total_characters"] == 12000
         assert summary["statistics"]["file_size_bytes"] == len(b"fake pdf content")

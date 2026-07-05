@@ -555,13 +555,13 @@ class TestHashUtilities:
     """Tests for hash computation and storage."""
 
     def test_compute_file_hash_returns_sha256(self, tmp_path):
-        """_compute_file_hash returns consistent SHA256 hex string."""
+        """compute_source_hash returns consistent SHA256 hex string."""
         test_file = tmp_path / "test.txt"
         test_file.write_text("hello world")
 
-        from agentic_mbse.cli import _compute_file_hash
-        hash1 = _compute_file_hash(test_file)
-        hash2 = _compute_file_hash(test_file)
+        from agentic_mbse.extraction.base import compute_source_hash
+        hash1 = compute_source_hash(test_file)
+        hash2 = compute_source_hash(test_file)
 
         assert hash1 == hash2  # Deterministic
         assert len(hash1) == 64  # SHA256 hex length
@@ -614,11 +614,12 @@ class TestModificationDetection:
 
     def test_check_modification_hash_matches(self, tmp_path):
         """Returns False when file matches stored hash."""
-        from agentic_mbse.cli import _compute_file_hash, _check_modification
+        from agentic_mbse.cli import _check_modification
+        from agentic_mbse.extraction.base import compute_source_hash
 
         test_file = tmp_path / "test.md"
         test_file.write_text("content")
-        file_hash = _compute_file_hash(test_file)
+        file_hash = compute_source_hash(test_file)
         hashes = {"version": "1.0", "commit": "abc", "files": {"test.md": file_hash}}
 
         result = _check_modification(test_file, hashes, "test.md")
@@ -726,7 +727,8 @@ class TestInstallFileWithHash:
 
     def test_install_file_returns_hash_on_copy(self, tmp_path):
         """Returns content hash when copying file."""
-        from agentic_mbse.cli import _install_file_with_hash, _compute_file_hash
+        from agentic_mbse.cli import _install_file_with_hash
+        from agentic_mbse.extraction.base import compute_source_hash
 
         src = tmp_path / "src.md"
         dst = tmp_path / "dst.md"
@@ -735,7 +737,7 @@ class TestInstallFileWithHash:
         action, content_hash = _install_file_with_hash(src, dst, is_dev_mode=False)
 
         assert action == "created"
-        assert content_hash == _compute_file_hash(dst)
+        assert content_hash == compute_source_hash(dst)
 
     def test_install_file_returns_none_hash_on_symlink(self, tmp_path):
         """Returns None hash when symlinking (dev mode)."""
