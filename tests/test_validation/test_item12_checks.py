@@ -192,3 +192,56 @@ def test_c6b_quoted_name_not_flagged():
     issues = check_qualified_names(load_fixture("c6_false_positives"))
     bad = [i for i in issues if i.code == ValidationCode.L6_INVALID_QUALIFIED_NAME]
     assert bad == [], f"Quoted name must not fire invalid-qualified-name: {_codes(issues)}"
+
+
+def test_c6c_calc_def_internal_power_not_flagged():
+    """`out attribute powered = availability ^ 2` uses power INSIDE a calc def ->
+    must NOT fire V4_UNSUPPORTED_OPERATOR, even in a flat layout where the library/
+    path skip does not apply. Power is unsupported at design scope (C5a) but
+    legitimate in a calc def; the fix keys off the owner type, mirroring C6a."""
+    issues = check_supported_operators(load_fixture("c6_false_positives"))
+    unsup = [i for i in issues if i.code == ValidationCode.V4_UNSUPPORTED_OPERATOR]
+    assert unsup == [], f"Calc-def-internal power must not fire V4: {_codes(issues)}"
+
+
+def test_c6d_calc_def_internal_function_not_flagged():
+    """`out attribute rooted = sqrt(availability)` invokes a function INSIDE a calc
+    def -> must NOT fire V4_STATIC_FUNCTION_INVOCATION, even in a flat layout. A
+    calc def is exactly where a function invocation belongs; the fix keys off the
+    owner type, mirroring C6a."""
+    issues = check_static_function_invocations(load_fixture("c6_false_positives"))
+    fn = [i for i in issues if i.code == ValidationCode.V4_STATIC_FUNCTION_INVOCATION]
+    assert fn == [], f"Calc-def-internal function must not fire V4: {_codes(issues)}"
+
+
+# --- F6: FORMULA computed attributes (L6 false-positive correction) --------------
+
+
+def test_f6_formula_computed_attrs_not_flagged():
+    """A design computed attribute whose refs are all same-part owned siblings is a
+    codegen-supported FORMULA (Item 5, REQ-CA-06): `net_margin = revenue - cost` and
+    `total_payout = net_margin * 2.0` (FORMULA reading a FORMULA sibling) must NOT
+    fire V2_DYNAMIC_EXPRESSION."""
+    issues = check_static_expressions(load_fixture("formula_computed"))
+    formula = [
+        i
+        for i in issues
+        if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION
+        and ("net_margin" in i.element_name or "total_payout" in i.element_name)
+    ]
+    assert formula == [], f"Same-part FORMULA must not fire V2: {_codes(issues)}"
+
+
+def test_f6_calc_output_ref_still_fires():
+    """Negative-of-the-negative: a reference to a calc OUTPUT inside arithmetic
+    (`derated = scale.result * 0.95`, foreign namespace, dotted path) is the
+    genuinely-unsupported dynamic-expression case and must STILL fire
+    V2_DYNAMIC_EXPRESSION. The F6 fix must not go blind to it."""
+    issues = check_static_expressions(load_fixture("formula_computed"))
+    fired = [
+        i
+        for i in issues
+        if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION and "derated" in i.element_name
+    ]
+    assert len(fired) == 1, f"Calc-output ref in arithmetic must fire V2: {_codes(issues)}"
+    assert fired[0].severity == Severity.ERROR
