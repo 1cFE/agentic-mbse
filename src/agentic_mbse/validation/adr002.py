@@ -11,7 +11,11 @@ These checks are integrated into Level 6 architecture validation.
 """
 from typing import Any
 
-from agentic_mbse.sysml.expression import extract_feature_refs, extract_operators
+from agentic_mbse.sysml.expression import (
+    extract_feature_refs,
+    extract_operators,
+    traverse_expression,
+)
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import ExpressionRef, Severity, ValidationCode, ValidationIssue
 
@@ -21,8 +25,12 @@ except ImportError:
     from common import get_element_location, get_qualified_name
 
 
-# Supported operators per ADR-002
-SUPPORTED_OPERATORS = {"+", "-", "*", "/", "[", "^"}
+# Supported operators per ADR-002: `+ - * /` and unit annotation `[`. Power
+# (`^`/`**`), function calls, and conditionals are NOT static operators — they
+# belong in a calc def (C5, Item 12). `^` was previously (wrongly) in this set,
+# so `a ^ b` in a static design expression slipped through; removing it makes the
+# operator check flag it as V4_UNSUPPORTED_OPERATOR, matching codegen V4.
+SUPPORTED_OPERATORS = {"+", "-", "*", "/", "["}
 
 
 def check_calc_def_locations(model: Any) -> list[ValidationIssue]:
@@ -142,6 +150,75 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
                         )
                     )
 
+        except Exception:
+            continue
+
+    return issues
+
+
+def check_static_function_invocations(model: Any) -> list[ValidationIssue]:
+    """
+    C5 (Item 12): WARN on a function invocation inside a static design expression.
+
+    A design-attribute expression like `x : Real = sqrt(2.0)` invokes a function
+    (an InvocationExpression that is not an operator). Function results are not
+    statically extractable — codegen cannot evaluate them at design scope, so the
+    modeler should move the calculation into a calc def. WARNING, not ERROR, so
+    Level 6 stays passing (mirrors codegen V4's steer-to-calc-def guidance).
+
+    Operators (`a ^ b`, `a * b`) are OperatorExpressions, handled by
+    check_supported_operators; only genuine function calls are flagged here.
+
+    Returns:
+        List of ValidationIssue (WARNING) for static function invocations.
+    """
+    issues: list[ValidationIssue] = []
+
+    def _is_invocation(node: Any) -> Any:
+        try:
+            if SysideAdapter.is_instance(
+                node, "InvocationExpression"
+            ) and not SysideAdapter.is_instance(node, "OperatorExpression"):
+                return node
+        except Exception:
+            return None
+        return None
+
+    for attr in SysideAdapter.elements_of_type(model, "AttributeUsage"):
+        try:
+            # Bindings inside calc usages are not static design expressions.
+            owner = getattr(attr, "owner", None)
+            if owner is not None and _is_calc_usage(owner):
+                continue
+
+            doc = attr.document
+            if not doc or not hasattr(doc, "url"):
+                continue
+            if "library/" in str(doc.url):
+                continue  # library calc defs may invoke functions freely
+
+            expr = getattr(attr, "feature_value_expression", None)
+            if not expr:
+                continue
+
+            if not traverse_expression(expr, _is_invocation):
+                continue
+
+            attr_name = get_qualified_name(attr)
+            issues.append(
+                ValidationIssue(
+                    level=6,
+                    severity=Severity.WARNING,
+                    code=ValidationCode.V4_STATIC_FUNCTION_INVOCATION,
+                    message=(
+                        f"Static design expression in '{attr_name}' invokes a function; "
+                        f"function results are not statically extractable"
+                    ),
+                    element_name=attr_name,
+                    location=get_element_location(attr),
+                    suggestion="Move the calculation into a calc def",
+                )
+            )
         except Exception:
             continue
 
@@ -454,6 +531,14 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
             # Skip if inside a calc usage (bindings are allowed)
             owner = attr.owner if hasattr(attr, "owner") else None
             if owner and _is_calc_usage(owner):
+                continue
+
+            # C6a (Item 12): skip attributes owned by a calc def. A calc-def-internal
+            # `out attribute X = <expr>` is exactly where ADR-002 says derived
+            # expressions belong, so it is never a V2 violation. The `library/` path
+            # skip below misses fixtures laid out as flat `library.sysml` files (no
+            # `library/` dir), so key off the owner type, not the path.
+            if owner and SysideAdapter.is_instance(owner, "CalculationDefinition"):
                 continue
 
             # Only check design files

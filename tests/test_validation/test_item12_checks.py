@@ -22,12 +22,19 @@ syside (SYSIDE_LICENSE_KEY from .env, loaded by conftest).
 from pathlib import Path
 
 from agentic_mbse.sysml.types import Severity, ValidationCode
+from agentic_mbse.validation.adr002 import (
+    check_static_expressions,
+    check_static_function_invocations,
+    check_supported_operators,
+)
 from agentic_mbse.validation.common import discover_sysml_files, load_sysml_model
 from agentic_mbse.validation.level2_structure import check_self_named_bindings
 from agentic_mbse.validation.level6_architecture import (
     check_anonymous_returns,
+    check_body_assignment_impl_loss,
     check_calc_bearing_instantiation,
     check_constraint_executability,
+    check_qualified_names,
 )
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "item12"
@@ -129,3 +136,59 @@ def test_c4_retype_counts_as_instantiation():
     issues = check_calc_bearing_instantiation(load_fixture("retype_instantiation"))
     no_inst = [i for i in issues if i.code == ValidationCode.L6_CALC_DEF_NO_INSTANTIATION]
     assert no_inst == [], f"Retyped instantiation must not fire: {_codes(issues)}"
+
+
+# --- C2b: body-assignment auto-impl-loss (L6, WARN) -----------------------------
+
+
+def test_c2b_body_assignment_warns():
+    """BodyCalc's `return attribute y; y = d*5` keeps the channel but loses
+    auto-impl -> exactly one WARN, on BodyCalc; the inline InlineCalc does NOT."""
+    issues = check_body_assignment_impl_loss(load_fixture("body_assignment"))
+    warns = [i for i in issues if i.code == ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS]
+    assert len(warns) == 1, f"Expected one body-assignment WARN, got {_codes(issues)}"
+    assert warns[0].severity == Severity.WARNING
+    assert "BodyCalc" in warns[0].element_name
+
+
+# --- C5: adr002 operator-set correction (L6) ------------------------------------
+
+
+def test_c5_power_operator_is_unsupported():
+    """`^` was wrongly in SUPPORTED_OPERATORS; `2.0 ^ 3.0` at design scope now
+    fires V4_UNSUPPORTED_OPERATOR (C5a). The supported-op `ok` does NOT fire."""
+    issues = check_supported_operators(load_fixture("static_operators"))
+    unsup = [i for i in issues if i.code == ValidationCode.V4_UNSUPPORTED_OPERATOR]
+    assert len(unsup) == 1, f"Expected one unsupported-operator ERROR, got {_codes(issues)}"
+    assert "powered" in unsup[0].element_name
+
+
+def test_c5_function_invocation_warns():
+    """`sqrt(2.0)` at design scope invokes a function -> V4_STATIC_FUNCTION_INVOCATION
+    WARN (C5b). The literal arg isolates it from the V2 derived-expr check; the
+    supported-op `ok` does NOT fire."""
+    issues = check_static_function_invocations(load_fixture("static_operators"))
+    fn = [i for i in issues if i.code == ValidationCode.V4_STATIC_FUNCTION_INVOCATION]
+    assert len(fn) == 1, f"Expected one function-invocation WARN, got {_codes(issues)}"
+    assert fn[0].severity == Severity.WARNING
+    assert "rooted" in fn[0].element_name
+
+
+# --- C6: L6 false-positive corrections ------------------------------------------
+
+
+def test_c6a_calc_def_internal_expr_not_flagged():
+    """A calc-def-internal `out attribute derated = availability * 0.9` is where
+    derived expressions belong (ADR-002) -> must NOT fire V2_DYNAMIC_EXPRESSION,
+    even in a flat layout where the library/ path skip does not apply (C6a)."""
+    issues = check_static_expressions(load_fixture("c6_false_positives"))
+    dyn = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
+    assert dyn == [], f"Calc-def-internal derived expr must not fire V2: {_codes(issues)}"
+
+
+def test_c6b_quoted_name_not_flagged():
+    """'Trap Plant' is a quoted name codegen sanitizes -> must NOT fire
+    L6_INVALID_QUALIFIED_NAME (C6b)."""
+    issues = check_qualified_names(load_fixture("c6_false_positives"))
+    bad = [i for i in issues if i.code == ValidationCode.L6_INVALID_QUALIFIED_NAME]
+    assert bad == [], f"Quoted name must not fire invalid-qualified-name: {_codes(issues)}"
