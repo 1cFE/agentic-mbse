@@ -267,3 +267,16 @@ error is the backstop until then.
 - Watch mode for dev symlinks (auto-reload on changes)
 - `agentic-mbse diff` command to compare project vs templates
 - Migration tool for updating user-owned files with new features
+
+### [ITEM-SYNC-F6] L6 derived-expr-references-design-attrs flags supported FORMULA shapes
+
+**Found**: 2026-07-06, orchestrator cross-repo sweep during the UPSTREAM-FINDINGS Item 12 audit.
+**Symptom**: `run_all_checks` on sysml-codegen's `quoted_owner_formula` fixture fails L6 with
+"Derived expression references design attributes ['revenue', ...]" — but that shape (a FORMULA
+computed attribute reading design attributes) is first-class in sysml-codegen (Item 5 landed the
+quoted-owner FORMULA wire; the fixture generates and resolves end-to-end).
+**Class**: third L6 false-positive family, sibling to the two C6 fixed (calc-def-internal derived
+expr; quoted-name EQN). Not in the Item 12 impact list — the fixture was never run through
+agentic-mbse validation in any item's records.
+**Fix shape**: scope the L6 derived-expr rule to exclude FORMULA-classified computed attributes
+(mirror C6's owner-type skip), negative fixture from `quoted_owner_formula`'s shape.
