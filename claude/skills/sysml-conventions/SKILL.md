@@ -69,9 +69,14 @@ For directory placement of definitions and usages, see the **project-structure**
 | Literal: `= 3.0 [m]` | OK |
 | Static expr: `= 3.14 * 2.0` | OK |
 | EXPOSE: `= my_calc.output` | OK |
-| Derived: `= radius * 2.0` | **VIOLATION** — extract to calc def |
+| Inline FORMULA: `= radius * 2.0` (same-part siblings) | OK for simple arithmetic |
+| Computation on calc output: `= calc.power * 0.95` | **VIOLATION** — extract to calc def |
+| Self-reference or dotted path: `= self.x`, `= a.b.c` | **VIOLATION** — extract to calc def |
 
-When a design attribute depends on another attribute's value, that relationship must be expressed as a `calc def` in `library/analyses/`, not inline in the design.
+A design attribute may reference same-part siblings inline (a FORMULA) for simple
+arithmetic and unit conversions. For any real or reusable calculation — and always when
+the value depends on a calc output or another part — express it as a `calc def` in
+`library/analyses/`, not inline.
 
 ## Standard Imports
 
@@ -147,7 +152,7 @@ calc my_calc { in value = other_part.exposed_attr; }
 
 | Instead of | Do |
 |------------|-----|
-| Inline derived expressions in designs | Extract to `calc def` in `library/analyses/` |
+| Real calculations inline, or computing on a calc output in a design attribute | Extract to `calc def` in `library/analyses/` (inline FORMULA over same-part siblings is fine for simple arithmetic) |
 | Unicode unit symbols (`m³`, `°C`) | ASCII equivalents (`m^3`, `K`) |
 | Bare attributes without types | Always declare type: `attribute x : Real` |
 | `part x : 'Base' { ... }` without import | Add `import` for the package containing `'Base'` |

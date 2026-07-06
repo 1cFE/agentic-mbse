@@ -52,7 +52,9 @@ Consumers bind to `geometry.calculated_area`, not `geometry.dimension_calc.area`
 | Literal: `= 3.0 [m]` | OK |
 | Static expr: `= 3.14 * 2.0` | OK |
 | EXPOSE: `= my_calc.output` | OK |
-| Derived: `= radius * 2.0` | **VIOLATION** - extract to calc def |
+| Inline FORMULA: `= radius * 2.0` (same-part siblings) | OK for simple arithmetic |
+| Computation on calc output: `= calc.power * 0.95` | **VIOLATION** - extract to calc def |
+| Self-reference or dotted path: `= self.x`, `= a.b.c` | **VIOLATION** - extract to calc def |
 
 > **Full reference**: [patterns/adr002-calculations.md] - Expression taxonomy, resolution patterns
 

@@ -148,42 +148,44 @@ package MyDesign {
 
 ---
 
-## Mistake 5: Derived Expressions in Attributes
+## Mistake 5: Computing on a Calc Output (or Reaching Outside the Part)
 
-### Don't: Compute from other attributes
+A design attribute may reference **same-part siblings** inline — `attribute area : Real =
+length * width` is a supported inline FORMULA, fine for simple arithmetic. What still fails
+is computing on a calc output, referencing the attribute itself, or reaching through a dotted
+path.
+
+### Don't: Compute on a calc output or reach outside the part
 
 ```sysml
-// BAD: Derived expression in design attribute
-part component {
-    attribute length : Real = 3.0 [m];
-    attribute width : Real = 4.0 [m];
-    attribute area : Real = length * width;  // VIOLATION!
-}
+// BAD: arithmetic on a calc output in a design attribute
+attribute adjusted : Real = power_calc.power * 0.95;  // VIOLATION!
+
+// BAD: self-reference / dotted path
+attribute total : Real = total + 1.0;                 // VIOLATION!
+attribute p : Real = subsystem.rotor.power;           // VIOLATION!
 ```
 
 ### Do: Use calc def with EXPOSE
 
 ```sysml
-// GOOD: Extract to calc def
-calc def AreaCalc {
-    in length : Real;
-    in width : Real;
-    out area : Real = length * width;
+// GOOD: fold the adjustment into a calc def
+calc def AdjustedPowerCalc {
+    in raw_power : Real;
+    in efficiency : Real default := 0.95;
+    out adjusted : Real = raw_power * efficiency;
 }
 
 part component {
-    attribute length : Real = 3.0 [m];
-    attribute width : Real = 4.0 [m];
-
-    calc area_calc : AreaCalc {
-        in length = component::length;
-        in width = component::width;
+    calc adj : AdjustedPowerCalc {
+        in raw_power = power_calc.power;
     }
-    attribute area : Real = area_calc.area;  // EXPOSE
+    attribute adjusted : Real = adj.adjusted;  // EXPOSE
 }
 ```
 
-**Why:** Keeps computations in library, maintains clean design files.
+**Why:** Same-part arithmetic is a convenience; real calculations and anything reading a calc
+output belong in the library, keeping design files clean and the computation reusable.
 
 ---
 
@@ -331,7 +333,7 @@ Model Review Checklist:
 - [ ] All definitions have doc comments
 - [ ] Naming conventions followed
 - [ ] No calc defs in design files
-- [ ] No derived expressions in design attributes
+- [ ] No calc-output arithmetic, self-references, or dotted paths in design attributes (inline FORMULA over same-part siblings is OK)
 - [ ] Units specified on all physical quantities
 - [ ] Constraints have assert/require prefix
 - [ ] Package names unique across files

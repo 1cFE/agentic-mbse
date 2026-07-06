@@ -130,4 +130,5 @@ two-hop shape).
 - `expose-pattern.md` — EXPOSE surfacing details.
 - `semantic-operators.md` — `:>` vs `:>>` vs `=`, redefinition precedence, the bare-`:>>`
   value idiom.
-- `adr002-calculations.md` — why derived expressions belong in calc defs, not designs.
+- `adr002-calculations.md` — inline FORMULA vs calc def, and which derived expressions
+  (calc-output arithmetic, self-reference, dotted path) still belong in calc defs.
