@@ -185,11 +185,22 @@ class SysideAdapter:
                 "Import": syside.Import,
                 "Comment": syside.Comment,
                 "Documentation": syside.Documentation,
-                # Relationships
+                # Relationships / memberships
                 "FeatureTyping": syside.FeatureTyping,
+                # OwningMembership / Subclassification are used by codegen's
+                # is_instance calls (extractor / usage_extractor) and previously
+                # relied on the old silent string-match. D6's hard-error requires
+                # every used name to resolve, so map them (strictly more correct:
+                # the check becomes hierarchy-aware).
+                "OwningMembership": syside.OwningMembership,
+                "Subclassification": syside.Subclassification,
                 # Expressions
                 "FeatureChainExpression": syside.FeatureChainExpression,
                 "FeatureReferenceExpression": syside.FeatureReferenceExpression,
+                # NullExpression is used by codegen's expression reconstruction
+                # (expression_utils) and likewise relied on the silent
+                # string-match; map it under D6.
+                "NullExpression": syside.NullExpression,
                 # InvocationExpression is the base of OperatorExpression; the C5
                 # function-invocation check (adr002.py) already used this name via
                 # is_instance, relying on the old silent string-match. D6's
