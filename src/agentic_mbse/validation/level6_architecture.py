@@ -510,6 +510,163 @@ def check_design_attr_completeness(
     return issues, attrs_checked
 
 
+def check_anonymous_returns(model: Any) -> list[ValidationIssue]:
+    """
+    C2a (Item 12): FAIL a calc def with an anonymous `return`.
+
+    An anonymous `return : Real = <expr>` has no declared name (syside synthesizes
+    `result`, but declared_name is empty), so codegen derives no output channel from
+    it. Mirrors codegen's V8 diagnostic. The named forms — `out attribute`, named
+    `return` (inline or body-assignment), and bare `in` — carry a declared name and
+    are accepted.
+
+    Returns:
+        List of ValidationIssue (ERROR) for anonymous returns.
+    """
+    issues: list[ValidationIssue] = []
+
+    for calc_def in SysideAdapter.elements_of_type(model, "CalculationDefinition"):
+        try:
+            if not hasattr(calc_def, "owned_members"):
+                continue
+            name = get_qualified_name(calc_def)
+            for member in calc_def.owned_members:
+                direction = str(getattr(member, "direction", "")) if hasattr(member, "direction") else ""
+                if "Out" not in direction and "Return" not in direction:
+                    continue
+                declared = getattr(member, "declared_name", None)
+                if declared is None or str(declared).strip() == "":
+                    issues.append(
+                        ValidationIssue(
+                            level=6,
+                            severity=Severity.ERROR,
+                            code=ValidationCode.L6_ANONYMOUS_RETURN,
+                            message=(
+                                f"Calc def '{name}' has an anonymous return (no declared name); "
+                                f"codegen derives no output channel from it"
+                            ),
+                            element_name=name,
+                            location=get_element_location(calc_def),
+                            suggestion=(
+                                "Name the result: `return <name> : Real = <expr>;` or "
+                                "`out attribute <name> : Real = <expr>;`"
+                            ),
+                        )
+                    )
+        except Exception:
+            continue
+
+    return issues
+
+
+def check_constraint_executability(model: Any) -> list[ValidationIssue]:
+    """
+    C3 (Item 12): WARN that constraint usages are not executable.
+
+    A model carrying constraint usages should warn that constraints are dropped at
+    extraction — they document intent but produce no computation. WARNING severity,
+    so it does not fail Level 6. Points at modeling-assumptions §8.
+
+    Returns:
+        List of ValidationIssue (WARNING), one per constraint usage.
+    """
+    issues: list[ValidationIssue] = []
+
+    try:
+        constraints = list(SysideAdapter.elements_of_type(model, "ConstraintUsage"))
+    except Exception:
+        constraints = []
+
+    for constraint in constraints:
+        try:
+            name = get_qualified_name(constraint)
+            issues.append(
+                ValidationIssue(
+                    level=6,
+                    severity=Severity.WARNING,
+                    code=ValidationCode.L6_CONSTRAINT_NON_EXECUTABLE,
+                    message=(
+                        f"Constraint '{name}' is not executable and is dropped at extraction"
+                    ),
+                    element_name=name,
+                    location=get_element_location(constraint),
+                    suggestion=(
+                        "Constraints document intent only; move any needed computation into a "
+                        "calc def (see modeling-assumptions §8)"
+                    ),
+                )
+            )
+        except Exception:
+            continue
+
+    return issues
+
+
+def check_calc_bearing_instantiation(model: Any) -> list[ValidationIssue]:
+    """
+    C4 (Item 12): FAIL a calc-bearing part def that no usage instantiates.
+
+    A part def that owns template calcs but is never instantiated — plainly OR by
+    retyping — has its calcs silently dropped at extraction. "Instantiated" means the
+    part def's name appears in some part usage's resolved type set. A part usage's
+    `.types` includes the full supertype chain AND any retype target, so a retyped
+    usage (`part :>> x : Subtype`) counts the subtype as instantiated (Item 4).
+
+    Returns:
+        List of ValidationIssue (ERROR) for uninstantiated calc-bearing part defs.
+    """
+    issues: list[ValidationIssue] = []
+
+    # Union of every type name reachable through a part usage (chain + retypes).
+    instantiated: set[str] = set()
+    try:
+        for part_usage in SysideAdapter.elements_of_type(model, "PartUsage"):
+            for typ in getattr(part_usage, "types", []) or []:
+                type_name = getattr(typ, "name", None)
+                if type_name:
+                    instantiated.add(str(type_name))
+    except Exception:
+        pass
+
+    for part_def in SysideAdapter.elements_of_type(model, "PartDefinition"):
+        try:
+            if not hasattr(part_def, "owned_members"):
+                continue
+            owns_calc = any(
+                SysideAdapter.is_instance(member, "CalculationUsage")
+                for member in part_def.owned_members
+            )
+            if not owns_calc:
+                continue
+
+            part_name = getattr(part_def, "name", None)
+            if not part_name:
+                continue
+            if str(part_name) in instantiated:
+                continue
+
+            issues.append(
+                ValidationIssue(
+                    level=6,
+                    severity=Severity.ERROR,
+                    code=ValidationCode.L6_CALC_DEF_NO_INSTANTIATION,
+                    message=(
+                        f"Part def '{part_name}' owns template calcs but is never instantiated "
+                        f"(plainly or by retyping); its calcs are dropped at extraction"
+                    ),
+                    element_name=str(part_name),
+                    location=get_element_location(part_def),
+                    suggestion=(
+                        "Instantiate the part def with a part usage, or retype an existing usage to it"
+                    ),
+                )
+            )
+        except Exception:
+            continue
+
+    return issues
+
+
 # --- New orchestrator (combines L7 + L8 + ADR-002) ---
 
 
@@ -586,6 +743,11 @@ def validate_architecture(
     # Codegen readiness checks (from old L8)
     all_issues.extend(check_qualified_names(model))
     all_issues.extend(check_calc_def_structure(model))
+
+    # Item 12 architecture checks (mirror codegen's shipped behavior)
+    all_issues.extend(check_anonymous_returns(model))
+    all_issues.extend(check_constraint_executability(model))
+    all_issues.extend(check_calc_bearing_instantiation(model))
     binding_issues, num_bindings = check_binding_formats(model)
     all_issues.extend(binding_issues)
     design_attr_issues, num_design_attrs = check_design_attr_completeness(
@@ -632,6 +794,15 @@ def validate_architecture(
             ),
             "L6_DESIGN_ATTR_UNEXTRACTABLE": len(
                 [i for i in all_issues if i.code == ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE]
+            ),
+            "L6_ANONYMOUS_RETURN": len(
+                [i for i in all_issues if i.code == ValidationCode.L6_ANONYMOUS_RETURN]
+            ),
+            "L6_CONSTRAINT_NON_EXECUTABLE": len(
+                [i for i in all_issues if i.code == ValidationCode.L6_CONSTRAINT_NON_EXECUTABLE]
+            ),
+            "L6_CALC_DEF_NO_INSTANTIATION": len(
+                [i for i in all_issues if i.code == ValidationCode.L6_CALC_DEF_NO_INSTANTIATION]
             ),
         },
     )
