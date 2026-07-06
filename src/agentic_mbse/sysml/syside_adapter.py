@@ -15,7 +15,7 @@ when actually using syside parsing functionality.
 """
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Collection, Iterator
 from enum import IntEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -26,8 +26,21 @@ __all__ = [
     "Diagnostics",
     "DiagnosticSeverity",
     "Element",
+    "EXCLUDED_CONSTRAINT_TYPES",
+    "is_droppable_constraint",
     "get_syside",
 ]
+
+# Requirement-side ConstraintUsage subtypes that are NOT dropped executable
+# predicates. This is the single production source of the drop-report exclusion
+# policy (PIPELINE-TRUTH Item 4, INV-D). Both this repo and sysml-codegen import
+# it; the string "RequirementUsage" must live in exactly one place.
+#
+# SatisfyRequirementUsage is a RequirementUsage subtype, so excluding
+# "RequirementUsage" with a subtype-aware check also excludes `satisfy` — a
+# deliberate choice (satisfy is requirement-side, not a free-standing dropped
+# predicate). See the constraint-enumeration decision table in the module docs.
+EXCLUDED_CONSTRAINT_TYPES: tuple[str, ...] = ("RequirementUsage",)
 
 # Lazy syside import
 _syside = None
@@ -119,6 +132,29 @@ class SysideAdapter:
     IMPORTANT: For mock compatibility in tests, mock class names MUST
     include the type name. Example: MockCalculationDefinition, not MockCalcDef.
     The is_instance() method falls back to `type_name in type(elem).__name__`.
+
+    Subtype-aware enumeration (PIPELINE-TRUTH Item 4)
+    -------------------------------------------------
+    ``model.elements(kind)`` matches ``kind`` exactly and never its subtypes.
+    ``elements_of_type(..., include_subtypes=True)`` opts into the subtype
+    sweep. This is per-call-site policy, recorded in the constraint-enumeration
+    decision table (published in the adapter docs). The load-bearing rows:
+
+      * ConstraintUsage drop report / non-executable checks: sweep with
+        ``include_subtypes=True`` so ``assert`` (AssertConstraintUsage) is seen,
+        and ``exclude=EXCLUDED_CONSTRAINT_TYPES`` so requirement-side usages
+        (RequirementUsage and its ``satisfy`` subtype) are not counted as
+        dropped predicates. Droppability is decided by
+        :func:`is_droppable_constraint`.
+      * Import dependency graph: sweep with ``include_subtypes=True`` because
+        ``Import`` is abstract (only MembershipImport / NamespaceImport
+        instantiate), so an exact-type query matches nothing.
+      * AttributeUsage / Part* / Calc* sweeps stay exact-type (opt-OUT): no
+        supported model needs their subtypes surfaced.
+
+    Every ``elements_of_type`` and ``is_instance`` type name is resolved through
+    TYPE_MAP; an unmapped name raises ``ValueError`` rather than silently
+    no-opping (D6).
     """
 
     _type_map: dict[str, type] | None = None
@@ -136,6 +172,13 @@ class SysideAdapter:
                 "PartDefinition": syside.PartDefinition,
                 "PartUsage": syside.PartUsage,
                 "ConstraintUsage": syside.ConstraintUsage,
+                # ConstraintUsage subtypes — required by subtype-aware constraint
+                # enumeration and the kind-ladder (PIPELINE-TRUTH Item 4, D6).
+                # AssertConstraintUsage <: ConstraintUsage;
+                # SatisfyRequirementUsage <: RequirementUsage <: ConstraintUsage.
+                "AssertConstraintUsage": syside.AssertConstraintUsage,
+                "RequirementUsage": syside.RequirementUsage,
+                "SatisfyRequirementUsage": syside.SatisfyRequirementUsage,
                 "ConstraintDefinition": syside.ConstraintDefinition,
                 "RequirementDefinition": syside.RequirementDefinition,
                 "ReferenceUsage": syside.ReferenceUsage,
@@ -147,6 +190,11 @@ class SysideAdapter:
                 # Expressions
                 "FeatureChainExpression": syside.FeatureChainExpression,
                 "FeatureReferenceExpression": syside.FeatureReferenceExpression,
+                # InvocationExpression is the base of OperatorExpression; the C5
+                # function-invocation check (adr002.py) already used this name via
+                # is_instance, relying on the old silent string-match. D6's
+                # hard-error requires every used name to resolve, so map it.
+                "InvocationExpression": syside.InvocationExpression,
                 "OperatorExpression": syside.OperatorExpression,
                 "LiteralInteger": syside.LiteralInteger,
                 "LiteralRational": syside.LiteralRational,
@@ -193,25 +241,63 @@ class SysideAdapter:
     # === Pattern 2: Element Iteration ===
 
     @classmethod
-    def elements_of_type(cls, model: Any, type_name: str) -> Iterator[Any]:
+    def _require_known_type(cls, type_name: str, type_map: dict[str, type]) -> None:
+        """Raise if ``type_name`` is not a whitelisted type name.
+
+        Turns a lookup miss into a loud failure instead of a silent wrong answer
+        (PIPELINE-TRUTH Item 4, D6/INV-F): an unmapped name used to no-op through
+        the enumeration and classification paths, shipping green on any model that
+        lacked the shape it should have matched.
+        """
+        if type_name not in type_map:
+            raise ValueError(
+                f"Unknown type name '{type_name}'. "
+                f"Valid types: {sorted(type_map)}"
+            )
+
+    @classmethod
+    def elements_of_type(
+        cls,
+        model: Any,
+        type_name: str,
+        *,
+        include_subtypes: bool = False,
+        exclude: Collection[str] = (),
+    ) -> Iterator[Any]:
         """Iterate elements of a given type.
 
         Args:
             model: Loaded syside model
             type_name: String name matching TYPE_MAP key
+            include_subtypes: If True, also match subtypes of ``type_name``
+                (syside ``all_nodes``); defaults to exact-type only (``nodes``).
+                Opt-in per call site per the constraint-enumeration decision
+                table — do NOT flip globally.
+            exclude: Type names whose instances are dropped from the result
+                (via subtype-aware ``is_instance``). Used to sweep a base type
+                including subtypes while subtracting a requirement-side subtree,
+                e.g. ``exclude=EXCLUDED_CONSTRAINT_TYPES`` on ``ConstraintUsage``.
 
         Returns:
             Iterator over matching elements
 
         Raises:
-            KeyError: If type_name not in TYPE_MAP
+            ValueError: If ``type_name`` or any ``exclude`` name is not in TYPE_MAP.
         """
         type_map = cls._get_type_map()
-        if type_name not in type_map:
-            raise KeyError(
-                f"Unknown type '{type_name}'. Valid types: {list(type_map.keys())}"
-            )
-        return model.elements(type_map[type_name])
+        cls._require_known_type(type_name, type_map)
+        for name in exclude:
+            cls._require_known_type(name, type_map)
+        elements = model.elements(
+            type_map[type_name], include_subtypes=include_subtypes
+        )
+        if not exclude:
+            return elements
+        return (
+            e
+            for e in elements
+            if not any(cls.is_instance(e, name) for name in exclude)
+        )
 
     @classmethod
     def get_type(cls, type_name: str) -> type:
@@ -240,20 +326,28 @@ class SysideAdapter:
 
         Returns:
             True if element matches type
+
+        Raises:
+            ValueError: If ``type_name`` is not in TYPE_MAP (D6/INV-F). Gated
+                before the mock string-match fallback, so a mock whose name is a
+                real (mapped) type still resolves by string match, but an
+                unmapped name is loud instead of a silent False.
         """
         try:
             type_map = cls._get_type_map()
-            sysml_type = type_map.get(type_name)
-            if sysml_type is not None:
-                if hasattr(elem, "isinstance"):
-                    try:
-                        return elem.isinstance(sysml_type)
-                    except Exception:
-                        pass
         except ImportError:
-            # syside not available, fall back to string matching
-            pass
-        # Fallback: string matching for mocks/tests
+            # syside not available (CLI/mock path): no map to validate against,
+            # so string-match only. D6's hard error targets the live path where
+            # the map exists but lacks the name.
+            return type_name in type(elem).__name__
+        cls._require_known_type(type_name, type_map)
+        sysml_type = type_map[type_name]
+        if hasattr(elem, "isinstance"):
+            try:
+                return elem.isinstance(sysml_type)
+            except Exception:
+                pass
+        # Fallback: string matching for mocks whose name is a mapped type.
         return type_name in type(elem).__name__
 
     # === Pattern 4: Source Location ===
@@ -300,3 +394,22 @@ class SysideAdapter:
             else:
                 break
         return None
+
+
+def is_droppable_constraint(elem: Any) -> bool:
+    """Whether a swept ``ConstraintUsage`` is a dropped executable predicate.
+
+    A dropped predicate is an ``assert`` or a plain/``require`` constraint —
+    something the pipeline cannot execute and therefore drops. Requirement-side
+    usages (``RequirementUsage`` and its ``satisfy`` subtype) are excluded: they
+    are requirements, not free-standing predicates.
+
+    This is the single droppable-policy predicate (PIPELINE-TRUTH Item 4, INV-D):
+    the exclusion is decided here, against :data:`EXCLUDED_CONSTRAINT_TYPES`, and
+    both this repo's validators and sysml-codegen's manifest collector consume it.
+    Callers pass an element already known to be a ``ConstraintUsage`` (subtypes
+    included) from a subtype-aware sweep.
+    """
+    return not any(
+        SysideAdapter.is_instance(elem, name) for name in EXCLUDED_CONSTRAINT_TYPES
+    )
