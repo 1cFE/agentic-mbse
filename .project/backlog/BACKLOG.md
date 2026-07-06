@@ -55,6 +55,71 @@ Prioritized list of epics and features.
 
 ## P2 - Medium Priority
 
+### [ITEM-SYNC-F1] SysIDE self-named-recursion vendor note (evaluation-time finding)
+
+**Priority**: P2
+**Effort**: 0.5 day (write the reproducer + report)
+**Status**: Note filed — draft at `.project/research/20260706_syside-self-named-recursion-vendor-note.md`
+**Source**: UPSTREAM-FINDINGS Item 12 (F1); Item 8 WI-014 toy
+
+**Finding**: A self-named binding (`in P = P` resolving to the calc's own parameter) trips
+SysIDE into recursion at **expression-evaluation time, not extraction time** — extraction is
+finite/degenerate (Item-8 probe, `timeout 150`, exit 0). The draft note records the
+distinction. Out of scope for Item 12: writing the full vendor report or contacting
+Sensmetry. This item is to produce a minimal reproducer and, if warranted, a report.
+
+---
+
+### [ITEM-SYNC-F2] V11 model-side mirror check (candidate)
+
+**Priority**: P2
+**Effort**: ~0.5 day (check + fixture)
+**Status**: Candidate
+**Source**: UPSTREAM-FINDINGS Item 12 (F2); warning-reconciliation (Item 7)
+
+**Idea**: A design-attribute binding whose `*_params` key no parameter group provides — the
+model-side mirror of codegen's V11 (hard FAIL). Recorded by Item 7 as a candidate, not
+floor; codegen V11 is the backstop, so this is a nice-to-have early warning at L2/L6.
+
+---
+
+### [ITEM-SYNC-C7] attribute-`:>>`-with-expression WARN (Item 12 fileable)
+
+**Priority**: P2
+**Effort**: ~0.5 day (check + fixture)
+**Status**: Ready — deferred from Item 12 under the scope guard
+**Source**: UPSTREAM-FINDINGS Item 12 (C7); cross-part-wiring
+
+**Idea**: WARN when `attribute :>> attr = <expression>` carries an expression RHS — this
+AttributeUsage-redefinition form is silently dropped at extraction (`hierarchy_resolver.py`
+`_extract_single_redefinition` scans only ReferenceUsage). Doc D5 (semantic-operators.md)
+already teaches the bare-`:>>` form as the fix.
+
+**Why filed, not built in Item 12**: the correct trigger boundary is subtle — must fire on
+an *AttributeUsage* redefinition with an *expression* RHS, but NOT on the supported bare-`:>>`
+(ReferenceUsage) value form nor on a literal-valued redefinition. A rushed check risks the
+C6 defect class (flagging a shape codegen accepts). Build it with its own negative fixture
+AND a negative-of-the-negative (bare-`:>>` literal must not fire).
+
+---
+
+### [ITEM-SYNC-C8] two-names-one-identifier WARN (Item 12 fileable)
+
+**Priority**: P2
+**Effort**: ~0.5–1 day (needs a shared sanitizer)
+**Status**: Ready — deferred from Item 12 under the scope guard
+**Source**: UPSTREAM-FINDINGS Item 12 (C8); identifier-sanitization (Item 5)
+
+**Idea**: WARN when two distinct SysML names sanitize to one Python identifier, before
+codegen fails on its duplicate-path error (REQ-NC-09).
+
+**Why filed, not built in Item 12**: requires replicating codegen's identifier sanitizer in
+agentic-mbse to compute collisions — a real duplication/drift risk against codegen's
+REQ-NC-09. The right fix is a shared sanitizer both repos import; codegen's duplicate-path
+error is the backstop until then.
+
+---
+
 ### [ITEM-EXAMPLES-001] Example Store for Modeling Agents
 
 **Priority**: P2
