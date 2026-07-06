@@ -9,7 +9,10 @@ Does NOT evaluate constraint values (that's handled by syside/TEAx).
 import sys
 from typing import Any
 
-from agentic_mbse.sysml.syside_adapter import SysideAdapter
+from agentic_mbse.sysml.syside_adapter import (
+    EXCLUDED_CONSTRAINT_TYPES,
+    SysideAdapter,
+)
 
 try:
     from .common import (
@@ -109,8 +112,16 @@ def analyze_constraints(models_path: str) -> QualityCheckResult:
             issues=[f"Failed to load model: {e}"],
         )
 
-    # Count constraints
-    constraints = list(SysideAdapter.elements_of_type(model, "ConstraintUsage"))
+    # Count constraints — row 6 (Item 4): sweep ConstraintUsage subtypes so
+    # `assert` is counted, excluding requirement-side usages (mirror row 1).
+    constraints = list(
+        SysideAdapter.elements_of_type(
+            model,
+            "ConstraintUsage",
+            include_subtypes=True,
+            exclude=EXCLUDED_CONSTRAINT_TYPES,
+        )
+    )
     total_constraints = len(constraints)
 
     # Count constraint definitions

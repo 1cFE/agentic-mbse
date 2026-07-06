@@ -1045,22 +1045,24 @@ class TestLevelDistinctness:
         for r in result.results[2:]:
             assert r.success is True, f"L{r.level} should pass but failed"
 
-    def test_l3_circular_import_fixture_exists(self):
-        """L3 fixture exists; cycle detection pending Import element support in syside.
+    def test_l3_circular_import_detected(self):
+        """L3 now DETECTS the circular import (PIPELINE-TRUTH Item 4, row 5).
 
-        syside's elements_of_type('Import') currently returns 0 elements,
-        so build_dependency_graph always produces an empty graph and L3 always
-        passes. When syside exposes Import elements, this test should be
-        updated to assert result.results[2].success is False.
+        The old exact-type ``Import`` query matched nothing (``Import`` is
+        abstract), so the dependency graph was always empty and L3 always passed
+        on a genuinely circular model — a validator that could not fail. The
+        subtype-aware sweep plus package-keyed graph make the check functional:
+        the PkgA <-> PkgB cycle is found and L3 fails. (This is the flip the old
+        test's own docstring anticipated.)
         """
         from agentic_mbse.validation.runner import run_all_checks
 
         result = run_all_checks(f"{self.FIXTURES}/l3_circular_import", fail_fast=False)
         assert result.results[0].success is True  # L1 passes
         assert result.results[1].success is True  # L2 passes
-        # L3 passes (cycle detection not yet functional)
-        assert result.results[2].success is True
-        assert result.results[2].metrics["Circular dependencies"] == 0
+        # L3 fails: the circular dependency is now detected.
+        assert result.results[2].success is False
+        assert result.results[2].metrics["Circular dependencies"] == 1
 
     def test_l4_reports_constraint_metrics(self):
         """L4 reports unique constraint coverage metrics (informational, always passes)."""

@@ -4,6 +4,9 @@ Level 3: Dataflow Integrity
 ============================================================
 Found 4 SysML files
 
-✅ Level 3: Dataflow Integrity
-   Documents analyzed: 0
-   Circular dependencies: 0
+❌ Level 3: Dataflow Integrity
+   Documents analyzed: 3
+   Circular dependencies: 1
+
+   Issues found: 1
+   - Circular dependency: PackageA → PackageB

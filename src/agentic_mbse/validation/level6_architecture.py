@@ -18,7 +18,10 @@ from typing import Any
 import yaml
 
 from agentic_mbse.sysml.expression import evaluate_true_static_expression
-from agentic_mbse.sysml.syside_adapter import SysideAdapter
+from agentic_mbse.sysml.syside_adapter import (
+    EXCLUDED_CONSTRAINT_TYPES,
+    SysideAdapter,
+)
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 
 from .adr002 import (
@@ -598,10 +601,19 @@ def check_constraint_executability(model: Any) -> list[ValidationIssue]:
     """
     issues: list[ValidationIssue] = []
 
-    try:
-        constraints = list(SysideAdapter.elements_of_type(model, "ConstraintUsage"))
-    except Exception:
-        constraints = []
+    # Row 7 (Item 4): sweep ConstraintUsage subtypes so `assert` is seen, and
+    # exclude requirement-side usages via the single droppable policy. D7: the
+    # old `except Exception: constraints = []` swallow is removed — an extraction
+    # failure here must be loud, not silently collapse to "zero constraints" and
+    # mask this very fix.
+    constraints = list(
+        SysideAdapter.elements_of_type(
+            model,
+            "ConstraintUsage",
+            include_subtypes=True,
+            exclude=EXCLUDED_CONSTRAINT_TYPES,
+        )
+    )
 
     for constraint in constraints:
         try:
