@@ -34,6 +34,11 @@ Every SysML element is either a **definition** (reusable type in `library/`) or 
 | Attributes | `snake_case` | `attribute flow_rate : Real` |
 | Packages | `lowercase_underscores` | `package thermal_components` |
 
+**Quoted names are fine.** Multi-word quoted names (`'Fusion Power Plant'`, `'HIF Driver'`)
+are supported everywhere a name appears. Codegen sanitizes them to valid identifiers
+(`Fusion_Power_Plant`) — the identifier is *derived*, you do not write it. Use the
+readable quoted name.
+
 ## Definition vs Usage Rule
 
 **Decision question**: "Could this apply to multiple designs?"

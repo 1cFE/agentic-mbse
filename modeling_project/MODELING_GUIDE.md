@@ -270,13 +270,14 @@ Agents have read permissions via `.claude/settings.json`.
 | Pattern Doc | Covers |
 |-------------|--------|
 | `definitions-usages.md` | Definition vs Usage distinction, decision tree |
-| `expose-pattern.md` | EXPOSE pattern details, anti-patterns |
-| `adr002-calculations.md` | Calculation architecture, expression taxonomy |
+| `expose-pattern.md` | EXPOSE pattern details, anti-patterns, EXPOSE surfacing |
+| `plant-idiom.md` | Cross-part calc wiring: chains, retyping, sibling disambiguation |
+| `adr002-calculations.md` | Calculation architecture, expression taxonomy, no-loops rule |
 | `doc-comments.md` | Documentation standards, citation formats |
 | `conditionals.md` | Conditional expression syntax |
-| `constraints.md` | Constraint syntax and prefixes |
+| `constraints.md` | Constraint syntax and prefixes; not executable |
 | `cross-file-binding.md` | Cross-file imports and bindings |
-| `semantic-operators.md` | `=` vs `default :=` vs `:>>` vs `:>` |
+| `semantic-operators.md` | `=` vs `default :=` vs `:>>` vs `:>`; bare-`:>>` value idiom |
 | `syntax-reference.md` | 10 syntax patterns quick reference |
 | `package-naming.md` | Multi-file organization, unique names |
 | `mbse-concepts.md` | Allocation, interfaces, cost patterns |

@@ -116,6 +116,16 @@ part component {
 
 ---
 
+## No Loops (rule A-3)
+
+The computation graph must be a DAG — no calc may depend, directly or transitively, on
+its own output. A cycle (`A` binds an input from `B`'s output, `B` binds an input from
+`A`'s output) has no valid execution order and is rejected. Break the cycle: introduce an
+intermediate value, or restructure so one calc produces what the other consumes. See the
+circular-dependency example in `semantic-operators.md`.
+
+---
+
 ## Validated Patterns
 
 ### Multiplicity Cost Aggregation

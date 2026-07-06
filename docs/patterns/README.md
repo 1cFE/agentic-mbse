@@ -11,8 +11,9 @@ Patterns provide definitive syntax references and usage guidance for common SysM
 | Pattern | Description |
 |---------|-------------|
 | [definitions-usages.md](definitions-usages.md) | Core principle: separating reusable definitions from specific usages |
-| [expose-pattern.md](expose-pattern.md) | EXPOSE pattern for cross-file access to calc outputs |
-| [adr002-calculations.md](adr002-calculations.md) | Calculation architecture: calc defs in library, values in designs |
+| [expose-pattern.md](expose-pattern.md) | EXPOSE pattern for cross-file access to calc outputs, and EXPOSE surfacing |
+| [plant-idiom.md](plant-idiom.md) | Cross-part calc wiring: chains, retyping, def-owned attributes, sibling disambiguation |
+| [adr002-calculations.md](adr002-calculations.md) | Calculation architecture: calc defs in library, values in designs; no-loops rule |
 | [doc-comments.md](doc-comments.md) | Documentation standards and citation patterns |
 | [conditionals.md](conditionals.md) | Conditional expression syntax (`if COND? VALUE else VALUE`) |
 | [constraints.md](constraints.md) | Constraint syntax with assert/require/assume prefixes |

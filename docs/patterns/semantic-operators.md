@@ -129,6 +129,47 @@ part system {
 }
 ```
 
+### Value-carrying redefinition: use the bare `:>>` form
+
+To redefine a feature *and* give it a value, use the **bare** form — no `attribute`
+keyword:
+
+```sysml
+part variant : 'Base Plant' {
+    :>> gain = 2.0;                     // bare :>> with a value — CAPTURED
+}
+```
+
+The bare `:>> attr = value` parses as a ReferenceUsage, which extraction captures. The
+value overrides the base def's value for this usage.
+
+You can also override a nested attribute with a plain-usage literal:
+
+```sysml
+part variant : 'Base Plant' {
+    :>> nested.gain = 3.0;             // literal override of a nested attribute — CAPTURED
+}
+```
+
+**Warning — `attribute :>>` with an expression is dropped.** Writing the redefinition
+*with* the `attribute` keyword and an expression RHS is silently lost at extraction:
+
+```sysml
+part variant : 'Base Plant' {
+    attribute :>> gain = other * 3.0;  // AttributeUsage redefinition + expression — DROPPED
+}
+```
+
+Extraction scans only ReferenceUsage redefinitions, so the `attribute :>>` form with an
+expression never reaches the pipeline. Use the bare form for values; move any real
+computation into a calc def.
+
+### Redefinition precedence
+
+When the same attribute is set at more than one level, the most specific wins:
+
+**usage override (`:>>` on the usage) > specialized-def `:>>` > base def value.**
+
 ---
 
 ## Operator 4: `:>` (Subsetting)

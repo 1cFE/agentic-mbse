@@ -83,8 +83,9 @@ All pattern docs are in the agentic-mbse `docs/patterns/` directory. Agents have
 | Pattern Doc | Covers |
 |-------------|--------|
 | `definitions-usages.md` | Definition vs Usage distinction, decision tree |
-| `expose-pattern.md` | EXPOSE pattern details, anti-patterns |
-| `adr002-calculations.md` | Calculation architecture, expression taxonomy |
+| `expose-pattern.md` | EXPOSE pattern details, anti-patterns, EXPOSE surfacing |
+| `plant-idiom.md` | Cross-part calc wiring: chains, retyping, sibling disambiguation |
+| `adr002-calculations.md` | Calculation architecture, expression taxonomy, no-loops rule |
 | `doc-comments.md` | Documentation standards, citation formats |
 | `conditionals.md` | Conditional expression syntax |
 | `constraints.md` | Constraint syntax and prefixes |
