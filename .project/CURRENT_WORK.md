@@ -6,6 +6,20 @@
 
 ## Active Work
 
+### FORMULA Teaching Reconciliation (UPSTREAM-FINDINGS Item 12 follow-up)
+
+**Branch:** `upstream-findings-sync`
+**Active:** `.project/active/formula-teaching-reconciliation/`
+
+Implemented (surgical stance). The F6 validator fix (same-part FORMULA no longer FAILs V2) left shipped teaching surfaces contradicting the validator. Reconciled across adr002-calculations.md, common-mistakes.md, the sysml-conventions skill, MODELING_GUIDE + MODELING_PROCESS (templates + tracked install copies): inline FORMULA taught as a convenience for simple arithmetic; calc defs remain recommended for real calculations; calc-output-arithmetic / self-ref / dotted-path still taught as violations.
+
+### C4 Plain-Subtype Instantiation — docstring + test gap (UPSTREAM-FINDINGS Item 12 follow-up)
+
+**Branch:** `upstream-findings-sync`
+**Active:** `.project/active/c4-plain-subtype-instantiation/`
+
+Spec in progress. `check_calc_bearing_instantiation` (L6) behaves correctly but its docstring wrongly claims `.types` walks the full supertype chain; the plain-subtype FAIL path is untested. Codegen confirmed (REQ-EXT-13/14) to drop plain-subtype-inherited calcs, so the FAIL is correct — fix is docstring + missing fixture, NOT walking the chain.
+
 ### PDF Skill Deployment (ITEM-DOCLING-002)
 
 **Branch:** `doc-ingest-clean`
