@@ -189,6 +189,51 @@ are both supported. See `expose-pattern.md` for how an EXPOSE name surfaces as a
 Reference: `spec_chain_channel`, `spec_chain_twolevel` (cross-part chains through nested
 parts).
 
+## Secondary shapes and their limits
+
+Beyond the four core mechanisms, a handful of syntactic shapes resolve — some cleanly, some
+only partially. The `plant_value_shapes` fixture pins each shape's *observed* behavior, so
+teach the ones that work and treat the rest as known-incomplete rather than as targets.
+
+**Shapes that resolve correctly (teach these):**
+- Bare `default 10.0` with no `:=` — a plain design-attribute default.
+- Quoted enum def with a usage-level quoted `:>>` (`:>> wall = 'Wall Kind'::liquid_wall`).
+- A quoted output-parameter name (`out attribute 'net cost'` de-quotes to `net_cost`).
+- Style-E mixed outputs — a calc def with both `out attribute` and `return` members.
+- A 5-deep specialization chain with abstract ends (`abstract part def 'Chain L1'` … `L5`).
+
+**Shapes that are DEGRADED (document, do not rely on):**
+- An attribute-def-typed attribute set by *nested* `:>>` (the `'Econ Param' { :>> value = … }`
+  shape): the nested value does not reach a cross-part calc input.
+- An inherited attribute redefined *below* an in-part binding: resolves for the local calc but
+  degrades across a part boundary.
+
+Reference: `plant_value_shapes` (every shape above, each labelled at capture).
+
+### Non-float entry points are now diagnosed (Item 5)
+
+An entry point must be float-valued. A bool/string/enum-typed entry point (the `wall_type`
+idiom — an enum-valued attribute one hop from a calc input) is no longer silently omitted:
+codegen diagnoses it. Model guidance: **keep entry points float-valued**; carry a categorical
+choice as a separate design decision, not as a calc input. Reference: `plant_value_shapes`
+(the `wall` attribute).
+
+### Keep cross-part chains shallow (D3)
+
+A cross-part reference that must resolve to a value should be **one hop**. A multi-hop dot
+chain — `station.array.derived_calc.derived_value` — truncates: extraction keeps only the
+first segment of the `source_path`, so the deep reference does not resolve to the intended
+producer. Item 5 turned the worst multi-hop case into a loud reject (D3-2) rather than a
+silent mis-wire, but the rule stands: **keep cross-part references to one hop**; surface a
+deep value through an intermediate EXPOSE attribute instead. Reference: `deep_cross_scope_probe`.
+
+### Aggregation operators (Item 5)
+
+In an aggregation expression, `^` is exponentiation and now maps to Python `**`. Earlier it
+was silently passed through as Python bitwise-XOR — a wrong number with no diagnostic. An
+operator with no valid translation now marks the aggregation unsupported (a warning) instead
+of emitting a silent mistranslation.
+
 ## Sibling disambiguation
 
 Two same-type sibling parts on a plant each produce their own instance-scoped calc, so a
