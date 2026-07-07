@@ -68,6 +68,12 @@ finite/degenerate (Item-8 probe, `timeout 150`, exit 0). The draft note records 
 distinction. Out of scope for Item 12: writing the full vendor report or contacting
 Sensmetry. This item is to produce a minimal reproducer and, if warranted, a report.
 
+**Item 9 disposition (R-VENDOR): DECLINE the Sensmetry filing.** The recursion is
+evaluation-time syside behavior; sysml-codegen extraction is finite/degenerate (Item-8 probe,
+`timeout 150`, exit 0), so no codegen path is affected. This note stays as the durable record of
+the finding, but the item is not escalated to a vendor report/contact. Revisit only if a supported
+model drives syside into extraction-time recursion.
+
 ---
 
 ### [ITEM-SYNC-F2] V11 model-side mirror check (candidate)
@@ -83,11 +89,17 @@ floor; codegen V11 is the backstop, so this is a nice-to-have early warning at L
 
 ---
 
-### [ITEM-SYNC-C7] attribute-`:>>`-with-expression WARN (Item 12 fileable)
+### [ITEM-SYNC-C7] attribute-`:>>`-with-expression WARN — ✅ BUILT (PIPELINE-TRUTH Item 9)
 
 **Priority**: P2
 **Effort**: ~0.5 day (check + fixture)
-**Status**: Ready — deferred from Item 12 under the scope guard
+**Status**: ✅ Done — built in PIPELINE-TRUTH Item 9 (`pipeline-truth-item4`, commit `fa3b706`).
+`check_attr_redef_expression_dropped` (level6_architecture.py) + `L6_ATTR_REDEF_EXPR_DROPPED`
+fires on an AttributeUsage `:>>` with a non-literal RHS; stays silent on the bare `:>>` forms
+(ReferenceUsage) and the `attribute :>>`-literal form. Fixtures `tests/fixtures/item9/attr_redef_expr`
+(fires) + `attr_redef_literal` (silent). A live syside probe confirmed the trigger boundary is cleanly
+distinguishable (AttributeUsage vs ReferenceUsage) before the check landed — the C6 defect-class risk
+that deferred it is retired.
 **Source**: UPSTREAM-FINDINGS Item 12 (C7); cross-part-wiring
 
 **Idea**: WARN when `attribute :>> attr = <expression>` carries an expression RHS — this
@@ -117,6 +129,12 @@ codegen fails on its duplicate-path error (REQ-NC-09).
 agentic-mbse to compute collisions — a real duplication/drift risk against codegen's
 REQ-NC-09. The right fix is a shared sanitizer both repos import; codegen's duplicate-path
 error is the backstop until then.
+
+**Item 9 disposition (R-C8): KEEP FILED.** Now lower-value — Item 5 landed SC-4
+sanitizer-injectivity fail-fast in codegen, so a two-names-one-identifier collision fails loudly
+at generation (the backstop exists). Building the pre-warn is not a small check-plus-fixture (it
+still needs the shared sanitizer to avoid drift, ~0.5–1 day), so it stays filed rather than being
+built under Item 9's guard. Revisit if/when the shared sanitizer lands.
 
 ---
 
