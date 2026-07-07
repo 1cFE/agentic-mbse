@@ -92,6 +92,79 @@ resolves the same way — the matcher finds it on the def. No special handling i
 `attribute radius : Real = 0.5` on `part def Coil` is a first-class value source for a
 template calc binding.
 
+## The whole-plant value idiom (the headline)
+
+A plant supplies a value to a nested part's calc in one of four ways. All four resolve
+end-to-end — the value reaches the calc input with no bridge attribute. Pick by where the
+value lives and whether you are also swapping the part's type.
+
+**(a) Subtype-def literal reached through a usage-level retype.** The value lives on a
+`:>>` in the *subtype def*; the design retypes the nested usage to that subtype, and the
+literal is consumed cross-part.
+
+```sysml
+// Library: the subtype def carries the value.
+part def 'Hif Driver' :> 'Ife Driver' {
+    :>> efficiency = 0.35;                 // subtype-def literal
+}
+// Design: retype the usage to pull the subtype (and its value) in.
+part hif_plant : 'IFE Power Plant' {
+    part :>> driver : 'Hif Driver';        // usage-level retype
+}
+```
+
+**(b) Bare no-retype override block.** The design keeps the part's type and overrides one
+of its attributes with a bare `:>>` inside a `part :>> name { ... }` block.
+
+```sysml
+part hif_plant : 'IFE Power Plant' {
+    part :>> target_factory {
+        :>> cost_per_target = 10.0;        // bare :>> literal, no retype
+    }
+}
+```
+
+**(c) One-hop dotted override on a plain cross-part attribute.** The design reaches one
+level down with a dotted `:>>` on the usage.
+
+```sysml
+part hif_plant : 'IFE Power Plant' {
+    :>> chamber.cost_per_unit = 7.0;       // usage-level dotted override, one hop
+}
+```
+
+**(d) In-part inherited-attr redefine.** A calc binds an inherited attribute
+(`in flow_rate = throughput`), and the same def redefines that attribute below the binding.
+Order does not matter — the redefine is seen even when it sits after the binding.
+
+```sysml
+part def 'Flow Sub' :> 'Flow Base' {       // 'Flow Base' declares `throughput`
+    calc flow_calc : FlowCalc {
+        in flow_rate = throughput;         // binds the inherited attribute...
+    }
+    :>> throughput = 8.0;                  // ...redefined below the binding
+}
+```
+
+### Three rules that govern all four
+
+- **Precedence — most specific wins:** *usage override (`:>>` on the usage) > specialized-def
+  `:>>` > base-def value.* A `:>>` in the design (a/b/c) beats a subtype-def `:>>`, which beats
+  the base def's declared value.
+- **Entry points key by the source attribute's qualified name.** Renaming an input per
+  consumer still collapses to **one** parameter (the calc inputs share the source attribute's
+  QN), and one attribute feeding N consumers is **one** channel, not N. This is why the JSON
+  input file has one key per source attribute, regardless of how many calcs read it.
+- **Only LITERAL values propagate this way.** A `:>>` whose RHS is a chain or a computed
+  expression does **not** silently vanish — it falls to the uncovered-parameter diagnostic, so
+  the modeler sees an unresolved input rather than a wrong number. (And a value written as
+  `attribute :>> attr = <expr>` is dropped at extraction — see semantic-operators.md and the
+  L6 `attribute :>>`-with-expression warning.)
+
+Reference fixtures: `plant_values` (all four mechanisms a/b/c/d, plus the fusion-tea vendored
+plant as the real-scale exemplar), `plant_value_shapes` (the secondary shapes and their
+observed labels), `spec_chain_twolevel` (the two-level specialization that mechanism (a) rides on).
+
 ## Cross-part chains and EXPOSE
 
 A calc in one part can consume a calc output from another part. The value crosses the

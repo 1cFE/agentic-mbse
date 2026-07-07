@@ -108,6 +108,9 @@ class ValidationCode(str, Enum):
     L6_CONSTRAINT_NON_EXECUTABLE = "L6_CONSTRAINT_NON_EXECUTABLE"
     # C4: a calc-bearing part def that no usage instantiates (plainly or by retyping) -> FAIL; its template calcs are dropped.
     L6_CALC_DEF_NO_INSTANTIATION = "L6_CALC_DEF_NO_INSTANTIATION"
+    # C7 (Item 9): `attribute :>> attr = <expr>` parses as an AttributeUsage, but codegen's
+    # redefinition scan reads only ReferenceUsage -> the override is silently dropped -> WARN.
+    L6_ATTR_REDEF_EXPR_DROPPED = "L6_ATTR_REDEF_EXPR_DROPPED"
 
 
 class ExpressionRef(BaseModel):

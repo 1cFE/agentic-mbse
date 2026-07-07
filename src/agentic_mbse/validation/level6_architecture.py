@@ -776,6 +776,94 @@ def check_body_assignment_impl_loss(model: Any) -> list[ValidationIssue]:
     return issues
 
 
+# C7 mirrors codegen's is_literal_expression (expression_utils.py): the five SysML
+# literal node types plus NullExpression. Every other value expression — Operator,
+# Invocation, FeatureChain/Reference — is a computed expression.
+_LITERAL_EXPR_TYPES = (
+    "LiteralInteger",
+    "LiteralRational",
+    "LiteralBoolean",
+    "LiteralString",
+    "LiteralInfinity",
+    "NullExpression",
+)
+
+
+def _is_literal_rhs(expr: Any) -> bool:
+    """True if a value expression is a literal (mirrors codegen is_literal_expression)."""
+    return any(SysideAdapter.is_instance(expr, t) for t in _LITERAL_EXPR_TYPES)
+
+
+def check_attr_redef_expression_dropped(model: Any) -> list[ValidationIssue]:
+    """
+    C7 (Item 9): WARN an `attribute :>>` redefinition carrying an expression value.
+
+    Codegen's redefinition scan (hierarchy_resolver._extract_single_redefinition)
+    reads only ReferenceUsage members, so a redefinition written WITH the
+    `attribute` keyword parses as an AttributeUsage and is silently dropped — its
+    override never reaches the pipeline. This fires only when the dropped RHS is a
+    computed expression (the dangerous case, where no supported one-line rewrite
+    exists). The two forms codegen accepts or teaches do NOT fire:
+    - the bare `:>> attr = <literal>` / bare `:>> attr = <expr>` forms parse as
+      ReferenceUsage and are captured (D1 mechanism b);
+    - the `attribute :>> attr = <literal>` form is an AttributeUsage too, but is
+      taught in semantic-operators.md (use the bare form) rather than warned — the
+      prior-epic C7 boundary is expression-vs-literal.
+
+    WARNING severity, so Level 6 stays passing. Mirrors semantic-operators.md
+    "attribute :>> with an expression is dropped".
+
+    Detection: an AttributeUsage with a non-empty owned_redefinitions and a
+    feature_value_expression that is not a literal.
+
+    Returns:
+        List of ValidationIssue (WARNING) for dropped attribute-redefinition exprs.
+    """
+    issues: list[ValidationIssue] = []
+
+    for attr in SysideAdapter.elements_of_type(model, "AttributeUsage"):
+        try:
+            redefs = getattr(attr, "owned_redefinitions", None)
+            if not redefs:
+                continue  # a plain typed attribute, not a :>> redefinition
+            expr = getattr(attr, "feature_value_expression", None)
+            if expr is None:
+                continue  # type-only redefinition — nothing to drop
+            if _is_literal_rhs(expr):
+                continue  # literal AttributeUsage redefine — taught (D5), not warned
+            # A redefinition member carries no qualified_name; name it by the
+            # redefined feature (falling back to the member's local name).
+            redefined = getattr(redefs[0], "redefined_feature", None)
+            name = (
+                getattr(attr, "name", None)
+                or getattr(redefined, "name", None)
+                or get_qualified_name(attr)
+            )
+            issues.append(
+                ValidationIssue(
+                    level=6,
+                    severity=Severity.WARNING,
+                    code=ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED,
+                    message=(
+                        f"Attribute redefinition '{name}' uses the `attribute :>>` form with an "
+                        f"expression value; codegen scans only ReferenceUsage redefinitions, so "
+                        f"this override is silently dropped at extraction"
+                    ),
+                    element_name=name,
+                    location=get_element_location(attr),
+                    suggestion=(
+                        "Use the bare `:>> attr = <value>` form (parses as ReferenceUsage and is "
+                        "captured), or move the computation into a calc def "
+                        "(see semantic-operators.md)"
+                    ),
+                )
+            )
+        except Exception:
+            continue
+
+    return issues
+
+
 # --- New orchestrator (combines L7 + L8 + ADR-002) ---
 
 
@@ -859,6 +947,7 @@ def validate_architecture(
     all_issues.extend(check_body_assignment_impl_loss(model))
     all_issues.extend(check_constraint_executability(model))
     all_issues.extend(check_calc_bearing_instantiation(model))
+    all_issues.extend(check_attr_redef_expression_dropped(model))  # C7 (Item 9)
     binding_issues, num_bindings = check_binding_formats(model)
     all_issues.extend(binding_issues)
     design_attr_issues, num_design_attrs = check_design_attr_completeness(
@@ -920,6 +1009,9 @@ def validate_architecture(
             ),
             "L6_CALC_DEF_NO_INSTANTIATION": len(
                 [i for i in all_issues if i.code == ValidationCode.L6_CALC_DEF_NO_INSTANTIATION]
+            ),
+            "L6_ATTR_REDEF_EXPR_DROPPED": len(
+                [i for i in all_issues if i.code == ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED]
             ),
         },
     )
