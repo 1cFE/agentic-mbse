@@ -253,19 +253,24 @@ Choose inline calc when:
 
 ```
 Am I creating...
-├─ A reusable calculation formula? → calc def in library/
+├─ A reusable or non-trivial calculation? → calc def in library/
 ├─ A true static expression (ONLY literals)? → OK in designs/
-├─ A derived expression (references design attrs)? → ❌ VIOLATION - use calc def
-├─ A value computed from calc output? → calc def in library/ + EXPOSE pattern
+├─ Simple arithmetic over same-part siblings? → inline FORMULA, OK in designs/
+├─ A value computed from a calc output? → calc def in library/ + EXPOSE pattern
+├─ A self-reference or dotted path? → ❌ VIOLATION - use calc def
 └─ A simple constant? → literal in designs/
 ```
 
-**Key Rule:** Design attributes may NOT contain expressions that reference other design attributes. Expressions like `diameter = radius * 2.0` are **derived expressions** and must be refactored to calc defs in `library/`.
+**Key Rule:** A design attribute may reference **same-part siblings** inline (`= radius * 2.0`)
+as a convenience for simple arithmetic and unit conversions. It may NOT compute on a calc
+output (`= calc.power * 0.95`), reference itself, or reach through a dotted path — those must
+be refactored to calc defs in `library/`. For any real or reusable calculation, prefer a calc
+def regardless.
 
 **Checkpoint:**
-- [ ] All calc defs identified and placed in `models/library/`
+- [ ] All reusable/non-trivial calc defs identified and placed in `models/library/`
 - [ ] No calc defs planned for `models/designs/`
-- [ ] Design expressions contain ONLY literals (no design attribute references)
+- [ ] Inline design expressions reference only same-part siblings (no calc-output arithmetic, self-reference, or dotted paths)
 - [ ] EXPOSE patterns are pure value propagation (no arithmetic on calc outputs)
 
 ### 2.3 Cross-File Coupling Architecture
@@ -459,7 +464,7 @@ All SysML constraints must hold:
 Before completing validation phase:
 
 - [ ] **No calc defs in designs/**: `grep -r "calc def" models/designs/` returns empty
-- [ ] **No derived expressions**: Design attributes contain only literals or EXPOSE patterns
+- [ ] **No unsupported derived expressions**: no design attribute computes on a calc output, references itself, or uses a dotted path (inline FORMULA over same-part siblings is OK)
 - [ ] **Calc usages wire correctly**: All calc usages bind to library calc defs
 ```
 

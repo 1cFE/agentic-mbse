@@ -399,13 +399,17 @@ def true_static_units_model():
 
 
 class TestDerivedExpressionProhibition:
-    """V2 check must reject expressions with feature references (except EXPOSE and std lib).
+    """V2 check rejects references to CALC OUTPUTS in arithmetic, not same-part siblings.
 
-    Per ADR-002 Amendment (2025-12-22):
-    - Expressions referencing design attributes are DERIVED EXPRESSIONS
-    - Derived expressions are prohibited in design files
-    - Only TRUE STATIC expressions (literals + std lib refs) are allowed
+    Per ADR-002 Rule 3 as relaxed by sysml-codegen Item 5 (FORMULA computed
+    attributes, F6):
+    - Only TRUE STATIC expressions (literals + std lib refs) are unconditionally allowed
+    - An expression whose feature refs are all same-part owned siblings is a
+      supported FORMULA computed attribute — NOT a violation (this reversed the old
+      "even one design-attr reference is a violation" rule)
     - EXPOSE pattern (single ref to sibling calc output) is exempt
+    - A reference to a calc OUTPUT inside arithmetic (foreign namespace) is the
+      unsupported dynamic-expression case and STILL fires V2_DYNAMIC_EXPRESSION
     """
 
     def test_true_static_allowed(self, true_static_model):
@@ -428,32 +432,34 @@ class TestDerivedExpressionProhibition:
         v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
         assert len(v2_issues) == 0, f"Unit annotations should pass, got: {v2_issues}"
 
-    def test_single_reference_violation(self, derived_single_model):
-        """Even one reference to a design attribute is a violation.
+    def test_single_reference_formula_allowed(self, derived_single_model):
+        """A single reference to a same-part sibling is a supported FORMULA (F6).
 
-        Input: Model with diameter = radius * 2.0
-        Output: V2 issue for diameter (references design attr 'radius')
+        Input: Model with diameter = radius * 2.0 (radius is a same-part sibling)
+        Output: NO V2 issue for diameter — this is a FORMULA computed attribute,
+        supported end-to-end by codegen (Item 5). The old rule flagged it; the
+        Item-5 relaxation reversed that.
         """
         issues = check_static_expressions(derived_single_model)
         v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
-        assert len(v2_issues) >= 1, "Expected at least 1 V2 violation for derived expression"
-        # Check the violating attribute is diameter
-        assert any("diameter" in i.element_name for i in v2_issues), (
-            f"Expected 'diameter' in violations, got: {[i.element_name for i in v2_issues]}"
+        diameter_issues = [i for i in v2_issues if "diameter" in i.element_name]
+        assert diameter_issues == [], (
+            f"Same-part FORMULA 'diameter' must not fire V2, got: {diameter_issues}"
         )
 
-    def test_multi_reference_violation(self, derived_multi_model):
-        """Multiple references are still a single violation per attribute.
+    def test_multi_reference_formula_allowed(self, derived_multi_model):
+        """Multiple same-part sibling references are still a supported FORMULA (F6).
 
         Input: Model with volume = ... * major_radius * minor_radius * elongation
-        Output: V2 issue for volume (references 3 design attrs)
+        (all same-part siblings)
+        Output: NO V2 issue for volume — a FORMULA may read any number of same-part
+        siblings (Item 5).
         """
         issues = check_static_expressions(derived_multi_model)
         v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
-        assert len(v2_issues) >= 1, "Expected at least 1 V2 violation"
-        # Check the violating attribute is volume
-        assert any("volume" in i.element_name for i in v2_issues), (
-            f"Expected 'volume' in violations, got: {[i.element_name for i in v2_issues]}"
+        volume_issues = [i for i in v2_issues if "volume" in i.element_name]
+        assert volume_issues == [], (
+            f"Same-part FORMULA 'volume' must not fire V2, got: {volume_issues}"
         )
 
     def test_expose_pattern_still_allowed(self, expose_pattern_model):
@@ -477,13 +483,13 @@ class TestDerivedExpressionProhibition:
         v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
         assert len(v2_issues) >= 1, "Computation on calc output should be V2 violation"
 
-    def test_guidance_includes_calc_def_template(self, derived_single_model):
+    def test_guidance_includes_calc_def_template(self, v2_violation_model):
         """Violation guidance should suggest creating a calc def.
 
-        Input: Model with derived expression
+        Input: Model with a genuine violation (calc-output ref in arithmetic)
         Output: V2 issue suggestion mentions calc def
         """
-        issues = check_static_expressions(derived_single_model)
+        issues = check_static_expressions(v2_violation_model)
         v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
         assert len(v2_issues) >= 1
         # Check suggestion mentions calc def

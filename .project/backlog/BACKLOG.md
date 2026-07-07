@@ -55,6 +55,71 @@ Prioritized list of epics and features.
 
 ## P2 - Medium Priority
 
+### [ITEM-SYNC-F1] SysIDE self-named-recursion vendor note (evaluation-time finding)
+
+**Priority**: P2
+**Effort**: 0.5 day (write the reproducer + report)
+**Status**: Note filed — draft at `.project/research/20260706_syside-self-named-recursion-vendor-note.md`
+**Source**: UPSTREAM-FINDINGS Item 12 (F1); Item 8 WI-014 toy
+
+**Finding**: A self-named binding (`in P = P` resolving to the calc's own parameter) trips
+SysIDE into recursion at **expression-evaluation time, not extraction time** — extraction is
+finite/degenerate (Item-8 probe, `timeout 150`, exit 0). The draft note records the
+distinction. Out of scope for Item 12: writing the full vendor report or contacting
+Sensmetry. This item is to produce a minimal reproducer and, if warranted, a report.
+
+---
+
+### [ITEM-SYNC-F2] V11 model-side mirror check (candidate)
+
+**Priority**: P2
+**Effort**: ~0.5 day (check + fixture)
+**Status**: Candidate
+**Source**: UPSTREAM-FINDINGS Item 12 (F2); warning-reconciliation (Item 7)
+
+**Idea**: A design-attribute binding whose `*_params` key no parameter group provides — the
+model-side mirror of codegen's V11 (hard FAIL). Recorded by Item 7 as a candidate, not
+floor; codegen V11 is the backstop, so this is a nice-to-have early warning at L2/L6.
+
+---
+
+### [ITEM-SYNC-C7] attribute-`:>>`-with-expression WARN (Item 12 fileable)
+
+**Priority**: P2
+**Effort**: ~0.5 day (check + fixture)
+**Status**: Ready — deferred from Item 12 under the scope guard
+**Source**: UPSTREAM-FINDINGS Item 12 (C7); cross-part-wiring
+
+**Idea**: WARN when `attribute :>> attr = <expression>` carries an expression RHS — this
+AttributeUsage-redefinition form is silently dropped at extraction (`hierarchy_resolver.py`
+`_extract_single_redefinition` scans only ReferenceUsage). Doc D5 (semantic-operators.md)
+already teaches the bare-`:>>` form as the fix.
+
+**Why filed, not built in Item 12**: the correct trigger boundary is subtle — must fire on
+an *AttributeUsage* redefinition with an *expression* RHS, but NOT on the supported bare-`:>>`
+(ReferenceUsage) value form nor on a literal-valued redefinition. A rushed check risks the
+C6 defect class (flagging a shape codegen accepts). Build it with its own negative fixture
+AND a negative-of-the-negative (bare-`:>>` literal must not fire).
+
+---
+
+### [ITEM-SYNC-C8] two-names-one-identifier WARN (Item 12 fileable)
+
+**Priority**: P2
+**Effort**: ~0.5–1 day (needs a shared sanitizer)
+**Status**: Ready — deferred from Item 12 under the scope guard
+**Source**: UPSTREAM-FINDINGS Item 12 (C8); identifier-sanitization (Item 5)
+
+**Idea**: WARN when two distinct SysML names sanitize to one Python identifier, before
+codegen fails on its duplicate-path error (REQ-NC-09).
+
+**Why filed, not built in Item 12**: requires replicating codegen's identifier sanitizer in
+agentic-mbse to compute collisions — a real duplication/drift risk against codegen's
+REQ-NC-09. The right fix is a shared sanitizer both repos import; codegen's duplicate-path
+error is the backstop until then.
+
+---
+
 ### [ITEM-EXAMPLES-001] Example Store for Modeling Agents
 
 **Priority**: P2
@@ -202,3 +267,22 @@ Prioritized list of epics and features.
 - Watch mode for dev symlinks (auto-reload on changes)
 - `agentic-mbse diff` command to compare project vs templates
 - Migration tool for updating user-owned files with new features
+
+### [ITEM-SYNC-F6] L6 derived-expr-references-design-attrs flags supported FORMULA shapes ✅
+
+**Found**: 2026-07-06, orchestrator cross-repo sweep during the UPSTREAM-FINDINGS Item 12 audit.
+**Fixed**: 2026-07-06, on `upstream-findings-sync`.
+**Symptom**: `run_all_checks` on sysml-codegen's `quoted_owner_formula` fixture fails L6 with
+"Derived expression references design attributes ['revenue', ...]" — but that shape (a FORMULA
+computed attribute reading design attributes) is first-class in sysml-codegen (Item 5 landed the
+quoted-owner FORMULA wire; the fixture generates and resolves end-to-end).
+**Class**: third L6 false-positive family, sibling to the two C6 fixed (calc-def-internal derived
+expr; quoted-name EQN). Not in the Item 12 impact list — the fixture was never run through
+agentic-mbse validation in any item's records.
+**Fix**: `check_static_expressions` (`adr002.py`) now exempts a design computed attribute whose
+feature refs all resolve to same-part owned siblings (a codegen FORMULA, verified against
+`computed_attribute_extractor.py::_classify_attribute_expression`). A reference to a calc output
+in a foreign namespace (`calc.out * 0.95`), a self-reference (REQ-CA-07), or a dotted path
+(FeatureChainExpression) still fires. Fixture `tests/fixtures/item12/formula_computed/` carries
+both directions; three pre-Item-5 tests in `test_sysml/test_adr002.py` that asserted the old
+blanket rule were updated to the relaxed contract.

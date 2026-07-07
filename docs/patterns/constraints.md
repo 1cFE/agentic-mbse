@@ -22,6 +22,12 @@ assert constraint ConstraintName {
 
 **Critical:** Constraints require a prefix keyword (`assert`, `require`, or `assume`).
 
+**Constraints are not executable.** They document intent — they are dropped at
+extraction and produce no computation in the generated pipeline (the validator WARNs when
+a model carries constraint usages). If a constraint expresses a value the pipeline needs,
+move that computation into a calc def. Canonical rule: modeling-assumptions §8
+("constraints are not executable"), in the sysml-codegen repo.
+
 ---
 
 ## Constraint Prefix Keywords

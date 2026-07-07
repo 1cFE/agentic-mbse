@@ -147,6 +147,35 @@ package MyProject::Designs::MyDesign::Cost {
 
 ---
 
+## EXPOSE surfacing: an EXPOSE name becomes an output
+
+An EXPOSE that names a calc output (an `EXPOSE_PURE` — a plain attribute bound directly
+to a single calc output, no arithmetic) is not just internal wiring. It **surfaces as a
+named output capture**:
+
+- The EXPOSE name lands on the module's `output_aliases`.
+- It becomes an output file named `{instance_path}__{alias_name}.json`.
+- The surfaced name is the sanitized `python_name` of the alias — a quoted or multi-word
+  name is sanitized the same way codegen sanitizes any identifier (`'Total Power'` →
+  `Total_Power`). Teach and expect the sanitized form.
+
+```sysml
+part plant {
+    // EXPOSE_PURE: a plain attribute bound to one calc output. Surfaces as an output.
+    attribute total_power : Real = power_calc.total_power;
+}
+// -> output_aliases carries `total_power`; output file `plant__total_power.json`.
+```
+
+Both EXPOSE shapes surface: a part-def-level EXPOSE (shape A, expanded per instance) and
+a part-usage-level EXPOSE (shape B).
+
+**`EXPOSE_COMPUTED` stays rejected.** An attribute whose expression combines a calc output
+with arithmetic (`= power_calc.output * 1.1`) is a derived expression, not an EXPOSE —
+it does not surface and is rejected. Move the arithmetic into a calc def.
+
+---
+
 ## Anti-Patterns
 
 ### DON'T: Create Circular EXPOSE Chains

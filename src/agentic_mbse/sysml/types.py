@@ -75,12 +75,18 @@ class ValidationCode(str, Enum):
     V2_DYNAMIC_EXPRESSION = "V2_DYNAMIC_EXPRESSION"
     V3_CIRCULAR_DEPENDENCY = "V3_CIRCULAR_DEPENDENCY"
     V4_UNSUPPORTED_OPERATOR = "V4_UNSUPPORTED_OPERATOR"
+    # C5 (Item 12): a function invocation inside a static design expression is not
+    # statically extractable — steer the modeler to a calc def. WARN, not ERROR.
+    V4_STATIC_FUNCTION_INVOCATION = "V4_STATIC_FUNCTION_INVOCATION"
 
     # Structural Issues
     UNBOUND_INPUT = "UNBOUND_INPUT"
     UNDEFINED_BINDING = "UNDEFINED_BINDING"
     LITERAL_BINDING = "LITERAL_BINDING"
     UNUSED_DEFINITION = "UNUSED_DEFINITION"
+    # C1 (Item 12): an input bound to a same-named reference that dead-ends on the
+    # calc's own parameter, with no producer of that name in scope. FAIL, L2.
+    L2_SELF_NAMED_BINDING = "L2_SELF_NAMED_BINDING"
 
     # Dataflow Issues
     CIRCULAR_IMPORT = "CIRCULAR_IMPORT"
@@ -93,6 +99,15 @@ class ValidationCode(str, Enum):
     L6_INVALID_BINDING_FORMAT = "L6_INVALID_BINDING_FORMAT"
     L6_DESIGN_ATTR_INCOMPLETE = "L6_DESIGN_ATTR_INCOMPLETE"
     L6_DESIGN_ATTR_UNEXTRACTABLE = "L6_DESIGN_ATTR_UNEXTRACTABLE"
+    # Item 12 architecture checks (mirror sysml-codegen's shipped behavior).
+    # C2a: an anonymous `return` (no declared name) yields no output channel -> FAIL (mirrors codegen V8).
+    L6_ANONYMOUS_RETURN = "L6_ANONYMOUS_RETURN"
+    # C2b: `return attribute y; y = expr` body-assignment extracts an output but loses auto-impl -> WARN.
+    L6_BODY_ASSIGNMENT_IMPL_LOSS = "L6_BODY_ASSIGNMENT_IMPL_LOSS"
+    # C3: constraint usages are not executable and are dropped at extraction -> WARN (see modeling-assumptions §8).
+    L6_CONSTRAINT_NON_EXECUTABLE = "L6_CONSTRAINT_NON_EXECUTABLE"
+    # C4: a calc-bearing part def that no usage instantiates (plainly or by retyping) -> FAIL; its template calcs are dropped.
+    L6_CALC_DEF_NO_INSTANTIATION = "L6_CALC_DEF_NO_INSTANTIATION"
 
 
 class ExpressionRef(BaseModel):

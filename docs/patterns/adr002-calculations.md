@@ -26,7 +26,7 @@ This extends the Definitions vs Usages pattern:
 |------|---------------|
 | **Rule 1** | `calc def` declarations SHALL be in `models/library/` only |
 | **Rule 2** | Calc usages in `designs/` wire library calc defs to design values |
-| **Rule 3** | Design attributes contain literals, bindings, or **static expressions** |
+| **Rule 3** | Design attributes contain literals, bindings, static expressions, or a simple **inline FORMULA** over same-part siblings — reserve real calculations for calc defs |
 
 ---
 
@@ -39,8 +39,13 @@ This extends the Definitions vs Usages pattern:
 | **EXPOSE pattern** | `designs/` attribute | 1 (calc output) | PASS | `= my_calc.output` |
 | **Calc def formula** | `library/` calc def | N/A | N/A | `out result : Real = input * 0.2;` |
 | **Binding reference** | Calc usage binding | N/A | N/A | `in value = system.property;` |
-| **Derived expression** | `designs/` attribute | ≥1 (design attr) | **FAIL** | `= radius * 2.0` |
-| **Computation on calc** | `designs/` attribute | ≥1 | **FAIL** | `= calc.power * 0.95` |
+| **Inline FORMULA** | `designs/` attribute | ≥1 (same-part sibling) | PASS¹ | `= radius * 2.0` |
+| **Computation on calc output** | `designs/` attribute | ≥1 (calc output) | **FAIL** | `= calc.power * 0.95` |
+| **Self / dotted reference** | `designs/` attribute | self, or a dotted path | **FAIL** | `= self.x`, `= a.b.c` |
+
+¹ Accepted as a convenience for simple arithmetic and unit conversions over same-part
+sibling attributes. For any real or reusable calculation, use a calc def in `library/`
+(see [Inline FORMULA vs Calc Def](#inline-formula-vs-calc-def) below).
 
 ---
 
@@ -52,8 +57,11 @@ part component {
     attribute dimension_a : Real = 3.0 [m];
     attribute dimension_b : Real = 5.0 [m];
 
-    // True static expressions (ONLY literals, no design attribute refs)
+    // True static expressions (ONLY literals)
     attribute pi_squared : Real = 3.14159 * 3.14159;
+
+    // Inline FORMULA (simple arithmetic over same-part siblings)
+    attribute area : Real = dimension_a * dimension_b;
 
     // EXPOSE pattern (pure value propagation from calc output)
     attribute result : Real = my_calc.output;
@@ -62,21 +70,24 @@ part component {
 
 ---
 
-## Invalid Pattern: Derived Expression
+## Inline FORMULA vs Calc Def
+
+A design attribute may reference **same-part sibling** attributes — a supported "inline
+FORMULA" computed attribute. Reserve it for simple arithmetic and unit conversions:
 
 ```sysml
 part component {
     attribute length : Real = 3.0 [m];
-    attribute width : Real = 4.0 [m];
+    attribute width  : Real = 4.0 [m];
 
-    // VIOLATION: References design attributes (length, width)
+    // Inline FORMULA: fine for simple arithmetic over same-part siblings.
     attribute area : Real = length * width;
 }
 ```
 
-**Why it fails:** The expression `length * width` references design attributes, making it a "derived expression" that should be in a calc def.
-
-### Resolution: Extract to Calc Def
+For any real or reusable calculation, still prefer a `calc def` in `library/`. It is
+named, testable, and reused across designs — the inline form is a convenience, not a
+replacement:
 
 ```sysml
 // library/geometry.sysml
@@ -99,6 +110,11 @@ part component {
 }
 ```
 
+**What an inline FORMULA may NOT do** — these still fail and must move into a calc def:
+- compute on a calc output — `= power_calc.power * 0.95`
+- reference itself — `= area * 2` inside `area`
+- reach through a dotted path — `= subsystem.rotor.power`
+
 ---
 
 ## Supported Static Operators
@@ -112,7 +128,18 @@ part component {
 - Exponentiation (`**`, `^`)
 - Functions (`sin`, `sqrt`, `abs`)
 - Conditionals (`if ... else`)
-- References to other design attributes
+- A reference to a calc output inside arithmetic, a self-reference, or a dotted path
+  (a plain same-part sibling reference is an inline FORMULA — allowed)
+
+---
+
+## No Loops (rule A-3)
+
+The computation graph must be a DAG — no calc may depend, directly or transitively, on
+its own output. A cycle (`A` binds an input from `B`'s output, `B` binds an input from
+`A`'s output) has no valid execution order and is rejected. Break the cycle: introduce an
+intermediate value, or restructure so one calc produces what the other consumes. See the
+circular-dependency example in `semantic-operators.md`.
 
 ---
 
@@ -168,17 +195,20 @@ package MyLibrary::Analyses {
 }
 ```
 
-### Derived expressions in attributes
+### Self-reference or dotted path in an inline FORMULA
+
+An inline FORMULA may read same-part siblings only — not itself, and not through a
+dotted path into another part.
 
 ```sysml
-// WRONG: Computation in design attribute
-attribute diameter : Real = radius * 2.0;  // References design attr!
+// WRONG: self-reference (a FORMULA may not read its own value)
+attribute total : Real = total + 1.0;
 
-// CORRECT: Use calc def
-calc diameter_calc : DiameterCalc {
-    in radius = component::radius;
-}
-attribute diameter : Real = diameter_calc.diameter;
+// WRONG: dotted path into another part
+attribute p : Real = subsystem.rotor.power;
+
+// OK: same-part siblings
+attribute margin : Real = revenue - cost;
 ```
 
 ### Computation on calc output
@@ -202,18 +232,17 @@ calc def AdjustedPowerCalc {
 ```
 Is this expression in a design attribute?
 |
-+-- Does it reference design attributes?
-    |
-    +-- NO: Static expression -> OK
-    |   (e.g., = 3.14159 * 2.0)
-    |
-    +-- YES: Is it just exposing a calc output?
-        |
-        +-- YES: EXPOSE pattern -> OK
-        |   (e.g., = my_calc.output)
-        |
-        +-- NO: Derived expression -> EXTRACT TO CALC DEF
-            (e.g., = length * width)
++-- Only literals? -> Static expression -> OK
+|   (e.g., = 3.14159 * 2.0)
+|
++-- Only same-part siblings? -> Inline FORMULA -> OK for simple arithmetic
+|   (e.g., = length * width; prefer a calc def for real calculations)
+|
++-- Just exposing one calc output? -> EXPOSE pattern -> OK
+|   (e.g., = my_calc.output)
+|
++-- Calc output in arithmetic, self-reference, or dotted path -> EXTRACT TO CALC DEF
+    (e.g., = calc.power * 0.95)
 ```
 
 ---

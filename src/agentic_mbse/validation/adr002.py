@@ -11,7 +11,11 @@ These checks are integrated into Level 6 architecture validation.
 """
 from typing import Any
 
-from agentic_mbse.sysml.expression import extract_feature_refs, extract_operators
+from agentic_mbse.sysml.expression import (
+    extract_feature_refs,
+    extract_operators,
+    traverse_expression,
+)
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import ExpressionRef, Severity, ValidationCode, ValidationIssue
 
@@ -21,8 +25,12 @@ except ImportError:
     from common import get_element_location, get_qualified_name
 
 
-# Supported operators per ADR-002
-SUPPORTED_OPERATORS = {"+", "-", "*", "/", "[", "^"}
+# Supported operators per ADR-002: `+ - * /` and unit annotation `[`. Power
+# (`^`/`**`), function calls, and conditionals are NOT static operators — they
+# belong in a calc def (C5, Item 12). `^` was previously (wrongly) in this set,
+# so `a ^ b` in a static design expression slipped through; removing it makes the
+# operator check flag it as V4_UNSUPPORTED_OPERATOR, matching codegen V4.
+SUPPORTED_OPERATORS = {"+", "-", "*", "/", "["}
 
 
 def check_calc_def_locations(model: Any) -> list[ValidationIssue]:
@@ -103,6 +111,17 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
 
     for attr in SysideAdapter.elements_of_type(model, "AttributeUsage"):
         try:
+            # C5/C6a (Item 12): skip attributes owned by a calc def. Power and other
+            # non-static operators are legitimate inside a calc-def-internal
+            # `out attribute X = <expr>` — that is exactly where ADR-002 says complex
+            # calculations belong. The `library/` path skip below misses flat-layout
+            # calc defs (no `library/` dir), so key off the owner type, not the path.
+            owner = getattr(attr, "owner", None)
+            if owner is not None and SysideAdapter.is_instance(
+                owner, "CalculationDefinition"
+            ):
+                continue
+
             # Only check design files (not library calc defs)
             doc = attr.document
             if not doc or not hasattr(doc, "url"):
@@ -142,6 +161,83 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
                         )
                     )
 
+        except Exception:
+            continue
+
+    return issues
+
+
+def check_static_function_invocations(model: Any) -> list[ValidationIssue]:
+    """
+    C5 (Item 12): WARN on a function invocation inside a static design expression.
+
+    A design-attribute expression like `x : Real = sqrt(2.0)` invokes a function
+    (an InvocationExpression that is not an operator). Function results are not
+    statically extractable — codegen cannot evaluate them at design scope, so the
+    modeler should move the calculation into a calc def. WARNING, not ERROR, so
+    Level 6 stays passing (mirrors codegen V4's steer-to-calc-def guidance).
+
+    Operators (`a ^ b`, `a * b`) are OperatorExpressions, handled by
+    check_supported_operators; only genuine function calls are flagged here.
+
+    Returns:
+        List of ValidationIssue (WARNING) for static function invocations.
+    """
+    issues: list[ValidationIssue] = []
+
+    def _is_invocation(node: Any) -> Any:
+        try:
+            if SysideAdapter.is_instance(
+                node, "InvocationExpression"
+            ) and not SysideAdapter.is_instance(node, "OperatorExpression"):
+                return node
+        except Exception:
+            return None
+        return None
+
+    for attr in SysideAdapter.elements_of_type(model, "AttributeUsage"):
+        try:
+            # Bindings inside calc usages are not static design expressions.
+            owner = getattr(attr, "owner", None)
+            if owner is not None and _is_calc_usage(owner):
+                continue
+
+            # C5/C6a (Item 12): a calc-def-internal `out attribute X = f(...)` is where
+            # function invocations legitimately live; the `library/` skip below misses
+            # flat-layout calc defs, so also skip by owner type.
+            if owner is not None and SysideAdapter.is_instance(
+                owner, "CalculationDefinition"
+            ):
+                continue
+
+            doc = attr.document
+            if not doc or not hasattr(doc, "url"):
+                continue
+            if "library/" in str(doc.url):
+                continue  # library calc defs may invoke functions freely
+
+            expr = getattr(attr, "feature_value_expression", None)
+            if not expr:
+                continue
+
+            if not traverse_expression(expr, _is_invocation):
+                continue
+
+            attr_name = get_qualified_name(attr)
+            issues.append(
+                ValidationIssue(
+                    level=6,
+                    severity=Severity.WARNING,
+                    code=ValidationCode.V4_STATIC_FUNCTION_INVOCATION,
+                    message=(
+                        f"Static design expression in '{attr_name}' invokes a function; "
+                        f"function results are not statically extractable"
+                    ),
+                    element_name=attr_name,
+                    location=get_element_location(attr),
+                    suggestion="Move the calculation into a calc def",
+                )
+            )
         except Exception:
             continue
 
@@ -415,26 +511,85 @@ def _generate_calc_def_guidance(attr_name: str, ref_names: list[str]) -> str:
     )
 
 
+def _contains_feature_chain(expr: Any) -> bool:
+    """True if the expression tree contains a FeatureChainExpression (a dotted path).
+
+    Codegen's FORMULA compiler rejects any FeatureChainExpression in a computed-
+    attribute body, so a dotted path disqualifies an expression from the supported-
+    FORMULA exemption in check_static_expressions (it is not a working FORMULA).
+    """
+
+    def _visitor(node: Any) -> Any:
+        return node if "FeatureChain" in type(node).__name__ else None
+
+    return bool(traverse_expression(expr, _visitor))
+
+
+def _is_supported_formula(attr: Any, refs: list[ExpressionRef]) -> bool:
+    """True if a design computed attribute is a codegen-supported FORMULA (F6).
+
+    sysml-codegen classifies a design-file `attribute X = <expr>` as a FORMULA
+    computed attribute — a first-class, end-to-end supported wire as of Item 5 —
+    when every feature reference resolves to a same-part OWNED sibling and the
+    attribute does not reference itself. A FORMULA may read a literal sibling OR
+    another FORMULA sibling on the same part (REQ-CA-06). These shapes generate
+    and resolve, so flagging them V2_DYNAMIC_EXPRESSION is a false positive.
+
+    The discriminator mirrors codegen's `_classify_attribute_expression`
+    (computed_attribute_extractor.py): a ref is a same-part sibling iff its
+    qualified name is nested under the owning part's qualified name. A ref whose
+    qualified name is NOT under the part — a calc output in a foreign namespace
+    (`my_calc.output * 0.95`) or an inherited attribute (carries the supertype's
+    QN) — is the genuinely-unsupported case and must STILL fire. A self-reference
+    (REQ-CA-07) falls through to the violation too. Dotted paths are excluded by
+    the caller via _contains_feature_chain.
+    """
+    owner = getattr(attr, "owner", None)
+    if owner is None:
+        return False
+    owner_qn = get_qualified_name(owner)
+    if not owner_qn:
+        return False
+    prefix = owner_qn + "::"
+    attr_qn = get_qualified_name(attr)
+
+    for ref in refs:
+        ref_qn = ref.qualified_name or ""
+        # Foreign reference (calc output, cross-part, or inherited) -> not a FORMULA.
+        if not ref_qn.startswith(prefix):
+            return False
+        # Self-reference -> codegen drops it (REQ-CA-07).
+        if attr_qn and ref_qn == attr_qn:
+            return False
+    return True
+
+
 def check_static_expressions(model: Any) -> list[ValidationIssue]:
     """
     V2: Validate that design attribute expressions are either:
     - True static (no feature references except standard library), OR
-    - EXPOSE pattern (single reference to sibling calc output)
+    - EXPOSE pattern (single reference to sibling calc output), OR
+    - a supported FORMULA computed attribute (refs are all same-part siblings)
 
-    Derived expressions (references to design attributes) are VIOLATIONS.
+    A derived expression that references a calc output inside arithmetic (or
+    combines calc outputs) is still a VIOLATION.
 
-    Per ADR-002 Rule 3 Amendment (2025-12-22):
-    - Expressions with FeatureReferenceExpression nodes are NOT allowed
-      (except references to standard library: SI::, ISQ::, ScalarValues::)
-    - Only expressions composed purely of literals are "true static"
+    Per ADR-002 Rule 3, as relaxed by sysml-codegen Item 5 (FORMULA computed
+    attributes):
+    - Expressions composed purely of literals + std lib are "true static"
+    - An expression whose feature refs are all same-part owned siblings is a
+      supported FORMULA (see _is_supported_formula) — NOT a violation
+    - A reference to a calc output (foreign namespace) in arithmetic is the
+      unsupported dynamic-expression case and fires V2_DYNAMIC_EXPRESSION
     - This is a STRUCTURAL check, not a SEMANTIC check
 
     Algorithm:
     1. For each AttributeUsage in designs/ with expression:
-       - Skip if inside a calc usage (bindings are allowed)
+       - Skip if inside a calc usage or owned by a calc def (bindings/FORMULA-in-def)
        - Extract all feature references (std lib filtered by default)
        - If no refs → TRUE STATIC → OK
        - If EXPOSE pattern → OK
+       - If supported FORMULA (all refs same-part siblings, no chain) → OK
        - Otherwise → DERIVED EXPRESSION VIOLATION
 
     Args:
@@ -454,6 +609,14 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
             # Skip if inside a calc usage (bindings are allowed)
             owner = attr.owner if hasattr(attr, "owner") else None
             if owner and _is_calc_usage(owner):
+                continue
+
+            # C6a (Item 12): skip attributes owned by a calc def. A calc-def-internal
+            # `out attribute X = <expr>` is exactly where ADR-002 says derived
+            # expressions belong, so it is never a V2 violation. The `library/` path
+            # skip below misses fixtures laid out as flat `library.sysml` files (no
+            # `library/` dir), so key off the owner type, not the path.
+            if owner and SysideAdapter.is_instance(owner, "CalculationDefinition"):
                 continue
 
             # Only check design files
@@ -484,6 +647,13 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
             # EXPOSE PATTERN: Single ref to sibling calc output is exempt
             if _is_expose_pattern(attr, expr, calc_outputs):
                 continue  # OK - EXPOSE pattern exempt
+
+            # F6 (Item 12): a design computed attribute whose refs are all same-part
+            # owned siblings is a codegen-supported FORMULA (Item 5), not a violation.
+            # A dotted path is rejected by codegen's FORMULA compiler, so a chain
+            # keeps firing; a foreign (calc-output) ref keeps firing.
+            if not _contains_feature_chain(expr) and _is_supported_formula(attr, refs):
+                continue  # OK - supported FORMULA computed attribute
 
             # DERIVED EXPRESSION VIOLATION: Has feature refs that aren't EXPOSE
             attr_name = get_qualified_name(attr)
