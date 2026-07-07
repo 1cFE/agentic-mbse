@@ -273,6 +273,27 @@ part component {
 
 ---
 
+## Subtype-aware validation: `assert` constraints are now visible (Item 4)
+
+The validators enumerate constraint usages with a subtype-aware sweep, so an
+`assert constraint` (an `AssertConstraintUsage`, a `ConstraintUsage` *subtype*) is now seen
+everywhere a plain `ConstraintUsage` is:
+
+- The **drop report** counts an `assert`-shaped constraint as a dropped constraint (constraints
+  document intent but are not executable — they produce no computation).
+- **L4** (constraint coverage) and **L6** (the non-executable-constraint WARN) both include
+  `assert`/`require`/`assume` constraints. Before Item 4 they undercounted asserts.
+
+Requirement-side usages (`RequirementUsage` and its `satisfy` subtype) are deliberately
+excluded from the drop set — they are requirement-side, not dropped predicates. The full
+per-call-site rationale is the reference table:
+`docs/subtype-enumeration-decision-table.md`.
+
+Modeler takeaway: an `assert constraint` you write is now surfaced (as a dropped-constraint
+warning), not silently ignored. Move any computation the constraint implies into a calc def.
+
+---
+
 ## Related Patterns
 
 - [semantic-operators.md](semantic-operators.md) - Constraint syntax requirements

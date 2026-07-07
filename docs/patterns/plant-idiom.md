@@ -92,6 +92,79 @@ resolves the same way — the matcher finds it on the def. No special handling i
 `attribute radius : Real = 0.5` on `part def Coil` is a first-class value source for a
 template calc binding.
 
+## The whole-plant value idiom (the headline)
+
+A plant supplies a value to a nested part's calc in one of four ways. All four resolve
+end-to-end — the value reaches the calc input with no bridge attribute. Pick by where the
+value lives and whether you are also swapping the part's type.
+
+**(a) Subtype-def literal reached through a usage-level retype.** The value lives on a
+`:>>` in the *subtype def*; the design retypes the nested usage to that subtype, and the
+literal is consumed cross-part.
+
+```sysml
+// Library: the subtype def carries the value.
+part def 'Hif Driver' :> 'Ife Driver' {
+    :>> efficiency = 0.35;                 // subtype-def literal
+}
+// Design: retype the usage to pull the subtype (and its value) in.
+part hif_plant : 'IFE Power Plant' {
+    part :>> driver : 'Hif Driver';        // usage-level retype
+}
+```
+
+**(b) Bare no-retype override block.** The design keeps the part's type and overrides one
+of its attributes with a bare `:>>` inside a `part :>> name { ... }` block.
+
+```sysml
+part hif_plant : 'IFE Power Plant' {
+    part :>> target_factory {
+        :>> cost_per_target = 10.0;        // bare :>> literal, no retype
+    }
+}
+```
+
+**(c) One-hop dotted override on a plain cross-part attribute.** The design reaches one
+level down with a dotted `:>>` on the usage.
+
+```sysml
+part hif_plant : 'IFE Power Plant' {
+    :>> chamber.cost_per_unit = 7.0;       // usage-level dotted override, one hop
+}
+```
+
+**(d) In-part inherited-attr redefine.** A calc binds an inherited attribute
+(`in flow_rate = throughput`), and the same def redefines that attribute below the binding.
+Order does not matter — the redefine is seen even when it sits after the binding.
+
+```sysml
+part def 'Flow Sub' :> 'Flow Base' {       // 'Flow Base' declares `throughput`
+    calc flow_calc : FlowCalc {
+        in flow_rate = throughput;         // binds the inherited attribute...
+    }
+    :>> throughput = 8.0;                  // ...redefined below the binding
+}
+```
+
+### Three rules that govern all four
+
+- **Precedence — most specific wins:** *usage override (`:>>` on the usage) > specialized-def
+  `:>>` > base-def value.* A `:>>` in the design (a/b/c) beats a subtype-def `:>>`, which beats
+  the base def's declared value.
+- **Entry points key by the source attribute's qualified name.** Renaming an input per
+  consumer still collapses to **one** parameter (the calc inputs share the source attribute's
+  QN), and one attribute feeding N consumers is **one** channel, not N. This is why the JSON
+  input file has one key per source attribute, regardless of how many calcs read it.
+- **Only LITERAL values propagate this way.** A `:>>` whose RHS is a chain or a computed
+  expression does **not** silently vanish — it falls to the uncovered-parameter diagnostic, so
+  the modeler sees an unresolved input rather than a wrong number. (And a value written as
+  `attribute :>> attr = <expr>` is dropped at extraction — see semantic-operators.md and the
+  L6 `attribute :>>`-with-expression warning.)
+
+Reference fixtures: `plant_values` (all four mechanisms a/b/c/d, plus the fusion-tea vendored
+plant as the real-scale exemplar), `plant_value_shapes` (the secondary shapes and their
+observed labels), `spec_chain_twolevel` (the two-level specialization that mechanism (a) rides on).
+
 ## Cross-part chains and EXPOSE
 
 A calc in one part can consume a calc output from another part. The value crosses the
@@ -115,6 +188,51 @@ are both supported. See `expose-pattern.md` for how an EXPOSE name surfaces as a
 
 Reference: `spec_chain_channel`, `spec_chain_twolevel` (cross-part chains through nested
 parts).
+
+## Secondary shapes and their limits
+
+Beyond the four core mechanisms, a handful of syntactic shapes resolve — some cleanly, some
+only partially. The `plant_value_shapes` fixture pins each shape's *observed* behavior, so
+teach the ones that work and treat the rest as known-incomplete rather than as targets.
+
+**Shapes that resolve correctly (teach these):**
+- Bare `default 10.0` with no `:=` — a plain design-attribute default.
+- Quoted enum def with a usage-level quoted `:>>` (`:>> wall = 'Wall Kind'::liquid_wall`).
+- A quoted output-parameter name (`out attribute 'net cost'` de-quotes to `net_cost`).
+- Style-E mixed outputs — a calc def with both `out attribute` and `return` members.
+- A 5-deep specialization chain with abstract ends (`abstract part def 'Chain L1'` … `L5`).
+
+**Shapes that are DEGRADED (document, do not rely on):**
+- An attribute-def-typed attribute set by *nested* `:>>` (the `'Econ Param' { :>> value = … }`
+  shape): the nested value does not reach a cross-part calc input.
+- An inherited attribute redefined *below* an in-part binding: resolves for the local calc but
+  degrades across a part boundary.
+
+Reference: `plant_value_shapes` (every shape above, each labelled at capture).
+
+### Non-float entry points are now diagnosed (Item 5)
+
+An entry point must be float-valued. A bool/string/enum-typed entry point (the `wall_type`
+idiom — an enum-valued attribute one hop from a calc input) is no longer silently omitted:
+codegen diagnoses it. Model guidance: **keep entry points float-valued**; carry a categorical
+choice as a separate design decision, not as a calc input. Reference: `plant_value_shapes`
+(the `wall` attribute).
+
+### Keep cross-part chains shallow (D3)
+
+A cross-part reference that must resolve to a value should be **one hop**. A multi-hop dot
+chain — `station.array.derived_calc.derived_value` — truncates: extraction keeps only the
+first segment of the `source_path`, so the deep reference does not resolve to the intended
+producer. Item 5 turned the worst multi-hop case into a loud reject (D3-2) rather than a
+silent mis-wire, but the rule stands: **keep cross-part references to one hop**; surface a
+deep value through an intermediate EXPOSE attribute instead. Reference: `deep_cross_scope_probe`.
+
+### Aggregation operators (Item 5)
+
+In an aggregation expression, `^` is exponentiation and now maps to Python `**`. Earlier it
+was silently passed through as Python bitwise-XOR — a wrong number with no diagnostic. An
+operator with no valid translation now marks the aggregation unsupported (a warning) instead
+of emitting a silent mistranslation.
 
 ## Sibling disambiguation
 

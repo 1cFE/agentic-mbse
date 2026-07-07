@@ -44,35 +44,51 @@ def build_dependency_graph(model: Any) -> dict[str, list[str]]:
     """
     graph = defaultdict(list)
 
-    # Get all imports in the model
-    for element in SysideAdapter.elements_of_type(model, "Import"):
+    # Get all imports in the model. Row 5 (Item 4): `Import` is abstract — every
+    # import is a concrete MembershipImport or NamespaceImport — so an exact-type
+    # query matched nothing and the graph was always empty. Sweep subtypes.
+    for element in SysideAdapter.elements_of_type(
+        model, "Import", include_subtypes=True
+    ):
         try:
-            # Get the document/package this import is in
-            doc = element.document
-            if not doc or not hasattr(doc, "url"):
+            # Source node = the package that OWNS this import. Keying the graph by
+            # the importing package's qualified name (not the document URL) is what
+            # makes cycle detection actually work: an edge PkgA -> PkgB is only a
+            # back-edge to a PkgB -> PkgA edge if both endpoints live in the same
+            # (package) namespace. With URL keys and package-name values the two
+            # never matched, so no cycle could ever be found (row 5).
+            owner_ns = getattr(element, "import_owning_namespace", None)
+            source_pkg = getattr(owner_ns, "qualified_name", None)
+            if not source_pkg:
+                continue
+            source_pkg = str(source_pkg).split("::")[0]
+
+            # Resolve the imported target's qualified name. NamespaceImport
+            # (`import Pkg::*`) exposes imported_namespace; MembershipImport
+            # (`import Pkg::Item`) exposes imported_membership.member_element.
+            # The old guard checked only imported_namespace, so it silently
+            # skipped every MembershipImport (row 5 secondary bug).
+            target = getattr(element, "imported_namespace", None)
+            if target is None:
+                membership = getattr(element, "imported_membership", None)
+                target = getattr(membership, "member_element", None)
+            if target is None or not hasattr(target, "qualified_name"):
                 continue
 
-            doc_name = str(doc.url)
+            imported_name = str(target.qualified_name)
+            # Extract package part (before ::)
+            if "::" in imported_name:
+                imported_pkg = imported_name.split("::")[0]
+            else:
+                imported_pkg = imported_name
 
-            # Try to get the imported namespace
-            if hasattr(element, "imported_namespace") and element.imported_namespace:  # type: ignore
-                target = element.imported_namespace  # type: ignore
-                # Get qualified name of imported element
-                if hasattr(target, "qualified_name"):
-                    imported_name = str(target.qualified_name)
-                    # Extract package part (before ::)
-                    if "::" in imported_name:
-                        imported_pkg = imported_name.split("::")[0]
-                    else:
-                        imported_pkg = imported_name
-
-                    # Skip standard library imports
-                    if imported_pkg and imported_pkg not in [
-                        "ScalarValues",
-                        "SI",
-                        "ISQ",
-                    ]:
-                        graph[doc_name].append(imported_pkg)
+            # Skip standard library imports and self-imports.
+            if (
+                imported_pkg
+                and imported_pkg != source_pkg
+                and imported_pkg not in ["ScalarValues", "SI", "ISQ"]
+            ):
+                graph[source_pkg].append(imported_pkg)
         except Exception:
             # Skip imports we can't resolve
             pass
