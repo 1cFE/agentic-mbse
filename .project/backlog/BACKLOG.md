@@ -119,22 +119,28 @@ AND a negative-of-the-negative (bare-`:>>` literal must not fire).
 
 **Priority**: P2
 **Effort**: ~0.5–1 day (needs a shared sanitizer)
-**Status**: Ready — deferred from Item 12 under the scope guard
-**Source**: UPSTREAM-FINDINGS Item 12 (C8); identifier-sanitization (Item 5)
+**Status**: Ready — shared sanitizer landed; sibling-scope collector still needed
+**Source**: UPSTREAM-FINDINGS Item 12 (C8); identifier-sanitization (Item 5); PUSH-DOWN Item 2
 
-**Idea**: WARN when two distinct SysML names sanitize to one Python identifier, before
+**Idea**: WARN when two distinct SysML sibling names sanitize to one Python identifier, before
 codegen fails on its duplicate-path error (REQ-NC-09).
 
-**Why filed, not built in Item 12**: requires replicating codegen's identifier sanitizer in
-agentic-mbse to compute collisions — a real duplication/drift risk against codegen's
-REQ-NC-09. The right fix is a shared sanitizer both repos import; codegen's duplicate-path
-error is the backstop until then.
+**Rule**: Within one owning namespace, if two distinct raw SysML names produce the same
+`agentic_mbse.sysml.qualified_names.sanitize_name(...)` result, emit a Level-6 WARNING.
 
-**Item 9 disposition (R-C8): KEEP FILED.** Now lower-value — Item 5 landed SC-4
-sanitizer-injectivity fail-fast in codegen, so a two-names-one-identifier collision fails loudly
-at generation (the backstop exists). Building the pre-warn is not a small check-plus-fixture (it
-still needs the shared sanitizer to avoid drift, ~0.5–1 day), so it stays filed rather than being
-built under Item 9's guard. Revisit if/when the shared sanitizer lands.
+**Fixture shape**: two siblings under the same owner named `'a b'` and `'a-b'` should warn;
+the same pair under unrelated owners should not warn.
+
+**Severity**: WARNING
+
+**Rationale**: PUSH-DOWN Item 2 moved the sanitizer into agentic-mbse, removing the drift risk.
+The remaining work is the sibling-scope collector. That collector is broader than the utility move
+and should land with dedicated positive and unrelated-namespace negative fixtures. codegen's
+duplicate-path error remains the backstop until then.
+
+**Item 9 disposition (R-C8): KEEP FILED.** Item 5 landed SC-4 sanitizer-injectivity fail-fast in
+codegen, so a two-names-one-identifier collision fails loudly at generation. PUSH-DOWN Item 2
+removed the shared-sanitizer blocker; this row now tracks only the Level-6 pre-warn collector.
 
 ---
 

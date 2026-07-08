@@ -36,6 +36,14 @@ from agentic_mbse.sysml.helpers import (
     get_source_file,
     get_source_location,
 )
+from agentic_mbse.sysml.qualified_names import (
+    build_element_qualified_name,
+    extract_simple_name,
+    python_to_sysml_qualified_name,
+    sanitize_name,
+    sanitize_qualified_name,
+    sysml_to_python_qualified_name,
+)
 from agentic_mbse.sysml.syside_adapter import (
     Diagnostics,
     DiagnosticSeverity,
@@ -79,6 +87,12 @@ __all__ = [
     "reconstruct_operator_expression",
     "reconstruct_expression",
     "STANDARD_LIBRARY_PREFIXES",
+    "sanitize_name",
+    "build_element_qualified_name",
+    "sysml_to_python_qualified_name",
+    "sanitize_qualified_name",
+    "python_to_sysml_qualified_name",
+    "extract_simple_name",
     # Binding utilities
     "classify_binding",
     "extract_bindings",
