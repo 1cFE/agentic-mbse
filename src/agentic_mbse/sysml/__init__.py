@@ -36,6 +36,14 @@ from agentic_mbse.sysml.helpers import (
     get_source_file,
     get_source_location,
 )
+from agentic_mbse.sysml.hierarchy import (
+    MultiplicityData,
+    RedefinitionData,
+    RedefinitionType,
+    classify_redefinition,
+    extract_multiplicities,
+    extract_redefinitions,
+)
 from agentic_mbse.sysml.qualified_names import (
     build_element_qualified_name,
     extract_simple_name,
@@ -93,6 +101,12 @@ __all__ = [
     "sanitize_qualified_name",
     "python_to_sysml_qualified_name",
     "extract_simple_name",
+    "RedefinitionType",
+    "RedefinitionData",
+    "MultiplicityData",
+    "classify_redefinition",
+    "extract_redefinitions",
+    "extract_multiplicities",
     # Binding utilities
     "classify_binding",
     "extract_bindings",

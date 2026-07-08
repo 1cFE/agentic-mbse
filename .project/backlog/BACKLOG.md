@@ -360,3 +360,88 @@ in a foreign namespace (`calc.out * 0.95`), a self-reference (REQ-CA-07), or a d
 (FeatureChainExpression) still fires. Fixture `tests/fixtures/item12/formula_computed/` carries
 both directions; three pre-Item-5 tests in `test_sysml/test_adr002.py` that asserted the old
 blanket rule were updated to the relaxed contract.
+
+
+### [PUSH-DOWN-HIER-PROFILE-REDEF-PRECEDENCE] design-vs-type redefinition precedence WARN
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed - needs codegen precedence facts or shared precedence contract
+**Source**: PUSH-DOWN Item 3 hierarchy-profile close-out
+
+**Rule**: Warn when one consumer scope has both a design-level override and a type-level literal
+redefinition for the same target, and the design override wins under codegen precedence.
+
+**Fixture shape**: Part def `Driver` has `:>> efficiency = 0.3`; design usage has
+`:>> driver.efficiency = 0.35`. The warning should explain that the design-level value wins.
+
+**Severity**: WARNING
+
+**Rationale**: PUSH-DOWN Item 3 moved primitive redefinition facts, but precedence depends on
+design override scope and supplied-value/codegen policy that intentionally remain in sysml-codegen.
+This should land only after that precedence contract is available as shared facts or a profile API.
+
+---
+
+### [PUSH-DOWN-HIER-PROFILE-UNSUPPORTED-RHS] unsupported redefinition RHS WARN
+
+**Priority**: P2
+**Effort**: ~0.5 day
+**Status**: Filed - coordinate with existing expression-profile unsupported-shape rows
+**Source**: PUSH-DOWN Item 3 hierarchy-profile close-out
+
+**Rule**: Warn when a `ReferenceUsage` redefinition classifies as `EXPRESSION` and the expression
+uses a codegen-unsupported shape or operator.
+
+**Fixture shape**: Bare `:>> cost = unsupported_fn(a.b)` warns; literal, feature-chain, and
+supported arithmetic-expression redefinitions do not warn.
+
+**Severity**: WARNING
+
+**Rationale**: Shared hierarchy classification can expose expression RHS values early, but support
+for operators/functions belongs to the existing expression-profile checks. This row keeps the
+hierarchy trigger filed without duplicating or drifting expression support policy.
+
+---
+
+### [PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE] unresolved multiplicity shape WARN
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed - needs model-level multiplicity fixture and Level-6 integration
+**Source**: PUSH-DOWN Item 3 hierarchy-profile close-out
+
+**Rule**: Warn when a child `PartUsage` multiplicity has no resolvable `cached_lower_bound`, or when
+its upper-bound referent has no integer literal default.
+
+**Fixture shape**: `part cell[pack_count]` where `pack_count` has no literal integer default warns;
+`part cell[20]` or `part cell[pack_count]` with `pack_count = 20` does not warn.
+
+**Severity**: WARNING
+
+**Rationale**: Shared multiplicity facts are now available, but Level 6 needs a real model-level
+fixture and integration path. Filing avoids a mock-only validator that would not prove the user-facing
+profile behavior.
+
+---
+
+### [PUSH-DOWN-HIER-PROFILE-AMBIG-INHERITED-ATTR] ambiguous inherited attribute WARN
+
+**Priority**: P2
+**Effort**: ~1 day
+**Status**: Filed - needs usage-type indexing or shared type-selection facts
+**Source**: PUSH-DOWN Item 3 hierarchy-profile close-out
+
+**Rule**: Warn when a usage has multiple incomparable owned typings that can supply different
+inherited attribute defaults for the same target.
+
+**Fixture shape**: A part usage has two unrelated typed targets, and both targets redefine the same
+attribute literal. The profile should warn before codegen chooses sorted-first behavior.
+
+**Severity**: WARNING
+
+**Rationale**: Detection requires most-specific type comparison and inherited attribute selection.
+Those surfaces remain in sysml-codegen for PUSH-DOWN Item 3, so the profile rule is filed rather
+than implemented by importing codegen policy.
+
+---

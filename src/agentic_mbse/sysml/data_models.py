@@ -3,7 +3,9 @@
 These types are imported by downstream packages (sysml-codegen).
 Changes here may require updates to dependent packages.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from agentic_mbse.sysml.types import BindingType, ExpressionRef
@@ -11,6 +13,9 @@ from agentic_mbse.sysml.types import BindingType, ExpressionRef
 __all__ = [
     "ExpressionRef",
     "AttributeInfo",
+    "RedefinitionType",
+    "RedefinitionData",
+    "MultiplicityData",
 ]
 
 # Re-export ExpressionRef from types for clean API surface
@@ -37,3 +42,39 @@ class AttributeInfo:
     binding_type: BindingType = BindingType.UNBOUND
     is_input: bool = False
     is_output: bool = False
+
+class RedefinitionType(str, Enum):
+    """Classification of a ``:>>`` redefinition's RHS expression."""
+
+    LITERAL = "literal"
+    CHAIN = "chain"
+    EXPRESSION = "expression"
+
+
+@dataclass
+class RedefinitionData:
+    """Extracted data for one ``:>>`` redefinition."""
+
+    owning_part_qn: str
+    attribute_name: str
+    redefinition_type: RedefinitionType
+    literal_value: float | int | str | bool | None = None
+    source_path: str | None = None
+    expression_ast: Any = None
+    expression_text: str = ""
+    target_path: list[str] = field(default_factory=list)
+    is_deep_path: bool = False
+    source_file: Path = field(default_factory=lambda: Path("unknown"))
+    source_line: int = 0
+
+
+@dataclass
+class MultiplicityData:
+    """Multiplicity information for a PartUsage within a PartDefinition."""
+
+    part_usage_name: str
+    owning_part_def_qn: str
+    count: int | None
+    count_attribute_name: str | None
+    default_value: int | None
+
