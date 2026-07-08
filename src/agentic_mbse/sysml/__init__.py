@@ -12,10 +12,17 @@ from agentic_mbse.sysml.data_models import (
 from agentic_mbse.sysml.expression import (
     STANDARD_LIBRARY_PREFIXES,
     evaluate_true_static_expression,
+    extract_feature_chain_name,
+    extract_feature_chain_segments,
+    extract_feature_reference_name,
     extract_feature_refs,
+    extract_literal_value,
     extract_operators,
     is_literal_expression,
+    is_literal_node,
     is_true_static_expression,
+    reconstruct_expression,
+    reconstruct_operator_expression,
     traverse_expression,
 )
 from agentic_mbse.sysml.graph import (
@@ -64,6 +71,13 @@ __all__ = [
     "is_literal_expression",
     "is_true_static_expression",
     "evaluate_true_static_expression",
+    "extract_literal_value",
+    "is_literal_node",
+    "extract_feature_chain_segments",
+    "extract_feature_chain_name",
+    "extract_feature_reference_name",
+    "reconstruct_operator_expression",
+    "reconstruct_expression",
     "STANDARD_LIBRARY_PREFIXES",
     # Binding utilities
     "classify_binding",

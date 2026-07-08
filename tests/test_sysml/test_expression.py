@@ -4,11 +4,21 @@ These tests document how expression traversal works with different
 expression tree structures.
 """
 
+import inspect
+
+import agentic_mbse.sysml as sysml
+from agentic_mbse.sysml import expression
 from agentic_mbse.sysml.expression import (
+    extract_feature_chain_name,
+    extract_feature_chain_segments,
+    extract_feature_reference_name,
     extract_feature_refs,
+    extract_literal_value,
     extract_operators,
     is_literal_expression,
+    is_literal_node,
     is_true_static_expression,
+    reconstruct_expression,
     traverse_expression,
 )
 from tests.test_sysml.conftest import (
@@ -962,3 +972,80 @@ class TestEvaluateTrueStaticExpression:
 
         with pytest.raises(TypeError, match="Cannot evaluate None"):
             evaluate_true_static_expression(None)
+
+
+# PUSH-DOWN Item 1: shared reconstruction API
+
+
+def test_expression_public_exports_include_reconstruction_helpers():
+    assert sysml.reconstruct_expression is expression.reconstruct_expression
+    assert sysml.reconstruct_operator_expression is expression.reconstruct_operator_expression
+    assert sysml.extract_feature_reference_name is expression.extract_feature_reference_name
+    assert sysml.extract_feature_chain_name is expression.extract_feature_chain_name
+    assert sysml.extract_feature_chain_segments is expression.extract_feature_chain_segments
+    assert sysml.is_literal_node is expression.is_literal_node
+    assert sysml.extract_literal_value is expression.extract_literal_value
+
+
+def test_reconstruct_expression_feature_ref_chain_and_literal():
+    ref = MockFeatureReferenceExpression(name="rate")
+    chain = MockFeatureChainExpression(instance_name="pump", attr_name="power")
+    literal = MockLiteralRational(value=3.5)
+
+    assert reconstruct_expression(ref) == "rate"
+    assert reconstruct_expression(chain) == "pump.power"
+    assert reconstruct_expression(literal) == "3.5"
+
+
+def test_reconstruct_expression_preserves_precedence():
+    a = MockFeatureReferenceExpression(name="a")
+    b = MockFeatureReferenceExpression(name="b")
+    c = MockFeatureReferenceExpression(name="c")
+
+    assert reconstruct_expression(MockOperatorExpression("*", [MockOperatorExpression("+", [a, b]), c])) == "(a + b) * c"
+    assert reconstruct_expression(MockOperatorExpression("+", [a, MockOperatorExpression("*", [b, c])])) == "a + b * c"
+    assert reconstruct_expression(MockOperatorExpression("-", [MockOperatorExpression("+", [a, b])])) == "-(a + b)"
+
+
+def test_feature_chain_segments_expand_target_chaining_features():
+    root = MockFeatureReferenceExpression(name="tf_coil")
+    target = type(
+        "TargetFeature",
+        (),
+        {
+            "name": None,
+            "chaining_features": [
+                type("Feature", (), {"name": "volume_calc"})(),
+                type("Feature", (), {"name": "volume"})(),
+            ],
+        },
+    )()
+    chain = MockFeatureChainExpression(instance_name="ignored", attr_name="ignored")
+    chain.operands = [root]
+    chain.target_feature = target
+
+    assert extract_feature_chain_segments(chain) == ["tf_coil", "volume_calc", "volume"]
+    assert extract_feature_chain_segments(MockLiteralRational(1.0)) == []
+
+
+def test_literal_node_and_value_are_distinct_from_true_static_expression():
+    literal = MockLiteralInteger(5)
+    expr = MockOperatorExpression("+", [MockLiteralInteger(1), MockLiteralInteger(2)])
+
+    assert is_literal_node(literal)
+    assert extract_literal_value(literal) == 5
+    assert is_true_static_expression(literal)
+    assert is_true_static_expression(expr)
+    assert not is_literal_node(expr)
+
+
+def test_extract_feature_reference_and_chain_names():
+    assert extract_feature_reference_name(MockFeatureReferenceExpression(name="cost")) == "cost"
+    assert extract_feature_chain_name(MockFeatureChainExpression(instance_name="plant", attr_name="cost")) == "plant.cost"
+
+
+def test_reconstruct_expression_dispatch_order_invariants():
+    source = inspect.getsource(expression.reconstruct_expression)
+    assert source.index('"FeatureChainExpression"') < source.index('"OperatorExpression"')
+    assert source.index('"LiteralInteger"') < source.index('hasattr(expr_node, "function")')
+    assert source.index('"NullExpression"') < source.index('hasattr(expr_node, "function")')

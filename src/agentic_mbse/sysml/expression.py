@@ -5,8 +5,9 @@ ASTs, including visitor-pattern traversal and reference extraction.
 """
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
+from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import ExpressionRef
 
 # Standard library qualified name prefixes to filter.
@@ -352,7 +353,7 @@ def get_reference_name(expr: Any) -> str | None:
     """
     # Try direct name attribute (works for mock objects and simple refs)
     if hasattr(expr, "name") and expr.name:
-        return expr.name
+        return cast(str, expr.name)
 
     # Try memberships pattern (syside AST structure)
     if hasattr(expr, "memberships"):
@@ -360,14 +361,298 @@ def get_reference_name(expr: Any) -> str | None:
             if hasattr(m, "member_element") and m.member_element:
                 elem = m.member_element
                 if hasattr(elem, "name") and elem.name:
-                    return elem.name
+                    return cast(str, elem.name)
 
     # Try target_feature for chain expressions
     if hasattr(expr, "target_feature") and expr.target_feature:
         target = expr.target_feature
         if hasattr(target, "name") and target.name:
-            return target.name
+            return cast(str, target.name)
 
+    return None
+
+
+# Operator mapping for expression reconstruction (SysML text output)
+OPERATOR_MAP = {
+    "and": " and ",
+    "or": " or ",
+    "==": " == ",
+    "!=": " != ",
+    ">": " > ",
+    "<": " < ",
+    ">=": " >= ",
+    "<=": " <= ",
+    "+": " + ",
+    "-": " - ",
+    "*": " * ",
+    "/": " / ",
+    "**": " ** ",
+    "^": " ^ ",
+    "implies": " implies ",
+    "not": "not ",
+}
+
+# Binary-operator precedence ranks from KerML Table 6 (§8.2.5.8.1).
+# Smaller rank = binds tighter.
+RANK = {
+    "**": 3,
+    "^": 3,
+    "*": 4,
+    "/": 4,
+    "+": 5,
+    "-": 5,
+    "<": 7,
+    ">": 7,
+    "<=": 7,
+    ">=": 7,
+    "==": 9,
+    "!=": 9,
+    "and": 10,
+    "or": 12,
+    "implies": 13,
+}
+UNARY_RANK = 2
+RIGHT_ASSOC = frozenset({"**", "^"})
+
+
+def reconstruct_expression(expr_node: Any) -> str:
+    """Reconstruct expression text from SysML AST nodes."""
+    if isinstance(expr_node, str):
+        return expr_node
+
+    if expr_node is None:
+        return ""
+
+    # FeatureChainExpression MUST be before OperatorExpression because FCE is a
+    # subtype of OE in SysIDE's type system.
+    if SysideAdapter.is_instance(expr_node, "FeatureChainExpression"):
+        return extract_feature_chain_name(expr_node)
+
+    if SysideAdapter.is_instance(expr_node, "OperatorExpression"):
+        return reconstruct_operator_expression(expr_node)
+
+    if SysideAdapter.is_instance(expr_node, "FeatureReferenceExpression"):
+        return extract_feature_reference_name(expr_node)
+
+    # Literal/null branches MUST dispatch before the invocation catch-all.
+    if (
+        SysideAdapter.is_instance(expr_node, "LiteralInteger")
+        or SysideAdapter.is_instance(expr_node, "LiteralRational")
+    ):
+        if hasattr(expr_node, "value"):
+            return str(expr_node.value)
+
+    if SysideAdapter.is_instance(expr_node, "LiteralBoolean"):
+        if hasattr(expr_node, "value"):
+            return "true" if expr_node.value else "false"
+
+    if SysideAdapter.is_instance(expr_node, "LiteralString"):
+        if hasattr(expr_node, "value"):
+            return f'"{expr_node.value}"'
+
+    if SysideAdapter.is_instance(expr_node, "LiteralInfinity"):
+        return "*"
+
+    if SysideAdapter.is_instance(expr_node, "NullExpression"):
+        return "null"
+
+    if hasattr(expr_node, "function") and hasattr(expr_node.function, "name"):
+        func_name = expr_node.function.name
+        operands = list(getattr(expr_node, "operands", []))
+        args = ", ".join(reconstruct_expression(op) for op in operands)
+        return f"{func_name}({args})"
+
+    return str(expr_node)
+
+
+def binary_op_of(child: Any) -> str | None:
+    """Return a child's operator iff it is a 2-operand binary OperatorExpression."""
+    if not SysideAdapter.is_instance(child, "OperatorExpression"):
+        return None
+    if len(list(getattr(child, "operands", []))) != 2:
+        return None
+    operator = getattr(child, "operator", None)
+    if operator is None:
+        return None
+    op_sym = str(operator)
+    return op_sym if op_sym in RANK else None
+
+
+def needs_parens(parent_rank: int, parent_right_assoc: bool, child: Any, side: str) -> bool:
+    """True iff `child` must be wrapped when it sits on `side` of a parent."""
+    cop = binary_op_of(child)
+    if cop is None:
+        return False
+    cr = RANK[cop]
+    if cr > parent_rank:
+        return True
+    if cr < parent_rank:
+        return False
+    unfavored = "left" if parent_right_assoc else "right"
+    return side == unfavored
+
+
+def reconstruct_operator_expression(expr_node: Any) -> str:
+    """Reconstruct an operator expression with precedence-aware parentheses."""
+    operator = ""
+    if hasattr(expr_node, "operator") and expr_node.operator:
+        operator = str(expr_node.operator)
+
+    operands = []
+    if hasattr(expr_node, "operands"):
+        operands = list(expr_node.operands)
+
+    if len(operands) == 2:
+        parent_rank = RANK.get(operator)
+        right_assoc = operator in RIGHT_ASSOC
+        left = reconstruct_expression(operands[0])
+        right = reconstruct_expression(operands[1])
+        if parent_rank is not None:
+            if needs_parens(parent_rank, right_assoc, operands[0], "left"):
+                left = f"({left})"
+            if needs_parens(parent_rank, right_assoc, operands[1], "right"):
+                right = f"({right})"
+        op_str = OPERATOR_MAP.get(operator, f" {operator} ")
+        return f"{left}{op_str}{right}"
+
+    if len(operands) == 1:
+        operand = reconstruct_expression(operands[0])
+        if needs_parens(UNARY_RANK, False, operands[0], "operand"):
+            operand = f"({operand})"
+        if operator == "-":
+            return f"-{operand}"
+        if operator == "not":
+            return f"not {operand}"
+        return f"{operator}({operand})"
+
+    if len(operands) > 2:
+        parent_rank = RANK.get(operator)
+        right_assoc = operator in RIGHT_ASSOC
+        op_str = OPERATOR_MAP.get(operator, f" {operator} ")
+        parts = []
+        for i, op in enumerate(operands):
+            text = reconstruct_expression(op)
+            side = "left" if i == 0 else "right"
+            if (
+                parent_rank is not None
+                and binary_op_of(op) != operator
+                and needs_parens(parent_rank, right_assoc, op, side)
+            ):
+                text = f"({text})"
+            parts.append(text)
+        return op_str.join(parts)
+
+    return operator
+
+
+def extract_feature_reference_name(expr_node: Any) -> str:
+    """Extract a name from a FeatureReferenceExpression."""
+    if hasattr(expr_node, "referent") and expr_node.referent:
+        referent = expr_node.referent
+        if hasattr(referent, "name") and referent.name:
+            return cast(str, referent.name)
+
+    if hasattr(expr_node, "memberships"):
+        for membership in expr_node.memberships:
+            if type(membership).__name__ == "Membership" or hasattr(membership, "member_element"):
+                elem = getattr(membership, "member_element", None)
+                if elem and hasattr(elem, "name") and elem.name:
+                    return cast(str, elem.name)
+
+    if hasattr(expr_node, "declared_name") and expr_node.declared_name:
+        return cast(str, expr_node.declared_name)
+    if hasattr(expr_node, "name") and expr_node.name:
+        return cast(str, expr_node.name)
+
+    return str(expr_node)
+
+
+def extract_feature_chain_name(expr_node: Any) -> str:
+    """Extract a dotted name from a FeatureChainExpression.
+
+    For terminal-only reference extraction, see get_reference_name(). This helper
+    reconstructs the chain text used by codegen compatibility paths.
+    """
+    path_parts: list[str] = []
+
+    if hasattr(expr_node, "operands"):
+        operands = list(expr_node.operands)
+        if operands:
+            operand_expr = operands[0]
+            operand_name = reconstruct_expression(operand_expr)
+            if operand_name:
+                path_parts.append(operand_name)
+    elif hasattr(expr_node, "instance_name") and expr_node.instance_name:
+        path_parts.append(cast(str, expr_node.instance_name))
+
+    if hasattr(expr_node, "target_feature") and expr_node.target_feature:
+        target = expr_node.target_feature
+        if hasattr(target, "name") and target.name:
+            path_parts.append(cast(str, target.name))
+    elif hasattr(expr_node, "attr_name") and expr_node.attr_name:
+        path_parts.append(cast(str, expr_node.attr_name))
+
+    if not path_parts and hasattr(expr_node, "memberships"):
+        for membership in expr_node.memberships:
+            if type(membership).__name__ == "Membership" or hasattr(membership, "member_element"):
+                elem = getattr(membership, "member_element", None)
+                if elem and hasattr(elem, "name") and elem.name:
+                    path_parts.append(cast(str, elem.name))
+
+    if path_parts:
+        return ".".join(path_parts)
+
+    return str(expr_node)
+
+
+def extract_feature_chain_segments(expr_node: Any) -> list[str]:
+    """Return the full dotted-path segments of a FeatureChainExpression."""
+    if not SysideAdapter.is_instance(expr_node, "FeatureChainExpression"):
+        return []
+
+    segments: list[str] = []
+
+    operands = list(getattr(expr_node, "operands", []) or [])
+    if operands:
+        root = operands[0]
+        if SysideAdapter.is_instance(root, "FeatureChainExpression"):
+            segments.extend(extract_feature_chain_segments(root))
+        else:
+            name = reconstruct_expression(root)
+            if name:
+                segments.append(name)
+    elif getattr(expr_node, "instance_name", None):
+        segments.append(cast(str, expr_node.instance_name))
+
+    target = getattr(expr_node, "target_feature", None)
+    if target is not None:
+        chaining = list(getattr(target, "chaining_features", []) or [])
+        if chaining:
+            segments.extend(cast(str, c.name) for c in chaining if getattr(c, "name", None))
+        elif getattr(target, "name", None):
+            segments.append(cast(str, target.name))
+    elif getattr(expr_node, "attr_name", None):
+        segments.append(cast(str, expr_node.attr_name))
+
+    return segments
+
+
+def is_literal_node(expr: Any) -> bool:
+    """Check whether a SysML AST node is a literal or null expression node."""
+    return (
+        SysideAdapter.is_instance(expr, "LiteralInteger")
+        or SysideAdapter.is_instance(expr, "LiteralRational")
+        or SysideAdapter.is_instance(expr, "LiteralBoolean")
+        or SysideAdapter.is_instance(expr, "LiteralString")
+        or SysideAdapter.is_instance(expr, "LiteralInfinity")
+        or SysideAdapter.is_instance(expr, "NullExpression")
+    )
+
+
+def extract_literal_value(expr: Any) -> float | int | str | bool | None:
+    """Extract the Python value from a literal AST node."""
+    if hasattr(expr, "value"):
+        return cast(float | int | str | bool | None, expr.value)
     return None
 
 

@@ -6,7 +6,7 @@ bindings from CalculationUsage AST elements.
 
 from typing import Any
 
-from agentic_mbse.sysml.expression import extract_feature_refs
+from agentic_mbse.sysml.expression import extract_feature_refs, extract_literal_value
 from agentic_mbse.sysml.types import BindingInfo, BindingType, ExpressionRef
 
 
@@ -149,7 +149,7 @@ def _build_binding_info(
 
     if binding_type == BindingType.LITERAL:
         # Extract literal value
-        literal_value = _extract_literal_value(expr)
+        literal_value = extract_literal_value(expr)
 
     elif binding_type == BindingType.CHAIN:
         # Build source path for chain expression
@@ -182,13 +182,6 @@ def _build_binding_info(
         expression_ast=expression_ast,
         references=references,
     )
-
-
-def _extract_literal_value(expr: Any) -> float | int | str | bool | None:
-    """Extract value from a literal expression."""
-    if hasattr(expr, "value"):
-        return expr.value
-    return None
 
 
 def _build_chain_source_path(expr: Any) -> str | None:

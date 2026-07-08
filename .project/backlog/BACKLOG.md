@@ -197,6 +197,56 @@ built under Item 9's guard. Revisit if/when the shared sanitizer lands.
 
 ---
 
+
+### [PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS] Codegen-Compatible Chain Segment Profile Check
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed by sysml-codegen PUSH-DOWN Item 1
+**Source**: sysml-codegen `.project/active/expression-reconstruction-push-down/design.md` SC-G
+
+**Rule**: Reject or warn in the codegen-compatible profile when full feature-chain segment extraction is empty, lossy, or uses an unsupported anonymous segment.
+
+**Fixture shape**: `a.b.c` chain where `target_feature.name is None` and `target_feature.chaining_features == [b, c]`; include a clean supported chain and an anonymous/lossy segment case.
+
+**Severity**: ERROR
+
+**Rationale**: sysml-codegen depends on full chain segments for supported multi-hop paths. The shared `extract_feature_chain_segments` helper now exposes the fact in agentic-mbse, but wiring a profile check needs dedicated fixture work beyond the expression move.
+
+---
+
+### [PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-SHAPE-MESSAGE] Opaque Expression Reconstruction Profile Warning
+
+**Priority**: P2
+**Effort**: ~0.5 day
+**Status**: Filed by sysml-codegen PUSH-DOWN Item 1
+**Source**: sysml-codegen `.project/active/expression-reconstruction-push-down/design.md` SC-G
+
+**Rule**: Warn when codegen-compatible validation sees an expression shape that reconstructs only through the opaque `str(node)` fallback.
+
+**Fixture shape**: Unsupported anonymous expression form that reconstructs only via `str(node)`, plus supported FeatureReferenceExpression, FeatureChainExpression, OperatorExpression, literal, null, and invocation controls.
+
+**Severity**: WARNING
+
+**Rationale**: Codegen-compatible validation should produce clear diagnostics before generation when reconstruction falls back to non-semantic text. The shared `reconstruct_expression` helper makes this detectable, but the exact validation surface should be designed with fixtures.
+
+---
+
+### [PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR] Codegen-Compatible Unsupported Operator Profile Check
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed by sysml-codegen PUSH-DOWN Item 1
+**Source**: sysml-codegen `.project/active/expression-reconstruction-push-down/design.md` SC-G
+
+**Rule**: Error when a codegen-targeted expression uses an operator outside the codegen-supported operator set.
+
+**Fixture shape**: OperatorExpression with an unsupported operator, plus supported `+`, `-`, `*`, `/`, comparisons, `and`, `or`, and `not` controls.
+
+**Severity**: ERROR
+
+**Rationale**: agentic-mbse should flag operators codegen cannot compile before generation. The shared operator maps and precedence helpers provide the expression facts; a separate profile item should pin the supported set and user-facing diagnostic.
+
 ## P3 - Low Priority
 
 ### [ITEM-ITERATION-LOOP] Experiment Iteration Loop

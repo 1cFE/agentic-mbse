@@ -33,6 +33,13 @@ class TestTypeMap:
             "FeatureChainExpression",
             "FeatureReferenceExpression",
             "OperatorExpression",
+            "InvocationExpression",
+            "LiteralInteger",
+            "LiteralRational",
+            "LiteralBoolean",
+            "LiteralString",
+            "LiteralInfinity",
+            "NullExpression",
         ]
         type_map = SysideAdapter._get_type_map()
         for type_name in expr_types:

@@ -17,7 +17,10 @@ from typing import Any
 
 import yaml
 
-from agentic_mbse.sysml.expression import evaluate_true_static_expression
+from agentic_mbse.sysml.expression import (
+    evaluate_true_static_expression,
+    is_literal_node,
+)
 from agentic_mbse.sysml.syside_adapter import (
     EXCLUDED_CONSTRAINT_TYPES,
     SysideAdapter,
@@ -776,22 +779,10 @@ def check_body_assignment_impl_loss(model: Any) -> list[ValidationIssue]:
     return issues
 
 
-# C7 mirrors codegen's is_literal_expression (expression_utils.py): the five SysML
-# literal node types plus NullExpression. Every other value expression — Operator,
-# Invocation, FeatureChain/Reference — is a computed expression.
-_LITERAL_EXPR_TYPES = (
-    "LiteralInteger",
-    "LiteralRational",
-    "LiteralBoolean",
-    "LiteralString",
-    "LiteralInfinity",
-    "NullExpression",
-)
-
 
 def _is_literal_rhs(expr: Any) -> bool:
-    """True if a value expression is a literal (mirrors codegen is_literal_expression)."""
-    return any(SysideAdapter.is_instance(expr, t) for t in _LITERAL_EXPR_TYPES)
+    """True if a value expression is a literal node per shared SysML expression API."""
+    return is_literal_node(expr)
 
 
 def check_attr_redef_expression_dropped(model: Any) -> list[ValidationIssue]:
