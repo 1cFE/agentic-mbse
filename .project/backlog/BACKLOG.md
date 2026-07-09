@@ -445,3 +445,68 @@ Those surfaces remain in sysml-codegen for PUSH-DOWN Item 3, so the profile rule
 than implemented by importing codegen policy.
 
 ---
+
+
+### [PUSH-DOWN-AGG-PROFILE-SUM-SHAPE] unsupported aggregation sum operand WARN
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed - needs aggregation-profile integration over shared aggregation facts
+**Source**: PUSH-DOWN Item 4 aggregation-profile close-out
+
+**Rule**: Warn when a codegen-targeted aggregation expression uses `sum(...)` on an operand that
+cannot decompose to a supported child feature chain or local reference, unless existing expression or
+hierarchy profile checks already cover the rejected operand shape.
+
+**Fixture shape**: `:>> total = sum(module.cost)` is clean; an unsupported operand shape warns only
+if not already covered elsewhere.
+
+**Severity**: WARNING
+
+**Rationale**: Aggregation-specific unsupported sum operand diagnostics need profile integration over
+shared aggregation facts. PUSH-DOWN Item 4 preserves generation behavior and avoids adding a shallow
+rule that could duplicate existing expression diagnostics.
+
+---
+
+### [PUSH-DOWN-AGG-PROFILE-WRAPPER-SHAPE] aggregation wrapper compatibility WARN
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed - profile-only warning must not change generation behavior
+**Source**: PUSH-DOWN Item 4 aggregation-profile close-out
+
+**Rule**: Preserve current generation behavior for wrapper unwrapping. Any profile-only warning for
+unsupported wrappers must be explicitly separated from the behavior-preserving aggregation move.
+
+**Fixture shape**: `sum(Evaluation(module.cost))`, `sum(collect(Evaluation(module.cost)))`,
+`Evaluation(allocation.total)`, and current permissive `sum(filter(module.cost))` behavior are
+controls. A future stricter wrapper warning is filed rather than implemented in PUSH-DOWN Item 4.
+
+**Severity**: WARNING
+
+**Rationale**: Current generation is permissive inside `sum(...)`; stricter wrapper warnings are
+future profile work, not part of this behavior-preserving move.
+
+---
+
+### [PUSH-DOWN-AGG-PROFILE-LITERAL-SHAPE] literal aggregation operand WARN
+
+**Priority**: P2
+**Effort**: ~0.5 day
+**Status**: Filed - aggregation-specific literal-term policy
+**Source**: PUSH-DOWN Item 4 aggregation-profile close-out
+
+**Rule**: Warn when a literal appears where codegen aggregation decomposition cannot use it as a
+term, while preserving supported literal rendering inside otherwise valid operator expressions.
+
+**Fixture shape**: `:>> total = sum(module.cost) + 5.0` keeps the literal in neutral operator facts;
+`sum(5.0)` is the filed aggregation-specific incompatible shape.
+
+**Severity**: WARNING
+
+**Rationale**: `sum(5.0)` is aggregation-specific and should not be mixed with general literal
+expression support. PUSH-DOWN Item 4 keeps the generation path behavior-preserving and files this
+profile warning for a dedicated validation pass.
+
+---

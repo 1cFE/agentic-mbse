@@ -2,6 +2,23 @@
 
 Public API for the sysml module.
 """
+from agentic_mbse.sysml.aggregation import (
+    AggregationDecomposition,
+    AggregationDiagnostic,
+    FeatureChainNode,
+    FeatureReferenceNode,
+    InvocationNode,
+    LiteralNode,
+    LocalTerm,
+    NullNode,
+    OperatorNode,
+    SingletonTerm,
+    SumNode,
+    SumTerm,
+    UnsupportedNode,
+    WrapperFact,
+    decompose_aggregation_expression,
+)
 from agentic_mbse.sysml.binding import (
     classify_binding,
     extract_bindings,
@@ -80,6 +97,21 @@ __all__ = [
     # Data Models (shared with sysml-codegen)
     "ExpressionRef",
     "AttributeInfo",
+    "SumTerm",
+    "SingletonTerm",
+    "LocalTerm",
+    "AggregationDecomposition",
+    "AggregationDiagnostic",
+    "WrapperFact",
+    "SumNode",
+    "FeatureChainNode",
+    "FeatureReferenceNode",
+    "LiteralNode",
+    "OperatorNode",
+    "InvocationNode",
+    "UnsupportedNode",
+    "NullNode",
+    "decompose_aggregation_expression",
     # Expression utilities
     "traverse_expression",
     "extract_feature_refs",

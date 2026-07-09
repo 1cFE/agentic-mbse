@@ -16,6 +16,9 @@ __all__ = [
     "RedefinitionType",
     "RedefinitionData",
     "MultiplicityData",
+    "SumTerm",
+    "SingletonTerm",
+    "LocalTerm",
 ]
 
 # Re-export ExpressionRef from types for clean API surface
@@ -77,4 +80,27 @@ class MultiplicityData:
     count: int | None
     count_attribute_name: str | None
     default_value: int | None
+
+@dataclass
+class SumTerm:
+    """One sum() operand in an aggregation expression."""
+
+    part_usage_name: str
+    attribute_name: str
+    multiplicity_attr: str | None
+    multiplicity_count: int | None
+
+
+@dataclass
+class SingletonTerm:
+    """A non-sum child attribute reference in an aggregation expression."""
+
+    source_path: str
+
+
+@dataclass
+class LocalTerm:
+    """A PartDef-local attribute reference in an aggregation expression."""
+
+    attribute_name: str
 
