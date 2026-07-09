@@ -18,7 +18,7 @@ def sanitize_name(name: str | None) -> str:
     """
     if not name:
         return "unnamed"
-    name = name.strip("\'\"")
+    name = name.strip("'\"")
     name = name.replace(" ", "_")
     name = re.sub(r"[^a-zA-Z0-9_]", "_", name)
     name = re.sub(r"_+", "_", name)

@@ -130,7 +130,9 @@ def test_wrapper_facts_and_permissive_sum_operand_unwrap() -> None:
 
 
 def test_known_non_sum_wrapper_unwraps() -> None:
-    result = decompose_aggregation_expression(invocation("Evaluation", chain("allocation", "total")))
+    result = decompose_aggregation_expression(
+        invocation("Evaluation", chain("allocation", "total"))
+    )
 
     assert isinstance(result.root, FeatureChainNode)
     assert result.root.source_path == "allocation.total"
@@ -240,6 +242,15 @@ def test_combined_type_map_inventory_is_mapped(monkeypatch) -> None:
     for name in used_names:
         SysideAdapter._require_known_type(name, SysideAdapter._get_type_map())
 
-    assert {"FeatureChainExpression", "OperatorExpression", "FeatureReferenceExpression"}.issubset(used_names)
-    assert {"LiteralInteger", "LiteralRational", "LiteralString", "LiteralBoolean", "LiteralInfinity", "NullExpression"}.issubset(used_names)
+    assert {"FeatureChainExpression", "OperatorExpression", "FeatureReferenceExpression"}.issubset(
+        used_names
+    )
+    assert {
+        "LiteralInteger",
+        "LiteralRational",
+        "LiteralString",
+        "LiteralBoolean",
+        "LiteralInfinity",
+        "NullExpression",
+    }.issubset(used_names)
     assert seen

@@ -3,6 +3,7 @@
 These types are imported by downstream packages (sysml-codegen).
 Changes here may require updates to dependent packages.
 """
+
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -39,12 +40,14 @@ class AttributeInfo:
         is_input: True if marked as input (direction In)
         is_output: True if marked as output (direction Out/Return)
     """
+
     name: str
     sysml_type: str | None = None
     default_value: Any = None
     binding_type: BindingType = BindingType.UNBOUND
     is_input: bool = False
     is_output: bool = False
+
 
 class RedefinitionType(str, Enum):
     """Classification of a ``:>>`` redefinition's RHS expression."""
@@ -81,6 +84,7 @@ class MultiplicityData:
     count_attribute_name: str | None
     default_value: int | None
 
+
 @dataclass
 class SumTerm:
     """One sum() operand in an aggregation expression."""
@@ -103,4 +107,3 @@ class LocalTerm:
     """A PartDef-local attribute reference in an aggregation expression."""
 
     attribute_name: str
-

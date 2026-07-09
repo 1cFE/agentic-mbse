@@ -2,6 +2,7 @@
 
 Public API for the sysml module.
 """
+
 from agentic_mbse.sysml.aggregation import (
     AggregationDecomposition,
     AggregationDiagnostic,

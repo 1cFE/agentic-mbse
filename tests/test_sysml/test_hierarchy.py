@@ -135,7 +135,12 @@ def test_redefinition_model_contract() -> None:
         ("expression_text", str, "", dataclasses.MISSING),
         ("target_path", list[str], dataclasses.MISSING, list),
         ("is_deep_path", bool, False, dataclasses.MISSING),
-        ("source_file", Path, dataclasses.MISSING, dataclasses.fields(RedefinitionData)[9].default_factory),
+        (
+            "source_file",
+            Path,
+            dataclasses.MISSING,
+            dataclasses.fields(RedefinitionData)[9].default_factory,
+        ),
         ("source_line", int, 0, dataclasses.MISSING),
     ]
     assert RedefinitionData("A", "b", RedefinitionType.LITERAL).source_file == Path("unknown")
@@ -157,14 +162,18 @@ def test_classify_redefinition_literal_chain_expression() -> None:
         "Plant::Driver",
     )
     chain = classify_redefinition(
-        MockReferenceUsage("cost", MockRedefinedFeature("cost"), MockFeatureChainExpression(["economics", "rate"])),
+        MockReferenceUsage(
+            "cost", MockRedefinedFeature("cost"), MockFeatureChainExpression(["economics", "rate"])
+        ),
         "Plant::Driver",
     )
     expr = classify_redefinition(
         MockReferenceUsage(
             "cost",
             MockRedefinedFeature("cost"),
-            MockOperatorExpression("+", [MockFeatureReferenceExpression("base"), MockFeatureReferenceExpression("fee")]),
+            MockOperatorExpression(
+                "+", [MockFeatureReferenceExpression("base"), MockFeatureReferenceExpression("fee")]
+            ),
         ),
         "Plant::Driver",
     )
@@ -182,17 +191,32 @@ def test_classify_redefinition_literal_chain_expression() -> None:
 
 def test_classify_redefinition_skips_type_only_and_non_reference_usage() -> None:
     assert classify_redefinition(MockPartUsage("not_ref"), "Owner") is None
-    assert classify_redefinition(MockReferenceUsage("cost", MockRedefinedFeature("cost"), None), "Owner") is None
-    assert classify_redefinition(
-        MockReferenceUsage("cost", MockRedefinedFeature("cost"), MockLiteralInteger(1), owned_redefinitions=[]),
-        "Owner",
-    ) is None
+    assert (
+        classify_redefinition(
+            MockReferenceUsage("cost", MockRedefinedFeature("cost"), None), "Owner"
+        )
+        is None
+    )
+    assert (
+        classify_redefinition(
+            MockReferenceUsage(
+                "cost", MockRedefinedFeature("cost"), MockLiteralInteger(1), owned_redefinitions=[]
+            ),
+            "Owner",
+        )
+        is None
+    )
 
 
 def test_classify_redefinition_deep_target_path() -> None:
     member = MockReferenceUsage(
         "unused",
-        MockRedefinedFeature(chaining_features=[type("Named", (), {"name": "pv module"})(), type("Named", (), {"name": "wattage"})()]),
+        MockRedefinedFeature(
+            chaining_features=[
+                type("Named", (), {"name": "pv module"})(),
+                type("Named", (), {"name": "wattage"})(),
+            ]
+        ),
         MockLiteralInteger(400),
     )
 

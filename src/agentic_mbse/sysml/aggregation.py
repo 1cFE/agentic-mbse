@@ -58,7 +58,9 @@ SUPPORTED_OPERATORS = frozenset(
 )
 KNOWN_WRAPPER_FUNCTIONS = frozenset({"Evaluation", "evaluate", "collect", "select"})
 
-DiagnosticKind: TypeAlias = Literal["unsupported_node", "unsupported_operator", "unsupported_invocation"]
+DiagnosticKind: TypeAlias = Literal[
+    "unsupported_node", "unsupported_operator", "unsupported_invocation"
+]
 WrapperReason: TypeAlias = Literal["sum_operand", "known_wrapper"]
 
 
@@ -301,9 +303,7 @@ def _decompose_node(
             if unwrapped is not node:
                 return _decompose_node(unwrapped, ctx, collect_terms=collect_terms)
 
-        operand_nodes = [
-            _decompose_node(op, ctx, collect_terms=collect_terms) for op in operands
-        ]
+        operand_nodes = [_decompose_node(op, ctx, collect_terms=collect_terms) for op in operands]
         diagnostic_id = ctx.add_diagnostic(
             "unsupported_invocation",
             node,
@@ -326,7 +326,9 @@ def _decompose_node(
     )
 
 
-def _unwrap_sum_operand(node: Any, ctx: _AggregationContext, depth: int = 0) -> tuple[Any, str | None]:
+def _unwrap_sum_operand(
+    node: Any, ctx: _AggregationContext, depth: int = 0
+) -> tuple[Any, str | None]:
     if depth >= 3:
         return node, None
     if SysideAdapter.is_instance(node, "FeatureChainExpression"):
