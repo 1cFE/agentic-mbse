@@ -4,11 +4,21 @@ These tests document how expression traversal works with different
 expression tree structures.
 """
 
+import inspect
+
+import agentic_mbse.sysml as sysml
+from agentic_mbse.sysml import expression
 from agentic_mbse.sysml.expression import (
+    extract_feature_chain_name,
+    extract_feature_chain_segments,
+    extract_feature_reference_name,
     extract_feature_refs,
+    extract_literal_value,
     extract_operators,
     is_literal_expression,
+    is_literal_node,
     is_true_static_expression,
+    reconstruct_expression,
     traverse_expression,
 )
 from tests.test_sysml.conftest import (
@@ -303,9 +313,7 @@ class TestStandardLibraryFilter:
         Input: FeatureReferenceExpression with qualified_name="SI::metre"
         Output: Empty list with default filtering; 1 ref when filter disabled
         """
-        mock_expr = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
+        mock_expr = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
 
         # Default behavior filters SI::
         refs = extract_feature_refs(mock_expr)
@@ -322,9 +330,7 @@ class TestStandardLibraryFilter:
         Input: FeatureReferenceExpression with qualified_name="ISQ::Length"
         Output: Empty list when filtered
         """
-        mock_expr = MockFeatureReferenceExpression(
-            name="Length", qualified_name="ISQ::Length"
-        )
+        mock_expr = MockFeatureReferenceExpression(name="Length", qualified_name="ISQ::Length")
 
         refs = extract_feature_refs(mock_expr)
         assert len(refs) == 0, "ISQ::Length should be filtered by default"
@@ -338,9 +344,7 @@ class TestStandardLibraryFilter:
         Input: FeatureReferenceExpression with qualified_name="ScalarValues::Real"
         Output: Empty list when filtered
         """
-        mock_expr = MockFeatureReferenceExpression(
-            name="Real", qualified_name="ScalarValues::Real"
-        )
+        mock_expr = MockFeatureReferenceExpression(name="Real", qualified_name="ScalarValues::Real")
 
         refs = extract_feature_refs(mock_expr)
         assert len(refs) == 0, "ScalarValues::Real should be filtered by default"
@@ -378,9 +382,7 @@ class TestStandardLibraryFilter:
         Input: OperatorExpression with SI::metre and RadialBuild::radius
         Output: Only RadialBuild::radius returned (SI::metre filtered)
         """
-        mock_unit = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
+        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
         mock_design = MockFeatureReferenceExpression(
             name="radius", qualified_name="RadialBuild::radius"
         )
@@ -405,9 +407,7 @@ class TestStandardLibraryFilter:
         Input: Expression with SI::metre reference
         Output: 1 reference when filter disabled
         """
-        mock_expr = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
+        mock_expr = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
 
         # With filter disabled, std lib refs are included
         refs = extract_feature_refs(mock_expr, ignore_std_lib=False)
@@ -426,12 +426,8 @@ class TestStandardLibraryFilter:
         #   operand[0]: LiteralRational (3.0)
         #   operand[1]: FeatureReferenceExpression → SI::metre
         mock_literal = MockLiteralRational(value=3.0)
-        mock_unit = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
-        mock_expr = MockOperatorExpression(
-            operator="[", operands=[mock_literal, mock_unit]
-        )
+        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_expr = MockOperatorExpression(operator="[", operands=[mock_literal, mock_unit])
 
         refs = extract_feature_refs(mock_expr)
         assert len(refs) == 0, "Unit annotation should yield zero refs after filtering"
@@ -487,12 +483,8 @@ class TestIsTrueStaticExpression:
         Output: True (SI::metre is filtered, only literal remains)
         """
         mock_literal = MockLiteralRational(value=3.0)
-        mock_unit = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
-        mock_expr = MockOperatorExpression(
-            operator="[", operands=[mock_literal, mock_unit]
-        )
+        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_expr = MockOperatorExpression(operator="[", operands=[mock_literal, mock_unit])
 
         assert is_true_static_expression(mock_expr) is True
 
@@ -537,20 +529,12 @@ class TestIsTrueStaticExpression:
         Output: True (all refs are SI:: which are filtered)
         """
         mock_lit1 = MockLiteralRational(value=3.0)
-        mock_unit1 = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
-        mock_unit_expr1 = MockOperatorExpression(
-            operator="[", operands=[mock_lit1, mock_unit1]
-        )
+        mock_unit1 = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit_expr1 = MockOperatorExpression(operator="[", operands=[mock_lit1, mock_unit1])
 
         mock_lit2 = MockLiteralRational(value=2.0)
-        mock_unit2 = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
-        mock_unit_expr2 = MockOperatorExpression(
-            operator="[", operands=[mock_lit2, mock_unit2]
-        )
+        mock_unit2 = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit_expr2 = MockOperatorExpression(operator="[", operands=[mock_lit2, mock_unit2])
 
         mock_expr = MockOperatorExpression(
             operator="+", operands=[mock_unit_expr1, mock_unit_expr2]
@@ -565,20 +549,14 @@ class TestIsTrueStaticExpression:
         Output: False (major_radius is a design ref)
         """
         mock_lit = MockLiteralRational(value=3.0)
-        mock_unit = MockFeatureReferenceExpression(
-            name="metre", qualified_name="SI::metre"
-        )
-        mock_unit_expr = MockOperatorExpression(
-            operator="[", operands=[mock_lit, mock_unit]
-        )
+        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit_expr = MockOperatorExpression(operator="[", operands=[mock_lit, mock_unit])
 
         mock_design = MockFeatureReferenceExpression(
             name="major_radius", qualified_name="RadialBuild::major_radius"
         )
 
-        mock_expr = MockOperatorExpression(
-            operator="+", operands=[mock_unit_expr, mock_design]
-        )
+        mock_expr = MockOperatorExpression(operator="+", operands=[mock_unit_expr, mock_design])
 
         assert is_true_static_expression(mock_expr) is False
 
@@ -831,9 +809,7 @@ class TestEvaluateTrueStaticExpression:
         """
         from agentic_mbse.sysml.expression import evaluate_true_static_expression
 
-        inner = MockOperatorExpression(
-            "+", [MockLiteralRational(3.0), MockLiteralRational(4.0)]
-        )
+        inner = MockOperatorExpression("+", [MockLiteralRational(3.0), MockLiteralRational(4.0)])
         expr = MockOperatorExpression("*", [inner, MockLiteralRational(2.0)])
         assert evaluate_true_static_expression(expr) == 14.0
 
@@ -962,3 +938,98 @@ class TestEvaluateTrueStaticExpression:
 
         with pytest.raises(TypeError, match="Cannot evaluate None"):
             evaluate_true_static_expression(None)
+
+
+# PUSH-DOWN Item 1: shared reconstruction API
+
+
+def test_expression_public_exports_include_reconstruction_helpers():
+    assert sysml.reconstruct_expression is expression.reconstruct_expression
+    assert sysml.reconstruct_operator_expression is expression.reconstruct_operator_expression
+    assert sysml.extract_feature_reference_name is expression.extract_feature_reference_name
+    assert sysml.extract_feature_chain_name is expression.extract_feature_chain_name
+    assert sysml.extract_feature_chain_segments is expression.extract_feature_chain_segments
+    assert sysml.is_literal_node is expression.is_literal_node
+    assert sysml.extract_literal_value is expression.extract_literal_value
+
+
+def test_reconstruct_expression_feature_ref_chain_and_literal():
+    ref = MockFeatureReferenceExpression(name="rate")
+    chain = MockFeatureChainExpression(instance_name="pump", attr_name="power")
+    literal = MockLiteralRational(value=3.5)
+
+    assert reconstruct_expression(ref) == "rate"
+    assert reconstruct_expression(chain) == "pump.power"
+    assert reconstruct_expression(literal) == "3.5"
+
+
+def test_reconstruct_expression_preserves_precedence():
+    a = MockFeatureReferenceExpression(name="a")
+    b = MockFeatureReferenceExpression(name="b")
+    c = MockFeatureReferenceExpression(name="c")
+
+    assert (
+        reconstruct_expression(
+            MockOperatorExpression("*", [MockOperatorExpression("+", [a, b]), c])
+        )
+        == "(a + b) * c"
+    )
+    assert (
+        reconstruct_expression(
+            MockOperatorExpression("+", [a, MockOperatorExpression("*", [b, c])])
+        )
+        == "a + b * c"
+    )
+    assert (
+        reconstruct_expression(MockOperatorExpression("-", [MockOperatorExpression("+", [a, b])]))
+        == "-(a + b)"
+    )
+
+
+def test_feature_chain_segments_expand_target_chaining_features():
+    root = MockFeatureReferenceExpression(name="tf_coil")
+    target = type(
+        "TargetFeature",
+        (),
+        {
+            "name": None,
+            "chaining_features": [
+                type("Feature", (), {"name": "volume_calc"})(),
+                type("Feature", (), {"name": "volume"})(),
+            ],
+        },
+    )()
+    chain = MockFeatureChainExpression(instance_name="ignored", attr_name="ignored")
+    chain.operands = [root]
+    chain.target_feature = target
+
+    assert extract_feature_chain_segments(chain) == ["tf_coil", "volume_calc", "volume"]
+    assert extract_feature_chain_segments(MockLiteralRational(1.0)) == []
+
+
+def test_literal_node_and_value_are_distinct_from_true_static_expression():
+    literal = MockLiteralInteger(5)
+    expr = MockOperatorExpression("+", [MockLiteralInteger(1), MockLiteralInteger(2)])
+
+    assert is_literal_node(literal)
+    assert extract_literal_value(literal) == 5
+    assert is_true_static_expression(literal)
+    assert is_true_static_expression(expr)
+    assert not is_literal_node(expr)
+
+
+def test_extract_feature_reference_and_chain_names():
+    assert extract_feature_reference_name(MockFeatureReferenceExpression(name="cost")) == "cost"
+    assert (
+        extract_feature_chain_name(
+            MockFeatureChainExpression(instance_name="plant", attr_name="cost")
+        )
+        == "plant.cost"
+    )
+
+
+def test_reconstruct_expression_dispatch_order_invariants():
+    source = inspect.getsource(expression.reconstruct_expression)
+    assert source.index('"FeatureChainExpression"') < source.index('"OperatorExpression"')
+    assert source.index('"LiteralInteger"') < source.index('hasattr(expr_node, "function")')
+    assert source.index('"NullExpression"') < source.index('hasattr(expr_node, "function")')

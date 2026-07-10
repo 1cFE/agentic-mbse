@@ -91,6 +91,15 @@ class MockFeatureChainExpression(MockElement):
         self.instance_name = instance_name
         self.attr_name = attr_name
 
+        # Model the real syside FeatureChainExpression shape: operands[0] is the
+        # chain-root expression and target_feature carries the terminal feature.
+        # Production helpers read only these (plus memberships) — never
+        # instance_name/attr_name, which are mock-constructor conveniences.
+        if instance_name:
+            self.operands = [MockFeatureReferenceExpression(name=instance_name)]
+        if attr_name:
+            self.target_feature = type("TargetFeature", (), {"name": attr_name})()
+
         # Create target for the attribute
         target = MockElement(name=attr_name, qualified_name=qualified_name)
         target.document = type("Doc", (), {"url": doc_path})() if doc_path else None

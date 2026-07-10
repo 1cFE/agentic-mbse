@@ -1,4 +1,5 @@
 """Tests for SysideAdapter."""
+
 from pathlib import Path
 
 import pytest
@@ -33,6 +34,13 @@ class TestTypeMap:
             "FeatureChainExpression",
             "FeatureReferenceExpression",
             "OperatorExpression",
+            "InvocationExpression",
+            "LiteralInteger",
+            "LiteralRational",
+            "LiteralBoolean",
+            "LiteralString",
+            "LiteralInfinity",
+            "NullExpression",
         ]
         type_map = SysideAdapter._get_type_map()
         for type_name in expr_types:
@@ -49,6 +57,7 @@ class TestIsInstance:
 
     def test_is_instance_with_mock_matching_name(self):
         """is_instance returns True for mocks with matching type name."""
+
         class MockCalculationDefinition:
             pass
 
@@ -57,6 +66,7 @@ class TestIsInstance:
 
     def test_is_instance_with_mock_non_matching_name(self):
         """is_instance returns False for mocks without matching type name."""
+
         class MockOtherThing:
             pass
 
@@ -79,11 +89,7 @@ class TestElementsOfType:
     def test_unknown_exclude_name_raises_value_error(self):
         """An unmapped name in ``exclude`` is loud, not a silent no-op (D6)."""
         with pytest.raises(ValueError, match="Unknown type name"):
-            list(
-                SysideAdapter.elements_of_type(
-                    None, "ConstraintUsage", exclude=("NotARealType",)
-                )
-            )
+            list(SysideAdapter.elements_of_type(None, "ConstraintUsage", exclude=("NotARealType",)))
 
 
 class TestSourceLocation:
@@ -91,6 +97,7 @@ class TestSourceLocation:
 
     def test_source_location_with_no_document(self):
         """get_source_location returns None for elements without document."""
+
         class MockElement:
             document = None
 
@@ -98,6 +105,7 @@ class TestSourceLocation:
 
     def test_source_location_with_document(self):
         """get_source_location extracts path and line."""
+
         class MockStartPoint:
             line = 41  # 0-indexed
 
@@ -135,6 +143,7 @@ class TestDocumentUrl:
 
     def test_document_url_direct(self):
         """get_document_url returns URL from element's document."""
+
         class MockDocument:
             url = "file:///path/to/model.sysml"
 
@@ -147,6 +156,7 @@ class TestDocumentUrl:
 
     def test_document_url_from_owner(self):
         """get_document_url traverses up ownership chain."""
+
         class MockDocument:
             url = "file:///owner/path.sysml"
 
@@ -163,6 +173,7 @@ class TestDocumentUrl:
 
     def test_document_url_not_found(self):
         """get_document_url returns None when no document found."""
+
         class MockElement:
             document = None
             owner = None
@@ -178,9 +189,7 @@ class TestDocumentUrl:
 # about: a plain ConstraintUsage (positive_cost), a RequirementUsage
 # (widget_budget), and an AssertConstraintUsage (affordable).
 
-_ITEM4_MODEL = (
-    Path(__file__).parent / "fixtures" / "item4_subtype" / "constraints.sysml"
-)
+_ITEM4_MODEL = Path(__file__).parent / "fixtures" / "item4_subtype" / "constraints.sysml"
 
 
 @pytest.fixture(scope="module")
@@ -215,25 +224,20 @@ class TestIsInstanceHardError:
 
     def test_is_instance_mock_path_survives_for_mapped_name(self):
         """A mapped name still resolves mocks by string match (gate is before it)."""
+
         class MockCalculationDefinition:
             pass
 
-        assert SysideAdapter.is_instance(
-            MockCalculationDefinition(), "CalculationDefinition"
-        )
+        assert SysideAdapter.is_instance(MockCalculationDefinition(), "CalculationDefinition")
 
 
 class TestSubtypeSweep:
     """include_subtypes and exclude on the ConstraintUsage sweep."""
 
     def test_include_subtypes_sweeps_assert(self, item4_model):
-        exact = list(
-            SysideAdapter.elements_of_type(item4_model, "ConstraintUsage")
-        )
+        exact = list(SysideAdapter.elements_of_type(item4_model, "ConstraintUsage"))
         swept = list(
-            SysideAdapter.elements_of_type(
-                item4_model, "ConstraintUsage", include_subtypes=True
-            )
+            SysideAdapter.elements_of_type(item4_model, "ConstraintUsage", include_subtypes=True)
         )
         # Exact-type sees only the plain constraint; the sweep also sees the
         # assert (and the requirement subtype).
@@ -241,9 +245,7 @@ class TestSubtypeSweep:
         swept_names = {e.name for e in swept}
         assert exact_names == {"positive_cost"}
         assert {"positive_cost", "affordable", "widget_budget"} == swept_names
-        assert any(
-            SysideAdapter.is_instance(e, "AssertConstraintUsage") for e in swept
-        )
+        assert any(SysideAdapter.is_instance(e, "AssertConstraintUsage") for e in swept)
 
     def test_exclude_drops_requirement_keeps_predicates(self, item4_model):
         kept = list(
@@ -264,9 +266,7 @@ class TestIsDroppableConstraint:
 
     def test_droppable_excludes_requirement_includes_predicates(self, item4_model):
         swept = list(
-            SysideAdapter.elements_of_type(
-                item4_model, "ConstraintUsage", include_subtypes=True
-            )
+            SysideAdapter.elements_of_type(item4_model, "ConstraintUsage", include_subtypes=True)
         )
         by_name = {e.name: e for e in swept}
         assert is_droppable_constraint(by_name["affordable"])
@@ -276,9 +276,7 @@ class TestIsDroppableConstraint:
     def test_droppable_matches_exclude_filter(self, item4_model):
         """ladder-droppable == helper-droppable (INV-D cross-check)."""
         swept = list(
-            SysideAdapter.elements_of_type(
-                item4_model, "ConstraintUsage", include_subtypes=True
-            )
+            SysideAdapter.elements_of_type(item4_model, "ConstraintUsage", include_subtypes=True)
         )
         via_helper = {e.name for e in swept if is_droppable_constraint(e)}
         via_exclude = {

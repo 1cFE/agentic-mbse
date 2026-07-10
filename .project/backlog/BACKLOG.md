@@ -119,22 +119,28 @@ AND a negative-of-the-negative (bare-`:>>` literal must not fire).
 
 **Priority**: P2
 **Effort**: ~0.5–1 day (needs a shared sanitizer)
-**Status**: Ready — deferred from Item 12 under the scope guard
-**Source**: UPSTREAM-FINDINGS Item 12 (C8); identifier-sanitization (Item 5)
+**Status**: Ready — shared sanitizer landed; sibling-scope collector still needed
+**Source**: UPSTREAM-FINDINGS Item 12 (C8); identifier-sanitization (Item 5); PUSH-DOWN Item 2
 
-**Idea**: WARN when two distinct SysML names sanitize to one Python identifier, before
+**Idea**: WARN when two distinct SysML sibling names sanitize to one Python identifier, before
 codegen fails on its duplicate-path error (REQ-NC-09).
 
-**Why filed, not built in Item 12**: requires replicating codegen's identifier sanitizer in
-agentic-mbse to compute collisions — a real duplication/drift risk against codegen's
-REQ-NC-09. The right fix is a shared sanitizer both repos import; codegen's duplicate-path
-error is the backstop until then.
+**Rule**: Within one owning namespace, if two distinct raw SysML names produce the same
+`agentic_mbse.sysml.qualified_names.sanitize_name(...)` result, emit a Level-6 WARNING.
 
-**Item 9 disposition (R-C8): KEEP FILED.** Now lower-value — Item 5 landed SC-4
-sanitizer-injectivity fail-fast in codegen, so a two-names-one-identifier collision fails loudly
-at generation (the backstop exists). Building the pre-warn is not a small check-plus-fixture (it
-still needs the shared sanitizer to avoid drift, ~0.5–1 day), so it stays filed rather than being
-built under Item 9's guard. Revisit if/when the shared sanitizer lands.
+**Fixture shape**: two siblings under the same owner named `'a b'` and `'a-b'` should warn;
+the same pair under unrelated owners should not warn.
+
+**Severity**: WARNING
+
+**Rationale**: PUSH-DOWN Item 2 moved the sanitizer into agentic-mbse, removing the drift risk.
+The remaining work is the sibling-scope collector. That collector is broader than the utility move
+and should land with dedicated positive and unrelated-namespace negative fixtures. codegen's
+duplicate-path error remains the backstop until then.
+
+**Item 9 disposition (R-C8): KEEP FILED.** Item 5 landed SC-4 sanitizer-injectivity fail-fast in
+codegen, so a two-names-one-identifier collision fails loudly at generation. PUSH-DOWN Item 2
+removed the shared-sanitizer blocker; this row now tracks only the Level-6 pre-warn collector.
 
 ---
 
@@ -196,6 +202,56 @@ built under Item 9's guard. Revisit if/when the shared sanitizer lands.
 **Tracking only** - active development continues in fusion-tea POC.
 
 ---
+
+
+### [PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS] Codegen-Compatible Chain Segment Profile Check
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed by sysml-codegen PUSH-DOWN Item 1
+**Source**: sysml-codegen `.project/active/expression-reconstruction-push-down/design.md` SC-G
+
+**Rule**: Reject or warn in the codegen-compatible profile when full feature-chain segment extraction is empty, lossy, or uses an unsupported anonymous segment.
+
+**Fixture shape**: `a.b.c` chain where `target_feature.name is None` and `target_feature.chaining_features == [b, c]`; include a clean supported chain and an anonymous/lossy segment case.
+
+**Severity**: ERROR
+
+**Rationale**: sysml-codegen depends on full chain segments for supported multi-hop paths. The shared `extract_feature_chain_segments` helper now exposes the fact in agentic-mbse, but wiring a profile check needs dedicated fixture work beyond the expression move.
+
+---
+
+### [PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-SHAPE-MESSAGE] Opaque Expression Reconstruction Profile Warning
+
+**Priority**: P2
+**Effort**: ~0.5 day
+**Status**: Filed by sysml-codegen PUSH-DOWN Item 1
+**Source**: sysml-codegen `.project/active/expression-reconstruction-push-down/design.md` SC-G
+
+**Rule**: Warn when codegen-compatible validation sees an expression shape that reconstructs only through the opaque `str(node)` fallback.
+
+**Fixture shape**: Unsupported anonymous expression form that reconstructs only via `str(node)`, plus supported FeatureReferenceExpression, FeatureChainExpression, OperatorExpression, literal, null, and invocation controls.
+
+**Severity**: WARNING
+
+**Rationale**: Codegen-compatible validation should produce clear diagnostics before generation when reconstruction falls back to non-semantic text. The shared `reconstruct_expression` helper makes this detectable, but the exact validation surface should be designed with fixtures.
+
+---
+
+### [PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR] Codegen-Compatible Unsupported Operator Profile Check
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed by sysml-codegen PUSH-DOWN Item 1
+**Source**: sysml-codegen `.project/active/expression-reconstruction-push-down/design.md` SC-G
+
+**Rule**: Error when a codegen-targeted expression uses an operator outside the codegen-supported operator set.
+
+**Fixture shape**: OperatorExpression with an unsupported operator, plus supported `+`, `-`, `*`, `/`, comparisons, `and`, `or`, and `not` controls.
+
+**Severity**: ERROR
+
+**Rationale**: agentic-mbse should flag operators codegen cannot compile before generation. The shared operator maps and precedence helpers provide the expression facts; a separate profile item should pin the supported set and user-facing diagnostic.
 
 ## P3 - Low Priority
 
@@ -304,3 +360,153 @@ in a foreign namespace (`calc.out * 0.95`), a self-reference (REQ-CA-07), or a d
 (FeatureChainExpression) still fires. Fixture `tests/fixtures/item12/formula_computed/` carries
 both directions; three pre-Item-5 tests in `test_sysml/test_adr002.py` that asserted the old
 blanket rule were updated to the relaxed contract.
+
+
+### [PUSH-DOWN-HIER-PROFILE-REDEF-PRECEDENCE] design-vs-type redefinition precedence WARN
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed - needs codegen precedence facts or shared precedence contract
+**Source**: PUSH-DOWN Item 3 hierarchy-profile close-out
+
+**Rule**: Warn when one consumer scope has both a design-level override and a type-level literal
+redefinition for the same target, and the design override wins under codegen precedence.
+
+**Fixture shape**: Part def `Driver` has `:>> efficiency = 0.3`; design usage has
+`:>> driver.efficiency = 0.35`. The warning should explain that the design-level value wins.
+
+**Severity**: WARNING
+
+**Rationale**: PUSH-DOWN Item 3 moved primitive redefinition facts, but precedence depends on
+design override scope and supplied-value/codegen policy that intentionally remain in sysml-codegen.
+This should land only after that precedence contract is available as shared facts or a profile API.
+
+---
+
+### [PUSH-DOWN-HIER-PROFILE-UNSUPPORTED-RHS] unsupported redefinition RHS WARN
+
+**Priority**: P2
+**Effort**: ~0.5 day
+**Status**: Filed - coordinate with existing expression-profile unsupported-shape rows
+**Source**: PUSH-DOWN Item 3 hierarchy-profile close-out
+
+**Rule**: Warn when a `ReferenceUsage` redefinition classifies as `EXPRESSION` and the expression
+uses a codegen-unsupported shape or operator.
+
+**Fixture shape**: Bare `:>> cost = unsupported_fn(a.b)` warns; literal, feature-chain, and
+supported arithmetic-expression redefinitions do not warn.
+
+**Severity**: WARNING
+
+**Rationale**: Shared hierarchy classification can expose expression RHS values early, but support
+for operators/functions belongs to the existing expression-profile checks. This row keeps the
+hierarchy trigger filed without duplicating or drifting expression support policy.
+
+---
+
+### [PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE] unresolved multiplicity shape WARN
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed - needs model-level multiplicity fixture and Level-6 integration
+**Source**: PUSH-DOWN Item 3 hierarchy-profile close-out
+
+**Rule**: Warn when a child `PartUsage` multiplicity has no resolvable `cached_lower_bound`, or when
+its upper-bound referent has no integer literal default.
+
+**Fixture shape**: `part cell[pack_count]` where `pack_count` has no literal integer default warns;
+`part cell[20]` or `part cell[pack_count]` with `pack_count = 20` does not warn.
+
+**Severity**: WARNING
+
+**Rationale**: Shared multiplicity facts are now available, but Level 6 needs a real model-level
+fixture and integration path. Filing avoids a mock-only validator that would not prove the user-facing
+profile behavior.
+
+---
+
+### [PUSH-DOWN-HIER-PROFILE-AMBIG-INHERITED-ATTR] ambiguous inherited attribute WARN
+
+**Priority**: P2
+**Effort**: ~1 day
+**Status**: Filed - needs usage-type indexing or shared type-selection facts
+**Source**: PUSH-DOWN Item 3 hierarchy-profile close-out
+
+**Rule**: Warn when a usage has multiple incomparable owned typings that can supply different
+inherited attribute defaults for the same target.
+
+**Fixture shape**: A part usage has two unrelated typed targets, and both targets redefine the same
+attribute literal. The profile should warn before codegen chooses sorted-first behavior.
+
+**Severity**: WARNING
+
+**Rationale**: Detection requires most-specific type comparison and inherited attribute selection.
+Those surfaces remain in sysml-codegen for PUSH-DOWN Item 3, so the profile rule is filed rather
+than implemented by importing codegen policy.
+
+---
+
+
+### [PUSH-DOWN-AGG-PROFILE-SUM-SHAPE] unsupported aggregation sum operand WARN
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed - needs aggregation-profile integration over shared aggregation facts
+**Source**: PUSH-DOWN Item 4 aggregation-profile close-out
+
+**Rule**: Warn when a codegen-targeted aggregation expression uses `sum(...)` on an operand that
+cannot decompose to a supported child feature chain or local reference, unless existing expression or
+hierarchy profile checks already cover the rejected operand shape.
+
+**Fixture shape**: `:>> total = sum(module.cost)` is clean; an unsupported operand shape warns only
+if not already covered elsewhere.
+
+**Severity**: WARNING
+
+**Rationale**: Aggregation-specific unsupported sum operand diagnostics need profile integration over
+shared aggregation facts. PUSH-DOWN Item 4 preserves generation behavior and avoids adding a shallow
+rule that could duplicate existing expression diagnostics.
+
+---
+
+### [PUSH-DOWN-AGG-PROFILE-WRAPPER-SHAPE] aggregation wrapper compatibility WARN
+
+**Priority**: P2
+**Effort**: ~0.5-1 day
+**Status**: Filed - profile-only warning must not change generation behavior
+**Source**: PUSH-DOWN Item 4 aggregation-profile close-out
+
+**Rule**: Preserve current generation behavior for wrapper unwrapping. Any profile-only warning for
+unsupported wrappers must be explicitly separated from the behavior-preserving aggregation move.
+
+**Fixture shape**: `sum(Evaluation(module.cost))`, `sum(collect(Evaluation(module.cost)))`,
+`Evaluation(allocation.total)`, and current permissive `sum(filter(module.cost))` behavior are
+controls. A future stricter wrapper warning is filed rather than implemented in PUSH-DOWN Item 4.
+
+**Severity**: WARNING
+
+**Rationale**: Current generation is permissive inside `sum(...)`; stricter wrapper warnings are
+future profile work, not part of this behavior-preserving move.
+
+---
+
+### [PUSH-DOWN-AGG-PROFILE-LITERAL-SHAPE] literal aggregation operand WARN
+
+**Priority**: P2
+**Effort**: ~0.5 day
+**Status**: Filed - aggregation-specific literal-term policy
+**Source**: PUSH-DOWN Item 4 aggregation-profile close-out
+
+**Rule**: Warn when a literal appears where codegen aggregation decomposition cannot use it as a
+term, while preserving supported literal rendering inside otherwise valid operator expressions.
+
+**Fixture shape**: `:>> total = sum(module.cost) + 5.0` keeps the literal in neutral operator facts;
+`sum(5.0)` is the filed aggregation-specific incompatible shape.
+
+**Severity**: WARNING
+
+**Rationale**: `sum(5.0)` is aggregation-specific and should not be mixed with general literal
+expression support. PUSH-DOWN Item 4 keeps the generation path behavior-preserving and files this
+profile warning for a dedicated validation pass.
+
+---

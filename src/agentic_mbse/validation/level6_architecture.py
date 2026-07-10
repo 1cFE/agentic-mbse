@@ -17,7 +17,10 @@ from typing import Any
 
 import yaml
 
-from agentic_mbse.sysml.expression import evaluate_true_static_expression
+from agentic_mbse.sysml.expression import (
+    evaluate_true_static_expression,
+    is_literal_node,
+)
 from agentic_mbse.sysml.syside_adapter import (
     EXCLUDED_CONSTRAINT_TYPES,
     SysideAdapter,
@@ -117,9 +120,7 @@ def _check_manifests(models_path: str, model: Any) -> tuple[list[str], int]:
         if manifest:
             missing = check_subsystem_composition(model, manifest)
             for subsystem in missing:
-                issues.append(
-                    f"Missing subsystem '{subsystem}' in {manifest_path.parent.name}"
-                )
+                issues.append(f"Missing subsystem '{subsystem}' in {manifest_path.parent.name}")
     return issues, len(manifests_found)
 
 
@@ -179,8 +180,7 @@ def check_qualified_names(model: Any) -> list[ValidationIssue]:
                 # A space inside a quoted segment is legal (C6b, sanitized by codegen).
                 qname_str = str(qname)
                 unquoted_space = any(
-                    " " in seg and not _segment_is_quoted(seg)
-                    for seg in qname_str.split("::")
+                    " " in seg and not _segment_is_quoted(seg) for seg in qname_str.split("::")
                 )
                 if unquoted_space or qname_str.startswith("::"):
                     issues.append(
@@ -405,7 +405,9 @@ def check_binding_formats(
                     continue
 
                 bindings_checked += 1
-                param_name = str(member.name) if hasattr(member, "name") and member.name else "<unnamed>"
+                param_name = (
+                    str(member.name) if hasattr(member, "name") and member.name else "<unnamed>"
+                )
 
                 if SysideAdapter.is_instance(expr, "FeatureChainExpression"):
                     source_path = _extract_chain_path(expr)
@@ -560,7 +562,9 @@ def check_anonymous_returns(model: Any) -> list[ValidationIssue]:
                 continue
             name = get_qualified_name(calc_def)
             for member in calc_def.owned_members:
-                direction = str(getattr(member, "direction", "")) if hasattr(member, "direction") else ""
+                direction = (
+                    str(getattr(member, "direction", "")) if hasattr(member, "direction") else ""
+                )
                 if "Out" not in direction and "Return" not in direction:
                     continue
                 declared = getattr(member, "declared_name", None)
@@ -623,9 +627,7 @@ def check_constraint_executability(model: Any) -> list[ValidationIssue]:
                     level=6,
                     severity=Severity.WARNING,
                     code=ValidationCode.L6_CONSTRAINT_NON_EXECUTABLE,
-                    message=(
-                        f"Constraint '{name}' is not executable and is dropped at extraction"
-                    ),
+                    message=(f"Constraint '{name}' is not executable and is dropped at extraction"),
                     element_name=name,
                     location=get_element_location(constraint),
                     suggestion=(
@@ -743,7 +745,9 @@ def check_body_assignment_impl_loss(model: Any) -> list[ValidationIssue]:
 
             name = get_qualified_name(calc_def)
             for member in members:
-                direction = str(getattr(member, "direction", "")) if hasattr(member, "direction") else ""
+                direction = (
+                    str(getattr(member, "direction", "")) if hasattr(member, "direction") else ""
+                )
                 if "Out" not in direction and "Return" not in direction:
                     continue
                 declared = getattr(member, "declared_name", None)
@@ -776,22 +780,9 @@ def check_body_assignment_impl_loss(model: Any) -> list[ValidationIssue]:
     return issues
 
 
-# C7 mirrors codegen's is_literal_expression (expression_utils.py): the five SysML
-# literal node types plus NullExpression. Every other value expression — Operator,
-# Invocation, FeatureChain/Reference — is a computed expression.
-_LITERAL_EXPR_TYPES = (
-    "LiteralInteger",
-    "LiteralRational",
-    "LiteralBoolean",
-    "LiteralString",
-    "LiteralInfinity",
-    "NullExpression",
-)
-
-
 def _is_literal_rhs(expr: Any) -> bool:
-    """True if a value expression is a literal (mirrors codegen is_literal_expression)."""
-    return any(SysideAdapter.is_instance(expr, t) for t in _LITERAL_EXPR_TYPES)
+    """True if a value expression is a literal node per shared SysML expression API."""
+    return is_literal_node(expr)
 
 
 def check_attr_redef_expression_dropped(model: Any) -> list[ValidationIssue]:
