@@ -44,6 +44,7 @@ SUPPORTED_OPERATORS = frozenset(
         "*",
         "/",
         "^",
+        "**",
         "<",
         ">",
         "<=",
@@ -131,7 +132,6 @@ class InvocationNode:
 
     function_name: str
     operands: list[AggregationNode]
-    wrapper_disposition: str | None = None
     unsupported: bool = False
     diagnostic_id: str | None = None
 

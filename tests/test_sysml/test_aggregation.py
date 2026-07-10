@@ -227,20 +227,15 @@ def _adapter_string_literals(module: object) -> set[str]:
     return names
 
 
-def test_combined_type_map_inventory_is_mapped(monkeypatch) -> None:
+def test_combined_type_map_inventory_is_mapped() -> None:
     used_names = _adapter_string_literals(aggregation) | _adapter_string_literals(expression)
-    fake_type_map = {name: type(name, (), {}) for name in used_names}
-    seen: list[str] = []
 
-    def fake_get_type_map(cls):
-        seen.append("called")
-        return fake_type_map
-
-    monkeypatch.setattr(SysideAdapter, "_get_type_map", classmethod(fake_get_type_map))
-    SysideAdapter._type_map = None
-
+    # Check every adapter string against the REAL type map — a new is_instance
+    # string added to aggregation.py/expression.py must be proven whitelisted,
+    # not asserted against a fake map built from the inventory itself.
+    real_type_map = SysideAdapter._get_type_map()
     for name in used_names:
-        SysideAdapter._require_known_type(name, SysideAdapter._get_type_map())
+        SysideAdapter._require_known_type(name, real_type_map)
 
     assert {"FeatureChainExpression", "OperatorExpression", "FeatureReferenceExpression"}.issubset(
         used_names
@@ -253,4 +248,3 @@ def test_combined_type_map_inventory_is_mapped(monkeypatch) -> None:
         "LiteralInfinity",
         "NullExpression",
     }.issubset(used_names)
-    assert seen

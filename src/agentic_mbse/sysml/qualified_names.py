@@ -3,6 +3,13 @@
 These helpers normalize SysML names and qualified names into Python-safe
 identifier forms. They are intentionally policy-free: codegen-specific module,
 channel, parameter, and alias naming stays in sysml-codegen.
+
+P1 exception (deliberate): ``build_element_qualified_name`` and its private
+owner-chain helper traverse the syside ownership model by duck-typing
+(``.owner``, ``.owning_related_element``, ``.name``) instead of going through
+``SysideAdapter.is_instance``. The functions predate the P1 pattern and
+remediation would require threading an adapter parameter through every caller.
+Accepted as-is at push-down (design R4).
 """
 
 import keyword

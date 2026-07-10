@@ -263,6 +263,11 @@ def is_literal_expression(expr: Any) -> bool:
     behavior per ADR-002. For the semantic equivalent with clearer naming,
     see `is_true_static_expression()`.
 
+    NOT the same as `is_literal_node()`: that is a structural check ("is this AST
+    node itself a Literal*/NullExpression node"), while this is a semantic check
+    ("does this expression reference any design attribute"). A computed expression
+    like `1 + 2` passes this check but fails `is_literal_node()`.
+
     Args:
         expr: Expression AST node to check (or None)
 
@@ -330,8 +335,9 @@ def get_reference_name(expr: Any) -> str | None:
     """Extract the name from a feature reference expression.
 
     Works with both FeatureReferenceExpression and FeatureChainExpression.
-    Consolidates logic from parameter_group_derivation._extract_reference_path()
-    and avoids duplication with the evaluator.
+    Returns the terminal name only (``"attr"``); for the full dotted path of a
+    chain (``"instance.attr"``), see extract_feature_chain_name() or
+    extract_feature_chain_segments().
 
     Args:
         expr: AST node (FeatureReferenceExpression or FeatureChainExpression)
@@ -549,10 +555,11 @@ def extract_feature_reference_name(expr_node: Any) -> str:
 
     if hasattr(expr_node, "memberships"):
         for membership in expr_node.memberships:
-            if type(membership).__name__ == "Membership" or hasattr(membership, "member_element"):
-                elem = getattr(membership, "member_element", None)
-                if elem and hasattr(elem, "name") and elem.name:
-                    return cast(str, elem.name)
+            if type(membership).__name__ == "Membership":
+                if hasattr(membership, "member_element"):
+                    elem = membership.member_element
+                    if elem and hasattr(elem, "name") and elem.name:
+                        return cast(str, elem.name)
 
     if hasattr(expr_node, "declared_name") and expr_node.declared_name:
         return cast(str, expr_node.declared_name)
@@ -577,22 +584,19 @@ def extract_feature_chain_name(expr_node: Any) -> str:
             operand_name = reconstruct_expression(operand_expr)
             if operand_name:
                 path_parts.append(operand_name)
-    elif hasattr(expr_node, "instance_name") and expr_node.instance_name:
-        path_parts.append(cast(str, expr_node.instance_name))
 
     if hasattr(expr_node, "target_feature") and expr_node.target_feature:
         target = expr_node.target_feature
         if hasattr(target, "name") and target.name:
             path_parts.append(cast(str, target.name))
-    elif hasattr(expr_node, "attr_name") and expr_node.attr_name:
-        path_parts.append(cast(str, expr_node.attr_name))
 
     if not path_parts and hasattr(expr_node, "memberships"):
         for membership in expr_node.memberships:
-            if type(membership).__name__ == "Membership" or hasattr(membership, "member_element"):
-                elem = getattr(membership, "member_element", None)
-                if elem and hasattr(elem, "name") and elem.name:
-                    path_parts.append(cast(str, elem.name))
+            if type(membership).__name__ == "Membership":
+                if hasattr(membership, "member_element"):
+                    elem = membership.member_element
+                    if elem and hasattr(elem, "name") and elem.name:
+                        path_parts.append(cast(str, elem.name))
 
     if path_parts:
         return ".".join(path_parts)
@@ -616,8 +620,6 @@ def extract_feature_chain_segments(expr_node: Any) -> list[str]:
             name = reconstruct_expression(root)
             if name:
                 segments.append(name)
-    elif getattr(expr_node, "instance_name", None):
-        segments.append(cast(str, expr_node.instance_name))
 
     target = getattr(expr_node, "target_feature", None)
     if target is not None:
@@ -626,14 +628,18 @@ def extract_feature_chain_segments(expr_node: Any) -> list[str]:
             segments.extend(cast(str, c.name) for c in chaining if getattr(c, "name", None))
         elif getattr(target, "name", None):
             segments.append(cast(str, target.name))
-    elif getattr(expr_node, "attr_name", None):
-        segments.append(cast(str, expr_node.attr_name))
 
     return segments
 
 
 def is_literal_node(expr: Any) -> bool:
-    """Check whether a SysML AST node is a literal or null expression node."""
+    """Check whether a SysML AST node is a literal or null expression node.
+
+    Structural check on the node type itself (the six Literal*/NullExpression
+    types). NOT the same as `is_literal_expression()`, which is a semantic
+    check for "no design attribute references" — a computed expression like
+    `1 + 2` passes that check but fails this one.
+    """
     return (
         SysideAdapter.is_instance(expr, "LiteralInteger")
         or SysideAdapter.is_instance(expr, "LiteralRational")

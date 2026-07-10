@@ -269,7 +269,7 @@ def test_extract_multiplicities_count_default_and_singleton_exclusion() -> None:
     ]
 
 
-def test_direct_type_map_inventory_is_mapped(monkeypatch) -> None:
+def test_direct_type_map_inventory_is_mapped() -> None:
     source = inspect.getsource(hierarchy)
     tree = ast.parse(source)
     direct_strings = {
@@ -292,12 +292,6 @@ def test_direct_type_map_inventory_is_mapped(monkeypatch) -> None:
         "PartUsage",
     }
 
-    monkeypatch.setattr(SysideAdapter, "_type_map", None)
-    monkeypatch.setattr(
-        SysideAdapter,
-        "_get_type_map",
-        classmethod(lambda cls: {name: type(name, (), {}) for name in direct_strings}),
-    )
-
-    type_map = SysideAdapter._get_type_map()
-    assert direct_strings <= set(type_map)
+    # Assert against the REAL adapter map, not a fake built from the inventory —
+    # a new is_instance string added to hierarchy.py must be proven whitelisted.
+    assert direct_strings <= set(SysideAdapter._get_type_map())
