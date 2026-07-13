@@ -37,18 +37,33 @@ schemas with production extraction.
       `inline`, `definition_typed`, `named_usage_reference`, `satisfy`,
       `requirement_constraint` (requirement-owned require/assume), and `plain_usage`
       (non-asserted usage as a reference target).
-- [ ] For every extracted usage fact, these facts match S1's golden values: membership kind,
-      polarity, ownership/scope, actuals (with formal targets), omitted defaulted formals, and
-      inheritance/retyping facts.
+- [ ] For every extracted usage fact, these facts **semantically match** S1's golden values:
+      membership kind, polarity, ownership/scope, actuals (with formal targets), omitted
+      defaulted formals, and inheritance/retyping facts. "Match" means value equality of the
+      facts, not byte-identity with S1's `golden.json` (see the serialization criterion).
+- [ ] Operand **leaf facts** extract and match the S1 type/unit evidence: each operand's type
+      category (Boolean / String / Integer / Real), enumeration identity where the operand is an
+      enum, and unit/dimension state resolved structurally — including the "dimension known,
+      exact unit unknown" state. The Item-3 equality-gate *decision* over these facts is **not**
+      asserted here.
+- [ ] Every feature reference keeps its source name, qualified target, and feature-chain
+      segments, and carries **no** channel/parameter/intermediate role tag.
+- [ ] No serialized fact contains a SysIDE Python type name or an `str(enum)` repr; library
+      enums (e.g. parameter direction) map to a neutral vocabulary at extraction.
 - [ ] `ConstraintDefinitionFact` carries the reusable predicate, its formals with defaults,
       and source identity; each usage fact carries **exactly one** `ConstraintSource` naming
       its form.
 - [ ] Neither fixture-coupled heuristic appears in production code: no namespace-prefix
       discrimination of inline vs definition-typed, and no `Unit`-suffix stripping for quantity
       dimension.
-- [ ] The facts serialize to a **versioned** JSON section that round-trips **byte-stably**.
-- [ ] Golden tests are re-anchored from S1's fixtures against the production extractor; S1's
-      test-only capture module is retired or clearly demoted to fixture tooling.
+- [ ] The facts serialize to a **versioned** JSON section whose **own** serialization
+      round-trips **byte-identically** (serialize → parse → serialize is stable). This is a
+      property of Item 1's production format — not a claim that S1's `golden.json` is reproduced
+      byte-for-byte.
+- [ ] Golden tests are re-anchored from S1's fixtures against the production extractor, covering
+      **fact fields only**; the `type_units.equality_cases[].decision` verdicts are Item 3's and
+      are excluded from Item 1's assertions. S1's test-only capture module is retired or clearly
+      demoted to fixture tooling.
 - [ ] agentic-mbse suite green; Ruff clean.
 
 ## Known Requirements
@@ -107,17 +122,61 @@ schemas with production extraction.
   feature typing — e.g. `m`/`cm`/`kg` → `SI::metre`/`SI::centimetre`/`SI::kilogram`, whose
   types distinguish length from mass). **`Unit`-suffix stripping is banned.** *(S1
   carry-forward (1); Epic Item 1 scope §2; `findings.md` §3.)*
+
+### Operand leaf facts (the leaf vocabulary downstream gates consume)
+
+This item **owns** the operand leaf facts as extracted, serialized facts. Item 3's equality/unit
+gate and Item 5's resolver read them; the *decisions* over them stay downstream. The concept
+assigns this leaf vocabulary to the neutral facts: equality is admitted only "when both operand
+types are recovered from the neutral facts and their compatibility is proven" (concept
+`.project/reference/constraint-execution-concept.md:91`), and references "keep source name,
+qualified target, and feature-chain segments; they do not pre-classify a value as channel,
+parameter, or intermediate — that is codegen's job" (concept `:87`).
+
+- **[INHERITED]** Every operand carries its **type category** (Boolean / String / Integer /
+  Real) and, where it is an enum, its **enumeration identity**, as recovered facts. These are
+  what let a downstream gate prove operand compatibility without guessing. *(Concept `:91`; S1
+  `type_units.equality_cases` evidence — `findings.md` §3.)*
+- **[INHERITED]** Every operand carries its **unit/dimension** fact, resolved structurally (per
+  the banned-heuristic requirement above). *(Concept `:91`; `findings.md` §3.)*
 - **[INHERITED]** Exact unit is a **conditional** fact, not a universally recoverable field. A
-  feature typed only as a dimension (e.g. `LengthValue`) proves the dimension, not one runtime
-  unit. The schema must represent "dimension known, exact unit unknown" as a first-class state,
-  not silently omit it. *(S1 `[AGENT]` verdict — `findings.md` §5; concept: silence is never an
-  outcome. Note: the *eligibility decision* that consumes this state is Item 3, not here.)*
+  feature typed only by a quantity kind (e.g. `LengthValue`) proves the dimension, not one
+  runtime unit. The schema must represent "dimension known, exact unit unknown" as a first-class
+  state, not silently omit it. *(Concept `:91` `[AGENT]` sharpening; S1 verdict — `findings.md`
+  §5; concept Design Principle 5: silence is never an outcome. The eligibility decision that
+  consumes this state is Item 3.)*
+- **[HARD]** A feature reference keeps its **source name**, **qualified target**, and
+  **feature-chain segments**, and is **never** pre-classified as channel, parameter, or
+  intermediate — that classification is codegen's job (Item 5). Item 5's strict resolver depends
+  on the reference arriving un-roled. The S1 golden already obeys this
+  (`FeatureReferenceExpression` carries `source_name` / `target` / `target_types`, no role tag).
+  *(Concept `:87`; concept Required Invariant — Semantics and Identity.)*
+
+### Wire-format neutrality
+
+- **[HARD]** No serialized fact value may be a library-specific string: no Python `str(enum)` /
+  `repr()` form, and no SysIDE-object identity rendered as text. Library-coupled values are
+  mapped to a stable neutral vocabulary **at extraction**. This is a general rule — the facts are
+  the contract three repos consume, and byte-stable serialization freezes whatever leaks in.
+  (SysML v2 **metaclass names** used as `kind` discriminants — e.g. `"AssertConstraintUsage"`,
+  `"ConstraintDefinition"` — are *not* leaks: they are spec-standardized and tool-independent, so
+  they are legitimate neutral values. The rule targets library formatting, like a Python enum's
+  `__str__`, not the SysML type identity itself.) *(Concept Design Principle 3: structure
+  survives, reconstructed text does not; Epic Item 1 intent — neutral vocabulary.)*
+- **[HARD]** Concretely: parameter **direction** serializes as a neutral token
+  (`in` / `out` / `inout`), mapped from `syside.FeatureDirectionKind` at extraction. The S1
+  capture module leaked `str(syside.FeatureDirectionKind.In)` → `"FeatureDirectionKind.In"` into
+  the golden `direction` field; production must not. *(Audit of S1 golden: `direction` is the one
+  such leak; no other `…Kind.X` repr appears.)*
 
 ### Serialization
 
 - **[NEED]** The facts serialize to a JSON section that carries an explicit **schema version**
-  and round-trips **byte-stably** (serialize → parse → serialize is identical). *(Epic Item 1
-  success criteria; concept: the facts are the downstream contract.)*
+  and whose **own** serialization round-trips byte-identically (serialize → parse → serialize is
+  stable). Byte-stability is a property of Item 1's production format — it is **not** a
+  requirement to reproduce S1's `golden.json` byte-for-byte. S1's golden is the **semantic
+  oracle** for the fact values; a new production golden is generated and byte-compared against
+  itself. *(Epic Item 1 success criteria; concept: the facts are the downstream contract.)*
 - **[HARD]** These schemas are shared types read by a downstream package (sysml-codegen
   snapshot v3). They belong with the existing shared-type surface
   (`src/agentic_mbse/sysml/data_models.py` / `types.py`, both already documented as
@@ -130,6 +189,13 @@ schemas with production extraction.
   (`tests/fixtures/constraint_fact_shapes/source_forms.sysml`, `type_units.sysml`,
   `golden.json`) and run against the **production** extractor, at
   `tests/test_sysml/test_constraint_fact_shapes.py`. *(Epic Item 1 scope §3.)*
+- **[NEED]** The re-anchor asserts **fact fields only**. The S1 golden's
+  `type_units.equality_cases[].decision` fields (e.g. `block_real_equality_requires_tolerance`,
+  `support_enum_same_enumeration`) are Item 3's equality-gate verdicts, not Item 1 facts — they
+  are excluded from Item 1's golden assertions and from its byte-stable claim. Item 1 asserts the
+  operand *facts* those decisions were derived from (type category, enumeration identity,
+  unit/dimension state), never the verdicts. *(Splits this item's Non-Goal from its tests;
+  concept: eligibility is Item 3, `:91`.)*
 - **[NEED]** S1's test-only capture module (`tests/constraint_fact_learning.py`) is retired, or
   clearly demoted to fixture-generation tooling with no production role. *(Epic Item 1 scope
   §3; S1 explicitly marked it non-production — `findings.md` §4.)*
@@ -137,11 +203,15 @@ schemas with production extraction.
 ## Non-Goals
 
 - **Eligibility / executable-profile decisions.** Which facts a runtime may execute — the
-  equality/unit gate, what blocks — is Item 3. This item captures the *facts*, including
-  "dimension known, exact unit unknown"; it does not decide what to do with them.
+  equality/unit gate, what blocks — is Item 3. This item captures the operand *facts* (type
+  category, enumeration identity, unit/dimension state, "dimension known, exact unit unknown");
+  it does not decide what to do with them. The equality-gate *verdicts* in S1's golden
+  `decision` fields are Item 3's, not Item 1's.
 - **Expression tree internals / `ExpressionIR`.** Item 2 owns the canonical expression
-  representation. This item owns the fact vocabulary that Item 2 adopts (see Open Questions for
-  the boundary). It does not define the full expression IR.
+  representation and its tree structure. This item owns the operand **leaf** facts Item 2's
+  leaves adopt (type category, enumeration identity, unit/dimension, source-name/qualified-target,
+  un-pre-classified references) — now enumerated in Known Requirements, not a deferred phrase. It
+  does not define the full expression IR.
 - **Any sysml-codegen consumption.** Downstream lowering and snapshot v3 wiring are out of
   scope; this item ships the producer side only.
 - **Re-deciding S1's semantic verdicts.** The equality/unit gate table and the exact-unit
@@ -149,15 +219,24 @@ schemas with production extraction.
 
 ## Open Questions / Deferred to design
 
-- **Predicate representation — the Item 1 / Item 2 boundary.** Both the definition fact and the
-  inline/requirement usage facts carry a `predicate`, and actuals/defaults carry expression
-  values. S1's golden captures full predicate trees (operators, operands, feature-reference and
-  literal leaves with resolved targets and types). But Item 2 owns `ExpressionIR`. Design must
-  settle **how much of the predicate representation this item freezes** versus defers: the
-  guidance is that this item owns the leaf fact vocabulary (feature-ref and literal field
-  shapes) that Item 2's `ExpressionIR` adopts, while Item 2 owns the tree structure. This is a
-  real cross-item coordination point — surface it to Item 2's design, do not resolve it
-  silently in either repo.
+- **Predicate tree structure — the Item 1 / Item 2 seam.** The operand **leaf** facts this item
+  freezes are now Known Requirements (type category, enumeration identity, unit/dimension,
+  source-name/qualified-target, un-pre-classified references). What remains open is the *tree
+  structure* that holds them: the definition fact and inline/requirement usage facts carry a
+  `predicate`, and S1's golden captures full trees (operators, ordered operands). Item 2 owns
+  `ExpressionIR` (its node algebra — literal, feature reference, operator, invocation, unit
+  annotation, explicit-unsupported — is fixed in the concept, `:87`). Design must settle where
+  Item 1's fact schema holds the predicate versus references Item 2's tree. A real cross-item
+  coordination point — surface it to Item 2's design; do not resolve it silently in either repo.
+- **Owner/scope grade for Item 5's `owning_part_def_qn` need.** This item carries `owner`
+  (kind/name/qualified_name) and `scope`, plus `inherited_into` for inherited assertions. But
+  `owner` is sometimes a `PartUsage` or `CalculationDefinition`, not a part-definition QN (S1
+  golden: `direct_owned` → a `PartUsage`; `calc_owned` → a `CalculationDefinition`). Item 4/5 key
+  multiplicity expansion by owning-definition + feature and expect an `owning_part_def_qn` grade
+  (S3 carry-forward). Design must confirm whether `owner.qualified_name` + `inherited_into`
+  suffice for Item 5 to derive the owning-part-definition identity in the inherited and
+  direct-usage cases, or whether the schema needs an explicit resolved owning-part-def field.
+  Stated as a coordination point, not resolved here.
 - **Schema carrier: dataclass vs pydantic.** The existing shared surface mixes both
   (`data_models.py` uses `@dataclass`; `types.py` uses pydantic `BaseModel`). Which to use, and
   the byte-stable serialization mechanism (key ordering, float formatting, `None`/omitted-field
@@ -176,14 +255,13 @@ schemas with production extraction.
 
 - **Epic:** CONSTRAINT-EXEC, Item 1 — transmitted via the orchestrator brief at
   `.project/active/constraint-facts/briefs/spec.md`.
-- **Concept (binding, but see note):** `~/1cfe/sysml-codegen/.project/concepts/constraint-execution-and-design-space-studies-claude.md`
-  — "Neutral Constraint Facts — agentic-mbse" section, Appendix B (S1), and Next-Stage
-  Handoff S1 `[AGENT]` blocks. **Note:** this file sits outside the session's allowed working
-  directory and was not directly readable during spec authoring (harness path guard). Its
-  binding content for this item was taken from two sources that transmit it: the S1 findings
-  (which record the Appendix B S1 result and carry-forwards) and the orchestrator brief (which
-  transmits the settled Design Principles and the epic item text). Design should re-read the
-  concept directly if access allows, and surface any contradiction loudly.
+- **Concept (binding):** `.project/reference/constraint-execution-concept.md` — "Neutral
+  Constraint Facts — agentic-mbse" (`:85`–`:91`), Required Invariants (`:136`–`:154`), and
+  Appendix B / Next-Stage Handoff S1 `[AGENT]` blocks. Now readable in-repo and read directly for
+  this revision; no contradiction with the spec's requirements was found. (During original
+  authoring the concept was outside the allowed working directory and its content was transmitted
+  via the S1 findings + brief; the one leaf-vocabulary rule that indirect transmission dropped —
+  references are never pre-classified — is now carried forward as a requirement from `:87`.)
 - **S1 spike (verified agent-grade evidence):**
   `.project/active/spike-constraint-fact-shapes/findings.md` — §2 (fact shapes / access
   quirks), §3 (type/unit evidence), §5 (equality gate and exact-unit restriction).
