@@ -395,10 +395,28 @@ def _unit_annotation_node(expression: Any, ctx: _ExtractionContext) -> UnitAnnot
     value = _expression_ir(operands[0], ctx)
     if value is None:
         raise ValueError("unit annotation expression has no value operand")
-    unit_text = reconstruct_expression(operands[1]) if len(operands) > 1 else None
+    unit_text = _unit_text(operands[1]) if len(operands) > 1 else None
     return UnitAnnotationNode(
         value=value, unit_text=unit_text, operand_type=_operand_type_fact(expression)
     )
+
+
+def _unit_text(unit_operand: Any) -> str | None:
+    """The unit's source spelling (`"m"`), not its canonical name (`"metre"`).
+
+    `short_name` is the unit definition's structural symbol slot — the spelling a `[m]`
+    annotation actually resolves through — distinct from `name`, its canonical identifier.
+    Reading it here (rather than re-deriving text via `reconstruct_expression`, which reads
+    `referent.name`) is what keeps the source spelling and the resolved name distinct facts.
+    """
+    referent = getattr(unit_operand, "referent", None)
+    if referent is None:
+        return reconstruct_expression(unit_operand) or None
+    short_name = getattr(referent, "short_name", None)
+    if short_name:
+        return str(short_name)
+    name = getattr(referent, "name", None)
+    return str(name) if name else None
 
 
 def _operator_node(expression: Any, operator_str: str, ctx: _ExtractionContext) -> OperatorNode:
