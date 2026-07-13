@@ -34,7 +34,7 @@ commit-message undercount in `48a61ee`).
 **Branch:** `constraint-exec-epic`
 **Active:** `.project/active/executable-profile/`
 
-Spec in progress. Publish the per-construct eligibility decision procedure over Item 1/2's
+Spec reviewed (Approved-with-must-fixes) and revised. Publish the per-construct eligibility decision procedure over Item 1/2's
 `ConstraintFacts`: admit matrix v1 (comparisons, and/or/not, arithmetic, negation, owner-scope
 refs/actuals/defaults), the S1 equality gate, the unit policy (incl. new inequality-unit golden
 cases), and the block list with named diagnostics. Replaces the L4 0% placeholder and the L6
