@@ -53,9 +53,12 @@ serialize/parse surface. The bump is `predicate-tree/v0 → expression-ir/v1`; t
   (`compound_boolean`) and unit annotations (`1 [m]`, `1 [kg]`, `100 [cm]`, `1 [m] + 1 [m]`). What is
   **absent everywhere**: `^`/`**` spelling distinctness, unary minus, and any structurally unsupported
   expression. Those three gaps drive one new fixture (see D6).
-- **Migration surface is one site larger than the spec's list.** `grep` for the retiring symbols found
-  `tests/test_sysml/test_constraint_extraction.py` imports the internal `_expression_fact` and asserts on
-  node attributes — a site the spec's Migration-surface section did not name. Surfaced in D7 below.
+- **Migration surface is two sites larger than the spec's list.** `grep` for the retiring symbols found
+  (a) `tests/test_sysml/test_constraint_extraction.py` imports the internal `_expression_fact` and asserts on
+  node attributes, and (b) `tests/test_sysml/test_constraint_fact_shapes.py:121,123` compare a tree node's
+  `.kind` against SysML **metaclass names** — which the repurposed discriminant no longer produces (B2).
+  Neither was named in the spec's Migration-surface section. Both are in the worklist (Integration Strategy
+  steps 6, 8).
 
 ## Core Concept
 
@@ -89,11 +92,18 @@ nulls) is reused, defined once, for both the bare tree and the embedded predicat
   the feature reference `source_name`/`chain_segments`, the unit annotation's `unit_text`, and the
   invocation `function_qn`/`arguments`. *If false → Item 13's byte-identity gate cannot be met and the
   calc cutover has no faithful source, defeating the one-tree decision S2 made.*
-- **B2.** Keeping the read-side attribute names stable across the transition (`operator`, `operands`,
-  `operand_type`, `kind`, `reference`, `literal`) means most existing tree-walking assertions survive
-  unchanged; only construction sites and the version string must migrate. *If false → the migration
-  surface is far larger than the four-plus-one sites enumerated, and every consumer that walks the tree
-  breaks.*
+- **B2.** The attribute names `operator`, `operands`, and `operand_type` keep both their spelling **and
+  their meaning** across the transition, so tree-walking assertions that read them survive unchanged (the
+  compound-Boolean `.operator`/`.operands` walk; the operand-type oracle checks). **`kind` is the
+  exception, and it is the root-cause trap:** its *value* is repurposed from the SysML metaclass name
+  (`"LiteralRational"`, `"FeatureChainExpression"`) to the algebra discriminant (`"literal"`,
+  `"feature_ref"`, …). So the rule is: **every `.kind` reader on a tree node must migrate** — the metaclass
+  detail it used to read now lives on `LiteralFact.kind` and on `chain_segments`. The complete list of such
+  readers (grep-verified) is two assertions at `test_constraint_fact_shapes.py:121,123`; both are in the
+  migration worklist (Integration Strategy step 8). *If false → a `.kind` value-comparison silently passes
+  or fails against the wrong string — a semantic break a rename-only audit misses — and the migration
+  surface is undercounted.* `reference`/`literal` are node-type-specific slots, not a preserved-across-all
+  claim; do not assume an arbitrary node has them.
 - **B3.** A distinct `kind` discriminant on each node is sufficient for a total parse: `parse` switches on
   `kind` and reconstructs exactly one node type, recursing on child slots. *If false → parse cannot
   round-trip a serialized tree without out-of-band type information, and the byte-stable round-trip
@@ -167,7 +177,9 @@ constraint_extraction.py   the only syside-touching module; builds ExpressionIR 
 
 **Data flow (extraction).** `constraint_extraction._expression_ir(node, ctx)` (renamed from
 `_expression_fact`) dispatches a live syside expression node in the fixed order (D4), builds one node
-dataclass, and recurses on child expressions. `operand_type` is attached to value-producing nodes exactly
+dataclass, and recurses on child expressions. Its starting point is the landed `_expression_fact`
+(`constraint_extraction.py:355-383`), which reads the operator with bare `str(operator)`; Item 2 adds the
+enum→symbol normalization + unrecognized-signal (see Implementation Notes) that the landed code lacks. `operand_type` is attached to value-producing nodes exactly
 as Item 1 does today (`_operand_type_fact`) — arithmetic/leaf nodes carry it; comparison/connective operator
 nodes carry `operand_type=None` (a proposition, not a value).
 
@@ -283,8 +295,11 @@ two source spellings into one (Item 13 recovers `^` only if the tree still holds
 - **Unsupported fixture candidate** — a `ConditionalExpression` (`if c ? a : b`) is a clean off-allowlist
   metaclass; fall back to a `select`/`collect` expression if SysIDE 0.8.4 parses it differently. Plan/impl
   confirms the parse and the emitted metaclass name.
-- **Normalization must signal "unrecognized"** (D4) — refactor `_operator_text` so an unmapped enum returns
-  a sentinel that routes to `UnsupportedNode`, not the raw enum name.
+- **Normalization is new work, not a refactor of landed code** (D4). The landed extractor takes the operator
+  with bare `str(operator)` (`constraint_extraction.py:240,366`) and has **no** enum→symbol normalization —
+  `_operator_text` is S2-probe-only code (`s2_ir.py:92`). Item 2 introduces the normalization, modeled on the
+  probe's `_operator_text` + `_OPERATOR_ENUM_MAP`, but must **signal "unrecognized"** where the probe passed
+  the raw enum name through: an unmapped/absent operator returns a sentinel that routes to `UnsupportedNode`.
 - **`_canonical_json` relocation** — moving it to `expression_ir.py` keeps ONE definition; verify
   `constraint_facts.serialize` still imports and uses it (byte output must not change except for the tree
   shape + version string).
@@ -293,8 +308,17 @@ two source spellings into one (Item 13 recovers `^` only if the tree still holds
 
 - **The golden diff hides an unintended change.** The regenerated `production_facts.json` will differ in
   every predicate node (new shape) + version string. *Mitigation:* review the diff node-by-node against the
-  expected shape; the self-compare test (`test_production_golden_self_compares`) then pins it. Confirm no
-  non-predicate field moved.
+  **expected-change checklist**, then let the self-compare test (`test_production_golden_self_compares`) pin
+  it. Expected changes only:
+  - every node loses the nullable slots it no longer has (a literal node drops `operator`/`operands`/`reference`);
+  - the version string flips `predicate-tree/v0 → expression-ir/v1`;
+  - **each unit annotation loses its `operands[1]` unit-reference subtree** — today `1 [m]` is an operator
+    node with `operator="["` and `operands=[value, unit_ref]`; the new `UnitAnnotationNode` keeps only `value`,
+    collapsing the unit reference into `unit_text` + the resolved `UnitFact` (via `operand_type`). The dropped
+    `operands[1]` feature-ref node is the largest structural deletion in the diff; confirm it is the *only*
+    subtree that disappears.
+  Anything else in the diff (a moved non-predicate field, a changed operand order) is a regression, not an
+  expected change.
 - **`operand_type` placement regressions Item 3's reads.** Item 1 attached `operand_type` to value nodes
   for Item 3's gate; a distinct-node rewrite could drop it on some node type. *Mitigation:* the migrated
   `test_constraint_extraction.py` operand-type assertions (`:58-69`) and `test_operand_facts_match_s1_type_unit_oracle`
@@ -308,7 +332,8 @@ two source spellings into one (Item 13 recovers `^` only if the tree still holds
 
 - Add `expression_ir.py`; edit the four landed src modules + `__init__.py` in one change (the type of the
   predicate slots changes, so a partial migration leaves the suite red).
-- The migration is the spec's enumerated surface **plus `test_constraint_extraction.py`** (surfaced D7):
+- The migration is the spec's enumerated surface **plus two design-surfaced sites** —
+  `test_constraint_extraction.py` and the `.kind` readers in `test_constraint_fact_shapes.py` (steps 6, 8):
   1. `expression_facts.py:25` — delete constant + `ExpressionFact`.
   2. `constraint_extraction.py` — rename/rebuild `_expression_ir`; import nodes + version from `expression_ir`.
   3. `constraint_facts.py` — retype predicate slots; delegate tree parse to `expression_ir`.
@@ -316,7 +341,12 @@ two source spellings into one (Item 13 recovers `^` only if the tree still holds
   5. `test_constraint_facts_serialize.py` — migrate `_literal_expression`/`_reference_expression`/
      `_hand_built_facts` to new nodes; re-pin `test_schema_versions_are_pinned` to `"expression-ir/v1"`.
   6. `test_constraint_extraction.py` — migrate the `_expression_fact` import + `MockLiteralRational` test.
-  7. `production_facts.json` — regenerate; review the diff.
+  7. `production_facts.json` — regenerate; review the diff (checklist below).
+  8. `test_constraint_fact_shapes.py:121,123` — two `.value.kind` assertions compare against **metaclass
+     names**, which the repurposed discriminant no longer produces (B2). Migrate per the review: distinguish
+     the feature chain by `actuals["observed"].value.chain_segments` being non-empty (a `FeatureReferenceNode`);
+     distinguish the rational by `actuals["limit"].value.literal.kind == "LiteralRational"` (the metaclass
+     detail now lives on `LiteralFact.kind`, reached through the `LiteralNode.literal` slot).
 
 ## Validation Approach
 
@@ -338,7 +368,8 @@ two source spellings into one (Item 13 recovers `^` only if the tree still holds
 - **Fixed:** new `expression_ir.py` with the six-node distinct-dataclass union (D1/D2); unit annotation +
   invocation as distinct kinds (D3); the allowlist contents and the inversion-to-unsupported (D4); one
   shared serialize/parse path exposed bare + embedded (D5); one new fixture for the three uncovered cases
-  (D6); the full seven-site migration including the surfaced `test_constraint_extraction.py`.
+  (D6); the full eight-site migration including the two design-surfaced sites (`test_constraint_extraction.py`
+  and the `.kind` readers in `test_constraint_fact_shapes.py`).
 - **Open (plan decides):** the `kind` discriminant mechanism (default field vs serializer injection); the
   exact unsupported construct (`ConditionalExpression` vs `select`/`collect`), pending a parse check; the
   per-node-vs-root version placement (D7 — retained per-node, but tunable if the golden review argues
