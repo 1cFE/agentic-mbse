@@ -61,11 +61,17 @@ that decides, stops):
 1. **Form gate** — dispatch on `ConstraintSource.form`. `satisfy`, `requirement_constraint`
    (require/assume), `plain_usage` → **unassessed**; `named_usage_reference` → **block**; only
    `inline` and `definition_typed` asserts continue. An unknown form → block (default-deny).
-2. **Node-kind walk** — walk the effective predicate body (the usage's own `predicate` for inline,
-   the `ConstraintDefinitionFact.predicate` for definition-typed). Each node is classified by role:
-   a **proposition** (comparison/connective) or a **value** (leaf/arithmetic/unit-annotation).
-   Feature chains, invocations, `xor`, `implies`, `UnsupportedNode`, unadmitted operators, and
-   unadmitted node roles each emit a construct-named block diagnostic.
+2. **Resolve then node-kind walk** — first *resolve* the effective predicate (the usage's own
+   `predicate` for inline; for definition-typed, look up `source.constraint_definition.qualified_name`
+   in the `{qn: ConstraintDefinitionFact}` index and take that definition's `predicate`). Resolution
+   is where the two absence cases route under default-deny **before** any walk: a definition-lookup
+   miss → **block** `block_unresolved_definition`; a resolved-but-`None` predicate (bodyless
+   `constraint def Foo;`, or a degenerate inline assert — both fields are `ExpressionIR | None`) →
+   **block** `block_missing_predicate`. Only a non-`None` predicate is walked. Each node is then
+   classified by role: a **proposition** (comparison/connective) or a **value**
+   (leaf/arithmetic/unit-annotation). Feature chains, invocations, `xor`, `implies`,
+   `UnsupportedNode`, unadmitted operators (including `!=`), and unadmitted node roles each emit a
+   construct-named block diagnostic.
 3. **Operand-fact gate** — at every comparison node, apply the equality gate (`==`) or the unit
    policy (`< <= > >=`) to the two operands' recovered `OperandTypeFact`; at every arithmetic node,
    apply the unit policy. Each produces one of the 11 golden decision codes.
@@ -86,10 +92,13 @@ preflight).
   The golden's 14 rows resolve purely from `(category, enumeration, unit)` with no evaluator call.
   *If false → some decision needs a fact the neutral schema doesn't carry, and either the schema
   grows (Item 1 rework) or that case becomes an explicit profile restriction.*
-- **B2. The compiler can be made to lower the exact IR the gate walked.** The seam holds only if
-  sysml-codegen consumes the profile's resolved effective predicate rather than re-resolving
-  inline-vs-definition-typed itself. *If false → a predicate passes a gate reading one IR and reaches
-  a compiler reading another, reopening the S2 drift hole.*
+- **B2. One `ConstraintFacts` value can be made to feed both preflight and compilation.** The seam
+  holds only if sysml-codegen builds facts once (live-extracted or parsed **once**) and consumes the
+  profile's resolved effective predicate rather than re-resolving or re-parsing. The guarantee has
+  two arms by construction path (D7): in-process it is object identity, resting on the single-parse
+  precondition; across a serialization boundary (Item 8's license-free snapshot path) it is
+  serialization-equality, which object identity cannot provide. *If false → a predicate passes a gate
+  reading one IR and reaches a compiler reading another, reopening the S2 drift hole.*
 - **B3. Live SysIDE never emits a true n-ary `and`/`or`/arithmetic node** (it nests binaries; S2
   carry-forward 4). The gate treats `OperatorNode` uniformly by operator and operand count, so this
   is latent, not special-cased. *If false → an n-ary node's operands are still each classified, so
@@ -124,20 +133,37 @@ preflight).
   (`block_non_predicate_root`).** The spec explicitly parks this to design; first scope stays minimal.
   *Rejected:* admit bare booleans (widens scope with no golden evidence; a future item can add it to
   the admit set explicitly).
-- **D7. The same-IR seam is carried by the decision object.** `UsageDecision.effective_predicate`
-  holds the exact `ExpressionIR` instance the gate walked; the preflight contract requires the
-  compiler to lower *that*, never a freshly resolved one. *Rejected:* rely on call-ordering
-  convention (the spec forbids "precedes" as mere convention); assert `is`-identity only in a
-  sysml-codegen test (necessary but not sufficient — the API must make drift impossible, not just
-  detectable).
+- **D7. The same-IR seam is carried by the decision object, with two arms matching the spec's "same
+  instance *or* same serialized facts."** `UsageDecision.effective_predicate` holds the
+  `ExpressionIR` the gate walked; the preflight contract requires the compiler to lower *that*,
+  never a freshly resolved one.
+  - *Live single-process arm — object identity.* Precondition: preflight and the compiler run in one
+    process over one `ConstraintFacts` value parsed/extracted **once**. Under that precondition
+    `admitted[].effective_predicate` is the identical object the compiler lowers. The assertion lives
+    on the codegen side, as a `gated_ir is compiled_ir` check at the pre-compile seam.
+  - *Snapshot license-free arm — serialization-equality.* Across a parse boundary (Item 8's
+    `constraint_facts.parse()`), object identity is false by construction (two parses = two graphs),
+    so the check is `serialize_expression(compiled_ir) == serialize_expression(gated_ir)` — the
+    compiler asserts the serialized predicate it is about to lower equals the one the gate walked.
+    `serialize_expression` already exists (`expression_ir.py:133`); this arm is the verifiable form
+    for the snapshot path.
+
+  *Rejected:* object identity as the sole guarantee (vacuous across a serialization boundary — the
+  exact hole the spec's "or same serialized facts" clause closes); rely on call-ordering convention
+  (the spec forbids "precedes" as mere convention); assert only in a sysml-codegen test (necessary
+  but not sufficient — the API must make drift impossible, not just detectable).
 - **D8. Introduce `PROFILE_SEMANTIC_VERSION = "executable-profile/v1"` alongside the existing
   package-version pin.** A behavior change (e.g. relaxing the dimension-only block) bumps it, so the
   consumer can assert it and see the change; the fact-schema version wouldn't move. *Rejected:*
   package version alone (a patch release could change decisions invisibly).
-- **D9. The two new inequality-unit fixtures reuse the certified operand facts** (metre/centimetre,
-  integer/real) under a new `type_units.inequality_cases` block, each `{name, operator, left, right,
-  decision}`. *Rejected:* add `<=` probes to `type_units.sysml` and re-extract (heavier, and edits
-  the S1-certified fixture; only the *decision* is new — the operand facts are already proven).
+- **D9. The two new inequality-unit fixtures reuse the certified operand facts** (metre/centimetre
+  from `quantity_convertible_unit`, integer/real from `integer_real`) under a new
+  `type_units.inequality_cases` block, each `{name, operator, left, right, decision}`. The `left`/
+  `right` operand objects are a **byte-copy** of the certified `equality_cases` operands — not a hand
+  re-authoring — since the operator does not change the operand facts and only the `decision` (the
+  hand-authored answer key Item 1 excluded from production facts) is new. *Rejected:* add `<=` probes
+  to `type_units.sysml` and re-extract (heavier, and edits the S1-certified fixture); re-authoring the
+  operand facts by hand (could drift from what live extraction produces).
 
 ## Architecture
 
@@ -155,8 +181,10 @@ preflight).
 
 **Effective-predicate resolution lives in the profile.** For `definition_typed`, the profile looks
 up `source.constraint_definition.qualified_name` in a `{qn: ConstraintDefinitionFact}` index and
-walks that definition's predicate; for `inline` it walks the usage's own. The resolved predicate is
-stored on the decision (D7) so no consumer re-resolves.
+walks that definition's predicate; for `inline` it walks the usage's own. Resolution is where the two
+absence cases route under default-deny before the walk: an index miss → block
+`block_unresolved_definition`; a resolved-`None` predicate → block `block_missing_predicate` (MF2).
+The resolved predicate is stored on the decision (D7) so no consumer re-resolves.
 
 **The walk** is a recursive classify over `ExpressionIR`, threading the constraint identity +
 location for diagnostics. Propositions recurse into propositions/comparisons; comparisons and
@@ -167,7 +195,12 @@ chain and an `xor` yields two) — the *outcome* is singular (`BLOCK`), the *dia
 
 - **I1. Total.** Every `ConstraintUsageFact` receives exactly one `eligibility` ∈ {admit, block,
   unassessed}. No fall-through: any construct/operand-category/form/node-role not on an admit list
-  blocks with a named reason.
+  blocks with a named reason — including the two *absence* inputs that are not "a node with an
+  unadmitted role": a resolved-`None` effective predicate (`block_missing_predicate`) and a
+  definition-lookup miss (`block_unresolved_definition`), both routed at resolution before the walk.
+  The profile decides over `facts.usages` only and reads `facts.definitions` **solely** as the
+  predicate lookup index, so an unused `ConstraintDefinition` never becomes a `UsageDecision` — the
+  concept's inventory rule holds by construction.
 - **I2. Silent-on-clean, loud-on-gap.** A usage whose effective predicate uses only admitted
   constructs and passes every gate emits **zero** diagnostics; each blocked construct emits exactly
   one diagnostic naming construct + location + identity + reason.
@@ -175,8 +208,11 @@ chain and an `xor` yields two) — the *outcome* is singular (`BLOCK`), the *dia
   `block_*` reasons are distinct values, never collapsed to a bare "blocked."
 - **I4. License-free.** `import agentic_mbse.sysml.executable_profile` pulls in no syside (structural
   test, D2/B1). The profile reads facts only — never the live model, never the evaluator.
-- **I5. Same-IR.** The `ExpressionIR` on `UsageDecision.effective_predicate` is the identical object
-  reachable from `facts` (not a copy), so gate and compiler share one instance.
+- **I5. Same-IR (two arms).** The `ExpressionIR` on `UsageDecision.effective_predicate` is the exact
+  object reachable from `facts` (not a copy). Under the single-parse precondition (D7) gate and
+  compiler share that instance, verified by `gated_ir is compiled_ir` at the codegen seam; across a
+  parse boundary the seam is verified by `serialize_expression` equality, since identity cannot hold.
+  A second parse or a re-serialize between preflight and compile violates I5 either way.
 
 ## Component Overview
 
@@ -191,11 +227,22 @@ chain and an `xor` yields two) — the *outcome* is singular (`BLOCK`), the *dia
   - `preflight(facts) -> PreflightResult` — codegen gate (`ok`, `blocking`, `admitted`, `unassessed`).
   - Matrix helpers (the test seam): `classify_equality(left, right) -> str`,
     `unit_compatibility(left, right) -> str` — return golden decision codes.
-  - `REASON_CODES` (the 11 golden codes + construct/default-deny codes), `PROFILE_SEMANTIC_VERSION`.
-- **`validation/level4_constraints.py`** — `check_constraint_coverage` deleted; `analyze_constraints`
-  extracts facts, runs `evaluate_profile`, reports coverage metrics.
+  - `REASON_CODES` — the 11 golden codes, the construct blocks (`block_assert_by_reference`,
+    `block_feature_chain`, `block_invocation`, `block_xor`, `block_implies`, `block_unsupported_node`),
+    and the default-deny codes (`block_unsupported_operator`, `block_unsupported_operand_category`,
+    `block_non_predicate_root`, `block_missing_predicate`, `block_unresolved_definition`) — plus
+    `PROFILE_SEMANTIC_VERSION`.
+- **`validation/level4_constraints.py`** — delete the whole `check_constraint_coverage` function and
+  its caller surface: the `unconstrained, coverage_metrics = ...` call and the `unconstrained` →
+  warnings loop (`level4_constraints.py:131–138`). The existing constraint *counts*
+  (`Total constraints`, `ConstraintUsage`, `ConstraintDefinition`, `level4_constraints.py:141–146`)
+  **survive** — L4 tests assert them; the profile adds eligibility coverage (admit/block/unassessed)
+  alongside them, not in place of them.
 - **`validation/level6_architecture.py`** — `check_constraint_executability` body replaced by
-  profile-driven per-construct WARNINGs.
+  profile-driven per-construct WARNINGs. Preserve the function's loud-on-failure discipline
+  (`level6_architecture.py:608–620` deliberately removed an `except: constraints = []` swallow): the
+  replacement calls `extract_constraint_facts(model)` and must let an extraction failure surface, not
+  collapse it to "no diagnostics."
 - **`sysml/types.py`** — new `ValidationCode` entries for the eligibility diagnostics (WARNING).
 - **`tests/`** — profile unit tests (golden-driven equality + inequality matrix), import-hygiene
   test, updated L4/L6 tests, updated golden fixture (`inequality_cases`).
@@ -263,15 +310,20 @@ class UsageDecision:
 - **Cross-repo seam unverifiable from here.** sysml-codegen is a separate repo. Mitigation: specify
   the `preflight` contract precisely; the wiring commit there is mechanical (locate the pre-compile
   seam, insert the call, branch on `.ok`, lower `admitted[].effective_predicate`).
+- **Duplicate extraction.** L4 and L6 each call `extract_constraint_facts(model)`, so one validation
+  run extracts twice. Not a correctness issue (extraction is deterministic). Plan note: accept the
+  small cost, or add a per-run fact cache if profiling warrants.
 
 ## Integration Strategy
 
 - **Replaces:** the L4 0% attribute-coverage placeholder and the L6 blanket "dropped at extraction"
   warning. **Adds:** the codegen preflight seam.
-- **sysml-codegen wiring (this item owns, separate small commit there):** after building
-  `ConstraintFacts`, call `preflight(facts)`; if `not ok`, halt and emit `blocking[]` diagnostics;
-  else feed `admitted[].effective_predicate` to the existing compiler. Pin the agentic-mbse package
-  version (coordinated-pair discipline) and assert `PROFILE_SEMANTIC_VERSION`.
+- **sysml-codegen wiring (this item owns, separate small commit there):** build `ConstraintFacts`
+  once, call `preflight(facts)`; if `not ok`, halt and emit `blocking[]` diagnostics; else feed
+  `admitted[].effective_predicate` to the existing compiler. The same-IR assertion lives here, at the
+  pre-compile seam (D7): `gated_ir is compiled_ir` on the in-process path,
+  `serialize_expression(compiled_ir) == serialize_expression(gated_ir)` on the snapshot path. Pin the
+  agentic-mbse package version (coordinated-pair discipline) and assert `PROFILE_SEMANTIC_VERSION`.
 
 ## Validation Approach
 
@@ -284,6 +336,10 @@ class UsageDecision:
   `typed_feature_chain_and_literal` usage (feature-chain *actual*) is **admitted**.
 - **Silent-on-clean / loud-on-gap test**: a clean model yields zero diagnostics; a model with a
   chain / xor / real-equality yields exactly the matching named diagnostics.
+- **Absence-case tests (MF2)**: a `definition_typed` usage typed by a bodyless definition (predicate
+  `None`) → `block_missing_predicate`; a `definition_typed` usage whose `constraint_definition` QN is
+  absent from `facts.definitions` → `block_unresolved_definition`. Synthetic `ConstraintFacts`, no
+  golden pin (matching how `unknown` is covered).
 - **Import-hygiene test**: subprocess imports `executable_profile` and asserts `syside` not loaded.
 - **L4/L6 tests**: coverage counts; per-construct WARNINGs; no blanket warning.
 - Gate = default suite (`uv run pytest tests/`). Never run `pytest -m ""` or the corpus test.
@@ -292,15 +348,18 @@ class UsageDecision:
 
 - **Fixed:** the three-layer order and short-circuit; the 11 decision codes and their golden mapping;
   `unit_compatibility` precedence; module placement and public surface (D1, Component Overview); the
-  same-IR seam via `UsageDecision.effective_predicate` (D7); the `preflight` contract; WARNING
-  severity; D5/D6 default-deny calls.
+  two-arm same-IR seam via `UsageDecision.effective_predicate` (D7 — object identity under the
+  single-parse precondition, serialization-equality across a parse boundary); the absence-case routing
+  (`block_missing_predicate`, `block_unresolved_definition`) at resolution; the `preflight` contract;
+  WARNING severity; D5 (`!=` blocks) / D6 default-deny calls.
 - **Open:** exact `ValidationCode` spellings and message wording (constrained only by "construct +
   location + identity + reason"); L4's exact metric labels and whether unassessed is a separate line;
   the physical JSON shape of `inequality_cases` (a new key vs a sibling file).
-- **De-risk first:** the cross-repo `preflight` wiring — confirm the sysml-codegen pre-compile seam
-  exists where expected and that one `ConstraintFacts` reaches both the gate and the compiler (B2).
-  A `/_my_spike` in sysml-codegen locating the seam before writing the wiring commit is cheap
-  insurance.
+- **De-risk first:** the cross-repo `preflight` wiring — a `/_my_spike` in sysml-codegen aimed at the
+  right question (B2/MF1): not just "does the pre-compile seam exist," but "does one parsed
+  `ConstraintFacts` reach both the gate and the compiler, or is there a second parse / re-serialize
+  between them?" The answer decides which same-IR arm applies (object identity vs serialization
+  equality) and where the assertion sits.
 
 ---
 Next Step: After approval → `/_my_plan` (multi-file, two repos) then `/_my_implement`.
