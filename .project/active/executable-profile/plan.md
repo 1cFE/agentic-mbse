@@ -266,16 +266,16 @@ discipline → `design.md#component-overview`; WARNING severity → `spec.md#dec
 
 #### 1. `ValidationCode` entries
 **File:** `src/agentic_mbse/sysml/types.py` (MODIFY, near line 108)
-- [ ] Add the eligibility WARNING code(s), e.g. `L6_CONSTRAINT_INELIGIBLE` (message wording carries
+- [x] Add the eligibility WARNING code(s), e.g. `L6_CONSTRAINT_INELIGIBLE` (message wording carries
   construct + reason). `sysml/types.py` is syside-free — safe (design Research Findings). Keep or
   retire `L6_CONSTRAINT_NON_EXECUTABLE` per what the new L6 body emits.
 
 #### 2. L4 replacement
 **File:** `src/agentic_mbse/validation/level4_constraints.py` (MODIFY)
-- [ ] Delete `check_constraint_coverage` (lines 44–82) entirely.
-- [ ] Delete its caller surface: the `unconstrained, coverage_metrics = ...` call and the
+- [x] Delete `check_constraint_coverage` (lines 44–82) entirely.
+- [x] Delete its caller surface: the `unconstrained, coverage_metrics = ...` call and the
   `unconstrained` → warnings loop (lines 131–138) and `metrics.update(coverage_metrics)` (line 146).
-- [ ] **Keep** the surviving counts `Total constraints` / `ConstraintUsage` / `ConstraintDefinition`
+- [x] **Keep** the surviving counts `Total constraints` / `ConstraintUsage` / `ConstraintDefinition`
   (lines 141–146). Add eligibility coverage: call `extract_constraint_facts(model)` →
   `evaluate_profile(facts)` → add admit/block/unassessed counts to `metrics` (labels are design detail;
   denominator = executable-asserts / total-asserts per `spec.md#open-questions`).
@@ -283,19 +283,19 @@ discipline → `design.md#component-overview`; WARNING severity → `spec.md#dec
 #### 3. L6 replacement
 **File:** `src/agentic_mbse/validation/level6_architecture.py` (MODIFY, `check_constraint_executability`
 body 606–642)
-- [ ] Replace body: `extract_constraint_facts(model)` → `evaluate_profile(facts)`; for each blocked
+- [x] Replace body: `extract_constraint_facts(model)` → `evaluate_profile(facts)`; for each blocked
   decision emit one WARNING `ValidationIssue` per diagnostic (construct + `location` + identity +
   reason). Admitted and unassessed → nothing.
-- [ ] Preserve loud-on-failure: let an extraction failure surface (do **not** re-introduce
+- [x] Preserve loud-on-failure: let an extraction failure surface (do **not** re-introduce
   `except: constraints = []`). Keep the existing `test_fails_loud_on_extraction_error` green.
 
 #### 4. Update affected tests to new semantics
-- [ ] `tests/test_validation/test_item4_subtype.py` (60–101): `TestLevel6NonExecutableWarn` — rewrite.
+- [x] `tests/test_validation/test_item4_subtype.py` (60–101): `TestLevel6NonExecutableWarn` — rewrite.
   `affordable` (clean `<=`) and `positive_cost` (plain) no longer warn. Assert admitted/unassessed →
   no WARN; keep `test_clean_model_silent`; keep `test_fails_loud_on_extraction_error`.
-- [ ] `tests/test_validation/test_item12_checks.py` (108–117): `test_c3_constraint_warns_not_fails` —
+- [x] `tests/test_validation/test_item12_checks.py` (108–117): `test_c3_constraint_warns_not_fails` —
   `within_limit` (clean `<=`) now admits → no warn. Repoint to a blocked-construct fixture (below).
-- [ ] `tests/test_sysml_quality_checks.py` (633–653, 1073–1080): the two L4 tests assert old labels
+- [x] `tests/test_sysml_quality_checks.py` (633–653, 1073–1080): the two L4 tests assert old labels
   `Total attributes`/`Constrained`/`Coverage`. Update to the new eligibility labels; keep the
   surviving `Total constraints` assertion. Confirm `result.success is True` (informational).
 
@@ -307,15 +307,15 @@ test.
 
 ### Validation
 **Automated:**
-- [ ] `uv run pytest tests/test_validation/test_item4_subtype.py tests/test_validation/test_item12_checks.py tests/test_sysml_quality_checks.py` → pass.
-- [ ] `uv run pytest tests/` → **full default suite green** (the phase's key gate — no other L4/L6
+- [x] `uv run pytest tests/test_validation/test_item4_subtype.py tests/test_validation/test_item12_checks.py tests/test_sysml_quality_checks.py` → pass.
+- [x] `uv run pytest tests/` → **full default suite green** (the phase's key gate — no other L4/L6
   consumer regressed).
-- [ ] `uv run ruff check src/ tests/` → clean.
+- [x] `uv run ruff check src/ tests/` → clean.
 
 **Manual:**
-- [ ] `uv run agentic-mbse validate --level=4 tests/fixtures/l6_architecture` → eligibility coverage
+- [x] `uv run agentic-mbse validate --level=4 tests/fixtures/l6_architecture` → eligibility coverage
   metrics appear; level passes.
-- [ ] `uv run agentic-mbse validate --level=6 <blocked fixture>` → one named WARN, level passes.
+- [x] `uv run agentic-mbse validate --level=6 <blocked fixture>` → one named WARN, level passes.
 
 **What we know works after this phase:** both in-repo seams read the profile; the blanket L6 warning and
 the L4 0% placeholder are gone; the suite is green under the new semantics.
@@ -431,6 +431,42 @@ the plan.
   the silent-on-clean case the original test intended.
 
 ### Phase 3 Completion
+**Completed:** 2026-07-12
+**Changes made:**
+- `src/agentic_mbse/sysml/types.py`: retired `L6_CONSTRAINT_NON_EXECUTABLE`, added
+  `L6_CONSTRAINT_INELIGIBLE`.
+- `src/agentic_mbse/validation/level4_constraints.py`: deleted `check_constraint_coverage` and its
+  caller surface; added `eligibility_coverage_metrics()` (admit/block/unassessed counts + admit-rate
+  percentage over admit+block, unassessed reported separately per spec's Open Questions); dropped the
+  now-unused `get_qualified_name`/`get_element_location` imports.
+- `src/agentic_mbse/validation/level6_architecture.py`: `check_constraint_executability` body replaced
+  — `extract_constraint_facts` → `evaluate_profile`, one WARNING per blocked-decision diagnostic
+  (construct + reason in the message, `_format_diagnostic_location` for the location string); admitted/
+  unassessed emit nothing. No `except` around extraction (loud-on-failure preserved). Dropped the
+  now-unused `EXCLUDED_CONSTRAINT_TYPES` import; updated the metrics-dict key.
+- Created `tests/fixtures/item4_subtype/l6_ineligible/blocked.sysml`: a deterministic blocked-construct
+  fixture (predicate-body feature chain), reused by both the item4_subtype and item12 C3 tests per the
+  plan's "one fixture" instruction.
+- Rewrote `tests/test_validation/test_item4_subtype.py::TestLevel6NonExecutableWarn`: `affordable`/
+  `positive_cost`/`widget_budget` now silent (admitted/unassessed); new `test_blocked_construct_warns`
+  against the new fixture; kept `test_clean_model_silent` and `test_fails_loud_on_extraction_error`.
+- Rewrote `tests/test_validation/test_item12_checks.py`'s C3 section: `test_c3_admitted_constraint_is_
+  silent` (repoints the old `constraint_model` fixture's expectation — clean `<=` now admits) plus
+  `test_c3_blocked_construct_warns_not_fails` (loads the item4_subtype fixture directly via
+  `discover_sysml_files`, not `load_fixture`, since it lives outside `tests/fixtures/item12/`).
+- Updated the two L4 label assertions in `tests/test_sysml_quality_checks.py` (`TestLevel4Constraint
+  Coverage.test_coverage_metrics_reported`, `TestLevelDistinctness.test_l4_reports_constraint_metrics`)
+  to the new eligibility-metric keys.
+
+**Issues encountered / deviations:** none beyond what the plan anticipated (the WARN-flip hazard). The
+observe-then-assert step matched the plan's prediction exactly: `affordable`/`positive_cost`/
+`within_limit` are all clean unitless-Real comparisons and are now silently admitted.
+
+**Manual validation:** `uv run agentic-mbse validate --level=4 tests/fixtures/distinctness/l6_architecture`
+(the plan's path didn't exist; located the real fixture) shows the eligibility metrics and passes;
+`uv run agentic-mbse validate --level=6 tests/fixtures/item4_subtype/l6_ineligible` shows exactly one
+named `L6_CONSTRAINT_INELIGIBLE` WARN (`block_feature_chain`) and the level still passes.
+
 ### Phase 4 Completion
 
 ---

@@ -628,10 +628,11 @@ class TestLevel5Traceability:
 
 
 class TestLevel4ConstraintCoverage:
-    """Tests for L4 constraint coverage (absorbed from old L5)"""
+    """Tests for L4 eligibility coverage (CONSTRAINT-EXEC Item 3, replacing the old 0%
+    attribute-coverage placeholder)."""
 
     def test_coverage_metrics_reported(self, temp_models_dir):
-        """Test that constraint coverage metrics are reported in L4"""
+        """Test that eligibility coverage metrics are reported in L4"""
         file = temp_models_dir / "library" / "coverage.sysml"
         file.write_text("""
             package CoverageTest {
@@ -648,9 +649,9 @@ class TestLevel4ConstraintCoverage:
         result = analyze_constraints(str(temp_models_dir))
 
         assert result.level == 4
-        assert "Total attributes" in result.metrics
-        assert "Constrained" in result.metrics
-        assert "Coverage" in result.metrics
+        assert "Eligible (admitted)" in result.metrics
+        assert "Ineligible (blocked)" in result.metrics
+        assert "Eligibility rate" in result.metrics
 
 
 class TestEndToEnd:
@@ -1065,7 +1066,8 @@ class TestLevelDistinctness:
         assert result.results[2].metrics["Circular dependencies"] == 1
 
     def test_l4_reports_constraint_metrics(self):
-        """L4 reports unique constraint coverage metrics (informational, always passes)."""
+        """L4 reports unique constraint + eligibility coverage metrics (informational, always
+        passes)."""
         from agentic_mbse.validation.runner import run_all_checks
 
         result = run_all_checks(f"{self.FIXTURES}/l6_architecture", fail_fast=False)
@@ -1073,8 +1075,9 @@ class TestLevelDistinctness:
         assert l4.level == 4
         assert l4.success is True
         assert "Total constraints" in l4.metrics
-        assert "Total attributes" in l4.metrics
-        assert "Coverage" in l4.metrics
+        assert "Eligible (admitted)" in l4.metrics
+        assert "Ineligible (blocked)" in l4.metrics
+        assert "Eligibility rate" in l4.metrics
 
     def test_l5_reports_doc_coverage_metrics(self):
         """L5 reports unique documentation coverage metrics (informational, always passes)."""

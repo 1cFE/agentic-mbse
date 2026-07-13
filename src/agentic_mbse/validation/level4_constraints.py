@@ -9,6 +9,8 @@ Does NOT evaluate constraint values (that's handled by syside/TEAx).
 import sys
 from typing import Any
 
+from agentic_mbse.sysml.constraint_extraction import extract_constraint_facts
+from agentic_mbse.sysml.executable_profile import evaluate_profile
 from agentic_mbse.sysml.syside_adapter import (
     EXCLUDED_CONSTRAINT_TYPES,
     SysideAdapter,
@@ -20,8 +22,6 @@ try:
         EXIT_SUCCESS,
         QualityCheckResult,
         discover_sysml_files,
-        get_element_location,
-        get_qualified_name,
         load_sysml_model,
         print_header,
         print_result,
@@ -33,53 +33,38 @@ except ImportError:
         EXIT_SUCCESS,
         QualityCheckResult,
         discover_sysml_files,
-        get_element_location,
-        get_qualified_name,
         load_sysml_model,
         print_header,
         print_result,
     )
 
 
-def check_constraint_coverage(model: Any) -> tuple[list[str], dict]:
+def eligibility_coverage_metrics(model: Any) -> dict:
     """
-    Calculate constraint coverage: which attributes are constrained.
+    CONSTRAINT-EXEC Item 3: executable-assertion eligibility, replacing the old 0%
+    attribute-coverage placeholder (`check_constraint_coverage`, which never parsed a predicate).
+
+    Runs the executable profile over the model's constraint facts and reports how many asserted
+    constraints (inline/definition-typed) are admitted, blocked, or unassessed (satisfy /
+    require-assume / plain). The denominator is executable asserts (admit + block) over total
+    asserts, per spec's Open Questions — unassessed is reported as its own line, not folded into
+    the percentage.
 
     Returns:
-        (unconstrained_attributes, metrics) tuple
+        Metrics dict: eligibility admit/block/unassessed counts and the admit-rate percentage.
     """
-    # Get all attributes
-    attributes = list(SysideAdapter.elements_of_type(model, "AttributeUsage"))
+    facts = extract_constraint_facts(model)
+    result = evaluate_profile(facts)
 
-    # Get all constraints (needed for constraint coverage calculation)
-    _constraints = list(SysideAdapter.elements_of_type(model, "ConstraintUsage"))
+    asserted = result.admitted_count + result.blocked_count
+    admit_rate = (result.admitted_count / asserted * 100) if asserted > 0 else 100
 
-    # Build set of attributes referenced in constraints
-    # Placeholder: This would need to parse constraint expressions
-    # to find which attributes are referenced
-    # For now, we'll report 0% coverage as a starting point
-    constrained_attrs = set()
-
-    # Find unconstrained attributes
-    unconstrained = []
-    for attr in attributes:
-        attr_name = get_qualified_name(attr)
-        if attr_name not in constrained_attrs:
-            location = get_element_location(attr)
-            unconstrained.append(f"{attr_name} at {location}")
-
-    total = len(attributes)
-    constrained_count = len(constrained_attrs)
-    coverage_pct = (constrained_count / total * 100) if total > 0 else 100
-
-    metrics = {
-        "Total attributes": total,
-        "Constrained": constrained_count,
-        "Unconstrained": len(unconstrained),
-        "Coverage": f"{coverage_pct:.1f}%",
+    return {
+        "Eligible (admitted)": result.admitted_count,
+        "Ineligible (blocked)": result.blocked_count,
+        "Unassessed (satisfy/require/plain)": result.unassessed_count,
+        "Eligibility rate": f"{admit_rate:.1f}%",
     }
-
-    return unconstrained, metrics
 
 
 def analyze_constraints(models_path: str) -> QualityCheckResult:
@@ -127,29 +112,18 @@ def analyze_constraints(models_path: str) -> QualityCheckResult:
     # Count constraint definitions
     constraint_defs = list(SysideAdapter.elements_of_type(model, "ConstraintDefinition"))
 
-    # Constraint coverage analysis (absorbed from old L5)
-    unconstrained, coverage_metrics = check_constraint_coverage(model)
-
-    # Build warnings from unconstrained attributes
-    warnings = []
-    for attr in unconstrained[:10]:
-        warnings.append(f"Unconstrained attribute: {attr}")
-    if len(unconstrained) > 10:
-        warnings.append(f"... and {len(unconstrained) - 10} more")
-
     # Merge metrics
     metrics = {
         "Total constraints": total_constraints,
         "ConstraintUsage": total_constraints,
         "ConstraintDefinition": len(constraint_defs),
     }
-    metrics.update(coverage_metrics)
+    metrics.update(eligibility_coverage_metrics(model))
 
     return QualityCheckResult(
         level=4,
         level_name="Constraint Coverage",
         success=True,  # Informational only
-        warnings=warnings,
         metrics=metrics,
     )
 

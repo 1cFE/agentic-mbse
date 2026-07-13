@@ -68,20 +68,30 @@ class TestLevel4ConstraintCount:
 
 
 class TestLevel6NonExecutableWarn:
-    def test_warns_on_assert_not_requirement(self):
-        """The assert now receives the non-executable WARN; the requirement does
-        not (excluded). Independent anchor: fixture has assert `affordable` and
-        plain `positive_cost` (both droppable) and requirement `widget_budget`."""
+    """CONSTRAINT-EXEC Item 3 superseded row 7's blanket WARN with per-construct eligibility
+    diagnostics: `affordable` (`cost <= budget`) and `positive_cost` (`cost > 0.0`) are both
+    clean, unitless Real comparisons — admitted, not blocked — so they no longer warn."""
+
+    def test_admitted_asserts_are_silent(self):
+        """Independent anchor: fixture has assert `affordable` and plain `positive_cost`
+        (both clean Real comparisons, now admitted) and requirement `widget_budget`
+        (unassessed). None of the three should warn."""
         issues = check_constraint_executability(_load("constraints.sysml"))
-        warned = {
-            i.element_name.split("::")[-1]
-            for i in issues
-            if i.code == ValidationCode.L6_CONSTRAINT_NON_EXECUTABLE
-        }
-        assert all(i.severity == Severity.WARNING for i in issues)
-        assert "affordable" in warned  # the assert — was invisible before
-        assert "positive_cost" in warned
-        assert "widget_budget" not in warned  # requirement excluded
+        warned = {i.element_name.split("::")[-1] for i in issues}
+        assert issues == []
+        assert "affordable" not in warned
+        assert "positive_cost" not in warned
+        assert "widget_budget" not in warned
+
+    def test_blocked_construct_warns(self):
+        """Loud-on-gap, deterministic regardless of how bare operands resolve: the feature-chain
+        predicate in l6_ineligible/blocked.sysml fires exactly one named WARN."""
+        issues = check_constraint_executability(_load("l6_ineligible/blocked.sysml"))
+        warns = [i for i in issues if i.code == ValidationCode.L6_CONSTRAINT_INELIGIBLE]
+        assert len(warns) == 1
+        assert warns[0].severity == Severity.WARNING
+        assert warns[0].element_name.split("::")[-1] == "chained_limit"
+        assert "block_feature_chain" in warns[0].message
 
     def test_clean_model_silent(self):
         """Silent-on-clean: no constraints -> no WARN."""
