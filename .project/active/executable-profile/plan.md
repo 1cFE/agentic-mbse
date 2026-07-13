@@ -1,6 +1,6 @@
 # Implementation Plan: Executable Profile — Eligibility Gates and Named Diagnostics
 
-**Status:** Draft
+**Status:** In Progress (Phase 1 complete)
 **Created:** 2026-07-12
 **Last Updated:** 2026-07-12
 **Epic:** CONSTRAINT-EXEC, Item 3 · Branch `constraint-exec-epic`
@@ -88,50 +88,65 @@ production dimension spellings in this test.
 
 #### 1. Fixture: add inequality cases (D9)
 **File:** `tests/fixtures/constraint_fact_shapes/golden.json` (MODIFY — additive)
-- [ ] Add `type_units.inequality_cases`: a list of `{name, operator, left, right, decision}`.
-- [ ] Row `inequality_convertible_unit`: `operator="<="`, `left`/`right` a **byte-copy** of
+- [x] Add `type_units.inequality_cases`: a list of `{name, operator, left, right, decision}`.
+- [x] Row `inequality_convertible_unit`: `operator="<="`, `left`/`right` a **byte-copy** of
   `quantity_convertible_unit`'s metre/centimetre operands, `decision="block_unit_conversion_required"`.
-- [ ] Row `inequality_integer_real`: `operator="<="`, `left`/`right` a **byte-copy** of `integer_real`'s
+- [x] Row `inequality_integer_real`: `operator="<="`, `left`/`right` a **byte-copy** of `integer_real`'s
   integer/real operands, `decision` = the ordering **admit** marker `unit_compatibility` returns for a
   clean pair (the `ok` sentinel — align the string to the helper's actual clean return in code).
-- [ ] The two S1-certified `type_units.equality_cases` operands are the copy source — do not re-author
+- [x] The two S1-certified `type_units.equality_cases` operands are the copy source — do not re-author
   operand facts by hand (D9). Only `decision` and `operator` are new.
 
 #### 2. Module skeleton + gate helpers
 **File:** `src/agentic_mbse/sysml/executable_profile.py` (NEW)
-- [ ] Module docstring: pure facts→decisions library; imports `expression_facts`/`expression_ir`/
+- [x] Module docstring: pure facts→decisions library; imports `expression_facts`/`expression_ir`/
   `constraint_facts` only; **no syside, no `ValidationCode`, no pydantic** (D2/I4).
-- [ ] `Eligibility` enum (`ADMIT`/`BLOCK`/`UNASSESSED`).
-- [ ] Frozen dataclasses `EligibilityDiagnostic`, `UsageDecision`, `ProfileResult`, `PreflightResult`
+- [x] `Eligibility` enum (`ADMIT`/`BLOCK`/`UNASSESSED`).
+- [x] Frozen dataclasses `EligibilityDiagnostic`, `UsageDecision`, `ProfileResult`, `PreflightResult`
   per `design.md#component-overview`. (`evaluate_profile`/`preflight` bodies land in Phase 2 — a `...`
   stub or `NotImplementedError` is fine now; keep them import-clean.)
-- [ ] `REASON_CODES`: the 11 golden codes + construct blocks (`block_assert_by_reference`,
+- [x] `REASON_CODES`: the 11 golden codes + construct blocks (`block_assert_by_reference`,
   `block_feature_chain`, `block_invocation`, `block_xor`, `block_implies`, `block_unsupported_node`) +
   default-deny codes (`block_unsupported_operator`, `block_unsupported_operand_category`,
   `block_non_predicate_root`, `block_missing_predicate`, `block_unresolved_definition`).
-- [ ] `PROFILE_SEMANTIC_VERSION = "executable-profile/v1"` (D8).
-- [ ] `unit_compatibility(left, right) -> str`: ordered guards exactly per `design.md#implementation-notes`
+- [x] `PROFILE_SEMANTIC_VERSION = "executable-profile/v1"` (D8).
+- [x] `unit_compatibility(left, right) -> str`: ordered guards exactly per `design.md#implementation-notes`
   (unitless-vs-dimensioned; unknown exact unit; incompatible dimensions; conversion required; else `ok`;
   integer/real/dimensionless mixes → `ok`).
-- [ ] `classify_equality(left, right) -> str`: precedence 1–6 layering unresolved/unknown → the shared
+- [x] `classify_equality(left, right) -> str`: precedence 1–6 layering unresolved/unknown → the shared
   `unit_compatibility` → real-tolerance → enum → same-scalar support codes.
-- [ ] Ordering path (the `<`/`<=`/`>`/`>=` entry) = `unit_compatibility` only, `ok` → admit.
+- [x] Ordering path (the `<`/`<=`/`>`/`>=` entry) = `unit_compatibility` only, `ok` → admit.
 
 #### 3. Import-hygiene test (I4)
 **File:** `tests/test_sysml/test_executable_profile_hygiene.py` (NEW)
-- [ ] Structural test: `subprocess` runs `python -c "import agentic_mbse.sysml.executable_profile,
+- [x] Structural test: `subprocess` runs `python -c "import agentic_mbse.sysml.executable_profile,
   sys; assert 'syside' not in sys.modules"`; assert exit 0. (Plain `python` subprocess — the
   CLAUDE.md blank-output caveat is about the *Claude CLI*, not this.)
 
 ### Validation
 **Automated:**
-- [ ] `uv run pytest tests/test_sysml/test_executable_profile_matrix.py tests/test_sysml/test_executable_profile_hygiene.py` → all pass (14 equality + 2 inequality + hygiene).
-- [ ] `uv run pytest tests/` → no regressions (golden.json edit is additive; confirm
-  `test_constraint_fact_shapes.py` still passes — it reads `equality_cases`, untouched).
-- [ ] `uv run ruff check src/ tests/` → clean.
+- [x] `uv run pytest tests/test_sysml/test_executable_profile_matrix.py tests/test_sysml/test_executable_profile_hygiene.py` → all pass (14 equality + 2 inequality + hygiene = 18 tests, plus a golden-decisions-subset-of-REASON_CODES check).
+- [x] `uv run pytest tests/` → no regressions (golden.json edit is additive; `test_constraint_fact_shapes.py` still passes — it reads `equality_cases`, untouched). Full run: 1351 passed, 1 skipped, 33 deselected.
+- [x] `uv run ruff check src/ tests/` → clean (131 pre-existing errors elsewhere are unchanged from before this phase — confirmed via `git stash` diff; none in the files this phase touched).
 
 **What we know works after this phase:** the operand-fact gate reproduces the golden answer key end to
 end (B1 held), and the module is license-free. The hardest part is done and pinned.
+
+**Deviation — the hygiene test found a real pre-existing I4 hole, fixed at the root.**
+`import agentic_mbse.sysml.executable_profile` runs `agentic_mbse/__init__.py` and
+`agentic_mbse/sysml/__init__.py` first (Python import semantics). Both eagerly imported syside-touching
+submodules — the top-level package via `from agentic_mbse.cli import main` (which pulls in the full
+validation stack), and the `sysml` package via its barrel re-export of `constraint_extraction`/
+`syside_adapter`/etc. — so *any* import under `agentic_mbse`, including `constraint_facts.py`
+standalone, was already silently pulling in syside despite that submodule's own "no syside" docstring.
+This predates Item 3 and would have equally broken Item 8's license-free snapshot-path guarantee.
+Root-caused, not worked around: converted both `__init__.py`s to PEP 562 lazy re-exports
+(`__getattr__`/`__dir__`), so every existing name (`agentic_mbse.main`, `agentic_mbse.sysml.SysideAdapter`,
+`agentic_mbse.sysml.ConstraintFacts`, ...) still resolves identically on first access, but nothing is
+imported at package-load time. Verified: full default suite green (no behavior change for any consumer);
+`from agentic_mbse.sysml import <name>` spot-checked for both a syside-touching name (`SysideAdapter`)
+and a submodule-style import (`from agentic_mbse.sysml import hierarchy`, which works via Python's
+own submodule-import fallback, independent of the lazy table).
 
 ---
 
@@ -366,9 +381,26 @@ See `design.md#potential-risks`. Phase-specific mitigations:
   mechanical.
 
 ## Implementation Notes
-[TO BE FILLED DURING IMPLEMENTATION]
 
 ### Phase 1 Completion
+**Completed:** 2026-07-12
+**Changes made:**
+- Created `src/agentic_mbse/sysml/executable_profile.py`: `Eligibility`, `EligibilityDiagnostic`,
+  `UsageDecision`, `ProfileResult`, `PreflightResult`, `REASON_CODES`, `PROFILE_SEMANTIC_VERSION`,
+  `unit_compatibility()`, `classify_equality()`; `evaluate_profile()`/`preflight()` raise
+  `NotImplementedError` pending Phase 2.
+- Modified `tests/fixtures/constraint_fact_shapes/golden.json`: added `type_units.inequality_cases`
+  (additive, 58 lines).
+- Created `tests/test_sysml/test_executable_profile_matrix.py` (18 tests: 14 equality + 2 inequality +
+  1 hygiene-adjacent REASON_CODES-superset check split across the two decision sets) and
+  `tests/test_sysml/test_executable_profile_hygiene.py` (1 subprocess structural test).
+- Modified `src/agentic_mbse/__init__.py` and `src/agentic_mbse/sysml/__init__.py` to lazy (PEP 562)
+  re-exports — see the deviation note above; root-caused the hygiene test's real failure rather than
+  weakening the test.
+
+**Issues encountered / deviations:** the barrel-laziness fix described above; no other deviations from
+the plan.
+
 ### Phase 2 Completion
 ### Phase 3 Completion
 ### Phase 4 Completion

@@ -2410,6 +2410,64 @@
           "unit": null
         }
       }
+    ],
+    "inequality_cases": [
+      {
+        "decision": "block_unit_conversion_required",
+        "left": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "1 [m]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::metre"
+          }
+        },
+        "name": "inequality_convertible_unit",
+        "operator": "<=",
+        "right": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "100 [cm]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::centimetre"
+          }
+        }
+      },
+      {
+        "decision": "ok",
+        "left": {
+          "category": "integer",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::integer_value",
+          "source": "integer_value",
+          "types": [
+            "ScalarValues::Integer",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        },
+        "name": "inequality_integer_real",
+        "operator": "<=",
+        "right": {
+          "category": "real",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::real_value",
+          "source": "real_value",
+          "types": [
+            "ScalarValues::Real",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        }
+      }
     ]
   }
 }
