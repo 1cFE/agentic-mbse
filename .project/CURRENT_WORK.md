@@ -1,6 +1,6 @@
 # Current Work
 
-**Last Updated**: 2026-07-05
+**Last Updated**: 2026-07-11
 
 ---
 
@@ -55,6 +55,15 @@ Four items, ~4.5 days:
 ---
 
 ## Recently Completed
+
+### 2026-07-11: S1 Constraint Fact-Shape Learning Test
+
+Live SysIDE 0.8.4 fixture matrix, golden JSON, and five kept tests now pin all four constraint
+source forms, membership/polarity/ownership, actuals/defaults, inheritance/retyping, compound
+expressions, and the equality type/unit gate. S1 passed with one explicit restriction: a
+dimensioned quantity feature does not prove one exact runtime unit. Full suite: 1,295 passed,
+1 skipped, 33 deselected. Findings:
+`.project/active/spike-constraint-fact-shapes/findings.md`.
 
 ### 2026-07-05: Web Source Capture + arXiv Extraction Pipeline (PR #6, merged)
 
