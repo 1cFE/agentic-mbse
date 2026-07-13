@@ -35,18 +35,18 @@ present-but-unassessed, or blocked with its construct and location named.
 
 ## Success Criteria
 
-- [ ] Every operand shape in S1's golden equality table (`findings.md` §5, 14 rows) receives
+- [x] Every operand shape in S1's golden equality table (`findings.md` §5, 14 rows) receives
   the profile's matrix decision, **observable through the diagnostic's reason** — each of the
   golden's seven distinct block reasons is distinguishable in the profile's output, not collapsed
   to a bare "construct blocked." The two inequality-unit cases S1 left unpinned are added as
   golden fixtures: `1 [m] <= 100 [cm]` → **block**, `integer <= real` → **admit**.
-- [ ] L4 no longer reports the 0% attribute-coverage placeholder; it reports executable-assertion
+- [x] L4 no longer reports the 0% attribute-coverage placeholder; it reports executable-assertion
   eligibility instead (how many asserted constraints are executable vs blocked vs unassessed).
-- [ ] L6's blanket per-constraint "dropped at extraction" WARNING is gone; in its place, each
+- [x] L6's blanket per-constraint "dropped at extraction" WARNING is gone; in its place, each
   ineligible asserted construct produces exactly one named diagnostic that states the construct
   and its source location; a satisfy or require/assume constraint is cataloged unassessed, not
   blocked.
-- [ ] A model whose assertions use only supported constructs produces **no** eligibility
+- [x] A model whose assertions use only supported constructs produces **no** eligibility
   diagnostic (silent-on-clean); each blocked construct fires exactly its own named diagnostic
   (loud-on-gap).
 - [ ] A codegen preflight hook runs the profile and halts generation — before any compilation —
