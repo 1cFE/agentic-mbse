@@ -203,13 +203,13 @@ Nothing imports `tests/constraint_fact_learning.py` after Phase 3, so deletion i
 ### Changes Required
 **See `design.md` for:** [D7 (retire the capture module)](../constraint-facts/design.md#key-decisions), [Integration Strategy](../constraint-facts/design.md#integration-strategy).
 
-- [ ] `grep -rn "constraint_fact_learning" tests/ src/` → confirm **zero** importers remain.
-- [ ] Delete `tests/constraint_fact_learning.py` (D7 — it embeds the two banned heuristics at `:172` and `:380-381`/`:431`; keeping it alive keeps banned code and duplicate extraction logic in the tree).
+- [x] `grep -rn "constraint_fact_learning" tests/ src/` → confirm **zero** importers remain (one comment mention in `constraint_extraction.py`'s module docstring, not an import).
+- [x] Delete `tests/constraint_fact_learning.py` (D7 — it embeds the two banned heuristics at `:172` and `:380-381`/`:431`; keeping it alive keeps banned code and duplicate extraction logic in the tree).
 
 ### Validation
 **Automated (suite-green gate):**
-- [ ] `uv run pytest tests/` → full suite green after deletion.
-- [ ] `uv run ruff check src/ tests/` → clean (no unused imports left by the deletion).
+- [x] `uv run pytest tests/` → full suite green after deletion (1316 passed, 1 skipped, 33 deselected).
+- [x] `uv run ruff check src/ tests/` → no new errors from the deletion (131 pre-existing errors remain, all in files this item never touches — see Phase 5 note).
 
 **What We Know Works After This Phase:** the retired capture path is gone; the suite is green without it.
 
@@ -310,6 +310,15 @@ See CLAUDE.md. Live-SysIDE tests run via `uv run pytest …` (license loads thro
 - `test_membership_polarity_ownership_actuals_and_inheritance_match_s1_oracle` and the six-forms test don't assert `owner.owning_definition.kind == "requirement_def"`/`"package"` for `positive_limit`/`satisfied_limit` inline (already covered by `test_constraint_extraction.py`'s `test_membership_polarity_ownership_survive`, Phase 2) — kept this file focused on the S1-golden-field mapping the plan's stencil calls for, rather than duplicating Phase 2's broader coverage.
 
 ### Phase 4 Completion
+**Completed:** 2026-07-12
+**Actual Changes:**
+- Deleted `tests/constraint_fact_learning.py` (D7).
+
+**Issues:**
+- None. `grep -rn "constraint_fact_learning" tests/ src/` had exactly one hit before deletion — a comment mentioning the retired module by name in `constraint_extraction.py`'s docstring, not an import — so the deletion was clean, no importers to fix up.
+
+**Deviations:**
+- None.
 
 ### Phase 5 Completion
 
