@@ -202,3 +202,25 @@ def test_non_finite_literal_yields_extraction_diagnostic() -> None:
     assert diagnostic.kind == "non_finite_literal"
     assert diagnostic.operand_source is not None
     assert diagnostic.location is not None
+
+
+def test_extract_expression_ir_public_single_node_entry() -> None:
+    """Item 13 enabling wrapper: one bare expression node -> IR, same dispatch."""
+    from agentic_mbse.sysml import extract_expression_ir
+    from agentic_mbse.sysml.expression_ir import serialize_expression
+
+    model = _load(SOURCE_FORMS)
+    facts = extract_constraint_facts(model)
+    inline = next(
+        u for u in facts.usages if u.source.form == "inline" and u.predicate is not None
+    )
+    live = next(
+        u
+        for u in model.elements(syside.ConstraintUsage, include_subtypes=True)
+        if getattr(u, "qualified_name", None)
+        and inline.identity.qualified_name.replace("__", "::") in str(u.qualified_name)
+        and getattr(u, "result_expression", None) is not None
+    )
+    ir = extract_expression_ir(live.result_expression)
+    assert ir is not None
+    assert serialize_expression(ir) == serialize_expression(inline.predicate)

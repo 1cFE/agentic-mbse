@@ -34,7 +34,10 @@ if TYPE_CHECKING:
         decompose_aggregation_expression,
     )
     from agentic_mbse.sysml.binding import classify_binding, extract_bindings
-    from agentic_mbse.sysml.constraint_extraction import extract_constraint_facts
+    from agentic_mbse.sysml.constraint_extraction import (
+        extract_constraint_facts,
+        extract_expression_ir,
+    )
     from agentic_mbse.sysml.constraint_facts import (
         CONSTRAINT_FACTS_SCHEMA_VERSION,
         ActualFact,
@@ -168,6 +171,7 @@ __all__ = [
     "UnitAnnotationNode",
     "UnitFact",
     "extract_constraint_facts",
+    "extract_expression_ir",
     "parse",
     "parse_expression",
     "serialize",
@@ -257,10 +261,8 @@ for _name in (
     _LAZY[_name] = ("agentic_mbse.sysml.aggregation", _name)
 for _name in ("classify_binding", "extract_bindings"):
     _LAZY[_name] = ("agentic_mbse.sysml.binding", _name)
-_LAZY["extract_constraint_facts"] = (
-    "agentic_mbse.sysml.constraint_extraction",
-    "extract_constraint_facts",
-)
+for _name in ("extract_constraint_facts", "extract_expression_ir"):
+    _LAZY[_name] = ("agentic_mbse.sysml.constraint_extraction", _name)
 for _name in (
     "CONSTRAINT_FACTS_SCHEMA_VERSION",
     "ActualFact",

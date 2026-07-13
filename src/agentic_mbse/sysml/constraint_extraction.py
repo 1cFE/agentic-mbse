@@ -461,6 +461,18 @@ def _invocation_node(expression: Any, ctx: _ExtractionContext) -> InvocationNode
     )
 
 
+def extract_expression_ir(expression: Any) -> ExpressionIR | None:
+    """Public single-node entry: one live syside expression -> its ExpressionIR.
+
+    Thin wrapper over the same dispatch `extract_constraint_facts` uses, for
+    consumers that hold a bare expression node rather than a whole model (the
+    sysml-codegen calc-compat renderer, CONSTRAINT-EXEC Item 13). Extraction
+    diagnostics that a whole-facts sweep would accumulate are not returned;
+    unrecognized constructs still surface structurally as `UnsupportedNode`.
+    """
+    return _expression_ir(expression, _ExtractionContext())
+
+
 def _expression_ir(expression: Any, ctx: _ExtractionContext) -> ExpressionIR | None:
     """Dispatch a live syside expression node to its ExpressionIR node (D4 allowlist).
 
