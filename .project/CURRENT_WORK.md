@@ -6,6 +6,15 @@
 
 ## Active Work
 
+### Neutral Constraint Facts — Production Schemas & Extraction (CONSTRAINT-EXEC Item 1)
+
+**Branch:** `constraint-exec-epic`
+**Active:** `.project/active/constraint-facts/`
+
+Spec in progress. Promote S1's frozen fact shapes into production `ConstraintDefinitionFact` /
+`ConstraintUsageFact` / `ConstraintSource` schemas with live extraction and versioned JSON
+serialization (consumed downstream by sysml-codegen snapshot v3).
+
 ### FORMULA Teaching Reconciliation (UPSTREAM-FINDINGS Item 12 follow-up)
 
 **Branch:** `upstream-findings-sync`
