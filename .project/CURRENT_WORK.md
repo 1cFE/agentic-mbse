@@ -11,9 +11,19 @@
 **Branch:** `constraint-exec-epic`
 **Active:** `.project/active/constraint-facts/`
 
-Spec in progress. Promote S1's frozen fact shapes into production `ConstraintDefinitionFact` /
-`ConstraintUsageFact` / `ConstraintSource` schemas with live extraction and versioned JSON
-serialization (consumed downstream by sysml-codegen snapshot v3).
+CERTIFIED. Landed the production `ConstraintDefinitionFact` / `ConstraintUsageFact` /
+`ConstraintSource` schemas with live extraction and versioned JSON serialization. The predicate
+tree ships as a provisional `predicate-tree/v0` sub-document inside the stable `constraint-facts/v1`
+envelope — Item 2 replaces it.
+
+### ExpressionIR — Production Tree, Extraction, Serialization (CONSTRAINT-EXEC Item 2)
+
+**Branch:** `constraint-exec-epic`
+**Active:** `.project/active/expression-ir/`
+
+Spec in progress. Promote Item 1's provisional predicate tree to the canonical `expression-ir/v1`
+node algebra: literal / feature-reference / operator / invocation / unit-annotation / explicit
+unsupported node with a structural diagnostic; harden live extraction; byte-stable JSON round-trip.
 
 ### FORMULA Teaching Reconciliation (UPSTREAM-FINDINGS Item 12 follow-up)
 
