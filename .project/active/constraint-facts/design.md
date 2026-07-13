@@ -416,6 +416,8 @@ what would overturn it — not resolved silently in either repo.
     sub-versioning contract into Item 2's design brief, and note **Item 8 pins BOTH versions**
     (`constraint-facts/v1` + the then-current `predicate-tree/vN`) when it embeds these facts in
     snapshot v3.
+    *[AGENT correction, Item 2 spec stage, 2026-07-12: sub-document namespace renamed to
+    `expression-ir/vN` at the Item 2 bump; mechanism unchanged (D9 per-pair byte-stability).]*
 
 - **C2 — Item 5's `owning_part_def_qn` grade (spec N2, MF3).** `owner` + `inherited_into` suffice for
   the `PartDefinition`-owned, `CalculationDefinition`-owned, and inherited cases, but **not** for the
@@ -507,6 +509,9 @@ the oracle survives.
   canonical tree, bumping only `predicate-tree/vN` (C1/MF1). **Item 5** — the `owning_definition`
   totality rule and its consumer semantics (C2/MF3). **Item 8** — pin BOTH versions
   (`constraint-facts/v1` + the then-current `predicate-tree/vN`) when embedding in snapshot v3 (D9).
+  *[AGENT correction, Item 2 spec stage, 2026-07-12: the sub-document namespace is renamed
+  `predicate-tree/vN → expression-ir/vN` at the Item 2 bump — so Item 8 pins `expression-ir/vN`;
+  mechanism unchanged (D9 per-pair byte-stability).]*
 - **Open (owned downstream):** the single canonical base-dimension QN (`isq.L`) is available via a
   deeper walk if Item 3/5 need dimension identity decoupled from the unit family; not needed for Item
   1. The live `mRef`-typing traversal (MF4) is a cheap plan-stage confirmation against

@@ -199,8 +199,38 @@ a clean contract.
 
 ## Resolutions
 
-*(To be filled in as the owner resolves findings. Keyed by ID. The spec agent reads this section to
-incorporate the review; the reviewer does not edit the spec.)*
+*Incorporated by the spec agent, 2026-07-12 (orchestrated Item 2 run). All four must-fixes and three
+nice-to-haves discharged.*
+
+- **L1-1 (must-fix) — DONE.** Corrected the false "not readable" claim. Problem section now points
+  design at the in-repo probe (`.project/reference/s2-spike/s2_ir.py` + `findings.md`); Required
+  Reading repointed there. OQ#5's surviving nuance kept and sharpened: the probe IR/findings are on
+  hand, but the `.sysml` fixture text for the inline-owner-ref, negated, and compound-Boolean shapes
+  was scratch-generated (`findings.md:147-148`) and only WI-014 + IFE viability are committed
+  fixtures — so "do landed fixtures cover all five?" remains a real design/plan question.
+- **L1-2 (must-fix) — DONE.** Version name re-graded `[INHERITED: brief/epic]` and the namespace
+  rename `predicate-tree → expression-ir` recorded as an explicit `[AGENT — recorded override of a
+  CERTIFIED artifact]` (agent-grade orchestrator decision), not inheritance from Item 1's design.
+  Item 1's certified `constraint-facts/design.md` amended forward (C1 Action + downstream-carry
+  handoff) with the correction note; mechanism unchanged (D9 per-pair byte-stability).
+- **L3-1 (must-fix) — DONE.** Added a "Migration surface (the sub-version bump)" subsection naming
+  the golden regeneration + self-compare (`production_facts.json` / `test_constraint_fact_shapes.py`),
+  the `test_schema_versions_are_pinned` hardcode (`test_constraint_facts_serialize.py:185`), the
+  hand-built old-node trees, and the `PREDICATE_TREE_SCHEMA_VERSION` constant + its importers. "Suite
+  green" now has a defined worklist.
+- **L3-2 (must-fix) — DONE.** Extraction requirement now states operator normalization is enum→symbol
+  only and preserves distinct source spellings (`^` ≠ `**`, unary minus, `[`-annotation source text);
+  added a success criterion that round-trips and distinguishes them, so a collapse is caught here, not
+  in Item 13.
+- **L1-3 (nice-to-have) — DONE.** Unsupported-payload wording made consistent across SC and the Known
+  Requirement: metaclass kind + diagnostic message + source text where available (the last a
+  deliberate addition over S2's `node_type`+`diagnostic`).
+- **L3-3 (nice-to-have) — DONE.** Invocation added to Honest Bounds with the same evidentiary framing
+  as n-ary (representable node kind, no live parity evidence in S2).
+- **L3-4 (nice-to-have) — DONE.** The allowlist inversion is now a fixed `[HARD]` requirement
+  (allow-known metaclass+normalizable-operator → productive node; every other metaclass and any
+  absent/unrecognized operator → unsupported node). The OQ now defers only the allowlist *contents*,
+  not the inversion.
 
 ---
 
