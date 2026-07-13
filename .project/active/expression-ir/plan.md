@@ -242,3 +242,14 @@ def test_unit_annotation_keeps_source_and_resolved():
 ---
 
 **Status:** Draft → In Progress → **Complete**
+
+---
+
+## Orchestrator note (post-implement, pre-audit, 2026-07-12)
+
+The Phase 2 alias deviation (`Predicate*Node` re-exports to dodge the `aggregation.py` name
+collision) is renamed to `Ir*Node` (`IrLiteralNode`, ...) by the orchestrator [AGENT]: the tree
+serves calc rendering too (Item 13's compat path), so a "Predicate" prefix bakes the wrong scope
+into the public names; `Ir` states what it is. Module-level bare names unchanged. Suite 1333
+green + ruff clean after rename; sole alias user was `__init__.py` itself. The collision itself
+retires whenever aggregation's own nodes migrate onto the shared IR (S2's staged direction).

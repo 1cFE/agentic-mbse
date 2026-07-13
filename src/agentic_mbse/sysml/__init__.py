@@ -77,11 +77,11 @@ from agentic_mbse.sysml.expression_ir import (
     parse_expression,
     serialize_expression,
 )
-from agentic_mbse.sysml.expression_ir import FeatureReferenceNode as PredicateFeatureReferenceNode
-from agentic_mbse.sysml.expression_ir import InvocationNode as PredicateInvocationNode
-from agentic_mbse.sysml.expression_ir import LiteralNode as PredicateLiteralNode
-from agentic_mbse.sysml.expression_ir import OperatorNode as PredicateOperatorNode
-from agentic_mbse.sysml.expression_ir import UnsupportedNode as PredicateUnsupportedNode
+from agentic_mbse.sysml.expression_ir import FeatureReferenceNode as IrFeatureReferenceNode
+from agentic_mbse.sysml.expression_ir import InvocationNode as IrInvocationNode
+from agentic_mbse.sysml.expression_ir import LiteralNode as IrLiteralNode
+from agentic_mbse.sysml.expression_ir import OperatorNode as IrOperatorNode
+from agentic_mbse.sysml.expression_ir import UnsupportedNode as IrUnsupportedNode
 from agentic_mbse.sysml.graph import (
     detect_cycles,
     topological_sort,
@@ -156,11 +156,11 @@ __all__ = [
     "OperandTypeFact",
     "OwnerFact",
     "OwningDefinitionFact",
-    "PredicateFeatureReferenceNode",
-    "PredicateInvocationNode",
-    "PredicateLiteralNode",
-    "PredicateOperatorNode",
-    "PredicateUnsupportedNode",
+    "IrFeatureReferenceNode",
+    "IrInvocationNode",
+    "IrLiteralNode",
+    "IrOperatorNode",
+    "IrUnsupportedNode",
     "RedefinitionFact",
     "UnitAnnotationNode",
     "UnitFact",
