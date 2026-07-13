@@ -43,33 +43,33 @@ production build-out of that proven shape — not new research.
 
 ## Success Criteria
 
-- [ ] All five S2 predicate shapes (the WI-014 `cost <= budget` predicate, the IFE viability
+- [x] All five S2 predicate shapes (the WI-014 `cost <= budget` predicate, the IFE viability
       predicate, an inline owner-reference predicate, a negated assertion, and a compound Boolean)
       and the S2 stress calc expressions (arithmetic with unary minus and `^`, unit annotations)
       extract to `ExpressionIR` trees.
-- [ ] Every one of those trees JSON-round-trips **byte-identically** — both within a single load
+- [x] Every one of those trees JSON-round-trips **byte-identically** — both within a single load
       (`serialize(parse(serialize(t))) == serialize(t)`) and across independent live loads of the
       same fixture.
-- [ ] **Source operator spellings survive distinctly in the tree.** A round-trip preserves and
+- [x] **Source operator spellings survive distinctly in the tree.** A round-trip preserves and
       distinguishes `^` from `**`, unary minus, and the `[` unit-annotation — a fixture exercising
       both `^` and `**` extracts to trees that keep them different operator strings, and the
       unit-annotation node keeps its source unit spelling (`m`) alongside the resolved `UnitFact`
       QN (`SI::metre`). A spelling collapse is caught here, not two items downstream (Item 13's
       calc compat renders byte-identically and depends on the distinction — see the extraction
       requirement below).
-- [ ] The unsupported node is real and exercised: a fixture containing a structurally
+- [x] The unsupported node is real and exercised: a fixture containing a structurally
       unrepresentable expression extracts to a tree whose unsupported node carries a structural
       diagnostic — the node's metaclass kind, a diagnostic message, and the source text where
       available. Silence is never an outcome at the tree level — no expression node is dropped or
       coerced into a wrong-kind node.
-- [ ] The canonical node types are `@dataclass`es that reuse Item 1's leaf vocabulary
+- [x] The canonical node types are `@dataclass`es that reuse Item 1's leaf vocabulary
       (`FeatureReferenceFact`, `LiteralFact`, `OperandTypeFact`, `UnitFact` from
       `expression_facts.py`) — the leaf idiom is visibly adopted, not restated as new pydantic
       stand-ins.
-- [ ] The predicate sub-document version is `expression-ir/v1`; the envelope stays
+- [x] The predicate sub-document version is `expression-ir/v1`; the envelope stays
       `constraint-facts/v1`. `constraint_facts.py` predicate slots (usage/definition predicates,
       formal defaults, actual values, redefinition values) carry the canonical tree.
-- [ ] agentic-mbse suite green (default selection); Ruff clean.
+- [x] agentic-mbse suite green (default selection); Ruff clean.
 
 ## Known Requirements
 

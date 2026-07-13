@@ -149,7 +149,7 @@ The seam is confirmed; Items 9–11 may freeze schemas against it. See
 
 ---
 
-### Item 2: ExpressionIR — Production Tree, Extraction, Serialization
+### Item 2: ExpressionIR — Production Tree, Extraction, Serialization ✅
 
 **Type**: Implementation (agentic-mbse)
 **Effort**: 1.5 days (spec 2h, design 2h, plan 1h, execute 7h)
@@ -166,10 +166,10 @@ The seam is confirmed; Items 9–11 may freeze schemas against it. See
 - Compiling IR to Python (Item 7 owns the Kleene predicate compiler; Item 13 owns the calc compat rendering); profile eligibility (Item 3); `ExpressionAST` retirement (Item 13).
 
 **Success Criteria**:
-- [ ] All five S2 predicate shapes and the S2 stress calc expressions extract to trees that JSON-round-trip byte-identically across independent loads.
-- [ ] The unsupported node carries a structural diagnostic (silence is never an outcome at the tree level).
-- [ ] Field shapes visibly adopt Item 1's fact vocabulary (S2 carry-forward: probe pydantic fields were stand-ins).
-- [ ] agentic-mbse suite green.
+- [x] All five S2 predicate shapes and the S2 stress calc expressions extract to trees that JSON-round-trip byte-identically across independent loads.
+- [x] The unsupported node carries a structural diagnostic (silence is never an outcome at the tree level).
+- [x] Field shapes visibly adopt Item 1's fact vocabulary (S2 carry-forward: probe pydantic fields were stand-ins).
+- [x] agentic-mbse suite green.
 
 **Required Reading**: concept `ExpressionIR` paragraph + S2 result and carry-forwards; S2 findings ("Facts the design can now rely on").
 
