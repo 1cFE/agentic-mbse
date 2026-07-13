@@ -1,6 +1,6 @@
 # Implementation Plan: ExpressionIR — Production Tree, Extraction, Serialization
 
-**Status:** Draft
+**Status:** Complete
 **Created:** 2026-07-12
 **Last Updated:** 2026-07-12
 **Epic:** CONSTRAINT-EXEC, Item 2 · **Branch:** `constraint-exec-epic`
@@ -176,17 +176,17 @@ def test_unit_annotation_keeps_source_and_resolved():
 
 ### Changes Required
 **See design.md#validation-approach for the full list.**
-- [ ] `tests/test_sysml/test_expression_ir_extraction.py` (NEW): distinctness, exercised unsupported, unit source+resolved, and cross-independent-load round-trip over `operator_fidelity.sysml`.
-- [ ] Confirm leaf reuse is visible: node fields are `FeatureReferenceFact`/`LiteralFact`/`OperandTypeFact`/`UnitFact` instances (a type assertion suffices).
+- [x] `tests/test_sysml/test_expression_ir_extraction.py` (NEW): distinctness, exercised unsupported, unit source+resolved, and cross-independent-load round-trip over `operator_fidelity.sysml`.
+- [x] Confirm leaf reuse is visible: node fields are `FeatureReferenceFact`/`LiteralFact`/`OperandTypeFact`/`UnitFact` instances (a type assertion suffices).
 
 ### Validation (final gates)
 **Automated:**
-- [ ] `uv run pytest tests/` → green (default selection only).
-- [ ] `uv run ruff check src/ tests/` → clean.
-- [ ] Byte-stable round-trip confirmed at the pair `(constraint-facts/v1, expression-ir/v1)` — the new extraction test + `test_round_trip_over_real_facts`.
+- [x] `uv run pytest tests/` → green (default selection only).
+- [x] `uv run ruff check src/ tests/` → clean (on files this epic item touched; see Phase 2 note on the 133 pre-existing, unrelated errors elsewhere).
+- [x] Byte-stable round-trip confirmed at the pair `(constraint-facts/v1, expression-ir/v1)` — the new extraction test + `test_round_trip_over_real_facts`.
 
 **Manual:**
-- [ ] `grep -rn "ExpressionFact\|predicate-tree\|PREDICATE_TREE_SCHEMA_VERSION" src/ tests/` → **no hits** (the "no silent third representation" gate; `ExpressionFact` gone everywhere).
+- [x] `grep -rn "ExpressionFact\|predicate-tree\|PREDICATE_TREE_SCHEMA_VERSION" src/ tests/` → **no hits** (the "no silent third representation" gate; `ExpressionFact` gone everywhere).
 
 **What We Know Works After This Phase:** every Item 2 success criterion is exercised by a live test; the gates are green; one tree, one encoder, one version pair.
 
@@ -232,10 +232,13 @@ def test_unit_annotation_keeps_source_and_resolved():
 - **Name collision, not anticipated by design/plan:** `expression_ir.py`'s six node dataclasses (`LiteralNode`, `FeatureReferenceNode`, `OperatorNode`, `InvocationNode`, `UnsupportedNode`) share bare names with classes `aggregation.py` already defines and re-exports from `sysml/__init__.py` (a distinct, unrelated node algebra for aggregation decomposition). Re-exporting both under identical bare names would make one implementation silently unreachable via `agentic_mbse.sysml.<Name>` — a "silent third representation"-shaped bug in miniature, even though no current test or caller reads either set through the top-level package (all landed usages import from the submodule directly — `agentic_mbse.sysml.aggregation.LiteralNode` or `agentic_mbse.sysml.expression_ir.LiteralNode`). Resolved by re-exporting the expression_ir node types under a `Predicate`-prefixed alias (`PredicateLiteralNode`, `PredicateFeatureReferenceNode`, `PredicateOperatorNode`, `PredicateInvocationNode`, `PredicateUnsupportedNode`) at the `sysml/__init__.py` level only; `UnitAnnotationNode` has no collision and keeps its bare name. The submodule (`agentic_mbse.sysml.expression_ir`) still exports all six under their design-specified bare names — this alias applies only to the package-level re-export, the one surface design.md#component-overview didn't anticipate would collide.
 
 ### Phase 3 Completion
-**Completed:**
+**Completed:** 2026-07-12
 **Actual Changes:**
+- `tests/test_sysml/test_expression_ir_extraction.py` (NEW): 7 live tests over `operator_fidelity.sysml` (Phase 1's de-risk fixture) and the reused `type_units.sysml` — `^`/`**` spelling distinctness, unary minus as a one-operand operator, the unsupported node (`node_kind`/`diagnostic` truthy), unit-annotation source+resolved fidelity, frozen-leaf-type instance checks, and round-trip byte-stability both within a load and across two independent loads.
+- Test design deviation from the plan's stencil: `test_unit_annotation_keeps_source_and_resolved` reuses `type_units.sysml::quantity_same_unit`, not `operator_fidelity.sysml` — the de-risk fixture (Phase 1) has no unit annotation by design (D6 scoped it to only the three gaps: `^`/`**`, unary minus, unsupported); unit-annotation coverage was always meant to come from the landed fixture (design.md's Research Findings + D6 "reuse the landed fixtures for the rest").
 **Issues / Deviations:**
+- **Pre-existing defect found and fixed before this phase's tests could pass:** Phase 2's `_unit_annotation_node` derived `unit_text` via `reconstruct_expression(operands[1])`, which reads the unit referent's canonical `.name` (`"metre"`) — not the source spelling actually written (`"m"`). This violated the design's B1 fidelity bet and the stated Validation Approach (`unit_text="m"` alongside `operand_type.unit.unit="SI::metre"`). This phase's `test_unit_annotation_keeps_source_and_resolved` is what caught it (writing the Phase 3 test surfaced a Phase 2 defect before any gate saw it). Fixed by reading the unit referent's `short_name` structurally (confirmed live: `SI::metre.short_name == "m"`, `SI::centimetre.short_name == "cm"`, `SI::kilogram.short_name == "kg"` — matches the tokens the fixtures actually use) — committed separately, ahead of this phase's tests, with `production_facts.json` regenerated a second time (diff: only the four `unit_text` values changed).
 
 ---
 
-**Status:** Draft → In Progress → Complete
+**Status:** Draft → In Progress → **Complete**
