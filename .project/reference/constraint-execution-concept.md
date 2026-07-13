@@ -1,4 +1,4 @@
-<!-- REFERENCE COPY. Canonical: sysml-codegen .project/concepts/constraint-execution-and-design-space-studies-claude.md @ 662411a (constraint-exec-epic anchor). Do not edit here; cross-repo stage sessions cannot read outside their repo. -->
+<!-- REFERENCE COPY. Canonical: sysml-codegen .project/concepts/constraint-execution-and-design-space-studies-claude.md (constraint-exec-epic). Do not edit here; cross-repo stage sessions cannot read outside their repo. -->
 # Design: Constraint Execution and Design-Space Studies
 
 **Status:** Proposed
@@ -318,6 +318,20 @@ Six spikes (S1–S6) plus a deferred seventh (S7). Each names the assumption it 
 **Spike result — [AGENT], 2026-07-12:** Confirmed against a fake evaluator. A SQLite (`WAL`, `synchronous=FULL`) store with content-addressed artifact staging (write tmp → fsync → atomic rename → fsync dir → single-transaction case insert) survived hard `os._exit(137)` crashes injected both before case commit and mid artifact-staging; resume in a fresh process reproduced the uninterrupted run's ordered cases exactly (58 invariant checks, green and stable across three repeats). All five pass criteria held: identical ordered cases; no double-commit under (`study_id`, `candidate_id`), enforced by a `UNIQUE` constraint and resume-skip; no committed case referencing a missing or half-written artifact (a mid-staging crash left only a truncated, hash-mismatching tmp as collectable garbage, never referenced); invalid out-of-domain proposals persisted as `ProposalRecord`s that never reached the evaluator; and an incompatible-fingerprint reopen raised. The three-layer identity behaved as specified — the crash-before-commit candidate committed exactly once on a **new** `attempt_id` (`a2`) with the crashed `a1` preserved in append-only attempt history; deliberate replicates became distinct `candidate_id`s sharing one content-addressed artifact; a retryable failure was retried under a new `attempt_id` yielding a single committed case. The tiny evaluator's seven outcomes each landed correctly, with assessment-failure preserving real evidence rather than a stub. Bounds: `os._exit` proves the protocol needs no graceful shutdown and rests on fsync-before-return, but does not simulate power/disk-cache loss; the S4-package repeat is deferred on the same merge-the-in-flight-scalar-work prerequisite as S5. See `../../../teax/.project/active/spike-crash-safe-study-lifecycle/findings.md`.
 
 *[AGENT] S6 review carry-forwards (2026-07-12, verified: probe re-run three times — 58/58 checks green, identical case order and count, only the temp workroot differing; direct crash child exits 137):* (1) the deferral prerequisite is **already satisfied** — teax `main`'s tip is `7560d65`, the merged scalar-persistence work S5 closed with, so the S6 findings' citation of unmerged `77bb6d0` is stale and the S4-package repeat is unblocked, pending only scheduling; (2) candidate identity is positional (`c{index:04d}` from the proposal sequence), so resume idempotency *presupposes* a deterministic proposal order — guaranteed for prepared/grid strategies, and exactly the replay property S7 must establish before adaptive ones; spec must state the minting rule and why it is positional (content-based IDs would collapse deliberate replicates); (3) the crash-safety proof binds to the store's journal settings (`WAL`, `synchronous=FULL`) and to the invariant that a final-path artifact is always complete (staging dedup trusts `exists()`) — both belong in the store contract as required behavior, not implementation detail.
+
+*[AGENT] S6 S4-package repeat — done, 2026-07-12 (epic Item 0):* the deferred repeat now
+ran. S6's machinery drove S4's real sealed package through an S5-shaped prepared-pipeline
+evaluator with zero runner/store changes — all three verdict classes committed as
+`completed` cases with real evidence (indeterminate reachable only via a NaN budget through
+the typed in-memory entry into the generated Kleene predicate), invalid proposal stayed a
+`ProposalRecord`, crash-before-commit + resume reproduced the uninterrupted run, and
+prepare-once measured ~64× over rebuild on the real package. Eight evaluator-interface
+mismatches surfaced, all schema/naming/wiring (typed-entry is channel→model→field not a flat
+parameter-ID map; proposal-validity vs non-finite-input are different axes; runner needs an
+injected validation seam; evaluator protocol drops `attempt_number`; headline
+underscore/hyphen vocabulary; non-finite evidence JSON encoding; no-persist still needs write
+handlers; package-load names by declared package name) — none architectural, distributed to
+Items 9–11. See `../../../teax/.project/active/constraint-study-integration-spike/findings.md`.
 
 ### S7 — Adaptive-resume (`teax`, deferred; gates adaptive strategies)
 

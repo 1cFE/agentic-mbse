@@ -1,4 +1,4 @@
-<!-- REFERENCE COPY. Canonical: sysml-codegen .project/backlog/epic_constraint_execution.md @ 662411a. Do not edit here. -->
+<!-- REFERENCE COPY. Canonical: sysml-codegen .project/backlog/epic_constraint_execution.md (constraint-exec-epic). Do not edit here. -->
 # Epic: Constraint Execution and Design-Space Studies
 
 **Epic ID**: CONSTRAINT-EXEC
@@ -98,6 +98,19 @@ Modeled physical limits (`assert constraint`) currently die at a drop-report war
 **Required Reading**: concept Appendix B S4–S6 results + carry-forwards; S4/S5/S6 findings (Reproduction sections).
 
 **Location**: `~/1cfe/teax/.project/active/constraint-study-integration-spike/`
+
+**[AGENT] Spike result — 2026-07-12:** All three criteria pass (40/40 invariant checks,
+stable across three repeats). S6's machinery drove S4's real sealed package through an
+S5-shaped prepared evaluator with **zero changes to the runner/store logic**. The three
+verdict classes landed as `completed` cases with real evidence (the indeterminate class
+reachable **only** via a NaN budget injected through the typed in-memory entry → generated
+Kleene predicate); the invalid proposal stayed a `ProposalRecord`; crash-before-commit then
+resume reproduced the uninterrupted ordered cases exactly. Prepare-once measured **~64×**
+faster than rebuild on the real package (vs S5's ~4× on its toy graph; the speedup scales
+with model validation cost). **Eight evaluator-interface mismatches named, all
+schema/naming/wiring — none architectural** — and distributed to Items 9–11 in the findings.
+The seam is confirmed; Items 9–11 may freeze schemas against it. See
+`~/1cfe/teax/.project/active/constraint-study-integration-spike/findings.md`.
 
 **Deliverables**:
 - `findings.md` (summary-on-top, reproduction, verdict feeding Items 9–11)
