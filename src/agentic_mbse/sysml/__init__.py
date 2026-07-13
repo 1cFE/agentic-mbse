@@ -64,14 +64,24 @@ from agentic_mbse.sysml.expression import (
     traverse_expression,
 )
 from agentic_mbse.sysml.expression_facts import (
-    PREDICATE_TREE_SCHEMA_VERSION,
-    ExpressionFact,
     FeatureReferenceFact,
     IdentityFact,
     LiteralFact,
     OperandTypeFact,
     UnitFact,
 )
+from agentic_mbse.sysml.expression_ir import (
+    EXPRESSION_IR_SCHEMA_VERSION,
+    ExpressionIR,
+    UnitAnnotationNode,
+    parse_expression,
+    serialize_expression,
+)
+from agentic_mbse.sysml.expression_ir import FeatureReferenceNode as PredicateFeatureReferenceNode
+from agentic_mbse.sysml.expression_ir import InvocationNode as PredicateInvocationNode
+from agentic_mbse.sysml.expression_ir import LiteralNode as PredicateLiteralNode
+from agentic_mbse.sysml.expression_ir import OperatorNode as PredicateOperatorNode
+from agentic_mbse.sysml.expression_ir import UnsupportedNode as PredicateUnsupportedNode
 from agentic_mbse.sysml.graph import (
     detect_cycles,
     topological_sort,
@@ -129,14 +139,14 @@ __all__ = [
     "AttributeInfo",
     # Constraint facts (shared with sysml-codegen; CONSTRAINT-EXEC epic)
     "CONSTRAINT_FACTS_SCHEMA_VERSION",
-    "PREDICATE_TREE_SCHEMA_VERSION",
+    "EXPRESSION_IR_SCHEMA_VERSION",
     "ActualFact",
     "ConstraintDefinitionFact",
     "ConstraintFacts",
     "ConstraintSource",
     "ConstraintUsageFact",
     "ContextFact",
-    "ExpressionFact",
+    "ExpressionIR",
     "ExtractionDiagnosticFact",
     "FeatureReferenceFact",
     "FormalFact",
@@ -146,11 +156,19 @@ __all__ = [
     "OperandTypeFact",
     "OwnerFact",
     "OwningDefinitionFact",
+    "PredicateFeatureReferenceNode",
+    "PredicateInvocationNode",
+    "PredicateLiteralNode",
+    "PredicateOperatorNode",
+    "PredicateUnsupportedNode",
     "RedefinitionFact",
+    "UnitAnnotationNode",
     "UnitFact",
     "extract_constraint_facts",
     "parse",
+    "parse_expression",
     "serialize",
+    "serialize_expression",
     "SumTerm",
     "SingletonTerm",
     "LocalTerm",

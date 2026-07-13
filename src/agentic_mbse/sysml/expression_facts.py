@@ -1,10 +1,10 @@
-"""Neutral leaf vocabulary and predicate-tree node algebra for constraint facts.
+"""Neutral leaf vocabulary for the constraint predicate tree.
 
 This is the frozen leaf vocabulary S1 (`.project/active/spike-constraint-fact-shapes/`)
 proved recoverable from live SysIDE: a feature reference or a literal, each carrying its
-type category, enumeration identity, and unit/dimension fact. It is the leaf Item 2's
-`ExpressionIR` adopts, so this module imports neither syside nor `constraint_facts` — the
-import direction points one way, toward the leaves.
+type category, enumeration identity, and unit/dimension fact. It is the leaf `expression_ir`'s
+`ExpressionIR` adopts, so this module imports neither syside nor `constraint_facts`/`expression_ir`
+— the import direction points one way, toward the leaves.
 """
 
 from __future__ import annotations
@@ -13,16 +13,12 @@ from dataclasses import dataclass, field
 from typing import Any
 
 __all__ = [
-    "PREDICATE_TREE_SCHEMA_VERSION",
-    "ExpressionFact",
     "FeatureReferenceFact",
     "IdentityFact",
     "LiteralFact",
     "OperandTypeFact",
     "UnitFact",
 ]
-
-PREDICATE_TREE_SCHEMA_VERSION = "predicate-tree/v0"
 
 
 @dataclass
@@ -88,23 +84,3 @@ class LiteralFact:
     kind: str
     value: Any
     result_type: str | None
-
-
-@dataclass
-class ExpressionFact:
-    """One node of the provisional predicate tree.
-
-    Every value-producing node carries ``operand_type`` — a ``reference``/``literal`` leaf, a
-    unit-annotation node like ``1 [m]`` (``category="quantity"`` and its ``UnitFact``), and a
-    same-unit arithmetic combination like ``1 [m] + 1 [m]``. Only a Boolean-relational or
-    connective node (``==``, ``<=``, ``and``, ``not``, ...) is a pure proposition and carries
-    ``operand_type=None`` — it is a statement about operands, not a value itself.
-    """
-
-    predicate_schema_version: str
-    kind: str
-    operator: str | None
-    operands: list[ExpressionFact]
-    reference: FeatureReferenceFact | None
-    literal: LiteralFact | None
-    operand_type: OperandTypeFact | None

@@ -25,13 +25,17 @@ from agentic_mbse.sysml.constraint_facts import (
     serialize,
 )
 from agentic_mbse.sysml.expression_facts import (
-    PREDICATE_TREE_SCHEMA_VERSION,
-    ExpressionFact,
     FeatureReferenceFact,
     IdentityFact,
     LiteralFact,
     OperandTypeFact,
     UnitFact,
+)
+from agentic_mbse.sysml.expression_ir import (
+    ExpressionIR,
+    FeatureReferenceNode,
+    LiteralNode,
+    OperatorNode,
 )
 
 
@@ -39,13 +43,8 @@ def _identity(kind: str, name: str | None, qualified_name: str | None) -> Identi
     return IdentityFact(kind=kind, name=name, qualified_name=qualified_name)
 
 
-def _literal_expression(value: float) -> ExpressionFact:
-    return ExpressionFact(
-        predicate_schema_version=PREDICATE_TREE_SCHEMA_VERSION,
-        kind="LiteralRational",
-        operator=None,
-        operands=[],
-        reference=None,
+def _literal_expression(value: float) -> LiteralNode:
+    return LiteralNode(
         literal=LiteralFact(
             kind="LiteralRational", value=value, result_type="ScalarValues::Rational"
         ),
@@ -53,19 +52,14 @@ def _literal_expression(value: float) -> ExpressionFact:
     )
 
 
-def _reference_expression() -> ExpressionFact:
-    return ExpressionFact(
-        predicate_schema_version=PREDICATE_TREE_SCHEMA_VERSION,
-        kind="FeatureReferenceExpression",
-        operator=None,
-        operands=[],
+def _reference_expression() -> FeatureReferenceNode:
+    return FeatureReferenceNode(
         reference=FeatureReferenceFact(
             source_name="limit",
             target=_identity("AttributeUsage", "limit", "WithinLimit::limit"),
             target_types=["ScalarValues::Real"],
             chain_segments=[],
         ),
-        literal=None,
         operand_type=OperandTypeFact(
             category="quantity",
             enumeration=None,
@@ -75,13 +69,9 @@ def _reference_expression() -> ExpressionFact:
 
 
 def _hand_built_facts() -> ConstraintFacts:
-    predicate = ExpressionFact(
-        predicate_schema_version=PREDICATE_TREE_SCHEMA_VERSION,
-        kind="OperatorExpression",
+    predicate: ExpressionIR = OperatorNode(
         operator="<=",
         operands=[_reference_expression(), _literal_expression(10.0)],
-        reference=None,
-        literal=None,
         operand_type=None,
     )
     definition = ConstraintDefinitionFact(
@@ -182,7 +172,7 @@ def test_every_field_present_absence_is_explicit_null() -> None:
 def test_schema_versions_are_pinned() -> None:
     doc = json.loads(serialize(_hand_built_facts()))
     assert doc["schema_version"] == "constraint-facts/v1"
-    assert doc["usages"][0]["predicate"]["predicate_schema_version"] == "predicate-tree/v0"
+    assert doc["usages"][0]["predicate"]["schema_version"] == "expression-ir/v1"
 
 
 def test_non_finite_serialize_backstop() -> None:

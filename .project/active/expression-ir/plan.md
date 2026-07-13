@@ -115,31 +115,31 @@ assert doc["usages"][0]["predicate"]["schema_version"] == "expression-ir/v1"  # 
 ### Changes Required — the 8-site worklist (design.md#integration-strategy)
 
 **Block A — extractor cutover (do first; the phase's self-contained logic block):**
-- [ ] **Site 2** `constraint_extraction.py`: rename `_expression_fact` → `_expression_ir`; import nodes + `EXPRESSION_IR_SCHEMA_VERSION` from `expression_ir`. Split the operator branch into operator / unit-annotation (operator normalizes to `[`) / unsupported. Reference/literal builders return `FeatureReferenceNode`/`LiteralNode`.
-- [ ] Add enum→symbol **normalization with an unrecognized-signal** (design.md#implementation-notes "Normalization is new work"): model on the probe's `_OPERATOR_ENUM_MAP` (`s2_ir.py:70`), but an unmapped/absent operator returns a sentinel routing to `UnsupportedNode` — do **not** pass the raw enum name through (D4; the probe's `_operator_text` did, Item 2 must not).
-- [ ] `UnsupportedNode` carries `node_kind` (the unrepresentable metaclass), `diagnostic`, and `source_text` from `reconstruct_expression` (`expression.py:420`) where available.
-- [ ] Preserve `operand_type` placement: on literal/reference/unit/arithmetic-operator nodes; `None` on comparison/connective nodes. Reuse the landed `_BOOLEAN_CONNECTIVE_OPERATORS` set (`constraint_extraction.py:53`) **as-is** — do not expand it (keeping it unchanged keeps `operand_type` byte-stable; note `xor` is deliberately absent there today).
+- [x] **Site 2** `constraint_extraction.py`: rename `_expression_fact` → `_expression_ir`; import nodes + `EXPRESSION_IR_SCHEMA_VERSION` from `expression_ir`. Split the operator branch into operator / unit-annotation (operator normalizes to `[`) / unsupported. Reference/literal builders return `FeatureReferenceNode`/`LiteralNode`.
+- [x] Add enum→symbol **normalization with an unrecognized-signal** (design.md#implementation-notes "Normalization is new work"): model on the probe's `_OPERATOR_ENUM_MAP` (`s2_ir.py:70`), but an unmapped/absent operator returns a sentinel routing to `UnsupportedNode` — do **not** pass the raw enum name through (D4; the probe's `_operator_text` did, Item 2 must not).
+- [x] `UnsupportedNode` carries `node_kind` (the unrepresentable metaclass), `diagnostic`, and `source_text` from `reconstruct_expression` (`expression.py:420`) where available.
+- [x] Preserve `operand_type` placement: on literal/reference/unit/arithmetic-operator nodes; `None` on comparison/connective nodes. Reuse the landed `_BOOLEAN_CONNECTIVE_OPERATORS` set (`constraint_extraction.py:53`) **as-is** — do not expand it (keeping it unchanged keeps `operand_type` byte-stable; note `xor` is deliberately absent there today).
 
 **Block B — src retype (atomic with A):**
-- [ ] **Site 1** `expression_facts.py:25`: delete `PREDICATE_TREE_SCHEMA_VERSION` + `ExpressionFact`; update `__all__`. Leaves + `IdentityFact` stay.
-- [ ] **Site 3** `constraint_facts.py`: retype the five predicate slots (`FormalFact.default`, `ActualFact.value`, `ConstraintDefinitionFact.predicate`, `ConstraintUsageFact.predicate`, `RedefinitionFact.value`) to `ExpressionIR`; delete the local `_expression_from_dict*` + moved leaf helpers, delegating to `expression_ir._expression_ir_from_dict`; import the shared `_canonical_json` from `expression_ir` (verify byte output unchanged except tree shape + version — design.md#implementation-notes).
-- [ ] **Site 4** `sysml/__init__.py`: re-export the node types + `ExpressionIR` union + `EXPRESSION_IR_SCHEMA_VERSION` + `serialize_expression`/`parse_expression`; drop `ExpressionFact` + `PREDICATE_TREE_SCHEMA_VERSION`.
+- [x] **Site 1** `expression_facts.py:25`: delete `PREDICATE_TREE_SCHEMA_VERSION` + `ExpressionFact`; update `__all__`. Leaves + `IdentityFact` stay.
+- [x] **Site 3** `constraint_facts.py`: retype the five predicate slots (`FormalFact.default`, `ActualFact.value`, `ConstraintDefinitionFact.predicate`, `ConstraintUsageFact.predicate`, `RedefinitionFact.value`) to `ExpressionIR`; delete the local `_expression_from_dict*` + moved leaf helpers, delegating to `expression_ir._expression_ir_from_dict`; import the shared `_canonical_json` from `expression_ir` (verify byte output unchanged except tree shape + version — design.md#implementation-notes).
+- [x] **Site 4** `sysml/__init__.py`: re-export the node types + `ExpressionIR` union + `EXPRESSION_IR_SCHEMA_VERSION` + `serialize_expression`/`parse_expression`; drop `ExpressionFact` + `PREDICATE_TREE_SCHEMA_VERSION`.
 
 **Block C — test migration:**
-- [ ] **Site 5** `test_constraint_facts_serialize.py`: migrate `_literal_expression`/`_reference_expression`/`_hand_built_facts` to the new node types; re-pin `test_schema_versions_are_pinned` (stencil above, note the field rename `predicate_schema_version` → `schema_version`).
-- [ ] **Site 6** `test_constraint_extraction.py`: migrate the `_expression_fact` import + `MockLiteralRational` test (`:192-203`) to `_expression_ir` and the new return type. The operand-type/compound assertions (`:58-69`, `:136-139`) read preserved names and need **no** change (B2 / design.md#implementation-notes).
-- [ ] **Site 8** `test_constraint_fact_shapes.py:121,123`: the two `.value.kind` metaclass-name comparisons — migrate per design step 8: chain via `actuals["observed"].value.chain_segments` non-empty; rational via `actuals["limit"].value.literal.kind == "LiteralRational"`.
+- [x] **Site 5** `test_constraint_facts_serialize.py`: migrate `_literal_expression`/`_reference_expression`/`_hand_built_facts` to the new node types; re-pin `test_schema_versions_are_pinned` (stencil above, note the field rename `predicate_schema_version` → `schema_version`).
+- [x] **Site 6** `test_constraint_extraction.py`: migrate the `_expression_fact` import + `MockLiteralRational` test (`:192-203`) to `_expression_ir` and the new return type. The operand-type/compound assertions (`:58-69`, `:136-139`) read preserved names and need **no** change (B2 / design.md#implementation-notes).
+- [x] **Site 8** `test_constraint_fact_shapes.py:121,123`: the two `.value.kind` metaclass-name comparisons — migrate per design step 8: chain via `actuals["observed"].value.chain_segments` non-empty; rational via `actuals["limit"].value.literal.kind == "LiteralRational"`.
 
 **Block D — golden:**
-- [ ] **Site 7** `production_facts.json`: regenerate (self-compare test writes/reads its own golden — `test_constraint_fact_shapes.py:54-58`). Review the diff **node-by-node** against the expected-change checklist (design.md#potential-risks): every node drops the nullable slots it no longer has; version string flips `predicate-tree/v0 → expression-ir/v1`; each unit annotation loses its `operands[1]` unit-reference subtree (collapsed into `unit_text` + resolved `UnitFact`). **Anything else in the diff is a regression, not an expected change** — stop and investigate.
+- [x] **Site 7** `production_facts.json`: regenerate (self-compare test writes/reads its own golden — `test_constraint_fact_shapes.py:54-58`). Review the diff **node-by-node** against the expected-change checklist (design.md#potential-risks): every node drops the nullable slots it no longer has; version string flips `predicate-tree/v0 → expression-ir/v1`; each unit annotation loses its `operands[1]` unit-reference subtree (collapsed into `unit_text` + resolved `UnitFact`). **Anything else in the diff is a regression, not an expected change** — stop and investigate.
 
 ### Validation
 **Automated:**
-- [ ] `uv run pytest tests/` → green (the phase gate; red mid-phase is expected).
-- [ ] `uv run ruff check src/ tests/` → clean.
+- [x] `uv run pytest tests/` → green (the phase gate; red mid-phase is expected).
+- [x] `uv run ruff check src/ tests/` → clean (on all files this phase touched; the 133 pre-existing errors elsewhere in the repo, in the unrelated PDF-extraction subsystem, are untouched and out of scope).
 
 **Manual:**
-- [ ] Golden diff reviewed against the checklist; the single largest deletion is the unit-annotation `operands[1]` subtree and nothing else structural moved.
+- [x] Golden diff reviewed against the checklist; the single largest deletion is the unit-annotation `operands[1]` subtree and nothing else structural moved.
 
 **What We Know Works After This Phase:** one tree in the codebase; the full suite green on the new shape; the golden pinned; versions bumped.
 
@@ -219,10 +219,17 @@ def test_unit_annotation_keeps_source_and_resolved():
 - `UnsupportedNode.operand_type`: the design's node-algebra sketch (design.md#node-algebra-schema-sketch-representative) omits an explicit `operand_type` slot on `UnsupportedNode` — it is not a value-producing node, so no slot was added, matching the sketch.
 
 ### Phase 2 Completion
-**Completed:**
-**Golden diff review (record):** confirmed only expected changes.
+**Completed:** 2026-07-12
+**Golden diff review (record):** Structural diff verified programmatically (stripped every predicate-shaped subtree from both old and new golden JSON, then diffed the remaining skeleton — identical). Spot-checked four representative predicate subtrees (`quantity_same_unit`, `unit_bearing_arithmetic`, `compound_boolean`, `unresolved_operand`): every non-unit node dropped only its now-absent nullable slots (`operator`/`operands`/`reference`/`literal` — only the fields the new node kind actually has); the version string flips `predicate-tree/v0` → `expression-ir/v1` on every node; every unit annotation (`1 [m]`, `2 [m]`, `1 [kg]`) collapsed its `operands[1]` `FeatureReferenceExpression` subtree into `unit_text` + the resolved `operand_type.unit` — confirmed as the only subtree deletion. No other structural change found.
 **Actual Changes:**
+- `src/agentic_mbse/sysml/expression_facts.py`: deleted `PREDICATE_TREE_SCHEMA_VERSION` + `ExpressionFact`; updated module docstring (no longer describes itself as holding "node algebra") and `__all__`.
+- `src/agentic_mbse/sysml/constraint_extraction.py`: added `_OPERATOR_SYMBOLS` (the D4 allowlist set); replaced `_reference_expression_fact`/`_literal_expression_fact`/`_expression_fact` with `_reference_node`/`_literal_node`/`_normalize_operator`/`_unsupported_node`/`_unit_annotation_node`/`_operator_node`/`_operator_expression_node`/`_invocation_node`/`_expression_ir` (the renamed, allowlist-inverted dispatcher). All 5 predicate-building call sites (`definitions[]`, formal defaults, actuals, usage predicate, redefinitions) now call `_expression_ir`.
+- `src/agentic_mbse/sysml/constraint_facts.py`: retyped the five predicate slots to `ExpressionIR`; deleted the local leaf-parse helpers (`_unit_from_dict`, `_operand_type_from_dict`, `_reference_from_dict`, `_literal_from_dict`, `_expression_from_dict*`) and `_canonical_json`, delegating to `expression_ir` (imported `_expression_ir_from_dict` under the alias `_parse_expression_ir` to avoid shadowing the module's own thin `_expression_ir_from_dict(data | None)` optional-wrapper).
+- `src/agentic_mbse/sysml/__init__.py`: dropped `ExpressionFact`/`PREDICATE_TREE_SCHEMA_VERSION`; added `EXPRESSION_IR_SCHEMA_VERSION`, `ExpressionIR`, `UnitAnnotationNode`, `serialize_expression`/`parse_expression`, and the four expression_ir node types re-exported under a `Predicate*` prefix (see Deviations — name collision with `aggregation.py`'s existing exports).
+- `tests/test_sysml/test_constraint_facts_serialize.py`, `tests/test_sysml/test_constraint_extraction.py`, `tests/test_sysml/test_constraint_fact_shapes.py`: migrated per Block C above.
+- `tests/fixtures/constraint_fact_shapes/production_facts.json`: regenerated (see golden diff review above).
 **Issues / Deviations:**
+- **Name collision, not anticipated by design/plan:** `expression_ir.py`'s six node dataclasses (`LiteralNode`, `FeatureReferenceNode`, `OperatorNode`, `InvocationNode`, `UnsupportedNode`) share bare names with classes `aggregation.py` already defines and re-exports from `sysml/__init__.py` (a distinct, unrelated node algebra for aggregation decomposition). Re-exporting both under identical bare names would make one implementation silently unreachable via `agentic_mbse.sysml.<Name>` — a "silent third representation"-shaped bug in miniature, even though no current test or caller reads either set through the top-level package (all landed usages import from the submodule directly — `agentic_mbse.sysml.aggregation.LiteralNode` or `agentic_mbse.sysml.expression_ir.LiteralNode`). Resolved by re-exporting the expression_ir node types under a `Predicate`-prefixed alias (`PredicateLiteralNode`, `PredicateFeatureReferenceNode`, `PredicateOperatorNode`, `PredicateInvocationNode`, `PredicateUnsupportedNode`) at the `sysml/__init__.py` level only; `UnitAnnotationNode` has no collision and keeps its bare name. The submodule (`agentic_mbse.sysml.expression_ir`) still exports all six under their design-specified bare names — this alias applies only to the package-level re-export, the one surface design.md#component-overview didn't anticipate would collide.
 
 ### Phase 3 Completion
 **Completed:**

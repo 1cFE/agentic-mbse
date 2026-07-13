@@ -189,10 +189,10 @@ def test_non_finite_literal_yields_extraction_diagnostic() -> None:
         operator = None
         operands: list[Any] = []
 
-    from agentic_mbse.sysml.constraint_extraction import _expression_fact, _ExtractionContext
+    from agentic_mbse.sysml.constraint_extraction import _expression_ir, _ExtractionContext
 
     ctx = _ExtractionContext()
-    fact = _expression_fact(MockLiteralRational(), ctx)
+    fact = _expression_ir(MockLiteralRational(), ctx)
 
     assert fact is not None
     assert fact.literal is not None

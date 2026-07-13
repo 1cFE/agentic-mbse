@@ -13,14 +13,9 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from agentic_mbse.sysml.expression_facts import (
-    ExpressionFact,
-    FeatureReferenceFact,
-    IdentityFact,
-    LiteralFact,
-    OperandTypeFact,
-    UnitFact,
-)
+from agentic_mbse.sysml.expression_facts import IdentityFact
+from agentic_mbse.sysml.expression_ir import ExpressionIR, _canonical_json
+from agentic_mbse.sysml.expression_ir import _expression_ir_from_dict as _parse_expression_ir
 
 __all__ = [
     "CONSTRAINT_FACTS_SCHEMA_VERSION",
@@ -103,7 +98,7 @@ class FormalFact:
     qualified_name: str | None
     types: list[str] = field(default_factory=list)
     has_default: bool = False
-    default: ExpressionFact | None = None
+    default: ExpressionIR | None = None
 
 
 @dataclass
@@ -113,7 +108,7 @@ class ActualFact:
     name: str | None
     direction: str | None
     formal_targets: list[str] = field(default_factory=list)
-    value: ExpressionFact | None = None
+    value: ExpressionIR | None = None
 
 
 @dataclass
@@ -122,7 +117,7 @@ class ConstraintDefinitionFact:
 
     identity: IdentityFact
     formals: list[FormalFact]
-    predicate: ExpressionFact | None
+    predicate: ExpressionIR | None
 
 
 @dataclass
@@ -138,7 +133,7 @@ class ConstraintUsageFact:
     is_negated: bool | None
     actuals: list[ActualFact]
     omitted_default_formals: list[str]
-    predicate: ExpressionFact | None
+    predicate: ExpressionIR | None
     inherited_into: list[str]
 
 
@@ -148,7 +143,7 @@ class RedefinitionFact:
 
     feature: str | None
     redefines: str | None
-    value: ExpressionFact | None
+    value: ExpressionIR | None
 
 
 @dataclass
@@ -183,12 +178,6 @@ class ConstraintFacts:
     diagnostics: list[ExtractionDiagnosticFact]
 
 
-def _canonical_json(obj: Any) -> str:
-    return json.dumps(
-        obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False
-    )
-
-
 def serialize(facts: ConstraintFacts) -> str:
     """Render ``facts`` as the canonical, byte-stable JSON section (D2).
 
@@ -214,55 +203,10 @@ def _location_from_dict(data: dict[str, Any] | None) -> LocationFact | None:
     return LocationFact(file=data["file"], line=data["line"], column=data["column"])
 
 
-def _unit_from_dict(data: dict[str, Any] | None) -> UnitFact | None:
+def _expression_ir_from_dict(data: dict[str, Any] | None) -> ExpressionIR | None:
     if data is None:
         return None
-    return UnitFact(unit=data["unit"], dimension=data["dimension"])
-
-
-def _operand_type_from_dict(data: dict[str, Any] | None) -> OperandTypeFact | None:
-    if data is None:
-        return None
-    return OperandTypeFact(
-        category=data["category"],
-        enumeration=data["enumeration"],
-        unit=_unit_from_dict(data["unit"]),
-    )
-
-
-def _reference_from_dict(data: dict[str, Any] | None) -> FeatureReferenceFact | None:
-    if data is None:
-        return None
-    return FeatureReferenceFact(
-        source_name=data["source_name"],
-        target=_identity_from_dict(data["target"]),
-        target_types=list(data["target_types"]),
-        chain_segments=list(data["chain_segments"]),
-    )
-
-
-def _literal_from_dict(data: dict[str, Any] | None) -> LiteralFact | None:
-    if data is None:
-        return None
-    return LiteralFact(kind=data["kind"], value=data["value"], result_type=data["result_type"])
-
-
-def _expression_from_dict_required(data: dict[str, Any]) -> ExpressionFact:
-    return ExpressionFact(
-        predicate_schema_version=data["predicate_schema_version"],
-        kind=data["kind"],
-        operator=data["operator"],
-        operands=[_expression_from_dict_required(operand) for operand in data["operands"]],
-        reference=_reference_from_dict(data["reference"]),
-        literal=_literal_from_dict(data["literal"]),
-        operand_type=_operand_type_from_dict(data["operand_type"]),
-    )
-
-
-def _expression_from_dict(data: dict[str, Any] | None) -> ExpressionFact | None:
-    if data is None:
-        return None
-    return _expression_from_dict_required(data)
+    return _parse_expression_ir(data)
 
 
 def _formal_from_dict(data: dict[str, Any]) -> FormalFact:
@@ -271,7 +215,7 @@ def _formal_from_dict(data: dict[str, Any]) -> FormalFact:
         qualified_name=data["qualified_name"],
         types=list(data["types"]),
         has_default=data["has_default"],
-        default=_expression_from_dict(data["default"]),
+        default=_expression_ir_from_dict(data["default"]),
     )
 
 
@@ -280,7 +224,7 @@ def _actual_from_dict(data: dict[str, Any]) -> ActualFact:
         name=data["name"],
         direction=data["direction"],
         formal_targets=list(data["formal_targets"]),
-        value=_expression_from_dict(data["value"]),
+        value=_expression_ir_from_dict(data["value"]),
     )
 
 
@@ -309,7 +253,7 @@ def _definition_from_dict(data: dict[str, Any]) -> ConstraintDefinitionFact:
     return ConstraintDefinitionFact(
         identity=_identity_from_dict_required(data["identity"]),
         formals=[_formal_from_dict(item) for item in data["formals"]],
-        predicate=_expression_from_dict(data["predicate"]),
+        predicate=_expression_ir_from_dict(data["predicate"]),
     )
 
 
@@ -324,7 +268,7 @@ def _usage_from_dict(data: dict[str, Any]) -> ConstraintUsageFact:
         is_negated=data["is_negated"],
         actuals=[_actual_from_dict(item) for item in data["actuals"]],
         omitted_default_formals=list(data["omitted_default_formals"]),
-        predicate=_expression_from_dict(data["predicate"]),
+        predicate=_expression_ir_from_dict(data["predicate"]),
         inherited_into=list(data["inherited_into"]),
     )
 
@@ -333,7 +277,7 @@ def _redefinition_from_dict(data: dict[str, Any]) -> RedefinitionFact:
     return RedefinitionFact(
         feature=data["feature"],
         redefines=data["redefines"],
-        value=_expression_from_dict(data["value"]),
+        value=_expression_ir_from_dict(data["value"]),
     )
 
 

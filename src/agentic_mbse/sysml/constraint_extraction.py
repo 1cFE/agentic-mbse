@@ -35,13 +35,20 @@ from agentic_mbse.sysml.expression import (
     reconstruct_expression,
 )
 from agentic_mbse.sysml.expression_facts import (
-    PREDICATE_TREE_SCHEMA_VERSION,
-    ExpressionFact,
     FeatureReferenceFact,
     IdentityFact,
     LiteralFact,
     OperandTypeFact,
     UnitFact,
+)
+from agentic_mbse.sysml.expression_ir import (
+    ExpressionIR,
+    FeatureReferenceNode,
+    InvocationNode,
+    LiteralNode,
+    OperatorNode,
+    UnitAnnotationNode,
+    UnsupportedNode,
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
@@ -52,6 +59,34 @@ __all__ = ["extract_constraint_facts"]
 # value-producing nodes; a comparison/connective node is not one).
 _BOOLEAN_CONNECTIVE_OPERATORS = frozenset(
     {"==", "!=", "<", ">", "<=", ">=", "and", "or", "not", "implies"}
+)
+
+# The D4 allowlist's operator-symbol set: every spelling SysIDE emits `str(operator)` as for a
+# supported construct. `str(operator)` already yields the SysML symbol text directly (not an
+# enum-name form), so normalization is membership-checking, not name translation; an operator
+# outside this set signals "unrecognized" and routes to `UnsupportedNode` (D4) rather than
+# passing the raw text through.
+_OPERATOR_SYMBOLS = frozenset(
+    {
+        "<",
+        "<=",
+        ">",
+        ">=",
+        "==",
+        "!=",
+        "and",
+        "or",
+        "not",
+        "xor",
+        "implies",
+        "+",
+        "-",
+        "*",
+        "/",
+        "**",
+        "^",
+        "[",
+    }
 )
 
 # Structural MF4 anchor: the measurement-unit-definition supertype every real unit
@@ -116,7 +151,7 @@ def extract_constraint_facts(model: Any) -> ConstraintFacts:
         ConstraintDefinitionFact(
             identity=_identity_required(definitions_by_qn[qn]),
             formals=formals_for(definitions_by_qn[qn]),
-            predicate=_expression_fact(
+            predicate=_expression_ir(
                 getattr(definitions_by_qn[qn], "result_expression", None), ctx
             ),
         )
@@ -300,7 +335,7 @@ def _operand_type_fact(expression: Any) -> OperandTypeFact:
 # === Predicate-tree recovery ===
 
 
-def _reference_expression_fact(expression: Any, *, chain: bool) -> ExpressionFact:
+def _reference_node(expression: Any, *, chain: bool) -> FeatureReferenceNode:
     if chain:
         target = getattr(expression, "target_feature", None)
         chain_segments = extract_feature_chain_segments(expression)
@@ -313,18 +348,10 @@ def _reference_expression_fact(expression: Any, *, chain: bool) -> ExpressionFac
         target_types=_direct_types(target),
         chain_segments=chain_segments,
     )
-    return ExpressionFact(
-        predicate_schema_version=PREDICATE_TREE_SCHEMA_VERSION,
-        kind=type(expression).__name__,
-        operator=None,
-        operands=[],
-        reference=reference,
-        literal=None,
-        operand_type=_operand_type_fact(expression),
-    )
+    return FeatureReferenceNode(reference=reference, operand_type=_operand_type_fact(expression))
 
 
-def _literal_expression_fact(expression: Any, ctx: _ExtractionContext) -> ExpressionFact:
+def _literal_node(expression: Any, ctx: _ExtractionContext) -> LiteralNode:
     result_type = getattr(expression, "cached_result_type", None)
     value = extract_literal_value(expression)
     if isinstance(value, float) and not math.isfinite(value):
@@ -341,46 +368,101 @@ def _literal_expression_fact(expression: Any, ctx: _ExtractionContext) -> Expres
         value=value,
         result_type=_resolved_qualified_name(result_type),
     )
-    return ExpressionFact(
-        predicate_schema_version=PREDICATE_TREE_SCHEMA_VERSION,
-        kind=type(expression).__name__,
-        operator=None,
-        operands=[],
-        reference=None,
-        literal=literal,
-        operand_type=_operand_type_fact(expression),
+    return LiteralNode(literal=literal, operand_type=_operand_type_fact(expression))
+
+
+def _normalize_operator(expression: Any) -> str | None:
+    """The expression's operator, normalized to its D4 symbol, or `None` if unrecognized."""
+    operator = getattr(expression, "operator", None)
+    if operator is None:
+        return None
+    operator_str = str(operator)
+    return operator_str if operator_str in _OPERATOR_SYMBOLS else None
+
+
+def _unsupported_node(expression: Any, diagnostic: str | None = None) -> UnsupportedNode:
+    node_kind = type(expression).__name__
+    message = diagnostic or f"unknown node type: {node_kind}"
+    return UnsupportedNode(
+        node_kind=node_kind,
+        diagnostic=message,
+        source_text=reconstruct_expression(expression) or None,
     )
 
 
-def _expression_fact(expression: Any, ctx: _ExtractionContext) -> ExpressionFact | None:
-    if expression is None:
-        return None
-    if SysideAdapter.is_instance(expression, "FeatureChainExpression"):
-        return _reference_expression_fact(expression, chain=True)
-    if SysideAdapter.is_instance(expression, "FeatureReferenceExpression"):
-        return _reference_expression_fact(expression, chain=False)
-    if is_literal_node(expression):
-        return _literal_expression_fact(expression, ctx)
+def _unit_annotation_node(expression: Any, ctx: _ExtractionContext) -> UnitAnnotationNode:
+    operands = list(getattr(expression, "operands", ()))
+    value = _expression_ir(operands[0], ctx)
+    if value is None:
+        raise ValueError("unit annotation expression has no value operand")
+    unit_text = reconstruct_expression(operands[1]) if len(operands) > 1 else None
+    return UnitAnnotationNode(
+        value=value, unit_text=unit_text, operand_type=_operand_type_fact(expression)
+    )
 
-    operator = getattr(expression, "operator", None)
-    operator_str = str(operator) if operator is not None else None
+
+def _operator_node(expression: Any, operator_str: str, ctx: _ExtractionContext) -> OperatorNode:
     operands = [
-        fact
+        node
         for operand in getattr(expression, "operands", ())
-        if (fact := _expression_fact(operand, ctx)) is not None
+        if (node := _expression_ir(operand, ctx)) is not None
     ]
     operand_type = (
         None if operator_str in _BOOLEAN_CONNECTIVE_OPERATORS else _operand_type_fact(expression)
     )
-    return ExpressionFact(
-        predicate_schema_version=PREDICATE_TREE_SCHEMA_VERSION,
-        kind=type(expression).__name__,
-        operator=operator_str,
-        operands=operands,
-        reference=None,
-        literal=None,
-        operand_type=operand_type,
+    return OperatorNode(operator=operator_str, operands=operands, operand_type=operand_type)
+
+
+def _operator_expression_node(
+    expression: Any, ctx: _ExtractionContext
+) -> OperatorNode | UnitAnnotationNode | UnsupportedNode:
+    operator_str = _normalize_operator(expression)
+    if operator_str is None:
+        raw_operator = getattr(expression, "operator", None)
+        diagnostic = (
+            f"unrecognized operator {str(raw_operator)!r}"
+            if raw_operator is not None
+            else "missing operator"
+        )
+        return _unsupported_node(expression, diagnostic)
+    if operator_str == "[":
+        return _unit_annotation_node(expression, ctx)
+    return _operator_node(expression, operator_str, ctx)
+
+
+def _invocation_node(expression: Any, ctx: _ExtractionContext) -> InvocationNode:
+    function_qn_raw = getattr(expression.function, "qualified_name", None)
+    function_qn = [str(part) for part in function_qn_raw] if function_qn_raw is not None else None
+    arguments = [
+        node
+        for operand in getattr(expression, "operands", ())
+        if (node := _expression_ir(operand, ctx)) is not None
+    ]
+    return InvocationNode(
+        function_qn=function_qn, arguments=arguments, operand_type=_operand_type_fact(expression)
     )
+
+
+def _expression_ir(expression: Any, ctx: _ExtractionContext) -> ExpressionIR | None:
+    """Dispatch a live syside expression node to its ExpressionIR node (D4 allowlist).
+
+    Fixed order — `FeatureChainExpression` before `OperatorExpression` (FCE subtypes OE) —
+    matching the proven S2 dispatch. Every unrecognized metaclass or operator routes to
+    `UnsupportedNode`; nothing is silently coerced.
+    """
+    if expression is None:
+        return None
+    if SysideAdapter.is_instance(expression, "FeatureChainExpression"):
+        return _reference_node(expression, chain=True)
+    if SysideAdapter.is_instance(expression, "OperatorExpression"):
+        return _operator_expression_node(expression, ctx)
+    if SysideAdapter.is_instance(expression, "FeatureReferenceExpression"):
+        return _reference_node(expression, chain=False)
+    if is_literal_node(expression):
+        return _literal_node(expression, ctx)
+    if hasattr(expression, "function") and hasattr(expression.function, "name"):
+        return _invocation_node(expression, ctx)
+    return _unsupported_node(expression)
 
 
 # === Formals, actuals, membership, classification ===
@@ -415,7 +497,7 @@ def _definition_formals(model: Any, definition: Any, ctx: _ExtractionContext) ->
             qualified_name=_qualified_name(formal),
             types=_direct_types(formal),
             has_default=_has_default(formal),
-            default=_expression_fact(getattr(formal, "feature_value_expression", None), ctx)
+            default=_expression_ir(getattr(formal, "feature_value_expression", None), ctx)
             if _has_default(formal)
             else None,
         )
@@ -433,7 +515,7 @@ def _actuals(constraint: Any, ctx: _ExtractionContext) -> list[ActualFact]:
                 for relationship in getattr(parameter, "owned_redefinitions", ())
                 if (name := _qualified_name(relationship.redefined_feature)) is not None
             ),
-            value=_expression_fact(getattr(parameter, "feature_value_expression", None), ctx),
+            value=_expression_ir(getattr(parameter, "feature_value_expression", None), ctx),
         )
         for parameter in getattr(constraint, "owned_parameters", ())
     ]
@@ -547,7 +629,7 @@ def _usage_fact(
         owning_definition=_owning_definition(constraint),
     )
     predicate_source = _effective_predicate_source(constraint, form)
-    predicate = _expression_fact(getattr(predicate_source, "result_expression", None), ctx)
+    predicate = _expression_ir(getattr(predicate_source, "result_expression", None), ctx)
     actuals = _actuals(constraint, ctx)
     return ConstraintUsageFact(
         identity=identity,
@@ -577,7 +659,7 @@ def _redefinitions(model: Any, context: Any, ctx: _ExtractionContext) -> list[Re
         RedefinitionFact(
             feature=_qualified_name(feature),
             redefines=_qualified_name(relationship.redefined_feature),
-            value=_expression_fact(getattr(feature, "feature_value_expression", None), ctx),
+            value=_expression_ir(getattr(feature, "feature_value_expression", None), ctx),
         )
         for feature in SysideAdapter.elements_of_type(
             model, "AttributeUsage", include_subtypes=True

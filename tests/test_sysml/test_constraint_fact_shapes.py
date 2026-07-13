@@ -118,9 +118,9 @@ def test_membership_polarity_ownership_actuals_and_inheritance_match_s1_oracle()
     typed = _by_name(facts, "typed_feature_chain_and_literal")
     actuals = {actual.name: actual for actual in typed.actuals}
     assert actuals["observed"].value is not None
-    assert actuals["observed"].value.kind == "FeatureChainExpression"
+    assert actuals["observed"].value.reference.chain_segments != []
     assert actuals["limit"].value is not None
-    assert actuals["limit"].value.kind == "LiteralRational"
+    assert actuals["limit"].value.literal.kind == "LiteralRational"
 
     defaulted = _by_name(facts, "typed_omitted_default")
     assert defaulted.omitted_default_formals == ["ConstraintFactShapeProbe::WithinLimit::limit"]
