@@ -33,6 +33,11 @@ commit-message undercount in `48a61ee`).
 
 **Branch:** `constraint-exec-epic`
 **Active:** `.project/active/executable-profile/`
+**Status:** Certified-with-notes (2026-07-12, audit.md). Phases 1–4 complete; agentic-mbse
+suite green (1400 passed). Spec SC1–SC4 verified in-repo. One note: the Phase 4 sysml-codegen
+**brief** has a same-IR assertion bug (`effective_predicate is usage.predicate` fails for
+admitted `definition_typed` usages) — fix before the orchestrator applies it in sysml-codegen.
+SC5/SC6 (codegen preflight + cross-repo suite) unverified here — separate repo, brief not applied.
 
 Spec reviewed (Approved-with-must-fixes) and revised. Publish the per-construct eligibility decision procedure over Item 1/2's
 `ConstraintFacts`: admit matrix v1 (comparisons, and/or/not, arithmetic, negation, owner-scope
