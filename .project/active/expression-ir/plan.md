@@ -44,8 +44,8 @@ Land the six-node algebra, the `ExpressionIR` union, the version constant, the b
 - A `kind`-tagged union round-trips byte-identically through `dataclasses.asdict` → `_canonical_json` → `_expression_ir_from_dict` (B3).
 
 ### De-risk First (do before building nodes) — design.md#next-stage-handoff
-- [ ] Author `tests/fixtures/expression_ir/operator_fidelity.sysml` (NEW dir): one model containing both `^` **and** `**`, a unary minus, and one structurally unsupported expression (start with `ConditionalExpression` `if c ? a : b`).
-- [ ] Live-load it via `uv run python` (or a scratch `uv run pytest -k` probe) and confirm: (a) `^` vs `**` surface as different `operator` enum values; (b) the unsupported construct's `type(node).__name__` is off the allowlist. If `^`/`**` collapse or the construct parses as an allowlisted operator, **stop and revise the fixture** (try `select`/`collect`) before continuing.
+- [x] Author `tests/fixtures/expression_ir/operator_fidelity.sysml` (NEW dir): one model containing both `^` **and** `**`, a unary minus, and one structurally unsupported expression (start with `ConditionalExpression` `if c ? a : b`).
+- [x] Live-load it via `uv run python` (or a scratch `uv run pytest -k` probe) and confirm: (a) `^` vs `**` surface as different `operator` enum values; (b) the unsupported construct's `type(node).__name__` is off the allowlist. If `^`/`**` collapse or the construct parses as an allowlisted operator, **stop and revise the fixture** (try `select`/`collect`) before continuing.
 
 ### Test Stencil (Write This First — offline, no syside)
 ```python
@@ -69,12 +69,12 @@ def test_version_constant_is_pinned():
 
 #### 1. New module
 **File:** `src/agentic_mbse/sysml/expression_ir.py` (NEW)
-- [ ] Six node dataclasses (`LiteralNode`, `FeatureReferenceNode`, `OperatorNode`, `UnitAnnotationNode`, `InvocationNode`, `UnsupportedNode`), each with `kind: str` defaulted per-class and `schema_version: str = EXPRESSION_IR_SCHEMA_VERSION` (D7).
-- [ ] `ExpressionIR` `TypeAlias` union; `EXPRESSION_IR_SCHEMA_VERSION = "expression-ir/v1"`.
-- [ ] `_canonical_json` (moved-here definition; `constraint_facts` imports it in Phase 2 — D5).
-- [ ] `serialize_expression(ir)` = `_canonical_json(dataclasses.asdict(ir))`.
-- [ ] `_expression_ir_from_dict(dict)` dispatcher on `kind`, recursing on child slots; `parse_expression` wraps it.
-- [ ] Move the leaf/identity parse helpers the dispatcher needs (`_reference_from_dict`, `_literal_from_dict`, `_operand_type_from_dict`, `_unit_from_dict`, `_identity_from_dict`) into this module (they belong with the tree; `constraint_facts` re-imports in Phase 2). Imports `expression_facts` only.
+- [x] Six node dataclasses (`LiteralNode`, `FeatureReferenceNode`, `OperatorNode`, `UnitAnnotationNode`, `InvocationNode`, `UnsupportedNode`), each with `kind: str` defaulted per-class and `schema_version: str = EXPRESSION_IR_SCHEMA_VERSION` (D7).
+- [x] `ExpressionIR` `TypeAlias` union; `EXPRESSION_IR_SCHEMA_VERSION = "expression-ir/v1"`.
+- [x] `_canonical_json` (moved-here definition; `constraint_facts` imports it in Phase 2 — D5).
+- [x] `serialize_expression(ir)` = `_canonical_json(dataclasses.asdict(ir))`.
+- [x] `_expression_ir_from_dict(dict)` dispatcher on `kind`, recursing on child slots; `parse_expression` wraps it.
+- [x] Move the leaf/identity parse helpers the dispatcher needs (`_reference_from_dict`, `_literal_from_dict`, `_operand_type_from_dict`, `_unit_from_dict`, `_identity_from_dict`) into this module (they belong with the tree; `constraint_facts` re-imports in Phase 2). Imports `expression_facts` only.
 
 #### 2. New fixture
 **File:** `tests/fixtures/expression_ir/operator_fidelity.sysml` (NEW — authored in De-risk step above).
@@ -84,12 +84,12 @@ def test_version_constant_is_pinned():
 
 ### Validation
 **Automated:**
-- [ ] `uv run pytest tests/test_sysml/test_expression_ir_serialize.py` → pass.
-- [ ] `uv run pytest tests/` → still green (nothing landed removed yet).
-- [ ] `uv run ruff check src/ tests/` → clean.
+- [x] `uv run pytest tests/test_sysml/test_expression_ir_serialize.py` → pass.
+- [x] `uv run pytest tests/` → still green (nothing landed removed yet).
+- [x] `uv run ruff check src/ tests/` → clean.
 
 **Manual:**
-- [ ] De-risk check output recorded in Implementation Notes: the observed `^`/`**` enum values and the unsupported construct's metaclass name.
+- [x] De-risk check output recorded in Implementation Notes: the observed `^`/`**` enum values and the unsupported construct's metaclass name.
 
 **What We Know Works After This Phase:** the new tree serializes and parses byte-stably offline; the two live unknowns are settled; nothing downstream is disturbed.
 
@@ -205,10 +205,18 @@ def test_unit_annotation_keeps_source_and_resolved():
 [TO BE FILLED DURING IMPLEMENTATION]
 
 ### Phase 1 Completion
-**Completed:**
-**De-risk results (record):** observed `^` enum / `**` enum / unsupported construct metaclass name.
+**Completed:** 2026-07-12
+**De-risk results (record):**
+- `^` surfaces as `Operator.ExponentCaret` (str `"^"`); `**` surfaces as `Operator.ExponentStar` (str `"**"`) — distinct enums confirmed, B1 holds.
+- Unary minus: single-operand `Operator.Minus` (str `"-"`), one operand — confirmed representable by the existing operator-node shape.
+- Unsupported construct: `if c ? a else b` (KerML `:` ternary syntax rejected by the parser; `else` is required) parses as an **`OperatorExpression`** with `operator=Operator.If` (str `"if"`) — not an off-allowlist metaclass as the design's fallback candidate anticipated. `"if"` is absent from the D4 operator-symbol set, so it routes to `UnsupportedNode` through the "unrecognized operator" arm of the allowlist, which design.md#allowlist-d4 already specifies for exactly this case ("absent or unrecognized operator → `UnsupportedNode`"). No fixture revision needed; the assumption under test ("off-allowlist metaclass") was narrower than what the design actually requires, and the broader unrecognized-operator path covers it.
 **Actual Changes:**
+- Added `tests/fixtures/expression_ir/operator_fidelity.sysml` (NEW): one `Probe` part with `caret_form` (`^`), `power_form` (`**`), `unary_minus_form` (unary `-`), `unsupported_form` (`if ... ? ... else ...`).
+- Added `src/agentic_mbse/sysml/expression_ir.py` (NEW): six node dataclasses, `ExpressionIR` union, `EXPRESSION_IR_SCHEMA_VERSION`, `_canonical_json`, `serialize_expression`/`parse_expression`, `_expression_ir_from_dict` dispatcher, leaf parse helpers. Imports `expression_facts` only.
+- Added `tests/test_sysml/test_expression_ir_serialize.py` (NEW): version-pin test + one offline round-trip test per node kind (7 tests total).
 **Issues / Deviations:**
+- Ternary syntax: the design's example `if c ? a : b` does not parse in SysIDE 0.8.4's KerML grammar; `if c ? a else b` does. Recorded here since Phase 3's live extraction tests reuse this fixture.
+- `UnsupportedNode.operand_type`: the design's node-algebra sketch (design.md#node-algebra-schema-sketch-representative) omits an explicit `operand_type` slot on `UnsupportedNode` — it is not a value-producing node, so no slot was added, matching the sketch.
 
 ### Phase 2 Completion
 **Completed:**
