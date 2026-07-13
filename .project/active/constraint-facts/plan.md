@@ -63,22 +63,22 @@ def test_non_finite_serialize_backstop():
 ### Changes Required
 **See `design.md` for:** [Component Overview](../constraint-facts/design.md#component-overview) (field lists), [Key Decisions D1–D4, D9](../constraint-facts/design.md#key-decisions), [Required Invariants](../constraint-facts/design.md#required-invariants).
 
-- [ ] **`src/agentic_mbse/sysml/expression_facts.py`** (NEW) — leaf + predicate-tree node algebra, `@dataclass`, no syside/constraint imports:
-  - [ ] `FeatureReferenceFact` (source_name, target identity, target_types, chain segments — **no role tag**), `LiteralFact`, `UnitFact` (`unit: str|None`, `dimension: str|None`), `OperandTypeFact` (category, enumeration, `UnitFact`).
-  - [ ] `ExpressionFact` (predicate_schema_version, kind, operator|None, operands, `operand_type: OperandTypeFact|None`). `operand_type` hangs off **every leaf-bearing node — both feature-reference and literal** (N2), so `1 [m]` carries `category="quantity"` + `UnitFact`; non-leaf operator nodes carry `operand_type=None`.
-  - [ ] `PREDICATE_TREE_SCHEMA_VERSION = "predicate-tree/v0"` constant.
-- [ ] **`src/agentic_mbse/sysml/constraint_facts.py`** (NEW) — `@dataclass`, imports `expression_facts` only:
-  - [ ] `ConstraintDefinitionFact`, `ConstraintUsageFact`, `ConstraintSource` (tagged union: `form` + `effective_predicate_source`/`constraint_definition`/`referenced_feature_target`/`asserted_constraint`, N2), `OwnerFact` with `OwningDefinitionFact` (kind ∈ {part_def, calc_def, requirement_def, package} + qualified_name — D6), `ContextFact`, `ConstraintFacts` aggregate, `IdentityFact`.
-  - [ ] `CONSTRAINT_FACTS_SCHEMA_VERSION = "constraint-facts/v1"` constant.
-  - [ ] `serialize(facts) -> str` — canonical JSON per D2 over `dataclasses.asdict`; every field present, absence is explicit `null` (D3).
-  - [ ] `parse(text) -> ConstraintFacts` — reconstruct the aggregate so the round-trip goes through the typed layer.
-- [ ] Export the public schema types + `CONSTRAINT_FACTS_SCHEMA_VERSION` from `src/agentic_mbse/sysml/__init__.py` alongside the aggregation/data_models exports ([`__init__.py:6-22,90-115`](../../../src/agentic_mbse/sysml/__init__.py)).
+- [x] **`src/agentic_mbse/sysml/expression_facts.py`** (NEW) — leaf + predicate-tree node algebra, `@dataclass`, no syside/constraint imports:
+  - [x] `FeatureReferenceFact` (source_name, target identity, target_types, chain segments — **no role tag**), `LiteralFact`, `UnitFact` (`unit: str|None`, `dimension: str|None`), `OperandTypeFact` (category, enumeration, `UnitFact`).
+  - [x] `ExpressionFact` (predicate_schema_version, kind, operator|None, operands, `operand_type: OperandTypeFact|None`). `operand_type` hangs off **every leaf-bearing node — both feature-reference and literal** (N2), so `1 [m]` carries `category="quantity"` + `UnitFact`; non-leaf operator nodes carry `operand_type=None`.
+  - [x] `PREDICATE_TREE_SCHEMA_VERSION = "predicate-tree/v0"` constant.
+- [x] **`src/agentic_mbse/sysml/constraint_facts.py`** (NEW) — `@dataclass`, imports `expression_facts` only:
+  - [x] `ConstraintDefinitionFact`, `ConstraintUsageFact`, `ConstraintSource` (tagged union: `form` + `effective_predicate_source`/`constraint_definition`/`referenced_feature_target`/`asserted_constraint`, N2), `OwnerFact` with `OwningDefinitionFact` (kind ∈ {part_def, calc_def, requirement_def, package} + qualified_name — D6), `ContextFact`, `ConstraintFacts` aggregate, `IdentityFact` (defined in `expression_facts.py` to keep the one-way import direction; re-exported from `constraint_facts.py` and `__init__.py`).
+  - [x] `CONSTRAINT_FACTS_SCHEMA_VERSION = "constraint-facts/v1"` constant.
+  - [x] `serialize(facts) -> str` — canonical JSON per D2 over `dataclasses.asdict`; every field present, absence is explicit `null` (D3).
+  - [x] `parse(text) -> ConstraintFacts` — reconstruct the aggregate so the round-trip goes through the typed layer.
+- [x] Export the public schema types + `CONSTRAINT_FACTS_SCHEMA_VERSION` from `src/agentic_mbse/sysml/__init__.py` alongside the aggregation/data_models exports ([`__init__.py:6-22,90-115`](../../../src/agentic_mbse/sysml/__init__.py)).
 
 ### Validation
 **Automated:**
-- [ ] `uv run pytest tests/test_sysml/test_constraint_facts_serialize.py` → all pass.
-- [ ] `uv run pytest tests/` → no regressions.
-- [ ] `uv run ruff check src/ tests/ && uv run mypy src/` → clean.
+- [x] `uv run pytest tests/test_sysml/test_constraint_facts_serialize.py` → all pass.
+- [x] `uv run pytest tests/` → no regressions (1300 passed, 1 skipped, 33 deselected).
+- [x] `uv run ruff check src/ tests/ && uv run mypy src/` → clean on the two new modules (pre-existing unrelated errors elsewhere in the repo, unchanged by this phase).
 
 **What We Know Works After This Phase:** the wire contract round-trips byte-identically at the pinned version pair; every field is present (null when absent); the serialize-time non-finite backstop fires. The schema surface downstream imports exists and is exported.
 
@@ -260,10 +260,19 @@ See CLAUDE.md. Live-SysIDE tests run via `uv run pytest …` (license loads thro
 [TO BE FILLED DURING IMPLEMENTATION — leave empty now]
 
 ### Phase 1 Completion
-**Completed:**
+**Completed:** 2026-07-12
 **Actual Changes:**
+- Created `src/agentic_mbse/sysml/expression_facts.py`: `IdentityFact`, `UnitFact`, `OperandTypeFact`, `FeatureReferenceFact`, `LiteralFact`, `ExpressionFact`, `PREDICATE_TREE_SCHEMA_VERSION`.
+- Created `src/agentic_mbse/sysml/constraint_facts.py`: `LocationFact`, `OwningDefinitionFact`, `OwnerFact`, `ConstraintSource`, `FormalFact`, `ActualFact`, `ConstraintDefinitionFact`, `ConstraintUsageFact`, `RedefinitionFact`, `ContextFact`, `ExtractionDiagnosticFact`, `ConstraintFacts`, `CONSTRAINT_FACTS_SCHEMA_VERSION`, `serialize()`, `parse()`.
+- Exported both modules' public surface from `src/agentic_mbse/sysml/__init__.py`.
+- Added `tests/test_sysml/test_constraint_facts_serialize.py` (5 tests, hand-built facts — no syside).
+
 **Issues:**
+- None.
+
 **Deviations:**
+- `IdentityFact` lives in `expression_facts.py`, not `constraint_facts.py` as the plan's bullet list literally groups it. `FeatureReferenceFact.target` (in `expression_facts.py`) needs an identity fact too, and the design's one-way import rule (`expression_facts` imports nothing from `constraint_facts`) means the shared identity type has to live at the leaf-module level. `constraint_facts.py` imports and reuses it; `__init__.py` exports it from both. No field or shape change — purely a module-placement call.
+- Added `_identity_from_dict_required`/`_expression_from_dict_required` parse helpers (not in the plan/design) to satisfy mypy: several fields (`ConstraintDefinitionFact.identity`, `ConstraintUsageFact.identity`/`.scope`, `ContextFact.identity`, and every `ExpressionFact` inside an `operands` list) are non-Optional per the dataclass definitions, so `parse()` needs non-Optional reconstruction paths alongside the Optional ones used for genuinely-nullable fields (e.g. `ConstraintSource.constraint_definition`).
 
 ### Phase 2 Completion
 
