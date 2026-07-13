@@ -89,9 +89,7 @@ def test_membership_polarity_ownership_survive() -> None:
     assert _by_name(facts, "calc_owned").owner.owning_definition.kind == "calc_def"
     assert _by_name(facts, "direct_owned").owner.owning_definition.kind == "package"
     assert _by_name(facts, "positive_limit").owner.owning_definition.kind == "requirement_def"
-    assert (
-        _by_name(facts, "satisfied_limit").owner.owning_definition.kind == "package"
-    )
+    assert _by_name(facts, "satisfied_limit").owner.owning_definition.kind == "package"
 
 
 def test_omitted_default_formals_and_actuals_survive() -> None:

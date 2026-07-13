@@ -98,10 +98,18 @@ def extract_constraint_facts(model: Any) -> ConstraintFacts:
     usages: list[ConstraintUsageFact] = []
     for constraint in constraints:
         form = _classify(constraint)
-        definition = getattr(constraint, "constraint_definition", None)
-        definition_qn = _qualified_name(definition)
-        if definition_qn is not None:
-            definitions_by_qn.setdefault(definition_qn, definition)
+        # A definitions[] entry is a *reused* predicate source: only definition_typed and
+        # named_usage_reference forms actually reuse a ConstraintDefinition's predicate/formals.
+        # Every form's raw constraint.constraint_definition still lands unconditionally in
+        # ConstraintSource.constraint_definition (see _source_fact) — that field is a separate,
+        # unfiltered attribute read, not the reused-definition set.
+        if form in ("definition_typed", "named_usage_reference"):
+            definition = _effective_predicate_source(constraint, form)
+            definition_qn = _qualified_name(definition)
+            if definition_qn is not None and SysideAdapter.is_instance(
+                definition, "ConstraintDefinition"
+            ):
+                definitions_by_qn.setdefault(definition_qn, definition)
         usages.append(_usage_fact(constraint, form, candidate_contexts, formals_for, ctx))
 
     definitions = [
@@ -240,7 +248,9 @@ def _unit_annotation_fact(expression: Any) -> UnitFact | None:
             dimension=_unit_definition_qn(unit_referent),
         )
     if operator_str in {"+", "-"}:
-        child_units = [_unit_annotation_fact(operand) for operand in getattr(expression, "operands", ())]
+        child_units = [
+            _unit_annotation_fact(operand) for operand in getattr(expression, "operands", ())
+        ]
         if child_units and all(unit == child_units[0] for unit in child_units):
             return child_units[0]
     return None
@@ -360,9 +370,7 @@ def _expression_fact(expression: Any, ctx: _ExtractionContext) -> ExpressionFact
         if (fact := _expression_fact(operand, ctx)) is not None
     ]
     operand_type = (
-        None
-        if operator_str in _BOOLEAN_CONNECTIVE_OPERATORS
-        else _operand_type_fact(expression)
+        None if operator_str in _BOOLEAN_CONNECTIVE_OPERATORS else _operand_type_fact(expression)
     )
     return ExpressionFact(
         predicate_schema_version=PREDICATE_TREE_SCHEMA_VERSION,
@@ -393,12 +401,12 @@ def _has_default(feature: Any) -> bool:
     )
 
 
-def _definition_formals(
-    model: Any, definition: Any, ctx: _ExtractionContext
-) -> list[FormalFact]:
+def _definition_formals(model: Any, definition: Any, ctx: _ExtractionContext) -> list[FormalFact]:
     formals = [
         feature
-        for feature in SysideAdapter.elements_of_type(model, "AttributeUsage", include_subtypes=True)
+        for feature in SysideAdapter.elements_of_type(
+            model, "AttributeUsage", include_subtypes=True
+        )
         if getattr(feature, "owner", None) is definition and _direction(feature) == "in"
     ]
     return [
@@ -444,7 +452,9 @@ def _omitted_default_formals(
     return sorted(
         formal.qualified_name
         for formal in formals_for(definition)
-        if formal.has_default and formal.qualified_name is not None and formal.qualified_name not in bound
+        if formal.has_default
+        and formal.qualified_name is not None
+        and formal.qualified_name not in bound
     )
 
 
@@ -494,9 +504,7 @@ def _source_fact(constraint: Any, form: str) -> ConstraintSource:
         form=form,
         effective_predicate_source=_identity(_effective_predicate_source(constraint, form)),
         constraint_definition=_identity(getattr(constraint, "constraint_definition", None)),
-        referenced_feature_target=_identity(
-            getattr(constraint, "referenced_feature_target", None)
-        ),
+        referenced_feature_target=_identity(getattr(constraint, "referenced_feature_target", None)),
         asserted_constraint=_identity(getattr(constraint, "asserted_constraint", None)),
     )
 
@@ -507,7 +515,9 @@ def _owning_definition(constraint: Any) -> OwningDefinitionFact:
     while current is not None:
         for type_name, kind in _OWNING_DEFINITION_TYPES:
             if SysideAdapter.is_instance(current, type_name):
-                return OwningDefinitionFact(kind=kind, qualified_name=_qualified_name(current) or "")
+                return OwningDefinitionFact(
+                    kind=kind, qualified_name=_qualified_name(current) or ""
+                )
         current = getattr(current, "owner", None)
     raise ValueError(f"owning_definition walk fell through for {constraint!r}")
 
@@ -569,19 +579,36 @@ def _redefinitions(model: Any, context: Any, ctx: _ExtractionContext) -> list[Re
             redefines=_qualified_name(relationship.redefined_feature),
             value=_expression_fact(getattr(feature, "feature_value_expression", None), ctx),
         )
-        for feature in SysideAdapter.elements_of_type(model, "AttributeUsage", include_subtypes=True)
+        for feature in SysideAdapter.elements_of_type(
+            model, "AttributeUsage", include_subtypes=True
+        )
         if getattr(feature, "owner", None) is context
         for relationship in getattr(feature, "owned_redefinitions", ())
     ]
     return sorted(redefinitions, key=lambda item: item.feature or "")
 
 
+def _is_standard_library_element(element: Any) -> bool:
+    """Whether `element` is owned by a document under syside's own standard library.
+
+    Every SysML v2 part/calc definition implicitly specializes a kernel type (`Parts::Part`,
+    `Items::Item`, ...) and inherits the kernel features that come with it. Those facts are true
+    of every model and carry no user-authored information, so they are excluded from
+    `ContextFact` — a structural (document-origin) filter, not a fixture-coupled one.
+    """
+    url = SysideAdapter.get_document_url(element)
+    return url is not None and "sysml.library" in url
+
+
 def _context_fact(model: Any, context: Any, ctx: _ExtractionContext) -> ContextFact | None:
     general_types = sorted(
         name
         for relationship in getattr(context, "owned_specializations", ())
-        if SysideAdapter.is_instance(relationship, "Subclassification")
-        or SysideAdapter.is_instance(relationship, "FeatureTyping")
+        if (
+            SysideAdapter.is_instance(relationship, "Subclassification")
+            or SysideAdapter.is_instance(relationship, "FeatureTyping")
+        )
+        and not getattr(relationship, "is_implied", False)
         if (name := _qualified_name(getattr(relationship, "general", None))) is not None
     )
     inherited_constraints = sorted(
@@ -589,6 +616,7 @@ def _context_fact(model: Any, context: Any, ctx: _ExtractionContext) -> ContextF
         for feature in getattr(context, "features", ())
         if SysideAdapter.is_instance(feature, "ConstraintUsage")
         and getattr(feature, "owner", None) is not context
+        and not _is_standard_library_element(feature)
         and (name := _qualified_name(feature)) is not None
     )
     redefinitions = _redefinitions(model, context, ctx)

@@ -46,7 +46,9 @@ def _literal_expression(value: float) -> ExpressionFact:
         operator=None,
         operands=[],
         reference=None,
-        literal=LiteralFact(kind="LiteralRational", value=value, result_type="ScalarValues::Rational"),
+        literal=LiteralFact(
+            kind="LiteralRational", value=value, result_type="ScalarValues::Rational"
+        ),
         operand_type=OperandTypeFact(category="real", enumeration=None, unit=None),
     )
 

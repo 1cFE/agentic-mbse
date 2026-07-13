@@ -176,19 +176,19 @@ def test_fact_fields_match_s1_oracle():            # step 3: semantic-oracle, de
 ### Changes Required
 **See `design.md` for:** [Validation Approach](../constraint-facts/design.md#validation-approach), [Integration Strategy — oracle vs production golden, two distinct files (N4)](../constraint-facts/design.md#integration-strategy), [Potential Risks](../constraint-facts/design.md#potential-risks) (dimension change, non-atomic rewrite).
 
-- [ ] **Generate `tests/fixtures/constraint_fact_shapes/production_facts.json`** from the production extractor (a distinct new artifact; **never overwrite `golden.json`**, which stays the read-only semantic oracle — N4).
-- [ ] **Rewrite `tests/test_sysml/test_constraint_fact_shapes.py`** to import from `agentic_mbse.sysml` (production), **not** from `tests.constraint_fact_learning`:
-  - [ ] Keep and re-point the fact-field tests (six forms distinct; membership/polarity/ownership/actuals/omitted-defaults/inheritance; compound Boolean tree; anonymous assertion by location; `owning_definition` present + tagged on every usage; no `str(enum)` in any value).
-  - [ ] Map each S1 golden fact field → production field and assert value equality; assert the `dimension` value against the real `ISQBase::LengthUnit` QN (MF4), documenting inline that the S1 golden's `ISQBase::Length` is the retired strip artifact.
-  - [ ] **Drop** the two decision-asserting functions (`test_equality_gate_is_decided_from_static_operand_facts`, `test_loader_diagnostics_are_golden_but_not_the_equality_gate`) — they assert Item 3's verdicts (review minor).
+- [x] **Generate `tests/fixtures/constraint_fact_shapes/production_facts.json`** from the production extractor (a distinct new artifact; **never overwrite `golden.json`**, which stays the read-only semantic oracle — N4).
+- [x] **Rewrite `tests/test_sysml/test_constraint_fact_shapes.py`** to import from `agentic_mbse.sysml` (production), **not** from `tests.constraint_fact_learning`:
+  - [x] Keep and re-point the fact-field tests (six forms distinct; membership/polarity/ownership/actuals/omitted-defaults/inheritance; compound Boolean tree; anonymous assertion by location; `owning_definition` present + tagged on every usage; no `str(enum)` in any value).
+  - [x] Map each S1 golden fact field → production field and assert value equality; assert the `dimension` value against the real `ISQBase::LengthUnit`/`MassUnit` QN (MF4), documenting inline that the S1 golden's `ISQBase::Length`/`Mass` is the retired strip artifact.
+  - [x] **Drop** the two decision-asserting functions (`test_equality_gate_is_decided_from_static_operand_facts`, `test_loader_diagnostics_are_golden_but_not_the_equality_gate`) — they assert Item 3's verdicts (review minor).
 
 ### Validation
 **Automated:**
-- [ ] `uv run pytest tests/test_sysml/test_constraint_fact_shapes.py` → all pass; production golden self-compares; real-fact round-trip byte-identical; every asserted fact field matches the oracle.
-- [ ] `grep -rn "constraint_fact_learning" tests/` → **no hit in `test_constraint_fact_shapes.py`** (import removed; the module is now orphaned).
-- [ ] `uv run pytest tests/` → no regressions.
+- [x] `uv run pytest tests/test_sysml/test_constraint_fact_shapes.py` → all pass (7/7); production golden self-compares; real-fact round-trip byte-identical; every asserted fact field matches the oracle.
+- [x] `grep -rn "constraint_fact_learning" tests/` → **no hit in `test_constraint_fact_shapes.py`** (import removed; the module is now orphaned — still present in `tests/constraint_fact_learning.py` itself and its own kept test file, both retired in Phase 4).
+- [x] `uv run pytest tests/` → no regressions (1316 passed).
 
-**What We Know Works After This Phase:** the re-anchored golden passes against production; the S1 golden survives read-only as the oracle; the capture module has zero importers.
+**What We Know Works After This Phase:** the re-anchored golden passes against production; the S1 golden survives read-only as the oracle; `test_constraint_fact_shapes.py` has zero importers of the capture module.
 
 ---
 
@@ -293,6 +293,21 @@ See CLAUDE.md. Live-SysIDE tests run via `uv run pytest …` (license loads thro
 - The non-finite-literal diagnostic test (`test_non_finite_literal_yields_extraction_diagnostic`) uses a hand-built mock literal node, not real SysML source — per D2a's own rationale, SysML has no infinity/NaN literal syntax, so this path is genuinely unreachable via `try_load_model` and can only be exercised by constructing the node directly (matches the plan's own test stencil, which likewise calls an undefined `_model_with_non_finite_literal()` helper rather than pointing at a fixture file).
 
 ### Phase 3 Completion
+**Completed:** 2026-07-12
+**Actual Changes:**
+- Generated `tests/fixtures/constraint_fact_shapes/production_facts.json` (77154 bytes) — the production extractor's output over both fixtures loaded together, serialized at the pinned version pair.
+- Rewrote `tests/test_sysml/test_constraint_fact_shapes.py` in full: imports `extract_constraint_facts`/`serialize`/`parse` from `agentic_mbse.sysml`, no import of `tests.constraint_fact_learning`. 7 tests: golden self-compare, real-fact round-trip, six-forms-distinct, membership/polarity/ownership/actuals/defaults/inheritance vs S1 oracle, operand category/enumeration/unit vs S1 oracle (dimension asserted against the real QN), no-str-enum-leak, owning_definition present+tagged.
+- `golden.json` untouched (still read via `S1_GOLDEN`, read-only).
+
+**Issues:**
+- **Non-portable byte-stable fixture (caught and fixed before commit).** First-pass `production_facts.json` was generated with a relative path string, but the test file initially built its model-load paths via `Path(__file__).parent.parent / ...` (absolute). `LocationFact.file` echoes whatever path string is passed to `try_load_model`, so the self-compare test failed — not from non-determinism, but from an absolute-vs-relative path mismatch between generation and test execution. Fixed by having the test load fixtures via a path relative to the repo root (matching CLAUDE.md's documented `uv run pytest tests/` invocation), matching the convention used to generate the golden. `FIXTURE_DIR` (built from `__file__`) is still used to *read* `golden.json`/`production_facts.json` off disk, since that doesn't leak into serialized content.
+- **`definitions[]` and `contexts[]` needed a second look after Phase 2's initial (broader) implementation.** Running the extractor over *both* fixtures together (rather than each fixture individually, as Phase 2's own tests did) surfaced two structural over-collection bugs invisible when each fixture was swept alone:
+  - `definitions[]` was collecting *every* usage's raw `constraint.constraint_definition` unconditionally, including `Constraints::ConstraintCheck` (the generic base every unassigned usage implicitly gets) and `LimitRequirement` (a `RequirementDefinition`, from `satisfy`'s raw `constraint_definition`). Fixed: `definitions[]` now collects only the `effective_predicate_source` of `definition_typed`/`named_usage_reference` usages, guarded by `SysideAdapter.is_instance(..., "ConstraintDefinition")` — the set of definitions actually *reused* as a predicate source, matching the S1 golden's single-entry (`WithinLimit`) `definitions[]` exactly. `ConstraintSource.constraint_definition` itself is unaffected — it stays the unconditional raw read (see the Phase 2 deviation note above).
+  - `ContextFact.general_types` was including implicit kernel specializations (every `part def` implicitly specializes `Parts::Part`), and `inherited_constraints` was including kernel bookkeeping features inherited from the standard library (`Items::Item::checkedConstraints`) — both making every part/calc definition in *any* model "non-trivial" and defeating the Phase 2 relevance filter. Fixed with two structural (not fixture-coupled) checks: `general_types` now excludes specializations where `relationship.is_implied` is `True` (a real SysIDE-exposed flag distinguishing kernel-inserted from user-authored specializations); `inherited_constraints` now excludes constraints owned by a standard-library document (`_is_standard_library_element`, checking for `sysml.library` in the owning document's URL — syside's own installed-library directory name, not this fixture's). Verified against both fixtures: `DerivedProbe`/`retyped_usage` now match the S1 golden's `general_types`/`inherited_constraints` values exactly; a third genuinely-relevant context (`sample`, a package-scoped retyped usage S1's own namespace-filtered probe never named) is also now correctly emitted — a legitimate structural fact S1's narrower capture never checked, not a divergence from anything S1 asserted.
+
+**Deviations:**
+- The re-anchor test asserts **operand facts on a curated subset of the 14 `type_units.sysml` equality cases** (the eight simple-category cases by exact value, the five unit/dimension cases by targeted field assertions), not all 14 by full structural equality — sufficient to prove every category/enumeration/unit value matches the S1 oracle (verified manually against the full 14-case matrix during Phase 2 development; see the Phase 2 completion note) without a 14-way copy-pasted assertion block.
+- `test_membership_polarity_ownership_actuals_and_inheritance_match_s1_oracle` and the six-forms test don't assert `owner.owning_definition.kind == "requirement_def"`/`"package"` for `positive_limit`/`satisfied_limit` inline (already covered by `test_constraint_extraction.py`'s `test_membership_polarity_ownership_survive`, Phase 2) — kept this file focused on the S1-golden-field mapping the plan's stencil calls for, rather than duplicating Phase 2's broader coverage.
 
 ### Phase 4 Completion
 
