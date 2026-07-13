@@ -1,6 +1,6 @@
 # Implementation Plan: Executable Profile — Eligibility Gates and Named Diagnostics
 
-**Status:** In Progress (Phase 1 complete)
+**Status:** Complete (Phases 1–4)
 **Created:** 2026-07-12
 **Last Updated:** 2026-07-12
 **Epic:** CONSTRAINT-EXEC, Item 3 · Branch `constraint-exec-epic`
@@ -336,29 +336,48 @@ depends on whether one parse reaches both sides (object identity) or a serializa
 between them (serialization-equality) — the de-risk spike question in `design.md#next-stage-handoff`.
 
 ### Deliverable (this repo)
-**File:** `.project/active/executable-profile/briefs/sysml-codegen-preflight.md` (NEW — a ready-to-apply
-change description, since the target tree is another repo)
-- [ ] Locate the pre-compile seam in sysml-codegen (the point that lowers a predicate to Python).
-- [ ] Insert: build facts once → `result = preflight(facts)`; if `not result.ok`, halt generation and
-  emit `result.blocking` diagnostics (construct + location + identity + reason); emit nothing partial.
-- [ ] Else, for each `admitted` decision, lower **its** `effective_predicate` — never a re-resolved or
+**File:** `.project/active/executable-profile/sysml-codegen-wiring.md` (NEW — a ready-to-apply
+change description, since the target tree is another repo; path per the orchestrator's brief for
+this stage, superseding this section's original `briefs/sysml-codegen-preflight.md` — this repo's
+`briefs/` directory is reserved for this item's own orchestration-stage artifacts, not deliverables)
+- [x] Locate the pre-compile seam in sysml-codegen (the point that lowers a predicate to Python).
+  Found by direct inspection of the sysml-codegen checkout at `/home/reid/1cfe/sysml-codegen`:
+  `constraint_lowering.py:399-401` inside `lower_constraints()` — not yet wired into the
+  production pipeline (currently test-only; threading is separately tracked in that repo's own
+  `.project/active/constraint-lowering/plan.md`).
+- [x] Insert: build facts once → run the profile **before any compilation**; if any usage blocks,
+  halt generation and emit its diagnostics (construct + location + identity + reason); emit
+  nothing partial. (Used `evaluate_profile` directly rather than `preflight`, so the per-usage
+  `effective_predicate` is available for the lowering loop in the same pass — `preflight` is a
+  thin partition over the same decisions and would need re-deriving that mapping anyway.)
+- [x] For each admitted decision, lower **its** `effective_predicate` — never a re-resolved or
   re-parsed IR.
-- [ ] Same-IR assertion at the seam (D7): in-process single-parse arm → `gated_ir is compiled_ir`;
-  snapshot/parse-boundary arm → `serialize_expression(compiled_ir) == serialize_expression(gated_ir)`
-  (`serialize_expression` at `expression_ir.py:133`). State which arm applies per the spike finding.
-- [ ] Pin the agentic-mbse package version (coordinated-pair discipline) and assert
-  `PROFILE_SEMANTIC_VERSION == "executable-profile/v1"`.
-- [ ] Specify the sysml-codegen tests: preflight halts on a blocked would-execute assert (named
+- [x] Same-IR assertion at the seam (D7): the in-process single-parse arm applies today (verified —
+  no re-parse/re-serialize point exists between extraction and this seam in the current tree), so
+  the brief specifies `decision.effective_predicate is usage.predicate`. Flagged, not built here:
+  the serialization-equality arm becomes load-bearing once Item 7's (not-yet-built) compiler reads
+  `ConcreteConstraint.predicate_ir` — a string, not a live object — downstream of this seam.
+- [x] Pin the agentic-mbse package version (coordinated-pair discipline) and assert
+  `PROFILE_SEMANTIC_VERSION == "executable-profile/v1"`. (Existing loose `>=0.1.0` pyproject pin
+  kept; the semantic-version runtime assertion is the actual coordination check, per the brief's
+  reasoning — a second, separate version-string pin would duplicate and could drift from it.)
+- [x] Specify the sysml-codegen tests: preflight halts on a blocked would-execute assert (named
   diagnostic, nothing generated); admitted assert compiles; unassessed passes; the same-IR assertion
   holds on the fixture path.
 
 ### Validation
-- [ ] The brief is self-contained: a fresh implementer in sysml-codegen can apply it without this chat.
-- [ ] agentic-mbse side already exports the surface `preflight`/`PROFILE_SEMANTIC_VERSION` consumes
-  (verified in Phase 2). No agentic-mbse code change here.
-- [ ] **De-risk note (carried from design):** before wiring, a `/_my_spike` in sysml-codegen answers
-  "does one parsed `ConstraintFacts` reach both gate and compiler, or is there a second parse /
-  re-serialize between them?" — the answer selects the arm and where the assertion sits.
+- [x] The brief is self-contained: a fresh implementer in sysml-codegen can apply it without this
+  chat — grounded in direct inspection of the current sysml-codegen tree (file:line citations for
+  the seam, existing imports, the halt mechanism, the version pin, and existing test conventions),
+  not assumed from this repo's design docs alone.
+- [x] agentic-mbse side already exports the surface `preflight`/`evaluate_profile`/
+  `PROFILE_SEMANTIC_VERSION` consumes (verified in Phase 2). No agentic-mbse code change here.
+- [x] **De-risk note (carried from design):** answered by direct inspection rather than deferred to
+  a sysml-codegen-side spike — `lower_constraints`'s one caller builds `ConstraintFacts` once via
+  `extract_constraint_facts` and passes it straight through with no re-parse point, so the
+  in-process object-identity arm applies today. The brief still carries the spike question forward
+  as a pre-apply check, in case sysml-codegen's own in-flight pipeline-threading work introduces a
+  parse boundary before this lands.
 
 **What we know works after this phase:** the cross-repo seam is specified precisely enough to apply
 mechanically, with the same-IR guarantee expressed as a checkable assertion on both construction paths.
@@ -468,8 +487,34 @@ observe-then-assert step matched the plan's prediction exactly: `affordable`/`po
 named `L6_CONSTRAINT_INELIGIBLE` WARN (`block_feature_chain`) and the level still passes.
 
 ### Phase 4 Completion
+**Completed:** 2026-07-12
+**Changes made:**
+- Created `.project/active/executable-profile/sysml-codegen-wiring.md`: the ready-to-apply brief,
+  grounded in direct inspection of the sysml-codegen checkout (not written generically from this
+  repo's design docs alone) — exact seam (`constraint_lowering.py:399-401` inside
+  `lower_constraints()`), exact import/edit diff, the halt exception to reuse
+  (`CodeGenerationError`), the version-pin reasoning, and four specified tests.
+- The de-risk spike question (B2/MF1: does one parsed `ConstraintFacts` reach both gate and
+  compiler, or is there a second parse/re-serialize between them?) was answered by inspection
+  rather than deferred: today, yes — single build, no re-parse — so the in-process object-identity
+  arm applies. The brief flags the serialization-equality arm as the one that becomes load-bearing
+  once Item 7's Kleene compiler (not yet built) reads `ConcreteConstraint.predicate_ir`, a string.
+
+**Issues encountered / deviations:**
+- The plan's stated deliverable path (`briefs/sysml-codegen-preflight.md`) collided with this
+  item's own `briefs/` directory, which holds the orchestrator's own stage artifacts
+  (spec.md/design.md/plan.md/implement.md for this item), not deliverables. Followed the
+  orchestrator's explicit brief instead, which named the correct path
+  (`sysml-codegen-wiring.md`, no `briefs/` prefix) — recorded here so the discrepancy is visible,
+  not silently resolved.
+- Found and fixed a pre-existing formatting artifact at the end of this file (a stray
+  `</content>`/`</invoke>` tail, apparently leaked from whatever tool produced an earlier revision)
+  while adding this section.
+
+**agentic-mbse-side validation:** none required — Phase 2 already exports the full surface this
+brief consumes (`preflight`, `evaluate_profile`, `PROFILE_SEMANTIC_VERSION`), verified by that
+phase's own tests. No code change in this repo for Phase 4.
 
 ---
-**Status:** Draft → In Progress → Complete
-</content>
-</invoke>
+**Status:** Complete
+
