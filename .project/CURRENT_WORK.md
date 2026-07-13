@@ -21,9 +21,24 @@ envelope — Item 2 replaces it.
 **Branch:** `constraint-exec-epic`
 **Active:** `.project/active/expression-ir/`
 
-Spec in progress. Promote Item 1's provisional predicate tree to the canonical `expression-ir/v1`
-node algebra: literal / feature-reference / operator / invocation / unit-annotation / explicit
-unsupported node with a structural diagnostic; harden live extraction; byte-stable JSON round-trip.
+**Status: certified 2026-07-12** (`.project/active/expression-ir/audit.md`). Promoted Item 1's
+provisional predicate tree to the canonical `expression-ir/v1` node algebra: literal /
+feature-reference / operator / invocation / unit-annotation / explicit unsupported node with a
+structural diagnostic; hardened live extraction (allowlist inversion → unsupported); byte-stable
+JSON round-trip within and across independent loads. Suite green (1333). Two non-blocking notes in
+the audit (garbled `source_text` for the `if` construct via Item-1 `reconstruct_expression`; a
+commit-message undercount in `48a61ee`).
+
+### Executable Profile — Eligibility Gates & Named Diagnostics (CONSTRAINT-EXEC Item 3)
+
+**Branch:** `constraint-exec-epic`
+**Active:** `.project/active/executable-profile/`
+
+Spec in progress. Publish the per-construct eligibility decision procedure over Item 1/2's
+`ConstraintFacts`: admit matrix v1 (comparisons, and/or/not, arithmetic, negation, owner-scope
+refs/actuals/defaults), the S1 equality gate, the unit policy (incl. new inequality-unit golden
+cases), and the block list with named diagnostics. Replaces the L4 0% placeholder and the L6
+blanket warning, and specs the sysml-codegen preflight hook that runs strictly before compilation.
 
 ### FORMULA Teaching Reconciliation (UPSTREAM-FINDINGS Item 12 follow-up)
 
