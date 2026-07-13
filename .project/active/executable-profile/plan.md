@@ -186,52 +186,52 @@ absence routing → `design.md#architecture`; walk classification → `design.md
 I1–I3; D6 (bare-Boolean root); D7 (`effective_predicate` stored on the decision).
 
 **File:** `src/agentic_mbse/sysml/executable_profile.py` (complete the Phase 1 stubs)
-- [ ] Layer 1 form gate: dispatch on `source.form` — `satisfy`/`requirement_constraint`/`plain_usage`
+- [x] Layer 1 form gate: dispatch on `source.form` — `satisfy`/`requirement_constraint`/`plain_usage`
   → UNASSESSED (set `unassessed_kind`); `named_usage_reference` → BLOCK `block_assert_by_reference`;
   unknown form → BLOCK (default-deny); only `inline`/`definition_typed` continue.
-- [ ] Resolver: build `{qn: ConstraintDefinitionFact}` index from `facts.definitions`. For
+- [x] Resolver: build `{qn: ConstraintDefinitionFact}` index from `facts.definitions`. For
   `definition_typed`, look up `source.constraint_definition.qualified_name`; miss → BLOCK
   `block_unresolved_definition`. For `inline`, take `usage.predicate`. A resolved-`None` predicate →
   BLOCK `block_missing_predicate` (MF2). Store the resolved IR on `UsageDecision.effective_predicate`
   (the exact object — I5/D7, no copy).
-- [ ] Layer 2 walk: recursive classify over `ExpressionIR`. Propositions (comparison/connective
+- [x] Layer 2 walk: recursive classify over `ExpressionIR`. Propositions (comparison/connective
   `and`/`or`/`not`) recurse; comparisons + arithmetic invoke the gate. Emit construct-named blocks for
   feature chains (`chain_segments` non-empty), `InvocationNode`, `xor`, `implies`, `UnsupportedNode`,
   unadmitted operators (incl. `!=` → `block_unsupported_operator`, D5), unadmitted node roles, and a
   bare-Boolean predicate root (`block_non_predicate_root`, D6). Diagnostics **accumulate**; outcome is
   singular BLOCK (I2).
-- [ ] Layer 3 gate wiring: at each comparison recover both operands' `operand_type` (leaf/unit/arith
+- [x] Layer 3 gate wiring: at each comparison recover both operands' `operand_type` (leaf/unit/arith
   carry it; a proposition in value position → `block_non_predicate_root`); `==` → `classify_equality`,
   `< <= > >=` → ordering (`unit_compatibility`); arithmetic node → `unit_compatibility`.
-- [ ] `is_negated=True` and a body `not` are admitted polarity — no diagnostic (`design.md#implementation-notes`).
-- [ ] `evaluate_profile(facts) -> ProfileResult`: one `UsageDecision` per `facts.usages` (never over
+- [x] `is_negated=True` and a body `not` are admitted polarity — no diagnostic (`design.md#implementation-notes`).
+- [x] `evaluate_profile(facts) -> ProfileResult`: one `UsageDecision` per `facts.usages` (never over
   `facts.definitions` — I1); `ProfileResult` carries derived admit/block/unassessed counts.
-- [ ] `preflight(facts) -> PreflightResult`: `ok` (no would-execute block), `blocking` (blocked
+- [x] `preflight(facts) -> PreflightResult`: `ok` (no would-execute block), `blocking` (blocked
   asserts + diagnostics), `admitted` (decisions with `effective_predicate`), `unassessed`.
 
 **Tests:**
 **File:** `tests/test_sysml/test_executable_profile.py` (NEW)
-- [ ] Form-gate outcomes over `production_facts.json`: `satisfied_limit`/`named_usage`(plain)/
+- [x] Form-gate outcomes over `production_facts.json`: `satisfied_limit`/`named_usage`(plain)/
   requirement usages → UNASSESSED; the `named_usage_reference` usage → BLOCK
   `block_assert_by_reference`; `typed_feature_chain_and_literal` (definition_typed, chain **actual**)
   → ADMIT.
-- [ ] Silent-on-clean / loud-on-gap: a clean admitted assert emits zero diagnostics; synthetic facts
+- [x] Silent-on-clean / loud-on-gap: a clean admitted assert emits zero diagnostics; synthetic facts
   with a feature-chain / `xor` / real-equality predicate each emit exactly the matching named block.
-- [ ] Default-deny unit tests (synthetic `ConstraintFacts`, no golden pin — mirrors how `unknown` is
+- [x] Default-deny unit tests (synthetic `ConstraintFacts`, no golden pin — mirrors how `unknown` is
   covered): operand category `unknown` → `block_unsupported_operand_category`; an operator outside the
   admit set (and not `xor`/`implies`) → `block_unsupported_operator`; `!=` → `block_unsupported_operator`
   (D5); bare-Boolean predicate root → `block_non_predicate_root` (D6).
-- [ ] Absence cases (MF2, synthetic facts): `definition_typed` usage typed by a bodyless definition
+- [x] Absence cases (MF2, synthetic facts): `definition_typed` usage typed by a bodyless definition
   (`predicate=None`) → `block_missing_predicate`; `definition_typed` usage whose
   `constraint_definition` QN is absent from `facts.definitions` → `block_unresolved_definition`.
-- [ ] Totality (I1): every usage in `production_facts.json` yields exactly one decision with a
+- [x] Totality (I1): every usage in `production_facts.json` yields exactly one decision with a
   non-null eligibility; count of decisions == `len(facts.usages)`.
 
 ### Validation
 **Automated:**
-- [ ] `uv run pytest tests/test_sysml/test_executable_profile.py` → pass.
-- [ ] `uv run pytest tests/` → no regressions.
-- [ ] `uv run ruff check src/ tests/` → clean.
+- [x] `uv run pytest tests/test_sysml/test_executable_profile.py` → pass (47 tests).
+- [x] `uv run pytest tests/` → no regressions (1398 passed, 1 skipped, 33 deselected).
+- [x] `uv run ruff check src/ tests/` → clean.
 
 **What we know works after this phase:** `evaluate_profile`/`preflight` are total and reason-distinguishable
 over real neutral facts and every default-deny/absence input — the profile is complete and offline.
@@ -402,6 +402,34 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 the plan.
 
 ### Phase 2 Completion
+**Completed:** 2026-07-12
+**Changes made:**
+- Completed `src/agentic_mbse/sysml/executable_profile.py`: `_walk`/`_walk_comparison` (the
+  recursive node-kind classifier + operand-fact gate wiring), the form gate and definition-lookup
+  resolver in `_evaluate_usage`, `evaluate_profile()`, `preflight()`.
+- Created `tests/test_sysml/test_executable_profile.py` (47 tests): form-gate outcomes and the full
+  golden equality matrix reproduced end-to-end over `production_facts.json`'s 28 real usages; nested
+  and/or/not walk tests (one over real data — `compound_boolean`, one fully clean synthetic); a
+  multi-violation-accumulation test; default-deny synthetic tests (`unknown` category, an
+  out-of-admit-set operator, `!=`, bare-Boolean root, boolean connective operand, feature chain in
+  body, `xor`, `implies`, invocation, `UnsupportedNode`); absence-case tests (bodyless definition,
+  unresolved definition lookup, degenerate inline `None` predicate); an unused-definition-is-not-a-
+  decision test (I1's inventory rule); totality + derived-count tests; `preflight` partition tests
+  including an I5 same-object identity check.
+
+**Issues encountered / deviations:**
+- The plan's test stencil's `test_satisfy_is_unassessed` name was folded into a parametrized
+  `test_non_asserted_forms_are_unassessed` covering all three UNASSESSED-routing forms
+  (satisfy/requirement_constraint/plain_usage) in one table, rather than one test per form — same
+  coverage, less duplication.
+- Wrote a `compound_boolean` test assuming (per its docstring's own paraphrase) that every leaf was
+  admitted; running it against real `production_facts.json` data caught that the third leaf
+  (`length_value`, a quantity feature with a known dimension but no exact unit) genuinely blocks —
+  the test's premise was wrong, not the code. Fixed the test to assert the correct
+  `block_unknown_exact_unit` outcome and re-purposed it to prove the walk reaches a leaf nested two
+  connective levels deep, then added a separate fully-clean synthetic nested-connective test to cover
+  the silent-on-clean case the original test intended.
+
 ### Phase 3 Completion
 ### Phase 4 Completion
 
