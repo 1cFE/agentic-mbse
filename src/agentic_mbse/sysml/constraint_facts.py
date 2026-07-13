@@ -79,10 +79,13 @@ class OwnerFact:
 class ConstraintSource:
     """The single discriminant naming a usage's form (D5).
 
-    Exactly one of the four pointer fields is set, matching ``form``: ``inline`` and
-    ``requirement_constraint`` set ``effective_predicate_source``; ``definition_typed`` sets
-    ``constraint_definition``; ``named_usage_reference`` sets ``asserted_constraint``; ``satisfy``
-    and ``plain_usage`` set none.
+    ``constraint_definition`` and ``asserted_constraint`` are raw, unconditional reads of the
+    usage's own attributes — populated whenever the underlying SysML element resolves to
+    something, independent of ``form`` (e.g. a ``satisfy`` usage's ``constraint_definition``
+    resolves to the ``RequirementDefinition`` it satisfies). Only ``effective_predicate_source``
+    is form-derived: ``inline`` and ``requirement_constraint`` point at the usage itself,
+    ``definition_typed`` at its ``constraint_definition``, ``named_usage_reference`` at the
+    referenced usage's ``constraint_definition``, and ``satisfy``/``plain_usage`` at ``None``.
     """
 
     form: str

@@ -185,6 +185,14 @@ class SysideAdapter:
                 "Import": syside.Import,
                 "Comment": syside.Comment,
                 "Documentation": syside.Documentation,
+                "Package": syside.Package,
+                # Constraint fact extraction (CONSTRAINT-EXEC Item 1): membership
+                # kind, enum-leaf category, and formal-default recovery all need
+                # a hierarchy-aware is_instance check rather than a silent
+                # string-match.
+                "RequirementConstraintMembership": syside.RequirementConstraintMembership,
+                "EnumerationDefinition": syside.EnumerationDefinition,
+                "FeatureValue": syside.FeatureValue,
                 # Relationships / memberships
                 "FeatureTyping": syside.FeatureTyping,
                 # OwningMembership / Subclassification are used by codegen's

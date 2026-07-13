@@ -94,9 +94,11 @@ class LiteralFact:
 class ExpressionFact:
     """One node of the provisional predicate tree.
 
-    A leaf-bearing node (``reference`` or ``literal`` set) carries ``operand_type`` — including
-    a literal-with-unit like ``1 [m]``, which carries ``category="quantity"`` and its
-    ``UnitFact``. A non-leaf operator node carries ``operands`` and ``operand_type=None``.
+    Every value-producing node carries ``operand_type`` — a ``reference``/``literal`` leaf, a
+    unit-annotation node like ``1 [m]`` (``category="quantity"`` and its ``UnitFact``), and a
+    same-unit arithmetic combination like ``1 [m] + 1 [m]``. Only a Boolean-relational or
+    connective node (``==``, ``<=``, ``and``, ``not``, ...) is a pure proposition and carries
+    ``operand_type=None`` — it is a statement about operands, not a value itself.
     """
 
     predicate_schema_version: str

@@ -24,6 +24,9 @@ from agentic_mbse.sysml.binding import (
     classify_binding,
     extract_bindings,
 )
+from agentic_mbse.sysml.constraint_extraction import (
+    extract_constraint_facts,
+)
 from agentic_mbse.sysml.constraint_facts import (
     CONSTRAINT_FACTS_SCHEMA_VERSION,
     ActualFact,
@@ -44,15 +47,6 @@ from agentic_mbse.sysml.constraint_facts import (
 from agentic_mbse.sysml.data_models import (
     AttributeInfo,
 )
-from agentic_mbse.sysml.expression_facts import (
-    PREDICATE_TREE_SCHEMA_VERSION,
-    ExpressionFact,
-    FeatureReferenceFact,
-    IdentityFact,
-    LiteralFact,
-    OperandTypeFact,
-    UnitFact,
-)
 from agentic_mbse.sysml.expression import (
     STANDARD_LIBRARY_PREFIXES,
     evaluate_true_static_expression,
@@ -68,6 +62,15 @@ from agentic_mbse.sysml.expression import (
     reconstruct_expression,
     reconstruct_operator_expression,
     traverse_expression,
+)
+from agentic_mbse.sysml.expression_facts import (
+    PREDICATE_TREE_SCHEMA_VERSION,
+    ExpressionFact,
+    FeatureReferenceFact,
+    IdentityFact,
+    LiteralFact,
+    OperandTypeFact,
+    UnitFact,
 )
 from agentic_mbse.sysml.graph import (
     detect_cycles,
@@ -145,6 +148,7 @@ __all__ = [
     "OwningDefinitionFact",
     "RedefinitionFact",
     "UnitFact",
+    "extract_constraint_facts",
     "parse",
     "serialize",
     "SumTerm",
