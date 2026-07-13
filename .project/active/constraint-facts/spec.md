@@ -33,38 +33,38 @@ schemas with production extraction.
 
 ## Success Criteria
 
-- [ ] All **six** source-form classes from S1's golden matrix extract via production code:
+- [x] All **six** source-form classes from S1's golden matrix extract via production code:
       `inline`, `definition_typed`, `named_usage_reference`, `satisfy`,
       `requirement_constraint` (requirement-owned require/assume), and `plain_usage`
       (non-asserted usage as a reference target).
-- [ ] For every extracted usage fact, these facts **semantically match** S1's golden values:
+- [x] For every extracted usage fact, these facts **semantically match** S1's golden values:
       membership kind, polarity, ownership/scope, actuals (with formal targets), omitted
       defaulted formals, and inheritance/retyping facts. "Match" means value equality of the
       facts, not byte-identity with S1's `golden.json` (see the serialization criterion).
-- [ ] Operand **leaf facts** extract and match the S1 type/unit evidence: each operand's type
+- [x] Operand **leaf facts** extract and match the S1 type/unit evidence: each operand's type
       category (Boolean / String / Integer / Real), enumeration identity where the operand is an
       enum, and unit/dimension state resolved structurally — including the "dimension known,
       exact unit unknown" state. The Item-3 equality-gate *decision* over these facts is **not**
       asserted here.
-- [ ] Every feature reference keeps its source name, qualified target, and feature-chain
+- [x] Every feature reference keeps its source name, qualified target, and feature-chain
       segments, and carries **no** channel/parameter/intermediate role tag.
-- [ ] No serialized fact contains a SysIDE Python type name or an `str(enum)` repr; library
+- [x] No serialized fact contains a SysIDE Python type name or an `str(enum)` repr; library
       enums (e.g. parameter direction) map to a neutral vocabulary at extraction.
-- [ ] `ConstraintDefinitionFact` carries the reusable predicate, its formals with defaults,
+- [x] `ConstraintDefinitionFact` carries the reusable predicate, its formals with defaults,
       and source identity; each usage fact carries **exactly one** `ConstraintSource` naming
       its form.
-- [ ] Neither fixture-coupled heuristic appears in production code: no namespace-prefix
+- [x] Neither fixture-coupled heuristic appears in production code: no namespace-prefix
       discrimination of inline vs definition-typed, and no `Unit`-suffix stripping for quantity
       dimension.
-- [ ] The facts serialize to a **versioned** JSON section whose **own** serialization
+- [x] The facts serialize to a **versioned** JSON section whose **own** serialization
       round-trips **byte-identically** (serialize → parse → serialize is stable). This is a
       property of Item 1's production format — not a claim that S1's `golden.json` is reproduced
       byte-for-byte.
-- [ ] Golden tests are re-anchored from S1's fixtures against the production extractor, covering
+- [x] Golden tests are re-anchored from S1's fixtures against the production extractor, covering
       **fact fields only**; the `type_units.equality_cases[].decision` verdicts are Item 3's and
       are excluded from Item 1's assertions. S1's test-only capture module is retired or clearly
       demoted to fixture tooling.
-- [ ] agentic-mbse suite green; Ruff clean.
+- [x] agentic-mbse suite green; Ruff clean.
 
 ## Known Requirements
 
