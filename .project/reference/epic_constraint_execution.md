@@ -1,3 +1,9 @@
+> **EPIC CLOSED 2026-07-13.** This is a stage-session reference copy, last synced mid-run —
+> it is STALE relative to the final state. The canonical, final epic file (all Success
+> Criteria checked, [OWNER] ratifications recorded) is archived at sysml-codegen
+> `.project/completed/20260713_epic_constraint_execution.md`, with the independent findings
+> audit alongside.
+
 <!-- REFERENCE COPY. Canonical: sysml-codegen .project/backlog/epic_constraint_execution.md (constraint-exec-epic). Do not edit here. -->
 # Epic: Constraint Execution and Design-Space Studies
 

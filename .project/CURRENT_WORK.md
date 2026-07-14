@@ -1,87 +1,10 @@
 # Current Work
 
-**Last Updated**: 2026-07-11
+**Last Updated**: 2026-07-13
 
 ---
 
 ## Active Work
-
-### Neutral Constraint Facts — Production Schemas & Extraction (CONSTRAINT-EXEC Item 1)
-
-**Branch:** `constraint-exec-epic`
-**Active:** `.project/active/constraint-facts/`
-
-CERTIFIED. Landed the production `ConstraintDefinitionFact` / `ConstraintUsageFact` /
-`ConstraintSource` schemas with live extraction and versioned JSON serialization. The predicate
-tree ships as a provisional `predicate-tree/v0` sub-document inside the stable `constraint-facts/v1`
-envelope — Item 2 replaces it.
-
-### ExpressionIR — Production Tree, Extraction, Serialization (CONSTRAINT-EXEC Item 2)
-
-**Branch:** `constraint-exec-epic`
-**Active:** `.project/active/expression-ir/`
-
-**Status: certified 2026-07-12** (`.project/active/expression-ir/audit.md`). Promoted Item 1's
-provisional predicate tree to the canonical `expression-ir/v1` node algebra: literal /
-feature-reference / operator / invocation / unit-annotation / explicit unsupported node with a
-structural diagnostic; hardened live extraction (allowlist inversion → unsupported); byte-stable
-JSON round-trip within and across independent loads. Suite green (1333). Two non-blocking notes in
-the audit (garbled `source_text` for the `if` construct via Item-1 `reconstruct_expression`; a
-commit-message undercount in `48a61ee`).
-
-### Executable Profile — Eligibility Gates & Named Diagnostics (CONSTRAINT-EXEC Item 3)
-
-**Branch:** `constraint-exec-epic`
-**Active:** `.project/active/executable-profile/`
-**Status:** Certified-with-notes (2026-07-12, audit.md). Phases 1–4 complete; agentic-mbse
-suite green (1400 passed). Spec SC1–SC4 verified in-repo. One note: the Phase 4 sysml-codegen
-**brief** has a same-IR assertion bug (`effective_predicate is usage.predicate` fails for
-admitted `definition_typed` usages) — fix before the orchestrator applies it in sysml-codegen.
-SC5/SC6 (codegen preflight + cross-repo suite) unverified here — separate repo, brief not applied.
-
-Spec reviewed (Approved-with-must-fixes) and revised. Publish the per-construct eligibility decision procedure over Item 1/2's
-`ConstraintFacts`: admit matrix v1 (comparisons, and/or/not, arithmetic, negation, owner-scope
-refs/actuals/defaults), the S1 equality gate, the unit policy (incl. new inequality-unit golden
-cases), and the block list with named diagnostics. Replaces the L4 0% placeholder and the L6
-blanket warning, and specs the sysml-codegen preflight hook that runs strictly before compilation.
-
-### FORMULA Teaching Reconciliation (UPSTREAM-FINDINGS Item 12 follow-up)
-
-**Branch:** `upstream-findings-sync`
-**Active:** `.project/active/formula-teaching-reconciliation/`
-
-Implemented (surgical stance). The F6 validator fix (same-part FORMULA no longer FAILs V2) left shipped teaching surfaces contradicting the validator. Reconciled across adr002-calculations.md, common-mistakes.md, the sysml-conventions skill, MODELING_GUIDE + MODELING_PROCESS (templates + tracked install copies): inline FORMULA taught as a convenience for simple arithmetic; calc defs remain recommended for real calculations; calc-output-arithmetic / self-ref / dotted-path still taught as violations.
-
-### C4 Plain-Subtype Instantiation — docstring + test gap (UPSTREAM-FINDINGS Item 12 follow-up)
-
-**Branch:** `upstream-findings-sync`
-**Active:** `.project/active/c4-plain-subtype-instantiation/`
-
-Spec in progress. `check_calc_bearing_instantiation` (L6) behaves correctly but its docstring wrongly claims `.types` walks the full supertype chain; the plain-subtype FAIL path is untested. Codegen confirmed (REQ-EXT-13/14) to drop plain-subtype-inherited calcs, so the FAIL is correct — fix is docstring + missing fixture, NOT walking the chain.
-
-### PDF Skill Deployment (ITEM-DOCLING-002)
-
-**Branch:** `doc-ingest-clean`
-**Active:** `.project/active/pdf-skill-deployment/`
-
-Integrate Docling MCP server setup into `agentic-mbse init`. Spec and design exist from Feb 6 but predate the v4 pipeline — need design revision before implementation.
-
-**Next:** Revisit design against v4 architecture, then plan and implement.
-
-### PDF Extraction Quality & Features (EPIC-PDFV4-002)
-
-**Branch:** `doc-ingest-clean`
-**Epic:** `.project/backlog/epic_pdf-extraction-improvements.md`
-
-Four items, ~4.5 days:
-1. **Quality regressions** (Item 1) — Phase 1 (equation fragments) DONE. Phases 2-3 remaining: GMFT xref, postprocess cleanup.
-2. **Unified image output** (Item 2) — ImageCollector pattern: figures + table crops in one system. Absorbs IMGEXT-001 + IMGEXT-003 + quality regressions Phase 4.
-3. **Equation region detection** (Item 3) — Research + implement detector, plug into image collector.
-4. **OCR integration** (Item 4) — EasyOCR via Docling, independent.
-
-**Next:** Finish Item 1 (Phases 2-3), then Item 2 design.
-
----
 
 ## Remaining Active Items (Under Review)
 
@@ -94,6 +17,12 @@ Four items, ~4.5 days:
 ---
 
 ## Recently Completed
+
+### 2026-07-13: CONSTRAINT-EXEC Items 1–3 (epic closed, archived)
+- Neutral constraint facts, ExpressionIR, and the executable profile all certified and archived
+  to `.project/completed/20260713_{constraint-facts,expression-ir,executable-profile}/`.
+- Canonical epic close-out + independent findings audit live in sysml-codegen
+  `.project/completed/20260713_epic_constraint_execution*.md`; suite at close 1401/1.
 
 ### 2026-07-11: S1 Constraint Fact-Shape Learning Test
 

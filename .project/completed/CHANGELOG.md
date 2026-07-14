@@ -4,6 +4,25 @@ Historical record of completed work.
 
 ---
 
+## [2026-07-13] - [CONSTRAINT-EXEC] Items 1-3 (agentic-mbse side)
+
+**Type**: Epic (3 items in this repo; canonical epic archived in sysml-codegen)
+**Duration**: ~1 day (created 2026-07-12; archived 2026-07-13)
+
+### Summary
+The three agentic-mbse items of the CONSTRAINT-EXEC epic: neutral `ConstraintFacts` production
+schemas + extraction (Item 1), the production `ExpressionIR` tree with extraction and
+serialization (Item 2), and the executable profile's eligibility gates + named diagnostics
+(Item 3). All certified; suite at close 1401 passed / 1 skipped.
+
+### Deliverables
+- `.project/completed/20260713_constraint-facts/`, `20260713_expression-ir/`,
+  `20260713_executable-profile/` (spec/design/plan/audit + briefs each).
+- Epic close-out and independent findings audit: sysml-codegen
+  `.project/completed/20260713_epic_constraint_execution*.md`.
+
+---
+
 ## [2026-07-05] - Web Source Capture + arXiv Extraction Pipeline
 
 **Type**: Items (5, standalone — shipped together in PR #6, `webfetch-tools` → `main`)
