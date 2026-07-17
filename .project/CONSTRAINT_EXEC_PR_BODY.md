@@ -20,12 +20,60 @@ generated graph modules (canonical epic + close-out archived in sysml-codegen
   assertion shape lowers; unsupported constructs block generation with a named diagnostic,
   never silence.
 
+## Post-review remediation (2026-07-14)
+
+A critical code-quality audit (`.project/research/20260714-064234_constraint-exec-pr-code-quality-audit.md`)
+found nine defects; an independent four-agent verification confirmed all nine, and every fix
+landed on this branch (plan + per-phase notes:
+`.project/active/constraint-exec-remediation/plan.md`):
+
+- **F1 (High, was the merge blocker):** the unit-safety gate now runs at every arithmetic
+  node. Interior arithmetic facts are *derived* from operand facts, never trusted from the
+  declared fact; mixed-unit arithmetic blocks with `block_unit_conversion_required`. Scalar
+  scaling and same-unit ratios are provable and admit; derived/inverse units block with the
+  new `block_derived_unit_unsupported`. `PROFILE_SEMANTIC_VERSION` → `executable-profile/v2`.
+- **F3:** malformed snapshot facts now yield `block_malformed_operand_fact` instead of
+  crashing an assert; the append-then-measure walk replaced by typed value results; the two
+  mypy `union-attr` errors are gone (four pure modules + extraction now mypy-clean).
+  A residual audit probe (zero-operand `and` admitted vacuously) closed with a connective
+  arity gate.
+- **F4:** the L4 eligibility block reports its own denominator
+  (`Constraint usages assessed (incl. satisfy)`), so categories reconcile by construction;
+  the legacy Item-4 `Total constraints` semantics are unchanged.
+- **F2/F8:** the wire codec fails closed — foreign `schema_version` (envelope or node) raises
+  a `ValueError` naming found vs supported instead of silently rewriting to v1; `kind`/
+  `schema_version` are non-init; `constraint_facts` consumes only public codec names.
+- **F9:** canonical constraint ordering gained `(file, column)` tie-breakers — two-file
+  anonymous assertions now serialize byte-stably regardless of load order
+  (`production_facts.json` bytes unchanged).
+- **F5:** `extract_expression_ir` gained an optional `diagnostics` sink (signature stays
+  call-compatible for sysml-codegen).
+- **F6/F7:** the fact-shapes spike archived with a close-out note (`golden.json` is the
+  frozen S1 oracle; `production_facts.json` is the regenerable golden); `sysml/__init__.py`
+  derives `__all__` from the lazy registry with an export-consistency test (372 → 276 lines).
+
+A fresh certification pass on 2026-07-17 found and closed three final wire-boundary gaps:
+
+- malformed literal, feature-reference, and unit-annotation leaves now survive the public
+  facts codec and reach D-R3's named `block_malformed_operand_fact` profile decision;
+- serializers reject post-construction mutation of every ExpressionIR `kind` /
+  `schema_version`, the facts envelope version, and nested IR tags;
+- `constraint_extraction.__all__` now includes the public `extract_expression_ir` API.
+
+The rerun certifies the local remediation at
+`.project/active/constraint-exec-remediation/audit.md`.
+
+Deferred by decision: barrel `parse`/`serialize` rename (coordinated cross-repo change) and
+L4/L6 duplicate extraction (design-accepted pending profiling).
+
 ## Evidence
 
 - Every item audit-certified with orchestrator-executed probes; independent findings audit
   (owner session, 2026-07-13) re-ran the final gates to exact counts.
-- Suite: **1401 passed / 1 skipped**. ruff: 1 pre-existing N806 (identical on `main`).
-  mypy: 106 errors (`main` has 107 — net improvement).
+- Latest normal suite: **1484 passed / 1 skipped / 33 deselected**. The prior remediation
+  all-markers run passed **1496 / 1** before the final wire-boundary cures; paid Claude-budget
+  cases were not rerun after those cures. Focused final set: **92 passed**. Targeted mypy over
+  the five constraint-exec modules and Ruff over the final touched files are clean.
 - Item artifacts archived under `.project/completed/20260713_{constraint-facts,expression-ir,executable-profile}/`.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

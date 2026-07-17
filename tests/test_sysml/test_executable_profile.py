@@ -30,9 +30,7 @@ _OWNER = OwnerFact(
     owner=None, owning_definition=OwningDefinitionFact(kind="package", qualified_name="Synthetic")
 )
 
-FACTS = parse(
-    Path("tests/fixtures/constraint_fact_shapes/production_facts.json").read_text()
-)
+FACTS = parse(Path("tests/fixtures/constraint_fact_shapes/production_facts.json").read_text())
 
 
 def _decision(name: str):
@@ -136,11 +134,15 @@ def test_compound_boolean_nested_walk_reaches_every_leaf() -> None:
 def test_nested_connectives_over_clean_operands_are_silent() -> None:
     """`(a and b) or not c`, every leaf a clean admitted comparison — nested and/or/not must not
     misfire on a genuinely clean predicate."""
-    clean_comparison = OperatorNode(operator="<=", operands=[_leaf("real"), _leaf("real")], operand_type=None)
+    clean_comparison = OperatorNode(
+        operator="<=", operands=[_leaf("real"), _leaf("real")], operand_type=None
+    )
     predicate = OperatorNode(
         operator="or",
         operands=[
-            OperatorNode(operator="and", operands=[clean_comparison, clean_comparison], operand_type=None),
+            OperatorNode(
+                operator="and", operands=[clean_comparison, clean_comparison], operand_type=None
+            ),
             OperatorNode(operator="not", operands=[clean_comparison], operand_type=None),
         ],
         operand_type=None,
@@ -162,7 +164,9 @@ def test_multiple_violations_in_one_predicate_all_accumulate() -> None:
                 operands=[_leaf("real", chain_segments=["sensor", "reading"]), _leaf("real")],
                 operand_type=None,
             ),
-            OperatorNode(operator="xor", operands=[_leaf("boolean"), _leaf("boolean")], operand_type=None),
+            OperatorNode(
+                operator="xor", operands=[_leaf("boolean"), _leaf("boolean")], operand_type=None
+            ),
         ],
         operand_type=None,
     )
@@ -185,9 +189,8 @@ def test_every_usage_yields_exactly_one_decision() -> None:
 
 def test_profile_result_derived_counts() -> None:
     result = evaluate_profile(FACTS)
-    assert (
-        result.admitted_count + result.blocked_count + result.unassessed_count
-        == len(result.decisions)
+    assert result.admitted_count + result.blocked_count + result.unassessed_count == len(
+        result.decisions
     )
     assert result.admitted_count > 0
     assert result.blocked_count > 0
@@ -198,7 +201,9 @@ def test_profile_result_derived_counts() -> None:
 
 
 def _identity(name: str) -> IdentityFact:
-    return IdentityFact(kind="AssertConstraintUsage", name=name, qualified_name=f"Synthetic::{name}")
+    return IdentityFact(
+        kind="AssertConstraintUsage", name=name, qualified_name=f"Synthetic::{name}"
+    )
 
 
 def _location() -> LocationFact:
@@ -242,7 +247,6 @@ def _inline_usage(name: str, predicate) -> ConstraintUsageFact:
 
 def _facts(*usages: ConstraintUsageFact, definitions: list[ConstraintDefinitionFact] | None = None):
     return ConstraintFacts(
-        schema_version="constraint-facts/v1",
         definitions=definitions or [],
         usages=list(usages),
         contexts=[],
@@ -295,7 +299,9 @@ def test_bare_boolean_predicate_root_blocks() -> None:
 
 def test_boolean_connective_operand_blocks() -> None:
     """D6: a boolean variable as an `and`/`or` operand — role mismatch, not a chain."""
-    predicate = OperatorNode(operator="and", operands=[_leaf("boolean"), _leaf("boolean")], operand_type=None)
+    predicate = OperatorNode(
+        operator="and", operands=[_leaf("boolean"), _leaf("boolean")], operand_type=None
+    )
     facts = _facts(_inline_usage("boolean_connective_operand", predicate))
     decision = evaluate_profile(facts).decisions[0]
     assert decision.eligibility is Eligibility.BLOCK
@@ -315,7 +321,9 @@ def test_feature_chain_in_predicate_body_blocks() -> None:
 
 
 def test_xor_blocks() -> None:
-    predicate = OperatorNode(operator="xor", operands=[_leaf("boolean"), _leaf("boolean")], operand_type=None)
+    predicate = OperatorNode(
+        operator="xor", operands=[_leaf("boolean"), _leaf("boolean")], operand_type=None
+    )
     facts = _facts(_inline_usage("xor_predicate", predicate))
     decision = evaluate_profile(facts).decisions[0]
     assert decision.eligibility is Eligibility.BLOCK
@@ -457,22 +465,24 @@ def test_definitions_not_referenced_by_any_usage_do_not_appear_as_decisions() ->
             kind="ConstraintDefinition", name="Unused", qualified_name="Synthetic::Unused"
         ),
         formals=[],
-        predicate=OperatorNode(operator="<=", operands=[_leaf("real"), _leaf("real")], operand_type=None),
+        predicate=OperatorNode(
+            operator="<=", operands=[_leaf("real"), _leaf("real")], operand_type=None
+        ),
     )
     literal_predicate = OperatorNode(
         operator="<=",
         operands=[
             _leaf("real"),
             LiteralNode(
-                literal=LiteralFact(kind="LiteralRational", value=0.0, result_type="ScalarValues::Rational"),
+                literal=LiteralFact(
+                    kind="LiteralRational", value=0.0, result_type="ScalarValues::Rational"
+                ),
                 operand_type=OperandTypeFact(category="real", enumeration=None, unit=None),
             ),
         ],
         operand_type=None,
     )
-    facts = _facts(
-        _inline_usage("only_usage", literal_predicate), definitions=[unused_definition]
-    )
+    facts = _facts(_inline_usage("only_usage", literal_predicate), definitions=[unused_definition])
     result = evaluate_profile(facts)
     assert len(result.decisions) == 1
     assert result.decisions[0].identity.name == "only_usage"
@@ -494,7 +504,9 @@ def test_preflight_partitions_by_outcome() -> None:
 
 
 def test_preflight_ok_when_nothing_blocks() -> None:
-    predicate = OperatorNode(operator="<=", operands=[_leaf("real"), _leaf("real")], operand_type=None)
+    predicate = OperatorNode(
+        operator="<=", operands=[_leaf("real"), _leaf("real")], operand_type=None
+    )
     facts = _facts(_inline_usage("clean", predicate))
     result = preflight(facts)
     assert result.ok is True

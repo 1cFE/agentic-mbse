@@ -10,6 +10,12 @@ in syside, which an eager barrel import here would defeat regardless of that sub
 purity (I4, executable-profile design D2).
 """
 
+# F401 is suppressed file-wide: `__all__` is derived from `_LAZY` at runtime, so ruff cannot
+# see that every TYPE_CHECKING import below is a deliberate re-export. The compensating guard
+# is `tests/test_sysml/test_public_api_exports.py`, which asserts the TYPE_CHECKING imports,
+# `_LAZY`, and `__all__` all name the same set.
+# ruff: noqa: F401
+
 from __future__ import annotations
 
 import importlib
@@ -132,112 +138,6 @@ if TYPE_CHECKING:
         ValidationIssue,
     )
 
-__all__ = [
-    # Types
-    "BindingType",
-    "Severity",
-    "ValidationCode",
-    "ValidationIssue",
-    "BindingInfo",
-    "CalcUsageInfo",
-    # Data Models (shared with sysml-codegen)
-    "ExpressionRef",
-    "AttributeInfo",
-    # Constraint facts (shared with sysml-codegen; CONSTRAINT-EXEC epic)
-    "CONSTRAINT_FACTS_SCHEMA_VERSION",
-    "EXPRESSION_IR_SCHEMA_VERSION",
-    "ActualFact",
-    "ConstraintDefinitionFact",
-    "ConstraintFacts",
-    "ConstraintSource",
-    "ConstraintUsageFact",
-    "ContextFact",
-    "ExpressionIR",
-    "ExtractionDiagnosticFact",
-    "FeatureReferenceFact",
-    "FormalFact",
-    "IdentityFact",
-    "LiteralFact",
-    "LocationFact",
-    "OperandTypeFact",
-    "OwnerFact",
-    "OwningDefinitionFact",
-    "IrFeatureReferenceNode",
-    "IrInvocationNode",
-    "IrLiteralNode",
-    "IrOperatorNode",
-    "IrUnsupportedNode",
-    "RedefinitionFact",
-    "UnitAnnotationNode",
-    "UnitFact",
-    "extract_constraint_facts",
-    "extract_expression_ir",
-    "parse",
-    "parse_expression",
-    "serialize",
-    "serialize_expression",
-    "SumTerm",
-    "SingletonTerm",
-    "LocalTerm",
-    "AggregationDecomposition",
-    "AggregationDiagnostic",
-    "WrapperFact",
-    "SumNode",
-    "FeatureChainNode",
-    "FeatureReferenceNode",
-    "LiteralNode",
-    "OperatorNode",
-    "InvocationNode",
-    "UnsupportedNode",
-    "NullNode",
-    "decompose_aggregation_expression",
-    # Expression utilities
-    "traverse_expression",
-    "extract_feature_refs",
-    "extract_operators",
-    "is_literal_expression",
-    "is_true_static_expression",
-    "evaluate_true_static_expression",
-    "extract_literal_value",
-    "is_literal_node",
-    "extract_feature_chain_segments",
-    "extract_feature_chain_name",
-    "extract_feature_reference_name",
-    "reconstruct_operator_expression",
-    "reconstruct_expression",
-    "STANDARD_LIBRARY_PREFIXES",
-    "sanitize_name",
-    "build_element_qualified_name",
-    "sysml_to_python_qualified_name",
-    "sanitize_qualified_name",
-    "python_to_sysml_qualified_name",
-    "extract_simple_name",
-    "RedefinitionType",
-    "RedefinitionData",
-    "MultiplicityData",
-    "classify_redefinition",
-    "extract_redefinitions",
-    "extract_multiplicities",
-    # Binding utilities
-    "classify_binding",
-    "extract_bindings",
-    # Graph utilities
-    "detect_cycles",
-    "topological_sort",
-    # Helpers
-    "get_calc_def_name",
-    "get_document_url",
-    "get_source_file",
-    "get_source_location",
-    "get_parent_part_name",
-    # Syside adapter
-    "SysideAdapter",
-    "Model",
-    "Diagnostics",
-    "DiagnosticSeverity",
-    "Element",
-]
-
 # name -> (module, attribute-in-that-module). Most names are re-exported under their own name;
 # the `Ir*` aliases pull a differently-named attribute out of `expression_ir`.
 _LAZY: dict[str, tuple[str, str]] = {}
@@ -355,6 +255,10 @@ for _name in (
 ):
     _LAZY[_name] = ("agentic_mbse.sysml.types", _name)
 del _name
+
+# The registry above is the single export inventory: `__all__` is derived from it, so the two
+# cannot drift. The TYPE_CHECKING imports stay hand-written — type checkers need them static.
+__all__: list[str] = sorted(_LAZY)
 
 
 def __getattr__(name: str) -> Any:

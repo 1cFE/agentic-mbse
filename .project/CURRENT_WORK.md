@@ -1,10 +1,21 @@
 # Current Work
 
-**Last Updated**: 2026-07-13
+**Last Updated**: 2026-07-17
 
 ---
 
 ## Active Work
+
+### CONSTRAINT-EXEC PR remediation (certified locally — paired compatibility pending)
+
+A critical PR audit (`.project/research/20260714-064234_constraint-exec-pr-code-quality-audit.md`)
+found nine defects on `constraint-exec-epic`; the remediation fixes those original findings. The
+three gaps from the fresh certification pass are now implemented: malformed snapshot leaf facts
+reach D-R3's named BLOCK through the public codec, serializers reject mutated wire tags, and the
+defining module exports both public extractors. The fresh audit now certifies the local remediation:
+`.project/active/constraint-exec-remediation/audit.md`. Normal suite: 1484 passed / 1 skipped /
+33 deselected; targeted mypy and Ruff clean. Paired sysml-codegen profile/compiler compatibility is
+the next stage.
 
 ## Remaining Active Items (Under Review)
 
@@ -31,7 +42,7 @@ source forms, membership/polarity/ownership, actuals/defaults, inheritance/retyp
 expressions, and the equality type/unit gate. S1 passed with one explicit restriction: a
 dimensioned quantity feature does not prove one exact runtime unit. Full suite: 1,295 passed,
 1 skipped, 33 deselected. Findings:
-`.project/active/spike-constraint-fact-shapes/findings.md`.
+`.project/completed/20260711_spike-constraint-fact-shapes/findings.md`.
 
 ### 2026-07-05: Web Source Capture + arXiv Extraction Pipeline (PR #6, merged)
 

@@ -14,7 +14,6 @@ from collections.abc import Callable, Iterator
 from typing import Any
 
 from agentic_mbse.sysml.constraint_facts import (
-    CONSTRAINT_FACTS_SCHEMA_VERSION,
     ActualFact,
     ConstraintDefinitionFact,
     ConstraintFacts,
@@ -52,7 +51,7 @@ from agentic_mbse.sysml.expression_ir import (
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
-__all__ = ["extract_constraint_facts"]
+__all__ = ["extract_constraint_facts", "extract_expression_ir"]
 
 # Boolean-relational and boolean-connective operators: the node they head is a proposition,
 # not a value, so it carries no OperandTypeFact (Core Concept: operand_type hangs off
@@ -165,7 +164,6 @@ def extract_constraint_facts(model: Any) -> ConstraintFacts:
     ]
 
     return ConstraintFacts(
-        schema_version=CONSTRAINT_FACTS_SCHEMA_VERSION,
         definitions=definitions,
         usages=usages,
         contexts=contexts,
@@ -233,10 +231,19 @@ def _location_fact(element: Any) -> LocationFact | None:
     return LocationFact(file=file_path, line=line, column=node.start_point.character + 1)
 
 
-def _constraint_sort_key(constraint: Any) -> tuple[int, str]:
+def _constraint_sort_key(constraint: Any) -> tuple[int, str, str, int]:
+    """Total order for swept constraints, independent of model load order (D-R5).
+
+    `(line, qualified_name)` alone collides for anonymous asserts at the same line number
+    in different files; file and column are appended as tie-breakers (not prepended — a
+    file-first re-sort would churn canonical bytes for every multi-file document).
+    """
     location = SysideAdapter.get_source_location(constraint)
     line = location[1] if location is not None else 0
-    return (line, _qualified_name(constraint) or "")
+    file_path = location[0] if location is not None else ""
+    node = getattr(constraint, "cst_node", None)
+    column = node.start_point.character + 1 if node is not None else 0
+    return (line, _qualified_name(constraint) or "", file_path, column)
 
 
 # === Structural dimension resolution (MF4) ===
@@ -461,16 +468,26 @@ def _invocation_node(expression: Any, ctx: _ExtractionContext) -> InvocationNode
     )
 
 
-def extract_expression_ir(expression: Any) -> ExpressionIR | None:
+def extract_expression_ir(
+    expression: Any,
+    *,
+    diagnostics: list[ExtractionDiagnosticFact] | None = None,
+) -> ExpressionIR | None:
     """Public single-node entry: one live syside expression -> its ExpressionIR.
 
     Thin wrapper over the same dispatch `extract_constraint_facts` uses, for
     consumers that hold a bare expression node rather than a whole model (the
-    sysml-codegen calc-compat renderer, CONSTRAINT-EXEC Item 13). Extraction
-    diagnostics that a whole-facts sweep would accumulate are not returned;
-    unrecognized constructs still surface structurally as `UnsupportedNode`.
+    sysml-codegen calc-compat renderer, CONSTRAINT-EXEC Item 13). Pass a list as
+    `diagnostics` to receive the extraction diagnostics (D2a, e.g. the
+    non-finite-literal fact) that a whole-facts sweep would accumulate — they are
+    appended to it; without a sink they are discarded. Unrecognized constructs
+    still surface structurally as `UnsupportedNode` either way.
     """
-    return _expression_ir(expression, _ExtractionContext())
+    ctx = _ExtractionContext()
+    node = _expression_ir(expression, ctx)
+    if diagnostics is not None:
+        diagnostics.extend(ctx.diagnostics)
+    return node
 
 
 def _expression_ir(expression: Any, ctx: _ExtractionContext) -> ExpressionIR | None:

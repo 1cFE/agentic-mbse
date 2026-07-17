@@ -1,21 +1,31 @@
 """Neutral constraint fact schemas and canonical serialization.
 
 Promotes S1's frozen, test-only constraint fact shapes
-(`.project/active/spike-constraint-fact-shapes/findings.md`) into the production schema
-downstream repos read as ground truth. Imports `expression_facts` only — the leaf vocabulary
-is defined there so Item 2's `ExpressionIR` can adopt it without a cycle.
+(`.project/completed/20260711_spike-constraint-fact-shapes/findings.md`) into the production schema
+downstream repos read as ground truth. The leaf vocabulary is defined in `expression_facts`
+so Item 2's `ExpressionIR` can adopt it without a cycle; the shared codec surface
+(`canonical_json`, `expression_ir_from_dict`, `identity_fact_from_dict`) comes from
+`expression_ir` — this module imports only public names from it, and the import direction
+stays one-way (`constraint_facts` → `expression_ir`).
+
+The codec fails closed on the envelope tag: `parse` rejects any unsupported
+`schema_version`, and `serialize` revalidates it so post-construction mutation cannot emit an
+impossible document.
 """
 
 from __future__ import annotations
 
-import dataclasses
 import json
 from dataclasses import dataclass, field
 from typing import Any
 
 from agentic_mbse.sysml.expression_facts import IdentityFact
-from agentic_mbse.sysml.expression_ir import ExpressionIR, _canonical_json
-from agentic_mbse.sysml.expression_ir import _expression_ir_from_dict as _parse_expression_ir
+from agentic_mbse.sysml.expression_ir import (
+    ExpressionIR,
+    canonical_json,
+    expression_ir_from_dict,
+    identity_fact_from_dict,
+)
 
 __all__ = [
     "CONSTRAINT_FACTS_SCHEMA_VERSION",
@@ -171,7 +181,7 @@ class ExtractionDiagnosticFact:
 class ConstraintFacts:
     """The full extracted fact aggregate for one model."""
 
-    schema_version: str
+    schema_version: str = field(init=False, default=CONSTRAINT_FACTS_SCHEMA_VERSION)
     definitions: list[ConstraintDefinitionFact]
     usages: list[ConstraintUsageFact]
     contexts: list[ContextFact]
@@ -184,17 +194,19 @@ def serialize(facts: ConstraintFacts) -> str:
     Every field is present; absence is an explicit ``null`` (D3). Raises ``ValueError`` if a
     non-finite float slipped past extraction (D2a's serialize-time backstop).
     """
-    return _canonical_json(dataclasses.asdict(facts))
+    if facts.schema_version != CONSTRAINT_FACTS_SCHEMA_VERSION:
+        raise ValueError(
+            f"invalid ConstraintFacts schema_version: found {facts.schema_version!r}, "
+            f"expected {CONSTRAINT_FACTS_SCHEMA_VERSION!r}"
+        )
+    return canonical_json(facts)
 
 
 def _identity_from_dict_required(data: dict[str, Any]) -> IdentityFact:
-    return IdentityFact(kind=data["kind"], name=data["name"], qualified_name=data["qualified_name"])
-
-
-def _identity_from_dict(data: dict[str, Any] | None) -> IdentityFact | None:
-    if data is None:
-        return None
-    return _identity_from_dict_required(data)
+    identity = identity_fact_from_dict(data)
+    if identity is None:
+        raise ValueError("expected an identity fact, got null")
+    return identity
 
 
 def _location_from_dict(data: dict[str, Any] | None) -> LocationFact | None:
@@ -206,7 +218,7 @@ def _location_from_dict(data: dict[str, Any] | None) -> LocationFact | None:
 def _expression_ir_from_dict(data: dict[str, Any] | None) -> ExpressionIR | None:
     if data is None:
         return None
-    return _parse_expression_ir(data)
+    return expression_ir_from_dict(data)
 
 
 def _formal_from_dict(data: dict[str, Any]) -> FormalFact:
@@ -234,7 +246,7 @@ def _owning_definition_from_dict(data: dict[str, Any]) -> OwningDefinitionFact:
 
 def _owner_from_dict(data: dict[str, Any]) -> OwnerFact:
     return OwnerFact(
-        owner=_identity_from_dict(data["owner"]),
+        owner=identity_fact_from_dict(data["owner"]),
         owning_definition=_owning_definition_from_dict(data["owning_definition"]),
     )
 
@@ -242,10 +254,10 @@ def _owner_from_dict(data: dict[str, Any]) -> OwnerFact:
 def _source_from_dict(data: dict[str, Any]) -> ConstraintSource:
     return ConstraintSource(
         form=data["form"],
-        effective_predicate_source=_identity_from_dict(data["effective_predicate_source"]),
-        constraint_definition=_identity_from_dict(data["constraint_definition"]),
-        referenced_feature_target=_identity_from_dict(data["referenced_feature_target"]),
-        asserted_constraint=_identity_from_dict(data["asserted_constraint"]),
+        effective_predicate_source=identity_fact_from_dict(data["effective_predicate_source"]),
+        constraint_definition=identity_fact_from_dict(data["constraint_definition"]),
+        referenced_feature_target=identity_fact_from_dict(data["referenced_feature_target"]),
+        asserted_constraint=identity_fact_from_dict(data["asserted_constraint"]),
     )
 
 
@@ -303,12 +315,24 @@ def _diagnostic_from_dict(data: dict[str, Any]) -> ExtractionDiagnosticFact:
 def parse(text: str) -> ConstraintFacts:
     """Reconstruct a `ConstraintFacts` aggregate from its canonical JSON section.
 
-    Goes through the typed layer (not a bare `json.loads`), so `serialize(parse(serialize(f)))
-    == serialize(f)` exercises the full round-trip, not just JSON re-encoding.
+    Rejects a missing or unsupported envelope `schema_version` with `ValueError` naming
+    found vs supported — a foreign-version document never parses. Goes through the typed
+    layer (not a bare `json.loads`), so `serialize(parse(serialize(f))) == serialize(f)`
+    exercises the full round-trip, not just JSON re-encoding.
     """
     data = json.loads(text)
+    if "schema_version" not in data:
+        raise ValueError(
+            "ConstraintFacts document is missing 'schema_version' "
+            f"(supported: {CONSTRAINT_FACTS_SCHEMA_VERSION!r})"
+        )
+    found_version = data["schema_version"]
+    if found_version != CONSTRAINT_FACTS_SCHEMA_VERSION:
+        raise ValueError(
+            f"unsupported ConstraintFacts schema_version: found {found_version!r}, "
+            f"supported {CONSTRAINT_FACTS_SCHEMA_VERSION!r}"
+        )
     return ConstraintFacts(
-        schema_version=data["schema_version"],
         definitions=[_definition_from_dict(item) for item in data["definitions"]],
         usages=[_usage_from_dict(item) for item in data["usages"]],
         contexts=[_context_from_dict(item) for item in data["contexts"]],

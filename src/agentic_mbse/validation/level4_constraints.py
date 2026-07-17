@@ -50,8 +50,16 @@ def eligibility_coverage_metrics(model: Any) -> dict:
     asserts, per spec's Open Questions — unassessed is reported as its own line, not folded into
     the percentage.
 
+    The eligibility block carries its own denominator ("Constraint usages assessed
+    (incl. satisfy)") because the extraction sweep classifies every ConstraintUsage,
+    including SatisfyRequirementUsage, while the legacy "Total constraints" count
+    excludes the requirement subtree (Item 4 semantics, EXCLUDED_CONSTRAINT_TYPES).
+    Eligible + Ineligible + Unassessed always sums to this denominator, not to
+    "Total constraints".
+
     Returns:
-        Metrics dict: eligibility admit/block/unassessed counts and the admit-rate percentage.
+        Metrics dict: assessed denominator, eligibility admit/block/unassessed counts,
+        and the admit-rate percentage.
     """
     facts = extract_constraint_facts(model)
     result = evaluate_profile(facts)
@@ -60,6 +68,7 @@ def eligibility_coverage_metrics(model: Any) -> dict:
     admit_rate = (result.admitted_count / asserted * 100) if asserted > 0 else 100
 
     return {
+        "Constraint usages assessed (incl. satisfy)": len(result.decisions),
         "Eligible (admitted)": result.admitted_count,
         "Ineligible (blocked)": result.blocked_count,
         "Unassessed (satisfy/require/plain)": result.unassessed_count,
@@ -132,9 +141,7 @@ def main() -> int:
     import argparse
 
     parser = argparse.ArgumentParser(description="Level 4: Constraint Satisfaction")
-    parser.add_argument(
-        "path", nargs="?", default="models", help="Path to models directory"
-    )
+    parser.add_argument("path", nargs="?", default="models", help="Path to models directory")
     args = parser.parse_args()
 
     result = analyze_constraints(args.path)

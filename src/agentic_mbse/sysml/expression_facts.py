@@ -1,6 +1,6 @@
 """Neutral leaf vocabulary for the constraint predicate tree.
 
-This is the frozen leaf vocabulary S1 (`.project/active/spike-constraint-fact-shapes/`)
+This is the frozen leaf vocabulary S1 (`.project/completed/20260711_spike-constraint-fact-shapes/`)
 proved recoverable from live SysIDE: a feature reference or a literal, each carrying its
 type category, enumeration identity, and unit/dimension fact. It is the leaf `expression_ir`'s
 `ExpressionIR` adopts, so this module imports neither syside nor `constraint_facts`/`expression_ir`

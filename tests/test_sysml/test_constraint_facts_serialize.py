@@ -139,7 +139,6 @@ def _hand_built_facts() -> ConstraintFacts:
         ],
     )
     return ConstraintFacts(
-        schema_version=CONSTRAINT_FACTS_SCHEMA_VERSION,
         definitions=[definition],
         usages=[usage],
         contexts=[context],
@@ -178,6 +177,57 @@ def test_schema_versions_are_pinned() -> None:
 def test_non_finite_serialize_backstop() -> None:
     with pytest.raises(ValueError):
         serialize(_facts_with_non_finite_literal())
+
+
+# === Fail-closed envelope and node version gates (F2) ===
+
+
+def test_foreign_envelope_version_is_rejected() -> None:
+    doc = json.loads(serialize(_hand_built_facts()))
+    doc["schema_version"] = "constraint-facts/v999"
+    with pytest.raises(ValueError, match=r"constraint-facts/v999.*constraint-facts/v1"):
+        parse(json.dumps(doc))
+
+
+def test_missing_envelope_version_is_rejected() -> None:
+    doc = json.loads(serialize(_hand_built_facts()))
+    del doc["schema_version"]
+    with pytest.raises(ValueError, match=r"missing 'schema_version'"):
+        parse(json.dumps(doc))
+
+
+def test_foreign_nested_node_version_is_rejected() -> None:
+    doc = json.loads(serialize(_hand_built_facts()))
+    doc["usages"][0]["predicate"]["schema_version"] = "expression-ir/v999"
+    with pytest.raises(ValueError, match=r"expression-ir/v999.*expression-ir/v1"):
+        parse(json.dumps(doc))
+
+
+def test_envelope_version_is_not_caller_settable() -> None:
+    # `schema_version` is init=False: callers cannot set the tag in the constructor.
+    with pytest.raises(TypeError):
+        ConstraintFacts(
+            schema_version=CONSTRAINT_FACTS_SCHEMA_VERSION,  # type: ignore[call-arg]
+            definitions=[],
+            usages=[],
+            contexts=[],
+            diagnostics=[],
+        )
+
+
+def test_mutated_envelope_version_cannot_serialize() -> None:
+    facts = _hand_built_facts()
+    facts.schema_version = "constraint-facts/v999"
+    with pytest.raises(ValueError, match=r"schema_version.*constraint-facts/v999"):
+        serialize(facts)
+
+
+def test_mutated_nested_expression_tag_cannot_serialize() -> None:
+    facts = _hand_built_facts()
+    assert facts.usages[0].predicate is not None
+    facts.usages[0].predicate.kind = "hologram"
+    with pytest.raises(ValueError, match=r"kind.*hologram"):
+        serialize(facts)
 
 
 def test_diagnostic_fact_round_trips() -> None:

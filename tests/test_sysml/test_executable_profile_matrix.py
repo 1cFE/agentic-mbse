@@ -16,9 +16,7 @@ import pytest
 from agentic_mbse.sysml.executable_profile import classify_equality, unit_compatibility
 from agentic_mbse.sysml.expression_facts import OperandTypeFact, UnitFact
 
-GOLDEN = json.loads(
-    Path("tests/fixtures/constraint_fact_shapes/golden.json").read_text()
-)
+GOLDEN = json.loads(Path("tests/fixtures/constraint_fact_shapes/golden.json").read_text())
 
 _EQUALITY_CASES = GOLDEN["type_units"]["equality_cases"]
 _INEQUALITY_CASES = GOLDEN["type_units"]["inequality_cases"]

@@ -1,5 +1,15 @@
 # Spike: Constraint Fact Shapes in Live SysIDE
 
+> **Close-out note (2026-07-14).** This spike is archived; treat everything below as a
+> historical record. The S1 capture module (`tests/constraint_fact_learning.py`) was retired
+> by design decision D7 during the constraint-facts item, so `generate_golden.py` and the
+> reproduction instructions below reference code that no longer exists and do not run.
+> `golden.json` in `tests/fixtures/constraint_fact_shapes/` is the frozen S1 semantic oracle
+> and is deliberately never regenerated. The regenerable byte-stability golden is
+> `tests/fixtures/constraint_fact_shapes/production_facts.json` (regeneration convention:
+> `.project/completed/20260713_constraint-facts/plan.md`). The dead generator and the
+> duplicate `probe_*.sysml` files are kept as part of the frozen spike record.
+
 ## Summary of Findings
 
 **Verdict: S1 passes with one explicit profile restriction.** Live SysIDE 0.8.4 exposes the

@@ -171,6 +171,12 @@ def test_owning_definition_present_and_tagged_on_every_usage() -> None:
 
 
 def test_non_finite_literal_yields_extraction_diagnostic() -> None:
+    """The D2a non-finite-literal diagnostic is observable through the public sink (F5).
+
+    Uses a hand-built mock literal: SysML has no infinity/NaN literal syntax, so this
+    path is unreachable via `try_load_model`.
+    """
+
     class MockDocument:
         url = "file:///probe.sysml"
 
@@ -189,16 +195,17 @@ def test_non_finite_literal_yields_extraction_diagnostic() -> None:
         operator = None
         operands: list[Any] = []
 
-    from agentic_mbse.sysml.constraint_extraction import _expression_ir, _ExtractionContext
+    from agentic_mbse.sysml import extract_expression_ir
+    from agentic_mbse.sysml.constraint_facts import ExtractionDiagnosticFact
 
-    ctx = _ExtractionContext()
-    fact = _expression_ir(MockLiteralRational(), ctx)
+    diagnostics: list[ExtractionDiagnosticFact] = []
+    fact = extract_expression_ir(MockLiteralRational(), diagnostics=diagnostics)
 
     assert fact is not None
     assert fact.literal is not None
     assert fact.literal.value == math.inf
-    assert len(ctx.diagnostics) == 1
-    diagnostic = ctx.diagnostics[0]
+    assert len(diagnostics) == 1
+    diagnostic = diagnostics[0]
     assert diagnostic.kind == "non_finite_literal"
     assert diagnostic.operand_source is not None
     assert diagnostic.location is not None
@@ -211,9 +218,7 @@ def test_extract_expression_ir_public_single_node_entry() -> None:
 
     model = _load(SOURCE_FORMS)
     facts = extract_constraint_facts(model)
-    inline = next(
-        u for u in facts.usages if u.source.form == "inline" and u.predicate is not None
-    )
+    inline = next(u for u in facts.usages if u.source.form == "inline" and u.predicate is not None)
     live = next(
         u
         for u in model.elements(syside.ConstraintUsage, include_subtypes=True)
