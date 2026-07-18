@@ -80,10 +80,6 @@ def test_feature_chain_actual_is_admitted() -> None:
         "calc_owned",
         "direct_owned",
         "inherited_limit",
-        "integer_integer",
-        "boolean_boolean",
-        "string_string",
-        "enum_own",
     ],
 )
 def test_clean_admitted_asserts_are_silent(name: str) -> None:
@@ -98,8 +94,8 @@ def test_clean_admitted_asserts_are_silent(name: str) -> None:
 @pytest.mark.parametrize(
     ("name", "reason"),
     [
-        ("enum_incompatible", "block_incompatible_enumerations"),
         ("integer_real", "block_real_equality_requires_tolerance"),
+        ("integer_integer", "block_integer_equality_unpreservable"),
         ("quantity_same_unit", "block_real_equality_requires_tolerance"),
         ("quantity_convertible_unit", "block_unit_conversion_required"),
         ("quantity_incompatible_dimension", "block_incompatible_dimensions"),
@@ -119,6 +115,18 @@ def test_golden_equality_matrix_reproduced_through_the_walk(name: str, reason: s
     assert decision.diagnostics[0].reason == reason
 
 
+@pytest.mark.parametrize(
+    "name", ["enum_own", "enum_incompatible", "boolean_boolean", "string_string"]
+)
+def test_non_numerical_equality_warns(name: str) -> None:
+    decision = _decision(name)
+    assert decision.eligibility is Eligibility.NON_NUMERICAL
+    assert [diagnostic.reason for diagnostic in decision.diagnostics] == [
+        "warn_non_numerical_equality"
+    ]
+    assert all(diagnostic.force == "non_numerical" for diagnostic in decision.diagnostics)
+
+
 def test_compound_boolean_nested_walk_reaches_every_leaf() -> None:
     """`(color == Color::red and integer_value <= real_value) or not (length_value == 0 [m])` —
     the nested and/or/not walk must recurse into every branch, not just the first. The third
@@ -127,8 +135,11 @@ def test_compound_boolean_nested_walk_reaches_every_leaf() -> None:
     connective nesting and name it — not stop at the first two (admitted) branches."""
     decision = _decision("compound_boolean")
     assert decision.eligibility is Eligibility.BLOCK
-    assert len(decision.diagnostics) == 1
-    assert decision.diagnostics[0].reason == "block_unknown_exact_unit"
+    assert [diagnostic.reason for diagnostic in decision.diagnostics] == [
+        "warn_non_numerical_equality",
+        "block_unknown_exact_unit",
+    ]
+    assert all(diagnostic.force == "error" for diagnostic in decision.diagnostics)
 
 
 def test_nested_connectives_over_clean_operands_are_silent() -> None:
@@ -174,7 +185,12 @@ def test_multiple_violations_in_one_predicate_all_accumulate() -> None:
     decision = evaluate_profile(facts).decisions[0]
     assert decision.eligibility is Eligibility.BLOCK
     reasons = {diag.reason for diag in decision.diagnostics}
-    assert reasons == {"block_feature_chain", "block_xor"}
+    assert reasons == {
+        "block_feature_chain",
+        "warn_non_numerical_xor",
+        "warn_non_numerical_predicate",
+    }
+    assert all(diagnostic.force == "error" for diagnostic in decision.diagnostics)
 
 
 # === Totality (I1) ===
@@ -189,8 +205,12 @@ def test_every_usage_yields_exactly_one_decision() -> None:
 
 def test_profile_result_derived_counts() -> None:
     result = evaluate_profile(FACTS)
-    assert result.admitted_count + result.blocked_count + result.unassessed_count == len(
-        result.decisions
+    assert (
+        result.admitted_count
+        + result.blocked_count
+        + result.non_numerical_count
+        + result.unassessed_count
+        == len(result.decisions)
     )
     assert result.admitted_count > 0
     assert result.blocked_count > 0
@@ -278,34 +298,32 @@ def test_operator_outside_admit_set_blocks() -> None:
     assert decision.diagnostics[0].reason == "block_unsupported_operator"
 
 
-def test_not_equal_blocks_under_default_deny() -> None:
+def test_not_equal_mirrors_equality_bucketing() -> None:
     predicate = OperatorNode(
         operator="!=", operands=[_leaf("integer"), _leaf("integer")], operand_type=None
     )
     facts = _facts(_inline_usage("not_equal", predicate))
     decision = evaluate_profile(facts).decisions[0]
     assert decision.eligibility is Eligibility.BLOCK
-    assert decision.diagnostics[0].reason == "block_unsupported_operator"
+    assert decision.diagnostics[0].reason == "block_integer_equality_unpreservable"
 
 
-def test_bare_boolean_predicate_root_blocks() -> None:
-    """D6: the whole predicate is a bare-Boolean feature reference, not a proposition."""
+def test_bare_boolean_predicate_root_warns() -> None:
     predicate = _leaf("boolean")
     facts = _facts(_inline_usage("bare_boolean", predicate))
     decision = evaluate_profile(facts).decisions[0]
-    assert decision.eligibility is Eligibility.BLOCK
-    assert decision.diagnostics[0].reason == "block_non_predicate_root"
+    assert decision.eligibility is Eligibility.NON_NUMERICAL
+    assert decision.diagnostics[0].reason == "warn_non_numerical_predicate"
 
 
-def test_boolean_connective_operand_blocks() -> None:
-    """D6: a boolean variable as an `and`/`or` operand — role mismatch, not a chain."""
+def test_boolean_connective_operand_warns() -> None:
     predicate = OperatorNode(
         operator="and", operands=[_leaf("boolean"), _leaf("boolean")], operand_type=None
     )
     facts = _facts(_inline_usage("boolean_connective_operand", predicate))
     decision = evaluate_profile(facts).decisions[0]
-    assert decision.eligibility is Eligibility.BLOCK
-    assert decision.diagnostics[0].reason == "block_non_predicate_root"
+    assert decision.eligibility is Eligibility.NON_NUMERICAL
+    assert all(d.force == "non_numerical" for d in decision.diagnostics)
 
 
 def test_feature_chain_in_predicate_body_blocks() -> None:
@@ -320,24 +338,24 @@ def test_feature_chain_in_predicate_body_blocks() -> None:
     assert decision.diagnostics[0].reason == "block_feature_chain"
 
 
-def test_xor_blocks() -> None:
+def test_pure_boolean_xor_warns() -> None:
     predicate = OperatorNode(
         operator="xor", operands=[_leaf("boolean"), _leaf("boolean")], operand_type=None
     )
     facts = _facts(_inline_usage("xor_predicate", predicate))
     decision = evaluate_profile(facts).decisions[0]
-    assert decision.eligibility is Eligibility.BLOCK
-    assert decision.diagnostics[0].reason == "block_xor"
+    assert decision.eligibility is Eligibility.NON_NUMERICAL
+    assert decision.diagnostics[0].reason == "warn_non_numerical_xor"
 
 
-def test_implies_blocks() -> None:
+def test_pure_boolean_implies_warns() -> None:
     predicate = OperatorNode(
         operator="implies", operands=[_leaf("boolean"), _leaf("boolean")], operand_type=None
     )
     facts = _facts(_inline_usage("implies_predicate", predicate))
     decision = evaluate_profile(facts).decisions[0]
-    assert decision.eligibility is Eligibility.BLOCK
-    assert decision.diagnostics[0].reason == "block_implies"
+    assert decision.eligibility is Eligibility.NON_NUMERICAL
+    assert decision.diagnostics[0].reason == "warn_non_numerical_implies"
 
 
 def test_invocation_blocks() -> None:
@@ -496,10 +514,14 @@ def test_preflight_partitions_by_outcome() -> None:
     assert result.ok is False  # production_facts.json carries blocked would-execute asserts
     assert len(result.blocking) > 0
     assert len(result.admitted) > 0
+    assert len(result.non_numerical) > 0
     assert len(result.unassessed) > 0
-    assert len(result.blocking) + len(result.admitted) + len(result.unassessed) == len(FACTS.usages)
+    assert len(result.blocking) + len(result.admitted) + len(result.non_numerical) + len(
+        result.unassessed
+    ) == len(FACTS.usages)
     assert all(d.eligibility is Eligibility.BLOCK for d in result.blocking)
     assert all(d.eligibility is Eligibility.ADMIT for d in result.admitted)
+    assert all(d.eligibility is Eligibility.NON_NUMERICAL for d in result.non_numerical)
     assert all(d.eligibility is Eligibility.UNASSESSED for d in result.unassessed)
 
 

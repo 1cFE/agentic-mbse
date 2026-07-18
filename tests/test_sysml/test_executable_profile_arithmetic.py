@@ -343,15 +343,15 @@ def test_scalar_times_quantity_admits(order: str) -> None:
 
 
 def test_dimensionless_product_merges_numeric_categories() -> None:
-    """`(2 * 3) == 6` stays integer (support_integer admits); any real operand makes the
-    product real, and real equality then blocks on tolerance."""
+    """Integer and real products remain numerical, but equality admits neither category."""
     integer_product = OperatorNode(
         operator="*", operands=[_int_literal(2), _int_literal(3)], operand_type=None
     )
-    admitted = _decide(
+    integer_equality = _decide(
         OperatorNode(operator="==", operands=[integer_product, _int_literal(6)], operand_type=None)
     )
-    assert admitted.eligibility is Eligibility.ADMIT
+    assert integer_equality.eligibility is Eligibility.BLOCK
+    assert _reasons(integer_equality) == {"block_integer_equality_unpreservable"}
 
     real_product = OperatorNode(
         operator="*", operands=[_int_literal(2), _real_literal(3.0)], operand_type=None
@@ -571,8 +571,8 @@ def test_proposition_as_arithmetic_operand_blocks_non_predicate_root() -> None:
 # === D-R4: version and reason-code vocabulary ===
 
 
-def test_profile_semantic_version_is_v2() -> None:
-    assert PROFILE_SEMANTIC_VERSION == "executable-profile/v2"
+def test_profile_semantic_version_is_v3() -> None:
+    assert PROFILE_SEMANTIC_VERSION == "executable-profile/v3"
 
 
 def test_new_reason_codes_are_registered() -> None:

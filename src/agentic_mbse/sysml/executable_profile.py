@@ -1,7 +1,7 @@
 """Executable profile: a pure facts-to-decisions library, no syside.
 
 Reads Item 1/2's `ConstraintFacts` and returns, per constraint usage, exactly one outcome —
-admit, block (with named diagnostics), or unassessed — so every modeled assertion ends in one
+admit, block, non-numerical, or unassessed — so every modeled assertion ends in one
 visible place and nothing reaches codegen silently (concept Design Principle 5, "silence is
 never an outcome"). Imports `expression_facts`/`expression_ir`/`constraint_facts` only: no
 syside, no `ValidationCode`, no pydantic (D2/I4) — L4/L6 translate `EligibilityDiagnostic.reason`
@@ -10,8 +10,9 @@ into their own `ValidationIssue`, keeping this module reusable by codegen too.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
+from typing import Literal
 
 from agentic_mbse.sysml.constraint_facts import (
     ConstraintDefinitionFact,
@@ -51,18 +52,18 @@ __all__ = [
 # read from the declared interior fact — mixed-unit arithmetic now blocks, scalar×quantity and
 # same-unit quantity ratios are newly admitted — and malformed snapshot facts block
 # (`block_malformed_operand_fact`) instead of crashing an assert.
-PROFILE_SEMANTIC_VERSION = "executable-profile/v2"
+PROFILE_SEMANTIC_VERSION = "executable-profile/v3"
 
 # The golden's 11 decision codes (S1 findings §5) plus the construct-named and default-deny
 # blocks the walk (Phase 2) emits. Every `EligibilityDiagnostic.reason` is one of these (I3).
 REASON_CODES = frozenset(
     {
-        # Equality/unit matrix — golden-pinned (4 support, 7 block).
-        "support_enum_same_enumeration",
-        "support_boolean",
-        "support_string",
-        "support_integer",
-        "block_incompatible_enumerations",
+        # Equality/unit matrix — v3 answer-key pinned (warn or block; never support).
+        "warn_non_numerical_equality",
+        "warn_non_numerical_predicate",
+        "warn_non_numerical_xor",
+        "warn_non_numerical_implies",
+        "block_integer_equality_unpreservable",
         "block_real_equality_requires_tolerance",
         "block_unit_conversion_required",
         "block_incompatible_dimensions",
@@ -94,6 +95,7 @@ class Eligibility(Enum):
 
     ADMIT = "admit"
     BLOCK = "block"
+    NON_NUMERICAL = "non_numerical"
     UNASSESSED = "unassessed"
 
 
@@ -106,6 +108,7 @@ class EligibilityDiagnostic:
     location: LocationFact | None
     constraint_identity: IdentityFact
     message: str
+    force: Literal["error", "non_numerical"] = "error"
 
 
 @dataclass(frozen=True)
@@ -135,6 +138,10 @@ class ProfileResult:
         return sum(1 for d in self.decisions if d.eligibility is Eligibility.BLOCK)
 
     @property
+    def non_numerical_count(self) -> int:
+        return sum(1 for d in self.decisions if d.eligibility is Eligibility.NON_NUMERICAL)
+
+    @property
     def unassessed_count(self) -> int:
         return sum(1 for d in self.decisions if d.eligibility is Eligibility.UNASSESSED)
 
@@ -146,6 +153,7 @@ class PreflightResult:
     ok: bool
     blocking: list[UsageDecision]
     admitted: list[UsageDecision]
+    non_numerical: list[UsageDecision]
     unassessed: list[UsageDecision]
 
 
@@ -187,7 +195,7 @@ def unit_compatibility(left: OperandTypeFact, right: OperandTypeFact) -> str:
 
 
 def classify_equality(left: OperandTypeFact, right: OperandTypeFact) -> str:
-    """`==` eligibility: one of the golden's 11 decision codes (S1 §5).
+    """Classify equality without admitting it.
 
     Precedence (design.md#implementation-notes): unresolved, then unknown category, then the
     shared unit policy, then real-valued equality (any quantity or real operand — quantity
@@ -208,16 +216,11 @@ def classify_equality(left: OperandTypeFact, right: OperandTypeFact) -> str:
     if left.category == "real" or right.category == "real":
         return "block_real_equality_requires_tolerance"
 
-    if left.category == "enum" and right.category == "enum":
-        if left.enumeration == right.enumeration:
-            return "support_enum_same_enumeration"
-        return "block_incompatible_enumerations"
-    if left.category == "boolean" and right.category == "boolean":
-        return "support_boolean"
-    if left.category == "string" and right.category == "string":
-        return "support_string"
+    non_numerical = frozenset({"enum", "boolean", "string"})
+    if left.category in non_numerical and right.category in non_numerical:
+        return "warn_non_numerical_equality"
     if left.category == "integer" and right.category == "integer":
-        return "support_integer"
+        return "block_integer_equality_unpreservable"
 
     # No admit rule matches this category pairing (e.g. enum vs integer) — default-deny.
     return "block_unsupported_operand_category"
@@ -240,6 +243,8 @@ def _diagnostic(
     identity: IdentityFact,
     location: LocationFact | None,
     message: str | None = None,
+    *,
+    force: Literal["error", "non_numerical"] = "error",
 ) -> EligibilityDiagnostic:
     return EligibilityDiagnostic(
         reason=reason,
@@ -247,6 +252,7 @@ def _diagnostic(
         location=location,
         constraint_identity=identity,
         message=message or f"{construct}: {reason}",
+        force=force,
     )
 
 
@@ -458,26 +464,9 @@ def _walk_comparison(
     identity: IdentityFact,
     location: LocationFact | None,
     diagnostics: list[EligibilityDiagnostic],
-) -> None:
-    """Recover both operands' facts and apply the equality gate or the unit policy.
-
-    `!=` is not in the admit set (D5): it blocks outright, regardless of operand facts. An
-    operand whose own value walk names a violation (nested chain, invocation, arithmetic
-    block, ...) short-circuits the gate for this comparison — the nested diagnostics already
-    name the problem (I2), and both sides still report.
-    """
+) -> bool:
+    """Apply the comparison gate and report whether it contains a numerical claim."""
     operator = node.operator
-    if operator == "!=":
-        diagnostics.append(
-            _diagnostic(
-                "block_unsupported_operator",
-                "comparison",
-                identity,
-                location,
-                "the != operator is not in the admitted comparison set",
-            )
-        )
-        return
     operands = node.operands
     if len(operands) != 2:
         diagnostics.append(
@@ -489,7 +478,7 @@ def _walk_comparison(
                 f"comparison with {len(operands)} operands, expected 2",
             )
         )
-        return
+        return True
     left, right = operands
     left_facts = _walk_value(left, identity, location)
     right_facts = _walk_value(right, identity, location)
@@ -498,20 +487,46 @@ def _walk_comparison(
             diagnostics.extend(left_facts)
         if isinstance(right_facts, list):
             diagnostics.extend(right_facts)
-        return
+        return True
 
-    if operator == "==":
+    if operator in ("==", "!="):
         reason = classify_equality(left_facts, right_facts)
-        if not reason.startswith("support_"):
-            diagnostics.append(_diagnostic(reason, "comparison", identity, location))
+        is_non_numerical = reason == "warn_non_numerical_equality"
+        if reason == "block_real_equality_requires_tolerance":
+            message = (
+                "numerical equality has no tolerance semantics; rewrite it as a two-inequality "
+                "tolerance band"
+            )
+        elif reason == "block_integer_equality_unpreservable":
+            message = (
+                "integer equality cannot be preserved through the generated IEEE-double data "
+                "path; rewrite the check as numerical bounds"
+            )
+        elif is_non_numerical:
+            message = "equality is a valid non-numerical statement and is not executed"
+        else:
+            message = f"comparison: {reason}"
+        diagnostics.append(
+            _diagnostic(
+                reason,
+                "comparison",
+                identity,
+                location,
+                message,
+                force="non_numerical" if is_non_numerical else "error",
+            )
+        )
+        return not is_non_numerical
     elif operator in _COMPARISON_OPS:  # <, <=, >, >=
         reason = unit_compatibility(left_facts, right_facts)
         if reason != "ok":
             diagnostics.append(_diagnostic(reason, "comparison", identity, location))
+        return True
     else:
         diagnostics.append(
             _diagnostic("block_unsupported_operator", "comparison", identity, location)
         )
+        return True
 
 
 def _walk_proposition(
@@ -519,7 +534,7 @@ def _walk_proposition(
     identity: IdentityFact,
     location: LocationFact | None,
     diagnostics: list[EligibilityDiagnostic],
-) -> None:
+) -> bool:
     """Classify one proposition-position node and emit named diagnostics for anything not admitted.
 
     A proposition position wants a comparison or connective; operand positions go through
@@ -534,25 +549,49 @@ def _walk_proposition(
             diagnostics.append(
                 _diagnostic("block_feature_chain", "feature_chain", identity, location)
             )
-            return
+            return True
+        if node.operand_type is not None and node.operand_type.category == "boolean":
+            diagnostics.append(
+                _diagnostic(
+                    "warn_non_numerical_predicate",
+                    "feature_ref",
+                    identity,
+                    location,
+                    "bare Boolean assertion is not a numerical statement and is not executed",
+                    force="non_numerical",
+                )
+            )
+            return False
         diagnostics.append(
             _diagnostic("block_non_predicate_root", "feature_ref", identity, location)
         )
-        return
+        return True
 
     if isinstance(node, LiteralNode):
+        if node.operand_type is not None and node.operand_type.category == "boolean":
+            diagnostics.append(
+                _diagnostic(
+                    "warn_non_numerical_predicate",
+                    "literal",
+                    identity,
+                    location,
+                    "bare Boolean assertion is not a numerical statement and is not executed",
+                    force="non_numerical",
+                )
+            )
+            return False
         diagnostics.append(_diagnostic("block_non_predicate_root", "literal", identity, location))
-        return
+        return True
 
     if isinstance(node, UnitAnnotationNode):
         diagnostics.append(
             _diagnostic("block_non_predicate_root", "unit_annotation", identity, location)
         )
-        return
+        return True
 
     if isinstance(node, InvocationNode):
         diagnostics.append(_diagnostic("block_invocation", "invocation", identity, location))
-        return
+        return True
 
     if isinstance(node, UnsupportedNode):
         diagnostics.append(
@@ -560,16 +599,27 @@ def _walk_proposition(
                 "block_unsupported_node", node.node_kind, identity, location, node.diagnostic
             )
         )
-        return
+        return True
 
     if isinstance(node, OperatorNode):
         operator = node.operator
         if operator in ("xor", "implies"):
-            diagnostics.append(_diagnostic(f"block_{operator}", operator, identity, location))
-            return
+            diagnostics.append(
+                _diagnostic(
+                    f"warn_non_numerical_{operator}",
+                    operator,
+                    identity,
+                    location,
+                    f"{operator} is outside the numerical executable profile",
+                    force="non_numerical",
+                )
+            )
+            contains_numerical = False
+            for operand in node.operands:
+                contains_numerical |= _walk_proposition(operand, identity, location, diagnostics)
+            return contains_numerical
         if operator in _COMPARISON_OPS or operator == "!=":
-            _walk_comparison(node, identity, location, diagnostics)
-            return
+            return _walk_comparison(node, identity, location, diagnostics)
         if operator in _CONNECTIVE_OPS:
             # Arity gate (v2): a vacuous connective must not admit by walking zero operands —
             # default-deny needs something to prove. `not` is unary; `and`/`or` are n-ary
@@ -587,24 +637,26 @@ def _walk_proposition(
                         f" expected {expected}",
                     )
                 )
-                return
+                return True
+            contains_numerical = False
             for operand in node.operands:
-                _walk_proposition(operand, identity, location, diagnostics)
-            return
+                contains_numerical |= _walk_proposition(operand, identity, location, diagnostics)
+            return contains_numerical
         if operator in _ARITHMETIC_OPS:
             diagnostics.append(
                 _diagnostic("block_non_predicate_root", "arithmetic", identity, location)
             )
-            return
+            return True
         # A future/unexpected operator symbol (spec's default-deny bullet) — unreachable given
         # today's closed extraction allowlist, but not assumed away.
         diagnostics.append(_diagnostic("block_unsupported_operator", operator, identity, location))
-        return
+        return True
 
     # Unreachable given ExpressionIR's closed union, kept for totality (I1).
     diagnostics.append(
         _diagnostic("block_unsupported_node", type(node).__name__, identity, location)
     )
+    return True
 
 
 # === Form gate, resolution, and the top-level entry points ===
@@ -676,12 +728,15 @@ def _evaluate_usage(
         )
 
     diagnostics: list[EligibilityDiagnostic] = []
-    _walk_proposition(predicate, identity, location, diagnostics)
+    contains_numerical = _walk_proposition(predicate, identity, location, diagnostics)
     if diagnostics:
+        if contains_numerical:
+            diagnostics = [replace(diagnostic, force="error") for diagnostic in diagnostics]
+        eligibility = Eligibility.BLOCK if contains_numerical else Eligibility.NON_NUMERICAL
         return UsageDecision(
             identity=identity,
             location=location,
-            eligibility=Eligibility.BLOCK,
+            eligibility=eligibility,
             diagnostics=diagnostics,
             unassessed_kind=None,
             effective_predicate=predicate,
@@ -716,7 +771,12 @@ def preflight(facts: ConstraintFacts) -> PreflightResult:
     result = evaluate_profile(facts)
     blocking = [d for d in result.decisions if d.eligibility is Eligibility.BLOCK]
     admitted = [d for d in result.decisions if d.eligibility is Eligibility.ADMIT]
+    non_numerical = [d for d in result.decisions if d.eligibility is Eligibility.NON_NUMERICAL]
     unassessed = [d for d in result.decisions if d.eligibility is Eligibility.UNASSESSED]
     return PreflightResult(
-        ok=not blocking, blocking=blocking, admitted=admitted, unassessed=unassessed
+        ok=not blocking,
+        blocking=blocking,
+        admitted=admitted,
+        non_numerical=non_numerical,
+        unassessed=unassessed,
     )
