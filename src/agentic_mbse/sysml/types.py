@@ -104,12 +104,10 @@ class ValidationCode(str, Enum):
     L6_ANONYMOUS_RETURN = "L6_ANONYMOUS_RETURN"
     # C2b: `return attribute y; y = expr` body-assignment extracts an output but loses auto-impl -> WARN.
     L6_BODY_ASSIGNMENT_IMPL_LOSS = "L6_BODY_ASSIGNMENT_IMPL_LOSS"
-    # C3 / CONSTRAINT-EXEC Item 3: a would-execute constraint usage's predicate carries an
-    # ineligible construct (executable_profile.evaluate_profile blocked it) -> WARN, one per
-    # blocked construct, naming the construct + reason. Replaces the blanket
-    # L6_CONSTRAINT_NON_EXECUTABLE warning, which fired on every constraint regardless of
-    # whether its predicate was actually executable.
-    L6_CONSTRAINT_INELIGIBLE = "L6_CONSTRAINT_INELIGIBLE"
+    # CONSTRAINT-EXEC Item 3: malformed numerical statements fail L6; valid statements outside
+    # the numerical executor warn once per statement.
+    L6_CONSTRAINT_MALFORMED_NUMERICAL = "L6_CONSTRAINT_MALFORMED_NUMERICAL"
+    L6_CONSTRAINT_NON_NUMERICAL = "L6_CONSTRAINT_NON_NUMERICAL"
     # C4: a calc-bearing part def that no usage instantiates (plainly or by retyping) -> FAIL; its template calcs are dropped.
     L6_CALC_DEF_NO_INSTANTIATION = "L6_CALC_DEF_NO_INSTANTIATION"
     # C7 (Item 9): `attribute :>> attr = <expr>` parses as an AttributeUsage, but codegen's

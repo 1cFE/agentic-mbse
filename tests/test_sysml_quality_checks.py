@@ -649,9 +649,10 @@ class TestLevel4ConstraintCoverage:
         result = analyze_constraints(str(temp_models_dir))
 
         assert result.level == 4
-        assert "Eligible (admitted)" in result.metrics
-        assert "Ineligible (blocked)" in result.metrics
-        assert "Eligibility rate" in result.metrics
+        assert "Admitted numerical" in result.metrics
+        assert "Malformed numerical" in result.metrics
+        assert "Non-numerical" in result.metrics
+        assert "Executable share" in result.metrics
 
 
 class TestEndToEnd:
@@ -1075,9 +1076,10 @@ class TestLevelDistinctness:
         assert l4.level == 4
         assert l4.success is True
         assert "Total constraints" in l4.metrics
-        assert "Eligible (admitted)" in l4.metrics
-        assert "Ineligible (blocked)" in l4.metrics
-        assert "Eligibility rate" in l4.metrics
+        assert "Admitted numerical" in l4.metrics
+        assert "Malformed numerical" in l4.metrics
+        assert "Non-numerical" in l4.metrics
+        assert "Executable share" in l4.metrics
 
     def test_l5_reports_doc_coverage_metrics(self):
         """L5 reports unique documentation coverage metrics (informational, always passes)."""

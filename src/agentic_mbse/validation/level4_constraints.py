@@ -45,10 +45,9 @@ def eligibility_coverage_metrics(model: Any) -> dict:
     attribute-coverage placeholder (`check_constraint_coverage`, which never parsed a predicate).
 
     Runs the executable profile over the model's constraint facts and reports how many asserted
-    constraints (inline/definition-typed) are admitted, blocked, or unassessed (satisfy /
-    require-assume / plain). The denominator is executable asserts (admit + block) over total
-    asserts, per spec's Open Questions — unassessed is reported as its own line, not folded into
-    the percentage.
+    constraints are admitted numerical claims, malformed numerical claims, non-numerical
+    statements, or unassessed forms. Executable share is admitted divided by all asserted
+    statements; unassessed forms are reported separately.
 
     The eligibility block carries its own denominator ("Constraint usages assessed
     (incl. satisfy)") because the extraction sweep classifies every ConstraintUsage,
@@ -64,15 +63,16 @@ def eligibility_coverage_metrics(model: Any) -> dict:
     facts = extract_constraint_facts(model)
     result = evaluate_profile(facts)
 
-    asserted = result.admitted_count + result.blocked_count
-    admit_rate = (result.admitted_count / asserted * 100) if asserted > 0 else 100
+    asserted = result.admitted_count + result.blocked_count + result.non_numerical_count
+    executable_share = (result.admitted_count / asserted * 100) if asserted > 0 else 100
 
     return {
         "Constraint usages assessed (incl. satisfy)": len(result.decisions),
-        "Eligible (admitted)": result.admitted_count,
-        "Ineligible (blocked)": result.blocked_count,
+        "Admitted numerical": result.admitted_count,
+        "Malformed numerical": result.blocked_count,
+        "Non-numerical": result.non_numerical_count,
         "Unassessed (satisfy/require/plain)": result.unassessed_count,
-        "Eligibility rate": f"{admit_rate:.1f}%",
+        "Executable share": f"{executable_share:.1f}%",
     }
 
 

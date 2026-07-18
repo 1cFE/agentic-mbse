@@ -11,14 +11,17 @@ total. Fixtures live under tests/fixtures/constraint_fact_shapes/.
 import shutil
 from pathlib import Path
 
+from agentic_mbse.sysml.constraint_facts import ConstraintFacts, parse
+from agentic_mbse.validation import level4_constraints
 from agentic_mbse.validation.level4_constraints import analyze_constraints
 
 FIX = Path(__file__).parent.parent / "fixtures" / "constraint_fact_shapes"
 
 ASSESSED_KEY = "Constraint usages assessed (incl. satisfy)"
 CATEGORY_KEYS = (
-    "Eligible (admitted)",
-    "Ineligible (blocked)",
+    "Admitted numerical",
+    "Malformed numerical",
+    "Non-numerical",
     "Unassessed (satisfy/require/plain)",
 )
 
@@ -47,3 +50,24 @@ class TestLevel4PopulationReconciliation:
         assert _category_sum(metrics) == metrics[ASSESSED_KEY]
         assert metrics["Total constraints"] == 27
         assert metrics[ASSESSED_KEY] == 28
+
+
+def test_executable_share_denominator_includes_non_numerical(monkeypatch):
+    facts = parse((FIX / "production_facts.json").read_text())
+    non_numerical_usage = next(
+        usage for usage in facts.usages if usage.identity.name == "boolean_boolean"
+    )
+    narrowed = ConstraintFacts(
+        definitions=facts.definitions,
+        usages=[non_numerical_usage],
+        contexts=facts.contexts,
+        diagnostics=facts.diagnostics,
+    )
+    monkeypatch.setattr(level4_constraints, "extract_constraint_facts", lambda _model: narrowed)
+
+    metrics = level4_constraints.eligibility_coverage_metrics(object())
+
+    assert metrics["Admitted numerical"] == 0
+    assert metrics["Malformed numerical"] == 0
+    assert metrics["Non-numerical"] == 1
+    assert metrics["Executable share"] == "0.0%"

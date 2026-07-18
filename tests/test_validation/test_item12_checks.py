@@ -76,7 +76,9 @@ def test_c1_self_named_trap_does_not_fire():
     flipped to negative-of-the-negative: C1 must NOT fire."""
     issues = check_self_named_bindings(load_fixture("self_named_trap"))
     self_named = [i for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
-    assert self_named == [], f"Trap now carries a covering attribute; must not fire: {_codes(issues)}"
+    assert self_named == [], (
+        f"Trap now carries a covering attribute; must not fire: {_codes(issues)}"
+    )
 
 
 def test_c1_self_named_rescue_does_not_fire():
@@ -117,17 +119,43 @@ def test_c3_admitted_constraint_is_silent():
     assert issues == []
 
 
-def test_c3_blocked_construct_warns_not_fails():
-    """A genuinely blocked construct (a predicate-body feature chain) WARNs (WARNING, not
-    ERROR — L6 stays passing). Reuses item4_subtype's l6_ineligible fixture (one shape, one
-    guaranteed-blocked construct, per plan.md Phase 3)."""
+def test_c3_malformed_numerical_is_error():
+    """A feature chain inside a numerical comparison is malformed and fails L6."""
     fixture_dir = Path(__file__).parent.parent / "fixtures" / "item4_subtype" / "l6_ineligible"
     files = discover_sysml_files(str(fixture_dir))
     model, _ = load_sysml_model(files)
     issues = check_constraint_executability(model)
-    warns = [i for i in issues if i.code == ValidationCode.L6_CONSTRAINT_INELIGIBLE]
-    assert len(warns) == 1, f"Expected one constraint WARN, got {_codes(issues)}"
-    assert all(i.severity == Severity.WARNING for i in warns)
+    errors = [i for i in issues if i.code == ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL]
+    assert len(errors) == 1, f"Expected one constraint ERROR, got {_codes(issues)}"
+    assert all(i.severity == Severity.ERROR for i in errors)
+
+
+def test_c3_non_numerical_is_one_warning_per_statement(monkeypatch):
+    from agentic_mbse.sysml.constraint_facts import ConstraintFacts, parse
+    from agentic_mbse.validation import level6_architecture
+
+    facts_path = (
+        Path(__file__).parent.parent
+        / "fixtures"
+        / "constraint_fact_shapes"
+        / "production_facts.json"
+    )
+    facts = parse(facts_path.read_text())
+    usage = next(u for u in facts.usages if u.identity.name == "boolean_boolean")
+    narrowed = ConstraintFacts(
+        definitions=facts.definitions,
+        usages=[usage],
+        contexts=facts.contexts,
+        diagnostics=facts.diagnostics,
+    )
+    monkeypatch.setattr(level6_architecture, "extract_constraint_facts", lambda _model: narrowed)
+
+    issues = check_constraint_executability(object())
+
+    assert len(issues) == 1
+    assert issues[0].code == ValidationCode.L6_CONSTRAINT_NON_NUMERICAL
+    assert issues[0].severity == Severity.WARNING
+    assert "warn_non_numerical_equality" in issues[0].message
 
 
 # --- C4: calc-bearing part def, no instantiation (L6) ---------------------------

@@ -4,6 +4,7 @@ Live syside tests (license-gated). Each changed diagnostic has a fires-on-shape
 test with an independently-anchored expectation and a silent-on-clean test.
 Fixtures live under tests/fixtures/item4_subtype/.
 """
+
 from pathlib import Path
 
 import pytest
@@ -83,15 +84,14 @@ class TestLevel6NonExecutableWarn:
         assert "positive_cost" not in warned
         assert "widget_budget" not in warned
 
-    def test_blocked_construct_warns(self):
-        """Loud-on-gap, deterministic regardless of how bare operands resolve: the feature-chain
-        predicate in l6_ineligible/blocked.sysml fires exactly one named WARN."""
+    def test_blocked_construct_errors(self):
+        """A feature chain in a numerical comparison fires one named error."""
         issues = check_constraint_executability(_load("l6_ineligible/blocked.sysml"))
-        warns = [i for i in issues if i.code == ValidationCode.L6_CONSTRAINT_INELIGIBLE]
-        assert len(warns) == 1
-        assert warns[0].severity == Severity.WARNING
-        assert warns[0].element_name.split("::")[-1] == "chained_limit"
-        assert "block_feature_chain" in warns[0].message
+        errors = [i for i in issues if i.code == ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL]
+        assert len(errors) == 1
+        assert errors[0].severity == Severity.ERROR
+        assert errors[0].element_name.split("::")[-1] == "chained_limit"
+        assert "block_feature_chain" in errors[0].message
 
     def test_clean_model_silent(self):
         """Silent-on-clean: no constraints -> no WARN."""
@@ -120,11 +120,7 @@ class TestRow8EnumStaysExact:
         include_subtypes would. This pins the opt-OUT decision."""
         model = _load("enum_attr.sysml")
         exact = list(SysideAdapter.elements_of_type(model, "AttributeUsage"))
-        swept = list(
-            SysideAdapter.elements_of_type(
-                model, "AttributeUsage", include_subtypes=True
-            )
-        )
+        swept = list(SysideAdapter.elements_of_type(model, "AttributeUsage", include_subtypes=True))
         exact_types = {type(e).__name__ for e in exact}
         swept_types = {type(e).__name__ for e in swept}
         assert exact_types == {"AttributeUsage"}

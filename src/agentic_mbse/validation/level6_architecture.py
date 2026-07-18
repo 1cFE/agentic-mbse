@@ -599,18 +599,10 @@ def _format_diagnostic_location(location: Any) -> str:
 
 def check_constraint_executability(model: Any) -> list[ValidationIssue]:
     """
-    CONSTRAINT-EXEC Item 3 (supersedes Item 12's C3): WARN per ineligible constraint construct.
+    Report malformed numerical diagnostics as errors and non-numerical statements as warnings.
 
-    Runs the executable profile (`executable_profile.evaluate_profile`) and emits one WARNING
-    per blocked construct, naming the construct, its source location, the owning constraint, and
-    the reason (one of `REASON_CODES` — e.g. `block_feature_chain`, `block_unit_conversion_
-    required`). A usage whose predicate is fully admitted, or that is cataloged unassessed
-    (satisfy / require-assume / plain), emits nothing — this replaces the old blanket "not
-    executable" warning that fired on every constraint usage regardless of whether its predicate
-    was actually runnable.
-
-    Returns:
-        List of ValidationIssue (WARNING), one per blocked construct (not one per usage).
+    BLOCK emits one ERROR per diagnostic so each malformed construct names its fix.
+    NON_NUMERICAL emits one aggregated WARNING per statement, preserving diagnostic walk order.
     """
     # D7 (Item 4): an extraction failure must surface, not collapse to "no diagnostics" — no
     # `except Exception: ...` swallow here, matching the discipline this function has kept since
@@ -620,24 +612,42 @@ def check_constraint_executability(model: Any) -> list[ValidationIssue]:
 
     issues: list[ValidationIssue] = []
     for decision in result.decisions:
-        if decision.eligibility is not Eligibility.BLOCK:
-            continue
         name = decision.identity.qualified_name or decision.identity.name or "<anonymous>"
-        for diagnostic in decision.diagnostics:
-            issues.append(
-                ValidationIssue(
-                    level=6,
-                    severity=Severity.WARNING,
-                    code=ValidationCode.L6_CONSTRAINT_INELIGIBLE,
-                    message=(
-                        f"Constraint '{name}' is not executable: {diagnostic.construct} "
-                        f"({diagnostic.reason})"
-                    ),
-                    element_name=name,
-                    location=_format_diagnostic_location(diagnostic.location),
-                    suggestion=diagnostic.message,
+        if decision.eligibility is Eligibility.BLOCK:
+            for diagnostic in decision.diagnostics:
+                issues.append(
+                    ValidationIssue(
+                        level=6,
+                        severity=Severity.ERROR,
+                        code=ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL,
+                        message=(
+                            f"Constraint '{name}' is a malformed numerical statement: "
+                            f"{diagnostic.construct} ({diagnostic.reason})"
+                        ),
+                        element_name=name,
+                        location=_format_diagnostic_location(diagnostic.location),
+                        suggestion=diagnostic.message,
+                    )
                 )
+            continue
+        if decision.eligibility is not Eligibility.NON_NUMERICAL:
+            continue
+        reasons = ", ".join(diagnostic.reason for diagnostic in decision.diagnostics)
+        suggestions = "; ".join(diagnostic.message for diagnostic in decision.diagnostics)
+        issues.append(
+            ValidationIssue(
+                level=6,
+                severity=Severity.WARNING,
+                code=ValidationCode.L6_CONSTRAINT_NON_NUMERICAL,
+                message=(
+                    f"Constraint '{name}' is not a numerical statement and will not execute: "
+                    f"{reasons}"
+                ),
+                element_name=name,
+                location=_format_diagnostic_location(decision.location),
+                suggestion=suggestions,
             )
+        )
     return issues
 
 
@@ -994,8 +1004,15 @@ def validate_architecture(
             "V4_STATIC_FUNCTION_INVOCATION": len(
                 [i for i in all_issues if i.code == ValidationCode.V4_STATIC_FUNCTION_INVOCATION]
             ),
-            "L6_CONSTRAINT_INELIGIBLE": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_CONSTRAINT_INELIGIBLE]
+            "L6_CONSTRAINT_MALFORMED_NUMERICAL": len(
+                [
+                    i
+                    for i in all_issues
+                    if i.code == ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL
+                ]
+            ),
+            "L6_CONSTRAINT_NON_NUMERICAL": len(
+                [i for i in all_issues if i.code == ValidationCode.L6_CONSTRAINT_NON_NUMERICAL]
             ),
             "L6_CALC_DEF_NO_INSTANTIATION": len(
                 [i for i in all_issues if i.code == ValidationCode.L6_CALC_DEF_NO_INSTANTIATION]
