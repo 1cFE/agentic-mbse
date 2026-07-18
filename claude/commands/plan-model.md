@@ -108,7 +108,7 @@ A plan.md should contain:
 
 **Final Phase: Integration & Validation** must include:
 - All files parse without errors
-- Quality validation: Levels 1-3 pass (critical), Levels 4-8 reviewed
+- Quality validation: Levels 1-3 pass (critical), Levels 4-6 reviewed
 - Traceability: all defs have doc comments with source citations, traceability matrix complete
 - Regression tests pass: `uv run pytest tests/models/ -v`
 - All spec acceptance criteria verified (list them explicitly from spec.md)

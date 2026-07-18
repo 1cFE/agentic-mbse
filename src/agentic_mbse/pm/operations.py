@@ -29,6 +29,8 @@ from agentic_mbse.pm.types import (
     BacklogData,
     DecisionEntry,
     DecisionStatus,
+    EpicEntry,
+    EpicStatus,
     GoalInput,
     ImpactResult,
     InsightEntry,
@@ -858,6 +860,74 @@ def impact_query(
 # ---------------------------------------------------------------------------
 # Public operations — Phase 4: BACKLOG.md mutations
 # ---------------------------------------------------------------------------
+
+
+def add_epic(
+    project_root: Path,
+    *,
+    name: str,
+    priority: str,
+    file: str,
+    goal: str | None = None,
+) -> OperationResult:
+    """Register an existing epic file in BACKLOG.md."""
+    epic_name = name.strip()
+    if not epic_name:
+        return OperationResult(success=False, message="Required field 'name' is empty")
+
+    try:
+        epic_priority = Priority(priority)
+    except ValueError:
+        valid = ", ".join(p.value for p in Priority)
+        return OperationResult(
+            success=False, message=f"Invalid priority '{priority}', expected one of: {valid}"
+        )
+
+    if not file or not file.strip():
+        return OperationResult(success=False, message="Required field 'file' is empty")
+
+    supplied_path = Path(file)
+    epic_path = supplied_path if supplied_path.is_absolute() else project_root / supplied_path
+    resolved_epic_path = epic_path.resolve()
+    work_directory = (project_root / "work").resolve()
+    try:
+        backlog_relative_path = resolved_epic_path.relative_to(work_directory)
+    except ValueError:
+        return OperationResult(
+            success=False,
+            message=f"Epic file must be inside the project work directory: {file}",
+        )
+
+    if not resolved_epic_path.is_file():
+        return OperationResult(success=False, message=f"Epic file does not exist: {file}")
+
+    backlog_path = project_root / "work" / "BACKLOG.md"
+    b_result = parse_backlog(backlog_path)
+    data = b_result.data
+    if any(epic.name == epic_name for epic in data.epics):
+        return OperationResult(
+            success=False,
+            message=f"Epic '{epic_name}' already exists in BACKLOG.md",
+            warnings=b_result.warnings,
+        )
+
+    data.epics.append(
+        EpicEntry(
+            name=epic_name,
+            goal=goal,
+            priority=epic_priority,
+            status=EpicStatus.DRAFT,
+            file=backlog_relative_path.as_posix(),
+        )
+    )
+    _write_backlog(backlog_path, data)
+
+    return OperationResult(
+        success=True,
+        message=f"Added epic: {epic_name}",
+        files_modified=[str(backlog_path)],
+        warnings=b_result.warnings,
+    )
 
 
 def add_item(

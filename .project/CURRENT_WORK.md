@@ -1,6 +1,6 @@
 # Current Work
 
-**Last Updated**: 2026-07-17
+**Last Updated**: 2026-07-18
 
 ---
 
@@ -28,6 +28,13 @@ the next stage.
 ---
 
 ## Recently Completed
+
+### 2026-07-18: Orchestrate Modeling
+
+- Added a thin, Task-led `/orchestrate-modeling` command for Standard and Epic model-building flows.
+- Added the canonical modeling flow, explicit Epic audit scope, and supported `pm add-epic` registration.
+- Verified 202 focused tests and the 1,504-test normal suite; closed without independent audit
+  certification by owner decision.
 
 ### 2026-07-13: CONSTRAINT-EXEC Items 1–3 (epic closed, archived)
 - Neutral constraint facts, ExpressionIR, and the executable profile all certified and archived

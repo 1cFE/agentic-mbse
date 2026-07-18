@@ -14,6 +14,7 @@ memory, and writes atomically.
 
 from agentic_mbse.pm.dashboard import generate_dashboard
 from agentic_mbse.pm.operations import (
+    add_epic,
     add_insight,
     add_item,
     add_validation,
@@ -133,6 +134,7 @@ __all__ = [
     # Dashboard
     "generate_dashboard",
     # Operations
+    "add_epic",
     "add_insight",
     "save_research",
     "approve_research",

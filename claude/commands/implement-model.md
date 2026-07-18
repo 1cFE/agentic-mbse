@@ -99,7 +99,8 @@ When all phases are done:
 - All plan checkboxes marked complete
 - All spec acceptance criteria met
 
-Report completion to the user with a summary of what was built and validation status.
+Report implementation completion to the user with a summary of what was built and validation status.
+The work item is not complete until a fresh `/audit-models` run returns a positive verdict.
 
 ## Guidelines
 
@@ -111,4 +112,4 @@ Report completion to the user with a summary of what was built and validation st
 
 ---
 
-**Related Commands:** Before → `/plan-model` | After → verify, update epic, move to completed
+**Related Commands:** Before → `/plan-model` | After → `/audit-models`

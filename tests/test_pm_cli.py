@@ -266,6 +266,34 @@ class TestPmAddInsight:
         )
 
 
+class TestPmAddEpic:
+    def test_dispatches_all_args(self, monkeypatch, capsys, tmp_path):
+        from agentic_mbse.cli.pm_cli import cmd_pm_add_epic
+
+        monkeypatch.setattr("agentic_mbse.cli.pm_cli.find_project_root", lambda: tmp_path)
+        mock_fn = MagicMock(return_value=OperationResult(success=True, message="Added epic"))
+        monkeypatch.setattr("agentic_mbse.cli.pm_cli._op_add_epic", mock_fn)
+
+        result = cmd_pm_add_epic(
+            MockArgs(
+                name="Thermal Model",
+                priority="P1",
+                file="work/backlog/epic-thermal.md",
+                goal="G-001",
+            )
+        )
+
+        assert result == EXIT_SUCCESS
+        mock_fn.assert_called_once_with(
+            tmp_path,
+            name="Thermal Model",
+            priority="P1",
+            file="work/backlog/epic-thermal.md",
+            goal="G-001",
+        )
+        assert "Added epic" in capsys.readouterr().out
+
+
 class TestPmSaveResearch:
     def test_reads_content_file(self, tmp_path, monkeypatch, capsys):
         from agentic_mbse.cli.pm_cli import cmd_pm_save_research
@@ -377,6 +405,7 @@ class TestPmIntegration:
         )
         assert "close-item" in result.stdout
         assert "add-insight" in result.stdout
+        assert "add-epic" in result.stdout
         assert "impact-query" in result.stdout
 
 

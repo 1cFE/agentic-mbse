@@ -957,6 +957,136 @@ class TestAddItem:
         assert r2.ids_assigned["WI"] == "WI-002"
 
 
+class TestAddEpic:
+    def _write_epic_file(self, root, name="epic-thermal.md"):
+        epic_file = root / "work" / "backlog" / name
+        epic_file.parent.mkdir(parents=True, exist_ok=True)
+        epic_file.write_text("---\nStatus: approved\n---\n# Thermal Model\n", encoding="utf-8")
+        return epic_file
+
+    def test_register_then_add_item_to_empty_backlog(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic, add_item
+
+        root = _setup_backlog(tmp_path)
+        epic_file = self._write_epic_file(root)
+
+        result = add_epic(
+            root,
+            name="Thermal Model",
+            priority="P1",
+            file=str(epic_file.relative_to(root)),
+            goal="G-001",
+        )
+
+        assert result.success
+        assert add_item(
+            root,
+            name="Radiator",
+            scale="standard",
+            priority="P1",
+            epic="Thermal Model",
+        ).success
+        parsed = parse_backlog(root / "work" / "BACKLOG.md")
+        assert parsed.data.epics == [
+            EpicEntry(
+                name="Thermal Model",
+                goal="G-001",
+                priority=Priority.P1,
+                status=EpicStatus.DRAFT,
+                file="backlog/epic-thermal.md",
+                items=[
+                    WorkItemEntry(
+                        id="WI-001",
+                        name="Radiator",
+                        scale=WorkItemScale.STANDARD,
+                        status=WorkItemStatus.BACKLOG,
+                    )
+                ],
+            )
+        ]
+        assert "## Epic: Thermal Model" in (root / "work" / "BACKLOG.md").read_text()
+
+    def test_registers_alongside_existing_epic(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        existing = EpicEntry(
+            name="Existing",
+            priority=Priority.P0,
+            status=EpicStatus.ACTIVE,
+            file="backlog/epic-existing.md",
+        )
+        root = _setup_backlog(tmp_path, BacklogData(epics=[existing]))
+        epic_file = self._write_epic_file(root)
+
+        result = add_epic(root, name="Thermal Model", priority="P2", file=str(epic_file))
+
+        assert result.success
+        parsed = parse_backlog(root / "work" / "BACKLOG.md")
+        assert [epic.name for epic in parsed.data.epics] == ["Existing", "Thermal Model"]
+
+    @pytest.mark.parametrize("priority", ["urgent", "p1", ""])
+    def test_rejects_invalid_priority_without_changing_backlog(self, tmp_path, priority):
+        from agentic_mbse.pm.operations import add_epic
+
+        root = _setup_backlog(tmp_path)
+        epic_file = self._write_epic_file(root)
+        before = (root / "work" / "BACKLOG.md").read_text()
+
+        result = add_epic(root, name="Thermal Model", priority=priority, file=str(epic_file))
+
+        assert not result.success
+        assert "invalid priority" in result.message.lower()
+        assert (root / "work" / "BACKLOG.md").read_text() == before
+
+    def test_rejects_duplicate_name_without_changing_backlog(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        existing = EpicEntry(
+            name="Thermal Model",
+            priority=Priority.P0,
+            status=EpicStatus.ACTIVE,
+            file="backlog/epic-existing.md",
+        )
+        root = _setup_backlog(tmp_path, BacklogData(epics=[existing]))
+        epic_file = self._write_epic_file(root)
+        before = (root / "work" / "BACKLOG.md").read_text()
+
+        result = add_epic(root, name=" Thermal Model ", priority="P1", file=str(epic_file))
+
+        assert not result.success
+        assert "already exists" in result.message.lower()
+        assert (root / "work" / "BACKLOG.md").read_text() == before
+
+    def test_rejects_missing_file_without_changing_backlog(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        root = _setup_backlog(tmp_path)
+        before = (root / "work" / "BACKLOG.md").read_text()
+
+        result = add_epic(
+            root,
+            name="Thermal Model",
+            priority="P1",
+            file="work/backlog/missing.md",
+        )
+
+        assert not result.success
+        assert "does not exist" in result.message.lower()
+        assert (root / "work" / "BACKLOG.md").read_text() == before
+
+    def test_rejects_file_outside_work_directory(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        root = _setup_backlog(tmp_path)
+        outside_file = root / "epic.md"
+        outside_file.write_text("# Outside", encoding="utf-8")
+
+        result = add_epic(root, name="Outside", priority="P1", file=str(outside_file))
+
+        assert not result.success
+        assert "work directory" in result.message.lower()
+
+
 class TestCloseItem:
     def _setup_active_item(self, tmp_path, wi_id="WI-001", name="solar-model"):
         """Create a full project with an active work item."""
