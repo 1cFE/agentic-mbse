@@ -149,6 +149,36 @@ def _reasons(decision: UsageDecision) -> set[str]:
     return {diagnostic.reason for diagnostic in decision.diagnostics}
 
 
+def test_contradictory_equal_unit_ratio_round_trip_blocks() -> None:
+    contradictory_second = UnitFact(
+        unit=_METRE.unit,
+        dimension=_SECOND.dimension,
+    )
+    ratio = OperatorNode(
+        operator="/",
+        operands=[
+            _leaf("quantity", unit=_METRE),
+            _leaf("quantity", unit=contradictory_second),
+        ],
+        operand_type=OperandTypeFact(category="real", enumeration=None, unit=None),
+    )
+    predicate = OperatorNode(
+        operator="<=",
+        operands=[ratio, _real_literal(2.0)],
+        operand_type=None,
+    )
+    facts = ConstraintFacts(
+        definitions=[],
+        usages=[_inline_usage("contradictory_ratio", predicate)],
+        contexts=[],
+        diagnostics=[],
+    )
+    parsed = parse_constraint_facts(serialize_constraint_facts(facts))
+    decision = evaluate_profile(parsed).decisions[0]
+    assert decision.eligibility is Eligibility.BLOCK
+    assert _reasons(decision) == {"block_derived_unit_unsupported"}
+
+
 # === F1: mixed-unit arithmetic must hit the unit gate ===
 
 
@@ -519,7 +549,7 @@ def test_unresolved_and_unknown_precedence_matches_unit_compatibility(
     assert _reasons(decision) == {reason}
 
 
-def test_arithmetic_reports_every_operand_violation_not_first_only() -> None:
+def test_comparison_operand_recovery_reports_first_violation_only() -> None:
     """A chain on one side and an invocation on the other — both named, matching the
     comparison walk's both-sides behavior."""
     plus = OperatorNode(
@@ -537,7 +567,7 @@ def test_arithmetic_reports_every_operand_violation_not_first_only() -> None:
     predicate = OperatorNode(operator="<=", operands=[plus, _int_literal(1)], operand_type=None)
     decision = _decide(predicate)
     assert decision.eligibility is Eligibility.BLOCK
-    assert _reasons(decision) == {"block_feature_chain", "block_invocation"}
+    assert _reasons(decision) == {"block_feature_chain"}
 
 
 def test_unit_annotation_over_chained_reference_still_blocks() -> None:
@@ -571,8 +601,8 @@ def test_proposition_as_arithmetic_operand_blocks_non_predicate_root() -> None:
 # === D-R4: version and reason-code vocabulary ===
 
 
-def test_profile_semantic_version_is_v3() -> None:
-    assert PROFILE_SEMANTIC_VERSION == "executable-profile/v3"
+def test_profile_semantic_version_is_v4() -> None:
+    assert PROFILE_SEMANTIC_VERSION == "executable-profile/v4"
 
 
 def test_new_reason_codes_are_registered() -> None:

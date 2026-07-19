@@ -6,6 +6,55 @@
 
 ## Active Work
 
+### Constraint-Wave Item 1: Profile Semantics (complete; orchestration paused for owner discussion)
+
+The fresh remediation audit found no remaining implementation or approved semantic-contract gap.
+Source-identity contradictions now fail before graph/output mutation; live/codec polarity and
+positive-IR continuity, compound diagnostic sentinels, one neutral body with per-usage polarity,
+mixed-polarity TEAx execution, package/skew controls, and the shared Items 2/4/6 union pass normally
+and under optimized Python. After audit, the owner removed the agent-authored clean-overlay and
+pre-edit-hash gates and requested no re-audit. Their absence remains recorded without retroactive
+claims. Further orchestration is paused for a larger-context discussion. Audit:
+`.project/active/constraint-wave-profile-semantics/audit.md`.
+
+### GAP-CLOSE Item 5: local partial wave certified; PR #11 pre-PR
+
+The companion package/build/runtime/lock identity is `0.1.1`, paired with codegen's
+`agentic-mbse>=0.1.1` floor. The shipped constraints guide now teaches all four v3 outcomes in both
+its opening and detailed sections; a kept test rejects the retired three-outcome wording. The
+rebuilt wheel contains the corrected guide, and the kept documentation test passes its recorded
+Ruff and format checks.
+
+The second re-audit's remaining guide contradictions are also corrected and pinned: BLOCK produces
+one named L6 `ERROR` per blocked construct, and asserted predicates may be admitted, blocked, or
+non-numerical. The rebuilt wheel guide matches source; sha256 is `160e7eb5…a8d4f`. The formatted
+documentation regression passes, and the relevant guide/profile/L6 selection passes 119 tests.
+The paired TEAx cure also moves explicit path expansion inside route-aware normalization and pins an
+injected expansion `RuntimeError`; discovery passes 5 tests normally and under optimized Python,
+and the established licensed environment passes the real SimKit lane 9/9.
+
+The paired audit cures also pin exact anonymous warning bytes across live/relocated/snapshot routes
+and normalize hostile TEAx discovery paths. The cross-repo audit certifies the local and in-scope
+partial wave only. External `[GAP-CLOSE-F1-TEAX-NORMALIZATION]` remains open, so neither F1 nor the
+full epic is complete.
+
+The PR #11 candidate excludes the unrelated local modeling-orchestrator commit and orchestration
+logs. Its fresh default suite passes 1,506 tests with 1 skipped and 5 deselected; changed-file Ruff,
+format, targeted mypy, and diff checks are clean. The certified mixed local worktree suite remains
+1,525 passed / 1 skipped / 33 deselected, and the codegen suite of record remains 2,516 / 26 / 9.
+Repository-wide Ruff, format, and mypy still reproduce pre-existing debt outside the partial-wave
+paths. All fixture manifests remain unchanged. Merge PR #11 before codegen PR #9. Do not close or
+archive GAP-CLOSE while the external F1 dependency is open.
+
+### GAP-CLOSE Item 4: Profile Default-Deny Totalization (certified in local partial wave)
+
+Malformed codec-roundtripped xor/implies arities and contradictory equal-unit dimensions now
+default-deny in executable-profile/v3. Numerical containment now promotes force, reason, and repair
+message together. The only codegen Item 4 change is the coordinated conformance assertion.
+Companion suite: 1,524 passed / 1 skipped / 33 deselected. Licensed codegen suite: 2,511 passed /
+26 skipped / 9 deselected. The cross-repo GAP-CLOSE audit re-certifies this item. Plan:
+`.project/active/gap-profile-totalization/plan.md`.
+
 ### CONSTRAINT-EXEC PR remediation (certified locally — paired compatibility pending)
 
 A critical PR audit (`.project/research/20260714-064234_constraint-exec-pr-code-quality-audit.md`)

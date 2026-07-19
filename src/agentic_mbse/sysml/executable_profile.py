@@ -10,6 +10,7 @@ into their own `ValidationIssue`, keeping this module reusable by codegen too.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from enum import Enum
 from typing import Literal
@@ -35,12 +36,14 @@ from agentic_mbse.sysml.expression_ir import (
 __all__ = [
     "PROFILE_SEMANTIC_VERSION",
     "REASON_CODES",
+    "CONSTRAINT_USAGE_FACT_FIELD_CONSUMERS",
     "Eligibility",
     "EligibilityDiagnostic",
     "PreflightResult",
     "ProfileResult",
     "UsageDecision",
     "classify_equality",
+    "classify_ordering",
     "evaluate_profile",
     "preflight",
     "unit_compatibility",
@@ -52,7 +55,7 @@ __all__ = [
 # read from the declared interior fact — mixed-unit arithmetic now blocks, scalar×quantity and
 # same-unit quantity ratios are newly admitted — and malformed snapshot facts block
 # (`block_malformed_operand_fact`) instead of crashing an assert.
-PROFILE_SEMANTIC_VERSION = "executable-profile/v3"
+PROFILE_SEMANTIC_VERSION = "executable-profile/v4"
 
 # The golden's 11 decision codes (S1 findings §5) plus the construct-named and default-deny
 # blocks the walk (Phase 2) emits. Every `EligibilityDiagnostic.reason` is one of these (I3).
@@ -63,6 +66,7 @@ REASON_CODES = frozenset(
         "warn_non_numerical_predicate",
         "warn_non_numerical_xor",
         "warn_non_numerical_implies",
+        "block_non_numerical_containment",
         "block_integer_equality_unpreservable",
         "block_real_equality_requires_tolerance",
         "block_unit_conversion_required",
@@ -86,6 +90,8 @@ REASON_CODES = frozenset(
         # Value-operation gate (executable-profile/v2 additions, plan.md D-R1/D-R3).
         "block_derived_unit_unsupported",
         "block_malformed_operand_fact",
+        "block_ordering_category_pair",
+        "block_invalid_assertion_polarity",
     }
 )
 
@@ -121,6 +127,69 @@ class UsageDecision:
     diagnostics: list[EligibilityDiagnostic]
     unassessed_kind: str | None
     effective_predicate: ExpressionIR | None  # the exact IR the gate walked (D7/I5)
+    is_negated: bool | None
+    expected_value: bool | None
+
+    def __post_init__(self) -> None:
+        pair_missing = self.is_negated is None and self.expected_value is None
+        pair_boolean = type(self.is_negated) is bool and type(self.expected_value) is bool
+        if not pair_missing and not pair_boolean:
+            raise ValueError("decision requires Boolean polarity fields together")
+        if pair_boolean and self.expected_value is not (not self.is_negated):
+            raise ValueError("decision polarity fields must be complementary")
+
+        if self.eligibility is Eligibility.UNASSESSED:
+            if (
+                self.unassessed_kind is None
+                or self.effective_predicate is not None
+                or not pair_missing
+            ):
+                raise ValueError("unassessed decision has invalid executable fields")
+            if self.diagnostics:
+                raise ValueError("unassessed decision cannot carry diagnostics")
+            return
+
+        if self.unassessed_kind is not None:
+            raise ValueError("assessed decision cannot carry unassessed_kind")
+        if self.eligibility in (Eligibility.ADMIT, Eligibility.NON_NUMERICAL):
+            if self.effective_predicate is None or not pair_boolean:
+                raise ValueError("executable decision requires Boolean polarity and a predicate")
+        if self.eligibility is Eligibility.ADMIT and self.diagnostics:
+            raise ValueError("admitted decision cannot carry diagnostics")
+        if (
+            self.eligibility in (Eligibility.BLOCK, Eligibility.NON_NUMERICAL)
+            and not self.diagnostics
+        ):
+            raise ValueError("non-admitted assessed decision requires diagnostics")
+        if self.eligibility is Eligibility.NON_NUMERICAL and any(
+            diagnostic.force != "non_numerical" for diagnostic in self.diagnostics
+        ):
+            raise ValueError("non-numerical decision requires non-numerical diagnostics")
+        if self.eligibility is Eligibility.BLOCK and pair_missing:
+            if self.effective_predicate is not None:
+                raise ValueError("unclassified block cannot carry a predicate")
+            allowed = {
+                "block_invalid_assertion_polarity",
+                "block_assert_by_reference",
+                "block_unsupported_node",
+            }
+            if len(self.diagnostics) != 1 or self.diagnostics[0].reason not in allowed:
+                raise ValueError("executable block requires Boolean polarity")
+
+
+CONSTRAINT_USAGE_FACT_FIELD_CONSUMERS: Mapping[str, str] = {
+    "identity": "decision identity and diagnostics",
+    "location": "decision and diagnostic location",
+    "source": "form gate, predicate selection, and downstream source identity",
+    "owner": "downstream lowering owner expansion",
+    "scope": "downstream lowering scope resolution",
+    "membership_kind": "downstream constraint identity provenance",
+    "is_negated": "profile polarity classifier and expected truth",
+    "actuals": "downstream lowering actual resolution",
+    "omitted_default_formals": "downstream default resolution",
+    "predicate": "inline predicate selection and continuity",
+    "inherited_into": "downstream inherited-context expansion",
+}
 
 
 @dataclass(frozen=True)
@@ -226,6 +295,32 @@ def classify_equality(left: OperandTypeFact, right: OperandTypeFact) -> str:
     return "block_unsupported_operand_category"
 
 
+_ORDERING_NUMERICAL_PAIRS = frozenset(
+    {
+        ("integer", "integer"),
+        ("integer", "real"),
+        ("real", "integer"),
+        ("real", "real"),
+        ("quantity", "quantity"),
+    }
+)
+
+
+def classify_ordering(operator: str, left: OperandTypeFact, right: OperandTypeFact) -> str:
+    """Classify one ordering pair from the closed operand-category vocabulary."""
+    if operator not in {"<", "<=", ">", ">="}:
+        return "block_unsupported_operator"
+    if "unresolved" in (left.category, right.category):
+        return "block_unresolved_operand"
+    if "unknown" in (left.category, right.category):
+        return "block_unsupported_operand_category"
+    if (left.category, right.category) not in _ORDERING_NUMERICAL_PAIRS:
+        return "block_ordering_category_pair"
+    if left.category == "quantity":
+        return unit_compatibility(left, right)
+    return "ok"
+
+
 # === The walk (layers 2+3: node-kind classification, operand-fact gate) ===
 
 _COMPARISON_OPS = frozenset({"==", "<", "<=", ">", ">="})
@@ -294,18 +389,18 @@ def _quantity_ratio_fact(left: OperandTypeFact, right: OperandTypeFact) -> Opera
     """`quantity / quantity` (D-R1): only an identical-exact-unit pure ratio is provable.
 
     Guard order mirrors `unit_compatibility`: malformed fact, then unknown exact unit, then
-    the identical-unit admit (a pure ratio needs no conversion, result is dimensionless real),
-    then differing dimensions (an m/s-style derived unit — not representable), then same
-    dimension with differing units (conversion needed).
+    differing dimensions (an m/s-style derived unit — not representable), then the
+    identical-unit admit (a pure ratio needs no conversion, result is dimensionless real),
+    then same dimension with differing units (conversion needed).
     """
     if left.unit is None or right.unit is None:
         return "block_malformed_operand_fact"
     if left.unit.unit is None or right.unit.unit is None:
         return "block_unknown_exact_unit"
-    if left.unit.unit == right.unit.unit:
-        return _real_fact()
     if left.unit.dimension != right.unit.dimension:
         return "block_derived_unit_unsupported"
+    if left.unit.unit == right.unit.unit:
+        return _real_fact()
     return "block_unit_conversion_required"
 
 
@@ -475,18 +570,18 @@ def _walk_comparison(
                 "comparison",
                 identity,
                 location,
-                f"comparison with {len(operands)} operands, expected 2",
+                f"comparison has {len(operands)} operands; expected 2",
             )
         )
         return True
     left, right = operands
     left_facts = _walk_value(left, identity, location)
     right_facts = _walk_value(right, identity, location)
-    if isinstance(left_facts, list) or isinstance(right_facts, list):
-        if isinstance(left_facts, list):
-            diagnostics.extend(left_facts)
-        if isinstance(right_facts, list):
-            diagnostics.extend(right_facts)
+    if isinstance(left_facts, list):
+        diagnostics.append(left_facts[0])
+        return True
+    if isinstance(right_facts, list):
+        diagnostics.append(right_facts[0])
         return True
 
     if operator in ("==", "!="):
@@ -518,9 +613,47 @@ def _walk_comparison(
         )
         return not is_non_numerical
     elif operator in _COMPARISON_OPS:  # <, <=, >, >=
-        reason = unit_compatibility(left_facts, right_facts)
+        reason = classify_ordering(operator, left_facts, right_facts)
         if reason != "ok":
-            diagnostics.append(_diagnostic(reason, "comparison", identity, location))
+            if reason == "block_ordering_category_pair":
+                message = (
+                    f"ordering {operator!r} requires Integer/Real operands or two Quantity "
+                    f"operands; got {left_facts.category}/{right_facts.category}. Rewrite both "
+                    "operands as one admitted numerical pair."
+                )
+            elif reason == "block_unresolved_operand":
+                message = (
+                    f"ordering {operator!r} has an unresolved operand type. Resolve both operands "
+                    "to typed model features before generation."
+                )
+            elif reason == "block_unsupported_operand_category":
+                message = (
+                    f"ordering {operator!r} has an unknown operand category. Use Integer, Real, "
+                    "or exact-unit Quantity operands."
+                )
+            elif reason == "block_malformed_operand_fact":
+                message = (
+                    f"ordering {operator!r} is missing a quantity unit fact. Re-capture the model "
+                    "facts with a compatible companion package."
+                )
+            elif reason == "block_unknown_exact_unit":
+                message = (
+                    f"ordering {operator!r} needs exact units for both Quantity operands. Declare "
+                    "the exact modeled units."
+                )
+            elif reason == "block_incompatible_dimensions":
+                message = (
+                    f"ordering {operator!r} cannot compare different dimensions. Use operands "
+                    "with the same modeled dimension."
+                )
+            elif reason == "block_unit_conversion_required":
+                message = (
+                    f"ordering {operator!r} does not convert units. Express both operands in the "
+                    "same exact modeled unit."
+                )
+            else:
+                message = f"ordering {operator!r}: {reason}"
+            diagnostics.append(_diagnostic(reason, "comparison", identity, location, message))
         return True
     else:
         diagnostics.append(
@@ -604,6 +737,17 @@ def _walk_proposition(
     if isinstance(node, OperatorNode):
         operator = node.operator
         if operator in ("xor", "implies"):
+            if len(node.operands) != 2:
+                diagnostics.append(
+                    _diagnostic(
+                        "block_unsupported_node",
+                        operator,
+                        identity,
+                        location,
+                        f"connective {operator!r} with {len(node.operands)} operands, expected 2",
+                    )
+                )
+                return True
             diagnostics.append(
                 _diagnostic(
                     f"warn_non_numerical_{operator}",
@@ -670,10 +814,14 @@ def _unassessed(usage: ConstraintUsageFact, kind: str) -> UsageDecision:
         diagnostics=[],
         unassessed_kind=kind,
         effective_predicate=None,
+        is_negated=None,
+        expected_value=None,
     )
 
 
-def _blocked(usage: ConstraintUsageFact, diagnostic: EligibilityDiagnostic) -> UsageDecision:
+def _non_executable_block(
+    usage: ConstraintUsageFact, diagnostic: EligibilityDiagnostic
+) -> UsageDecision:
     return UsageDecision(
         identity=usage.identity,
         location=usage.location,
@@ -681,6 +829,91 @@ def _blocked(usage: ConstraintUsageFact, diagnostic: EligibilityDiagnostic) -> U
         diagnostics=[diagnostic],
         unassessed_kind=None,
         effective_predicate=None,
+        is_negated=None,
+        expected_value=None,
+    )
+
+
+def _invalid_polarity_block(usage: ConstraintUsageFact) -> UsageDecision:
+    raw_type = type(usage.is_negated).__name__
+    return UsageDecision(
+        identity=usage.identity,
+        location=usage.location,
+        eligibility=Eligibility.BLOCK,
+        diagnostics=[
+            _diagnostic(
+                "block_invalid_assertion_polarity",
+                "assertion_polarity",
+                usage.identity,
+                usage.location,
+                "assertion polarity must be a JSON Boolean; "
+                f"got type {raw_type!r}. Re-extract or repair the fact payload so is_negated "
+                "is true or false.",
+            )
+        ],
+        unassessed_kind=None,
+        effective_predicate=None,
+        is_negated=None,
+        expected_value=None,
+    )
+
+
+def _missing_body_block(
+    usage: ConstraintUsageFact, diagnostic: EligibilityDiagnostic
+) -> UsageDecision:
+    is_negated = usage.is_negated
+    if type(is_negated) is not bool:
+        raise ValueError("missing-body construction requires classified polarity")
+    return UsageDecision(
+        identity=usage.identity,
+        location=usage.location,
+        eligibility=Eligibility.BLOCK,
+        diagnostics=[diagnostic],
+        unassessed_kind=None,
+        effective_predicate=None,
+        is_negated=is_negated,
+        expected_value=not is_negated,
+    )
+
+
+def _body_decision(
+    usage: ConstraintUsageFact,
+    predicate: ExpressionIR,
+    eligibility: Eligibility,
+    diagnostics: list[EligibilityDiagnostic],
+) -> UsageDecision:
+    if eligibility not in (Eligibility.ADMIT, Eligibility.BLOCK, Eligibility.NON_NUMERICAL):
+        raise ValueError("body decision requires an executable eligibility")
+    is_negated = usage.is_negated
+    if type(is_negated) is not bool:
+        raise ValueError("body decision requires classified polarity")
+    return UsageDecision(
+        identity=usage.identity,
+        location=usage.location,
+        eligibility=eligibility,
+        diagnostics=diagnostics,
+        unassessed_kind=None,
+        effective_predicate=predicate,
+        is_negated=is_negated,
+        expected_value=not is_negated,
+    )
+
+
+def _promote_non_numerical_diagnostic(
+    diagnostic: EligibilityDiagnostic,
+) -> EligibilityDiagnostic:
+    """Replace warning semantics when numerical containment makes the diagnostic blocking."""
+    if diagnostic.force != "non_numerical":
+        return diagnostic
+    return replace(
+        diagnostic,
+        reason="block_non_numerical_containment",
+        message=(
+            f"the numerical assertion contains a non-numerical {diagnostic.construct} and "
+            "generation stops; separate it into its own assertion or rewrite it as a numerical "
+            "comparison"
+        ),
+        force="error",
     )
 
 
@@ -693,12 +926,12 @@ def _evaluate_usage(
     if form in ("satisfy", "requirement_constraint", "plain_usage"):
         return _unassessed(usage, form)
     if form == "named_usage_reference":
-        return _blocked(
+        return _non_executable_block(
             usage,
             _diagnostic("block_assert_by_reference", "assert_by_reference", identity, location),
         )
     if form not in ("inline", "definition_typed"):
-        return _blocked(
+        return _non_executable_block(
             usage,
             _diagnostic(
                 "block_unsupported_node",
@@ -709,12 +942,15 @@ def _evaluate_usage(
             ),
         )
 
+    if type(usage.is_negated) is not bool:
+        return _invalid_polarity_block(usage)
+
     if form == "definition_typed":
         constraint_definition = usage.source.constraint_definition
         qn = constraint_definition.qualified_name if constraint_definition else None
         definition = definitions_by_qn.get(qn) if qn is not None else None
         if definition is None:
-            return _blocked(
+            return _missing_body_block(
                 usage,
                 _diagnostic("block_unresolved_definition", "definition_lookup", identity, location),
             )
@@ -723,7 +959,7 @@ def _evaluate_usage(
         predicate = usage.predicate
 
     if predicate is None:
-        return _blocked(
+        return _missing_body_block(
             usage, _diagnostic("block_missing_predicate", "missing_predicate", identity, location)
         )
 
@@ -731,24 +967,12 @@ def _evaluate_usage(
     contains_numerical = _walk_proposition(predicate, identity, location, diagnostics)
     if diagnostics:
         if contains_numerical:
-            diagnostics = [replace(diagnostic, force="error") for diagnostic in diagnostics]
+            diagnostics = [
+                _promote_non_numerical_diagnostic(diagnostic) for diagnostic in diagnostics
+            ]
         eligibility = Eligibility.BLOCK if contains_numerical else Eligibility.NON_NUMERICAL
-        return UsageDecision(
-            identity=identity,
-            location=location,
-            eligibility=eligibility,
-            diagnostics=diagnostics,
-            unassessed_kind=None,
-            effective_predicate=predicate,
-        )
-    return UsageDecision(
-        identity=identity,
-        location=location,
-        eligibility=Eligibility.ADMIT,
-        diagnostics=[],
-        unassessed_kind=None,
-        effective_predicate=predicate,
-    )
+        return _body_decision(usage, predicate, eligibility, diagnostics)
+    return _body_decision(usage, predicate, Eligibility.ADMIT, [])
 
 
 def evaluate_profile(facts: ConstraintFacts) -> ProfileResult:

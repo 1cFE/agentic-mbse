@@ -593,7 +593,7 @@ def check_anonymous_returns(model: Any) -> list[ValidationIssue]:
 
 def _format_diagnostic_location(location: Any) -> str:
     if location is None:
-        return ""
+        return "<no location>"
     return f"{location.file}:{location.line}"
 
 

@@ -22,6 +22,7 @@ from agentic_mbse.sysml.constraint_facts import (
     parse,
     serialize,
 )
+from agentic_mbse.sysml.executable_profile import CONSTRAINT_USAGE_FACT_FIELD_CONSUMERS
 from agentic_mbse.sysml.syside_adapter import get_syside
 
 syside = get_syside()
@@ -45,6 +46,14 @@ def _extract_both_fixtures() -> ConstraintFacts:
 
 def _by_name(facts: ConstraintFacts, name: str) -> ConstraintUsageFact:
     return next(usage for usage in facts.usages if usage.identity.name == name)
+
+
+def test_constraint_usage_fact_field_consumers_are_exhaustive() -> None:
+    from dataclasses import fields
+
+    assert set(CONSTRAINT_USAGE_FACT_FIELD_CONSUMERS) == {
+        field.name for field in fields(ConstraintUsageFact)
+    }
 
 
 def _s1_case_by_name(oracle: dict, name: str) -> dict:

@@ -1,0 +1,7 @@
+Using Python 3.12.11 environment at: /tmp/constraint-wave-env-new-old-resolver
+  × No solution found when resolving dependencies:
+  ╰─▶ Because sysml-codegen==0.1.0 depends on agentic-mbse>=0.1.2 and you
+      require agentic-mbse==0.1.1, we can conclude that your requirements and
+      sysml-codegen==0.1.0 are incompatible.
+      And because you require sysml-codegen==0.1.0, we can conclude that your
+      requirements are unsatisfiable.
