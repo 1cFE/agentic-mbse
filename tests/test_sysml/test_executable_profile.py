@@ -136,7 +136,7 @@ def test_compound_boolean_nested_walk_reaches_every_leaf() -> None:
     decision = _decision("compound_boolean")
     assert decision.eligibility is Eligibility.BLOCK
     assert [diagnostic.reason for diagnostic in decision.diagnostics] == [
-        "warn_non_numerical_equality",
+        "block_non_numerical_containment",
         "block_unknown_exact_unit",
     ]
     assert all(diagnostic.force == "error" for diagnostic in decision.diagnostics)
@@ -187,8 +187,7 @@ def test_multiple_violations_in_one_predicate_all_accumulate() -> None:
     reasons = {diag.reason for diag in decision.diagnostics}
     assert reasons == {
         "block_feature_chain",
-        "warn_non_numerical_xor",
-        "warn_non_numerical_predicate",
+        "block_non_numerical_containment",
     }
     assert all(diagnostic.force == "error" for diagnostic in decision.diagnostics)
 

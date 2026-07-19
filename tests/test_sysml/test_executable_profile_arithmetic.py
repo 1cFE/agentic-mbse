@@ -149,6 +149,36 @@ def _reasons(decision: UsageDecision) -> set[str]:
     return {diagnostic.reason for diagnostic in decision.diagnostics}
 
 
+def test_contradictory_equal_unit_ratio_round_trip_blocks() -> None:
+    contradictory_second = UnitFact(
+        unit=_METRE.unit,
+        dimension=_SECOND.dimension,
+    )
+    ratio = OperatorNode(
+        operator="/",
+        operands=[
+            _leaf("quantity", unit=_METRE),
+            _leaf("quantity", unit=contradictory_second),
+        ],
+        operand_type=OperandTypeFact(category="real", enumeration=None, unit=None),
+    )
+    predicate = OperatorNode(
+        operator="<=",
+        operands=[ratio, _real_literal(2.0)],
+        operand_type=None,
+    )
+    facts = ConstraintFacts(
+        definitions=[],
+        usages=[_inline_usage("contradictory_ratio", predicate)],
+        contexts=[],
+        diagnostics=[],
+    )
+    parsed = parse_constraint_facts(serialize_constraint_facts(facts))
+    decision = evaluate_profile(parsed).decisions[0]
+    assert decision.eligibility is Eligibility.BLOCK
+    assert _reasons(decision) == {"block_derived_unit_unsupported"}
+
+
 # === F1: mixed-unit arithmetic must hit the unit gate ===
 
 

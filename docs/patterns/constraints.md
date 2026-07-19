@@ -23,17 +23,19 @@ assert constraint ConstraintName {
 **Critical:** Constraints require a prefix keyword (`assert`, `require`, or `assume`).
 
 **An `assert` constraint's predicate is eligible for execution, not automatically dropped.**
-The **executable profile** (`agentic_mbse.sysml.executable_profile`) decides one of three
-outcomes per asserted constraint usage:
+The **executable profile v3** (`agentic_mbse.sysml.executable_profile`) assigns exactly one of four
+outcomes per constraint usage:
 
-- **Admitted** — the predicate uses only supported constructs (comparisons, `and`/`or`/`not`,
+- **`ADMIT`** — the predicate uses only supported constructs (comparisons, `and`/`or`/`not`,
   arithmetic, feature references, unit-annotated literals) and lowers into a real check
   downstream (sysml-codegen). L4 counts it eligible; L6 stays silent.
-- **Blocked** — some construct in the predicate isn't in the admitted set. L6 emits one named
-  WARNING per blocked construct (the construct, its source location, and a reason code like
+- **`BLOCK`** — some construct in the predicate isn't in the admitted set. Generation stops, and
+  L6 emits one named ERROR per blocked construct (the construct, its source location, and a reason code like
   `block_feature_chain` or `block_real_equality_requires_tolerance`) — see
   [Executable Profile: Block List](#executable-profile-block-list) below.
-- **Unassessed** — `satisfy` constraints, requirement-side usages, and plain (unprefixed)
+- **`NON_NUMERICAL`** — a valid Boolean, string, or enumeration statement is outside numerical
+  execution. Validation and generation warn, and codegen catalogs it without an executable module.
+- **`UNASSESSED`** — `satisfy` constraints, requirement-side usages, and plain (unprefixed)
   constraints aren't run through the profile at all; they're cataloged separately, not blocked.
 
 `require` and `assume` constraints are unassessed today (only `assert` predicates are walked).
@@ -253,18 +255,33 @@ assert constraint ThermalLimits {
 
 | Operator | Meaning | Example | Executable profile |
 |----------|---------|---------|---------------------|
-| `==` | Equal | `mode == 1` | Admitted for enum (same enumeration), boolean, string, integer. **Blocked** for any quantity or real operand — see below. |
-| `!=` | Not equal | `divisor != 0` | Always **blocked** (`block_unsupported_operator`) — not in the admitted comparison set. |
+| `==` | Equal | `mode == 1` | Never admitted. Boolean, string, and enumeration equality is `NON_NUMERICAL`; integer, real, and quantity equality is `BLOCK` — see below. |
+| `!=` | Not equal | `divisor != 0` | Never admitted. It follows the same `NON_NUMERICAL`/`BLOCK` type split as `==`. |
 | `<`, `<=` | Less than | `temp < max_temp` | Admitted if both operands share a unit (or are both unitless). |
 | `>`, `>=` | Greater than | `power > 0` | Admitted if both operands share a unit (or are both unitless). |
 | `and`, `or`, `not` | Logical connectives | `a > 0 and b > 0` | Admitted; each operand is walked as its own predicate. |
-| `xor`, `implies` | Logical XOR/implication | — | Always **blocked** (`block_xor` / `block_implies`) — not in the admitted connective set. |
+| `xor`, `implies` | Logical XOR/implication | — | A valid binary expression is classified by numerical containment: a purely non-numerical statement is `NON_NUMERICAL`, while one containing a numerical assertion is `BLOCK`. Any arity other than two default-denies as `BLOCK`. |
+
+### The four executable-profile outcomes
+
+Executable-profile v3 assigns exactly one outcome to each constraint usage:
+
+- `ADMIT`: the predicate is in the numerical execution subset and may be lowered.
+- `BLOCK`: generation stops with an error and repair guidance.
+- `NON_NUMERICAL`: the statement is valid but is not a numerical execution claim. Validation and
+  generation warn, and code generation catalogs it without an executable module.
+- `UNASSESSED`: the usage kind or source form is outside the profile. Code generation catalogs it
+  without walking or executing its predicate.
 
 ### Real-valued equality: use a two-inequality band, not `==`
 
-`==` between any quantity (dimensioned value) or `Real` operand blocks with
-`block_real_equality_requires_tolerance` — floating-point equality isn't a meaningful check.
-Express the same intent as an explicit tolerance band with two inequalities:
+No equality or inequality enters numerical execution. Boolean, string, and enumeration equality
+or inequality is a `NON_NUMERICAL` statement and produces a warning. Integer equality or
+inequality is `BLOCK` because the generated float path cannot preserve integer equality semantics.
+Real equality or inequality is `BLOCK` because it has no modeled tolerance. Quantity equality or
+inequality is also `BLOCK`: identical units still need a tolerance, while mismatched or unknown
+units retain their specific unit diagnostic. Express a real or quantity equality intent as an
+explicit tolerance band with two inequalities:
 
 ```sysml
 // WRONG: blocks — real-valued equality has no tolerance
@@ -281,7 +298,7 @@ assert constraint EnergyBalance {
 
 ### Executable profile: block list
 
-Besides `!=`, real-valued `==`, and unit mismatches, these constructs always block:
+Besides numerical equality/inequality and unit mismatches, these constructs block:
 
 | Construct | Reason code | Why |
 |-----------|-------------|-----|
@@ -291,8 +308,8 @@ Besides `!=`, real-valued `==`, and unit mismatches, these constructs always blo
 | Unresolved or unrecognized operand/expression shape | `block_unresolved_operand`, `block_unsupported_node`, `block_unsupported_operand_category` | Default-deny — the profile only admits constructs it recognizes. |
 
 `require` and `assume` constraints, `satisfy` usages, and plain (unprefixed) constraints are
-**unassessed** — the profile doesn't walk their predicates at all, so they're neither admitted
-nor blocked.
+`UNASSESSED`: the profile does not walk their predicates, so they are neither admitted nor
+blocked.
 
 ---
 
@@ -324,12 +341,13 @@ The validators enumerate constraint usages with a subtype-aware sweep, so an
 `assert constraint` (an `AssertConstraintUsage`, a `ConstraintUsage` *subtype*) is now seen
 everywhere a plain `ConstraintUsage` is:
 
-- **L4** (constraint coverage) reports eligibility counts — admitted, blocked, and unassessed —
+- **L4** (constraint coverage) reports all four eligibility counts — admitted, blocked,
+  non-numerical, and unassessed —
   across all `assert`/`require`/`assume`/`satisfy` constraints, via the executable profile
-  (Item 3): `assert` predicates land in admitted or blocked, everything else lands in
-  unassessed. Before Item 4 it undercounted asserts; before Item 3 it reported a 0%
+  (Item 3): `assert` predicates land in admitted, blocked, or non-numerical; everything else lands
+  in unassessed. Before Item 4 it undercounted asserts; before Item 3 it reported a 0%
   attribute-coverage placeholder that never parsed a predicate.
-- **L6** emits one named WARNING per blocked construct (not one blanket warning per constraint
+- **L6** emits one named ERROR per blocked construct (not one blanket error per constraint
   usage) — see [Executable profile: block list](#executable-profile-block-list) above.
 
 Requirement-side usages (`RequirementUsage` and its `satisfy` subtype) are deliberately

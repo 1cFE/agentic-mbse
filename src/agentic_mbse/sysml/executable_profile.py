@@ -63,6 +63,7 @@ REASON_CODES = frozenset(
         "warn_non_numerical_predicate",
         "warn_non_numerical_xor",
         "warn_non_numerical_implies",
+        "block_non_numerical_containment",
         "block_integer_equality_unpreservable",
         "block_real_equality_requires_tolerance",
         "block_unit_conversion_required",
@@ -294,18 +295,18 @@ def _quantity_ratio_fact(left: OperandTypeFact, right: OperandTypeFact) -> Opera
     """`quantity / quantity` (D-R1): only an identical-exact-unit pure ratio is provable.
 
     Guard order mirrors `unit_compatibility`: malformed fact, then unknown exact unit, then
-    the identical-unit admit (a pure ratio needs no conversion, result is dimensionless real),
-    then differing dimensions (an m/s-style derived unit — not representable), then same
-    dimension with differing units (conversion needed).
+    differing dimensions (an m/s-style derived unit — not representable), then the
+    identical-unit admit (a pure ratio needs no conversion, result is dimensionless real),
+    then same dimension with differing units (conversion needed).
     """
     if left.unit is None or right.unit is None:
         return "block_malformed_operand_fact"
     if left.unit.unit is None or right.unit.unit is None:
         return "block_unknown_exact_unit"
-    if left.unit.unit == right.unit.unit:
-        return _real_fact()
     if left.unit.dimension != right.unit.dimension:
         return "block_derived_unit_unsupported"
+    if left.unit.unit == right.unit.unit:
+        return _real_fact()
     return "block_unit_conversion_required"
 
 
@@ -604,6 +605,17 @@ def _walk_proposition(
     if isinstance(node, OperatorNode):
         operator = node.operator
         if operator in ("xor", "implies"):
+            if len(node.operands) != 2:
+                diagnostics.append(
+                    _diagnostic(
+                        "block_unsupported_node",
+                        operator,
+                        identity,
+                        location,
+                        f"connective {operator!r} with {len(node.operands)} operands, expected 2",
+                    )
+                )
+                return True
             diagnostics.append(
                 _diagnostic(
                     f"warn_non_numerical_{operator}",
@@ -684,6 +696,24 @@ def _blocked(usage: ConstraintUsageFact, diagnostic: EligibilityDiagnostic) -> U
     )
 
 
+def _promote_non_numerical_diagnostic(
+    diagnostic: EligibilityDiagnostic,
+) -> EligibilityDiagnostic:
+    """Replace warning semantics when numerical containment makes the diagnostic blocking."""
+    if diagnostic.force != "non_numerical":
+        return diagnostic
+    return replace(
+        diagnostic,
+        reason="block_non_numerical_containment",
+        message=(
+            f"the numerical assertion contains a non-numerical {diagnostic.construct} and "
+            "generation stops; separate it into its own assertion or rewrite it as a numerical "
+            "comparison"
+        ),
+        force="error",
+    )
+
+
 def _evaluate_usage(
     usage: ConstraintUsageFact, definitions_by_qn: dict[str, ConstraintDefinitionFact]
 ) -> UsageDecision:
@@ -731,7 +761,9 @@ def _evaluate_usage(
     contains_numerical = _walk_proposition(predicate, identity, location, diagnostics)
     if diagnostics:
         if contains_numerical:
-            diagnostics = [replace(diagnostic, force="error") for diagnostic in diagnostics]
+            diagnostics = [
+                _promote_non_numerical_diagnostic(diagnostic) for diagnostic in diagnostics
+            ]
         eligibility = Eligibility.BLOCK if contains_numerical else Eligibility.NON_NUMERICAL
         return UsageDecision(
             identity=identity,

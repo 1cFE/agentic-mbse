@@ -1,10 +1,48 @@
 # Current Work
 
-**Last Updated**: 2026-07-17
+**Last Updated**: 2026-07-18
 
 ---
 
 ## Active Work
+
+### GAP-CLOSE Item 5: local partial wave certified; PR #11 pre-PR
+
+The companion package/build/runtime/lock identity is `0.1.1`, paired with codegen's
+`agentic-mbse>=0.1.1` floor. The shipped constraints guide now teaches all four v3 outcomes in both
+its opening and detailed sections; a kept test rejects the retired three-outcome wording. The
+rebuilt wheel contains the corrected guide, and the kept documentation test passes its recorded
+Ruff and format checks.
+
+The second re-audit's remaining guide contradictions are also corrected and pinned: BLOCK produces
+one named L6 `ERROR` per blocked construct, and asserted predicates may be admitted, blocked, or
+non-numerical. The rebuilt wheel guide matches source; sha256 is `160e7eb5…a8d4f`. The formatted
+documentation regression passes, and the relevant guide/profile/L6 selection passes 119 tests.
+The paired TEAx cure also moves explicit path expansion inside route-aware normalization and pins an
+injected expansion `RuntimeError`; discovery passes 5 tests normally and under optimized Python,
+and the established licensed environment passes the real SimKit lane 9/9.
+
+The paired audit cures also pin exact anonymous warning bytes across live/relocated/snapshot routes
+and normalize hostile TEAx discovery paths. The cross-repo audit certifies the local and in-scope
+partial wave only. External `[GAP-CLOSE-F1-TEAX-NORMALIZATION]` remains open, so neither F1 nor the
+full epic is complete.
+
+The PR #11 candidate excludes the unrelated local modeling-orchestrator commit and orchestration
+logs. Its fresh default suite passes 1,506 tests with 1 skipped and 5 deselected; changed-file Ruff,
+format, targeted mypy, and diff checks are clean. The certified mixed local worktree suite remains
+1,525 passed / 1 skipped / 33 deselected, and the codegen suite of record remains 2,516 / 26 / 9.
+Repository-wide Ruff, format, and mypy still reproduce pre-existing debt outside the partial-wave
+paths. All fixture manifests remain unchanged. Merge PR #11 before codegen PR #9. Do not close or
+archive GAP-CLOSE while the external F1 dependency is open.
+
+### GAP-CLOSE Item 4: Profile Default-Deny Totalization (certified in local partial wave)
+
+Malformed codec-roundtripped xor/implies arities and contradictory equal-unit dimensions now
+default-deny in executable-profile/v3. Numerical containment now promotes force, reason, and repair
+message together. The only codegen Item 4 change is the coordinated conformance assertion.
+Companion suite: 1,524 passed / 1 skipped / 33 deselected. Licensed codegen suite: 2,511 passed /
+26 skipped / 9 deselected. The cross-repo GAP-CLOSE audit re-certifies this item. Plan:
+`.project/active/gap-profile-totalization/plan.md`.
 
 ### CONSTRAINT-EXEC PR remediation (certified locally — paired compatibility pending)
 
@@ -28,6 +66,13 @@ the next stage.
 ---
 
 ## Recently Completed
+
+### 2026-07-18: Orchestrate Modeling
+
+- Added a thin, Task-led `/orchestrate-modeling` command for Standard and Epic model-building flows.
+- Added the canonical modeling flow, explicit Epic audit scope, and supported `pm add-epic` registration.
+- Verified 202 focused tests and the 1,504-test normal suite; closed without independent audit
+  certification by owner decision.
 
 ### 2026-07-13: CONSTRAINT-EXEC Items 1–3 (epic closed, archived)
 - Neutral constraint facts, ExpressionIR, and the executable profile all certified and archived
