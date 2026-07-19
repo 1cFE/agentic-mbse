@@ -917,6 +917,24 @@ def _promote_non_numerical_diagnostic(
     )
 
 
+def _promote_non_numerical_diagnostic(
+    diagnostic: EligibilityDiagnostic,
+) -> EligibilityDiagnostic:
+    """Replace warning semantics when numerical containment makes the diagnostic blocking."""
+    if diagnostic.force != "non_numerical":
+        return diagnostic
+    return replace(
+        diagnostic,
+        reason="block_non_numerical_containment",
+        message=(
+            f"the numerical assertion contains a non-numerical {diagnostic.construct} and "
+            "generation stops; separate it into its own assertion or rewrite it as a numerical "
+            "comparison"
+        ),
+        force="error",
+    )
+
+
 def _evaluate_usage(
     usage: ConstraintUsageFact, definitions_by_qn: dict[str, ConstraintDefinitionFact]
 ) -> UsageDecision:
