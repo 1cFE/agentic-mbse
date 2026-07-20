@@ -116,6 +116,17 @@ class EligibilityDiagnostic:
     message: str
     force: Literal["error", "non_numerical"] = "error"
 
+    def __post_init__(self) -> None:
+        # DD-R05: the closed vocabulary is enforced here, in production, not by a
+        # test asserting over a frozenset. A typo or a newly added unclassified
+        # reason used to flow through and land in the L6 message text as the whole
+        # of its own explanation.
+        if self.reason not in REASON_CODES:
+            raise ValueError(
+                f"unknown eligibility reason: {self.reason!r} "
+                f"(known: {sorted(REASON_CODES)})"
+            )
+
 
 @dataclass(frozen=True)
 class UsageDecision:

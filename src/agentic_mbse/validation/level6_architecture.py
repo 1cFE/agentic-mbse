@@ -627,6 +627,7 @@ def check_constraint_executability(model: Any) -> list[ValidationIssue]:
                         element_name=name,
                         location=_format_diagnostic_location(diagnostic.location),
                         suggestion=diagnostic.message,
+                        reason_code=diagnostic.reason,
                     )
                 )
             continue
@@ -646,6 +647,11 @@ def check_constraint_executability(model: Any) -> list[ValidationIssue]:
                 element_name=name,
                 location=_format_diagnostic_location(decision.location),
                 suggestion=suggestions,
+                # One aggregated WARNING per statement, so the branchable code is the
+                # first diagnostic's reason; the full set stays in `message`.
+                reason_code=next(
+                    (diagnostic.reason for diagnostic in decision.diagnostics), None
+                ),
             )
         )
     return issues

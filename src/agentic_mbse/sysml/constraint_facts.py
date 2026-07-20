@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any
 
 from agentic_mbse.sysml.expression_facts import IdentityFact
@@ -29,6 +30,10 @@ from agentic_mbse.sysml.expression_ir import (
 
 __all__ = [
     "CONSTRAINT_FACTS_SCHEMA_VERSION",
+    "EXTRACTION_DIAGNOSTIC_KINDS",
+    "EXTRACTION_DIAGNOSTIC_SEVERITY",
+    "DiagnosticSeverity",
+    "severity_for_kind",
     "ActualFact",
     "ConstraintDefinitionFact",
     "ConstraintFacts",
@@ -46,7 +51,48 @@ __all__ = [
     "serialize",
 ]
 
-CONSTRAINT_FACTS_SCHEMA_VERSION = "constraint-facts/v1"
+CONSTRAINT_FACTS_SCHEMA_VERSION = "constraint-facts/v2"
+
+
+class DiagnosticSeverity(str, Enum):
+    """Whether a diagnostic stops the consumer or is carried for visibility.
+
+    Two members, deliberately. This is a transport severity: it answers "does this
+    halt?" and nothing else. It is NOT ``EligibilityDiagnostic.force``, which is an
+    input to the eligibility decision and whose ``"non_numerical"`` member is not a
+    severity at all (design D1).
+    """
+
+    BLOCKING = "blocking"
+    ADVISORY = "advisory"
+
+    def __str__(self) -> str:  # pragma: no cover - trivial
+        return self.value
+
+
+# The writer-side table. A diagnostic's severity is fixed here, at construction, and
+# no reader ever recomputes it -- that is what makes two readers at different versions
+# unable to disagree about whether the same bytes block (DD-R07). Changing an entry is
+# a semantic change to already-written snapshots and therefore requires a schema bump,
+# which is exactly the cost a reader-side classification map was supposed to avoid.
+EXTRACTION_DIAGNOSTIC_SEVERITY: dict[str, DiagnosticSeverity] = {
+    # A non-finite literal cannot be evaluated downstream: a generated package that
+    # ran with it would publish a value nobody can act on.
+    "non_finite_literal": DiagnosticSeverity.BLOCKING,
+}
+
+EXTRACTION_DIAGNOSTIC_KINDS = frozenset(EXTRACTION_DIAGNOSTIC_SEVERITY)
+
+
+def severity_for_kind(kind: str) -> DiagnosticSeverity:
+    """The writer's severity for ``kind``; refuses a kind outside the closed set."""
+    try:
+        return EXTRACTION_DIAGNOSTIC_SEVERITY[kind]
+    except KeyError:
+        raise ValueError(
+            f"unknown extraction diagnostic kind: {kind!r} "
+            f"(known: {sorted(EXTRACTION_DIAGNOSTIC_KINDS)})"
+        ) from None
 
 
 @dataclass
@@ -169,12 +215,22 @@ class ContextFact:
 
 @dataclass
 class ExtractionDiagnosticFact:
-    """A structured diagnostic raised during extraction (D2a): a non-finite literal operand."""
+    """A structured diagnostic raised during extraction (D2a): a non-finite literal operand.
+
+    ``kind`` is a closed vocabulary and ``severity`` is derived from it at construction
+    (DD-R01, DD-R06). Severity is a field on the fact rather than a reader-side lookup so
+    that reclassifying a diagnostic family cannot change the meaning of bytes already on
+    disk without a schema bump the version gate can see.
+    """
 
     kind: str
     message: str
     operand_source: str | None
     location: LocationFact | None
+    severity: DiagnosticSeverity = field(init=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "severity", severity_for_kind(self.kind))
 
 
 @dataclass
@@ -304,12 +360,30 @@ def _context_from_dict(data: dict[str, Any]) -> ContextFact:
 
 
 def _diagnostic_from_dict(data: dict[str, Any]) -> ExtractionDiagnosticFact:
-    return ExtractionDiagnosticFact(
+    found_severity = data["severity"]
+    try:
+        severity = DiagnosticSeverity(found_severity)
+    except ValueError:
+        raise ValueError(
+            f"unsupported diagnostic severity: found {found_severity!r}, "
+            f"supported {sorted(member.value for member in DiagnosticSeverity)}"
+        ) from None
+    # Construction re-derives severity from the writer table, so a document whose
+    # stored severity disagrees with this reader's table is a skew the version gate
+    # should already have caught. Refuse rather than silently prefer either side.
+    diagnostic = ExtractionDiagnosticFact(
         kind=data["kind"],
         message=data["message"],
         operand_source=data["operand_source"],
         location=_location_from_dict(data["location"]),
     )
+    if diagnostic.severity is not severity:
+        raise ValueError(
+            f"diagnostic severity disagrees with this reader's table for kind "
+            f"{data['kind']!r}: document says {found_severity!r}, table says "
+            f"{diagnostic.severity.value!r}"
+        )
+    return diagnostic
 
 
 def parse(text: str) -> ConstraintFacts:

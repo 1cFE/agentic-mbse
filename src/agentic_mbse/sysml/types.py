@@ -156,6 +156,14 @@ class ValidationIssue(BaseModel):
         element_name: Name of the affected element
         location: File:line location string
         suggestion: Optional guidance for fixing the issue
+        reason_code: The producing subsystem's own diagnostic code, when it has
+            one, as a field a consumer can branch on. `code` is a UI-facing
+            category vocabulary; the executable profile's 27 reason codes are a
+            diagnostic vocabulary and collapsed into two `ValidationCode` members
+            with the real discriminator surviving only inside interpolated
+            message text (DD-R10). Minting a `ValidationCode` per reason was
+            rejected: it would nearly double a category enum to carry a
+            different vocabulary.
 
     Example:
         >>> issue = ValidationIssue(
@@ -175,6 +183,7 @@ class ValidationIssue(BaseModel):
     element_name: str = ""
     location: str = ""
     suggestion: str | None = None
+    reason_code: str | None = None
 
     def __str__(self) -> str:
         """Format as human-readable string for backward compatibility."""
