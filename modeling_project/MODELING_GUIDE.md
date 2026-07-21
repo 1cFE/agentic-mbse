@@ -277,7 +277,7 @@ Agents have read permissions via `.claude/settings.json`.
 | `adr002-calculations.md` | Calculation architecture, expression taxonomy, no-loops rule |
 | `doc-comments.md` | Documentation standards, citation formats |
 | `conditionals.md` | Conditional expression syntax |
-| `constraints.md` | Constraint syntax and prefixes; not executable |
+| `constraints.md` | Constraint syntax and prefixes; execution under the profile (ADMIT/BLOCK/unassessed) |
 | `cross-file-binding.md` | Cross-file imports and bindings |
 | `semantic-operators.md` | `=` vs `default :=` vs `:>>` vs `:>`; bare-`:>>` value idiom |
 | `syntax-reference.md` | 10 syntax patterns quick reference |

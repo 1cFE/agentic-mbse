@@ -1,48 +1,70 @@
 # Current Work
 
-**Last Updated**: 2026-07-05
+**Last Updated**: 2026-07-18
 
 ---
 
 ## Active Work
 
-### FORMULA Teaching Reconciliation (UPSTREAM-FINDINGS Item 12 follow-up)
+### Constraint-Wave Item 1: Profile Semantics (complete; orchestration paused for owner discussion)
 
-**Branch:** `upstream-findings-sync`
-**Active:** `.project/active/formula-teaching-reconciliation/`
+The fresh remediation audit found no remaining implementation or approved semantic-contract gap.
+Source-identity contradictions now fail before graph/output mutation; live/codec polarity and
+positive-IR continuity, compound diagnostic sentinels, one neutral body with per-usage polarity,
+mixed-polarity TEAx execution, package/skew controls, and the shared Items 2/4/6 union pass normally
+and under optimized Python. After audit, the owner removed the agent-authored clean-overlay and
+pre-edit-hash gates and requested no re-audit. Their absence remains recorded without retroactive
+claims. Further orchestration is paused for a larger-context discussion. Audit:
+`.project/active/constraint-wave-profile-semantics/audit.md`.
 
-Implemented (surgical stance). The F6 validator fix (same-part FORMULA no longer FAILs V2) left shipped teaching surfaces contradicting the validator. Reconciled across adr002-calculations.md, common-mistakes.md, the sysml-conventions skill, MODELING_GUIDE + MODELING_PROCESS (templates + tracked install copies): inline FORMULA taught as a convenience for simple arithmetic; calc defs remain recommended for real calculations; calc-output-arithmetic / self-ref / dotted-path still taught as violations.
+### GAP-CLOSE Item 5: local partial wave certified; PR #11 pre-PR
 
-### C4 Plain-Subtype Instantiation — docstring + test gap (UPSTREAM-FINDINGS Item 12 follow-up)
+The companion package/build/runtime/lock identity is `0.1.1`, paired with codegen's
+`agentic-mbse>=0.1.1` floor. The shipped constraints guide now teaches all four v3 outcomes in both
+its opening and detailed sections; a kept test rejects the retired three-outcome wording. The
+rebuilt wheel contains the corrected guide, and the kept documentation test passes its recorded
+Ruff and format checks.
 
-**Branch:** `upstream-findings-sync`
-**Active:** `.project/active/c4-plain-subtype-instantiation/`
+The second re-audit's remaining guide contradictions are also corrected and pinned: BLOCK produces
+one named L6 `ERROR` per blocked construct, and asserted predicates may be admitted, blocked, or
+non-numerical. The rebuilt wheel guide matches source; sha256 is `160e7eb5…a8d4f`. The formatted
+documentation regression passes, and the relevant guide/profile/L6 selection passes 119 tests.
+The paired TEAx cure also moves explicit path expansion inside route-aware normalization and pins an
+injected expansion `RuntimeError`; discovery passes 5 tests normally and under optimized Python,
+and the established licensed environment passes the real SimKit lane 9/9.
 
-Spec in progress. `check_calc_bearing_instantiation` (L6) behaves correctly but its docstring wrongly claims `.types` walks the full supertype chain; the plain-subtype FAIL path is untested. Codegen confirmed (REQ-EXT-13/14) to drop plain-subtype-inherited calcs, so the FAIL is correct — fix is docstring + missing fixture, NOT walking the chain.
+The paired audit cures also pin exact anonymous warning bytes across live/relocated/snapshot routes
+and normalize hostile TEAx discovery paths. The cross-repo audit certifies the local and in-scope
+partial wave only. External `[GAP-CLOSE-F1-TEAX-NORMALIZATION]` remains open, so neither F1 nor the
+full epic is complete.
 
-### PDF Skill Deployment (ITEM-DOCLING-002)
+The PR #11 candidate excludes the unrelated local modeling-orchestrator commit and orchestration
+logs. Its fresh default suite passes 1,506 tests with 1 skipped and 5 deselected; changed-file Ruff,
+format, targeted mypy, and diff checks are clean. The certified mixed local worktree suite remains
+1,525 passed / 1 skipped / 33 deselected, and the codegen suite of record remains 2,516 / 26 / 9.
+Repository-wide Ruff, format, and mypy still reproduce pre-existing debt outside the partial-wave
+paths. All fixture manifests remain unchanged. Merge PR #11 before codegen PR #9. Do not close or
+archive GAP-CLOSE while the external F1 dependency is open.
 
-**Branch:** `doc-ingest-clean`
-**Active:** `.project/active/pdf-skill-deployment/`
+### GAP-CLOSE Item 4: Profile Default-Deny Totalization (certified in local partial wave)
 
-Integrate Docling MCP server setup into `agentic-mbse init`. Spec and design exist from Feb 6 but predate the v4 pipeline — need design revision before implementation.
+Malformed codec-roundtripped xor/implies arities and contradictory equal-unit dimensions now
+default-deny in executable-profile/v3. Numerical containment now promotes force, reason, and repair
+message together. The only codegen Item 4 change is the coordinated conformance assertion.
+Companion suite: 1,524 passed / 1 skipped / 33 deselected. Licensed codegen suite: 2,511 passed /
+26 skipped / 9 deselected. The cross-repo GAP-CLOSE audit re-certifies this item. Plan:
+`.project/active/gap-profile-totalization/plan.md`.
 
-**Next:** Revisit design against v4 architecture, then plan and implement.
+### CONSTRAINT-EXEC PR remediation (certified locally — paired compatibility pending)
 
-### PDF Extraction Quality & Features (EPIC-PDFV4-002)
-
-**Branch:** `doc-ingest-clean`
-**Epic:** `.project/backlog/epic_pdf-extraction-improvements.md`
-
-Four items, ~4.5 days:
-1. **Quality regressions** (Item 1) — Phase 1 (equation fragments) DONE. Phases 2-3 remaining: GMFT xref, postprocess cleanup.
-2. **Unified image output** (Item 2) — ImageCollector pattern: figures + table crops in one system. Absorbs IMGEXT-001 + IMGEXT-003 + quality regressions Phase 4.
-3. **Equation region detection** (Item 3) — Research + implement detector, plug into image collector.
-4. **OCR integration** (Item 4) — EasyOCR via Docling, independent.
-
-**Next:** Finish Item 1 (Phases 2-3), then Item 2 design.
-
----
+A critical PR audit (`.project/research/20260714-064234_constraint-exec-pr-code-quality-audit.md`)
+found nine defects on `constraint-exec-epic`; the remediation fixes those original findings. The
+three gaps from the fresh certification pass are now implemented: malformed snapshot leaf facts
+reach D-R3's named BLOCK through the public codec, serializers reject mutated wire tags, and the
+defining module exports both public extractors. The fresh audit now certifies the local remediation:
+`.project/active/constraint-exec-remediation/audit.md`. Normal suite: 1484 passed / 1 skipped /
+33 deselected; targeted mypy and Ruff clean. Paired sysml-codegen profile/compiler compatibility is
+the next stage.
 
 ## Remaining Active Items (Under Review)
 
@@ -55,6 +77,28 @@ Four items, ~4.5 days:
 ---
 
 ## Recently Completed
+
+### 2026-07-18: Orchestrate Modeling
+
+- Added a thin, Task-led `/orchestrate-modeling` command for Standard and Epic model-building flows.
+- Added the canonical modeling flow, explicit Epic audit scope, and supported `pm add-epic` registration.
+- Verified 202 focused tests and the 1,504-test normal suite; closed without independent audit
+  certification by owner decision.
+
+### 2026-07-13: CONSTRAINT-EXEC Items 1–3 (epic closed, archived)
+- Neutral constraint facts, ExpressionIR, and the executable profile all certified and archived
+  to `.project/completed/20260713_{constraint-facts,expression-ir,executable-profile}/`.
+- Canonical epic close-out + independent findings audit live in sysml-codegen
+  `.project/completed/20260713_epic_constraint_execution*.md`; suite at close 1401/1.
+
+### 2026-07-11: S1 Constraint Fact-Shape Learning Test
+
+Live SysIDE 0.8.4 fixture matrix, golden JSON, and five kept tests now pin all four constraint
+source forms, membership/polarity/ownership, actuals/defaults, inheritance/retyping, compound
+expressions, and the equality type/unit gate. S1 passed with one explicit restriction: a
+dimensioned quantity feature does not prove one exact runtime unit. Full suite: 1,295 passed,
+1 skipped, 33 deselected. Findings:
+`.project/completed/20260711_spike-constraint-fact-shapes/findings.md`.
 
 ### 2026-07-05: Web Source Capture + arXiv Extraction Pipeline (PR #6, merged)
 

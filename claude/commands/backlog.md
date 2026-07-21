@@ -36,17 +36,18 @@ When invoked without arguments, ask: "Would you like to add work items, decompos
 
 Present scale assessment: "This looks like a [scale] change. Agree?" Let the user override.
 
-**Prioritize** each item with the user (P0/P1/P2/P3). Then add via AP-7 script:
+**Prioritize** each item with the user (P0/P1/P2/P3). Register Standard items with:
 ```
-agentic-mbse pm add-to-backlog --name "<name>" --scale <trivial|standard|epic> --priority <P0|P1|P2|P3> --goal <G-XXX> --epic "<epic-name>"
+agentic-mbse pm add-item --name "<name>" --scale standard --priority <P0|P1|P2|P3> --goal <G-XXX>
 ```
+For an Epic, write and approve its epic file as described below, then register it with `pm add-epic`.
 The script updates BACKLOG.md YAML frontmatter and re-renders the markdown body. Do not edit BACKLOG.md directly for state transitions.
 
 Confirm additions and suggest next steps: `/spec-model` for P0 Standard items, `/backlog decompose` for Epics.
 
 ### 2. Decompose Epic (`/backlog decompose <epic>`)
 
-Read the epic entry in `work/BACKLOG.md`. If an epic file already exists at `work/backlog/epic-{name}.md`, read it and continue refining. Otherwise, create one.
+If the epic is already registered, read its entry in `work/BACKLOG.md`. If an epic file already exists at `work/backlog/epic-{name}.md`, read it and continue refining. Otherwise, create one.
 
 **Read broadly** to inform decomposition:
 - `modeling_project/OVERVIEW.md` — which G-XXX goal does this epic serve?
@@ -69,9 +70,11 @@ Updated: <YYYY-MM-DD>
 
 The body is free-form: executive summary, context, per-item breakdowns with scope and dependencies, sequencing rationale, success criteria, risks. Depth matches complexity.
 
-Present the decomposition to the user. Iterate until approved. On approval, register sub-items:
+Present the decomposition to the user. Iterate until approved. On approval, register the epic, then
+register its sub-items using the epic priority:
 ```
-agentic-mbse pm add-to-backlog --name "<item>" --scale standard --epic "<epic-name>"
+agentic-mbse pm add-epic --name "<epic-name>" --priority <P0|P1|P2|P3> --file "work/backlog/epic-{name}.md" --goal <G-XXX>
+agentic-mbse pm add-item --name "<item>" --scale standard --priority <P0|P1|P2|P3> --epic "<epic-name>"
 ```
 
 ### 3. Close Work (`/backlog close [item]`)

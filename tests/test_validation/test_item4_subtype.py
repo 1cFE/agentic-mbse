@@ -4,6 +4,7 @@ Live syside tests (license-gated). Each changed diagnostic has a fires-on-shape
 test with an independently-anchored expectation and a silent-on-clean test.
 Fixtures live under tests/fixtures/item4_subtype/.
 """
+
 from pathlib import Path
 
 import pytest
@@ -68,20 +69,29 @@ class TestLevel4ConstraintCount:
 
 
 class TestLevel6NonExecutableWarn:
-    def test_warns_on_assert_not_requirement(self):
-        """The assert now receives the non-executable WARN; the requirement does
-        not (excluded). Independent anchor: fixture has assert `affordable` and
-        plain `positive_cost` (both droppable) and requirement `widget_budget`."""
+    """CONSTRAINT-EXEC Item 3 superseded row 7's blanket WARN with per-construct eligibility
+    diagnostics: `affordable` (`cost <= budget`) and `positive_cost` (`cost > 0.0`) are both
+    clean, unitless Real comparisons — admitted, not blocked — so they no longer warn."""
+
+    def test_admitted_asserts_are_silent(self):
+        """Independent anchor: fixture has assert `affordable` and plain `positive_cost`
+        (both clean Real comparisons, now admitted) and requirement `widget_budget`
+        (unassessed). None of the three should warn."""
         issues = check_constraint_executability(_load("constraints.sysml"))
-        warned = {
-            i.element_name.split("::")[-1]
-            for i in issues
-            if i.code == ValidationCode.L6_CONSTRAINT_NON_EXECUTABLE
-        }
-        assert all(i.severity == Severity.WARNING for i in issues)
-        assert "affordable" in warned  # the assert — was invisible before
-        assert "positive_cost" in warned
-        assert "widget_budget" not in warned  # requirement excluded
+        warned = {i.element_name.split("::")[-1] for i in issues}
+        assert issues == []
+        assert "affordable" not in warned
+        assert "positive_cost" not in warned
+        assert "widget_budget" not in warned
+
+    def test_blocked_construct_errors(self):
+        """A feature chain in a numerical comparison fires one named error."""
+        issues = check_constraint_executability(_load("l6_ineligible/blocked.sysml"))
+        errors = [i for i in issues if i.code == ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL]
+        assert len(errors) == 1
+        assert errors[0].severity == Severity.ERROR
+        assert errors[0].element_name.split("::")[-1] == "chained_limit"
+        assert "block_feature_chain" in errors[0].message
 
     def test_clean_model_silent(self):
         """Silent-on-clean: no constraints -> no WARN."""
@@ -110,11 +120,7 @@ class TestRow8EnumStaysExact:
         include_subtypes would. This pins the opt-OUT decision."""
         model = _load("enum_attr.sysml")
         exact = list(SysideAdapter.elements_of_type(model, "AttributeUsage"))
-        swept = list(
-            SysideAdapter.elements_of_type(
-                model, "AttributeUsage", include_subtypes=True
-            )
-        )
+        swept = list(SysideAdapter.elements_of_type(model, "AttributeUsage", include_subtypes=True))
         exact_types = {type(e).__name__ for e in exact}
         swept_types = {type(e).__name__ for e in swept}
         assert exact_types == {"AttributeUsage"}

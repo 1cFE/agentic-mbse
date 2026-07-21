@@ -22,7 +22,7 @@ wheels = [
 
 [[package]]
 name = "agentic-mbse"
-version = "0.1.0"
+version = "0.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "img2table" },

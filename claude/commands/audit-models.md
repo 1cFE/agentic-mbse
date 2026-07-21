@@ -9,12 +9,13 @@ user-invocable: true
 # Audit Models Command
 
 **Purpose:** VERIFY models — independent verification against baseline sources, project standards, and architectural decisions.
-**Input:** A work item in `work/active/`, OR specific model files/directory to audit
+**Input:** A work item in `work/active/`, an Epic file in `work/backlog/`, OR specific model files/directory to audit
 **Output:** Audit report saved to `work/analysis/`
 
-The audit operates at two scopes:
+The audit operates at three scopes:
 
 - **Work item audit** — the final stage of the `spec → design → plan → implement → audit` pipeline. Verifies a specific work item's models against its spec's acceptance criteria AND project-level standards. Invoke with a work item path.
+- **Epic audit** — the final integration stage after every Epic item has a positive work item audit. Verifies epic success criteria, item audit evidence, and cross-item integration obligations. Invoke with an Epic file path.
 - **Project audit** — a health check across models. Verifies against project-level standards only (no per-item spec). Invoke with model file paths or a directory.
 
 When invoked without arguments, ask which scope the user wants.
@@ -76,9 +77,23 @@ When auditing a specific work item, also read:
 
 Verify **each** MR-XXX requirement is satisfied by the implemented models. Verify all spec acceptance criteria are met. Verify all plan completion gates passed. This is the independent verification that implementation is complete.
 
+### Epic Integration (Epic audit only)
+
+When auditing an Epic, read its file and the spec, design, plan, and item audit report for every
+registered item. Verify:
+
+- every epic success criterion has concrete evidence;
+- every item audit has a positive verdict and no unresolved finding that affects the Epic;
+- dependency handoffs and shared interfaces agree across item boundaries;
+- integrated models pass the applicable six-level validation and regression tests;
+- no cross-item integration obligation remains parked or unverified.
+
+Report each epic success criterion and item audit separately. A collection of positive item audits is
+necessary but does not replace cross-item integration verification.
+
 ## Process
 
-1. **Scope** — determine work item audit vs project audit. Identify target models, locate baseline sources, load project standards (REQUIREMENTS.md, ARCHITECTURE.md, VALIDATION_MATRIX.md, traceability_matrix.csv). For work item audits, read the spec/design/plan chain. Present scope and get user confirmation.
+1. **Scope** — determine work item, Epic, or project audit. Identify target models, locate baseline sources, load project standards (REQUIREMENTS.md, ARCHITECTURE.md, VALIDATION_MATRIX.md, traceability_matrix.csv). For work item audits, read the spec/design/plan chain. For Epic audits, read the Epic file and every item artifact chain and audit report. Present scope and get user confirmation.
 
 2. **Verify** — execute each applicable verification obligation. Use parallel reads for multiple model files. Read baseline source files once and cache values. For large audits, work incrementally by file or subsystem.
 
@@ -113,6 +128,7 @@ An audit report should contain:
 - **AD-XXX Adherence** — deviations with evidence
 - **SV-XXX Status Updates** — criteria evaluated, new statuses, criteria not yet verifiable
 - **MR-XXX Verification** (work item audit only) — per-requirement pass/fail, spec acceptance criteria results
+- **Epic Integration Verification** (Epic audit only) — epic success criteria, item audit status, dependency handoffs, and cross-item integration evidence
 - **Recommendations** — immediate actions, follow-up actions, promotable patterns
 - **Audit Metadata** — models audited with paths, baseline source, thresholds, date
 

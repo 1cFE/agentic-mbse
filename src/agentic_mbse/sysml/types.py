@@ -104,8 +104,10 @@ class ValidationCode(str, Enum):
     L6_ANONYMOUS_RETURN = "L6_ANONYMOUS_RETURN"
     # C2b: `return attribute y; y = expr` body-assignment extracts an output but loses auto-impl -> WARN.
     L6_BODY_ASSIGNMENT_IMPL_LOSS = "L6_BODY_ASSIGNMENT_IMPL_LOSS"
-    # C3: constraint usages are not executable and are dropped at extraction -> WARN (see modeling-assumptions §8).
-    L6_CONSTRAINT_NON_EXECUTABLE = "L6_CONSTRAINT_NON_EXECUTABLE"
+    # CONSTRAINT-EXEC Item 3: malformed numerical statements fail L6; valid statements outside
+    # the numerical executor warn once per statement.
+    L6_CONSTRAINT_MALFORMED_NUMERICAL = "L6_CONSTRAINT_MALFORMED_NUMERICAL"
+    L6_CONSTRAINT_NON_NUMERICAL = "L6_CONSTRAINT_NON_NUMERICAL"
     # C4: a calc-bearing part def that no usage instantiates (plainly or by retyping) -> FAIL; its template calcs are dropped.
     L6_CALC_DEF_NO_INSTANTIATION = "L6_CALC_DEF_NO_INSTANTIATION"
     # C7 (Item 9): `attribute :>> attr = <expr>` parses as an AttributeUsage, but codegen's
@@ -154,6 +156,14 @@ class ValidationIssue(BaseModel):
         element_name: Name of the affected element
         location: File:line location string
         suggestion: Optional guidance for fixing the issue
+        reason_code: The producing subsystem's own diagnostic code, when it has
+            one, as a field a consumer can branch on. `code` is a UI-facing
+            category vocabulary; the executable profile's 27 reason codes are a
+            diagnostic vocabulary and collapsed into two `ValidationCode` members
+            with the real discriminator surviving only inside interpolated
+            message text (DD-R10). Minting a `ValidationCode` per reason was
+            rejected: it would nearly double a category enum to carry a
+            different vocabulary.
 
     Example:
         >>> issue = ValidationIssue(
@@ -173,6 +183,7 @@ class ValidationIssue(BaseModel):
     element_name: str = ""
     location: str = ""
     suggestion: str | None = None
+    reason_code: str | None = None
 
     def __str__(self) -> str:
         """Format as human-readable string for backward compatibility."""

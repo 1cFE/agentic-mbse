@@ -17,14 +17,13 @@ from typing import Any
 
 import yaml
 
+from agentic_mbse.sysml.constraint_extraction import extract_constraint_facts
+from agentic_mbse.sysml.executable_profile import Eligibility, evaluate_profile
 from agentic_mbse.sysml.expression import (
     evaluate_true_static_expression,
     is_literal_node,
 )
-from agentic_mbse.sysml.syside_adapter import (
-    EXCLUDED_CONSTRAINT_TYPES,
-    SysideAdapter,
-)
+from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 
 from .adr002 import (
@@ -592,53 +591,69 @@ def check_anonymous_returns(model: Any) -> list[ValidationIssue]:
     return issues
 
 
+def _format_diagnostic_location(location: Any) -> str:
+    if location is None:
+        return "<no location>"
+    return f"{location.file}:{location.line}"
+
+
 def check_constraint_executability(model: Any) -> list[ValidationIssue]:
     """
-    C3 (Item 12): WARN that constraint usages are not executable.
+    Report malformed numerical diagnostics as errors and non-numerical statements as warnings.
 
-    A model carrying constraint usages should warn that constraints are dropped at
-    extraction — they document intent but produce no computation. WARNING severity,
-    so it does not fail Level 6. Points at modeling-assumptions §8.
-
-    Returns:
-        List of ValidationIssue (WARNING), one per constraint usage.
+    BLOCK emits one ERROR per diagnostic so each malformed construct names its fix.
+    NON_NUMERICAL emits one aggregated WARNING per statement, preserving diagnostic walk order.
     """
+    # D7 (Item 4): an extraction failure must surface, not collapse to "no diagnostics" — no
+    # `except Exception: ...` swallow here, matching the discipline this function has kept since
+    # Item 4 removed the equivalent swallow for constraint enumeration.
+    facts = extract_constraint_facts(model)
+    result = evaluate_profile(facts)
+
     issues: list[ValidationIssue] = []
-
-    # Row 7 (Item 4): sweep ConstraintUsage subtypes so `assert` is seen, and
-    # exclude requirement-side usages via the single droppable policy. D7: the
-    # old `except Exception: constraints = []` swallow is removed — an extraction
-    # failure here must be loud, not silently collapse to "zero constraints" and
-    # mask this very fix.
-    constraints = list(
-        SysideAdapter.elements_of_type(
-            model,
-            "ConstraintUsage",
-            include_subtypes=True,
-            exclude=EXCLUDED_CONSTRAINT_TYPES,
-        )
-    )
-
-    for constraint in constraints:
-        try:
-            name = get_qualified_name(constraint)
-            issues.append(
-                ValidationIssue(
-                    level=6,
-                    severity=Severity.WARNING,
-                    code=ValidationCode.L6_CONSTRAINT_NON_EXECUTABLE,
-                    message=(f"Constraint '{name}' is not executable and is dropped at extraction"),
-                    element_name=name,
-                    location=get_element_location(constraint),
-                    suggestion=(
-                        "Constraints document intent only; move any needed computation into a "
-                        "calc def (see modeling-assumptions §8)"
-                    ),
+    for decision in result.decisions:
+        name = decision.identity.qualified_name or decision.identity.name or "<anonymous>"
+        if decision.eligibility is Eligibility.BLOCK:
+            for diagnostic in decision.diagnostics:
+                issues.append(
+                    ValidationIssue(
+                        level=6,
+                        severity=Severity.ERROR,
+                        code=ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL,
+                        message=(
+                            f"Constraint '{name}' is a malformed numerical statement: "
+                            f"{diagnostic.construct} ({diagnostic.reason})"
+                        ),
+                        element_name=name,
+                        location=_format_diagnostic_location(diagnostic.location),
+                        suggestion=diagnostic.message,
+                        reason_code=diagnostic.reason,
+                    )
                 )
-            )
-        except Exception:
             continue
-
+        if decision.eligibility is not Eligibility.NON_NUMERICAL:
+            continue
+        reasons = ", ".join(diagnostic.reason for diagnostic in decision.diagnostics)
+        suggestions = "; ".join(diagnostic.message for diagnostic in decision.diagnostics)
+        issues.append(
+            ValidationIssue(
+                level=6,
+                severity=Severity.WARNING,
+                code=ValidationCode.L6_CONSTRAINT_NON_NUMERICAL,
+                message=(
+                    f"Constraint '{name}' is not a numerical statement and will not execute: "
+                    f"{reasons}"
+                ),
+                element_name=name,
+                location=_format_diagnostic_location(decision.location),
+                suggestion=suggestions,
+                # One aggregated WARNING per statement, so the branchable code is the
+                # first diagnostic's reason; the full set stays in `message`.
+                reason_code=next(
+                    (diagnostic.reason for diagnostic in decision.diagnostics), None
+                ),
+            )
+        )
     return issues
 
 
@@ -995,8 +1010,15 @@ def validate_architecture(
             "V4_STATIC_FUNCTION_INVOCATION": len(
                 [i for i in all_issues if i.code == ValidationCode.V4_STATIC_FUNCTION_INVOCATION]
             ),
-            "L6_CONSTRAINT_NON_EXECUTABLE": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_CONSTRAINT_NON_EXECUTABLE]
+            "L6_CONSTRAINT_MALFORMED_NUMERICAL": len(
+                [
+                    i
+                    for i in all_issues
+                    if i.code == ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL
+                ]
+            ),
+            "L6_CONSTRAINT_NON_NUMERICAL": len(
+                [i for i in all_issues if i.code == ValidationCode.L6_CONSTRAINT_NON_NUMERICAL]
             ),
             "L6_CALC_DEF_NO_INSTANTIATION": len(
                 [i for i in all_issues if i.code == ValidationCode.L6_CALC_DEF_NO_INSTANTIATION]

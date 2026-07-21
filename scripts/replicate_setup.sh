@@ -54,7 +54,7 @@ install_claude_components() {
     # Commands - direct copy
     for cmd in analyze-models.md audit-models.md backlog.md design-model.md \
                formalize-intent.md implement-model.md manage-sources.md onboard.md \
-               plan-model.md quick-model.md research.md review-model.md \
+               orchestrate-modeling.md plan-model.md quick-model.md research.md review-model.md \
                spec-model.md status.md; do
         cp "$REPO_ROOT/claude/commands/$cmd" "$REPO_ROOT/.claude/commands/$cmd"
         log_created ".claude/commands/$cmd"

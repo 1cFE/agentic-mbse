@@ -1,0 +1,2473 @@
+{
+  "schema": "constraint-fact-learning-test/v1",
+  "source_forms": {
+    "constraints": [
+      {
+        "actuals": [],
+        "asserted_constraint": null,
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "ConstraintCheck",
+          "qualified_name": "Constraints::ConstraintCheck"
+        },
+        "effective_predicate_source": {
+          "kind": "ConstraintUsage",
+          "name": "positive_limit",
+          "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::positive_limit"
+        },
+        "identity": {
+          "kind": "ConstraintUsage",
+          "name": "positive_limit",
+          "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::positive_limit"
+        },
+        "inherited_into": [],
+        "is_negated": null,
+        "location": {
+          "column": 16,
+          "file": "source_forms.sysml",
+          "line": 12
+        },
+        "membership_kind": "assumption",
+        "omitted_default_formals": [],
+        "owner": {
+          "kind": "RequirementDefinition",
+          "name": "LimitRequirement",
+          "qualified_name": "ConstraintFactShapeProbe::LimitRequirement"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureChainExpression",
+              "operands": [
+                {
+                  "kind": "FeatureReferenceExpression",
+                  "reference": {
+                    "resolved": true,
+                    "source_name": "checked",
+                    "target": {
+                      "kind": "ReferenceUsage",
+                      "name": "checked",
+                      "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::checked"
+                    },
+                    "target_types": [
+                      "ConstraintFactShapeProbe::ProbePart",
+                      "Base::Anything",
+                      "Objects::Object",
+                      "Occurrences::Occurrence"
+                    ]
+                  },
+                  "result_type": {
+                    "kind": "ReferenceUsage",
+                    "name": "checked",
+                    "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::checked",
+                    "types": [
+                      "ConstraintFactShapeProbe::ProbePart",
+                      "Base::Anything",
+                      "Objects::Object",
+                      "Occurrences::Occurrence"
+                    ]
+                  },
+                  "source": "checked"
+                }
+              ],
+              "operator": ".",
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "limit",
+                "qualified_name": "ConstraintFactShapeProbe::ProbePart::limit",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "checked.limit",
+              "target_feature": {
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "limit",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbePart::limit"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              }
+            },
+            {
+              "kind": "LiteralRational",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Rational",
+                "qualified_name": "ScalarValues::Rational",
+                "types": []
+              },
+              "source": "0.0",
+              "value": 0.0
+            }
+          ],
+          "operator": ">",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "checked.limit > 0.0"
+        },
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "ConstraintUsage",
+          "name": "positive_limit",
+          "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::positive_limit"
+        },
+        "source_form": "requirement_constraint"
+      },
+      {
+        "actuals": [],
+        "asserted_constraint": null,
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "ConstraintCheck",
+          "qualified_name": "Constraints::ConstraintCheck"
+        },
+        "effective_predicate_source": {
+          "kind": "ConstraintUsage",
+          "name": "below_limit",
+          "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::below_limit"
+        },
+        "identity": {
+          "kind": "ConstraintUsage",
+          "name": "below_limit",
+          "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::below_limit"
+        },
+        "inherited_into": [],
+        "is_negated": null,
+        "location": {
+          "column": 17,
+          "file": "source_forms.sysml",
+          "line": 15
+        },
+        "membership_kind": "requirement",
+        "omitted_default_formals": [],
+        "owner": {
+          "kind": "RequirementDefinition",
+          "name": "LimitRequirement",
+          "qualified_name": "ConstraintFactShapeProbe::LimitRequirement"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureChainExpression",
+              "operands": [
+                {
+                  "kind": "FeatureReferenceExpression",
+                  "reference": {
+                    "resolved": true,
+                    "source_name": "checked",
+                    "target": {
+                      "kind": "ReferenceUsage",
+                      "name": "checked",
+                      "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::checked"
+                    },
+                    "target_types": [
+                      "ConstraintFactShapeProbe::ProbePart",
+                      "Base::Anything",
+                      "Objects::Object",
+                      "Occurrences::Occurrence"
+                    ]
+                  },
+                  "result_type": {
+                    "kind": "ReferenceUsage",
+                    "name": "checked",
+                    "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::checked",
+                    "types": [
+                      "ConstraintFactShapeProbe::ProbePart",
+                      "Base::Anything",
+                      "Objects::Object",
+                      "Occurrences::Occurrence"
+                    ]
+                  },
+                  "source": "checked"
+                }
+              ],
+              "operator": ".",
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed_value",
+                "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "checked.observed_value",
+              "target_feature": {
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed_value",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              }
+            },
+            {
+              "kind": "FeatureChainExpression",
+              "operands": [
+                {
+                  "kind": "FeatureReferenceExpression",
+                  "reference": {
+                    "resolved": true,
+                    "source_name": "checked",
+                    "target": {
+                      "kind": "ReferenceUsage",
+                      "name": "checked",
+                      "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::checked"
+                    },
+                    "target_types": [
+                      "ConstraintFactShapeProbe::ProbePart",
+                      "Base::Anything",
+                      "Objects::Object",
+                      "Occurrences::Occurrence"
+                    ]
+                  },
+                  "result_type": {
+                    "kind": "ReferenceUsage",
+                    "name": "checked",
+                    "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::checked",
+                    "types": [
+                      "ConstraintFactShapeProbe::ProbePart",
+                      "Base::Anything",
+                      "Objects::Object",
+                      "Occurrences::Occurrence"
+                    ]
+                  },
+                  "source": "checked"
+                }
+              ],
+              "operator": ".",
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "limit",
+                "qualified_name": "ConstraintFactShapeProbe::ProbePart::limit",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "checked.limit",
+              "target_feature": {
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "limit",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbePart::limit"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              }
+            }
+          ],
+          "operator": "<=",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "checked.observed_value <= checked.limit"
+        },
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "ConstraintUsage",
+          "name": "below_limit",
+          "qualified_name": "ConstraintFactShapeProbe::LimitRequirement::below_limit"
+        },
+        "source_form": "requirement_constraint"
+      },
+      {
+        "actuals": [],
+        "asserted_constraint": {
+          "kind": "AssertConstraintUsage",
+          "name": "inline_owner_reference",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::inline_owner_reference"
+        },
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "ConstraintCheck",
+          "qualified_name": "Constraints::ConstraintCheck"
+        },
+        "effective_predicate_source": {
+          "kind": "AssertConstraintUsage",
+          "name": "inline_owner_reference",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::inline_owner_reference"
+        },
+        "identity": {
+          "kind": "AssertConstraintUsage",
+          "name": "inline_owner_reference",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::inline_owner_reference"
+        },
+        "inherited_into": [
+          "ConstraintFactShapeProbe::sample"
+        ],
+        "is_negated": false,
+        "location": {
+          "column": 9,
+          "file": "source_forms.sysml",
+          "line": 27
+        },
+        "membership_kind": null,
+        "omitted_default_formals": [],
+        "owner": {
+          "kind": "PartDefinition",
+          "name": "ProbePart",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "observed_value",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed_value",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed_value",
+                "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "observed_value"
+            },
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "limit",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "limit",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbePart::limit"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "limit",
+                "qualified_name": "ConstraintFactShapeProbe::ProbePart::limit",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "limit"
+            }
+          ],
+          "operator": "<=",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "observed_value <= limit"
+        },
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "AssertConstraintUsage",
+          "name": "inline_owner_reference",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::inline_owner_reference"
+        },
+        "source_form": "inline"
+      },
+      {
+        "actuals": [
+          {
+            "direction": "FeatureDirectionKind.In",
+            "formal_targets": [
+              "ConstraintFactShapeProbe::WithinLimit::limit"
+            ],
+            "name": "limit",
+            "value": {
+              "kind": "LiteralRational",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Rational",
+                "qualified_name": "ScalarValues::Rational",
+                "types": []
+              },
+              "source": "12.0",
+              "value": 12.0
+            }
+          },
+          {
+            "direction": "FeatureDirectionKind.In",
+            "formal_targets": [
+              "ConstraintFactShapeProbe::WithinLimit::observed"
+            ],
+            "name": "observed",
+            "value": {
+              "kind": "FeatureChainExpression",
+              "operands": [
+                {
+                  "kind": "FeatureReferenceExpression",
+                  "reference": {
+                    "resolved": true,
+                    "source_name": "sensor",
+                    "target": {
+                      "kind": "PartUsage",
+                      "name": "sensor",
+                      "qualified_name": "ConstraintFactShapeProbe::ProbePart::sensor"
+                    },
+                    "target_types": [
+                      "Parts::Part",
+                      "Items::Item",
+                      "Objects::Object",
+                      "Occurrences::Occurrence",
+                      "Base::Anything"
+                    ]
+                  },
+                  "result_type": {
+                    "kind": "PartUsage",
+                    "name": "sensor",
+                    "qualified_name": "ConstraintFactShapeProbe::ProbePart::sensor",
+                    "types": [
+                      "Parts::Part",
+                      "Items::Item",
+                      "Objects::Object",
+                      "Occurrences::Occurrence",
+                      "Base::Anything"
+                    ]
+                  },
+                  "source": "sensor"
+                }
+              ],
+              "operator": ".",
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "reading",
+                "qualified_name": "ConstraintFactShapeProbe::ProbePart::sensor::reading",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "sensor.reading",
+              "target_feature": {
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "reading",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbePart::sensor::reading"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              }
+            }
+          }
+        ],
+        "asserted_constraint": {
+          "kind": "AssertConstraintUsage",
+          "name": "typed_feature_chain_and_literal",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::typed_feature_chain_and_literal"
+        },
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "WithinLimit",
+          "qualified_name": "ConstraintFactShapeProbe::WithinLimit"
+        },
+        "effective_predicate_source": {
+          "kind": "ConstraintDefinition",
+          "name": "WithinLimit",
+          "qualified_name": "ConstraintFactShapeProbe::WithinLimit"
+        },
+        "identity": {
+          "kind": "AssertConstraintUsage",
+          "name": "typed_feature_chain_and_literal",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::typed_feature_chain_and_literal"
+        },
+        "inherited_into": [
+          "ConstraintFactShapeProbe::sample"
+        ],
+        "is_negated": false,
+        "location": {
+          "column": 9,
+          "file": "source_forms.sysml",
+          "line": 31
+        },
+        "membership_kind": null,
+        "omitted_default_formals": [],
+        "owner": {
+          "kind": "PartDefinition",
+          "name": "ProbePart",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "observed",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed",
+                  "qualified_name": "ConstraintFactShapeProbe::WithinLimit::observed"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed",
+                "qualified_name": "ConstraintFactShapeProbe::WithinLimit::observed",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "observed"
+            },
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "limit",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "limit",
+                  "qualified_name": "ConstraintFactShapeProbe::WithinLimit::limit"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "limit",
+                "qualified_name": "ConstraintFactShapeProbe::WithinLimit::limit",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "limit"
+            }
+          ],
+          "operator": "<=",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "observed <= limit"
+        },
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "AssertConstraintUsage",
+          "name": "typed_feature_chain_and_literal",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::typed_feature_chain_and_literal"
+        },
+        "source_form": "definition_typed"
+      },
+      {
+        "actuals": [
+          {
+            "direction": "FeatureDirectionKind.In",
+            "formal_targets": [
+              "ConstraintFactShapeProbe::WithinLimit::observed"
+            ],
+            "name": "observed",
+            "value": {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "observed_value",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed_value",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed_value",
+                "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "observed_value"
+            }
+          }
+        ],
+        "asserted_constraint": {
+          "kind": "AssertConstraintUsage",
+          "name": "typed_omitted_default",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::typed_omitted_default"
+        },
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "WithinLimit",
+          "qualified_name": "ConstraintFactShapeProbe::WithinLimit"
+        },
+        "effective_predicate_source": {
+          "kind": "ConstraintDefinition",
+          "name": "WithinLimit",
+          "qualified_name": "ConstraintFactShapeProbe::WithinLimit"
+        },
+        "identity": {
+          "kind": "AssertConstraintUsage",
+          "name": "typed_omitted_default",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::typed_omitted_default"
+        },
+        "inherited_into": [
+          "ConstraintFactShapeProbe::sample"
+        ],
+        "is_negated": false,
+        "location": {
+          "column": 9,
+          "file": "source_forms.sysml",
+          "line": 36
+        },
+        "membership_kind": null,
+        "omitted_default_formals": [
+          "ConstraintFactShapeProbe::WithinLimit::limit"
+        ],
+        "owner": {
+          "kind": "PartDefinition",
+          "name": "ProbePart",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "observed",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed",
+                  "qualified_name": "ConstraintFactShapeProbe::WithinLimit::observed"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed",
+                "qualified_name": "ConstraintFactShapeProbe::WithinLimit::observed",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "observed"
+            },
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "limit",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "limit",
+                  "qualified_name": "ConstraintFactShapeProbe::WithinLimit::limit"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "limit",
+                "qualified_name": "ConstraintFactShapeProbe::WithinLimit::limit",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "limit"
+            }
+          ],
+          "operator": "<=",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "observed <= limit"
+        },
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "AssertConstraintUsage",
+          "name": "typed_omitted_default",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::typed_omitted_default"
+        },
+        "source_form": "definition_typed"
+      },
+      {
+        "actuals": [],
+        "asserted_constraint": {
+          "kind": "AssertConstraintUsage",
+          "name": null,
+          "qualified_name": null
+        },
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "ConstraintCheck",
+          "qualified_name": "Constraints::ConstraintCheck"
+        },
+        "effective_predicate_source": {
+          "kind": "AssertConstraintUsage",
+          "name": null,
+          "qualified_name": null
+        },
+        "identity": {
+          "kind": "AssertConstraintUsage",
+          "name": null,
+          "qualified_name": null
+        },
+        "inherited_into": [
+          "ConstraintFactShapeProbe::sample"
+        ],
+        "is_negated": false,
+        "location": {
+          "column": 9,
+          "file": "source_forms.sysml",
+          "line": 40
+        },
+        "membership_kind": null,
+        "omitted_default_formals": [],
+        "owner": {
+          "kind": "PartDefinition",
+          "name": "ProbePart",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "observed_value",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed_value",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed_value",
+                "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "observed_value"
+            },
+            {
+              "kind": "LiteralRational",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Rational",
+                "qualified_name": "ScalarValues::Rational",
+                "types": []
+              },
+              "source": "0.0",
+              "value": 0.0
+            }
+          ],
+          "operator": ">=",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "observed_value >= 0.0"
+        },
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "AssertConstraintUsage",
+          "name": null,
+          "qualified_name": null
+        },
+        "source_form": "inline"
+      },
+      {
+        "actuals": [],
+        "asserted_constraint": null,
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "WithinLimit",
+          "qualified_name": "ConstraintFactShapeProbe::WithinLimit"
+        },
+        "effective_predicate_source": null,
+        "identity": {
+          "kind": "ConstraintUsage",
+          "name": "named_usage",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::named_usage"
+        },
+        "inherited_into": [
+          "ConstraintFactShapeProbe::sample"
+        ],
+        "is_negated": null,
+        "location": {
+          "column": 9,
+          "file": "source_forms.sysml",
+          "line": 44
+        },
+        "membership_kind": null,
+        "omitted_default_formals": [
+          "ConstraintFactShapeProbe::WithinLimit::limit"
+        ],
+        "owner": {
+          "kind": "PartDefinition",
+          "name": "ProbePart",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart"
+        },
+        "predicate": null,
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "ConstraintUsage",
+          "name": "named_usage",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::named_usage"
+        },
+        "source_form": "plain_usage"
+      },
+      {
+        "actuals": [
+          {
+            "direction": "FeatureDirectionKind.In",
+            "formal_targets": [
+              "ConstraintFactShapeProbe::WithinLimit::limit"
+            ],
+            "name": "limit",
+            "value": {
+              "kind": "LiteralRational",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Rational",
+                "qualified_name": "ScalarValues::Rational",
+                "types": []
+              },
+              "source": "12.0",
+              "value": 12.0
+            }
+          },
+          {
+            "direction": "FeatureDirectionKind.In",
+            "formal_targets": [
+              "ConstraintFactShapeProbe::WithinLimit::observed"
+            ],
+            "name": "observed",
+            "value": {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "observed_value",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed_value",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed_value",
+                "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "observed_value"
+            }
+          }
+        ],
+        "asserted_constraint": {
+          "kind": "ConstraintUsage",
+          "name": "named_usage",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::named_usage"
+        },
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "WithinLimit",
+          "qualified_name": "ConstraintFactShapeProbe::WithinLimit"
+        },
+        "effective_predicate_source": {
+          "kind": "ConstraintDefinition",
+          "name": "WithinLimit",
+          "qualified_name": "ConstraintFactShapeProbe::WithinLimit"
+        },
+        "identity": {
+          "kind": "AssertConstraintUsage",
+          "name": null,
+          "qualified_name": null
+        },
+        "inherited_into": [
+          "ConstraintFactShapeProbe::sample"
+        ],
+        "is_negated": false,
+        "location": {
+          "column": 9,
+          "file": "source_forms.sysml",
+          "line": 46
+        },
+        "membership_kind": null,
+        "omitted_default_formals": [],
+        "owner": {
+          "kind": "PartDefinition",
+          "name": "ProbePart",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "observed",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed",
+                  "qualified_name": "ConstraintFactShapeProbe::WithinLimit::observed"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed",
+                "qualified_name": "ConstraintFactShapeProbe::WithinLimit::observed",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "observed"
+            },
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "limit",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "limit",
+                  "qualified_name": "ConstraintFactShapeProbe::WithinLimit::limit"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "limit",
+                "qualified_name": "ConstraintFactShapeProbe::WithinLimit::limit",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "limit"
+            }
+          ],
+          "operator": "<=",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "observed <= limit"
+        },
+        "referenced_feature_target": {
+          "kind": "ConstraintUsage",
+          "name": "named_usage",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::named_usage"
+        },
+        "scope": {
+          "kind": "AssertConstraintUsage",
+          "name": null,
+          "qualified_name": null
+        },
+        "source_form": "named_usage_reference"
+      },
+      {
+        "actuals": [],
+        "asserted_constraint": {
+          "kind": "AssertConstraintUsage",
+          "name": "negated_inline",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::negated_inline"
+        },
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "ConstraintCheck",
+          "qualified_name": "Constraints::ConstraintCheck"
+        },
+        "effective_predicate_source": {
+          "kind": "AssertConstraintUsage",
+          "name": "negated_inline",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::negated_inline"
+        },
+        "identity": {
+          "kind": "AssertConstraintUsage",
+          "name": "negated_inline",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::negated_inline"
+        },
+        "inherited_into": [
+          "ConstraintFactShapeProbe::sample"
+        ],
+        "is_negated": true,
+        "location": {
+          "column": 9,
+          "file": "source_forms.sysml",
+          "line": 51
+        },
+        "membership_kind": null,
+        "omitted_default_formals": [],
+        "owner": {
+          "kind": "PartDefinition",
+          "name": "ProbePart",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "observed_value",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed_value",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed_value",
+                "qualified_name": "ConstraintFactShapeProbe::ProbePart::observed_value",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "observed_value"
+            },
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "limit",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "limit",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbePart::limit"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "limit",
+                "qualified_name": "ConstraintFactShapeProbe::ProbePart::limit",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "limit"
+            }
+          ],
+          "operator": ">",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "observed_value > limit"
+        },
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "AssertConstraintUsage",
+          "name": "negated_inline",
+          "qualified_name": "ConstraintFactShapeProbe::ProbePart::negated_inline"
+        },
+        "source_form": "inline"
+      },
+      {
+        "actuals": [],
+        "asserted_constraint": {
+          "kind": "AssertConstraintUsage",
+          "name": "calc_owned",
+          "qualified_name": "ConstraintFactShapeProbe::ProbeCalculation::calc_owned"
+        },
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "ConstraintCheck",
+          "qualified_name": "Constraints::ConstraintCheck"
+        },
+        "effective_predicate_source": {
+          "kind": "AssertConstraintUsage",
+          "name": "calc_owned",
+          "qualified_name": "ConstraintFactShapeProbe::ProbeCalculation::calc_owned"
+        },
+        "identity": {
+          "kind": "AssertConstraintUsage",
+          "name": "calc_owned",
+          "qualified_name": "ConstraintFactShapeProbe::ProbeCalculation::calc_owned"
+        },
+        "inherited_into": [],
+        "is_negated": false,
+        "location": {
+          "column": 9,
+          "file": "source_forms.sysml",
+          "line": 58
+        },
+        "membership_kind": null,
+        "omitted_default_formals": [],
+        "owner": {
+          "kind": "CalculationDefinition",
+          "name": "ProbeCalculation",
+          "qualified_name": "ConstraintFactShapeProbe::ProbeCalculation"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "observed",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed",
+                  "qualified_name": "ConstraintFactShapeProbe::ProbeCalculation::observed"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed",
+                "qualified_name": "ConstraintFactShapeProbe::ProbeCalculation::observed",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "observed"
+            },
+            {
+              "kind": "LiteralRational",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Rational",
+                "qualified_name": "ScalarValues::Rational",
+                "types": []
+              },
+              "source": "0.0",
+              "value": 0.0
+            }
+          ],
+          "operator": ">=",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "observed >= 0.0"
+        },
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "AssertConstraintUsage",
+          "name": "calc_owned",
+          "qualified_name": "ConstraintFactShapeProbe::ProbeCalculation::calc_owned"
+        },
+        "source_form": "inline"
+      },
+      {
+        "actuals": [],
+        "asserted_constraint": {
+          "kind": "AssertConstraintUsage",
+          "name": "direct_owned",
+          "qualified_name": "ConstraintFactShapeProbe::direct_usage::direct_owned"
+        },
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "ConstraintCheck",
+          "qualified_name": "Constraints::ConstraintCheck"
+        },
+        "effective_predicate_source": {
+          "kind": "AssertConstraintUsage",
+          "name": "direct_owned",
+          "qualified_name": "ConstraintFactShapeProbe::direct_usage::direct_owned"
+        },
+        "identity": {
+          "kind": "AssertConstraintUsage",
+          "name": "direct_owned",
+          "qualified_name": "ConstraintFactShapeProbe::direct_usage::direct_owned"
+        },
+        "inherited_into": [],
+        "is_negated": false,
+        "location": {
+          "column": 9,
+          "file": "source_forms.sysml",
+          "line": 66
+        },
+        "membership_kind": null,
+        "omitted_default_formals": [],
+        "owner": {
+          "kind": "PartUsage",
+          "name": "direct_usage",
+          "qualified_name": "ConstraintFactShapeProbe::direct_usage"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "observed",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed",
+                  "qualified_name": "ConstraintFactShapeProbe::direct_usage::observed"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed",
+                "qualified_name": "ConstraintFactShapeProbe::direct_usage::observed",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "observed"
+            },
+            {
+              "kind": "LiteralRational",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Rational",
+                "qualified_name": "ScalarValues::Rational",
+                "types": []
+              },
+              "source": "0.0",
+              "value": 0.0
+            }
+          ],
+          "operator": ">=",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "observed >= 0.0"
+        },
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "AssertConstraintUsage",
+          "name": "direct_owned",
+          "qualified_name": "ConstraintFactShapeProbe::direct_usage::direct_owned"
+        },
+        "source_form": "inline"
+      },
+      {
+        "actuals": [],
+        "asserted_constraint": {
+          "kind": "AssertConstraintUsage",
+          "name": "inherited_limit",
+          "qualified_name": "ConstraintFactShapeProbe::BaseProbe::inherited_limit"
+        },
+        "constraint_definition": {
+          "kind": "ConstraintDefinition",
+          "name": "ConstraintCheck",
+          "qualified_name": "Constraints::ConstraintCheck"
+        },
+        "effective_predicate_source": {
+          "kind": "AssertConstraintUsage",
+          "name": "inherited_limit",
+          "qualified_name": "ConstraintFactShapeProbe::BaseProbe::inherited_limit"
+        },
+        "identity": {
+          "kind": "AssertConstraintUsage",
+          "name": "inherited_limit",
+          "qualified_name": "ConstraintFactShapeProbe::BaseProbe::inherited_limit"
+        },
+        "inherited_into": [
+          "ConstraintFactShapeProbe::DerivedProbe",
+          "ConstraintFactShapeProbe::retyped_usage"
+        ],
+        "is_negated": false,
+        "location": {
+          "column": 9,
+          "file": "source_forms.sysml",
+          "line": 73
+        },
+        "membership_kind": null,
+        "omitted_default_formals": [],
+        "owner": {
+          "kind": "PartDefinition",
+          "name": "BaseProbe",
+          "qualified_name": "ConstraintFactShapeProbe::BaseProbe"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "base_value",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "base_value",
+                  "qualified_name": "ConstraintFactShapeProbe::BaseProbe::base_value"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "base_value",
+                "qualified_name": "ConstraintFactShapeProbe::BaseProbe::base_value",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "base_value"
+            },
+            {
+              "kind": "LiteralRational",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Rational",
+                "qualified_name": "ScalarValues::Rational",
+                "types": []
+              },
+              "source": "0.0",
+              "value": 0.0
+            }
+          ],
+          "operator": ">=",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "base_value >= 0.0"
+        },
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "AssertConstraintUsage",
+          "name": "inherited_limit",
+          "qualified_name": "ConstraintFactShapeProbe::BaseProbe::inherited_limit"
+        },
+        "source_form": "inline"
+      },
+      {
+        "actuals": [
+          {
+            "direction": "FeatureDirectionKind.In",
+            "formal_targets": [
+              "ConstraintFactShapeProbe::LimitRequirement::checked",
+              "Requirements::RequirementCheck::subj"
+            ],
+            "name": "checked",
+            "value": {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "sample",
+                "target": {
+                  "kind": "PartUsage",
+                  "name": "sample",
+                  "qualified_name": "ConstraintFactShapeProbe::sample"
+                },
+                "target_types": [
+                  "ConstraintFactShapeProbe::ProbePart",
+                  "Parts::Part",
+                  "Items::Item",
+                  "Objects::Object",
+                  "Occurrences::Occurrence",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "PartUsage",
+                "name": "sample",
+                "qualified_name": "ConstraintFactShapeProbe::sample",
+                "types": [
+                  "ConstraintFactShapeProbe::ProbePart",
+                  "Parts::Part",
+                  "Items::Item",
+                  "Objects::Object",
+                  "Occurrences::Occurrence",
+                  "Base::Anything"
+                ]
+              },
+              "source": "sample"
+            }
+          }
+        ],
+        "asserted_constraint": {
+          "kind": "SatisfyRequirementUsage",
+          "name": "satisfied_limit",
+          "qualified_name": "ConstraintFactShapeProbe::satisfied_limit"
+        },
+        "constraint_definition": {
+          "kind": "RequirementDefinition",
+          "name": "LimitRequirement",
+          "qualified_name": "ConstraintFactShapeProbe::LimitRequirement"
+        },
+        "effective_predicate_source": null,
+        "identity": {
+          "kind": "SatisfyRequirementUsage",
+          "name": "satisfied_limit",
+          "qualified_name": "ConstraintFactShapeProbe::satisfied_limit"
+        },
+        "inherited_into": [],
+        "is_negated": false,
+        "location": {
+          "column": 5,
+          "file": "source_forms.sysml",
+          "line": 87
+        },
+        "membership_kind": null,
+        "omitted_default_formals": [],
+        "owner": {
+          "kind": "Package",
+          "name": "ConstraintFactShapeProbe",
+          "qualified_name": "ConstraintFactShapeProbe"
+        },
+        "predicate": null,
+        "referenced_feature_target": null,
+        "scope": {
+          "kind": "SatisfyRequirementUsage",
+          "name": "satisfied_limit",
+          "qualified_name": "ConstraintFactShapeProbe::satisfied_limit"
+        },
+        "source_form": "satisfy"
+      }
+    ],
+    "contexts": [
+      {
+        "general_types": [
+          "ConstraintFactShapeProbe::BaseProbe"
+        ],
+        "identity": {
+          "kind": "PartDefinition",
+          "name": "DerivedProbe",
+          "qualified_name": "ConstraintFactShapeProbe::DerivedProbe"
+        },
+        "inherited_constraints": [
+          "ConstraintFactShapeProbe::BaseProbe::inherited_limit"
+        ],
+        "redefinitions": [
+          {
+            "feature": "ConstraintFactShapeProbe::DerivedProbe::base_value",
+            "redefines": "ConstraintFactShapeProbe::BaseProbe::base_value",
+            "value": {
+              "kind": "LiteralRational",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Rational",
+                "qualified_name": "ScalarValues::Rational",
+                "types": []
+              },
+              "source": "2.0",
+              "value": 2.0
+            }
+          }
+        ],
+        "types": []
+      },
+      {
+        "general_types": [
+          "ConstraintFactShapeProbe::BaseProbe"
+        ],
+        "identity": {
+          "kind": "PartUsage",
+          "name": "retyped_usage",
+          "qualified_name": "ConstraintFactShapeProbe::retyped_usage"
+        },
+        "inherited_constraints": [
+          "ConstraintFactShapeProbe::BaseProbe::inherited_limit"
+        ],
+        "redefinitions": [
+          {
+            "feature": "ConstraintFactShapeProbe::retyped_usage::base_value",
+            "redefines": "ConstraintFactShapeProbe::BaseProbe::base_value",
+            "value": {
+              "kind": "LiteralRational",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Rational",
+                "qualified_name": "ScalarValues::Rational",
+                "types": []
+              },
+              "source": "3.0",
+              "value": 3.0
+            }
+          }
+        ],
+        "types": [
+          "ConstraintFactShapeProbe::BaseProbe",
+          "Parts::Part",
+          "Items::Item",
+          "Objects::Object",
+          "Occurrences::Occurrence",
+          "Base::Anything"
+        ]
+      }
+    ],
+    "definitions": [
+      {
+        "formals": [
+          {
+            "default": {
+              "kind": "LiteralRational",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Rational",
+                "qualified_name": "ScalarValues::Rational",
+                "types": []
+              },
+              "source": "10.0",
+              "value": 10.0
+            },
+            "has_default": true,
+            "name": "limit",
+            "qualified_name": "ConstraintFactShapeProbe::WithinLimit::limit",
+            "types": [
+              "ScalarValues::Real",
+              "Base::DataValue",
+              "Base::Anything"
+            ]
+          },
+          {
+            "default": null,
+            "has_default": false,
+            "name": "observed",
+            "qualified_name": "ConstraintFactShapeProbe::WithinLimit::observed",
+            "types": [
+              "ScalarValues::Real",
+              "Base::DataValue",
+              "Base::Anything"
+            ]
+          }
+        ],
+        "identity": {
+          "kind": "ConstraintDefinition",
+          "name": "WithinLimit",
+          "qualified_name": "ConstraintFactShapeProbe::WithinLimit"
+        },
+        "predicate": {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "observed",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "observed",
+                  "qualified_name": "ConstraintFactShapeProbe::WithinLimit::observed"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "observed",
+                "qualified_name": "ConstraintFactShapeProbe::WithinLimit::observed",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "observed"
+            },
+            {
+              "kind": "FeatureReferenceExpression",
+              "reference": {
+                "resolved": true,
+                "source_name": "limit",
+                "target": {
+                  "kind": "AttributeUsage",
+                  "name": "limit",
+                  "qualified_name": "ConstraintFactShapeProbe::WithinLimit::limit"
+                },
+                "target_types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "result_type": {
+                "kind": "AttributeUsage",
+                "name": "limit",
+                "qualified_name": "ConstraintFactShapeProbe::WithinLimit::limit",
+                "types": [
+                  "ScalarValues::Real",
+                  "Base::DataValue",
+                  "Base::Anything"
+                ]
+              },
+              "source": "limit"
+            }
+          ],
+          "operator": "<=",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "observed <= limit"
+        }
+      }
+    ],
+    "diagnostics": []
+  },
+  "syside_version": "0.8.4",
+  "type_units": {
+    "compound_boolean": {
+      "kind": "OperatorExpression",
+      "operands": [
+        {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "OperatorExpression",
+              "operands": [
+                {
+                  "kind": "FeatureReferenceExpression",
+                  "reference": {
+                    "resolved": true,
+                    "source_name": "color",
+                    "target": {
+                      "kind": "AttributeUsage",
+                      "name": "color",
+                      "qualified_name": "ConstraintTypeUnitProbe::TypeMatrix::color"
+                    },
+                    "target_types": [
+                      "ConstraintTypeUnitProbe::Color",
+                      "Base::DataValue",
+                      "Base::Anything"
+                    ]
+                  },
+                  "result_type": {
+                    "kind": "AttributeUsage",
+                    "name": "color",
+                    "qualified_name": "ConstraintTypeUnitProbe::TypeMatrix::color",
+                    "types": [
+                      "ConstraintTypeUnitProbe::Color",
+                      "Base::DataValue",
+                      "Base::Anything"
+                    ]
+                  },
+                  "source": "color"
+                },
+                {
+                  "kind": "FeatureReferenceExpression",
+                  "reference": {
+                    "resolved": true,
+                    "source_name": "Color::red",
+                    "target": {
+                      "kind": "EnumerationUsage",
+                      "name": "red",
+                      "qualified_name": "ConstraintTypeUnitProbe::Color::red"
+                    },
+                    "target_types": [
+                      "ConstraintTypeUnitProbe::Color",
+                      "Base::DataValue",
+                      "Base::Anything"
+                    ]
+                  },
+                  "result_type": {
+                    "kind": "EnumerationUsage",
+                    "name": "red",
+                    "qualified_name": "ConstraintTypeUnitProbe::Color::red",
+                    "types": [
+                      "ConstraintTypeUnitProbe::Color",
+                      "Base::DataValue",
+                      "Base::Anything"
+                    ]
+                  },
+                  "source": "Color::red"
+                }
+              ],
+              "operator": "==",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Boolean",
+                "qualified_name": "ScalarValues::Boolean",
+                "types": []
+              },
+              "source": "color == Color::red"
+            },
+            {
+              "kind": "OperatorExpression",
+              "operands": [
+                {
+                  "kind": "FeatureReferenceExpression",
+                  "reference": {
+                    "resolved": true,
+                    "source_name": "integer_value",
+                    "target": {
+                      "kind": "AttributeUsage",
+                      "name": "integer_value",
+                      "qualified_name": "ConstraintTypeUnitProbe::TypeMatrix::integer_value"
+                    },
+                    "target_types": [
+                      "ScalarValues::Integer",
+                      "Base::DataValue",
+                      "Base::Anything"
+                    ]
+                  },
+                  "result_type": {
+                    "kind": "AttributeUsage",
+                    "name": "integer_value",
+                    "qualified_name": "ConstraintTypeUnitProbe::TypeMatrix::integer_value",
+                    "types": [
+                      "ScalarValues::Integer",
+                      "Base::DataValue",
+                      "Base::Anything"
+                    ]
+                  },
+                  "source": "integer_value"
+                },
+                {
+                  "kind": "FeatureReferenceExpression",
+                  "reference": {
+                    "resolved": true,
+                    "source_name": "real_value",
+                    "target": {
+                      "kind": "AttributeUsage",
+                      "name": "real_value",
+                      "qualified_name": "ConstraintTypeUnitProbe::TypeMatrix::real_value"
+                    },
+                    "target_types": [
+                      "ScalarValues::Real",
+                      "Base::DataValue",
+                      "Base::Anything"
+                    ]
+                  },
+                  "result_type": {
+                    "kind": "AttributeUsage",
+                    "name": "real_value",
+                    "qualified_name": "ConstraintTypeUnitProbe::TypeMatrix::real_value",
+                    "types": [
+                      "ScalarValues::Real",
+                      "Base::DataValue",
+                      "Base::Anything"
+                    ]
+                  },
+                  "source": "real_value"
+                }
+              ],
+              "operator": "<=",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Boolean",
+                "qualified_name": "ScalarValues::Boolean",
+                "types": []
+              },
+              "source": "integer_value <= real_value"
+            }
+          ],
+          "operator": "and",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "color == Color::red and integer_value <= real_value"
+        },
+        {
+          "kind": "OperatorExpression",
+          "operands": [
+            {
+              "kind": "OperatorExpression",
+              "operands": [
+                {
+                  "kind": "FeatureReferenceExpression",
+                  "reference": {
+                    "resolved": true,
+                    "source_name": "length_value",
+                    "target": {
+                      "kind": "AttributeUsage",
+                      "name": "length_value",
+                      "qualified_name": "ConstraintTypeUnitProbe::TypeMatrix::length_value"
+                    },
+                    "target_types": [
+                      "ISQBase::LengthValue",
+                      "Base::DataValue",
+                      "Base::Anything"
+                    ]
+                  },
+                  "result_type": {
+                    "kind": "AttributeUsage",
+                    "name": "length_value",
+                    "qualified_name": "ConstraintTypeUnitProbe::TypeMatrix::length_value",
+                    "types": [
+                      "ISQBase::LengthValue",
+                      "Base::DataValue",
+                      "Base::Anything"
+                    ]
+                  },
+                  "source": "length_value"
+                },
+                {
+                  "kind": "OperatorExpression",
+                  "operands": [
+                    {
+                      "kind": "LiteralInteger",
+                      "result_type": {
+                        "kind": "DataType",
+                        "name": "Natural",
+                        "qualified_name": "ScalarValues::Natural",
+                        "types": []
+                      },
+                      "source": "0",
+                      "value": 0
+                    },
+                    {
+                      "kind": "FeatureReferenceExpression",
+                      "reference": {
+                        "resolved": true,
+                        "source_name": "m",
+                        "target": {
+                          "kind": "AttributeUsage",
+                          "name": "metre",
+                          "qualified_name": "SI::metre"
+                        },
+                        "target_types": [
+                          "ISQBase::LengthUnit",
+                          "Base::DataValue",
+                          "Base::Anything"
+                        ]
+                      },
+                      "result_type": {
+                        "kind": "AttributeUsage",
+                        "name": "metre",
+                        "qualified_name": "SI::metre",
+                        "types": [
+                          "ISQBase::LengthUnit",
+                          "Base::DataValue",
+                          "Base::Anything"
+                        ]
+                      },
+                      "source": "m"
+                    }
+                  ],
+                  "operator": "[",
+                  "result_type": {
+                    "kind": "AttributeDefinition",
+                    "name": "TensorQuantityValue",
+                    "qualified_name": "Quantities::TensorQuantityValue",
+                    "types": []
+                  },
+                  "source": "0 [m]"
+                }
+              ],
+              "operator": "==",
+              "result_type": {
+                "kind": "DataType",
+                "name": "Boolean",
+                "qualified_name": "ScalarValues::Boolean",
+                "types": []
+              },
+              "source": "length_value == 0 [m]"
+            }
+          ],
+          "operator": "not",
+          "result_type": {
+            "kind": "DataType",
+            "name": "Boolean",
+            "qualified_name": "ScalarValues::Boolean",
+            "types": []
+          },
+          "source": "not (length_value == 0 [m])"
+        }
+      ],
+      "operator": "or",
+      "result_type": {
+        "kind": "DataType",
+        "name": "Boolean",
+        "qualified_name": "ScalarValues::Boolean",
+        "types": []
+      },
+      "source": "(color == Color::red and integer_value <= real_value) or\n            not (length_value == 0 [m])"
+    },
+    "diagnostics": [
+      {
+        "code": "reference-error",
+        "column": 48,
+        "file": "type_units.sysml",
+        "line": 39,
+        "message": "No Feature named 'missing_value' found.",
+        "severity": "error"
+      }
+    ],
+    "equality_cases": [
+      {
+        "decision": "support_enum_same_enumeration",
+        "left": {
+          "category": "enum",
+          "enumeration": "ConstraintTypeUnitProbe::Color",
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::color",
+          "source": "color",
+          "types": [
+            "ConstraintTypeUnitProbe::Color",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        },
+        "name": "enum_own",
+        "right": {
+          "category": "enum",
+          "enumeration": "ConstraintTypeUnitProbe::Color",
+          "result_type": "ConstraintTypeUnitProbe::Color::red",
+          "source": "Color::red",
+          "types": [
+            "ConstraintTypeUnitProbe::Color",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        }
+      },
+      {
+        "decision": "block_incompatible_enumerations",
+        "left": {
+          "category": "enum",
+          "enumeration": "ConstraintTypeUnitProbe::Color",
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::color",
+          "source": "color",
+          "types": [
+            "ConstraintTypeUnitProbe::Color",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        },
+        "name": "enum_incompatible",
+        "right": {
+          "category": "enum",
+          "enumeration": "ConstraintTypeUnitProbe::Mode",
+          "result_type": "ConstraintTypeUnitProbe::Mode::on",
+          "source": "Mode::on",
+          "types": [
+            "ConstraintTypeUnitProbe::Mode",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        }
+      },
+      {
+        "decision": "block_real_equality_requires_tolerance",
+        "left": {
+          "category": "integer",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::integer_value",
+          "source": "integer_value",
+          "types": [
+            "ScalarValues::Integer",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        },
+        "name": "integer_real",
+        "right": {
+          "category": "real",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::real_value",
+          "source": "real_value",
+          "types": [
+            "ScalarValues::Real",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        }
+      },
+      {
+        "decision": "support_integer",
+        "left": {
+          "category": "integer",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::integer_value",
+          "source": "integer_value",
+          "types": [
+            "ScalarValues::Integer",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        },
+        "name": "integer_integer",
+        "right": {
+          "category": "integer",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::second_integer",
+          "source": "second_integer",
+          "types": [
+            "ScalarValues::Integer",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        }
+      },
+      {
+        "decision": "support_boolean",
+        "left": {
+          "category": "boolean",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::boolean_value",
+          "source": "boolean_value",
+          "types": [
+            "ScalarValues::Boolean",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        },
+        "name": "boolean_boolean",
+        "right": {
+          "category": "boolean",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::second_boolean",
+          "source": "second_boolean",
+          "types": [
+            "ScalarValues::Boolean",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        }
+      },
+      {
+        "decision": "support_string",
+        "left": {
+          "category": "string",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::string_value",
+          "source": "string_value",
+          "types": [
+            "ScalarValues::String",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        },
+        "name": "string_string",
+        "right": {
+          "category": "string",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::second_string",
+          "source": "second_string",
+          "types": [
+            "ScalarValues::String",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        }
+      },
+      {
+        "decision": "block_real_equality_requires_tolerance",
+        "left": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "1 [m]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::metre"
+          }
+        },
+        "name": "quantity_same_unit",
+        "right": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "2 [m]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::metre"
+          }
+        }
+      },
+      {
+        "decision": "block_unit_conversion_required",
+        "left": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "1 [m]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::metre"
+          }
+        },
+        "name": "quantity_convertible_unit",
+        "right": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "100 [cm]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::centimetre"
+          }
+        }
+      },
+      {
+        "decision": "block_incompatible_dimensions",
+        "left": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "1 [m]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::metre"
+          }
+        },
+        "name": "quantity_incompatible_dimension",
+        "right": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "1 [kg]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Mass",
+            "unit": "SI::kilogram"
+          }
+        }
+      },
+      {
+        "decision": "block_real_equality_requires_tolerance",
+        "left": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "1 [m] + 1 [m]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::metre"
+          }
+        },
+        "name": "unit_bearing_arithmetic",
+        "right": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "2 [m]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::metre"
+          }
+        }
+      },
+      {
+        "decision": "block_unitless_dimensioned",
+        "left": {
+          "category": "real",
+          "enumeration": null,
+          "result_type": "ScalarValues::Rational",
+          "source": "1.0",
+          "types": [],
+          "unit": null
+        },
+        "name": "unitless_dimensioned",
+        "right": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "1 [m]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::metre"
+          }
+        }
+      },
+      {
+        "decision": "block_unknown_exact_unit",
+        "left": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::length_value",
+          "source": "length_value",
+          "types": [
+            "ISQBase::LengthValue",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": null
+          }
+        },
+        "name": "quantity_feature_unknown_unit",
+        "right": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "1 [m]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::metre"
+          }
+        }
+      },
+      {
+        "decision": "block_unresolved_operand",
+        "left": {
+          "category": "unresolved",
+          "enumeration": null,
+          "result_type": "'<placeholder Feature>'",
+          "source": "missing_value",
+          "types": [],
+          "unit": null
+        },
+        "name": "unresolved_operand",
+        "right": {
+          "category": "real",
+          "enumeration": null,
+          "result_type": "ScalarValues::Rational",
+          "source": "1.0",
+          "types": [],
+          "unit": null
+        }
+      },
+      {
+        "decision": "block_real_equality_requires_tolerance",
+        "left": {
+          "category": "real",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::derived_value",
+          "source": "derived_value",
+          "types": [
+            "ConstraintTypeUnitProbe::DerivedReal",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        },
+        "name": "inherited_alias_type",
+        "right": {
+          "category": "real",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::alias_value",
+          "source": "alias_value",
+          "types": [
+            "ScalarValues::Real",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        }
+      }
+    ],
+    "inequality_cases": [
+      {
+        "decision": "block_unit_conversion_required",
+        "left": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "1 [m]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::metre"
+          }
+        },
+        "name": "inequality_convertible_unit",
+        "operator": "<=",
+        "right": {
+          "category": "quantity",
+          "enumeration": null,
+          "result_type": "Quantities::TensorQuantityValue",
+          "source": "100 [cm]",
+          "types": [],
+          "unit": {
+            "dimension": "ISQBase::Length",
+            "unit": "SI::centimetre"
+          }
+        }
+      },
+      {
+        "decision": "ok",
+        "left": {
+          "category": "integer",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::integer_value",
+          "source": "integer_value",
+          "types": [
+            "ScalarValues::Integer",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        },
+        "name": "inequality_integer_real",
+        "operator": "<=",
+        "right": {
+          "category": "real",
+          "enumeration": null,
+          "result_type": "ConstraintTypeUnitProbe::TypeMatrix::real_value",
+          "source": "real_value",
+          "types": [
+            "ScalarValues::Real",
+            "Base::DataValue",
+            "Base::Anything"
+          ],
+          "unit": null
+        }
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 """CLI handlers for 'agentic-mbse pm' subcommands.
 
-Registers nested argparse sub-subcommands for all 14 PM operations
+Registers nested argparse sub-subcommands for all PM operations
 (D4.4 AP-7). Each handler finds the project root, extracts arguments,
 calls the corresponding operations.py function, and returns an exit code.
 """
@@ -136,6 +136,12 @@ def _op_add_item(project_root, **kwargs):
     from agentic_mbse.pm.operations import add_item
 
     return add_item(project_root, **kwargs)
+
+
+def _op_add_epic(project_root, **kwargs):
+    from agentic_mbse.pm.operations import add_epic
+
+    return add_epic(project_root, **kwargs)
 
 
 def _op_add_validation(project_root, **kwargs):
@@ -303,6 +309,17 @@ def cmd_pm_add_item(args: argparse.Namespace) -> int:
         scale=args.scale,
         priority=args.priority,
         epic=args.epic,
+        goal=args.goal,
+    )
+
+
+def cmd_pm_add_epic(args: argparse.Namespace) -> int:
+    return _dispatch(
+        args,
+        _op_add_epic,
+        name=args.name,
+        priority=args.priority,
+        file=args.file,
         goal=args.goal,
     )
 
@@ -506,6 +523,19 @@ def register_pm_subcommands(subparsers: argparse._SubParsersAction) -> None:
     p.add_argument("--epic", default=None, help="Epic name to add item under")
     p.add_argument("--goal", default=None, help="Goal ID (G-XXX) to associate")
     p.set_defaults(func=cmd_pm_add_item)
+
+    # -- add-epic --
+    p = pm_subs.add_parser("add-epic", help="Register an existing epic file in BACKLOG.md")
+    p.add_argument("--name", required=True, help="Epic name")
+    p.add_argument(
+        "--priority",
+        required=True,
+        choices=["P0", "P1", "P2", "P3"],
+        help="Priority level",
+    )
+    p.add_argument("--file", required=True, help="Epic file path inside work/")
+    p.add_argument("--goal", default=None, help="Goal ID (G-XXX) to associate")
+    p.set_defaults(func=cmd_pm_add_epic)
 
     # -- add-validation --
     p = pm_subs.add_parser(

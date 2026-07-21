@@ -1,12 +1,11 @@
 """Tests for CLI module."""
-import shutil
+import re
 import subprocess
-import tempfile
 from pathlib import Path
 
 import pytest
 
-from agentic_mbse.cli import cmd_init, cmd_install_commands, cmd_validate, main
+from agentic_mbse.cli import MBSE_COMMANDS, cmd_init, cmd_install_commands, cmd_validate, main
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
 
 
@@ -58,7 +57,7 @@ package TestPackage {
         """Runs only specified level when --level provided."""
         model_file = tmp_path / "test.sysml"
         model_file.write_text("package Empty {}")
-        
+
         args = MockArgs(
             path=str(tmp_path),
             complete=False,
@@ -246,6 +245,7 @@ class TestCmdInstallCommands:
         captured = capsys.readouterr()
         assert "design-model.md" in captured.out
         assert "audit-models.md" in captured.out
+        assert "orchestrate-modeling.md" in captured.out
 
     def test_installs_commands_to_directory(self, tmp_path):
         """Installs commands to .claude/commands/ directory."""
@@ -257,6 +257,19 @@ class TestCmdInstallCommands:
         assert commands_dir.exists()
         assert (commands_dir / "design-model.md").exists()
         assert (commands_dir / "audit-models.md").exists()
+        assert (commands_dir / "orchestrate-modeling.md").exists()
+
+    def test_command_manifests_match_shipped_files(self):
+        """Python and development manifests include every shipped command."""
+        repository_root = Path(__file__).parent.parent
+        shipped = {path.name for path in (repository_root / "claude" / "commands").glob("*.md")}
+        script = (repository_root / "scripts" / "replicate_setup.sh").read_text()
+        match = re.search(r"for cmd in (?P<commands>.*?); do", script, re.DOTALL)
+
+        assert match is not None
+        replicated = set(match.group("commands").replace("\\", "").split())
+        assert set(MBSE_COMMANDS) == shipped
+        assert replicated == shipped
 
     def test_skips_existing_without_force(self, tmp_path, capsys):
         """Skips existing files without --force."""
@@ -311,7 +324,7 @@ class TestMain:
         """Validate subcommand is registered and works."""
         model_file = tmp_path / "test.sysml"
         model_file.write_text("package Test {}")
-        
+
         monkeypatch.setattr("sys.argv", [
             "agentic-mbse", "validate", str(tmp_path)
         ])
@@ -397,6 +410,16 @@ class TestCmdInitDevMode:
         assert cmd_path.is_symlink()
         # Verify symlink points to source repo
         assert "agentic-mbse" in str(cmd_path.resolve())
+
+    def test_dev_symlinks_orchestrator_command(self, tmp_path):
+        """--dev links the orchestrator from the source command directory."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        result = cmd_init(args)
+
+        assert result == EXIT_SUCCESS
+        command_path = tmp_path / ".claude" / "commands" / "orchestrate-modeling.md"
+        assert command_path.is_symlink()
+        assert command_path.resolve().name == "orchestrate-modeling.md"
 
     def test_dev_creates_symlinks_for_agents(self, tmp_path):
         """--dev creates symlinks for agent files."""
@@ -806,6 +829,29 @@ class TestModificationDetectionIntegration:
         assert "commit" in hashes
         assert "files" in hashes
         assert len(hashes["files"]) > 0
+
+    def test_orchestrator_is_hash_tracked_and_modification_is_preserved(
+        self, tmp_path, monkeypatch, capsys
+    ):
+        """The new command participates in normal tool-owned modification handling."""
+        import json
+
+        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        cmd_init(args)
+        command_path = tmp_path / ".claude" / "commands" / "orchestrate-modeling.md"
+        hashes = json.loads((tmp_path / ".claude" / ".tool-hashes.json").read_text())
+        relative_path = ".claude/commands/orchestrate-modeling.md"
+
+        assert relative_path in hashes["files"]
+        command_path.write_text("# Owner modification", encoding="utf-8")
+        prompts = []
+        monkeypatch.setattr("builtins.input", lambda prompt: prompts.append(prompt) or "s")
+
+        cmd_init(args)
+
+        assert prompts
+        assert relative_path in capsys.readouterr().out
+        assert command_path.read_text(encoding="utf-8") == "# Owner modification"
 
     def test_dev_mode_no_hash_file(self, tmp_path):
         """Dev mode does not create hash file."""

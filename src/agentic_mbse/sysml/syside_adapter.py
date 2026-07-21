@@ -13,6 +13,7 @@ NOTE: syside is imported lazily to allow CLI operations (like `init`)
 to work without a syside license key. The license check only happens
 when actually using syside parsing functionality.
 """
+
 from __future__ import annotations
 
 from collections.abc import Collection, Iterator
@@ -99,10 +100,17 @@ if TYPE_CHECKING:
     Diagnostics = syside.Diagnostics
     Element = syside.Element
 else:
-    # Runtime: these will be resolved when actually used
-    Model = None
-    Diagnostics = None
-    Element = None
+    # Runtime: resolved on first access by the module __getattr__ (PEP 562) below, so
+    # importing this module never requires syside for these names, but accessing them
+    # yields the real syside classes rather than None placeholders.
+    _SYSIDE_TYPE_ALIASES = ("Model", "Diagnostics", "Element")
+
+    def __getattr__(name: str) -> Any:
+        if name in _SYSIDE_TYPE_ALIASES:
+            value = getattr(get_syside(), name)
+            globals()[name] = value  # cache so later access skips this hook
+            return value
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def _get_model_type():
@@ -185,6 +193,14 @@ class SysideAdapter:
                 "Import": syside.Import,
                 "Comment": syside.Comment,
                 "Documentation": syside.Documentation,
+                "Package": syside.Package,
+                # Constraint fact extraction (CONSTRAINT-EXEC Item 1): membership
+                # kind, enum-leaf category, and formal-default recovery all need
+                # a hierarchy-aware is_instance check rather than a silent
+                # string-match.
+                "RequirementConstraintMembership": syside.RequirementConstraintMembership,
+                "EnumerationDefinition": syside.EnumerationDefinition,
+                "FeatureValue": syside.FeatureValue,
                 # Relationships / memberships
                 "FeatureTyping": syside.FeatureTyping,
                 # OwningMembership / Subclassification are used by codegen's
@@ -261,10 +277,7 @@ class SysideAdapter:
         lacked the shape it should have matched.
         """
         if type_name not in type_map:
-            raise ValueError(
-                f"Unknown type name '{type_name}'. "
-                f"Valid types: {sorted(type_map)}"
-            )
+            raise ValueError(f"Unknown type name '{type_name}'. Valid types: {sorted(type_map)}")
 
     @classmethod
     def elements_of_type(
@@ -299,16 +312,10 @@ class SysideAdapter:
         cls._require_known_type(type_name, type_map)
         for name in exclude:
             cls._require_known_type(name, type_map)
-        elements = model.elements(
-            type_map[type_name], include_subtypes=include_subtypes
-        )
+        elements = model.elements(type_map[type_name], include_subtypes=include_subtypes)
         if not exclude:
             return elements
-        return (
-            e
-            for e in elements
-            if not any(cls.is_instance(e, name) for name in exclude)
-        )
+        return (e for e in elements if not any(cls.is_instance(e, name) for name in exclude))
 
     @classmethod
     def get_type(cls, type_name: str) -> type:
@@ -421,6 +428,4 @@ def is_droppable_constraint(elem: Any) -> bool:
     Callers pass an element already known to be a ``ConstraintUsage`` (subtypes
     included) from a subtype-aware sweep.
     """
-    return not any(
-        SysideAdapter.is_instance(elem, name) for name in EXCLUDED_CONSTRAINT_TYPES
-    )
+    return not any(SysideAdapter.is_instance(elem, name) for name in EXCLUDED_CONSTRAINT_TYPES)

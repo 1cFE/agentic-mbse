@@ -10,8 +10,9 @@ accepts must NOT fire):
         both carry a same-named feature, the plant idiom Items 9/10 support)
 - C2a L6  anonymous return -> FAIL
        (anonymous_return FAILs; return_styles does NOT)
-- C3  L6  constraint non-executability -> WARN
-       (constraint_model warns, L6 still passes)
+- C3  L6  constraint ineligibility (CONSTRAINT-EXEC Item 3 superseded this: a genuinely
+       blocked construct WARNs; an admitted one, like `constraint_model`'s clean
+       `measured <= limit`, is silent) -> WARN, L6 still passes
 - C4  L6  calc-bearing part def never instantiated -> FAIL
        (no_instantiation FAILs; retype_instantiation does NOT — retype counts)
 
@@ -75,7 +76,9 @@ def test_c1_self_named_trap_does_not_fire():
     flipped to negative-of-the-negative: C1 must NOT fire."""
     issues = check_self_named_bindings(load_fixture("self_named_trap"))
     self_named = [i for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
-    assert self_named == [], f"Trap now carries a covering attribute; must not fire: {_codes(issues)}"
+    assert self_named == [], (
+        f"Trap now carries a covering attribute; must not fire: {_codes(issues)}"
+    )
 
 
 def test_c1_self_named_rescue_does_not_fire():
@@ -105,16 +108,54 @@ def test_c2a_return_styles_accepted():
     assert anon == [], f"Legal return styles must not fire: {_codes(issues)}"
 
 
-# --- C3: constraint non-executability (L6, WARN) --------------------------------
+# --- C3: constraint ineligibility (L6, WARN) -------------------------------------
 
 
-def test_c3_constraint_warns_not_fails():
-    """A constraint usage warns that it is dropped at extraction (WARNING, not
-    ERROR — L6 stays passing)."""
+def test_c3_admitted_constraint_is_silent():
+    """`within_limit` (`measured <= limit`, a clean unitless Real comparison) is admitted
+    under the executable profile, not blocked — CONSTRAINT-EXEC Item 3's silent-on-clean,
+    superseding the old blanket 'dropped at extraction' WARN this fixture used to trigger."""
     issues = check_constraint_executability(load_fixture("constraint_model"))
-    warns = [i for i in issues if i.code == ValidationCode.L6_CONSTRAINT_NON_EXECUTABLE]
-    assert len(warns) >= 1, f"Expected a constraint WARN, got {_codes(issues)}"
-    assert all(i.severity == Severity.WARNING for i in warns)
+    assert issues == []
+
+
+def test_c3_malformed_numerical_is_error():
+    """A feature chain inside a numerical comparison is malformed and fails L6."""
+    fixture_dir = Path(__file__).parent.parent / "fixtures" / "item4_subtype" / "l6_ineligible"
+    files = discover_sysml_files(str(fixture_dir))
+    model, _ = load_sysml_model(files)
+    issues = check_constraint_executability(model)
+    errors = [i for i in issues if i.code == ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL]
+    assert len(errors) == 1, f"Expected one constraint ERROR, got {_codes(issues)}"
+    assert all(i.severity == Severity.ERROR for i in errors)
+
+
+def test_c3_non_numerical_is_one_warning_per_statement(monkeypatch):
+    from agentic_mbse.sysml.constraint_facts import ConstraintFacts, parse
+    from agentic_mbse.validation import level6_architecture
+
+    facts_path = (
+        Path(__file__).parent.parent
+        / "fixtures"
+        / "constraint_fact_shapes"
+        / "production_facts.json"
+    )
+    facts = parse(facts_path.read_text())
+    usage = next(u for u in facts.usages if u.identity.name == "boolean_boolean")
+    narrowed = ConstraintFacts(
+        definitions=facts.definitions,
+        usages=[usage],
+        contexts=facts.contexts,
+        diagnostics=facts.diagnostics,
+    )
+    monkeypatch.setattr(level6_architecture, "extract_constraint_facts", lambda _model: narrowed)
+
+    issues = check_constraint_executability(object())
+
+    assert len(issues) == 1
+    assert issues[0].code == ValidationCode.L6_CONSTRAINT_NON_NUMERICAL
+    assert issues[0].severity == Severity.WARNING
+    assert "warn_non_numerical_equality" in issues[0].message
 
 
 # --- C4: calc-bearing part def, no instantiation (L6) ---------------------------

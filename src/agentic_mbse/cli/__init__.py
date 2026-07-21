@@ -24,6 +24,7 @@ MBSE_COMMANDS = [
     "implement-model.md",
     "manage-sources.md",
     "onboard.md",
+    "orchestrate-modeling.md",
     "plan-model.md",
     "quick-model.md",
     "research.md",

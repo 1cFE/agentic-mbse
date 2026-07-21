@@ -68,7 +68,7 @@ Present the decomposition to the user for review. Iterate until approved.
 For each approved work item, call the AP-7 script to register in BACKLOG.md:
 
 ```bash
-agentic-mbse pm add-item --epic '<epic-name>' --name '<item-name>' --scale standard
+agentic-mbse pm add-item --epic '<epic-name>' --name '<item-name>' --scale standard --priority <P0|P1|P2|P3>
 ```
 
 ### Mode: Close Work Item

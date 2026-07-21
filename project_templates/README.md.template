@@ -52,7 +52,7 @@ Each document has **one clear purpose**:
 
 **Commands manage for you:**
 - `knowledge/SOURCE_INDEX.md` - Use `/manage-sources` to add/remove sources
-- `work/BACKLOG.md` - Use `/backlog add` and `/backlog clear`
+- `work/BACKLOG.md` - Use `/backlog add` and `/backlog close`
 - `work/learnings/RAW_LEARNINGS.md` - Use `/record-learning` to capture insights
 - `work/active/*` - Created by `/spec-model`, `/design-model`, `/plan-model`
 - `models/**/*.sysml` - Created by `/implement-model`
@@ -91,7 +91,7 @@ agentic-mbse install-commands [--force]
 | `/audit-models` | Validate against sources |
 | `/manage-sources` | Add/remove domain sources |
 | `/backlog add [source]` | Add work items |
-| `/backlog clear` | Archive completed work |
+| `/backlog close` | Archive completed work |
 | `/record-learning` | Capture session insights |
 
 Additional commands may be available in later toolkit versions.
@@ -145,7 +145,7 @@ Work flows through a **pipeline** with validation at each stage:
 /audit-models               Validate against sources
        |
        v
-/backlog clear              Archive completed work
+/backlog close              Archive completed work
 ```
 
 ---

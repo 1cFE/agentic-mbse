@@ -1,9 +1,66 @@
 # SysMLv2 Modeling Architecture Process
 
+## Command-Level Modeling Flow
+
+This section is the canonical map for building models. Individual commands own their stage-specific
+method. `EPIC_GUIDE.md` owns decomposition detail. Use this map to choose an entry point, decide which
+optional stages add confidence, and determine when modeling work is complete.
+
+### Choose an Entry Point
+
+- **Trivial change:** use `/quick-model`, validate the affected model surface, and report the result.
+- **Standard work:** enter at the earliest unsatisfied stage in the Standard flow below. Existing,
+  approved artifacts satisfy their stage; inspect their content rather than relying only on presence.
+- **Epic work:** use `/backlog` to define and decompose the epic into complete Standard items before
+  implementation. Register backlog state through `agentic-mbse pm` commands.
+- **Unclear objective or authority gap:** start with `/research`, then route the resulting evidence into
+  Standard work or an Epic.
+
+### Standard Work
+
+```text
+[/research] → /spec-model → /design-model → [/review-model]
+  → /plan-model → /implement-model → /audit-models → report
+```
+
+Optional stages are shown in brackets:
+
+- Use `/research` when the objective depends on missing, uncertain, or conflicting authority sources.
+- Use `/review-model` when an independent design critique would reduce architectural or integration
+  risk. It is advisory; resolve material findings before planning.
+
+`/audit-models` is mandatory for Standard work. A positive independent audit is the completion
+boundary. Closing or archiving the work item is a separate owner action through `/backlog close` or
+`/status close`.
+
+### Epic Work
+
+An Epic is a dependency graph of complete Standard items, never a set of workflow phases. Execute an
+item only after its declared dependencies are satisfied. Parallel work also requires non-overlapping
+model write surfaces; serial execution is the safe default. Validate the integrated model after each
+parallel wave.
+
+Each item follows the full Standard flow through a positive item audit. After every item passes, run a
+fresh Epic audit with `/audit-models`. That audit checks the epic success criteria, every item audit,
+and cross-item integration. A positive Epic audit is the Epic completion boundary; the owner still
+decides whether to close or archive it.
+
+### Stage Responsibilities
+
+| Stage | Responsibility | Durable evidence |
+|-------|----------------|------------------|
+| `/research` | Resolve an authority or domain-knowledge gap | Research and approved insights |
+| `/spec-model` | Define evaluatable model requirements and success criteria | `spec.md` |
+| `/design-model` | Decide architecture and prove risky syntax or structure | `design.md`, prototype validation |
+| `/review-model` | Critique the design in an independent context | Review findings |
+| `/plan-model` | Sequence implementation and validation work | `plan.md` |
+| `/implement-model` | Execute the plan and produce model and test changes | Models, tests, completed plan |
+| `/audit-models` | Independently verify the applicable completion contract | Audit report and validation evidence |
+
 **Quick Links:**
 - **Navigation & finding code** → [models/README.md](../models/README.md)
 - **SysML syntax & patterns** → [MODELING_GUIDE.md](MODELING_GUIDE.md)
-- **You are here** - Design workflow & process
+- **You are here** - Command flow, design workflow, and process
 - **Architecture overview** → [OVERVIEW.md](OVERVIEW.md)
 
 **Use this document for:**
