@@ -49,12 +49,25 @@ def classify_redefinition(member: Any, owning_qn: str) -> RedefinitionData | Non
         target_path = [sanitize_name(c.name) for c in chaining]
         attr_name = target_path[-1]
         is_deep_path = True
+        # Exact value-site identity (SOURCE-IDENTITY Item 4): a deep-path
+        # redefined feature is an anonymous chained Feature; its chaining
+        # features carry the exact qualified names.
+        redefined_target_qns = tuple(
+            str(c.qualified_name)
+            for c in chaining
+            if getattr(c, "qualified_name", None) is not None
+        )
     else:
         attr_name = sanitize_name(getattr(redefined_feature, "name", None)) or sanitize_name(
             getattr(member, "name", None)
         )
         target_path = []
         is_deep_path = False
+        redefined_qn = getattr(redefined_feature, "qualified_name", None)
+        redefined_target_qns = (str(redefined_qn),) if redefined_qn is not None else ()
+
+    member_qn = getattr(member, "qualified_name", None)
+    member_qualified_name = str(member_qn) if member_qn is not None else None
 
     expr = getattr(member, "feature_value_expression", None)
     if expr is None:
@@ -68,6 +81,8 @@ def classify_redefinition(member: Any, owning_qn: str) -> RedefinitionData | Non
             literal_value=extract_literal_value(expr),
             target_path=target_path,
             is_deep_path=is_deep_path,
+            member_qualified_name=member_qualified_name,
+            redefined_target_qns=redefined_target_qns,
         )
 
     if SysideAdapter.is_instance(expr, "FeatureChainExpression"):
@@ -78,6 +93,8 @@ def classify_redefinition(member: Any, owning_qn: str) -> RedefinitionData | Non
             source_path=extract_feature_chain_name(expr),
             target_path=target_path,
             is_deep_path=is_deep_path,
+            member_qualified_name=member_qualified_name,
+            redefined_target_qns=redefined_target_qns,
         )
 
     if SysideAdapter.is_instance(expr, "FeatureReferenceExpression"):
@@ -88,6 +105,8 @@ def classify_redefinition(member: Any, owning_qn: str) -> RedefinitionData | Non
             source_path=extract_feature_reference_name(expr),
             target_path=target_path,
             is_deep_path=is_deep_path,
+            member_qualified_name=member_qualified_name,
+            redefined_target_qns=redefined_target_qns,
         )
 
     return RedefinitionData(
@@ -98,6 +117,8 @@ def classify_redefinition(member: Any, owning_qn: str) -> RedefinitionData | Non
         expression_text=reconstruct_expression(expr),
         target_path=target_path,
         is_deep_path=is_deep_path,
+        member_qualified_name=member_qualified_name,
+        redefined_target_qns=redefined_target_qns,
     )
 
 

@@ -142,7 +142,16 @@ def test_redefinition_model_contract() -> None:
             dataclasses.fields(RedefinitionData)[9].default_factory,
         ),
         ("source_line", int, 0, dataclasses.MISSING),
+        ("member_qualified_name", str | None, None, dataclasses.MISSING),
+        ("redefined_target_qns", tuple[str, ...], (), dataclasses.MISSING),
     ]
+    # SOURCE-IDENTITY Item 4: exact value-site identity is snapshot-excluded
+    # until the codegen v6 snapshot cut owns its serialization.
+    for name in ("member_qualified_name", "redefined_target_qns"):
+        (evidence_field,) = [
+            f for f in dataclasses.fields(RedefinitionData) if f.name == name
+        ]
+        assert evidence_field.metadata.get("snapshot_exclude") is True
     assert RedefinitionData("A", "b", RedefinitionType.LITERAL).source_file == Path("unknown")
 
 
