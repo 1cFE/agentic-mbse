@@ -7,7 +7,10 @@ ASTs, including visitor-pattern traversal and reference extraction.
 from collections.abc import Callable
 from typing import Any, cast
 
-from agentic_mbse.sysml.data_models import ResolvedTargetFact
+from agentic_mbse.sysml.data_models import (
+    ResolvedSemanticReferenceFact,
+    ResolvedTargetFact,
+)
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import ExpressionRef
 
@@ -650,12 +653,20 @@ def resolved_target_fact(elem: Any) -> ResolvedTargetFact | None:
     owner = getattr(elem, "owning_type", None)
     owner_qn = getattr(owner, "qualified_name", None) if owner is not None else None
     redefined: list[str] = []
+    redefined_ids = []
     for redefinition in getattr(elem, "owned_redefinitions", None) or []:
         redefined_feature = getattr(redefinition, "redefined_feature", None)
         redefined_qn = getattr(redefined_feature, "qualified_name", None)
         if redefined_qn is not None:
             redefined.append(str(redefined_qn))
+        if redefined_feature is not None:
+            redefined_ids.append(SysideAdapter.element_id(redefined_feature))
     return ResolvedTargetFact(
+        element_id=SysideAdapter.element_id(elem),
+        owner_element_id=(
+            SysideAdapter.element_id(owner) if owner is not None else None
+        ),
+        redefined_element_ids=tuple(redefined_ids),
         qualified_name=str(qualified_name),
         element_kind=type(elem).__name__,
         element_name=str(getattr(elem, "name", None) or ""),
@@ -669,17 +680,11 @@ def resolved_target_fact(elem: Any) -> ResolvedTargetFact | None:
 
 def feature_chain_facts(
     expr_node: Any,
-) -> tuple[
-    ResolvedTargetFact | None,
-    ResolvedTargetFact | None,
-    tuple[str, ...],
-    tuple[str, ...],
-    bool,
-]:
+) -> ResolvedSemanticReferenceFact:
     """Resolved-target evidence for a FeatureChainExpression of any length.
 
-    Returns ``(root_fact, leaf_fact, resolved_segment_qns,
-    resolved_member_names, has_index_segment)``:
+    Returns one immutable fact containing the root, every exact resolved
+    segment, the leaf, diagnostic member names, and the indexed-form marker:
 
     - ``root_fact`` — the chain root's resolved referent (the occurrence anchor).
     - ``leaf_fact`` — the exact resolved target of the whole chain: the last
@@ -697,7 +702,7 @@ def feature_chain_facts(
       by metatype name.
     """
     root_fact: ResolvedTargetFact | None = None
-    segments: list[str] = []
+    segments: list[ResolvedTargetFact] = []
     member_names: list[str] = []
     has_index = False
 
@@ -712,17 +717,16 @@ def feature_chain_facts(
         elif SysideAdapter.is_instance(first, "FeatureChainExpression"):
             # The inner call's member names already cover every step after the
             # inner root, its leaf included.
-            root_fact, _inner_leaf, inner_segments, inner_names, inner_index = (
-                feature_chain_facts(first)
-            )
-            segments.extend(inner_segments)
-            member_names.extend(inner_names)
-            has_index = has_index or inner_index
+            inner_fact = feature_chain_facts(first)
+            root_fact = inner_fact.root
+            segments.extend(inner_fact.segments)
+            member_names.extend(inner_fact.resolved_member_names)
+            has_index = has_index or inner_fact.has_index_segment
         elif SysideAdapter.is_instance(first, "FeatureReferenceExpression"):
             root_fact = resolved_target_fact(getattr(first, "referent", None))
 
     if root_fact is not None and not segments:
-        segments.append(root_fact.qualified_name)
+        segments.append(root_fact)
 
     leaf_fact: ResolvedTargetFact | None = None
     target = getattr(expr_node, "target_feature", None)
@@ -730,9 +734,9 @@ def feature_chain_facts(
         chaining = list(getattr(target, "chaining_features", []) or [])
         if chaining:
             for chained in chaining:
-                chained_qn = getattr(chained, "qualified_name", None)
-                if chained_qn is not None:
-                    segments.append(str(chained_qn))
+                chained_fact = resolved_target_fact(chained)
+                if chained_fact is not None:
+                    segments.append(chained_fact)
                 chained_name = getattr(chained, "name", None)
                 if chained_name:
                     member_names.append(str(chained_name))
@@ -740,11 +744,17 @@ def feature_chain_facts(
         else:
             leaf_fact = resolved_target_fact(target)
             if leaf_fact is not None:
-                segments.append(leaf_fact.qualified_name)
+                segments.append(leaf_fact)
                 if leaf_fact.element_name:
                     member_names.append(leaf_fact.element_name)
 
-    return root_fact, leaf_fact, tuple(segments), tuple(member_names), has_index
+    return ResolvedSemanticReferenceFact(
+        root=root_fact,
+        segments=tuple(segments),
+        leaf=leaf_fact,
+        resolved_member_names=tuple(member_names),
+        has_index_segment=has_index,
+    )
 
 
 def is_literal_node(expr: Any) -> bool:

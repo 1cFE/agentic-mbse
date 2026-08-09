@@ -248,9 +248,11 @@ def _decompose_node(
     # report feature chains as operators too.
     if SysideAdapter.is_instance(node, "FeatureChainExpression"):
         source_path = extract_feature_chain_name(node)
-        chain_root, resolved_target, _segment_qns, member_names, has_index = (
-            feature_chain_facts(node)
-        )
+        chain_fact = feature_chain_facts(node)
+        chain_root = chain_fact.root
+        resolved_target = chain_fact.leaf
+        member_names = chain_fact.resolved_member_names
+        has_index = chain_fact.has_index_segment
         if collect_terms:
             ctx.singleton_terms.append(
                 SingletonTerm(
@@ -421,8 +423,8 @@ def _operand_chain_evidence(
 ) -> tuple[ResolvedTargetFact | None, ResolvedTargetFact | None, tuple[str, ...]]:
     """The exact (leaf, root, member names) of a sum() operand chain or reference."""
     if SysideAdapter.is_instance(operand, "FeatureChainExpression"):
-        root, leaf, _segments, member_names, _has_index = feature_chain_facts(operand)
-        return leaf, root, member_names
+        chain_fact = feature_chain_facts(operand)
+        return chain_fact.leaf, chain_fact.root, chain_fact.resolved_member_names
     if SysideAdapter.is_instance(operand, "FeatureReferenceExpression"):
         return resolved_target_fact(getattr(operand, "referent", None)), None, ()
     return None, None, ()

@@ -20,6 +20,7 @@ from collections.abc import Collection, Iterator
 from enum import IntEnum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from uuid import UUID
 
 __all__ = [
     "SysideAdapter",
@@ -176,6 +177,7 @@ class SysideAdapter:
                 # Core definitions and usages
                 "CalculationDefinition": syside.CalculationDefinition,
                 "CalculationUsage": syside.CalculationUsage,
+                "Feature": syside.Feature,
                 "AttributeUsage": syside.AttributeUsage,
                 "PartDefinition": syside.PartDefinition,
                 "PartUsage": syside.PartUsage,
@@ -232,6 +234,25 @@ class SysideAdapter:
         return cls._type_map
 
     # === Pattern 1: Model Loading ===
+
+    @staticmethod
+    def element_id(element: Any) -> UUID:
+        """Return one element's exact parser UUID.
+
+        This is the sole production access point for SysIDE ``element_id``.
+        It validates the raw surface but does not claim reload stability; the
+        consumer decides whether the element belongs to its supported stable
+        declaration boundary.
+        """
+        raw = getattr(element, "element_id", None)
+        if isinstance(raw, UUID):
+            return raw
+        try:
+            return UUID(str(raw))
+        except (TypeError, ValueError, AttributeError) as error:
+            raise ValueError(
+                f"{type(element).__name__} has no valid element_id UUID"
+            ) from error
 
     @staticmethod
     def load_model(paths: list[Path]) -> tuple[Any, Any]:

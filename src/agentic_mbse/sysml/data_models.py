@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 from agentic_mbse.sysml.types import BindingType, ExpressionRef
 
@@ -17,6 +18,7 @@ __all__ = [
     "RedefinitionType",
     "RedefinitionData",
     "ResolvedTargetFact",
+    "ResolvedSemanticReferenceFact",
     "MultiplicityData",
     "SumTerm",
     "SingletonTerm",
@@ -61,12 +63,39 @@ class ResolvedTargetFact:
     the redefinition relationships the referent declares.
     """
 
+    element_id: UUID
+    owner_element_id: UUID | None
+    redefined_element_ids: tuple[UUID, ...]
     qualified_name: str
     element_kind: str
     element_name: str = ""
     owner_qualified_name: str = ""
     owner_is_definition: bool = False
     redefined_qualified_names: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ResolvedSemanticReferenceFact:
+    """One resolved feature-chain path with exact parser declaration IDs.
+
+    Qualified names and member names remain diagnostic metadata. Consumers
+    resolve with ``root.element_id`` and ``segment_element_ids`` only.
+    """
+
+    root: ResolvedTargetFact | None
+    segments: tuple[ResolvedTargetFact, ...]
+    leaf: ResolvedTargetFact | None
+    resolved_member_names: tuple[str, ...]
+    has_index_segment: bool
+
+    @property
+    def segment_element_ids(self) -> tuple[UUID, ...]:
+        return tuple(segment.element_id for segment in self.segments)
+
+    @property
+    def resolved_segment_qns(self) -> tuple[str, ...]:
+        """Diagnostic-only qualified names for the already-resolved path."""
+        return tuple(segment.qualified_name for segment in self.segments)
 
 
 class RedefinitionType(str, Enum):
