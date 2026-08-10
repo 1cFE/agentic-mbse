@@ -7,10 +7,17 @@ production fixture doesn't exercise (mirrors how `unknown` category is covered â
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
+from uuid import UUID
 
 import pytest
 
+from agentic_mbse.sysml.constraint_extraction import (
+    IdentifiedConstraintDefinition,
+    IdentifiedConstraintFacts,
+    IdentifiedConstraintUsage,
+)
 from agentic_mbse.sysml.constraint_facts import (
     ConstraintDefinitionFact,
     ConstraintFacts,
@@ -22,7 +29,12 @@ from agentic_mbse.sysml.constraint_facts import (
     OwningDefinitionFact,
     parse,
 )
-from agentic_mbse.sysml.executable_profile import Eligibility, evaluate_profile, preflight
+from agentic_mbse.sysml.executable_profile import (
+    Eligibility,
+    evaluate_identified_profile,
+    evaluate_profile,
+    preflight,
+)
 from agentic_mbse.sysml.expression_facts import FeatureReferenceFact, LiteralFact, OperandTypeFact
 from agentic_mbse.sysml.expression_ir import FeatureReferenceNode, LiteralNode, OperatorNode
 
@@ -271,6 +283,132 @@ def _facts(*usages: ConstraintUsageFact, definitions: list[ConstraintDefinitionF
         contexts=[],
         diagnostics=[],
     )
+
+
+def _typed_usage(name: str, definition: IdentityFact) -> ConstraintUsageFact:
+    usage = _inline_usage(name, None)
+    return replace(
+        usage,
+        source=ConstraintSource(
+            form="definition_typed",
+            effective_predicate_source=definition,
+            constraint_definition=definition,
+            referenced_feature_target=None,
+            asserted_constraint=usage.identity,
+        ),
+    )
+
+
+def test_identified_profile_selects_by_exact_id_and_is_total_across_all_outcomes() -> None:
+    collision_identity = IdentityFact(
+        kind="ConstraintDefinition", name="Collision", qualified_name="Synthetic::Collision"
+    )
+    anonymous_definition_identity = IdentityFact(
+        kind="ConstraintDefinition", name=None, qualified_name=None
+    )
+    admitted_predicate = OperatorNode(
+        operator="<=", operands=[_leaf("real"), _leaf("real")], operand_type=None
+    )
+    blocked_predicate = OperatorNode(
+        operator="==", operands=[_leaf("integer"), _leaf("integer")], operand_type=None
+    )
+    colliding_admit = ConstraintDefinitionFact(
+        identity=collision_identity, formals=[], predicate=admitted_predicate
+    )
+    colliding_block = ConstraintDefinitionFact(
+        identity=collision_identity, formals=[], predicate=blocked_predicate
+    )
+    anonymous_admit = ConstraintDefinitionFact(
+        identity=anonymous_definition_identity, formals=[], predicate=admitted_predicate
+    )
+
+    blocked_usage = _typed_usage("blocked", collision_identity)
+    admitted_usage = _typed_usage("admitted", anonymous_definition_identity)
+    anonymous_identity = IdentityFact(
+        kind="AssertConstraintUsage", name=None, qualified_name=None
+    )
+    anonymous_non_numerical = replace(
+        _inline_usage("display_only", _leaf("boolean")),
+        identity=anonymous_identity,
+        scope=anonymous_identity,
+        source=ConstraintSource(
+            form="inline",
+            effective_predicate_source=anonymous_identity,
+            constraint_definition=None,
+            referenced_feature_target=None,
+            asserted_constraint=anonymous_identity,
+        ),
+    )
+    unassessed_usage = replace(
+        _inline_usage("unassessed", None),
+        source=ConstraintSource(
+            form="plain_usage",
+            effective_predicate_source=None,
+            constraint_definition=None,
+            referenced_feature_target=None,
+            asserted_constraint=None,
+        ),
+    )
+
+    definition_ids = [UUID(int=index) for index in range(1, 4)]
+    usage_ids = [UUID(int=index) for index in range(11, 15)]
+    facts = ConstraintFacts(
+        definitions=[colliding_admit, colliding_block, anonymous_admit],
+        usages=[
+            blocked_usage,
+            admitted_usage,
+            anonymous_non_numerical,
+            unassessed_usage,
+        ],
+        contexts=[],
+        diagnostics=[],
+    )
+    identified = IdentifiedConstraintFacts(
+        facts=facts,
+        definitions=(
+            IdentifiedConstraintDefinition(definition_ids[2], anonymous_admit),
+            IdentifiedConstraintDefinition(definition_ids[1], colliding_block),
+            IdentifiedConstraintDefinition(definition_ids[0], colliding_admit),
+        ),
+        usages=tuple(
+            reversed(
+                (
+                    IdentifiedConstraintUsage(usage_ids[0], definition_ids[1], blocked_usage),
+                    IdentifiedConstraintUsage(usage_ids[1], definition_ids[2], admitted_usage),
+                    IdentifiedConstraintUsage(
+                        usage_ids[2], None, anonymous_non_numerical
+                    ),
+                    IdentifiedConstraintUsage(usage_ids[3], None, unassessed_usage),
+                )
+            )
+        ),
+    )
+
+    result = evaluate_identified_profile(identified)
+
+    assert {item.usage_id for item in result.decisions} == set(usage_ids)
+    assert not result.missing_usage_ids
+    assert result.by_usage_id[usage_ids[0]].effective_definition_id == definition_ids[1]
+    assert result.by_usage_id[usage_ids[0]].decision.eligibility is Eligibility.BLOCK
+    assert result.by_usage_id[usage_ids[1]].decision.eligibility is Eligibility.ADMIT
+    assert result.by_usage_id[usage_ids[2]].decision.eligibility is Eligibility.NON_NUMERICAL
+    assert result.by_usage_id[usage_ids[3]].decision.eligibility is Eligibility.UNASSESSED
+
+
+def test_identified_profile_rejects_duplicate_usage_ids() -> None:
+    usage = _inline_usage("duplicate", _leaf("boolean"))
+    duplicate_id = UUID(int=99)
+    identified = IdentifiedConstraintFacts(
+        facts=_facts(usage),
+        definitions=(),
+        usages=(
+            IdentifiedConstraintUsage(duplicate_id, None, usage),
+            IdentifiedConstraintUsage(duplicate_id, None, usage),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="duplicate identified constraint usage UUID"):
+        evaluate_identified_profile(identified)
 
 
 def test_unknown_operand_category_blocks() -> None:

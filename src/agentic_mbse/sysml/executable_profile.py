@@ -13,7 +13,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from enum import Enum
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+from uuid import UUID
 
 from agentic_mbse.sysml.constraint_facts import (
     ConstraintDefinitionFact,
@@ -33,18 +34,24 @@ from agentic_mbse.sysml.expression_ir import (
     UnsupportedNode,
 )
 
+if TYPE_CHECKING:
+    from agentic_mbse.sysml.constraint_extraction import IdentifiedConstraintFacts
+
 __all__ = [
     "PROFILE_SEMANTIC_VERSION",
     "REASON_CODES",
     "CONSTRAINT_USAGE_FACT_FIELD_CONSUMERS",
     "Eligibility",
     "EligibilityDiagnostic",
+    "IdentifiedProfileResult",
+    "IdentifiedUsageDecision",
     "PreflightResult",
     "ProfileResult",
     "UsageDecision",
     "classify_equality",
     "classify_ordering",
     "evaluate_profile",
+    "evaluate_identified_profile",
     "preflight",
     "unit_compatibility",
 ]
@@ -224,6 +231,36 @@ class ProfileResult:
     @property
     def unassessed_count(self) -> int:
         return sum(1 for d in self.decisions if d.eligibility is Eligibility.UNASSESSED)
+
+
+@dataclass(frozen=True)
+class IdentifiedUsageDecision:
+    """One profile decision paired with its exact live usage association."""
+
+    usage_id: UUID
+    effective_definition_id: UUID | None
+    decision: UsageDecision
+
+
+@dataclass(frozen=True)
+class IdentifiedProfileResult:
+    """Exact profile output with a total usage-UUID index."""
+
+    decisions: tuple[IdentifiedUsageDecision, ...]
+    expected_usage_ids: tuple[UUID, ...]
+
+    @property
+    def by_usage_id(self) -> dict[UUID, IdentifiedUsageDecision]:
+        result: dict[UUID, IdentifiedUsageDecision] = {}
+        for item in self.decisions:
+            if item.usage_id in result:
+                raise ValueError(f"duplicate identified constraint usage UUID: {item.usage_id}")
+            result[item.usage_id] = item
+        return result
+
+    @property
+    def missing_usage_ids(self) -> frozenset[UUID]:
+        return frozenset(self.expected_usage_ids) - self.by_usage_id.keys()
 
 
 @dataclass(frozen=True)
@@ -946,8 +983,9 @@ def _promote_non_numerical_diagnostic(
     )
 
 
-def _evaluate_usage(
-    usage: ConstraintUsageFact, definitions_by_qn: dict[str, ConstraintDefinitionFact]
+def _evaluate_usage_against_definition(
+    usage: ConstraintUsageFact,
+    definition: ConstraintDefinitionFact | None,
 ) -> UsageDecision:
     form = usage.source.form
     identity, location = usage.identity, usage.location
@@ -975,9 +1013,6 @@ def _evaluate_usage(
         return _invalid_polarity_block(usage)
 
     if form == "definition_typed":
-        constraint_definition = usage.source.constraint_definition
-        qn = constraint_definition.qualified_name if constraint_definition else None
-        definition = definitions_by_qn.get(qn) if qn is not None else None
         if definition is None:
             return _missing_body_block(
                 usage,
@@ -1004,6 +1039,17 @@ def _evaluate_usage(
     return _body_decision(usage, predicate, Eligibility.ADMIT, [])
 
 
+def _evaluate_usage(
+    usage: ConstraintUsageFact, definitions_by_qn: dict[str, ConstraintDefinitionFact]
+) -> UsageDecision:
+    definition: ConstraintDefinitionFact | None = None
+    if usage.source.form == "definition_typed":
+        constraint_definition = usage.source.constraint_definition
+        qn = constraint_definition.qualified_name if constraint_definition else None
+        definition = definitions_by_qn.get(qn) if qn is not None else None
+    return _evaluate_usage_against_definition(usage, definition)
+
+
 def evaluate_profile(facts: ConstraintFacts) -> ProfileResult:
     """Decide eligibility for every usage in `facts.usages` (I1) — never over `facts.definitions`.
 
@@ -1017,6 +1063,44 @@ def evaluate_profile(facts: ConstraintFacts) -> ProfileResult:
     }
     decisions = [_evaluate_usage(usage, definitions_by_qn) for usage in facts.usages]
     return ProfileResult(decisions=decisions)
+
+
+def evaluate_identified_profile(facts: IdentifiedConstraintFacts) -> IdentifiedProfileResult:
+    """Evaluate live facts by exact usage/definition UUID, never by neutral display identity."""
+    definitions_by_id: dict[UUID, ConstraintDefinitionFact] = {}
+    for definition_record in facts.definitions:
+        if definition_record.definition_id in definitions_by_id:
+            raise ValueError(
+                "duplicate identified constraint definition UUID: "
+                f"{definition_record.definition_id}"
+            )
+        definitions_by_id[definition_record.definition_id] = definition_record.fact
+
+    seen_usage_ids: set[UUID] = set()
+    decisions: list[IdentifiedUsageDecision] = []
+    for usage_record in facts.usages:
+        if usage_record.usage_id in seen_usage_ids:
+            raise ValueError(
+                f"duplicate identified constraint usage UUID: {usage_record.usage_id}"
+            )
+        seen_usage_ids.add(usage_record.usage_id)
+        definition = (
+            definitions_by_id.get(usage_record.effective_definition_id)
+            if usage_record.effective_definition_id is not None
+            else None
+        )
+        decisions.append(
+            IdentifiedUsageDecision(
+                usage_id=usage_record.usage_id,
+                effective_definition_id=usage_record.effective_definition_id,
+                decision=_evaluate_usage_against_definition(usage_record.fact, definition),
+            )
+        )
+
+    return IdentifiedProfileResult(
+        decisions=tuple(decisions),
+        expected_usage_ids=tuple(record.usage_id for record in facts.usages),
+    )
 
 
 def preflight(facts: ConstraintFacts) -> PreflightResult:
