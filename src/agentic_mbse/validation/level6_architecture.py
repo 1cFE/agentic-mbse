@@ -62,7 +62,11 @@ def load_manifest(design_path: Path) -> dict[Any, Any] | None:
     try:
         with manifest_path.open() as manifest_file:
             manifest = yaml.safe_load(manifest_file)
-    except (OSError, yaml.YAMLError) as error:
+    # UnicodeDecodeError is a ValueError, not an OSError, and `yaml.safe_load` raises it
+    # through the file handle before the parser ever sees the bytes. `_check_manifests`
+    # loops over every design's manifest and relies on this None to skip a bad one, so
+    # letting it escape would abort the whole Level 6 check on one mis-encoded file.
+    except (OSError, UnicodeDecodeError, yaml.YAMLError) as error:
         print(f"Warning: Could not load manifest: {error}")
         return None
     if not isinstance(manifest, dict):

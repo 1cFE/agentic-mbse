@@ -719,14 +719,26 @@ def test_exact_gate_partitions_every_outcome_and_follows_the_uuid_association() 
     non_numerical_usage = _inline_usage("display_only", _leaf("boolean"))
     unassessed_usage = _unassessed_usage("unassessed")
 
+    usages = [typed_usage, admitted_usage, non_numerical_usage, unassessed_usage]
     facts = ConstraintFacts(
         definitions=[admitting_twin, blocking_twin],
-        usages=[typed_usage, admitted_usage, non_numerical_usage, unassessed_usage],
+        usages=usages,
         contexts=[],
         diagnostics=[],
     )
     # The neutral payload cannot tell the twins apart: one qualified name, two predicates.
     assert len({definition.identity.qualified_name for definition in facts.definitions}) == 1
+    # Measured, not argued: the neutral gate indexes definitions by qualified name, so which
+    # twin wins — and therefore whether the run is blocked at all — depends on list order.
+    neutral_verdicts = {
+        preflight(
+            ConstraintFacts(
+                definitions=list(order), usages=usages, contexts=[], diagnostics=[]
+            )
+        ).ok
+        for order in ((admitting_twin, blocking_twin), (blocking_twin, admitting_twin))
+    }
+    assert neutral_verdicts == {True, False}
 
     admitting_id, blocking_id = UUID(int=201), UUID(int=202)
     usage_ids = [UUID(int=index) for index in range(211, 215)]
@@ -758,6 +770,17 @@ def test_exact_gate_partitions_every_outcome_and_follows_the_uuid_association() 
         len(gate.blocking) + len(gate.admitted) + len(gate.non_numerical) + len(gate.unassessed)
         == len(identified.usages)
     )
+
+    # The contrast the neutral flip above sets up: reversing the definition list moves the
+    # exact gate not at all, because the usage names its definition by UUID.
+    reversed_definitions = replace(
+        identified, definitions=tuple(reversed(identified.definitions))
+    )
+    reversed_gate = preflight_identified(evaluate_identified_profile(reversed_definitions))
+    assert reversed_gate.ok is False
+    assert [d.identity.name for d in reversed_gate.blocking] == [
+        "typed_to_the_blocking_twin"
+    ]
 
 
 def test_exact_gate_and_neutral_gate_agree_when_definition_identity_is_unambiguous() -> None:

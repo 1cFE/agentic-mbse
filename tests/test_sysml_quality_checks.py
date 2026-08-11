@@ -1000,6 +1000,24 @@ class TestLevel6NegativeCases:
 
         assert load_manifest(design_dir) is None
 
+    def test_manifest_that_is_not_utf8_is_reported_not_raised(self, tmp_path):
+        """A mis-encoded manifest warns and returns None; `_check_manifests` keeps going.
+
+        `UnicodeDecodeError` is a `ValueError`, so it is neither `OSError` nor
+        `yaml.YAMLError`. The caller loops over every design's manifest, so one bad file
+        must not abort the whole check.
+        """
+        from agentic_mbse.validation.level6_architecture import load_manifest
+
+        design_dir = tmp_path / "designs" / "latin1_design"
+        design_dir.mkdir(parents=True)
+        # Valid YAML in latin-1; byte 0xE9 is not a legal UTF-8 sequence start.
+        (design_dir / "manifest.yaml").write_bytes(
+            "subsystems:\n  - caf\xe9\n".encode("latin-1")
+        )
+
+        assert load_manifest(design_dir) is None
+
     def test_manifest_read_failure_is_reported_not_raised(self, tmp_path):
         """An unreadable manifest warns and returns None; unexpected errors are not swallowed."""
         from agentic_mbse.validation.level6_architecture import load_manifest
