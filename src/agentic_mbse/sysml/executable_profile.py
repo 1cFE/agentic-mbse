@@ -10,7 +10,7 @@ into their own `ValidationIssue`, keeping this module reusable by codegen too.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import Enum
 from typing import TYPE_CHECKING, Literal
@@ -53,6 +53,7 @@ __all__ = [
     "evaluate_profile",
     "evaluate_identified_profile",
     "preflight",
+    "preflight_identified",
     "unit_compatibility",
 ]
 
@@ -965,24 +966,6 @@ def _promote_non_numerical_diagnostic(
     )
 
 
-def _promote_non_numerical_diagnostic(
-    diagnostic: EligibilityDiagnostic,
-) -> EligibilityDiagnostic:
-    """Replace warning semantics when numerical containment makes the diagnostic blocking."""
-    if diagnostic.force != "non_numerical":
-        return diagnostic
-    return replace(
-        diagnostic,
-        reason="block_non_numerical_containment",
-        message=(
-            f"the numerical assertion contains a non-numerical {diagnostic.construct} and "
-            "generation stops; separate it into its own assertion or rewrite it as a numerical "
-            "comparison"
-        ),
-        force="error",
-    )
-
-
 def _evaluate_usage_against_definition(
     usage: ConstraintUsageFact,
     definition: ConstraintDefinitionFact | None,
@@ -1103,13 +1086,12 @@ def evaluate_identified_profile(facts: IdentifiedConstraintFacts) -> IdentifiedP
     )
 
 
-def preflight(facts: ConstraintFacts) -> PreflightResult:
-    """The codegen gate: run the profile and partition its decisions by outcome."""
-    result = evaluate_profile(facts)
-    blocking = [d for d in result.decisions if d.eligibility is Eligibility.BLOCK]
-    admitted = [d for d in result.decisions if d.eligibility is Eligibility.ADMIT]
-    non_numerical = [d for d in result.decisions if d.eligibility is Eligibility.NON_NUMERICAL]
-    unassessed = [d for d in result.decisions if d.eligibility is Eligibility.UNASSESSED]
+def _partition_decisions(decisions: Sequence[UsageDecision]) -> PreflightResult:
+    """Split one decision list into the gate's four outcome buckets."""
+    blocking = [d for d in decisions if d.eligibility is Eligibility.BLOCK]
+    admitted = [d for d in decisions if d.eligibility is Eligibility.ADMIT]
+    non_numerical = [d for d in decisions if d.eligibility is Eligibility.NON_NUMERICAL]
+    unassessed = [d for d in decisions if d.eligibility is Eligibility.UNASSESSED]
     return PreflightResult(
         ok=not blocking,
         blocking=blocking,
@@ -1117,3 +1099,18 @@ def preflight(facts: ConstraintFacts) -> PreflightResult:
         non_numerical=non_numerical,
         unassessed=unassessed,
     )
+
+
+def preflight(facts: ConstraintFacts) -> PreflightResult:
+    """The neutral codegen gate: run the neutral profile and partition its decisions."""
+    return _partition_decisions(evaluate_profile(facts).decisions)
+
+
+def preflight_identified(result: IdentifiedProfileResult) -> PreflightResult:
+    """The exact codegen gate: partition an already-decided exact profile by outcome.
+
+    Takes the decided result rather than the facts, because the exact route associates
+    usages to definitions by UUID before evaluation and that association is not
+    re-derivable from the neutral payload.
+    """
+    return _partition_decisions([item.decision for item in result.decisions])

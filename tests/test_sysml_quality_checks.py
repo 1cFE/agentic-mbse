@@ -588,6 +588,24 @@ class TestLevel4Constraints:
         result = analyze_constraints(str(valid_sysml_file.parent.parent))
         assert result.level == 4
 
+    def test_direct_file_execution_resolves_its_shared_helpers(self):
+        """Running the checker as a script still imports `common`, with no relative fallback."""
+        import subprocess
+        import sys
+
+        from agentic_mbse.validation import level4_constraints
+
+        completed = subprocess.run(
+            [sys.executable, level4_constraints.__file__, "--help"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert completed.returncode == 0, completed.stderr
+        assert "Level 4" in completed.stdout
+        assert "ImportError" not in completed.stderr
+
 
 class TestLevel5Traceability:
     """Tests for Level 5: Traceability & Documentation"""
@@ -971,6 +989,30 @@ class TestLevel6NegativeCases:
         issues, count = _check_manifests(str(tmp_path), model)
         assert count == 1  # Found the manifest file
         assert len(issues) == 0  # But skipped it (None manifest)
+
+    def test_manifest_valid_yaml_that_is_not_a_mapping(self, tmp_path):
+        """Well-formed YAML that is a list is refused here, not subscripted by a caller."""
+        from agentic_mbse.validation.level6_architecture import load_manifest
+
+        design_dir = tmp_path / "designs" / "list_design"
+        design_dir.mkdir(parents=True)
+        (design_dir / "manifest.yaml").write_text("- alpha\n- beta\n")
+
+        assert load_manifest(design_dir) is None
+
+    def test_manifest_read_failure_is_reported_not_raised(self, tmp_path):
+        """An unreadable manifest warns and returns None; unexpected errors are not swallowed."""
+        from agentic_mbse.validation.level6_architecture import load_manifest
+
+        design_dir = tmp_path / "designs" / "unreadable_design"
+        design_dir.mkdir(parents=True)
+        manifest = design_dir / "manifest.yaml"
+        manifest.write_text("subsystems: []\n")
+        manifest.chmod(0o000)
+        try:
+            assert load_manifest(design_dir) is None
+        finally:
+            manifest.chmod(0o644)
 
     def test_adr002_v1_in_orchestrator(self):
         """ADR-002 V1 violations (calc def in designs/) appear in L6 result."""

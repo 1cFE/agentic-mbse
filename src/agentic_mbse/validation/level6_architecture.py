@@ -44,7 +44,7 @@ from .common import (
 # --- Functions from L7 (manifest validation) ---
 
 
-def load_manifest(design_path: Path) -> dict | None:
+def load_manifest(design_path: Path) -> dict[Any, Any] | None:
     """
     Load design manifest if exists
 
@@ -52,7 +52,7 @@ def load_manifest(design_path: Path) -> dict | None:
         design_path: Path to design directory (e.g., models/designs/design_model/)
 
     Returns:
-        Manifest dict or None if not found
+        Manifest dict, or None if not found, unreadable, malformed, or not a mapping
     """
     manifest_path = design_path / "manifest.yaml"
 
@@ -60,11 +60,17 @@ def load_manifest(design_path: Path) -> dict | None:
         return None
 
     try:
-        with open(manifest_path) as f:
-            return yaml.safe_load(f)
-    except Exception as e:
-        print(f"Warning: Could not load manifest: {e}")
+        with manifest_path.open() as manifest_file:
+            manifest = yaml.safe_load(manifest_file)
+    except (OSError, yaml.YAMLError) as error:
+        print(f"Warning: Could not load manifest: {error}")
         return None
+    if not isinstance(manifest, dict):
+        # Callers subscript the result. Well-formed YAML that is a list or a scalar used to
+        # reach them and fail there instead of here.
+        print(f"Warning: Manifest {manifest_path} is not a mapping")
+        return None
+    return manifest
 
 
 def check_subsystem_composition(model: Any, manifest: dict) -> list[str]:

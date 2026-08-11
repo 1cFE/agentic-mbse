@@ -34,6 +34,7 @@ from agentic_mbse.sysml.executable_profile import (
     evaluate_identified_profile,
     evaluate_profile,
     preflight,
+    preflight_identified,
 )
 from agentic_mbse.sysml.expression_facts import FeatureReferenceFact, LiteralFact, OperandTypeFact
 from agentic_mbse.sysml.expression_ir import FeatureReferenceNode, LiteralNode, OperatorNode
@@ -672,3 +673,135 @@ def test_preflight_ok_when_nothing_blocks() -> None:
     assert result.blocking == []
     assert len(result.admitted) == 1
     assert result.admitted[0].effective_predicate is predicate  # I5: the exact object, not a copy
+
+
+# === preflight_identified (the exact gate) ===
+
+
+def _admitting_predicate() -> OperatorNode:
+    return OperatorNode(
+        operator="<=", operands=[_leaf("real"), _leaf("real")], operand_type=None
+    )
+
+
+def _blocking_predicate() -> OperatorNode:
+    return OperatorNode(
+        operator="==", operands=[_leaf("integer"), _leaf("integer")], operand_type=None
+    )
+
+
+def _unassessed_usage(name: str) -> ConstraintUsageFact:
+    return replace(
+        _inline_usage(name, None),
+        source=ConstraintSource(
+            form="plain_usage",
+            effective_predicate_source=None,
+            constraint_definition=None,
+            referenced_feature_target=None,
+            asserted_constraint=None,
+        ),
+    )
+
+
+def test_exact_gate_partitions_every_outcome_and_follows_the_uuid_association() -> None:
+    """The exact gate blocks on the definition the UUID names, not the one the name finds."""
+    shared_identity = IdentityFact(
+        kind="ConstraintDefinition", name="Twin", qualified_name="Synthetic::Twin"
+    )
+    admitting_twin = ConstraintDefinitionFact(
+        identity=shared_identity, formals=[], predicate=_admitting_predicate()
+    )
+    blocking_twin = ConstraintDefinitionFact(
+        identity=shared_identity, formals=[], predicate=_blocking_predicate()
+    )
+    typed_usage = _typed_usage("typed_to_the_blocking_twin", shared_identity)
+    admitted_usage = _inline_usage("admitted", _admitting_predicate())
+    non_numerical_usage = _inline_usage("display_only", _leaf("boolean"))
+    unassessed_usage = _unassessed_usage("unassessed")
+
+    facts = ConstraintFacts(
+        definitions=[admitting_twin, blocking_twin],
+        usages=[typed_usage, admitted_usage, non_numerical_usage, unassessed_usage],
+        contexts=[],
+        diagnostics=[],
+    )
+    # The neutral payload cannot tell the twins apart: one qualified name, two predicates.
+    assert len({definition.identity.qualified_name for definition in facts.definitions}) == 1
+
+    admitting_id, blocking_id = UUID(int=201), UUID(int=202)
+    usage_ids = [UUID(int=index) for index in range(211, 215)]
+    identified = IdentifiedConstraintFacts(
+        facts=facts,
+        definitions=(
+            IdentifiedConstraintDefinition(admitting_id, admitting_twin),
+            IdentifiedConstraintDefinition(blocking_id, blocking_twin),
+        ),
+        usages=(
+            IdentifiedConstraintUsage(usage_ids[0], blocking_id, typed_usage),
+            IdentifiedConstraintUsage(usage_ids[1], None, admitted_usage),
+            IdentifiedConstraintUsage(usage_ids[2], None, non_numerical_usage),
+            IdentifiedConstraintUsage(usage_ids[3], None, unassessed_usage),
+        ),
+    )
+
+    gate = preflight_identified(evaluate_identified_profile(identified))
+
+    assert gate.ok is False
+    assert [d.identity.name for d in gate.blocking] == ["typed_to_the_blocking_twin"]
+    assert [d.diagnostics[0].reason for d in gate.blocking] == [
+        "block_integer_equality_unpreservable"
+    ]
+    assert [d.identity.name for d in gate.admitted] == ["admitted"]
+    assert [d.identity.name for d in gate.non_numerical] == ["display_only"]
+    assert [d.identity.name for d in gate.unassessed] == ["unassessed"]
+    assert (
+        len(gate.blocking) + len(gate.admitted) + len(gate.non_numerical) + len(gate.unassessed)
+        == len(identified.usages)
+    )
+
+
+def test_exact_gate_and_neutral_gate_agree_when_definition_identity_is_unambiguous() -> None:
+    """The transitional neutral gate stays available and answers the same on shared input."""
+    definition_identity = IdentityFact(
+        kind="ConstraintDefinition", name="Sole", qualified_name="Synthetic::Sole"
+    )
+    definition = ConstraintDefinitionFact(
+        identity=definition_identity, formals=[], predicate=_blocking_predicate()
+    )
+    typed_usage = _typed_usage("typed", definition_identity)
+    usages = [
+        typed_usage,
+        _inline_usage("admitted", _admitting_predicate()),
+        _inline_usage("display_only", _leaf("boolean")),
+        _unassessed_usage("unassessed"),
+    ]
+    facts = ConstraintFacts(
+        definitions=[definition], usages=usages, contexts=[], diagnostics=[]
+    )
+    identified = IdentifiedConstraintFacts(
+        facts=facts,
+        definitions=(IdentifiedConstraintDefinition(UUID(int=301), definition),),
+        usages=tuple(
+            IdentifiedConstraintUsage(
+                UUID(int=311 + index),
+                UUID(int=301) if usage is typed_usage else None,
+                usage,
+            )
+            for index, usage in enumerate(usages)
+        ),
+    )
+
+    neutral = preflight(facts)
+    exact = preflight_identified(evaluate_identified_profile(identified))
+
+    def buckets(gate):
+        return {
+            "ok": gate.ok,
+            "blocking": [d.identity.name for d in gate.blocking],
+            "admitted": [d.identity.name for d in gate.admitted],
+            "non_numerical": [d.identity.name for d in gate.non_numerical],
+            "unassessed": [d.identity.name for d in gate.unassessed],
+        }
+
+    assert buckets(exact) == buckets(neutral)
+    assert exact.ok is False

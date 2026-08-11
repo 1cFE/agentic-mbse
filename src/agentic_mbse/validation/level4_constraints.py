@@ -16,27 +16,19 @@ from agentic_mbse.sysml.syside_adapter import (
     SysideAdapter,
 )
 
-try:
-    from .common import (
-        EXIT_FAILURE,
-        EXIT_SUCCESS,
-        QualityCheckResult,
-        discover_sysml_files,
-        load_sysml_model,
-        print_header,
-        print_result,
-    )
-except ImportError:
-    # Handle direct execution
-    from common import (
-        EXIT_FAILURE,
-        EXIT_SUCCESS,
-        QualityCheckResult,
-        discover_sysml_files,
-        load_sysml_model,
-        print_header,
-        print_result,
-    )
+# Absolute, so direct execution (`python level4_constraints.py`) resolves the same module the
+# package import resolves. The module already imports `agentic_mbse.sysml` absolutely above, so
+# an installed package is required either way and the old relative/`common` fallback could never
+# be the only working path.
+from agentic_mbse.validation.common import (
+    EXIT_FAILURE,
+    EXIT_SUCCESS,
+    QualityCheckResult,
+    discover_sysml_files,
+    load_sysml_model,
+    print_header,
+    print_result,
+)
 
 
 def eligibility_coverage_metrics(model: Any) -> dict:
