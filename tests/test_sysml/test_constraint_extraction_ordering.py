@@ -14,7 +14,6 @@ import pytest
 
 import agentic_mbse.sysml.constraint_extraction as constraint_extraction
 from agentic_mbse.sysml.constraint_extraction import (
-    extract_constraint_facts,
     extract_identified_constraint_facts,
 )
 from agentic_mbse.sysml.constraint_facts import serialize
@@ -43,7 +42,7 @@ _FILE_B = """package OrderProbeB {
 def _serialize_for(paths: list[str]) -> str:
     model, diagnostics = syside.try_load_model(paths)
     assert not list(diagnostics.all), list(diagnostics.all)
-    return serialize(extract_constraint_facts(model))
+    return serialize(extract_identified_constraint_facts(model).facts)
 
 
 def test_two_file_anonymous_asserts_serialize_identically_for_both_load_orders(
@@ -108,7 +107,6 @@ def test_identified_anonymous_usages_keep_exact_ids_when_enumeration_reverses(
     profile = evaluate_identified_profile(forward)
     assert {item.usage_id for item in profile.decisions} == expected_ids
     assert not profile.missing_usage_ids
-    assert serialize(forward.facts) == serialize(extract_constraint_facts(model))
 
 
 def test_identified_fact_pairing_uses_usage_identity_not_parallel_order(

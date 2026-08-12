@@ -22,10 +22,23 @@ from agentic_mbse.sysml.executable_profile import (
     Eligibility,
     UsageDecision,
     classify_ordering,
-    evaluate_profile,
+    evaluate_identified_profile,
 )
 from agentic_mbse.sysml.expression_facts import FeatureReferenceFact, OperandTypeFact, UnitFact
 from agentic_mbse.sysml.expression_ir import FeatureReferenceNode, OperatorNode
+from tests.helpers.identified_facts import identify
+
+
+def _sole_decision(facts: ConstraintFacts) -> UsageDecision:
+    """The one decision the exact route produces for a single-usage synthetic payload.
+
+    The payload declares no definitions, so the usage carries no effective definition.
+    `identify` states that association rather than deriving it from a name — see
+    `tests/helpers/identified_facts`.
+    """
+    result = evaluate_identified_profile(identify(facts))
+    assert len(result.decisions) == 1
+    return result.decisions[0].decision
 
 CATEGORIES = ("boolean", "string", "integer", "real", "enum", "quantity", "unresolved", "unknown")
 ORDERING_OPERATORS = ("<", "<=", ">", ">=")
@@ -115,7 +128,7 @@ def _facts(*, is_negated: object = False) -> ConstraintFacts:
 @pytest.mark.parametrize("is_negated", [False, True])
 def test_polarity_is_classified_without_rewriting_positive_body(is_negated: bool) -> None:
     facts = _facts(is_negated=is_negated)
-    decision = evaluate_profile(facts).decisions[0]
+    decision = _sole_decision(facts)
     assert decision.eligibility is Eligibility.ADMIT
     assert decision.is_negated is is_negated
     assert decision.expected_value is (not is_negated)
@@ -124,7 +137,7 @@ def test_polarity_is_classified_without_rewriting_positive_body(is_negated: bool
 
 @pytest.mark.parametrize("raw", [None, "false", 0, 1, []])
 def test_invalid_direct_polarity_blocks_before_body(raw: object) -> None:
-    decision = evaluate_profile(_facts(is_negated=raw)).decisions[0]
+    decision = _sole_decision(_facts(is_negated=raw))
     assert decision.eligibility is Eligibility.BLOCK
     assert decision.effective_predicate is None
     assert decision.is_negated is None
@@ -136,12 +149,12 @@ def test_invalid_direct_polarity_blocks_before_body(raw: object) -> None:
 def test_invalid_codec_polarity_blocks_before_body(raw: object) -> None:
     payload = json.loads(serialize(_facts()))
     payload["usages"][0]["is_negated"] = raw
-    decision = evaluate_profile(parse(json.dumps(payload))).decisions[0]
+    decision = _sole_decision(parse(json.dumps(payload)))
     assert [item.reason for item in decision.diagnostics] == ["block_invalid_assertion_polarity"]
 
 
 def test_usage_decision_state_validation_is_not_assert_based() -> None:
-    valid = evaluate_profile(_facts()).decisions[0]
+    valid = _sole_decision(_facts())
     with pytest.raises(ValueError, match="complementary"):
         replace(valid, expected_value=False)
     with pytest.raises(ValueError, match="requires Boolean polarity"):
@@ -166,7 +179,7 @@ def test_malformed_ordering_arity_uses_approved_exact_message() -> None:
     predicate = facts.usages[0].predicate
     assert isinstance(predicate, OperatorNode)
     predicate.operands.pop()
-    decision = evaluate_profile(facts).decisions[0]
+    decision = _sole_decision(facts)
     assert [item.message for item in decision.diagnostics] == [
         "comparison has 1 operands; expected 2"
     ]

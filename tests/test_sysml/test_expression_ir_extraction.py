@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from agentic_mbse.sysml.constraint_extraction import extract_constraint_facts
+from agentic_mbse.sysml.constraint_extraction import extract_identified_constraint_facts
 from agentic_mbse.sysml.constraint_facts import ConstraintFacts, parse, serialize
 from agentic_mbse.sysml.expression_facts import (
     FeatureReferenceFact,
@@ -32,7 +32,7 @@ TYPE_UNITS = (
 
 def _extract(*paths: Path) -> ConstraintFacts:
     model, _diagnostics = syside.try_load_model([str(path) for path in paths])
-    return extract_constraint_facts(model)
+    return extract_identified_constraint_facts(model).facts
 
 
 def _by_name(facts: ConstraintFacts, name: str) -> Any:

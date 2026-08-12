@@ -228,8 +228,8 @@ def _extract_constraint_facts(
 def extract_identified_constraint_facts(model: Any) -> IdentifiedConstraintFacts:
     """Extract neutral facts plus live-only exact usage/definition associations.
 
-    The neutral payload is produced by :func:`extract_constraint_facts` without adding parser
-    identity to its schema. Exact sidecars are captured while the live SysIDE elements are still
+    The neutral payload comes from the same sweep, without adding parser identity to its
+    schema. Exact sidecars are captured while the live SysIDE elements are still
     available, using the adapter as the sole UUID boundary.
     """
     facts, usage_records = _extract_constraint_facts(model)

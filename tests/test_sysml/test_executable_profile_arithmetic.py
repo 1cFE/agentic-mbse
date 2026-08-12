@@ -32,7 +32,7 @@ from agentic_mbse.sysml.executable_profile import (
     REASON_CODES,
     Eligibility,
     UsageDecision,
-    evaluate_profile,
+    evaluate_identified_profile,
 )
 from agentic_mbse.sysml.expression_facts import (
     FeatureReferenceFact,
@@ -49,6 +49,19 @@ from agentic_mbse.sysml.expression_ir import (
     parse_expression,
     serialize_expression,
 )
+from tests.helpers.identified_facts import identify
+
+
+def _sole_decision(facts: ConstraintFacts) -> UsageDecision:
+    """The one decision the exact route produces for a single-usage synthetic payload.
+
+    The payload declares no definitions, so the usage carries no effective definition.
+    `identify` states that association rather than deriving it from a name — see
+    `tests/helpers/identified_facts`.
+    """
+    result = evaluate_identified_profile(identify(facts))
+    assert len(result.decisions) == 1
+    return result.decisions[0].decision
 
 _OWNER = OwnerFact(
     owner=None, owning_definition=OwningDefinitionFact(kind="package", qualified_name="Synthetic")
@@ -142,7 +155,7 @@ def _decide(predicate: ExpressionIR | None) -> UsageDecision:
         contexts=[],
         diagnostics=[],
     )
-    return evaluate_profile(facts).decisions[0]
+    return _sole_decision(facts)
 
 
 def _reasons(decision: UsageDecision) -> set[str]:
@@ -174,7 +187,7 @@ def test_contradictory_equal_unit_ratio_round_trip_blocks() -> None:
         diagnostics=[],
     )
     parsed = parse_constraint_facts(serialize_constraint_facts(facts))
-    decision = evaluate_profile(parsed).decisions[0]
+    decision = _sole_decision(parsed)
     assert decision.eligibility is Eligibility.BLOCK
     assert _reasons(decision) == {"block_derived_unit_unsupported"}
 
@@ -316,7 +329,7 @@ def test_malformed_leaf_from_facts_wire_reaches_named_profile_block(
         del malformed_leaf["operand_type"]
 
     parsed = parse_constraint_facts(json.dumps(document))
-    decision = evaluate_profile(parsed).decisions[0]
+    decision = _sole_decision(parsed)
     assert decision.eligibility is Eligibility.BLOCK
     assert _reasons(decision) == {"block_malformed_operand_fact"}
 

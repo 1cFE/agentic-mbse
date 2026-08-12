@@ -17,8 +17,8 @@ from typing import Any
 
 import yaml
 
-from agentic_mbse.sysml.constraint_extraction import extract_constraint_facts
-from agentic_mbse.sysml.executable_profile import Eligibility, evaluate_profile
+from agentic_mbse.sysml.constraint_extraction import extract_identified_constraint_facts
+from agentic_mbse.sysml.executable_profile import Eligibility, evaluate_identified_profile
 from agentic_mbse.sysml.expression import (
     evaluate_true_static_expression,
     is_literal_node,
@@ -44,15 +44,25 @@ from .common import (
 # --- Functions from L7 (manifest validation) ---
 
 
+class ManifestError(Exception):
+    """A design's manifest.yaml exists but cannot be read as a mapping."""
+
+
 def load_manifest(design_path: Path) -> dict[Any, Any] | None:
     """
-    Load design manifest if exists
+    Load a design's manifest.
 
     Args:
         design_path: Path to design directory (e.g., models/designs/design_model/)
 
     Returns:
-        Manifest dict, or None if not found, unreadable, malformed, or not a mapping
+        The manifest mapping, or None when the design carries no manifest at all.
+
+    Raises:
+        ManifestError: the manifest exists but is unreadable, malformed YAML, or is
+            well-formed YAML that is not a mapping. Absent and invalid are different
+            states and this function reports them differently: a design without a
+            manifest has nothing to check, an unusable one is a Level 6 defect.
     """
     manifest_path = design_path / "manifest.yaml"
 
@@ -63,17 +73,15 @@ def load_manifest(design_path: Path) -> dict[Any, Any] | None:
         with manifest_path.open() as manifest_file:
             manifest = yaml.safe_load(manifest_file)
     # UnicodeDecodeError is a ValueError, not an OSError, and `yaml.safe_load` raises it
-    # through the file handle before the parser ever sees the bytes. `_check_manifests`
-    # loops over every design's manifest and relies on this None to skip a bad one, so
-    # letting it escape would abort the whole Level 6 check on one mis-encoded file.
+    # through the file handle before the parser ever sees the bytes.
     except (OSError, UnicodeDecodeError, yaml.YAMLError) as error:
-        print(f"Warning: Could not load manifest: {error}")
-        return None
+        raise ManifestError(f"{manifest_path} could not be read: {error}") from error
     if not isinstance(manifest, dict):
         # Callers subscript the result. Well-formed YAML that is a list or a scalar used to
         # reach them and fail there instead of here.
-        print(f"Warning: Manifest {manifest_path} is not a mapping")
-        return None
+        raise ManifestError(
+            f"{manifest_path} is a {type(manifest).__name__}, not a mapping of manifest keys"
+        )
     return manifest
 
 
@@ -125,11 +133,21 @@ def _check_manifests(models_path: str, model: Any) -> tuple[list[str], int]:
 
     issues = []
     for manifest_path in manifests_found:
-        manifest = load_manifest(manifest_path.parent)
-        if manifest:
-            missing = check_subsystem_composition(model, manifest)
-            for subsystem in missing:
-                issues.append(f"Missing subsystem '{subsystem}' in {manifest_path.parent.name}")
+        # Policy, stated here rather than hidden in the loader: an unusable manifest fails
+        # Level 6, and one bad file must not stop the remaining designs from being checked.
+        try:
+            manifest = load_manifest(manifest_path.parent)
+        except ManifestError as error:
+            issues.append(f"Unusable manifest in {manifest_path.parent.name}: {error}")
+            continue
+        if manifest is None:
+            # The glob above found this file, so it can only be gone because something
+            # removed it mid-check. That is worth reporting, not skipping.
+            issues.append(f"Manifest {manifest_path} vanished during the check")
+            continue
+        missing = check_subsystem_composition(model, manifest)
+        for subsystem in missing:
+            issues.append(f"Missing subsystem '{subsystem}' in {manifest_path.parent.name}")
     return issues, len(manifests_found)
 
 
@@ -613,15 +631,20 @@ def check_constraint_executability(model: Any) -> list[ValidationIssue]:
 
     BLOCK emits one ERROR per diagnostic so each malformed construct names its fix.
     NON_NUMERICAL emits one aggregated WARNING per statement, preserving diagnostic walk order.
+
+    Runs the exact route: a usage is evaluated against the definition its parser UUID names.
+    The neutral route indexed definitions by qualified name, so two definitions sharing one
+    qualified name collapsed to whichever the enumeration reached last and the reported
+    diagnostics depended on that order. The exact route refuses a duplicate UUID instead.
     """
     # D7 (Item 4): an extraction failure must surface, not collapse to "no diagnostics" — no
     # `except Exception: ...` swallow here, matching the discipline this function has kept since
     # Item 4 removed the equivalent swallow for constraint enumeration.
-    facts = extract_constraint_facts(model)
-    result = evaluate_profile(facts)
+    result = evaluate_identified_profile(extract_identified_constraint_facts(model))
 
     issues: list[ValidationIssue] = []
-    for decision in result.decisions:
+    for identified in result.decisions:
+        decision = identified.decision
         name = decision.identity.qualified_name or decision.identity.name or "<anonymous>"
         if decision.eligibility is Eligibility.BLOCK:
             for diagnostic in decision.diagnostics:
