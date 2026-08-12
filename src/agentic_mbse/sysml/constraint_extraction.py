@@ -54,7 +54,6 @@ from agentic_mbse.sysml.expression_ir import (
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
 __all__ = [
-    "extract_constraint_facts",
     "extract_expression_ir",
     "extract_identified_constraint_facts",
 ]
@@ -109,7 +108,7 @@ _OWNING_DEFINITION_TYPES: tuple[tuple[str, str], ...] = (
 
 
 class _ExtractionContext:
-    """Accumulates extraction diagnostics (D2a) across one `extract_constraint_facts` call."""
+    """Accumulates extraction diagnostics (D2a) across one facts-extraction sweep."""
 
     def __init__(self) -> None:
         self.diagnostics: list[ExtractionDiagnosticFact] = []
@@ -147,12 +146,6 @@ class _ExtractedConstraintUsage:
 
     element: Any
     fact: ConstraintUsageFact
-
-
-def extract_constraint_facts(model: Any) -> ConstraintFacts:
-    """Sweep, classify, and recover neutral constraint facts from a loaded SysIDE model."""
-    facts, _usage_records = _extract_constraint_facts(model)
-    return facts
 
 
 def _extract_constraint_facts(
@@ -588,7 +581,7 @@ def extract_expression_ir(
 ) -> ExpressionIR | None:
     """Public single-node entry: one live syside expression -> its ExpressionIR.
 
-    Thin wrapper over the same dispatch `extract_constraint_facts` uses, for
+    Thin wrapper over the same dispatch the whole-model sweep uses, for
     consumers that hold a bare expression node rather than a whole model (the
     sysml-codegen calc-compat renderer, CONSTRAINT-EXEC Item 13). Pass a list as
     `diagnostics` to receive the extraction diagnostics (D2a, e.g. the

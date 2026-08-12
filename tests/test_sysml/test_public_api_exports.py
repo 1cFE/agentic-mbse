@@ -63,13 +63,11 @@ def test_type_checking_imports_match_lazy_registry() -> None:
 
 def test_constraint_extraction_star_import_includes_all_public_extractors() -> None:
     assert set(constraint_extraction.__all__) == {
-        "extract_constraint_facts",
         "extract_expression_ir",
         "extract_identified_constraint_facts",
     }
     namespace: dict[str, object] = {}
     exec("from agentic_mbse.sysml.constraint_extraction import *", namespace)  # noqa: S102
-    assert namespace["extract_constraint_facts"] is constraint_extraction.extract_constraint_facts
     assert namespace["extract_expression_ir"] is constraint_extraction.extract_expression_ir
     assert (
         namespace["extract_identified_constraint_facts"]

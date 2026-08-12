@@ -1,6 +1,6 @@
 """Executable profile: a pure facts-to-decisions library, no syside.
 
-Reads Item 1/2's `ConstraintFacts` and returns, per constraint usage, exactly one outcome —
+Reads Item 1/2's identified constraint facts and returns, per constraint usage, exactly one outcome —
 admit, block, non-numerical, or unassessed — so every modeled assertion ends in one
 visible place and nothing reaches codegen silently (concept Design Principle 5, "silence is
 never an outcome"). Imports `expression_facts`/`expression_ir`/`constraint_facts` only: no
@@ -18,7 +18,6 @@ from uuid import UUID
 
 from agentic_mbse.sysml.constraint_facts import (
     ConstraintDefinitionFact,
-    ConstraintFacts,
     ConstraintUsageFact,
     IdentityFact,
     LocationFact,
@@ -46,13 +45,10 @@ __all__ = [
     "IdentifiedProfileResult",
     "IdentifiedUsageDecision",
     "PreflightResult",
-    "ProfileResult",
     "UsageDecision",
     "classify_equality",
     "classify_ordering",
-    "evaluate_profile",
     "evaluate_identified_profile",
-    "preflight",
     "preflight_identified",
     "unit_compatibility",
 ]
@@ -209,29 +205,6 @@ CONSTRAINT_USAGE_FACT_FIELD_CONSUMERS: Mapping[str, str] = {
     "predicate": "inline predicate selection and continuity",
     "inherited_into": "downstream inherited-context expansion",
 }
-
-
-@dataclass(frozen=True)
-class ProfileResult:
-    """`evaluate_profile`'s full output: one decision per usage, plus derived counts."""
-
-    decisions: list[UsageDecision]
-
-    @property
-    def admitted_count(self) -> int:
-        return sum(1 for d in self.decisions if d.eligibility is Eligibility.ADMIT)
-
-    @property
-    def blocked_count(self) -> int:
-        return sum(1 for d in self.decisions if d.eligibility is Eligibility.BLOCK)
-
-    @property
-    def non_numerical_count(self) -> int:
-        return sum(1 for d in self.decisions if d.eligibility is Eligibility.NON_NUMERICAL)
-
-    @property
-    def unassessed_count(self) -> int:
-        return sum(1 for d in self.decisions if d.eligibility is Eligibility.UNASSESSED)
 
 
 @dataclass(frozen=True)
@@ -1033,21 +1006,6 @@ def _evaluate_usage(
     return _evaluate_usage_against_definition(usage, definition)
 
 
-def evaluate_profile(facts: ConstraintFacts) -> ProfileResult:
-    """Decide eligibility for every usage in `facts.usages` (I1) — never over `facts.definitions`.
-
-    `facts.definitions` is read solely as the `definition_typed` predicate-lookup index; an unused
-    `ConstraintDefinition` never becomes a decision (the concept's inventory rule, by construction).
-    """
-    definitions_by_qn = {
-        definition.identity.qualified_name: definition
-        for definition in facts.definitions
-        if definition.identity.qualified_name is not None
-    }
-    decisions = [_evaluate_usage(usage, definitions_by_qn) for usage in facts.usages]
-    return ProfileResult(decisions=decisions)
-
-
 def evaluate_identified_profile(facts: IdentifiedConstraintFacts) -> IdentifiedProfileResult:
     """Evaluate live facts by exact usage/definition UUID, never by neutral display identity."""
     definitions_by_id: dict[UUID, ConstraintDefinitionFact] = {}
@@ -1099,11 +1057,6 @@ def _partition_decisions(decisions: Sequence[UsageDecision]) -> PreflightResult:
         non_numerical=non_numerical,
         unassessed=unassessed,
     )
-
-
-def preflight(facts: ConstraintFacts) -> PreflightResult:
-    """The neutral codegen gate: run the neutral profile and partition its decisions."""
-    return _partition_decisions(evaluate_profile(facts).decisions)
 
 
 def preflight_identified(result: IdentifiedProfileResult) -> PreflightResult:
