@@ -22,7 +22,7 @@ from agentic_mbse.sysml.constraint_facts import (
     IdentityFact,
     LocationFact,
 )
-from agentic_mbse.sysml.expression_facts import OperandTypeFact
+from agentic_mbse.sysml.expression_facts import FeatureReferenceFact, OperandTypeFact
 from agentic_mbse.sysml.expression_ir import (
     ExpressionIR,
     FeatureReferenceNode,
@@ -373,6 +373,31 @@ def _diagnostic(
     )
 
 
+def _feature_chain_message(reference: FeatureReferenceFact) -> str:
+    """Name the offending chain and the rewrite that replaces it.
+
+    `_diagnostic`'s default message repeats the reason (`feature_chain:
+    block_feature_chain`), which tells a modeler nothing: not which of a multi-chain
+    predicate's references is at fault, and not what to write instead. Everything needed is
+    already here at the decision point — `chain_segments` holds the ordered path names, root
+    first, so joining them reproduces the authored spelling.
+
+    The rewrite is the bindings-only recipe: a chain is not executable inside a predicate
+    body, but a usage formal bound to that chain is. The formal is named after the chain's
+    leaf, which is the name a modeler would pick anyway.
+
+    One line, no newline: the consumer folds several of these into a single-line diagnostic
+    detail.
+    """
+    chain = ".".join(reference.chain_segments)
+    formal = reference.chain_segments[-1]
+    return (
+        f"feature chain {chain!r} is not executable in a predicate body; "
+        f"bind it to a constraint formal in the usage (in {formal} = {chain};) "
+        "and use the formal in the predicate"
+    )
+
+
 def _leaf_fact(
     operand_type: OperandTypeFact | None,
     construct: str,
@@ -534,7 +559,15 @@ def _walk_value(
     """
     if isinstance(node, FeatureReferenceNode):
         if node.reference.chain_segments:
-            return [_diagnostic("block_feature_chain", "feature_chain", identity, location)]
+            return [
+                _diagnostic(
+                    "block_feature_chain",
+                    "feature_chain",
+                    identity,
+                    location,
+                    _feature_chain_message(node.reference),
+                )
+            ]
         return _leaf_fact(node.operand_type, "feature_ref", identity, location)
 
     if isinstance(node, LiteralNode):
@@ -702,7 +735,13 @@ def _walk_proposition(
     if isinstance(node, FeatureReferenceNode):
         if node.reference.chain_segments:
             diagnostics.append(
-                _diagnostic("block_feature_chain", "feature_chain", identity, location)
+                _diagnostic(
+                    "block_feature_chain",
+                    "feature_chain",
+                    identity,
+                    location,
+                    _feature_chain_message(node.reference),
+                )
             )
             return True
         if node.operand_type is not None and node.operand_type.category == "boolean":
