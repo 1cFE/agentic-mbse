@@ -129,6 +129,11 @@ requirement flowReq : FlowRequirement {
 }
 ```
 
+`require constraint` inside a `requirement def` is the correct way to state a requirement's required
+constraint, and that is all it does: the usage is cataloged and visible, and it never executes. The
+assert family is the sole enforcement opt-in — if you want the flow rate checked, write
+`assert constraint` against a `constraint def` with its formals bound to real values in scope.
+
 ---
 
 ## Response Format

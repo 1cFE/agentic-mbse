@@ -21,7 +21,7 @@ where the subtype-aware sweep is opt-in; the "drop" era it was written against i
 
 | # | Repo | Call site | Base type | Decision | Rationale |
 |---|------|-----------|-----------|----------|-----------|
-| 1 | codegen | `extractor.py` `collect_constraint_manifest` | `ConstraintUsage` | **include_subtypes=True, EXCLUDE `RequirementUsage`** | `assert` (`AssertConstraintUsage`) and `require`/plain are executable constraint usages (lowered under the profile); `RequirementUsage` + its `satisfy` subtype are requirement-side and excluded |
+| 1 | codegen | `extractor.py` `collect_constraint_manifest` | `ConstraintUsage` | **include_subtypes=True, EXCLUDE `RequirementUsage`** | `require`/plain subtypes are enumerated for visibility and catalog totality — every authored usage gets a catalog disposition — not because they execute. Only the assert family (`AssertConstraintUsage`) executes, lowered under the profile. `RequirementUsage` + its `satisfy` subtype are requirement-side and excluded from the sweep. |
 | 2 | codegen | `constraint_extractor.py` `extract_all_constraints` | `ConstraintUsage` | **DELETED** | zero callers, false docstring — removed with Item 4 |
 | 3 | codegen | `parameter_groups.py` design-attr sweep | `AttributeUsage` | **KEEP exact-type (opt-OUT)** | an `EnumerationUsage` entry point needs non-float EP typing (Item 5); flipping now would mint mistyped EPs |
 | 4 | codegen | `Part*/Calc*` def/usage sweeps | those | **KEEP exact-type (opt-OUT)** | no supported model produces connection/interface/view/case/analysis subtypes (Out of Scope) |

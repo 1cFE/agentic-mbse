@@ -38,9 +38,38 @@ outcomes per constraint usage:
 - **`UNASSESSED`** — `satisfy` constraints, requirement-side usages, and plain (unprefixed)
   constraints aren't run through the profile at all; they're cataloged separately, not blocked.
 
-`require` and `assume` constraints are unassessed today (only `assert` predicates are walked).
-If a constraint expresses a value the pipeline needs and its predicate blocks, move that
-computation into a calc def instead.
+The assert family is the enforcement opt-in, and that is the settled rule, not a current
+implementation state: `require`, `assume`, plain, and requirement-side constraints are cataloged and
+visible, and their predicates are never walked. If a constraint expresses a value the pipeline needs
+and its predicate blocks, move that computation into a calc def instead.
+
+### When should you write an equality at all?
+
+A numerical `==` does not execute as a check (see the outcomes above), and even where it could, an
+exact equality is usually not what you mean. Find your intent, then use the move next to it.
+
+| Your intent | The move |
+|---|---|
+| `b` **is** `a` by construction — structural identity | Derive `b`. Do not constrain it. |
+| Two independently computed values should agree — a cross-check | A loose, physically motivated validity band, sized to the disagreement you would accept. |
+| The design must meet a limit — a feasibility gate | A one-sided inequality. If a quantity must *equal* a value, fix it as an input rather than searching for it and constraining it. |
+| Terms must sum to a whole — composition closure | Derive the last term by construction; where you cannot, use a banded check as above. |
+
+**Why it matters:** narrow bands of viability make design exploration really difficult — searching a
+zero-measure set is why a study stops finding feasible points.
+
+**Tolerances are yours.** A band's tolerance is a modeled value you choose and can override. The
+pipeline never invents one.
+
+`[AGENT] (ratified by owner, 2026-08-12)` — the four classes are agent-originated and owner-reviewed;
+the *need* for this guidance is owner-stated. The reasoning behind each class, and the record you
+would challenge it against, is the authority copy: sysml-codegen
+`.project/concepts/constraint-execution-authoritative-lifecycle-contract.md`, "Equality intent and
+authoring policy". **This is not a second authority** — it is the same instruction, rendered where
+the instructed reader is. If the two ever disagree, the contract governs.
+
+Coverage and headline semantics are recorded in ADR-009 (sysml-codegen
+docs/architecture/modeling-assumptions.md §9).
 
 ---
 
@@ -189,16 +218,18 @@ assert constraint Conservation {
 
 ## Common Mistakes
 
-### Wrong: Plain constraint block (no prefix)
+### Not a check: plain constraint block (no prefix)
 
 ```sysml
-// WRONG: Not recognized as ConstraintUsage!
+// Parses fine — a ConstraintUsage — but never executes
 constraint TempLimit {
     temperature < 1000 [K]
 }
 ```
 
-**Error:** Parser does not create proper AST node without prefix.
+**Why it never runs:** the parser does create a ConstraintUsage; it is classified `plain_usage`, and
+the form gate stops it before the predicate is ever walked. It is cataloged and visible, never
+enforced. Use `assert constraint` for a check.
 
 ### Correct: With prefix
 

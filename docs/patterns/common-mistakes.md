@@ -241,28 +241,31 @@ calc consumer : ConsumerCalc {
 
 ---
 
-## Mistake 8: Forgetting Constraint Prefix
+## Mistake 8: Expecting a Plain Constraint to Be Checked
 
 ### Don't: Plain constraint block
 
 ```sysml
-// BAD: Not recognized as constraint
+// BAD: parses fine, but never executes
 constraint TempLimit {
     temperature < 1000 [K]
 }
 ```
 
-### Do: Use assert/require prefix
+### Do: Use the assert prefix
 
 ```sysml
-// GOOD: Proper constraint
+// GOOD: an executed check
 assert constraint TempLimit {
     doc /* Operating temperature limit */
     temperature < 1000 [K]
 }
 ```
 
-**Why:** Parser requires prefix to create proper ConstraintUsage node.
+**Why:** the parser does create a ConstraintUsage without the prefix — it is classified
+`plain_usage`, cataloged, and visible, but the form gate stops it before the predicate is walked.
+The assert family is the only enforcement opt-in; `require` and `assume` are cataloged and visible
+too, and neither executes.
 
 ---
 
