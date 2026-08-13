@@ -148,12 +148,63 @@ class _ExtractedConstraintUsage:
     fact: ConstraintUsageFact
 
 
+#: The forms that ask for their predicate to be enforced. Only these can be *vacuous*:
+#: a bare `constraint` states a condition without asking anyone to check it, so an owner
+#: nobody instantiates says nothing about it.
+_ASSERTED_FORMS = frozenset({"definition_typed", "inline", "named_usage_reference"})
+
+
+def _typed_part_definition_ids(model: Any) -> frozenset[UUID]:
+    """Every part definition that some part usage in the model is typed by.
+
+    This is the structural stand-in for "was anything of this ever instantiated". It is
+    deliberately weaker than an occurrence walk: a part definition typed by a usage that
+    is itself never instantiated counts as typed here. Reaching for the stronger answer
+    would mean reimplementing occurrence resolution in this layer, and the alignment rule
+    is directional rather than equal -- this trigger set is a subset of what codegen
+    grades vacuous, so the advisory can only ever be missing, never false.
+    """
+    typed: set[UUID] = set()
+    for usage in SysideAdapter.elements_of_type(model, "PartUsage", include_subtypes=True):
+        for relationship, target in getattr(usage, "heritage", None) or ():
+            if SysideAdapter.is_instance(
+                relationship, "FeatureTyping"
+            ) and SysideAdapter.is_instance(target, "PartDefinition"):
+                typed.add(SysideAdapter.element_id(target))
+    return frozenset(typed)
+
+
+def _vacuous_asserted_gate_fact(
+    constraint: Any, form: str, typed_part_definitions: frozenset[UUID]
+) -> ExtractionDiagnosticFact | None:
+    """The advisory for an asserted gate on a part definition nothing types, else None."""
+    if form not in _ASSERTED_FORMS:
+        return None
+    owner = getattr(constraint, "owning_type", None) or getattr(constraint, "owner", None)
+    if not SysideAdapter.is_instance(owner, "PartDefinition"):
+        return None
+    if SysideAdapter.element_id(owner) in typed_part_definitions:
+        return None
+    usage_qn = _qualified_name(constraint) or "<anonymous>"
+    owner_qn = _qualified_name(owner) or "<anonymous>"
+    return ExtractionDiagnosticFact(
+        kind="vacuous_asserted_gate",
+        message=(
+            f"asserted constraint {usage_qn} can never be checked: its owner {owner_qn} "
+            "is not typed by any part usage in the model, so nothing instantiates it"
+        ),
+        operand_source=None,
+        location=_location_fact(constraint),
+    )
+
+
 def _extract_constraint_facts(
     model: Any,
 ) -> tuple[ConstraintFacts, tuple[_ExtractedConstraintUsage, ...]]:
     """Extract neutral facts and retain their live producer association internally."""
     ctx = _ExtractionContext()
     candidate_contexts = list(_candidate_contexts(model))
+    typed_part_definitions = _typed_part_definition_ids(model)
     constraints = sorted(
         SysideAdapter.elements_of_type(model, "ConstraintUsage", include_subtypes=True),
         key=_constraint_sort_key,
@@ -186,6 +237,9 @@ def _extract_constraint_facts(
                 definition, "ConstraintDefinition"
             ):
                 definitions_by_qn.setdefault(definition_qn, definition)
+        advisory = _vacuous_asserted_gate_fact(constraint, form, typed_part_definitions)
+        if advisory is not None:
+            ctx.diagnostics.append(advisory)
         usage_fact = _usage_fact(constraint, form, candidate_contexts, formals_for, ctx)
         usages.append(usage_fact)
         usage_records.append(_ExtractedConstraintUsage(constraint, usage_fact))

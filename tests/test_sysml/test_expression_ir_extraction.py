@@ -2,7 +2,7 @@
 
 Spelling distinctness, an exercised unsupported node, unit-annotation source+resolved
 fidelity, and byte-stable round-trip over real facts — at the pinned pair
-`(constraint-facts/v2, expression-ir/v1)`, within a load and across independent loads.
+`(constraint-facts/v3, expression-ir/v1)`, within a load and across independent loads.
 """
 
 from __future__ import annotations

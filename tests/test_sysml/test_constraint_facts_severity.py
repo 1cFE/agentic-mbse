@@ -86,7 +86,7 @@ def test_unrecognized_kind_fails_closed_at_parse():
 
 @pytest.mark.parametrize(
     "foreign_version",
-    ["constraint-facts/v1", "constraint-facts/v3"],
+    ["constraint-facts/v2", "constraint-facts/v4"],
     ids=["reader-newer-than-writer", "reader-older-than-writer"],
 )
 def test_both_skew_directions_fail_closed_before_field_deserialization(foreign_version):
@@ -101,7 +101,7 @@ def test_both_skew_directions_fail_closed_before_field_deserialization(foreign_v
 
 
 def test_schema_version_is_v2():
-    assert CONSTRAINT_FACTS_SCHEMA_VERSION == "constraint-facts/v2"
+    assert CONSTRAINT_FACTS_SCHEMA_VERSION == "constraint-facts/v3"
 
 
 # --- DD-A01: the profile's reason vocabulary, enforced in production --------
