@@ -422,18 +422,45 @@ That set of gates the headline is accountable for is the **feasibility denominat
 
 ### How to write it
 
-Put the marker in the constraint usage's doc comment, with a reason:
+Put the marker in the constraint usage's doc comment, with a reason — **on a gate that does not
+run**:
 
 ```sysml
-assert constraint vac_ok : ProductWithinBand {
-    doc /* @inapplicable: no vacuum system in the direct-drive variant */
-    in actual = plant.pumping_speed_total;
-    in reference = plant.pumping_speed_required;
+constraint def ProductWithinBand {
+    in actual : Real;
+    in reference : Real;
+    actual <= reference
+}
+
+// The direct-drive variant instantiates no VacuumSystem, so this definition has zero
+// occurrences and the gate below reaches nothing. That is what lets the marker stand.
+part def VacuumSystem {
+    attribute pumping_speed_total : Real = 12.0;
+    attribute pumping_speed_required : Real = 20.0;
+
+    assert constraint vac_ok : ProductWithinBand {
+        doc /* @inapplicable: no vacuum system in the direct-drive variant */
+        in actual = pumping_speed_total;
+        in reference = pumping_speed_required;
+    }
 }
 ```
 
+**Read the comment, not just the constraint.** The marker is honest here because nothing instantiates
+`VacuumSystem` in this variant, so `vac_ok` reaches no occurrence and never produces a verdict. Put
+the same marked gate on a part that *is* instantiated and generation **refuses the model** — see
+"D9" below. A marker is a statement that a gate is out of the feasible set; it is not a switch that
+turns a running gate off.
+
 The reason text is not decoration. It is what a reviewer reads to decide whether the exclusion is
-honest, and it travels into the catalog with the disposition.
+honest, and it travels into the catalog with the disposition — the generated catalog for the model
+above carries `inapplicability_reason: "no vacuum system in the direct-drive variant"` and
+`inapplicable_gate_count: 1`.
+
+Both shapes are pinned as fixtures in sysml-codegen: the accepted one above as
+`tests/fixtures/constraint_coverage_all_inapplicable`, and the refused one as
+`tests/fixtures/constraint_coverage_eligible_inapplicable`, whose header says in as many words that
+generation **must** fail on it.
 
 ### ⚠️ Where the marker actually works — decide this **before** you author
 

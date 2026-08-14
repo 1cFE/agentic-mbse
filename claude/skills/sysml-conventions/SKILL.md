@@ -158,16 +158,30 @@ Three rules, and each one bites:
    **no conversion**; two consumers of one shared value that annotate different units fail closed
    with `SI_RENDERING_COLLISION`, naming the key. Fix the model, not the diagnostic.
 
-**Marking a constraint inapplicable:**
+**Marking a constraint inapplicable** — the marker goes on a gate that **does not run**:
 ```sysml
-assert constraint vac_ok : ProductWithinBand {
-    doc /* @inapplicable: no vacuum system in the direct-drive variant */
-    // ...
+// The direct-drive variant instantiates no VacuumSystem, so this definition has zero
+// occurrences and the gate below reaches nothing. That is what lets the marker stand.
+part def VacuumSystem {
+    attribute pumping_speed_total : Real = 12.0;
+    attribute pumping_speed_required : Real = 20.0;
+
+    assert constraint vac_ok : ProductWithinBand {
+        doc /* @inapplicable: no vacuum system in the direct-drive variant */
+        in actual = pumping_speed_total;
+        in reference = pumping_speed_required;
+    }
 }
 ```
 An `@inapplicable:` marker is the **only** way a gate leaves the feasibility denominator. Without
 one, an asserted gate that never ran keeps the report at `partial_coverage` rather than
 `full_satisfaction` — which is the point: an unassessed gate must not read as a passing one.
+
+⚠️ **Marking a gate that actually runs is refused, not honoured.** Put this same marked constraint on
+a part that *is* instantiated and generation fails by name: *"marked inapplicable but produced 1
+executable entries."* That is D9. A marker states a gate is out of the feasible set; it is not a
+switch that silences a live check. Accepted and refused shapes are both pinned as sysml-codegen
+fixtures — `constraint_coverage_all_inapplicable` and `constraint_coverage_eligible_inapplicable`.
 
 ⚠️ **The marker only reaches the domain on the bindings form.** On an inline-predicate constraint
 SysIDE silently drops the doc comment, so the marker never arrives and the gate stays in the
