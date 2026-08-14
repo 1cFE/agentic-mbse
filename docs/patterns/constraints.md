@@ -402,6 +402,79 @@ computation an ineligible predicate expresses into a calc def instead.
 
 ---
 
+## Marking a constraint inapplicable: `@inapplicable:`
+
+*Added 2026-08-14, CONSTRAINT-SEMANTICS Item 7, documenting what Items 2–5 landed.*
+
+Some gates do not apply to some designs. A vacuum-system limit means nothing in a variant with no
+vacuum system. You need a way to say so that is **visible** — not by deleting the constraint, and not
+by leaving it to fail quietly.
+
+### Why it matters: the feasibility denominator
+
+A generated constraint report does not just say "nothing failed." It makes a **coverage** claim.
+`full_satisfaction` means *every applicable asserted gate was assessed and passed*. If an asserted
+gate exists and never ran, the headline drops to `partial_coverage` — deliberately, so an unassessed
+gate can never read as a passing one.
+
+That set of gates the headline is accountable for is the **feasibility denominator**. An
+`@inapplicable:` marker is the **only** way a gate leaves it.
+
+### How to write it
+
+Put the marker in the constraint usage's doc comment, with a reason:
+
+```sysml
+assert constraint vac_ok : ProductWithinBand {
+    doc /* @inapplicable: no vacuum system in the direct-drive variant */
+    in actual = plant.pumping_speed_total;
+    in reference = plant.pumping_speed_required;
+}
+```
+
+The reason text is not decoration. It is what a reviewer reads to decide whether the exclusion is
+honest, and it travels into the catalog with the disposition.
+
+### ⚠️ Where the marker actually works — decide this **before** you author
+
+| Constraint form | Does `@inapplicable:` reach the domain? | What carries the disposition |
+|---|---|---|
+| **Bindings form** — `assert constraint x : SomeDef { in a = …; in b = …; }` | **Yes** | the marker, in source |
+| **Inline-predicate form** — `assert constraint x { a <= b }` | **No — silently dropped** | the fixture's `PROVENANCE.md` |
+
+On the inline-predicate form SysIDE drops the doc comment before it reaches extraction, so the marker
+never arrives. Nothing warns you. The gate stays in the denominator and the report reads
+`partial_coverage` while your source says the constraint is inapplicable.
+
+This is filed as `[INLINE-PREDICATE-MARKER-DROP]` and it is **open**. Until it closes, an
+inline-form disposition has to be recorded in the fixture's `PROVENANCE.md` instead of in source.
+
+**The worked case.** sysml-codegen `tests/fixtures/catf_mfe_gated`, B1–B5: five markers written,
+zero carried. The loud detector that catches the gap is
+`tests/conformance/test_constraint_population_oracle.py`, rule 3.
+
+**Practical rule:** if you intend to mark a constraint inapplicable, write it in the bindings form.
+That is the blessed shape anyway.
+
+### D9 — eligible **and** `@inapplicable:` is refused
+
+A constraint cannot be both "the profile admitted it, it lowers, it runs" and "it is not part of the
+feasible set." Generation **refuses** that combination loudly, by name (D9). Nothing ships wrong.
+
+**Catch it earlier — the authoring-time advisory.** D9 fires at generation time, which is late: you
+have already written the model, and the failure arrives from a different repo. Authoring validation
+raises the same combination as an advisory while you are still in the model, naming the usage and
+both halves of the contradiction. Treat that advisory as the real answer, not a nag — it is D9 one
+step earlier.
+
+The fix is always one of two things, and you have to decide which you meant:
+
+- **The gate really does apply here** → remove the `@inapplicable:` marker and let it run.
+- **The gate really does not apply** → the usage should not be admitted for this design. Do not
+  silence the check; change what the model asserts.
+
+---
+
 ## Related Patterns
 
 - [semantic-operators.md](semantic-operators.md) - Constraint syntax requirements
