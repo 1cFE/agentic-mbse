@@ -9,12 +9,19 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal, TypeAlias
 
-from agentic_mbse.sysml.data_models import LocalTerm, SingletonTerm, SumTerm
+from agentic_mbse.sysml.data_models import (
+    LocalTerm,
+    ResolvedTargetFact,
+    SingletonTerm,
+    SumTerm,
+)
 from agentic_mbse.sysml.expression import (
     extract_feature_chain_name,
     extract_feature_reference_name,
+    feature_chain_facts,
     is_literal_node,
     reconstruct_expression,
+    resolved_target_fact,
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
@@ -95,9 +102,20 @@ class SumNode:
 
 @dataclass
 class FeatureChainNode:
-    """Neutral feature-chain expression."""
+    """Neutral feature-chain expression.
+
+    ``resolved_target`` is the exact SysIDE-resolved leaf of the chain,
+    ``chain_root`` the resolved root referent, both captured before any name is
+    rendered (SOURCE-IDENTITY Item 4). ``resolved_member_names`` is the resolved
+    member path from root to leaf. ``has_index_segment`` marks an ``#(i)``
+    index operand — recorded, never flattened away.
+    """
 
     source_path: str
+    resolved_target: ResolvedTargetFact | None = None
+    chain_root: ResolvedTargetFact | None = None
+    resolved_member_names: tuple[str, ...] = ()
+    has_index_segment: bool = False
 
 
 @dataclass
@@ -105,6 +123,7 @@ class FeatureReferenceNode:
     """Neutral feature-reference expression."""
 
     attribute_name: str
+    resolved_target: ResolvedTargetFact | None = None
 
 
 @dataclass
@@ -229,10 +248,28 @@ def _decompose_node(
     # report feature chains as operators too.
     if SysideAdapter.is_instance(node, "FeatureChainExpression"):
         source_path = extract_feature_chain_name(node)
+        chain_fact = feature_chain_facts(node)
+        chain_root = chain_fact.root
+        resolved_target = chain_fact.leaf
+        member_names = chain_fact.resolved_member_names
+        has_index = chain_fact.has_index_segment
         if collect_terms:
-            ctx.singleton_terms.append(SingletonTerm(source_path=source_path))
+            ctx.singleton_terms.append(
+                SingletonTerm(
+                    source_path=source_path,
+                    resolved_target=resolved_target,
+                    chain_root=chain_root,
+                    resolved_member_names=member_names,
+                )
+            )
             ctx.source_refs.append(source_path)
-        return FeatureChainNode(source_path=source_path)
+        return FeatureChainNode(
+            source_path=source_path,
+            resolved_target=resolved_target,
+            chain_root=chain_root,
+            resolved_member_names=member_names,
+            has_index_segment=has_index,
+        )
 
     if SysideAdapter.is_instance(node, "OperatorExpression"):
         operator = str(getattr(node, "operator", "+"))
@@ -257,10 +294,13 @@ def _decompose_node(
 
     if SysideAdapter.is_instance(node, "FeatureReferenceExpression"):
         attr_name = extract_feature_reference_name(node)
+        resolved_target = resolved_target_fact(getattr(node, "referent", None))
         if collect_terms:
-            ctx.local_terms.append(LocalTerm(attribute_name=attr_name))
+            ctx.local_terms.append(
+                LocalTerm(attribute_name=attr_name, resolved_target=resolved_target)
+            )
             ctx.source_refs.append(attr_name)
-        return FeatureReferenceNode(attribute_name=attr_name)
+        return FeatureReferenceNode(attribute_name=attr_name, resolved_target=resolved_target)
 
     # Literal/null must precede the invocation catch-all because real SysIDE
     # nodes can expose a derived .function.name.
@@ -278,6 +318,7 @@ def _decompose_node(
         if func_name == "sum" and operands:
             operand, wrapper_context = _unwrap_sum_operand(operands[0], ctx)
             operand_node = _decompose_node(operand, ctx, collect_terms=False)
+            resolved_target, chain_root, member_names = _operand_chain_evidence(operand)
             chain_name = _sum_operand_name(operand)
             parts = chain_name.split(".", 1)
             if len(parts) == 2:
@@ -287,6 +328,9 @@ def _decompose_node(
                     attribute_name=attr_name,
                     multiplicity_attr=None,
                     multiplicity_count=None,
+                    resolved_target=resolved_target,
+                    chain_root=chain_root,
+                    resolved_member_names=member_names,
                 )
                 ctx.sum_terms.append(term)
                 return SumNode(
@@ -295,8 +339,17 @@ def _decompose_node(
                     wrapper_context=wrapper_context,
                 )
 
-            ctx.local_terms.append(LocalTerm(attribute_name=chain_name))
-            return FeatureReferenceNode(attribute_name=chain_name)
+            ctx.local_terms.append(
+                LocalTerm(
+                    attribute_name=chain_name,
+                    resolved_target=resolved_target,
+                    chain_root=chain_root,
+                    resolved_member_names=member_names,
+                )
+            )
+            return FeatureReferenceNode(
+                attribute_name=chain_name, resolved_target=resolved_target
+            )
 
         if func_name in KNOWN_WRAPPER_FUNCTIONS and operands:
             unwrapped, _depth = _unwrap_known_wrapper(node, ctx)
@@ -363,3 +416,15 @@ def _sum_operand_name(operand: Any) -> str:
     if SysideAdapter.is_instance(operand, "FeatureChainExpression"):
         return extract_feature_chain_name(operand)
     return extract_feature_reference_name(operand)
+
+
+def _operand_chain_evidence(
+    operand: Any,
+) -> tuple[ResolvedTargetFact | None, ResolvedTargetFact | None, tuple[str, ...]]:
+    """The exact (leaf, root, member names) of a sum() operand chain or reference."""
+    if SysideAdapter.is_instance(operand, "FeatureChainExpression"):
+        chain_fact = feature_chain_facts(operand)
+        return chain_fact.leaf, chain_fact.root, chain_fact.resolved_member_names
+    if SysideAdapter.is_instance(operand, "FeatureReferenceExpression"):
+        return resolved_target_fact(getattr(operand, "referent", None)), None, ()
+    return None, None, ()

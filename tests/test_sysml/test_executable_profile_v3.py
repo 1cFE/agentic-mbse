@@ -18,9 +18,26 @@ from agentic_mbse.sysml.constraint_facts import (
 from agentic_mbse.sysml.constraint_facts import (
     serialize as serialize_constraint_facts,
 )
-from agentic_mbse.sysml.executable_profile import Eligibility, evaluate_profile
+from agentic_mbse.sysml.executable_profile import (
+    Eligibility,
+    UsageDecision,
+    evaluate_identified_profile,
+)
 from agentic_mbse.sysml.expression_facts import FeatureReferenceFact, OperandTypeFact
 from agentic_mbse.sysml.expression_ir import FeatureReferenceNode, OperatorNode
+from tests.helpers.identified_facts import identify
+
+
+def _sole_decision(facts: ConstraintFacts) -> UsageDecision:
+    """The one decision the exact route produces for a single-usage synthetic payload.
+
+    The payload declares no definitions, so the usage carries no effective definition.
+    `identify` states that association rather than deriving it from a name — see
+    `tests/helpers/identified_facts`.
+    """
+    result = evaluate_identified_profile(identify(facts))
+    assert len(result.decisions) == 1
+    return result.decisions[0].decision
 
 
 def _leaf(category: str, *, chained: bool = False) -> FeatureReferenceNode:
@@ -65,9 +82,8 @@ def _decision(predicate: object, *, location=None):
         predicate=predicate,
         inherited_into=[],
     )
-    return evaluate_profile(
-        ConstraintFacts(definitions=[], usages=[usage], contexts=[], diagnostics=[])
-    ).decisions[0]
+    return _sole_decision(ConstraintFacts(definitions=[], usages=[usage], contexts=[], diagnostics=[])
+    )
 
 
 def _round_trip_decision(predicate: object):
@@ -98,7 +114,7 @@ def _round_trip_decision(predicate: object):
     )
     facts = ConstraintFacts(definitions=[], usages=[usage], contexts=[], diagnostics=[])
     parsed = parse_constraint_facts(serialize_constraint_facts(facts))
-    return evaluate_profile(parsed).decisions[0]
+    return _sole_decision(parsed)
 
 
 @pytest.mark.parametrize(

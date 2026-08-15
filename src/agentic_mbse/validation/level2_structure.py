@@ -306,71 +306,25 @@ def _has_defined_value(element: Any) -> bool:
     return False
 
 
-def _owner_covers_name(owner: Any, name: str) -> bool:
-    """Check whether `owner` carries a same-named feature that covers `name`.
-
-    Coverage is any feature named `name` — owned OR inherited from a supertype —
-    that could supply the value the self-named binding intends to reach:
-    - an AttributeUsage named `name` — including a bare literal (`attribute name =
-      0.70`). This is the plant design-attribute idiom (`in radius = radius` with an
-      outer `attribute radius = <lit>`) that Item 9's rescue makes a SUPPORTED shape:
-      the outer attribute is the value source, resolved downstream.
-    - a sibling calc usage whose output is named `name` — the EXPOSE-of-an-upstream
-      channel that Item 10's rescue wires.
-
-    Inherited features count: a subtype driver retyped in (Item 4) binds
-    `in bank_energy = bank_energy` against a `bank_energy` attribute it inherits from
-    its base def — a covered, supported shape. So the scan walks `owner.features`
-    (owned + inherited), not just `owned_members`.
-
-    Only a self-named binding with NO such same-named feature at all is a true
-    dead-end: the value literally has nowhere to come from.
-    """
-    if owner is None:
-        return False
-
-    members = getattr(owner, "features", None)
-    if members is None:
-        members = getattr(owner, "owned_members", None)
-    if members is None:
-        return False
-
-    for member in members:
-        try:
-            if SysideAdapter.is_instance(member, "AttributeUsage"):
-                if str(getattr(member, "name", "")) == name:
-                    return True
-            elif SysideAdapter.is_instance(member, "CalculationUsage"):
-                calc_def = getattr(member, "calculation_definition", None)
-                if calc_def and hasattr(calc_def, "owned_members"):
-                    for param in calc_def.owned_members:
-                        direction = str(getattr(param, "direction", ""))
-                        if ("Out" in direction or "Return" in direction) and str(
-                            getattr(param, "name", "")
-                        ) == name:
-                            return True
-        except Exception:
-            continue
-
-    return False
-
-
 def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
     """
-    C1 (Item 12): flag a self-named input binding that dead-ends with nothing to
-    cover it.
+    C1 (Item 12): flag every self-named input binding.
 
     A binding `in P = P` where the reference name equals the calc's own input
-    parameter name resolves to that parameter itself (a self-reference), so the
-    intended outer value never reaches the input. This is a modeling error UNLESS
-    the enclosing part carries a same-named feature that supplies the value: an
-    attribute named `P` (even a bare literal — the plant design-attribute idiom
-    Item 9 rescues) or a sibling calc output named `P` (the EXPOSE channel Item 10
-    rescues). Only a self-named binding with NO same-named feature at all is a true
-    dead-end — that is the sole shape this check FAILs.
+    parameter name resolves to that parameter itself, so the intended outer value
+    never reaches the input. Every such binding is a modeling error.
+
+    There is no same-named-outer-feature exemption. The check used to suppress the
+    diagnostic when the enclosing part carried an attribute or sibling calc output
+    named `P`, on the theory that the outer feature would be resolved downstream.
+    Exact elaboration never does that: D-4 [OWNER-VERBATIM 2026-08-05] — "Never
+    reinterpret a self-binding as an outer reference" — and the lifecycle contract's
+    blocking-diagnostics clause and violation table put `SI_SELF_BINDING` in the
+    blocking set unconditionally. A validator that stayed silent on a shape the
+    generator refuses was telling the author the model was fine when it was not.
 
     Returns:
-        List of ValidationIssue (ERROR) for dead-end self-named bindings.
+        List of ValidationIssue (ERROR), one per self-named binding.
     """
     issues: list[ValidationIssue] = []
 
@@ -385,7 +339,6 @@ def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
                 for feat in _extract_input_features(calc_def)
                 if getattr(feat, "name", None)
             }
-            owner = getattr(calc_usage, "owner", None)
 
             for binding in extract_bindings(calc_usage):
                 # Self-named: the bound param is a real input, the RHS is a bare
@@ -397,11 +350,6 @@ def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
                 if binding.source_path != binding.param_name:
                     continue
 
-                # Covered? A same-named feature (attribute, incl. literal, or a
-                # sibling calc output) in the owner scope supplies the value.
-                if _owner_covers_name(owner, binding.param_name):
-                    continue
-
                 calc_name = get_qualified_name(calc_usage)
                 issues.append(
                     ValidationIssue(
@@ -410,9 +358,10 @@ def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
                         code=ValidationCode.L2_SELF_NAMED_BINDING,
                         message=(
                             f"Input '{binding.param_name}' in calc '{calc_name}' binds to a "
-                            f"same-named reference that resolves to the calc's own parameter; "
-                            f"no feature named '{binding.param_name}' is in scope to supply it, "
-                            f"so the binding dead-ends"
+                            f"same-named reference that resolves to the calc's own parameter, "
+                            f"so the binding dead-ends. A same-named feature in the enclosing "
+                            f"scope does not rescue it — the binding is never reinterpreted as "
+                            f"an outer reference. Bind the outer feature by a distinct path"
                         ),
                         element_name=calc_name,
                         location=get_element_location(calc_usage),

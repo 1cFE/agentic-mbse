@@ -5,10 +5,11 @@ Test suite for the 6-level SysML quality validation framework.
 Follows test-first approach per plan.md.
 """
 
-import pytest
-from pathlib import Path
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
+
+import pytest
 
 
 # Test fixtures for valid/invalid SysML files
@@ -229,8 +230,8 @@ class TestLevel2Structure:
             }
         """)
 
+        from agentic_mbse.validation.common import discover_sysml_files, load_sysml_model
         from agentic_mbse.validation.level2_structure import check_unbound_inputs
-        from agentic_mbse.validation.common import load_sysml_model, discover_sysml_files
 
         files = discover_sysml_files(str(temp_models_dir))
         model, _ = load_sysml_model(files)
@@ -588,6 +589,24 @@ class TestLevel4Constraints:
         result = analyze_constraints(str(valid_sysml_file.parent.parent))
         assert result.level == 4
 
+    def test_direct_file_execution_resolves_its_shared_helpers(self):
+        """Running the checker as a script still imports `common`, with no relative fallback."""
+        import subprocess
+        import sys
+
+        from agentic_mbse.validation import level4_constraints
+
+        completed = subprocess.run(
+            [sys.executable, level4_constraints.__file__, "--help"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        assert completed.returncode == 0, completed.stderr
+        assert "Level 4" in completed.stdout
+        assert "ImportError" not in completed.stderr
+
 
 class TestLevel5Traceability:
     """Tests for Level 5: Traceability & Documentation"""
@@ -733,9 +752,10 @@ class TestEndToEnd:
 
     def test_fail_fast_mode(self):
         """Test that fail-fast mode stops appropriately"""
-        import tempfile
         import shutil
+        import tempfile
         from pathlib import Path
+
         from agentic_mbse.validation.runner import run_all_checks
 
         # Create temp dir with broken file
@@ -810,8 +830,8 @@ class TestLevel6Architecture:
 
     def test_check_calc_def_structure_finds_outputs(self):
         """Valid calc defs with outputs pass structure check"""
-        from agentic_mbse.validation.level6_architecture import validate_architecture
         from agentic_mbse.sysml.types import ValidationCode
+        from agentic_mbse.validation.level6_architecture import validate_architecture
 
         result = validate_architecture("tests/fixtures/sample_models/")
         no_output_issues = [
@@ -823,8 +843,8 @@ class TestLevel6Architecture:
 
     def test_check_binding_formats_valid(self):
         """Valid bindings pass format check"""
-        from agentic_mbse.validation.level6_architecture import validate_architecture
         from agentic_mbse.sysml.types import ValidationCode
+        from agentic_mbse.validation.level6_architecture import validate_architecture
 
         result = validate_architecture("tests/fixtures/sample_models/")
         binding_issues = [
@@ -846,8 +866,8 @@ class TestLevel6Architecture:
 
     def test_incomplete_design_attrs_are_errors(self):
         """Incomplete design attributes produce errors per FR-7"""
-        from agentic_mbse.validation.level6_architecture import validate_architecture
         from agentic_mbse.sysml.types import Severity, ValidationCode
+        from agentic_mbse.validation.level6_architecture import validate_architecture
 
         result = validate_architecture("tests/fixtures/sample_models/")
         incomplete_issues = [
@@ -948,29 +968,96 @@ class TestLevel6NegativeCases:
         assert len(manifest_issues) >= 2
         assert any("nonexistent_subsystem_alpha" in str(i) for i in manifest_issues)
 
-    def test_manifest_invalid_yaml(self, tmp_path):
-        """Malformed manifest.yaml is handled gracefully (not a crash)."""
+    def test_manifest_invalid_yaml_fails_the_level_and_does_not_stop_the_sweep(self, tmp_path):
+        """A malformed manifest is a Level 6 issue, not a silently skipped design.
+
+        The three unusable-manifest shapes used to collapse to `None` and read the same as
+        "this design has no manifest", so a design whose composition was never checked left
+        Level 6 green. `load_manifest` now separates absent from invalid, and `_check_manifests`
+        reports the invalid one while still visiting the design that follows it.
+        """
         from agentic_mbse.validation.common import discover_sysml_files, load_sysml_model
-        from agentic_mbse.validation.level6_architecture import _check_manifests, load_manifest
+        from agentic_mbse.validation.level6_architecture import (
+            ManifestError,
+            _check_manifests,
+            load_manifest,
+        )
 
-        # Create designs/ with bad YAML
-        design_dir = tmp_path / "designs" / "bad_design"
-        design_dir.mkdir(parents=True)
-        (design_dir / "manifest.yaml").write_text(": : : not valid yaml {{[")
+        bad_design = tmp_path / "designs" / "bad_design"
+        bad_design.mkdir(parents=True)
+        (bad_design / "manifest.yaml").write_text(": : : not valid yaml {{[")
 
-        # Create a minimal SysML file so we have a model
+        # A second, well-formed design whose expectation is genuinely unmet: it must still be
+        # reached and reported, which is what "one bad file must not abort the check" means.
+        good_design = tmp_path / "designs" / "good_design"
+        good_design.mkdir(parents=True)
+        (good_design / "manifest.yaml").write_text("expected_subsystems:\n  - absent_part\n")
+
         (tmp_path / "test.sysml").write_text("package BadYamlTest {}")
         files = discover_sysml_files(str(tmp_path))
         model, _ = load_sysml_model(files)
 
-        # load_manifest returns None for bad YAML (doesn't crash)
-        manifest = load_manifest(design_dir)
-        assert manifest is None
+        with pytest.raises(ManifestError, match="could not be read"):
+            load_manifest(bad_design)
 
-        # _check_manifests skips None manifests gracefully
         issues, count = _check_manifests(str(tmp_path), model)
-        assert count == 1  # Found the manifest file
-        assert len(issues) == 0  # But skipped it (None manifest)
+        assert count == 2
+        assert any("Unusable manifest in bad_design" in issue for issue in issues)
+        assert any("Missing subsystem 'absent_part' in good_design" in issue for issue in issues)
+
+    def test_manifest_absent_is_not_an_error(self, tmp_path):
+        """A design with no manifest has nothing to check — the one state that stays `None`."""
+        from agentic_mbse.validation.level6_architecture import load_manifest
+
+        design_dir = tmp_path / "designs" / "no_manifest_design"
+        design_dir.mkdir(parents=True)
+
+        assert load_manifest(design_dir) is None
+
+    def test_manifest_valid_yaml_that_is_not_a_mapping(self, tmp_path):
+        """Well-formed YAML that is a list is refused here, not subscripted by a caller."""
+        from agentic_mbse.validation.level6_architecture import ManifestError, load_manifest
+
+        design_dir = tmp_path / "designs" / "list_design"
+        design_dir.mkdir(parents=True)
+        (design_dir / "manifest.yaml").write_text("- alpha\n- beta\n")
+
+        with pytest.raises(ManifestError, match="is a list, not a mapping"):
+            load_manifest(design_dir)
+
+    def test_manifest_that_is_not_utf8_is_refused_by_name(self, tmp_path):
+        """A mis-encoded manifest is refused as unreadable, not returned as absent.
+
+        `UnicodeDecodeError` is a `ValueError`, so it is neither `OSError` nor
+        `yaml.YAMLError`. It still has to become a named `ManifestError` rather than escape
+        raw, because `_check_manifests` loops over every design and catches that name.
+        """
+        from agentic_mbse.validation.level6_architecture import ManifestError, load_manifest
+
+        design_dir = tmp_path / "designs" / "latin1_design"
+        design_dir.mkdir(parents=True)
+        # Valid YAML in latin-1; byte 0xE9 is not a legal UTF-8 sequence start.
+        (design_dir / "manifest.yaml").write_bytes(
+            "subsystems:\n  - caf\xe9\n".encode("latin-1")
+        )
+
+        with pytest.raises(ManifestError, match="could not be read"):
+            load_manifest(design_dir)
+
+    def test_manifest_read_failure_is_refused_by_name(self, tmp_path):
+        """An unreadable manifest is refused as unreadable; unexpected errors are not swallowed."""
+        from agentic_mbse.validation.level6_architecture import ManifestError, load_manifest
+
+        design_dir = tmp_path / "designs" / "unreadable_design"
+        design_dir.mkdir(parents=True)
+        manifest = design_dir / "manifest.yaml"
+        manifest.write_text("subsystems: []\n")
+        manifest.chmod(0o000)
+        try:
+            with pytest.raises(ManifestError, match="Permission denied"):
+                load_manifest(design_dir)
+        finally:
+            manifest.chmod(0o644)
 
     def test_adr002_v1_in_orchestrator(self):
         """ADR-002 V1 violations (calc def in designs/) appear in L6 result."""

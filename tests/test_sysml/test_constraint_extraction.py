@@ -6,7 +6,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from agentic_mbse.sysml.constraint_extraction import extract_constraint_facts
+from agentic_mbse.sysml.constraint_extraction import extract_identified_constraint_facts
 from agentic_mbse.sysml.constraint_facts import ConstraintFacts
 from agentic_mbse.sysml.syside_adapter import get_syside
 
@@ -24,6 +24,15 @@ def _load(path: Path) -> Any:
     return model
 
 
+def _neutral_facts(model: object) -> ConstraintFacts:
+    """The neutral payload of one exact extraction.
+
+    `extract_identified_constraint_facts` is the extractor; `.facts` is the neutral record it
+    carries, which is what these tests are about. There is no second sweep.
+    """
+    return extract_identified_constraint_facts(model).facts
+
+
 def _by_name(facts: ConstraintFacts, name: str):
     return next(usage for usage in facts.usages if usage.identity.name == name)
 
@@ -35,7 +44,7 @@ def _left_operand(facts: ConstraintFacts, case_name: str):
 
 
 def test_six_forms_extract_and_are_distinct() -> None:
-    facts = extract_constraint_facts(_load(SOURCE_FORMS))
+    facts = _neutral_facts(_load(SOURCE_FORMS))
     forms = {usage.source.form for usage in facts.usages}
     assert {
         "inline",
@@ -48,13 +57,13 @@ def test_six_forms_extract_and_are_distinct() -> None:
 
 
 def test_requirement_constraint_not_misclassified_as_inline() -> None:
-    facts = extract_constraint_facts(_load(SOURCE_FORMS))
+    facts = _neutral_facts(_load(SOURCE_FORMS))
     assert _by_name(facts, "positive_limit").source.form == "requirement_constraint"
     assert _by_name(facts, "below_limit").source.form == "requirement_constraint"
 
 
 def test_dimension_is_real_measurement_unit_def_qn() -> None:
-    facts = extract_constraint_facts(_load(TYPE_UNITS))
+    facts = _neutral_facts(_load(TYPE_UNITS))
     operand = _left_operand(facts, "quantity_convertible_unit")
     assert operand.operand_type is not None
     assert operand.operand_type.unit is not None
@@ -63,7 +72,7 @@ def test_dimension_is_real_measurement_unit_def_qn() -> None:
 
 
 def test_quantity_feature_unknown_unit_is_dimension_known_unit_unknown() -> None:
-    facts = extract_constraint_facts(_load(TYPE_UNITS))
+    facts = _neutral_facts(_load(TYPE_UNITS))
     operand = _left_operand(facts, "quantity_feature_unknown_unit")
     assert operand.operand_type is not None
     assert operand.operand_type.unit == type(operand.operand_type.unit)(
@@ -72,7 +81,7 @@ def test_quantity_feature_unknown_unit_is_dimension_known_unit_unknown() -> None
 
 
 def test_direction_is_neutral_token() -> None:
-    facts = extract_constraint_facts(_load(SOURCE_FORMS))
+    facts = _neutral_facts(_load(SOURCE_FORMS))
     typed = _by_name(facts, "typed_feature_chain_and_literal")
     directions = {actual.direction for actual in typed.actuals}
     assert directions <= {"in", "out", "inout"}
@@ -80,7 +89,7 @@ def test_direction_is_neutral_token() -> None:
 
 
 def test_membership_polarity_ownership_survive() -> None:
-    facts = extract_constraint_facts(_load(SOURCE_FORMS))
+    facts = _neutral_facts(_load(SOURCE_FORMS))
     assert _by_name(facts, "positive_limit").membership_kind == "assumption"
     assert _by_name(facts, "below_limit").membership_kind == "requirement"
     assert _by_name(facts, "negated_inline").is_negated is True
@@ -93,7 +102,7 @@ def test_membership_polarity_ownership_survive() -> None:
 
 
 def test_omitted_default_formals_and_actuals_survive() -> None:
-    facts = extract_constraint_facts(_load(SOURCE_FORMS))
+    facts = _neutral_facts(_load(SOURCE_FORMS))
     defaulted = _by_name(facts, "typed_omitted_default")
     assert defaulted.omitted_default_formals == ["ConstraintFactShapeProbe::WithinLimit::limit"]
 
@@ -108,7 +117,7 @@ def test_omitted_default_formals_and_actuals_survive() -> None:
 
 
 def test_inherited_into_and_context_facts_survive() -> None:
-    facts = extract_constraint_facts(_load(SOURCE_FORMS))
+    facts = _neutral_facts(_load(SOURCE_FORMS))
     inherited = _by_name(facts, "inherited_limit")
     assert inherited.inherited_into == [
         "ConstraintFactShapeProbe::DerivedProbe",
@@ -122,7 +131,7 @@ def test_inherited_into_and_context_facts_survive() -> None:
 def test_no_role_tag_on_feature_reference() -> None:
     import dataclasses
 
-    facts = extract_constraint_facts(_load(SOURCE_FORMS))
+    facts = _neutral_facts(_load(SOURCE_FORMS))
     typed = _by_name(facts, "typed_feature_chain_and_literal")
     actuals = {actual.name: actual for actual in typed.actuals}
     reference = actuals["observed"].value.reference
@@ -131,7 +140,7 @@ def test_no_role_tag_on_feature_reference() -> None:
 
 
 def test_compound_boolean_tree_survives() -> None:
-    facts = extract_constraint_facts(_load(TYPE_UNITS))
+    facts = _neutral_facts(_load(TYPE_UNITS))
     compound = _by_name(facts, "compound_boolean")
     assert compound.predicate is not None
     assert compound.predicate.operator == "or"
@@ -140,7 +149,7 @@ def test_compound_boolean_tree_survives() -> None:
 
 
 def test_anonymous_assertion_identified_by_location() -> None:
-    facts = extract_constraint_facts(_load(SOURCE_FORMS))
+    facts = _neutral_facts(_load(SOURCE_FORMS))
     anonymous_inline = next(
         usage
         for usage in facts.usages
@@ -151,7 +160,7 @@ def test_anonymous_assertion_identified_by_location() -> None:
 
 
 def test_no_str_enum_leaks_in_any_value() -> None:
-    facts = extract_constraint_facts(_load(SOURCE_FORMS))
+    facts = _neutral_facts(_load(SOURCE_FORMS))
     for usage in facts.usages:
         for actual in usage.actuals:
             assert actual.direction is None or "." not in actual.direction
@@ -159,7 +168,7 @@ def test_no_str_enum_leaks_in_any_value() -> None:
 
 
 def test_owning_definition_present_and_tagged_on_every_usage() -> None:
-    facts = extract_constraint_facts(_load(SOURCE_FORMS))
+    facts = _neutral_facts(_load(SOURCE_FORMS))
     for usage in facts.usages:
         assert usage.owner.owning_definition.kind in {
             "part_def",
@@ -217,7 +226,7 @@ def test_extract_expression_ir_public_single_node_entry() -> None:
     from agentic_mbse.sysml.expression_ir import serialize_expression
 
     model = _load(SOURCE_FORMS)
-    facts = extract_constraint_facts(model)
+    facts = _neutral_facts(model)
     inline = next(u for u in facts.usages if u.source.form == "inline" and u.predicate is not None)
     live = next(
         u

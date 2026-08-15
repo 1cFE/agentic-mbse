@@ -490,25 +490,25 @@ calc def ExtendedCalculation :>> BaseCalculation {
 
 **Critical Rule:** Constraints require prefix keywords to create proper AST nodes.
 
-### Wrong: Plain constraint block
+### Not a check: plain constraint block
 
 ```sysml
 calc def WrongConstraint {
     in attribute temperature : Temperature;
 
-    constraint TempLimit {  // Not recognized as ConstraintUsage!
+    constraint TempLimit {  // Parses fine — a ConstraintUsage — but never executes
         temperature < 1000 [K]
     }
 }
 ```
 
-### Correct: Assert/require prefix
+### Correct: assert prefix
 
 ```sysml
 calc def CorrectConstraint {
     in attribute temperature : Temperature;
 
-    assert constraint TempLimit {  // Creates ConstraintUsage!
+    assert constraint TempLimit {  // Executes: the assert family is the enforcement opt-in
         doc /* Operating temperature must not exceed limit */
         temperature < 1000 [K]
     }
@@ -516,9 +516,11 @@ calc def CorrectConstraint {
 ```
 
 **Constraint Prefix Keywords:**
-- `assert constraint` - Invariants that must always hold
-- `require constraint` - Preconditions that must be satisfied
-- `assume constraint` - Assumptions made by the model
+- `assert constraint` - Invariants that must always hold. The only form that executes.
+- `require constraint` — a requirement-side precondition. It is cataloged and visible; it is not
+  executed and does not gate generation.
+- `assume constraint` — a modeling assumption. It is cataloged and visible; it is not executed and
+  does not gate generation.
 
 ---
 
@@ -542,7 +544,7 @@ What are you doing?
 |   -> Use `=` (binding)
 |
 +-- Creating a constraint?
-    -> Use `assert constraint` or `require constraint` (with prefix!)
+    -> Use `assert constraint` (with prefix!)
 ```
 
 ---

@@ -5,9 +5,11 @@ The four non-fileable checks that catch the traps that actually bit fusion-tea,
 each with a negative fixture AND a negative-of-the-negative (the shape codegen
 accepts must NOT fire):
 
-- C1  L2  self-named binding with no covering feature (a true dead-end) -> FAIL
-       (self_named_deadend FAILs; self_named_trap AND self_named_rescue do NOT —
-        both carry a same-named feature, the plant idiom Items 9/10 support)
+- C1  L2  self-named binding -> FAIL, with no exemption
+       (self_named_deadend, self_named_trap AND self_named_rescue all FAIL: a
+        same-named outer attribute or sibling calc output does not rescue the
+        binding, because exact elaboration never reinterprets a self-binding as an
+        outer reference — D-4 [OWNER-VERBATIM 2026-08-05])
 - C2a L6  anonymous return -> FAIL
        (anonymous_return FAILs; return_styles does NOT)
 - C3  L6  constraint ineligibility (CONSTRAINT-EXEC Item 3 superseded this: a genuinely
@@ -37,6 +39,7 @@ from agentic_mbse.validation.level6_architecture import (
     check_constraint_executability,
     check_qualified_names,
 )
+from tests.helpers.identified_facts import identify
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "item12"
 
@@ -60,9 +63,10 @@ def _codes(issues) -> list[str]:
 
 
 def test_c1_self_named_deadend_fails():
-    """DeadEndPlant binds `in gain = gain` but owns NO feature named `gain` — no
-    attribute, no sibling calc output. The reference dead-ends on the calc's own
-    parameter with nothing to cover it -> L2 FAIL."""
+    """DeadEndPlant binds `in gain = gain`. The reference resolves to the calc's own
+    parameter, so the intended outer value never arrives -> L2 FAIL. This fixture owns
+    no same-named feature at all, which is why it was the one shape the check flagged
+    even while the exemption stood."""
     issues = check_self_named_bindings(load_fixture("self_named_deadend"))
     self_named = [i for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
     assert len(self_named) == 1, f"Expected one self-named FAIL, got {_codes(issues)}"
@@ -70,23 +74,43 @@ def test_c1_self_named_deadend_fails():
     assert "gain" in self_named[0].message
 
 
-def test_c1_self_named_trap_does_not_fire():
-    """The trap owns `attribute availability = 0.70` — a same-named covering
-    feature (the plant design-attribute idiom Item 9 makes SUPPORTED). Its role
-    flipped to negative-of-the-negative: C1 must NOT fire."""
+def test_c1_self_named_binding_fires_over_a_covering_attribute():
+    """TrapPlant owns `attribute availability = 0.70` and still binds
+    `in availability = availability`. The outer attribute does not rescue it: exact
+    elaboration never reinterprets a self-binding as an outer reference (D-4
+    [OWNER-VERBATIM 2026-08-05]), so the binding dead-ends on the calc's own parameter
+    and C1 FAILs. The check used to exempt exactly this shape."""
     issues = check_self_named_bindings(load_fixture("self_named_trap"))
     self_named = [i for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
-    assert self_named == [], (
-        f"Trap now carries a covering attribute; must not fire: {_codes(issues)}"
-    )
+    assert len(self_named) == 1, f"Expected one self-named FAIL, got {_codes(issues)}"
+    assert self_named[0].severity == Severity.ERROR
+    assert "availability" in self_named[0].message
+    assert "TrapLib::TrapPlant::avail_calc" == self_named[0].element_name
 
 
-def test_c1_self_named_rescue_does_not_fire():
-    """The rescue exposes `attribute throughput = source_calc.throughput`, a real
-    producer, so the same self-named binding must NOT fire (Item 10 rescues it)."""
+def test_c1_self_named_binding_fires_over_a_covering_calc_output():
+    """RescuePlant exposes `attribute throughput = source_calc.throughput`, a real
+    producer, and still binds `in throughput = throughput`. A sibling producer is the
+    other shape the exemption used to cover; the same rule removes it. The author's fix
+    is to bind the producer by a distinct path, not to rely on the name collision."""
     issues = check_self_named_bindings(load_fixture("self_named_rescue"))
     self_named = [i for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
-    assert self_named == [], f"Rescue must not fire self-named FAIL: {_codes(issues)}"
+    assert len(self_named) == 1, f"Expected one self-named FAIL, got {_codes(issues)}"
+    assert self_named[0].severity == Severity.ERROR
+    assert "throughput" in self_named[0].message
+    assert "RescueLib::RescuePlant::sink_calc" == self_named[0].element_name
+
+
+def test_c1_message_does_not_offer_the_outer_feature_as_a_rescue():
+    """The diagnostic must not send the author looking for a same-named outer feature:
+    that reading is precisely what D-4 forbids, and the old message implied it by saying
+    'no feature named P is in scope to supply it'."""
+    issues = check_self_named_bindings(load_fixture("self_named_trap"))
+    message = next(
+        i.message for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING
+    )
+    assert "is in scope to supply it" not in message
+    assert "never reinterpreted as an outer reference" in message
 
 
 # --- C2a: anonymous return (L6) -------------------------------------------------
@@ -148,7 +172,13 @@ def test_c3_non_numerical_is_one_warning_per_statement(monkeypatch):
         contexts=facts.contexts,
         diagnostics=facts.diagnostics,
     )
-    monkeypatch.setattr(level6_architecture, "extract_constraint_facts", lambda _model: narrowed)
+    # The usage is inline, so it names no definition and its exact association is None.
+    identified = identify(narrowed)
+    monkeypatch.setattr(
+        level6_architecture,
+        "extract_identified_constraint_facts",
+        lambda _model: identified,
+    )
 
     issues = check_constraint_executability(object())
 

@@ -83,7 +83,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1" },
-    { name = "syside", specifier = ">=0.8.4" },
+    { name = "syside", specifier = "==0.8.4" },
     { name = "trafilatura", marker = "extra == 'web'", specifier = ">=2.0" },
 ]
 provides-extras = ["extract", "extract-tables", "extract-full", "web", "dev"]

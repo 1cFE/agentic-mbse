@@ -14,6 +14,7 @@ from pathlib import Path
 from agentic_mbse.sysml.constraint_facts import ConstraintFacts, parse
 from agentic_mbse.validation import level4_constraints
 from agentic_mbse.validation.level4_constraints import analyze_constraints
+from tests.helpers.identified_facts import identify
 
 FIX = Path(__file__).parent.parent / "fixtures" / "constraint_fact_shapes"
 
@@ -63,7 +64,13 @@ def test_executable_share_denominator_includes_non_numerical(monkeypatch):
         contexts=facts.contexts,
         diagnostics=facts.diagnostics,
     )
-    monkeypatch.setattr(level4_constraints, "extract_constraint_facts", lambda _model: narrowed)
+    # The usage is inline, so it names no definition and its exact association is None.
+    identified = identify(narrowed)
+    monkeypatch.setattr(
+        level4_constraints,
+        "extract_identified_constraint_facts",
+        lambda _model: identified,
+    )
 
     metrics = level4_constraints.eligibility_coverage_metrics(object())
 

@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from agentic_mbse.sysml.constraint_extraction import extract_constraint_facts
+from agentic_mbse.sysml.constraint_extraction import extract_identified_constraint_facts
 from agentic_mbse.sysml.constraint_facts import (
     ConstraintFacts,
     ConstraintUsageFact,
@@ -41,7 +41,7 @@ _TYPE_UNITS_REL = "tests/fixtures/constraint_fact_shapes/type_units.sysml"
 
 def _extract_both_fixtures() -> ConstraintFacts:
     model, _diagnostics = syside.try_load_model([_SOURCE_FORMS_REL, _TYPE_UNITS_REL])
-    return extract_constraint_facts(model)
+    return extract_identified_constraint_facts(model).facts
 
 
 def _by_name(facts: ConstraintFacts, name: str) -> ConstraintUsageFact:

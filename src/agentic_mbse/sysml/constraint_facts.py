@@ -51,7 +51,7 @@ __all__ = [
     "serialize",
 ]
 
-CONSTRAINT_FACTS_SCHEMA_VERSION = "constraint-facts/v2"
+CONSTRAINT_FACTS_SCHEMA_VERSION = "constraint-facts/v3"
 
 
 class DiagnosticSeverity(str, Enum):
@@ -79,6 +79,13 @@ EXTRACTION_DIAGNOSTIC_SEVERITY: dict[str, DiagnosticSeverity] = {
     # A non-finite literal cannot be evaluated downstream: a generated package that
     # ran with it would publish a value nobody can act on.
     "non_finite_literal": DiagnosticSeverity.BLOCKING,
+    # An asserted gate whose owning part definition nothing instantiates. The model is
+    # well formed and the predicate is fine; it simply never runs, so the author has
+    # written a check that cannot fail. Advisory rather than blocking because that is a
+    # coverage fact, not an error, and because codegen grades the same condition
+    # independently and unconditionally -- this is the author-time half of that, and the
+    # author is the only one who can act on it.
+    "vacuous_asserted_gate": DiagnosticSeverity.ADVISORY,
 }
 
 EXTRACTION_DIAGNOSTIC_KINDS = frozenset(EXTRACTION_DIAGNOSTIC_SEVERITY)

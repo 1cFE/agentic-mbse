@@ -131,10 +131,78 @@ For doc comment field content requirements and citation patterns, see the **sour
 attribute diff : Real = if x > y? x - y else y - x;
 ```
 
-**Constraints:**
+**Constraints — the blessed shape is bindings-only:**
 ```sysml
-assert constraint TempLimit { temperature < 1000 [K] }
+// A constraint def with formals, asserted with every formal bound to a real value in scope.
+constraint def TempLimit { in temperature : Real; in limit : Real; temperature < limit }
+// ...
+assert constraint temp_ok : TempLimit {
+    in temperature = reactor.wall_temperature_k;
+    in limit = 1000.0;
+}
 ```
+
+Three rules, and each one bites:
+
+1. **Only the assert family executes.** A bare `constraint`, a `require constraint`, an
+   `assume constraint`, and a `satisfy` reference are visible, cataloged descriptions that **never
+   run**. Writing one where you meant a gate is the single most common way a model ships with no
+   check at all. Use them when you mean to describe; use `assert` when you mean to check.
+2. **Bind formals; don't inline the predicate.** `assert constraint TempLimit { temperature < 1000
+   [K] }` parses, but an inline predicate resolves its names by reaching into surrounding scope, and
+   a unit literal inside the predicate is a frequent block. Binding every formal to a real value in
+   scope makes the wiring explicit and lowerable. It is also the form `@inapplicable:` works on —
+   see below.
+3. **Units go on the binding, not inside the predicate.** `in temperature = wall_temp_k;` where the
+   attribute carries `[K]`. Codegen carries the authored unit text into port metadata and performs
+   **no conversion**; two consumers of one shared value that annotate different units fail closed
+   with `SI_RENDERING_COLLISION`, naming the key. Fix the model, not the diagnostic.
+
+**Marking a constraint inapplicable** — the marker goes on a gate that **does not run**:
+```sysml
+// The direct-drive variant instantiates no VacuumSystem, so this definition has zero
+// occurrences and the gate below reaches nothing. That is what lets the marker stand.
+part def VacuumSystem {
+    attribute pumping_speed_total : Real = 12.0;
+    attribute pumping_speed_required : Real = 20.0;
+
+    assert constraint vac_ok : ProductWithinBand {
+        doc /* @inapplicable: no vacuum system in the direct-drive variant */
+        in actual = pumping_speed_total;
+        in reference = pumping_speed_required;
+    }
+}
+```
+An `@inapplicable:` marker is the **only** way a gate leaves the feasibility denominator. Without
+one, an asserted gate that never ran keeps the report at `partial_coverage` rather than
+`full_satisfaction` — which is the point: an unassessed gate must not read as a passing one.
+
+⚠️ **Marking a gate that actually runs is refused, not honoured.** Put this same marked constraint on
+a part that *is* instantiated and generation fails by name: *"marked inapplicable but produced 1
+executable entries."* That is D9. A marker states a gate is out of the feasible set; it is not a
+switch that silences a live check. Accepted and refused shapes are both pinned as sysml-codegen
+fixtures — `constraint_coverage_all_inapplicable` and `constraint_coverage_eligible_inapplicable`.
+
+⚠️ **The marker only reaches the domain on the bindings form.** On an inline-predicate constraint
+SysIDE silently drops the doc comment, so the marker never arrives and the gate stays in the
+denominator with no warning. This is `[INLINE-PREDICATE-MARKER-DROP]`, open. Until it closes, an
+inline-form disposition has to be recorded in the fixture's `PROVENANCE.md` instead of in source.
+**Decide before you author:** bindings form → the marker works; inline form → PROVENANCE carries it.
+Worked case: sysml-codegen `tests/fixtures/catf_mfe_gated`, B1–B5 — five markers written, zero
+carried. The loud detector is `tests/conformance/test_constraint_population_oracle.py` rule 3.
+
+**Equality intent — check which of four you have before writing `==`.** An equality gate over a
+parameter you meant to vary does not judge the design, it deletes the degree of freedom.
+
+| Intent | Do this instead |
+|---|---|
+| Structural identity | Derive it. Do not constrain it. |
+| Cross-check of two independently computed values | A loose, physically motivated validity band. |
+| Feasibility gate | Prefer a one-sided inequality; if a quantity must equal a value, fix it as an input rather than search for it and then constrain it. |
+| Composition closure | Derive the last term by construction, or fall back to a banded check. |
+
+The authority copy is the lifecycle contract's "Equality intent and authoring policy" in
+sysml-codegen (`.project/concepts/constraint-execution-authoritative-lifecycle-contract.md`).
 
 **Cross-file binding:**
 ```sysml

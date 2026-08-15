@@ -7,6 +7,7 @@ is checked directly rather than inferred from test outcomes.
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 
 MODULES = [
@@ -40,3 +41,18 @@ def test_no_unit_suffix_strip() -> None:
     assert 'removesuffix("Value")' not in source
     assert "removesuffix('Value')" not in source
     assert "removesuffix(" not in source
+
+
+def test_constraint_extraction_reads_uuid_only_through_syside_adapter() -> None:
+    tree = ast.parse(MODULES[-1].read_text())
+    element_id_reads = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute) and node.attr == "element_id"
+    ]
+
+    assert element_id_reads
+    assert all(
+        isinstance(node.value, ast.Name) and node.value.id == "SysideAdapter"
+        for node in element_id_reads
+    )

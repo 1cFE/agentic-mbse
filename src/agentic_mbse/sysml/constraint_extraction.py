@@ -11,7 +11,9 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
 from agentic_mbse.sysml.constraint_facts import (
     ActualFact,
@@ -51,7 +53,10 @@ from agentic_mbse.sysml.expression_ir import (
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
-__all__ = ["extract_constraint_facts", "extract_expression_ir"]
+__all__ = [
+    "extract_expression_ir",
+    "extract_identified_constraint_facts",
+]
 
 # Boolean-relational and boolean-connective operators: the node they head is a proposition,
 # not a value, so it carries no OperandTypeFact (Core Concept: operand_type hangs off
@@ -103,16 +108,103 @@ _OWNING_DEFINITION_TYPES: tuple[tuple[str, str], ...] = (
 
 
 class _ExtractionContext:
-    """Accumulates extraction diagnostics (D2a) across one `extract_constraint_facts` call."""
+    """Accumulates extraction diagnostics (D2a) across one facts-extraction sweep."""
 
     def __init__(self) -> None:
         self.diagnostics: list[ExtractionDiagnosticFact] = []
 
 
-def extract_constraint_facts(model: Any) -> ConstraintFacts:
-    """Sweep, classify, and recover neutral constraint facts from a loaded SysIDE model."""
+@dataclass(frozen=True)
+class IdentifiedConstraintDefinition:
+    """One live definition fact paired with its exact parser identity."""
+
+    definition_id: UUID
+    fact: ConstraintDefinitionFact
+
+
+@dataclass(frozen=True)
+class IdentifiedConstraintUsage:
+    """One live usage fact and the exact definition that supplies its predicate."""
+
+    usage_id: UUID
+    effective_definition_id: UUID | None
+    fact: ConstraintUsageFact
+
+
+@dataclass(frozen=True)
+class IdentifiedConstraintFacts:
+    """Live identity sidecars around the unchanged neutral constraint facts."""
+
+    facts: ConstraintFacts
+    definitions: tuple[IdentifiedConstraintDefinition, ...]
+    usages: tuple[IdentifiedConstraintUsage, ...]
+
+
+@dataclass(frozen=True)
+class _ExtractedConstraintUsage:
+    """One neutral fact kept beside the live element that produced it."""
+
+    element: Any
+    fact: ConstraintUsageFact
+
+
+#: The forms that ask for their predicate to be enforced. Only these can be *vacuous*:
+#: a bare `constraint` states a condition without asking anyone to check it, so an owner
+#: nobody instantiates says nothing about it.
+_ASSERTED_FORMS = frozenset({"definition_typed", "inline", "named_usage_reference"})
+
+
+def _typed_part_definition_ids(model: Any) -> frozenset[UUID]:
+    """Every part definition that some part usage in the model is typed by.
+
+    This is the structural stand-in for "was anything of this ever instantiated". It is
+    deliberately weaker than an occurrence walk: a part definition typed by a usage that
+    is itself never instantiated counts as typed here. Reaching for the stronger answer
+    would mean reimplementing occurrence resolution in this layer, and the alignment rule
+    is directional rather than equal -- this trigger set is a subset of what codegen
+    grades vacuous, so the advisory can only ever be missing, never false.
+    """
+    typed: set[UUID] = set()
+    for usage in SysideAdapter.elements_of_type(model, "PartUsage", include_subtypes=True):
+        for relationship, target in getattr(usage, "heritage", None) or ():
+            if SysideAdapter.is_instance(
+                relationship, "FeatureTyping"
+            ) and SysideAdapter.is_instance(target, "PartDefinition"):
+                typed.add(SysideAdapter.element_id(target))
+    return frozenset(typed)
+
+
+def _vacuous_asserted_gate_fact(
+    constraint: Any, form: str, typed_part_definitions: frozenset[UUID]
+) -> ExtractionDiagnosticFact | None:
+    """The advisory for an asserted gate on a part definition nothing types, else None."""
+    if form not in _ASSERTED_FORMS:
+        return None
+    owner = getattr(constraint, "owning_type", None) or getattr(constraint, "owner", None)
+    if not SysideAdapter.is_instance(owner, "PartDefinition"):
+        return None
+    if SysideAdapter.element_id(owner) in typed_part_definitions:
+        return None
+    usage_qn = _qualified_name(constraint) or "<anonymous>"
+    owner_qn = _qualified_name(owner) or "<anonymous>"
+    return ExtractionDiagnosticFact(
+        kind="vacuous_asserted_gate",
+        message=(
+            f"asserted constraint {usage_qn} can never be checked: its owner {owner_qn} "
+            "is not typed by any part usage in the model, so nothing instantiates it"
+        ),
+        operand_source=None,
+        location=_location_fact(constraint),
+    )
+
+
+def _extract_constraint_facts(
+    model: Any,
+) -> tuple[ConstraintFacts, tuple[_ExtractedConstraintUsage, ...]]:
+    """Extract neutral facts and retain their live producer association internally."""
     ctx = _ExtractionContext()
     candidate_contexts = list(_candidate_contexts(model))
+    typed_part_definitions = _typed_part_definition_ids(model)
     constraints = sorted(
         SysideAdapter.elements_of_type(model, "ConstraintUsage", include_subtypes=True),
         key=_constraint_sort_key,
@@ -130,6 +222,7 @@ def extract_constraint_facts(model: Any) -> ConstraintFacts:
 
     definitions_by_qn: dict[str, Any] = {}
     usages: list[ConstraintUsageFact] = []
+    usage_records: list[_ExtractedConstraintUsage] = []
     for constraint in constraints:
         form = _classify(constraint)
         # A definitions[] entry is a *reused* predicate source: only definition_typed and
@@ -144,7 +237,12 @@ def extract_constraint_facts(model: Any) -> ConstraintFacts:
                 definition, "ConstraintDefinition"
             ):
                 definitions_by_qn.setdefault(definition_qn, definition)
-        usages.append(_usage_fact(constraint, form, candidate_contexts, formals_for, ctx))
+        advisory = _vacuous_asserted_gate_fact(constraint, form, typed_part_definitions)
+        if advisory is not None:
+            ctx.diagnostics.append(advisory)
+        usage_fact = _usage_fact(constraint, form, candidate_contexts, formals_for, ctx)
+        usages.append(usage_fact)
+        usage_records.append(_ExtractedConstraintUsage(constraint, usage_fact))
 
     definitions = [
         ConstraintDefinitionFact(
@@ -163,11 +261,73 @@ def extract_constraint_facts(model: Any) -> ConstraintFacts:
         if (fact := _context_fact(model, context, ctx)) is not None
     ]
 
-    return ConstraintFacts(
-        definitions=definitions,
-        usages=usages,
-        contexts=contexts,
-        diagnostics=ctx.diagnostics,
+    return (
+        ConstraintFacts(
+            definitions=definitions,
+            usages=usages,
+            contexts=contexts,
+            diagnostics=ctx.diagnostics,
+        ),
+        tuple(usage_records),
+    )
+
+
+def extract_identified_constraint_facts(model: Any) -> IdentifiedConstraintFacts:
+    """Extract neutral facts plus live-only exact usage/definition associations.
+
+    The neutral payload comes from the same sweep, without adding parser identity to its
+    schema. Exact sidecars are captured while the live SysIDE elements are still
+    available, using the adapter as the sole UUID boundary.
+    """
+    facts, usage_records = _extract_constraint_facts(model)
+
+    ctx = _ExtractionContext()
+    formals_by_id: dict[UUID, list[FormalFact]] = {}
+
+    def exact_formals(definition: Any) -> list[FormalFact]:
+        definition_id = SysideAdapter.element_id(definition)
+        if definition_id not in formals_by_id:
+            formals_by_id[definition_id] = _definition_formals(model, definition, ctx)
+        return formals_by_id[definition_id]
+
+    definitions_by_id: dict[UUID, IdentifiedConstraintDefinition] = {}
+    usages_by_id: dict[UUID, IdentifiedConstraintUsage] = {}
+    usage_order: list[UUID] = []
+    for record in usage_records:
+        constraint = record.element
+        usage_id = SysideAdapter.element_id(constraint)
+        if usage_id in usages_by_id:
+            raise ValueError(f"duplicate identified constraint usage UUID: {usage_id}")
+        form = _classify(constraint)
+        predicate_source = _effective_predicate_source(constraint, form)
+        effective_definition_id: UUID | None = None
+        if SysideAdapter.is_instance(predicate_source, "ConstraintDefinition"):
+            effective_definition_id = SysideAdapter.element_id(predicate_source)
+            if effective_definition_id not in definitions_by_id:
+                definitions_by_id[effective_definition_id] = IdentifiedConstraintDefinition(
+                    definition_id=effective_definition_id,
+                    fact=ConstraintDefinitionFact(
+                        identity=_identity_required(predicate_source),
+                        formals=exact_formals(predicate_source),
+                        predicate=_expression_ir(
+                            getattr(predicate_source, "result_expression", None), ctx
+                        ),
+                    ),
+                )
+        usages_by_id[usage_id] = IdentifiedConstraintUsage(
+            usage_id=usage_id,
+            effective_definition_id=effective_definition_id,
+            fact=record.fact,
+        )
+        usage_order.append(usage_id)
+
+    return IdentifiedConstraintFacts(
+        facts=facts,
+        definitions=tuple(
+            definitions_by_id[item]
+            for item in sorted(definitions_by_id, key=lambda value: value.int)
+        ),
+        usages=tuple(usages_by_id[usage_id] for usage_id in usage_order),
     )
 
 
@@ -475,7 +635,7 @@ def extract_expression_ir(
 ) -> ExpressionIR | None:
     """Public single-node entry: one live syside expression -> its ExpressionIR.
 
-    Thin wrapper over the same dispatch `extract_constraint_facts` uses, for
+    Thin wrapper over the same dispatch the whole-model sweep uses, for
     consumers that hold a bare expression node rather than a whole model (the
     sysml-codegen calc-compat renderer, CONSTRAINT-EXEC Item 13). Pass a list as
     `diagnostics` to receive the extraction diagnostics (D2a, e.g. the

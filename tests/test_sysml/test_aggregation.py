@@ -86,9 +86,33 @@ def test_term_dataclass_contract_and_import_identity() -> None:
         "attribute_name",
         "multiplicity_attr",
         "multiplicity_count",
+        "resolved_target",
+        "chain_root",
+        "resolved_member_names",
     ]
-    assert [f.name for f in fields(SingletonTerm)] == ["source_path"]
-    assert [f.name for f in fields(LocalTerm)] == ["attribute_name"]
+    assert [f.name for f in fields(SingletonTerm)] == [
+        "source_path",
+        "resolved_target",
+        "chain_root",
+        "resolved_member_names",
+    ]
+    assert [f.name for f in fields(LocalTerm)] == [
+        "attribute_name",
+        "resolved_target",
+        "chain_root",
+        "resolved_member_names",
+    ]
+    # Resolved-target/chain evidence defaults to empty and is snapshot-excluded
+    # until a snapshot format owns its serialization (ELABORATE-FIRST Item 6).
+    for term_type in (SumTerm, SingletonTerm, LocalTerm):
+        for name, default in (
+            ("resolved_target", None),
+            ("chain_root", None),
+            ("resolved_member_names", ()),
+        ):
+            (evidence_field,) = [f for f in fields(term_type) if f.name == name]
+            assert evidence_field.default == default
+            assert evidence_field.metadata.get("snapshot_exclude") is True
 
     assert aggregation.SumTerm is data_models.SumTerm is sysml.SumTerm
     assert aggregation.SingletonTerm is data_models.SingletonTerm is sysml.SingletonTerm

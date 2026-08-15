@@ -170,7 +170,7 @@ def test_every_field_present_absence_is_explicit_null() -> None:
 
 def test_schema_versions_are_pinned() -> None:
     doc = json.loads(serialize(_hand_built_facts()))
-    assert doc["schema_version"] == "constraint-facts/v2"
+    assert doc["schema_version"] == "constraint-facts/v3"
     assert doc["usages"][0]["predicate"]["schema_version"] == "expression-ir/v1"
 
 
@@ -185,7 +185,7 @@ def test_non_finite_serialize_backstop() -> None:
 def test_foreign_envelope_version_is_rejected() -> None:
     doc = json.loads(serialize(_hand_built_facts()))
     doc["schema_version"] = "constraint-facts/v999"
-    with pytest.raises(ValueError, match=r"constraint-facts/v999.*constraint-facts/v2"):
+    with pytest.raises(ValueError, match=r"constraint-facts/v999.*constraint-facts/v3"):
         parse(json.dumps(doc))
 
 

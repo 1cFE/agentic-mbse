@@ -19,9 +19,10 @@ pipeline.
 part def Coil {
     attribute radius : Real = 0.5;
 
-    // Template calc: computes volume from the coil's own radius.
+    // Template calc: computes volume from the coil's own radius. The parameter and the
+    // attribute must not share a name — see "Self-named bindings" below.
     calc volume_calc : VolumeCalc {
-        in radius = radius;          // design-attribute binding (see below)
+        in radius_in = radius;
     }
 }
 
@@ -30,23 +31,41 @@ part def Plant {
 }
 ```
 
-Reference: `ife_plant` (a full plant with drivers, coils, and chambers).
+Reference: `fusion_tea` binds this way throughout (`in beam_energy_mj_in = beam_energy_mj`,
+`in availability_in = availability`) and is one of the fixtures the exact route elaborates.
+`ife_plant` is a fuller plant — drivers, coils and chambers — but it is written with
+self-named bindings and the exact route refuses it, so read it for structure, not for the
+binding form.
 
-## Design-attribute bindings (`in x = x`)
+## Self-named bindings (`in x = x`) are not supported — do not write them
 
-A template calc binds its input to a same-named attribute on the owning part:
-`in radius = radius`. This reads as self-referential but is not — the left `radius` is
-the calc's input parameter, the right `radius` is the part's attribute. The attribute is
-the value source.
+A template calc that binds `in radius = radius` reads as if the right `radius` were the
+owning part's attribute. It is not. The reference resolves to the calc's own input
+parameter, so the attribute's value never reaches the calc.
 
-This is a **supported** shape. The validator (L2 self-named-binding check) FAILs a
-`in x = x` binding *only* when the owning part carries no feature named `x` at all — a
-true dead-end where the value has nowhere to come from. An attribute named `x` (even a
-bare literal), a sibling calc output named `x`, or an inherited attribute named `x` all
-cover it.
+**This shape is refused.** The L2 self-named-binding check FAILs every `in x = x`
+binding, and elaboration refuses the model with `SI_SELF_BINDING` before generation. A
+same-named attribute in the owning part, a sibling calc output, and an inherited
+attribute are all irrelevant: a self-binding is never reinterpreted as an outer
+reference (D-4 [OWNER-VERBATIM 2026-08-05]; the lifecycle contract's blocking-diagnostics
+clause and violation table).
 
-Reference: `ife_plant` carries ~21 of these; the true dead-end is the agentic-mbse
-`item12/self_named_deadend` fixture.
+The check used to exempt a binding whose owner carried a same-named feature, and this
+section used to call that exemption a supported idiom. Both were wrong: the validator
+stayed silent on a shape the generator refuses.
+
+Write the binding so the two names differ. Two forms are in the accepted corpus:
+
+- suffix the parameter — `in radius_in = radius`, as `fusion_tea` does throughout;
+- give the attribute the qualifying name — `in length = plant_length`, as `wi014_toy` does.
+
+For a value that lives on another part, name the path: `in driver_cost = driver.cost`.
+
+Reference: the agentic-mbse `item12` fixtures. `self_named_deadend` has no same-named
+feature at all; `self_named_trap` (a literal attribute) and `self_named_rescue` (a
+sibling calc output) carry one and fail just the same. In the codegen corpus the exact
+route refuses 22 of 37 fixtures, and `SI_SELF_BINDING` is the reason for most of them —
+including `ife_plant` (21 bindings) and `solar_battery_model` (24).
 
 ## Retyping to pull in a subtype's calcs (D2)
 

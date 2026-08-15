@@ -38,9 +38,38 @@ outcomes per constraint usage:
 - **`UNASSESSED`** — `satisfy` constraints, requirement-side usages, and plain (unprefixed)
   constraints aren't run through the profile at all; they're cataloged separately, not blocked.
 
-`require` and `assume` constraints are unassessed today (only `assert` predicates are walked).
-If a constraint expresses a value the pipeline needs and its predicate blocks, move that
-computation into a calc def instead.
+The assert family is the enforcement opt-in, and that is the settled rule, not a current
+implementation state: `require`, `assume`, plain, and requirement-side constraints are cataloged and
+visible, and their predicates are never walked. If a constraint expresses a value the pipeline needs
+and its predicate blocks, move that computation into a calc def instead.
+
+### When should you write an equality at all?
+
+A numerical `==` does not execute as a check (see the outcomes above), and even where it could, an
+exact equality is usually not what you mean. Find your intent, then use the move next to it.
+
+| Your intent | The move |
+|---|---|
+| `b` **is** `a` by construction — structural identity | Derive `b`. Do not constrain it. |
+| Two independently computed values should agree — a cross-check | A loose, physically motivated validity band, sized to the disagreement you would accept. |
+| The design must meet a limit — a feasibility gate | A one-sided inequality. If a quantity must *equal* a value, fix it as an input rather than searching for it and constraining it. |
+| Terms must sum to a whole — composition closure | Derive the last term by construction; where you cannot, use a banded check as above. |
+
+**Why it matters:** narrow bands of viability make design exploration really difficult — searching a
+zero-measure set is why a study stops finding feasible points.
+
+**Tolerances are yours.** A band's tolerance is a modeled value you choose and can override. The
+pipeline never invents one.
+
+`[AGENT] (ratified by owner, 2026-08-12)` — the four classes are agent-originated and owner-reviewed;
+the *need* for this guidance is owner-stated. The reasoning behind each class, and the record you
+would challenge it against, is the authority copy: sysml-codegen
+`.project/concepts/constraint-execution-authoritative-lifecycle-contract.md`, "Equality intent and
+authoring policy". **This is not a second authority** — it is the same instruction, rendered where
+the instructed reader is. If the two ever disagree, the contract governs.
+
+Coverage and headline semantics are recorded in ADR-009 (sysml-codegen
+docs/architecture/modeling-assumptions.md §9).
 
 ---
 
@@ -189,16 +218,18 @@ assert constraint Conservation {
 
 ## Common Mistakes
 
-### Wrong: Plain constraint block (no prefix)
+### Not a check: plain constraint block (no prefix)
 
 ```sysml
-// WRONG: Not recognized as ConstraintUsage!
+// Parses fine — a ConstraintUsage — but never executes
 constraint TempLimit {
     temperature < 1000 [K]
 }
 ```
 
-**Error:** Parser does not create proper AST node without prefix.
+**Why it never runs:** the parser does create a ConstraintUsage; it is classified `plain_usage`, and
+the form gate stops it before the predicate is ever walked. It is cataloged and visible, never
+enforced. Use `assert constraint` for a check.
 
 ### Correct: With prefix
 
@@ -368,6 +399,106 @@ walked as predicates. The full per-call-site rationale is the reference table:
 Modeler takeaway: an `assert constraint` you write is now surfaced by construct and reason if
 its predicate blocks, not collapsed into a blanket "not executable" warning. Move any
 computation an ineligible predicate expresses into a calc def instead.
+
+---
+
+## Marking a constraint inapplicable: `@inapplicable:`
+
+*Added 2026-08-14, CONSTRAINT-SEMANTICS Item 7, documenting what Items 2–5 landed.*
+
+Some gates do not apply to some designs. A vacuum-system limit means nothing in a variant with no
+vacuum system. You need a way to say so that is **visible** — not by deleting the constraint, and not
+by leaving it to fail quietly.
+
+### Why it matters: the feasibility denominator
+
+A generated constraint report does not just say "nothing failed." It makes a **coverage** claim.
+`full_satisfaction` means *every applicable asserted gate was assessed and passed*. If an asserted
+gate exists and never ran, the headline drops to `partial_coverage` — deliberately, so an unassessed
+gate can never read as a passing one.
+
+That set of gates the headline is accountable for is the **feasibility denominator**. An
+`@inapplicable:` marker is the **only** way a gate leaves it.
+
+### How to write it
+
+Put the marker in the constraint usage's doc comment, with a reason — **on a gate that does not
+run**:
+
+```sysml
+constraint def ProductWithinBand {
+    in actual : Real;
+    in reference : Real;
+    actual <= reference
+}
+
+// The direct-drive variant instantiates no VacuumSystem, so this definition has zero
+// occurrences and the gate below reaches nothing. That is what lets the marker stand.
+part def VacuumSystem {
+    attribute pumping_speed_total : Real = 12.0;
+    attribute pumping_speed_required : Real = 20.0;
+
+    assert constraint vac_ok : ProductWithinBand {
+        doc /* @inapplicable: no vacuum system in the direct-drive variant */
+        in actual = pumping_speed_total;
+        in reference = pumping_speed_required;
+    }
+}
+```
+
+**Read the comment, not just the constraint.** The marker is honest here because nothing instantiates
+`VacuumSystem` in this variant, so `vac_ok` reaches no occurrence and never produces a verdict. Put
+the same marked gate on a part that *is* instantiated and generation **refuses the model** — see
+"D9" below. A marker is a statement that a gate is out of the feasible set; it is not a switch that
+turns a running gate off.
+
+The reason text is not decoration. It is what a reviewer reads to decide whether the exclusion is
+honest, and it travels into the catalog with the disposition — the generated catalog for the model
+above carries `inapplicability_reason: "no vacuum system in the direct-drive variant"` and
+`inapplicable_gate_count: 1`.
+
+Both shapes are pinned as fixtures in sysml-codegen: the accepted one above as
+`tests/fixtures/constraint_coverage_all_inapplicable`, and the refused one as
+`tests/fixtures/constraint_coverage_eligible_inapplicable`, whose header says in as many words that
+generation **must** fail on it.
+
+### ⚠️ Where the marker actually works — decide this **before** you author
+
+| Constraint form | Does `@inapplicable:` reach the domain? | What carries the disposition |
+|---|---|---|
+| **Bindings form** — `assert constraint x : SomeDef { in a = …; in b = …; }` | **Yes** | the marker, in source |
+| **Inline-predicate form** — `assert constraint x { a <= b }` | **No — silently dropped** | the fixture's `PROVENANCE.md` |
+
+On the inline-predicate form SysIDE drops the doc comment before it reaches extraction, so the marker
+never arrives. Nothing warns you. The gate stays in the denominator and the report reads
+`partial_coverage` while your source says the constraint is inapplicable.
+
+This is filed as `[INLINE-PREDICATE-MARKER-DROP]` and it is **open**. Until it closes, an
+inline-form disposition has to be recorded in the fixture's `PROVENANCE.md` instead of in source.
+
+**The worked case.** sysml-codegen `tests/fixtures/catf_mfe_gated`, B1–B5: five markers written,
+zero carried. The loud detector that catches the gap is
+`tests/conformance/test_constraint_population_oracle.py`, rule 3.
+
+**Practical rule:** if you intend to mark a constraint inapplicable, write it in the bindings form.
+That is the blessed shape anyway.
+
+### D9 — eligible **and** `@inapplicable:` is refused
+
+A constraint cannot be both "the profile admitted it, it lowers, it runs" and "it is not part of the
+feasible set." Generation **refuses** that combination loudly, by name (D9). Nothing ships wrong.
+
+**Catch it earlier — the authoring-time advisory.** D9 fires at generation time, which is late: you
+have already written the model, and the failure arrives from a different repo. Authoring validation
+raises the same combination as an advisory while you are still in the model, naming the usage and
+both halves of the contradiction. Treat that advisory as the real answer, not a nag — it is D9 one
+step earlier.
+
+The fix is always one of two things, and you have to decide which you meant:
+
+- **The gate really does apply here** → remove the `@inapplicable:` marker and let it run.
+- **The gate really does not apply** → the usage should not be admitted for this design. Do not
+  silence the check; change what the model asserts.
 
 ---
 

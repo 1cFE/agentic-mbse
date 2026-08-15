@@ -1,6 +1,6 @@
 """Executable profile: a pure facts-to-decisions library, no syside.
 
-Reads Item 1/2's `ConstraintFacts` and returns, per constraint usage, exactly one outcome —
+Reads Item 1/2's identified constraint facts and returns, per constraint usage, exactly one outcome —
 admit, block, non-numerical, or unassessed — so every modeled assertion ends in one
 visible place and nothing reaches codegen silently (concept Design Principle 5, "silence is
 never an outcome"). Imports `expression_facts`/`expression_ir`/`constraint_facts` only: no
@@ -10,19 +10,19 @@ into their own `ValidationIssue`, keeping this module reusable by codegen too.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, replace
 from enum import Enum
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
+from uuid import UUID
 
 from agentic_mbse.sysml.constraint_facts import (
     ConstraintDefinitionFact,
-    ConstraintFacts,
     ConstraintUsageFact,
     IdentityFact,
     LocationFact,
 )
-from agentic_mbse.sysml.expression_facts import OperandTypeFact
+from agentic_mbse.sysml.expression_facts import FeatureReferenceFact, OperandTypeFact
 from agentic_mbse.sysml.expression_ir import (
     ExpressionIR,
     FeatureReferenceNode,
@@ -33,19 +33,23 @@ from agentic_mbse.sysml.expression_ir import (
     UnsupportedNode,
 )
 
+if TYPE_CHECKING:
+    from agentic_mbse.sysml.constraint_extraction import IdentifiedConstraintFacts
+
 __all__ = [
     "PROFILE_SEMANTIC_VERSION",
     "REASON_CODES",
     "CONSTRAINT_USAGE_FACT_FIELD_CONSUMERS",
     "Eligibility",
     "EligibilityDiagnostic",
+    "IdentifiedProfileResult",
+    "IdentifiedUsageDecision",
     "PreflightResult",
-    "ProfileResult",
     "UsageDecision",
     "classify_equality",
     "classify_ordering",
-    "evaluate_profile",
-    "preflight",
+    "evaluate_identified_profile",
+    "preflight_identified",
     "unit_compatibility",
 ]
 
@@ -204,26 +208,33 @@ CONSTRAINT_USAGE_FACT_FIELD_CONSUMERS: Mapping[str, str] = {
 
 
 @dataclass(frozen=True)
-class ProfileResult:
-    """`evaluate_profile`'s full output: one decision per usage, plus derived counts."""
+class IdentifiedUsageDecision:
+    """One profile decision paired with its exact live usage association."""
 
-    decisions: list[UsageDecision]
+    usage_id: UUID
+    effective_definition_id: UUID | None
+    decision: UsageDecision
 
-    @property
-    def admitted_count(self) -> int:
-        return sum(1 for d in self.decisions if d.eligibility is Eligibility.ADMIT)
 
-    @property
-    def blocked_count(self) -> int:
-        return sum(1 for d in self.decisions if d.eligibility is Eligibility.BLOCK)
+@dataclass(frozen=True)
+class IdentifiedProfileResult:
+    """Exact profile output with a total usage-UUID index."""
 
-    @property
-    def non_numerical_count(self) -> int:
-        return sum(1 for d in self.decisions if d.eligibility is Eligibility.NON_NUMERICAL)
+    decisions: tuple[IdentifiedUsageDecision, ...]
+    expected_usage_ids: tuple[UUID, ...]
 
     @property
-    def unassessed_count(self) -> int:
-        return sum(1 for d in self.decisions if d.eligibility is Eligibility.UNASSESSED)
+    def by_usage_id(self) -> dict[UUID, IdentifiedUsageDecision]:
+        result: dict[UUID, IdentifiedUsageDecision] = {}
+        for item in self.decisions:
+            if item.usage_id in result:
+                raise ValueError(f"duplicate identified constraint usage UUID: {item.usage_id}")
+            result[item.usage_id] = item
+        return result
+
+    @property
+    def missing_usage_ids(self) -> frozenset[UUID]:
+        return frozenset(self.expected_usage_ids) - self.by_usage_id.keys()
 
 
 @dataclass(frozen=True)
@@ -359,6 +370,31 @@ def _diagnostic(
         constraint_identity=identity,
         message=message or f"{construct}: {reason}",
         force=force,
+    )
+
+
+def _feature_chain_message(reference: FeatureReferenceFact) -> str:
+    """Name the offending chain and the rewrite that replaces it.
+
+    `_diagnostic`'s default message repeats the reason (`feature_chain:
+    block_feature_chain`), which tells a modeler nothing: not which of a multi-chain
+    predicate's references is at fault, and not what to write instead. Everything needed is
+    already here at the decision point — `chain_segments` holds the ordered path names, root
+    first, so joining them reproduces the authored spelling.
+
+    The rewrite is the bindings-only recipe: a chain is not executable inside a predicate
+    body, but a usage formal bound to that chain is. The formal is named after the chain's
+    leaf, which is the name a modeler would pick anyway.
+
+    One line, no newline: the consumer folds several of these into a single-line diagnostic
+    detail.
+    """
+    chain = ".".join(reference.chain_segments)
+    formal = reference.chain_segments[-1]
+    return (
+        f"feature chain {chain!r} is not executable in a predicate body; "
+        f"bind it to a constraint formal in the usage (in {formal} = {chain};) "
+        "and use the formal in the predicate"
     )
 
 
@@ -523,7 +559,15 @@ def _walk_value(
     """
     if isinstance(node, FeatureReferenceNode):
         if node.reference.chain_segments:
-            return [_diagnostic("block_feature_chain", "feature_chain", identity, location)]
+            return [
+                _diagnostic(
+                    "block_feature_chain",
+                    "feature_chain",
+                    identity,
+                    location,
+                    _feature_chain_message(node.reference),
+                )
+            ]
         return _leaf_fact(node.operand_type, "feature_ref", identity, location)
 
     if isinstance(node, LiteralNode):
@@ -691,7 +735,13 @@ def _walk_proposition(
     if isinstance(node, FeatureReferenceNode):
         if node.reference.chain_segments:
             diagnostics.append(
-                _diagnostic("block_feature_chain", "feature_chain", identity, location)
+                _diagnostic(
+                    "block_feature_chain",
+                    "feature_chain",
+                    identity,
+                    location,
+                    _feature_chain_message(node.reference),
+                )
             )
             return True
         if node.operand_type is not None and node.operand_type.category == "boolean":
@@ -928,26 +978,9 @@ def _promote_non_numerical_diagnostic(
     )
 
 
-def _promote_non_numerical_diagnostic(
-    diagnostic: EligibilityDiagnostic,
-) -> EligibilityDiagnostic:
-    """Replace warning semantics when numerical containment makes the diagnostic blocking."""
-    if diagnostic.force != "non_numerical":
-        return diagnostic
-    return replace(
-        diagnostic,
-        reason="block_non_numerical_containment",
-        message=(
-            f"the numerical assertion contains a non-numerical {diagnostic.construct} and "
-            "generation stops; separate it into its own assertion or rewrite it as a numerical "
-            "comparison"
-        ),
-        force="error",
-    )
-
-
-def _evaluate_usage(
-    usage: ConstraintUsageFact, definitions_by_qn: dict[str, ConstraintDefinitionFact]
+def _evaluate_usage_against_definition(
+    usage: ConstraintUsageFact,
+    definition: ConstraintDefinitionFact | None,
 ) -> UsageDecision:
     form = usage.source.form
     identity, location = usage.identity, usage.location
@@ -975,9 +1008,6 @@ def _evaluate_usage(
         return _invalid_polarity_block(usage)
 
     if form == "definition_typed":
-        constraint_definition = usage.source.constraint_definition
-        qn = constraint_definition.qualified_name if constraint_definition else None
-        definition = definitions_by_qn.get(qn) if qn is not None else None
         if definition is None:
             return _missing_body_block(
                 usage,
@@ -1004,28 +1034,61 @@ def _evaluate_usage(
     return _body_decision(usage, predicate, Eligibility.ADMIT, [])
 
 
-def evaluate_profile(facts: ConstraintFacts) -> ProfileResult:
-    """Decide eligibility for every usage in `facts.usages` (I1) — never over `facts.definitions`.
-
-    `facts.definitions` is read solely as the `definition_typed` predicate-lookup index; an unused
-    `ConstraintDefinition` never becomes a decision (the concept's inventory rule, by construction).
-    """
-    definitions_by_qn = {
-        definition.identity.qualified_name: definition
-        for definition in facts.definitions
-        if definition.identity.qualified_name is not None
-    }
-    decisions = [_evaluate_usage(usage, definitions_by_qn) for usage in facts.usages]
-    return ProfileResult(decisions=decisions)
+def _evaluate_usage(
+    usage: ConstraintUsageFact, definitions_by_qn: dict[str, ConstraintDefinitionFact]
+) -> UsageDecision:
+    definition: ConstraintDefinitionFact | None = None
+    if usage.source.form == "definition_typed":
+        constraint_definition = usage.source.constraint_definition
+        qn = constraint_definition.qualified_name if constraint_definition else None
+        definition = definitions_by_qn.get(qn) if qn is not None else None
+    return _evaluate_usage_against_definition(usage, definition)
 
 
-def preflight(facts: ConstraintFacts) -> PreflightResult:
-    """The codegen gate: run the profile and partition its decisions by outcome."""
-    result = evaluate_profile(facts)
-    blocking = [d for d in result.decisions if d.eligibility is Eligibility.BLOCK]
-    admitted = [d for d in result.decisions if d.eligibility is Eligibility.ADMIT]
-    non_numerical = [d for d in result.decisions if d.eligibility is Eligibility.NON_NUMERICAL]
-    unassessed = [d for d in result.decisions if d.eligibility is Eligibility.UNASSESSED]
+def evaluate_identified_profile(facts: IdentifiedConstraintFacts) -> IdentifiedProfileResult:
+    """Evaluate live facts by exact usage/definition UUID, never by neutral display identity."""
+    definitions_by_id: dict[UUID, ConstraintDefinitionFact] = {}
+    for definition_record in facts.definitions:
+        if definition_record.definition_id in definitions_by_id:
+            raise ValueError(
+                "duplicate identified constraint definition UUID: "
+                f"{definition_record.definition_id}"
+            )
+        definitions_by_id[definition_record.definition_id] = definition_record.fact
+
+    seen_usage_ids: set[UUID] = set()
+    decisions: list[IdentifiedUsageDecision] = []
+    for usage_record in facts.usages:
+        if usage_record.usage_id in seen_usage_ids:
+            raise ValueError(
+                f"duplicate identified constraint usage UUID: {usage_record.usage_id}"
+            )
+        seen_usage_ids.add(usage_record.usage_id)
+        definition = (
+            definitions_by_id.get(usage_record.effective_definition_id)
+            if usage_record.effective_definition_id is not None
+            else None
+        )
+        decisions.append(
+            IdentifiedUsageDecision(
+                usage_id=usage_record.usage_id,
+                effective_definition_id=usage_record.effective_definition_id,
+                decision=_evaluate_usage_against_definition(usage_record.fact, definition),
+            )
+        )
+
+    return IdentifiedProfileResult(
+        decisions=tuple(decisions),
+        expected_usage_ids=tuple(record.usage_id for record in facts.usages),
+    )
+
+
+def _partition_decisions(decisions: Sequence[UsageDecision]) -> PreflightResult:
+    """Split one decision list into the gate's four outcome buckets."""
+    blocking = [d for d in decisions if d.eligibility is Eligibility.BLOCK]
+    admitted = [d for d in decisions if d.eligibility is Eligibility.ADMIT]
+    non_numerical = [d for d in decisions if d.eligibility is Eligibility.NON_NUMERICAL]
+    unassessed = [d for d in decisions if d.eligibility is Eligibility.UNASSESSED]
     return PreflightResult(
         ok=not blocking,
         blocking=blocking,
@@ -1033,3 +1096,13 @@ def preflight(facts: ConstraintFacts) -> PreflightResult:
         non_numerical=non_numerical,
         unassessed=unassessed,
     )
+
+
+def preflight_identified(result: IdentifiedProfileResult) -> PreflightResult:
+    """The exact codegen gate: partition an already-decided exact profile by outcome.
+
+    Takes the decided result rather than the facts, because the exact route associates
+    usages to definitions by UUID before evaluation and that association is not
+    re-derivable from the neutral payload.
+    """
+    return _partition_decisions([item.decision for item in result.decisions])

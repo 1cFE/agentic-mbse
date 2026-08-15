@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 from agentic_mbse.sysml.types import BindingType, ExpressionRef
 
@@ -16,6 +17,8 @@ __all__ = [
     "AttributeInfo",
     "RedefinitionType",
     "RedefinitionData",
+    "ResolvedTargetFact",
+    "ResolvedSemanticReferenceFact",
     "MultiplicityData",
     "SumTerm",
     "SingletonTerm",
@@ -49,6 +52,52 @@ class AttributeInfo:
     is_output: bool = False
 
 
+@dataclass(frozen=True)
+class ResolvedTargetFact:
+    """The exact SysIDE-resolved target of one reference (SOURCE-IDENTITY Item 4).
+
+    Immutable evidence of what a reference resolved to, captured while the AST is
+    live. Records the resolved element itself — never a same-named substitute — so
+    downstream identity work can distinguish a definition-level referent (owner is
+    a Definition) from an occurrence-level one (owner is a Usage), and can follow
+    the redefinition relationships the referent declares.
+    """
+
+    element_id: UUID
+    owner_element_id: UUID | None
+    redefined_element_ids: tuple[UUID, ...]
+    qualified_name: str
+    element_kind: str
+    element_name: str = ""
+    owner_qualified_name: str = ""
+    owner_is_definition: bool = False
+    redefined_qualified_names: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class ResolvedSemanticReferenceFact:
+    """One resolved feature-chain path with exact parser declaration IDs.
+
+    Qualified names and member names remain diagnostic metadata. Consumers
+    resolve with ``root.element_id`` and ``segment_element_ids`` only.
+    """
+
+    root: ResolvedTargetFact | None
+    segments: tuple[ResolvedTargetFact, ...]
+    leaf: ResolvedTargetFact | None
+    resolved_member_names: tuple[str, ...]
+    has_index_segment: bool
+
+    @property
+    def segment_element_ids(self) -> tuple[UUID, ...]:
+        return tuple(segment.element_id for segment in self.segments)
+
+    @property
+    def resolved_segment_qns(self) -> tuple[str, ...]:
+        """Diagnostic-only qualified names for the already-resolved path."""
+        return tuple(segment.qualified_name for segment in self.segments)
+
+
 class RedefinitionType(str, Enum):
     """Classification of a ``:>>`` redefinition's RHS expression."""
 
@@ -72,6 +121,17 @@ class RedefinitionData:
     is_deep_path: bool = False
     source_file: Path = field(default_factory=lambda: Path("unknown"))
     source_line: int = 0
+    # Exact value-site identity (SOURCE-IDENTITY Item 4, D2): the redefining
+    # member's own qualified name (None when the deep-path member is anonymous)
+    # and the exact qualified names of the redefined target — the redefined
+    # feature itself, or its chaining features for a deep path. Kept out of the
+    # snapshot wire format until the v6 cut owns serialization.
+    member_qualified_name: str | None = field(
+        default=None, metadata={"snapshot_exclude": True}
+    )
+    redefined_target_qns: tuple[str, ...] = field(
+        default=(), metadata={"snapshot_exclude": True}
+    )
 
 
 @dataclass
@@ -93,6 +153,19 @@ class SumTerm:
     attribute_name: str
     multiplicity_attr: str | None
     multiplicity_count: int | None
+    # Exact structural chain evidence (SOURCE-IDENTITY Item 4): the resolved
+    # leaf target, the resolved chain root (the occurrence anchor), and the
+    # resolved member names from root to leaf. Evidence only until snapshot v6
+    # owns serialization.
+    resolved_target: ResolvedTargetFact | None = field(
+        default=None, metadata={"snapshot_exclude": True}
+    )
+    chain_root: ResolvedTargetFact | None = field(
+        default=None, metadata={"snapshot_exclude": True}
+    )
+    resolved_member_names: tuple[str, ...] = field(
+        default=(), metadata={"snapshot_exclude": True}
+    )
 
 
 @dataclass
@@ -100,6 +173,15 @@ class SingletonTerm:
     """A non-sum child attribute reference in an aggregation expression."""
 
     source_path: str
+    resolved_target: ResolvedTargetFact | None = field(
+        default=None, metadata={"snapshot_exclude": True}
+    )
+    chain_root: ResolvedTargetFact | None = field(
+        default=None, metadata={"snapshot_exclude": True}
+    )
+    resolved_member_names: tuple[str, ...] = field(
+        default=(), metadata={"snapshot_exclude": True}
+    )
 
 
 @dataclass
@@ -107,3 +189,12 @@ class LocalTerm:
     """A PartDef-local attribute reference in an aggregation expression."""
 
     attribute_name: str
+    resolved_target: ResolvedTargetFact | None = field(
+        default=None, metadata={"snapshot_exclude": True}
+    )
+    chain_root: ResolvedTargetFact | None = field(
+        default=None, metadata={"snapshot_exclude": True}
+    )
+    resolved_member_names: tuple[str, ...] = field(
+        default=(), metadata={"snapshot_exclude": True}
+    )

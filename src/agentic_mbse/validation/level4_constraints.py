@@ -7,36 +7,32 @@ Does NOT evaluate constraint values (that's handled by syside/TEAx).
 """
 
 import sys
+from collections import Counter
 from typing import Any
 
-from agentic_mbse.sysml.constraint_extraction import extract_constraint_facts
-from agentic_mbse.sysml.executable_profile import evaluate_profile
+from agentic_mbse.sysml.constraint_extraction import extract_identified_constraint_facts
+from agentic_mbse.sysml.executable_profile import (
+    Eligibility,
+    evaluate_identified_profile,
+)
 from agentic_mbse.sysml.syside_adapter import (
     EXCLUDED_CONSTRAINT_TYPES,
     SysideAdapter,
 )
 
-try:
-    from .common import (
-        EXIT_FAILURE,
-        EXIT_SUCCESS,
-        QualityCheckResult,
-        discover_sysml_files,
-        load_sysml_model,
-        print_header,
-        print_result,
-    )
-except ImportError:
-    # Handle direct execution
-    from common import (
-        EXIT_FAILURE,
-        EXIT_SUCCESS,
-        QualityCheckResult,
-        discover_sysml_files,
-        load_sysml_model,
-        print_header,
-        print_result,
-    )
+# Absolute, so direct execution (`python level4_constraints.py`) resolves the same module the
+# package import resolves. The module already imports `agentic_mbse.sysml` absolutely above, so
+# an installed package is required either way and the old relative/`common` fallback could never
+# be the only working path.
+from agentic_mbse.validation.common import (
+    EXIT_FAILURE,
+    EXIT_SUCCESS,
+    QualityCheckResult,
+    discover_sysml_files,
+    load_sysml_model,
+    print_header,
+    print_result,
+)
 
 
 def eligibility_coverage_metrics(model: Any) -> dict:
@@ -56,22 +52,31 @@ def eligibility_coverage_metrics(model: Any) -> dict:
     Eligible + Ineligible + Unassessed always sums to this denominator, not to
     "Total constraints".
 
+    Runs the exact route: each usage is associated to the definition its parser UUID
+    names. The neutral route indexed definitions by qualified name, so two definitions
+    sharing one qualified name silently collapsed to whichever came last and the metrics
+    depended on enumeration order. `evaluate_identified_profile` refuses a duplicate
+    UUID outright instead.
+
     Returns:
         Metrics dict: assessed denominator, eligibility admit/block/unassessed counts,
         and the admit-rate percentage.
     """
-    facts = extract_constraint_facts(model)
-    result = evaluate_profile(facts)
+    result = evaluate_identified_profile(extract_identified_constraint_facts(model))
+    counts = Counter(item.decision.eligibility for item in result.decisions)
 
-    asserted = result.admitted_count + result.blocked_count + result.non_numerical_count
-    executable_share = (result.admitted_count / asserted * 100) if asserted > 0 else 100
+    admitted = counts[Eligibility.ADMIT]
+    blocked = counts[Eligibility.BLOCK]
+    non_numerical = counts[Eligibility.NON_NUMERICAL]
+    asserted = admitted + blocked + non_numerical
+    executable_share = (admitted / asserted * 100) if asserted > 0 else 100
 
     return {
         "Constraint usages assessed (incl. satisfy)": len(result.decisions),
-        "Admitted numerical": result.admitted_count,
-        "Malformed numerical": result.blocked_count,
-        "Non-numerical": result.non_numerical_count,
-        "Unassessed (satisfy/require/plain)": result.unassessed_count,
+        "Admitted numerical": admitted,
+        "Malformed numerical": blocked,
+        "Non-numerical": non_numerical,
+        "Unassessed (satisfy/require/plain)": counts[Eligibility.UNASSESSED],
         "Executable share": f"{executable_share:.1f}%",
     }
 
