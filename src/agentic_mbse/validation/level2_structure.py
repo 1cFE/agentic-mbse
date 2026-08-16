@@ -13,7 +13,7 @@ Checks:
 import sys
 from typing import Any
 
-from agentic_mbse.sysml.binding import extract_bindings
+from agentic_mbse.sysml.binding import classify_binding, extract_bindings
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import (
     BindingType,
@@ -310,9 +310,17 @@ def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
     """
     C1 (Item 12): flag every self-named input binding.
 
-    A binding `in P = P` where the reference name equals the calc's own input
-    parameter name resolves to that parameter itself, so the intended outer value
-    never reaches the input. Every such binding is a modeling error.
+    A binding whose right-hand side resolves to the calc's own input parameter
+    (`in P = P`) dead-ends: the intended outer value never reaches the input.
+    Every such binding is a modeling error.
+
+    The comparison is referent identity, mirroring codegen's SRC-01 rule
+    (``extraction/source_evidence.py::is_self_binding``): the value
+    expression's resolved referent element is compared with the bound parameter
+    member itself. A name comparison is wrong in one direction — it also
+    flagged the supported owner-qualified form ``in x = owner::x``, whose
+    referent is the owner's attribute and not the parameter (F-2,
+    self-binding-replacement Phase 1).
 
     There is no same-named-outer-feature exemption. The check used to suppress the
     diagnostic when the enclosing part carried an attribute or sibling calc output
@@ -340,14 +348,20 @@ def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
                 if getattr(feat, "name", None)
             }
 
-            for binding in extract_bindings(calc_usage):
-                # Self-named: the bound param is a real input, the RHS is a bare
-                # reference (not a chain/literal), and its name equals the param.
-                if binding.param_name not in input_params:
+            for member in getattr(calc_usage, "owned_members", None) or []:
+                param_name = str(getattr(member, "name", "") or "")
+                if param_name not in input_params:
                     continue
-                if binding.binding_type != BindingType.REFERENCE:
+                expr = getattr(member, "feature_value_expression", None)
+                if classify_binding(expr) != BindingType.REFERENCE:
                     continue
-                if binding.source_path != binding.param_name:
+                # Self-named: the RHS reference's resolved referent IS the bound
+                # parameter member. An unresolved referent is a load error, not
+                # a self-binding this check can establish.
+                referent = getattr(expr, "referent", None)
+                if referent is None:
+                    continue
+                if SysideAdapter.element_id(referent) != SysideAdapter.element_id(member):
                     continue
 
                 calc_name = get_qualified_name(calc_usage)
@@ -357,7 +371,7 @@ def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
                         severity=Severity.ERROR,
                         code=ValidationCode.L2_SELF_NAMED_BINDING,
                         message=(
-                            f"Input '{binding.param_name}' in calc '{calc_name}' binds to a "
+                            f"Input '{param_name}' in calc '{calc_name}' binds to a "
                             f"same-named reference that resolves to the calc's own parameter, "
                             f"so the binding dead-ends. A same-named feature in the enclosing "
                             f"scope does not rescue it — the binding is never reinterpreted as "
