@@ -125,6 +125,26 @@ def test_c1_qualified_binding_to_owner_attribute_is_not_self_named():
     assert self_named == [], f"Qualified referent must not fire C1: {_codes(issues)}"
 
 
+def test_c1_inspection_failure_surfaces_as_error_not_clean(monkeypatch):
+    """Audit F4 (self-binding-replacement): an unexpected failure while inspecting
+    a calc usage must surface as an L2_CHECK_UNVERIFIABLE ERROR, never be swallowed
+    into an empty (clean-looking) issue list. A SysIDE or adapter regression that
+    made the check skip usages silently was exactly the failure mode."""
+    from agentic_mbse.validation import level2_structure
+
+    def _boom(_element):
+        raise RuntimeError("simulated adapter regression")
+
+    monkeypatch.setattr(
+        level2_structure.SysideAdapter, "element_id", staticmethod(_boom)
+    )
+    issues = check_self_named_bindings(load_fixture("self_named_trap"))
+    unverified = [i for i in issues if i.code == ValidationCode.L2_CHECK_UNVERIFIABLE]
+    assert unverified, f"inspection failure must be reported, got {_codes(issues)}"
+    assert all(i.severity == Severity.ERROR for i in unverified)
+    assert "simulated adapter regression" in unverified[0].message
+
+
 # --- C2a: anonymous return (L6) -------------------------------------------------
 
 

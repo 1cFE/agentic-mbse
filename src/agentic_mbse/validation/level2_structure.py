@@ -381,10 +381,34 @@ def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
                         location=get_element_location(calc_usage),
                     )
                 )
-        except Exception:
-            continue
+        except Exception as error:  # noqa: BLE001 — surfaced as a finding, never swallowed
+            # An inspection failure leaves this usage UNVERIFIED. Reporting it as
+            # an ERROR keeps the run honest: a SysIDE or adapter regression must
+            # read as a failed check, not as a clean model (audit F4).
+            issues.append(
+                ValidationIssue(
+                    level=2,
+                    severity=Severity.ERROR,
+                    code=ValidationCode.L2_CHECK_UNVERIFIABLE,
+                    message=(
+                        f"self-named-binding check could not inspect calc usage "
+                        f"'{_safe_display_name(calc_usage)}': "
+                        f"{type(error).__name__}: {error}. The usage is unverified; "
+                        f"treat this as a check failure, not a clean result"
+                    ),
+                    element_name=_safe_display_name(calc_usage),
+                )
+            )
 
     return issues
+
+
+def _safe_display_name(element: Any) -> str:
+    """A best-effort name for an element that may itself refuse inspection."""
+    try:
+        return str(get_qualified_name(element) or getattr(element, "name", None) or repr(element))
+    except Exception:  # noqa: BLE001 — naming only; the failure is already being reported
+        return "<unnameable element>"
 
 
 def check_orphaned_elements(model: Any) -> list[ValidationIssue]:

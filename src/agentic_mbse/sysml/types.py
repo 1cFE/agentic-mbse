@@ -87,6 +87,10 @@ class ValidationCode(str, Enum):
     # C1 (Item 12): an input bound to a same-named reference that dead-ends on the
     # calc's own parameter, with no producer of that name in scope. FAIL, L2.
     L2_SELF_NAMED_BINDING = "L2_SELF_NAMED_BINDING"
+    # A structural check could not inspect an element it is responsible for, so the
+    # element is UNVERIFIED. Surfaced as an ERROR: an inspection failure must never
+    # read as a clean result (self-binding-replacement audit F4).
+    L2_CHECK_UNVERIFIABLE = "L2_CHECK_UNVERIFIABLE"
 
     # Dataflow Issues
     CIRCULAR_IMPORT = "CIRCULAR_IMPORT"
