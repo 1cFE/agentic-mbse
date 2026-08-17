@@ -16,8 +16,10 @@ from __future__ import annotations
 import ast
 import inspect
 
+import agentic_mbse
 import agentic_mbse.sysml as sysml
 import agentic_mbse.sysml.constraint_extraction as constraint_extraction
+from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 
 
 def test_all_is_sorted_list_of_str() -> None:
@@ -73,3 +75,19 @@ def test_constraint_extraction_star_import_includes_all_public_extractors() -> N
         namespace["extract_identified_constraint_facts"]
         is constraint_extraction.extract_identified_constraint_facts
     )
+
+
+def test_semantic_evidence_contract_is_exported_from_package_root() -> None:
+    assert agentic_mbse.SEMANTIC_EVIDENCE_API_VERSION == "semantic-evidence/v1"
+    assert agentic_mbse.SemanticEvidenceCode is SemanticEvidenceCode
+    assert agentic_mbse.SemanticEvidenceError is SemanticEvidenceError
+    assert {
+        "SEMANTIC_EVIDENCE_API_VERSION",
+        "SemanticEvidenceCode",
+        "SemanticEvidenceError",
+    } <= set(agentic_mbse.__all__)
+
+
+def test_obsolete_standard_library_prefix_export_is_absent() -> None:
+    assert "STANDARD_LIBRARY_PREFIXES" not in sysml.__all__
+    assert not hasattr(sysml, "STANDARD_LIBRARY_PREFIXES")

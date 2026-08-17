@@ -12,6 +12,14 @@ from typing import Any
 
 import pytest
 
+from agentic_mbse.sysml.syside_adapter import get_syside
+
+
+def _mock_document(url: str, tier: Any = None) -> Any:
+    if tier is None:
+        tier = get_syside().DocumentTier.Project
+    return type("MockDocument", (), {"url": url, "document_tier": tier})()
+
 
 class MockElement:
     """Base mock for syside elements with isinstance support.
@@ -61,16 +69,17 @@ class MockFeatureReferenceExpression(MockElement):
         qualified_name: str = "",
         doc_path: str = "",
         target_element: Any = None,
+        document_tier: Any = None,
     ) -> None:
         super().__init__(name, qualified_name, doc_path)
-        # Simulate memberships pattern for extracting target
+        # Match the real SysIDE shape: ``referent`` is the identity authority.
         if target_element:
-            self.memberships = [MockMembership(target_element)]
+            target = target_element
         else:
-            # Create a simple target for name extraction
-            target = MockElement(name=name, qualified_name=qualified_name)
-            target.document = type("Doc", (), {"url": doc_path})() if doc_path else None
-            self.memberships = [MockMembership(target)]
+            target = MockElement(name=name, qualified_name=qualified_name or None)
+            target.document = _mock_document(doc_path, document_tier)
+        self.referent = target
+        self.memberships = [MockMembership(target)]
 
 
 class MockFeatureChainExpression(MockElement):
@@ -85,6 +94,7 @@ class MockFeatureChainExpression(MockElement):
         attr_name: str = "",
         qualified_name: str = "",
         doc_path: str = "",
+        document_tier: Any = None,
     ) -> None:
         # The name is typically the attribute name
         super().__init__(name=attr_name, qualified_name=qualified_name, doc_path=doc_path)
@@ -98,7 +108,15 @@ class MockFeatureChainExpression(MockElement):
         if instance_name:
             self.operands = [MockFeatureReferenceExpression(name=instance_name)]
         if attr_name:
-            self.target_feature = type("TargetFeature", (), {"name": attr_name})()
+            self.target_feature = type(
+                "TargetFeature",
+                (),
+                {
+                    "name": attr_name,
+                    "qualified_name": qualified_name or None,
+                    "document": _mock_document(doc_path, document_tier),
+                },
+            )()
 
         # Create target for the attribute
         target = MockElement(name=attr_name, qualified_name=qualified_name)

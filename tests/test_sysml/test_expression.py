@@ -5,8 +5,13 @@ expression tree structures.
 """
 
 import inspect
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 import agentic_mbse.sysml as sysml
+from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 from agentic_mbse.sysml import expression
 from agentic_mbse.sysml.expression import (
     extract_feature_chain_name,
@@ -15,12 +20,14 @@ from agentic_mbse.sysml.expression import (
     extract_feature_refs,
     extract_literal_value,
     extract_operators,
+    feature_chain_facts,
     is_literal_expression,
     is_literal_node,
     is_true_static_expression,
     reconstruct_expression,
     traverse_expression,
 )
+from agentic_mbse.sysml.syside_adapter import SysideAdapter, get_syside
 from tests.test_sysml.conftest import (
     MockFeatureChainExpression,
     MockFeatureReferenceExpression,
@@ -28,6 +35,11 @@ from tests.test_sysml.conftest import (
     MockLiteralRational,
     MockOperatorExpression,
 )
+
+DOCUMENT_TIER = get_syside().DocumentTier
+PROJECT_SI = Path(__file__).parents[1] / "fixtures/semantic_evidence/project_si.sysml"
+TYPE_UNITS = Path(__file__).parents[1] / "fixtures/constraint_fact_shapes/type_units.sysml"
+SOURCE_FORMS = Path(__file__).parents[1] / "fixtures/constraint_fact_shapes/source_forms.sysml"
 
 
 def test_mock_fixtures_exist(mock_feature_ref, mock_operator_expr, mock_literal):
@@ -128,6 +140,28 @@ def test_traverse_expression_nested_operators():
     assert set(results) == {"a", "b", "c"}
 
 
+def test_operand_iteration_failure_is_typed_and_keeps_cause():
+    cause = RuntimeError("operand stream failed")
+
+    class MockOperatorExpression:
+        qualified_name = "Probe::broken_expression"
+        document = SimpleNamespace(url="file:root-0/model.sysml")
+        cst_node = SimpleNamespace(start_point=SimpleNamespace(line=10))
+
+        @property
+        def operands(self):
+            raise cause
+
+    with pytest.raises(SemanticEvidenceError) as caught:
+        traverse_expression(MockOperatorExpression(), lambda node: node)
+
+    assert caught.value.code is SemanticEvidenceCode.OPERAND_ITERATION_FAILED
+    assert caught.value.reference == "Probe::broken_expression"
+    assert caught.value.location == ("root-0/model.sysml", 11)
+    assert caught.value.cause is cause
+    assert caught.value.__cause__ is cause
+
+
 def test_traverse_expression_with_literal():
     """traverse_expression handles literal nodes correctly.
 
@@ -223,6 +257,139 @@ def test_extract_feature_refs_from_chain():
     assert any(ref.name == "p_fusion" for ref in refs)
 
 
+def test_reference_dispatch_uses_exact_mapped_mock_metatype_name():
+    class MockFeatureReferenceExpressionSuffix:
+        referent = SimpleNamespace(name="wrong", qualified_name="Probe::wrong")
+        operands = ()
+
+    assert extract_feature_refs(MockFeatureReferenceExpressionSuffix()) == []
+
+
+def test_real_operator_reference_and_chain_use_mapped_exact_evidence():
+    model, diagnostics = SysideAdapter.load_model([SOURCE_FORMS])
+    assert not [
+        item
+        for item in diagnostics.all
+        if str(getattr(item, "severity", "")).endswith("Error")
+    ]
+    syside = get_syside()
+    operator = next(model.elements(syside.OperatorExpression, include_subtypes=False))
+    reference = next(
+        model.elements(syside.FeatureReferenceExpression, include_subtypes=False)
+    )
+    chain = next(model.elements(syside.FeatureChainExpression, include_subtypes=False))
+
+    assert SysideAdapter.is_instance(operator, "OperatorExpression")
+    assert SysideAdapter.is_instance(reference, "FeatureReferenceExpression")
+    assert SysideAdapter.is_instance(chain, "FeatureChainExpression")
+    assert str(operator.operator) in extract_operators(operator)
+    assert any(
+        item.element is reference.referent
+        for item in extract_feature_refs(reference, ignore_std_lib=False)
+    )
+    assert any(
+        item.element is chain.target_feature
+        for item in extract_feature_refs(chain, ignore_std_lib=False)
+    )
+
+    chain_fact = feature_chain_facts(chain)
+    exact_leaf = (
+        chain.target_feature.chaining_features[-1]
+        if chain.target_feature.chaining_features
+        else chain.target_feature
+    )
+    assert chain_fact.leaf is not None
+    assert chain_fact.leaf.element_id == SysideAdapter.element_id(exact_leaf)
+
+
+def test_feature_reference_retains_only_exact_referent():
+    exact = SimpleNamespace(
+        name="value",
+        qualified_name="Probe::value",
+        document=SimpleNamespace(
+            url="file:root-0/model.sysml", document_tier=DOCUMENT_TIER.Project
+        ),
+    )
+    expression_node = MockFeatureReferenceExpression(
+        name="authored_name", target_element=exact
+    )
+
+    refs = extract_feature_refs(expression_node)
+
+    assert len(refs) == 1
+    assert refs[0].element is exact
+    assert refs[0].name == "value"
+    assert refs[0].qualified_name == "Probe::value"
+
+
+def test_real_project_package_named_si_is_retained():
+    model, diagnostics = SysideAdapter.load_model([PROJECT_SI])
+    assert not [
+        item
+        for item in diagnostics.all
+        if str(getattr(item, "severity", "")).endswith("Error")
+    ]
+    reference = next(
+        item
+        for item in model.elements(
+            get_syside().FeatureReferenceExpression, include_subtypes=True
+        )
+        if str(getattr(getattr(item, "referent", None), "qualified_name", ""))
+        == "SI::ProjectType::project_value"
+    )
+
+    refs = extract_feature_refs(reference)
+
+    assert len(refs) == 1
+    assert refs[0].element is reference.referent
+    assert SysideAdapter.document_tier(reference.referent) is DOCUMENT_TIER.Project
+
+
+def test_real_standard_library_reference_is_filtered_by_document_tier():
+    model, _diagnostics = SysideAdapter.load_model([TYPE_UNITS])
+    reference = next(
+        item
+        for item in model.elements(
+            get_syside().FeatureReferenceExpression, include_subtypes=True
+        )
+        if str(getattr(getattr(item, "referent", None), "qualified_name", ""))
+        == "SI::metre"
+    )
+
+    assert extract_feature_refs(reference) == []
+    refs = extract_feature_refs(reference, ignore_std_lib=False)
+    assert len(refs) == 1
+    assert refs[0].element is reference.referent
+    assert SysideAdapter.document_tier(reference.referent) is DOCUMENT_TIER.StandardLibrary
+
+
+def test_missing_exact_referent_is_typed_before_document_classification():
+    expression_node = MockFeatureReferenceExpression(name="missing")
+    expression_node.referent = None
+
+    with pytest.raises(SemanticEvidenceError) as caught:
+        extract_feature_refs(expression_node)
+
+    assert caught.value.code is SemanticEvidenceCode.RESOLVED_TARGET_MISSING
+
+
+def test_resolved_chain_without_exact_leaf_is_typed():
+    expression_node = MockFeatureChainExpression(instance_name="root", attr_name="leaf")
+    expression_node.semantic_reference_resolved = True
+    expression_node.target_feature = SimpleNamespace(
+        name="leaf",
+        qualified_name=None,
+        document=SimpleNamespace(document_tier=DOCUMENT_TIER.Project),
+    )
+
+    with pytest.raises(SemanticEvidenceError) as caught:
+        feature_chain_facts(expression_node)
+
+    assert caught.value.code is SemanticEvidenceCode.RESOLVED_LEAF_MISSING
+    assert caught.value.reference
+    assert caught.value.detail.count(caught.value.code.value) == 0
+
+
 def test_extract_operators_returns_operator_list():
     """extract_operators returns all operators in expression.
 
@@ -313,7 +480,11 @@ class TestStandardLibraryFilter:
         Input: FeatureReferenceExpression with qualified_name="SI::metre"
         Output: Empty list with default filtering; 1 ref when filter disabled
         """
-        mock_expr = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_expr = MockFeatureReferenceExpression(
+            name="metre",
+            qualified_name="SI::metre",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
 
         # Default behavior filters SI::
         refs = extract_feature_refs(mock_expr)
@@ -330,7 +501,11 @@ class TestStandardLibraryFilter:
         Input: FeatureReferenceExpression with qualified_name="ISQ::Length"
         Output: Empty list when filtered
         """
-        mock_expr = MockFeatureReferenceExpression(name="Length", qualified_name="ISQ::Length")
+        mock_expr = MockFeatureReferenceExpression(
+            name="Length",
+            qualified_name="ISQ::Length",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
 
         refs = extract_feature_refs(mock_expr)
         assert len(refs) == 0, "ISQ::Length should be filtered by default"
@@ -344,7 +519,11 @@ class TestStandardLibraryFilter:
         Input: FeatureReferenceExpression with qualified_name="ScalarValues::Real"
         Output: Empty list when filtered
         """
-        mock_expr = MockFeatureReferenceExpression(name="Real", qualified_name="ScalarValues::Real")
+        mock_expr = MockFeatureReferenceExpression(
+            name="Real",
+            qualified_name="ScalarValues::Real",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
 
         refs = extract_feature_refs(mock_expr)
         assert len(refs) == 0, "ScalarValues::Real should be filtered by default"
@@ -356,7 +535,9 @@ class TestStandardLibraryFilter:
         Output: Empty list when filtered
         """
         mock_expr = MockFeatureReferenceExpression(
-            name="UnitFactor", qualified_name="UnitsAndScales::UnitFactor"
+            name="UnitFactor",
+            qualified_name="UnitsAndScales::UnitFactor",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
         )
 
         refs = extract_feature_refs(mock_expr)
@@ -382,7 +563,11 @@ class TestStandardLibraryFilter:
         Input: OperatorExpression with SI::metre and RadialBuild::radius
         Output: Only RadialBuild::radius returned (SI::metre filtered)
         """
-        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit = MockFeatureReferenceExpression(
+            name="metre",
+            qualified_name="SI::metre",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
         mock_design = MockFeatureReferenceExpression(
             name="radius", qualified_name="RadialBuild::radius"
         )
@@ -407,7 +592,11 @@ class TestStandardLibraryFilter:
         Input: Expression with SI::metre reference
         Output: 1 reference when filter disabled
         """
-        mock_expr = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_expr = MockFeatureReferenceExpression(
+            name="metre",
+            qualified_name="SI::metre",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
 
         # With filter disabled, std lib refs are included
         refs = extract_feature_refs(mock_expr, ignore_std_lib=False)
@@ -426,7 +615,11 @@ class TestStandardLibraryFilter:
         #   operand[0]: LiteralRational (3.0)
         #   operand[1]: FeatureReferenceExpression → SI::metre
         mock_literal = MockLiteralRational(value=3.0)
-        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit = MockFeatureReferenceExpression(
+            name="metre",
+            qualified_name="SI::metre",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
         mock_expr = MockOperatorExpression(operator="[", operands=[mock_literal, mock_unit])
 
         refs = extract_feature_refs(mock_expr)
@@ -442,6 +635,27 @@ class TestStandardLibraryFilter:
 
         refs = extract_feature_refs(mock_expr)
         assert len(refs) == 1, "Refs without qualified_name should not be filtered"
+
+    def test_project_package_named_si_is_not_filtered(self):
+        mock_expr = MockFeatureReferenceExpression(
+            name="project_value",
+            qualified_name="SI::ProjectType::project_value",
+            document_tier=DOCUMENT_TIER.Project,
+        )
+
+        refs = extract_feature_refs(mock_expr)
+
+        assert len(refs) == 1
+        assert refs[0].qualified_name == "SI::ProjectType::project_value"
+
+    def test_external_reference_is_retained(self):
+        mock_expr = MockFeatureReferenceExpression(
+            name="external_value",
+            qualified_name="Vendor::external_value",
+            document_tier=DOCUMENT_TIER.External,
+        )
+
+        assert len(extract_feature_refs(mock_expr)) == 1
 
 
 # Phase 5: is_true_static_expression() tests (ADR-002 semantic helper)
@@ -483,7 +697,11 @@ class TestIsTrueStaticExpression:
         Output: True (SI::metre is filtered, only literal remains)
         """
         mock_literal = MockLiteralRational(value=3.0)
-        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit = MockFeatureReferenceExpression(
+            name="metre",
+            qualified_name="SI::metre",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
         mock_expr = MockOperatorExpression(operator="[", operands=[mock_literal, mock_unit])
 
         assert is_true_static_expression(mock_expr) is True
@@ -529,11 +747,19 @@ class TestIsTrueStaticExpression:
         Output: True (all refs are SI:: which are filtered)
         """
         mock_lit1 = MockLiteralRational(value=3.0)
-        mock_unit1 = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit1 = MockFeatureReferenceExpression(
+            name="metre",
+            qualified_name="SI::metre",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
         mock_unit_expr1 = MockOperatorExpression(operator="[", operands=[mock_lit1, mock_unit1])
 
         mock_lit2 = MockLiteralRational(value=2.0)
-        mock_unit2 = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit2 = MockFeatureReferenceExpression(
+            name="metre",
+            qualified_name="SI::metre",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
         mock_unit_expr2 = MockOperatorExpression(operator="[", operands=[mock_lit2, mock_unit2])
 
         mock_expr = MockOperatorExpression(
@@ -549,7 +775,11 @@ class TestIsTrueStaticExpression:
         Output: False (major_radius is a design ref)
         """
         mock_lit = MockLiteralRational(value=3.0)
-        mock_unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        mock_unit = MockFeatureReferenceExpression(
+            name="metre",
+            qualified_name="SI::metre",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
         mock_unit_expr = MockOperatorExpression(operator="[", operands=[mock_lit, mock_unit])
 
         mock_design = MockFeatureReferenceExpression(
@@ -745,7 +975,11 @@ class TestEvaluateTrueStaticExpression:
         from agentic_mbse.sysml.expression import evaluate_true_static_expression
 
         value = MockLiteralRational(3.0)
-        unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        unit = MockFeatureReferenceExpression(
+            name="metre",
+            qualified_name="SI::metre",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
         expr = MockOperatorExpression("[", [value, unit])
         assert evaluate_true_static_expression(expr) == 3.0
 
@@ -859,7 +1093,11 @@ class TestEvaluateTrueStaticExpression:
         from agentic_mbse.sysml.expression import evaluate_true_static_expression
 
         value = MockLiteralRational(3.0)
-        unit = MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre")
+        unit = MockFeatureReferenceExpression(
+            name="metre",
+            qualified_name="SI::metre",
+            document_tier=DOCUMENT_TIER.StandardLibrary,
+        )
         unit_expr = MockOperatorExpression("[", [value, unit])
         expr = MockOperatorExpression("*", [unit_expr, MockLiteralRational(2.0)])
         assert evaluate_true_static_expression(expr) == 6.0

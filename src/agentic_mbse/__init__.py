@@ -4,9 +4,21 @@ from __future__ import annotations
 
 from typing import Any
 
-__version__ = "0.1.2"
+from agentic_mbse.errors import (
+    SEMANTIC_EVIDENCE_API_VERSION,
+    SemanticEvidenceCode,
+    SemanticEvidenceError,
+)
 
-__all__ = ["__version__", "main"]
+__version__ = "0.1.3"
+
+__all__ = [
+    "SEMANTIC_EVIDENCE_API_VERSION",
+    "SemanticEvidenceCode",
+    "SemanticEvidenceError",
+    "__version__",
+    "main",
+]
 
 
 def __getattr__(name: str) -> Any:

@@ -19,8 +19,10 @@ from __future__ import annotations
 from collections.abc import Collection, Iterator
 from enum import IntEnum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
+
+from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 
 __all__ = [
     "SysideAdapter",
@@ -138,9 +140,9 @@ class SysideAdapter:
     - Easy mocking for tests
     - Single point for syside version compatibility
 
-    IMPORTANT: For mock compatibility in tests, mock class names MUST
-    include the type name. Example: MockCalculationDefinition, not MockCalcDef.
-    The is_instance() method falls back to `type_name in type(elem).__name__`.
+    IMPORTANT: For mock compatibility in tests, mock MRO names MUST be the
+    mapped type name or ``Mock`` plus that exact name. Example:
+    ``MockCalculationDefinition``, not ``MockCalcDef``.
 
     Subtype-aware enumeration (PIPELINE-TRUTH Item 4)
     -------------------------------------------------
@@ -167,6 +169,43 @@ class SysideAdapter:
     """
 
     _type_map: dict[str, type] | None = None
+    _type_names = frozenset(
+        {
+            "AssertConstraintUsage",
+            "AttributeUsage",
+            "CalculationDefinition",
+            "CalculationUsage",
+            "Comment",
+            "ConstraintDefinition",
+            "ConstraintUsage",
+            "Documentation",
+            "EnumerationDefinition",
+            "Feature",
+            "FeatureChainExpression",
+            "FeatureReferenceExpression",
+            "FeatureTyping",
+            "FeatureValue",
+            "Import",
+            "InvocationExpression",
+            "LiteralBoolean",
+            "LiteralInfinity",
+            "LiteralInteger",
+            "LiteralRational",
+            "LiteralString",
+            "NullExpression",
+            "OperatorExpression",
+            "OwningMembership",
+            "Package",
+            "PartDefinition",
+            "PartUsage",
+            "ReferenceUsage",
+            "RequirementConstraintMembership",
+            "RequirementDefinition",
+            "RequirementUsage",
+            "SatisfyRequirementUsage",
+            "Subclassification",
+        }
+    )
 
     @classmethod
     def _get_type_map(cls) -> dict[str, type]:
@@ -231,6 +270,8 @@ class SysideAdapter:
                 "LiteralBoolean": syside.LiteralBoolean,
                 "LiteralInfinity": syside.LiteralInfinity,
             }
+            if frozenset(cls._type_map) != cls._type_names:
+                raise RuntimeError("SysIDE type map and license-free name map differ")
         return cls._type_map
 
     # === Pattern 1: Model Loading ===
@@ -271,7 +312,7 @@ class SysideAdapter:
                 files.extend(syside.collect_files_recursively(str(p)))
             else:
                 files.append(str(p))
-        return syside.try_load_model(files)
+        return cast(tuple[Any, Any], syside.try_load_model(files))
 
     @staticmethod
     def collect_files(path: Path) -> list[str]:
@@ -284,7 +325,7 @@ class SysideAdapter:
             List of absolute file path strings
         """
         syside = get_syside()
-        return syside.collect_files_recursively(str(path))
+        return cast(list[str], syside.collect_files_recursively(str(path)))
 
     # === Pattern 2: Element Iteration ===
 
@@ -333,7 +374,10 @@ class SysideAdapter:
         cls._require_known_type(type_name, type_map)
         for name in exclude:
             cls._require_known_type(name, type_map)
-        elements = model.elements(type_map[type_name], include_subtypes=include_subtypes)
+        elements = cast(
+            Iterator[Any],
+            model.elements(type_map[type_name], include_subtypes=include_subtypes),
+        )
         if not exclude:
             return elements
         return (e for e in elements if not any(cls.is_instance(e, name) for name in exclude))
@@ -352,12 +396,20 @@ class SysideAdapter:
 
     # === Pattern 3: Type Checking ===
 
+    @staticmethod
+    def is_live_element(elem: Any) -> bool:
+        """Whether ``elem`` is an element from the installed SysIDE runtime."""
+        try:
+            return isinstance(elem, get_syside().Element)
+        except ImportError:
+            return False
+
     @classmethod
     def is_instance(cls, elem: Any, type_name: str) -> bool:
         """Check if element is instance of type.
 
-        Works with both real syside elements and mock objects.
-        For mocks, falls back to string matching on type name.
+        Live SysIDE elements use the installed metatype map as the sole authority.
+        Non-live test doubles use exact mapped names in their Python MRO.
 
         Args:
             elem: Element to check
@@ -368,26 +420,93 @@ class SysideAdapter:
 
         Raises:
             ValueError: If ``type_name`` is not in TYPE_MAP (D6/INV-F). Gated
-                before the mock string-match fallback, so a mock whose name is a
-                real (mapped) type still resolves by string match, but an
+                before the explicit test-double fallback, so a mock whose name is a
+                real (mapped) type still resolves, but an
                 unmapped name is loud instead of a silent False.
         """
+        if type_name not in cls._type_names:
+            raise ValueError(
+                f"Unknown type name '{type_name}'. Valid types: {sorted(cls._type_names)}"
+            )
         try:
             type_map = cls._get_type_map()
         except ImportError:
-            # syside not available (CLI/mock path): no map to validate against,
-            # so string-match only. D6's hard error targets the live path where
-            # the map exists but lacks the name.
-            return type_name in type(elem).__name__
-        cls._require_known_type(type_name, type_map)
+            allowed_names = {type_name, f"Mock{type_name}"}
+            return any(base.__name__ in allowed_names for base in type(elem).__mro__)
         sysml_type = type_map[type_name]
-        if hasattr(elem, "isinstance"):
+        if cls.is_live_element(elem):
             try:
-                return elem.isinstance(sysml_type)
-            except Exception:
-                pass
-        # Fallback: string matching for mocks whose name is a mapped type.
-        return type_name in type(elem).__name__
+                return bool(elem.isinstance(sysml_type))
+            except Exception as cause:
+                error = SemanticEvidenceError(
+                    SemanticEvidenceCode.METATYPE_CHECK_FAILED,
+                    operation="is_instance",
+                    detail=f"SysIDE could not test mapped metatype {type_name}",
+                    location=cls.get_source_location(elem),
+                    reference=cls._semantic_reference(elem),
+                    cause=cause,
+                )
+                raise error from cause
+        allowed_names = {type_name, f"Mock{type_name}"}
+        return any(base.__name__ in allowed_names for base in type(elem).__mro__)
+
+    @staticmethod
+    def _semantic_reference(elem: Any) -> str | None:
+        value = getattr(elem, "qualified_name", None) or getattr(elem, "name", None)
+        return str(value) if value else None
+
+    @staticmethod
+    def document_tier_type() -> Any:
+        """Return the installed SysIDE ``DocumentTier`` enum type."""
+        return get_syside().DocumentTier
+
+    @classmethod
+    def document_tier(cls, elem: Any) -> Any:
+        """Return one element's exact SysIDE document tier.
+
+        Missing evidence and values outside the installed enum are distinct,
+        named failures. URLs, paths, package names, and qualified names have no
+        classification role.
+        """
+        document = getattr(elem, "document", None)
+        if not document:
+            raise SemanticEvidenceError(
+                SemanticEvidenceCode.DOCUMENT_TIER_MISSING,
+                operation="document_tier",
+                detail="element has no document",
+                location=cls.get_source_location(elem),
+                reference=cls._semantic_reference(elem),
+            )
+        try:
+            tier = getattr(document, "document_tier", None)
+        except Exception as cause:
+            error = SemanticEvidenceError(
+                SemanticEvidenceCode.DOCUMENT_TIER_UNKNOWN,
+                operation="document_tier",
+                detail="SysIDE could not read the document tier",
+                location=cls.get_source_location(elem),
+                reference=cls._semantic_reference(elem),
+                cause=cause,
+            )
+            raise error from cause
+        if tier is None:
+            raise SemanticEvidenceError(
+                SemanticEvidenceCode.DOCUMENT_TIER_MISSING,
+                operation="document_tier",
+                detail="document has no tier",
+                location=cls.get_source_location(elem),
+                reference=cls._semantic_reference(elem),
+            )
+        document_tier_type = cls.document_tier_type()
+        if type(tier) is not document_tier_type:
+            raise SemanticEvidenceError(
+                SemanticEvidenceCode.DOCUMENT_TIER_UNKNOWN,
+                operation="document_tier",
+                detail=f"document tier is outside the installed enum: {tier!r}",
+                location=cls.get_source_location(elem),
+                reference=cls._semantic_reference(elem),
+            )
+        return tier
 
     # === Pattern 4: Source Location ===
 
@@ -401,9 +520,11 @@ class SysideAdapter:
         Returns:
             (file_path, line_number) tuple, or None if unavailable
         """
-        if not hasattr(elem, "document") or not elem.document:
+        document = getattr(elem, "document", None)
+        if not document:
             return None
-        doc_url = str(elem.document.url) if elem.document.url else ""
+        document_url = getattr(document, "url", None)
+        doc_url = str(document_url) if document_url else ""
         file_path = doc_url.replace("file:", "").replace("file://", "")
         line = 0
         if hasattr(elem, "cst_node") and elem.cst_node:

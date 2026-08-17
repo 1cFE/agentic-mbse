@@ -1,11 +1,15 @@
 """Tests for error classes."""
 import pytest
+
 from agentic_mbse.errors import (
-    AgenticMBSEError,
-    ModelLoadError,
-    ValidationError,
-    ConfigurationError,
+    SEMANTIC_EVIDENCE_API_VERSION,
     AdapterError,
+    AgenticMBSEError,
+    ConfigurationError,
+    ModelLoadError,
+    SemanticEvidenceCode,
+    SemanticEvidenceError,
+    ValidationError,
 )
 
 
@@ -103,3 +107,39 @@ class TestAdapterError:
         """Inherits from AgenticMBSEError."""
         err = AdapterError("operation", "message")
         assert isinstance(err, AgenticMBSEError)
+
+
+class TestSemanticEvidenceError:
+    """The semantic evidence failure surface is closed and machine-readable."""
+
+    def test_public_version_and_code_inventory_are_exact(self):
+        assert SEMANTIC_EVIDENCE_API_VERSION == "semantic-evidence/v1"
+        assert {code.value for code in SemanticEvidenceCode} == {
+            "METATYPE_CHECK_FAILED",
+            "EXPRESSION_KIND_UNSUPPORTED",
+            "OPERAND_ITERATION_FAILED",
+            "RESOLVED_TARGET_MISSING",
+            "DOCUMENT_TIER_MISSING",
+            "DOCUMENT_TIER_UNKNOWN",
+            "RESOLVED_LEAF_MISSING",
+        }
+
+    def test_error_retains_structured_evidence_without_copying_code_into_detail(self):
+        cause = RuntimeError("parser failure")
+        error = SemanticEvidenceError(
+            SemanticEvidenceCode.METATYPE_CHECK_FAILED,
+            operation="is_instance",
+            detail="parser metatype query failed",
+            location=("root-0/model.sysml", 7),
+            reference="Probe::value",
+            cause=cause,
+        )
+
+        assert isinstance(error, AgenticMBSEError)
+        assert error.code is SemanticEvidenceCode.METATYPE_CHECK_FAILED
+        assert error.operation == "is_instance"
+        assert error.detail == "parser metatype query failed"
+        assert error.location == ("root-0/model.sysml", 7)
+        assert error.reference == "Probe::value"
+        assert error.cause is cause
+        assert error.code.value not in error.detail

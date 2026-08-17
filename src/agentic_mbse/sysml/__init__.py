@@ -60,7 +60,6 @@ if TYPE_CHECKING:
     )
     from agentic_mbse.sysml.data_models import AttributeInfo
     from agentic_mbse.sysml.expression import (
-        STANDARD_LIBRARY_PREFIXES,
         evaluate_true_static_expression,
         extract_feature_chain_name,
         extract_feature_chain_segments,
@@ -182,7 +181,6 @@ for _name in (
     _LAZY[_name] = ("agentic_mbse.sysml.constraint_facts", _name)
 _LAZY["AttributeInfo"] = ("agentic_mbse.sysml.data_models", "AttributeInfo")
 for _name in (
-    "STANDARD_LIBRARY_PREFIXES",
     "evaluate_true_static_expression",
     "extract_feature_chain_name",
     "extract_feature_chain_segments",

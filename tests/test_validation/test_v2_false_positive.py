@@ -14,12 +14,11 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from agentic_mbse.sysml.syside_adapter import get_syside
-
+from agentic_mbse.sysml.types import ExpressionRef, ValidationCode
 from agentic_mbse.validation.adr002 import (
     _is_calc_output_reference,
     check_static_expressions,
 )
-from agentic_mbse.sysml.types import ExpressionRef, ValidationCode
 
 
 class TestIsCalcOutputReference:
@@ -139,9 +138,10 @@ class TestIsCalcOutputReference:
         When the reference element's owner is a CalculationDefinition,
         it's definitively a calc output.
         """
-        # Mock the element with a CalculationDefinition owner
-        mock_owner = MagicMock()
-        mock_owner.isinstance.return_value = True  # isinstance(CalculationDefinition) → True
+        class MockCalculationDefinition:
+            pass
+
+        mock_owner = MockCalculationDefinition()
 
         mock_element = MagicMock()
         mock_element.owner = mock_owner
@@ -161,11 +161,10 @@ class TestIsCalcOutputReference:
         When the reference element's owner is a PartUsage, it's definitively
         NOT a calc output - it's a design attribute.
         """
-        # Mock the element with a PartUsage owner
-        mock_owner = MagicMock()
-        # First call (CalculationDefinition) → False
-        # Second call (PartUsage) → True
-        mock_owner.isinstance.side_effect = [False, True]
+        class MockPartUsage:
+            pass
+
+        mock_owner = MockPartUsage()
 
         mock_element = MagicMock()
         mock_element.owner = mock_owner
@@ -193,9 +192,10 @@ class TestIsCalcOutputReference:
 
         This is the real-world scenario for same-named design attributes.
         """
-        # Mock the element with a PartUsage owner
-        mock_owner = MagicMock()
-        mock_owner.isinstance.side_effect = [False, True]  # CalcDef=False, PartUsage=True
+        class MockPartUsage:
+            pass
+
+        mock_owner = MockPartUsage()
 
         mock_element = MagicMock()
         mock_element.owner = mock_owner

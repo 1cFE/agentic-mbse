@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
+from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 from agentic_mbse.sysml.constraint_facts import (
     ActualFact,
     ConstraintDefinitionFact,
@@ -33,6 +34,7 @@ from agentic_mbse.sysml.expression import (
     extract_feature_chain_segments,
     extract_literal_value,
     is_literal_node,
+    materialize_operands,
     reconstruct_expression,
 )
 from agentic_mbse.sysml.expression_facts import (
@@ -441,7 +443,7 @@ def _unit_annotation_fact(expression: Any) -> UnitFact | None:
     operator = getattr(expression, "operator", None)
     operator_str = str(operator) if operator is not None else None
     if operator_str == "[":
-        operands = list(getattr(expression, "operands", ()))
+        operands = list(materialize_operands(expression))
         if len(operands) != 2:
             return None
         unit_referent = getattr(operands[1], "referent", None)
@@ -451,7 +453,7 @@ def _unit_annotation_fact(expression: Any) -> UnitFact | None:
         )
     if operator_str in {"+", "-"}:
         child_units = [
-            _unit_annotation_fact(operand) for operand in getattr(expression, "operands", ())
+            _unit_annotation_fact(operand) for operand in materialize_operands(expression)
         ]
         if child_units and all(unit == child_units[0] for unit in child_units):
             return child_units[0]
@@ -509,6 +511,14 @@ def _reference_node(expression: Any, *, chain: bool) -> FeatureReferenceNode:
     else:
         target = getattr(expression, "referent", None)
         chain_segments = []
+    if target is None:
+        raise SemanticEvidenceError(
+            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+            operation="extract_expression_ir",
+            detail="resolved reference has no exact target",
+            location=SysideAdapter.get_source_location(expression),
+            reference=_qualified_name(expression) or getattr(expression, "name", None),
+        )
     reference = FeatureReferenceFact(
         source_name=reconstruct_expression(expression),
         target=_identity(target),
@@ -558,7 +568,7 @@ def _unsupported_node(expression: Any, diagnostic: str | None = None) -> Unsuppo
 
 
 def _unit_annotation_node(expression: Any, ctx: _ExtractionContext) -> UnitAnnotationNode:
-    operands = list(getattr(expression, "operands", ()))
+    operands = list(materialize_operands(expression))
     value = _expression_ir(operands[0], ctx)
     if value is None:
         raise ValueError("unit annotation expression has no value operand")
@@ -589,7 +599,7 @@ def _unit_text(unit_operand: Any) -> str | None:
 def _operator_node(expression: Any, operator_str: str, ctx: _ExtractionContext) -> OperatorNode:
     operands = [
         node
-        for operand in getattr(expression, "operands", ())
+        for operand in materialize_operands(expression)
         if (node := _expression_ir(operand, ctx)) is not None
     ]
     operand_type = (
@@ -620,7 +630,7 @@ def _invocation_node(expression: Any, ctx: _ExtractionContext) -> InvocationNode
     function_qn = [str(part) for part in function_qn_raw] if function_qn_raw is not None else None
     arguments = [
         node
-        for operand in getattr(expression, "operands", ())
+        for operand in materialize_operands(expression)
         if (node := _expression_ir(operand, ctx)) is not None
     ]
     return InvocationNode(
@@ -885,8 +895,8 @@ def _is_standard_library_element(element: Any) -> bool:
     of every model and carry no user-authored information, so they are excluded from
     `ContextFact` — a structural (document-origin) filter, not a fixture-coupled one.
     """
-    url = SysideAdapter.get_document_url(element)
-    return url is not None and "sysml.library" in url
+    tier = SysideAdapter.document_tier(element)
+    return tier is SysideAdapter.document_tier_type().StandardLibrary
 
 
 def _context_fact(model: Any, context: Any, ctx: _ExtractionContext) -> ContextFact | None:

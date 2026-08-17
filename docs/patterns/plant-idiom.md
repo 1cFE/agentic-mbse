@@ -8,6 +8,27 @@ disambiguation.
 Reference fixtures live in the sysml-codegen repo under `tests/fixtures/`; each shape
 below names the fixture that exercises it.
 
+## Supported reference shapes and their required context
+
+The parser's resolved element is the identity authority for every shape. A spelling alone does
+not select a value. The elaborator combines that identity with the consumer occurrence and the
+modeled containment domain.
+
+| Authored shape | Meaning | Context required |
+|---|---|---|
+| bare `value` | one resolved feature in the current semantic scope | the consumer occurrence and the feature's semantic owner |
+| owner-qualified `Owner::value` | the exact resolved feature owned by a usage or definition | the owner class, the consumer occurrence, and its modeled lineage/domain |
+| feature chain `part.value` | the resolved chain root followed by its exact resolved members | the root occurrence address plus every resolved member in order |
+| package-owned reference | a feature owned directly by a package | the exact package anchor; only the supported direct one-step case omits an occurrence prefix |
+| definition-domain reference | a definition-owned feature used inside an occurrence of that definition | the consumer's own occurrence lineage; descendants and siblings are not substitutes |
+| plural occurrence | one modeled feature materialized more than once | the exact occurrence index from the consumer domain; an unindexed plural result refuses as ambiguous |
+
+The semantic owner class is one input to this derivation. It does not determine the result by
+itself. A missing target, missing document tier, broken operand traversal, or incomplete resolved
+chain is ill-formed evidence and fails by name. An indexed reference is different: it is valid
+SysML evidence whose code-generation meaning is not implemented yet, so it is refused as the
+valid-but-unsupported indexed form rather than reclassified as malformed.
+
 ## The core shape
 
 A plant is a part with nested parts. Each nested part def owns *template calcs* — calc

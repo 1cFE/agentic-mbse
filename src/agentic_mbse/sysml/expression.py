@@ -7,6 +7,7 @@ ASTs, including visitor-pattern traversal and reference extraction.
 from collections.abc import Callable
 from typing import Any, cast
 
+from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 from agentic_mbse.sysml.data_models import (
     ResolvedSemanticReferenceFact,
     ResolvedTargetFact,
@@ -14,16 +15,56 @@ from agentic_mbse.sysml.data_models import (
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import ExpressionRef
 
-# Standard library qualified name prefixes to filter.
-# These are constants/types from the SysML standard library, not design-specific values.
-# Unit annotations like `3.0 [m]` contain references to SI::metre, which should not
-# be treated as "derived expressions" per ADR-002.
-STANDARD_LIBRARY_PREFIXES = (
-    "SI::",  # SI units (metre, kilogram, second, etc.)
-    "ISQ::",  # ISQ quantity types (Length, Mass, Time, etc.)
-    "ScalarValues::",  # Scalar types (Real, Integer, Boolean, String)
-    "UnitsAndScales::",  # Unit system definitions
-)
+
+def _semantic_reference(element: Any) -> str | None:
+    value = getattr(element, "qualified_name", None) or getattr(element, "name", None)
+    return str(value) if value else None
+
+
+def _evidence_error(
+    code: SemanticEvidenceCode,
+    operation: str,
+    detail: str,
+    element: Any,
+    *,
+    cause: BaseException | None = None,
+) -> SemanticEvidenceError:
+    return SemanticEvidenceError(
+        code,
+        operation=operation,
+        detail=detail,
+        location=SysideAdapter.get_source_location(element),
+        reference=_semantic_reference(element),
+        cause=cause,
+    )
+
+
+def materialize_operands(expression: Any) -> tuple[Any, ...]:
+    """Read one expression's complete operand sequence exactly once."""
+    try:
+        return tuple(expression.operands)
+    except Exception as cause:
+        error = _evidence_error(
+            SemanticEvidenceCode.OPERAND_ITERATION_FAILED,
+            "iterate_operands",
+            "SysIDE could not materialize the expression operands",
+            expression,
+            cause=cause,
+        )
+        raise error from cause
+
+
+def _traversal_operands(expression: Any) -> tuple[Any, ...]:
+    """Materialize operands only for metatypes that own an operand sequence."""
+    has_operands = any(
+        SysideAdapter.is_instance(expression, type_name)
+        for type_name in (
+            "FeatureChainExpression",
+            "OperatorExpression",
+            "InvocationExpression",
+        )
+    )
+    return materialize_operands(expression) if has_operands else ()
 
 
 def traverse_expression(
@@ -65,56 +106,22 @@ def traverse_expression(
     if result is not None:
         results.append(result)
 
-    # Recurse into children based on expression type
-    # Check for operator expression with operands
-    if _is_operator_expression(expr):
-        if hasattr(expr, "operands"):
-            try:
-                for operand in expr.operands:
-                    child_results = traverse_expression(
-                        operand, visitor, max_depth, _current_depth + 1
-                    )
-                    results.extend(child_results)
-            except (TypeError, AttributeError):
-                pass
-    elif hasattr(expr, "operands"):
-        # Fallback: check for operands attribute directly (mock pattern)
-        try:
-            for operand in expr.operands:
-                child_results = traverse_expression(operand, visitor, max_depth, _current_depth + 1)
-                results.extend(child_results)
-        except (TypeError, AttributeError):
-            pass
+    for operand in _traversal_operands(expr):
+        child_results = traverse_expression(operand, visitor, max_depth, _current_depth + 1)
+        results.extend(child_results)
 
     return results
 
 
 def _is_operator_expression(expr: Any) -> bool:
     """Check if expression is an OperatorExpression type."""
-    # Try to detect OperatorExpression via type name
-    # This works with both real syside and our mocks
-    type_name = type(expr).__name__
-    return "Operator" in type_name or "OperatorExpression" in type_name
+    return SysideAdapter.is_instance(expr, "OperatorExpression")
 
 
-def _is_standard_library_ref(ref: ExpressionRef) -> bool:
-    """Check if reference points to a standard library element.
-
-    Standard library elements are:
-    - SI units (SI::metre, SI::kilogram, etc.)
-    - ISQ quantities (ISQ::Length, ISQ::Mass, etc.)
-    - Scalar values (ScalarValues::Real, ScalarValues::Integer, etc.)
-    - Units and scales definitions (UnitsAndScales::*)
-
-    Args:
-        ref: ExpressionRef to check
-
-    Returns:
-        True if reference is to standard library element
-    """
-    if not ref.qualified_name:
-        return False
-    return any(ref.qualified_name.startswith(prefix) for prefix in STANDARD_LIBRARY_PREFIXES)
+def _is_standard_library_element(element: Any) -> bool:
+    """Classify one exact target through SysIDE's document tier."""
+    tier = SysideAdapter.document_tier(element)
+    return tier is SysideAdapter.document_tier_type().StandardLibrary
 
 
 def extract_feature_refs(
@@ -144,79 +151,33 @@ def extract_feature_refs(
 
     def ref_visitor(node: Any) -> ExpressionRef | None:
         """Visitor that creates ExpressionRef for reference expressions."""
-        type_name = type(node).__name__
-
-        # Check for reference types
-        if "FeatureReference" in type_name or "FeatureChain" in type_name:
-            name = ""
-            qualified_name = ""
-            doc_path = None
-            element = None
-
-            # For FeatureChainExpression, prefer target_feature (the final target)
-            if "FeatureChain" in type_name and hasattr(node, "target_feature"):
-                target = node.target_feature
-                if target:
-                    element = target
-                    if hasattr(target, "name") and target.name:
-                        name = target.name
-                    if hasattr(target, "qualified_name"):
-                        qn = target.qualified_name
-                        qualified_name = str(qn) if qn else ""
-                    if hasattr(target, "document") and target.document:
-                        if hasattr(target.document, "url"):
-                            doc_path = str(target.document.url)
-
-            # Fallback: Try to extract name from node directly
-            if not name:
-                if hasattr(node, "name") and node.name:
-                    name = node.name
-
-            # Fallback: Try to extract qualified_name
-            if not qualified_name:
-                if hasattr(node, "qualified_name") and node.qualified_name:
-                    qualified_name = str(node.qualified_name)
-
-            # Fallback: Try to get target element from memberships (syside pattern)
-            if not name and hasattr(node, "memberships"):
-                try:
-                    for membership in node.memberships:
-                        if hasattr(membership, "member_element"):
-                            target = membership.member_element
-                            if target:
-                                element = target
-                                if hasattr(target, "name") and target.name:
-                                    name = target.name
-                                if hasattr(target, "qualified_name"):
-                                    qn = target.qualified_name
-                                    qualified_name = str(qn) if qn else ""
-                                if hasattr(target, "document") and target.document:
-                                    if hasattr(target.document, "url"):
-                                        doc_path = str(target.document.url)
-                                break
-                except (AttributeError, TypeError):
-                    pass
-
-            # Fallback: Try referent attribute (alternative syside pattern)
-            if not name and hasattr(node, "referent") and node.referent:
-                element = node.referent
-                if hasattr(node.referent, "name"):
-                    name = node.referent.name
-                if hasattr(node.referent, "qualified_name"):
-                    qn = node.referent.qualified_name
-                    qualified_name = str(qn) if qn else ""
-
-            if name:
-                ref = ExpressionRef(
-                    name=name,
-                    qualified_name=qualified_name,
-                    document_path=doc_path,
-                    element=element,
+        is_chain = SysideAdapter.is_instance(node, "FeatureChainExpression")
+        is_reference = SysideAdapter.is_instance(node, "FeatureReferenceExpression")
+        if is_chain or is_reference:
+            target = (
+                getattr(node, "target_feature", None)
+                if is_chain
+                else getattr(node, "referent", None)
+            )
+            if target is None:
+                raise _evidence_error(
+                    SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+                    "extract_feature_refs",
+                    "resolved reference has no exact target",
+                    node,
                 )
-                # Filter standard library refs if requested (via closure)
-                if ignore_std_lib and _is_standard_library_ref(ref):
-                    return None
-                return ref
+            if ignore_std_lib and _is_standard_library_element(target):
+                return None
+            name = str(getattr(target, "name", None) or "")
+            qualified_name = str(getattr(target, "qualified_name", None) or "")
+            document = getattr(target, "document", None)
+            document_url = getattr(document, "url", None) if document else None
+            return ExpressionRef(
+                name=name,
+                qualified_name=qualified_name,
+                document_path=str(document_url) if document_url else None,
+                element=target,
+            )
 
         return None
 
@@ -245,9 +206,7 @@ def extract_operators(expr: Any) -> list[str]:
 
     def op_visitor(node: Any) -> str | None:
         """Visitor that extracts operator from OperatorExpression."""
-        type_name = type(node).__name__
-
-        if "Operator" in type_name and hasattr(node, "operator"):
+        if _is_operator_expression(node) and hasattr(node, "operator"):
             return str(node.operator)
 
         return None
@@ -307,8 +266,16 @@ def is_literal_type(expr: Any) -> bool:
         >>> is_literal_type(MockLiteralRational(3.14))  # True
         >>> is_literal_type(MockOperatorExpression("+", []))  # False
     """
-    type_name = type(expr).__name__
-    return "Literal" in type_name
+    return any(
+        SysideAdapter.is_instance(expr, type_name)
+        for type_name in (
+            "LiteralInteger",
+            "LiteralRational",
+            "LiteralString",
+            "LiteralBoolean",
+            "LiteralInfinity",
+        )
+    )
 
 
 def is_reference_type(expr: Any) -> bool:
@@ -327,8 +294,9 @@ def is_reference_type(expr: Any) -> bool:
         >>> is_reference_type(MockFeatureReferenceExpression(name="radius"))  # True
         >>> is_reference_type(MockLiteralRational(3.0))  # False
     """
-    type_name = type(expr).__name__
-    return "FeatureReference" in type_name or "FeatureChain" in type_name
+    return SysideAdapter.is_instance(
+        expr, "FeatureChainExpression"
+    ) or SysideAdapter.is_instance(expr, "FeatureReferenceExpression")
 
 
 # Supported operators for static expressions (per ADR-002)
@@ -357,25 +325,21 @@ def get_reference_name(expr: Any) -> str | None:
         >>> get_reference_name(MockLiteralRational(3.0))
         None
     """
-    # Try direct name attribute (works for mock objects and simple refs)
-    if hasattr(expr, "name") and expr.name:
-        return cast(str, expr.name)
-
-    # Try memberships pattern (syside AST structure)
-    if hasattr(expr, "memberships"):
-        for m in expr.memberships:
-            if hasattr(m, "member_element") and m.member_element:
-                elem = m.member_element
-                if hasattr(elem, "name") and elem.name:
-                    return cast(str, elem.name)
-
-    # Try target_feature for chain expressions
-    if hasattr(expr, "target_feature") and expr.target_feature:
-        target = expr.target_feature
-        if hasattr(target, "name") and target.name:
-            return cast(str, target.name)
-
-    return None
+    if SysideAdapter.is_instance(expr, "FeatureChainExpression"):
+        target = getattr(expr, "target_feature", None)
+    elif SysideAdapter.is_instance(expr, "FeatureReferenceExpression"):
+        target = getattr(expr, "referent", None)
+    else:
+        return None
+    if target is None:
+        raise _evidence_error(
+            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+            "get_reference_name",
+            "resolved reference has no exact target",
+            expr,
+        )
+    name = getattr(target, "name", None)
+    return cast(str, name) if name else None
 
 
 # Operator mapping for expression reconstruction (SysML text output)
@@ -463,7 +427,7 @@ def reconstruct_expression(expr_node: Any) -> str:
 
     if hasattr(expr_node, "function") and hasattr(expr_node.function, "name"):
         func_name = expr_node.function.name
-        operands = list(getattr(expr_node, "operands", []))
+        operands = materialize_operands(expr_node)
         args = ", ".join(reconstruct_expression(op) for op in operands)
         return f"{func_name}({args})"
 
@@ -474,7 +438,7 @@ def binary_op_of(child: Any) -> str | None:
     """Return a child's operator iff it is a 2-operand binary OperatorExpression."""
     if not SysideAdapter.is_instance(child, "OperatorExpression"):
         return None
-    if len(list(getattr(child, "operands", []))) != 2:
+    if len(materialize_operands(child)) != 2:
         return None
     operator = getattr(child, "operator", None)
     if operator is None:
@@ -503,9 +467,7 @@ def reconstruct_operator_expression(expr_node: Any) -> str:
     if hasattr(expr_node, "operator") and expr_node.operator:
         operator = str(expr_node.operator)
 
-    operands = []
-    if hasattr(expr_node, "operands"):
-        operands = list(expr_node.operands)
+    operands = materialize_operands(expr_node)
 
     if len(operands) == 2:
         parent_rank = RANK.get(operator)
@@ -552,25 +514,16 @@ def reconstruct_operator_expression(expr_node: Any) -> str:
 
 def extract_feature_reference_name(expr_node: Any) -> str:
     """Extract a name from a FeatureReferenceExpression."""
-    if hasattr(expr_node, "referent") and expr_node.referent:
-        referent = expr_node.referent
-        if hasattr(referent, "name") and referent.name:
-            return cast(str, referent.name)
-
-    if hasattr(expr_node, "memberships"):
-        for membership in expr_node.memberships:
-            if type(membership).__name__ == "Membership":
-                if hasattr(membership, "member_element"):
-                    elem = membership.member_element
-                    if elem and hasattr(elem, "name") and elem.name:
-                        return cast(str, elem.name)
-
-    if hasattr(expr_node, "declared_name") and expr_node.declared_name:
-        return cast(str, expr_node.declared_name)
-    if hasattr(expr_node, "name") and expr_node.name:
-        return cast(str, expr_node.name)
-
-    return str(expr_node)
+    referent = getattr(expr_node, "referent", None)
+    if referent is None:
+        raise _evidence_error(
+            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+            "extract_feature_reference_name",
+            "resolved feature reference has no exact referent",
+            expr_node,
+        )
+    name = getattr(referent, "name", None)
+    return cast(str, name) if name else str(referent)
 
 
 def extract_feature_chain_name(expr_node: Any) -> str:
@@ -581,26 +534,23 @@ def extract_feature_chain_name(expr_node: Any) -> str:
     """
     path_parts: list[str] = []
 
-    if hasattr(expr_node, "operands"):
-        operands = list(expr_node.operands)
-        if operands:
-            operand_expr = operands[0]
-            operand_name = reconstruct_expression(operand_expr)
-            if operand_name:
-                path_parts.append(operand_name)
+    operands = materialize_operands(expr_node)
+    if operands:
+        operand_expr = operands[0]
+        operand_name = reconstruct_expression(operand_expr)
+        if operand_name:
+            path_parts.append(operand_name)
 
-    if hasattr(expr_node, "target_feature") and expr_node.target_feature:
-        target = expr_node.target_feature
-        if hasattr(target, "name") and target.name:
-            path_parts.append(cast(str, target.name))
-
-    if not path_parts and hasattr(expr_node, "memberships"):
-        for membership in expr_node.memberships:
-            if type(membership).__name__ == "Membership":
-                if hasattr(membership, "member_element"):
-                    elem = membership.member_element
-                    if elem and hasattr(elem, "name") and elem.name:
-                        path_parts.append(cast(str, elem.name))
+    target = getattr(expr_node, "target_feature", None)
+    if target is None:
+        raise _evidence_error(
+            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+            "extract_feature_chain_name",
+            "resolved feature chain has no exact target",
+            expr_node,
+        )
+    if getattr(target, "name", None):
+        path_parts.append(cast(str, target.name))
 
     if path_parts:
         return ".".join(path_parts)
@@ -615,7 +565,7 @@ def extract_feature_chain_segments(expr_node: Any) -> list[str]:
 
     segments: list[str] = []
 
-    operands = list(getattr(expr_node, "operands", []) or [])
+    operands = list(materialize_operands(expr_node))
     if operands:
         root = operands[0]
         if SysideAdapter.is_instance(root, "FeatureChainExpression"):
@@ -641,9 +591,8 @@ def resolved_target_fact(elem: Any) -> ResolvedTargetFact | None:
 
     Returns ``None`` when there is no element or the element has no qualified
     name (an anonymous chained feature — callers walk its ``chaining_features``
-    instead). ``owner_is_definition`` classifies the owner by its metatype name:
-    SysIDE's Definition metatypes all end in ``Definition``, and the adapter's
-    closed type map has no common ``Definition`` supertype name to test against.
+    instead). ``owner_is_definition`` uses the adapter's mapped definition
+    metatypes.
     """
     if elem is None:
         return None
@@ -671,9 +620,19 @@ def resolved_target_fact(elem: Any) -> ResolvedTargetFact | None:
         element_kind=type(elem).__name__,
         element_name=str(getattr(elem, "name", None) or ""),
         owner_qualified_name=str(owner_qn) if owner_qn is not None else "",
-        owner_is_definition=type(owner).__name__.endswith("Definition")
-        if owner is not None
-        else False,
+        owner_is_definition=(
+            any(
+                SysideAdapter.is_instance(owner, type_name)
+                for type_name in (
+                    "PartDefinition",
+                    "CalculationDefinition",
+                    "ConstraintDefinition",
+                    "RequirementDefinition",
+                )
+            )
+            if owner is not None
+            else False
+        ),
         redefined_qualified_names=tuple(redefined),
     )
 
@@ -706,14 +665,22 @@ def feature_chain_facts(
     member_names: list[str] = []
     has_index = False
 
-    operands = list(getattr(expr_node, "operands", []) or [])
+    operands = materialize_operands(expr_node)
     if operands:
         first = operands[0]
         if type(first).__name__ == "IndexExpression":
             has_index = True
-            inner = list(getattr(first, "operands", []) or [])
+            inner = list(materialize_operands(first))
             if inner and SysideAdapter.is_instance(inner[0], "FeatureReferenceExpression"):
-                root_fact = resolved_target_fact(getattr(inner[0], "referent", None))
+                root_target = getattr(inner[0], "referent", None)
+                if root_target is None:
+                    raise _evidence_error(
+                        SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+                        "feature_chain_facts",
+                        "resolved chain root has no exact referent",
+                        inner[0],
+                    )
+                root_fact = resolved_target_fact(root_target)
         elif SysideAdapter.is_instance(first, "FeatureChainExpression"):
             # The inner call's member names already cover every step after the
             # inner root, its leaf included.
@@ -723,30 +690,62 @@ def feature_chain_facts(
             member_names.extend(inner_fact.resolved_member_names)
             has_index = has_index or inner_fact.has_index_segment
         elif SysideAdapter.is_instance(first, "FeatureReferenceExpression"):
-            root_fact = resolved_target_fact(getattr(first, "referent", None))
+            root_target = getattr(first, "referent", None)
+            if root_target is None:
+                raise _evidence_error(
+                    SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+                    "feature_chain_facts",
+                    "resolved chain root has no exact referent",
+                    first,
+                )
+            root_fact = resolved_target_fact(root_target)
 
     if root_fact is not None and not segments:
         segments.append(root_fact)
 
     leaf_fact: ResolvedTargetFact | None = None
     target = getattr(expr_node, "target_feature", None)
-    if target is not None:
-        chaining = list(getattr(target, "chaining_features", []) or [])
-        if chaining:
-            for chained in chaining:
-                chained_fact = resolved_target_fact(chained)
-                if chained_fact is not None:
-                    segments.append(chained_fact)
-                chained_name = getattr(chained, "name", None)
-                if chained_name:
-                    member_names.append(str(chained_name))
-            leaf_fact = resolved_target_fact(chaining[-1])
-        else:
-            leaf_fact = resolved_target_fact(target)
-            if leaf_fact is not None:
-                segments.append(leaf_fact)
-                if leaf_fact.element_name:
-                    member_names.append(leaf_fact.element_name)
+    if target is None:
+        raise _evidence_error(
+            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+            "feature_chain_facts",
+            "resolved feature chain has no exact target",
+            expr_node,
+        )
+    chaining = list(getattr(target, "chaining_features", []) or [])
+    require_total_leaf = SysideAdapter.is_live_element(expr_node) or bool(
+        getattr(expr_node, "semantic_reference_resolved", False)
+    )
+    if chaining:
+        for chained in chaining:
+            chained_fact = resolved_target_fact(chained)
+            if chained_fact is None:
+                if require_total_leaf:
+                    raise _evidence_error(
+                        SemanticEvidenceCode.RESOLVED_LEAF_MISSING,
+                        "feature_chain_facts",
+                        "resolved feature chain has an incomplete exact segment",
+                        expr_node,
+                    )
+                continue
+            segments.append(chained_fact)
+            chained_name = getattr(chained, "name", None)
+            if chained_name:
+                member_names.append(str(chained_name))
+        leaf_fact = resolved_target_fact(chaining[-1])
+    else:
+        leaf_fact = resolved_target_fact(target)
+        if leaf_fact is None and require_total_leaf:
+            raise _evidence_error(
+                SemanticEvidenceCode.RESOLVED_LEAF_MISSING,
+                "feature_chain_facts",
+                "resolved feature chain has no exact leaf",
+                expr_node,
+            )
+        if leaf_fact is not None:
+            segments.append(leaf_fact)
+        if leaf_fact is not None and leaf_fact.element_name:
+            member_names.append(leaf_fact.element_name)
 
     return ResolvedSemanticReferenceFact(
         root=root_fact,
@@ -835,7 +834,7 @@ def evaluate_true_static_expression(expr: Any) -> float:
         # Get operator - may be Operator enum (syside) or string (mocks)
         operator_raw = getattr(expr, "operator", None)
         operator = str(operator_raw) if operator_raw is not None else None
-        operands = list(getattr(expr, "operands", []))
+        operands = materialize_operands(expr)
 
         if operator not in STATIC_OPERATORS:
             raise ValueError(
