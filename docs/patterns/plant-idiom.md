@@ -20,7 +20,7 @@ part def Coil {
     attribute radius : Real = 0.5;
 
     // Template calc: computes volume from the coil's own radius. The parameter and the
-    // attribute must not share a name — see "Self-named bindings" below.
+    // attribute must not share a name — see "Binding a modelled value" below.
     calc volume_calc : VolumeCalc {
         in radius_in = radius;
     }
@@ -37,52 +37,172 @@ Reference: `fusion_tea` binds this way throughout (`in beam_energy_mj_in = beam_
 self-named bindings and the exact route refuses it, so read it for structure, not for the
 binding form.
 
-## Self-named bindings (`in x = x`) are not supported — do not write them
+## Binding a modelled value into a calculation — match the form to where the value lives
 
-A template calc that binds `in radius = radius` reads as if the right `radius` were the
-owning part's attribute. It is not. The reference resolves to the calc's own input
-parameter, so the attribute's value never reaches the calc.
+<!-- @authoritative calculation-binding-rule -->
+This section is the one authoritative copy of the calculation-binding rule; agent
+skills and project templates carry a summary and point here. The rule: **a
+calculation input binds to the modelled value its resolved reference names** —
+never to a name coincidence, and never to a same-named outer feature standing in
+for the one you wrote. Pick the authoring form by where the value lives.
 
-**This shape is refused.** The L2 self-named-binding check FAILs every `in x = x`
-binding, and elaboration refuses the model with `SI_SELF_BINDING` before generation. A
-same-named attribute in the owning part, a sibling calc output, and an inherited
-attribute are all irrelevant: a self-binding is never reinterpreted as an outer
-reference (D-4 [OWNER-VERBATIM 2026-08-05]; the lifecycle contract's blocking-diagnostics
-clause and violation table).
+Each pinned example below is an excerpt of the named sysml-codegen fixture, and a
+conformance test compares them (`test_self_binding_guidance_contract.py`); the
+`owner-class` label says which resolution route governs it.
 
-The check used to exempt a binding whose owner carried a same-named feature, and this
-section used to call that exemption a supported idiom. Both were wrong: the validator
-stayed silent on a shape the generator refuses.
+### The value is an attribute on the part that owns the calculation → make the names differ (D-5)
 
-Write the binding so the two names differ. Two forms are in the accepted corpus:
+Rename the calculation input and bind it bare. The bare reference then lands on
+the outer attribute, and a public mutation of that attribute reaches the calc.
+This is the ratified form for the local situation and what the migrated
+fusion-tea customer model uses throughout.
 
-- suffix the parameter — `in radius_in = radius`, as `fusion_tea` does throughout;
-- give the attribute the qualifying name — `in length = plant_length`, as `wi014_toy` does.
+<!-- @pinned fixture=tests/fixtures/fusion_tea/designs/generic_ife/ife_plant.sysml owner-class=n/a outcome=generates -->
+```sysml
+in availability_in = availability;
+in gain_in = gain;
+```
 
-For a value that lives on another part, name the path: `in driver_cost = driver.cost`.
+The other accepted spelling renames the attribute instead, so the calc input
+keeps its library name:
 
-Reference: the agentic-mbse `item12` fixtures. `self_named_deadend` has no same-named
-feature at all; `self_named_trap` (a literal attribute) and `self_named_rescue` (a
-sibling calc output) carry one and fail just the same. In the codegen corpus the exact
-route refuses 22 of 37 fixtures, and `SI_SELF_BINDING` is the reason for most of them —
-including `ife_plant` (21 bindings) and `solar_battery_model` (24).
+<!-- @pinned fixture=tests/fixtures/wi014_toy/toy_plant.sysml owner-class=n/a outcome=generates -->
+```sysml
+attribute plant_length : Real = 4.0;
+in length = plant_length;
+```
+
+### The value lives on another part → name the occurrence path (D-7)
+
+The reference lands on that occurrence's feature — the nested driver's own
+`cost_per_joule`, not a name lookup in the consumer's scope.
+
+<!-- @pinned fixture=tests/fixtures/fusion_tea/designs/generic_ife/ife_plant.sysml owner-class=n/a outcome=generates -->
+```sysml
+in driver_cost_constant = driver.cost_per_joule;
+in target_cost_constant = target_factory.cost_per_target;
+```
+
+### Qualifying by owner (D-6) — the behavior follows who owns the resolved feature
+
+An owner-qualified reference is supported, but two owner classes resolve by
+different routes. Check which one you are writing.
+
+**The leaf is owned by a part usage → the exact usage anchors.** SysIDE resolves
+a usage-qualified reference to the exact feature owned by that usage, and the
+elaborator honors that owner (`qualified-reference-occurrence-anchoring`, landed
+2026-08-15; pinned by `tests/conformance/test_usage_owned_reference_anchoring.py`).
+
+<!-- @pinned fixture=tests/fixtures/usage_owned_reference_consumers/model.sysml owner-class=usage outcome=generates -->
+```sysml
+part comp_a : 'Component' { :>> length = 3.0; }
+calc area_calc : AreaCalculation {
+    in length_in = comp_a::length;
+}
+```
+
+An unindexed reference to an **arrayed** usage owner's leaf is deliberately
+scalar and refuses with `SI_OCCURRENCE_AMBIGUOUS`; the author-facing diagnostic
+work for arrayed owners is owned by `[ANCHORING-ARRAYED-DIAGNOSTIC]`, not by
+this rule.
+
+**The leaf is owned by a part definition → a positional fallback searches by
+occurrence.** This is implementation behavior for that owner class, not the
+language meaning of `::`. The consumer's position relative to the occurrences
+decides the outcome.
+
+Inside the definition, each occurrence reads its own value — two occurrences are
+not ambiguous when the consumer sits inside them:
+
+<!-- @pinned fixture=tests/fixtures/def_qual_two_occ_inside/model.sysml owner-class=definition outcome=generates -->
+```sysml
+part def 'Plant' {
+    attribute availability : Real default 0.85;
+    calc revenue_calc : Revenue {
+        in availability = 'Plant'::availability;
+    }
+}
+```
+
+Above the definition, with two occurrences reachable below the consumer, the
+route refuses rather than guessing:
+
+<!-- @pinned fixture=tests/fixtures/def_qual_two_occ_above/model.sysml owner-class=definition outcome=refused:SI_OCCURRENCE_AMBIGUOUS -->
+```sysml
+part def 'Fleet' {
+    part plant_a : 'Plant' { :>> availability = 0.11; }
+    part plant_b : 'Plant' { :>> availability = 0.99; }
+    calc revenue_calc : Revenue {
+        in availability = 'Plant'::availability;
+    }
+}
+```
+
+And **owner qualification does not mean "mine"**: with no local occurrence, the
+fallback silently selects a single occurrence found under a *sibling* subtree.
+The route cannot check that the author meant the sibling — that residue stays
+with the reader, so prefer D-7's explicit path when the value is not yours.
+
+<!-- @pinned fixture=tests/fixtures/def_qual_sibling_scope/model.sysml owner-class=definition outcome=generates -->
+```sysml
+part def 'Power Block' {
+    calc cost_calc : UnitCost {
+        in unit_cost = 'Unit'::cost;
+    }
+}
+```
+
+### The refused form: `in x = x` binds the calculation input to itself
+
+A template calc that binds `in radius = radius` reads as if the right `radius`
+were the owning part's attribute. It is not. The reference resolves to the
+calc's own input parameter, so the attribute's value never reaches the calc and
+the calculation computes on a default — legal SysML, silently inert.
+
+**This shape is refused on both validation paths.** The L2 self-named-binding
+check FAILs it (`L2_SELF_NAMED_BINDING`, compared by referent identity, not by
+name), and elaboration refuses the model with `SI_SELF_BINDING` before
+generation. A same-named attribute in the owning part, a sibling calc output,
+and an inherited attribute are all irrelevant: a self-binding is never
+reinterpreted as an outer reference (D-4 [OWNER-VERBATIM 2026-08-05]; the
+lifecycle contract's blocking-diagnostics clause and violation table).
+
+<!-- @pinned fixture=tests/fixtures/self_named_binding_trap/library.sysml owner-class=n/a outcome=refused:SI_SELF_BINDING -->
+```sysml
+calc avail_calc : AvailabilityCalc {
+    in availability = availability;
+}
+```
+
+Nor can redefinition rescue it from inside the calc: after `redefines`, a name
+resolves through the owning type's supertypes with the owner's own namespace
+excluded (KerML §7.3.4.5; §8.2.3.5.1 describes the abstract-syntax mechanism),
+so a `:>>` inside the calc usage cannot name the enclosing part's attribute.
+
+Reference: the agentic-mbse `item12` fixtures. `self_named_deadend` (no
+same-named feature), `self_named_trap` (a covering attribute) and
+`self_named_rescue` (a sibling calc output) all fail identically, and
+`usage_qualified_local` pins that the supported owner-qualified spellings are
+not flagged. In the codegen corpus the exact route still refuses `ife_plant`
+(21 self-named bindings) — read it for structure, not for the binding form.
 
 ## Retyping to pull in a subtype's calcs (D2)
 
 A design may retype a nested part usage to a subtype to pull in the subtype's template
 calcs, while keeping the base def's calcs:
 
+<!-- @measured evidence="D-5 rename pinned by fusion_tea (spike row 2); the inherited-attribute D-5 variant is measured behavior without a pinned fixture" owner-class=n/a outcome=generates -->
 ```sysml
 // Library: subtype specializes the base and adds its own calc.
 part def 'Base Driver' {
     attribute bank_energy : Real = 10000000.0;
-    calc base_power_calc : DriverPowerCalc { in bank_energy = bank_energy; }
+    calc base_power_calc : DriverPowerCalc { in bank_energy_in = bank_energy; }
 }
 part def 'Hif Driver' :> 'Base Driver' {           // subtype specializes base (`:>`)
     attribute cost_per_joule : Real = 5.0;
     calc hif_cost_calc : HifCostCalc {
-        in cost_per_joule = cost_per_joule;
-        in bank_energy = bank_energy;              // binds against an INHERITED attribute
+        in cost_per_joule_in = cost_per_joule;
+        in bank_energy_in = bank_energy;           // D-5 on an INHERITED attribute
     }
 }
 
@@ -189,6 +309,7 @@ observed labels), `spec_chain_twolevel` (the two-level specialization that mecha
 A calc in one part can consume a calc output from another part. The value crosses the
 boundary through an EXPOSE — a named attribute that surfaces the upstream output:
 
+<!-- @measured evidence="EXPOSE surfacing measured by the expose-pattern fixtures; the refused self-named variant of this exact shape is pinned by self_named_rescue" owner-class=n/a outcome=generates -->
 ```sysml
 part def RescuePlant {
     calc source_calc : SourceCalc { in raw = raw_flow; }
@@ -197,7 +318,7 @@ part def RescuePlant {
     attribute throughput : Real = source_calc.throughput;
 
     calc sink_calc : SinkCalc {
-        in throughput = throughput;   // covered by the EXPOSE attribute above
+        in throughput_in = throughput;   // D-5; the EXPOSE attribute supplies the value
     }
 }
 ```

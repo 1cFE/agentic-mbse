@@ -121,6 +121,7 @@ For doc comment field content requirements and citation patterns, see the **sour
 | `:>> radius = 0.5 [m];` without parent | Redefinition (`:>>`) requires a parent type that declares `radius` |
 | `material : Material = SS316;` | Use `material : String = "SS316";` unless Material type is imported |
 | Qualified names in calc expressions | Use local bindings: `in x = other.value;` not `other.value` inline |
+| Self-named binding `in x = x` | Refused (`SI_SELF_BINDING` / L2 error): the RHS resolves to the calc's own input, never an outer feature. Rename the input — `in x_in = x;` — so the bare RHS lands on the part attribute |
 | `redefines` when meaning `specializes` | `redefines` replaces a feature; `:>` specializes a type — different semantics |
 | Missing imports for cross-file refs | Every cross-file reference needs explicit `import` or `private import` |
 
@@ -209,6 +210,16 @@ sysml-codegen (`.project/concepts/constraint-execution-authoritative-lifecycle-c
 private import OtherPackage::other_part;
 calc my_calc { in value = other_part.exposed_attr; }
 ```
+
+**Calculation input binding — pick the form by where the value lives:**
+- attribute on the part that owns the calc → make the names differ: `in radius_in = radius;`
+  (never the self-named `in radius = radius` — refused, not reinterpreted);
+- value on another part → name the occurrence path: `in driver_cost = driver.cost;`;
+- owner-qualified (`comp_a::length`) → resolves to the exact feature owned by that usage;
+  a definition-owned leaf falls back to positional occurrence search instead.
+
+The authoritative copy of this rule is agentic-mbse `docs/patterns/plant-idiom.md`,
+"Binding a modelled value into a calculation".
 
 **Semantic operators:**
 - `=` — fixed value (cannot be overridden)

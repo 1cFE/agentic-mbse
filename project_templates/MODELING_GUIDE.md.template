@@ -146,6 +146,13 @@ calc my_calc { in value = other_part.exposed_attr; }
 ```
 > [patterns/cross-file-binding.md]
 
+**Calculation input binding** (pick by where the value lives):
+- own part's attribute → make the names differ: `in radius_in = radius;` — never the
+  self-named `in radius = radius`, which binds the input to itself and is refused;
+- another part → name the occurrence path: `in driver_cost = driver.cost;`;
+- owner-qualified → anchors to the exact feature owned by the named usage.
+> [patterns/plant-idiom.md] - "Binding a modelled value into a calculation" is the authoritative rule
+
 **Semantic operators** (`=` vs `default :=` vs `:>>`):
 > [patterns/semantic-operators.md] - Critical for correct AST generation
 
