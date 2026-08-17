@@ -97,7 +97,12 @@ def traverse_expression(
         return []
 
     if _current_depth >= max_depth:
-        return []
+        raise _evidence_error(
+            SemanticEvidenceCode.OPERAND_ITERATION_FAILED,
+            "traverse_expression",
+            "maximum expression traversal depth exhausted before all operands were visited",
+            expr,
+        )
 
     results: list[Any] = []
 
@@ -634,6 +639,29 @@ def resolved_target_fact(elem: Any) -> ResolvedTargetFact | None:
             else False
         ),
         redefined_qualified_names=tuple(redefined),
+    )
+
+
+def feature_reference_facts(expr_node: Any) -> ResolvedSemanticReferenceFact:
+    """Return the exact resolved-target evidence for one feature reference.
+
+    The live ``referent`` is the sole B4 authority. Absence or an unusable
+    target is a typed evidence failure, never an empty dependency list.
+    """
+    target = resolved_target_fact(getattr(expr_node, "referent", None))
+    if target is None:
+        raise _evidence_error(
+            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+            "feature_reference_facts",
+            "resolved reference has no exact target",
+            expr_node,
+        )
+    return ResolvedSemanticReferenceFact(
+        root=target,
+        segments=(target,),
+        leaf=target,
+        resolved_member_names=(),
+        has_index_segment=False,
     )
 
 

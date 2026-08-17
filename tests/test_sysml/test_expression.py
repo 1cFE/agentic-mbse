@@ -21,6 +21,7 @@ from agentic_mbse.sysml.expression import (
     extract_literal_value,
     extract_operators,
     feature_chain_facts,
+    feature_reference_facts,
     is_literal_expression,
     is_literal_node,
     is_true_static_expression,
@@ -180,20 +181,23 @@ def test_traverse_expression_with_literal():
 
 
 def test_traverse_expression_max_depth_protection():
-    """traverse_expression respects max_depth to prevent infinite recursion.
+    """Depth exhaustion is a named refusal, never a successful partial walk.
 
     Input: Expression tree deeper than max_depth
-    Output: Traversal stops at max_depth, returns partial results
+    Output: Traversal refuses with the closed B3 evidence code
     """
     # Create deeply nested structure
     current = MockOperatorExpression("+", [])
     for _ in range(10):
         current = MockOperatorExpression("+", [current])
 
-    # Should not raise RecursionError with max_depth protection
-    results = traverse_expression(current, lambda n: 1, max_depth=5)
-    # Should have stopped early
-    assert len(results) <= 5
+    with pytest.raises(SemanticEvidenceError) as caught:
+        traverse_expression(current, lambda n: 1, max_depth=5)
+
+    assert caught.value.code is SemanticEvidenceCode.OPERAND_ITERATION_FAILED
+    assert caught.value.operation == "traverse_expression"
+    assert "maximum expression traversal depth" in caught.value.detail
+    assert caught.value.cause is None
 
 
 # Phase 3: Helper function tests
@@ -371,6 +375,24 @@ def test_missing_exact_referent_is_typed_before_document_classification():
         extract_feature_refs(expression_node)
 
     assert caught.value.code is SemanticEvidenceCode.RESOLVED_TARGET_MISSING
+
+
+def test_feature_reference_facts_requires_the_exact_referent():
+    expression_node = MockFeatureReferenceExpression(name="missing")
+    expression_node.qualified_name = "Probe::missing_reference"
+    expression_node.document = SimpleNamespace(url="file:root-0/model.sysml")
+    expression_node.cst_node = SimpleNamespace(start_point=SimpleNamespace(line=10))
+    expression_node.referent = None
+
+    with pytest.raises(SemanticEvidenceError) as caught:
+        feature_reference_facts(expression_node)
+
+    assert caught.value.code is SemanticEvidenceCode.RESOLVED_TARGET_MISSING
+    assert caught.value.operation == "feature_reference_facts"
+    assert caught.value.reference == "Probe::missing_reference"
+    assert caught.value.location == ("root-0/model.sysml", 11)
+    assert caught.value.cause is None
+    assert caught.value.__cause__ is None
 
 
 def test_resolved_chain_without_exact_leaf_is_typed():
