@@ -106,10 +106,11 @@ scalar and refuses with `SI_OCCURRENCE_AMBIGUOUS`; the author-facing diagnostic
 work for arrayed owners is owned by `[ANCHORING-ARRAYED-DIAGNOSTIC]`, not by
 this rule.
 
-**The leaf is owned by a part definition → a positional fallback searches by
-occurrence.** This is implementation behavior for that owner class, not the
-language meaning of `::`. The consumer's position relative to the occurrences
-decides the outcome.
+**The leaf is owned by a part definition → it must map through the consumer's
+own occurrence lineage.** SysIDE's resolved structure is authoritative. If the
+lineage carries no occurrence of that feature, codegen refuses with
+`SI_OCCURRENCE_MISSING`; it does not search descendants or siblings to invent
+one.
 
 Inside the definition, each occurrence reads its own value — two occurrences are
 not ambiguous when the consumer sits inside them:
@@ -124,10 +125,10 @@ part def 'Plant' {
 }
 ```
 
-Above the definition, with two occurrences reachable below the consumer, the
-route refuses rather than guessing:
+Above the definition, neither occurrence is on the consumer's lineage, so the
+route refuses. The number of descendants does not change that result:
 
-<!-- @pinned fixture=tests/fixtures/def_qual_two_occ_above/model.sysml owner-class=definition outcome=refused:SI_OCCURRENCE_AMBIGUOUS -->
+<!-- @pinned fixture=tests/fixtures/def_qual_two_occ_above/model.sysml owner-class=definition outcome=refused:SI_OCCURRENCE_MISSING -->
 ```sysml
 part def 'Fleet' {
     part plant_a : 'Plant' { :>> availability = 0.11; }
@@ -138,12 +139,11 @@ part def 'Fleet' {
 }
 ```
 
-And **owner qualification does not mean "mine"**: with no local occurrence, the
-fallback silently selects a single occurrence found under a *sibling* subtree.
-The route cannot check that the author meant the sibling — that residue stays
-with the reader, so prefer D-7's explicit path when the value is not yours.
+With no local occurrence, a single feature under a sibling subtree still does
+not qualify. Use D-7's explicit occurrence path when the value lives on another
+part.
 
-<!-- @pinned fixture=tests/fixtures/def_qual_sibling_scope/model.sysml owner-class=definition outcome=generates -->
+<!-- @pinned fixture=tests/fixtures/def_qual_sibling_scope/model.sysml owner-class=definition outcome=refused:SI_OCCURRENCE_MISSING -->
 ```sysml
 part def 'Power Block' {
     calc cost_calc : UnitCost {

@@ -466,10 +466,9 @@ def validate_structure(models_path: str) -> QualityCheckResult:
     all_issues: list[ValidationIssue] = []
     all_issues.extend(check_unused_definitions(model))
     all_issues.extend(check_unbound_inputs(model))
-    # C1 (Item 12): FAIL a self-named binding (`in P = P`) only when NO same-named
-    # feature covers it. The plant design-attribute idiom (`in radius = radius` with
-    # an outer `attribute radius = <lit>`, Item 9) and the EXPOSE channel (Item 10)
-    # both carry a covering feature, so they pass — only a true dead-end FAILs.
+    # C1 (Item 12): FAIL when `in P = P` resolves the right-hand reference to the
+    # bound input member itself. Same-named features elsewhere do not change that
+    # resolved identity.
     all_issues.extend(check_self_named_bindings(model))
     all_issues.extend(check_orphaned_elements(model))
 

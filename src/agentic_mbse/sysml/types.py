@@ -84,8 +84,8 @@ class ValidationCode(str, Enum):
     UNDEFINED_BINDING = "UNDEFINED_BINDING"
     LITERAL_BINDING = "LITERAL_BINDING"
     UNUSED_DEFINITION = "UNUSED_DEFINITION"
-    # C1 (Item 12): an input bound to a same-named reference that dead-ends on the
-    # calc's own parameter, with no producer of that name in scope. FAIL, L2.
+    # C1 (Item 12): an input whose binding resolves to the calc's own parameter.
+    # Same-named features elsewhere do not change that identity. FAIL, L2.
     L2_SELF_NAMED_BINDING = "L2_SELF_NAMED_BINDING"
     # A structural check could not inspect an element it is responsible for, so the
     # element is UNVERIFIED. Surfaced as an ERROR: an inspection failure must never
