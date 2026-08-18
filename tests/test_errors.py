@@ -113,15 +113,19 @@ class TestSemanticEvidenceError:
     """The semantic evidence failure surface is closed and machine-readable."""
 
     def test_public_version_and_code_inventory_are_exact(self):
-        assert SEMANTIC_EVIDENCE_API_VERSION == "semantic-evidence/v1"
+        assert SEMANTIC_EVIDENCE_API_VERSION == "semantic-evidence/v2"
         assert {code.value for code in SemanticEvidenceCode} == {
             "METATYPE_CHECK_FAILED",
             "EXPRESSION_KIND_UNSUPPORTED",
             "OPERAND_ITERATION_FAILED",
+            # v2 adds depth exhaustion as its own outcome (it was reported as an operand
+            # failure) and the indexed refusal an exact consumer needs by name.
+            "EXPRESSION_DEPTH_EXHAUSTED",
             "RESOLVED_TARGET_MISSING",
             "DOCUMENT_TIER_MISSING",
             "DOCUMENT_TIER_UNKNOWN",
             "RESOLVED_LEAF_MISSING",
+            "INDEXED_REFERENCE_UNSUPPORTED",
         }
 
     def test_error_retains_structured_evidence_without_copying_code_into_detail(self):

@@ -371,6 +371,30 @@ teach the ones that work and treat the rest as known-incomplete rather than as t
 
 Reference: `plant_value_shapes` (every shape above, each labelled at capture).
 
+### The indexed form is valid SysML, and not implemented
+
+An authored index selects one occurrence by position:
+
+```sysml
+part cells : Cell[3];
+attribute picked : Real = cells#(2).mass;   // refused, not reinterpreted
+```
+
+This is well-formed SysML and the parser resolves it. What is not implemented is generating
+code for it, so the toolchain refuses it **by name** rather than choosing an occurrence on the
+author's behalf. Agentic raises `SemanticEvidenceError` with
+`INDEXED_REFERENCE_UNSUPPORTED`; codegen surfaces the same refusal as
+`SI_INDEXED_SOURCE_UNSUPPORTED`, carrying the authored reference and its `file:line`.
+
+The refusal is structural, not a check that could be forgotten. `inspect_reference_uses`
+returns a closed union, and the indexed variant carries no resolved path at all — so there is
+nothing for a downstream consumer to read while ignoring the index. Dropping the `#(2)` and
+wiring `cells[0].mass` would be a different expression than the one written, which is the
+class of substitution this toolchain exists to prevent.
+
+To model per-occurrence values today, name the occurrence instead of indexing it — give the
+part its own usage and reference that usage by name.
+
 ### Non-float entry points are now diagnosed (Item 5)
 
 An entry point must be float-valued. A bool/string/enum-typed entry point (the `wall_type`

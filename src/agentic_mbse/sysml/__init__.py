@@ -60,11 +60,8 @@ if TYPE_CHECKING:
     )
     from agentic_mbse.sysml.data_models import AttributeInfo
     from agentic_mbse.sysml.expression import (
+        design_reference_uses,
         evaluate_true_static_expression,
-        extract_feature_chain_name,
-        extract_feature_chain_segments,
-        extract_feature_reference_name,
-        extract_feature_refs,
         extract_literal_value,
         extract_operators,
         is_literal_expression,
@@ -117,6 +114,12 @@ if TYPE_CHECKING:
         sanitize_qualified_name,
         sysml_to_python_qualified_name,
     )
+    from agentic_mbse.sysml.reference_use import (
+        ExactReferenceUse,
+        ExactSemanticPath,
+        IndexedReferenceUse,
+        inspect_reference_uses,
+    )
     from agentic_mbse.sysml.syside_adapter import (
         Diagnostics,
         DiagnosticSeverity,
@@ -128,7 +131,6 @@ if TYPE_CHECKING:
         BindingInfo,
         BindingType,
         CalcUsageInfo,
-        ExpressionRef,
         Severity,
         ValidationCode,
         ValidationIssue,
@@ -181,11 +183,8 @@ for _name in (
     _LAZY[_name] = ("agentic_mbse.sysml.constraint_facts", _name)
 _LAZY["AttributeInfo"] = ("agentic_mbse.sysml.data_models", "AttributeInfo")
 for _name in (
+    "design_reference_uses",
     "evaluate_true_static_expression",
-    "extract_feature_chain_name",
-    "extract_feature_chain_segments",
-    "extract_feature_reference_name",
-    "extract_feature_refs",
     "extract_literal_value",
     "extract_operators",
     "is_literal_expression",
@@ -196,6 +195,13 @@ for _name in (
     "traverse_expression",
 ):
     _LAZY[_name] = ("agentic_mbse.sysml.expression", _name)
+for _name in (
+    "ExactReferenceUse",
+    "ExactSemanticPath",
+    "IndexedReferenceUse",
+    "inspect_reference_uses",
+):
+    _LAZY[_name] = ("agentic_mbse.sysml.reference_use", _name)
 for _name in ("FeatureReferenceFact", "IdentityFact", "LiteralFact", "OperandTypeFact", "UnitFact"):
     _LAZY[_name] = ("agentic_mbse.sysml.expression_facts", _name)
 for _name in (
@@ -245,7 +251,6 @@ for _name in (
     "BindingInfo",
     "BindingType",
     "CalcUsageInfo",
-    "ExpressionRef",
     "Severity",
     "ValidationCode",
     "ValidationIssue",

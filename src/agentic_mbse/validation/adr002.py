@@ -12,12 +12,18 @@ These checks are integrated into Level 6 architecture validation.
 from typing import Any
 
 from agentic_mbse.sysml.expression import (
-    extract_feature_refs,
+    design_reference_uses,
     extract_operators,
     traverse_expression,
 )
+from agentic_mbse.sysml.reference_use import (
+    ExactReferenceUse,
+    IndexedReferenceUse,
+    ReferenceUse,
+    resolved_referent,
+)
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
-from agentic_mbse.sysml.types import ExpressionRef, Severity, ValidationCode, ValidationIssue
+from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 
 try:
     from .common import get_element_location, get_qualified_name
@@ -322,8 +328,19 @@ def _is_calc_usage(element: Any) -> bool:
         return False
 
 
+def reference_is_dynamic(use: ReferenceUse) -> bool:
+    """Whether a reference use counts as a dynamic reference for V2.
+
+    Both variants of the closed union do.  An indexed use is a reference the model
+    authored and the toolchain cannot honor exactly; treating it as absent would let a
+    dynamic expression pass V2 because its index made it unreadable.  It is counted here
+    and never flattened into an exact path or an empty reference list.
+    """
+    return isinstance(use, (ExactReferenceUse, IndexedReferenceUse))
+
+
 def _is_calc_output_reference(
-    ref: ExpressionRef,
+    use: ExactReferenceUse,
     calc_def_qualified_names: set[str],
 ) -> bool:
     """
@@ -339,44 +356,38 @@ def _is_calc_output_reference(
     4. Conservative fallback: If all methods fail → True (backwards compatible)
 
     Args:
-        ref: ExpressionRef from extract_feature_refs()
+        use: one ExactReferenceUse from design_reference_uses()
         calc_def_qualified_names: Set of calc def qualified names for pattern matching
 
     Returns:
         True if ref is to a calc output (or if all verifications fail - conservative)
         False if ref is definitively NOT to a calc output
     """
+    leaf = use.path.leaf
+
     # Method 1: Document path check (simplest, most reliable)
-    if ref.document_path:
-        if "library/" in ref.document_path:
+    if leaf.document_url:
+        if "library/" in leaf.document_url:
             return True  # From library - it's a calc output
-        if "designs/" in ref.document_path:
+        if "designs/" in leaf.document_url:
             return False  # From designs - NOT a calc output
 
     # Method 2: Qualified name pattern (proven in codegen)
-    if ref.qualified_name and "::" in ref.qualified_name:
-        parts = ref.qualified_name.split("::")
+    if leaf.qualified_name and "::" in leaf.qualified_name:
+        parts = leaf.qualified_name.split("::")
         if len(parts) >= 2:
             # Check if parent path matches a calc def
             parent_path = "::".join(parts[:-1])
             if parent_path in calc_def_qualified_names:
                 return True
 
-    # Method 3: Owner type check (fallback)
-    if ref.element:
-        owner = getattr(ref.element, "owner", None)
-        if owner:
-            try:
-                # Calc output owners are always CalculationDefinition
-                if SysideAdapter.is_instance(owner, "CalculationDefinition"):
-                    return True
-                # Explicit negative: design attrs have Part owners
-                if SysideAdapter.is_instance(owner, "PartUsage") or SysideAdapter.is_instance(
-                    owner, "PartDefinition"
-                ):
-                    return False
-            except Exception:
-                pass
+    # Method 3: Owner kind, from the evidence the exact route captured.  A calc output's
+    # owner is a CalculationDefinition; a design attribute's owner is a part.
+    if leaf.owner_kind:
+        if leaf.owner_kind == "CalculationDefinition":
+            return True
+        if leaf.owner_kind in ("PartUsage", "PartDefinition"):
+            return False
 
     # Conservative fallback only if ALL methods fail
     return True
@@ -446,14 +457,14 @@ def _is_expose_pattern(
 
         if hasattr(first_member, "feature_value_expression"):
             fve = first_member.feature_value_expression
-            if fve and hasattr(fve, "referent"):
-                source_instance = fve.referent
+            if fve is not None:
+                source_instance = resolved_referent(fve)
 
         # Fallback paths for different AST structures
         if source_instance is None and hasattr(first_member, "member_element"):
             source_instance = first_member.member_element
-        if source_instance is None and hasattr(first_member, "referent"):
-            source_instance = first_member.referent
+        if source_instance is None:
+            source_instance = resolved_referent(first_member)
 
         if source_instance is None:
             return False
@@ -525,7 +536,7 @@ def _contains_feature_chain(expr: Any) -> bool:
     return bool(traverse_expression(expr, _visitor))
 
 
-def _is_supported_formula(attr: Any, refs: list[ExpressionRef]) -> bool:
+def _is_supported_formula(attr: Any, uses: tuple[ExactReferenceUse, ...]) -> bool:
     """True if a design computed attribute is a codegen-supported FORMULA (F6).
 
     sysml-codegen classifies a design-file `attribute X = <expr>` as a FORMULA
@@ -553,8 +564,8 @@ def _is_supported_formula(attr: Any, refs: list[ExpressionRef]) -> bool:
     prefix = owner_qn + "::"
     attr_qn = get_qualified_name(attr)
 
-    for ref in refs:
-        ref_qn = ref.qualified_name or ""
+    for use in uses:
+        ref_qn = use.path.leaf.qualified_name or ""
         # Foreign reference (calc output, cross-part, or inherited) -> not a FORMULA.
         if not ref_qn.startswith(prefix):
             return False
@@ -638,10 +649,10 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
             expr = attr.feature_value_expression
 
             # Extract all feature references (std lib filtered by default per Phase 1)
-            refs = extract_feature_refs(expr)
+            uses = design_reference_uses(expr)
 
             # TRUE STATIC: No refs after filtering = only literals + std lib
-            if len(refs) == 0:
+            if not any(reference_is_dynamic(use) for use in uses):
                 continue  # OK - true static expression
 
             # EXPOSE PATTERN: Single ref to sibling calc output is exempt
@@ -652,13 +663,23 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
             # owned siblings is a codegen-supported FORMULA (Item 5), not a violation.
             # A dotted path is rejected by codegen's FORMULA compiler, so a chain
             # keeps firing; a foreign (calc-output) ref keeps firing.
-            if not _contains_feature_chain(expr) and _is_supported_formula(attr, refs):
+            exact_uses = tuple(use for use in uses if isinstance(use, ExactReferenceUse))
+            if (
+                len(exact_uses) == len(uses)
+                and not _contains_feature_chain(expr)
+                and _is_supported_formula(attr, exact_uses)
+            ):
                 continue  # OK - supported FORMULA computed attribute
 
             # DERIVED EXPRESSION VIOLATION: Has feature refs that aren't EXPOSE
             attr_name = get_qualified_name(attr)
             location = get_element_location(attr)
-            ref_names = [ref.name for ref in refs]
+            ref_names = [
+                use.path.leaf.element_name
+                if isinstance(use, ExactReferenceUse)
+                else use.reference
+                for use in uses
+            ]
 
             issues.append(
                 ValidationIssue(

@@ -6,8 +6,13 @@ bindings from CalculationUsage AST elements.
 
 from typing import Any
 
-from agentic_mbse.sysml.expression import extract_feature_refs, extract_literal_value
-from agentic_mbse.sysml.types import BindingInfo, BindingType, ExpressionRef
+from agentic_mbse.sysml.expression import extract_literal_value
+from agentic_mbse.sysml.reference_use import (
+    ExactReferenceUse,
+    ReferenceUse,
+    inspect_reference_uses,
+)
+from agentic_mbse.sysml.types import BindingInfo, BindingType
 
 
 def classify_binding(expr: Any) -> BindingType:
@@ -140,7 +145,7 @@ def _build_binding_info(
     source_path: str | None = None
     literal_value: float | int | str | bool | None = None
     expression_ast: Any = None
-    references: list[ExpressionRef] = []
+    reference_uses: tuple[ReferenceUse, ...] = ()
     is_cross_file = False
 
     if binding_type == BindingType.LITERAL:
@@ -161,13 +166,17 @@ def _build_binding_info(
     elif binding_type == BindingType.EXPRESSION:
         # Preserve AST and extract references
         expression_ast = expr
-        references = extract_feature_refs(expr)
-        # Cross-file if any reference is from different file
-        for ref in references:
-            if ref.document_path and usage_doc_url:
-                if ref.document_path != usage_doc_url:
-                    is_cross_file = True
-                    break
+        reference_uses = inspect_reference_uses(expr)
+        # Cross-file if an exact target's document differs from the usage's.  An indexed
+        # use has no exact target and is never projected into path metadata, so it cannot
+        # answer this question either way.
+        for use in reference_uses:
+            if not isinstance(use, ExactReferenceUse):
+                continue
+            document_url = use.path.leaf.document_url
+            if document_url and usage_doc_url and document_url != usage_doc_url:
+                is_cross_file = True
+                break
 
     return BindingInfo(
         param_name=param_name,
@@ -176,7 +185,7 @@ def _build_binding_info(
         is_cross_file=is_cross_file,
         literal_value=literal_value,
         expression_ast=expression_ast,
-        references=references,
+        reference_uses=reference_uses,
     )
 
 

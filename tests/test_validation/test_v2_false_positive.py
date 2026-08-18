@@ -4,21 +4,59 @@ Tests the _is_calc_output_reference() helper function and integration with
 check_static_expressions() to verify false positives are prevented.
 
 Layered verification approach:
-1. document_path: Contains 'library/' → calc output, contains 'designs/' → NOT calc output
+1. document_url: Contains 'library/' → calc output, contains 'designs/' → NOT calc output
 2. qualified_name: Parent path matches known calc def → calc output
-3. owner type: CalculationDefinition owner → calc output, PartUsage → NOT calc output
+3. owner kind: CalculationDefinition owner → calc output, PartUsage → NOT calc output
 4. Conservative fallback: If all methods fail → assume calc output (backwards compatible)
+
+Every signal now comes off the exact evidence the closed reference boundary captured, so
+the helper takes an `ExactReferenceUse` rather than a rebuildable `ExpressionRef` carrying
+a live parser element.
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock
+from uuid import NAMESPACE_URL, uuid5
 
+from agentic_mbse.sysml.data_models import ResolvedTargetFact
+from agentic_mbse.sysml.reference_use import ExactReferenceUse, ExactSemanticPath
 from agentic_mbse.sysml.syside_adapter import get_syside
-from agentic_mbse.sysml.types import ExpressionRef, ValidationCode
+from agentic_mbse.sysml.types import ValidationCode
 from agentic_mbse.validation.adr002 import (
     _is_calc_output_reference,
     check_static_expressions,
 )
+
+
+def _use(
+    *,
+    name: str = "output_val",
+    qualified_name: str = "",
+    document_url: str = "",
+    owner_kind: str = "",
+) -> ExactReferenceUse:
+    """One exact reference use carrying exactly the evidence a case exercises."""
+    fact = ResolvedTargetFact(
+        element_id=uuid5(NAMESPACE_URL, qualified_name or name),
+        owner_element_id=None,
+        redefined_element_ids=(),
+        qualified_name=qualified_name,
+        element_kind="AttributeUsage",
+        element_name=name,
+        owner_qualified_name=qualified_name.rsplit("::", 1)[0] if "::" in qualified_name else "",
+        owner_kind=owner_kind,
+        document_url=document_url,
+    )
+    return ExactReferenceUse(
+        path=ExactSemanticPath(
+            root=fact, segments=(fact,), leaf=fact, resolved_member_names=()
+        ),
+        form="bare",
+        authored_text=name,
+        authored_segments=(name,),
+        authored_qualifier=None,
+        plural=False,
+        location=None,
+    )
 
 
 class TestIsCalcOutputReference:
@@ -34,10 +72,9 @@ class TestIsCalcOutputReference:
         When a reference's document_path contains 'library/', it's definitively
         from a library calc definition, so it's a calc output.
         """
-        ref = ExpressionRef(
-            name="output_val",
+        ref = _use(
             qualified_name="V2TestLibrary::SimpleCalc::output_val",
-            document_path="models/library/analyses/thermal_loads.sysml",
+            document_url="models/library/analyses/thermal_loads.sysml",
         )
         result = _is_calc_output_reference(ref, set())
         assert result is True
@@ -48,10 +85,9 @@ class TestIsCalcOutputReference:
         When a reference's document_path contains 'designs/', it's definitively
         from a design file, so it's NOT a calc output (even if name matches).
         """
-        ref = ExpressionRef(
-            name="output_val",  # Same name as a calc output
+        ref = _use(
             qualified_name="CATFMFERadialBuild::plasma_region::output_val",
-            document_path="models/designs/catf_mfe/radial_build.sysml",
+            document_url="models/designs/catf_mfe/radial_build.sysml",
         )
         result = _is_calc_output_reference(ref, set())
         assert result is False
@@ -66,11 +102,7 @@ class TestIsCalcOutputReference:
         When the parent path in qualified_name matches a known calc def,
         the reference is to that calc's output.
         """
-        ref = ExpressionRef(
-            name="output_val",
-            qualified_name="V2TestLibrary::SimpleCalc::output_val",
-            document_path=None,  # No document_path - fallthrough to qualified_name
-        )
+        ref = _use(qualified_name="V2TestLibrary::SimpleCalc::output_val")
         calc_def_names = {"V2TestLibrary::SimpleCalc"}
         result = _is_calc_output_reference(ref, calc_def_names)
         assert result is True
@@ -82,12 +114,7 @@ class TestIsCalcOutputReference:
         the check falls through to the owner type check. With no element,
         it falls through to conservative True.
         """
-        ref = ExpressionRef(
-            name="output_val",
-            qualified_name="SomeOtherPackage::SomePart::output_val",
-            document_path=None,  # No document_path - fallthrough to qualified_name
-            element=None,  # No element - falls through to conservative fallback
-        )
+        ref = _use(qualified_name="SomeOtherPackage::SomePart::output_val")
         calc_def_names = {"V2TestLibrary::SimpleCalc"}  # Doesn't include SomeOtherPackage
         result = _is_calc_output_reference(ref, calc_def_names)
         # Falls through to conservative True because no element for owner check
@@ -103,11 +130,7 @@ class TestIsCalcOutputReference:
         The layered approach means if document_path doesn't provide a definitive
         answer (None or doesn't contain library/ or designs/), we try qualified_name.
         """
-        ref = ExpressionRef(
-            name="output_val",
-            qualified_name="V2TestLibrary::SimpleCalc::output_val",
-            document_path=None,  # No document_path
-        )
+        ref = _use(qualified_name="V2TestLibrary::SimpleCalc::output_val")
         calc_def_names = {"V2TestLibrary::SimpleCalc"}
         result = _is_calc_output_reference(ref, calc_def_names)
         assert result is True
@@ -118,12 +141,7 @@ class TestIsCalcOutputReference:
         If qualified_name can't be parsed for parent path, we try owner type check.
         With no element, falls through to conservative True.
         """
-        ref = ExpressionRef(
-            name="output_val",
-            qualified_name="",  # Empty qualified name
-            document_path=None,  # No document_path
-            element=None,  # No element - falls through to conservative
-        )
+        ref = _use()
         result = _is_calc_output_reference(ref, set())
         # Falls through all checks to conservative True
         assert result is True
@@ -138,20 +156,7 @@ class TestIsCalcOutputReference:
         When the reference element's owner is a CalculationDefinition,
         it's definitively a calc output.
         """
-        class MockCalculationDefinition:
-            pass
-
-        mock_owner = MockCalculationDefinition()
-
-        mock_element = MagicMock()
-        mock_element.owner = mock_owner
-
-        ref = ExpressionRef(
-            name="output_val",
-            qualified_name="",  # No qualified_name - forces owner check
-            document_path=None,  # No document_path - forces fallthrough
-            element=mock_element,
-        )
+        ref = _use(owner_kind="CalculationDefinition")
         result = _is_calc_output_reference(ref, set())
         assert result is True
 
@@ -161,20 +166,7 @@ class TestIsCalcOutputReference:
         When the reference element's owner is a PartUsage, it's definitively
         NOT a calc output - it's a design attribute.
         """
-        class MockPartUsage:
-            pass
-
-        mock_owner = MockPartUsage()
-
-        mock_element = MagicMock()
-        mock_element.owner = mock_owner
-
-        ref = ExpressionRef(
-            name="output_val",
-            qualified_name="",  # No qualified_name - forces owner check
-            document_path=None,  # No document_path - forces fallthrough
-            element=mock_element,
-        )
+        ref = _use(owner_kind="PartUsage")
         result = _is_calc_output_reference(ref, set())
         assert result is False
 
@@ -192,19 +184,9 @@ class TestIsCalcOutputReference:
 
         This is the real-world scenario for same-named design attributes.
         """
-        class MockPartUsage:
-            pass
-
-        mock_owner = MockPartUsage()
-
-        mock_element = MagicMock()
-        mock_element.owner = mock_owner
-
-        ref = ExpressionRef(
-            name="output_val",
-            qualified_name="V2FalsePositiveTest::test_part::output_val",  # Non-matching
-            document_path=None,  # No document_path
-            element=mock_element,
+        ref = _use(
+            qualified_name="V2FalsePositiveTest::test_part::output_val",
+            owner_kind="PartUsage",
         )
         calc_def_names = {"V2TestLibrary::SimpleCalc"}  # Doesn't match
         result = _is_calc_output_reference(ref, calc_def_names)
@@ -220,34 +202,18 @@ class TestIsCalcOutputReference:
         If we can't determine definitively whether it's a calc output,
         we conservatively assume it is to maintain backwards compatibility.
         """
-        ref = ExpressionRef(
-            name="output_val",
-            qualified_name="",  # No qualified_name
-            document_path=None,  # No document_path
-            element=None,  # No element for owner check
-        )
+        ref = _use()
         result = _is_calc_output_reference(ref, set())
         assert result is True
 
     def test_exception_in_owner_check_falls_through(self):
         """When owner.isinstance() raises exception → conservative fallback.
 
-        If the owner type check fails with an exception, we don't crash -
-        we fall through to the conservative True.
+        The owner kind is now captured evidence rather than a live `isinstance` call, so
+        there is no exception to swallow: a reference whose owner kind was never resolved
+        simply has no tertiary signal, and the conservative fallback applies.
         """
-        # Mock the element with an owner that raises on isinstance
-        mock_owner = MagicMock()
-        mock_owner.isinstance.side_effect = Exception("AST access error")
-
-        mock_element = MagicMock()
-        mock_element.owner = mock_owner
-
-        ref = ExpressionRef(
-            name="output_val",
-            qualified_name="",  # No qualified_name - forces owner check
-            document_path=None,  # No document_path - forces fallthrough
-            element=mock_element,
-        )
+        ref = _use()
         result = _is_calc_output_reference(ref, set())
         assert result is True
 

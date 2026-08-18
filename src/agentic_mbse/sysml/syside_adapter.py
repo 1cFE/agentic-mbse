@@ -186,6 +186,7 @@ class SysideAdapter:
             "FeatureTyping",
             "FeatureValue",
             "Import",
+            "IndexExpression",
             "InvocationExpression",
             "LiteralBoolean",
             "LiteralInfinity",
@@ -263,6 +264,11 @@ class SysideAdapter:
                 # is_instance, relying on the old silent string-match. D6's
                 # hard-error requires every used name to resolve, so map it.
                 "InvocationExpression": syside.InvocationExpression,
+                # IndexExpression is the authored `#(i)` form.  It is mapped so the
+                # closed reference boundary dispatches on the installed metatype; the
+                # previous route compared `type(node).__name__` against the string
+                # "IndexExpression", which any lookalike could satisfy (D5).
+                "IndexExpression": syside.IndexExpression,
                 "OperatorExpression": syside.OperatorExpression,
                 "LiteralInteger": syside.LiteralInteger,
                 "LiteralRational": syside.LiteralRational,
@@ -507,6 +513,40 @@ class SysideAdapter:
                 reference=cls._semantic_reference(elem),
             )
         return tier
+
+    @classmethod
+    def authored_text(cls, elem: Any) -> str:
+        """Return the exact authored source text of one element.
+
+        The concrete syntax node holds the byte range the author wrote; the owning
+        document holds the source.  Reading them together is the only route to the
+        authored spelling, so it is acquired here once and travels on the evidence
+        value.  Unavailable evidence is a named failure, never a rendered guess.
+        """
+        document = getattr(elem, "document", None)
+        cst_node = getattr(elem, "cst_node", None)
+        if not document or cst_node is None:
+            raise SemanticEvidenceError(
+                SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+                operation="authored_text",
+                detail="element has no concrete syntax node in a document",
+                location=cls.get_source_location(elem),
+                reference=cls._semantic_reference(elem),
+            )
+        try:
+            with document.text_document.lock() as text_document:
+                source = text_document.text
+            return str(cst_node.text(source))
+        except Exception as cause:
+            error = SemanticEvidenceError(
+                SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+                operation="authored_text",
+                detail="SysIDE could not read the authored source range",
+                location=cls.get_source_location(elem),
+                reference=cls._semantic_reference(elem),
+                cause=cause,
+            )
+            raise error from cause
 
     # === Pattern 4: Source Location ===
 

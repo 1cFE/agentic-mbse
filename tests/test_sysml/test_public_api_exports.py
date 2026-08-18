@@ -78,7 +78,7 @@ def test_constraint_extraction_star_import_includes_all_public_extractors() -> N
 
 
 def test_semantic_evidence_contract_is_exported_from_package_root() -> None:
-    assert agentic_mbse.SEMANTIC_EVIDENCE_API_VERSION == "semantic-evidence/v1"
+    assert agentic_mbse.SEMANTIC_EVIDENCE_API_VERSION == "semantic-evidence/v2"
     assert agentic_mbse.SemanticEvidenceCode is SemanticEvidenceCode
     assert agentic_mbse.SemanticEvidenceError is SemanticEvidenceError
     assert {

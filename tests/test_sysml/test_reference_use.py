@@ -135,8 +135,9 @@ def test_an_indexed_use_cannot_form_an_aggregation_term() -> None:
 
 
 def _target_fact(name: str, *, tier: str = "Project") -> Any:
+    from uuid import NAMESPACE_URL, uuid5
+
     from agentic_mbse.sysml.data_models import ResolvedTargetFact
-    from uuid import uuid5, NAMESPACE_URL
 
     return ResolvedTargetFact(
         element_id=uuid5(NAMESPACE_URL, name),
@@ -174,6 +175,9 @@ def _exact_use_double(authored: str) -> Any:
 
 
 PROBE_MODEL = """package Probe {
+    private import ScalarValues::*;
+    private import NumericalFunctions::sum;
+
     part def Cell {
         attribute mass : ScalarValues::Real = 1.0;
     }
@@ -233,7 +237,7 @@ def test_a_bare_reference_yields_one_exact_use_with_authored_evidence(probe_expr
     assert use.authored_segments == ("local_scale",)
     assert use.authored_qualifier is None
     assert use.plural is False
-    assert use.location is not None and use.location[1] == 9
+    assert use.location is not None and use.location[1] == 13
 
 
 def test_a_qualified_reference_records_its_authored_qualifier(probe_expressions) -> None:
@@ -318,7 +322,7 @@ def test_an_indexed_chain_returns_the_closed_indexed_variant(probe_expressions) 
     assert isinstance(use, module.IndexedReferenceUse)
     assert not hasattr(use, "path")
     assert use.reference == "cells#(2).mass"
-    assert use.location is not None and use.location[1] == 8
+    assert use.location is not None and use.location[1] == 11
 
 
 def test_index_dispatch_comes_from_the_mapped_metatype_not_a_class_name(probe_expressions) -> None:
@@ -335,9 +339,14 @@ def test_index_dispatch_comes_from_the_mapped_metatype_not_a_class_name(probe_ex
     (head,) = tuple(module.materialize_operands(chain))[:1]
     assert SysideAdapter.is_instance(head, "IndexExpression")
 
-    # A lookalike that only *spells* the metatype is not one.
-    lookalike = type("IndexExpression", (), {})()
-    assert not SysideAdapter.is_instance(lookalike, "IndexExpression")
+    # The claim is about production dispatch: the boundary must never decide an index by
+    # comparing a runtime class name.  The old route did exactly that
+    # (`type(first).__name__ == "IndexExpression"`); the new one has no such comparison.
+    import inspect as _inspect
+
+    source = _inspect.getsource(module)
+    assert "__name__ ==" not in source
+    assert '"IndexExpression"' in source  # named only as a mapped type-map key
 
 
 def test_an_indexed_use_never_reaches_a_binding_path(probe_expressions) -> None:
@@ -355,11 +364,12 @@ def test_an_indexed_use_never_reaches_a_binding_path(probe_expressions) -> None:
 # --------------------------------------------------------------------------------------
 
 
-class _RefusingOperands:
-    """A non-live double whose operand sequence cannot be materialized."""
+class OperatorExpression:
+    """Base for non-live doubles: the adapter matches mapped names in the Python MRO."""
 
-    def isinstance(self, cls: type) -> bool:
-        return cls.__name__ == "OperatorExpression"
+
+class _RefusingOperands(OperatorExpression):
+    """A non-live double whose operand sequence cannot be materialized."""
 
     @property
     def operands(self) -> Any:
@@ -375,11 +385,8 @@ def test_operand_iteration_failure_is_a_named_outcome_carrying_its_cause() -> No
     assert caught.value.__cause__ is caught.value.cause
 
 
-class _EndlessOperator:
+class _EndlessOperator(OperatorExpression):
     """A non-live double that nests into itself forever."""
-
-    def isinstance(self, cls: type) -> bool:
-        return cls.__name__ == "OperatorExpression"
 
     @property
     def operands(self) -> tuple[Any, ...]:
@@ -404,10 +411,15 @@ def test_the_depth_budget_is_not_caller_selectable() -> None:
     assert isinstance(module.MAX_EXPRESSION_DEPTH, int)
 
 
-class _ReferenceWithoutReferent:
-    def isinstance(self, cls: type) -> bool:
-        return cls.__name__ == "FeatureReferenceExpression"
+class FeatureReferenceExpression:
+    """Base for non-live feature-reference doubles."""
 
+
+class FeatureChainExpression:
+    """Base for non-live feature-chain doubles."""
+
+
+class _ReferenceWithoutReferent(FeatureReferenceExpression):
     referent = None
     name = "orphan"
 
@@ -421,16 +433,24 @@ def test_a_missing_resolved_target_is_named_and_never_an_empty_result() -> None:
 
 class _Chained:
     def __init__(self, name: str | None) -> None:
+        from uuid import NAMESPACE_URL, uuid5
+
         self.name = name
         self.qualified_name = f"Probe::{name}" if name else None
+        self.element_id = uuid5(NAMESPACE_URL, str(name))
+        # Doubles carry a document with a real tier: D6 makes the tier the sole
+        # standard-library classifier, so a target without one is a named failure and
+        # would mask the leaf failure this double exists to prove.
+        self.document = type(
+            "Document",
+            (),
+            {"url": "file:///probe/model.sysml", "document_tier": get_syside().DocumentTier.Project},
+        )()
         self.chaining_features: list[Any] = []
 
 
-class _ChainWithUnusableLeaf:
+class _ChainWithUnusableLeaf(FeatureChainExpression):
     """A chain whose declared leaf carries no qualified name — B8's skip-proof case."""
-
-    def isinstance(self, cls: type) -> bool:
-        return cls.__name__ == "FeatureChainExpression"
 
     def __init__(self) -> None:
         self.operands = [_ReferenceTo("cells")]
@@ -440,10 +460,7 @@ class _ChainWithUnusableLeaf:
         self.target_feature = target
 
 
-class _ReferenceTo:
-    def isinstance(self, cls: type) -> bool:
-        return cls.__name__ == "FeatureReferenceExpression"
-
+class _ReferenceTo(FeatureReferenceExpression):
     def __init__(self, name: str) -> None:
         self.name = name
         self.referent = _Chained(name)
@@ -475,7 +492,7 @@ def test_a_project_package_named_si_is_still_project_evidence(tmp_path) -> None:
         "package SI {\n"
         "    part def Holder {\n"
         "        attribute base : ScalarValues::Real = 1.0;\n"
-        "        attribute derived : ScalarValues::Real = base * 2.0;\n"
+        "        attribute scaled_value : ScalarValues::Real = base * 2.0;\n"
         "    }\n"
         "}\n"
     )
@@ -484,12 +501,12 @@ def test_a_project_package_named_si_is_still_project_evidence(tmp_path) -> None:
     except Exception as exc:  # pragma: no cover - license-gated
         pytest.skip(f"SysIDE model load unavailable: {exc}")
     for attribute in SysideAdapter.elements_of_type(model, "AttributeUsage"):
-        if attribute.name == "derived":
+        if attribute.name == "scaled_value":
             (use,) = module.inspect_reference_uses(attribute.feature_value_expression)
             assert use.path.leaf.document_tier == "Project"
             assert use.path.leaf.qualified_name.startswith("SI::")
             return
-    pytest.fail("probe model did not yield the `derived` attribute")
+    pytest.fail("probe model did not yield the `scaled_value` attribute")
 
 
 # --------------------------------------------------------------------------------------

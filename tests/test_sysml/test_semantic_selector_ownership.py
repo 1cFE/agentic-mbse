@@ -32,6 +32,15 @@ REVIEWED_MODULES = (
     "sysml/syside_adapter.py",
 )
 
+#: The gate is about *SysIDE* selectors, so it scans the modules that can actually hold a
+#: SysIDE node — the ones reaching the parser through the adapter.  Without this scope the
+#: name-based scan also flags `operands` on the neutral `ExpressionIR` dataclasses, which
+#: are not parser nodes at all: `sysml/executable_profile.py` is pinned license-free and
+#: provably never imports syside, so its `node.operands` is a plain field read.  This
+#: mirrors the scoping the Phase-1 audit required on the Codegen side (Finding 3): key the
+#: gate on the adapter, which is how this repository actually reaches the parser.
+ADAPTER_IMPORT = "agentic_mbse.sysml.syside_adapter"
+
 #: Permissive identifiers that must not survive.  Each one lets a consumer reconstruct or
 #: ignore evidence instead of receiving a closed value.
 #:
@@ -62,6 +71,21 @@ def _modules() -> list[Path]:
     return sorted(PACKAGE_ROOT.rglob("*.py"))
 
 
+def _reaches_the_parser(path: Path) -> bool:
+    """Whether a module can hold a live SysIDE node.
+
+    The adapter itself is the parser gateway, so it is in scope by definition; every other
+    module reaches SysIDE only by importing it.
+    """
+    if path.relative_to(PACKAGE_ROOT).as_posix() == "sysml/syside_adapter.py":
+        return True
+    return ADAPTER_IMPORT in path.read_text()
+
+
+def _scanned_modules() -> list[Path]:
+    return [path for path in _modules() if _reaches_the_parser(path)]
+
+
 def _selector_reads(path: Path) -> set[str]:
     found: set[str] = set()
     for node in ast.walk(ast.parse(path.read_text())):
@@ -82,7 +106,7 @@ def _selector_reads(path: Path) -> set[str]:
 def test_raw_selector_reads_stay_inside_the_owned_boundary() -> None:
     """Recorded red at `A_base`: selectors are read well outside the reviewed modules."""
     outside: list[str] = []
-    for path in _modules():
+    for path in _scanned_modules():
         module = path.relative_to(PACKAGE_ROOT).as_posix()
         if module in REVIEWED_MODULES:
             continue
@@ -208,3 +232,42 @@ def test_every_ordered_deletion_is_covered_by_a_gate() -> None:
         for class_name, attribute in PERMISSIVE_CLASS_ATTRIBUTES
     }
     assert ordered_deletions <= covered, sorted(ordered_deletions - covered)
+
+
+def test_the_scanned_module_set_admits_neither_everything_nor_nothing() -> None:
+    """Anti-vacuity for the adapter scope: it must be a real, non-trivial subset.
+
+    An empty scope would make the boundary test pass without reading anything; a scope of
+    every module would drag the neutral IR dataclasses back in and make it fail for a
+    reason it is not about.
+    """
+    scanned = {path.relative_to(PACKAGE_ROOT).as_posix() for path in _scanned_modules()}
+    everything = {path.relative_to(PACKAGE_ROOT).as_posix() for path in _modules()}
+
+    assert scanned, "the adapter scope admits nothing"
+    assert scanned < everything, "the adapter scope admits everything"
+    assert set(REVIEWED_MODULES) <= scanned, "a reviewed boundary module fell out of scope"
+    assert "sysml/executable_profile.py" in everything - scanned
+
+
+def test_no_production_module_reaches_syside_directly() -> None:
+    """The scope premise: this repository reaches the parser only through the adapter.
+
+    If a module ever imported `syside` directly, the adapter-keyed scope would stop being
+    the right scope, and this test says so before the boundary test goes quietly vacuous.
+    """
+    direct: list[str] = []
+    for path in _modules():
+        module = path.relative_to(PACKAGE_ROOT).as_posix()
+        if module == "sysml/syside_adapter.py":
+            continue
+        for node in ast.walk(ast.parse(path.read_text())):
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                names = [node.module or ""]
+            else:
+                continue
+            if any(name == "syside" or name.startswith("syside.") for name in names):
+                direct.append(module)
+    assert not direct, f"modules importing syside outside the adapter: {sorted(set(direct))}"

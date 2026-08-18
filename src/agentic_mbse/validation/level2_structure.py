@@ -14,6 +14,7 @@ import sys
 from typing import Any
 
 from agentic_mbse.sysml.binding import classify_binding, extract_bindings
+from agentic_mbse.sysml.reference_use import ExactReferenceUse, resolved_referent
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import (
     BindingType,
@@ -181,11 +182,16 @@ def check_unbound_inputs(model: Any) -> list[ValidationIssue]:
                     continue
 
                 # CHECK 3: Do ALL binding targets have values?
-                for ref in binding.references:
-                    if ref.element and not _has_defined_value(ref.element):
+                for use in binding.reference_uses:
+                    # An indexed use has no exact target, so this check has nothing to
+                    # ask about it; the closed boundary refuses it before generation.
+                    if not isinstance(use, ExactReferenceUse):
+                        continue
+                    leaf = use.path.leaf
+                    if not leaf.declares_value:
                         location = get_element_location(calc_usage)
                         calc_name = get_qualified_name(calc_usage)
-                        target_name = ref.qualified_name or ref.name
+                        target_name = leaf.qualified_name or leaf.element_name
                         issues.append(
                             ValidationIssue(
                                 level=2,
@@ -358,7 +364,7 @@ def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
                 # Self-named: the RHS reference's resolved referent IS the bound
                 # parameter member. An unresolved referent is a load error, not
                 # a self-binding this check can establish.
-                referent = getattr(expr, "referent", None)
+                referent = resolved_referent(expr)
                 if referent is None:
                     continue
                 if SysideAdapter.element_id(referent) != SysideAdapter.element_id(member):

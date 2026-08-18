@@ -208,7 +208,7 @@ def test_extract_bindings_expression_type():
     assert len(bindings) == 1
     assert bindings[0].param_name == "volume"
     assert bindings[0].binding_type == BindingType.EXPRESSION
-    assert len(bindings[0].references) == 2
+    assert len(bindings[0].reference_uses) == 2
 
 
 def test_extract_bindings_unbound_parameter():

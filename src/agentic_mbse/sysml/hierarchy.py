@@ -13,13 +13,16 @@ from agentic_mbse.sysml.data_models import (
     RedefinitionType,
 )
 from agentic_mbse.sysml.expression import (
-    extract_feature_chain_name,
-    extract_feature_reference_name,
     extract_literal_value,
     is_literal_node,
     reconstruct_expression,
 )
 from agentic_mbse.sysml.qualified_names import build_element_qualified_name, sanitize_name
+from agentic_mbse.sysml.reference_use import (
+    authored_reference_text,
+    resolved_chaining_features,
+    resolved_referent,
+)
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
 __all__ = [
@@ -44,7 +47,7 @@ def classify_redefinition(member: Any, owning_qn: str) -> RedefinitionData | Non
     redef = owned_redefs[0]
     redefined_feature = redef.redefined_feature
 
-    chaining = list(getattr(redefined_feature, "chaining_features", []))
+    chaining = list(resolved_chaining_features(redefined_feature))
     if chaining:
         target_path = [sanitize_name(c.name) for c in chaining]
         attr_name = target_path[-1]
@@ -90,7 +93,7 @@ def classify_redefinition(member: Any, owning_qn: str) -> RedefinitionData | Non
             owning_part_qn=owning_qn,
             attribute_name=attr_name,
             redefinition_type=RedefinitionType.CHAIN,
-            source_path=extract_feature_chain_name(expr),
+            source_path=authored_reference_text(expr),
             target_path=target_path,
             is_deep_path=is_deep_path,
             member_qualified_name=member_qualified_name,
@@ -102,7 +105,7 @@ def classify_redefinition(member: Any, owning_qn: str) -> RedefinitionData | Non
             owning_part_qn=owning_qn,
             attribute_name=attr_name,
             redefinition_type=RedefinitionType.CHAIN,
-            source_path=extract_feature_reference_name(expr),
+            source_path=authored_reference_text(expr),
             target_path=target_path,
             is_deep_path=is_deep_path,
             member_qualified_name=member_qualified_name,
@@ -154,8 +157,8 @@ def extract_multiplicities(part_element: Any) -> list[MultiplicityData]:
         count_attr_name = None
         default_value = None
         upper = getattr(mult, "upper_bound", None)
-        if upper and hasattr(upper, "referent"):
-            referent = upper.referent
+        referent = resolved_referent(upper) if upper else None
+        if referent is not None:
             count_attr_name = getattr(referent, "name", None)
             fve = getattr(referent, "feature_value_expression", None)
             if fve and hasattr(fve, "value"):

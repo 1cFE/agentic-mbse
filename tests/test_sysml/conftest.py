@@ -9,6 +9,7 @@ syside's element.isinstance(syside.TypeName) pattern.
 """
 
 from typing import Any
+from uuid import NAMESPACE_URL, uuid5
 
 import pytest
 
@@ -33,6 +34,9 @@ class MockElement:
     ) -> None:
         self.name = name
         self.qualified_name = qualified_name
+        # Real elements carry a stable declaration id, and the closed reference boundary
+        # records it as evidence, so a double that omits it is not modelling the shape.
+        self.element_id = uuid5(NAMESPACE_URL, f"{qualified_name or name}")
         self._doc_path = doc_path
         self._type_name = self.__class__.__name__
 
@@ -76,7 +80,9 @@ class MockFeatureReferenceExpression(MockElement):
         if target_element:
             target = target_element
         else:
-            target = MockElement(name=name, qualified_name=qualified_name or None)
+            # Every named SysIDE element carries a qualified name; a double that omits
+            # one is under-specified, not a model of a nameless reference.
+            target = MockElement(name=name, qualified_name=qualified_name or name or None)
             target.document = _mock_document(doc_path, document_tier)
         self.referent = target
         self.memberships = [MockMembership(target)]
@@ -113,7 +119,8 @@ class MockFeatureChainExpression(MockElement):
                 (),
                 {
                     "name": attr_name,
-                    "qualified_name": qualified_name or None,
+                    "qualified_name": qualified_name or attr_name or None,
+                    "element_id": uuid5(NAMESPACE_URL, qualified_name or attr_name),
                     "document": _mock_document(doc_path, document_tier),
                 },
             )()

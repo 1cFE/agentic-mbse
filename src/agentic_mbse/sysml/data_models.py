@@ -10,23 +10,51 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from agentic_mbse.sysml.types import BindingType, ExpressionRef
-
 __all__ = [
-    "ExpressionRef",
+    "BindingType",
     "AttributeInfo",
     "RedefinitionType",
     "RedefinitionData",
     "ResolvedTargetFact",
-    "ResolvedSemanticReferenceFact",
     "MultiplicityData",
     "SumTerm",
     "SingletonTerm",
     "LocalTerm",
 ]
 
-# Re-export ExpressionRef from types for clean API surface
-ExpressionRef = ExpressionRef  # noqa: PLW0127
+
+class BindingType(Enum):
+    """Classification of SysML binding expression types.
+
+    Used to understand how a calculation parameter receives its value.
+    This classifies the TOP-LEVEL binding expression, not internal components.
+
+    Values:
+        CHAIN: FeatureChainExpression like `instance.attribute` - entire binding is a chain
+        REFERENCE: FeatureReferenceExpression like `simple_name` - entire binding is simple ref
+        LITERAL: Constant value like `42.0` or `"string"` - entire binding is literal
+        EXPRESSION: Arithmetic expression like `a + b * 2` - has operators, may contain refs
+        UNBOUND: No binding - parameter uses default or is entry point
+
+    Classification Examples:
+        `in x = instance.attr` → CHAIN
+        `in x = simple_name` → REFERENCE
+        `in x = 42.0` → LITERAL
+        `in x = instance.attr + 2` → EXPRESSION (has operator)
+        `in x = a + b` → EXPRESSION (has operator)
+        No binding → UNBOUND
+
+    Example:
+        >>> binding_type = BindingType.CHAIN
+        >>> binding_type.value
+        'chain'
+    """
+
+    CHAIN = "chain"
+    REFERENCE = "reference"
+    LITERAL = "literal"
+    EXPRESSION = "expression"
+    UNBOUND = "unbound"
 
 
 @dataclass
@@ -70,32 +98,16 @@ class ResolvedTargetFact:
     element_kind: str
     element_name: str = ""
     owner_qualified_name: str = ""
+    owner_kind: str = ""
     owner_is_definition: bool = False
     redefined_qualified_names: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True)
-class ResolvedSemanticReferenceFact:
-    """One resolved feature-chain path with exact parser declaration IDs.
-
-    Qualified names and member names remain diagnostic metadata. Consumers
-    resolve with ``root.element_id`` and ``segment_element_ids`` only.
-    """
-
-    root: ResolvedTargetFact | None
-    segments: tuple[ResolvedTargetFact, ...]
-    leaf: ResolvedTargetFact | None
-    resolved_member_names: tuple[str, ...]
-    has_index_segment: bool
-
-    @property
-    def segment_element_ids(self) -> tuple[UUID, ...]:
-        return tuple(segment.element_id for segment in self.segments)
-
-    @property
-    def resolved_segment_qns(self) -> tuple[str, ...]:
-        """Diagnostic-only qualified names for the already-resolved path."""
-        return tuple(segment.qualified_name for segment in self.segments)
+    # Document and location provenance (semantic-evidence/v2).  Carried on the fact so a
+    # consumer doing a cross-file check or a standard-library classification reads the
+    # evidence the exact route captured, instead of going back to the live element.
+    declares_value: bool = False
+    document_url: str = ""
+    document_tier: str = ""
+    source_location: tuple[str, int] | None = None
 
 
 class RedefinitionType(str, Enum):

@@ -3,9 +3,9 @@
 This module defines the fundamental data structures used throughout
 the sysml_utils library for:
 
-- Classifying parameter bindings (BindingType enum)
+- Classifying parameter bindings (BindingType, defined in data_models)
 - Tracking validation results (Severity, ValidationCode, ValidationIssue)
-- Capturing expression references (ExpressionRef, BindingInfo)
+- Capturing expression references (BindingInfo)
 - Summarizing calculation usages (CalcUsageInfo)
 """
 
@@ -14,39 +14,17 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from agentic_mbse.sysml.data_models import BindingType
+from agentic_mbse.sysml.reference_use import ReferenceUse
 
-class BindingType(Enum):
-    """Classification of SysML binding expression types.
-
-    Used to understand how a calculation parameter receives its value.
-    This classifies the TOP-LEVEL binding expression, not internal components.
-
-    Values:
-        CHAIN: FeatureChainExpression like `instance.attribute` - entire binding is a chain
-        REFERENCE: FeatureReferenceExpression like `simple_name` - entire binding is simple ref
-        LITERAL: Constant value like `42.0` or `"string"` - entire binding is literal
-        EXPRESSION: Arithmetic expression like `a + b * 2` - has operators, may contain refs
-        UNBOUND: No binding - parameter uses default or is entry point
-
-    Classification Examples:
-        `in x = instance.attr` → CHAIN
-        `in x = simple_name` → REFERENCE
-        `in x = 42.0` → LITERAL
-        `in x = instance.attr + 2` → EXPRESSION (has operator)
-        `in x = a + b` → EXPRESSION (has operator)
-        No binding → UNBOUND
-
-    Example:
-        >>> binding_type = BindingType.CHAIN
-        >>> binding_type.value
-        'chain'
-    """
-
-    CHAIN = "chain"
-    REFERENCE = "reference"
-    LITERAL = "literal"
-    EXPRESSION = "expression"
-    UNBOUND = "unbound"
+__all__ = [
+    "BindingType",
+    "BindingInfo",
+    "CalcUsageInfo",
+    "Severity",
+    "ValidationCode",
+    "ValidationIssue",
+]
 
 
 class Severity(Enum):
@@ -117,34 +95,6 @@ class ValidationCode(str, Enum):
     # C7 (Item 9): `attribute :>> attr = <expr>` parses as an AttributeUsage, but codegen's
     # redefinition scan reads only ReferenceUsage -> the override is silently dropped -> WARN.
     L6_ATTR_REDEF_EXPR_DROPPED = "L6_ATTR_REDEF_EXPR_DROPPED"
-
-
-class ExpressionRef(BaseModel):
-    """A reference to an attribute found within an expression.
-
-    Represents a single FeatureReferenceExpression or FeatureChainExpression
-    target discovered during expression traversal.
-
-    Attributes:
-        name: Simple name of the referenced element (e.g., "volume")
-        qualified_name: Full qualified name (e.g., "Package::part_name::attribute")
-        document_path: Path to the file containing this element
-        element: The raw AST element (for advanced analysis, not serialized)
-
-    Example:
-        >>> ref = ExpressionRef(
-        ...     name="volume",
-        ...     qualified_name="Package::part_name::attribute",
-        ...     document_path="models/designs/example/component.sysml"
-        ... )
-    """
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    name: str
-    qualified_name: str = ""
-    document_path: str | None = None
-    element: Any | None = Field(default=None, exclude=True)
 
 
 class ValidationIssue(BaseModel):
@@ -237,7 +187,11 @@ class BindingInfo(BaseModel):
     is_cross_file: bool = False
     literal_value: float | int | str | bool | None = None
     expression_ast: Any | None = Field(default=None, exclude=True)
-    references: list[ExpressionRef] = Field(default_factory=list)
+    # The ordered closed reference uses of an EXPRESSION binding, exactly as the parser
+    # resolved them.  Replaces the old `references: list[ExpressionRef]`, which a consumer
+    # could rebuild a path from by hand; an indexed use stays closed here and can never be
+    # projected into path metadata (semantic-evidence/v2).
+    reference_uses: tuple[ReferenceUse, ...] = Field(default_factory=tuple)
 
     @property
     def is_bound(self) -> bool:

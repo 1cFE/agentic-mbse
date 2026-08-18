@@ -7,70 +7,25 @@ ASTs, including visitor-pattern traversal and reference extraction.
 from collections.abc import Callable
 from typing import Any, cast
 
-from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
-from agentic_mbse.sysml.data_models import (
-    ResolvedSemanticReferenceFact,
-    ResolvedTargetFact,
+from agentic_mbse.errors import SemanticEvidenceCode
+from agentic_mbse.sysml.reference_use import (
+    MAX_EXPRESSION_DEPTH,
+    ReferenceUse,
+    authored_reference_text,
+    evidence_error,
+    inspect_reference_uses,
+    is_standard_library_use,
+    materialize_operands,
+    operand_bearing_operands,
+    resolved_chain_target,
+    resolved_referent,
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
-from agentic_mbse.sysml.types import ExpressionRef
-
-
-def _semantic_reference(element: Any) -> str | None:
-    value = getattr(element, "qualified_name", None) or getattr(element, "name", None)
-    return str(value) if value else None
-
-
-def _evidence_error(
-    code: SemanticEvidenceCode,
-    operation: str,
-    detail: str,
-    element: Any,
-    *,
-    cause: BaseException | None = None,
-) -> SemanticEvidenceError:
-    return SemanticEvidenceError(
-        code,
-        operation=operation,
-        detail=detail,
-        location=SysideAdapter.get_source_location(element),
-        reference=_semantic_reference(element),
-        cause=cause,
-    )
-
-
-def materialize_operands(expression: Any) -> tuple[Any, ...]:
-    """Read one expression's complete operand sequence exactly once."""
-    try:
-        return tuple(expression.operands)
-    except Exception as cause:
-        error = _evidence_error(
-            SemanticEvidenceCode.OPERAND_ITERATION_FAILED,
-            "iterate_operands",
-            "SysIDE could not materialize the expression operands",
-            expression,
-            cause=cause,
-        )
-        raise error from cause
-
-
-def _traversal_operands(expression: Any) -> tuple[Any, ...]:
-    """Materialize operands only for metatypes that own an operand sequence."""
-    has_operands = any(
-        SysideAdapter.is_instance(expression, type_name)
-        for type_name in (
-            "FeatureChainExpression",
-            "OperatorExpression",
-            "InvocationExpression",
-        )
-    )
-    return materialize_operands(expression) if has_operands else ()
 
 
 def traverse_expression(
     expr: Any,
     visitor: Callable[[Any], Any],
-    max_depth: int = 100,
     _current_depth: int = 0,
 ) -> list[Any]:
     """Traverse expression AST using visitor pattern.
@@ -81,8 +36,10 @@ def traverse_expression(
     Args:
         expr: Expression AST node to traverse (or None)
         visitor: Function called for each node, returns value to collect or None
-        max_depth: Maximum recursion depth (default 100, prevents infinite loops)
         _current_depth: Internal depth counter (do not set externally)
+
+    The depth budget is ``MAX_EXPRESSION_DEPTH``, shared with every other recursive
+    production expression entry and not selectable by a caller.
 
     Returns:
         List of all non-None visitor results
@@ -96,9 +53,9 @@ def traverse_expression(
     if expr is None:
         return []
 
-    if _current_depth >= max_depth:
-        raise _evidence_error(
-            SemanticEvidenceCode.OPERAND_ITERATION_FAILED,
+    if _current_depth >= MAX_EXPRESSION_DEPTH:
+        raise evidence_error(
+            SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED,
             "traverse_expression",
             "maximum expression traversal depth exhausted before all operands were visited",
             expr,
@@ -111,8 +68,8 @@ def traverse_expression(
     if result is not None:
         results.append(result)
 
-    for operand in _traversal_operands(expr):
-        child_results = traverse_expression(operand, visitor, max_depth, _current_depth + 1)
+    for operand in operand_bearing_operands(expr):
+        child_results = traverse_expression(operand, visitor, _current_depth + 1)
         results.extend(child_results)
 
     return results
@@ -123,70 +80,19 @@ def _is_operator_expression(expr: Any) -> bool:
     return SysideAdapter.is_instance(expr, "OperatorExpression")
 
 
-def _is_standard_library_element(element: Any) -> bool:
-    """Classify one exact target through SysIDE's document tier."""
-    tier = SysideAdapter.document_tier(element)
-    return tier is SysideAdapter.document_tier_type().StandardLibrary
+def design_reference_uses(expr: Any) -> tuple[ReferenceUse, ...]:
+    """The reference uses in one expression that are not standard-library references.
 
-
-def extract_feature_refs(
-    expr: Any,
-    ignore_std_lib: bool = True,
-) -> list[ExpressionRef]:
-    """Extract all attribute references from an expression.
-
-    Traverses the expression tree and returns ExpressionRef objects for
-    all FeatureReferenceExpression and FeatureChainExpression nodes found.
-
-    Args:
-        expr: Expression AST node to analyze (or None)
-        ignore_std_lib: If True, filter out references to standard library
-                       elements (SI::, ISQ::, ScalarValues::, UnitsAndScales::).
-                       Default is True to exclude unit annotations from ref counts.
-
-    Returns:
-        List of ExpressionRef objects for all referenced attributes
-
-    Example:
-        >>> refs = extract_feature_refs(expr)  # Filters std lib by default
-        >>> refs = extract_feature_refs(expr, ignore_std_lib=False)  # Include all
+    The filter is the policy this module owns: a unit annotation resolves into the SysIDE
+    standard library and is not a design dependency, while everything else is.  The
+    classification comes from the document tier the exact route captured (D6); a URL,
+    path, or package name has no say.  An indexed use is never filtered out — it has no
+    resolved target to classify, and dropping it would be the substitution this item
+    removes.
     """
     if expr is None:
-        return []
-
-    def ref_visitor(node: Any) -> ExpressionRef | None:
-        """Visitor that creates ExpressionRef for reference expressions."""
-        is_chain = SysideAdapter.is_instance(node, "FeatureChainExpression")
-        is_reference = SysideAdapter.is_instance(node, "FeatureReferenceExpression")
-        if is_chain or is_reference:
-            target = (
-                getattr(node, "target_feature", None)
-                if is_chain
-                else getattr(node, "referent", None)
-            )
-            if target is None:
-                raise _evidence_error(
-                    SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
-                    "extract_feature_refs",
-                    "resolved reference has no exact target",
-                    node,
-                )
-            if ignore_std_lib and _is_standard_library_element(target):
-                return None
-            name = str(getattr(target, "name", None) or "")
-            qualified_name = str(getattr(target, "qualified_name", None) or "")
-            document = getattr(target, "document", None)
-            document_url = getattr(document, "url", None) if document else None
-            return ExpressionRef(
-                name=name,
-                qualified_name=qualified_name,
-                document_path=str(document_url) if document_url else None,
-                element=target,
-            )
-
-        return None
-
-    return traverse_expression(expr, ref_visitor)
+        return ()
+    return tuple(use for use in inspect_reference_uses(expr) if not is_standard_library_use(use))
 
 
 def extract_operators(expr: Any) -> list[str]:
@@ -251,8 +157,7 @@ def is_literal_expression(expr: Any) -> bool:
     if expr is None:
         return True  # No expression = effectively literal
 
-    refs = extract_feature_refs(expr)
-    return len(refs) == 0
+    return not design_reference_uses(expr)
 
 
 def is_literal_type(expr: Any) -> bool:
@@ -312,9 +217,9 @@ def get_reference_name(expr: Any) -> str | None:
     """Extract the name from a feature reference expression.
 
     Works with both FeatureReferenceExpression and FeatureChainExpression.
-    Returns the terminal name only (``"attr"``); for the full dotted path of a
-    chain (``"instance.attr"``), see extract_feature_chain_name() or
-    extract_feature_chain_segments().
+    Returns the terminal name only (``"attr"``); for the full authored path of a
+    chain (``"instance.attr"``), read ``authored_text`` off the reference use that
+    ``inspect_reference_uses`` returns.
 
     Args:
         expr: AST node (FeatureReferenceExpression or FeatureChainExpression)
@@ -331,13 +236,13 @@ def get_reference_name(expr: Any) -> str | None:
         None
     """
     if SysideAdapter.is_instance(expr, "FeatureChainExpression"):
-        target = getattr(expr, "target_feature", None)
+        target = resolved_chain_target(expr)
     elif SysideAdapter.is_instance(expr, "FeatureReferenceExpression"):
-        target = getattr(expr, "referent", None)
+        target = resolved_referent(expr)
     else:
         return None
     if target is None:
-        raise _evidence_error(
+        raise evidence_error(
             SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
             "get_reference_name",
             "resolved reference has no exact target",
@@ -401,13 +306,13 @@ def reconstruct_expression(expr_node: Any) -> str:
     # FeatureChainExpression MUST be before OperatorExpression because FCE is a
     # subtype of OE in SysIDE's type system.
     if SysideAdapter.is_instance(expr_node, "FeatureChainExpression"):
-        return extract_feature_chain_name(expr_node)
+        return authored_reference_text(expr_node)
 
     if SysideAdapter.is_instance(expr_node, "OperatorExpression"):
         return reconstruct_operator_expression(expr_node)
 
     if SysideAdapter.is_instance(expr_node, "FeatureReferenceExpression"):
-        return extract_feature_reference_name(expr_node)
+        return authored_reference_text(expr_node)
 
     # Literal/null branches MUST dispatch before the invocation catch-all.
     if SysideAdapter.is_instance(expr_node, "LiteralInteger") or SysideAdapter.is_instance(
@@ -515,273 +420,6 @@ def reconstruct_operator_expression(expr_node: Any) -> str:
         return op_str.join(parts)
 
     return operator
-
-
-def extract_feature_reference_name(expr_node: Any) -> str:
-    """Extract a name from a FeatureReferenceExpression."""
-    referent = getattr(expr_node, "referent", None)
-    if referent is None:
-        raise _evidence_error(
-            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
-            "extract_feature_reference_name",
-            "resolved feature reference has no exact referent",
-            expr_node,
-        )
-    name = getattr(referent, "name", None)
-    return cast(str, name) if name else str(referent)
-
-
-def extract_feature_chain_name(expr_node: Any) -> str:
-    """Extract a dotted name from a FeatureChainExpression.
-
-    For terminal-only reference extraction, see get_reference_name(). This helper
-    reconstructs the chain text used by codegen compatibility paths.
-    """
-    path_parts: list[str] = []
-
-    operands = materialize_operands(expr_node)
-    if operands:
-        operand_expr = operands[0]
-        operand_name = reconstruct_expression(operand_expr)
-        if operand_name:
-            path_parts.append(operand_name)
-
-    target = getattr(expr_node, "target_feature", None)
-    if target is None:
-        raise _evidence_error(
-            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
-            "extract_feature_chain_name",
-            "resolved feature chain has no exact target",
-            expr_node,
-        )
-    if getattr(target, "name", None):
-        path_parts.append(cast(str, target.name))
-
-    if path_parts:
-        return ".".join(path_parts)
-
-    return str(expr_node)
-
-
-def extract_feature_chain_segments(expr_node: Any) -> list[str]:
-    """Return the full dotted-path segments of a FeatureChainExpression."""
-    if not SysideAdapter.is_instance(expr_node, "FeatureChainExpression"):
-        return []
-
-    segments: list[str] = []
-
-    operands = list(materialize_operands(expr_node))
-    if operands:
-        root = operands[0]
-        if SysideAdapter.is_instance(root, "FeatureChainExpression"):
-            segments.extend(extract_feature_chain_segments(root))
-        else:
-            name = reconstruct_expression(root)
-            if name:
-                segments.append(name)
-
-    target = getattr(expr_node, "target_feature", None)
-    if target is not None:
-        chaining = list(getattr(target, "chaining_features", []) or [])
-        if chaining:
-            segments.extend(cast(str, c.name) for c in chaining if getattr(c, "name", None))
-        elif getattr(target, "name", None):
-            segments.append(cast(str, target.name))
-
-    return segments
-
-
-def resolved_target_fact(elem: Any) -> ResolvedTargetFact | None:
-    """Build the immutable resolved-target fact for one live SysIDE element.
-
-    Returns ``None`` when there is no element or the element has no qualified
-    name (an anonymous chained feature — callers walk its ``chaining_features``
-    instead). ``owner_is_definition`` uses the adapter's mapped definition
-    metatypes.
-    """
-    if elem is None:
-        return None
-    qualified_name = getattr(elem, "qualified_name", None)
-    if qualified_name is None:
-        return None
-    owner = getattr(elem, "owning_type", None)
-    owner_qn = getattr(owner, "qualified_name", None) if owner is not None else None
-    redefined: list[str] = []
-    redefined_ids = []
-    for redefinition in getattr(elem, "owned_redefinitions", None) or []:
-        redefined_feature = getattr(redefinition, "redefined_feature", None)
-        redefined_qn = getattr(redefined_feature, "qualified_name", None)
-        if redefined_qn is not None:
-            redefined.append(str(redefined_qn))
-        if redefined_feature is not None:
-            redefined_ids.append(SysideAdapter.element_id(redefined_feature))
-    return ResolvedTargetFact(
-        element_id=SysideAdapter.element_id(elem),
-        owner_element_id=(
-            SysideAdapter.element_id(owner) if owner is not None else None
-        ),
-        redefined_element_ids=tuple(redefined_ids),
-        qualified_name=str(qualified_name),
-        element_kind=type(elem).__name__,
-        element_name=str(getattr(elem, "name", None) or ""),
-        owner_qualified_name=str(owner_qn) if owner_qn is not None else "",
-        owner_is_definition=(
-            any(
-                SysideAdapter.is_instance(owner, type_name)
-                for type_name in (
-                    "PartDefinition",
-                    "CalculationDefinition",
-                    "ConstraintDefinition",
-                    "RequirementDefinition",
-                )
-            )
-            if owner is not None
-            else False
-        ),
-        redefined_qualified_names=tuple(redefined),
-    )
-
-
-def feature_reference_facts(expr_node: Any) -> ResolvedSemanticReferenceFact:
-    """Return the exact resolved-target evidence for one feature reference.
-
-    The live ``referent`` is the sole B4 authority. Absence or an unusable
-    target is a typed evidence failure, never an empty dependency list.
-    """
-    target = resolved_target_fact(getattr(expr_node, "referent", None))
-    if target is None:
-        raise _evidence_error(
-            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
-            "feature_reference_facts",
-            "resolved reference has no exact target",
-            expr_node,
-        )
-    return ResolvedSemanticReferenceFact(
-        root=target,
-        segments=(target,),
-        leaf=target,
-        resolved_member_names=(),
-        has_index_segment=False,
-    )
-
-
-def feature_chain_facts(
-    expr_node: Any,
-) -> ResolvedSemanticReferenceFact:
-    """Resolved-target evidence for a FeatureChainExpression of any length.
-
-    Returns one immutable fact containing the root, every exact resolved
-    segment, the leaf, diagnostic member names, and the indexed-form marker:
-
-    - ``root_fact`` — the chain root's resolved referent (the occurrence anchor).
-    - ``leaf_fact`` — the exact resolved target of the whole chain: the last
-      chaining feature when the target is a chained feature, else the target
-      itself. This is the referent identity work must preserve (I1).
-    - ``resolved_segment_qns`` — qualified names of every resolved step, root
-      included, in chain order.
-    - ``resolved_member_names`` — the RESOLVED element names of the steps after
-      the root, in chain order. This is the structural member path from the
-      root occurrence to the leaf; identity work uses it, never the authored
-      spelling.
-    - ``has_index_segment`` — True when an ``#(i)`` IndexExpression appears as a
-      chain operand. The index segment is evidence, never flattened away; the
-      adapter's closed type map has no ``IndexExpression`` entry, so the check is
-      by metatype name.
-    """
-    root_fact: ResolvedTargetFact | None = None
-    segments: list[ResolvedTargetFact] = []
-    member_names: list[str] = []
-    has_index = False
-
-    operands = materialize_operands(expr_node)
-    if operands:
-        first = operands[0]
-        if type(first).__name__ == "IndexExpression":
-            has_index = True
-            inner = list(materialize_operands(first))
-            if inner and SysideAdapter.is_instance(inner[0], "FeatureReferenceExpression"):
-                root_target = getattr(inner[0], "referent", None)
-                if root_target is None:
-                    raise _evidence_error(
-                        SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
-                        "feature_chain_facts",
-                        "resolved chain root has no exact referent",
-                        inner[0],
-                    )
-                root_fact = resolved_target_fact(root_target)
-        elif SysideAdapter.is_instance(first, "FeatureChainExpression"):
-            # The inner call's member names already cover every step after the
-            # inner root, its leaf included.
-            inner_fact = feature_chain_facts(first)
-            root_fact = inner_fact.root
-            segments.extend(inner_fact.segments)
-            member_names.extend(inner_fact.resolved_member_names)
-            has_index = has_index or inner_fact.has_index_segment
-        elif SysideAdapter.is_instance(first, "FeatureReferenceExpression"):
-            root_target = getattr(first, "referent", None)
-            if root_target is None:
-                raise _evidence_error(
-                    SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
-                    "feature_chain_facts",
-                    "resolved chain root has no exact referent",
-                    first,
-                )
-            root_fact = resolved_target_fact(root_target)
-
-    if root_fact is not None and not segments:
-        segments.append(root_fact)
-
-    leaf_fact: ResolvedTargetFact | None = None
-    target = getattr(expr_node, "target_feature", None)
-    if target is None:
-        raise _evidence_error(
-            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
-            "feature_chain_facts",
-            "resolved feature chain has no exact target",
-            expr_node,
-        )
-    chaining = list(getattr(target, "chaining_features", []) or [])
-    require_total_leaf = SysideAdapter.is_live_element(expr_node) or bool(
-        getattr(expr_node, "semantic_reference_resolved", False)
-    )
-    if chaining:
-        for chained in chaining:
-            chained_fact = resolved_target_fact(chained)
-            if chained_fact is None:
-                if require_total_leaf:
-                    raise _evidence_error(
-                        SemanticEvidenceCode.RESOLVED_LEAF_MISSING,
-                        "feature_chain_facts",
-                        "resolved feature chain has an incomplete exact segment",
-                        expr_node,
-                    )
-                continue
-            segments.append(chained_fact)
-            chained_name = getattr(chained, "name", None)
-            if chained_name:
-                member_names.append(str(chained_name))
-        leaf_fact = resolved_target_fact(chaining[-1])
-    else:
-        leaf_fact = resolved_target_fact(target)
-        if leaf_fact is None and require_total_leaf:
-            raise _evidence_error(
-                SemanticEvidenceCode.RESOLVED_LEAF_MISSING,
-                "feature_chain_facts",
-                "resolved feature chain has no exact leaf",
-                expr_node,
-            )
-        if leaf_fact is not None:
-            segments.append(leaf_fact)
-        if leaf_fact is not None and leaf_fact.element_name:
-            member_names.append(leaf_fact.element_name)
-
-    return ResolvedSemanticReferenceFact(
-        root=root_fact,
-        segments=tuple(segments),
-        leaf=leaf_fact,
-        resolved_member_names=tuple(member_names),
-        has_index_segment=has_index,
-    )
 
 
 def is_literal_node(expr: Any) -> bool:
@@ -940,7 +578,5 @@ def is_true_static_expression(expr: Any) -> bool:
     if expr is None:
         return True  # No expression = effectively static
 
-    # extract_feature_refs filters std lib by default, so any remaining
-    # refs are design attribute references
-    refs = extract_feature_refs(expr)
-    return len(refs) == 0
+    # Standard-library references are not design dependencies, so anything left is one.
+    return not design_reference_uses(expr)

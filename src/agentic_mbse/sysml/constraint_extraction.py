@@ -31,10 +31,8 @@ from agentic_mbse.sysml.constraint_facts import (
     RedefinitionFact,
 )
 from agentic_mbse.sysml.expression import (
-    extract_feature_chain_segments,
     extract_literal_value,
     is_literal_node,
-    materialize_operands,
     reconstruct_expression,
 )
 from agentic_mbse.sysml.expression_facts import (
@@ -52,6 +50,13 @@ from agentic_mbse.sysml.expression_ir import (
     OperatorNode,
     UnitAnnotationNode,
     UnsupportedNode,
+)
+from agentic_mbse.sysml.reference_use import (
+    ExactReferenceUse,
+    inspect_reference_uses,
+    materialize_operands,
+    resolved_chain_target,
+    resolved_referent,
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
@@ -446,7 +451,7 @@ def _unit_annotation_fact(expression: Any) -> UnitFact | None:
         operands = list(materialize_operands(expression))
         if len(operands) != 2:
             return None
-        unit_referent = getattr(operands[1], "referent", None)
+        unit_referent = resolved_referent(operands[1])
         return UnitFact(
             unit=_qualified_name(unit_referent),
             dimension=_unit_definition_qn(unit_referent),
@@ -504,12 +509,29 @@ def _operand_type_fact(expression: Any) -> OperandTypeFact:
 # === Predicate-tree recovery ===
 
 
+def _authored_chain_segments(expression: Any) -> list[str]:
+    """The authored dotted segments of one feature chain.
+
+    Read off the closed reference use rather than re-walked here, so the segments and the
+    resolved path come from the same acquisition.  An indexed chain has no exact path;
+    its authored segments still describe what the model wrote, which is what the neutral
+    IR records.
+    """
+    uses = inspect_reference_uses(expression)
+    if len(uses) != 1:
+        return []
+    use = uses[0]
+    if isinstance(use, ExactReferenceUse):
+        return list(use.authored_segments)
+    return use.reference.split(".")
+
+
 def _reference_node(expression: Any, *, chain: bool) -> FeatureReferenceNode:
     if chain:
-        target = getattr(expression, "target_feature", None)
-        chain_segments = extract_feature_chain_segments(expression)
+        target = resolved_chain_target(expression)
+        chain_segments = _authored_chain_segments(expression)
     else:
-        target = getattr(expression, "referent", None)
+        target = resolved_referent(expression)
         chain_segments = []
     if target is None:
         raise SemanticEvidenceError(
@@ -586,7 +608,7 @@ def _unit_text(unit_operand: Any) -> str | None:
     Reading it here (rather than re-deriving text via `reconstruct_expression`, which reads
     `referent.name`) is what keeps the source spelling and the resolved name distinct facts.
     """
-    referent = getattr(unit_operand, "referent", None)
+    referent = resolved_referent(unit_operand)
     if referent is None:
         return reconstruct_expression(unit_operand) or None
     short_name = getattr(referent, "short_name", None)
