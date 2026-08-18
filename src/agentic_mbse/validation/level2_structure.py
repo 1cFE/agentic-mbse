@@ -277,41 +277,6 @@ def _has_default_value(feature: Any) -> bool:
     return False
 
 
-def _has_defined_value(element: Any) -> bool:
-    """
-    Check if attribute/feature has a defined value.
-
-    Distinguishes:
-    - Defined: "attribute x : Real = 5.0;" → True
-    - Undefined: "attribute x : Real;" → False
-
-    Uses same mechanism as _has_default_value() but applied to target attribute
-    instead of calc def input.
-
-    Algorithm:
-    1. Check if element has feature_value_expression attribute
-    2. Return True if expression exists, False otherwise
-
-    Future enhancement: Could also check if element is calc output
-    (has value from computation rather than direct assignment)
-
-    Args:
-        element: Attribute or feature element to check
-
-    Returns:
-        True if value defined, False if only type declared
-    """
-    # Same pattern as _has_default_value()
-    if hasattr(element, "feature_value_expression") and element.feature_value_expression:
-        return True
-
-    # Future enhancement: Check for other value sources
-    # - Computed from calc output (calc_usage.output_name)
-    # - Inherited/redefined value
-
-    return False
-
-
 def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
     """
     C1 (Item 12): flag every self-named input binding.

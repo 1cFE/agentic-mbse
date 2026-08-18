@@ -71,15 +71,31 @@ def _modules() -> list[Path]:
     return sorted(PACKAGE_ROOT.rglob("*.py"))
 
 
+def _imported_modules(path: Path) -> set[str]:
+    """Every module name this file imports, read from its parsed import statements."""
+    imported: set[str] = set()
+    for node in ast.walk(ast.parse(path.read_text())):
+        if isinstance(node, ast.Import):
+            imported.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            imported.add(node.module)
+            imported.update(f"{node.module}.{alias.name}" for alias in node.names)
+    return imported
+
+
 def _reaches_the_parser(path: Path) -> bool:
     """Whether a module can hold a live SysIDE node.
 
     The adapter itself is the parser gateway, so it is in scope by definition; every other
     module reaches SysIDE only by importing it.
+
+    Audit m2: this used to be `ADAPTER_IMPORT in path.read_text()`, a substring test that a
+    docstring or a comment naming the adapter would satisfy, and that a re-exported or
+    aliased import would not.  The scope is now read off the parsed import statements.
     """
     if path.relative_to(PACKAGE_ROOT).as_posix() == "sysml/syside_adapter.py":
         return True
-    return ADAPTER_IMPORT in path.read_text()
+    return ADAPTER_IMPORT in _imported_modules(path)
 
 
 def _scanned_modules() -> list[Path]:
@@ -271,3 +287,51 @@ def test_no_production_module_reaches_syside_directly() -> None:
             if any(name == "syside" or name.startswith("syside.") for name in names):
                 direct.append(module)
     assert not direct, f"modules importing syside outside the adapter: {sorted(set(direct))}"
+
+
+def test_the_import_scope_is_structural_not_a_substring_match() -> None:
+    """Audit m2: prose naming the adapter must not pull a module into scope.
+
+    Both directions matter.  A comment mentioning the adapter is not an import, and a real
+    `from ... import` is one however it is spelled.
+    """
+    prose_only = ast.parse(
+        f'''"""A module that only talks about {ADAPTER_IMPORT} in its docstring."""\n'''
+    )
+    assert not _imported_modules_from_tree(prose_only)
+
+    real = ast.parse(f"from {ADAPTER_IMPORT} import SysideAdapter\n")
+    assert ADAPTER_IMPORT in _imported_modules_from_tree(real)
+
+    plain = ast.parse(f"import {ADAPTER_IMPORT}\n")
+    assert ADAPTER_IMPORT in _imported_modules_from_tree(plain)
+
+
+def _imported_modules_from_tree(tree: ast.AST) -> set[str]:
+    imported: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imported.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            imported.add(node.module)
+            imported.update(f"{node.module}.{alias.name}" for alias in node.names)
+    return imported
+
+
+@pytest.mark.parametrize("selector", sorted(REVIEWED_SELECTORS))
+def test_the_scanner_finds_a_dynamic_getattr_read(selector: str, tmp_path: Path) -> None:
+    """Anti-vacuity for the `getattr` branch (audit m7).
+
+    The scanner has two detection branches and only the attribute one was exercised, so a
+    regression in the `getattr` branch would have gone unnoticed while the gate stayed
+    green.
+    """
+    module = tmp_path / "mutant_getattr.py"
+    module.write_text(f'def consume(node):\n    return getattr(node, "{selector}", None)\n')
+    assert _selector_reads(module) == {selector}
+
+
+def test_the_scanner_ignores_an_unrelated_getattr(tmp_path: Path) -> None:
+    module = tmp_path / "clean_getattr.py"
+    module.write_text('def consume(node):\n    return getattr(node, "qualified_name", None)\n')
+    assert _selector_reads(module) == set()

@@ -260,7 +260,7 @@ def _document_tier_name(element: Any) -> str:
     produce a tier is a named adapter failure, which propagates: recording an empty tier
     here would let a consumer read "not standard library" out of missing evidence.
     """
-    return str(getattr(SysideAdapter.document_tier(element), "name", "") or "")
+    return str(SysideAdapter.document_tier(element).name)
 
 
 # ======================================================================================
@@ -299,6 +299,10 @@ def _walk(node: Any, *, plural: bool, depth: int) -> list[ReferenceUse]:
     if SysideAdapter.is_instance(node, "FeatureReferenceExpression"):
         return [_reference_use(node, plural=plural)]
 
+    unit_value = _unit_annotation_value(node)
+    if unit_value is not None:
+        return _walk(unit_value, plural=plural, depth=depth + 1)
+
     operands = operand_bearing_operands(node)
     if not operands:
         return []
@@ -307,6 +311,50 @@ def _walk(node: Any, *, plural: bool, depth: int) -> list[ReferenceUse]:
     for operand in operands:
         collected.extend(_walk(operand, plural=operand_plural, depth=depth + 1))
     return collected
+
+
+def _unit_annotation_value(node: Any) -> Any | None:
+    """The value operand of a structural unit annotation, or ``None`` if this is not one.
+
+    A unit annotation (``3.0 [SI::metre]``) is structure, not data flow: the unit names the
+    scale the value is written in, and nothing downstream depends on it as a reference.  So
+    the annotation's shape is validated here and its value operand is walked, but the unit
+    operand is never emitted as a data reference.
+
+    Filtering it downstream by document tier would be the wrong place *and* the wrong rule:
+    a project-scoped unit (``3.0 [MyUnits::widget]``) is tier ``Project`` and would reach a
+    consumer as a design dependency.
+    """
+    if not SysideAdapter.is_instance(node, "OperatorExpression"):
+        return None
+    if str(getattr(node, "operator", "") or "") != "[":
+        return None
+
+    operands = materialize_operands(node)
+    if len(operands) != 2:
+        raise evidence_error(
+            SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED,
+            "inspect_reference_uses",
+            f"unit annotation carries {len(operands)} operands, expected a value and a unit",
+            node,
+        )
+
+    unit = operands[1]
+    if not SysideAdapter.is_instance(unit, "FeatureReferenceExpression"):
+        raise evidence_error(
+            SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED,
+            "inspect_reference_uses",
+            "unit annotation's unit operand is not a feature reference",
+            node,
+        )
+    if resolved_referent(unit) is None:
+        raise evidence_error(
+            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+            "inspect_reference_uses",
+            "unit annotation's unit operand has no exact referent",
+            unit,
+        )
+    return operands[0]
 
 
 def _is_plural_invocation(node: Any) -> bool:

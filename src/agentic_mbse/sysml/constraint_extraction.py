@@ -52,6 +52,7 @@ from agentic_mbse.sysml.expression_ir import (
     UnsupportedNode,
 )
 from agentic_mbse.sysml.reference_use import (
+    MAX_EXPRESSION_DEPTH,
     ExactReferenceUse,
     inspect_reference_uses,
     materialize_operands,
@@ -119,6 +120,10 @@ class _ExtractionContext:
 
     def __init__(self) -> None:
         self.diagnostics: list[ExtractionDiagnosticFact] = []
+        # The recursion's own position in the one shared traversal budget.  It lives on the
+        # context because the IR dispatch recurses through several helpers that already
+        # thread it, and because no caller may choose it.
+        self.depth = 0
 
 
 @dataclass(frozen=True)
@@ -683,14 +688,36 @@ def extract_expression_ir(
 
 
 def _expression_ir(expression: Any, ctx: _ExtractionContext) -> ExpressionIR | None:
+    """Extract one expression's IR node under the shared traversal budget.
+
+    Exhaustion raises the named `EXPRESSION_DEPTH_EXHAUSTED` failure rather than a bare
+    `RecursionError`, which a caller cannot tell from an interpreter limit it hit some other
+    way.  The dispatch itself is `_expression_ir_node`.
+    """
+    if expression is None:
+        return None
+    if ctx.depth >= MAX_EXPRESSION_DEPTH:
+        raise SemanticEvidenceError(
+            SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED,
+            operation="extract_expression_ir",
+            detail="maximum expression traversal depth exhausted before the IR was built",
+            location=SysideAdapter.get_source_location(expression),
+            reference=_qualified_name(expression) or getattr(expression, "name", None),
+        )
+    ctx.depth += 1
+    try:
+        return _expression_ir_node(expression, ctx)
+    finally:
+        ctx.depth -= 1
+
+
+def _expression_ir_node(expression: Any, ctx: _ExtractionContext) -> ExpressionIR | None:
     """Dispatch a live syside expression node to its ExpressionIR node (D4 allowlist).
 
     Fixed order — `FeatureChainExpression` before `OperatorExpression` (FCE subtypes OE) —
     matching the proven S2 dispatch. Every unrecognized metaclass or operator routes to
     `UnsupportedNode`; nothing is silently coerced.
     """
-    if expression is None:
-        return None
     if SysideAdapter.is_instance(expression, "FeatureChainExpression"):
         return _reference_node(expression, chain=True)
     if SysideAdapter.is_instance(expression, "OperatorExpression"):

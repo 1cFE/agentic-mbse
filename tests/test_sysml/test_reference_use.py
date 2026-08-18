@@ -33,6 +33,11 @@ from agentic_mbse.errors import (
     SemanticEvidenceError,
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter, get_syside
+from tests.test_sysml.conftest import (
+    MockFeatureReferenceExpression,
+    MockLiteralRational,
+    MockOperatorExpression,
+)
 
 # --------------------------------------------------------------------------------------
 # Recorded Phase-1 red nodes.  Names and reasons are unchanged.
@@ -174,6 +179,22 @@ def _exact_use_double(authored: str) -> Any:
     )
 
 
+def _require_a_clean_load(diagnostics: Any) -> None:
+    """Assert the probe model parsed.
+
+    Audit m4: the previous form wrapped `load_model` in `except Exception: pytest.skip`,
+    which would also have skipped on a genuine regression in the loader.  These probes are
+    licensed tests in a licensed lane; a load failure is a failure, and a parse error in the
+    probe source is a broken test, not a reason to go quiet.
+    """
+    errors = [
+        item
+        for item in diagnostics.all
+        if str(getattr(item, "severity", "")).endswith("Error")
+    ]
+    assert not errors, f"probe model did not parse cleanly: {errors}"
+
+
 PROBE_MODEL = """package Probe {
     private import ScalarValues::*;
     private import NumericalFunctions::sum;
@@ -188,6 +209,7 @@ PROBE_MODEL = """package Probe {
         attribute total : ScalarValues::Real = sum(cells.mass);
         attribute scaled : ScalarValues::Real = local_scale * 2.0;
         attribute unit_wrapped : ScalarValues::Real = 3.0 [SI::metre];
+        attribute unit_over_reference : ScalarValues::Real = local_scale [SI::metre];
         attribute qualified_ref : ScalarValues::Real = Probe::Rack::local_scale;
     }
 }
@@ -199,10 +221,8 @@ def probe_expressions(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any
     """Named `feature_value_expression` nodes from one live, licensed model."""
     root = tmp_path_factory.mktemp("reference_use_probe")
     (root / "model.sysml").write_text(PROBE_MODEL)
-    try:
-        model, _ = SysideAdapter.load_model([root])
-    except Exception as exc:  # pragma: no cover - license-gated
-        pytest.skip(f"SysIDE model load unavailable: {exc}")
+    model, diagnostics = SysideAdapter.load_model([root])
+    _require_a_clean_load(diagnostics)
     found: dict[str, Any] = {}
     for attribute in SysideAdapter.elements_of_type(model, "AttributeUsage"):
         expression = getattr(attribute, "feature_value_expression", None)
@@ -213,6 +233,7 @@ def probe_expressions(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any
         "total",
         "scaled",
         "unit_wrapped",
+        "unit_over_reference",
         "qualified_ref",
     } - set(found)
     assert not missing, f"probe model did not yield {sorted(missing)}"
@@ -386,7 +407,14 @@ def test_operand_iteration_failure_is_a_named_outcome_carrying_its_cause() -> No
 
 
 class _EndlessOperator(OperatorExpression):
-    """A non-live double that nests into itself forever."""
+    """A non-live double that nests into itself forever.
+
+    Carries an `operator` so it recurses through the reconstruction and IR-extraction
+    entries too, not just the reference walk (audit M1).
+    """
+
+    operator = "+"
+    name = "endless"
 
     @property
     def operands(self) -> tuple[Any, ...]:
@@ -401,14 +429,73 @@ def test_depth_exhaustion_is_its_own_named_outcome() -> None:
     assert caught.value.code is SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED
 
 
+def test_the_shared_budget_covers_expression_ir_extraction() -> None:
+    """Audit M1: `extract_expression_ir` raised a bare `RecursionError` on self-nesting.
+
+    The design gives one budget to `inspect_reference_uses`, `extract_expression_ir`, and
+    expression reconstruction alike.  A bare `RecursionError` is not the named failure, and
+    a caller cannot tell it from an interpreter limit it caused some other way.
+    """
+    from agentic_mbse.sysml.constraint_extraction import extract_expression_ir
+
+    with pytest.raises(SemanticEvidenceError) as caught:
+        extract_expression_ir(_EndlessOperator())
+    assert caught.value.code is SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED
+    assert caught.value.operation == "extract_expression_ir"
+
+
+def test_the_shared_budget_covers_expression_reconstruction() -> None:
+    """Audit M1: `reconstruct_expression` raised a bare `RecursionError` on self-nesting."""
+    from agentic_mbse.sysml.expression import reconstruct_expression
+
+    with pytest.raises(SemanticEvidenceError) as caught:
+        reconstruct_expression(_EndlessOperator())
+    assert caught.value.code is SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED
+    assert caught.value.operation == "reconstruct_expression"
+
+
+def test_no_recursive_production_entry_reports_a_bare_recursion_error() -> None:
+    """Every entry the design names shares one budget and one named outcome.
+
+    Stated as a set rather than three separate assertions, because M1's defect was that two
+    of the three entries were simply never wired up.
+    """
+    from agentic_mbse.sysml.constraint_extraction import extract_expression_ir
+    from agentic_mbse.sysml.expression import reconstruct_expression, traverse_expression
+
+    module = _reference_use_module()
+    entries = (
+        lambda node: module.inspect_reference_uses(node),
+        lambda node: extract_expression_ir(node),
+        lambda node: reconstruct_expression(node),
+        lambda node: traverse_expression(node, lambda inner: None),
+    )
+    for entry in entries:
+        with pytest.raises(SemanticEvidenceError) as caught:
+            entry(_EndlessOperator())
+        assert caught.value.code is SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED
+
+
 def test_the_depth_budget_is_not_caller_selectable() -> None:
     """One shared limit; no consumer may widen or narrow it through the signature."""
     import inspect as _inspect
 
     module = _reference_use_module()
-    parameters = _inspect.signature(module.inspect_reference_uses).parameters
-    assert list(parameters) == ["expression"]
+    from agentic_mbse.sysml.constraint_extraction import extract_expression_ir
+    from agentic_mbse.sysml.expression import reconstruct_expression
+
+    assert list(_inspect.signature(module.inspect_reference_uses).parameters) == ["expression"]
     assert isinstance(module.MAX_EXPRESSION_DEPTH, int)
+
+    # No public entry offers a depth knob; the private counters are underscore-prefixed and
+    # exist only so the recursion can carry its own position.
+    for entry in (extract_expression_ir, reconstruct_expression):
+        public = [
+            name
+            for name in _inspect.signature(entry).parameters
+            if not name.startswith("_")
+        ]
+        assert not any("depth" in name for name in public), entry.__name__
 
 
 class FeatureReferenceExpression:
@@ -474,39 +561,78 @@ def test_a_resolved_fact_without_its_exact_leaf_can_never_be_skipped() -> None:
     assert caught.value.code is SemanticEvidenceCode.RESOLVED_LEAF_MISSING
 
 
-def test_a_standard_library_target_is_classified_by_its_document_tier(probe_expressions) -> None:
-    """D6: the unit reference in `3.0 [SI::metre]` is StandardLibrary by tier, not by name."""
+def test_a_unit_annotation_never_emits_its_unit_operand(probe_expressions) -> None:
+    """A structural unit annotation visits its value operand only.
+
+    Audit m3: the unit operand was emitted as a reference use and then filtered downstream
+    by document tier.  That works for `SI::metre` and fails for a project-scoped unit, which
+    would arrive at a consumer as a design dependency.  The unit is not a data reference at
+    all, so it is not emitted here — the tier filter is not what makes it disappear.
+    """
     module = _reference_use_module()
-    uses = module.inspect_reference_uses(probe_expressions["unit_wrapped"])
-    tiers = {use.path.leaf.document_tier for use in uses}
-    assert tiers == {"StandardLibrary"}, tiers
+    assert module.inspect_reference_uses(probe_expressions["unit_wrapped"]) == ()
+
+    # The value operand is still visited: a reference inside one is real evidence.
+    assert len(module.inspect_reference_uses(probe_expressions["unit_over_reference"])) == 1
 
     project = module.inspect_reference_uses(probe_expressions["scaled"])
     assert {use.path.leaf.document_tier for use in project} == {"Project"}
 
 
-def test_a_project_package_named_si_is_still_project_evidence(tmp_path) -> None:
-    """A real user package named `SI` remains project evidence (D6)."""
+def test_a_project_scoped_unit_is_not_emitted_either() -> None:
+    """The case that proves the fix is at the boundary and not in the tier filter.
+
+    A project-scoped unit (`3.0 [MyUnits::widget]`) carries document tier `Project`, so
+    under the old route it survived the standard-library filter and reached a consumer as a
+    design dependency.  Now nothing emits it in the first place, whatever its tier.
+
+    Measured at SysIDE 0.8.4: a user-declared unit is *not* accepted in a quantity
+    expression — every form tried (`attribute def U :> UnitsAndScales::{Simple,Derived,
+    Measurement}Unit`, and the same typings applied directly) fails to parse with
+    "expected a measurement unit as the second argument".  So the authored form the audit
+    names cannot be reached through a real model, and the test double below is the only way
+    to exercise it.  The code path is the same one; only the tier differs from the live
+    `SI::metre` case, which is exactly the difference under test.
+    """
     module = _reference_use_module()
-    (tmp_path / "model.sysml").write_text(
-        "package SI {\n"
-        "    part def Holder {\n"
-        "        attribute base : ScalarValues::Real = 1.0;\n"
-        "        attribute scaled_value : ScalarValues::Real = base * 2.0;\n"
-        "    }\n"
-        "}\n"
+    unit = MockFeatureReferenceExpression(
+        name="widget",
+        qualified_name="MyUnits::widget",
+        document_tier=get_syside().DocumentTier.Project,
     )
-    try:
-        model, _ = SysideAdapter.load_model([tmp_path])
-    except Exception as exc:  # pragma: no cover - license-gated
-        pytest.skip(f"SysIDE model load unavailable: {exc}")
-    for attribute in SysideAdapter.elements_of_type(model, "AttributeUsage"):
-        if attribute.name == "scaled_value":
-            (use,) = module.inspect_reference_uses(attribute.feature_value_expression)
-            assert use.path.leaf.document_tier == "Project"
-            assert use.path.leaf.qualified_name.startswith("SI::")
-            return
-    pytest.fail("probe model did not yield the `scaled_value` attribute")
+    annotation = MockOperatorExpression(
+        operator="[", operands=[MockLiteralRational(value=3.0), unit]
+    )
+
+    # The unit really is project-scoped, so a tier filter would have let it through.
+    assert (
+        module.resolved_target_fact(module.resolved_referent(unit)).document_tier
+        == "Project"
+    )
+    assert module.inspect_reference_uses(annotation) == ()
+
+    # And the value operand is still visited, so this is a boundary rule and not a mute.
+    over_reference = MockOperatorExpression(
+        operator="[",
+        operands=[
+            MockFeatureReferenceExpression(name="scale", qualified_name="Probe::scale"),
+            unit,
+        ],
+    )
+    (use,) = module.inspect_reference_uses(over_reference)
+    assert use.path.leaf.qualified_name == "Probe::scale"
+
+
+def test_a_malformed_unit_annotation_is_refused_by_name() -> None:
+    """Shape validation still happens; it just does not emit the unit as data."""
+    module = _reference_use_module()
+    with pytest.raises(SemanticEvidenceError) as caught:
+        module.inspect_reference_uses(
+            MockOperatorExpression(
+                operator="[", operands=[MockLiteralRational(value=3.0)]
+            )
+        )
+    assert caught.value.code is SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED
 
 
 # --------------------------------------------------------------------------------------

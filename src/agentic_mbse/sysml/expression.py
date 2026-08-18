@@ -295,13 +295,25 @@ UNARY_RANK = 2
 RIGHT_ASSOC = frozenset({"**", "^"})
 
 
-def reconstruct_expression(expr_node: Any) -> str:
-    """Reconstruct expression text from SysML AST nodes."""
+def reconstruct_expression(expr_node: Any, _depth: int = 0) -> str:
+    """Reconstruct expression text from SysML AST nodes.
+
+    Shares the one production traversal budget (`MAX_EXPRESSION_DEPTH`); `_depth` is the
+    recursion's own position, not a caller knob.
+    """
     if isinstance(expr_node, str):
         return expr_node
 
     if expr_node is None:
         return ""
+
+    if _depth >= MAX_EXPRESSION_DEPTH:
+        raise evidence_error(
+            SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED,
+            "reconstruct_expression",
+            "maximum expression traversal depth exhausted before the text was reconstructed",
+            expr_node,
+        )
 
     # FeatureChainExpression MUST be before OperatorExpression because FCE is a
     # subtype of OE in SysIDE's type system.
@@ -309,7 +321,7 @@ def reconstruct_expression(expr_node: Any) -> str:
         return authored_reference_text(expr_node)
 
     if SysideAdapter.is_instance(expr_node, "OperatorExpression"):
-        return reconstruct_operator_expression(expr_node)
+        return reconstruct_operator_expression(expr_node, _depth)
 
     if SysideAdapter.is_instance(expr_node, "FeatureReferenceExpression"):
         return authored_reference_text(expr_node)
@@ -338,7 +350,7 @@ def reconstruct_expression(expr_node: Any) -> str:
     if hasattr(expr_node, "function") and hasattr(expr_node.function, "name"):
         func_name = expr_node.function.name
         operands = materialize_operands(expr_node)
-        args = ", ".join(reconstruct_expression(op) for op in operands)
+        args = ", ".join(reconstruct_expression(op, _depth + 1) for op in operands)
         return f"{func_name}({args})"
 
     return str(expr_node)
@@ -371,8 +383,12 @@ def needs_parens(parent_rank: int, parent_right_assoc: bool, child: Any, side: s
     return side == unfavored
 
 
-def reconstruct_operator_expression(expr_node: Any) -> str:
-    """Reconstruct an operator expression with precedence-aware parentheses."""
+def reconstruct_operator_expression(expr_node: Any, _depth: int = 0) -> str:
+    """Reconstruct an operator expression with precedence-aware parentheses.
+
+    `_depth` carries the shared traversal budget through the recursion; see
+    `reconstruct_expression`.
+    """
     operator = ""
     if hasattr(expr_node, "operator") and expr_node.operator:
         operator = str(expr_node.operator)
@@ -382,8 +398,8 @@ def reconstruct_operator_expression(expr_node: Any) -> str:
     if len(operands) == 2:
         parent_rank = RANK.get(operator)
         right_assoc = operator in RIGHT_ASSOC
-        left = reconstruct_expression(operands[0])
-        right = reconstruct_expression(operands[1])
+        left = reconstruct_expression(operands[0], _depth + 1)
+        right = reconstruct_expression(operands[1], _depth + 1)
         if parent_rank is not None:
             if needs_parens(parent_rank, right_assoc, operands[0], "left"):
                 left = f"({left})"
@@ -393,7 +409,7 @@ def reconstruct_operator_expression(expr_node: Any) -> str:
         return f"{left}{op_str}{right}"
 
     if len(operands) == 1:
-        operand = reconstruct_expression(operands[0])
+        operand = reconstruct_expression(operands[0], _depth + 1)
         if needs_parens(UNARY_RANK, False, operands[0], "operand"):
             operand = f"({operand})"
         if operator == "-":
@@ -408,7 +424,7 @@ def reconstruct_operator_expression(expr_node: Any) -> str:
         op_str = OPERATOR_MAP.get(operator, f" {operator} ")
         parts = []
         for i, op in enumerate(operands):
-            text = reconstruct_expression(op)
+            text = reconstruct_expression(op, _depth + 1)
             side = "left" if i == 0 else "right"
             if (
                 parent_rank is not None
