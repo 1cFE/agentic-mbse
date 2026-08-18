@@ -34,14 +34,28 @@ REVIEWED_MODULES = (
 
 #: Permissive identifiers that must not survive.  Each one lets a consumer reconstruct or
 #: ignore evidence instead of receiving a closed value.
+#:
+#: Audit Minor 5: Phase 1 listed only six names and omitted four of the seven ordered
+#: deletions, so the gate could have gone green while `extract_feature_refs`,
+#: `ResolvedSemanticReferenceFact`, and `ExpressionRef` were still in the tree.  All seven
+#: ordered deletions are covered here now.  `BindingInfo.references` is the one that cannot
+#: be a bare name — `references` is far too common a local identifier to scan for — so it
+#: has its own class-scoped check below.
 PERMISSIVE_SYMBOLS = (
-    "has_index_segment",
+    "extract_feature_refs",
     "feature_reference_facts",
     "feature_chain_facts",
+    "ResolvedSemanticReferenceFact",
+    "has_index_segment",
+    "ExpressionRef",
     "extract_feature_chain_segments",
     "extract_feature_chain_name",
     "extract_feature_reference_name",
 )
+
+#: The seventh ordered deletion, as (class, attribute).  Scanned in class scope so an
+#: unrelated local named `references` cannot make the gate red or green by accident.
+PERMISSIVE_CLASS_ATTRIBUTES = (("BindingInfo", "references"),)
 
 
 def _modules() -> list[Path]:
@@ -122,3 +136,75 @@ def test_the_scanner_ignores_an_unrelated_attribute(tmp_path: Path) -> None:
     module = tmp_path / "clean.py"
     module.write_text("def consume(node):\n    return node.qualified_name\n")
     assert _selector_reads(module) == set()
+
+
+def _class_attribute_survives(path: Path, class_name: str, attribute: str) -> bool:
+    for node in ast.walk(ast.parse(path.read_text())):
+        if not isinstance(node, ast.ClassDef) or node.name != class_name:
+            continue
+        for statement in node.body:
+            target = None
+            if isinstance(statement, ast.AnnAssign) and isinstance(statement.target, ast.Name):
+                target = statement.target.id
+            elif isinstance(statement, ast.Assign):
+                names = [t.id for t in statement.targets if isinstance(t, ast.Name)]
+                target = names[0] if names else None
+            if target == attribute:
+                return True
+    return False
+
+
+def test_no_permissive_class_attribute_survives() -> None:
+    """Recorded red: `BindingInfo.references` still declares a rebuildable reference list.
+
+    Audit Minor 5's seventh deletion.  Scanned in class scope, so the gate proves the field
+    is gone from `BindingInfo` specifically rather than reacting to any local named
+    `references`.
+    """
+    surviving: list[str] = []
+    for path in _modules():
+        module = path.relative_to(PACKAGE_ROOT).as_posix()
+        for class_name, attribute in PERMISSIVE_CLASS_ATTRIBUTES:
+            if _class_attribute_survives(path, class_name, attribute):
+                surviving.append(f"{module}::{class_name}.{attribute}")
+    assert not surviving, f"permissive class attributes that must not survive: {surviving}"
+
+
+def test_the_class_attribute_scanner_is_not_vacuous(tmp_path: Path) -> None:
+    """Anti-vacuity: the scanner must find the field it is looking for, and only there."""
+    module = tmp_path / "mutant.py"
+    module.write_text(
+        "class BindingInfo:\n"
+        "    references: list = []\n"
+        "\n"
+        "class Other:\n"
+        "    references: list = []\n"
+    )
+    assert _class_attribute_survives(module, "BindingInfo", "references")
+    assert not _class_attribute_survives(module, "Missing", "references")
+
+    clean = tmp_path / "clean.py"
+    clean.write_text("class BindingInfo:\n    reference_uses: tuple = ()\n")
+    assert not _class_attribute_survives(clean, "BindingInfo", "references")
+
+
+def test_every_ordered_deletion_is_covered_by_a_gate() -> None:
+    """The gate's own coverage check — audit Minor 5's root cause.
+
+    Phase 1's list drifted from the design's ordered-deletion set without anything
+    noticing.  This asserts the two scanners between them name all seven.
+    """
+    ordered_deletions = {
+        "extract_feature_refs",
+        "feature_reference_facts",
+        "feature_chain_facts",
+        "ResolvedSemanticReferenceFact",
+        "has_index_segment",
+        "ExpressionRef",
+        "BindingInfo.references",
+    }
+    covered = set(PERMISSIVE_SYMBOLS) | {
+        f"{class_name}.{attribute}"
+        for class_name, attribute in PERMISSIVE_CLASS_ATTRIBUTES
+    }
+    assert ordered_deletions <= covered, sorted(ordered_deletions - covered)
