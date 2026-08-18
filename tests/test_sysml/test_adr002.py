@@ -426,7 +426,7 @@ class TestDerivedExpressionProhibition:
         """Unit annotations [m], [kg] are allowed - std lib refs filtered.
 
         Input: Model with unit-annotated literals (3.0 [m])
-        Output: No V2 issues (SI::metre filtered by extract_feature_refs)
+        Output: No V2 issues (SI::metre filtered by document tier)
         """
         issues = check_static_expressions(true_static_units_model)
         v2_issues = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
