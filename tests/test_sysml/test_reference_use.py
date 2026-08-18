@@ -69,12 +69,18 @@ def test_the_permissive_boolean_index_marker_is_gone() -> None:
     `ResolvedSemanticReferenceFact.has_index_segment` (`sysml/data_models.py:89`) is the
     marker this item removes.  While it exists, an indexed chain and an exact chain have
     the same type and a consumer can read the path regardless.
+
+    Phase 2 deletes `ResolvedSemanticReferenceFact` outright, so the class going away is the
+    strongest way to satisfy this.  The lookup is therefore by `getattr`, not attribute
+    access: reaching through a deleted class would raise `AttributeError` and leave the test
+    permanently red against a correct implementation.  Both endings pass — class absent, or
+    class present without the marker — and only today's state fails.
     """
     from agentic_mbse.sysml import data_models
 
-    assert "has_index_segment" not in getattr(
-        data_models.ResolvedSemanticReferenceFact, "__annotations__", {}
-    )
+    fact = getattr(data_models, "ResolvedSemanticReferenceFact", None)
+    annotations = {} if fact is None else getattr(fact, "__annotations__", {})
+    assert "has_index_segment" not in annotations
 
 
 def test_an_indexed_use_cannot_form_an_aggregation_term() -> None:
