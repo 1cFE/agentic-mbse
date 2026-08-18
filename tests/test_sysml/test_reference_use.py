@@ -197,7 +197,7 @@ def _require_a_clean_load(diagnostics: Any) -> None:
 
 PROBE_MODEL = """package Probe {
     private import ScalarValues::*;
-    private import NumericalFunctions::sum;
+    private import NumericalFunctions::sum; private import SI::*;
 
     part def Cell {
         attribute mass : ScalarValues::Real = 1.0;
@@ -210,6 +210,10 @@ PROBE_MODEL = """package Probe {
         attribute scaled : ScalarValues::Real = local_scale * 2.0;
         attribute unit_wrapped : ScalarValues::Real = 3.0 [SI::metre];
         attribute unit_over_reference : ScalarValues::Real = local_scale [SI::metre];
+        attribute simple_unit : ScalarValues::Real = 0.04 [m];
+        attribute compound_ratio : ScalarValues::Real = 9400 [kg/m^3];
+        attribute compound_grouped : ScalarValues::Real = 16.3 [W/(m*K)];
+        attribute compound_over_reference : ScalarValues::Real = local_scale [kg/m^3];
         attribute qualified_ref : ScalarValues::Real = Probe::Rack::local_scale;
     }
 }
@@ -234,6 +238,10 @@ def probe_expressions(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any
         "scaled",
         "unit_wrapped",
         "unit_over_reference",
+        "simple_unit",
+        "compound_ratio",
+        "compound_grouped",
+        "compound_over_reference",
         "qualified_ref",
     } - set(found)
     assert not missing, f"probe model did not yield {sorted(missing)}"
@@ -624,7 +632,12 @@ def test_a_project_scoped_unit_is_not_emitted_either() -> None:
 
 
 def test_a_malformed_unit_annotation_is_refused_by_name() -> None:
-    """Shape validation still happens; it just does not emit the unit as data."""
+    """Arity is the one shape rule left, and it refuses under its own code.
+
+    Ruling 1 (design Revision 8) drops the feature-reference and exact-referent
+    requirements on the unit operand.  What survives is the operand count: a recognised
+    `[` annotation that does not carry exactly two operands is malformed, not math.
+    """
     module = _reference_use_module()
     with pytest.raises(SemanticEvidenceError) as caught:
         module.inspect_reference_uses(
@@ -633,6 +646,132 @@ def test_a_malformed_unit_annotation_is_refused_by_name() -> None:
             )
         )
     assert caught.value.code is SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED
+
+
+# --------------------------------------------------------------------------------------
+# Phase 2b — the shared `unit_annotation_value` primitive (design Revision 8, rulings 1-2).
+#
+# The unit operand is opaque: never traversed, never emitted, never grammar-checked here.
+# SysIDE owns the validity of the unit expression.  These four cases are the owner's
+# required coverage.
+# --------------------------------------------------------------------------------------
+
+
+def test_a_simple_unit_annotation_is_accepted_and_its_value_operand_is_returned(
+    probe_expressions,
+) -> None:
+    """`0.04 [m]` — the case that already worked, still working, through the primitive."""
+    module = _reference_use_module()
+    annotation = probe_expressions["simple_unit"]
+
+    value, unit = module.materialize_operands(annotation)
+    assert module.unit_annotation_value(annotation) is value
+    assert SysideAdapter.is_instance(unit, "FeatureReferenceExpression")
+    assert module.inspect_reference_uses(annotation) == ()
+
+
+@pytest.mark.parametrize("probe", ["compound_ratio", "compound_grouped"])
+def test_a_compound_unit_annotation_elaborates_rather_than_refusing(
+    probe_expressions, probe: str
+) -> None:
+    """`9400 [kg/m^3]` and `16.3 [W/(m*K)]` — red before Phase 2b, for the measured reason.
+
+    A compound unit is an `OperatorExpression`, not a feature reference, so Revision 7's
+    "the unit operand is a feature reference" rule refused every compound-unit model on the
+    real corpus (`run-records/phase3-stop-report.md`).  The annotation is now accepted and
+    the unit operand is left alone.
+
+    Non-emission is the observable half: `kg`, `m`, `W`, and `K` are real resolvable
+    standard-library feature references, so a traversal of the unit operand would return
+    them here.  It returns nothing.
+    """
+    module = _reference_use_module()
+    annotation = probe_expressions[probe]
+
+    value, unit = module.materialize_operands(annotation)
+    assert SysideAdapter.is_instance(unit, "OperatorExpression")
+    assert module.unit_annotation_value(annotation) is value
+    assert module.inspect_reference_uses(annotation) == ()
+
+
+def test_the_unit_operand_is_never_traversed_not_merely_filtered() -> None:
+    """The other half of opaque: the unit operand is not read at all.
+
+    Non-emission alone cannot distinguish "walked, then dropped" from "never walked".  This
+    unit operand raises the moment anything materializes its operands, so if the walk
+    reached it the call would fail with `OPERAND_ITERATION_FAILED` instead of returning.
+    """
+    module = _reference_use_module()
+
+    class _UnitThatRefusesToBeRead(MockOperatorExpression):
+        @property
+        def operands(self) -> list[Any]:
+            raise AssertionError("the unit operand was traversed")
+
+        @operands.setter
+        def operands(self, value: list[Any]) -> None:
+            pass
+
+    annotation = MockOperatorExpression(
+        operator="[",
+        operands=[
+            MockFeatureReferenceExpression(name="scale", qualified_name="Probe::scale"),
+            _UnitThatRefusesToBeRead(operator="/"),
+        ],
+    )
+
+    (use,) = module.inspect_reference_uses(annotation)
+    assert use.path.leaf.qualified_name == "Probe::scale"
+
+
+def test_a_wrong_arity_annotation_raises_and_never_returns_none() -> None:
+    """`None` means exactly one thing: this is not a `[` annotation.
+
+    A malformed annotation that returned `None` would fall through to the general-math walk
+    and re-emit the unit operand as a data reference — undoing the m3 closure.  So the
+    primitive raises instead ([AGENT ruling 2026-08-18], design Revision 8).
+    """
+    module = _reference_use_module()
+    three_operands = MockOperatorExpression(
+        operator="[",
+        operands=[
+            MockLiteralRational(value=3.0),
+            MockFeatureReferenceExpression(name="metre", qualified_name="SI::metre"),
+            MockLiteralRational(value=1.0),
+        ],
+    )
+
+    with pytest.raises(SemanticEvidenceError) as caught:
+        module.unit_annotation_value(three_operands)
+    assert caught.value.code is SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED
+
+    with pytest.raises(SemanticEvidenceError):
+        module.unit_annotation_value(
+            MockOperatorExpression(operator="[", operands=[MockLiteralRational(value=3.0)])
+        )
+
+    # And an expression that is genuinely not an annotation is the only `None`.
+    assert (
+        module.unit_annotation_value(
+            MockOperatorExpression(
+                operator="+",
+                operands=[MockLiteralRational(value=1.0), MockLiteralRational(value=2.0)],
+            )
+        )
+        is None
+    )
+    assert module.unit_annotation_value(MockLiteralRational(value=1.0)) is None
+
+
+def test_a_reference_in_the_value_operand_of_a_compound_annotation_is_still_visited(
+    probe_expressions,
+) -> None:
+    """`local_scale [kg/m^3]` — the value side is evidence, the unit side is not."""
+    module = _reference_use_module()
+    uses = module.inspect_reference_uses(probe_expressions["compound_over_reference"])
+
+    assert [use.authored_text for use in uses] == ["local_scale"]
+    assert uses[0].path.leaf.qualified_name == "Probe::Rack::local_scale"
 
 
 # --------------------------------------------------------------------------------------
@@ -713,6 +852,9 @@ def test_the_closed_boundary_is_exported_from_the_package() -> None:
         "ExactReferenceUse",
         "IndexedReferenceUse",
         "inspect_reference_uses",
+        # Phase 2b: Codegen's value-site policy calls this shared primitive, so it is
+        # part of the `semantic-evidence/v2` surface (design Revision 8, ruling 2).
+        "unit_annotation_value",
     ):
         assert name in sysml.__all__, f"sysml barrel omits {name}"
         assert hasattr(sysml, name)
