@@ -119,6 +119,7 @@ if TYPE_CHECKING:
         ExactSemanticPath,
         IndexedReferenceUse,
         inspect_reference_uses,
+        unit_annotation_value,
     )
     from agentic_mbse.sysml.syside_adapter import (
         Diagnostics,
@@ -200,6 +201,7 @@ for _name in (
     "ExactSemanticPath",
     "IndexedReferenceUse",
     "inspect_reference_uses",
+    "unit_annotation_value",
 ):
     _LAZY[_name] = ("agentic_mbse.sysml.reference_use", _name)
 for _name in ("FeatureReferenceFact", "IdentityFact", "LiteralFact", "OperandTypeFact", "UnitFact"):

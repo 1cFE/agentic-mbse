@@ -46,6 +46,7 @@ __all__ = [
     "resolved_chaining_features",
     "resolved_referent",
     "resolved_target_fact",
+    "unit_annotation_value",
 ]
 
 #: The one traversal budget.  Shared by every recursive production expression entry and
@@ -299,7 +300,8 @@ def _walk(node: Any, *, plural: bool, depth: int) -> list[ReferenceUse]:
     if SysideAdapter.is_instance(node, "FeatureReferenceExpression"):
         return [_reference_use(node, plural=plural)]
 
-    unit_value = _unit_annotation_value(node)
+    # Only the value operand is reachable from here: the unit operand is opaque.
+    unit_value = unit_annotation_value(node)
     if unit_value is not None:
         return _walk(unit_value, plural=plural, depth=depth + 1)
 
@@ -313,46 +315,39 @@ def _walk(node: Any, *, plural: bool, depth: int) -> list[ReferenceUse]:
     return collected
 
 
-def _unit_annotation_value(node: Any) -> Any | None:
-    """The value operand of a structural unit annotation, or ``None`` if this is not one.
+def unit_annotation_value(expression: Any) -> Any | None:
+    """The value operand of a ``[`` unit annotation, or ``None`` if this is not one.
 
-    A unit annotation (``3.0 [SI::metre]``) is structure, not data flow: the unit names the
-    scale the value is written in, and nothing downstream depends on it as a reference.  So
-    the annotation's shape is validated here and its value operand is walked, but the unit
-    operand is never emitted as a data reference.
+    This is the one structural reading of a unit annotation.  Both Agentic's reference walk
+    and Codegen's value-site policy call it, so the annotation's parser shape has a single
+    owner and no consumer indexes the operands itself.
 
-    Filtering it downstream by document tier would be the wrong place *and* the wrong rule:
-    a project-scoped unit (``3.0 [MyUnits::widget]``) is tier ``Project`` and would reach a
-    consumer as a design dependency.
+    The unit operand is **opaque**: it is not traversed, not emitted, and not checked for
+    unit grammar of any kind.  SysIDE owns whether the unit expression is valid — a shape it
+    rejects never reaches here.  That matters because a unit is structure, not data flow:
+    ``3.0 [SI::metre]`` names the scale the value is written in, and a compound unit like
+    ``9400 [kg/m^3]`` is an ``OperatorExpression`` whose own operands resolve to real
+    standard-library features.  Walking it would turn the scale into a design dependency.
+
+    ``None`` means exactly one thing: the expression is not a ``[`` annotation.  A
+    recognised annotation with the wrong operand count **raises**, because returning
+    ``None`` there would let a malformed annotation fall through to the general-math walk
+    and emit the unit operand after all.
+
+    Recognition is by mapped metatype and operator; no runtime class name is compared.
     """
-    if not SysideAdapter.is_instance(node, "OperatorExpression"):
+    if not SysideAdapter.is_instance(expression, "OperatorExpression"):
         return None
-    if str(getattr(node, "operator", "") or "") != "[":
+    if str(getattr(expression, "operator", "") or "") != "[":
         return None
 
-    operands = materialize_operands(node)
+    operands = materialize_operands(expression)
     if len(operands) != 2:
         raise evidence_error(
             SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED,
-            "inspect_reference_uses",
+            "unit_annotation_value",
             f"unit annotation carries {len(operands)} operands, expected a value and a unit",
-            node,
-        )
-
-    unit = operands[1]
-    if not SysideAdapter.is_instance(unit, "FeatureReferenceExpression"):
-        raise evidence_error(
-            SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED,
-            "inspect_reference_uses",
-            "unit annotation's unit operand is not a feature reference",
-            node,
-        )
-    if resolved_referent(unit) is None:
-        raise evidence_error(
-            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
-            "inspect_reference_uses",
-            "unit annotation's unit operand has no exact referent",
-            unit,
+            expression,
         )
     return operands[0]
 
