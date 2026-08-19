@@ -203,6 +203,7 @@ class SysideAdapter:
             "RequirementConstraintMembership",
             "RequirementDefinition",
             "RequirementUsage",
+            "ReturnParameterMembership",
             "SatisfyRequirementUsage",
             "Subclassification",
         }
@@ -241,6 +242,7 @@ class SysideAdapter:
                 # a hierarchy-aware is_instance check rather than a silent
                 # string-match.
                 "RequirementConstraintMembership": syside.RequirementConstraintMembership,
+                "ReturnParameterMembership": syside.ReturnParameterMembership,
                 "EnumerationDefinition": syside.EnumerationDefinition,
                 "FeatureValue": syside.FeatureValue,
                 # Relationships / memberships
