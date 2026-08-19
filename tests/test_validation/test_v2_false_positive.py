@@ -33,6 +33,8 @@ def _use(
     qualified_name: str = "",
     document_url: str = "",
     owner_kind: str = "",
+    owner_is_calculation_definition: bool = False,
+    owner_is_part: bool = False,
 ) -> ExactReferenceUse:
     """One exact reference use carrying exactly the evidence a case exercises."""
     fact = ResolvedTargetFact(
@@ -44,6 +46,8 @@ def _use(
         element_name=name,
         owner_qualified_name=qualified_name.rsplit("::", 1)[0] if "::" in qualified_name else "",
         owner_kind=owner_kind,
+        owner_is_calculation_definition=owner_is_calculation_definition,
+        owner_is_part=owner_is_part,
         document_url=document_url,
     )
     return ExactReferenceUse(
@@ -78,6 +82,15 @@ class TestIsCalcOutputReference:
         )
         result = _is_calc_output_reference(ref, set())
         assert result is True
+
+    def test_document_url_has_no_classification_role(self):
+        """A path spelling cannot override mapped owner evidence."""
+        ref = _use(
+            qualified_name="Design::Assembly::output_val",
+            document_url="models/library/misleading.sysml",
+            owner_is_part=True,
+        )
+        assert _is_calc_output_reference(ref, set()) is False
 
     def test_designs_path_returns_false(self):
         """Primary check: document_path contains 'designs/' → False.
@@ -160,6 +173,10 @@ class TestIsCalcOutputReference:
         result = _is_calc_output_reference(ref, set())
         assert result is True
 
+    def test_mapped_calc_definition_owner_returns_true(self):
+        ref = _use(owner_is_calculation_definition=True)
+        assert _is_calc_output_reference(ref, set()) is True
+
     def test_part_usage_owner_returns_false(self):
         """Tertiary check: owner is PartUsage → False (explicit negative).
 
@@ -169,6 +186,10 @@ class TestIsCalcOutputReference:
         ref = _use(owner_kind="PartUsage")
         result = _is_calc_output_reference(ref, set())
         assert result is False
+
+    def test_mapped_part_owner_returns_false(self):
+        ref = _use(owner_is_part=True)
+        assert _is_calc_output_reference(ref, set()) is False
 
     # =========================================================================
     # Combined fallthrough scenarios
@@ -205,6 +226,10 @@ class TestIsCalcOutputReference:
         ref = _use()
         result = _is_calc_output_reference(ref, set())
         assert result is True
+
+    def test_no_evidence_fails_closed(self):
+        """Missing classification evidence must not exempt a dynamic reference."""
+        assert _is_calc_output_reference(_use(), set()) is False
 
     def test_exception_in_owner_check_falls_through(self):
         """When owner.isinstance() raises exception → conservative fallback.

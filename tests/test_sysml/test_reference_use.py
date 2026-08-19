@@ -24,6 +24,7 @@ evidence, and ADR002 dynamic handling.
 from __future__ import annotations
 
 from typing import Any
+from uuid import NAMESPACE_URL, uuid5
 
 import pytest
 
@@ -314,6 +315,37 @@ def test_an_exact_chain_carries_root_members_leaf_and_document_evidence(probe_ex
     # No operator or literal structure rides along on the reference value.
     assert not hasattr(use, "operator")
     assert not hasattr(use, "operands")
+
+
+class InvocationExpression:
+    """Mapped-metatype base for a license-free invocation double."""
+
+
+class _UserFunctionNamedSum:
+    """A different declaration whose spelling must not grant aggregation semantics."""
+
+    name = "sum"
+    element_id = uuid5(NAMESPACE_URL, "Probe::sum")
+
+
+class _UserNamedSumInvocation(InvocationExpression):
+    function = _UserFunctionNamedSum()
+    operands: tuple[Any, ...] = ()
+    name = "sum"
+
+
+def test_plurality_comes_from_the_standard_sum_declaration_identity(
+    probe_expressions,
+) -> None:
+    """A same-named declaration is unsupported and can never make references plural."""
+    module = _reference_use_module()
+
+    assert module._is_plural_invocation(probe_expressions["total"]) is True
+    assert module._is_plural_invocation(_UserNamedSumInvocation()) is False
+
+    with pytest.raises(SemanticEvidenceError) as caught:
+        module.inspect_reference_uses(_UserNamedSumInvocation())
+    assert caught.value.code is SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED
 
 
 def test_an_exact_path_refuses_to_exist_without_a_root_and_leaf() -> None:
