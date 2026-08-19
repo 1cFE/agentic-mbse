@@ -100,6 +100,8 @@ class ResolvedTargetFact:
     owner_qualified_name: str = ""
     owner_kind: str = ""
     owner_is_definition: bool = False
+    owner_is_calculation_definition: bool = False
+    owner_is_part: bool = False
     redefined_qualified_names: tuple[str, ...] = ()
     # Document and location provenance (semantic-evidence/v2).  Carried on the fact so a
     # consumer doing a cross-file check or a standard-library classification reads the

@@ -3,11 +3,10 @@
 Tests the _is_calc_output_reference() helper function and integration with
 check_static_expressions() to verify false positives are prevented.
 
-Layered verification approach:
-1. document_url: Contains 'library/' → calc output, contains 'designs/' → NOT calc output
-2. qualified_name: Parent path matches known calc def → calc output
-3. owner kind: CalculationDefinition owner → calc output, PartUsage → NOT calc output
-4. Conservative fallback: If all methods fail → assume calc output (backwards compatible)
+Semantic verification approach:
+1. qualified_name: parent path matches a known calc definition → calc output
+2. mapped owner metatype: CalculationDefinition → calc output; Part* → not a calc output
+3. missing evidence fails closed
 
 Every signal now comes off the exact evidence the closed reference boundary captured, so
 the helper takes an `ExactReferenceUse` rather than a rebuildable `ExpressionRef` carrying
@@ -67,21 +66,17 @@ class TestIsCalcOutputReference:
     """Tests for _is_calc_output_reference() helper function."""
 
     # =========================================================================
-    # Method 1: document_path check (Primary)
+    # Document URL has no classification force.
     # =========================================================================
 
     def test_library_path_returns_true(self):
-        """Primary check: document_path contains 'library/' → True.
-
-        When a reference's document_path contains 'library/', it's definitively
-        from a library calc definition, so it's a calc output.
-        """
+        """A library-looking URL alone does not identify a calc output."""
         ref = _use(
             qualified_name="V2TestLibrary::SimpleCalc::output_val",
             document_url="models/library/analyses/thermal_loads.sysml",
         )
         result = _is_calc_output_reference(ref, set())
-        assert result is True
+        assert result is False
 
     def test_document_url_has_no_classification_role(self):
         """A path spelling cannot override mapped owner evidence."""
@@ -93,11 +88,7 @@ class TestIsCalcOutputReference:
         assert _is_calc_output_reference(ref, set()) is False
 
     def test_designs_path_returns_false(self):
-        """Primary check: document_path contains 'designs/' → False.
-
-        When a reference's document_path contains 'designs/', it's definitively
-        from a design file, so it's NOT a calc output (even if name matches).
-        """
+        """A design-looking URL likewise has no classification force."""
         ref = _use(
             qualified_name="CATFMFERadialBuild::plasma_region::output_val",
             document_url="models/designs/catf_mfe/radial_build.sysml",
@@ -130,8 +121,7 @@ class TestIsCalcOutputReference:
         ref = _use(qualified_name="SomeOtherPackage::SomePart::output_val")
         calc_def_names = {"V2TestLibrary::SimpleCalc"}  # Doesn't include SomeOtherPackage
         result = _is_calc_output_reference(ref, calc_def_names)
-        # Falls through to conservative True because no element for owner check
-        assert result is True
+        assert result is False
 
     # =========================================================================
     # Fallthrough behavior
@@ -151,13 +141,12 @@ class TestIsCalcOutputReference:
     def test_empty_qualified_name_falls_through(self):
         """When qualified_name is empty or no ::, falls through to owner check.
 
-        If qualified_name can't be parsed for parent path, we try owner type check.
-        With no element, falls through to conservative True.
+        If qualified_name cannot identify a known calc definition, missing owner
+        evidence fails closed.
         """
         ref = _use()
         result = _is_calc_output_reference(ref, set())
-        # Falls through all checks to conservative True
-        assert result is True
+        assert result is False
 
     # =========================================================================
     # Method 3: owner type check (Tertiary)
@@ -169,7 +158,7 @@ class TestIsCalcOutputReference:
         When the reference element's owner is a CalculationDefinition,
         it's definitively a calc output.
         """
-        ref = _use(owner_kind="CalculationDefinition")
+        ref = _use(owner_is_calculation_definition=True)
         result = _is_calc_output_reference(ref, set())
         assert result is True
 
@@ -183,7 +172,7 @@ class TestIsCalcOutputReference:
         When the reference element's owner is a PartUsage, it's definitively
         NOT a calc output - it's a design attribute.
         """
-        ref = _use(owner_kind="PartUsage")
+        ref = _use(owner_is_part=True)
         result = _is_calc_output_reference(ref, set())
         assert result is False
 
@@ -207,25 +196,21 @@ class TestIsCalcOutputReference:
         """
         ref = _use(
             qualified_name="V2FalsePositiveTest::test_part::output_val",
-            owner_kind="PartUsage",
+            owner_is_part=True,
         )
         calc_def_names = {"V2TestLibrary::SimpleCalc"}  # Doesn't match
         result = _is_calc_output_reference(ref, calc_def_names)
         assert result is False
 
     # =========================================================================
-    # Conservative fallback
+    # Fail-closed fallback
     # =========================================================================
 
     def test_no_info_conservative_fallback(self):
-        """Fallback: When all methods fail → True (conservative).
-
-        If we can't determine definitively whether it's a calc output,
-        we conservatively assume it is to maintain backwards compatibility.
-        """
+        """When all semantic signals are absent, do not grant an exemption."""
         ref = _use()
         result = _is_calc_output_reference(ref, set())
-        assert result is True
+        assert result is False
 
     def test_no_evidence_fails_closed(self):
         """Missing classification evidence must not exempt a dynamic reference."""
@@ -236,11 +221,11 @@ class TestIsCalcOutputReference:
 
         The owner kind is now captured evidence rather than a live `isinstance` call, so
         there is no exception to swallow: a reference whose owner kind was never resolved
-        simply has no tertiary signal, and the conservative fallback applies.
+        simply has no tertiary signal, so the check fails closed.
         """
         ref = _use()
         result = _is_calc_output_reference(ref, set())
-        assert result is True
+        assert result is False
 
 
 # =============================================================================

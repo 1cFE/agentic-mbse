@@ -344,35 +344,23 @@ def _is_calc_output_reference(
     calc_def_qualified_names: set[str],
 ) -> bool:
     """
-    Check if ref points to a calc output using multiple verification signals.
+    Check if ref points to a calc output using semantic evidence only.
 
-    Uses a layered approach to distinguish actual calc outputs from same-named
-    design attributes:
-
-    1. document_path (primary): If contains 'library/' → True, 'designs/' → False
-    2. qualified_name (secondary): If parent path matches known calc def → True
-    3. owner type (tertiary): If owner is CalculationDefinition → True,
-       if owner is PartUsage/PartDefinition → False
-    4. Conservative fallback: If all methods fail → True (backwards compatible)
+    A known calculation-definition qualified name is positive evidence.  Otherwise the
+    mapped owner metatype captured at the evidence boundary decides.  URL spellings and
+    runtime Python class names have no classification force.  Missing evidence fails
+    closed so it cannot exempt a dynamic reference from V2.
 
     Args:
         use: one ExactReferenceUse from design_reference_uses()
         calc_def_qualified_names: Set of calc def qualified names for pattern matching
 
     Returns:
-        True if ref is to a calc output (or if all verifications fail - conservative)
-        False if ref is definitively NOT to a calc output
+        True if the evidence identifies a calculation output; False otherwise.
     """
     leaf = use.path.leaf
 
-    # Method 1: Document path check (simplest, most reliable)
-    if leaf.document_url:
-        if "library/" in leaf.document_url:
-            return True  # From library - it's a calc output
-        if "designs/" in leaf.document_url:
-            return False  # From designs - NOT a calc output
-
-    # Method 2: Qualified name pattern (proven in codegen)
+    # Qualified-name identity against the model's known calculation definitions.
     if leaf.qualified_name and "::" in leaf.qualified_name:
         parts = leaf.qualified_name.split("::")
         if len(parts) >= 2:
@@ -381,16 +369,13 @@ def _is_calc_output_reference(
             if parent_path in calc_def_qualified_names:
                 return True
 
-    # Method 3: Owner kind, from the evidence the exact route captured.  A calc output's
-    # owner is a CalculationDefinition; a design attribute's owner is a part.
-    if leaf.owner_kind:
-        if leaf.owner_kind == "CalculationDefinition":
-            return True
-        if leaf.owner_kind in ("PartUsage", "PartDefinition"):
-            return False
+    # Mapped owner-metatype evidence captured while the live element was available.
+    if leaf.owner_is_calculation_definition:
+        return True
+    if leaf.owner_is_part:
+        return False
 
-    # Conservative fallback only if ALL methods fail
-    return True
+    return False
 
 
 def _is_part_usage(element: Any) -> bool:

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Literal, TypeAlias
+from uuid import UUID
 
 from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 from agentic_mbse.sysml.data_models import ResolvedTargetFact, SingletonTerm
@@ -53,6 +54,11 @@ __all__ = [
 #: not selectable by a caller: a consumer that could widen it could also decide, per call
 #: site, how much of an expression counts as evidence.
 MAX_EXPRESSION_DEPTH = 100
+
+# Reload-stable declaration identity of ``NumericalFunctions::sum`` in the SysML
+# standard library.  Its spelling is not authority: a different declaration called
+# ``sum`` is still a different function and must not gain collection semantics.
+_STANDARD_SUM_FUNCTION_ID = UUID("6d745ea3-e265-5ddd-aa6c-b3fe29dc4272")
 
 #: The authored spelling of a reference.  ``bare`` is a name with no prefix, ``qualified``
 #: carries a ``::`` package path, ``chain`` is a dotted feature chain.
@@ -231,6 +237,8 @@ def resolved_target_fact(element: Any) -> ResolvedTargetFact | None:
         owner_qualified_name=str(owner_qn) if owner_qn is not None else "",
         owner_kind=type(owner).__name__ if owner is not None else "",
         owner_is_definition=_owner_is_definition(owner),
+        owner_is_calculation_definition=_owner_is_calculation_definition(owner),
+        owner_is_part=_owner_is_part(owner),
         redefined_qualified_names=tuple(redefined_names),
         declares_value=bool(getattr(element, "feature_value_expression", None)),
         document_url=str(document_url) if document_url else "",
@@ -250,6 +258,17 @@ def _owner_is_definition(owner: Any) -> bool:
             "ConstraintDefinition",
             "RequirementDefinition",
         )
+    )
+
+
+def _owner_is_calculation_definition(owner: Any) -> bool:
+    return owner is not None and SysideAdapter.is_instance(owner, "CalculationDefinition")
+
+
+def _owner_is_part(owner: Any) -> bool:
+    return owner is not None and (
+        SysideAdapter.is_instance(owner, "PartUsage")
+        or SysideAdapter.is_instance(owner, "PartDefinition")
     )
 
 
@@ -304,6 +323,11 @@ def _walk(node: Any, *, plural: bool, depth: int) -> list[ReferenceUse]:
     unit_value = unit_annotation_value(node)
     if unit_value is not None:
         return _walk(unit_value, plural=plural, depth=depth + 1)
+
+    if SysideAdapter.is_instance(node, "InvocationExpression") and not SysideAdapter.is_instance(
+        node, "OperatorExpression"
+    ):
+        _require_supported_invocation(node)
 
     operands = operand_bearing_operands(node)
     if not operands:
@@ -360,7 +384,48 @@ def _is_plural_invocation(node: Any) -> bool:
     aggregation semantics without choosing a concrete occurrence.
     """
     function = getattr(node, "function", None)
-    return bool(function is not None and getattr(function, "name", None) == "sum")
+    if function is None:
+        return False
+    try:
+        return SysideAdapter.element_id(function) == _STANDARD_SUM_FUNCTION_ID
+    except ValueError:
+        return False
+
+
+def _require_supported_invocation(node: Any) -> None:
+    """Refuse every ordinary invocation except the exact standard-library ``sum``.
+
+    Operator expressions share SysIDE's invocation base but are handled by their own
+    grammar.  For an ordinary call, declaration identity is the capability boundary.
+    Refusing here keeps unsupported calls out of the graph and preserves the whole
+    authored expression for the public diagnostic.
+    """
+    if _is_plural_invocation(node):
+        return
+    try:
+        reference = (
+            SysideAdapter.authored_text(node)
+            if SysideAdapter.is_live_element(node)
+            else str(getattr(node, "name", None) or "") or None
+        )
+    except SemanticEvidenceError:
+        reference = None
+    function = getattr(node, "function", None)
+    function_name = str(
+        getattr(function, "qualified_name", None)
+        or getattr(function, "name", None)
+        or "<unresolved>"
+    )
+    raise SemanticEvidenceError(
+        SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED,
+        operation="inspect_reference_uses",
+        detail=(
+            f"invocation of {function_name!r} is valid SysML but is not supported by "
+            "this executable subset; only NumericalFunctions::sum is supported"
+        ),
+        location=SysideAdapter.get_source_location(node),
+        reference=reference,
+    )
 
 
 def _indexed_use(node: Any) -> IndexedReferenceUse:
