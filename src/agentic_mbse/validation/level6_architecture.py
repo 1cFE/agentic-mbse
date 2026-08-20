@@ -23,6 +23,11 @@ from agentic_mbse.sysml.expression import (
     evaluate_true_static_expression,
     is_literal_node,
 )
+from agentic_mbse.sysml.reference_use import (
+    resolved_chain_target,
+    resolved_chaining_features,
+    resolved_referent,
+)
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 
@@ -372,28 +377,23 @@ def check_calc_def_structure(model: Any) -> list[ValidationIssue]:
 
 
 def _extract_chain_path(expr: Any) -> str | None:
-    """Extract dotted path from FeatureChainExpression."""
-    try:
-        parts = []
-        if hasattr(expr, "target_feature") and expr.target_feature:
-            for feat in expr.target_feature:
-                if hasattr(feat, "name") and feat.name:
-                    parts.append(str(feat.name))
-        return ".".join(parts) if parts else None
-    except Exception:
+    """The resolved member path of a feature chain, dotted."""
+    target = resolved_chain_target(expr)
+    if target is None:
         return None
+    parts = [
+        str(feature.name)
+        for feature in resolved_chaining_features(target)
+        if getattr(feature, "name", None)
+    ]
+    return ".".join(parts) if parts else None
 
 
 def _extract_reference_path(expr: Any) -> str | None:
-    """Extract qualified path from FeatureReferenceExpression."""
-    try:
-        if hasattr(expr, "referent") and expr.referent:
-            ref = expr.referent
-            if hasattr(ref, "qualified_name") and ref.qualified_name:
-                return str(ref.qualified_name)
-        return None
-    except Exception:
-        return None
+    """The qualified name of a feature reference's exact referent."""
+    referent = resolved_referent(expr)
+    qualified_name = getattr(referent, "qualified_name", None) if referent else None
+    return str(qualified_name) if qualified_name else None
 
 
 def check_binding_formats(

@@ -8,7 +8,11 @@ from uuid import UUID
 
 import pytest
 
-from agentic_mbse.sysml.expression import feature_chain_facts, resolved_target_fact
+from agentic_mbse.sysml.reference_use import (
+    ExactReferenceUse,
+    inspect_reference_uses,
+    resolved_target_fact,
+)
 from agentic_mbse.sysml.syside_adapter import SysideAdapter, get_syside
 
 syside = get_syside()
@@ -143,13 +147,14 @@ def test_chain_and_typing_surfaces_retain_exact_endpoint_ids(tmp_path: Path) -> 
     assert UUID(str(root.element_id)) == named_ids[str(root.qualified_name)]
     assert UUID(str(leaf.element_id)) == named_ids[str(leaf.qualified_name)]
 
-    chain_fact = feature_chain_facts(chain)
-    assert chain_fact.root is not None
-    assert chain_fact.leaf is not None
+    (use,) = inspect_reference_uses(chain)
+    # The union is closed, so "not indexed" is the variant itself rather than a boolean
+    # beside an otherwise-exact path.
+    assert isinstance(use, ExactReferenceUse)
+    chain_fact = use.path
     assert chain_fact.root.element_id == named_ids[str(root.qualified_name)]
     assert chain_fact.leaf.element_id == named_ids[str(leaf.qualified_name)]
     assert chain_fact.segment_element_ids[-1] == chain_fact.leaf.element_id
-    assert not chain_fact.has_index_segment
 
     station = next(
         usage

@@ -113,6 +113,38 @@ def test_c1_message_does_not_offer_the_outer_feature_as_a_rescue():
     assert "never reinterpreted as an outer reference" in message
 
 
+def test_c1_qualified_binding_to_owner_attribute_is_not_self_named():
+    """F-2 (self-binding-replacement Phase 1): `in availability =
+    QualifiedPlant::availability` and the usage-qualified `station::availability`
+    resolve to the OWNER's attribute — a different element from the calc's own
+    parameter — and codegen accepts both (D-6). C1 compares referent identity,
+    not names, so neither may fire. The other direction stays pinned by the
+    three self-named tests above: deadend, trap, and rescue all still FAIL."""
+    issues = check_self_named_bindings(load_fixture("usage_qualified_local"))
+    self_named = [i for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
+    assert self_named == [], f"Qualified referent must not fire C1: {_codes(issues)}"
+
+
+def test_c1_inspection_failure_surfaces_as_error_not_clean(monkeypatch):
+    """Audit F4 (self-binding-replacement): an unexpected failure while inspecting
+    a calc usage must surface as an L2_CHECK_UNVERIFIABLE ERROR, never be swallowed
+    into an empty (clean-looking) issue list. A SysIDE or adapter regression that
+    made the check skip usages silently was exactly the failure mode."""
+    from agentic_mbse.validation import level2_structure
+
+    def _boom(_element):
+        raise RuntimeError("simulated adapter regression")
+
+    monkeypatch.setattr(
+        level2_structure.SysideAdapter, "element_id", staticmethod(_boom)
+    )
+    issues = check_self_named_bindings(load_fixture("self_named_trap"))
+    unverified = [i for i in issues if i.code == ValidationCode.L2_CHECK_UNVERIFIABLE]
+    assert unverified, f"inspection failure must be reported, got {_codes(issues)}"
+    assert all(i.severity == Severity.ERROR for i in unverified)
+    assert "simulated adapter regression" in unverified[0].message
+
+
 # --- C2a: anonymous return (L6) -------------------------------------------------
 
 

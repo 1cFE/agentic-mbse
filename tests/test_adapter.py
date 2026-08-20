@@ -1,13 +1,18 @@
 """Tests for SysideAdapter."""
 
+from enum import Enum
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
+from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
+from agentic_mbse.sysml import syside_adapter as adapter_module
 from agentic_mbse.sysml.syside_adapter import (
     EXCLUDED_CONSTRAINT_TYPES,
     DiagnosticSeverity,
     SysideAdapter,
+    get_syside,
     is_droppable_constraint,
 )
 
@@ -72,6 +77,83 @@ class TestIsInstance:
 
         mock = MockOtherThing()
         assert not SysideAdapter.is_instance(mock, "CalculationDefinition")
+
+    def test_live_metatype_failure_preserves_parser_cause(self, monkeypatch):
+        cause = RuntimeError("live metatype lookup failed")
+
+        class FakeLiveElement:
+            qualified_name = "Probe::value"
+            document = SimpleNamespace(url="file:root-0/model.sysml")
+            cst_node = SimpleNamespace(start_point=SimpleNamespace(line=6))
+
+            def isinstance(self, _metatype):
+                raise cause
+
+        monkeypatch.setattr(
+            adapter_module,
+            "get_syside",
+            lambda: SimpleNamespace(Element=FakeLiveElement),
+        )
+        monkeypatch.setattr(
+            SysideAdapter,
+            "_get_type_map",
+            classmethod(lambda cls: {"CalculationDefinition": object}),
+        )
+
+        with pytest.raises(SemanticEvidenceError) as caught:
+            SysideAdapter.is_instance(FakeLiveElement(), "CalculationDefinition")
+
+        assert caught.value.code is SemanticEvidenceCode.METATYPE_CHECK_FAILED
+        assert caught.value.operation == "is_instance"
+        assert caught.value.reference == "Probe::value"
+        assert caught.value.location == ("root-0/model.sysml", 7)
+        assert caught.value.cause is cause
+        assert caught.value.__cause__ is cause
+
+    def test_non_live_mock_uses_exact_mapped_mro_without_calling_parser_method(self):
+        class MockCalculationDefinition:
+            def isinstance(self, _metatype):
+                raise AssertionError("non-live test double called parser method")
+
+        assert SysideAdapter.is_instance(MockCalculationDefinition(), "CalculationDefinition")
+
+
+class TestDocumentTier:
+    """Document classification uses SysIDE's exact enum member."""
+
+    def test_returns_all_real_document_tiers_unchanged(self):
+        document_tier = get_syside().DocumentTier
+        for tier in (
+            document_tier.StandardLibrary,
+            document_tier.External,
+            document_tier.Project,
+        ):
+            element = SimpleNamespace(document=SimpleNamespace(document_tier=tier))
+            assert SysideAdapter.document_tier(element) is tier
+
+    @pytest.mark.parametrize(
+        "element",
+        [
+            SimpleNamespace(document=None),
+            SimpleNamespace(document=SimpleNamespace()),
+            SimpleNamespace(document=SimpleNamespace(document_tier=None)),
+        ],
+    )
+    def test_missing_document_or_tier_is_typed(self, element):
+        with pytest.raises(SemanticEvidenceError) as caught:
+            SysideAdapter.document_tier(element)
+        assert caught.value.code is SemanticEvidenceCode.DOCUMENT_TIER_MISSING
+
+    def test_foreign_document_tier_is_typed(self):
+        class ForeignTier(Enum):
+            Project = 2
+
+        element = SimpleNamespace(
+            document=SimpleNamespace(document_tier=ForeignTier.Project)
+        )
+        with pytest.raises(SemanticEvidenceError) as caught:
+            SysideAdapter.document_tier(element)
+        assert caught.value.code is SemanticEvidenceCode.DOCUMENT_TIER_UNKNOWN
 
 
 class TestElementsOfType:

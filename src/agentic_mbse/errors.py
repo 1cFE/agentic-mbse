@@ -1,17 +1,63 @@
 """Error classes for agentic-mbse."""
 
+from enum import Enum
+
+SEMANTIC_EVIDENCE_API_VERSION = "semantic-evidence/v2"
+
 __all__ = [
     "AgenticMBSEError",
     "ModelLoadError",
     "ValidationError",
     "ConfigurationError",
     "AdapterError",
+    "SEMANTIC_EVIDENCE_API_VERSION",
+    "SemanticEvidenceCode",
+    "SemanticEvidenceError",
 ]
 
 
 class AgenticMBSEError(Exception):
     """Base error for agentic-mbse package."""
+
     pass
+
+
+class SemanticEvidenceCode(str, Enum):
+    """Closed failure vocabulary for incomplete parser evidence."""
+
+    METATYPE_CHECK_FAILED = "METATYPE_CHECK_FAILED"
+    EXPRESSION_KIND_UNSUPPORTED = "EXPRESSION_KIND_UNSUPPORTED"
+    OPERAND_ITERATION_FAILED = "OPERAND_ITERATION_FAILED"
+    EXPRESSION_DEPTH_EXHAUSTED = "EXPRESSION_DEPTH_EXHAUSTED"
+    RESOLVED_TARGET_MISSING = "RESOLVED_TARGET_MISSING"
+    DOCUMENT_TIER_MISSING = "DOCUMENT_TIER_MISSING"
+    DOCUMENT_TIER_UNKNOWN = "DOCUMENT_TIER_UNKNOWN"
+    RESOLVED_LEAF_MISSING = "RESOLVED_LEAF_MISSING"
+    INDEXED_REFERENCE_UNSUPPORTED = "INDEXED_REFERENCE_UNSUPPORTED"
+
+
+class SemanticEvidenceError(AgenticMBSEError):
+    """A named failure to obtain exact semantic evidence from SysIDE."""
+
+    def __init__(
+        self,
+        code: SemanticEvidenceCode,
+        operation: str,
+        detail: str,
+        *,
+        location: tuple[str, int] | None = None,
+        reference: str | None = None,
+        cause: BaseException | None = None,
+    ) -> None:
+        if code.value in detail:
+            raise ValueError("semantic evidence detail must not contain its code")
+        self.code = code
+        self.operation = operation
+        self.detail = detail
+        self.location = location
+        self.reference = reference
+        self.cause = cause
+        super().__init__(f"{operation}: {detail}")
 
 
 class ModelLoadError(AgenticMBSEError):

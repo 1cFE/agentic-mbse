@@ -13,7 +13,8 @@ Checks:
 import sys
 from typing import Any
 
-from agentic_mbse.sysml.binding import extract_bindings
+from agentic_mbse.sysml.binding import classify_binding, extract_bindings
+from agentic_mbse.sysml.reference_use import ExactReferenceUse, resolved_referent
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import (
     BindingType,
@@ -181,11 +182,16 @@ def check_unbound_inputs(model: Any) -> list[ValidationIssue]:
                     continue
 
                 # CHECK 3: Do ALL binding targets have values?
-                for ref in binding.references:
-                    if ref.element and not _has_defined_value(ref.element):
+                for use in binding.reference_uses:
+                    # An indexed use has no exact target, so this check has nothing to
+                    # ask about it; the closed boundary refuses it before generation.
+                    if not isinstance(use, ExactReferenceUse):
+                        continue
+                    leaf = use.path.leaf
+                    if not leaf.declares_value:
                         location = get_element_location(calc_usage)
                         calc_name = get_qualified_name(calc_usage)
-                        target_name = ref.qualified_name or ref.name
+                        target_name = leaf.qualified_name or leaf.element_name
                         issues.append(
                             ValidationIssue(
                                 level=2,
@@ -271,48 +277,21 @@ def _has_default_value(feature: Any) -> bool:
     return False
 
 
-def _has_defined_value(element: Any) -> bool:
-    """
-    Check if attribute/feature has a defined value.
-
-    Distinguishes:
-    - Defined: "attribute x : Real = 5.0;" → True
-    - Undefined: "attribute x : Real;" → False
-
-    Uses same mechanism as _has_default_value() but applied to target attribute
-    instead of calc def input.
-
-    Algorithm:
-    1. Check if element has feature_value_expression attribute
-    2. Return True if expression exists, False otherwise
-
-    Future enhancement: Could also check if element is calc output
-    (has value from computation rather than direct assignment)
-
-    Args:
-        element: Attribute or feature element to check
-
-    Returns:
-        True if value defined, False if only type declared
-    """
-    # Same pattern as _has_default_value()
-    if hasattr(element, "feature_value_expression") and element.feature_value_expression:
-        return True
-
-    # Future enhancement: Check for other value sources
-    # - Computed from calc output (calc_usage.output_name)
-    # - Inherited/redefined value
-
-    return False
-
-
 def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
     """
     C1 (Item 12): flag every self-named input binding.
 
-    A binding `in P = P` where the reference name equals the calc's own input
-    parameter name resolves to that parameter itself, so the intended outer value
-    never reaches the input. Every such binding is a modeling error.
+    A binding whose right-hand side resolves to the calc's own input parameter
+    (`in P = P`) dead-ends: the intended outer value never reaches the input.
+    Every such binding is a modeling error.
+
+    The comparison is referent identity, mirroring codegen's SRC-01 rule
+    (``extraction/source_evidence.py::is_self_binding``): the value
+    expression's resolved referent element is compared with the bound parameter
+    member itself. A name comparison is wrong in one direction — it also
+    flagged the supported owner-qualified form ``in x = owner::x``, whose
+    referent is the owner's attribute and not the parameter (F-2,
+    self-binding-replacement Phase 1).
 
     There is no same-named-outer-feature exemption. The check used to suppress the
     diagnostic when the enclosing part carried an attribute or sibling calc output
@@ -340,14 +319,20 @@ def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
                 if getattr(feat, "name", None)
             }
 
-            for binding in extract_bindings(calc_usage):
-                # Self-named: the bound param is a real input, the RHS is a bare
-                # reference (not a chain/literal), and its name equals the param.
-                if binding.param_name not in input_params:
+            for member in getattr(calc_usage, "owned_members", None) or []:
+                param_name = str(getattr(member, "name", "") or "")
+                if param_name not in input_params:
                     continue
-                if binding.binding_type != BindingType.REFERENCE:
+                expr = getattr(member, "feature_value_expression", None)
+                if classify_binding(expr) != BindingType.REFERENCE:
                     continue
-                if binding.source_path != binding.param_name:
+                # Self-named: the RHS reference's resolved referent IS the bound
+                # parameter member. An unresolved referent is a load error, not
+                # a self-binding this check can establish.
+                referent = resolved_referent(expr)
+                if referent is None:
+                    continue
+                if SysideAdapter.element_id(referent) != SysideAdapter.element_id(member):
                     continue
 
                 calc_name = get_qualified_name(calc_usage)
@@ -357,7 +342,7 @@ def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
                         severity=Severity.ERROR,
                         code=ValidationCode.L2_SELF_NAMED_BINDING,
                         message=(
-                            f"Input '{binding.param_name}' in calc '{calc_name}' binds to a "
+                            f"Input '{param_name}' in calc '{calc_name}' binds to a "
                             f"same-named reference that resolves to the calc's own parameter, "
                             f"so the binding dead-ends. A same-named feature in the enclosing "
                             f"scope does not rescue it — the binding is never reinterpreted as "
@@ -367,10 +352,34 @@ def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
                         location=get_element_location(calc_usage),
                     )
                 )
-        except Exception:
-            continue
+        except Exception as error:  # noqa: BLE001 — surfaced as a finding, never swallowed
+            # An inspection failure leaves this usage UNVERIFIED. Reporting it as
+            # an ERROR keeps the run honest: a SysIDE or adapter regression must
+            # read as a failed check, not as a clean model (audit F4).
+            issues.append(
+                ValidationIssue(
+                    level=2,
+                    severity=Severity.ERROR,
+                    code=ValidationCode.L2_CHECK_UNVERIFIABLE,
+                    message=(
+                        f"self-named-binding check could not inspect calc usage "
+                        f"'{_safe_display_name(calc_usage)}': "
+                        f"{type(error).__name__}: {error}. The usage is unverified; "
+                        f"treat this as a check failure, not a clean result"
+                    ),
+                    element_name=_safe_display_name(calc_usage),
+                )
+            )
 
     return issues
+
+
+def _safe_display_name(element: Any) -> str:
+    """A best-effort name for an element that may itself refuse inspection."""
+    try:
+        return str(get_qualified_name(element) or getattr(element, "name", None) or repr(element))
+    except Exception:  # noqa: BLE001 — naming only; the failure is already being reported
+        return "<unnameable element>"
 
 
 def check_orphaned_elements(model: Any) -> list[ValidationIssue]:
@@ -428,10 +437,9 @@ def validate_structure(models_path: str) -> QualityCheckResult:
     all_issues: list[ValidationIssue] = []
     all_issues.extend(check_unused_definitions(model))
     all_issues.extend(check_unbound_inputs(model))
-    # C1 (Item 12): FAIL a self-named binding (`in P = P`) only when NO same-named
-    # feature covers it. The plant design-attribute idiom (`in radius = radius` with
-    # an outer `attribute radius = <lit>`, Item 9) and the EXPOSE channel (Item 10)
-    # both carry a covering feature, so they pass — only a true dead-end FAILs.
+    # C1 (Item 12): FAIL when `in P = P` resolves the right-hand reference to the
+    # bound input member itself. Same-named features elsewhere do not change that
+    # resolved identity.
     all_issues.extend(check_self_named_bindings(model))
     all_issues.extend(check_orphaned_elements(model))
 

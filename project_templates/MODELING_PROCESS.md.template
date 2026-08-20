@@ -330,6 +330,20 @@ def regardless.
 - [ ] Inline design expressions reference only same-part siblings (no calc-output arithmetic, self-reference, or dotted paths)
 - [ ] EXPOSE patterns are pure value propagation (no arithmetic on calc outputs)
 
+### 2.2.2 Calculation Input Binding — pick the form by where the value lives
+
+- **Attribute on the part that owns the calc → make the names differ (D-5).** Name the calc
+  def's formal apart from the attribute (`in volume_in = volume;`). **Never** write the
+  self-named form `in volume = volume` — the reference resolves to the calc's own input,
+  the value never arrives, and generation refuses the model (`SI_SELF_BINDING`).
+- **Value on another part → name the occurrence path (D-7):** `in driver_cost = driver.cost;`.
+- **Owner-qualified (`my_component::volume`) is a supported alternative** for the local case:
+  it anchors to the exact feature owned by that usage (with multiple owner occurrences the
+  route refuses rather than guessing). D-5 is the recommended local form.
+
+The authoritative copy of this rule is agentic-mbse `docs/patterns/plant-idiom.md`,
+"Binding a modelled value into a calculation".
+
 ### 2.3 Cross-File Coupling Architecture
 
 **Pattern for exposing calculated values:**
@@ -344,10 +358,12 @@ package MyComponent {
         attribute volume : Real = 150.0;
         attribute surface_area : Real = 500.0;
 
-        // Internal calculation
+        // Internal calculation. The calc def names its formals with an `_in`
+        // suffix (D-5: make the names differ), so each bare reference lands on
+        // the part's own attribute.
         calc component_calc : ComponentCalculation {
-            in volume = my_component::volume;
-            in surface_area = my_component::surface_area;
+            in volume_in = volume;
+            in surface_area_in = surface_area;
         }
 
         // EXPOSED ATTRIBUTE (for other files to import)

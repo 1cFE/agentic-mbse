@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
 
+from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 from agentic_mbse.sysml.constraint_facts import (
     ActualFact,
     ConstraintDefinitionFact,
@@ -30,7 +31,6 @@ from agentic_mbse.sysml.constraint_facts import (
     RedefinitionFact,
 )
 from agentic_mbse.sysml.expression import (
-    extract_feature_chain_segments,
     extract_literal_value,
     is_literal_node,
     reconstruct_expression,
@@ -50,6 +50,14 @@ from agentic_mbse.sysml.expression_ir import (
     OperatorNode,
     UnitAnnotationNode,
     UnsupportedNode,
+)
+from agentic_mbse.sysml.reference_use import (
+    MAX_EXPRESSION_DEPTH,
+    ExactReferenceUse,
+    inspect_reference_uses,
+    materialize_operands,
+    resolved_chain_target,
+    resolved_referent,
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
@@ -112,6 +120,10 @@ class _ExtractionContext:
 
     def __init__(self) -> None:
         self.diagnostics: list[ExtractionDiagnosticFact] = []
+        # The recursion's own position in the one shared traversal budget.  It lives on the
+        # context because the IR dispatch recurses through several helpers that already
+        # thread it, and because no caller may choose it.
+        self.depth = 0
 
 
 @dataclass(frozen=True)
@@ -441,17 +453,17 @@ def _unit_annotation_fact(expression: Any) -> UnitFact | None:
     operator = getattr(expression, "operator", None)
     operator_str = str(operator) if operator is not None else None
     if operator_str == "[":
-        operands = list(getattr(expression, "operands", ()))
+        operands = list(materialize_operands(expression))
         if len(operands) != 2:
             return None
-        unit_referent = getattr(operands[1], "referent", None)
+        unit_referent = resolved_referent(operands[1])
         return UnitFact(
             unit=_qualified_name(unit_referent),
             dimension=_unit_definition_qn(unit_referent),
         )
     if operator_str in {"+", "-"}:
         child_units = [
-            _unit_annotation_fact(operand) for operand in getattr(expression, "operands", ())
+            _unit_annotation_fact(operand) for operand in materialize_operands(expression)
         ]
         if child_units and all(unit == child_units[0] for unit in child_units):
             return child_units[0]
@@ -502,13 +514,38 @@ def _operand_type_fact(expression: Any) -> OperandTypeFact:
 # === Predicate-tree recovery ===
 
 
+def _authored_chain_segments(expression: Any) -> list[str]:
+    """The authored dotted segments of one feature chain.
+
+    Read off the closed reference use rather than re-walked here, so the segments and the
+    resolved path come from the same acquisition.  An indexed chain has no exact path;
+    its authored segments still describe what the model wrote, which is what the neutral
+    IR records.
+    """
+    uses = inspect_reference_uses(expression)
+    if len(uses) != 1:
+        return []
+    use = uses[0]
+    if isinstance(use, ExactReferenceUse):
+        return list(use.authored_segments)
+    return use.reference.split(".")
+
+
 def _reference_node(expression: Any, *, chain: bool) -> FeatureReferenceNode:
     if chain:
-        target = getattr(expression, "target_feature", None)
-        chain_segments = extract_feature_chain_segments(expression)
+        target = resolved_chain_target(expression)
+        chain_segments = _authored_chain_segments(expression)
     else:
-        target = getattr(expression, "referent", None)
+        target = resolved_referent(expression)
         chain_segments = []
+    if target is None:
+        raise SemanticEvidenceError(
+            SemanticEvidenceCode.RESOLVED_TARGET_MISSING,
+            operation="extract_expression_ir",
+            detail="resolved reference has no exact target",
+            location=SysideAdapter.get_source_location(expression),
+            reference=_qualified_name(expression) or getattr(expression, "name", None),
+        )
     reference = FeatureReferenceFact(
         source_name=reconstruct_expression(expression),
         target=_identity(target),
@@ -558,7 +595,7 @@ def _unsupported_node(expression: Any, diagnostic: str | None = None) -> Unsuppo
 
 
 def _unit_annotation_node(expression: Any, ctx: _ExtractionContext) -> UnitAnnotationNode:
-    operands = list(getattr(expression, "operands", ()))
+    operands = list(materialize_operands(expression))
     value = _expression_ir(operands[0], ctx)
     if value is None:
         raise ValueError("unit annotation expression has no value operand")
@@ -576,7 +613,7 @@ def _unit_text(unit_operand: Any) -> str | None:
     Reading it here (rather than re-deriving text via `reconstruct_expression`, which reads
     `referent.name`) is what keeps the source spelling and the resolved name distinct facts.
     """
-    referent = getattr(unit_operand, "referent", None)
+    referent = resolved_referent(unit_operand)
     if referent is None:
         return reconstruct_expression(unit_operand) or None
     short_name = getattr(referent, "short_name", None)
@@ -589,7 +626,7 @@ def _unit_text(unit_operand: Any) -> str | None:
 def _operator_node(expression: Any, operator_str: str, ctx: _ExtractionContext) -> OperatorNode:
     operands = [
         node
-        for operand in getattr(expression, "operands", ())
+        for operand in materialize_operands(expression)
         if (node := _expression_ir(operand, ctx)) is not None
     ]
     operand_type = (
@@ -620,7 +657,7 @@ def _invocation_node(expression: Any, ctx: _ExtractionContext) -> InvocationNode
     function_qn = [str(part) for part in function_qn_raw] if function_qn_raw is not None else None
     arguments = [
         node
-        for operand in getattr(expression, "operands", ())
+        for operand in materialize_operands(expression)
         if (node := _expression_ir(operand, ctx)) is not None
     ]
     return InvocationNode(
@@ -651,14 +688,36 @@ def extract_expression_ir(
 
 
 def _expression_ir(expression: Any, ctx: _ExtractionContext) -> ExpressionIR | None:
+    """Extract one expression's IR node under the shared traversal budget.
+
+    Exhaustion raises the named `EXPRESSION_DEPTH_EXHAUSTED` failure rather than a bare
+    `RecursionError`, which a caller cannot tell from an interpreter limit it hit some other
+    way.  The dispatch itself is `_expression_ir_node`.
+    """
+    if expression is None:
+        return None
+    if ctx.depth >= MAX_EXPRESSION_DEPTH:
+        raise SemanticEvidenceError(
+            SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED,
+            operation="extract_expression_ir",
+            detail="maximum expression traversal depth exhausted before the IR was built",
+            location=SysideAdapter.get_source_location(expression),
+            reference=_qualified_name(expression) or getattr(expression, "name", None),
+        )
+    ctx.depth += 1
+    try:
+        return _expression_ir_node(expression, ctx)
+    finally:
+        ctx.depth -= 1
+
+
+def _expression_ir_node(expression: Any, ctx: _ExtractionContext) -> ExpressionIR | None:
     """Dispatch a live syside expression node to its ExpressionIR node (D4 allowlist).
 
     Fixed order — `FeatureChainExpression` before `OperatorExpression` (FCE subtypes OE) —
     matching the proven S2 dispatch. Every unrecognized metaclass or operator routes to
     `UnsupportedNode`; nothing is silently coerced.
     """
-    if expression is None:
-        return None
     if SysideAdapter.is_instance(expression, "FeatureChainExpression"):
         return _reference_node(expression, chain=True)
     if SysideAdapter.is_instance(expression, "OperatorExpression"):
@@ -885,8 +944,8 @@ def _is_standard_library_element(element: Any) -> bool:
     of every model and carry no user-authored information, so they are excluded from
     `ContextFact` — a structural (document-origin) filter, not a fixture-coupled one.
     """
-    url = SysideAdapter.get_document_url(element)
-    return url is not None and "sysml.library" in url
+    tier = SysideAdapter.document_tier(element)
+    return tier is SysideAdapter.document_tier_type().StandardLibrary
 
 
 def _context_fact(model: Any, context: Any, ctx: _ExtractionContext) -> ContextFact | None:

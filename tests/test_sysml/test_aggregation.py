@@ -119,6 +119,19 @@ def test_term_dataclass_contract_and_import_identity() -> None:
     assert aggregation.LocalTerm is data_models.LocalTerm is sysml.LocalTerm
 
 
+def _neutral(terms: list) -> list[tuple]:
+    """The neutral identity of each sum term, without its exact-evidence fields."""
+    return [
+        (
+            term.part_usage_name,
+            term.attribute_name,
+            term.multiplicity_attr,
+            term.multiplicity_count,
+        )
+        for term in terms
+    ]
+
+
 def test_decompose_sum_singleton_local_and_literal_without_codegen_leaks() -> None:
     expr = MockOperatorExpression(
         "+",
@@ -134,9 +147,12 @@ def test_decompose_sum_singleton_local_and_literal_without_codegen_leaks() -> No
     assert_no_codegen_fields(result)
     assert isinstance(result.root, OperatorNode)
     assert result.root.operator == "+"
-    assert result.sum_terms == [SumTerm("module", "cost", None, None)]
-    assert result.singleton_terms == [SingletonTerm("allocation.total")]
-    assert result.local_terms == [LocalTerm("misc")]
+    # The neutral shape is what this test is about; the exact evidence beside it now
+    # always populates (the closed route resolves a fact for every reference), so the
+    # comparison is on the identifying fields rather than on whole-dataclass equality.
+    assert _neutral(result.sum_terms) == [("module", "cost", None, None)]
+    assert [term.source_path for term in result.singleton_terms] == ["allocation.total"]
+    assert [term.attribute_name for term in result.local_terms] == ["misc"]
     assert not result.has_unsupported
 
 
@@ -147,7 +163,7 @@ def test_wrapper_facts_and_permissive_sum_operand_unwrap() -> None:
 
     assert isinstance(result.root, SumNode)
     assert result.root.wrapper_context == "filter"
-    assert result.sum_terms == [SumTerm("module", "cost", None, None)]
+    assert _neutral(result.sum_terms) == [("module", "cost", None, None)]
     assert [w.function_name for w in result.wrappers] == ["filter"]
     assert [w.reason for w in result.wrappers] == ["sum_operand"]
     assert not result.has_unsupported
@@ -195,7 +211,7 @@ def test_single_element_sum_becomes_local_reference() -> None:
     result = decompose_aggregation_expression(invocation("sum", ref("misc")))
 
     assert isinstance(result.root, FeatureReferenceNode)
-    assert result.local_terms == [LocalTerm("misc")]
+    assert [term.attribute_name for term in result.local_terms] == ["misc"]
     assert result.sum_terms == []
 
 

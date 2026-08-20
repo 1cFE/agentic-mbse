@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal, TypeAlias
 
+from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 from agentic_mbse.sysml.data_models import (
     LocalTerm,
     ResolvedTargetFact,
@@ -16,12 +17,16 @@ from agentic_mbse.sysml.data_models import (
     SumTerm,
 )
 from agentic_mbse.sysml.expression import (
-    extract_feature_chain_name,
-    extract_feature_reference_name,
-    feature_chain_facts,
     is_literal_node,
     reconstruct_expression,
-    resolved_target_fact,
+)
+from agentic_mbse.sysml.reference_use import (
+    ReferenceUse,
+    authored_reference_text,
+    build_aggregation_term,
+    inspect_reference_uses,
+    materialize_operands,
+    require_exact_reference_use,
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
@@ -107,15 +112,17 @@ class FeatureChainNode:
     ``resolved_target`` is the exact SysIDE-resolved leaf of the chain,
     ``chain_root`` the resolved root referent, both captured before any name is
     rendered (SOURCE-IDENTITY Item 4). ``resolved_member_names`` is the resolved
-    member path from root to leaf. ``has_index_segment`` marks an ``#(i)``
-    index operand — recorded, never flattened away.
+    member path from root to leaf.
+
+    There is no index marker.  An authored ``#(i)`` never reaches this node: the
+    closed reference boundary refuses it by name first, so a chain node here is
+    exact by construction rather than exact-unless-a-flag-says-otherwise.
     """
 
     source_path: str
     resolved_target: ResolvedTargetFact | None = None
     chain_root: ResolvedTargetFact | None = None
     resolved_member_names: tuple[str, ...] = ()
-    has_index_segment: bool = False
 
 
 @dataclass
@@ -247,35 +254,26 @@ def _decompose_node(
     # FeatureChainExpression MUST be before OperatorExpression because SysIDE can
     # report feature chains as operators too.
     if SysideAdapter.is_instance(node, "FeatureChainExpression"):
-        source_path = extract_feature_chain_name(node)
-        chain_fact = feature_chain_facts(node)
-        chain_root = chain_fact.root
-        resolved_target = chain_fact.leaf
-        member_names = chain_fact.resolved_member_names
-        has_index = chain_fact.has_index_segment
+        # The guard runs before any term or node object exists, so this site cannot
+        # manufacture an index-free term from an indexed reference.
+        exact = require_exact_reference_use(
+            _one_reference_use(node), operation="decompose_aggregation_expression"
+        )
         if collect_terms:
-            ctx.singleton_terms.append(
-                SingletonTerm(
-                    source_path=source_path,
-                    resolved_target=resolved_target,
-                    chain_root=chain_root,
-                    resolved_member_names=member_names,
-                )
-            )
-            ctx.source_refs.append(source_path)
+            ctx.singleton_terms.append(build_aggregation_term(exact))
+            ctx.source_refs.append(exact.authored_text)
         return FeatureChainNode(
-            source_path=source_path,
-            resolved_target=resolved_target,
-            chain_root=chain_root,
-            resolved_member_names=member_names,
-            has_index_segment=has_index,
+            source_path=exact.authored_text,
+            resolved_target=exact.path.leaf,
+            chain_root=exact.path.root,
+            resolved_member_names=exact.path.resolved_member_names,
         )
 
     if SysideAdapter.is_instance(node, "OperatorExpression"):
         operator = str(getattr(node, "operator", "+"))
         operands = [
             _decompose_node(op, ctx, collect_terms=collect_terms)
-            for op in list(getattr(node, "operands", []))
+            for op in materialize_operands(node)
         ]
         diagnostic_id = None
         unsupported = operator not in SUPPORTED_OPERATORS
@@ -293,8 +291,11 @@ def _decompose_node(
         )
 
     if SysideAdapter.is_instance(node, "FeatureReferenceExpression"):
-        attr_name = extract_feature_reference_name(node)
-        resolved_target = resolved_target_fact(getattr(node, "referent", None))
+        exact = require_exact_reference_use(
+            _one_reference_use(node), operation="decompose_aggregation_expression"
+        )
+        attr_name = exact.authored_text
+        resolved_target: ResolvedTargetFact | None = exact.path.leaf
         if collect_terms:
             ctx.local_terms.append(
                 LocalTerm(attribute_name=attr_name, resolved_target=resolved_target)
@@ -313,7 +314,7 @@ def _decompose_node(
 
     if hasattr(node, "function") and hasattr(node.function, "name"):
         func_name = str(node.function.name)
-        operands = list(getattr(node, "operands", []))
+        operands = list(materialize_operands(node))
 
         if func_name == "sum" and operands:
             operand, wrapper_context = _unwrap_sum_operand(operands[0], ctx)
@@ -389,7 +390,7 @@ def _unwrap_sum_operand(
     if SysideAdapter.is_instance(node, "FeatureReferenceExpression"):
         return node, None
     if hasattr(node, "function") and hasattr(node.function, "name"):
-        operands = list(getattr(node, "operands", []))
+        operands = list(materialize_operands(node))
         if operands:
             ctx.wrappers.append(WrapperFact(str(node.function.name), "sum_operand", depth))
             unwrapped, inner_context = _unwrap_sum_operand(operands[0], ctx, depth + 1)
@@ -405,7 +406,7 @@ def _unwrap_known_wrapper(node: Any, ctx: _AggregationContext, depth: int = 0) -
     if SysideAdapter.is_instance(node, "FeatureReferenceExpression"):
         return node, depth
     if hasattr(node, "function") and hasattr(node.function, "name"):
-        operands = list(getattr(node, "operands", []))
+        operands = list(materialize_operands(node))
         if operands:
             ctx.wrappers.append(WrapperFact(str(node.function.name), "known_wrapper", depth))
             return _unwrap_known_wrapper(operands[0], ctx, depth + 1)
@@ -413,18 +414,38 @@ def _unwrap_known_wrapper(node: Any, ctx: _AggregationContext, depth: int = 0) -
 
 
 def _sum_operand_name(operand: Any) -> str:
-    if SysideAdapter.is_instance(operand, "FeatureChainExpression"):
-        return extract_feature_chain_name(operand)
-    return extract_feature_reference_name(operand)
+    return authored_reference_text(operand)
+
+
+def _one_reference_use(node: Any) -> ReferenceUse:
+    """The single reference use of one reference or chain node.
+
+    The inspector is total over an expression tree; at a reference node it returns
+    exactly one use, and anything else means the node was not the reference kind this
+    caller dispatched on.
+    """
+    uses = inspect_reference_uses(node)
+    if len(uses) != 1:
+        raise SemanticEvidenceError(
+            SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED,
+            operation="decompose_aggregation_expression",
+            detail=f"reference node yielded {len(uses)} reference uses, expected one",
+            location=SysideAdapter.get_source_location(node),
+        )
+    return uses[0]
 
 
 def _operand_chain_evidence(
     operand: Any,
 ) -> tuple[ResolvedTargetFact | None, ResolvedTargetFact | None, tuple[str, ...]]:
     """The exact (leaf, root, member names) of a sum() operand chain or reference."""
-    if SysideAdapter.is_instance(operand, "FeatureChainExpression"):
-        chain_fact = feature_chain_facts(operand)
-        return chain_fact.leaf, chain_fact.root, chain_fact.resolved_member_names
-    if SysideAdapter.is_instance(operand, "FeatureReferenceExpression"):
-        return resolved_target_fact(getattr(operand, "referent", None)), None, ()
-    return None, None, ()
+    if not (
+        SysideAdapter.is_instance(operand, "FeatureChainExpression")
+        or SysideAdapter.is_instance(operand, "FeatureReferenceExpression")
+    ):
+        return None, None, ()
+    exact = require_exact_reference_use(
+        _one_reference_use(operand), operation="decompose_aggregation_expression"
+    )
+    root = exact.path.root if exact.form == "chain" else None
+    return exact.path.leaf, root, exact.path.resolved_member_names

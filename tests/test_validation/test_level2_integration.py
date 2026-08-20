@@ -103,9 +103,12 @@ def test_level2_essential_helpers_exist():
     # Essential helpers that remain after Phase 6 cleanup
     assert hasattr(level2_structure, "_extract_input_features")
     assert hasattr(level2_structure, "_has_default_value")
-    assert hasattr(level2_structure, "_has_defined_value")
 
     # Verify they're callable
     assert callable(level2_structure._extract_input_features)
     assert callable(level2_structure._has_default_value)
-    assert callable(level2_structure._has_defined_value)
+
+    # `_has_defined_value` is gone: its only caller read `ExpressionRef.element` to reach a
+    # live node, and the closed evidence route carries `ResolvedTargetFact.declares_value`
+    # instead.  Nothing called it afterwards, and a `hasattr` assertion is not a caller.
+    assert not hasattr(level2_structure, "_has_defined_value")

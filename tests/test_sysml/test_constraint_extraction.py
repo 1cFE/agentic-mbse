@@ -4,9 +4,17 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
-from agentic_mbse.sysml.constraint_extraction import extract_identified_constraint_facts
+import pytest
+
+from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
+from agentic_mbse.sysml.constraint_extraction import (
+    _is_standard_library_element,
+    extract_expression_ir,
+    extract_identified_constraint_facts,
+)
 from agentic_mbse.sysml.constraint_facts import ConstraintFacts
 from agentic_mbse.sysml.syside_adapter import get_syside
 
@@ -238,3 +246,34 @@ def test_extract_expression_ir_public_single_node_entry() -> None:
     ir = extract_expression_ir(live.result_expression)
     assert ir is not None
     assert serialize_expression(ir) == serialize_expression(inline.predicate)
+
+
+def test_inherited_context_filter_uses_exact_document_tier() -> None:
+    tier = syside.DocumentTier
+    assert _is_standard_library_element(
+        SimpleNamespace(document=SimpleNamespace(document_tier=tier.StandardLibrary))
+    )
+    assert not _is_standard_library_element(
+        SimpleNamespace(document=SimpleNamespace(document_tier=tier.Project))
+    )
+    assert not _is_standard_library_element(
+        SimpleNamespace(document=SimpleNamespace(document_tier=tier.External))
+    )
+
+
+def test_constraint_reference_without_exact_target_fails_by_name() -> None:
+    class MockFeatureReferenceExpression:
+        referent = None
+        operands = ()
+        qualified_name = "Probe::missing"
+        document = SimpleNamespace(
+            url="file:root-0/model.sysml", document_tier=syside.DocumentTier.Project
+        )
+        cst_node = SimpleNamespace(start_point=SimpleNamespace(line=2))
+
+    with pytest.raises(SemanticEvidenceError) as caught:
+        extract_expression_ir(MockFeatureReferenceExpression())
+
+    assert caught.value.code is SemanticEvidenceCode.RESOLVED_TARGET_MISSING
+    assert caught.value.reference == "Probe::missing"
+    assert caught.value.location == ("root-0/model.sysml", 3)

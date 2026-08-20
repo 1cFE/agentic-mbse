@@ -3,6 +3,8 @@
 These tests document the expected behavior of all dataclasses and enums.
 """
 
+import pytest
+
 
 def test_package_imports():
     """Verify sysml_utils package is importable.
@@ -63,35 +65,31 @@ def test_severity_values():
 # Phase 3: Simple Dataclasses
 
 
-def test_expression_ref_basic():
-    """ExpressionRef captures attribute reference info.
+def test_the_permissive_expression_ref_is_gone():
+    """`ExpressionRef` is deleted, not deprecated.
 
-    Input: ExpressionRef with name and qualified_name
-    Output: Fields are accessible
+    It let a consumer rebuild a reference from names and carried the live element along
+    for anyone who wanted to go back to the parser.  Both are what `semantic-evidence/v2`
+    removes, so the type has no replacement under its old name and no alias.
     """
-    from agentic_mbse.sysml.types import ExpressionRef
+    from agentic_mbse.sysml import types
 
-    ref = ExpressionRef(
-        name="volume",
-        qualified_name="CATFMFERadialBuild::plasma_region::volume",
-        document_path="models/designs/catf_mfe/radial_build.sysml",
-    )
-    assert ref.name == "volume"
-    assert ref.qualified_name == "CATFMFERadialBuild::plasma_region::volume"
-    assert ref.document_path == "models/designs/catf_mfe/radial_build.sysml"
+    assert not hasattr(types, "ExpressionRef")
+    with pytest.raises(ImportError):
+        from agentic_mbse.sysml.types import ExpressionRef  # noqa: F401
 
 
-def test_expression_ref_element_excluded_from_serialization():
-    """ExpressionRef.element is excluded from JSON/dict serialization.
+def test_the_reference_evidence_carries_no_live_element():
+    """The closed value records facts; it never hands a caller the parser node back."""
+    from dataclasses import fields
 
-    Input: ExpressionRef with element set
-    Output: element not in model_dump() output
-    """
-    from agentic_mbse.sysml.types import ExpressionRef
+    from agentic_mbse.sysml.data_models import ResolvedTargetFact
+    from agentic_mbse.sysml.reference_use import ExactReferenceUse
 
-    ref = ExpressionRef(name="test", element=object())
-    dump = ref.model_dump()
-    assert "element" not in dump
+    names = {field.name for field in fields(ResolvedTargetFact)}
+    assert "element" not in names
+    assert {"element_id", "qualified_name", "document_url", "document_tier"} <= names
+    assert "element" not in {field.name for field in fields(ExactReferenceUse)}
 
 
 def test_validation_issue_str_format():
@@ -169,26 +167,60 @@ def test_binding_info_literal_value_extraction():
     assert float_binding.literal_value == 0.95
 
 
-def test_binding_info_expression_with_references():
-    """BindingInfo captures references for EXPRESSION bindings.
+def test_binding_info_expression_carries_ordered_reference_uses():
+    """BindingInfo captures the ordered closed uses for EXPRESSION bindings.
 
-    Input: BindingInfo with EXPRESSION type and references list
-    Output: references are accessible
+    Input: BindingInfo with EXPRESSION type and a reference-use tuple
+    Output: the uses are accessible in authored order, as closed values
     """
-    from agentic_mbse.sysml.types import BindingInfo, BindingType, ExpressionRef
+    from uuid import NAMESPACE_URL, uuid5
 
-    ref_a = ExpressionRef(name="a", qualified_name="Part::a")
-    ref_b = ExpressionRef(name="b", qualified_name="Part::b")
+    from agentic_mbse.sysml.data_models import ResolvedTargetFact
+    from agentic_mbse.sysml.reference_use import (
+        ExactReferenceUse,
+        ExactSemanticPath,
+        IndexedReferenceUse,
+    )
+    from agentic_mbse.sysml.types import BindingInfo, BindingType
+
+    def _use(name: str) -> ExactReferenceUse:
+        fact = ResolvedTargetFact(
+            element_id=uuid5(NAMESPACE_URL, name),
+            owner_element_id=None,
+            redefined_element_ids=(),
+            qualified_name=f"Part::{name}",
+            element_kind="AttributeUsage",
+            element_name=name,
+        )
+        return ExactReferenceUse(
+            path=ExactSemanticPath(
+                root=fact, segments=(fact,), leaf=fact, resolved_member_names=()
+            ),
+            form="bare",
+            authored_text=name,
+            authored_segments=(name,),
+            authored_qualifier=None,
+            plural=False,
+            location=None,
+        )
 
     expr_binding = BindingInfo(
         param_name="result",
         binding_type=BindingType.EXPRESSION,
-        references=[ref_a, ref_b],
+        reference_uses=(_use("a"), _use("b")),
     )
 
     assert expr_binding.is_expression is True
-    assert len(expr_binding.references) == 2
-    assert expr_binding.references[0].name == "a"
+    assert len(expr_binding.reference_uses) == 2
+    assert expr_binding.reference_uses[0].path.leaf.element_name == "a"
+
+    # An indexed use stays closed here and is never projected into path metadata.
+    indexed = BindingInfo(
+        param_name="picked",
+        binding_type=BindingType.EXPRESSION,
+        reference_uses=(IndexedReferenceUse(reference="cells#(2).mass", location=None),),
+    )
+    assert not hasattr(indexed.reference_uses[0], "path")
 
 
 def test_calc_usage_info_location_property():
