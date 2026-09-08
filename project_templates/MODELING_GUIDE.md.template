@@ -147,8 +147,7 @@ calc my_calc { in value = other_part.exposed_attr; }
 > [patterns/cross-file-binding.md]
 
 **Calculation input binding** (pick by where the value lives):
-- own part's attribute → make the names differ: `in radius_in = radius;` — never the
-  self-named `in radius = radius`, which binds the input to itself and is refused;
+- own part's attribute → make the names differ: `in radius_in = radius;` — never the self-named `in radius = radius`, which binds the input to itself and is refused;
 - another part → name the occurrence path: `in driver_cost = driver.cost;`;
 - owner-qualified → anchors to the exact feature owned by the named usage.
 > [patterns/plant-idiom.md] - "Binding a modelled value into a calculation" is the authoritative rule
@@ -178,9 +177,7 @@ calc my_calc { in value = other_part.exposed_attr; }
 
 ### Why Regression Testing Matters
 
-The library/usage separation pattern enables model reuse but introduces regression risk:
-when you modify a library definition to support a new design, existing designs that
-depend on it may break. Regression tests detect these breakages automatically.
+The library/usage separation pattern enables model reuse but introduces regression risk: when you modify a library definition to support a new design, existing designs that depend on it may break. Regression tests detect these breakages automatically.
 
 ### Test Structure
 
@@ -273,8 +270,7 @@ syside check models/library/file.sysml
 <!-- SKILL: moves to sysml-conventions -->
 ## Pattern Documentation Index
 
-All pattern docs are in the agentic-mbse `docs/patterns/` directory.
-Agents have read permissions via `.claude/settings.json`.
+All pattern docs are in the agentic-mbse `docs/patterns/` directory. Consult the current assistant adapter in `.agentic-mbse/` for external-document access.
 
 | Pattern Doc | Covers |
 |-------------|--------|

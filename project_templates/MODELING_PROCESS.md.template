@@ -2,19 +2,14 @@
 
 ## Command-Level Modeling Flow
 
-This section is the canonical map for building models. Individual commands own their stage-specific
-method. `EPIC_GUIDE.md` owns decomposition detail. Use this map to choose an entry point, decide which
-optional stages add confidence, and determine when modeling work is complete.
+This section is the canonical map for building models. Individual commands own their stage-specific method. `EPIC_GUIDE.md` owns decomposition detail. Use this map to choose an entry point, decide which optional stages add confidence, and determine when modeling work is complete.
 
 ### Choose an Entry Point
 
 - **Trivial change:** use `/quick-model`, validate the affected model surface, and report the result.
-- **Standard work:** enter at the earliest unsatisfied stage in the Standard flow below. Existing,
-  approved artifacts satisfy their stage; inspect their content rather than relying only on presence.
-- **Epic work:** use `/backlog` to define and decompose the epic into complete Standard items before
-  implementation. Register backlog state through `agentic-mbse pm` commands.
-- **Unclear objective or authority gap:** start with `/research`, then route the resulting evidence into
-  Standard work or an Epic.
+- **Standard work:** enter at the earliest unsatisfied stage in the Standard flow below. Existing, approved artifacts satisfy their stage; inspect their content rather than relying only on presence.
+- **Epic work:** use `/backlog` to define and decompose the epic into complete Standard items before implementation. Register backlog state through `agentic-mbse pm` commands.
+- **Unclear objective or authority gap:** start with `/research`, then route the resulting evidence into Standard work or an Epic.
 
 ### Standard Work
 
@@ -26,24 +21,15 @@ optional stages add confidence, and determine when modeling work is complete.
 Optional stages are shown in brackets:
 
 - Use `/research` when the objective depends on missing, uncertain, or conflicting authority sources.
-- Use `/review-model` when an independent design critique would reduce architectural or integration
-  risk. It is advisory; resolve material findings before planning.
+- Use `/review-model` when an independent design critique would reduce architectural or integration risk. It is advisory; resolve material findings before planning.
 
-`/audit-models` is mandatory for Standard work. A positive independent audit is the completion
-boundary. Closing or archiving the work item is a separate owner action through `/backlog close` or
-`/status close`.
+`/audit-models` is mandatory for Standard work. A positive independent audit is the completion boundary. Closing or archiving the work item is a separate owner action through `/backlog close` or `/status close`.
 
 ### Epic Work
 
-An Epic is a dependency graph of complete Standard items, never a set of workflow phases. Execute an
-item only after its declared dependencies are satisfied. Parallel work also requires non-overlapping
-model write surfaces; serial execution is the safe default. Validate the integrated model after each
-parallel wave.
+An Epic is a dependency graph of complete Standard items, never a set of workflow phases. Execute an item only after its declared dependencies are satisfied. Parallel work also requires non-overlapping model write surfaces; serial execution is the safe default. Validate the integrated model after each parallel wave.
 
-Each item follows the full Standard flow through a positive item audit. After every item passes, run a
-fresh Epic audit with `/audit-models`. That audit checks the epic success criteria, every item audit,
-and cross-item integration. A positive Epic audit is the Epic completion boundary; the owner still
-decides whether to close or archive it.
+Each item follows the full Standard flow through a positive item audit. After every item passes, run a fresh Epic audit with `/audit-models`. That audit checks the epic success criteria, every item audit, and cross-item integration. A positive Epic audit is the Epic completion boundary; the owner still decides whether to close or archive it.
 
 ### Stage Responsibilities
 
@@ -158,71 +144,26 @@ This process ensures:
 
 **Launch agents in parallel** to maximize speed:
 
-```python
-# Agent 1: Explore library structure
-Task(
-    subagent_type="Explore",
-    prompt="""Map all calc defs in models/library/ with focus on:
-    - Physics calculations
-    - Component definitions
-    - Material properties and constraints
+Use the current assistant adapter in `.agentic-mbse/` to launch these independent tasks, queuing work within the host’s concurrency limits:
 
-    For each calc def found, provide: name, file location, inputs, outputs.
-    Thoroughness: medium
-    """,
-    model="haiku"  # Fast for exploration
-)
+- **Repository explorer:** Map calculation definitions in `models/library/`: physics calculations, components, materials, and constraints. Return names, file locations, inputs, and outputs.
+- **sysml-expert:** Explain cross-file attribute bindings, calculation instantiation, and circular dependency prevention with concrete examples.
+- **kerml-expert:** Explain package imports, relevant standard-library functions, and numerical base types with examples.
+- **General agent:** Analyze the reference baseline at the source path. Extract calculation flow, expected numerical values, and formulas with file/line references.
 
-# Agent 2: Get SysMLv2 modeling patterns
-Task(
-    subagent_type="sysml-expert",
-    prompt="""Provide guidance on:
-    - Cross-file attribute binding patterns
-    - Calc def instantiation and binding
-    - Circular dependency prevention
-
-    Include concrete examples.
-    """,
-    model="haiku"
-)
-
-# Agent 3: Get KerML base types and imports
-Task(
-    subagent_type="kerml-expert",
-    prompt="""Provide guidance on:
-    - Package import syntax (private vs public)
-    - Standard library functions relevant to calculations
-    - Base type hierarchy for numerical attributes
-
-    Include concrete examples.
-    """,
-    model="haiku"
-)
-
-# Agent 4: Analyze baseline (if applicable)
-Task(
-    subagent_type="general-purpose",
-    prompt="""Analyze reference baseline at {SOURCE_PATH} for:
-    - Calculation flow
-    - Expected numerical values for validation
-
-    Extract formulas with file:line references.
-    """,
-    model="sonnet"  # Needs reasoning for code analysis
-)
-```
-
-**Why parallel?** These tasks are independent and can run concurrently (3x speedup).
+Gather the results before choosing the model design.
 
 ### 1.3 Read Existing Models (Parallel)
+
+The `read_file` sketches below describe file reads; use the host’s available tools.
 
 **After** library discovery, read relevant existing models:
 
 ```python
 # Use parallel Read calls
-Read("models/designs/{design}/system.sysml")
-Read("models/designs/{design}/physics.sysml")
-Read("models/library/physics/calculations.sysml")
+read_file("models/designs/{design}/system.sysml")
+read_file("models/designs/{design}/physics.sysml")
+read_file("models/library/physics/calculations.sysml")
 # ... other relevant files
 ```
 
@@ -318,11 +259,7 @@ Am I creating...
 └─ A simple constant? → literal in designs/
 ```
 
-**Key Rule:** A design attribute may reference **same-part siblings** inline (`= radius * 2.0`)
-as a convenience for simple arithmetic and unit conversions. It may NOT compute on a calc
-output (`= calc.power * 0.95`), reference itself, or reach through a dotted path — those must
-be refactored to calc defs in `library/`. For any real or reusable calculation, prefer a calc
-def regardless.
+**Key Rule:** A design attribute may reference **same-part siblings** inline (`= radius * 2.0`) as a convenience for simple arithmetic and unit conversions. It may NOT compute on a calc output (`= calc.power * 0.95`), reference itself, or reach through a dotted path — those must be refactored to calc defs in `library/`. For any real or reusable calculation, prefer a calc def regardless.
 
 **Checkpoint:**
 - [ ] All reusable/non-trivial calc defs identified and placed in `models/library/`
@@ -332,17 +269,11 @@ def regardless.
 
 ### 2.2.2 Calculation Input Binding — pick the form by where the value lives
 
-- **Attribute on the part that owns the calc → make the names differ (D-5).** Name the calc
-  def's formal apart from the attribute (`in volume_in = volume;`). **Never** write the
-  self-named form `in volume = volume` — the reference resolves to the calc's own input,
-  the value never arrives, and generation refuses the model (`SI_SELF_BINDING`).
+- **Attribute on the part that owns the calc → make the names differ (D-5).** Name the calc def's formal apart from the attribute (`in volume_in = volume;`). **Never** write the self-named form `in volume = volume` — the reference resolves to the calc's own input, the value never arrives, and generation refuses the model (`SI_SELF_BINDING`).
 - **Value on another part → name the occurrence path (D-7):** `in driver_cost = driver.cost;`.
-- **Owner-qualified (`my_component::volume`) is a supported alternative** for the local case:
-  it anchors to the exact feature owned by that usage (with multiple owner occurrences the
-  route refuses rather than guessing). D-5 is the recommended local form.
+- **Owner-qualified (`my_component::volume`) is a supported alternative** for the local case: it anchors to the exact feature owned by that usage (with multiple owner occurrences the route refuses rather than guessing). D-5 is the recommended local form.
 
-The authoritative copy of this rule is agentic-mbse `docs/patterns/plant-idiom.md`,
-"Binding a modelled value into a calculation".
+The authoritative copy of this rule is agentic-mbse `docs/patterns/plant-idiom.md`, "Binding a modelled value into a calculation".
 
 ### 2.3 Cross-File Coupling Architecture
 
@@ -470,8 +401,7 @@ For each new calc def:
 
 **Formula**:
 ```python
-intermediate = param_a * factor
-result = intermediate + param_b
+intermediate = param_a * factor result = intermediate + param_b
 ```
 
 **Source**: reference_file.py lines XX-YY
@@ -496,8 +426,7 @@ Document all cross-file attribute bindings:
 
 **Import statements required**:
 ```sysml
-private import ComponentA::component_a;
-private import ComponentB::component_b;
+private import ComponentA::component_a; private import ComponentB::component_b;
 ```
 ```
 
@@ -769,14 +698,14 @@ grep -r "calc def" models/library/
 **Solution**: Use parallel Read calls
 ```python
 # Good: Parallel
-Read("file1.sysml")
-Read("file2.sysml")
-Read("file3.sysml")
+read_file("file1.sysml")
+read_file("file2.sysml")
+read_file("file3.sysml")
 
 # Bad: Sequential (requires multiple messages)
-Read("file1.sysml")
+read_file("file1.sysml")
 # ... wait for result ...
-Read("file2.sysml")
+read_file("file2.sysml")
 ```
 
 **Time saved**: 3x faster for exploration
@@ -911,5 +840,4 @@ A well-designed model specification should have:
 
 ---
 
-**Last Updated**: <!-- YYYY-MM-DD -->
-**Patterns Validated**: See [MODELING_GUIDE.md](MODELING_GUIDE.md) Pattern Validation Status section
+**Last Updated**: <!-- YYYY-MM-DD --> **Patterns Validated**: See [MODELING_GUIDE.md](MODELING_GUIDE.md) Pattern Validation Status section

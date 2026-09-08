@@ -39,7 +39,7 @@ def test_canonical_flow_marks_optional_and_completion_stages():
 
 
 def test_epic_audit_has_explicit_integration_scope():
-    audit = read_repo_file("claude/commands/audit-models.md")
+    audit = read_repo_file("skills/audit-models/SKILL.md")
 
     assert "Epic audit" in audit
     assert "epic success criteria" in audit
@@ -49,10 +49,10 @@ def test_epic_audit_has_explicit_integration_scope():
 
 def test_touched_workflow_docs_have_no_stale_commands_or_validation_levels():
     touched_paths = (
-        "claude/commands/backlog.md",
-        "claude/commands/status.md",
-        "claude/commands/plan-model.md",
-        "claude/commands/implement-model.md",
+        "skills/backlog/SKILL.md",
+        "skills/status/SKILL.md",
+        "skills/plan-model/SKILL.md",
+        "skills/implement-model/SKILL.md",
         "project_templates/EPIC_GUIDE.md.template",
         "project_templates/README.md.template",
     )
@@ -65,10 +65,10 @@ def test_touched_workflow_docs_have_no_stale_commands_or_validation_levels():
 
 
 def test_orchestrator_frontmatter_and_single_alignment_contract():
-    command = read_repo_file("claude/commands/orchestrate-modeling.md")
+    command = read_repo_file("skills/orchestrate-modeling/SKILL.md")
 
     assert "name: orchestrate-modeling" in command
-    assert "Task" in command.partition("---")[2].partition("---")[0]
+    assert "Agent" in command.partition("---")[2].partition("---")[0]
     assert "user-invocable: true" in command
     assert command.count("## Align Once") == 1
     assert "only planned owner checkpoint" in command
@@ -77,11 +77,11 @@ def test_orchestrator_frontmatter_and_single_alignment_contract():
 
 
 def test_orchestrator_uses_fresh_self_contained_noninteractive_tasks():
-    command = read_repo_file("claude/commands/orchestrate-modeling.md")
+    command = read_repo_file("skills/orchestrate-modeling/SKILL.md")
     normalized_command = " ".join(command.split())
     lowercase_command = normalized_command.lower()
 
-    assert "fresh Task agent" in normalized_command
+    assert "fresh subagent" in normalized_command
     assert "self-contained stage brief" in normalized_command
     assert "Do not interact with the owner" in normalized_command
     assert "return all blocking questions before writing" in lowercase_command
@@ -90,7 +90,7 @@ def test_orchestrator_uses_fresh_self_contained_noninteractive_tasks():
 
 
 def test_orchestrator_declares_routes_decision_tiers_and_bounded_repair():
-    command = read_repo_file("claude/commands/orchestrate-modeling.md")
+    command = read_repo_file("skills/orchestrate-modeling/SKILL.md")
 
     assert "Standard route" in command and "Epic route" in command
     assert "Execution detail" in command
@@ -102,7 +102,7 @@ def test_orchestrator_declares_routes_decision_tiers_and_bounded_repair():
 
 
 def test_orchestrator_does_not_embed_a_runtime_or_automatic_close():
-    command = read_repo_file("claude/commands/orchestrate-modeling.md").lower()
+    command = read_repo_file("skills/orchestrate-modeling/SKILL.md").lower()
 
     for prohibited in (
         "orchestrate-stage.sh",

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-agentic-mbse is a domain-agnostic Model-Based Systems Engineering (MBSE) toolkit for AI-assisted systems engineering. It provides SysML v2 model validation and Claude Code slash commands/agents for guided modeling workflows.
+agentic-mbse is a domain-agnostic Model-Based Systems Engineering (MBSE) toolkit for AI-assisted systems engineering. It provides SysML v2 model validation and Claude Code and Codex skills/agents for guided modeling workflows.
 
 ## Critical: Two Contexts
 
@@ -24,7 +24,7 @@ When discussing what agentic-mbse provides to its users:
 - **Target repo**: Any SysML modeling project that runs `agentic-mbse init`
 - **What users do**: Build SysML v2 models using guided workflows
 - **Project management**: `knowledge/`, `modeling_project/`, `work/`, `data/` directories
-- **Workflow commands**: The MBSE commands we ship in `claude/commands/`:
+- **Workflow commands**: The MBSE commands we ship in `skills/`:
   - `/spec-model` - requirements and success criteria for models
   - `/design-model` - model architecture decisions
   - `/plan-model` - implementation planning with phases
@@ -35,14 +35,14 @@ When discussing what agentic-mbse provides to its users:
 
 | Term | Meaning |
 |------|---------|
-| **"commands"** | The MBSE commands in `claude/commands/` that we ship, unless explicitly stated otherwise |
-| **"target repo"** | A SysML modeling project that installs agentic-mbse and inherits `claude/` and `project_templates/` |
+| **"commands"** | The MBSE commands in `skills/` that we ship, unless explicitly stated otherwise |
+| **"target repo"** | A SysML modeling project that installs agentic-mbse and installs shared `skills/`, native `agents/` and `adapters/`, and `project_templates/` |
 | **"spec", "plan", "implement"** | In modeling context, these refer to `/spec-model`, `/plan-model`, `/implement-model` - NOT personal dev workflow commands |
 
 ### Why This Matters
 
 When a work item says "the spec should include evaluatable success criteria" or "the plan should add test phases":
-- **CORRECT**: Modify `claude/commands/spec-model.md` or `claude/commands/plan-model.md`
+- **CORRECT**: Modify `skills/spec-model.md` or `skills/plan-model.md`
 - **WRONG**: Assume it means personal dev commands like `/_my_spec` or `/_my_plan`
 
 The personal dev workflow commands are used to develop THIS repo but are not shipped to users.
@@ -130,14 +130,13 @@ This only affects agent-invoked commands. Running the same commands directly in 
   - `graph.py`: Dependency cycle detection and topological sort
   - `types.py`: ValidationIssue, BindingInfo, and other type definitions
 
-### Claude Integration (`claude/`)
+### Assistant Integration
 
-The toolkit includes Claude Code slash commands and agents installed via `agentic-mbse init`:
-
-- **commands/**: MBSE workflow commands (`/design-model`, `/plan-model`, `/implement-model`, `/spec-model`, `/research`, `/audit-models`, `/onboard`, `/manage-sources`, `/backlog`)
-- **agents/**: Specialized agents (`python-debugger.md`, `kerml-expert.md`, `sysml-expert.md`, `syside-expert.md`, `sysmlv2-validator.md`)
-- **skills/**: Reusable skill definitions
-- **hooks/**: Git hooks (e.g., `ruff-format.sh`)
+- **skills/**: The 15 modeling workflows and ten supporting skill bundles, shared by Claude Code and Codex.
+- **agents/**: Shared expert role instructions. The installer renders native Claude Markdown and Codex TOML definitions with documentation paths resolved.
+- **adapters/**: Platform tool, delegation, question, and permission guidance.
+- **claude/hooks/**: The existing inactive formatter hook script.
+- **cli/installation.py**: Shared ownership-aware installer used by `init`, `install-commands`, and the replication helper.
 
 ### Project Templates (`project_templates/`)
 
@@ -205,7 +204,7 @@ See [Critical: Two Contexts](#critical-two-contexts) for the full distinction. Q
 | `modeling_project/` | B (target repo) | Architecture, requirements, overview, guides | No (created by init) |
 | `work/` | B (target repo) | Backlog, active/completed work items, learnings | No (created by init) |
 | `data/` | B (target repo) | Traceability matrix and structured data | No (created by init) |
-| `claude/commands/` | B (shipped to target repos) | MBSE workflow commands users run | Yes |
+| `skills/` | B (shipped to target repos) | MBSE workflow commands users run | Yes |
 | `tests/` | A (developing agentic-mbse) | pytest tests for Python code | Yes |
 
 ## Change Coordination
@@ -228,7 +227,7 @@ When adding new files to `cmd_init()`, categorize them as user-owned or tool-own
 | Category | Behavior | Examples |
 |----------|----------|----------|
 | **User-owned** | Create once, skip on re-init (preserve customizations) | `knowledge/SOURCE_INDEX.md`, `modeling_project/OVERVIEW.md`, `work/BACKLOG.md`, `README.md`, `.gitignore`, `.claude/settings.json` |
-| **Tool-owned** | Always update on re-init (get latest versions) | Commands, agents, skills, hooks, `modeling_project/MODELING_GUIDE.md`, `modeling_project/MODELING_PROCESS.md`, `work/EPIC_GUIDE.md`, `work/backlog/epic_template.md` |
+| **Tool-owned** | Update unmodified files; preserve or prompt on local edits | Commands, agents, skills, hooks, `modeling_project/MODELING_GUIDE.md`, `modeling_project/MODELING_PROCESS.md`, `work/EPIC_GUIDE.md`, `work/backlog/epic_template.md` |
 
 Use `--force` to overwrite user-owned files.
 

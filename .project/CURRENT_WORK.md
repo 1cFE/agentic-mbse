@@ -6,6 +6,10 @@
 
 ## Active Work
 
+### Native Claude/Codex skills: implemented and test-installed
+
+Branch `native-claude-codex-skills`, worktree `/tmp/agentic-mbse-native-skills`. Shared skills, native adapters and role rendering, explicit Codex role registration, and the ownership-aware common installer are implemented. The final code suite passed 1,926 tests with one skipped and five deselected; targeted Ruff/mypy and wheel-content checks passed. The wheel was test-installed into `/home/reid/agentic-mbse-target`; both catalogs and a trusted Codex nested custom-role documentation read passed. Codex project trust must be established in the client; installation preserves personal trust settings. Full modeling execution remains unverified, including the inherited contradictory standalone `syside check` guidance. Details: `.project/active/native-skills/validation.md`. Independent workflow audit has not been run.
+
 ### Constraint-Wave Item 1: Profile Semantics (complete; orchestration paused for owner discussion)
 
 The fresh remediation audit found no remaining implementation or approved semantic-contract gap.
