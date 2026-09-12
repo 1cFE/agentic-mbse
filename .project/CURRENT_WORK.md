@@ -1,6 +1,6 @@
 # Current Work
 
-**Last Updated**: 2026-07-18
+**Last Updated**: 2026-09-07
 
 ---
 
@@ -144,6 +144,10 @@ Claude-powered document structure detection pipeline. 4-layer extraction, 12-doc
 ---
 
 ## Session Notes
+
+### 2026-09-07: Native Claude/Codex support research
+
+Research is complete in [native Claude/Codex skills](research/20260907-162310_native-claude-codex-skills.md). Linux probes confirmed that both clients discover shared relative-symlinked skill bundles, including all 15 workflows and ten existing skills, and that relocation/copy fallback work. The report recommends shared skills plus native agent/config adapters; these are agent recommendations awaiting implementation scope. Custom Codex role execution and full nested modeling behavior remain unverified. Installer probes reproduced skipped-command hash loss, skill-edit deletion on re-init, and forced command installation writing through destination symlinks. Runnable probes and findings are in `active/spike-native-skill-install/`. No production implementation changed.
 
 ### 2026-03-01
 

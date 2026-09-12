@@ -1,0 +1,23 @@
+{
+  "claude": {
+    "registered_roles": [
+      "kerml-expert",
+      "python-debugger",
+      "syside-expert",
+      "sysml-expert",
+      "sysmlv2-validator"
+    ]
+  },
+  "codex": {
+    "verdict": "inconclusive: prompt-input does not expose a role catalog",
+    "returncode": 0,
+    "role_names_in_prompt": {
+      "sysml-expert": false,
+      "sysmlv2-validator": false,
+      "python-debugger": false,
+      "kerml-expert": false,
+      "syside-expert": false
+    },
+    "stderr": ""
+  }
+}

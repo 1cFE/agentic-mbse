@@ -55,6 +55,56 @@ Prioritized list of epics and features.
 
 ## P2 - Medium Priority
 
+### [PM-MATRIX-ESCAPED-PIPE] Validation-matrix parser drops rows with escaped pipes; `add-validation` then reuses an SV id
+
+**Priority**: P2
+**Effort**: 0.5 day
+**Status**: Filed 2026-08-21 (fusion-tea, WI-030 spec session)
+
+**Problem**: `_parse_markdown_table` splits every line on `|` (`src/agentic_mbse/pm/parser.py:109`) and does not honor the GFM escape `\|`. A cell containing `\|rel dev\|` (fusion-tea `modeling_project/VALIDATION_MATRIX.md` rows SV-034 and SV-035) shifts the columns, the `Type` enum check fails, the row is dropped with a warning, and `parse_validation_matrix` returns without it. `add_validation` then computes `_next_id("SV", [e.id for e in result.data])` (`pm/operations.py:515`, `:58-70`) over the surviving rows and minted a second `SV-034`. Silent id reuse in a registry other artifacts cite by id.
+
+**Goal**: (1) the table splitter honors `\|` (split on unescaped pipes only, then unescape). (2) `_next_id` for every registry (SV, DI, PR, AD, WI, G, AQ) scans the raw file for `^\| (PREFIX-\d+) \|`-shaped ids in addition to parsed rows, so a row that fails validation can never cause reuse. (3) A test with a row containing `\|` and a malformed row proves both.
+
+**Downstream**: fusion-tea BACKLOG row "VALIDATION_MATRIX.md rows SV-034/SV-035 are invisible to the PM parser" (fixes its two cells independently).
+
+---
+
+
+### [PM-APPROVE-RESEARCH-EMPTY-INSIGHTS] `approve-research` refuses a research document that mints no insight
+
+**Priority**: P2
+**Effort**: 0.5 day
+**Status**: Filed 2026-08-25 (fusion-tea, goal-research-seam implementation)
+
+**Problem**: `approve_research` returns `success=False, message="No insights provided"` when the insight list is empty (`src/agentic_mbse/pm/operations.py:664-668`). That treats "this research approved no new domain insight" as a caller error. It is a legitimate and common outcome: a round can approve a research document that registers sources, records a bounded negative, or confirms an existing insight without minting a DI. The refusal means such a document cannot be moved from `knowledge/research/pending/` to `approved/` through the tool at all, so the operator moves the file by hand — exactly the hand-editing the PM exists to remove.
+
+**Goal**: An empty insight list approves the document and mints nothing. Distinguish it from a malformed call: a missing `--insights` argument is still an error; `--insights '[]'` is an explicit "no insights". A test covers both, and asserts the document lands in `approved/` with no DI written.
+
+**Downstream**: fusion-tea `.project/active/goal-research-seam/` — the seam's research surface registers sources under an approval gate that does not mint DIs (spec R-C3, R-C4), so it hits this refusal on every source-only round.
+
+---
+
+
+### [EXTRACT-PROVENANCE-HOOK] `extract` should return provenance JSON, or expose a `--register` hook
+
+**Priority**: P2
+**Effort**: 1-2 days
+**Status**: Filed 2026-08-25 (fusion-tea, goal-research-seam implementation)
+
+**Problem**: `agentic-mbse extract` produces everything a downstream registry entry needs — source URL, the hash of the source as fetched, the output path — and returns none of it in machine-readable form. A caller has to re-derive all of it from the output directory, and the layout it must re-derive differs by input kind. Four asymmetries measured against the pinned build on 2026-08-25, each of which a downstream caller currently hard-codes:
+
+1. **Flat vs nested output.** `<url> --output DIR` writes `DIR/output.md`, `DIR/raw.html`, `DIR/metrics.json` flat (`extract_cli.py:222-230` passes `--output` straight through as `output_dir`). A local PDF writes `DIR/<stem>/{output.md,metrics.json,decisions.json,images/}`. Callers flatten by hand.
+2. **`--save-source` writes no `raw.pdf` on the local-PDF path.** The flag only persists `result.raw_source_bytes`, which the arXiv shortcut populates (`extract_cli.py:541`). A caller wanting the raw artifact for a local PDF has to copy the input itself.
+3. **No `file://` support.** URL dispatch is `startswith(("http://","https://"))` only (`extract_cli.py:407`); a `file://` URL is reported as `path does not exist`. Offline test fixtures therefore need a loopback HTTP server rather than a local file.
+4. **`raw.html` is written re-encoded, not as fetched.** The frontmatter `content_hash_sha256` digests the bytes as fetched (`web_backend.py:444` hashes `fetched.content`), but `raw.html` is written from `fetched.text()` — decoded with the declared charset and re-encoded UTF-8 (`web_backend.py:515`). The two agree only for a page that was already UTF-8. Measured on a loopback page served as `charset=iso-8859-1`: fetched and frontmatter both `3b6596c0…`, `raw.html` on disk `afb0c4a6…`. A downstream caller that assumes the frontmatter hash verifies the stored artifact is wrong. Related: a page whose declared charset is wrong makes `fetched.text()` raise `UnicodeDecodeError` after extraction has otherwise succeeded, so capture can die having written nothing.
+
+**Goal**: Either (a) `extract --provenance-json PATH` writes one object carrying source URL or origin path, the hash of the source as fetched, the path and hash of the stored raw artifact, the output path and its hash, and the backend used; or (b) a `--register` hook the caller supplies. Option (a) is the smaller change and serves any downstream registry. Separately, write `raw.html` as the fetched bytes so the frontmatter hash verifies it, or document the two as different numbers with different jobs.
+
+**Downstream**: fusion-tea `scripts/source_registry.py` carries all four workarounds today — a flatten step, a staged copy of the local PDF, a loopback HTTP fixture, and two separately recorded hashes (`raw_sha256` for identity, `raw_artifact_sha256` for integrity).
+
+---
+
+
 ### [ITEM-SYNC-F1] SysIDE self-named-recursion vendor note (evaluation-time finding)
 
 **Priority**: P2
