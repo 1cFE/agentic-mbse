@@ -249,7 +249,9 @@ private import NumericalFunctions::sum;
 :>> capital_cost = sum(child.capital_cost);
 ```
 
-### Interface: Missing conservation constraints
+### Interface: Describe and verify conservation separately
+
+A bare constraint documents the relationship. To claim an enforced balance, use a supported asserted constraint or a test through the intended execution route. Parsing this port example does not establish executable port lowering or conservation checks.
 
 ```sysml
 // WRONG: No flow balance
@@ -259,7 +261,7 @@ part def 'Flow Component' {
     // Missing constraint!
 }
 
-// CORRECT: Conservation enforced
+// Descriptive flow-balance relationship; this bare constraint does not execute
 part def 'Flow Component' {
     port inlet : 'Flow Port';
     port outlet : 'Flow Port';

@@ -12,7 +12,7 @@ Not all work needs an epic. Use the scale taxonomy to decide the right entry poi
 
 | Scale | When to use | Entry point | Modeling examples |
 |-------|-------------|-------------|-------------------|
-| Trivial | Single attribute change, doc comment fix, value update | Direct edit + validate (planned: `/quick-model`) | Fix a naming convention violation; add a missing doc comment citing a source; update a constant from an authority source revision |
+| Trivial | Understood local correction with bounded semantic impact | `/quick-model` | Fix a naming convention violation; add a missing doc comment citing a source; update a constant from an authority source revision |
 | Standard | A cohesive modeling feature: new subsystem, integration, refactor | `/spec-model` | Model a costing subsystem; integrate power balance with a plant subsystem; refactor a cost hierarchy to match an updated standard |
 | Epic | Multiple domain concerns requiring decomposition before execution | `/backlog` | End-to-end costing pipeline across all subsystems; full system model with multiple design configurations; architecture migration to a new domain taxonomy |
 
@@ -27,23 +27,18 @@ Work items need to be the right size. Too large and they become unmanageable; to
 ### Too Large (needs decomposition into an epic)
 
 - Spans multiple domain subsystems that could be modeled independently
-- Depends on 4+ authority sources
-- Would produce 25+ new definitions (part defs, calc defs, constraint defs)
-- Success criteria mix structural concerns with validation concerns with codegen concerns
-- Cannot describe the scope without referencing multiple architectural decisions (AD-XXX)
+- Contains independently useful outcomes with different owners or unresolved dependencies
+- Cannot be reviewed as one coherent change to the system
 
 ### Too Small (doesn't need the full workflow)
 
-- Single definition change or addition
-- No new interfaces or cross-file dependencies
-- Success criteria are a single validation check
+- The correction and its affected consumers are understood
+- No consequential architecture or supported-use decision is needed
 - The spec/design/plan cycle would produce more overhead than value
 
 ### Just Right (standard work item)
 
 - Models one domain subsystem or concern end-to-end
-- Depends on 1-3 authority sources
-- Produces 5-20 new definitions
 - Can be validated independently through applicable validation levels
 - If paused and resumed later, the spec.md provides enough context to continue
 - A change to a domain insight (DI-XXX) affecting this item would be localized — not cascading
@@ -66,7 +61,7 @@ List which sources from `knowledge/SOURCE_INDEX.md` constrain the work. Flag any
 
 Decompose by domain subsystem or model package — NOT by workflow phase (spec/design/plan) and NOT by validation level. Each item should produce a complete, independently-validatable piece of the model.
 
-Align with architectural decisions: if AD-001 defines subsystem boundaries, items should respect those boundaries. If a natural item cuts across two packages, that is a signal to revisit the architecture or to split the item.
+Align with architectural decisions: if AD-001 defines subsystem boundaries, items should respect those boundaries. A coherent outcome may cross packages; split it only when the resulting items remain independently useful and their handoff is clear.
 
 ### Step 4: Check Each Item's Independence
 
@@ -104,7 +99,7 @@ Updated: YYYY-MM-DD
 ---
 ```
 
-- **Status**: `draft` while decomposition is in progress, `active` once items are being executed, `completed` when all items are done.
+- **Status**: `draft` while decomposition is in progress, `active` once items are being executed, `completed` when all items are closed (the PM rollup). Independent acceptance of epic outcomes and integration additionally requires the linked epic audit; the rollup alone does not certify it.
 - **Priority**: P0 (critical) through P3 (low). Matches BACKLOG.md priority scheme.
 - **Goal**: Links to a project goal in `modeling_project/OVERVIEW.md`. Every epic should trace to at least one goal.
 - **Created/Updated**: ISO dates. Updated changes whenever the epic file is modified.

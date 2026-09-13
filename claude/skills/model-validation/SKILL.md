@@ -1,176 +1,58 @@
 ---
 name: model-validation
 description: >
-  Use when asking about "validate", "validation levels", "quality checks", "run checks",
-  "test models", "regression test", "Level 1", "Level 6", "validation pyramid",
-  "model quality", "parse error", "verification thresholds", "PASS WARN FAIL",
-  or when deciding what validation to run and how to interpret results.
-  Provides the 6-level validation methodology, timing, thresholds, and regression testing patterns.
+  Use when choosing model checks, running the six-level validator, interpreting
+  diagnostics, or assessing regression, source, numerical, and integration evidence.
 allowed-tools: Read, Grep, Glob, Bash
 user-invocable: false
 ---
 
 # Model Validation
 
-The 6-level validation pyramid, when to validate, how to interpret results, and regression testing patterns.
+Choose checks for the promised behavior and its actual risks. Validate early enough to catch useful failures, then validate the integrated outcome. The number of phases or model elements does not determine the strength of the evidence.
 
-## Core Principle
+## Tool Checks and Their Limits
 
-Validate early and often. Every modeling phase ends with a validation checkpoint. Levels 1-3 are blocking (must pass before proceeding); Levels 4-5 are informational WIP (guide improvements but don't block progress); Level 6 is application-specific (ADR-002, manifests, codegen readiness).
+| Level | What the tool examines |
+|---|---|
+| 1 — Syntax | Parser diagnostics |
+| 2 — Structural completeness | Definitions, inputs, and bindings |
+| 3 — Dependency integrity | Dependency cycles |
+| 4 — Constraint coverage | Authored constraints and executable coverage |
+| 5 — Documentation | Documentation presence |
+| 6 — Architecture/readiness | Supported patterns and downstream execution readiness |
 
-## When to Reference
+These checks do not establish source fidelity or sufficient engineering coverage. Interpret each diagnostic's severity and applicability; retain the actual exit status. L1–L3 errors normally block valid execution, and relevant L6 failures can block a required downstream route. A documented project-specific exception needs applicable evidence, not blanket dismissal of a level or an unchanged issue count.
 
-- `/implement-model` — validation after each implementation phase
-- `/design-model` — prototype validation during design
-- `/plan-model` — planning validation checkpoints per phase
-- `/audit-models` — comprehensive verification against baselines
-- `/spec-model` — defining evaluatable success criteria
+## Run the Relevant Checks
 
-## The 6-Level Validation Pyramid
-
-| Level | Name | Checks | Blocking |
-|-------|------|--------|----------|
-| 1 | Syntax Validation | Parser errors (via syside) | Yes |
-| 2 | Structural Completeness | Unused definitions, unbound inputs | Yes |
-| 3 | Dependency Integrity | Circular dependencies | Yes |
-| 4 | Constraint Coverage | Constraint counts, coverage metrics | No (WIP) |
-| 5 | Traceability & Documentation | Doc comment presence on definitions | No (WIP) |
-| 6 | Architecture & Pipeline Readiness | ADR-002 rules, manifest subsystems, codegen readiness | Configurable |
-
-## CLI Invocation
-
-For `uv run` prefix and environment rules, see the **toolkit-awareness** skill.
+Follow the project's environment instructions and **toolkit-awareness** guidance:
 
 ```bash
-# All levels, fail-fast (default)
-uv run agentic-mbse validate models/
-
-# All levels, continue past failures
-uv run agentic-mbse validate --complete models/
-
-# Specific level only
-uv run agentic-mbse validate --level=N models/
-
-# Verbose diagnostics
-uv run agentic-mbse validate --verbose models/
+uv run agentic-mbse validate models/             # fail-fast default
+uv run agentic-mbse validate --complete models/  # report all six levels
+uv run agentic-mbse validate --level=3 models/   # focused level
+uv run pytest tests/models/ -v                  # model regressions, if present
 ```
 
-## When to Validate
+Use the model scope and test selection appropriate to the change. During editing or a prototype, run the checks that answer the immediate question. Before completion, assess all applicable levels and integrated regressions. After repair, rerun the affected checks; broaden when new changes or failures justify it.
 
-| Timing | Levels | Purpose |
-|--------|--------|---------|
-| After prototype (design phase) | 1-3 | Verify architecture works |
-| After each implementation phase | 1-5 | Catch issues early |
-| Final validation | All (1-6) | Full quality assessment |
-| After audit | Focused (specific levels) | Verify fixes |
-| ADR-002 compliance check | Manual | `grep -r "calc def" models/designs/` should return empty |
+## Evidence Beyond Parsing
 
-## Verification Thresholds
+Select evidence according to the claim:
 
-For baseline comparison audits (comparing model values to authority source values):
+- Source values: inspect the authoritative table, image, or code branch when needed; separate transcription, derivation, and assumption.
+- Numerical behavior: use an independent identity/reference and relevant boundary or counterexample cases. Choose tolerances from the quantities and numerical risk; small percentages are not universally acceptable.
+- Structure and behavior: check ownership, physical relationships, operating assumptions, and agreement with analytical bindings where relevant.
+- Public consumers: change a supported input through its normal route and check intended downstream effects, including what should remain unchanged.
+- Translation: compare generated and manual execution, while recognizing that shared formulas can share an error.
 
-| Status | Threshold | Action |
-|--------|-----------|--------|
-| PASS | Deviation ≤ 1% | Proceed — model matches baseline |
-| WARN | Deviation 1-5% | Investigate — may be intentional, document if justified |
-| FAIL | Deviation > 5% | Stop and fix — update model or document rationale |
+Write kept tests for meaningful regressions where practical. A definition-existence test verifies existence, not its physical role; a mirror test verifies agreement, not independent correctness. Avoid tests whose only expectation is the current implementation's graph or output.
 
-## Reading Validation Output
+Model tests normally live in `tests/models/`. When a project uses `codegen_available` for downstream tests, preserve that convention and report skips as unverified. An unavailable pipeline cannot supply a positive completion result for required executable behavior.
 
-**Level 1-3 errors are critical** — these break models:
-- **Parse errors** (L1): Syntax mistakes, missing imports, unicode unit symbols
-- **Structural issues** (L2): Definitions declared but never used, unbound inputs
-- **Dataflow errors** (L3): Circular dependencies between files
+## Record the Result
 
-**Level 4-6 provide insights** — guide improvements:
-- **Constraint gaps** (L4): Constraint coverage metrics
-- **Documentation gaps** (L5): Missing doc comments, incomplete source citations
-- **Architecture & codegen** (L6): ADR-002 rules, manifest subsystems, codegen readiness
+Report examined revision and model scope, commands/environment, actual results, and evidence paths. Link checks to the applicable requirements or findings. Distinguish new failures, inherited issues, skips, and checks not run; compare issue identities when claiming an unchanged failing baseline.
 
-Use `--complete` to see all issues across all levels (default stops at first blocking failure). Use `--verbose` for detailed diagnostic output.
-
-### Validation Report Structure
-
-When reporting validation results, structure as:
-
-1. **Header**: Model path, levels run, date
-2. **Per-level summary**: Level name, issue count (error/warning/info), blocking status
-3. **Issue details**: Level, severity, file:line, message, suggested fix
-4. **Outcome**: PASS (all blocking levels clean) or FAIL (blocking errors remain)
-
-## Regression Testing
-
-### Test Structure
-
-Model tests live in `tests/models/` and use pytest with the syside library:
-
-```
-tests/
-├── conftest.py          # Common fixtures
-└── models/
-    ├── test_library.py  # Library definition tests
-    └── test_designs.py  # Design integration tests
-```
-
-### Test Pattern
-
-```python
-from pathlib import Path
-from agentic_mbse.sysml.syside_adapter import get_syside
-
-MODELS_DIR = Path(__file__).parent.parent.parent / "models"
-
-def test_definition_exists():
-    """Verify part definition exists in library."""
-    files = list((MODELS_DIR / "library").glob("**/*.sysml"))
-    model, diagnostics = get_syside().try_load_model([str(f) for f in files])
-
-    syside = get_syside()
-    errors = [d for d in diagnostics if d.severity == syside.DiagnosticSeverity.Error]
-    assert len(errors) == 0, f"Parse errors: {errors}"
-
-    part_defs = list(model.elements(syside.PartDefinition))
-    names = [p.name for p in part_defs]
-    assert "Motor" in names, "Expected Motor definition"
-```
-
-### When to Write Tests
-
-| Phase | Test Activity |
-|-------|---------------|
-| Library definitions | Write structural tests for new defs |
-| Design instances | Write integration tests |
-| Final validation | Run full regression suite |
-
-### Running Tests
-
-```bash
-uv run pytest tests/models/ -v          # All model tests
-uv run pytest tests/models/test_library.py -v  # Specific file
-```
-
-### Codegen Skip Convention
-
-Tests requiring the downstream pipeline (sysml-codegen) use a pytest marker:
-
-```python
-@pytest.mark.codegen_available
-def test_codegen_output():
-    """Only runs when codegen pipeline is available."""
-```
-
-## Anti-Patterns
-
-| Instead of | Do |
-|------------|-----|
-| Skipping validation until the end | Validate after every phase (L1-3 minimum) |
-| Ignoring Level 4-6 warnings | Review and document — they guide improvements |
-| Running `syside check` directly | Use `uv run agentic-mbse validate` (wraps syside + more) |
-| Proceeding when L1-3 fail | Stop, fix blocking errors before continuing |
-| Writing tests after all implementation | Write tests alongside each phase |
-| Guessing validation commands | Read README.md for current CLI (see toolkit-awareness) |
-
-## Related Skills
-
-- For `uv run` prefix and environment rules, see the **toolkit-awareness** skill.
-- For SysML syntax rules that prevent validation errors, see the **sysml-conventions** skill.
+Keep source, translation, numerical, engineering, and consumer claims distinct where relevant. Record known limitations and their effect on permitted use. A positive assessment requires evidence for the scoped outcome, not just a green aggregate label. Reuse current evidence with its original scope and provenance rather than rerunning or recopying it automatically.

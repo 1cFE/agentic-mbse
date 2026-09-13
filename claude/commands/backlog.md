@@ -81,25 +81,9 @@ agentic-mbse pm add-item --name "<item>" --scale standard --priority <P0|P1|P2|P
 
 If no item specified, scan `work/active/` for completed items — read each `spec.md` frontmatter for Status. Present candidates.
 
-**Verify completion** before closing:
-- Read `work/active/{WI-XXX}_{name}/spec.md` — are all acceptance criteria met?
-- Read `plan.md` — are all phases complete (all checkboxes checked)?
-- Run `agentic-mbse validate` on the relevant models — do Levels 1-3 pass?
-- Check `modeling_project/VALIDATION_MATRIX.md` — are related SV-XXX entries passing?
+Read “Durable Handoff and Closure” in `modeling_project/MODELING_PROCESS.md`. Inspect the linked positive independent audit and confirm that it covers the current scoped change and acceptance conditions. If absent, failed, or superseded, route to `/audit-models` before closing. Reuse applicable evidence rather than rerunning checks merely to archive.
 
-Present assessment to the user. If incomplete, recommend what remains.
-
-**On user confirmation**, close via AP-7 script:
-```
-agentic-mbse pm close-item <WI-XXX>
-```
-The script sets all artifact Status fields to their completion values (spec.md → `completed`, design.md → `complete`, plan.md → `complete`), moves the directory to `work/completed/YYYYMMDD_{WI-XXX}_{name}/`, and updates BACKLOG.md status. All mutations are atomic.
-
-**Project document review.** After closing, prompt the user with specific questions:
-- "Did you discover a modeling pattern that should be a project-wide rule?" → If yes, help draft and call `agentic-mbse pm promote-requirement`
-- "Did you make a structural decision that future work needs to know?" → If yes, help draft and call `agentic-mbse pm register-decision`
-- "Should any new verification criteria be added?" → If yes, help draft and call `agentic-mbse pm add-validation`
-- "Did you learn something about the domain not yet captured?" → If yes, help draft and call `agentic-mbse pm add-insight`
+Under the owner's existing closure authorization, use `agentic-mbse pm close-item <WI-XXX>`. The operation archives and updates state; it does not validate audit evidence. Carry warranted durable decisions and discoveries through native PM operations, preserving source authority and owner-reserved approvals.
 
 ## Guidelines
 

@@ -81,7 +81,7 @@ Modeling requirements exist at two tiers: tool-owned baseline rules (MODELING_GU
 - **Project-wide**: Constrains all modeling work, not just one feature
 - **Worth tracking**: The cost of non-compliance is high enough to justify enforcement
 
-The `trace-element` AP-7 script handles mechanical promotion: assigns PR-XXX ID, enforces format, validates source references.
+The `promote-requirement` PM operation handles mechanical promotion: assigns the PR-XXX ID, enforces format, and validates source references.
 
 ## Enforcement Methods
 

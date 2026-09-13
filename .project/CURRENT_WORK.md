@@ -6,6 +6,10 @@
 
 ## Active Work
 
+### Modeling workflow outcomes — draft
+
+Workflow reachability repairs and three focused fresh-context trials are complete on `harness-simplify`; [record and limits](active/modeling-workflow-outcomes/draft.md). Source discovery and missing-audit closure pass. Binding navigation and semantic tests pass, with a reproduced pre-existing EXPOSE mismatch in two L6 checks retained as a separate runtime-validator issue. The 91-test command/installation selection passes. Installed into `fusion-tea-codex-test` on 2026-09-13; its installation record describes native adaptation and discovery checks. Synchronizing the native source branch and independent implementation certification remain outstanding.
+
 ### Constraint-Wave Item 1: Profile Semantics (complete; orchestration paused for owner discussion)
 
 The fresh remediation audit found no remaining implementation or approved semantic-contract gap.

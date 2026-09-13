@@ -76,17 +76,16 @@ def test_orchestrator_frontmatter_and_single_alignment_contract():
     assert "work/orchestration/<objective-slug>.md" in command
 
 
-def test_orchestrator_uses_fresh_self_contained_noninteractive_tasks():
+def test_orchestrator_distinguishes_author_continuity_from_independent_review():
     command = read_repo_file("claude/commands/orchestrate-modeling.md")
     normalized_command = " ".join(command.split())
     lowercase_command = normalized_command.lower()
 
-    assert "fresh Task agent" in normalized_command
-    assert "self-contained stage brief" in normalized_command
-    assert "Do not interact with the owner" in normalized_command
-    assert "return all blocking questions before writing" in lowercase_command
-    assert "original brief plus the answers" in normalized_command
-    assert "fresh authoring and audit contexts" in normalized_command
+    assert "continuing author" in normalized_command
+    assert "self-contained brief" in normalized_command
+    assert "Resume the author after clarifications and repairs" in normalized_command
+    assert "fresh non-author context without inherited author conversation" in normalized_command
+    assert "blocking questions to the coordinator" in lowercase_command
 
 
 def test_orchestrator_declares_routes_decision_tiers_and_bounded_repair():

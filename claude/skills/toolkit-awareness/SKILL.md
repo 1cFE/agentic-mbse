@@ -108,7 +108,7 @@ Consult `README.md` for full details. Complete command list grouped by function:
 | `/design-model` | Make model architecture decisions |
 | `/plan-model` | Create implementation plan with phases |
 | `/implement-model` | Execute plan, write SysML |
-| `/quick-model` | Rapid single-file model creation |
+| `/quick-model` | Understood local corrections with focused evidence |
 | `/review-model` | Review model quality and correctness |
 | `/formalize-intent` | Convert informal intent to formal SysML |
 

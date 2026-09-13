@@ -147,8 +147,8 @@ circular-dependency example in `semantic-operators.md`.
 
 ### Multiplicity Cost Aggregation
 
-**Status:** Validated CORRECT (2026-01-12)
-**Evidence:** `syside check` passes with no errors or warnings
+**Status:** Parser-validated example (2026-01-12).
+**Evidence:** `syside check` passes with no errors or warnings. This establishes syntax, not runtime occurrence expansion or numerical aggregation.
 
 Use `import NumericalFunctions::sum` then `sum(child.capital_cost)` to aggregate costs from parts with multiplicity `[N]`.
 
@@ -169,7 +169,7 @@ attribute child_total_cost : Real;  // Placeholder
 :>> capital_cost = child_total_cost;  // Bound in design with hardcoded value
 ```
 
-**Why:** The `sum()` function automatically aggregates over the multiplicity, keeping the model DRY and accurate.
+**Intent:** Aggregate costs from the modeled child occurrences. Before claiming executable aggregation, cite an applicable runtime fixture or check a heterogeneous two-occurrence sum and a changed child value through the intended route. Each occurrence must contribute its own value exactly once.
 
 ---
 
