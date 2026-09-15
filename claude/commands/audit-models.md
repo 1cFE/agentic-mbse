@@ -8,7 +8,9 @@ user-invocable: true
 
 # Audit Models
 
-Independently assess whether the model supports its promised outcomes and intended use. Run as a fresh non-author reviewer without inherited author conversation. Save the report to `work/analysis/YYYYMMDD-HHMMSS_audit_{scope}.md` and link it from the work item or epic.
+Use the assigned scope and “Review Brief and Context Limits” in `modeling_project/MODELING_PROCESS.md`. For a focused question, read only the supplied entry sections and primary evidence within the brief’s budget; return missing evidence before expanding. Apply the broader checks below only to claims in scope. Save a short finding in the existing work record or requested evidence path; a separate report is useful for a substantive assessment.
+
+Independently assess whether the model supports its promised outcomes and intended use. Run as a fresh non-author reviewer without inherited author conversation. For a substantive audit, save `work/analysis/YYYYMMDD-HHMMSS_audit_{scope}.md` and link it from the work item or epic.
 
 ## Choose the Scope
 
@@ -26,7 +28,7 @@ Read `modeling_project/VALIDATION_MATRIX.md` and identify existing criteria affe
 
 Select independent checks for the real risks: original defect counterexamples, changed public-input behavior, source-image comparisons, dimensional identities, numerical boundaries, or an affected consumer's outputs. Use justified tolerances. A copied formula, a preserved graph, or a baseline match alone cannot establish independent physical validity.
 
-Run applicable validation and focused regressions using **model-validation** guidance. Inspect existing results and independently reproduce the checks needed to support the verdict. Reuse unchanged evidence where its scope, revision, and environment remain applicable; explain gaps, skips, and inherited failures rather than counting them as passes.
+Inspect deposited validation and regression results using **model-validation** guidance. Independently reproduce a check only for missing evidence or a concrete doubt; name that reason. Do not rerun full batteries as a default audit step. Reuse unchanged evidence where its scope, revision, and environment remain applicable; explain gaps, skips, and inherited failures rather than counting them as passes.
 
 Follow the target project's citation requirements. Check that relevant references resolve and support the claim; documentation presence and source accuracy are different checks. Update evaluable SV-XXX entries through `agentic-mbse pm update-validation` using `passing`, `failing`, or `pending`. Required evidence that cannot be obtained stays unverified.
 

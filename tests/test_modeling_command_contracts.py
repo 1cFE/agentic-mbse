@@ -33,7 +33,8 @@ def test_canonical_flow_marks_optional_and_completion_stages():
     flow = read_repo_file("project_templates/MODELING_PROCESS.md.template")
 
     assert "Optional stages" in flow
-    assert "positive independent audit" in flow
+    assert "Process Selection" in flow
+    assert "Review Brief and Context Limits" in flow
     assert "cross-item integration" in flow
     assert "dependency" in flow.lower()
 

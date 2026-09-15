@@ -73,7 +73,7 @@ agentic-mbse pm add-item --epic '<epic-name>' --name '<item-name>' --scale stand
 
 ### Mode: Close Work Item
 
-Invoked as `/status close <item>`. Read “Durable Handoff and Closure” in `modeling_project/MODELING_PROCESS.md`. Inspect the linked positive independent audit for the current scoped change before calling `agentic-mbse pm close-item <WI-XXX>`. If audit evidence is missing or inadequate, route to `/audit-models` first. Use the owner's existing closure authorization; do not add a repeat confirmation.
+Invoked as `/status close <item>`. Read “Durable Handoff and Closure” in `modeling_project/MODELING_PROCESS.md`. Inspect acceptance evidence and reviews required by “Process Selection” for the current change before calling `agentic-mbse pm close-item <WI-XXX>`. Resolve missing required evidence; closure alone does not trigger an audit. Use the owner's existing closure authorization; do not add a repeat confirmation.
 
 The native operation archives the item and updates its records. It does not verify audit evidence. Carry any warranted durable decisions or discoveries through the applicable native PM operations, preserving owner-reserved approvals.
 

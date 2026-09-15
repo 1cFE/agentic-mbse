@@ -8,6 +8,8 @@ user-invocable: true
 
 # Spec Model
 
+Use “Process Selection” in `modeling_project/MODELING_PROCESS.md`. This stage may be brief or skipped when its responsibility is already satisfied. For a bounded tracked change, use sections in the existing `spec.md` instead of creating separate design/plan documents; retain required native metadata. The instructions below describe a separate artifact when it is useful.
+
 Define the intended modeling outcome, requirements, and supported use. Write `work/active/{WI-XXX}_{name}/spec.md` using the project's native work-item registration and metadata conventions.
 
 ## Understand the Need

@@ -113,7 +113,7 @@ Updated: YYYY-MM-DD
 
 | Anti-Pattern | Why It's Wrong |
 |-------------|---------------|
-| **Phase-as-item** ("Item 1: Design. Item 2: Implement.") | Each item should go through its own full workflow cycle |
+| **Phase-as-item** ("Item 1: Design. Item 2: Implement.") | Each item should deliver a cohesive outcome with evidence and risk-triggered review |
 | **Validation-level decomposition** ("Item 1: L1-3. Item 2: L4-6.") | Levels are quality gates, not separable units of work |
 | **Separating authority sources** ("Item 1: Structure. Item 2: Data.") | Sources constrain models from the start; integrate together |
 | **Ignoring AD-XXX boundaries** | Items should respect package boundaries from ARCHITECTURE.md |

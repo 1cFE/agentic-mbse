@@ -8,6 +8,8 @@ user-invocable: true
 
 # Plan Model
 
+Use “Process Selection” in `modeling_project/MODELING_PROCESS.md`. This stage may be brief or skipped when its responsibility is already satisfied. For a bounded tracked change, use sections in the existing `spec.md` instead of creating separate design/plan documents; retain required native metadata. The instructions below describe a separate artifact when it is useful.
+
 Turn the agreed outcomes and design into a checklist of work and evidence. Write `work/active/{WI-XXX}_{name}/plan.md`; retain Status, Created, Updated, and Related Artifacts metadata.
 
 ## Understand What Remains

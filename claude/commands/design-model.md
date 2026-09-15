@@ -8,6 +8,8 @@ user-invocable: true
 
 # Design Model
 
+Use “Process Selection” in `modeling_project/MODELING_PROCESS.md`. This stage may be brief or skipped when its responsibility is already satisfied. For a bounded tracked change, use sections in the existing `spec.md` instead of creating separate design/plan documents; retain required native metadata. The instructions below describe a separate artifact when it is useful.
+
 Explain the system architecture and dependencies needed to meet `spec.md`. Write `work/active/{WI-XXX}_{name}/design.md`; retain Status, Created, Updated, and Related Artifacts metadata.
 
 ## Understand the Affected System

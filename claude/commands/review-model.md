@@ -8,9 +8,11 @@ user-invocable: true
 
 # Review Model
 
-Independently challenge a design where an architectural or integration risk warrants it. Read the applicable spec, design, project requirements, and source evidence; write `work/active/{WI-XXX}_{name}/review.md`.
+Use the assigned scope and “Review Brief and Context Limits” in `modeling_project/MODELING_PROCESS.md`. For a focused question, read only the supplied entry sections and primary evidence within the brief’s budget; return missing evidence before expanding. Apply the broader checks below only to claims in scope. Save a short finding in the existing work record or requested evidence path; a separate report is useful for a substantive assessment.
 
-This is an optional design critique. Use a fresh non-author context without inherited author conversation. One reviewer owns the assessment and may consult a specialist for a concrete uncertainty.
+Independently challenge a design where an architectural or integration risk warrants it. Read the relevant requirements, design, and primary evidence within the assigned scope; a substantive review can use `work/active/{WI-XXX}_{name}/review.md`.
+
+Run this critique when requested or triggered by the canonical process. Use a fresh non-author context without inherited author conversation. One reviewer owns the assessment and may consult a specialist for a concrete uncertainty.
 
 ## Examine the Design's Meaning
 

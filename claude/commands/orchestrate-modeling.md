@@ -8,7 +8,7 @@ user-invocable: true
 
 # Orchestrate Modeling
 
-Drive a modeling objective through the appropriate artifact and evidence contracts in `modeling_project/MODELING_PROCESS.md`. Keep the outcome and owner decisions clear, choose work from evidence, and obtain independent completion review. The owner decides whether to close or archive.
+Drive a modeling objective through the appropriate artifact and evidence contracts in `modeling_project/MODELING_PROCESS.md`. Keep the outcome and owner decisions clear, choose work from evidence, and select independent review using the canonical process thresholds. The owner decides whether to close or archive.
 
 ## Orient
 
@@ -26,23 +26,23 @@ Use one continuing author for a bounded item while its context remains useful. T
 
 Give a delegated author a self-contained brief: outcome, relevant artifact/source references, provenance and reserved gates, owned write surfaces, and required evidence. It routes blocking questions to the coordinator and continues independent authorized work. Routine stage approvals are coordinator decisions under this overlay.
 
-Independent design criticism and completion audits use a fresh non-author context without inherited author conversation. A fork may help related authoring work but is not an independent critic. When replacing an author, preserve the remaining work and consequential decisions in native artifacts first.
+When review is triggered, use a fresh non-author context without inherited author conversation and the “Review Brief and Context Limits” contract in `modeling_project/MODELING_PROCESS.md`. Default other delegated jobs to fresh self-contained briefs too; reserve forks for jobs that need the actual conversation. Give focused research and review jobs explicit read scope and tool-call budgets. When replacing an author, preserve the remaining work and consequential decisions in native artifacts first.
 
 Delegate specialists only for concrete questions. Parallel tasks need independent dependencies and coordinated write ownership; conclusions as well as writes can conflict. Integrate shared model/package and registry changes sequentially. Queue tasks within host capacity. Use the actual host delegation interface; do not build a separate dispatcher to satisfy a prescribed agent roster.
 
 ## Standard route
 
-Have the author satisfy the spec, design, and plan contracts at the depth the item needs, then implement and validate. Research and prototype only material uncertainties; request an optional design review for a real architectural or integration risk. Follow the canonical flow rather than copying its steps into a second control system.
+Have the author apply “Process Selection” before editing and record the affected consumers, uncertainty, and chosen checks. Skip or combine preparation stages already satisfied; one short native work record can hold requirements, decisions, checklist, and evidence. Research or prototype only a material uncertainty.
 
-Obtain a fresh independent `/audit-models` assessment before reporting completion. Return concrete findings to the author, then independently verify the repair and affected dependencies. A narrow item result does not close a broader outcome whose consumer migration or integration remains outstanding.
+Obtain only the independent reviews triggered by that selection, combining overlapping questions. A source or design check need not become a full completion audit. Complex changes need independent assessment of integrated behavior. Return findings to the author and send the repair diff to the same reviewer. A narrow item result does not close a broader outcome whose consumer migration or integration remains outstanding.
 
 ## Epic route
 
 Use `/backlog` and native PM operations to register the epic and its independently useful Standard items (`pm add-epic`, `pm add-item`). Carry applicable epic outcomes into each item. Execute ready items in parallel only where their semantic and write dependencies permit it.
 
-Each item needs independent completion evidence. Once ready, obtain an independent Epic audit of epic success criteria and cross-item integration, using item audits as evidence and investigating gaps. Do not repeat all item preparation just to produce an epic verdict.
+Each item needs acceptance evidence and any risk-triggered review. Assess epic success criteria and cross-item integration using that evidence; commission independent review of consequential interactions not already covered. Do not add item and epic audits that judge the same evidence twice.
 
-For Trivial work, use `/quick-model` and verify its targeted evidence. Reclassify when a consequential design or scope question emerges.
+For Trivial work, use `/quick-model` and verify its targeted evidence. A new uncertainty triggers the relevant investigation or review, not an automatic full pipeline.
 
 ## Decision Policy
 

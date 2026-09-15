@@ -16,7 +16,7 @@ Not all work needs an epic. Use the scale taxonomy to decide the right entry poi
 | Standard | A cohesive modeling feature: new subsystem, integration, refactor | `/spec-model` | Model a costing subsystem; integrate power balance with a plant subsystem; refactor a cost hierarchy to match an updated standard |
 | Epic | Multiple domain concerns requiring decomposition before execution | `/backlog` | End-to-end costing pipeline across all subsystems; full system model with multiple design configurations; architecture migration to a new domain taxonomy |
 
-**Trivial** work skips the full workflow — the overhead of spec/design/plan would exceed the work itself. **Standard** work is the default: one cohesive modeling concern, handled end-to-end through the Standard flow in `modeling_project/MODELING_PROCESS.md`, including a positive independent audit. **Epic** work must be decomposed into standard items before any execution begins.
+**Trivial** work skips the full workflow — the overhead of spec/design/plan would exceed the work itself. **Standard** work is the default: one cohesive modeling concern, handled end-to-end through the Standard flow in `modeling_project/MODELING_PROCESS.md`, with review selected by the process thresholds. **Epic** work must be decomposed into standard items before any execution begins.
 
 ---
 
@@ -138,9 +138,7 @@ agentic-mbse pm add-epic --name "<epic-name>" --priority <P0|P1|P2|P3> --file "w
 agentic-mbse pm add-item --name "<item-name>" --scale standard --priority <P0|P1|P2|P3> --epic "<epic-name>"
 ```
 
-Each item receives its own independent audit. After all item audits pass, an Epic audit verifies the
-epic success criteria and cross-item integration before the Epic is reported complete. See the
-canonical flow in `modeling_project/MODELING_PROCESS.md`.
+Each item supplies acceptance evidence and risk-triggered reviews. Check epic success criteria and cross-item integration using those results; independently assess consequential interactions not already reviewed. Use a separate Epic audit only for remaining scope. See `modeling_project/MODELING_PROCESS.md`.
 
 ---
 
@@ -166,7 +164,7 @@ Decomposition that cuts across AD-XXX boundaries. If the architecture says subsy
 
 "Item 1: Design phase. Item 2: Implementation phase. Item 3: Testing phase."
 
-Each item should go through its own full Standard cycle through independent audit. Decomposing by workflow phase recreates waterfall within the epic and defers integration risk to the end.
+Each item should deliver a cohesive outcome with appropriate evidence and risk-triggered review. Decomposing by workflow phase recreates waterfall within the epic and defers integration risk to the end.
 
 ### 5. Vague Success Criteria
 

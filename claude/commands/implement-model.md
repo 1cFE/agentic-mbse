@@ -8,7 +8,7 @@ user-invocable: true
 
 # Implement Model
 
-Produce the model and test changes required by the agreed spec and design, maintaining progress in `work/active/{WI-XXX}_{name}/plan.md`.
+Produce the authorized model and test changes. Apply “Process Selection” in `modeling_project/MODELING_PROCESS.md`; use existing requirements and design evidence, including a combined work record. Maintain progress in the existing checklist; do not create missing stage documents solely to enter implementation.
 
 ## Resume from Evidence
 
@@ -30,4 +30,4 @@ If evidence invalidates a design premise, surface the conflict and park dependen
 
 ## Return
 
-Report implemented behavior, checks run, limitations, and downstream handoffs. Complete the applicable final checklist on the integrated change. Implementation evidence is ready for review when the spec outcomes are supported and outstanding work is explicit. The work item is not complete until a fresh independent `/audit-models` assessment returns a positive verdict.
+Report implemented behavior, checks run, limitations, and downstream handoffs. Complete the applicable final checklist on the integrated change. Implementation evidence is ready for review when the spec outcomes are supported and outstanding work is explicit. Completion requires acceptance evidence and the independent reviews triggered by “Process Selection”; a separate audit is not required for every item. Reuse applicable evidence and review repair diffs without repeating unaffected batteries.

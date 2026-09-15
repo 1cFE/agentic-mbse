@@ -81,7 +81,7 @@ agentic-mbse pm add-item --name "<item>" --scale standard --priority <P0|P1|P2|P
 
 If no item specified, scan `work/active/` for completed items — read each `spec.md` frontmatter for Status. Present candidates.
 
-Read “Durable Handoff and Closure” in `modeling_project/MODELING_PROCESS.md`. Inspect the linked positive independent audit and confirm that it covers the current scoped change and acceptance conditions. If absent, failed, or superseded, route to `/audit-models` before closing. Reuse applicable evidence rather than rerunning checks merely to archive.
+Read “Durable Handoff and Closure” in `modeling_project/MODELING_PROCESS.md`. Inspect acceptance evidence and reviews required by “Process Selection” for the current change. Resolve missing or failed required evidence before closing; an independent audit is not mandatory for every Standard item. Reuse applicable evidence rather than rerunning checks merely to archive.
 
 Under the owner's existing closure authorization, use `agentic-mbse pm close-item <WI-XXX>`. The operation archives and updates state; it does not validate audit evidence. Carry warranted durable decisions and discoveries through native PM operations, preserving source authority and owner-reserved approvals.
 
@@ -95,4 +95,4 @@ Under the owner's existing closure authorization, use `agentic-mbse pm close-ite
 
 ---
 
-**Related Commands:** After add → `/spec-model` (Standard) or `/quick-model` (Trivial) | Before close → `/audit-models` | For research → `/research` before adding items
+**Related Commands:** After add → `/spec-model` (Standard) or `/quick-model` (Trivial) | Before close → acceptance evidence and risk-triggered reviews | For research → `/research` before adding items

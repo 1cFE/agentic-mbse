@@ -1,3 +1,7 @@
+# Harness right-sizing — 2026-09-14
+
+[OWNER] Requested rapid process simplification for the demo. Revised toolkit instructions on `harness-right-size` and installed them in Fusion TEA. Routine changes use a combined record and focused checks; source/design/integration risks select independent review with explicit scope budgets. All 91 command/installer checks pass; bounded independent review found no material defect in the five core process files. See [requirements](active/harness-right-size/requirements.md) and [review](active/harness-right-size/review.md). Local goal/study revisions and installation evidence are in Fusion TEA `.project/active/harness-right-size/report.md`. Token savings and full modeling behavior remain unmeasured.
+
 # Current Work
 
 **Last Updated**: 2026-09-07

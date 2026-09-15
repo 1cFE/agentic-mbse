@@ -4,29 +4,42 @@ Build models that explain the system and support their intended use. Requirement
 
 ## Command-Level Modeling Flow
 
-- **Trivial change:** use `/quick-model` for an understood local correction. Judge its meaning and affected consumers, not the number of files alone.
-- **Standard work:** use the artifact contracts below for one cohesive outcome. Enter at the earliest unmet obligation; existing evidence can satisfy it.
-- **Epic work:** use `/backlog` to decompose independently useful outcomes with explicit dependency handoffs. See `work/EPIC_GUIDE.md` for decomposition and native PM operations.
+Skills are available tools. Choose them from the uncertainty and affected consumers, not the line count or work-item label. The main agent owns delivery and may carry out the whole change or delegate scoped work.
 
-```text
-[/research] → /spec-model → /design-model → [/review-model]
-  → /plan-model → /implement-model → /audit-models → report
-```
+- **Trivial change:** `/quick-model` handles an understood correction with affected-consumer checks.
+- **Standard work:** track one cohesive outcome with native PM metadata and a short `spec.md`. Design and plan may be sections of that record when separate documents add no value.
+- **Epic work:** `/backlog` separates independently useful outcomes and dependency handoffs. See `work/EPIC_GUIDE.md`.
 
-Optional stages: research resolves a material knowledge gap; design review challenges a consequential architectural choice. The sequence describes responsibilities, not required agent handoffs. One author can carry an item through preparation and implementation, revising earlier decisions when evidence warrants it.
+Optional stages: `/research`, `/spec-model`, `/design-model`, `/review-model`, `/plan-model`, `/implement-model`, and `/audit-models` can each be brief, combined, or skipped when their responsibility is already satisfied or does not apply. Do not create empty stage artifacts. An explicitly requested review still runs. Skipping a stage does not remove an applicable evidence obligation below.
 
-Standard work ends with a positive independent audit. The owner decides whether to close or archive. Epic completion also requires an independent assessment of epic outcomes and cross-item integration; item audits supply evidence rather than requiring every earlier check to be repeated.
+## Process Selection
+
+Before editing, record the intended behavior, affected definitions and consumers, source basis, and selected checks/reviews in the existing work record. A few sentences suffice. Search references and inspect inherited definitions and bindings; a local edit can affect other instances. Unknown impact calls for a bounded dependency investigation before choosing the final scope.
+
+| Evidence about the change | Required response |
+|---|---|
+| Existing pattern and source interpretation; affected consumers known; expected behavior directly checkable | Main agent edits and verifies. No independent review required. |
+| New or reinterpreted source value, equation, unit conversion, physical assumption, or domain of applicability | Focused independent source/math review using original evidence, units, assumptions, and off-reference behavior. Resolve source interpretation before relying on it. |
+| New modeling pattern or changed ownership, specialization, public interface, or binding semantics | Focused independent design review before dependent implementation; check surrounding producer/consumer interfaces and the applicable pattern. |
+| Shared definition or calculation changes | Identify affected instances and test relevant consumer behavior, including preserved behavior. Shared use alone does not require a full audit. |
+| Coupled changes across model families/subsystems, architectural restructuring, or material uncertainty remaining after focused checks | Substantive independent design/integration assessment. Inspect interacting assumptions and coverage; use `/review-model` or `/audit-models` for the unresolved scope. |
+| Mechanical correction to already reviewed work | Recheck the diff and affected evidence. Reuse the reviewer when review is needed; no new full audit by default. |
+
+Combine related review questions in one independent session when the evidence overlaps. A completed source/design review does not automatically require a second completion audit. Complex work needs positive independent assessment of its consequential design choices and integrated behavior; one continuing reviewer can cover both. Report unverified behavior explicitly instead of declaring completion on a missing check.
 
 ## Artifact Contracts
 
-| Artifact | What it establishes |
-|---|---|
-| `spec.md` | Intended outcomes, supported use, scope, source authority, and evaluable success criteria |
-| `design.md` | Relevant physical structure and behavior, ownership of quantities and interfaces, analysis dependencies, architectural choices and unresolved uncertainty |
-| `plan.md` | An ordered checklist of meaningful changes and checks, with requirement/evidence references and current progress |
-| Audit report | Independent evidence that the outcomes hold, affected consumers remain coherent, and limitations are explicit |
+Preserve native PM registration and required `spec.md` frontmatter for tracked items. Keep the intended outcome, supported use, source authority, acceptance conditions, decisions, and verification results in that record or linked existing evidence. `/spec-model` captures missing requirements; `/design-model` resolves design uncertainty; `/plan-model` supplies a checklist when sequencing or interruption recovery needs it. A short change can use one record. Larger work can use separate `design.md` and `plan.md` documents. Cite decisions instead of restating them.
 
-A small correction can have a short impact note and one checklist. Research, prototypes, additional reviewers, and finer phasing earn their place by resolving a specific uncertainty. Keep each decision in one artifact and cite it elsewhere. Follow project-specific requirements and preserve the PM frontmatter and native operations used to track work.
+## Review Brief and Context Limits
+
+Independent judgment uses a fresh non-author context without inherited author conversation. Supply a self-contained brief with the exact question, candidate revision, entry files/sections, relevant requirements/pattern excerpts, original source evidence, and available verification results. The reviewer checks primary evidence, not only the author's summary. Include surrounding interfaces or source context needed to challenge the premise.
+
+For a focused review, default to at most six tool calls and a 300-word return. Batch related reads. The brief must explicitly forbid recursive project orientation, reading whole trails or precedent collections, nested delegation, and full-suite reruns. If evidence is missing or the scope will exceed the budget, return the named missing evidence and reason for expansion; do not silently broaden or issue a pass. The coordinator supplies that evidence or grants a specific broader assignment. These are starting budgets, not limits on correctness.
+
+For complex review, name the system claims, interacting surfaces, and evidence to assess; set a larger explicit investigation budget appropriate to that scope. Allow dependency tracing and independent calculations where they address a real uncertainty. Do not use the focused budget to certify a complex change. Return material findings, evidence, and limits; optional improvements do not block delivery.
+
+Reuse deposited test results when candidate revision, tested scope, and environment apply. Independently reproduce a check when there is a concrete doubt or a missing result, and explain why. A review is not a second execution of the author's entire test plan. Send repairs to the same reviewer as a diff with affected evidence.
 
 ## MBSE Methodology: Four Integrated Views
 
@@ -76,15 +89,15 @@ Preserve owner-reserved decisions and any independent interpretation checkpoint 
 
 The author owns carrying consequential reusable decisions and discoveries into the applicable architecture, knowledge, requirement, and verification records before handoff. Use native PM operations and preserve source authority and owner-reserved approvals. Select what future work needs; a routine correction need not create new project-wide entries.
 
-Before archiving Standard work through any command, read the linked positive independent audit and confirm that it covers the current scoped change. If it is absent, failed, or superseded by consequential changes, route to `/audit-models` before closure. Owner authorization to close does not itself supply audit evidence; an explicit owner exception must be recorded as an exception, not certification. Then use `pm close-item` under the existing authorization. That operation mutates records; it does not validate review evidence.
+Before archiving, check the acceptance evidence and the reviews selected by “Process Selection” against the current change. Resolve missing or failed required evidence; do not commission an audit solely because the item is Standard or is being closed. Use `pm close-item` under existing owner authorization. That operation mutates records; it does not validate the outcome. Report independent certification only for the scope actually reviewed.
 
-The PM epic `completed` rollup means all items are closed. Report independent acceptance of epic outcomes and integration only when supported by the linked epic audit.
+The PM epic `completed` rollup means all items are closed. Assess cross-item integration using applicable item evidence and independent review of remaining consequential interactions; a separate epic audit is needed only when existing reviews do not cover that scope.
 
 ## Context and Parallel Work
 
-Keep a continuing author when its context remains useful. Resume it after answers or repairs; start a replacement when stale context or a distinct job warrants it. Independent criticism uses a fresh non-author context without inherited author conversation. A fork can help related authoring work but does not supply that independence.
+Keep a continuing author when its context remains useful. Resume it after answers or repairs; start a replacement when stale context or a distinct job warrants it. Independent criticism uses a fresh non-author context without inherited author conversation. Default delegated work to a fresh self-contained brief. Use a full-context fork only when the task actually requires that conversation; do not fork a long pipeline merely to preserve the main window.
 
-A delegated job needs its outcome, relevant source/artifact references, write ownership, constraints, and expected evidence. Read the relevant sections first and expand when dependencies require it. Use specialists for concrete questions, not a standing roster.
+The main agent may offload bounded research, source lookup, dependency discovery, or implementation at its discretion. A delegated job needs its outcome, relevant source/artifact references, write ownership, constraints, expected evidence, and an explicit scope/tool-call budget. Read the relevant sections first and expand when dependencies require it. Use specialists for concrete questions, not a standing roster.
 
 Parallelize work when neither its writes nor its conclusions are likely to invalidate the other task. Name an owner for shared package generation, registries, and integration. Context separation does not isolate filesystem writes; separate worktrees still need coordination over shared resources. Queue work within the host's capacity.
 
