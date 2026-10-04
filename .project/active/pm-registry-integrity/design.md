@@ -89,7 +89,7 @@ All decisions below are agent-grade by construction. D2, D6, D8, and D9 settle t
   - **Candidate rows.** It lists the rows under `## Verification Registry`, up to the next `## ` heading and outside HTML comments, whose first split cell is the ID. That is the region the parser reads, so the template's commented example rows are never candidates.
   - **Comment exclusion.** `_strip_html_comments(text, keep_lines=True)` blanks each comment but keeps its newlines, so line numbers still match the file.
   - **Refusals.** It needs exactly one candidate (R6), and that row must parse as a record (R7). On a row with raw pipes, the ninth cell is not the Status column.
-  - **Write.** It sets the Status cell and writes `_format_table_row(cells)`. Split and format are inverses, so every other cell's value is unchanged and `\|rel dev\|` is written back as `\|rel dev\|`.
+  - **Write.** It splits the **original file line** at the candidate's line number (not the comment-stripped copy, which is only used to find it), sets the Status cell, and writes `_format_table_row(cells)` back over that line. Split and format are inverses, so every other cell's value is unchanged and `\|rel dev\|` is written back as `\|rel dev\|`. If the original line carries an inline HTML comment, `_format_table_row` raises on the marker; the operation turns that into an R7 refusal and the file is untouched (RC1).
   - *Rejected: splicing the Status cell by character offset (needs a second splitter API that returns spans); today's "first matching row anywhere in the file" (a malformed duplicate earlier in the file takes the write); a whole-file scan with comments skipped (a summary table elsewhere would read as a duplicate, and the scope would differ from the parser's).*
 - **D5. One ID discovery path, in `operations.py` beside `_next_id`.**
   - **One definition.** `_id_pattern(prefix)` is the only regex that says how an ID is numbered. The parser's per-prefix regexes (`parser.py:324`, `:400`, `:488`, `:529`, `:742`, `:766`) validate record IDs; they do not number them. Every ID they accept also fully matches `_id_pattern`.
@@ -131,7 +131,7 @@ All decisions below are agent-grade by construction. D2, D6, D8, and D9 settle t
   | R4 | `add-item --epic`, `close-item` | the one matching mapping is not a valid record | "present but not a valid record", quoting the parser warning at that location or its epic's |
   | R5 | `add-epic` | an epic mapping with that name already exists, valid or rejected | its location, plus its parser warning if it is rejected |
   | R6 | `update-validation` | no candidate row (D4) has the ID, or several do | "not found", or every matching line |
-  | R7 | `update-validation` | the one candidate row does not parse as a record | fix the row by hand; if it has more cells than the header, a pipe inside a cell must be written as backslash-pipe |
+  | R7 | `update-validation` | the one candidate row does not parse as a record, or its original line holds an HTML comment marker | fix the row by hand; if it has more cells than the header, a pipe inside a cell must be written as backslash-pipe; a comment inside the row must be moved out of it |
   | R8 | `promote-requirement`, `add-validation`, `register-intent` | a cell value holds a line break, `<!--`, or `-->` | the offending marker and the value, to reword without it |
   | R9 | `promote-requirement`, `add-validation`, `register-intent` | a target section heading, or the table under it, is missing | the missing heading |
 
@@ -314,7 +314,7 @@ Test names below are proposals for the plan. The tables avoid backslash examples
 | R4 | `TestAddItem::test_refuses_rejected_epic_quoting_warning`; `TestCloseItem::test_refuses_invalid_item_quoting_warning` |
 | R5 | `TestAddEpic::test_refuses_name_of_rejected_epic` |
 | R6 | `TestUpdateValidation::test_refuses_duplicate_rows`; `TestUpdateValidation::test_ignores_commented_example_rows` (template with real `SV-001`) |
-| R7 | `TestUpdateValidation::test_refuses_unparsed_row` (raw pipes; the message names the escape) |
+| R7 | `TestUpdateValidation::test_refuses_unparsed_row` (raw pipes; the message names the escape); `TestUpdateValidation::test_refuses_row_with_inline_comment_and_leaves_file_unchanged` |
 | R8 | `test_pm_parser.py::TestEscapeTableCell::test_refuses_line_breaks_and_comment_markers`; `TestAddValidation::test_refuses_comment_marker`; `TestRegisterIntent::test_refused_second_goal_writes_nothing` |
 | R9 | `TestRegisterIntent::test_missing_questions_section_writes_nothing`; `TestPromoteRequirement::test_missing_section_refuses` |
 

@@ -246,3 +246,58 @@ After the revision the orchestrator runs the bounded re-check the reviewer scope
 
 **Overall:** Revise
 **Next Steps:** The orchestrator records resolutions above, then returns to `/_my_design` pointed at this review to incorporate them. The reviewer does not edit the design. After the revision, a bounded check of D6, D9, the raw-lookup note, the escape cases, and the E2 wording is enough before `/_my_plan`.
+
+---
+
+## Re-check (bounded) — 2026-10-04
+
+**Design:** `design.md` at `06678c7`. **Scope:** D6 with Appendix A, D9's refusal table, the raw lookups, the escape cases, the E2 wording, and the design session's four extra calls. Accepted resolutions were not reopened.
+
+**Verdict: Approve, conditional on one text edit (RC1).** RC1 is a sentence in D4, a word in R7, and one test row. The orchestrator can apply it directly; no further review is needed. Everything else in scope is sound.
+
+### What landed, checked
+
+- **D6 and Appendix A (M3).** The new boundary `(?<![A-Za-z0-9])` counts both 1 and 14 in `DI-001-DI-014` (`loss_paths_probe.py`). `MAG-001` still counts as no G, and `SV-034-x` still counts as SV 34. No fusion-tea copy has a hyphen-preceded token, so its maxima are unchanged. The E4 harness's narrower regex only lowers its own bar, as D6 says.
+- **D9 and R1 to R9.** Every refusal is listed in one place, says what to change, and runs before the first write. I traced `add-item`, `add-epic`, `close-item`, `update-validation`, `promote-requirement`, `add-validation`, and `register-intent`. The `close-item` ordering section still holds: `_load_backlog`, R3, and R4 all run before the first `_update_frontmatter_fields` call.
+- **Raw lookups (M1).**
+  - `_single_match` is the only "exactly one" rule, and both R3 and R6 go through it. `_raw_epics` and `_raw_work_items` are the only definitions of a backlog match, and `add-epic` reuses `_raw_epics` for R5.
+  - Because the raw match is unique, "valid" is exact: the target is valid if and only if the typed view holds that ID or name. R4 therefore cannot misfire.
+  - The existing `test_epic_not_found` still sees "not found".
+- **Escape cases (M2).** `\n`, `\r`, `<!--`, and `-->` each raise, and I1 now excludes comment markers. The pass-through cases are unchanged. R8 covers all three table add operations.
+- **E2 wording (m1).** For DI and AD, the added lines must form one contiguous block (the heading and its field lines, plus separators), with exactly one line carrying the new ID. Correct.
+- **Minors and nits.** m2 to m6 and n1 to n5 landed as text edits without changing a decision.
+
+### The four extra calls
+
+1. **Repeated keys rejected at any depth, on the write path only: sound.**
+   - The resolution named top-level keys. But a second `items:` inside one epic hides records exactly the same way, and a repeated field inside one item would be silently collapsed on write-back. That is an alteration criterion 5 forbids.
+   - Read-only callers keep last-wins, so `parse_backlog`, `state.py`, the dashboard, and E3 are unchanged.
+   - The implementation note about merge keys (check each mapping node before `<<:` is flattened) is right for PyYAML's `SafeConstructor`.
+2. **`close-item` through `_single_match`: sound.** It closes the duplicate-ID wrong-target case, and the lookup runs before any file is touched.
+3. **`update-validation` skipping HTML comments: sound, and required.**
+   - `TestUpdateValidation::test_happy_path` builds its matrix from the template. The template's commented example row `SV-001` (`VALIDATION_MATRIX.md.template:28-30`) would otherwise be a second candidate, so R6 would refuse the existing happy-path test.
+   - The candidate region is the whole `## Verification Registry` section, which is slightly wider than the table the parser reads. The difference only adds candidates, which R6 or R7 then refuse, so it errs safe.
+   - See RC1 for the one gap this call opens.
+4. **Missing sections refuse for `promote-requirement` and `add-validation` (R9): sound.**
+   - No existing test expects the old `ValueError`. The only `pytest.raises` in the PM operation tests is for `supersede_insight`.
+   - `_append_table_row` keeps its signature and its raise, so `TestAppendTableRow` is unaffected.
+   - The ID is minted before the refusal, but nothing is written.
+
+### Remaining must-fix
+
+- **RC1. D4 must say which line text it rewrites, and R7 must cover a comment marker in the target row.**
+  - D4 finds candidates on comment-blanked text but does not say whether the write splits the blanked line or the file line. Both readings go wrong on a row with an inline comment, for example a description `Energy balance <!-- confirm tolerance with owner -->` (`recheck_d4_probe.py`):
+    - **Split the blanked line.** The write silently deletes the comment from a non-target cell. Criterion 2 forbids changing anything but the targeted cell.
+    - **Split the file line.** `_format_table_row` raises R8's `ValueError` inside `update-validation`, which has no refusal mapped for it. The user gets a traceback.
+  - The same raise happens for a stray `-->`, or for an unclosed `<!--` that `_strip_html_comments` leaves in place.
+  - **Fix:**
+    - D4 splits and rewrites the original file line, at the index the candidate search found. Comment blanking keeps line numbers, so the indices match.
+    - If formatting that line raises, `update-validation` refuses under R7 with "the row holds an HTML comment marker; edit it by hand".
+    - Add `TestUpdateValidation::test_refuses_row_with_comment_marker`, asserting the file is unchanged.
+
+### Nits (optional)
+
+- In Component Overview, "`keep_lines=False` option" and "`unique_keys=False` option" read as if `False` were the option. Say "new keyword `keep_lines` (default `False`)", and the same for `unique_keys`.
+- In D4, "That is the region the parser reads" should be "it contains the region the parser reads". The section is wider than the parser's table, which errs safe.
+
+**Next Steps:** The orchestrator applies RC1 to `design.md` directly, then proceeds to `/_my_plan`. The reviewer does not edit the design.
