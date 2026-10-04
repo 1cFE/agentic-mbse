@@ -31,14 +31,14 @@ Evidence for ID reuse:
 
 - [ ] [INHERITED: BACKLOG.md PM-MATRIX-ESCAPED-PIPE, Problem and original Goal (1)] **Escaped pipes.** Splitting a registry table row follows GitHub's GFM table rule ([GFM spec §4.10, Tables extension](https://github.github.com/gfm/#tables-extension-)): `\|` is a literal pipe inside the cell, including inside code spans. A cell holding `\|rel dev\|` stays one cell, parses to `|rel dev|`, and adjacent columns keep their meaning. The behavior of `\\|` is pinned by a test. Evidence: E1, E4, and a splitter test with a pipe inside a code span.
 - [ ] [INFERRED] **One escape rule for every row reader and writer.** Every operation that reads or rewrites a registry table row applies the same escape rule, and updating a row changes only the targeted cell. Evidence: a test running `update-validation` on an escaped row, where the new status lands in Status and every other cell, including `\|rel dev\|`, is unchanged.
-- [ ] [INFERRED] **Round-trip.** A value written by any PM add operation reads back identical through the parser, including a value containing `|`. Evidence: for each table registry (SV, PR, G, AQ), a test that adds a free-text value containing `|` and reads it back.
-- [ ] [AGENT] (orchestrator, 2026-10-04: the only reading that also covers drifted structure and archive notes, and E4 as ratified already says "above every ID in the file") **No ID minted twice.** A newly minted ID is numerically greater than every same-prefix ID token that appears in the registry file outside HTML comments, whether or not the parser accepted its record. Evidence: E1, E2, E4.
+- [ ] [INFERRED] **Round-trip.** A value written by a PM add operation to a table registry (SV, PR, G, AQ) reads back identical through the parser, including a value containing `|`. Evidence: for each table registry (SV, PR, G, AQ), a test that adds a free-text value containing `|` and reads it back.
+- [ ] [AGENT] (orchestrator, 2026-10-04: the only reading that also covers drifted structure and archive notes, and E4 as ratified already says "above every ID in the file") **No ID minted twice.** A newly minted ID is numerically greater than every same-prefix ID token that appears in the registry file outside HTML comments, whether or not the parser accepted its record. Evidence: E1, E2, E4, and a test whose `KNOWLEDGE.md` holds records `DI-001` to `DI-011` under an archive note naming `DI-014`, where the next ID is `DI-015`.
   - A token stands alone: `MAG-001` is not `G-001`. Tokens inside code spans count.
   - Allocation stays strictly above the max, with no gap filling. The archive-note protection depends on this.
   - HTML comments are excluded because every shipped template holds example IDs inside them (`project_templates/*.md.template`), and existing tests assert the first minted IDs.
   - Accepted costs: a prose mention of a high number skips numbers permanently (a gap, never a reuse), and an ID that appears only inside an HTML comment is not protected.
   - `PR-1` and `PR-001` both count as 1, as today (`operations.py:63-67`). Whether fusion-tea treats them as the same ID is that project's convention, not settled here.
-- [ ] [AGENT] (orchestrator, 2026-10-04: E2's WI case requires it, and the 2026-02 operations spec already promised a malformed backlog fails rather than corrupts) **No record lost on write.** No PM write deletes an existing record or alters any record other than the one it targets. When a write cannot keep a record, it refuses with an error that names what it could not keep. Evidence: E2's WI case, plus tests where `add-item`, `add-epic`, and `close-item` meet a work item with an invalid field and a `BACKLOG.md` with malformed YAML.
+- [ ] [AGENT] (orchestrator, 2026-10-04: E2's WI case requires it, and the 2026-02 operations spec already promised a malformed backlog fails rather than corrupts) **No record lost on write.** No PM write deletes an existing record or alters any record other than the one it targets. When a write cannot keep a record, it refuses with an error that names what it could not keep, and a refused write leaves every file unchanged (`close_item` moves the item directory and rewrites its frontmatter before it writes `BACKLOG.md`, `operations.py:1078-1107`, so a late refusal would half-close an item). Evidence: E2's WI case, plus tests where `add-item`, `add-epic`, and `close-item` meet a work item with an invalid field and a `BACKLOG.md` with malformed YAML.
 - [ ] [INFERRED] **Nothing else changes.** Evidence: E3.
   1. No operation renumbers, re-pads, or re-spells an existing ID; `PR-1` stays `PR-1`.
   2. New IDs keep the `PREFIX-NNN` form with three-digit minimum padding (`operations.py:70`).
@@ -61,6 +61,8 @@ Evidence for ID reuse:
 - E2's PR, G, and AQ fixtures drop their row with a decorated ID cell such as `**PR-007**`, since an escaped pipe does not drop rows in those tables.
 - E3 allows `SV-035`'s warning to disappear and allows new diagnostics, such as one reporting that `SV-034` is present but unparsed and its ID reserved.
 - E4 and the snapshot half of E3 read gitignored copies of a private sibling repo (`.orchestrate-logs/ft-snapshot/`). The orchestrator runs them and records the result in the audit; they are not CI tests.
+- E4 also records the next DI the allocator would mint on the `KNOWLEDGE.md` copy. Expected `DI-015`: the live records end at `DI-011`, and the archive note at `KNOWLEDGE.md:11` names `DI-014`. A record-shaped scan would mint `DI-012` and fail this.
+- E2's WI case is judged on the YAML frontmatter. The `BACKLOG.md` body is a dashboard re-rendered from the kept records on every write.
 
 ## Known Requirements
 
@@ -71,9 +73,9 @@ Evidence for ID reuse:
 
 | Registry | File and format | Dropped from the parse today by | Effect of an escaped pipe | What PM writes do to the file |
 |---|---|---|---|---|
-| SV | `VALIDATION_MATRIX.md`, table under `## Verification Registry` | invalid ID, Type, Mechanism, or Status (warned); rows after a prose line or outside the section (silent) | drops the row (Type check fails) | `add_validation` inserts one row; `update_validation` rewrites one row through its own splitter |
+| SV | `VALIDATION_MATRIX.md`, table under `## Verification Registry` | invalid ID, Type, Mechanism, or Status (warned); rows after a prose line or outside the section (silent) | drops the row (a pipe before the Type column fails the Type check; a later pipe fails a later check) | `add_validation` inserts one row; `update_validation` rewrites one row through its own splitter |
 | PR | `REQUIREMENTS.md`, table under `## Requirements` | invalid ID cell such as `**PR-007**` (warned); rows outside the scanned table (silent) | keeps the row; later columns shift with no warning | `promote_requirement` inserts one row; raises if the section heading is missing |
-| G, AQ | `OVERVIEW.md`, tables under `## Goals Registry` and `## Analysis Questions` | same as PR | same as PR | `register_intent` inserts one row; raises if the section heading is missing |
+| G, AQ | `OVERVIEW.md`, tables under `## Goals Registry` and `## Analysis Questions` | same as PR | same as PR | `register_intent` inserts one row per goal or question; raises if the section heading is missing |
 | DI | `KNOWLEDGE.md`, `### DI-NNN: title` headings | invalid Status (warned); heading drift such as `## DI-` or a missing colon (silent) | n/a | `add_insight` and `approve_research` append at end of file |
 | AD | `ARCHITECTURE.md`, `### AD-NNN:` headings under `## Key Decisions` | invalid Status (warned); headings outside that section (silent; fusion-tea's case) | n/a | `register_decision` refuses if the section is missing, else inserts |
 | WI | `work/BACKLOG.md` YAML frontmatter | invalid id, scale, status, or priority (warned); an invalid epic drops all its items; malformed YAML drops every record (warned) | n/a | `add_item`, `add_epic`, and `close_item` rewrite the whole file from parsed data, deleting dropped records |
@@ -91,18 +93,18 @@ Evidence for ID reuse:
 
 ## Open Questions / Deferred to design
 
-- How allocation finds same-prefix ID tokens: one whole-file token scan that works the same for tables, headings, and frontmatter, or per-format detection of record-shaped text. Either must meet the "No ID minted twice" criterion, including drifted structure such as fusion-tea's `## AD-001` and `### PR-1` headings.
+- How allocation finds same-prefix ID tokens. Orchestrator steer: one whole-file token scan outside HTML comments, the same for tables, headings, and frontmatter. Any alternative must meet the "No ID minted twice" criterion on drifted structure (fusion-tea's `## AD-001` and `### PR-1` headings) and on prose mentions (fusion-tea's archive notes naming `DI-014` and `PR-007`), which rules out detection of record-shaped text alone.
 - What `\\|` (an escaped backslash before a pipe) means, and how writes emit a literal pipe in a new cell so the round-trip criterion holds.
-- For a work item with an invalid field, whether the backlog writer carries it forward raw or refuses. Orchestrator steer: malformed YAML refuses.
+- How the backlog writer carries forward a work item it cannot validate. E2's WI fixture uses a work item with an invalid field (such as `status`), and `add-item` must still mint above it and keep it, so carrying forward is required for that case; design chooses the mechanism (raw text or a preserved YAML node) and which other failures refuse (an invalid epic, a non-mapping entry). Malformed YAML refuses.
 
 ## Related Artifacts
 
 - **Backlog:** [PM-MATRIX-ESCAPED-PIPE](../../backlog/BACKLOG.md).
 - **Evidence:** [October 4 reconciliation](../../reports/2026-10-04-0901-status-report.md#what-is-actually-broken-or-missing).
-- **Spec review:** [spec-review.md](spec-review.md), with resolutions; orchestrator-verified fusion-tea facts in [briefs/spec_review.md](briefs/spec_review.md).
+- **Spec reviews:** [spec-review.md](spec-review.md) and [spec-review-2.md](spec-review-2.md), with resolutions; orchestrator-verified fusion-tea facts in [briefs/spec_review.md](briefs/spec_review.md).
 - **Historical contract:** [PM operations spec](../../completed/20260203_d4.4-operations/spec.md).
 - **Current code:** table splitter `src/agentic_mbse/pm/parser.py:109`; allocator `src/agentic_mbse/pm/operations.py:58`, validation allocation at `:514`, `update_validation` splitter at `:1148`, backlog writer at `:155`.
 - **fusion-tea copies:** `.orchestrate-logs/ft-snapshot/` (gitignored; read by E3 and E4).
 - **Product lens:** [Review ledger](product-lens.md).
 
-**Next Steps:** After the bounded second spec review, `/_my_design`, then `/_my_design_review`.
+**Next Steps:** `/_my_design`, then `/_my_design_review`. Both spec reviews are closed.
