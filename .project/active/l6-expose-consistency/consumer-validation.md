@@ -25,3 +25,17 @@ Owner-approved: this checkout was installed editable into fusion-tea's venv (`uv
 Levels 1, 3, 4, 5 pass on both. The Level 2 warnings are unrelated to this item. The CLI still prints five issues then "and N more"; the per-code counts in the Level 6 metrics block are the readable signal.
 
 **State left behind:** fusion-tea's venv holds the editable install until the next plain `uv run` or `uv sync` there, which restores the pinned pre-fix version. No committed fusion-tea file was changed.
+
+## Recorded fusion-tea work-item scenarios, rerun with the fix (2026-10-04)
+
+fusion-tea work items have been recording "inherited Level 6 debt" and hand-attributing it per item because the CLI truncates at five issues (WI-049 built its own before/after multiset comparison in `implementation/l6-before.json`). Rerunning their recorded commands through fusion-tea's CLI with the editable install (`uv run --no-sync`):
+
+| Work item and recorded path | Recorded before | After fix | Removed | Added |
+|---|---|---|---|---|
+| WI-099 `exploration/magnet_materials/input_models` | 43 L6 errors, "all Unsupported operator '.' on EXPOSE attributes" (implementation-notes.md:17) | **Level 6 passes; all six levels pass** | 43 | 0 |
+| WI-049 `work/active/WI-049_ife-zero-discount-repair/prototype/models` | 50 (its `l6-before.json`) | 24 | 26 (13 V4 `.` + 13 UNEXTRACTABLE on 13 EXPOSE attributes, none V2-flagged) | 0 |
+| WI-100 `exploration/stellarator_materials/units/reference/input_models` | not recorded | 196 (same set as the stellarator study) | — | — |
+
+WI-049's remaining 24: 18 `L6_DESIGN_ATTR_INCOMPLETE`, 2 `V2_DYNAMIC_EXPRESSION`, and 2 V4 `.` plus 2 UNEXTRACTABLE on those same two derived expressions. Every remaining V4/UNEXTRACTABLE element is V2-flagged, i.e. a genuine derived expression.
+
+**Usage observation.** The owner's live goal session on `goal/magnet-material-comparison` (commits `a9683fa1d`..`58b73d402`) changed no `.sysml` files and did not run `agentic-mbse validate`; the run-goal flow has no model-validation step. Across 48 goal trails under `work/orchestration/goals/`, none mentions `agentic-mbse validate`. Validation runs in the work-item (WI) flow, where 56 item folders reference it. So the fix lands in WI audits (where L6 debt attribution was manual) rather than in goal sessions.
