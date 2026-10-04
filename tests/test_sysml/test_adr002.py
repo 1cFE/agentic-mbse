@@ -3,20 +3,18 @@
 Tests the V1, V2, V4 checks from agentic_mbse.validation.adr002
 using the test fixtures in tests/fixtures/adr002_violations/.
 """
-import pytest
 from pathlib import Path
 
-from agentic_mbse.sysml.syside_adapter import get_syside
+import pytest
 
+from agentic_mbse.sysml.syside_adapter import get_syside
 from agentic_mbse.sysml.types import Severity, ValidationCode
 from agentic_mbse.validation.adr002 import (
     check_calc_def_locations,
-    check_supported_operators,
     check_static_expressions,
-    _is_expose_pattern,
-    _build_calc_output_catalog,
+    check_supported_operators,
+    is_expose_binding,
 )
-
 
 # ============================================================================
 # Fixtures
@@ -183,15 +181,12 @@ def test_check_static_expressions_allows_literal_refs(valid_model):
 # ============================================================================
 
 
-def test_is_expose_pattern_detects_simple_case(expose_pattern_model):
-    """_is_expose_pattern returns True for attr = calc.output (EXPOSE pattern).
+def test_is_expose_binding_detects_simple_case(expose_pattern_model):
+    """is_expose_binding returns True for attr = calc.output (EXPOSE pattern).
 
     The exposed_output attribute in expose_test_part is a pure value propagation
     from my_calc.output_val - this is the EXPOSE pattern.
     """
-    # Build calc output catalog (now returns tuple)
-    calc_outputs, _ = _build_calc_output_catalog(expose_pattern_model)
-
     # Find the exposed_output attribute in expose_test_part
     exposed_attr = None
     for attr in expose_pattern_model.elements(get_syside().AttributeUsage):
@@ -204,24 +199,21 @@ def test_is_expose_pattern_detects_simple_case(expose_pattern_model):
 
     expr = exposed_attr.feature_value_expression
 
-    # Call _is_expose_pattern directly
-    result = _is_expose_pattern(exposed_attr, expr, calc_outputs)
+    # Call is_expose_binding directly
+    result = is_expose_binding(exposed_attr, expr)
 
     assert result is True, (
-        f"Expected _is_expose_pattern to return True for EXPOSE pattern, "
+        f"Expected is_expose_binding to return True for EXPOSE pattern, "
         f"but got {result}. Expression type: {type(expr).__name__}"
     )
 
 
-def test_is_expose_pattern_rejects_operator_expression(expose_pattern_model):
-    """_is_expose_pattern returns False for attr = calc.output * 0.95 (computed).
+def test_is_expose_binding_rejects_operator_expression(expose_pattern_model):
+    """is_expose_binding returns False for attr = calc.output * 0.95 (computed).
 
     The combined attribute in multi_ref_test uses an OperatorExpression
     (calc1.output_val + calc2.output_val) - this is NOT an EXPOSE pattern.
     """
-    # Build calc output catalog (now returns tuple)
-    calc_outputs, _ = _build_calc_output_catalog(expose_pattern_model)
-
     # Find the combined attribute in multi_ref_test
     combined_attr = None
     for attr in expose_pattern_model.elements(get_syside().AttributeUsage):
@@ -234,11 +226,11 @@ def test_is_expose_pattern_rejects_operator_expression(expose_pattern_model):
 
     expr = combined_attr.feature_value_expression
 
-    # Call _is_expose_pattern directly
-    result = _is_expose_pattern(combined_attr, expr, calc_outputs)
+    # Call is_expose_binding directly
+    result = is_expose_binding(combined_attr, expr)
 
     assert result is False, (
-        f"Expected _is_expose_pattern to return False for OperatorExpression, "
+        f"Expected is_expose_binding to return False for OperatorExpression, "
         f"but got {result}. Expression type: {type(expr).__name__}"
     )
 

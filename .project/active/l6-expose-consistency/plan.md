@@ -1,6 +1,6 @@
 # Implementation Plan: L6 EXPOSE Validation Consistency
 
-**Status:** Draft
+**Status:** Complete (implementation; audit next)
 **Created:** 2026-10-04
 **Last Updated:** 2026-10-04
 **Branch:** harness-right-size (source unchanged since design commit `2d4b165`)
@@ -130,12 +130,12 @@ def test_referent_combined_route(tmp_path):
 
 ### Changes Required
 
-- [ ] Create the four fixture files with the design's [Appendix A](design.md#appendix-a--control-fixtures-probe-verified) text verbatim (do not rename `scaled`, see `design.md#implementation-notes`):
+- [x] Create the four fixture files with the design's [Appendix A](design.md#appendix-a--control-fixtures-probe-verified) text verbatim (do not rename `scaled`, see `design.md#implementation-notes`):
   - `tests/fixtures/l6_expose_consistency/shapes/library/expose_calc.sysml`
   - `tests/fixtures/l6_expose_consistency/shapes/designs/expose_shapes.sysml`
   - `tests/fixtures/l6_expose_consistency/controls/library/expose_calc.sysml`
   - `tests/fixtures/l6_expose_consistency/controls/designs/expose_controls.sysml`
-- [ ] Create `tests/test_validation/test_l6_expose_consistency.py` from the stencil, with a module docstring pointing at the spec.
+- [x] Create `tests/test_validation/test_l6_expose_consistency.py` from the stencil, with a module docstring pointing at the spec.
 
 Gotchas:
 
@@ -144,12 +144,12 @@ Gotchas:
 
 ### Validation
 
-- [ ] `uv run pytest tests/test_validation/test_l6_expose_consistency.py -v` → **2 passed, 2 failed**, and the failures are exactly these:
+- [x] `uv run pytest tests/test_validation/test_l6_expose_consistency.py -v` → **2 passed, 2 failed**, and the failures are exactly these:
   - `test_controls_keep_every_diagnostic` **passes** (first proof point).
   - `test_shapes_pass_combined_route` **fails**: 6 issues, V4 `'.'` and `L6_DESIGN_ATTR_UNEXTRACTABLE` on each of `ExposeShapesDesign::ExposingModule::module_result`, `ExposeShapesDesign::expose_test_part::exposed_output`, `ExposeShapesDesign::relay_part::relayed`.
   - `test_referent_individual_checks` and `test_referent_combined_route` **fail** on the first assertion: V4 `'.'` and `L6_DESIGN_ATTR_UNEXTRACTABLE` on `EXPOSED`. The `COMBINED` assertion would already hold.
-- [ ] Any other failure (a load warning, an unrelated code, a different count) means the fixture differs from Appendix A. Fix the fixture, not the assertion.
-- [ ] Record the observed red output in Implementation Notes below.
+- [x] Any other failure (a load warning, an unrelated code, a different count) means the fixture differs from Appendix A. Fix the fixture, not the assertion.
+- [x] Record the observed red output in Implementation Notes below.
 
 **What we know after this phase:** the proof reproduces the defect through the public route, and the controls pin today's non-EXPOSE diagnostics.
 
@@ -208,18 +208,18 @@ def test_is_expose_binding_boundary(root, qualified_name, expected):
 
 See `design.md#key-decisions` (D4) and Invariant 3 in `design.md#required-invariants`.
 
-- [ ] `src/agentic_mbse/validation/adr002.py:389`: rename `_is_expose_pattern` → `def is_expose_binding(attr: Any, expr: Any) -> bool`. Drop `calc_outputs`. Keep the body unchanged. Rewrite the docstring to state Invariant 3 exactly: top-level feature chain; head resolves to a `CalculationUsage` or `PartUsage`; head's owner is the attribute's owner; chain length and final target unconstrained; never raises, returns `False` on any analysis failure. Name its consumers: `check_static_expressions`, `check_supported_operators`, `check_design_attr_completeness`. Remove the "single attribute/output target" and "transitive EXPOSE" claims.
-- [ ] `adr002.py:599-600`: delete the catalog comment and `calc_outputs, _ = _build_calc_output_catalog(model)`.
-- [ ] `adr002.py:644`: call `is_expose_binding(attr, expr)`.
-- [ ] `adr002.py:253-307`: delete `_build_calc_output_catalog`.
-- [ ] `tests/test_sysml/test_adr002.py:12-18`: import `is_expose_binding`; drop `_build_calc_output_catalog`. Sort the import block as you edit it; that clears the file's one existing ruff finding (I001).
-- [ ] `test_adr002.py:186` and `:216`: rename to `test_is_expose_binding_detects_simple_case` and `test_is_expose_binding_rejects_operator_expression`. Delete the catalog lines (`:193`, `:223`). Update the calls (`:208`, `:238`), docstrings, and assertion messages to the new name.
+- [x] `src/agentic_mbse/validation/adr002.py:389`: rename `_is_expose_pattern` → `def is_expose_binding(attr: Any, expr: Any) -> bool`. Drop `calc_outputs`. Keep the body unchanged. Rewrite the docstring to state Invariant 3 exactly: top-level feature chain; head resolves to a `CalculationUsage` or `PartUsage`; head's owner is the attribute's owner; chain length and final target unconstrained; never raises, returns `False` on any analysis failure. Name its consumers: `check_static_expressions`, `check_supported_operators`, `check_design_attr_completeness`. Remove the "single attribute/output target" and "transitive EXPOSE" claims.
+- [x] `adr002.py:599-600`: delete the catalog comment and `calc_outputs, _ = _build_calc_output_catalog(model)`.
+- [x] `adr002.py:644`: call `is_expose_binding(attr, expr)`.
+- [x] `adr002.py:253-307`: delete `_build_calc_output_catalog`.
+- [x] `tests/test_sysml/test_adr002.py:12-18`: import `is_expose_binding`; drop `_build_calc_output_catalog`. Sort the import block as you edit it; that clears the file's one existing ruff finding (I001).
+- [x] `test_adr002.py:186` and `:216`: rename to `test_is_expose_binding_detects_simple_case` and `test_is_expose_binding_rejects_operator_expression`. Delete the catalog lines (`:193`, `:223`). Update the calls (`:208`, `:238`), docstrings, and assertion messages to the new name.
 
 ### Validation
 
-- [ ] `uv run pytest tests/test_validation/test_l6_expose_consistency.py -v` → the 6 boundary cases pass. Phase 1 results are unchanged (controls pass; shapes and both referent tests still fail the same way).
-- [ ] `uv run pytest tests/test_sysml/test_adr002.py tests/test_validation/test_v2_false_positive.py tests/test_l8_extractability.py` → all pass.
-- [ ] `grep -rn "_is_expose_pattern\|_build_calc_output_catalog" src/ tests/` → no hits (Invariant 1).
+- [x] `uv run pytest tests/test_validation/test_l6_expose_consistency.py -v` → the 6 boundary cases pass. Phase 1 results are unchanged (controls pass; shapes and both referent tests still fail the same way).
+- [x] `uv run pytest tests/test_sysml/test_adr002.py tests/test_validation/test_v2_false_positive.py tests/test_l8_extractability.py` → all pass.
+- [x] `grep -rn "_is_expose_pattern\|_build_calc_output_catalog" src/ tests/` → no hits (Invariant 1).
 
 **What we know after this phase:** the predicate is importable under its contract name, its boundary is pinned by test, and V2 is unaffected.
 
@@ -243,15 +243,15 @@ Already written: `test_shapes_pass_combined_route`, `test_referent_individual_ch
 
 See `design.md#architecture` and `design.md#implementation-notes` for placement.
 
-- [ ] **V4 guard**, `adr002.py`, in `check_supported_operators`: after `expr = attr.feature_value_expression` (`:147`) and before `extract_operators(expr)` (`:150`), add `if is_expose_binding(attr, expr): continue` with a one-line comment (an EXPOSE alias has no arithmetic, so it is outside V4's scope). Add one docstring line saying the same.
-- [ ] Run the module once. `test_shapes_pass_combined_route` should now show only the 3 `L6_DESIGN_ATTR_UNEXTRACTABLE` issues.
-- [ ] **Completeness guard**, `src/agentic_mbse/validation/level6_architecture.py`: add `is_expose_binding` to the `from .adr002 import (...)` block (`:34-39`). Inside `if has_value:` (`:530`), before the `try:` around `evaluate_true_static_expression`, add `if is_expose_binding(attr, attr.feature_value_expression): continue` with a one-line comment (complete: codegen wires the alias to its source). `attrs_checked` has already incremented at `:521`, which keeps Invariant 6.
-- [ ] Do not touch `extract_operators`, `SUPPORTED_OPERATORS`, `STATIC_OPERATORS`, or `evaluate_true_static_expression` (Invariant 5).
+- [x] **V4 guard**, `adr002.py`, in `check_supported_operators`: after `expr = attr.feature_value_expression` (`:147`) and before `extract_operators(expr)` (`:150`), add `if is_expose_binding(attr, expr): continue` with a one-line comment (an EXPOSE alias has no arithmetic, so it is outside V4's scope). Add one docstring line saying the same.
+- [x] Run the module once. `test_shapes_pass_combined_route` should now show only the 3 `L6_DESIGN_ATTR_UNEXTRACTABLE` issues.
+- [x] **Completeness guard**, `src/agentic_mbse/validation/level6_architecture.py`: add `is_expose_binding` to the `from .adr002 import (...)` block (`:34-39`). Inside `if has_value:` (`:530`), before the `try:` around `evaluate_true_static_expression`, add `if is_expose_binding(attr, attr.feature_value_expression): continue` with a one-line comment (complete: codegen wires the alias to its source). `attrs_checked` has already incremented at `:521`, which keeps Invariant 6.
+- [x] Do not touch `extract_operators`, `SUPPORTED_OPERATORS`, `STATIC_OPERATORS`, or `evaluate_true_static_expression` (Invariant 5).
 
 ### Validation
 
-- [ ] `uv run pytest tests/test_validation/test_l6_expose_consistency.py -v` → **10 passed**.
-- [ ] `uv run pytest tests/test_sysml_quality_checks.py -k adr002 tests/test_l8_extractability.py tests/test_sysml/test_adr002.py` → all pass. The V4 orchestrator test (`tests/test_sysml_quality_checks.py:1087`) still finds `**`. The FORMULA rejection (`tests/test_l8_extractability.py:58`) is unchanged (Invariant 7).
+- [x] `uv run pytest tests/test_validation/test_l6_expose_consistency.py -v` → **10 passed**.
+- [x] `uv run pytest tests/test_sysml_quality_checks.py -k adr002 tests/test_l8_extractability.py tests/test_sysml/test_adr002.py` → all pass. The V4 orchestrator test (`tests/test_sysml_quality_checks.py:1087`) still finds `**`. The FORMULA rejection (`tests/test_l8_extractability.py:58`) is unchanged (Invariant 7).
 
 **What we know after this phase:** all three spec success criteria are proven by committed tests.
 
@@ -267,12 +267,12 @@ No regressions, and no new lint, format, or type findings.
 
 The default suite skips the 33 slow corpus tests (CLAUDE.md; `-m ""` runs them, not required here). On this machine the default suite ran in about 22 s; allow longer elsewhere.
 
-- [ ] `uv run pytest tests/` → baseline was **1922 passed, 1 skipped, 33 deselected**. Expect 1922 + the new module's tests (10 with the stencils above) passed, 1 skipped, 33 deselected, 0 failed.
-- [ ] `uv run ruff check src/agentic_mbse/validation/adr002.py src/agentic_mbse/validation/level6_architecture.py tests/test_sysml/test_adr002.py tests/test_validation/test_l6_expose_consistency.py` → **clean**.
-- [ ] `uv run ruff format tests/test_validation/test_l6_expose_consistency.py`, then `uv run ruff format --check` on the same file → **clean**. New lines in the three existing files should already be in ruff's style; the files themselves still report "would reformat", as they did before this item.
-- [ ] `uv run mypy src/ 2>&1 | grep -E "validation/(adr002|level6_architecture)\.py"` → only the 3 pre-existing errors at `adr002.py:31`.
-- [ ] Brief's repo-wide commands, judged against the baseline (see the gate note above): `uv run ruff check src/ tests/` reports ≤ 119 errors; `uv run ruff format --check src/ tests/` reports ≤ 78 files; `uv run mypy src/` reports ≤ 91 errors in 19 files.
-- [ ] Scope check: `git status --short` shows only `adr002.py`, `level6_architecture.py`, `tests/test_sysml/test_adr002.py`, the new test module, the four fixture files, and this plan. `git diff src/agentic_mbse/sysml/ tests/test_l8_extractability.py` is empty.
+- [x] `uv run pytest tests/` → baseline was **1922 passed, 1 skipped, 33 deselected**. Expect 1922 + the new module's tests (10 with the stencils above) passed, 1 skipped, 33 deselected, 0 failed.
+- [x] `uv run ruff check src/agentic_mbse/validation/adr002.py src/agentic_mbse/validation/level6_architecture.py tests/test_sysml/test_adr002.py tests/test_validation/test_l6_expose_consistency.py` → **clean**.
+- [x] `uv run ruff format tests/test_validation/test_l6_expose_consistency.py`, then `uv run ruff format --check` on the same file → **clean**. New lines in the three existing files should already be in ruff's style; the files themselves still report "would reformat", as they did before this item.
+- [x] `uv run mypy src/ 2>&1 | grep -E "validation/(adr002|level6_architecture)\.py"` → only the 3 pre-existing errors at `adr002.py:31`.
+- [x] Brief's repo-wide commands, judged against the baseline (see the gate note above): `uv run ruff check src/ tests/` reports ≤ 119 errors; `uv run ruff format --check src/ tests/` reports ≤ 78 files; `uv run mypy src/` reports ≤ 91 errors in 19 files.
+- [x] Scope check: `git status --short` shows only `adr002.py`, `level6_architecture.py`, `tests/test_sysml/test_adr002.py`, the new test module, the four fixture files, and this plan. `git diff src/agentic_mbse/sysml/ tests/test_l8_extractability.py` is empty.
 
 **What we know after this phase:** the item is ready for `/_my_audit`.
 
@@ -291,24 +291,69 @@ See `design.md#potential-risks` (R1–R4). Phase-specific:
 [To be filled during implementation.]
 
 ### Phase 1 Completion
-**Completed:**
+**Completed:** 2026-10-04
 **Actual Changes:**
-**Observed red output:**
+- Created the four fixture files under `tests/fixtures/l6_expose_consistency/{shapes,controls}/{library,designs}/`, text copied verbatim from design Appendix A.
+- Created `tests/test_validation/test_l6_expose_consistency.py` from the stencil: module docstring pointing at the spec, tests grouped under one comment banner per spec criterion.
+
+**Observed red output:** `1 passed, 3 failed`.
+- `test_controls_keep_every_diagnostic` passed before any production change (first proof point, Invariant 4).
+- `test_shapes_pass_combined_route` failed with exactly 6 issues: V4 `'.'` and `L6_DESIGN_ATTR_UNEXTRACTABLE` on each of `ExposingModule::module_result`, `expose_test_part::exposed_output`, `relay_part::relayed`.
+- `test_referent_individual_checks` and `test_referent_combined_route` failed on the first assertion with exactly two issues on `exposed_output`: V4 `'.'` and `L6_DESIGN_ATTR_UNEXTRACTABLE`. No load warnings, no unrelated codes.
+
 **Deviations:**
+- The validation headline "2 passed, 2 failed" is an arithmetic slip in the plan; its own bullet list (controls pass; shapes and both referent tests fail) describes 1 passed, 3 failed, which is what ran.
+- Stencil cosmetics only: the `powered` V4 check is two asserts instead of one `and`, and `_assert_referent` has a one-line docstring.
 
 ### Phase 2 Completion
-**Completed:**
+**Completed:** 2026-10-04
 **Actual Changes:**
+- Added `test_is_expose_binding_boundary` (6 parametrized cases) to the new module; it failed at collection on the missing import before the rename (red step).
+- `adr002.py`: `_is_expose_pattern(attr, expr, calc_outputs)` → `is_expose_binding(attr: Any, expr: Any) -> bool`. Docstring rewritten to Invariant 3: top-level feature chain, head resolves to `CalculationUsage` or `PartUsage`, head's owner is the attribute's owner, chain length and final target not checked, never raises (returns `False` on failure). Names its three consumers. The "single attribute/output target" and "transitive EXPOSE" claims are gone.
+- `adr002.py`: deleted `_build_calc_output_catalog` and the V2 catalog build plus its comment; V2 now calls `is_expose_binding(attr, expr)`.
+- `tests/test_sysml/test_adr002.py`: import block sorted (clears the file's one I001), `_build_calc_output_catalog` import and calls dropped, the two predicate tests renamed to `test_is_expose_binding_*` with docstrings, comments, and messages updated.
+
+**Validation:** new module 7 passed, 3 failed (the same 3 as Phase 1, same issues). `test_adr002.py` + `test_v2_false_positive.py` + `test_l8_extractability.py`: 41 passed, 1 skipped. Invariant 1 grep: no hits.
+
 **Deviations:**
+- One body comment in the predicate changed: `# For PartUsage: transitive EXPOSE (...)` → `# For PartUsage: part-headed EXPOSE (...)`. The plan says keep the body unchanged; this is comment-only, no logic touched. It was the last place still claiming the "transitive" check that D4 removes, and it would have contradicted the new docstring.
 
 ### Phase 3 Completion
-**Completed:**
+**Completed:** 2026-10-04
 **Actual Changes:**
+- `adr002.py` `check_supported_operators`: after `expr = attr.feature_value_expression` and before `extract_operators(expr)`, added `if is_expose_binding(attr, expr): continue` under a comment naming D2 (an alias has no arithmetic, so it is outside V4's scope). Docstring gained one line saying EXPOSE bindings are skipped.
+- After the V4 guard alone, `shapes/` showed exactly the 3 `L6_DESIGN_ATTR_UNEXTRACTABLE` issues, as predicted.
+- `level6_architecture.py`: `is_expose_binding` added to the `from .adr002 import (...)` block. Inside `if has_value:`, before the `try:` around `evaluate_true_static_expression`, added `if is_expose_binding(attr, attr.feature_value_expression): continue` under a comment naming D3 (codegen wires the alias to its source, so no numeric default is needed). `attrs_checked` increments before this point (Invariant 6).
+
+**Validation:** new module 10 passed. `test_sysml_quality_checks.py -k adr002` + `test_l8_extractability.py` + `test_adr002.py`: 21 passed, 1 skipped. The filter selects `test_adr002_v4_in_orchestrator`, which still finds `**`.
+
 **Deviations:**
+- The completeness docstring's "Checks" bullet ("Design attrs with values produce extractable numeric defaults") gained a clause: "except EXPOSE bindings (see is_expose_binding), which are complete as written". Not in the plan; without it the docstring would state a rule the code no longer enforces. Parallels the V4 docstring line the plan asked for.
 
 ### Phase 4 Completion
-**Completed:**
+**Completed:** 2026-10-04
 **Gate results vs baseline:**
+
+| Check | Before | After |
+|---|---|---|
+| `uv run pytest tests/` | 1922 passed, 1 skipped, 33 deselected | 1932 passed, 1 skipped, 33 deselected, 0 failed |
+| `uv run ruff check src/ tests/` | 119 errors | 118 errors (the I001 in `test_adr002.py` is cleared) |
+| `uv run ruff format --check src/ tests/` | 78 would reformat, 76 formatted | 78 would reformat, 77 formatted (the new test file is formatted) |
+| `uv run mypy src/` | 91 errors in 19 files | 91 errors in 19 files |
+| mypy findings in `adr002.py` / `level6_architecture.py` | 3, all at `adr002.py:31` | the same 3 |
+| `ruff check` on the four touched Python files | 1 (I001, `test_adr002.py`) | clean |
+| `ruff format --check` on the new test file | n/a | clean |
+
+- No `ruff format --diff` hunk in `adr002.py`, `level6_architecture.py`, or `test_adr002.py` touches a changed line; none of the three was reformatted wholesale.
+- The 6 pytest warnings are pre-existing `fork()` DeprecationWarnings from `tests/test_extraction.py`. The new module and `test_adr002.py` emit none.
+- Scope: `git status` under `src/` and `tests/` shows only `adr002.py`, `level6_architecture.py`, `tests/test_sysml/test_adr002.py`, the new test module, and the four fixture files. `git diff src/agentic_mbse/sysml/ tests/test_l8_extractability.py` is empty (Invariants 5 and 7).
+- Deleted the gitignored scratch directory `build/l6probe/` (design/plan probe output, nothing tracked).
+
+**Deviations:**
+- `ruff check --fix --select I001` on `test_adr002.py` also removed one of the two blank lines after the import block. That is part of the same I001 finding the plan says to clear.
+- Two more doc-only lines in V2 (`check_static_expressions`) now point at `is_expose_binding` instead of describing EXPOSE as a "single reference to sibling calc output": the docstring bullet and the comment above the renamed call. Same class of overstated boundary claim as D4, on lines beside the call this item already edits. No logic change.
+
+**Follow-ups noticed (not acted on):** none beyond the design's Non-Goals.
 
 ---
 

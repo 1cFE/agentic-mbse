@@ -36,6 +36,7 @@ from .adr002 import (
     check_static_expressions,
     check_static_function_invocations,
     check_supported_operators,
+    is_expose_binding,
 )
 from .common import (
     QualityCheckResult,
@@ -481,7 +482,8 @@ def check_design_attr_completeness(
 
     Checks:
     - Design attrs in designs/ have feature_value_expression or binding
-    - Design attrs with values produce extractable numeric defaults
+    - Design attrs with values produce extractable numeric defaults, except EXPOSE
+      bindings (see is_expose_binding), which are complete as written
 
     Args:
         model: Parsed SysML model
@@ -528,6 +530,11 @@ def check_design_attr_completeness(
             )
 
             if has_value:
+                # D3 (L6-EXPOSE-CONSISTENCY): an EXPOSE binding is complete. Codegen
+                # wires the alias to its source, so it needs no numeric default and
+                # the static evaluator does not apply.
+                if is_expose_binding(attr, attr.feature_value_expression):
+                    continue
                 try:
                     evaluate_true_static_expression(attr.feature_value_expression)
                 except (ValueError, TypeError) as e:

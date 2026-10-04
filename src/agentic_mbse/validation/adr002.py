@@ -97,6 +97,7 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
 
     Supported operators: +, -, *, /, [ (unit annotation)
     Unsupported: ** (exponentiation), ^ (power), function calls
+    EXPOSE bindings (see is_expose_binding) contain no arithmetic and are skipped.
 
     Per ADR-002: "Unsupported operator in static expression.
     Use calc def for complex calculations."
@@ -145,6 +146,12 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
                 continue
 
             expr = attr.feature_value_expression
+
+            # D2 (L6-EXPOSE-CONSISTENCY): an EXPOSE binding is an alias with no
+            # arithmetic, so it is outside V4's scope. Without this skip its feature
+            # chain reports a false '.' operator.
+            if is_expose_binding(attr, expr):
+                continue
 
             # Extract all operators from expression
             operators = extract_operators(expr)
@@ -250,63 +257,6 @@ def check_static_function_invocations(model: Any) -> list[ValidationIssue]:
     return issues
 
 
-def _build_calc_output_catalog(model: Any) -> tuple[set[str], set[str]]:
-    """
-    Build catalog of calc output names and calc def qualified names from library/.
-
-    Returns:
-        Tuple of (output_names, calc_def_qualified_names)
-        - output_names: Set of simple output parameter names (e.g., "output_val")
-        - calc_def_qualified_names: Set of calc def qualified names
-          (e.g., "V2TestLibrary::SimpleCalc")
-    """
-    outputs: set[str] = set()
-    calc_def_qualified_names: set[str] = set()
-
-    for calc_def in SysideAdapter.elements_of_type(model, "CalculationDefinition"):
-        try:
-            doc = calc_def.document
-            if not doc or not hasattr(doc, "url"):
-                continue
-
-            doc_path = str(doc.url)
-            if "library/" not in doc_path:
-                continue  # Only catalog library calc defs
-
-            calc_name = calc_def.name if hasattr(calc_def, "name") else ""
-
-            # Collect calc def qualified name for pattern matching
-            if hasattr(calc_def, "qualified_name") and calc_def.qualified_name:
-                calc_def_qualified_names.add(str(calc_def.qualified_name))
-
-            # Find output parameters
-            if not hasattr(calc_def, "owned_members"):
-                continue
-
-            for member in calc_def.owned_members:
-                if not (
-                    SysideAdapter.is_instance(member, "AttributeUsage")
-                    or SysideAdapter.is_instance(member, "ReferenceUsage")
-                ):
-                    continue
-
-                # Check if output direction
-                if hasattr(member, "direction"):
-                    direction_str = str(member.direction)
-                    if "Out" in direction_str or "Return" in direction_str:
-                        output_name = member.name if hasattr(member, "name") else ""
-                        if output_name:
-                            # Add output name
-                            outputs.add(output_name)
-                            if calc_name:
-                                outputs.add(f"{calc_name}::{output_name}")
-
-        except Exception:
-            continue
-
-    return outputs, calc_def_qualified_names
-
-
 def _get_calc_usage_names(model: Any) -> set:
     """Get set of all calc usage instance names."""
     names = set()
@@ -386,35 +336,28 @@ def _is_part_usage(element: Any) -> bool:
         return False
 
 
-def _is_expose_pattern(
-    attr: Any,
-    expr,
-    calc_outputs: set,
-) -> bool:
+def is_expose_binding(attr: Any, expr: Any) -> bool:
     """
-    Check if attribute follows EXPOSE pattern: attribute x = calc.x OR attribute x = part.y
+    Check if an attribute's value is an EXPOSE binding, e.g. `attribute x = calc.y`.
 
-    The EXPOSE pattern is value propagation from:
-    1. A sibling calc usage's output (attribute x = calc.output), OR
-    2. A sibling part's attribute that is itself an EXPOSE (transitive EXPOSE)
+    An EXPOSE binding aliases a value that already exists on a sibling, so it
+    introduces no computation. It is True when all of these hold:
+    1. `expr` is itself a feature chain (not arithmetic or a call around one).
+    2. The chain's first member resolves to a CalculationUsage or a PartUsage.
+    3. That head has the same owner as `attr` (it is a sibling).
 
-    This is architecturally valid per ADR-002 amendment because it enables clean
-    cross-file interfaces without introducing computation.
+    Chain length and the chain's final target are not checked. The function never
+    raises: on any analysis failure it returns False.
 
-    Detection criteria:
-    1. Expression is a FeatureChainExpression (x.y pattern) - NO arithmetic
-    2. The intermediate element is either:
-       a. A CalculationUsage in the same owner (direct EXPOSE), OR
-       b. A PartUsage in the same owner (transitive EXPOSE)
-    3. The target is a single attribute/output reference (no computation)
+    This is the one EXPOSE predicate. Its consumers are check_static_expressions
+    (V2), check_supported_operators (V4), and check_design_attr_completeness (L6).
 
     Args:
         attr: The AttributeUsage being analyzed
         expr: The attribute's value expression
-        calc_outputs: Set of known calc output names from library/
 
     Returns:
-        True if this is an EXPOSE pattern (exempt from V2), False otherwise
+        True if this is an EXPOSE binding, False otherwise
     """
     try:
         # 1. Check expression type - must be FeatureChainExpression
@@ -474,7 +417,7 @@ def _is_expose_pattern(
 
         # All criteria met - this is an EXPOSE pattern
         # For CalculationUsage: direct EXPOSE (e.g., attribute x = calc.output)
-        # For PartUsage: transitive EXPOSE (e.g., attribute x = sibling_part.volume)
+        # For PartUsage: part-headed EXPOSE (e.g., attribute x = sibling_part.volume)
         return True
 
     except Exception:
@@ -564,7 +507,8 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
     """
     V2: Validate that design attribute expressions are either:
     - True static (no feature references except standard library), OR
-    - EXPOSE pattern (single reference to sibling calc output), OR
+    - EXPOSE binding (feature chain headed by a sibling calc or part, see
+      is_expose_binding), OR
     - a supported FORMULA computed attribute (refs are all same-part siblings)
 
     A derived expression that references a calc output inside arithmetic (or
@@ -595,9 +539,6 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
         List of ValidationIssue for V2 violations
     """
     issues: list[ValidationIssue] = []
-
-    # Build catalog of calc output names (still needed for EXPOSE pattern detection)
-    calc_outputs, _ = _build_calc_output_catalog(model)
 
     # Check each attribute in design files
     for attr in SysideAdapter.elements_of_type(model, "AttributeUsage"):
@@ -640,8 +581,8 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
             if not any(reference_is_dynamic(use) for use in uses):
                 continue  # OK - true static expression
 
-            # EXPOSE PATTERN: Single ref to sibling calc output is exempt
-            if _is_expose_pattern(attr, expr, calc_outputs):
+            # EXPOSE binding (see is_expose_binding) is exempt
+            if is_expose_binding(attr, expr):
                 continue  # OK - EXPOSE pattern exempt
 
             # F6 (Item 12): a design computed attribute whose refs are all same-part
