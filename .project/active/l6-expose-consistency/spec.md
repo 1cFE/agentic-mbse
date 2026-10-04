@@ -1,6 +1,6 @@
 # Spec: L6 EXPOSE Validation Consistency
 
-**Status:** Implementation Complete — audit next (2026-10-04)
+**Status:** Certified — [audit](audit.md) 2026-10-04; close next
 **Owner:** Reid W
 **Created:** 2026-10-04 09:28 PDT
 **Complexity:** MEDIUM
@@ -13,9 +13,9 @@
 
 ## Success Criteria
 
-- [ ] [INHERITED: ../../reports/2026-10-04-0901-status-report.md] The retained `tests/fixtures/adr002_violations/v2_expose_pattern.sysml` reproduction produces neither false-positive diagnostic for its valid exposed output, through the individual checks and the combined L6 route in a checked design location.
-- [ ] [INHERITED: ../../../docs/patterns/expose-pattern.md] Pure EXPOSE bindings on part definitions and part usages remain accepted; arithmetic over a calculation output remains rejected as a derived expression.
-- [ ] [INFERRED] Controls prove that unsupported operators, absent design values/bindings, unextractable static defaults, and invalid reference targets still receive their applicable diagnostics. The fix does not admit an arbitrary dotted reference merely because it contains `.`.
+- [x] [INHERITED: ../../reports/2026-10-04-0901-status-report.md] The retained `tests/fixtures/adr002_violations/v2_expose_pattern.sysml` reproduction produces neither false-positive diagnostic for its valid exposed output, through the individual checks and the combined L6 route in a checked design location.
+- [x] [INHERITED: ../../../docs/patterns/expose-pattern.md] Pure EXPOSE bindings on part definitions and part usages remain accepted; arithmetic over a calculation output remains rejected as a derived expression.
+- [x] [INFERRED] Controls prove that unsupported operators, absent design values/bindings, unextractable static defaults, and invalid reference targets still receive their applicable diagnostics. The fix does not admit an arbitrary dotted reference merely because it contains `.`.
 
 ## Known Requirements
 

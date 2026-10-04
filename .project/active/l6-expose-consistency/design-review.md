@@ -287,7 +287,12 @@ Once C1 is decided, every remaining item is a wording or test-shape edit that ca
 
 ## Resolutions
 
-Pending. This review ran non-interactively for the orchestrator. C1 needs an owner decision. Record it here in the owner's terms, along with the disposition of M1 and the minor items, before the design agent incorporates the review.
+Recorded by the orchestrator on 2026-10-04. The owner reserved no gates at Align ("no gates needed unless there is a surprising result that you genuinely need my judgement for"), so C1 was decided at execution-detail tier and is surfaced in the run summary for the owner to reverse if they disagree.
+
+- **C1 → option (a), keep the predicate's boundary.** Recorded as design D6, graded `[AGENT]` (ratified by orchestrator; not owner-originated; reversible in one place, `is_expose_binding`). Reasoning: the spec's inherited requirement names the existing classification as the boundary; V2 has always accepted part-headed and multi-hop sibling chains; codegen resolves any design-attribute feature chain as an alias node by exact occurrence identity (`sysml-codegen/docs/architecture/reference/16-computed-attributes.md`, `tests/conformance/test_elaboration_expose_shapes.py`, orchestrator-verified); narrowing would change V2's accepted set, which is new policy. The three dotted-path doc rows are a pre-existing doc defect and a recorded follow-up (design Non-Goals).
+- **M1** folded into D4: the predicate docstring now claims only what the code checks. Verified in the implementation commit `3f442ce` and by the audit.
+- **Minor items** (Counter-based controls assertion plus `len(result.issues) == 13`, B2 wording in B1/D3/Core Concept, the `test_sysml_quality_checks.py:1087` correction, the calc-usage `in attribute` binding follow-up) all landed; design Appendix C maps each to its location.
+- **Audit Advisory 2 (chains of three or more segments).** `plant-idiom.md:406-413` describes calc *input binding* truncation, which codegen now rejects loudly (D3-2). EXPOSE design attributes take codegen's alias walk, which lands on one exact node or refuses with a diagnostic. V2 accepted deep sibling chains before this item. Disposition: pre-existing boundary, not a regression; no change.
 
 ---
 

@@ -1,6 +1,6 @@
 # Implementation Plan: L6 EXPOSE Validation Consistency
 
-**Status:** Complete (implementation; audit next)
+**Status:** Complete; certified by [audit](audit.md) 2026-10-04 (all phases verified)
 **Created:** 2026-10-04
 **Last Updated:** 2026-10-04
 **Branch:** harness-right-size (source unchanged since design commit `2d4b165`)
