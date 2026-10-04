@@ -45,3 +45,16 @@ WI-049's remaining 24: 18 `L6_DESIGN_ATTR_INCOMPLETE`, 2 `V2_DYNAMIC_EXPRESSION`
 The owner's fusion-tea agent ran a scripted probe on `exploration/magnet_materials/input_models` (the WI-099 path): baseline all six levels pass; adding `attribute probe_expose : Real = conductor.element_area_total;` to `magnet_subsystem.sysml` produced no diagnostic and Level 6 still passed. That exercises the V4 half of the fix on a real consumer file (pre-fix, that line produced `V4_UNSUPPORTED_OPERATOR` for `.`; WI-099 recorded 43 such errors).
 
 **Finding (pre-existing, not caused by this item):** "Design attrs checked" was 0 before and after. `check_design_attr_completeness` keeps its default `design_path_filter="designs"`, and the CLI exposes no way to change it, so a flat layout with no `designs/` directory gets zero completeness coverage. In fusion-tea this applies to at least `exploration/magnet_materials/input_models` and `exploration/exchanger_architecture/thermal_requirements/input_models`. WI-099's recorded "43 errors, all `.`" were therefore V4 only; the completeness half of the fix was never reachable on that path. The completeness half is exercised on `models/`, the stellarator set, and the WI-049 prototype (all have `designs/`). Follow-up candidate for close: either a CLI flag for the filter or a warning when the filter matches no files.
+
+## Owner-run end-to-end probe on a `designs/` layout (2026-10-04) — all expectations met
+
+The owner's fusion-tea agent ran the scripted probe on `work/active/WI-049_ife-zero-discount-repair/prototype/models` through fusion-tea's CLI (`uv run --no-sync`, editable install confirmed), editing `designs/generic_ife/ife_plant.sysml` inside `'IFE Power Plant'` and reverting afterwards (empty `git diff`, no commits).
+
+| Step | Design attrs checked | INCOMPLETE | UNEXTRACTABLE | Issues found |
+|---|---|---|---|---|
+| Baseline | 50 | 18 | 2 | 24 |
+| + `attribute probe_expose : Real = hawker_price.price;` | 51 | 18 | 2 | 24 |
+| + `attribute probe_derived : Real = hawker_price.price * 0.95;` | 52 | 18 | 3 | 27 |
+| Both removed | 50 | 18 | 2 | 24 |
+
+The three new diagnostics in step 3 were all on `probe_derived`: `V2_DYNAMIC_EXPRESSION`, `V4_UNSUPPORTED_OPERATOR` (`.`), `L6_DESIGN_ATTR_UNEXTRACTABLE`. `probe_expose` received none at any step. Existing diagnostic identities were unchanged throughout, and the restored run reproduced the baseline exactly. This exercises both repaired checks (V4 and completeness) and the V2 control through the consumer's own entry point on a real design file. Spec success criteria 1–3 are thereby confirmed in situ.
