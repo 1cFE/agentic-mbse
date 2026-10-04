@@ -45,3 +45,5 @@ tests/corpus/page_images/
 
 # Memories
 .project/memories
+# orchestrate-stage.sh raw logs
+.orchestrate-logs/

@@ -1,0 +1,26 @@
+{
+  "command_skip_then_reinit": {
+    "second_init_prompts": 1,
+    "second_init_preserved_edit": true,
+    "second_manifest_retains_command_hash": false,
+    "third_init_prompts": 0,
+    "third_init_preserved_edit": false,
+    "third_init_restored_shipped_content": true
+  },
+  "skill_update": {
+    "prompts": 0,
+    "restored_shipped_content": true,
+    "preserved_local_addition": false
+  },
+  "command_only_forced_copy_to_symlink": {
+    "destination_remains_symlink": true,
+    "referent_was_overwritten": true
+  },
+  "hash_aware_copy_to_symlink": {
+    "action": "updated",
+    "destination_remains_symlink": false,
+    "referent_preserved": true,
+    "copied_source_content": true,
+    "hash_returned": true
+  }
+}

@@ -1,6 +1,6 @@
 # Spec: Iteration Loop — Experimental Orchestration for Claude Code
 
-**Status:** Draft
+**Status:** Shelved (P3); historical draft retained
 **Owner:** Reid W
 **Created:** 2026-02-10 09:32 PST
 **Complexity:** HIGH
@@ -27,7 +27,7 @@ Right now, when facing an exploratory problem, the workflow degenerates into ad-
 
 ### Priority
 
-Immediate — this is the vehicle for the next phase of doc-ingest work.
+P3 — shelved in the backlog; the original immediate priority is obsolete.
 
 ---
 
@@ -299,4 +299,4 @@ These are observations, not requirements — defer decisions to design phase.
 
 ---
 
-**Next Steps:** After approval, proceed to `/_my_design` (or go straight to implementation given the scripts are self-contained and the ralph-init.sh serves as a strong reference)
+**Next Steps:** None while shelved; revisit scope only if the owner reopens the item.

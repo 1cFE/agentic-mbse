@@ -1,0 +1,792 @@
+{
+  "versions": {
+    "codex": "codex-cli 0.153.4",
+    "claude": "2.1.263 (Claude Code)"
+  },
+  "cases": {
+    "shared-relative": {
+      "codex": {
+        "skills": [
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/project/.agents/skills/mbse-probe/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          }
+        ],
+        "errors": [],
+        "error": null
+      },
+      "claude": {
+        "commands": [
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel (project)",
+            "argumentHint": ""
+          }
+        ],
+        "agents": [
+          "claude",
+          "Explore",
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
+        ],
+        "error": null
+      },
+      "reference_read": "MBSE_REFERENCE_SENTINEL"
+    },
+    "relocated": {
+      "codex": {
+        "skills": [
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/mbse-probe/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          }
+        ],
+        "errors": [],
+        "error": null
+      },
+      "claude": {
+        "commands": [
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel (project)",
+            "argumentHint": ""
+          }
+        ],
+        "agents": [
+          "claude",
+          "Explore",
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
+        ],
+        "error": null
+      },
+      "reference_read": "MBSE_REFERENCE_SENTINEL"
+    },
+    "both-symlinked": {
+      "codex": {
+        "skills": [
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/shared/mbse-probe/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          }
+        ],
+        "errors": [],
+        "error": null
+      },
+      "claude": {
+        "commands": [
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel (project)",
+            "argumentHint": ""
+          }
+        ],
+        "agents": [
+          "claude",
+          "Explore",
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
+        ],
+        "error": null
+      },
+      "reference_read": "MBSE_REFERENCE_SENTINEL"
+    },
+    "legacy-duplicate": {
+      "codex": {
+        "skills": [
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/shared/mbse-probe/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          }
+        ],
+        "errors": [],
+        "error": null
+      },
+      "claude": {
+        "commands": [
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel (project)",
+            "argumentHint": ""
+          }
+        ],
+        "agents": [
+          "claude",
+          "Explore",
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
+        ],
+        "error": null
+      },
+      "reference_read": "MBSE_REFERENCE_SENTINEL"
+    },
+    "full-catalog": {
+      "codex": {
+        "skills": [
+          {
+            "name": "analyze-models",
+            "description": "Analyze current model state and produce structured reports on structure, compliance, and health",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/analyze-models/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "audit-models",
+            "description": "Verify SysML model accuracy against baseline sources, project requirements, and architectural decisions",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/audit-models/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "backlog",
+            "description": "Manage work items \u2014 add, decompose epics, and close completed work",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/backlog/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "design-model",
+            "description": "Create semantic design document for SysMLv2 models with prototyping and validation",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/design-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "epic-decomposition",
+            "description": "Use when asking about \"epic\", \"decompose\", \"too large\", \"too small\", \"scale\", \"work item size\", \"backlog\", \"how to break down\", \"Goldilocks\", \"standard vs epic\", \"trivial vs standard\", \"work item taxonomy\", \"scope sizing\", or when deciding whether work needs decomposition or determining work item scale. Provides the scale taxonomy, Goldilocks indicators, and decomposition process.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/epic-decomposition/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "formalize-intent",
+            "description": "Extract structured goals and analysis questions from raw intent documents into OVERVIEW.md",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/formalize-intent/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "implement-model",
+            "description": "Execute approved plan to implement SysMLv2 models with validation and progress tracking",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/implement-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "manage-sources",
+            "description": "Add, remove, or review authority sources in SOURCE_INDEX.md",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/manage-sources/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/shared/mbse-probe/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "model-validation",
+            "description": "Use when asking about \"validate\", \"validation levels\", \"quality checks\", \"run checks\", \"test models\", \"regression test\", \"Level 1\", \"Level 6\", \"validation pyramid\", \"model quality\", \"parse error\", \"verification thresholds\", \"PASS WARN FAIL\", or when deciding what validation to run and how to interpret results. Provides the 6-level validation methodology, timing, thresholds, and regression testing patterns.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/model-validation/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "onboard",
+            "description": "Set up a new MBSE project with goals, sources, architecture sketch, and initial backlog",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/onboard/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "orchestrate-modeling",
+            "description": "Drive a modeling objective or Epic through the appropriate model-building stages",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/orchestrate-modeling/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "pdf-analysis",
+            "description": "This skill should be used when the user asks to \"extract PDF\", \"analyze this PDF\", \"read this paper\", \"get the table from page X\", \"extract content from document\", \"convert PDF to markdown\", \"what does this PDF say\", or mentions PDF page extraction, document analysis, or paper reading. Provides a 3-tier extraction pipeline (pymupdf4llm \u2192 Docling MCP \u2192 image fallback) with memory-safe single-page workflows.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/pdf-analysis/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "plan-model",
+            "description": "Create phased implementation plan for SysMLv2 models with validation checkpoints",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/plan-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "project-structure",
+            "description": "Use when asking about \"project structure\", \"where does this go\", \"library vs designs\", \"file organization\", \"directory\", \"EXPOSE pattern\", \"project files\", \"4-directory model\", \"knowledge directory\", \"modeling_project\", \"work directory\", \"data directory\", \"OVERVIEW.md\", \"ARCHITECTURE.md\", \"REQUIREMENTS.md\", \"BACKLOG.md\", or when deciding where to place new files or model elements. Provides the 4-directory information architecture and model file organization rules.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/project-structure/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "python-debugger",
+            "description": "Programmatic Python debugging with breakpoints, state inspection, and stack traces. Use when debugging Python code that requires inspecting variable values at specific lines, understanding program state at runtime, capturing exception context, or when print-debugging is insufficient. Triggers on requests to \"set a breakpoint\", \"inspect variables at line X\", \"debug this Python script\", \"capture the state when this crashes\", or \"trace execution\".",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/python-debugger/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "quick-model",
+            "description": "Make a small SysML model change without the full spec-design-plan-implement pipeline",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/quick-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "record-learning",
+            "description": "Capture and record learnings, discoveries, and insights from modeling sessions. Use when: you discover a pattern, solve a tricky problem, find a workaround, learn something about SysML syntax, resolve a confusing error, or identify a best practice worth remembering. Triggers: \"record this\", \"capture learning\", \"I learned\", \"worth remembering\", \"let's document this\", \"record what we discovered\"",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/record-learning/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "requirements-tracking",
+            "description": "Use when asking about \"requirement\", \"PR-XXX\", \"MR-XXX\", \"project rule\", \"modeling rule\", \"compliance\", \"enforcement\", \"promote requirement\", \"REQUIREMENTS.md\", \"two-tier\", \"MR-XXX to PR-XXX\", \"EARS format\", \"validation method\", \"design review\", or when deciding how to write, enforce, or promote modeling requirements. Provides the two-tier requirements structure, PR-XXX format, and promotion path.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/requirements-tracking/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "research",
+            "description": "Explore authority sources and capture approved domain insights into the knowledge base",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/research/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "review-model",
+            "description": "Review a design document against project requirements, architecture decisions, and SysML conventions",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/review-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "source-traceability",
+            "description": "Use when asking about \"traceability\", \"source\", \"citation\", \"doc comment\", \"SOURCE_INDEX\", \"where did this come from\", \"reference\", \"traceability matrix\", \"DI-XXX\", \"PR-XXX\", \"source type\", \"confidence\", \"authority source\", \"durable chain\", or when deciding how to cite sources, write doc comments, or record traceability. Provides the durable traceability chain, citation patterns, and traceability matrix schema.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/source-traceability/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "spec-model",
+            "description": "Define modeling requirements and success criteria for SysMLv2 model enhancements",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/spec-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "status",
+            "description": "Present project state dashboard with intelligent interpretation and recommendations",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/status/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "sysml-conventions",
+            "description": "Use when writing SysML v2 code, asking about \"SysML syntax\", \"naming conventions\", \"how to write\" a part def or calc def, \"imports\", \"syntax error\", \"parse error\", \"common mistakes\", \"pitfalls\", \"SysML patterns\", attribute declarations, units notation, doc comment format, ADR-002, or definition vs usage rules. Provides the canonical syntax rules and patterns for SysML v2 modeling.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/sysml-conventions/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "toolkit-awareness",
+            "description": "This skill should be used when the user asks about \"validation\", \"validate models\", \"run checks\", \"quality checks\", \"codegen readiness\", \"TEA pipeline\", \"how to validate\", \"run the pipeline\", \"toolkit\", \"available commands\", \"what tools do we have\", \"PM operations\", \"project management\", \"agentic-mbse pm\", \"agentic-mbse status\", \"project files\", \"directory structure\", or when answering questions about project workflow, build steps, or CI processes. Ensures Claude uses the actual installed toolchain instead of guessing commands.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/toolkit-awareness/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          }
+        ],
+        "errors": [],
+        "error": null
+      },
+      "claude": {
+        "commands": [
+          {
+            "name": "analyze-models",
+            "description": "Analyze current model state and produce structured reports on structure, compliance, and health (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "audit-models",
+            "description": "Verify SysML model accuracy against baseline sources, project requirements, and architectural decisions (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "backlog",
+            "description": "Manage work items \u2014 add, decompose epics, and close completed work (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "design-model",
+            "description": "Create semantic design document for SysMLv2 models with prototyping and validation (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "formalize-intent",
+            "description": "Extract structured goals and analysis questions from raw intent documents into OVERVIEW.md (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "implement-model",
+            "description": "Execute approved plan to implement SysMLv2 models with validation and progress tracking (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "manage-sources",
+            "description": "Add, remove, or review authority sources in SOURCE_INDEX.md (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "onboard",
+            "description": "Set up a new MBSE project with goals, sources, architecture sketch, and initial backlog (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "orchestrate-modeling",
+            "description": "Drive a modeling objective or Epic through the appropriate model-building stages (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "pdf-analysis",
+            "description": "This skill should be used when the user asks to \"extract PDF\", \"analyze this PDF\", \"read this paper\", \"get the table from page X\", \"extract content from document\", \"convert PDF to markdown\", \"what does this PDF say\", or mentions PDF page extraction, document analysis, or paper reading. Provides a 3-tier extraction pipeline (pymupdf4llm \u2192 Docling MCP \u2192 image fallback) with memory-safe single-page workflows. (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "plan-model",
+            "description": "Create phased implementation plan for SysMLv2 models with validation checkpoints (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "python-debugger",
+            "description": "Programmatic Python debugging with breakpoints, state inspection, and stack traces. Use when debugging Python code that requires inspecting variable values at specific lines, understanding program state at runtime, capturing exception context, or when print-debugging is insufficient. Triggers on requests to \"set a breakpoint\", \"inspect variables at line X\", \"debug this Python script\", \"capture the state when this crashes\", or \"trace execution\". (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "quick-model",
+            "description": "Make a small SysML model change without the full spec-design-plan-implement pipeline (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "record-learning",
+            "description": "Capture and record learnings, discoveries, and insights from modeling sessions. Use when: you discover a pattern, solve a tricky problem, find a workaround, learn something about SysML syntax, resolve a confusing error, or identify a best practice worth remembering. Triggers: \"record this\", \"capture learning\", \"I learned\", \"worth remembering\", \"let's document this\", \"record what we discovered\" (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "research",
+            "description": "Explore authority sources and capture approved domain insights into the knowledge base (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "review-model",
+            "description": "Review a design document against project requirements, architecture decisions, and SysML conventions (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "spec-model",
+            "description": "Define modeling requirements and success criteria for SysMLv2 model enhancements (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "status",
+            "description": "Present project state dashboard with intelligent interpretation and recommendations (project)",
+            "argumentHint": ""
+          }
+        ],
+        "agents": [
+          "claude",
+          "Explore",
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
+        ],
+        "error": null
+      },
+      "reference_read": "MBSE_REFERENCE_SENTINEL"
+    },
+    "copy-fallback": {
+      "codex": {
+        "skills": [
+          {
+            "name": "analyze-models",
+            "description": "Analyze current model state and produce structured reports on structure, compliance, and health",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/analyze-models/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "audit-models",
+            "description": "Verify SysML model accuracy against baseline sources, project requirements, and architectural decisions",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/audit-models/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "backlog",
+            "description": "Manage work items \u2014 add, decompose epics, and close completed work",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/backlog/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "design-model",
+            "description": "Create semantic design document for SysMLv2 models with prototyping and validation",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/design-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "epic-decomposition",
+            "description": "Use when asking about \"epic\", \"decompose\", \"too large\", \"too small\", \"scale\", \"work item size\", \"backlog\", \"how to break down\", \"Goldilocks\", \"standard vs epic\", \"trivial vs standard\", \"work item taxonomy\", \"scope sizing\", or when deciding whether work needs decomposition or determining work item scale. Provides the scale taxonomy, Goldilocks indicators, and decomposition process.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/epic-decomposition/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "formalize-intent",
+            "description": "Extract structured goals and analysis questions from raw intent documents into OVERVIEW.md",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/formalize-intent/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "implement-model",
+            "description": "Execute approved plan to implement SysMLv2 models with validation and progress tracking",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/implement-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "manage-sources",
+            "description": "Add, remove, or review authority sources in SOURCE_INDEX.md",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/manage-sources/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/shared/mbse-probe/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "model-validation",
+            "description": "Use when asking about \"validate\", \"validation levels\", \"quality checks\", \"run checks\", \"test models\", \"regression test\", \"Level 1\", \"Level 6\", \"validation pyramid\", \"model quality\", \"parse error\", \"verification thresholds\", \"PASS WARN FAIL\", or when deciding what validation to run and how to interpret results. Provides the 6-level validation methodology, timing, thresholds, and regression testing patterns.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/model-validation/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "onboard",
+            "description": "Set up a new MBSE project with goals, sources, architecture sketch, and initial backlog",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/onboard/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "orchestrate-modeling",
+            "description": "Drive a modeling objective or Epic through the appropriate model-building stages",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/orchestrate-modeling/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "pdf-analysis",
+            "description": "This skill should be used when the user asks to \"extract PDF\", \"analyze this PDF\", \"read this paper\", \"get the table from page X\", \"extract content from document\", \"convert PDF to markdown\", \"what does this PDF say\", or mentions PDF page extraction, document analysis, or paper reading. Provides a 3-tier extraction pipeline (pymupdf4llm \u2192 Docling MCP \u2192 image fallback) with memory-safe single-page workflows.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/pdf-analysis/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "plan-model",
+            "description": "Create phased implementation plan for SysMLv2 models with validation checkpoints",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/plan-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "project-structure",
+            "description": "Use when asking about \"project structure\", \"where does this go\", \"library vs designs\", \"file organization\", \"directory\", \"EXPOSE pattern\", \"project files\", \"4-directory model\", \"knowledge directory\", \"modeling_project\", \"work directory\", \"data directory\", \"OVERVIEW.md\", \"ARCHITECTURE.md\", \"REQUIREMENTS.md\", \"BACKLOG.md\", or when deciding where to place new files or model elements. Provides the 4-directory information architecture and model file organization rules.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/project-structure/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "python-debugger",
+            "description": "Programmatic Python debugging with breakpoints, state inspection, and stack traces. Use when debugging Python code that requires inspecting variable values at specific lines, understanding program state at runtime, capturing exception context, or when print-debugging is insufficient. Triggers on requests to \"set a breakpoint\", \"inspect variables at line X\", \"debug this Python script\", \"capture the state when this crashes\", or \"trace execution\".",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/python-debugger/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "quick-model",
+            "description": "Make a small SysML model change without the full spec-design-plan-implement pipeline",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/quick-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "record-learning",
+            "description": "Capture and record learnings, discoveries, and insights from modeling sessions. Use when: you discover a pattern, solve a tricky problem, find a workaround, learn something about SysML syntax, resolve a confusing error, or identify a best practice worth remembering. Triggers: \"record this\", \"capture learning\", \"I learned\", \"worth remembering\", \"let's document this\", \"record what we discovered\"",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/record-learning/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "requirements-tracking",
+            "description": "Use when asking about \"requirement\", \"PR-XXX\", \"MR-XXX\", \"project rule\", \"modeling rule\", \"compliance\", \"enforcement\", \"promote requirement\", \"REQUIREMENTS.md\", \"two-tier\", \"MR-XXX to PR-XXX\", \"EARS format\", \"validation method\", \"design review\", or when deciding how to write, enforce, or promote modeling requirements. Provides the two-tier requirements structure, PR-XXX format, and promotion path.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/requirements-tracking/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "research",
+            "description": "Explore authority sources and capture approved domain insights into the knowledge base",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/research/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "review-model",
+            "description": "Review a design document against project requirements, architecture decisions, and SysML conventions",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/review-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "source-traceability",
+            "description": "Use when asking about \"traceability\", \"source\", \"citation\", \"doc comment\", \"SOURCE_INDEX\", \"where did this come from\", \"reference\", \"traceability matrix\", \"DI-XXX\", \"PR-XXX\", \"source type\", \"confidence\", \"authority source\", \"durable chain\", or when deciding how to cite sources, write doc comments, or record traceability. Provides the durable traceability chain, citation patterns, and traceability matrix schema.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/source-traceability/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "spec-model",
+            "description": "Define modeling requirements and success criteria for SysMLv2 model enhancements",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/spec-model/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "status",
+            "description": "Present project state dashboard with intelligent interpretation and recommendations",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/status/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "sysml-conventions",
+            "description": "Use when writing SysML v2 code, asking about \"SysML syntax\", \"naming conventions\", \"how to write\" a part def or calc def, \"imports\", \"syntax error\", \"parse error\", \"common mistakes\", \"pitfalls\", \"SysML patterns\", attribute declarations, units notation, doc comment format, ADR-002, or definition vs usage rules. Provides the canonical syntax rules and patterns for SysML v2 modeling.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/sysml-conventions/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          },
+          {
+            "name": "toolkit-awareness",
+            "description": "This skill should be used when the user asks about \"validation\", \"validate models\", \"run checks\", \"quality checks\", \"codegen readiness\", \"TEA pipeline\", \"how to validate\", \"run the pipeline\", \"toolkit\", \"available commands\", \"what tools do we have\", \"PM operations\", \"project management\", \"agentic-mbse pm\", \"agentic-mbse status\", \"project files\", \"directory structure\", or when answering questions about project workflow, build steps, or CI processes. Ensures Claude uses the actual installed toolchain instead of guessing commands.",
+            "path": "/home/reid/1cfe/agentic-mbse/.project/active/spike-native-skill-install/fixture-ecg0yrgl/relocated-project/.agents/skills/toolkit-awareness/SKILL.md",
+            "scope": "repo",
+            "enabled": true,
+            "pluginId": null
+          }
+        ],
+        "errors": [],
+        "error": null
+      },
+      "claude": {
+        "commands": [
+          {
+            "name": "analyze-models",
+            "description": "Analyze current model state and produce structured reports on structure, compliance, and health (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "audit-models",
+            "description": "Verify SysML model accuracy against baseline sources, project requirements, and architectural decisions (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "backlog",
+            "description": "Manage work items \u2014 add, decompose epics, and close completed work (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "design-model",
+            "description": "Create semantic design document for SysMLv2 models with prototyping and validation (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "formalize-intent",
+            "description": "Extract structured goals and analysis questions from raw intent documents into OVERVIEW.md (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "implement-model",
+            "description": "Execute approved plan to implement SysMLv2 models with validation and progress tracking (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "manage-sources",
+            "description": "Add, remove, or review authority sources in SOURCE_INDEX.md (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "mbse-probe",
+            "description": "MBSE shared skill discovery sentinel (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "onboard",
+            "description": "Set up a new MBSE project with goals, sources, architecture sketch, and initial backlog (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "orchestrate-modeling",
+            "description": "Drive a modeling objective or Epic through the appropriate model-building stages (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "pdf-analysis",
+            "description": "This skill should be used when the user asks to \"extract PDF\", \"analyze this PDF\", \"read this paper\", \"get the table from page X\", \"extract content from document\", \"convert PDF to markdown\", \"what does this PDF say\", or mentions PDF page extraction, document analysis, or paper reading. Provides a 3-tier extraction pipeline (pymupdf4llm \u2192 Docling MCP \u2192 image fallback) with memory-safe single-page workflows. (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "plan-model",
+            "description": "Create phased implementation plan for SysMLv2 models with validation checkpoints (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "python-debugger",
+            "description": "Programmatic Python debugging with breakpoints, state inspection, and stack traces. Use when debugging Python code that requires inspecting variable values at specific lines, understanding program state at runtime, capturing exception context, or when print-debugging is insufficient. Triggers on requests to \"set a breakpoint\", \"inspect variables at line X\", \"debug this Python script\", \"capture the state when this crashes\", or \"trace execution\". (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "quick-model",
+            "description": "Make a small SysML model change without the full spec-design-plan-implement pipeline (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "record-learning",
+            "description": "Capture and record learnings, discoveries, and insights from modeling sessions. Use when: you discover a pattern, solve a tricky problem, find a workaround, learn something about SysML syntax, resolve a confusing error, or identify a best practice worth remembering. Triggers: \"record this\", \"capture learning\", \"I learned\", \"worth remembering\", \"let's document this\", \"record what we discovered\" (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "research",
+            "description": "Explore authority sources and capture approved domain insights into the knowledge base (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "review-model",
+            "description": "Review a design document against project requirements, architecture decisions, and SysML conventions (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "spec-model",
+            "description": "Define modeling requirements and success criteria for SysMLv2 model enhancements (project)",
+            "argumentHint": ""
+          },
+          {
+            "name": "status",
+            "description": "Present project state dashboard with intelligent interpretation and recommendations (project)",
+            "argumentHint": ""
+          }
+        ],
+        "agents": [
+          "claude",
+          "Explore",
+          "general-purpose",
+          "Plan",
+          "statusline-setup"
+        ],
+        "error": null
+      },
+      "reference_read": "MBSE_REFERENCE_SENTINEL"
+    }
+  }
+}

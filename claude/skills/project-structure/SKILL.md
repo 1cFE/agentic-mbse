@@ -102,9 +102,9 @@ models/
 | Naming | `'Title Case'` with quotes | `snake_case` |
 | Purpose | Reusable across designs | Specific configuration |
 
-**ADR-002 structural consequence**: `calc def` declarations belong exclusively in `library/analyses/`. Design files contain values and wiring only (literals, static expressions, EXPOSE bindings).
+**ADR-002 structural consequence**: `calc def` declarations belong exclusively in `library/analyses/`. Design files contain values and wiring, including simple same-part sibling arithmetic (inline FORMULA). Use the calculation taxonomy in the modeling guide and its `adr002-calculations.md` reference for the precise boundary.
 
-**Library-first phasing**: Always design and implement library definitions before design usages. Bottom-up dependency order: foundation → components → analyses → designs.
+**Dependency order**: Establish definitions before usages that depend on them. Reuse existing library definitions; phase the work around actual dependencies and meaningful validation boundaries.
 
 For definition vs usage SysML syntax, see the **sysml-conventions** skill.
 

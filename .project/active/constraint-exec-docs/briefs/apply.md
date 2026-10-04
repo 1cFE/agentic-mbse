@@ -1,5 +1,7 @@
 # Brief: CONSTRAINT-EXEC Item 14 Appendix A — agentic-mbse docs (ready-to-apply)
 
+**Status (2026-10-04):** Local documentation implemented in `d83109a` and `9e24c93`; this copied cross-repo handoff is superseded. Most unchecked tasks below refer to codegen documentation/verification paths and are not unimplemented local requirements. See the [current reconciliation](../../../reports/2026-10-04-0901-status-report.md).
+
 Process: work synchronously; you MAY commit in this repo (sole writer); NEVER run pytest tests/ -m '' or test_corpus_integration.py [OWNER]. Gate = default suite + ruff. End commits with: Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 
 - **Design (rev 2, committed):** `.project/active/constraint-migration-acceptance/design.md` ← **all component details, file:line targets, bets, decisions, invariants live here. Do not restate; link.** Key anchors: five-workstream architecture (`design.md#architecture`), the dual carrier surfaces (`design.md#key-decisions` D1), the gain-fix tier (D2), within-v3 removal (D3), the epsilon boundary rule (`design.md#implementation-notes`), retirement grep targets (Appendix B), per-repo doc set (Appendix A).
@@ -39,8 +41,7 @@ The doc surfaces in Appendix A are the complete in-repo set (verified surfaces),
 - [ ] `grep -o 'REQ-[A-Z]*-[0-9]*' docs/architecture/reference/*.md | sort -u` cross-checks the matrix; every new REQ family has a row.
 - [ ] Index family counts + STATUS recounted and consistent (not just the summary block).
 
-**What We Know Works After This Phase:**
-This repo's docs teach the built system. (agentic-mbse and teax docs land in S-MBSE / S-TEAX — Appendices A/B.)
+**What We Know Works After This Phase:** This repo's docs teach the built system. (agentic-mbse and teax docs land in S-MBSE / S-TEAX — Appendices A/B.)
 
 ---
 
@@ -58,8 +59,7 @@ Dispose of the reserved-but-unreachable `GENERATOR_MISMATCH` diagnostic (`contra
 ### Validation
 - [ ] The chosen disposition is recorded; if wired, a test exercises the new axis; if documented, the dead expectation is gone and no test asserts unreachable reachability.
 
-**What We Know Works After This Phase:**
-The in-repo seam (W5a) is swept. The teax seams (W5b loader seal, W5c tracking-key note) land in S-TEAX (Appendix B).
+**What We Know Works After This Phase:** The in-repo seam (W5a) is swept. The teax seams (W5b loader seal, W5c tracking-key note) land in S-TEAX (Appendix B).
 ## Appendix A — S-MBSE brief: agentic-mbse docs (W3b)
 
 **Repo:** `~/1cfe/agentic-mbse` · **Runs:** parallel to S-CODEGEN · **License:** not needed (docs only).

@@ -1,6 +1,6 @@
 # SysML Modeling Guide
 
-Quick reference for SysML v2 modeling. Each section links to detailed pattern docs.
+Quick reference for SysML v2 modeling. Each section names detailed pattern docs; use the [Pattern Documentation Index](#pattern-documentation-index) to locate them in the installed toolkit.
 
 > **Note**: For project-specific patterns and customizations, see [REQUIREMENTS.md](REQUIREMENTS.md).
 
@@ -265,7 +265,7 @@ syside check models/library/file.sysml
 
 - Check examples in `models/library/`
 - Review `OVERVIEW.md` for project status
-- Review `SOURCE_INDEX.md` for domain knowledge sources
+- Review `knowledge/SOURCE_INDEX.md` for domain knowledge sources
 - Use `/research` command to explore sources
 
 ---
@@ -273,8 +273,13 @@ syside check models/library/file.sysml
 <!-- SKILL: moves to sysml-conventions -->
 ## Pattern Documentation Index
 
-All pattern docs are in the agentic-mbse `docs/patterns/` directory.
-Agents have read permissions via `.claude/settings.json`.
+Pattern references such as `[patterns/plant-idiom.md]` name files under the installed toolkit's pattern directory, not the target project's directories. Locate it with the installed environment:
+
+```bash
+uv run python -c 'from agentic_mbse.cli import get_docs_dir; print(get_docs_dir() / "patterns")'
+```
+
+Read the named file under the returned directory. This resolver works for source and packaged installations. Agents have read permissions via `.claude/settings.json`; permission alone does not load the reference.
 
 | Pattern Doc | Covers |
 |-------------|--------|

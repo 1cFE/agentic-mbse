@@ -6,129 +6,32 @@ allowed-tools: [Read, Grep, Glob, Bash, Task, Write, Edit, AskUserQuestion]
 user-invocable: true
 ---
 
-# Plan Model Command
+# Plan Model
 
-**Purpose:** Organize the WORK — break model implementation into phased, executable steps with validation checkpoints.
-**Input:** Approved design at `work/active/{WI-XXX}_{name}/design.md`
-**Output:** `work/active/{WI-XXX}_{name}/plan.md`
+Use “Process Selection” in `modeling_project/MODELING_PROCESS.md`. This stage may be brief or skipped when its responsibility is already satisfied. For a bounded tracked change, use sections in the existing `spec.md` instead of creating separate design/plan documents; retain required native metadata. The instructions below describe a separate artifact when it is useful.
 
-The design phase produced a working prototype (Levels 1-3 passing) and a validation report. Your job is to organize the refinement of that prototype to production quality: complete documentation, full constraints, comprehensive integration, verification tests.
+Turn the agreed outcomes and design into a checklist of work and evidence. Write `work/active/{WI-XXX}_{name}/plan.md`; retain Status, Created, Updated, and Related Artifacts metadata.
 
-When invoked without a work item, ask which item in `work/active/` to plan.
+## Understand What Remains
 
-## Skills Referenced
+Read the spec's acceptance conditions, the relevant design sections, and actual existing work. Reuse valid prototype or prior implementation evidence. If a consequential design question remains unresolved, address it before planning dependent execution.
 
-- **model-validation**: Quality pyramid, CLI usage, regression testing patterns. Consult for validation checkpoints (which levels per phase vs final), test phase planning, and interpreting Level 4-6 issues from the design validation report.
-- **sysml-conventions**: Syntax rules, naming, pitfalls. Consult when checking feasibility of planned syntax patterns (constraints, cross-file bindings, refactoring).
-- **project-structure**: Library vs designs, file organization. Consult when determining phase ordering (library before instances) and file placement.
+## Write an Executable Checklist
 
-## Process
+Group work by meaningful behavior and dependencies. One phase is enough for a small change. Name affected files or model surfaces, their owners when work is delegated, and the checks that establish each outcome. Avoid repeating the design or enumerating every attribute.
 
-### 1. Understand
+For each acceptance condition, identify:
 
-Read the design, spec, and prototype files:
-- `work/active/{WI-XXX}_{name}/design.md` — primary input. Understand all model elements, dependencies, traceability sources, and the validation report (prototype files, Level 4-6 issues to address).
-- `work/active/{WI-XXX}_{name}/spec.md` — acceptance criteria, SV-XXX verification entries, scope boundaries.
-- Prototype files listed in the design's validation report — understand what already works and what needs refinement.
-- `modeling_project/MODELING_PROCESS.md` — project methodology context.
+| Outcome or requirement | Check and expected observation | Basis | Evidence/status |
+|---|---|---|---|
+| Relevant spec reference | Runnable test or focused inspection, with expected behavior/tolerance | Source, identity, independent reference, or governing decision | Result location or remaining work |
 
-If the design doesn't exist or hasn't been approved, stop and ask the user to complete `/design-model` first.
+Use this table or the project's equivalent; its purpose is to keep the acceptance evidence traceable. Include structural/analytical agreement and affected consumers where the change concerns them. Tests should expose plausible mistakes, including the original counterexample for a defect, rather than merely reproduce current wiring or copied formulas.
 
-### 2. Phase the Work
+Choose validation checkpoints where they can catch errors usefully. Run focused checks during editing and integrated validation when a coherent change is ready. Repeating a full suite requires changed inputs, new failures, or another concrete reason. The final checklist must cover applicable regression checks, spec outcomes, and registered verification criteria; see **model-validation** for interpreting results and skips.
 
-Break the refinement into 3-6 phases following these principles:
-- **Library before instances** — definitions before usages
-- **Bottom-up dependencies** — base definitions before derived ones
-- **Logical groupings** — related components in the same phase
-- **Validate after each phase** — every phase ends with a validation checkpoint
-- **Test alongside implementation** — each phase includes test activities per the **model-validation** skill's regression testing patterns (new library defs get structural tests, design instances get integration tests, final phase runs full regression)
+## Keep It Resumable
 
-If phasing is unclear, present 2-3 options to the user with trade-offs.
+Link specific design/source sections so an implementer can load the relevant context. Record completed work, remaining checks, meaningful deviations, and any downstream migration needed for the broader outcome. Reference existing evidence instead of copying its results into several artifacts.
 
-### 3. Assess Feasibility
-
-Before presenting the plan, validate that planned refinements are sound:
-
-1. **Review planned changes** — identify new calc defs, structural changes, complex constraints, cross-file bindings. Check syntax patterns against the **sysml-conventions** skill. Verify calc defs are planned for `library/` not `designs/`.
-2. **Check against design validation report** — the design flagged Level 4-6 issues. Map each issue to a specific phase that addresses it (e.g., Level 5 documentation gaps → Phase N, Level 6 architectural concerns → Phase M).
-3. **Flag risks** — circular dependency risks from cross-file bindings, breaking changes to existing usages, patterns that might fail validation. Include mitigations for each.
-4. **Document prototype baseline** — list prototype files from design phase, their current validation status (Levels 1-3 passing), and specific refinement needs from Levels 4-6.
-
-### 4. Write the Plan
-
-Create the plan file at `work/active/{WI-XXX}_{name}/plan.md`:
-```yaml
----
-Status: draft
-Created: <YYYY-MM-DD>
-Updated: <YYYY-MM-DD>
-Related Artifacts:
-  Spec: ./spec.md
-  Design: ./design.md
----
-```
-
-Present the plan to the user. Options:
-- **Approve** — proceed to `/implement-model`
-- **Adjust** — change phasing, scope per phase, risk handling
-- **Need more design work** — return to `/design-model`
-
-## What Good Output Looks Like
-
-A plan.md should contain:
-
-- **YAML Frontmatter** — Status, Created, Updated, Related Artifacts (Spec, Design)
-- **Source Documents** — links to design (primary), spec, epic file
-- **Design Summary** — 2-3 sentences only. Reference design doc for rationale, sources, and alternatives — do NOT repeat them.
-- **Prototype Baseline** — files from design phase, current validation status, specific Level 4-6 issues to address with phase mapping
-- **Phasing Approach** — why work is broken into these specific phases
-- **Validation Strategy** — per-phase (Levels 1-3 after each phase), optional user review points, final (comprehensive Levels 1-6)
-
-**Per-Phase Sections** — each phase must include:
-
-- **Overview** — what refinements are being made and why this phase comes here in the sequence
-- **Design Reference** — cite **specific sections** of the design doc by name (e.g., "See design doc 'Model Element 5: Breeding Blanket' for parameters and constraints"). Summarize key design decisions in 1-2 bullets — do not repeat the full rationale. The implementing agent should be able to read *only* the cited sections, not the entire design.
-- **Prototype Baseline** (per phase) — existing files with their current state and what specific refinements are needed (e.g., "has basic structure, needs complete doc comments and source citations")
-- **Files to Create/Modify** — explicit file paths marked NEW or REFINE
-- **Checklist** — concrete, actionable items with checkboxes at this granularity:
-  - Every file creation/modification
-  - Every definition within a file (each part def, calc def, etc.)
-  - Attribute groups within definitions (geometric, electrical, material, etc.)
-  - Doc comment completions with source citation targets
-  - Traceability matrix row additions (`data/traceability_matrix.csv`)
-  - Every validation command to run
-- **Test Requirements** — what tests to write or verify this phase, per the **model-validation** skill
-- **Validation Checkpoint** — parsing validation (`uv run syside check` on modified files), quality validation (Levels 1-3 must pass), manual checks (naming, imports, types), expected output
-- **Phase Completion Gate** — explicit conditions that must hold before proceeding
-
-**Parallelization** (when 3+ independent files exist in a phase):
-- Mark which files can be created concurrently
-- For each parallelizable file, specify: package name, plan section reference, codebase source with file:line ranges from `knowledge/SOURCE_INDEX.md`, parts/attributes to create, validation rules to follow
-- Implementation instruction: "Use Task tool to create files in parallel. Main agent validates batch."
-
-**Final Phase: Integration & Validation** must include:
-- All files parse without errors
-- Quality validation: Levels 1-3 pass (critical), Levels 4-6 reviewed
-- Traceability: all defs have doc comments with source citations, traceability matrix complete
-- Regression tests pass: `uv run pytest tests/models/ -v`
-- All spec acceptance criteria verified (list them explicitly from spec.md)
-- SV-XXX verification tests written for entries created during `/spec-model`
-
-**Feasibility Concerns** — risks with mitigations, assumptions about prototype state
-
-The depth should match the complexity. A simple refinement needs fewer phases than a multi-subsystem production push.
-
-## Guidelines
-
-- The plan is an instruction manual for the implementing agent — it must be precise enough that the agent can execute each phase by reading only the plan and the cited design sections
-- Reference design doc by **specific section names and element names** — never "see the design doc" generically
-- Do NOT repeat design rationale, research findings, codebase analysis, or SysML code examples — reference them
-- Every file, definition, and validation step is a checkbox
-- Validation is continuous — Levels 1-3 after every phase, don't let errors accumulate
-- Offer user review at natural breakpoints (after all library defs, after complex subsystems, before final integration)
-- If the design lacks a validation report, flag this to the user — the plan depends on knowing prototype state
-- The final phase is not optional — every plan ends with comprehensive integration and validation
-
----
-
-**Related Commands:** Before -> `/design-model` | After -> `/implement-model`
+Parallel work requires independent dependencies and coordinated write ownership; follow the canonical process guidance. Preserve existing owner approvals and gates rather than creating routine phase-approval pauses. Implementation may refine the checklist as evidence develops without silently changing the agreed outcome.

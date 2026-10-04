@@ -6,161 +6,54 @@ allowed-tools: [Read, Grep, Glob, Bash, Task, Write, Edit, AskUserQuestion]
 user-invocable: true
 ---
 
-# Orchestrate Modeling Command
+# Orchestrate Modeling
 
-**Purpose:** Given a modeling objective, drive one Standard work item or an Epic through implemented,
-independently audited model changes using judgment and the existing modeling commands.
-**Input:** An artifact path or an inline modeling objective.
-**Output:** The applicable pipeline artifacts, model and test changes, validation evidence, and audit
-trail. The owner decides whether to close or archive completed work.
-
-This is a thin coordination command. You hold the objective and quality bar, delegate each modeling
-stage to a fresh Task agent, inspect the returned evidence, and choose what comes next. Do not copy the
-stage commands into this command or turn the documented flow into a transition engine.
-
-## What Matters Most
-
-- **Stay on modeling intent.** Carry the aligned objective, authority sources, provenance, and scope
-  boundaries into every item and stage. An artifact is useful only when it advances that intent.
-- **Exercise engineering judgment.** Decide ordinary routing and execution details. Insert research or
-  review when it reduces a real risk. Do not add ceremony merely because a stage exists.
-- **Demand independent evidence.** Do not accept an implementing agent's self-assessment as completion.
-  Standard work ends at a positive work item audit; Epic work ends at a positive Epic integration audit.
-- **Keep context light.** Treat each Task result as the primary signal. Read detailed artifacts only
-  when a routing, premise, or quality decision requires them.
+Drive a modeling objective through the appropriate artifact and evidence contracts in `modeling_project/MODELING_PROCESS.md`. Keep the outcome and owner decisions clear, choose work from evidence, and select independent review using the canonical process thresholds. The owner decides whether to close or archive.
 
 ## Orient
 
-Read the supplied objective or artifact fully. Then read:
-
-- `modeling_project/MODELING_PROCESS.md` for the canonical Standard and Epic flow;
-- `work/BACKLOG.md`, relevant Epic files, and `work/active/` and `work/completed/` artifacts;
-- `modeling_project/OVERVIEW.md`, `ARCHITECTURE.md`, and `REQUIREMENTS.md` as relevant;
-- `knowledge/SOURCE_INDEX.md` and cited knowledge or research artifacts.
-
-Decide whether the objective is Trivial, one Standard item, or an Epic. Identify the earliest
-unsatisfied obligation from artifact contents and validation evidence, not filename presence alone.
-On a resumed run, find the existing alignment brief and continue from that obligation. Do not repeat
-completed stages or reopen settled owner decisions without new conflicting evidence.
+Read the objective and relevant native work/epic records, project requirements, architecture decisions, and sources. Decide whether the work is Trivial, Standard, or Epic. Resume at the earliest unmet obligation based on artifact contents and actual evidence, not filename presence.
 
 ## Align Once
 
-Alignment is the only planned owner checkpoint. Before launching any stage, present a short alignment
-message and wait for the reply. Cover:
+Alignment is the only planned owner checkpoint. Confirm the intended outcome, supported scope, provenance conflicts, and reserved decisions before launching any stage. Reuse explicit alignment already supplied by the owner or enclosing goal; ask only for unresolved decisions.
 
-- what the objective means and the outcome you intend to drive toward;
-- whether this is Trivial, Standard, or Epic work and the proposed entry point;
-- owner-reserved decisions that you must not make;
-- provenance gaps, authority conflicts, and evidence against an apparent premise;
-- inherited constraints that need an owner decision before being treated as fixed.
+Record that authority in `work/orchestration/<objective-slug>.md`, or cite an existing equivalent alignment record. Preserve owner-originated statements, inherited constraints, and agent choices at their own grades. Keep progress in native item/epic artifacts rather than creating another stage log. Later scope or premise changes need an explicit decision record.
 
-After the owner replies, create `work/orchestration/<objective-slug>.md` before launching any stage.
-Create `work/orchestration/` on first use. This immutable alignment brief records:
+## Author Continuity and Delegation
 
-- objective and input-source path or inline text;
-- decision-carrying inputs graded as owner-stated, agent-inferred, or inherited, with owner quotes
-  preserved where their wording carries force;
-- owner decisions from Align and the reserved gates;
-- premise conflicts already known and which conclusions remain parked.
+Use one continuing author for a bounded item while its context remains useful. The coordinator may author the item or delegate it. Resume the author after clarifications and repairs; replace it when a distinct job or stale context warrants a fresh start. Stage names do not require new agents.
 
-Do not put a stage cursor, mutable status, or later execution log in this file. Link the eventual
-Standard spec or Epic file to it. Record later execution decisions in the relevant stage artifact or
-resulting model evidence.
+Give a delegated author a self-contained brief: outcome, relevant artifact/source references, provenance and reserved gates, owned write surfaces, and required evidence. It routes blocking questions to the coordinator and continues independent authorized work. Routine stage approvals are coordinator decisions under this overlay.
 
-## Delegate Stages
+When review is triggered, use a fresh non-author context without inherited author conversation and the “Review Brief and Context Limits” contract in `modeling_project/MODELING_PROCESS.md`. Default other delegated jobs to fresh self-contained briefs too; reserve forks for jobs that need the actual conversation. Give focused research and review jobs explicit read scope and tool-call budgets. When replacing an author, preserve the remaining work and consequential decisions in native artifacts first.
 
-Every stage runs in a fresh Task agent. Give it a self-contained stage brief with:
+Delegate specialists only for concrete questions. Parallel tasks need independent dependencies and coordinated write ownership; conclusions as well as writes can conflict. Integrate shared model/package and registry changes sequentially. Queue tasks within host capacity. Use the actual host delegation interface; do not build a separate dispatcher to satisfy a prescribed agent roster.
 
-- the installed command it must read and execute, such as `/spec-model` or `/audit-models`;
-- the alignment-brief path and the objective relevant to this item;
-- provenance grades for decision-carrying input;
-- the item or Epic scope, upstream artifact paths, applicable decisions, and reserved gates;
-- the one concrete job and the evidence that will demonstrate completion;
-- this overlay: **Do not interact with the owner. Return all blocking questions before writing an
-  artifact. Treat routine approval pauses as parent-orchestrator decisions. Preserve source conflicts,
-  aligned-scope changes, major baseline deviations, reserved gates, and premise surprises as blockers.**
+## Standard route
 
-Evaluate the Task's final result and verify its claimed artifact or model evidence. If the Task returns
-questions, classify them using the decision policy below. For questions you may answer, launch another
-fresh Task agent with the original brief plus the answers. Do not continue a prior Task. Keep fresh
-authoring and audit contexts, including after repairs.
+Have the author apply “Process Selection” before editing and record the affected consumers, uncertainty, and chosen checks. Skip or combine preparation stages already satisfied; one short native work record can hold requirements, decisions, checklist, and evidence. Research or prototype only a material uncertainty.
 
-## Choose and Run the Route
+Obtain only the independent reviews triggered by that selection, combining overlapping questions. A source or design check need not become a full completion audit. Complex changes need independent assessment of integrated behavior. Return findings to the author and send the repair diff to the same reviewer. A narrow item result does not close a broader outcome whose consumer migration or integration remains outstanding.
 
-### Trivial route
+## Epic route
 
-For a genuinely Trivial change, delegate `/quick-model` in a fresh Task, verify its targeted validation
-evidence, and report. If the work reveals a new interface, architectural choice, or broader scope,
-reclassify it as Standard work and follow the full route.
+Use `/backlog` and native PM operations to register the epic and its independently useful Standard items (`pm add-epic`, `pm add-item`). Carry applicable epic outcomes into each item. Execute ready items in parallel only where their semantic and write dependencies permit it.
 
-### Standard route
+Each item needs acceptance evidence and any risk-triggered review. Assess epic success criteria and cross-item integration using that evidence; commission independent review of consequential interactions not already covered. Do not add item and epic audits that judge the same evidence twice.
 
-Use the canonical flow and enter at the earliest incomplete obligation:
-
-```text
-[/research] → /spec-model → /design-model → [/review-model]
-  → /plan-model → /implement-model → /audit-models → report
-```
-
-Use `/research` for a material knowledge gap or source conflict. Use `/review-model` when an independent
-design critique adds confidence. All other shown stages are required unless existing positive evidence
-already satisfies their contract. Ensure the spec links to the alignment brief.
-
-Run `/audit-models` in a fresh context. If it fails, send the concrete findings to a fresh authoring
-Task for repair, validate the repair, then launch another fresh audit Task. Apply the bounded repair
-rule below.
-
-### Epic route
-
-If the Epic does not exist, delegate `/backlog` to write and approve the Epic file, register it with
-`agentic-mbse pm add-epic`, and register each complete Standard item with `pm add-item`. Ensure the Epic
-file links to the alignment brief.
-
-Treat the decomposition as a dependency graph of domain concerns. Carry Epic intent and applicable
-success criteria into every item brief. Execute serially unless two ready items have both independent
-dependencies and non-overlapping model write surfaces. After a parallel wave, validate the integrated
-tree before starting dependent work.
-
-Run the complete Standard route for every item, including a fresh item audit. When all item audits are
-positive, launch a fresh `/audit-models` Task in Epic scope. It must verify every epic success criterion,
-every item audit, dependency handoffs, and cross-item integration. Repair and re-audit material Epic
-findings under the same bounded rule.
+For Trivial work, use `/quick-model` and verify its targeted evidence. A new uncertainty triggers the relevant investigation or review, not an automatic full pipeline.
 
 ## Decision Policy
 
-Classify every mid-run decision into one tier:
+- **Execution detail:** decide within the aligned meaning, record consequential choices where they belong, and continue.
+- **Reserved gate:** park dependent work until the owner decides; continue independent authorized work.
+- **Premise surprise:** surface conflicting evidence and its consequence before dependent conclusions proceed.
 
-1. **Execution detail:** Decide it, record the choice and rationale in the relevant durable artifact,
-   and continue.
-2. **Reserved gate:** Do not decide a choice the owner reserved during Align. Park dependent work,
-   continue independent work, and surface the gate when all useful independent work is exhausted.
-3. **Premise surprise:** When evidence conflicts with a premise the aligned work depends on, record and
-   surface the conflict. Park dependent conclusions. Never silently resolve it in either direction.
+Source conflicts, supported-scope changes, and intentional major baseline deviations require explicit treatment rather than routine approval. Preserve any interpretation checkpoints imposed by the target project's goal or study workflow.
 
-A stage's routine request for approval is an execution detail under this overlay. Source conflicts,
-changes to aligned scope or semantics, intentional major baseline deviations, and owner-held close or
-archive decisions are not routine approvals.
+## Bound Repair and Finish
 
-## Bound Audit Repair
+After two unsuccessful repair-and-audit rounds for the same finding, or sooner with no material progress, surface the attempted fixes and unresolved evidence. Do not relabel an unchanged failure to restart the bound.
 
-Track repair attempts by concrete finding. After two unsuccessful repair-and-audit rounds for the same
-finding, park the dependent work and surface the failure with the attempted fixes and current evidence.
-Park sooner when a round makes no material progress. A materially new finding starts its own bounded
-cycle; do not use that distinction to relabel an unchanged failure.
-
-## Finish
-
-Report completion only when fresh independent evidence is positive for the entire scope. Summarize:
-
-- what was modeled and which artifacts were produced;
-- validation and audit results, including the Epic integration result when applicable;
-- important execution decisions and premise evidence;
-- any parked independent work or owner-reserved gate;
-- the remaining owner action, if any.
-
-Never archive work as part of this command. The owner decides whether to close after reading the report.
-
----
-
-**Related Commands:** Canonical flow → `modeling_project/MODELING_PROCESS.md` | Decomposition →
-`/backlog` | Final evidence → `/audit-models` | Owner-held archive → `/backlog close` or `/status close`
+Report the outcome, artifact/evidence references, independent verdict, and remaining limitations or owner decisions. Close and archive remain owner actions through the native workflow.
