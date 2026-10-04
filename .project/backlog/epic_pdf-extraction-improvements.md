@@ -1,15 +1,19 @@
 # Epic: PDF Extraction Quality & Features
 
 **Epic ID**: EPIC-PDFV4-002
-**Status**: In Progress (Item 1 Phase 1 complete, Items 2-4 complete)
+**Status**: Items 1-4 complete and merged; Items 5-6 ready in backlog
 **Priority**: P1
 **Created**: 2026-03-01
 **Estimated Effort**: ~6 days
 
 **Parent**: Builds on EPIC-PDFV4-001 (complete)
-**Branch**: `doc-ingest-clean`
+**Merged baseline**: PDF v4 PR #5 (`af49028`, 2026-03-06); original branch `doc-ingest-clean`
 
 ---
+
+## Current delivery status
+
+Items 1-4 were completed, archived, and merged by March 6; only OCR and near-empty-section summarization remain. The original problem description below is historical. Checked criteria reflect archived implementation/test evidence. Three Item 1 corpus-outcome criteria remain unasserted because retained records do not prove their measurements; completed implementation is not being reopened by that evidence limit. The existing P1 priority is preserved.
 
 ## Executive Summary
 
@@ -85,10 +89,10 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 ### Item 1: Quality Regressions — Gate & Routing Fixes [1 day]
 
 **Type**: Bug fix
-**Status**: Phase 1 complete, Phases 2-3 remaining
-**Active work**: `.project/active/v4-output-quality-regressions/` (spec, design, plan ready)
+**Status**: Complete (Phases 1-3; Phase 4 superseded by Item 2)
+**Archive**: `.project/completed/20260306_v4-output-quality-regressions/`
 
-**Scope** (remaining):
+**Implemented scope**:
 1. ~~Equation-fragment detection in quality gate~~ — **DONE** (Phase 1, 2026-03-01)
 2. GMFT cross-reference step: boost severity when GMFT found tables that pymupdf missed → routes to CLAUDE_REPLACE instead of GMFT_APPEND (Phase 2 of existing plan)
 3. Postprocess cleanup: wire `strip_running_headers()`, `strip_page_numbers()`, `repair_ligatures()` into pipeline step 7b (Phase 3 of existing plan)
@@ -100,10 +104,10 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 **Success Criteria**:
 - [x] Equation fragments trigger Claude enhancement (severity >= 1.0)
 - [ ] Zero running headers and page numbers in TEA document output
-- [ ] GMFT-missed-table pages route to CLAUDE_REPLACE when budget allows
+- [x] GMFT-missed-table pages route to CLAUDE_REPLACE when budget allows
 - [ ] No page has same table in both flat-text and pipe-table format
 - [ ] Output line count <= v3 for equivalent content
-- [ ] No test regressions
+- [x] No test regressions
 
 **Dependencies**: None
 **Deliverables**: Updated quality_gate.py, pipeline.py, postprocess integration, tests
@@ -114,7 +118,7 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 
 **Type**: Feature (replaces IMGEXT-001 + IMGEXT-003 + quality regressions Phase 4)
 **Status**: Complete
-**Active work**: `.project/active/unified-image-output/` (spec, design, plan — all complete)
+**Archive**: `.project/completed/20260306_unified-image-output/` (spec, design, plan — all complete)
 **Completed**: 2026-03-01
 
 **Objective**: Build the image collector pattern and enable all current image sources — pymupdf4llm figures and GMFT/Img2Table table crops — in a single pass.
@@ -147,7 +151,7 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 
 **Type**: Tooling / Observability
 **Status**: Complete
-**Active work**: `.project/active/pipeline-profiling/` (spec, design, plan — all complete)
+**Archive**: `.project/completed/20260306_pipeline-profiling/` (spec, design, plan — all complete)
 **Completed**: 2026-03-01
 
 **Objective**: Build a profiling utility that runs the pipeline on a diverse corpus and produces a report showing per-page routing decisions and per-step timing. Answers: "how long does each step take?", "are routes being engaged as expected?", and "what's the time profile for different document types?"
@@ -190,7 +194,7 @@ This means IMGEXT-001 (table crops) and IMGEXT-003 (figures) collapse into a sin
 
 **Type**: Research + Implementation (was IMGEXT-002)
 **Status**: Complete
-**Active work**: `.project/active/equation-region-detection/` (spec, design, plan, learning tests — all complete)
+**Archive**: `.project/completed/20260306_equation-region-detection/` (spec, design, plan, learning tests — all complete)
 **Completed**: 2026-03-01
 
 **Objective**: Detect equation regions on PDF pages, crop as images, feed into the image collector.
@@ -294,14 +298,14 @@ Item 6 (Summarize hallucination fix) ← independent, can run in parallel with a
 
 | Prior Item | Disposition |
 |------------|-------------|
-| `v4-output-quality-regressions` spec/design/plan | **Kept** — Items 1 uses Phases 2-3 directly. Phase 4 (image extraction) superseded by Item 2's unified approach. |
+| `v4-output-quality-regressions` spec/design/plan | **Completed and archived** — Phases 1-3 implemented; Phase 4 superseded by Item 2. |
 | IMGEXT-001 (table crop persistence) | **Absorbed** into Item 2 |
 | IMGEXT-003 (figure image extraction) | **Absorbed** into Item 2 |
-| IMGEXT-002 (equation region detection) | **Becomes** Item 3 (unchanged scope, but image plumbing is free from Item 2) |
-| `docling-deep-dive` Phases 3-4 | **Not needed** — OCR findings (Phase 2B) are sufficient for Item 4. Close as research-complete. |
-| `pandoc-deep-dive` Phases 5-6 | **Not needed** — Pandoc findings already integrated into v4. Close as research-complete. |
+| IMGEXT-002 (equation region detection) | **Completed** as Item 4 using the shared image pipeline. |
+| `docling-deep-dive` Phases 3-4 | **Closed as research-complete** March 6; Phase 2B findings support Item 5 OCR integration. |
+| `pandoc-deep-dive` Phases 5-6 | **Closed as research-complete** March 6; findings integrated into v4. |
 | `iteration-loop` | **Not in scope** — independent, separate decision. |
 
 ---
 
-**Last Updated**: 2026-03-01
+**Last Updated**: 2026-10-04

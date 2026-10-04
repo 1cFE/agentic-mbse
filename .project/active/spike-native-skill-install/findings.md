@@ -1,5 +1,7 @@
 # Spike: Native skill installation
 
+**Status (2026-10-04):** Research complete. The sibling native implementation and remediation supersede these feasibility questions; its plan records a successful root → stage → installed-expert probe. Preserve these historical observations and platform limits; native distribution/re-review remains separate work. See the [current reconciliation](../../reports/2026-10-04-0901-status-report.md).
+
 ## Summary of Findings
 
 Both installed clients discover shared skill directories through relative symlinks. Discovery and Python filesystem reads through the supporting-file links survive moving the fixture project. Copying the bundles works too. Codex accepts all 15 command files unchanged as `SKILL.md`, together with the ten existing skills, without loader errors. Claude exposes all 15 workflows and the three invocable supporting skills; its seven reference-only skills stay out of the command catalog. This proves installation feasibility, not full workflow parity.

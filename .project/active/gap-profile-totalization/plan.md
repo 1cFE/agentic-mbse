@@ -1,5 +1,7 @@
 # Implementation Plan: GAP-CLOSE Item 4 — Profile Default-Deny Totalization
 
+**Reconciled 2026-10-04:** Complete and integrated. The old external TEAx normalization blocker is implemented and shipped in TEAx `fa0e06a`; later profile-v4/exact-identity work supersedes the original package baseline. See the [current reconciliation](../../reports/2026-10-04-0901-status-report.md).
+
 **Status:** Complete
 **Created:** 2026-07-18
 **Last Updated:** 2026-07-18

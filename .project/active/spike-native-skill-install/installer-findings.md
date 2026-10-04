@@ -1,5 +1,7 @@
 # Spike: Installer update behavior
 
+**Status (2026-10-04):** Historical legacy-installer findings. The sibling native ownership installer records remediation for these failures; that implementation is not merged into this checkout. This spike is complete, and its old findings must not be counted as eleven still-unfixed native audit defects. See the [current reconciliation](../../reports/2026-10-04-0901-status-report.md).
+
 ## Summary of Findings
 
 The existing installer does not preserve local edits across all update paths. A skipped command survives the second init but loses its stored hash; the third init overwrites it without prompting. Skills are replaced without prompting, including deletion of locally added files. The command-only forced installer follows destination symlinks and overwrites their referents. The normal hash-aware helper correctly removes the symlink before copying and preserves the referent.

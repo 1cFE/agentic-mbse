@@ -1,12 +1,19 @@
 # Modeling workflow draft
 
-**Status:** Instruction repairs implemented; focused trials complete; installed in fusion-tea-codex-test; independent implementation certification outstanding.
+**Status:** Repairs and focused trials complete; installed and used in Fusion TEA. Native-source distribution drift and L6 EXPOSE defects are separate remaining items.
 **Date:** 2026-09-12
+**Reconciled:** 2026-10-04
 **Branch:** harness-simplify
+
+## Current reconciliation
+
+Fusion TEA installation `ed1ec5cd2` and harness revision `94cf6973f` are ancestors of its September 30 HEAD `97fabad31`. Its September 27 delivery review independently compared 1,277 fresh native cases exactly and passed. This establishes substantial consumer operation; it does not certify the sibling native installer. The older independent-implementation-certification request remains an unperformed broader check, not an operational failure. September 14 right-sizing replaced unconditional review requirements with risk-based scope. Both EXPOSE false positives reproduced on current toolkit source during the October 4 reconciliation. See the [status report](../../reports/2026-10-04-0901-status-report.md).
+
+Historical specification, reviews, trials, and diagnosis remain available in Fusion TEA git revision `24af3a7e9` at the recorded paths; they are absent from its current checkout. The citations below name that revision.
 
 ## Scope and authority
 
-[OWNER] Requested draft workflow changes, preservation of the valuable four-view/architecture/pattern discipline, adversarial reachability reviews, and then the recommended repairs and three trials. The [lightweight spec](/home/reid/1cfe/fusion-tea/.project/active/modeling-workflow-outcomes/spec.md) defines the outcomes. [AGENT, ratified] Implementation choices derive from the [reachability review](/home/reid/1cfe/fusion-tea/.project/reports/20260912-workflow-reachability-review.md).
+[OWNER] Requested draft workflow changes, preservation of the valuable four-view/architecture/pattern discipline, adversarial reachability reviews, and then the recommended repairs and three trials. The lightweight spec (`fusion-tea@24af3a7e9:.project/active/modeling-workflow-outcomes/spec.md`) defines the outcomes. [AGENT, ratified] Implementation choices derive from the reachability review (`fusion-tea@24af3a7e9:.project/reports/20260912-workflow-reachability-review.md`).
 
 ## Implemented choices
 
@@ -21,8 +28,8 @@ This checkout ships `claude/commands/`, not the sibling native-skills installati
 - Three separate fresh-context agents used isolated copied installations. Direct source discovery and missing-audit closure passed. Installed pattern navigation and exact semantic binding passed; full validation remains qualified by the reproduced pre-existing EXPOSE mismatch described below.
 - The coordinator inspected produced artifacts, verified closure files against pretrial hashes, reconstructed the original binding fixture against its hashes, reproduced baseline/repaired diagnostics, and reran the three semantic test cases successfully.
 
-The [trial report and retained evidence](/home/reid/1cfe/fusion-tea/.project/reports/20260912-workflow-repairs-and-trials.md) record prompts, fixtures, installed instructions, actual actions, and limits. No statistical speed comparison, host auto-loading trial, or real multi-component model-validity certification is claimed. The initial word-count reduction described only the earlier draft and is not a current performance measure.
+The trial report and retained evidence (`fusion-tea@24af3a7e9:.project/reports/20260912-workflow-repairs-and-trials.md`) record prompts, fixtures, installed instructions, actual actions, and limits. No statistical speed comparison, host auto-loading trial, or real multi-component model-validity certification is claimed. The initial word-count reduction described only the earlier draft and is not a current performance measure.
 
 ## Remaining concrete issue
 
-The binding trial's pure EXPOSE output is recognized by the validator's static-expression rule but rejected by its supported-operator and design-attribute-completeness checks. Both failures occur before and after the binding repair. [Diagnosis](/home/reid/1cfe/fusion-tea/.project/reports/workflow-trial-evidence/binding/l6-diagnosis.md). [AGENT] Fix those two checks consistently with existing EXPOSE classification and test through the combined L6 route as a separate runtime-validator repair. The trial correctly preserved and reported the failure instead of claiming a green execution route.
+The binding trial's pure EXPOSE output is recognized by the validator's static-expression rule but rejected by its supported-operator and design-attribute-completeness checks. Both failures occur before and after the binding repair. Diagnosis (`fusion-tea@24af3a7e9:.project/reports/workflow-trial-evidence/binding/l6-diagnosis.md`). [AGENT] Fix those two checks consistently with existing EXPOSE classification and test through the combined L6 route as a separate runtime-validator repair. The trial correctly preserved and reported the failure instead of claiming a green execution route.
