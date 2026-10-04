@@ -40,3 +40,5 @@ Stage subagents cannot read sibling repositories. Read-only copies of fusion-tea
 - Standard devil's-advocate pass per your command: faithfulness of the INHERITED tags to `../../backlog/BACKLOG.md`, code-facing claims (line numbers cited are `parser.py:109`, `operations.py:58`, `:514`), sizing (backlog says 0.5 day; spec says MEDIUM).
 
 You own the review doc only; do not edit `spec.md`. There is no live spec-authoring session; the orchestrator will apply resolutions through a fresh `/_my_spec` session fed with your review. Record each finding with an ID and a proposed resolution the orchestrator can accept or override.
+
+**Addendum (verified after the first commit of this brief):** fusion-tea's `REQUIREMENTS.md` holds no `| PR-` table rows. Its `## Process Requirements` section uses `### PR-1:` through `### PR-5:` headings (unpadded numbers). `_next_id`'s pattern `^PR-(\d+)$` would accept `PR-1` as 1 if those IDs ever reached it, but today the table parser never sees them, so `add-requirement` there would mint `PR-001`. Whether `PR-1` and `PR-001` are the same namespace is a fusion-tea convention question; note it, do not resolve it.
