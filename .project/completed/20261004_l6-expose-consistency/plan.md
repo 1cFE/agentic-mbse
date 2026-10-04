@@ -1,6 +1,6 @@
 # Implementation Plan: L6 EXPOSE Validation Consistency
 
-**Status:** Complete; certified by [audit](audit.md) 2026-10-04 (all phases verified)
+**Status:** Complete; independently certified by [audit](audit.md) 2026-10-04 (implementation phases verified; this pass's wheel-build check blocked by DNS)
 **Created:** 2026-10-04
 **Last Updated:** 2026-10-04
 **Branch:** harness-right-size (source unchanged since design commit `2d4b165`)

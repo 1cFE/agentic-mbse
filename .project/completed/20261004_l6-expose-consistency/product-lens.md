@@ -45,3 +45,17 @@ Smells:
 Gate: CLEAR
 
 Auditor disposition (audit, 2026-10-04): every finding verified against the code; all still true. None is owner- or `[HARD]`-graded, so none controls the verdict (Certify). The two DON'T findings and the first CAN'T-FIND are one issue: D6 has not reached the owner, and this commit makes it user-visible. Carried as `audit.md` Advisory 1 (owner decision before PR) and Advisory 3 (file the follow-ups at close). The codegen CAN'T-FIND is Advisory 2 and is listed under the audit's "Not checked". On the special-category smell, the auditor judges the sibling rule to track a real distinction (a part you own vs. a stranger's part), though no doc states it.
+
+## audit — 2026-10-04 — rev 86ea739 — independent second pass
+
+Point (re-derived): Accept documented calc-output EXPOSE interfaces and same-part inline formulas; reject arithmetic on calc outputs. [source: docs/patterns/adr002-calculations.md; docs/patterns/expose-pattern.md; docs/patterns/plant-idiom.md:347, grade: INHERITED]
+Falsifier: Level 6 rejects a documented EXPOSE or inline formula, or accepts a cross-part attribute chain that the guide lists as a violation.
+Findings:
+- audit-F1 [DON'T] EXPOSE skips accept sibling-part chains without checking the terminal value, beyond the calc-output-only table and conflicting dotted-path rule — docs/patterns/adr002-calculations.md:39,44 (INHERITED) — disposition: design.md D6; audit.md Product Judgment. Preserve the inherited alias boundary; codegen's alias walk handles ordinary attributes too. Reconcile the guide rows as recorded follow-up; no owner/HARD invariant requires narrowing V2.
+- audit-F2 [DO] Completeness rejects documented same-part inline formulas; independently confirmed on formula_computed fixture — docs/patterns/adr002-calculations.md:42 (INHERITED) — disposition: design.md Non-Goals; audit.md Product Judgment. Pre-existing adjacent defect, excluded from this EXPOSE repair and retained as follow-up.
+
+Smells: sibling ownership exempts otherwise similar dotted paths; runtime-class and owner identity require parser knowledge; the preserved FORMULA rejection conflicts with documented support. Escalated and disposed in audit.md Product Judgment. Documentation/policy and scope-filter synchronization remain follow-ups. No duplicate-output or route-selection failure found.
+
+Additional auditor evidence: predicate executable-body AST matches pre-fix source; a three-member sibling chain passes full L6; the library unset-source limitation in B4/R4 reproduces, while a design-declared unset source is diagnosed. Codegen alias source and conformance assertions were readable in this pass, but were not executed. The owner's invocation explicitly surfaces D6 and its doc cost; the earlier claim that D6 has not reached the owner no longer describes this session. D6 retains AGENT provenance.
+
+Gate: DISPOSED (audit-F1, audit-F2)

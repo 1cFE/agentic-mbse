@@ -4,6 +4,102 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-04] - L6 EXPOSE Validation Consistency
+
+**Type**: Item (standalone `L6-EXPOSE-CONSISTENCY`; implementation `3f442ce` on `harness-right-size`)
+**Duration**: <1 day (spec created 2026-10-04 09:28; closed 2026-10-04)
+
+### Summary
+
+Level 6 no longer rejects the documented EXPOSE pattern. The supported-operator check (V4) and design-attribute completeness now use the same EXPOSE predicate as the static-expression check (V2), so a design attribute bound directly to a calculation output gets neither `V4_UNSUPPORTED_OPERATOR` for `.` nor `L6_DESIGN_ATTR_UNEXTRACTABLE`. Arithmetic over a calc output keeps all three diagnostics, and 13 pinned controls are unchanged. Independently certified. On fusion-tea `models/`, Level 6 issues fell from 7,734 to 408 with none added, and an owner-run probe through fusion-tea's CLI confirmed all three spec criteria in situ. Per design D6 ([AGENT], ratified by orchestrator), part-headed and multi-hop sibling chains also pass, which conflicts with three guide rows; that reconciliation and five other follow-ups are filed in the backlog.
+
+### Deliverables
+
+- `src/agentic_mbse/validation/adr002.py` (shared `is_expose_binding`, V4 guard) and `src/agentic_mbse/validation/level6_architecture.py` (completeness guard).
+- `tests/test_validation/test_l6_expose_consistency.py` and `tests/fixtures/l6_expose_consistency/{shapes,controls}/`.
+- `.project/completed/20261004_l6-expose-consistency/`: `spec.md`, `design.md`, `design-review.md`, `plan.md`, `audit.md`, `product-lens.md`, `consumer-validation.md`, `briefs/`.
+- Backlog follow-ups: `DOCS-DOTTED-PATH-BOUNDARY`, `VALIDATE-CLI-FULL-REPORT`, `L6-COMPLETENESS-PATH-FILTER`, `L6-FORMULA-COMPLETENESS`, `L6-EXPOSE-CLEANUPS`, `L6-LIBRARY-ALIAS-SOURCE`.
+
+---
+
+## [2026-09-14] - Modeling Harness Right-Sizing
+
+**Type**: Change (implemented on `harness-right-size`; tracking backfilled 2026-10-04)
+
+### Summary
+
+Commit `ce80472` replaces unconditional process/review requirements with concrete risk triggers, evidence reuse, and bounded review scope. The implementation record reports 91 command/installer checks passing and a bounded independent review with no material defects in five core process files. Fusion TEA's September 15 harness revision `94cf6973f` carries consumer adaptations. Full native installer certification and source-distribution synchronization remain separate work; no measured token-savings claim is made.
+
+### Deliverables
+
+- `.project/active/harness-right-size/requirements.md` and `review.md`; evidence retained at original paths.
+- Revised shipped modeling commands, canonical process, and epic guidance.
+
+---
+
+## [2026-09-13] - Modeling Workflow Repairs and Focused Trials
+
+**Type**: Change (implemented on `harness-simplify`, inherited by `harness-right-size`; tracking backfilled 2026-10-04)
+
+### Summary
+
+Commit `d20069b` simplifies modeling workflows and repairs source discovery, installed pattern navigation, durable-record ownership, and missing-audit closure. The recorded 91-test selection and three fresh-context trials pass within their scope. Installation `ed1ec5cd2` is in Fusion TEA's history, followed by successful native consumer work. Two reproduced L6 EXPOSE false positives are a separate validator defect; native-source synchronization remains a distribution gap.
+
+### Deliverables
+
+- `.project/active/modeling-workflow-outcomes/{draft,plan}.md` and referenced Fusion TEA trial evidence.
+
+---
+
+## [2026-09-12] - Native Skill Installation Research Capture
+
+**Type**: Change (research capture; tracking backfilled 2026-10-04)
+
+### Summary
+
+Commit `35fa2b6`, titled “Ported to codex,” captures native Claude/Codex discovery and installer research in this checkout. Production migration lives in sibling branch `native-claude-codex-skills` (`955295b` with uncommitted remediation). Its accepted audit repairs are implemented and tested in the recorded evidence, but independent re-review and distribution reconciliation remain pending. The commit title alone is not evidence that native installation is shipped from this branch.
+
+### Deliverables
+
+- `.project/research/20260907-162310_native-claude-codex-skills.md` and `.project/active/spike-native-skill-install/` probes.
+
+---
+
+## [2026-08-20] - Parser Evidence and Validation Integration (PR #13)
+
+**Type**: Integration (tracking backfilled 2026-10-04)
+
+### Summary
+
+Local `main` merged `stop-parser-evidence-r2` as `88e2489`. The integrated work tightens expression/declaration and invocation evidence, centralizes unit annotations, and fixes return-parameter membership. Fusion TEA's companion pin `4433888` contains this work. This entry records integration from git history; this tracking refresh did not rerun its full suite.
+
+---
+
+## [2026-08-14] - Exact Identity and Identified Constraint Route (PR #12)
+
+**Type**: Integration (tracking backfilled 2026-10-04)
+
+### Summary
+
+Commit `1decd95` integrates ELABORATE-FIRST identity evidence and identified constraint extraction/profile evaluation, migrates validation consumers, and retires the neutral live route. This supersedes transitional July constraint-route descriptions. Historical certification and recovery details remain in git and the companion codegen records.
+
+---
+
+## [2026-07-20] - Constraint Lifecycle Integration (PR #11)
+
+**Type**: Integration (tracking backfilled 2026-10-04)
+
+### Summary
+
+Companion `f4ebdce`, codegen `936315c`, and TEAx `fa0e06a` integrate the constraint lifecycle, including certified remediation, profile semantics/default-deny fixes, authoring docs, and external failure normalization. The later codegen record reports paired post-merge smoke of 3,115 passed / 47 skipped and a 41/41 public lifecycle proof. These records discharge the old compatibility, external F1, and pre-PR blockers; current ancestry checks confirm delivery. Fresh October 4 focused TEAx checks passed 15/15.
+
+### Deliverables
+
+- Historical local evidence remains in `.project/active/{constraint-exec-remediation,constraint-wave-profile-semantics,gap-profile-totalization,constraint-exec-docs}/`.
+- sysml-codegen `.project/CURRENT_WORK.md:904` records the composed merge and paired smoke; TEAx `.project/active/gap-close-f1-normalization/audit.md` records its independent certification.
+
+---
+
 ## [2026-07-18] - Orchestrate Modeling
 
 **Type**: Item (standalone)
@@ -11,25 +107,20 @@ Historical record of completed work.
 
 ### Summary
 
-Added a thin, judgment-led modeling orchestrator that carries either one Standard work item or an Epic
-through the existing modeling stages after one owner alignment. The shipped workflow now has one
-canonical flow map, durable pre-stage alignment, independent item and Epic audits, bounded repair, and a
-supported deterministic path for registering new Epics.
+Added a thin, judgment-led modeling orchestrator that carries either one Standard work item or an Epic through the existing modeling stages after one owner alignment. The shipped workflow now has one canonical flow map, durable pre-stage alignment, independent item and Epic audits, bounded repair, and a supported deterministic path for registering new Epics.
 
 ### Deliverables
 
 - `.project/completed/20260718_orchestrate-modeling/` — spec, reviews, design, and implementation plan.
 - `claude/commands/orchestrate-modeling.md` — Task-only orchestration command.
-- `project_templates/MODELING_PROCESS.md.template` and `EPIC_GUIDE.md.template` — canonical Standard and
-  Epic flow documentation.
+- `project_templates/MODELING_PROCESS.md.template` and `EPIC_GUIDE.md.template` — canonical Standard and Epic flow documentation.
 - `agentic-mbse pm add-epic` — validated operation and CLI registration.
 - Command contract, PM operation, CLI dispatch, installation, hash, and manifest-parity tests.
 
 ### Lessons Learned
 
 - A newly registered Epic must start in `draft` so declared and derived PM state agree.
-- Prompt safety contracts are usefully pinned with kept structural tests, while judgment-led routing
-  still needs tabletop scenarios and dogfooding.
+- Prompt safety contracts are usefully pinned with kept structural tests, while judgment-led routing still needs tabletop scenarios and dogfooding.
 - Closed without an independent audit by owner decision; focused and normal regression suites passed.
 
 ---
@@ -40,16 +131,31 @@ supported deterministic path for registering new Epics.
 **Duration**: ~1 day (created 2026-07-12; archived 2026-07-13)
 
 ### Summary
-The three agentic-mbse items of the CONSTRAINT-EXEC epic: neutral `ConstraintFacts` production
-schemas + extraction (Item 1), the production `ExpressionIR` tree with extraction and
-serialization (Item 2), and the executable profile's eligibility gates + named diagnostics
-(Item 3). All certified; suite at close 1401 passed / 1 skipped.
+The three agentic-mbse items of the CONSTRAINT-EXEC epic: neutral `ConstraintFacts` production schemas + extraction (Item 1), the production `ExpressionIR` tree with extraction and serialization (Item 2), and the executable profile's eligibility gates + named diagnostics (Item 3). All certified; suite at close 1401 passed / 1 skipped.
 
 ### Deliverables
-- `.project/completed/20260713_constraint-facts/`, `20260713_expression-ir/`,
-  `20260713_executable-profile/` (spec/design/plan/audit + briefs each).
-- Epic close-out and independent findings audit: sysml-codegen
-  `.project/completed/20260713_epic_constraint_execution*.md`.
+- `.project/completed/20260713_constraint-facts/`, `20260713_expression-ir/`, `20260713_executable-profile/` (spec/design/plan/audit + briefs each).
+- Epic close-out and independent findings audit: sysml-codegen `.project/completed/20260713_epic_constraint_execution*.md`.
+
+---
+
+## [2026-07-10] - Shared SysML Primitives (PR #10)
+
+**Type**: Integration (tracking backfilled 2026-10-04)
+
+### Summary
+
+Merge `6a69e13` brings shared expression reconstruction, qualified names, hierarchy primitives, and aggregation decomposition into agentic-mbse, including independent-audit remediation `d340c8e`. These shared utilities underpin later codegen integration; this record does not claim the separately filed profile-warning candidates were implemented.
+
+---
+
+## [2026-07-06] - Validation and Teaching Alignment (PRs #7 and #8)
+
+**Type**: Integration (tracking backfilled 2026-10-04)
+
+### Summary
+
+Merges `f3b19ba` and `d582940` integrate upstream validation/teaching corrections, subtype-aware adapter enumeration, and the C7 attribute-redefinition warning. FORMULA teaching reconciliation `9cf6b3c` shipped with these changes. C8 remains filed and the vendor-report escalation was declined; C4 plain-subtype documentation/test work remains a separate draft.
 
 ---
 

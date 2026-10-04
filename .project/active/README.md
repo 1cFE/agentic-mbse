@@ -1,46 +1,25 @@
-# Active Work
+# Active work and retained evidence
 
-This folder contains work-in-progress item folders.
+**Last Reconciled**: 2026-10-04
 
-## Structure
+[CURRENT_WORK.md](../CURRENT_WORK.md) identifies actual remaining work. Folder presence alone does not mean implementation is still active. Completed evidence stays at its existing path during this tracking refresh so historical references remain valid; archival can be done separately.
 
-```
-active/
-├── README.md           # This file
-└── {item_name}/        # One folder per active work item
-    ├── spec.md         # What needs to be done
-    ├── design.md       # How to do it
-    ├── plan.md         # Phased implementation plan
-    └── [deliverables]  # Work products
-```
+| Folder | Reconciled disposition |
+|--------|------------------------|
+| `pm-registry-integrity` | Draft repair spec complete; product-lens CLEAR; implementation not started; P2 |
+| `research-approval-empty-insights` | Draft repair spec complete; product-lens CLEAR; implementation not started; P2 |
+| `native-skill-distribution` | Draft residual-work spec complete; product-lens CLEAR; existing native migration contract referenced |
+| `harness-right-size` | Implementation and bounded review complete; installed in Fusion TEA |
+| `modeling-workflow-outcomes` | Repairs and focused trials complete; native-source drift and L6 EXPOSE defect tracked separately |
+| `spike-native-skill-install` | Research/probes complete; native implementation and remediation live in sibling `agentic-mbse-native-skills` |
+| `constraint-wave-profile-semantics` | Audited implementation integrated; July orchestration pause is historical |
+| `gap-profile-totalization` | Complete and integrated; external normalization blocker resolved |
+| `constraint-exec-remediation` | Certified implementation integrated; old paired-compatibility next step discharged by later evidence |
+| `constraint-exec-docs` | Local documentation implemented; copied cross-repo brief superseded |
+| `formula-teaching-reconciliation` | Implemented; historical acceptance checklist was not independently recertified in this refresh |
+| `pdf-skill-deployment` | Unimplemented P1 work; pre-v4 design needs revision |
+| `artifact-scaffolding` | Draft specification; implementation not started; P2 |
+| `c4-plain-subtype-instantiation` | Draft documentation/test repair; implementation not recorded |
+| `iteration-loop` | Shelved P3; draft retained |
 
-## Starting a Work Item
-
-1. Create folder: `mkdir {item_name}`
-2. Create `spec.md` using `/spec` command or manually
-3. Create `design.md` using `/design` command
-4. Create `plan.md` with phased breakdown
-5. Update `../CURRENT_WORK.md`
-
-## During Work
-
-1. Follow phases in `plan.md`
-2. Check off completed tasks
-3. Add notes and decisions
-
-## Completing a Work Item
-
-1. Ensure all deliverables exist
-2. Validate success criteria met
-3. Move folder to `../completed/` with date prefix
-4. Update `../CURRENT_WORK.md`
-5. Update epic in `../backlog/`
-
-## Naming Convention
-
-Use descriptive, lowercase names with underscores:
-- `user_auth_backend`
-- `api_integration`
-- `performance_optimization`
-
-Avoid generic names like `task1` or `work`.
+See the [reconciliation report](../reports/2026-10-04-0901-status-report.md) for evidence and verification limits. New work should have an entry in CURRENT_WORK and the backlog before its folder is treated as active.

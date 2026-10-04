@@ -1,6 +1,6 @@
 # Spec: L6 EXPOSE Validation Consistency
 
-**Status:** Certified — [audit](audit.md) 2026-10-04; close next
+**Status:** Closed 2026-10-04 — independently certified ([audit](audit.md)); consumer validation in [consumer-validation.md](consumer-validation.md)
 **Owner:** Reid W
 **Created:** 2026-10-04 09:28 PDT
 **Complexity:** MEDIUM
