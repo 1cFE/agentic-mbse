@@ -1,7 +1,7 @@
 # Current Work
 
 **Last Updated**: 2026-10-04
-**Checkout**: `harness-right-size` at `ce80472`; three commits beyond local `main` (`88e2489`).
+**Checkout**: `pm-registry-integrity`, branched from `main` at `9b82006` after PR #14 merged.
 
 [OWNER] Reports successful operation in Fusion TEA and requested reconciliation of tracking against actual remaining work. The [status report](reports/2026-10-04-0901-status-report.md#tracking-reconciliation--progress) carries investigation progress, evidence, and limits. This refresh updates local tracking; sibling repositories were inspected read-only.
 
@@ -11,7 +11,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
-- [pm-registry-integrity](active/pm-registry-integrity/spec.md) — standalone `PM-MATRIX-ESCAPED-PIPE`; draft spec complete; product-lens CLEAR; owner review next.
+- [pm-registry-integrity](active/pm-registry-integrity/spec.md) — standalone `PM-MATRIX-ESCAPED-PIPE`; orchestrated run complete on branch `pm-registry-integrity` (spec reviewed twice, design reviewed, five implementation phases, audit Certified with follow-ups, E3/E4 pass on fusion-tea copies); owner to run `/_my_close` then `/_my_pre_pr`.
 - [research-approval-empty-insights](active/research-approval-empty-insights/spec.md) — standalone `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS`; draft spec complete; product-lens CLEAR; owner review next.
 - [native-skill-distribution](active/native-skill-distribution/spec.md) — standalone `NATIVE-DISTRIBUTION-RECONCILIATION`; draft spec complete; product-lens CLEAR; owner review next.
 
@@ -21,7 +21,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 |------|----------------|-------------|
 | L6 EXPOSE validation | Closed 2026-10-04: certified repair archived to [completed/20261004_l6-expose-consistency](completed/20261004_l6-expose-consistency/); fusion-tea consumer validation confirmed all spec criteria in situ | None for the item. Follow-ups filed in the [backlog](backlog/BACKLOG.md): `DOCS-DOTTED-PATH-BOUNDARY` (with deep-chain regression coverage), `VALIDATE-CLI-FULL-REPORT`, `L6-COMPLETENESS-PATH-FILTER`, `L6-FORMULA-COMPLETENESS`, `L6-EXPOSE-CLEANUPS`, `L6-LIBRARY-ALIAS-SOURCE` |
 | Native skill distribution | Installed Fusion TEA workflows differ from the `native-claude-codex-skills` source; native installer remediation is uncommitted and awaits final verification | Reconcile source with consumer changes and finish installer verification before distributing that branch |
-| PM registry integrity | Escaped-pipe rows disappear; `add-validation` freshly reproduced reuse of `SV-034` | Fix escaped-pipe splitting and protect ID allocation against malformed rows; tracked P2 |
+| PM registry integrity | Implemented and audited on `pm-registry-integrity` (2026-10-04): GFM escape honoured, whole-file ID reservation for all seven prefixes, backlog writes keep unparsed records, nine refusals before any write | Owner: `/_my_close`, then `/_my_pre_pr`; after merge, move fusion-tea's pin and fix its malformed `SV-034` row by hand |
 | Research approval | Explicit empty insight list freshly reproduced refusal to approve/move the document | Support approval with zero new insights; tracked P2 |
 | Extraction provenance | Machine-readable provenance and saved-raw-byte fidelity remain filed P2 work | Implement a scoped provenance contract; retain current downstream workarounds until then |
 

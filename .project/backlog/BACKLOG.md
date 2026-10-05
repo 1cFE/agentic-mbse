@@ -77,8 +77,8 @@ Prioritized list of epics and features.
 ### [PM-MATRIX-ESCAPED-PIPE] Validation-matrix parser drops rows with escaped pipes; `add-validation` then reuses an SV id
 
 **Priority**: P2
-**Effort**: 0.5 day
-**Status**: Reproduced defect; draft spec complete; product-lens CLEAR; implementation not started (originally filed 2026-08-21)
+**Effort**: 1.5 days (was 0.5 day; scope grew in spec review to two splitters, seven allocators, and the backlog writer)
+**Status**: Implemented and audited on branch `pm-registry-integrity` (Certified with follow-ups, 2026-10-04); awaiting close and PR. Four advisory follow-ups listed in `.project/active/pm-registry-integrity/audit.md`. (originally filed 2026-08-21)
 **Spec**: [Registry integrity](../active/pm-registry-integrity/spec.md)
 
 **Problem**: `_parse_markdown_table` splits every line on `|` (`src/agentic_mbse/pm/parser.py:109`) and does not honor the GFM escape `\|`. A cell containing `\|rel dev\|` (fusion-tea `modeling_project/VALIDATION_MATRIX.md` rows SV-034 and SV-035) shifts the columns, the `Type` enum check fails, the row is dropped with a warning, and `parse_validation_matrix` returns without it. `add_validation` then computes `_next_id("SV", [e.id for e in result.data])` (`pm/operations.py:515`, `:58-70`) over the surviving rows and minted a second `SV-034`. Silent id reuse in a registry other artifacts cite by id.

@@ -1,6 +1,6 @@
 # Audit: Escaped Pipes and Registry ID Integrity
 
-**Verdict:** Certified with follow-ups (Certify: zero blockers, six advisories)
+**Verdict:** Certified with follow-ups (Certify: zero blockers). Re-checked at `b801fd5`: A1 closed, five advisories remain; the final verdict and follow-up list are in [Re-check](#re-check).
 **Audited:** 2026-10-04
 **Branch:** pm-registry-integrity
 **Commit:** `9357192` (source and tests last changed at `b8bbf8d`; `git diff --stat b8bbf8d..HEAD -- src/ tests/` is empty)
@@ -47,7 +47,7 @@ None.
 
 Ranked by importance. None blocks certification.
 
-**A1. A table add can still write a record where the parser cannot see it, then mint its ID again.** Pre-existing; the insert loop is byte-identical to base `_append_table_row` (`e5bd0db` `operations.py:229-238`).
+**A1. A table add can still write a record where the parser cannot see it, then mint its ID again.** Closed in-item at `c3f3517`; see Re-check. Pre-existing; the insert loop is byte-identical to base `_append_table_row` (`e5bd0db` `operations.py:229-238`).
 
 - Concern: `_insert_table_row` (`operations.py:422-460`) finds "the table under the heading" on the raw text. If a commented example table sits between the heading and the real table, it takes the commented rows as the table and inserts the new row inside the comment.
 - Evidence: probe P1 (`.orchestrate-logs/audit-scratch/audit_probe.py`). `register-intent` and `add-validation` each report success twice, both times minting `G-001` or `SV-001`, and the parser reads zero records afterwards.
@@ -189,22 +189,66 @@ I7 (refuse before the first write) is also pinned. Making `close-item` rewrite `
 **Marked:** nothing. Per the brief, the orchestrator updates `plan.md`, `spec.md`, the backlog, and `CURRENT_WORK.md`. My recommendation:
 
 - All plan phases (1, 2, 3a, 3b, 4) are verified complete.
-- Spec criteria C1 to C6 are verified met. C3 carries the A1 caveat on a hand-edited layout the spec did not name.
+- Spec criteria C1 to C6 are verified met. (The C3 caveat from A1 is lifted at re-check.)
 
-**Follow-ups (backlog-ready):**
-
-1. `PM-TABLE-INSERT-COMMENT`: `_insert_table_row` should find the target table on comment-blanked text, so an add never writes inside a commented example table placed above the real one. Add SV, PR, G, and AQ tests for that layout (A1).
-2. `PM-DASHBOARD-REPEATED-KEY`: read-only `parse_backlog` should warn on a repeated frontmatter key, so `status` stops silently showing only the last list (A2).
-3. `PM-UPDATE-VALIDATION-COMMENT`: decide whether `update-validation` should carry an inline HTML comment in a non-Status cell through unchanged instead of refusing the row (A3).
-4. `PM-WRITE-BACKLOG-TYPED-FORM`: move `_write_backlog`'s `BacklogData` form into a test helper and point `TestWriteBacklogRoundTrip` at the document write path (A5).
-5. `PM-R7-MESSAGE`: when an SV row parses but Status is not its ninth cell, R7's message should say so instead of blaming pipes or comments (A6).
+**Follow-ups:** see [Re-check](#re-check) for the final list.
 
 **Not checked:**
 
-- fusion-tea's live repo and its work-item `spec.md`, `design.md`, and `plan.md` frontmatter (outside the sandbox). So A4's exposure there is unknown; only the snapshot copies were exercised.
+- fusion-tea's live repo and its work-item `spec.md`, `design.md`, and `plan.md` frontmatter (outside the sandbox). The orchestrator has since scanned them for A4; see Re-check.
 - The CLI end to end: I called the operations directly and read the CLI's print path (`cli/pm_cli.py:39-91`), but did not run `agentic-mbse pm …` commands.
 - CRLF files. `update-validation` and the backlog writer rewrite line endings to LF, as at base.
 - Comment-marker values in heading registries and backlog fields (a design Non-Goal).
 - Concurrency between two PM writes.
 - Every layout variant of the commented-table case beyond probe P1.
 - The product-lens instruction file itself. The lens ran on the fallback method, as at design review.
+
+---
+
+## Re-check
+
+**Re-checked:** 2026-10-04 at `b801fd5` (source and tests last changed at `c3f3517`, the A1 fix). Bounded to the A1 fix and to whether anything else moved.
+
+**Final verdict: Certified with follow-ups.** Zero blockers. A1 is closed, and advisories A2 to A6 stand as written above.
+
+**What changed.** `_insert_table_row` (`operations.py:422-470`) now finds the heading and the table on comment-blanked text, so a commented table is never the target. After inserting, it re-blanks the text and refuses if the new row reads as blank, which means it landed inside a comment. Design D9's R9 row is amended to match. Six tests were added.
+
+**(1) My A1 reproduction is fixed.** I reran probe P1 (`.orchestrate-logs/audit-scratch/audit_probe.py`) with a commented example table above the real one:
+
+- `register-intent` mints `G-001` then `G-002`, and `add-validation` mints `SV-001` then `SV-002`.
+- Both rows land in the real table, the parser reads them back, and the commented example is unchanged.
+- A table that exists only inside a comment refuses, and so does a row that would fall inside a comment opening on the table's last line. In both cases the file is unchanged. The tests are `test_missing_section_refuses[table only in a comment]` and `test_refuses_row_that_would_land_in_a_comment`, and both compare every file's bytes.
+- Probes P2 to P8 give the same results as at audit.
+
+**(2) Removing either new piece makes tests fail.** Both mutations were added to `mutate.py`:
+
+- Deleting the post-insert check fails `TestAddValidation::test_refuses_row_that_would_land_in_a_comment`.
+- Reverting the search to raw text fails all four `test_skips_commented_table_above_real_table` cases (SV, PR, G, AQ).
+- Under that second mutation, `test_missing_section_refuses[table only in a comment]` still passes. The post-insert check catches the same case as a backstop, so the file stays unchanged. Only the message differs: it says the comment opens on line 5 instead of saying no table was found (`.orchestrate-logs/audit-scratch/a1_backstop.py`). No row can be lost; the test just does not pin which message the user sees.
+- The other 23 mutations from the audit are all still caught.
+
+**Why the post-insert check is exact.** The row cannot hold a comment marker (R8 refuses one first), and inserting a marker-free line cannot change how existing comments pair. So the check refuses exactly when the row lands inside a comment, and never otherwise.
+
+**(3) Nothing else moved.**
+
+- Full suite: 2056 passed, 1 skipped, 33 deselected. That is the audit's 2050 plus the 6 new tests.
+- Gates at parity: ruff 118 repo-wide, PM-scoped "All checks passed!"; format 78 files, 8 hunks in the four edited files; mypy 91 errors, 0 under `src/agentic_mbse/pm/`.
+- No base test line removed: `git diff e5bd0db..HEAD -- tests/` is 1337 insertions and 0 deletions. The one line the fix edited (the `ids=` list of `test_missing_section_refuses`) was added on this branch, not at base.
+- E4 rerun: PASS, 14 of 14, minting `SV-136` and `DI-015`. E3 rerun: identical to baseline except `SV-035` added and its warning removed.
+
+**A4's exposure is answered, as reported by the orchestrator.** `acceptance-evidence.md` records a scan of 1138 fusion-tea frontmatter files with no indented closing `---`. I could not verify this myself, because fusion-tea is outside this sandbox. On that evidence, the stricter delimiter rule changes nothing on real data. A4 stays only as a note that the design's Integration Strategy understates the read-side change.
+
+**Recommendation for tracking.** All plan phases are complete, including the post-audit A1 fix. Spec criteria C1 to C6 are met with no caveat.
+
+**Remaining follow-ups (backlog-ready):**
+
+1. `PM-DASHBOARD-REPEATED-KEY`: read-only `parse_backlog` should warn on a repeated frontmatter key, so `status` stops silently showing only the last list (A2).
+2. `PM-UPDATE-VALIDATION-COMMENT`: decide whether `update-validation` should carry an inline HTML comment in a non-Status cell through unchanged instead of refusing the row (A3).
+3. `PM-WRITE-BACKLOG-TYPED-FORM`: move `_write_backlog`'s `BacklogData` form into a test helper and point `TestWriteBacklogRoundTrip` at the document write path (A5).
+4. `PM-R7-MESSAGE`: when an SV row parses but Status is not its ninth cell, R7's message should say so instead of blaming pipes or comments (A6).
+
+**Not checked in this pass:**
+
+- Anything outside the A1 fix beyond the reruns listed above.
+- The orchestrator's 1138-file fusion-tea scan, which is outside the sandbox.
+- Comment layouts beyond the ones the six tests and probe P1 cover.

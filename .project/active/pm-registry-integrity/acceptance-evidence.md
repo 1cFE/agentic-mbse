@@ -38,3 +38,7 @@ All 14 expectations pass:
 ## Audit advisory A4 — indented closing `---` (checked by the orchestrator against fusion-tea itself)
 
 The audit could not read fusion-tea's work-item files. Scanned 1138 frontmatter files under fusion-tea's `work/`, `modeling_project/`, and `knowledge/` on 2026-10-04: none has an indented `---` line inside its frontmatter. The stricter delimiter rule changes nothing on real data.
+
+## Re-run after the A1 fix (`c3f3517`)
+
+E4: PASS, 14 of 14, same IDs minted (`SV-136`, `DI-015`). E3: snapshot identical to the `b8bbf8d` run, so still only `SV-035` added and its warning gone. Raw outputs `after_a1.json`, `e4_result_c3f3517.txt`.

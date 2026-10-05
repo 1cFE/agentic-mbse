@@ -1,6 +1,6 @@
 # Spec: Escaped Pipes and Registry ID Integrity
 
-**Status:** Draft
+**Status:** Implemented and audited (Certified with follow-ups, 2026-10-04; see audit.md). Awaiting owner close.
 **Owner:** Reid W
 **Created:** 2026-10-04 09:28 PDT
 **Complexity:** MEDIUM
@@ -29,17 +29,17 @@ Evidence for ID reuse:
 
 ## Success Criteria
 
-- [ ] [INHERITED: BACKLOG.md PM-MATRIX-ESCAPED-PIPE, Problem and original Goal (1)] **Escaped pipes.** Splitting a registry table row follows GitHub's GFM table rule ([GFM spec §4.10, Tables extension](https://github.github.com/gfm/#tables-extension-)): `\|` is a literal pipe inside the cell, including inside code spans. A cell holding `\|rel dev\|` stays one cell, parses to `|rel dev|`, and adjacent columns keep their meaning. The behavior of `\\|` is pinned by a test. Evidence: E1, E4, and a splitter test with a pipe inside a code span.
-- [ ] [INFERRED] **One escape rule for every row reader and writer.** Every operation that reads or rewrites a registry table row applies the same escape rule, and updating a row changes only the targeted cell. Evidence: a test running `update-validation` on an escaped row, where the new status lands in Status and every other cell, including `\|rel dev\|`, is unchanged.
-- [ ] [INFERRED] **Round-trip.** A value written by a PM add operation to a table registry (SV, PR, G, AQ) reads back identical through the parser, including a value containing `|`. Evidence: for each table registry (SV, PR, G, AQ), a test that adds a free-text value containing `|` and reads it back.
-- [ ] [AGENT] (orchestrator, 2026-10-04: the only reading that also covers drifted structure and archive notes, and E4 as ratified already says "above every ID in the file") **No ID minted twice.** A newly minted ID is numerically greater than every same-prefix ID token that appears in the registry file outside HTML comments, whether or not the parser accepted its record. Evidence: E1, E2, E4, and a test whose `KNOWLEDGE.md` holds records `DI-001` to `DI-011` under an archive note naming `DI-014`, where the next ID is `DI-015`.
+- [x] [INHERITED: BACKLOG.md PM-MATRIX-ESCAPED-PIPE, Problem and original Goal (1)] **Escaped pipes.** Splitting a registry table row follows GitHub's GFM table rule ([GFM spec §4.10, Tables extension](https://github.github.com/gfm/#tables-extension-)): `\|` is a literal pipe inside the cell, including inside code spans. A cell holding `\|rel dev\|` stays one cell, parses to `|rel dev|`, and adjacent columns keep their meaning. The behavior of `\\|` is pinned by a test. Evidence: E1, E4, and a splitter test with a pipe inside a code span.
+- [x] [INFERRED] **One escape rule for every row reader and writer.** Every operation that reads or rewrites a registry table row applies the same escape rule, and updating a row changes only the targeted cell. Evidence: a test running `update-validation` on an escaped row, where the new status lands in Status and every other cell, including `\|rel dev\|`, is unchanged.
+- [x] [INFERRED] **Round-trip.** A value written by a PM add operation to a table registry (SV, PR, G, AQ) reads back identical through the parser, including a value containing `|`. Evidence: for each table registry (SV, PR, G, AQ), a test that adds a free-text value containing `|` and reads it back.
+- [x] [AGENT] (orchestrator, 2026-10-04: the only reading that also covers drifted structure and archive notes, and E4 as ratified already says "above every ID in the file") **No ID minted twice.** A newly minted ID is numerically greater than every same-prefix ID token that appears in the registry file outside HTML comments, whether or not the parser accepted its record. Evidence: E1, E2, E4, and a test whose `KNOWLEDGE.md` holds records `DI-001` to `DI-011` under an archive note naming `DI-014`, where the next ID is `DI-015`.
   - A token stands alone: `MAG-001` is not `G-001`. Tokens inside code spans count.
   - Allocation stays strictly above the max, with no gap filling. The archive-note protection depends on this.
   - HTML comments are excluded because every shipped template holds example IDs inside them (`project_templates/*.md.template`), and existing tests assert the first minted IDs.
   - Accepted costs: a prose mention of a high number skips numbers permanently (a gap, never a reuse), and an ID that appears only inside an HTML comment is not protected.
   - `PR-1` and `PR-001` both count as 1, as today (`operations.py:63-67`). Whether fusion-tea treats them as the same ID is that project's convention, not settled here.
-- [ ] [AGENT] (orchestrator, 2026-10-04: E2's WI case requires it, and the 2026-02 operations spec already promised a malformed backlog fails rather than corrupts) **No record lost on write.** No PM write deletes an existing record or alters any record other than the one it targets. When a write cannot keep a record, it refuses with an error that names what it could not keep, and a refused write leaves every file unchanged (`close_item` moves the item directory and rewrites its frontmatter before it writes `BACKLOG.md`, `operations.py:1078-1107`, so a late refusal would half-close an item). Evidence: E2's WI case, plus tests where `add-item`, `add-epic`, and `close-item` meet a work item with an invalid field and a `BACKLOG.md` with malformed YAML.
-- [ ] [INFERRED] **Nothing else changes.** Evidence: E3.
+- [x] [AGENT] (orchestrator, 2026-10-04: E2's WI case requires it, and the 2026-02 operations spec already promised a malformed backlog fails rather than corrupts) **No record lost on write.** No PM write deletes an existing record or alters any record other than the one it targets. When a write cannot keep a record, it refuses with an error that names what it could not keep, and a refused write leaves every file unchanged (`close_item` moves the item directory and rewrites its frontmatter before it writes `BACKLOG.md`, `operations.py:1078-1107`, so a late refusal would half-close an item). Evidence: E2's WI case, plus tests where `add-item`, `add-epic`, and `close-item` meet a work item with an invalid field and a `BACKLOG.md` with malformed YAML.
+- [x] [INFERRED] **Nothing else changes.** Evidence: E3.
   1. No operation renumbers, re-pads, or re-spells an existing ID; `PR-1` stays `PR-1`.
   2. New IDs keep the `PREFIX-NNN` form with three-digit minimum padding (`operations.py:70`).
   3. Parsed values of rows without `\|` are unchanged.
@@ -107,4 +107,4 @@ Evidence for ID reuse:
 - **fusion-tea copies:** `.orchestrate-logs/ft-snapshot/` (gitignored; read by E3 and E4).
 - **Product lens:** [Review ledger](product-lens.md).
 
-**Next Steps:** `/_my_design`, then `/_my_design_review`. Both spec reviews are closed.
+**Next Steps:** Owner runs `/_my_close`, then `/_my_pre_pr` on branch `pm-registry-integrity`.
