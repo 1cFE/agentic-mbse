@@ -1,6 +1,6 @@
 # Implementation Plan: Escaped Pipes and Registry ID Integrity
 
-**Status:** In Progress (Phases 1, 2, and 3a complete)
+**Status:** In Progress (Phases 1, 2, 3a, and 3b complete)
 **Created:** 2026-10-04
 **Last Updated:** 2026-10-04
 **Branch:** pm-registry-integrity
@@ -452,54 +452,54 @@ class TestAddItem:
 
 **Tests: reader, in `test_pm_parser.py`**
 
-- [ ] `TestParseFrontmatter::test_indented_dashes_stay_in_block_scalar` [R1, M4]
-- [ ] `TestParseFrontmatter::test_unique_keys_rejects_repeat`, covering a top-level key, a nested key, and a `<<` merge key, which is not a repeat [R1, M4]
-- [ ] `TestParseFrontmatter::test_default_keeps_last_wins` [R1]
-- [ ] Existing `TestParseBacklog` tests pass unchanged after the extraction [I8]
+- [x] `TestParseFrontmatter::test_indented_dashes_stay_in_block_scalar` [R1, M4]
+- [x] `TestParseFrontmatter::test_unique_keys_rejects_repeat`, covering a top-level key, a nested key, and a `<<` merge key, which is not a repeat [R1, M4]
+- [x] `TestParseFrontmatter::test_default_keeps_last_wins` [R1]
+- [x] Existing `TestParseBacklog` tests pass unchanged after the extraction [I8]
 
 **Tests: operations, in `test_pm_operations.py`**
 
-- [ ] Helpers `_write_raw_backlog` and `_wi` [E2]
-- [ ] E2, WI: `TestAddItem::test_mints_above_unparsed_record` (the stencil above) [E2, C4, C5]
-- [ ] `test_carries_forward_invalid_item` in `TestAddItem`, `TestAddEpic`, and `TestCloseItem`: the frontmatter changes only at the target [C5, I6]
-- [ ] `TestAddItem::test_refuses_unreadable_frontmatter`, parametrized over five cases: malformed YAML, no frontmatter, `standalone` twice, `items` twice in one epic, and a closing `---` that is only indented [R1]
-- [ ] `TestAddItem::test_keeps_items_after_indented_dashes` [R1, M4]
-- [ ] `TestAddEpic::test_refuses_malformed_yaml` [R1, I7]
-- [ ] `TestCloseItem::test_refusal_leaves_item_active`: the directory is still in `work/active/`, and `spec.md` is unchanged [R1, I7]
-- [ ] `TestAddItem::test_refuses_non_list_standalone` and `TestAddItem::test_refuses_non_list_epic_items` [R2]
-- [ ] `TestAddEpic::test_refuses_non_list_epics` [R2]
-- [ ] `TestAddItem::test_refuses_duplicate_epic_names`: one rejected and one valid epic named `X` [R3, M1]
-- [ ] `TestCloseItem::test_refuses_duplicate_work_item_ids` [R3, M1]
-- [ ] `TestAddItem::test_refuses_rejected_epic_quoting_warning` and `TestCloseItem::test_refuses_invalid_item_quoting_warning` [R4]
-- [ ] `TestAddEpic::test_refuses_name_of_rejected_epic` [R5, M1]
+- [x] Helpers `_write_raw_backlog` and `_wi` [E2]
+- [x] E2, WI: `TestAddItem::test_mints_above_unparsed_record` (the stencil above) [E2, C4, C5]
+- [x] `test_carries_forward_invalid_item` in `TestAddItem`, `TestAddEpic`, and `TestCloseItem`: the frontmatter changes only at the target [C5, I6]
+- [x] `TestAddItem::test_refuses_unreadable_frontmatter`, parametrized over five cases: malformed YAML, no frontmatter, `standalone` twice, `items` twice in one epic, and a closing `---` that is only indented [R1]
+- [x] `TestAddItem::test_keeps_items_after_indented_dashes` [R1, M4]
+- [x] `TestAddEpic::test_refuses_malformed_yaml` [R1, I7]
+- [x] `TestCloseItem::test_refusal_leaves_item_active`: the directory is still in `work/active/`, and `spec.md` is unchanged [R1, I7]
+- [x] `TestAddItem::test_refuses_non_list_standalone` and `TestAddItem::test_refuses_non_list_epic_items` [R2]
+- [x] `TestAddEpic::test_refuses_non_list_epics` [R2]
+- [x] `TestAddItem::test_refuses_duplicate_epic_names`: one rejected and one valid epic named `X` [R3, M1]
+- [x] `TestCloseItem::test_refuses_duplicate_work_item_ids` [R3, M1]
+- [x] `TestAddItem::test_refuses_rejected_epic_quoting_warning` and `TestCloseItem::test_refuses_invalid_item_quoting_warning` [R4]
+- [x] `TestAddEpic::test_refuses_name_of_rejected_epic` [R5, M1]
 
 **Code**
 
-- [ ] `parser.py:219` and `operations.py:83`: only an unindented `---` closes the frontmatter (`rstrip()` replaces `strip()`) [R1, M4]
-- [ ] `parser.py:193`: `parse_frontmatter` gains the keyword `unique_keys` (default `False`). With `True`, it loads with a SafeLoader subclass that rejects a repeated key in any mapping. The check runs before `<<` merges are flattened, and it reports through the existing malformed-YAML warning [R1, M4]
-- [ ] `parser.py:251-465`: extract `_parse_backlog_mapping` unchanged: same loop bodies, messages, and locations. `parse_backlog` becomes `parse_frontmatter` plus `_parse_backlog_mapping` [D8, I8]
-- [ ] `operations.py`: add `_load_backlog(path)`, returning the document (read with `unique_keys=True`) and its typed view [D8, R1]
+- [x] `parser.py:219` and `operations.py:83`: only an unindented `---` closes the frontmatter (`rstrip()` replaces `strip()`) [R1, M4]
+- [x] `parser.py:193`: `parse_frontmatter` gains the keyword `unique_keys` (default `False`). With `True`, it loads with a SafeLoader subclass that rejects a repeated key in any mapping. The check runs before `<<` merges are flattened, and it reports through the existing malformed-YAML warning [R1, M4]
+- [x] `parser.py:251-465`: extract `_parse_backlog_mapping` unchanged: same loop bodies, messages, and locations. `parse_backlog` becomes `parse_frontmatter` plus `_parse_backlog_mapping` [D8, I8]
+- [x] `operations.py`: add `_load_backlog(path)`, returning the document (read with `unique_keys=True`) and its typed view [D8, R1]
   - Any warning on an existing file is R1. The docstring must say so.
   - A missing or empty file starts from a dumped `BacklogData()`, so a fresh write matches today's output.
-- [ ] `operations.py`: add `_backlog_list`. An absent key creates the list; a present non-list refuses [R2]
-- [ ] `operations.py`: add `_raw_epics` and `_raw_work_items`, whose locations use the parser's warning format [D9, R3, R4, R5]
-- [ ] `operations.py:155`: `_write_backlog` dumps a document, or a `BacklogData` converted first (the docstring says the typed form is for fixtures and fresh backlogs). It renders the body from the typed view of the edited document [D8]
-- [ ] `add_epic` `:904-923`: R1, then R5 through `_raw_epics`, then R2, then append `EpicEntry(...).model_dump(mode="json")`. The R5 message keeps "already exists" [D8, R5]
-- [ ] `add_item` `:962-1008`: R1, then mint, then R3 and R4 for `--epic`, then R2, then append the model dump. The epic "not found" wording stays [D8, R3, R4]
-- [ ] `close_item` `:1045-1107`: R1, R3, and R4 all run before the first `_update_frontmatter_fields`. Then set `status` and `completed` on the one matching mapping [D8, I7]
+- [x] `operations.py`: add `_backlog_list`. An absent key creates the list; a present non-list refuses [R2]
+- [x] `operations.py`: add `_raw_epics` and `_raw_work_items`, whose locations use the parser's warning format [D9, R3, R4, R5]
+- [x] `operations.py:155`: `_write_backlog` dumps a document, or a `BacklogData` converted first (the docstring says the typed form is for fixtures and fresh backlogs). It renders the body from the typed view of the edited document [D8]
+- [x] `add_epic` `:904-923`: R1, then R5 through `_raw_epics`, then R2, then append `EpicEntry(...).model_dump(mode="json")`. The R5 message keeps "already exists" [D8, R5]
+- [x] `add_item` `:962-1008`: R1, then mint, then R3 and R4 for `--epic`, then R2, then append the model dump. The epic "not found" wording stays [D8, R3, R4]
+- [x] `close_item` `:1045-1107`: R1, R3, and R4 all run before the first `_update_frontmatter_fields`. Then set `status` and `completed` on the one matching mapping [D8, I7]
 
 ### Validation
 
 **Automated:**
 
-- [ ] G1 `uv run pytest tests/test_pm_*.py`. The existing `TestWriteBacklogRoundTrip`, `TestAddEpic`, and `TestCloseItem` tests pass unchanged
-- [ ] G2 `uv run ruff check src/ tests/`
-- [ ] G3 `uv run ruff format --check src/ tests/`
-- [ ] G4 `uv run mypy src/`
+- [x] G1 `uv run pytest tests/test_pm_*.py`. The existing `TestWriteBacklogRoundTrip`, `TestAddEpic`, and `TestCloseItem` tests pass unchanged
+- [x] G2 `uv run ruff check src/ tests/`
+- [x] G3 `uv run ruff format --check src/ tests/`
+- [x] G4 `uv run mypy src/`
 
 **Manual:**
 
-- [ ] On a scratch `BACKLOG.md` holding an `in-progress` `WI-002`, run `add-item`. Expect `WI-003`, a frontmatter that differs only by the added mapping, and `WI-002`'s parse warning printed by the CLI.
+- [x] On a scratch `BACKLOG.md` holding an `in-progress` `WI-002`, run `add-item`. Expect `WI-003`, a frontmatter that differs only by the added mapping, and `WI-002`'s parse warning printed by the CLI.
 
 **What We Know Works After This Phase:**
 
@@ -833,10 +833,119 @@ The table shows the rerun after the R9 change. G3 first showed 13 hunks: five ne
 
 ### Phase 3b Completion
 
-**Completed:**
+**Completed:** 2026-10-04. Not committed; the orchestrator commits after review.
+
+**Red runs:** all 30 new tests were written first and run against Phase 3a's source (`7822989`) before any `src/` edit. 26 failed, each where predicted:
+
+```
+tests/test_pm_parser.py:86: AssertionError: assert {'goal': 'first'} == {'Status': 'a...--\nsecond\n'}      (indented --- closed the frontmatter)
+tests/test_pm_parser.py:100: TypeError: parse_frontmatter() got an unexpected keyword argument 'unique_keys'   (x2, rejects_repeat)
+tests/test_pm_parser.py:119: TypeError: parse_frontmatter() got an unexpected keyword argument 'unique_keys'   (x2, merge override)
+tests/test_pm_operations.py:1654: AssertionError: assert ({'epics': [],...}]} == {'epics': [],...}]}      (E2 WI: in-progress WI-002 deleted)
+tests/test_pm_operations.py:1668: AssertionError: assert {'epics': [{'...andalone': []} == ...           (add-item: WI-002 and WI-003 deleted)
+tests/test_pm_operations.py:1681: AssertionError: assert not True                                      (x5, every unreadable frontmatter was overwritten)
+tests/test_pm_operations.py:1716: IndexError: list index out of range                                  (indented ---: every item after it deleted)
+tests/test_pm_operations.py:1726: AssertionError: assert not True                                      (non-list standalone replaced)
+tests/test_pm_operations.py:1736: AssertionError: assert not True                                      (non-list epic items replaced)
+tests/test_pm_operations.py:1776: assert not True                                                      (duplicate epic X: rejected X deleted)
+tests/test_pm_operations.py:1788: assert 'not a valid record' in "Epic 'X' not found in BACKLOG.md"
+tests/test_pm_operations.py:1949: AssertionError: assert {'epics': [{'...andalone': []} == ...           (add-epic: invalid item and rejected epic deleted)
+tests/test_pm_operations.py:1960: assert not True                                                      (add-epic over malformed YAML)
+tests/test_pm_operations.py:1973: assert not True                                                      (non-list epics replaced)
+tests/test_pm_operations.py:1986: assert not True                                                      (second epic beside a rejected one)
+tests/test_pm_operations.py:2140: AssertionError: assert {'epics': [{'...andalone': []} == ...           (close-item: rejected epic and invalid items deleted)
+tests/test_pm_operations.py:2177: assert 'Malformed YAML' in 'WI-001 not found in BACKLOG.md'
+tests/test_pm_operations.py:2176: AssertionError: assert not True                                      (standalone twice: WI-001 closed, WI-002 deleted)
+tests/test_pm_operations.py:2194: AssertionError: assert not True                                      (duplicate WI-001: first one closed)
+tests/test_pm_operations.py:2208: assert 'not a valid record' in 'WI-001 not found in BACKLOG.md'
+================= 26 failed, 4 passed, 223 deselected in 0.31s =================
+```
+
+The 4 passes are behaviour pins, expected to pass before and after: `test_default_keeps_last_wins` (read-only callers keep last-wins), `test_null_standalone_starts_a_list`, and `test_fresh_backlog_matches_typed_write[missing]` and `[empty]` (a fresh write matches today's typed write).
+
 **Actual Changes:**
+
+- `parser.py`:
+  - Added `_UniqueKeyLoader`, a `yaml.SafeLoader` subclass, with `_MERGE_TAG`, at the end of the shared helpers. It records each mapping's keys as written the first time the mapping is flattened, then compares the constructed keys after construction. A repeat raises `ConstructorError`, which `parse_frontmatter` already reports as its "Malformed YAML" warning.
+  - `parse_frontmatter(path, *, unique_keys=False)`. Only an unindented `---` closes the frontmatter (`rstrip()`). It loads with `_UniqueKeyLoader` when `unique_keys` is set, else with `yaml.SafeLoader`, which is what `safe_load` used.
+  - Extracted `_parse_backlog_mapping(raw, fp) -> ParseResult[BacklogData]` from `parse_backlog`. No diff hunk falls inside the loop bodies. `parse_backlog` is now `parse_frontmatter` plus `_parse_backlog_mapping`, with the warnings in the same order.
+- `operations.py`:
+  - Imports `_parse_backlog_mapping` and `parse_frontmatter`, and no longer imports `parse_backlog`.
+  - `_update_frontmatter_fields` uses `rstrip()` for the closing delimiter.
+  - `_write_backlog(path, document)` takes a document or a `BacklogData`. It dumps the document and renders the body from `_parse_backlog_mapping` of that document.
+  - New backlog helpers beside it:
+    - `_load_backlog` returns the document and its typed view, else raises R1.
+    - `_backlog_list` returns the list to append to, else raises R2.
+    - `_raw_epics` and `_raw_work_items` are the finders. Both use `_entries_of`, so a lookup finds nothing in a non-list.
+    - `_backlog_target` applies R3 through `_single_match`, then R4. `_with_parse_warnings` formats R4's and R5's quoted warnings.
+    - `_work_item_ids` lists the parsed IDs, for minting and for R4.
+  - `add_epic`: R1, then R5 through `_raw_epics`, then R2, then appends `EpicEntry(...).model_dump(mode="json")`.
+  - `add_item`: R1, then mint, then R3 and R4 for `--epic`, then R2, then appends the model dump. Minting still feeds `_next_id` from `_registry_ids(backlog_path, "WI", ...)`, with `warnings = [*parse warnings, *taken.warnings]`.
+  - `close_item`: R1, R3, and R4 all run before the first `_update_frontmatter_fields`. At step 3 it sets `status` and `completed` on the one matching mapping, then writes.
+- `tests/test_pm_parser.py` (6 new cases), all in `TestParseFrontmatter`: `test_indented_dashes_stay_in_block_scalar`, `test_unique_keys_rejects_repeat` (top-level and nested key), `test_unique_keys_merge_override_is_not_a_repeat` (a merge override, and a chained merge under a deeper anchor), and `test_default_keeps_last_wins`.
+- `tests/test_pm_operations.py` (24 new cases):
+  - `TestAddItem` (15): `test_mints_above_unparsed_record` (E2 WI), `test_carries_forward_invalid_item`, `test_refuses_unreadable_frontmatter` (5 cases), `test_keeps_items_after_indented_dashes`, `test_refuses_non_list_standalone`, `test_refuses_non_list_epic_items`, `test_null_standalone_starts_a_list`, `test_fresh_backlog_matches_typed_write` (missing and empty), `test_refuses_duplicate_epic_names`, `test_refuses_rejected_epic_quoting_warning`.
+  - `TestAddEpic` (4): `test_carries_forward_invalid_item`, `test_refuses_malformed_yaml`, `test_refuses_non_list_epics`, `test_refuses_name_of_rejected_epic`.
+  - `TestCloseItem` (5): `test_carries_forward_invalid_item`, `test_refusal_leaves_item_active` (malformed YAML, and `standalone` twice), `test_refuses_duplicate_work_item_ids`, `test_refuses_invalid_item_quoting_warning`.
+  - Every refusal test compares every file's bytes before and after with `_file_bytes`. Every carry-forward test compares the loaded frontmatter with the one before, plus the single edit.
+
+**Refusal wording** (D9 leaves wording open):
+
+- R1: `BACKLOG.md cannot be read whole, so writing it back could delete records. Fix it by hand, then retry: <the reader's warning>`. For a repeated key, the warning names the key and its line.
+- R2: `'standalone' in BACKLOG.md is not a list, so appending to it would discard it. Fix it by hand, then retry.` The location is `epics`, `standalone`, or `epics[i].items`.
+- R3 uses `_single_match`. "Not found" keeps the existing `Epic 'X' not found in BACKLOG.md` and `WI-001 not found in BACKLOG.md`. A duplicate gives `WI-001 appears 2 times in BACKLOG.md (epics[0].items[0], standalone[0]); deduplicate by hand, then retry`.
+- R4: `WI-002 is in BACKLOG.md at standalone[1] (Invalid status 'in-progress') but is not a valid record. Fix it by hand, then retry.`
+- R5: `Epic 'X' already exists in BACKLOG.md at epics[0]`. A rejected epic adds its parse warning: `at epics[0] (Invalid status 'bogus', expected one of: draft, active, completed)`.
+
+**Gates:**
+
+| Gate | Result | Parity bar |
+|---|---|---|
+| G1 `pytest tests/test_pm_*.py` | 342 passed | Phase 3a: 312 passed; +30 new cases. `TestWriteBacklogRoundTrip`, `TestAddEpic`, `TestCloseItem`, and `TestParseBacklog` pass unchanged |
+| G2 `ruff check src/ tests/` | 118 repo-wide; PM-scoped check prints "All checks passed!" | ≤ 118 |
+| G3 `ruff format --check src/ tests/` | 78 files repo-wide; 8 hunks in the four edited files | ≤ 78; still 8 hunks |
+| G4 `mypy src/` | 91 errors in 19 files; 0 under `src/agentic_mbse/pm/` | ≤ 91; none in `pm/` |
+
+G3 first showed 9 hunks: one new test line was over-long. It was laid out by hand the way `ruff format` wanted, so the 8 base hunks stay as they were. `git diff e5bd0db -- 'tests/test_pm_*.py' | grep -c '^-[^-]'` prints 0.
+
+**Manual check:** a scratch project held a `BACKLOG.md` with a valid `WI-001` and an `in-progress` `WI-002`.
+
+- `add-item --name Third --scale standard --priority P1` exited 0 with `Added work item WI-003: Third`.
+  - The frontmatter diff is exactly the added `WI-003` mapping, including `completed: null`.
+  - stderr printed `Invalid status 'in-progress'`, then `WI-002 is named in BACKLOG.md but is not a parsed record; its ID stays reserved`.
+  - The re-rendered body lists `WI-001` and `WI-003` but not `WI-002`, as D8 says.
+- `close-item WI-002` (with `work/active/WI-002_second/`) exited 1 with the R4 message above. Every file's hash was unchanged, and the directory stayed in `work/active/`.
+- With a second `standalone:` key added, `add-item` exited 1 with R1 naming `found repeated key 'standalone'`. Every file's hash was unchanged.
+
 **Issues:**
+
+- **The first loader design false-refused a valid merge.** The obvious override checks a mapping's own keys inside `construct_mapping`, before the merge is flattened. But when a mapping is merged into a shallower one, PyYAML flattens it early, while constructing the parent. Its keys then include the merged keys before its own check runs, so `k: 1` overriding a merged `k: 0` reads as a repeat. The probe is `.orchestrate-logs/impl-3b-scratch/unique_keys_probe.py` (gitignored). The shipped loader records keys on the first flatten instead. `test_unique_keys_merge_override_is_not_a_repeat[chained merge under a deeper anchor]` pins it.
+- **R1's line numbers count from the first frontmatter line.** File line 4 reads as "line 3". The existing "Malformed YAML" warning has always counted this way. Changing it would alter existing warning text, which E3 compares, so it was left alone.
+- **A carried-forward invalid record is now in the frontmatter but not in the dashboard body** (D8). Before, it was deleted from both.
+
 **Deviations:**
+
+- **`_backlog_list` treats a null value like an absent key** (`standalone:` with nothing after it). It does not refuse under R2. [AGENT]
+  - Replacing a null discards nothing, so R2's message ("appending would discard it") would be false.
+  - `standalone:` with nothing after it is how a hand-written empty list naturally reads, and today's writer also turned it into a list.
+  - `test_null_standalone_starts_a_list` pins it.
+- **`_load_backlog` starts from a dumped `BacklogData()` whenever the loaded mapping is empty.** The plan named a missing and an empty file. This rule also covers an empty frontmatter (`---\n---`, which `test_pm_cli.py`'s status fixture uses). No record can be lost, and the first write matches today's typed write. `test_fresh_backlog_matches_typed_write` pins the missing and empty cases.
+- **`_write_backlog`'s docstring says only test fixtures pass a `BacklogData`.** The plan wrote "fixtures and fresh backlogs". But fresh backlogs go through `_load_backlog`, which hands every operation a document.
+- **R4's validity test is passed to `_backlog_target` as `parsed`**: whether the typed view holds the name or ID. This is the design re-check's "valid if and only if the typed view holds that ID or name". It is exact because the raw match is unique.
+- **The merge case is its own test.** `test_unique_keys_rejects_repeat` covers the top-level and nested keys. The `<<` merge case is `test_unique_keys_merge_override_is_not_a_repeat`, because it asserts the opposite outcome. It also adds the chained-merge case.
+- **`test_refusal_leaves_item_active` has two cases.** At the base, malformed YAML already refused, but with a misleading "WI-001 not found". The repeated-`standalone` case is the one where the base closed the item and deleted the other list. Both assert the reader's warning is in the message.
+- **Three pin tests beyond the plan's list:** `test_null_standalone_starts_a_list`, and `test_fresh_backlog_matches_typed_write` for missing and empty.
+- **New helper names.**
+  - Source: `_UniqueKeyLoader` (with `_MERGE_TAG`), `_entries_of`, `_with_parse_warnings`, `_backlog_target`, `_work_item_ids`.
+  - Tests: `_write_backlog_text`, `_epic`, `_UNREADABLE_BACKLOGS`. Phase 2's `_write_raw_backlog` now delegates to `_write_backlog_text`.
+  - No design name changed.
+
+**For Phase 4:**
+
+- `uv run pytest tests/test_pm_operations.py -k mints_above_unparsed` already selects and passes 7 cases (SV, PR, G, AQ, DI, AD, WI).
+- `grep -n xfail tests/test_pm_*.py` finds nothing, and the removed-base-lines check prints 0.
+- C5 evidence: the three `test_carries_forward_invalid_item` tests, E2's WI case, and the R1 to R5 tests listed above.
+- The full suite (`uv run pytest tests/`) was not run in this phase. No test outside `tests/test_pm_*.py` calls the backlog operations or the frontmatter reader.
 
 ### Phase 4 Completion
 

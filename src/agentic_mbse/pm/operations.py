@@ -13,16 +13,17 @@ import datetime
 import re
 import shutil
 from pathlib import Path
-from typing import TypeVar
+from typing import Any, TypeVar
 
 import yaml
 
 from agentic_mbse.pm.parser import (
     _escape_table_cell,
+    _parse_backlog_mapping,
     _split_table_row,
     _strip_html_comments,
     parse_architecture,
-    parse_backlog,
+    parse_frontmatter,
     parse_knowledge,
     parse_overview,
     parse_requirements,
@@ -151,7 +152,7 @@ def _update_frontmatter_fields(path: Path, updates: dict[str, str]) -> None:
 
     closing_idx = None
     for i in range(1, len(lines)):
-        if lines[i].strip() == "---":
+        if lines[i].rstrip() == "---":
             closing_idx = i
             break
 
@@ -223,12 +224,144 @@ def _render_backlog_body(data: BacklogData) -> str:
     return "\n".join(parts)
 
 
-def _write_backlog(path: Path, data: BacklogData) -> None:
-    """Write complete BACKLOG.md: YAML frontmatter + rendered body."""
-    raw = data.model_dump(mode="json")
-    yaml_text = yaml.dump(raw, default_flow_style=False, sort_keys=False, allow_unicode=True)
-    body = _render_backlog_body(data)
+def _write_backlog(path: Path, document: dict[str, Any] | BacklogData) -> None:
+    """Write complete BACKLOG.md: ``document`` as the YAML frontmatter + the body rendered from it.
+
+    The body is rendered from the document's typed view, so a record the parser
+    rejects stays in the frontmatter but is left out of the dashboard; the
+    frontmatter is authoritative.  Operations pass the document ``_load_backlog``
+    returned.  Only test fixtures pass a ``BacklogData``, which is dumped first.
+    """
+    if isinstance(document, BacklogData):
+        document = document.model_dump(mode="json")
+    yaml_text = yaml.dump(document, default_flow_style=False, sort_keys=False, allow_unicode=True)
+    body = _render_backlog_body(_parse_backlog_mapping(document, str(path)).data)
     path.write_text(f"---\n{yaml_text}---\n{body}", encoding="utf-8")
+
+
+def _load_backlog(path: Path) -> tuple[dict[str, Any], ParseResult[BacklogData]]:
+    """Load BACKLOG.md's frontmatter as a document to edit and write back, with its typed view.
+
+    Unreadable means any ``parse_frontmatter`` warning on an existing file,
+    including a repeated key, since the document is read with ``unique_keys``.
+    Such a document may hold less than the file, and writing it back would
+    delete the rest, so every warning raises ``ValueError`` (R1); a warning the
+    reader gains later will refuse writes too.  A missing file, or one with no
+    frontmatter keys, starts from an empty ``BacklogData``, and the typed view
+    carries the reader's "File not found" warning, as ``parse_backlog`` does.
+    """
+    loaded = parse_frontmatter(path, unique_keys=True)
+    if loaded.warnings and path.exists():
+        reasons = "; ".join(w.message for w in loaded.warnings)
+        raise ValueError(
+            f"{path.name} cannot be read whole, so writing it back could delete records. "
+            f"Fix it by hand, then retry: {reasons}"
+        )
+    document = loaded.data or BacklogData().model_dump(mode="json")
+    typed = _parse_backlog_mapping(document, str(path))
+    return document, ParseResult(data=typed.data, warnings=[*loaded.warnings, *typed.warnings])
+
+
+def _backlog_list(mapping: dict[str, Any], key: str, location: str) -> list[Any]:
+    """Return the list under ``key`` that a new backlog entry is appended to.
+
+    An absent or null key gets a new list, since replacing it discards nothing.
+    Raises ``ValueError`` (R2) if the key holds anything else; ``location``
+    names it the way the parser's warnings do.
+    """
+    if mapping.get(key) is None:
+        mapping[key] = []
+    entries = mapping[key]
+    if not isinstance(entries, list):
+        raise ValueError(
+            f"'{location}' in BACKLOG.md is not a list, so appending to it would discard it. "
+            "Fix it by hand, then retry."
+        )
+    return entries
+
+
+def _entries_of(value: Any) -> list[Any]:
+    """Return ``value`` if it is a list, else no entries: a lookup finds nothing in a non-list."""
+    return value if isinstance(value, list) else []
+
+
+def _raw_epics(document: dict[str, Any], name: str) -> list[tuple[str, dict[str, Any]]]:
+    """Find the epic mappings named ``name`` in a backlog document, valid or not.
+
+    Returns ``(location, mapping)`` pairs for ``_single_match``, each located
+    ``epics[i]`` as in the parser's warnings.  A name matches as the parser
+    reads it, so an epic with an empty name matches nothing.
+    """
+    return [
+        (f"epics[{i}]", epic)
+        for i, epic in enumerate(_entries_of(document.get("epics")))
+        if isinstance(epic, dict) and epic.get("name") and str(epic["name"]) == name
+    ]
+
+
+def _raw_work_items(document: dict[str, Any], wi_id: str) -> list[tuple[str, dict[str, Any]]]:
+    """Find the work-item mappings with ID ``wi_id`` in a backlog document, valid or not.
+
+    Searches every epic's items, then the standalone list.  Returns ``(location,
+    mapping)`` pairs for ``_single_match``, each located ``epics[i].items[j]`` or
+    ``standalone[k]`` as in the parser's warnings.
+    """
+    located = [
+        (f"epics[{i}].items[{j}]", item)
+        for i, epic in enumerate(_entries_of(document.get("epics")))
+        if isinstance(epic, dict)
+        for j, item in enumerate(_entries_of(epic.get("items")))
+    ]
+    located += [
+        (f"standalone[{k}]", item) for k, item in enumerate(_entries_of(document.get("standalone")))
+    ]
+    return [
+        (location, item)
+        for location, item in located
+        if isinstance(item, dict) and str(item.get("id", "")) == wi_id
+    ]
+
+
+def _with_parse_warnings(location: str, warnings: list[ParseWarning]) -> str:
+    """Return ``location`` followed by the parse warnings found there, for a refusal message.
+
+    The warnings at an item's enclosing ``epics[i]`` count too, because an item
+    is dropped with its epic.
+    """
+    epic_location = location.split(".", 1)[0]
+    messages = [w.message for w in warnings if w.location in (location, epic_location)]
+    return f"{location} ({'; '.join(messages)})" if messages else location
+
+
+def _backlog_target(
+    matches: list[tuple[str, dict[str, Any]]],
+    what: str,
+    *,
+    parsed: bool,
+    warnings: list[ParseWarning],
+) -> tuple[str, dict[str, Any]]:
+    """Return the one backlog mapping a write targets, refusing per R3 and R4.
+
+    Raises ``ValueError`` unless exactly one mapping matches (``_single_match``)
+    and the parser accepted it as a record.  ``parsed`` says whether the typed
+    view holds ``what``; with one match that is exact, because the typed record
+    can only have come from that mapping.  The R4 refusal quotes the parse
+    ``warnings`` that rejected it.
+    """
+    location, target = _single_match(matches, what, "BACKLOG.md")
+    if not parsed:
+        raise ValueError(
+            f"{what} is in BACKLOG.md at {_with_parse_warnings(location, warnings)} but is "
+            "not a valid record. Fix it by hand, then retry."
+        )
+    return location, target
+
+
+def _work_item_ids(data: BacklogData) -> list[str]:
+    """Return the ID of every parsed work item: epic items first, then standalone."""
+    return [item.id for epic in data.epics for item in epic.items] + [
+        sa.id for sa in data.standalone
+    ]
 
 
 def _format_insight_entry(entry: InsightEntry) -> str:
@@ -1056,31 +1189,42 @@ def add_epic(
         return OperationResult(success=False, message=f"Epic file does not exist: {file}")
 
     backlog_path = project_root / "work" / "BACKLOG.md"
-    b_result = parse_backlog(backlog_path)
-    data = b_result.data
-    if any(epic.name == epic_name for epic in data.epics):
+    try:
+        document, backlog = _load_backlog(backlog_path)
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e))
+
+    # Any epic mapping with this name blocks the add, valid or not (R5)
+    existing = _raw_epics(document, epic_name)
+    if existing:
+        places = ", ".join(_with_parse_warnings(loc, backlog.warnings) for loc, _ in existing)
         return OperationResult(
             success=False,
-            message=f"Epic '{epic_name}' already exists in BACKLOG.md",
-            warnings=b_result.warnings,
+            message=f"Epic '{epic_name}' already exists in BACKLOG.md at {places}",
+            warnings=backlog.warnings,
         )
 
-    data.epics.append(
+    try:
+        epics = _backlog_list(document, "epics", "epics")
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e), warnings=backlog.warnings)
+
+    epics.append(
         EpicEntry(
             name=epic_name,
             goal=goal,
             priority=epic_priority,
             status=EpicStatus.DRAFT,
             file=backlog_relative_path.as_posix(),
-        )
+        ).model_dump(mode="json")
     )
-    _write_backlog(backlog_path, data)
+    _write_backlog(backlog_path, document)
 
     return OperationResult(
         success=True,
         message=f"Added epic: {epic_name}",
         files_modified=[str(backlog_path)],
-        warnings=b_result.warnings,
+        warnings=backlog.warnings,
     )
 
 
@@ -1114,54 +1258,49 @@ def add_item(
         )
 
     backlog_path = project_root / "work" / "BACKLOG.md"
-    b_result = parse_backlog(backlog_path)
-    data = b_result.data
+    try:
+        document, backlog = _load_backlog(backlog_path)
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e))
 
-    # Collect all parsed WI-XXX IDs
-    all_ids: list[str] = []
-    for ep in data.epics:
-        for item in ep.items:
-            all_ids.append(item.id)
-    for sa in data.standalone:
-        all_ids.append(sa.id)
-
-    taken = _registry_ids(backlog_path, "WI", all_ids)
-    warnings = [*b_result.warnings, *taken.warnings]
+    taken = _registry_ids(backlog_path, "WI", _work_item_ids(backlog.data))
+    warnings = [*backlog.warnings, *taken.warnings]
     new_id = _next_id("WI", taken.data)
 
+    # Find the list the item goes in: the one epic named, or standalone
+    try:
+        if epic:
+            location, target_epic = _backlog_target(
+                _raw_epics(document, epic),
+                f"Epic '{epic}'",
+                parsed=any(ep.name == epic for ep in backlog.data.epics),
+                warnings=backlog.warnings,
+            )
+            items = _backlog_list(target_epic, "items", f"{location}.items")
+        else:
+            items = _backlog_list(document, "standalone", "standalone")
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e), warnings=warnings)
+
+    entry: WorkItemEntry | StandaloneEntry
     if epic:
-        # Find the epic
-        target_epic = None
-        for ep in data.epics:
-            if ep.name == epic:
-                target_epic = ep
-                break
-        if target_epic is None:
-            return OperationResult(
-                success=False,
-                message=f"Epic '{epic}' not found in BACKLOG.md",
-                warnings=warnings,
-            )
-        target_epic.items.append(
-            WorkItemEntry(
-                id=new_id,
-                name=name.strip(),
-                scale=item_scale,
-                status=WorkItemStatus.BACKLOG,
-            )
+        entry = WorkItemEntry(
+            id=new_id,
+            name=name.strip(),
+            scale=item_scale,
+            status=WorkItemStatus.BACKLOG,
         )
     else:
-        data.standalone.append(
-            StandaloneEntry(
-                id=new_id,
-                name=name.strip(),
-                scale=item_scale,
-                priority=item_priority,
-                status=WorkItemStatus.BACKLOG,
-            )
+        entry = StandaloneEntry(
+            id=new_id,
+            name=name.strip(),
+            scale=item_scale,
+            priority=item_priority,
+            status=WorkItemStatus.BACKLOG,
         )
+    items.append(entry.model_dump(mode="json"))
 
-    _write_backlog(backlog_path, data)
+    _write_backlog(backlog_path, document)
 
     return OperationResult(
         success=True,
@@ -1198,35 +1337,22 @@ def close_item(
             message=f"{wi_id} is not in work/active/ (found at {item_dir})",
         )
 
-    # Validate item exists in BACKLOG.md
+    # Validate item exists in BACKLOG.md, before any file changes
     backlog_path = project_root / "work" / "BACKLOG.md"
-    b_result = parse_backlog(backlog_path)
-    data = b_result.data
+    try:
+        document, backlog = _load_backlog(backlog_path)
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e))
 
-    found = False
-    for ep in data.epics:
-        for item in ep.items:
-            if item.id == wi_id:
-                item.status = WorkItemStatus.COMPLETED
-                item.completed = datetime.date.today().isoformat()
-                found = True
-                break
-        if found:
-            break
-    if not found:
-        for sa in data.standalone:
-            if sa.id == wi_id:
-                sa.status = WorkItemStatus.COMPLETED
-                sa.completed = datetime.date.today().isoformat()
-                found = True
-                break
-
-    if not found:
-        return OperationResult(
-            success=False,
-            message=f"{wi_id} not found in BACKLOG.md",
-            warnings=b_result.warnings,
+    try:
+        _, target = _backlog_target(
+            _raw_work_items(document, wi_id),
+            wi_id,
+            parsed=wi_id in _work_item_ids(backlog.data),
+            warnings=backlog.warnings,
         )
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e), warnings=backlog.warnings)
 
     today = datetime.date.today().isoformat()
     files_modified: list[str] = []
@@ -1260,14 +1386,16 @@ def close_item(
     shutil.move(str(item_dir), str(dest_path))
 
     # Step 3: Write BACKLOG.md
-    _write_backlog(backlog_path, data)
+    target["status"] = WorkItemStatus.COMPLETED.value
+    target["completed"] = today
+    _write_backlog(backlog_path, document)
     files_modified.append(str(backlog_path))
 
     return OperationResult(
         success=True,
         message=f"Closed {wi_id}. Archived to {dest_path.relative_to(project_root)}",
         files_modified=files_modified,
-        warnings=b_result.warnings,
+        warnings=backlog.warnings,
     )
 
 

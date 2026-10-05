@@ -79,6 +79,54 @@ class TestParseFrontmatter:
         assert len(result.warnings) == 1
         assert "closing" in result.warnings[0].message.lower()
 
+    def test_indented_dashes_stay_in_block_scalar(self, tmp_path):
+        f = tmp_path / "test.md"
+        f.write_text("---\ngoal: |\n  first\n  ---\n  second\nStatus: active\n---\n# Body\n")
+        result = parse_frontmatter(f)
+        assert result.data == {"goal": "first\n---\nsecond\n", "Status": "active"}
+        assert result.warnings == []
+
+    @pytest.mark.parametrize(
+        ("yaml_text", "key"),
+        [
+            ("standalone: []\nepics: []\nstandalone: []\n", "standalone"),
+            ("epics:\n- name: X\n  items: []\n  items: []\n", "items"),
+        ],
+        ids=["top-level key", "nested key"],
+    )
+    def test_unique_keys_rejects_repeat(self, tmp_path, yaml_text, key):
+        f = tmp_path / "test.md"
+        f.write_text(f"---\n{yaml_text}---\n")
+        result = parse_frontmatter(f, unique_keys=True)
+        assert result.data == {}
+        assert len(result.warnings) == 1
+        assert result.warnings[0].message.startswith("Malformed YAML")
+        assert f"found repeated key '{key}'" in result.warnings[0].message
+
+    @pytest.mark.parametrize(
+        "yaml_text",
+        [
+            "base: &b {scale: standard, status: backlog}\n"
+            "standalone:\n- <<: *b\n  id: WI-001\n  status: active\n",
+            # The anchor sits deeper than the mapping that merges it, so it is flattened first
+            "c: &c {k: 0}\nepics:\n- name: X\n  d: &d\n    <<: *c\n    k: 1\nother:\n  <<: *d\n",
+        ],
+        ids=["merge override", "chained merge under a deeper anchor"],
+    )
+    def test_unique_keys_merge_override_is_not_a_repeat(self, tmp_path, yaml_text):
+        f = tmp_path / "test.md"
+        f.write_text(f"---\n{yaml_text}---\n")
+        result = parse_frontmatter(f, unique_keys=True)
+        assert result.warnings == []
+        assert result.data == parse_frontmatter(f).data != {}
+
+    def test_default_keeps_last_wins(self, tmp_path):
+        f = tmp_path / "test.md"
+        f.write_text("---\nstandalone: [a]\nstandalone: [b]\n---\n")
+        result = parse_frontmatter(f)
+        assert result.data == {"standalone": ["b"]}
+        assert result.warnings == []
+
 
 # ---------------------------------------------------------------------------
 # Phase 2: Table-based parsers

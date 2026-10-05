@@ -1,5 +1,6 @@
 """Tests for the PM operations module."""
 
+import datetime
 import difflib
 from pathlib import Path
 
@@ -10,6 +11,7 @@ from agentic_mbse.pm import (
     BacklogData,
     parse_architecture,
     parse_backlog,
+    parse_frontmatter,
     parse_knowledge,
     parse_overview,
     parse_requirements,
@@ -1487,18 +1489,23 @@ def _setup_backlog(tmp_path, data=None):
     return tmp_path
 
 
-def _write_raw_backlog(root, epics=(), standalone=()):
-    """Write work/BACKLOG.md from raw mappings, which BacklogData cannot hold when invalid."""
+def _write_backlog_text(root, text):
+    """Write work/BACKLOG.md with the given text and return its path."""
     wdir = root / "work"
     wdir.mkdir(exist_ok=True)
     path = wdir / "BACKLOG.md"
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def _write_raw_backlog(root, epics=(), standalone=()):
+    """Write work/BACKLOG.md from raw mappings, which BacklogData cannot hold when invalid."""
     frontmatter = yaml.dump(
         {"epics": list(epics), "standalone": list(standalone)},
         default_flow_style=False,
         sort_keys=False,
     )
-    path.write_text(f"---\n{frontmatter}---\n\n# Project Backlog\n", encoding="utf-8")
-    return path
+    return _write_backlog_text(root, f"---\n{frontmatter}---\n\n# Project Backlog\n")
 
 
 def _wi(wi_id, **overrides):
@@ -1513,6 +1520,60 @@ def _wi(wi_id, **overrides):
     }
     item.update(overrides)
     return item
+
+
+def _epic(name, **overrides):
+    """Return one valid epic mapping with no items, with any fields overridden."""
+    epic = {
+        "name": name,
+        "goal": None,
+        "priority": "P1",
+        "status": "active",
+        "file": "backlog/epic.md",
+        "items": [],
+    }
+    epic.update(overrides)
+    return epic
+
+
+# BACKLOG.md texts whose frontmatter cannot be read whole, each with the reader's warning (R1)
+_UNREADABLE_BACKLOGS = {
+    "malformed YAML": ("---\nstandalone: [\n---\n", "Malformed YAML"),
+    "no frontmatter": ("# Project Backlog\n\nNo items yet.\n", "No opening frontmatter delimiter"),
+    "standalone twice": (
+        "---\n"
+        "standalone:\n"
+        "- id: WI-001\n"
+        "  name: first\n"
+        "  scale: standard\n"
+        "  priority: P1\n"
+        "  status: backlog\n"
+        "standalone: []\n"
+        "---\n",
+        "found repeated key 'standalone'",
+    ),
+    "items twice in one epic": (
+        "---\n"
+        "epics:\n"
+        "- name: X\n"
+        "  priority: P1\n"
+        "  status: active\n"
+        "  file: backlog/epic.md\n"
+        "  items:\n"
+        "  - id: WI-001\n"
+        "    name: first\n"
+        "    scale: standard\n"
+        "    status: backlog\n"
+        "  items: []\n"
+        "standalone: []\n"
+        "---\n",
+        "found repeated key 'items'",
+    ),
+    "closing --- only indented": (
+        "---\nstandalone: []\n  ---\n\n# Project Backlog\n",
+        "No closing frontmatter delimiter",
+    ),
+}
 
 
 class TestAddItem:
@@ -1577,6 +1638,156 @@ class TestAddItem:
         assert [e.id for e in parse_backlog(path).data.standalone] == ["WI-001"]
         result = add_item(tmp_path, name="new", scale="standard", priority="P1")
         assert result.ids_assigned["WI"] == "WI-003"
+
+    def test_mints_above_unparsed_record(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        path = _write_raw_backlog(
+            tmp_path, standalone=[_wi("WI-001"), _wi("WI-002", status="in-progress")]
+        )
+        assert [e.id for e in parse_backlog(path).data.standalone] == ["WI-001"]
+        before = parse_frontmatter(path).data
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1")
+        assert result.ids_assigned["WI"] == "WI-003"
+        after = parse_frontmatter(path).data
+        before["standalone"].append(after["standalone"][-1])
+        assert after == before and after["standalone"][-1] == _wi("WI-003", name="new")
+
+    def test_carries_forward_invalid_item(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        epic = _epic("X", items=[_wi("WI-001"), _wi("WI-002", scale="huge")])
+        path = _write_raw_backlog(
+            tmp_path, epics=[epic], standalone=[_wi("WI-003", status="in-progress")]
+        )
+        before = parse_frontmatter(path).data
+        result = add_item(tmp_path, name="new", scale="trivial", priority="P2", epic="X")
+        assert result.success, result.message
+        new_item = {"id": "WI-004", "name": "new", "scale": "trivial", "status": "backlog"}
+        before["epics"][0]["items"].append({**new_item, "completed": None})
+        assert parse_frontmatter(path).data == before
+
+    @pytest.mark.parametrize(
+        ("text", "warning"),
+        list(_UNREADABLE_BACKLOGS.values()),
+        ids=list(_UNREADABLE_BACKLOGS),
+    )
+    def test_refuses_unreadable_frontmatter(self, tmp_path, text, warning):
+        from agentic_mbse.pm.operations import add_item
+
+        _write_backlog_text(tmp_path, text)
+        before = _file_bytes(tmp_path)
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1")
+        assert not result.success
+        assert warning in result.message and "by hand" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_keeps_items_after_indented_dashes(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        path = _write_backlog_text(
+            tmp_path,
+            "---\n"
+            "epics:\n"
+            "- name: X\n"
+            "  goal: |\n"
+            "    first line\n"
+            "    ---\n"
+            "    last line\n"
+            "  priority: P1\n"
+            "  status: active\n"
+            "  file: backlog/epic.md\n"
+            "  items:\n"
+            "  - id: WI-001\n"
+            "    name: first\n"
+            "    scale: standard\n"
+            "    status: backlog\n"
+            "standalone:\n"
+            "- id: WI-002\n"
+            "  name: second\n"
+            "  scale: trivial\n"
+            "  priority: P1\n"
+            "  status: backlog\n"
+            "---\n",
+        )
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1")
+        assert result.success, result.message
+        after = parse_frontmatter(path).data
+        assert after["epics"][0]["goal"] == "first line\n---\nlast line\n"
+        assert [item["id"] for item in after["epics"][0]["items"]] == ["WI-001"]
+        assert [item["id"] for item in after["standalone"]] == ["WI-002", "WI-003"]
+
+    def test_refuses_non_list_standalone(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        _write_backlog_text(tmp_path, "---\nstandalone:\n  id: WI-001\n  name: lone\n---\n")
+        before = _file_bytes(tmp_path)
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1")
+        assert not result.success
+        assert "'standalone'" in result.message and "not a list" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_refuses_non_list_epic_items(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        _write_raw_backlog(tmp_path, epics=[_epic("X", items={"id": "WI-001", "name": "lone"})])
+        before = _file_bytes(tmp_path)
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1", epic="X")
+        assert not result.success
+        assert "'epics[0].items'" in result.message and "not a list" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_null_standalone_starts_a_list(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        path = _write_backlog_text(tmp_path, "---\nepics: []\nstandalone:\n---\n")
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1")
+        assert result.success, result.message
+        assert parse_frontmatter(path).data == {
+            "epics": [],
+            "standalone": [_wi("WI-001", name="new")],
+        }
+
+    @pytest.mark.parametrize("existing", ["missing", "empty"])
+    def test_fresh_backlog_matches_typed_write(self, tmp_path, existing):
+        from agentic_mbse.pm.operations import add_item
+
+        path = _write_backlog_text(tmp_path, "")
+        if existing == "missing":
+            path.unlink()
+        assert add_item(tmp_path, name="new", scale="standard", priority="P1").success
+        expected = tmp_path / "expected.md"
+        entry = StandaloneEntry(
+            id="WI-001",
+            name="new",
+            scale=WorkItemScale.STANDARD,
+            priority=Priority.P1,
+            status=WorkItemStatus.BACKLOG,
+        )
+        _write_backlog(expected, BacklogData(standalone=[entry]))
+        assert path.read_text(encoding="utf-8") == expected.read_text(encoding="utf-8")
+
+    def test_refuses_duplicate_epic_names(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        _write_raw_backlog(tmp_path, epics=[_epic("X", status="bogus"), _epic("X")])
+        before = _file_bytes(tmp_path)
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1", epic="X")
+        assert not result.success
+        assert "epics[0]" in result.message and "epics[1]" in result.message
+        assert "by hand" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_refuses_rejected_epic_quoting_warning(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        _write_raw_backlog(tmp_path, epics=[_epic("X", status="bogus")])
+        before = _file_bytes(tmp_path)
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1", epic="X")
+        assert not result.success
+        assert "not a valid record" in result.message
+        assert "epics[0]" in result.message and "Invalid status 'bogus'" in result.message
+        assert _file_bytes(tmp_path) == before
 
 
 class TestAddEpic:
@@ -1708,6 +1919,75 @@ class TestAddEpic:
         assert not result.success
         assert "work directory" in result.message.lower()
 
+    def test_carries_forward_invalid_item(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        epics = [
+            _epic("Existing", items=[_wi("WI-001", scale="huge")]),
+            _epic("Rejected", status="bogus"),
+        ]
+        path = _write_raw_backlog(
+            tmp_path, epics=epics, standalone=[_wi("WI-002", status="in-progress")]
+        )
+        epic_file = self._write_epic_file(tmp_path)
+        before = parse_frontmatter(path).data
+
+        result = add_epic(
+            tmp_path, name="Thermal Model", priority="P2", file=str(epic_file), goal="G-001"
+        )
+
+        assert result.success, result.message
+        before["epics"].append(
+            _epic(
+                "Thermal Model",
+                goal="G-001",
+                priority="P2",
+                status="draft",
+                file="backlog/epic-thermal.md",
+            )
+        )
+        assert parse_frontmatter(path).data == before
+
+    def test_refuses_malformed_yaml(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        _write_backlog_text(tmp_path, "---\nepics: [\n---\n")
+        epic_file = self._write_epic_file(tmp_path)
+        before = _file_bytes(tmp_path)
+
+        result = add_epic(tmp_path, name="Thermal Model", priority="P1", file=str(epic_file))
+
+        assert not result.success
+        assert "Malformed YAML" in result.message and "by hand" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_refuses_non_list_epics(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        _write_backlog_text(tmp_path, "---\nepics:\n  name: Existing\n  priority: P0\n---\n")
+        epic_file = self._write_epic_file(tmp_path)
+        before = _file_bytes(tmp_path)
+
+        result = add_epic(tmp_path, name="Thermal Model", priority="P1", file=str(epic_file))
+
+        assert not result.success
+        assert "'epics'" in result.message and "not a list" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_refuses_name_of_rejected_epic(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        _write_raw_backlog(tmp_path, epics=[_epic("Thermal Model", status="bogus")])
+        epic_file = self._write_epic_file(tmp_path)
+        before = _file_bytes(tmp_path)
+
+        result = add_epic(tmp_path, name="Thermal Model", priority="P1", file=str(epic_file))
+
+        assert not result.success
+        assert "already exists" in result.message
+        assert "epics[0]" in result.message and "Invalid status 'bogus'" in result.message
+        assert _file_bytes(tmp_path) == before
+
 
 class TestCloseItem:
     def _setup_active_item(self, tmp_path, wi_id="WI-001", name="solar-model"):
@@ -1837,6 +2117,100 @@ class TestCloseItem:
         assert result.success
         completed_dirs = list((root / "work" / "completed").iterdir())
         assert len(completed_dirs) == 1
+
+    def test_carries_forward_invalid_item(self, tmp_path):
+        from agentic_mbse.pm.operations import close_item
+
+        root = self._setup_active_item(tmp_path)
+        epic = _epic(
+            "Test Epic", items=[_wi("WI-001", status="active"), _wi("WI-002", scale="huge")]
+        )
+        path = _write_raw_backlog(
+            root,
+            epics=[epic, _epic("Rejected", status="bogus")],
+            standalone=[_wi("WI-003", status="in-progress")],
+        )
+        before = parse_frontmatter(path).data
+
+        result = close_item(root, "WI-001")
+
+        assert result.success, result.message
+        after = parse_frontmatter(path).data
+        completed = after["epics"][0]["items"][0]["completed"]
+        assert datetime.date.fromisoformat(completed)
+        before["epics"][0]["items"][0].update(status="completed", completed=completed)
+        assert after == before
+
+    @pytest.mark.parametrize(
+        ("text", "warning"),
+        [
+            ("---\nepics: [\n---\n", "Malformed YAML"),
+            (
+                # Last-wins would find WI-001 in the second list and drop the first
+                "---\n"
+                "standalone:\n"
+                "- id: WI-002\n"
+                "  name: other\n"
+                "  scale: trivial\n"
+                "  priority: P1\n"
+                "  status: backlog\n"
+                "standalone:\n"
+                "- id: WI-001\n"
+                "  name: solar model\n"
+                "  scale: standard\n"
+                "  priority: P1\n"
+                "  status: active\n"
+                "---\n",
+                "found repeated key 'standalone'",
+            ),
+        ],
+        ids=["malformed YAML", "standalone twice"],
+    )
+    def test_refusal_leaves_item_active(self, tmp_path, text, warning):
+        from agentic_mbse.pm.operations import close_item
+
+        root = self._setup_active_item(tmp_path)
+        _write_backlog_text(root, text)
+        before = _file_bytes(root)
+
+        result = close_item(root, "WI-001")
+
+        assert not result.success
+        assert warning in result.message
+        assert (root / "work" / "active" / "WI-001_solar-model" / "spec.md").is_file()
+        assert _file_bytes(root) == before
+
+    def test_refuses_duplicate_work_item_ids(self, tmp_path):
+        from agentic_mbse.pm.operations import close_item
+
+        root = self._setup_active_item(tmp_path)
+        _write_raw_backlog(
+            root,
+            epics=[_epic("Test Epic", items=[_wi("WI-001", status="active")])],
+            standalone=[_wi("WI-001", status="active")],
+        )
+        before = _file_bytes(root)
+
+        result = close_item(root, "WI-001")
+
+        assert not result.success
+        assert "epics[0].items[0]" in result.message and "standalone[0]" in result.message
+        assert _file_bytes(root) == before
+
+    def test_refuses_invalid_item_quoting_warning(self, tmp_path):
+        from agentic_mbse.pm.operations import close_item
+
+        root = self._setup_active_item(tmp_path)
+        _write_raw_backlog(root, standalone=[_wi("WI-001", status="in-progress")])
+        before = _file_bytes(root)
+
+        result = close_item(root, "WI-001")
+
+        assert not result.success
+        assert "not a valid record" in result.message
+        assert "standalone[0]" in result.message
+        assert "Invalid status 'in-progress'" in result.message
+        assert _file_bytes(root) == before
 
 
 class TestUpdateValidation:
