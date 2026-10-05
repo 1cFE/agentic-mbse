@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from agentic_mbse.pm import (
     BacklogData,
     InsightStatus,
@@ -15,6 +17,7 @@ from agentic_mbse.pm import (
     parse_traceability,
     parse_validation_matrix,
 )
+from agentic_mbse.pm.parser import _escape_table_cell, _split_table_row, _strip_html_comments
 
 TEMPLATES = Path(__file__).parent.parent / "project_templates"
 FIXTURES = Path(__file__).parent / "fixtures" / "pm"
@@ -75,6 +78,54 @@ class TestParseFrontmatter:
         assert result.data == {}
         assert len(result.warnings) == 1
         assert "closing" in result.warnings[0].message.lower()
+
+    def test_indented_dashes_stay_in_block_scalar(self, tmp_path):
+        f = tmp_path / "test.md"
+        f.write_text("---\ngoal: |\n  first\n  ---\n  second\nStatus: active\n---\n# Body\n")
+        result = parse_frontmatter(f)
+        assert result.data == {"goal": "first\n---\nsecond\n", "Status": "active"}
+        assert result.warnings == []
+
+    @pytest.mark.parametrize(
+        ("yaml_text", "key"),
+        [
+            ("standalone: []\nepics: []\nstandalone: []\n", "standalone"),
+            ("epics:\n- name: X\n  items: []\n  items: []\n", "items"),
+        ],
+        ids=["top-level key", "nested key"],
+    )
+    def test_unique_keys_rejects_repeat(self, tmp_path, yaml_text, key):
+        f = tmp_path / "test.md"
+        f.write_text(f"---\n{yaml_text}---\n")
+        result = parse_frontmatter(f, unique_keys=True)
+        assert result.data == {}
+        assert len(result.warnings) == 1
+        assert result.warnings[0].message.startswith("Malformed YAML")
+        assert f"found repeated key '{key}'" in result.warnings[0].message
+
+    @pytest.mark.parametrize(
+        "yaml_text",
+        [
+            "base: &b {scale: standard, status: backlog}\n"
+            "standalone:\n- <<: *b\n  id: WI-001\n  status: active\n",
+            # The anchor sits deeper than the mapping that merges it, so it is flattened first
+            "c: &c {k: 0}\nepics:\n- name: X\n  d: &d\n    <<: *c\n    k: 1\nother:\n  <<: *d\n",
+        ],
+        ids=["merge override", "chained merge under a deeper anchor"],
+    )
+    def test_unique_keys_merge_override_is_not_a_repeat(self, tmp_path, yaml_text):
+        f = tmp_path / "test.md"
+        f.write_text(f"---\n{yaml_text}---\n")
+        result = parse_frontmatter(f, unique_keys=True)
+        assert result.warnings == []
+        assert result.data == parse_frontmatter(f).data != {}
+
+    def test_default_keeps_last_wins(self, tmp_path):
+        f = tmp_path / "test.md"
+        f.write_text("---\nstandalone: [a]\nstandalone: [b]\n---\n")
+        result = parse_frontmatter(f)
+        assert result.data == {"standalone": ["b"]}
+        assert result.warnings == []
 
 
 # ---------------------------------------------------------------------------
@@ -169,6 +220,20 @@ class TestParseValidationMatrix:
         result = parse_validation_matrix(tmp_path / "nope.md")
         assert result.data == []
         assert len(result.warnings) == 1
+
+    def test_escaped_pipe_keeps_columns(self, tmp_path):
+        f = tmp_path / "VALIDATION_MATRIX.md"
+        f.write_text(
+            "## Verification Registry\n\n"
+            "| ID | Description | Type | Mechanism | Expected | Tolerance | Source | Test | Status |\n"
+            "|----|-------------|------|-----------|----------|-----------|--------|------|--------|\n"
+            "| SV-035 | bar (\\|rel dev\\| <= 1e-6) | baseline | test | x | 1e-6 | s | t | passing |\n"
+        )
+        result = parse_validation_matrix(f)
+        assert result.warnings == []
+        assert result.data[0].description == "bar (|rel dev| <= 1e-6)"
+        assert result.data[0].type.value == "baseline"
+        assert result.data[0].status.value == "passing"
 
 
 class TestParseOverview:
@@ -279,6 +344,79 @@ class TestMarkdownTableEdgeCases:
         result = parse_requirements(f)
         assert len(result.data) == 1
         assert result.data[0].id == "PR-001"
+
+
+class TestStripHtmlComments:
+    def test_default_removes_comments(self):
+        assert _strip_html_comments("a <!-- x -->b\n<!--\ny\n-->c") == "a b\nc"
+
+    def test_keep_lines_blanks_each_comment_but_keeps_line_count(self):
+        text = "| SV-001 | a <!-- note --> |\n<!-- example:\n| SV-002 | b |\n-->\n| SV-003 | c |"
+        blanked = _strip_html_comments(text, keep_lines=True)
+        assert blanked.split("\n") == ["| SV-001 | a  |", "", "", "", "| SV-003 | c |"]
+
+    def test_keep_lines_leaves_unclosed_comment(self):
+        text = "<!-- never closed\n| SV-001 | a |"
+        assert _strip_html_comments(text, keep_lines=True) == text
+
+
+def _split_as_before(line):
+    """The table split used before backslash-pipe escaping, kept as the reference for I2."""
+    cells = [c.strip() for c in line.strip().split("|")]
+    if cells and cells[0] == "":
+        cells = cells[1:]
+    if cells and cells[-1] == "":
+        cells = cells[:-1]
+    return cells
+
+
+class TestSplitTableRow:
+    def test_escaped_pipe_is_content(self):
+        row = "| SV-034 | bar (\\|rel dev\\| <= 1e-6) | baseline | passing |"
+        assert _split_table_row(row) == ["SV-034", "bar (|rel dev| <= 1e-6)", "baseline", "passing"]
+
+    def test_escaped_pipe_inside_code_span(self):
+        assert _split_table_row("| `p\\|q` | x |") == ["`p|q`", "x"]
+
+    def test_bare_pipe_inside_code_span_splits(self):
+        assert _split_table_row("| `m|n` | x |") == ["`m", "n`", "x"]
+
+    def test_escaped_backslash_before_pipe_stays_one_cell(self):
+        # GFM: the pipe never splits, and only the backslash right before it is dropped
+        assert _split_table_row("| a \\\\| b | x |") == ["a \\| b", "x"]
+
+    def test_row_without_escapes_drops_edge_cells(self):
+        assert _split_table_row("| PR-001 | First | G-001 |") == ["PR-001", "First", "G-001"]
+
+    @pytest.mark.parametrize(
+        "row",
+        [
+            "| SV-001 | Cost ballpark | reasonableness | test | $3B-$15B | range | j | t | pending |",
+            "|----|-------------|------|",
+            "|SV-001|tight|cells|",
+            "| no trailing pipe | b",
+            "|  | empty edges |  |",
+            "||",
+            "   | indented | row |   ",
+            "| path\\to | ends in \\ | `code` |",
+        ],
+    )
+    def test_unescaped_rows_split_as_before(self, row):
+        assert _split_table_row(row) == _split_as_before(row)
+
+
+class TestEscapeTableCell:
+    def test_escapes_every_pipe(self):
+        assert _escape_table_cell("|a| or |b|") == "\\|a\\| or \\|b\\|"
+
+    @pytest.mark.parametrize("value", ["a|b", "a\\|b", "\\\\|", "ends in \\"])
+    def test_survives_escape_then_split(self, value):
+        assert _split_table_row(f"| {_escape_table_cell(value)} | next |") == [value, "next"]
+
+    @pytest.mark.parametrize("marker", ["\n", "\r", "<!--", "-->"])
+    def test_refuses_line_breaks_and_comment_markers(self, marker):
+        with pytest.raises(ValueError, match="cannot hold"):
+            _escape_table_cell(f"before {marker} after")
 
 
 # ---------------------------------------------------------------------------

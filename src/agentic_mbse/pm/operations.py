@@ -13,12 +13,17 @@ import datetime
 import re
 import shutil
 from pathlib import Path
+from typing import Any, TypeVar
 
 import yaml
 
 from agentic_mbse.pm.parser import (
+    _escape_table_cell,
+    _parse_backlog_mapping,
+    _split_table_row,
+    _strip_html_comments,
     parse_architecture,
-    parse_backlog,
+    parse_frontmatter,
     parse_knowledge,
     parse_overview,
     parse_requirements,
@@ -37,6 +42,7 @@ from agentic_mbse.pm.types import (
     InsightInput,
     InsightStatus,
     OperationResult,
+    ParseResult,
     ParseWarning,
     Priority,
     QuestionInput,
@@ -50,9 +56,22 @@ from agentic_mbse.pm.types import (
     WorkItemStatus,
 )
 
+T = TypeVar("T")
+
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
+
+def _id_pattern(prefix: str) -> re.Pattern[str]:
+    """Return the regex for one ``PREFIX-NNN`` ID token; group 1 is its number.
+
+    The only definition of how an ID is numbered.  The prefix must not follow a
+    letter or digit, so ``MAG-001`` is not ``G-001``; a hyphen may precede it, so
+    the joined range ``DI-001-DI-014`` names both ends.  Only the digit run must
+    end, so ``SV-034a`` names SV 34.  ``PR-1`` and ``PR-001`` share number 1.
+    """
+    return re.compile(rf"(?<![A-Za-z0-9]){re.escape(prefix)}-(\d+)(?!\d)")
 
 
 def _next_id(prefix: str, existing_ids: list[str]) -> str:
@@ -60,14 +79,67 @@ def _next_id(prefix: str, existing_ids: list[str]) -> str:
     if not existing_ids:
         return f"{prefix}-001"
     nums = []
-    pattern = re.compile(rf"^{re.escape(prefix)}-(\d+)$")
+    pattern = _id_pattern(prefix)
     for eid in existing_ids:
-        m = pattern.match(eid)
+        m = pattern.fullmatch(eid)
         if m:
             nums.append(int(m.group(1)))
     if not nums:
         return f"{prefix}-001"
     return f"{prefix}-{max(nums) + 1:03d}"
+
+
+def _registry_ids(path: Path, prefix: str, parsed_ids: list[str]) -> ParseResult[list[str]]:
+    """Return every ``prefix`` ID the registry file names, so ``_next_id`` never reuses one.
+
+    The data is ``parsed_ids`` followed by every ``_id_pattern`` token in the file
+    outside HTML comments, whether or not the parser accepted its record.  Each
+    distinct number that no parsed ID holds gets one warning, located at its
+    first spelling.  A missing file returns ``parsed_ids`` with no warning: the
+    parser has already warned, and the operation creates the file.
+    """
+    try:
+        content = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ParseResult(data=list(parsed_ids))
+
+    pattern = _id_pattern(prefix)
+    tokens = list(pattern.finditer(_strip_html_comments(content)))
+    parsed_numbers = {int(m.group(1)) for m in map(pattern.fullmatch, parsed_ids) if m}
+    reserved: dict[int, str] = {}  # unparsed number -> its first spelling
+    for token in tokens:
+        number = int(token.group(1))
+        if number not in parsed_numbers:
+            reserved.setdefault(number, token.group(0))
+
+    warnings = [
+        ParseWarning(
+            file=str(path),
+            location=spelling,
+            message=f"{spelling} is named in {path.name} but is not a parsed record; "
+            "its ID stays reserved",
+        )
+        for spelling in reserved.values()
+    ]
+    return ParseResult(data=[*parsed_ids, *(m.group(0) for m in tokens)], warnings=warnings)
+
+
+def _single_match(matches: list[tuple[str, T]], what: str, where: str) -> tuple[str, T]:
+    """Return the one ``(location, match)`` pair a targeted write may change.
+
+    The only "exactly one" rule for writes that target an existing record.
+    Raises ``ValueError`` when nothing matches ("not found") or several do,
+    naming every location so the user can deduplicate by hand.
+    """
+    if not matches:
+        raise ValueError(f"{what} not found in {where}")
+    if len(matches) > 1:
+        locations = ", ".join(location for location, _ in matches)
+        raise ValueError(
+            f"{what} appears {len(matches)} times in {where} ({locations}); "
+            "deduplicate by hand, then retry"
+        )
+    return matches[0]
 
 
 def _update_frontmatter_fields(path: Path, updates: dict[str, str]) -> None:
@@ -80,7 +152,7 @@ def _update_frontmatter_fields(path: Path, updates: dict[str, str]) -> None:
 
     closing_idx = None
     for i in range(1, len(lines)):
-        if lines[i].strip() == "---":
+        if lines[i].rstrip() == "---":
             closing_idx = i
             break
 
@@ -152,12 +224,144 @@ def _render_backlog_body(data: BacklogData) -> str:
     return "\n".join(parts)
 
 
-def _write_backlog(path: Path, data: BacklogData) -> None:
-    """Write complete BACKLOG.md: YAML frontmatter + rendered body."""
-    raw = data.model_dump(mode="json")
-    yaml_text = yaml.dump(raw, default_flow_style=False, sort_keys=False, allow_unicode=True)
-    body = _render_backlog_body(data)
+def _write_backlog(path: Path, document: dict[str, Any] | BacklogData) -> None:
+    """Write complete BACKLOG.md: ``document`` as the YAML frontmatter + the body rendered from it.
+
+    The body is rendered from the document's typed view, so a record the parser
+    rejects stays in the frontmatter but is left out of the dashboard; the
+    frontmatter is authoritative.  Operations pass the document ``_load_backlog``
+    returned.  Only test fixtures pass a ``BacklogData``, which is dumped first.
+    """
+    if isinstance(document, BacklogData):
+        document = document.model_dump(mode="json")
+    yaml_text = yaml.dump(document, default_flow_style=False, sort_keys=False, allow_unicode=True)
+    body = _render_backlog_body(_parse_backlog_mapping(document, str(path)).data)
     path.write_text(f"---\n{yaml_text}---\n{body}", encoding="utf-8")
+
+
+def _load_backlog(path: Path) -> tuple[dict[str, Any], ParseResult[BacklogData]]:
+    """Load BACKLOG.md's frontmatter as a document to edit and write back, with its typed view.
+
+    Unreadable means any ``parse_frontmatter`` warning on an existing file,
+    including a repeated key, since the document is read with ``unique_keys``.
+    Such a document may hold less than the file, and writing it back would
+    delete the rest, so every warning raises ``ValueError`` (R1); a warning the
+    reader gains later will refuse writes too.  A missing file, or one with no
+    frontmatter keys, starts from an empty ``BacklogData``, and the typed view
+    carries the reader's "File not found" warning, as ``parse_backlog`` does.
+    """
+    loaded = parse_frontmatter(path, unique_keys=True)
+    if loaded.warnings and path.exists():
+        reasons = "; ".join(w.message for w in loaded.warnings)
+        raise ValueError(
+            f"{path.name} cannot be read whole, so writing it back could delete records. "
+            f"Fix it by hand, then retry: {reasons}"
+        )
+    document = loaded.data or BacklogData().model_dump(mode="json")
+    typed = _parse_backlog_mapping(document, str(path))
+    return document, ParseResult(data=typed.data, warnings=[*loaded.warnings, *typed.warnings])
+
+
+def _backlog_list(mapping: dict[str, Any], key: str, location: str) -> list[Any]:
+    """Return the list under ``key`` that a new backlog entry is appended to.
+
+    An absent or null key gets a new list, since replacing it discards nothing.
+    Raises ``ValueError`` (R2) if the key holds anything else; ``location``
+    names it the way the parser's warnings do.
+    """
+    if mapping.get(key) is None:
+        mapping[key] = []
+    entries = mapping[key]
+    if not isinstance(entries, list):
+        raise ValueError(
+            f"'{location}' in BACKLOG.md is not a list, so appending to it would discard it. "
+            "Fix it by hand, then retry."
+        )
+    return entries
+
+
+def _entries_of(value: Any) -> list[Any]:
+    """Return ``value`` if it is a list, else no entries: a lookup finds nothing in a non-list."""
+    return value if isinstance(value, list) else []
+
+
+def _raw_epics(document: dict[str, Any], name: str) -> list[tuple[str, dict[str, Any]]]:
+    """Find the epic mappings named ``name`` in a backlog document, valid or not.
+
+    Returns ``(location, mapping)`` pairs for ``_single_match``, each located
+    ``epics[i]`` as in the parser's warnings.  A name matches as the parser
+    reads it, so an epic with an empty name matches nothing.
+    """
+    return [
+        (f"epics[{i}]", epic)
+        for i, epic in enumerate(_entries_of(document.get("epics")))
+        if isinstance(epic, dict) and epic.get("name") and str(epic["name"]) == name
+    ]
+
+
+def _raw_work_items(document: dict[str, Any], wi_id: str) -> list[tuple[str, dict[str, Any]]]:
+    """Find the work-item mappings with ID ``wi_id`` in a backlog document, valid or not.
+
+    Searches every epic's items, then the standalone list.  Returns ``(location,
+    mapping)`` pairs for ``_single_match``, each located ``epics[i].items[j]`` or
+    ``standalone[k]`` as in the parser's warnings.
+    """
+    located = [
+        (f"epics[{i}].items[{j}]", item)
+        for i, epic in enumerate(_entries_of(document.get("epics")))
+        if isinstance(epic, dict)
+        for j, item in enumerate(_entries_of(epic.get("items")))
+    ]
+    located += [
+        (f"standalone[{k}]", item) for k, item in enumerate(_entries_of(document.get("standalone")))
+    ]
+    return [
+        (location, item)
+        for location, item in located
+        if isinstance(item, dict) and str(item.get("id", "")) == wi_id
+    ]
+
+
+def _with_parse_warnings(location: str, warnings: list[ParseWarning]) -> str:
+    """Return ``location`` followed by the parse warnings found there, for a refusal message.
+
+    The warnings at an item's enclosing ``epics[i]`` count too, because an item
+    is dropped with its epic.
+    """
+    epic_location = location.split(".", 1)[0]
+    messages = [w.message for w in warnings if w.location in (location, epic_location)]
+    return f"{location} ({'; '.join(messages)})" if messages else location
+
+
+def _backlog_target(
+    matches: list[tuple[str, dict[str, Any]]],
+    what: str,
+    *,
+    parsed: bool,
+    warnings: list[ParseWarning],
+) -> tuple[str, dict[str, Any]]:
+    """Return the one backlog mapping a write targets, refusing per R3 and R4.
+
+    Raises ``ValueError`` unless exactly one mapping matches (``_single_match``)
+    and the parser accepted it as a record.  ``parsed`` says whether the typed
+    view holds ``what``; with one match that is exact, because the typed record
+    can only have come from that mapping.  The R4 refusal quotes the parse
+    ``warnings`` that rejected it.
+    """
+    location, target = _single_match(matches, what, "BACKLOG.md")
+    if not parsed:
+        raise ValueError(
+            f"{what} is in BACKLOG.md at {_with_parse_warnings(location, warnings)} but is "
+            "not a valid record. Fix it by hand, then retry."
+        )
+    return location, target
+
+
+def _work_item_ids(data: BacklogData) -> list[str]:
+    """Return the ID of every parsed work item: epic items first, then standalone."""
+    return [item.id for epic in data.epics for item in epic.items] + [
+        sa.id for sa in data.standalone
+    ]
 
 
 def _format_insight_entry(entry: InsightEntry) -> str:
@@ -192,8 +396,13 @@ def _format_decision_entry(entry: DecisionEntry) -> str:
 
 
 def _format_table_row(columns: list[str]) -> str:
-    """Format a markdown table data row."""
-    return "| " + " | ".join(columns) + " |"
+    """Format a markdown table data row, escaping every cell with ``_escape_table_cell``.
+
+    The space on each side of every delimiter keeps a value that ends in a
+    backslash from escaping the next delimiter.  Raises ``ValueError`` for a
+    value no row can carry.
+    """
+    return "| " + " | ".join(_escape_table_cell(c) for c in columns) + " |"
 
 
 def _append_section(path: Path, text: str) -> None:
@@ -210,25 +419,32 @@ def _append_section(path: Path, text: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def _append_table_row(path: Path, section_heading: str, row: str) -> None:
-    """Append a row to a markdown table under a given section heading."""
-    content = path.read_text(encoding="utf-8")
-    lines = content.split("\n")
+def _insert_table_row(text: str, section_heading: str, row: str) -> str:
+    """Return ``text`` with ``row`` inserted after the last table line under ``section_heading``.
+
+    The heading and the table are found on comment-blanked text, so a table
+    inside an HTML comment is never the target.  Raises ``ValueError`` if the
+    heading is missing, if no table line comes before the next ``## `` heading,
+    or if the row would fall inside a comment that opens on the table's last line.
+    """
+    lines = text.split("\n")
+    # Blanking keeps line numbers, so an index into ``visible`` is a line of ``text``
+    visible = _strip_html_comments(text, keep_lines=True).split("\n")
 
     # Find section heading
     section_start = None
-    for i, line in enumerate(lines):
+    for i, line in enumerate(visible):
         if line.strip() == section_heading:
             section_start = i
             break
 
     if section_start is None:
-        raise ValueError(f"Section heading '{section_heading}' not found in {path}")
+        raise ValueError(f"Section heading '{section_heading}' not found")
 
     # Find the last table row in this section
     last_table_line = None
-    for i in range(section_start + 1, len(lines)):
-        stripped = lines[i].strip()
+    for i in range(section_start + 1, len(visible)):
+        stripped = visible[i].strip()
         if stripped.startswith("|"):
             last_table_line = i
         elif last_table_line is not None and stripped and not stripped.startswith("|"):
@@ -236,13 +452,53 @@ def _append_table_row(path: Path, section_heading: str, row: str) -> None:
             break
         elif stripped.startswith("#") and last_table_line is not None:
             break
+        elif re.match(r"##(\s|$)", stripped):
+            # The next section starts before any table, so this section has none
+            break
 
     if last_table_line is None:
-        raise ValueError(f"No table found under '{section_heading}' in {path}")
+        raise ValueError(f"No table found under '{section_heading}'")
 
     # Insert after the last table line
     lines.insert(last_table_line + 1, row)
-    path.write_text("\n".join(lines), encoding="utf-8")
+    new_text = "\n".join(lines)
+    if _strip_html_comments(new_text, keep_lines=True).split("\n")[last_table_line + 1] != row:
+        raise ValueError(
+            f"A row added under '{section_heading}' would fall inside the HTML comment "
+            f"that opens on line {last_table_line + 1}; move that comment out of the table"
+        )
+    return new_text
+
+
+def _append_table_row(path: Path, section_heading: str, row: str) -> None:
+    """Append a row to a markdown table under a given section heading.
+
+    Raises ``ValueError`` from ``_insert_table_row`` before writing anything.
+    """
+    content = path.read_text(encoding="utf-8")
+    path.write_text(_insert_table_row(content, section_heading, row), encoding="utf-8")
+
+
+def _raw_table_rows(text: str, section_heading: str, row_id: str) -> list[tuple[str, int]]:
+    """Find the table rows under ``section_heading`` whose first cell is ``row_id``.
+
+    Returns ``(location, line index)`` pairs for ``_single_match``; a location
+    reads ``line N``, counting from 1.  The section runs from the first line
+    that is ``section_heading`` to the next ``## `` heading, so it holds the
+    table ``_parse_markdown_table`` reads.  HTML comments are blanked first, so
+    a commented example row never matches, and every index is a line of ``text``.
+    """
+    rows: list[tuple[str, int]] = []
+    in_section = False
+    for i, line in enumerate(_strip_html_comments(text, keep_lines=True).split("\n")):
+        stripped = line.strip()
+        if not in_section:
+            in_section = line.rstrip() == section_heading
+        elif re.match(r"##\s", line):
+            break
+        elif stripped.startswith("|") and _split_table_row(stripped)[:1] == [row_id]:
+            rows.append((f"line {i + 1}", i))
+    return rows
 
 
 def _append_csv_row(path: Path, row: dict[str, str]) -> None:
@@ -308,8 +564,8 @@ def add_insight(
 
     knowledge_path = project_root / "knowledge" / "KNOWLEDGE.md"
     result = parse_knowledge(knowledge_path)
-    existing_ids = [e.id for e in result.data]
-    new_id = _next_id("DI", existing_ids)
+    taken = _registry_ids(knowledge_path, "DI", [e.id for e in result.data])
+    new_id = _next_id("DI", taken.data)
 
     entry = InsightEntry(
         id=new_id,
@@ -330,7 +586,7 @@ def add_insight(
         message=f"Added insight {new_id}: {title}",
         ids_assigned={"DI": new_id},
         files_modified=[str(knowledge_path)],
-        warnings=result.warnings,
+        warnings=[*result.warnings, *taken.warnings],
     )
 
 
@@ -389,26 +645,34 @@ def promote_requirement(
 
     req_path = project_root / "modeling_project" / "REQUIREMENTS.md"
     result = parse_requirements(req_path)
-    existing_ids = [e.id for e in result.data]
-    new_id = _next_id("PR", existing_ids)
+    taken = _registry_ids(req_path, "PR", [e.id for e in result.data])
+    warnings = [*result.warnings, *taken.warnings]
+    new_id = _next_id("PR", taken.data)
 
-    row = _format_table_row(
-        [
-            new_id,
-            requirement.strip(),
-            source.strip(),
-            enforcement.strip(),
-            validation_method.strip(),
-        ]
-    )
-    _append_table_row(req_path, "## Requirements", row)
+    try:
+        row = _format_table_row(
+            [
+                new_id,
+                requirement.strip(),
+                source.strip(),
+                enforcement.strip(),
+                validation_method.strip(),
+            ]
+        )
+        _append_table_row(req_path, "## Requirements", row)
+    except ValueError as e:
+        return OperationResult(
+            success=False,
+            message=f"Requirement not added to {req_path.name}: {e}",
+            warnings=warnings,
+        )
 
     return OperationResult(
         success=True,
         message=f"Added requirement {new_id}: {requirement}",
         ids_assigned={"PR": new_id},
         files_modified=[str(req_path)],
-        warnings=result.warnings,
+        warnings=warnings,
     )
 
 
@@ -426,8 +690,8 @@ def register_decision(
 
     arch_path = project_root / "modeling_project" / "ARCHITECTURE.md"
     result = parse_architecture(arch_path)
-    existing_ids = [e.id for e in result.data]
-    new_id = _next_id("AD", existing_ids)
+    taken = _registry_ids(arch_path, "AD", [e.id for e in result.data])
+    new_id = _next_id("AD", taken.data)
 
     today = datetime.date.today().isoformat()
     entry = DecisionEntry(
@@ -474,7 +738,7 @@ def register_decision(
         message=f"Added decision {new_id}: {title}",
         ids_assigned={"AD": new_id},
         files_modified=[str(arch_path)],
-        warnings=result.warnings,
+        warnings=[*result.warnings, *taken.warnings],
     )
 
 
@@ -511,30 +775,38 @@ def add_validation(
 
     val_path = project_root / "modeling_project" / "VALIDATION_MATRIX.md"
     result = parse_validation_matrix(val_path)
-    existing_ids = [e.id for e in result.data]
-    new_id = _next_id("SV", existing_ids)
+    taken = _registry_ids(val_path, "SV", [e.id for e in result.data])
+    warnings = [*result.warnings, *taken.warnings]
+    new_id = _next_id("SV", taken.data)
 
-    row = _format_table_row(
-        [
-            new_id,
-            description.strip(),
-            vtype.value,
-            vmech.value,
-            expected.strip(),
-            tolerance.strip(),
-            source.strip(),
-            test.strip(),
-            VerificationStatus.PENDING.value,
-        ]
-    )
-    _append_table_row(val_path, "## Verification Registry", row)
+    try:
+        row = _format_table_row(
+            [
+                new_id,
+                description.strip(),
+                vtype.value,
+                vmech.value,
+                expected.strip(),
+                tolerance.strip(),
+                source.strip(),
+                test.strip(),
+                VerificationStatus.PENDING.value,
+            ]
+        )
+        _append_table_row(val_path, "## Verification Registry", row)
+    except ValueError as e:
+        return OperationResult(
+            success=False,
+            message=f"Verification not added to {val_path.name}: {e}",
+            warnings=warnings,
+        )
 
     return OperationResult(
         success=True,
         message=f"Added verification {new_id}: {description}",
         ids_assigned={"SV": new_id},
         files_modified=[str(val_path)],
-        warnings=result.warnings,
+        warnings=warnings,
     )
 
 
@@ -670,12 +942,13 @@ def approve_research(
     # Parse existing knowledge for ID assignment
     k_path = project_root / "knowledge" / "KNOWLEDGE.md"
     k_result = parse_knowledge(k_path)
-    existing_ids = [e.id for e in k_result.data]
+    taken = _registry_ids(k_path, "DI", [e.id for e in k_result.data])
+    warnings = [*k_result.warnings, *taken.warnings]
 
     # Build all entries in memory first
     entries: list[InsightEntry] = []
     ids_assigned: dict[str, str] = {}
-    all_ids = list(existing_ids)
+    all_ids = list(taken.data)
     for inp in insights:
         for name, val in [
             ("title", inp.title),
@@ -688,7 +961,7 @@ def approve_research(
                 return OperationResult(
                     success=False,
                     message=f"Insight '{inp.title}': required field '{name}' is empty",
-                    warnings=k_result.warnings,
+                    warnings=warnings,
                 )
 
         new_id = _next_id("DI", all_ids)
@@ -723,7 +996,7 @@ def approve_research(
         message=f"Approved research: {pending_path.name}. Created insights: {id_list}",
         ids_assigned={di_id: title for di_id, title in ids_assigned.items()},
         files_modified=[str(k_path), str(approved_path)],
-        warnings=k_result.warnings,
+        warnings=warnings,
     )
 
 
@@ -739,71 +1012,95 @@ def register_intent(
 
     overview_path = project_root / "modeling_project" / "OVERVIEW.md"
     o_result = parse_overview(overview_path)
-    existing_g = [e.id for e in o_result.data.goals]
-    existing_aq = [e.id for e in o_result.data.questions]
+    taken_g = _registry_ids(overview_path, "G", [e.id for e in o_result.data.goals])
+    taken_aq = _registry_ids(overview_path, "AQ", [e.id for e in o_result.data.questions])
+    warnings = [*o_result.warnings, *taken_g.warnings, *taken_aq.warnings]
 
+    # Build every row before the one write, so a refused value writes nothing
     ids_assigned: dict[str, str] = {}
-    files_modified: list[str] = []
 
-    if goals:
-        all_g_ids = list(existing_g)
-        for g in goals:
-            for name, val in [("goal", g.goal), ("priority", g.priority), ("source", g.source)]:
-                if not val or not val.strip():
-                    return OperationResult(
-                        success=False,
-                        message=f"Goal '{g.goal}': required field '{name}' is empty",
-                        warnings=o_result.warnings,
-                    )
-            new_id = _next_id("G", all_g_ids)
-            all_g_ids.append(new_id)
-            row = _format_table_row(
-                [
-                    new_id,
-                    g.goal.strip(),
-                    g.priority.strip(),
-                    g.status.strip(),
-                    g.source.strip(),
-                    g.traced_requirements.strip(),
-                ]
+    goal_rows: list[str] = []
+    all_g_ids = list(taken_g.data)
+    for g in goals or []:
+        for name, val in [("goal", g.goal), ("priority", g.priority), ("source", g.source)]:
+            if not val or not val.strip():
+                return OperationResult(
+                    success=False,
+                    message=f"Goal '{g.goal}': required field '{name}' is empty",
+                    warnings=warnings,
+                )
+        new_id = _next_id("G", all_g_ids)
+        all_g_ids.append(new_id)
+        try:
+            goal_rows.append(
+                _format_table_row(
+                    [
+                        new_id,
+                        g.goal.strip(),
+                        g.priority.strip(),
+                        g.status.strip(),
+                        g.source.strip(),
+                        g.traced_requirements.strip(),
+                    ]
+                )
             )
-            _append_table_row(overview_path, "## Goals Registry", row)
-            ids_assigned[new_id] = g.goal
-        files_modified.append(str(overview_path))
+        except ValueError as e:
+            return OperationResult(
+                success=False, message=f"Goal '{g.goal}': {e}", warnings=warnings
+            )
+        ids_assigned[new_id] = g.goal
 
-    if questions:
-        all_aq_ids = list(existing_aq)
-        for q in questions:
-            for name, val in [("question", q.question), ("source", q.source)]:
-                if not val or not val.strip():
-                    return OperationResult(
-                        success=False,
-                        message=f"Question '{q.question}': required field '{name}' is empty",
-                        warnings=o_result.warnings,
-                    )
-            new_id = _next_id("AQ", all_aq_ids)
-            all_aq_ids.append(new_id)
-            row = _format_table_row(
-                [
-                    new_id,
-                    q.question.strip(),
-                    q.implies.strip(),
-                    q.source.strip(),
-                    q.status.strip(),
-                ]
+    question_rows: list[str] = []
+    all_aq_ids = list(taken_aq.data)
+    for q in questions or []:
+        for name, val in [("question", q.question), ("source", q.source)]:
+            if not val or not val.strip():
+                return OperationResult(
+                    success=False,
+                    message=f"Question '{q.question}': required field '{name}' is empty",
+                    warnings=warnings,
+                )
+        new_id = _next_id("AQ", all_aq_ids)
+        all_aq_ids.append(new_id)
+        try:
+            question_rows.append(
+                _format_table_row(
+                    [
+                        new_id,
+                        q.question.strip(),
+                        q.implies.strip(),
+                        q.source.strip(),
+                        q.status.strip(),
+                    ]
+                )
             )
-            _append_table_row(overview_path, "## Analysis Questions", row)
-            ids_assigned[new_id] = q.question
-        if str(overview_path) not in files_modified:
-            files_modified.append(str(overview_path))
+        except ValueError as e:
+            return OperationResult(
+                success=False, message=f"Question '{q.question}': {e}", warnings=warnings
+            )
+        ids_assigned[new_id] = q.question
+
+    text = overview_path.read_text(encoding="utf-8")
+    try:
+        for row in goal_rows:
+            text = _insert_table_row(text, "## Goals Registry", row)
+        for row in question_rows:
+            text = _insert_table_row(text, "## Analysis Questions", row)
+    except ValueError as e:
+        return OperationResult(
+            success=False,
+            message=f"Intent not registered in {overview_path.name}: {e}",
+            warnings=warnings,
+        )
+    overview_path.write_text(text, encoding="utf-8")
 
     id_list = ", ".join(ids_assigned.keys())
     return OperationResult(
         success=True,
         message=f"Registered intent: {id_list}",
         ids_assigned=ids_assigned,
-        files_modified=files_modified,
-        warnings=o_result.warnings,
+        files_modified=[str(overview_path)],
+        warnings=warnings,
     )
 
 
@@ -902,31 +1199,42 @@ def add_epic(
         return OperationResult(success=False, message=f"Epic file does not exist: {file}")
 
     backlog_path = project_root / "work" / "BACKLOG.md"
-    b_result = parse_backlog(backlog_path)
-    data = b_result.data
-    if any(epic.name == epic_name for epic in data.epics):
+    try:
+        document, backlog = _load_backlog(backlog_path)
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e))
+
+    # Any epic mapping with this name blocks the add, valid or not (R5)
+    existing = _raw_epics(document, epic_name)
+    if existing:
+        places = ", ".join(_with_parse_warnings(loc, backlog.warnings) for loc, _ in existing)
         return OperationResult(
             success=False,
-            message=f"Epic '{epic_name}' already exists in BACKLOG.md",
-            warnings=b_result.warnings,
+            message=f"Epic '{epic_name}' already exists in BACKLOG.md at {places}",
+            warnings=backlog.warnings,
         )
 
-    data.epics.append(
+    try:
+        epics = _backlog_list(document, "epics", "epics")
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e), warnings=backlog.warnings)
+
+    epics.append(
         EpicEntry(
             name=epic_name,
             goal=goal,
             priority=epic_priority,
             status=EpicStatus.DRAFT,
             file=backlog_relative_path.as_posix(),
-        )
+        ).model_dump(mode="json")
     )
-    _write_backlog(backlog_path, data)
+    _write_backlog(backlog_path, document)
 
     return OperationResult(
         success=True,
         message=f"Added epic: {epic_name}",
         files_modified=[str(backlog_path)],
-        warnings=b_result.warnings,
+        warnings=backlog.warnings,
     )
 
 
@@ -960,59 +1268,56 @@ def add_item(
         )
 
     backlog_path = project_root / "work" / "BACKLOG.md"
-    b_result = parse_backlog(backlog_path)
-    data = b_result.data
+    try:
+        document, backlog = _load_backlog(backlog_path)
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e))
 
-    # Collect all WI-XXX IDs
-    all_ids: list[str] = []
-    for ep in data.epics:
-        for item in ep.items:
-            all_ids.append(item.id)
-    for sa in data.standalone:
-        all_ids.append(sa.id)
+    taken = _registry_ids(backlog_path, "WI", _work_item_ids(backlog.data))
+    warnings = [*backlog.warnings, *taken.warnings]
+    new_id = _next_id("WI", taken.data)
 
-    new_id = _next_id("WI", all_ids)
+    # Find the list the item goes in: the one epic named, or standalone
+    try:
+        if epic:
+            location, target_epic = _backlog_target(
+                _raw_epics(document, epic),
+                f"Epic '{epic}'",
+                parsed=any(ep.name == epic for ep in backlog.data.epics),
+                warnings=backlog.warnings,
+            )
+            items = _backlog_list(target_epic, "items", f"{location}.items")
+        else:
+            items = _backlog_list(document, "standalone", "standalone")
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e), warnings=warnings)
 
+    entry: WorkItemEntry | StandaloneEntry
     if epic:
-        # Find the epic
-        target_epic = None
-        for ep in data.epics:
-            if ep.name == epic:
-                target_epic = ep
-                break
-        if target_epic is None:
-            return OperationResult(
-                success=False,
-                message=f"Epic '{epic}' not found in BACKLOG.md",
-                warnings=b_result.warnings,
-            )
-        target_epic.items.append(
-            WorkItemEntry(
-                id=new_id,
-                name=name.strip(),
-                scale=item_scale,
-                status=WorkItemStatus.BACKLOG,
-            )
+        entry = WorkItemEntry(
+            id=new_id,
+            name=name.strip(),
+            scale=item_scale,
+            status=WorkItemStatus.BACKLOG,
         )
     else:
-        data.standalone.append(
-            StandaloneEntry(
-                id=new_id,
-                name=name.strip(),
-                scale=item_scale,
-                priority=item_priority,
-                status=WorkItemStatus.BACKLOG,
-            )
+        entry = StandaloneEntry(
+            id=new_id,
+            name=name.strip(),
+            scale=item_scale,
+            priority=item_priority,
+            status=WorkItemStatus.BACKLOG,
         )
+    items.append(entry.model_dump(mode="json"))
 
-    _write_backlog(backlog_path, data)
+    _write_backlog(backlog_path, document)
 
     return OperationResult(
         success=True,
         message=f"Added work item {new_id}: {name}",
         ids_assigned={"WI": new_id},
         files_modified=[str(backlog_path)],
-        warnings=b_result.warnings,
+        warnings=warnings,
     )
 
 
@@ -1042,35 +1347,22 @@ def close_item(
             message=f"{wi_id} is not in work/active/ (found at {item_dir})",
         )
 
-    # Validate item exists in BACKLOG.md
+    # Validate item exists in BACKLOG.md, before any file changes
     backlog_path = project_root / "work" / "BACKLOG.md"
-    b_result = parse_backlog(backlog_path)
-    data = b_result.data
+    try:
+        document, backlog = _load_backlog(backlog_path)
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e))
 
-    found = False
-    for ep in data.epics:
-        for item in ep.items:
-            if item.id == wi_id:
-                item.status = WorkItemStatus.COMPLETED
-                item.completed = datetime.date.today().isoformat()
-                found = True
-                break
-        if found:
-            break
-    if not found:
-        for sa in data.standalone:
-            if sa.id == wi_id:
-                sa.status = WorkItemStatus.COMPLETED
-                sa.completed = datetime.date.today().isoformat()
-                found = True
-                break
-
-    if not found:
-        return OperationResult(
-            success=False,
-            message=f"{wi_id} not found in BACKLOG.md",
-            warnings=b_result.warnings,
+    try:
+        _, target = _backlog_target(
+            _raw_work_items(document, wi_id),
+            wi_id,
+            parsed=wi_id in _work_item_ids(backlog.data),
+            warnings=backlog.warnings,
         )
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e), warnings=backlog.warnings)
 
     today = datetime.date.today().isoformat()
     files_modified: list[str] = []
@@ -1104,14 +1396,16 @@ def close_item(
     shutil.move(str(item_dir), str(dest_path))
 
     # Step 3: Write BACKLOG.md
-    _write_backlog(backlog_path, data)
+    target["status"] = WorkItemStatus.COMPLETED.value
+    target["completed"] = today
+    _write_backlog(backlog_path, document)
     files_modified.append(str(backlog_path))
 
     return OperationResult(
         success=True,
         message=f"Closed {wi_id}. Archived to {dest_path.relative_to(project_root)}",
         files_modified=files_modified,
-        warnings=b_result.warnings,
+        warnings=backlog.warnings,
     )
 
 
@@ -1136,33 +1430,46 @@ def update_validation(
         )
 
     val_path = project_root / "modeling_project" / "VALIDATION_MATRIX.md"
+    result = parse_validation_matrix(val_path)
     content = val_path.read_text(encoding="utf-8")
+
+    try:
+        _, index = _single_match(
+            _raw_table_rows(content, "## Verification Registry", sv_id),
+            sv_id,
+            val_path.name,
+        )
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e), warnings=result.warnings)
+
+    # Rewrite the file line only if the parser read it as this record, Status in cell 9
     lines = content.split("\n")
-
-    # Find and update the row
-    found = False
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if not stripped.startswith("|"):
-            continue
-        cells = [c.strip() for c in stripped.split("|")]
-        # Remove empty leading/trailing from split
-        if cells and cells[0] == "":
-            cells = cells[1:]
-        if cells and cells[-1] == "":
-            cells = cells[:-1]
-
-        if len(cells) >= 9 and cells[0] == sv_id:
-            # Update the Status column (index 8)
-            cells[8] = new_status.value
-            lines[i] = "| " + " | ".join(cells) + " |"
-            found = True
-            break
-
-    if not found:
+    cells = _split_table_row(lines[index].strip())
+    entry = next((e for e in result.data if e.id == sv_id), None)
+    if entry is None or cells[8:9] != [entry.status.value]:
         return OperationResult(
             success=False,
-            message=f"{sv_id} not found in VALIDATION_MATRIX.md",
+            message=(
+                f"{sv_id}'s row in {val_path.name} does not parse as a record, so its Status "
+                "cannot be updated. Fix the row by hand, then retry: a pipe inside a cell must "
+                "be written as \\|, and an HTML comment must move out of the row."
+            ),
+            warnings=result.warnings,
+        )
+
+    cells[8] = new_status.value
+    try:
+        lines[index] = _format_table_row(cells)
+    except ValueError:
+        # Split and format are inverses; only a comment marker in the row stops it
+        return OperationResult(
+            success=False,
+            message=(
+                f"{sv_id}'s row in {val_path.name} holds an HTML comment marker, "
+                "so it cannot be rewritten. Move the comment out of the row by hand, "
+                "then retry."
+            ),
+            warnings=result.warnings,
         )
 
     val_path.write_text("\n".join(lines), encoding="utf-8")
@@ -1171,6 +1478,7 @@ def update_validation(
         success=True,
         message=f"Updated {sv_id} status to {new_status.value}",
         files_modified=[str(val_path)],
+        warnings=result.warnings,
     )
 
 

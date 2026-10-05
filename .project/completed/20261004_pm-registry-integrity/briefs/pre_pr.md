@@ -1,0 +1,9 @@
+# Brief: pre_pr — pm-registry-integrity
+
+**Stage:** `/_my_pre_pr`. **Branch:** `pm-registry-integrity`, base `main`. The item is closed and archived under `.project/completed/` (see the newest CHANGELOG entry). Owner asked for the PR on 2026-10-04.
+
+**Quality checks, parity rule.** Repo-wide `ruff check`, `ruff format --check`, and `mypy src/` were already failing on `main` at `9b82006` (118 findings, 78 files to reformat, 91 mypy errors in 19 files). The bar on this branch is no worse than base and clean within the files it edits: `uv run ruff check src/agentic_mbse/pm/ tests/test_pm_operations.py tests/test_pm_parser.py` prints "All checks passed!", mypy has zero errors under `pm/`, and the four edited files carry only the 8 formatting hunks they had at base. Do not reformat or lint-fix files this branch did not touch. The full suite must be green: expect 2056 passed, 1 skipped.
+
+**PR scope, one item.** Title: `Honor escaped pipes and protect registry IDs across all PM registries`. Body sections: Problem (two defects: records lost or corrupted, IDs minted twice; the fusion-tea `SV-034`/`SV-035` facts), What changed (one cell splitter and escape, whole-file ID reservation for all seven prefixes, backlog writer keeps unparsed records, nine refusals before any write), Evidence (the table from `acceptance-evidence.md`: E1 to E4 and the suite count), Contract change ("IDs are never reused" narrowed to IDs present in the registry file), and Downstream (fusion-tea pin move and `SV-034` hand fix after merge; four advisory follow-ups now in the backlog). Note the parity rule for lint and format in one sentence. Link the archived item folder. End the body with the line `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
+
+Create it with `gh pr create --base main`. Return the PR URL in your final message. If a check fails in a way the parity rule does not cover, stop and report instead of fixing unrelated code.

@@ -10,10 +10,12 @@ from __future__ import annotations
 import csv
 import datetime
 import re
+from collections.abc import Hashable
 from pathlib import Path
 from typing import Any
 
 import yaml
+from yaml.constructor import ConstructorError
 
 from agentic_mbse.pm.types import (
     AnalysisQuestionEntry,
@@ -51,9 +53,51 @@ def _warn(warnings: list[ParseWarning], file: str, location: str, message: str) 
     warnings.append(ParseWarning(file=str(file), location=location, message=message))
 
 
-def _strip_html_comments(text: str) -> str:
-    """Remove all HTML comments (<!-- ... -->) from text, including multi-line."""
-    return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+def _strip_html_comments(text: str, *, keep_lines: bool = False) -> str:
+    """Remove all HTML comments (<!-- ... -->) from text, including multi-line.
+
+    With ``keep_lines``, each comment is replaced by the newlines it held, so
+    line ``i`` of the result is line ``i`` of ``text`` with its comments blanked.
+    """
+    return re.sub(
+        r"<!--.*?-->",
+        lambda m: "\n" * m.group().count("\n") if keep_lines else "",
+        text,
+        flags=re.DOTALL,
+    )
+
+
+def _split_table_row(line: str) -> list[str]:
+    r"""Split a markdown table row into stripped cell values, following GFM.
+
+    A pipe right after a backslash is content, not a delimiter, and only that
+    one backslash is dropped: ``\|`` reads as ``|`` and ``\\|`` as ``\|``.
+    Code spans get no special handling, exactly as in GFM.  The empty edge
+    cells that a leading and a trailing pipe produce are dropped.
+    """
+    cells = [c.replace("\\|", "|").strip() for c in re.split(r"(?<!\\)\|", line)]
+    # Remove empty leading/trailing from split
+    if cells and cells[0] == "":
+        cells = cells[1:]
+    if cells and cells[-1] == "":
+        cells = cells[:-1]
+    return cells
+
+
+def _escape_table_cell(value: str) -> str:
+    """Escape a value for one markdown table cell; ``_split_table_row`` reads it back.
+
+    Puts a backslash before every pipe.  Raises ``ValueError`` if the value
+    holds a line break, which no single-line row can carry, or an HTML comment
+    marker, which the parsers strip before they split rows.
+    """
+    for marker in ("\n", "\r", "<!--", "-->"):
+        if marker in value:
+            raise ValueError(
+                f"{value!r} contains {marker!r}, which a table cell cannot hold; "
+                "reword the value without it"
+            )
+    return value.replace("|", "\\|")
 
 
 def _parse_markdown_table(
@@ -67,7 +111,8 @@ def _parse_markdown_table(
     ``text`` must be the file body AFTER frontmatter stripping and HTML comment
     removal.  Callers that use ``parse_frontmatter`` get the body naturally
     (content after the closing ``---``).  ``---`` horizontal rules in the body
-    are treated as section terminators.
+    are treated as section terminators.  Rows are split by ``_split_table_row``,
+    so a backslash-escaped pipe is cell content.
 
     Returns a list of dicts mapping column-name -> cell-value for each data row.
     """
@@ -106,12 +151,7 @@ def _parse_markdown_table(
                 break
             continue
 
-        cells = [c.strip() for c in stripped.split("|")]
-        # Remove empty leading/trailing from split
-        if cells and cells[0] == "":
-            cells = cells[1:]
-        if cells and cells[-1] == "":
-            cells = cells[:-1]
+        cells = _split_table_row(stripped)
 
         if not headers:
             # First | line is the header
@@ -185,16 +225,58 @@ def _parse_heading_sections(
     return results
 
 
+_MERGE_TAG = "tag:yaml.org,2002:merge"
+
+
+class _UniqueKeyLoader(yaml.SafeLoader):
+    """A ``SafeLoader`` that refuses a key repeated within one mapping.
+
+    PyYAML keeps the last of two equal keys, so a second ``standalone:`` would
+    silently hide the first list.  Each mapping's keys are compared as written,
+    before any ``<<`` merge is flattened into it, so a merged key that the
+    mapping overrides is not a repeat.
+    """
+
+    def __init__(self, stream: str) -> None:
+        super().__init__(stream)
+        self._keys_as_written: dict[int, list[yaml.Node]] = {}
+
+    def flatten_mapping(self, node: yaml.MappingNode) -> None:
+        # Merging a mapping into another flattens it early, so record its keys on first sight
+        self._keys_as_written.setdefault(
+            id(node), [key for key, _ in node.value if key.tag != _MERGE_TAG]
+        )
+        super().flatten_mapping(node)
+
+    def construct_mapping(self, node: yaml.MappingNode, deep: bool = False) -> dict[Hashable, Any]:
+        mapping = super().construct_mapping(node, deep=deep)
+        keys: set[Hashable] = set()
+        for key_node in self._keys_as_written[id(node)]:
+            key = self.construct_object(key_node, deep=deep)
+            if key in keys:
+                raise ConstructorError(
+                    "while constructing a mapping",
+                    node.start_mark,
+                    f"found repeated key {key!r}",
+                    key_node.start_mark,
+                )
+            keys.add(key)
+        return mapping
+
+
 # ---------------------------------------------------------------------------
 # Public parse functions
 # ---------------------------------------------------------------------------
 
 
-def parse_frontmatter(path: Path) -> ParseResult[dict[str, Any]]:
+def parse_frontmatter(path: Path, *, unique_keys: bool = False) -> ParseResult[dict[str, Any]]:
     """Extract YAML frontmatter from a markdown file (FR-2).
 
     Returns the parsed dict and any warnings.  Handles missing files,
-    empty files, missing delimiters, and malformed YAML gracefully.
+    empty files, missing delimiters, and malformed YAML gracefully.  Only an
+    unindented ``---`` closes the frontmatter, so a ``---`` line inside a block
+    scalar stays content.  With ``unique_keys``, a key repeated within one
+    mapping is reported as malformed YAML instead of keeping the last value.
     """
     warns: list[ParseWarning] = []
     fp = str(path)
@@ -216,7 +298,7 @@ def parse_frontmatter(path: Path) -> ParseResult[dict[str, Any]]:
     # Find closing ---
     closing_idx = None
     for i in range(1, len(lines)):
-        if lines[i].strip() == "---":
+        if lines[i].rstrip() == "---":
             closing_idx = i
             break
 
@@ -225,8 +307,9 @@ def parse_frontmatter(path: Path) -> ParseResult[dict[str, Any]]:
         return ParseResult(data={}, warnings=warns)
 
     yaml_text = "\n".join(lines[1:closing_idx])
+    loader = _UniqueKeyLoader if unique_keys else yaml.SafeLoader
     try:
-        data = yaml.safe_load(yaml_text)
+        data = yaml.load(yaml_text, Loader=loader)
     except yaml.YAMLError as e:
         _warn(warns, fp, "frontmatter", f"Malformed YAML: {e}")
         return ParseResult(data={}, warnings=warns)
@@ -248,12 +331,15 @@ def parse_frontmatter(path: Path) -> ParseResult[dict[str, Any]]:
     return ParseResult(data=data, warnings=warns)
 
 
-def parse_backlog(path: Path) -> ParseResult[BacklogData]:
-    """Parse BACKLOG.md YAML frontmatter into typed BacklogData (FR-3)."""
-    fm_result = parse_frontmatter(path)
-    warns = list(fm_result.warnings)
-    fp = str(path)
-    raw = fm_result.data
+def _parse_backlog_mapping(raw: dict[str, Any], fp: str) -> ParseResult[BacklogData]:
+    """Validate a loaded BACKLOG.md frontmatter mapping into typed BacklogData.
+
+    A record that fails validation is left out, with a warning located the way
+    ``epics[i].items[j]`` and ``standalone[k]`` read; ``fp`` names the file.
+    ``parse_backlog`` uses it, and so do the operations that write back the
+    mapping they loaded.
+    """
+    warns: list[ParseWarning] = []
 
     epics: list[EpicEntry] = []
     standalone: list[StandaloneEntry] = []
@@ -463,6 +549,13 @@ def parse_backlog(path: Path) -> ParseResult[BacklogData]:
         )
 
     return ParseResult(data=BacklogData(epics=epics, standalone=standalone), warnings=warns)
+
+
+def parse_backlog(path: Path) -> ParseResult[BacklogData]:
+    """Parse BACKLOG.md YAML frontmatter into typed BacklogData (FR-3)."""
+    fm_result = parse_frontmatter(path)
+    backlog = _parse_backlog_mapping(fm_result.data, str(path))
+    return ParseResult(data=backlog.data, warnings=[*fm_result.warnings, *backlog.warnings])
 
 
 def parse_requirements(path: Path) -> ParseResult[list[RequirementEntry]]:

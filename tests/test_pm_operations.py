@@ -1,13 +1,17 @@
 """Tests for the PM operations module."""
 
+import datetime
+import difflib
 from pathlib import Path
 
 import pytest
+import yaml
 
 from agentic_mbse.pm import (
     BacklogData,
     parse_architecture,
     parse_backlog,
+    parse_frontmatter,
     parse_knowledge,
     parse_overview,
     parse_requirements,
@@ -21,10 +25,13 @@ from agentic_mbse.pm.operations import (
     _format_insight_entry,
     _format_table_row,
     _next_id,
+    _registry_ids,
     _render_backlog_body,
+    _single_match,
     _update_frontmatter_fields,
     _write_backlog,
 )
+from agentic_mbse.pm.parser import _split_table_row
 from agentic_mbse.pm.types import (
     DecisionEntry,
     DecisionStatus,
@@ -68,6 +75,105 @@ class TestNextId:
 
     def test_ignores_mismatched_prefix(self):
         assert _next_id("DI", ["PR-001", "PR-002"]) == "DI-001"
+
+
+# design.md Appendix A: (text in the registry file, prefix, numbers it reserves)
+_APPENDIX_A = [
+    ("MAG-001", "G", []),
+    ("`SV-034`", "SV", [34]),
+    ("PR-1", "PR", [1]),
+    ("SV-034a", "SV", [34]),
+    ("SV-034-x", "SV", [34]),
+    ("DI-001-DI-014", "DI", [1, 14]),
+    ("X-SV-001", "SV", [1]),
+    ("**PR-007**", "PR", [7]),
+    ("id: WI-002", "WI", [2]),
+    ("DI-001 through DI-014", "DI", [1, 14]),
+    ("<!-- SV-900 -->", "SV", []),
+    ("<!-- unclosed SV-900", "SV", [900]),
+]
+
+
+class TestRegistryIds:
+    @pytest.mark.parametrize(("text", "prefix", "numbers"), _APPENDIX_A)
+    def test_token_boundary(self, tmp_path, text, prefix, numbers):
+        path = tmp_path / "REGISTRY.md"
+        path.write_text(text + "\n", encoding="utf-8")
+        found = _registry_ids(path, prefix, []).data
+        assert sorted({int(t.split("-")[1]) for t in found}) == numbers
+
+    def test_skips_html_comments(self, tmp_path):
+        path = tmp_path / "VALIDATION_MATRIX.md"
+        path.write_text(
+            "<!-- Example:\n| SV-900 | x |\n-->\n| SV-001 | y |\n<!-- SV-901 --> SV-002\n",
+            encoding="utf-8",
+        )
+        assert _registry_ids(path, "SV", []).data == ["SV-001", "SV-002"]
+
+    @pytest.mark.parametrize(
+        ("template", "prefix"),
+        [
+            ("KNOWLEDGE.md.template", "DI"),
+            ("ARCHITECTURE.md.template", "AD"),
+            ("REQUIREMENTS.md.template", "PR"),
+            ("VALIDATION_MATRIX.md.template", "SV"),
+            ("OVERVIEW.md.template", "G"),
+            ("OVERVIEW.md.template", "AQ"),
+            ("BACKLOG.md.template", "WI"),
+        ],
+    )
+    def test_templates_reserve_nothing(self, template, prefix):
+        # B2: every registry template holds its example IDs inside HTML comments only
+        result = _registry_ids(TEMPLATES / template, prefix, [])
+        assert result.data == []
+        assert result.warnings == []
+
+    def test_data_is_parsed_ids_then_tokens(self, tmp_path):
+        path = tmp_path / "VALIDATION_MATRIX.md"
+        path.write_text("| SV-001 | a |\n| SV-002 | b |\n", encoding="utf-8")
+        assert _registry_ids(path, "SV", ["SV-001"]).data == ["SV-001", "SV-001", "SV-002"]
+
+    def test_one_warning_per_unparsed_number_at_first_spelling(self, tmp_path):
+        path = tmp_path / "VALIDATION_MATRIX.md"
+        path.write_text(
+            "SV-001 parsed. SV-34 cited, then SV-034, SV-040, SV-040.\n", encoding="utf-8"
+        )
+        result = _registry_ids(path, "SV", ["SV-001"])
+        assert [w.location for w in result.warnings] == ["SV-34", "SV-040"]
+        assert all(w.file == str(path) for w in result.warnings)
+        assert result.warnings[0].message.startswith("SV-34 is named in VALIDATION_MATRIX.md")
+        assert "reserved" in result.warnings[0].message
+
+    def test_parsed_id_covers_padded_mention(self, tmp_path):
+        path = tmp_path / "REQUIREMENTS.md"
+        path.write_text("| PR-1 | r |\n\nSee PR-001.\n", encoding="utf-8")
+        result = _registry_ids(path, "PR", ["PR-1"])
+        assert result.warnings == []
+        assert _next_id("PR", result.data) == "PR-002"
+
+    def test_missing_file_returns_parsed_ids(self, tmp_path):
+        result = _registry_ids(tmp_path / "VALIDATION_MATRIX.md", "SV", ["SV-001"])
+        assert result.data == ["SV-001"]
+        assert result.warnings == []
+
+
+class TestSingleMatch:
+    def test_returns_the_one_pair(self):
+        assert _single_match([("line 5", 4)], "SV-001", "VALIDATION_MATRIX.md") == ("line 5", 4)
+
+    def test_no_match_is_not_found(self):
+        with pytest.raises(ValueError) as excinfo:
+            _single_match([], "SV-001", "VALIDATION_MATRIX.md")
+        assert str(excinfo.value) == "SV-001 not found in VALIDATION_MATRIX.md"
+
+    def test_several_matches_name_every_location(self):
+        matches = [("epics[0]", {}), ("epics[2]", {}), ("epics[3]", {})]
+        with pytest.raises(ValueError) as excinfo:
+            _single_match(matches, "Epic 'X'", "BACKLOG.md")
+        message = str(excinfo.value)
+        assert message.startswith("Epic 'X' appears 3 times in BACKLOG.md")
+        assert all(location in message for location, _ in matches)
+        assert "by hand" in message
 
 
 class TestRenderBacklogBody:
@@ -244,6 +350,11 @@ class TestFormatTableRow:
         row = _format_table_row(["PR-001", "All X SHALL Y", "DI-001", "Review", "Check"])
         assert row == "| PR-001 | All X SHALL Y | DI-001 | Review | Check |"
 
+    def test_escapes_pipes(self):
+        row = _format_table_row(["SV-001", "|x| < 1", "ends in \\"])
+        assert row == "| SV-001 | \\|x\\| < 1 | ends in \\ |"
+        assert _split_table_row(row) == ["SV-001", "|x| < 1", "ends in \\"]
+
 
 class TestAppendTableRow:
     def test_append_to_existing_table(self, tmp_path):
@@ -371,6 +482,103 @@ def _setup_validation_matrix(tmp_path):
     return tmp_path
 
 
+# The E1 reproduction rows. The labels are the reverse of fusion-tea's matrix by design:
+# here SV-034 is the escaped (valid) row and SV-035 the malformed one.
+_E1_ROWS = {
+    "valid": "| SV-033 | plain | baseline | test | x | 1e-6 | s | t | passing |",
+    "escaped": "| SV-034 | bar (\\|rel dev\\| <= 1e-6) | baseline | test | x | 1e-6 | s | t | passing |",
+    "malformed": "| SV-035 | bar (|rel dev| <= 1e-6) | baseline | test | x | 1e-6 | s | t | passing |",
+}
+
+
+def _write_matrix(root, rows):
+    """Write a VALIDATION_MATRIX.md holding only the registry table with the given rows."""
+    mdir = root / "modeling_project"
+    mdir.mkdir(exist_ok=True)
+    path = mdir / "VALIDATION_MATRIX.md"
+    path.write_text(
+        "## Verification Registry\n\n"
+        "| ID | Description | Type | Mechanism | Expected | Tolerance | Source | Test | Status |\n"
+        "|----|-------------|------|-----------|----------|-----------|--------|------|--------|\n"
+        + "".join(row + "\n" for row in rows),
+        encoding="utf-8",
+    )
+    return path
+
+
+def _file_bytes(root):
+    """Map every file under root to its bytes, so a refusal test can show nothing changed."""
+    return {p: p.read_bytes() for p in sorted(root.rglob("*")) if p.is_file()}
+
+
+def _insight(di_id):
+    """Return a valid captured InsightEntry with the given ID."""
+    return InsightEntry(
+        id=di_id,
+        title=f"Insight {di_id}",
+        source="s",
+        context="c",
+        model_implications="m",
+        analysis_implications="a",
+        status=InsightStatus.CAPTURED,
+    )
+
+
+def _write_knowledge(root, text):
+    """Write knowledge/KNOWLEDGE.md with the given text and return its path."""
+    kdir = root / "knowledge"
+    kdir.mkdir(exist_ok=True)
+    path = kdir / "KNOWLEDGE.md"
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def _write_archived_knowledge(root):
+    """Write fusion-tea's KNOWLEDGE.md shape: DI-001 to DI-011 under a note naming DI-014."""
+    records = "\n".join(_format_insight_entry(_insight(f"DI-{n:03d}")) for n in range(1, 12))
+    note = "Previous entries (DI-001 through DI-014) archived.\n\n"
+    return _write_knowledge(root, "# Domain Knowledge\n\n" + note + records)
+
+
+def _decision(ad_id):
+    """Return a valid active DecisionEntry with the given ID."""
+    return DecisionEntry(
+        id=ad_id,
+        title=f"Decision {ad_id}",
+        decision="d",
+        rationale="r",
+        date="2026-01-01",
+        status=DecisionStatus.ACTIVE,
+    )
+
+
+def _assert_one_record_added(before, after, new_id, *, table):
+    """Assert the write added one contiguous block holding the new record, and nothing else.
+
+    The block is the record plus its blank separators: one row for a table registry,
+    the heading and field lines for a heading registry. Exactly one added line names new_id.
+    """
+    a, b = before.splitlines(), after.splitlines()
+    ops = [op for op in difflib.SequenceMatcher(None, a, b).get_opcodes() if op[0] != "equal"]
+    assert len(ops) == 1 and ops[0][0] == "insert"
+    added = b[ops[0][3] : ops[0][4]]
+    assert sum(new_id in line for line in added) == 1
+    if table:
+        assert len([line for line in added if line.strip()]) == 1
+
+
+def _comment_example_above_table(path, heading, example_row):
+    """Put a commented example table between heading and the real table (audit A1's layout).
+
+    Returns the comment block, so a test can check the write left it unchanged.
+    """
+    example = f"<!-- Example:\n{example_row}\n-->\n\n"
+    text = path.read_text(encoding="utf-8")
+    assert text.count(f"{heading}\n\n") == 1
+    path.write_text(text.replace(f"{heading}\n\n", f"{heading}\n\n{example}"), encoding="utf-8")
+    return example
+
+
 class TestAddInsight:
     def test_happy_path(self, tmp_path):
         from agentic_mbse.pm.operations import add_insight
@@ -445,6 +653,40 @@ class TestAddInsight:
         assert result.success
         parsed = parse_knowledge(root / "knowledge" / "KNOWLEDGE.md")
         assert parsed.data[0].rationale == "Because physics"
+
+    def test_archive_note_reserves_di_014(self, tmp_path):
+        from agentic_mbse.pm.operations import add_insight
+
+        _write_archived_knowledge(tmp_path)
+        result = add_insight(
+            tmp_path,
+            title="t",
+            source="s",
+            context="c",
+            model_implications="m",
+            analysis_implications="a",
+        )
+        assert result.ids_assigned["DI"] == "DI-015"
+
+    def test_mints_above_unparsed_record(self, tmp_path):
+        from agentic_mbse.pm.operations import add_insight
+
+        dropped = _format_insight_entry(_insight("DI-002")).replace("captured", "bogus")
+        path = _write_knowledge(
+            tmp_path, _format_insight_entry(_insight("DI-001")) + "\n" + dropped
+        )
+        assert [e.id for e in parse_knowledge(path).data] == ["DI-001"]
+        before = path.read_text(encoding="utf-8")
+        result = add_insight(
+            tmp_path,
+            title="t",
+            source="s",
+            context="c",
+            model_implications="m",
+            analysis_implications="a",
+        )
+        assert result.ids_assigned["DI"] == "DI-003"
+        _assert_one_record_added(before, path.read_text(encoding="utf-8"), "DI-003", table=False)
 
 
 class TestSaveResearch:
@@ -522,6 +764,106 @@ class TestPromoteRequirement:
         assert not result.success
         assert "DI-XXX or G-XXX" in result.message
 
+    def test_value_with_pipe_round_trips(self, tmp_path):
+        from agentic_mbse.pm.operations import promote_requirement
+
+        root = _setup_requirements(tmp_path)
+        result = promote_requirement(
+            root,
+            requirement="Margin SHALL keep |dT| under 5 K",
+            source="DI-001",
+            enforcement="e",
+            validation_method="v",
+        )
+        assert result.success
+        parsed = parse_requirements(root / "modeling_project" / "REQUIREMENTS.md")
+        assert parsed.data[0].requirement == "Margin SHALL keep |dT| under 5 K"
+        assert parsed.data[0].source == "DI-001"
+        assert parsed.data[0].validation_method == "v"
+
+    def test_refuses_line_break(self, tmp_path):
+        from agentic_mbse.pm.operations import promote_requirement
+
+        root = _setup_requirements(tmp_path)
+        before = _file_bytes(root)
+        result = promote_requirement(
+            root,
+            requirement="First line\nsecond line",
+            source="DI-001",
+            enforcement="e",
+            validation_method="v",
+        )
+        assert not result.success
+        assert "First line\\nsecond line" in result.message
+        assert _file_bytes(root) == before
+
+    def test_mints_above_unparsed_record(self, tmp_path):
+        from agentic_mbse.pm.operations import promote_requirement
+
+        mdir = tmp_path / "modeling_project"
+        mdir.mkdir()
+        path = mdir / "REQUIREMENTS.md"
+        path.write_text(
+            "## Requirements\n\n"
+            "| ID | Requirement | Source | Enforcement | Validation Method |\n"
+            "|----|-------------|--------|-------------|-------------------|\n"
+            "| PR-001 | r | DI-001 | e | v |\n"
+            "| **PR-002** | r | DI-001 | e | v |\n",
+            encoding="utf-8",
+        )
+        assert [e.id for e in parse_requirements(path).data] == ["PR-001"]
+        before = path.read_text(encoding="utf-8")
+        result = promote_requirement(
+            tmp_path, requirement="new", source="DI-001", enforcement="e", validation_method="v"
+        )
+        assert result.ids_assigned["PR"] == "PR-003"
+        _assert_one_record_added(before, path.read_text(encoding="utf-8"), "PR-003", table=True)
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "# Requirements\n\nNo table yet.\n",
+            "## Requirements\n\nNo table yet.\n",
+            "## Requirements\n\nNo table yet.\n\n## Glossary\n\n| Term | Meaning |\n|---|---|\n",
+        ],
+        ids=["no heading", "no table", "table only in a later section"],
+    )
+    def test_missing_section_refuses(self, tmp_path, text):
+        from agentic_mbse.pm.operations import promote_requirement
+
+        mdir = tmp_path / "modeling_project"
+        mdir.mkdir()
+        (mdir / "REQUIREMENTS.md").write_text(text, encoding="utf-8")
+        before = _file_bytes(tmp_path)
+        result = promote_requirement(
+            tmp_path, requirement="r", source="DI-001", enforcement="e", validation_method="v"
+        )
+        assert not result.success
+        assert "'## Requirements'" in result.message
+        assert "REQUIREMENTS.md" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_skips_commented_table_above_real_table(self, tmp_path):
+        from agentic_mbse.pm.operations import promote_requirement
+
+        root = _setup_requirements(tmp_path)
+        path = root / "modeling_project" / "REQUIREMENTS.md"
+        example = _comment_example_above_table(
+            path, "## Requirements", "| PR-001 | ex | DI-001 | e | v |"
+        )
+        first = promote_requirement(
+            root, requirement="first", source="DI-001", enforcement="e", validation_method="v"
+        )
+        assert [(e.id, e.requirement) for e in parse_requirements(path).data] == [
+            ("PR-001", "first")
+        ]
+        second = promote_requirement(
+            root, requirement="second", source="DI-001", enforcement="e", validation_method="v"
+        )
+        assert [first.ids_assigned["PR"], second.ids_assigned["PR"]] == ["PR-001", "PR-002"]
+        assert [e.id for e in parse_requirements(path).data] == ["PR-001", "PR-002"]
+        assert example in path.read_text(encoding="utf-8")
+
 
 class TestRegisterDecision:
     def test_happy_path(self, tmp_path):
@@ -556,6 +898,26 @@ class TestRegisterDecision:
         root = _setup_architecture(tmp_path)
         result = register_decision(root, title="", decision="d", rationale="r")
         assert not result.success
+
+    def test_mints_above_unparsed_record(self, tmp_path):
+        from agentic_mbse.pm.operations import register_decision
+
+        dropped = _format_decision_entry(_decision("AD-002")).replace("active", "bogus")
+        mdir = tmp_path / "modeling_project"
+        mdir.mkdir()
+        path = mdir / "ARCHITECTURE.md"
+        path.write_text(
+            "# Model Architecture\n\n## Key Decisions\n\n"
+            + _format_decision_entry(_decision("AD-001"))
+            + "\n"
+            + dropped,
+            encoding="utf-8",
+        )
+        assert [e.id for e in parse_architecture(path).data] == ["AD-001"]
+        before = path.read_text(encoding="utf-8")
+        result = register_decision(tmp_path, title="t", decision="d", rationale="r")
+        assert result.ids_assigned["AD"] == "AD-003"
+        _assert_one_record_added(before, path.read_text(encoding="utf-8"), "AD-003", table=False)
 
 
 class TestAddValidation:
@@ -628,6 +990,168 @@ class TestAddValidation:
         assert not result.success
         assert "mechanism" in result.message.lower()
 
+    def test_value_with_pipe_round_trips(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        root = _setup_validation_matrix(tmp_path)
+        result = add_validation(
+            root,
+            description="bar (|rel dev| <= 1e-6)",
+            type="baseline",
+            mechanism="test",
+            expected="|a - b| < 2",
+            tolerance="t",
+        )
+        assert result.success
+        parsed = parse_validation_matrix(root / "modeling_project" / "VALIDATION_MATRIX.md")
+        assert parsed.warnings == []
+        assert parsed.data[0].description == "bar (|rel dev| <= 1e-6)"
+        assert parsed.data[0].expected == "|a - b| < 2"
+        assert parsed.data[0].type.value == "baseline"
+
+    def test_refuses_comment_marker(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        root = _setup_validation_matrix(tmp_path)
+        before = _file_bytes(root)
+        result = add_validation(
+            root,
+            description="see <!-- note",
+            type="baseline",
+            mechanism="test",
+            expected="x",
+            tolerance="t",
+        )
+        assert not result.success
+        assert "'<!--'" in result.message
+        assert "see <!-- note" in result.message
+        assert _file_bytes(root) == before
+
+    def test_e1_three_record_reproduction(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        vm = _write_matrix(tmp_path, list(_E1_ROWS.values()))
+        parsed = parse_validation_matrix(vm)
+        assert [e.id for e in parsed.data] == ["SV-033", "SV-034"]
+        assert parsed.data[1].description == "bar (|rel dev| <= 1e-6)"
+        assert any(w.location == "row 2" for w in parsed.warnings)  # malformed SV-035 stays warned
+        result = add_validation(
+            tmp_path,
+            description="new",
+            type="baseline",
+            mechanism="test",
+            expected="e",
+            tolerance="t",
+        )
+        assert result.ids_assigned["SV"] == "SV-036"
+
+    def test_mints_above_unparsed_record(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        valid = _E1_ROWS["valid"].replace("SV-033", "SV-001")
+        dropped = _E1_ROWS["valid"].replace("SV-033", "SV-002").replace("passing", "done")
+        vm = _write_matrix(tmp_path, [valid, dropped])
+        assert [e.id for e in parse_validation_matrix(vm).data] == ["SV-001"]
+        before = vm.read_text(encoding="utf-8")
+        result = add_validation(
+            tmp_path,
+            description="new",
+            type="baseline",
+            mechanism="test",
+            expected="e",
+            tolerance="t",
+        )
+        assert result.ids_assigned["SV"] == "SV-003"
+        _assert_one_record_added(before, vm.read_text(encoding="utf-8"), "SV-003", table=True)
+
+    def test_reports_reserved_id_after_parse_warnings(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        vm = _write_matrix(tmp_path, list(_E1_ROWS.values()))
+        parse_warnings = parse_validation_matrix(vm).warnings
+        assert [w.location for w in parse_warnings] == ["row 2"]
+        result = add_validation(
+            tmp_path,
+            description="new",
+            type="baseline",
+            mechanism="test",
+            expected="e",
+            tolerance="t",
+        )
+        assert result.warnings[: len(parse_warnings)] == parse_warnings
+        reserved = result.warnings[len(parse_warnings) :]
+        assert [w.location for w in reserved] == ["SV-035"]
+        assert reserved[0].file == str(vm)
+        assert "SV-035" in reserved[0].message and "reserved" in reserved[0].message
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "# Validation Matrix\n\nNo registry yet.\n",
+            "## Verification Registry\n\nNo table yet.\n",
+            "## Verification Registry\n\nNo table yet.\n\n## Notes\n\n| Note |\n|---|\n",
+            "## Verification Registry\n\n<!-- Example:\n| ID | Status |\n|---|---|\n-->\n",
+        ],
+        ids=["no heading", "no table", "table only in a later section", "table only in a comment"],
+    )
+    def test_missing_section_refuses(self, tmp_path, text):
+        from agentic_mbse.pm.operations import add_validation
+
+        mdir = tmp_path / "modeling_project"
+        mdir.mkdir()
+        (mdir / "VALIDATION_MATRIX.md").write_text(text, encoding="utf-8")
+        before = _file_bytes(tmp_path)
+        result = add_validation(
+            tmp_path,
+            description="d",
+            type="baseline",
+            mechanism="test",
+            expected="e",
+            tolerance="t",
+        )
+        assert not result.success
+        assert "'## Verification Registry'" in result.message
+        assert "VALIDATION_MATRIX.md" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_skips_commented_table_above_real_table(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        root = _setup_validation_matrix(tmp_path)
+        vm = root / "modeling_project" / "VALIDATION_MATRIX.md"
+        example = _comment_example_above_table(
+            vm,
+            "## Verification Registry",
+            "| SV-001 | ex | baseline | test | x | t |  |  | pending |",
+        )
+        fields = {"type": "baseline", "mechanism": "test", "expected": "e", "tolerance": "t"}
+        first = add_validation(root, description="first", **fields)
+        assert [(e.id, e.description) for e in parse_validation_matrix(vm).data] == [
+            ("SV-001", "first")
+        ]
+        second = add_validation(root, description="second", **fields)
+        assert [first.ids_assigned["SV"], second.ids_assigned["SV"]] == ["SV-001", "SV-002"]
+        assert [e.id for e in parse_validation_matrix(vm).data] == ["SV-001", "SV-002"]
+        assert example in vm.read_text(encoding="utf-8")
+
+    def test_refuses_row_that_would_land_in_a_comment(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        # The table's last row opens a comment that closes on the next line
+        _write_matrix(tmp_path, [_E1_ROWS["valid"] + " <!-- recheck", "with the owner -->"])
+        before = _file_bytes(tmp_path)
+        result = add_validation(
+            tmp_path,
+            description="d",
+            type="baseline",
+            mechanism="test",
+            expected="e",
+            tolerance="t",
+        )
+        assert not result.success
+        assert "comment" in result.message and "'## Verification Registry'" in result.message
+        assert _file_bytes(tmp_path) == before
+
 
 # ---------------------------------------------------------------------------
 # Phase 3: Cross-file and multi-file operations
@@ -641,6 +1165,33 @@ def _setup_overview(tmp_path):
     src = TEMPLATES / "OVERVIEW.md.template"
     (mdir / "OVERVIEW.md").write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
     return tmp_path
+
+
+def _write_overview(root, goal_rows, question_rows):
+    """Write an OVERVIEW.md holding only the goals and questions tables with the given rows."""
+    mdir = root / "modeling_project"
+    mdir.mkdir(exist_ok=True)
+    path = mdir / "OVERVIEW.md"
+    path.write_text(
+        "## Goals Registry\n\n"
+        "| ID | Goal | Priority | Status | Source | Traced Requirements |\n"
+        "|----|------|----------|--------|--------|---------------------|\n"
+        + "".join(row + "\n" for row in goal_rows)
+        + "\n## Analysis Questions\n\n"
+        "| ID | Question | Implies | Source | Status |\n"
+        "|----|----------|---------|--------|--------|\n"
+        + "".join(row + "\n" for row in question_rows),
+        encoding="utf-8",
+    )
+    return path
+
+
+# Each table holds a valid record and a dropped one with a decorated ID cell.
+_OVERVIEW_GOAL_ROWS = [
+    "| G-001 | g | P0 | active | s |  |",
+    "| **G-002** | g | P0 | active | s |  |",
+]
+_OVERVIEW_QUESTION_ROWS = ["| AQ-001 | q | i | s | open |", "| **AQ-002** | q | i | s | open |"]
 
 
 def _setup_traceability(tmp_path):
@@ -797,6 +1348,29 @@ class TestApproveResearch:
         )
         assert not result.success
 
+    def test_mints_above_archive_note(self, tmp_path):
+        from agentic_mbse.pm.operations import approve_research
+
+        _write_archived_knowledge(tmp_path)
+        pending_file = tmp_path / "knowledge" / "research" / "pending" / "20260202-120000_r.md"
+        pending_file.parent.mkdir(parents=True)
+        pending_file.write_text("# Research\n", encoding="utf-8")
+        result = approve_research(
+            tmp_path,
+            pending_file=str(pending_file),
+            insights=[
+                InsightInput(
+                    title=title,
+                    source="r.md",
+                    context="c",
+                    model_implications="m",
+                    analysis_implications="a",
+                )
+                for title in ("First", "Second")
+            ],
+        )
+        assert result.ids_assigned == {"DI-015": "First", "DI-016": "Second"}
+
 
 class TestRegisterIntent:
     def test_goals_only(self, tmp_path):
@@ -843,6 +1417,126 @@ class TestRegisterIntent:
         register_intent(root, goals=[GoalInput(goal="G1", priority="P0", source="s")])
         result = register_intent(root, goals=[GoalInput(goal="G2", priority="P1", source="s")])
         assert "G-002" in result.ids_assigned
+
+    def test_value_with_pipe_round_trips(self, tmp_path):
+        from agentic_mbse.pm.operations import register_intent
+
+        root = _setup_overview(tmp_path)
+        result = register_intent(
+            root,
+            goals=[GoalInput(goal="Keep |dT| under 5 K", priority="P0", source="s")],
+            questions=[QuestionInput(question="Is |x| bounded?", source="G-001")],
+        )
+        assert result.success
+        parsed = parse_overview(root / "modeling_project" / "OVERVIEW.md")
+        assert parsed.warnings == []
+        assert parsed.data.goals[0].goal == "Keep |dT| under 5 K"
+        assert parsed.data.goals[0].priority == "P0"
+        assert parsed.data.questions[0].question == "Is |x| bounded?"
+        assert parsed.data.questions[0].source == "G-001"
+
+    def test_refused_second_goal_writes_nothing(self, tmp_path):
+        from agentic_mbse.pm.operations import register_intent
+
+        root = _setup_overview(tmp_path)
+        before = _file_bytes(root)
+        result = register_intent(
+            root,
+            goals=[
+                GoalInput(goal="Fine goal", priority="P0", source="s"),
+                GoalInput(goal="Hidden <!-- note", priority="P1", source="s"),
+            ],
+        )
+        assert not result.success
+        assert "Hidden <!-- note" in result.message
+        assert _file_bytes(root) == before
+
+    @pytest.mark.parametrize(
+        ("new_id", "intent"),
+        [
+            ("G-003", {"goals": [GoalInput(goal="new", priority="P0", source="s")]}),
+            ("AQ-003", {"questions": [QuestionInput(question="new?", source="s")]}),
+        ],
+    )
+    def test_mints_above_unparsed_record(self, tmp_path, new_id, intent):
+        from agentic_mbse.pm.operations import register_intent
+
+        path = _write_overview(tmp_path, _OVERVIEW_GOAL_ROWS, _OVERVIEW_QUESTION_ROWS)
+        parsed = parse_overview(path).data
+        assert [e.id for e in parsed.goals + parsed.questions] == ["G-001", "AQ-001"]
+        before = path.read_text(encoding="utf-8")
+        result = register_intent(tmp_path, **intent)
+        assert list(result.ids_assigned) == [new_id]
+        _assert_one_record_added(before, path.read_text(encoding="utf-8"), new_id, table=True)
+
+    def test_multiple_goals_mint_above_unparsed(self, tmp_path):
+        from agentic_mbse.pm.operations import register_intent
+
+        _write_overview(tmp_path, _OVERVIEW_GOAL_ROWS, [])
+        result = register_intent(
+            tmp_path,
+            goals=[
+                GoalInput(goal="first", priority="P0", source="s"),
+                GoalInput(goal="second", priority="P1", source="s"),
+            ],
+        )
+        assert result.ids_assigned == {"G-003": "first", "G-004": "second"}
+
+    def test_missing_questions_section_writes_nothing(self, tmp_path):
+        from agentic_mbse.pm.operations import register_intent
+
+        root = _setup_overview(tmp_path)
+        path = root / "modeling_project" / "OVERVIEW.md"
+        text = path.read_text(encoding="utf-8")
+        path.write_text(
+            text.replace("## Analysis Questions", "## Open Questions"), encoding="utf-8"
+        )
+        before = _file_bytes(root)
+        result = register_intent(
+            root,
+            goals=[GoalInput(goal="g", priority="P0", source="s")],
+            questions=[QuestionInput(question="q?", source="G-001")],
+        )
+        assert not result.success
+        assert "'## Analysis Questions'" in result.message
+        assert "OVERVIEW.md" in result.message
+        assert _file_bytes(root) == before
+
+    @pytest.mark.parametrize(
+        ("kind", "heading", "example_row", "item", "minted"),
+        [
+            pytest.param(
+                "goals",
+                "## Goals Registry",
+                "| G-001 | ex | P0 | active | s |  |",
+                lambda text: GoalInput(goal=text, priority="P0", source="s"),
+                ["G-001", "G-002"],
+                id="G",
+            ),
+            pytest.param(
+                "questions",
+                "## Analysis Questions",
+                "| AQ-001 | ex? | i | s | open |",
+                lambda text: QuestionInput(question=text, source="s"),
+                ["AQ-001", "AQ-002"],
+                id="AQ",
+            ),
+        ],
+    )
+    def test_skips_commented_table_above_real_table(
+        self, tmp_path, kind, heading, example_row, item, minted
+    ):
+        from agentic_mbse.pm.operations import register_intent
+
+        root = _setup_overview(tmp_path)
+        path = root / "modeling_project" / "OVERVIEW.md"
+        example = _comment_example_above_table(path, heading, example_row)
+        first = register_intent(root, **{kind: [item("first")]})
+        assert [e.id for e in getattr(parse_overview(path).data, kind)] == minted[:1]
+        second = register_intent(root, **{kind: [item("second")]})
+        assert [*first.ids_assigned, *second.ids_assigned] == minted
+        assert [e.id for e in getattr(parse_overview(path).data, kind)] == minted
+        assert example in path.read_text(encoding="utf-8")
 
 
 class TestImpactQuery:
@@ -903,6 +1597,93 @@ def _setup_backlog(tmp_path, data=None):
     return tmp_path
 
 
+def _write_backlog_text(root, text):
+    """Write work/BACKLOG.md with the given text and return its path."""
+    wdir = root / "work"
+    wdir.mkdir(exist_ok=True)
+    path = wdir / "BACKLOG.md"
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+def _write_raw_backlog(root, epics=(), standalone=()):
+    """Write work/BACKLOG.md from raw mappings, which BacklogData cannot hold when invalid."""
+    frontmatter = yaml.dump(
+        {"epics": list(epics), "standalone": list(standalone)},
+        default_flow_style=False,
+        sort_keys=False,
+    )
+    return _write_backlog_text(root, f"---\n{frontmatter}---\n\n# Project Backlog\n")
+
+
+def _wi(wi_id, **overrides):
+    """Return one valid standalone work-item mapping, with any fields overridden."""
+    item = {
+        "id": wi_id,
+        "name": f"Item {wi_id}",
+        "scale": "standard",
+        "priority": "P1",
+        "status": "backlog",
+        "completed": None,
+    }
+    item.update(overrides)
+    return item
+
+
+def _epic(name, **overrides):
+    """Return one valid epic mapping with no items, with any fields overridden."""
+    epic = {
+        "name": name,
+        "goal": None,
+        "priority": "P1",
+        "status": "active",
+        "file": "backlog/epic.md",
+        "items": [],
+    }
+    epic.update(overrides)
+    return epic
+
+
+# BACKLOG.md texts whose frontmatter cannot be read whole, each with the reader's warning (R1)
+_UNREADABLE_BACKLOGS = {
+    "malformed YAML": ("---\nstandalone: [\n---\n", "Malformed YAML"),
+    "no frontmatter": ("# Project Backlog\n\nNo items yet.\n", "No opening frontmatter delimiter"),
+    "standalone twice": (
+        "---\n"
+        "standalone:\n"
+        "- id: WI-001\n"
+        "  name: first\n"
+        "  scale: standard\n"
+        "  priority: P1\n"
+        "  status: backlog\n"
+        "standalone: []\n"
+        "---\n",
+        "found repeated key 'standalone'",
+    ),
+    "items twice in one epic": (
+        "---\n"
+        "epics:\n"
+        "- name: X\n"
+        "  priority: P1\n"
+        "  status: active\n"
+        "  file: backlog/epic.md\n"
+        "  items:\n"
+        "  - id: WI-001\n"
+        "    name: first\n"
+        "    scale: standard\n"
+        "    status: backlog\n"
+        "  items: []\n"
+        "standalone: []\n"
+        "---\n",
+        "found repeated key 'items'",
+    ),
+    "closing --- only indented": (
+        "---\nstandalone: []\n  ---\n\n# Project Backlog\n",
+        "No closing frontmatter delimiter",
+    ),
+}
+
+
 class TestAddItem:
     def test_standalone(self, tmp_path):
         from agentic_mbse.pm.operations import add_item
@@ -955,6 +1736,166 @@ class TestAddItem:
         r2 = add_item(root, name="Second", scale="standard", priority="P0")
         assert r1.ids_assigned["WI"] == "WI-001"
         assert r2.ids_assigned["WI"] == "WI-002"
+
+    def test_mints_above_invalid_item(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        path = _write_raw_backlog(
+            tmp_path, standalone=[_wi("WI-001"), _wi("WI-002", status="in-progress")]
+        )
+        assert [e.id for e in parse_backlog(path).data.standalone] == ["WI-001"]
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1")
+        assert result.ids_assigned["WI"] == "WI-003"
+
+    def test_mints_above_unparsed_record(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        path = _write_raw_backlog(
+            tmp_path, standalone=[_wi("WI-001"), _wi("WI-002", status="in-progress")]
+        )
+        assert [e.id for e in parse_backlog(path).data.standalone] == ["WI-001"]
+        before = parse_frontmatter(path).data
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1")
+        assert result.ids_assigned["WI"] == "WI-003"
+        after = parse_frontmatter(path).data
+        before["standalone"].append(after["standalone"][-1])
+        assert after == before and after["standalone"][-1] == _wi("WI-003", name="new")
+
+    def test_carries_forward_invalid_item(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        epic = _epic("X", items=[_wi("WI-001"), _wi("WI-002", scale="huge")])
+        path = _write_raw_backlog(
+            tmp_path, epics=[epic], standalone=[_wi("WI-003", status="in-progress")]
+        )
+        before = parse_frontmatter(path).data
+        result = add_item(tmp_path, name="new", scale="trivial", priority="P2", epic="X")
+        assert result.success, result.message
+        new_item = {"id": "WI-004", "name": "new", "scale": "trivial", "status": "backlog"}
+        before["epics"][0]["items"].append({**new_item, "completed": None})
+        assert parse_frontmatter(path).data == before
+
+    @pytest.mark.parametrize(
+        ("text", "warning"),
+        list(_UNREADABLE_BACKLOGS.values()),
+        ids=list(_UNREADABLE_BACKLOGS),
+    )
+    def test_refuses_unreadable_frontmatter(self, tmp_path, text, warning):
+        from agentic_mbse.pm.operations import add_item
+
+        _write_backlog_text(tmp_path, text)
+        before = _file_bytes(tmp_path)
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1")
+        assert not result.success
+        assert warning in result.message and "by hand" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_keeps_items_after_indented_dashes(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        path = _write_backlog_text(
+            tmp_path,
+            "---\n"
+            "epics:\n"
+            "- name: X\n"
+            "  goal: |\n"
+            "    first line\n"
+            "    ---\n"
+            "    last line\n"
+            "  priority: P1\n"
+            "  status: active\n"
+            "  file: backlog/epic.md\n"
+            "  items:\n"
+            "  - id: WI-001\n"
+            "    name: first\n"
+            "    scale: standard\n"
+            "    status: backlog\n"
+            "standalone:\n"
+            "- id: WI-002\n"
+            "  name: second\n"
+            "  scale: trivial\n"
+            "  priority: P1\n"
+            "  status: backlog\n"
+            "---\n",
+        )
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1")
+        assert result.success, result.message
+        after = parse_frontmatter(path).data
+        assert after["epics"][0]["goal"] == "first line\n---\nlast line\n"
+        assert [item["id"] for item in after["epics"][0]["items"]] == ["WI-001"]
+        assert [item["id"] for item in after["standalone"]] == ["WI-002", "WI-003"]
+
+    def test_refuses_non_list_standalone(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        _write_backlog_text(tmp_path, "---\nstandalone:\n  id: WI-001\n  name: lone\n---\n")
+        before = _file_bytes(tmp_path)
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1")
+        assert not result.success
+        assert "'standalone'" in result.message and "not a list" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_refuses_non_list_epic_items(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        _write_raw_backlog(tmp_path, epics=[_epic("X", items={"id": "WI-001", "name": "lone"})])
+        before = _file_bytes(tmp_path)
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1", epic="X")
+        assert not result.success
+        assert "'epics[0].items'" in result.message and "not a list" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_null_standalone_starts_a_list(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        path = _write_backlog_text(tmp_path, "---\nepics: []\nstandalone:\n---\n")
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1")
+        assert result.success, result.message
+        assert parse_frontmatter(path).data == {
+            "epics": [],
+            "standalone": [_wi("WI-001", name="new")],
+        }
+
+    @pytest.mark.parametrize("existing", ["missing", "empty"])
+    def test_fresh_backlog_matches_typed_write(self, tmp_path, existing):
+        from agentic_mbse.pm.operations import add_item
+
+        path = _write_backlog_text(tmp_path, "")
+        if existing == "missing":
+            path.unlink()
+        assert add_item(tmp_path, name="new", scale="standard", priority="P1").success
+        expected = tmp_path / "expected.md"
+        entry = StandaloneEntry(
+            id="WI-001",
+            name="new",
+            scale=WorkItemScale.STANDARD,
+            priority=Priority.P1,
+            status=WorkItemStatus.BACKLOG,
+        )
+        _write_backlog(expected, BacklogData(standalone=[entry]))
+        assert path.read_text(encoding="utf-8") == expected.read_text(encoding="utf-8")
+
+    def test_refuses_duplicate_epic_names(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        _write_raw_backlog(tmp_path, epics=[_epic("X", status="bogus"), _epic("X")])
+        before = _file_bytes(tmp_path)
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1", epic="X")
+        assert not result.success
+        assert "epics[0]" in result.message and "epics[1]" in result.message
+        assert "by hand" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_refuses_rejected_epic_quoting_warning(self, tmp_path):
+        from agentic_mbse.pm.operations import add_item
+
+        _write_raw_backlog(tmp_path, epics=[_epic("X", status="bogus")])
+        before = _file_bytes(tmp_path)
+        result = add_item(tmp_path, name="new", scale="standard", priority="P1", epic="X")
+        assert not result.success
+        assert "not a valid record" in result.message
+        assert "epics[0]" in result.message and "Invalid status 'bogus'" in result.message
+        assert _file_bytes(tmp_path) == before
 
 
 class TestAddEpic:
@@ -1086,6 +2027,75 @@ class TestAddEpic:
         assert not result.success
         assert "work directory" in result.message.lower()
 
+    def test_carries_forward_invalid_item(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        epics = [
+            _epic("Existing", items=[_wi("WI-001", scale="huge")]),
+            _epic("Rejected", status="bogus"),
+        ]
+        path = _write_raw_backlog(
+            tmp_path, epics=epics, standalone=[_wi("WI-002", status="in-progress")]
+        )
+        epic_file = self._write_epic_file(tmp_path)
+        before = parse_frontmatter(path).data
+
+        result = add_epic(
+            tmp_path, name="Thermal Model", priority="P2", file=str(epic_file), goal="G-001"
+        )
+
+        assert result.success, result.message
+        before["epics"].append(
+            _epic(
+                "Thermal Model",
+                goal="G-001",
+                priority="P2",
+                status="draft",
+                file="backlog/epic-thermal.md",
+            )
+        )
+        assert parse_frontmatter(path).data == before
+
+    def test_refuses_malformed_yaml(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        _write_backlog_text(tmp_path, "---\nepics: [\n---\n")
+        epic_file = self._write_epic_file(tmp_path)
+        before = _file_bytes(tmp_path)
+
+        result = add_epic(tmp_path, name="Thermal Model", priority="P1", file=str(epic_file))
+
+        assert not result.success
+        assert "Malformed YAML" in result.message and "by hand" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_refuses_non_list_epics(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        _write_backlog_text(tmp_path, "---\nepics:\n  name: Existing\n  priority: P0\n---\n")
+        epic_file = self._write_epic_file(tmp_path)
+        before = _file_bytes(tmp_path)
+
+        result = add_epic(tmp_path, name="Thermal Model", priority="P1", file=str(epic_file))
+
+        assert not result.success
+        assert "'epics'" in result.message and "not a list" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_refuses_name_of_rejected_epic(self, tmp_path):
+        from agentic_mbse.pm.operations import add_epic
+
+        _write_raw_backlog(tmp_path, epics=[_epic("Thermal Model", status="bogus")])
+        epic_file = self._write_epic_file(tmp_path)
+        before = _file_bytes(tmp_path)
+
+        result = add_epic(tmp_path, name="Thermal Model", priority="P1", file=str(epic_file))
+
+        assert not result.success
+        assert "already exists" in result.message
+        assert "epics[0]" in result.message and "Invalid status 'bogus'" in result.message
+        assert _file_bytes(tmp_path) == before
+
 
 class TestCloseItem:
     def _setup_active_item(self, tmp_path, wi_id="WI-001", name="solar-model"):
@@ -1216,6 +2226,100 @@ class TestCloseItem:
         completed_dirs = list((root / "work" / "completed").iterdir())
         assert len(completed_dirs) == 1
 
+    def test_carries_forward_invalid_item(self, tmp_path):
+        from agentic_mbse.pm.operations import close_item
+
+        root = self._setup_active_item(tmp_path)
+        epic = _epic(
+            "Test Epic", items=[_wi("WI-001", status="active"), _wi("WI-002", scale="huge")]
+        )
+        path = _write_raw_backlog(
+            root,
+            epics=[epic, _epic("Rejected", status="bogus")],
+            standalone=[_wi("WI-003", status="in-progress")],
+        )
+        before = parse_frontmatter(path).data
+
+        result = close_item(root, "WI-001")
+
+        assert result.success, result.message
+        after = parse_frontmatter(path).data
+        completed = after["epics"][0]["items"][0]["completed"]
+        assert datetime.date.fromisoformat(completed)
+        before["epics"][0]["items"][0].update(status="completed", completed=completed)
+        assert after == before
+
+    @pytest.mark.parametrize(
+        ("text", "warning"),
+        [
+            ("---\nepics: [\n---\n", "Malformed YAML"),
+            (
+                # Last-wins would find WI-001 in the second list and drop the first
+                "---\n"
+                "standalone:\n"
+                "- id: WI-002\n"
+                "  name: other\n"
+                "  scale: trivial\n"
+                "  priority: P1\n"
+                "  status: backlog\n"
+                "standalone:\n"
+                "- id: WI-001\n"
+                "  name: solar model\n"
+                "  scale: standard\n"
+                "  priority: P1\n"
+                "  status: active\n"
+                "---\n",
+                "found repeated key 'standalone'",
+            ),
+        ],
+        ids=["malformed YAML", "standalone twice"],
+    )
+    def test_refusal_leaves_item_active(self, tmp_path, text, warning):
+        from agentic_mbse.pm.operations import close_item
+
+        root = self._setup_active_item(tmp_path)
+        _write_backlog_text(root, text)
+        before = _file_bytes(root)
+
+        result = close_item(root, "WI-001")
+
+        assert not result.success
+        assert warning in result.message
+        assert (root / "work" / "active" / "WI-001_solar-model" / "spec.md").is_file()
+        assert _file_bytes(root) == before
+
+    def test_refuses_duplicate_work_item_ids(self, tmp_path):
+        from agentic_mbse.pm.operations import close_item
+
+        root = self._setup_active_item(tmp_path)
+        _write_raw_backlog(
+            root,
+            epics=[_epic("Test Epic", items=[_wi("WI-001", status="active")])],
+            standalone=[_wi("WI-001", status="active")],
+        )
+        before = _file_bytes(root)
+
+        result = close_item(root, "WI-001")
+
+        assert not result.success
+        assert "epics[0].items[0]" in result.message and "standalone[0]" in result.message
+        assert _file_bytes(root) == before
+
+    def test_refuses_invalid_item_quoting_warning(self, tmp_path):
+        from agentic_mbse.pm.operations import close_item
+
+        root = self._setup_active_item(tmp_path)
+        _write_raw_backlog(root, standalone=[_wi("WI-001", status="in-progress")])
+        before = _file_bytes(root)
+
+        result = close_item(root, "WI-001")
+
+        assert not result.success
+        assert "not a valid record" in result.message
+        assert "standalone[0]" in result.message
+        assert "Invalid status 'in-progress'" in result.message
+        assert _file_bytes(root) == before
+
 
 class TestUpdateValidation:
     def test_happy_path(self, tmp_path):
@@ -1275,6 +2379,101 @@ class TestUpdateValidation:
         parsed = parse_validation_matrix(root / "modeling_project" / "VALIDATION_MATRIX.md")
         assert parsed.data[0].status == VerificationStatus.PASSING
         assert parsed.data[1].status == VerificationStatus.PENDING
+
+    def test_escaped_row_changes_only_status(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        vm = _write_matrix(tmp_path, [_E1_ROWS["escaped"].replace("passing", "pending")])
+        before = vm.read_text(encoding="utf-8")
+        assert update_validation(tmp_path, sv_id="SV-034", status="passing").success
+        assert vm.read_text(encoding="utf-8") == before.replace("| pending |", "| passing |")
+
+    def test_refuses_row_with_inline_comment_and_leaves_file_unchanged(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        row = "| SV-001 | ratio <!-- check --> | baseline | test | x | t | s | t | pending |"
+        vm = _write_matrix(tmp_path, [row])
+        assert [e.id for e in parse_validation_matrix(vm).data] == ["SV-001"]
+        before = _file_bytes(tmp_path)
+        result = update_validation(tmp_path, sv_id="SV-001", status="passing")
+        assert not result.success
+        assert "comment" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_ignores_commented_example_rows(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation, update_validation
+
+        root = _setup_validation_matrix(tmp_path)  # template: example SV-001, SV-002 in <!-- -->
+        add_validation(
+            root, description="real", type="baseline", mechanism="test", expected="x", tolerance="t"
+        )
+        vm = root / "modeling_project" / "VALIDATION_MATRIX.md"
+        before = vm.read_text(encoding="utf-8")
+        assert update_validation(root, sv_id="SV-001", status="passing").success
+        real = "| SV-001 | real | baseline | test | x | t |  |  | "
+        assert vm.read_text(encoding="utf-8") == before.replace(
+            real + "pending |", real + "passing |"
+        )
+
+    @pytest.mark.parametrize("sv_id", ["SV-001", "SV-002"])
+    def test_commented_example_rows_are_not_found(self, tmp_path, sv_id):
+        from agentic_mbse.pm.operations import update_validation
+
+        root = _setup_validation_matrix(tmp_path)
+        before = _file_bytes(root)
+        result = update_validation(root, sv_id=sv_id, status="passing")
+        assert not result.success
+        assert result.message == f"{sv_id} not found in VALIDATION_MATRIX.md"
+        assert _file_bytes(root) == before
+
+    def test_refuses_duplicate_rows(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        _write_matrix(tmp_path, [_E1_ROWS["valid"], _E1_ROWS["valid"].replace("plain", "copy")])
+        before = _file_bytes(tmp_path)
+        result = update_validation(tmp_path, sv_id="SV-033", status="failing")
+        assert not result.success
+        assert "line 5" in result.message and "line 6" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_ignores_rows_outside_registry_section(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        row = _E1_ROWS["valid"].replace("passing", "pending")
+        vm = _write_matrix(tmp_path, [row])
+        registry = vm.read_text(encoding="utf-8")
+        table = registry.removeprefix("## Verification Registry\n\n")
+        vm.write_text(f"## Summary\n\n{table}\n{registry}\n## Archive\n\n{table}", encoding="utf-8")
+        before = vm.read_text(encoding="utf-8").split("\n")
+        assert update_validation(tmp_path, sv_id="SV-033", status="passing").success
+        after = vm.read_text(encoding="utf-8").split("\n")
+        assert [i for i, (a, b) in enumerate(zip(before, after, strict=True)) if a != b] == [10]
+        assert after[10] == row.replace("pending", "passing")
+
+    def test_refuses_unparsed_row(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        vm = _write_matrix(tmp_path, [_E1_ROWS["valid"], _E1_ROWS["malformed"]])
+        parsed = parse_validation_matrix(vm)
+        assert [e.id for e in parsed.data] == ["SV-033"]
+        before = _file_bytes(tmp_path)
+        result = update_validation(tmp_path, sv_id="SV-035", status="failing")
+        assert not result.success
+        assert "\\|" in result.message and "by hand" in result.message
+        assert result.warnings == parsed.warnings
+        assert _file_bytes(tmp_path) == before
+
+    def test_refuses_comment_in_status_cell(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        row = "| SV-001 | d | baseline | test | x | t | s | t | pending <!-- recheck --> |"
+        vm = _write_matrix(tmp_path, [row])
+        assert [e.status for e in parse_validation_matrix(vm).data] == [VerificationStatus.PENDING]
+        before = _file_bytes(tmp_path)
+        result = update_validation(tmp_path, sv_id="SV-001", status="passing")
+        assert not result.success
+        assert "comment" in result.message
+        assert _file_bytes(tmp_path) == before
 
 
 # ---------------------------------------------------------------------------
