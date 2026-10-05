@@ -1,6 +1,6 @@
 # Implementation Plan: Escaped Pipes and Registry ID Integrity
 
-**Status:** In Progress (Phases 1, 2, 3a, and 3b complete)
+**Status:** Complete (Phases 1 to 4 complete; orchestrator E3 snapshot and E4 PASS at `b8bbf8d`, see `acceptance-evidence.md`)
 **Created:** 2026-10-04
 **Last Updated:** 2026-10-04
 **Branch:** pm-registry-integrity
@@ -525,16 +525,16 @@ None. This phase adds no behaviour.
 
 ### Checklist
 
-- [ ] `uv run pytest tests/test_pm_operations.py -v -k mints_above_unparsed` passes seven cases: SV, PR, G, AQ, DI, AD, WI [E2]
-- [ ] `grep -n xfail tests/test_pm_*.py` finds nothing [brief]
-- [ ] `git diff e5bd0db -- 'tests/test_pm_*.py' | grep -c '^-[^-]'` prints 0, meaning existing test lines are untouched. Otherwise, explain each removed line in the Implementation Record [C6]
-- [ ] E3 suite check: G1 `uv run pytest tests/test_pm_*.py` is green [E3, C6]
-- [ ] Full suite: `uv run pytest tests/` passes everything that passed at the base (1932 passed, 1 skipped, 33 deselected), plus the new tests [C6]
-- [ ] G2 `uv run ruff check src/ tests/`
-- [ ] G3 `uv run ruff format --check src/ tests/`
-- [ ] G4 `uv run mypy src/`
-- [ ] Fill in the Evidence Map in the Implementation Record [C1 to C6]
-- [ ] Do not run E3's snapshot or E4. Record that they are ready for the orchestrator [brief]
+- [x] `uv run pytest tests/test_pm_operations.py -v -k mints_above_unparsed` passes seven cases: SV, PR, G, AQ, DI, AD, WI [E2]
+- [x] `grep -n xfail tests/test_pm_*.py` finds nothing [brief]
+- [x] `git diff e5bd0db -- 'tests/test_pm_*.py' | grep -c '^-[^-]'` prints 0, meaning existing test lines are untouched. Otherwise, explain each removed line in the Implementation Record [C6]
+- [x] E3 suite check: G1 `uv run pytest tests/test_pm_*.py` is green [E3, C6]
+- [x] Full suite: `uv run pytest tests/` passes everything that passed at the base (1932 passed, 1 skipped, 33 deselected), plus the new tests [C6]
+- [x] G2 `uv run ruff check src/ tests/`
+- [x] G3 `uv run ruff format --check src/ tests/`
+- [x] G4 `uv run mypy src/`
+- [x] Fill in the Evidence Map in the Implementation Record [C1 to C6]
+- [x] Do not run E3's snapshot or E4. Record that they are ready for the orchestrator [brief]
 
 **What We Know Works After This Phase:** every criterion has passing, named evidence in this repo's suite. Only the fusion-tea checks remain, and the orchestrator runs them.
 
@@ -949,23 +949,55 @@ G3 first showed 9 hunks: one new test line was over-long. It was laid out by han
 
 ### Phase 4 Completion
 
-**Completed:**
-**Full suite result:**
+**Completed:** 2026-10-04, at HEAD `b8bbf8d`. This phase changed only this plan. No source or test file changed, so there is nothing new for the orchestrator to commit except the plan.
+
+**Full suite result:** `uv run pytest tests/` gives 2050 passed, 1 skipped, 33 deselected, 6 warnings, exit 0.
+
+- The base had 1932 passed. The PM files grew from 224 to 342 cases, which is 118 new tests. 1932 + 118 = 2050, so every test that passed at the base still passes.
+- All 6 warnings are `DeprecationWarning: ... use of fork() may lead to deadlocks` from `tests/test_extraction.py` (`TestRunWithTimeout`, `TestDoclingBackend`). None comes from a PM test.
+- The run added `-q -p no:cacheprovider` for a short log and no `.pytest_cache`. Neither flag changes which tests run.
+
+**Acceptance checks:**
+
+- **E2:** `uv run pytest tests/test_pm_operations.py -v -k mints_above_unparsed` selects 7 of 166 and passes all 7: SV, PR, G, AQ, DI, AD, and WI (node IDs in the Evidence Map).
+- **No xfail left:** `grep -n xfail tests/test_pm_*.py` prints nothing (exit 1).
+- **Existing test lines untouched:** `git diff e5bd0db -- 'tests/test_pm_*.py' | grep -c '^-[^-]'` prints 0.
+
 **Gate results:**
+
+| Gate | Result | Parity bar |
+|---|---|---|
+| G1 `pytest tests/test_pm_*.py` | 342 passed | base 224 passed; +118 new cases across Phases 1 to 3b |
+| G2 `ruff check src/ tests/` | 118 repo-wide; PM-scoped check prints "All checks passed!" | ≤ 118 |
+| G3 `ruff format --check src/ tests/` | 78 files repo-wide; 8 hunks in the four edited files | ≤ 78; still 8 hunks |
+| G4 `mypy src/` | 91 errors in 19 files; 0 under `src/agentic_mbse/pm/` | ≤ 91; none in `pm/` |
+| Full suite `pytest tests/` | 2050 passed, 1 skipped, 33 deselected | base 1932 passed, 1 skipped, 33 deselected, plus the new tests |
+
+**Ready for the orchestrator, not run here:** E3's snapshot (`snapshot_parse.py` against `baseline.json`) and E4 (`e4_check.py`). Their expected outcomes are under "Orchestrator-Run Acceptance Checks" above. The code under test is `src/agentic_mbse/pm/` at `b8bbf8d`, which this phase did not change.
+
+**Issues:** none.
+
+**Deviations:**
+
+- **`spec.md` was not updated.** Its Status line and Success Criteria checkboxes still read Draft and unchecked. This session's brief allows edits only to `src/agentic_mbse/pm/`, `tests/test_pm_*.py`, and this plan. Ticking the criteria belongs to the audit or close, after E3 and E4.
+- **The Evidence Map gained an E4 row,** so the table shows that E4 is pending with the orchestrator rather than missing.
 
 ### Evidence Map (filled in Phase 4)
 
+`ops` is `tests/test_pm_operations.py` and `parser` is `tests/test_pm_parser.py`. Every listed test passes at `b8bbf8d`.
+
 | Criterion | Evidence (test node IDs) |
 |---|---|
-| C1 Escaped pipes | |
-| C2 One escape rule | |
-| C3 Round-trip | |
-| C4 No ID minted twice | |
-| C5 No record lost on write | |
-| C6 Nothing else changes | |
-| E1 | |
-| E2 (seven cases) | |
-| E3 suite check | |
+| C1 Escaped pipes | `parser::TestSplitTableRow` (6 tests): `test_escaped_pipe_is_content`, `test_escaped_pipe_inside_code_span` (a pipe inside a code span), `test_bare_pipe_inside_code_span_splits`, `test_escaped_backslash_before_pipe_stays_one_cell` (pins `\\|`), `test_row_without_escapes_drops_edge_cells`, `test_unescaped_rows_split_as_before`. `parser::TestParseValidationMatrix::test_escaped_pipe_keeps_columns` (Type stays `baseline`). E1. E4 is the orchestrator's. |
+| C2 One escape rule | `ops::TestUpdateValidation::test_escaped_row_changes_only_status` (the spec's named test). One escape for every writer: `parser::TestEscapeTableCell` (3 tests), `ops::TestFormatTableRow::test_escapes_pipes`. Update targets exactly one row: `ops::TestSingleMatch` (3 tests) and, in `ops::TestUpdateValidation`, `test_ignores_commented_example_rows`, `test_commented_example_rows_are_not_found`, `test_ignores_rows_outside_registry_section`, `test_refuses_duplicate_rows`, `test_refuses_unparsed_row`, `test_refuses_comment_in_status_cell`, `test_refuses_row_with_inline_comment_and_leaves_file_unchanged`. `parser::TestStripHtmlComments` (3 tests) for the comment-blanked search. |
+| C3 Round-trip | `test_value_with_pipe_round_trips` in `ops::TestAddValidation` (SV), `ops::TestPromoteRequirement` (PR), and `ops::TestRegisterIntent` (G and AQ in one call). A value no cell can hold is refused, with no file changed: `ops::TestAddValidation::test_refuses_comment_marker`, `ops::TestPromoteRequirement::test_refuses_line_break`, `ops::TestRegisterIntent::test_refused_second_goal_writes_nothing`. |
+| C4 No ID minted twice | `ops::TestAddInsight::test_archive_note_reserves_di_014` (the spec's named `DI-015` test). E1. E2's seven cases. Running lists: `ops::TestApproveResearch::test_mints_above_archive_note`, `ops::TestRegisterIntent::test_multiple_goals_mint_above_unparsed`. `ops::TestAddItem::test_mints_above_invalid_item`. Reporting: `ops::TestAddValidation::test_reports_reserved_id_after_parse_warnings`. The scan itself: `ops::TestRegistryIds` (7 tests), including `test_token_boundary` over the 12 Appendix A rows (`MAG-001` is not `G-001`; a code-spanned `` `SV-034` `` counts), `test_skips_html_comments`, and `test_templates_reserve_nothing`. |
+| C5 No record lost on write | Carry forward: `test_carries_forward_invalid_item` in `ops::TestAddItem`, `ops::TestAddEpic`, and `ops::TestCloseItem`, plus E2's WI case. R1: `ops::TestAddItem::test_refuses_unreadable_frontmatter` (5 cases), `ops::TestAddItem::test_keeps_items_after_indented_dashes`, `ops::TestAddEpic::test_refuses_malformed_yaml`, `ops::TestCloseItem::test_refusal_leaves_item_active` (2 cases), and the reader in `parser::TestParseFrontmatter` (`test_indented_dashes_stay_in_block_scalar`, `test_unique_keys_rejects_repeat`, `test_unique_keys_merge_override_is_not_a_repeat`, `test_default_keeps_last_wins`). R2: `ops::TestAddItem::test_refuses_non_list_standalone`, `ops::TestAddItem::test_refuses_non_list_epic_items`, `ops::TestAddEpic::test_refuses_non_list_epics`. R3: `ops::TestAddItem::test_refuses_duplicate_epic_names`, `ops::TestCloseItem::test_refuses_duplicate_work_item_ids`. R4: `ops::TestAddItem::test_refuses_rejected_epic_quoting_warning`, `ops::TestCloseItem::test_refuses_invalid_item_quoting_warning`. R5: `ops::TestAddEpic::test_refuses_name_of_rejected_epic`. R9 (a table write that would land where the parser cannot read it): `test_missing_section_refuses` in `ops::TestPromoteRequirement` and `ops::TestAddValidation` (3 cases each), `ops::TestRegisterIntent::test_missing_questions_section_writes_nothing`. Every refusal test compares every file's bytes before and after. |
+| C6 Nothing else changes | Existing PM tests are unchanged (removed-lines check prints 0) and pass (G1, 342). The full suite passes 2050, the base's 1932 plus the 118 new. C6.1 and C6.2 (no re-spelling; three-digit padding): the existing `ops::TestNextId` is unchanged and passes; each E2 case asserts the diff is one inserted block, so no other line was rewritten; `ops::TestRegistryIds::test_parsed_id_covers_padded_mention` (`PR-1` stays `PR-1`, next is `PR-002`). C6.3: `parser::TestSplitTableRow::test_unescaped_rows_split_as_before` (8 rows). C6.4: `parser::TestParseValidationMatrix::test_escaped_pipe_keeps_columns`. C6.5: E1 asserts the malformed `SV-035` is still warned; `ops::TestAddValidation::test_reports_reserved_id_after_parse_warnings` keeps the parse warnings first. The fusion-tea snapshot is E3's other half, run by the orchestrator. |
+| E1 | `ops::TestAddValidation::test_e1_three_record_reproduction`. Red at the base (Phase 1 record), green since Phase 2. |
+| E2 (seven cases) | `test_mints_above_unparsed_record` in `ops::TestAddValidation` (SV), `ops::TestPromoteRequirement` (PR), `ops::TestRegisterIntent` as `[G-003-intent0]` (G) and `[AQ-003-intent1]` (AQ), `ops::TestAddInsight` (DI), `ops::TestRegisterDecision` (AD), and `ops::TestAddItem` (WI). All 7 pass. |
+| E3 suite check | G1 `uv run pytest tests/test_pm_*.py`: 342 passed. The snapshot half is pending with the orchestrator. |
+| E4 | PASS at `b8bbf8d`, run by the orchestrator: 14 of 14 expectations; `SV-136` minted, `DI-015` on the knowledge copy. E3 snapshot: only `SV-035` added, its warning gone, five other files identical. See `acceptance-evidence.md`. |
 
 ---
 
