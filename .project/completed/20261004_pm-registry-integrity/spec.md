@@ -1,6 +1,6 @@
 # Spec: Escaped Pipes and Registry ID Integrity
 
-**Status:** Implemented and audited (Certified with follow-ups, 2026-10-04; see audit.md). Awaiting owner close.
+**Status:** Closed 2026-10-04 — independently certified with follow-ups ([audit](audit.md), including its Re-check); follow-ups filed in the [backlog](../../backlog/BACKLOG.md).
 **Owner:** Reid W
 **Created:** 2026-10-04 09:28 PDT
 **Complexity:** MEDIUM
@@ -107,4 +107,4 @@ Evidence for ID reuse:
 - **fusion-tea copies:** `.orchestrate-logs/ft-snapshot/` (gitignored; read by E3 and E4).
 - **Product lens:** [Review ledger](product-lens.md).
 
-**Next Steps:** Owner runs `/_my_close`, then `/_my_pre_pr` on branch `pm-registry-integrity`.
+**Next Steps:** Closed 2026-10-04. Owner runs `/_my_pre_pr` on branch `pm-registry-integrity`.

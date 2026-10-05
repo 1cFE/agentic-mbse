@@ -4,6 +4,28 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-04] - Escaped Pipes and Registry ID Integrity
+
+**Type**: Item (standalone `PM-MATRIX-ESCAPED-PIPE`, filed 2026-08-21; branch `pm-registry-integrity`, source last changed at `c3f3517`, not yet merged)
+**Duration**: <1 day (spec created 2026-10-04 09:28 PDT; closed 2026-10-04)
+
+### Summary
+
+PM reads and writes no longer lose registry records or mint an ID twice. Before this item, the table splitter treated GFM's `\|` escape as a cell boundary (fusion-tea's valid `SV-035` vanished from the parse), `update-validation` wrote into the wrong column, the backlog writer deleted every work item it could not parse, and all seven allocators numbered only parsed records. Now one splitter and escape pair serves every table reader and writer; every allocator (SV, DI, PR, AD, WI, G, AQ) mints above every same-prefix ID the registry file names outside HTML comments; backlog writes edit the loaded frontmatter and carry rejected records forward; and nine refusals (R1 to R9) stop a write before any file changes. A post-audit fix makes table inserts skip commented example tables. Independently certified with follow-ups: 25 source mutations caught, full suite 2,056 passed, and E3/E4 pass on copies of fusion-tea's files (`SV-035` parses; next IDs `SV-136` and `DI-015`). Users will see new stderr reservation warnings and clean refusals where calls used to corrupt or crash; the one new refusal on a previously harmless call is `update-validation` on a row with an inline HTML comment (filed as `PM-UPDATE-VALIDATION-COMMENT`).
+
+**Contract change.** The PM operations promise "IDs are never reused" ([2026-02 operations spec](20260203_d4.4-operations/spec.md), line 73) was never implemented. Per this item's spec Decisions ([AGENT], orchestrator 2026-10-04), it is narrowed to IDs present in the registry file, with no persistent high-water mark: a deleted ID can be minted again once the file no longer names it, and archived IDs are protected only while the file names them.
+
+**Downstream (fusion-tea, not in this item's scope).** After merge, fusion-tea's agentic-mbse pin must move. Its `SV-034` row still holds two raw pipes and stays warned until they are escaped by hand.
+
+### Deliverables
+
+- `src/agentic_mbse/pm/parser.py` (GFM cell splitter, unique-key frontmatter loader, unindented closing delimiter) and `src/agentic_mbse/pm/operations.py` (escape pair, whole-file ID discovery, document write-back, refusals R1 to R9, comment-aware table insert).
+- `tests/test_pm_parser.py` and `tests/test_pm_operations.py`: 124 tests added, no base test line removed.
+- `.project/completed/20261004_pm-registry-integrity/`: `spec.md`, `spec-review.md`, `spec-review-2.md`, `design.md`, `design-review.md`, `plan.md`, `acceptance-evidence.md`, `audit.md`, `product-lens.md`, `briefs/`.
+- Backlog follow-ups (P3): `PM-DASHBOARD-REPEATED-KEY`, `PM-UPDATE-VALIDATION-COMMENT`, `PM-WRITE-BACKLOG-TYPED-FORM`, `PM-R7-MESSAGE`.
+
+---
+
 ## [2026-10-04] - L6 EXPOSE Validation Consistency
 
 **Type**: Item (standalone `L6-EXPOSE-CONSISTENCY`; implementation `3f442ce` on `harness-right-size`)

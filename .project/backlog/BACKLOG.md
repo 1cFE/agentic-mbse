@@ -12,7 +12,7 @@ Prioritized list of epics and features.
 
 - July constraint-wave, GAP-CLOSE, and CONSTRAINT-EXEC compatibility blockers are resolved by merged successor work. They are not pending features.
 - Docling/Pandoc research is closed; iteration-loop remains shelved. Artifact scaffolding is a draft, despite the old “spec complete” label.
-- P1 OCR/deployment gaps remain unimplemented; the PDF epic's summarization guard retains explicit item-level P2. Recent P2 registry ID reuse and empty-insight approval defects are freshly reproduced. PM operation stubs and extraction provenance gaps also remain.
+- P1 OCR/deployment gaps remain unimplemented; the PDF epic's summarization guard retains explicit item-level P2. Recent P2 registry ID reuse (closed 2026-10-04 as `PM-MATRIX-ESCAPED-PIPE`; see Completed) and empty-insight approval defects are freshly reproduced. PM operation stubs and extraction provenance gaps also remain.
 
 ### Newly tracked follow-ups — priority not assigned
 
@@ -73,22 +73,6 @@ Prioritized list of epics and features.
 ---
 
 ## P2 - Medium Priority
-
-### [PM-MATRIX-ESCAPED-PIPE] Validation-matrix parser drops rows with escaped pipes; `add-validation` then reuses an SV id
-
-**Priority**: P2
-**Effort**: 1.5 days (was 0.5 day; scope grew in spec review to two splitters, seven allocators, and the backlog writer)
-**Status**: Implemented and audited on branch `pm-registry-integrity` (Certified with follow-ups, 2026-10-04); awaiting close and PR. Four advisory follow-ups listed in `.project/active/pm-registry-integrity/audit.md`. (originally filed 2026-08-21)
-**Spec**: [Registry integrity](../active/pm-registry-integrity/spec.md)
-
-**Problem**: `_parse_markdown_table` splits every line on `|` (`src/agentic_mbse/pm/parser.py:109`) and does not honor the GFM escape `\|`. A cell containing `\|rel dev\|` (fusion-tea `modeling_project/VALIDATION_MATRIX.md` rows SV-034 and SV-035) shifts the columns, the `Type` enum check fails, the row is dropped with a warning, and `parse_validation_matrix` returns without it. `add_validation` then computes `_next_id("SV", [e.id for e in result.data])` (`pm/operations.py:515`, `:58-70`) over the surviving rows and minted a second `SV-034`. Silent id reuse in a registry other artifacts cite by id.
-
-**Goal**: Escaped literal pipes preserve table cells. Every registry allocator (SV, DI, PR, AD, WI, G, AQ) protects IDs still present in malformed records, using each registry's native representation. Regression evidence covers escaped-pipe and malformed-record cases. The original table-only scanning recipe was inadequate for heading/frontmatter registries; mechanism is deferred to the spec's design questions.
-
-**Downstream**: fusion-tea BACKLOG row "VALIDATION_MATRIX.md rows SV-034/SV-035 are invisible to the PM parser" (fixes its two cells independently).
-
----
-
 
 ### [PM-APPROVE-RESEARCH-EMPTY-INSIGHTS] `approve-research` refuses a research document that mints no insight
 
@@ -503,6 +487,54 @@ Three small items left out of `L6-EXPOSE-CONSISTENCY`: V4 still reports `.` on n
 
 ---
 
+### [PM-DASHBOARD-REPEATED-KEY] `status` silently shows only the last list when a `BACKLOG.md` frontmatter key repeats
+
+**Priority**: P3
+**Status**: Filed 2026-10-04 at `PM-MATRIX-ESCAPED-PIPE` close
+**Source**: [audit](../completed/20261004_pm-registry-integrity/audit.md) advisory A2; product-lens audit block, smells ii and v
+
+**Problem**: `parse_backlog` (`src/agentic_mbse/pm/parser.py:554`) loads the frontmatter with YAML's default last-wins rule, so when a key such as `standalone:` appears twice, `agentic-mbse status` shows only the second list and gives no warning. PM writes already refuse such a file (refusal R1), so no record is deleted, but the dashboard misstates what the file holds. Design D9 kept read-only consumers unchanged on purpose, and `test_default_keeps_last_wins` (`tests/test_pm_parser.py:123`) pins the silent default.
+
+**Goal**: Read-only callers warn, not refuse, on a repeated frontmatter key, so `status` tells the user the file holds a list it is not showing.
+
+---
+
+### [PM-UPDATE-VALIDATION-COMMENT] `update-validation` refuses a valid SV row that holds an inline HTML comment
+
+**Priority**: P3
+**Status**: Filed 2026-10-04 at `PM-MATRIX-ESCAPED-PIPE` close
+**Source**: [audit](../completed/20261004_pm-registry-integrity/audit.md) advisory A3; product-lens audit finding (c)
+
+**Problem**: When an SV row the parser reads as valid carries an inline HTML comment, `update-validation` refuses it because the row writer rejects comment markers (`src/agentic_mbse/pm/operations.py:1460-1473`, pinned by `test_refuses_row_with_inline_comment_and_leaves_file_unchanged`). Before `PM-MATRIX-ESCAPED-PIPE`, such a row updated correctly, so this is the one new refusal on a call that used to succeed without damage. `claude/commands/audit-models.md:33` routes SV status changes only through this command, so the user must move the comment out by hand; the message says so and the file is untouched. fusion-tea is not exposed: all 134 parsed rows on its real matrix copy update cleanly.
+
+**Goal**: Decide whether `update-validation` should carry an inline comment in a non-Status cell through unchanged instead of refusing the row, and implement that decision with a test.
+
+---
+
+### [PM-WRITE-BACKLOG-TYPED-FORM] `_write_backlog` keeps a `BacklogData` branch that only tests use
+
+**Priority**: P3
+**Status**: Filed 2026-10-04 at `PM-MATRIX-ESCAPED-PIPE` close
+**Source**: [audit](../completed/20261004_pm-registry-integrity/audit.md) advisory A5
+
+**Problem**: `_write_backlog` (`src/agentic_mbse/pm/operations.py:227`) still accepts a typed `BacklogData` (branch at `:235`), but every production caller passes the loaded frontmatter document. The branch exists so six base test call sites stayed unchanged under the item's additions-only test rule. As a result, the base `TestWriteBacklogRoundTrip` tests (`tests/test_pm_operations.py:238`) exercise only this test branch, not the production write path; production write-back is covered by the newer carry-forward tests and the fusion-tea round trip.
+
+**Goal**: Move the typed form into a test helper and point `TestWriteBacklogRoundTrip` at the document write path, so `_write_backlog` has one production signature.
+
+---
+
+### [PM-R7-MESSAGE] `update-validation`'s refusal blames pipes or comments when Status is not the ninth column
+
+**Priority**: P3
+**Status**: Filed 2026-10-04 at `PM-MATRIX-ESCAPED-PIPE` close
+**Source**: [audit](../completed/20261004_pm-registry-integrity/audit.md) advisory A6; product-lens audit smell iv
+
+**Problem**: `update-validation` writes the ninth cell of the matched row and refuses (refusal R7) when that cell is not the parsed Status (`src/agentic_mbse/pm/operations.py:1449`). On a matrix with a custom header, where Status sits in another column, the refusal is correct but its message (`:1453-1455`) tells the user to escape pipes or move an HTML comment, which is not the cause.
+
+**Goal**: When the row parses but Status is not its ninth cell, the refusal says that Status must be the ninth column.
+
+---
+
 ## Disposition Records
 
 ### [ITEM-SYNC-F1] SysIDE self-named-recursion vendor note (evaluation-time finding)
@@ -578,6 +610,7 @@ Implemented in `9cf6b3c`; the retained [spec](../active/formula-teaching-reconci
 | Docling Deep-Dive | 2026-03-06 | — | Research complete (Phases 0-2). Phases 3-4 not needed. |
 | Pandoc Deep-Dive | 2026-03-06 | — | Research complete (Phases 1-4). Findings integrated into v4. |
 | L6-EXPOSE-CONSISTENCY: L6 EXPOSE Validation Consistency | 2026-10-04 | <1 day | V4 and completeness share V2's EXPOSE predicate (`3f442ce`); fusion-tea `models/` Level 6 issues 7,734 → 408, none added. Archived to `completed/20261004_l6-expose-consistency/` |
+| PM-MATRIX-ESCAPED-PIPE: Escaped Pipes and Registry ID Integrity | 2026-10-04 | <1 day (filed 2026-08-21) | GFM `\|` escape honoured; all seven allocators reserve every ID the registry file names; backlog writes keep unparsed records; nine refusals before any write. Certified with follow-ups. Archived to `completed/20261004_pm-registry-integrity/`. Downstream: fusion-tea fixes its `SV-034` cells by hand |
 | ~~EPIC-CMDREV-001: Command System Revision~~ | — | — | **Superseded** by EPIC-ARCH-002 + EPIC-ARCH-003 |
 | ~~TASK-PDF-001: Header Consistency~~ | — | — | **Superseded** by EPIC-PDFV3-001 (Claude structure repair handles this) |
 
