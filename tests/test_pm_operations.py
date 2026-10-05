@@ -567,6 +567,18 @@ def _assert_one_record_added(before, after, new_id, *, table):
         assert len([line for line in added if line.strip()]) == 1
 
 
+def _comment_example_above_table(path, heading, example_row):
+    """Put a commented example table between heading and the real table (audit A1's layout).
+
+    Returns the comment block, so a test can check the write left it unchanged.
+    """
+    example = f"<!-- Example:\n{example_row}\n-->\n\n"
+    text = path.read_text(encoding="utf-8")
+    assert text.count(f"{heading}\n\n") == 1
+    path.write_text(text.replace(f"{heading}\n\n", f"{heading}\n\n{example}"), encoding="utf-8")
+    return example
+
+
 class TestAddInsight:
     def test_happy_path(self, tmp_path):
         from agentic_mbse.pm.operations import add_insight
@@ -831,6 +843,27 @@ class TestPromoteRequirement:
         assert "REQUIREMENTS.md" in result.message
         assert _file_bytes(tmp_path) == before
 
+    def test_skips_commented_table_above_real_table(self, tmp_path):
+        from agentic_mbse.pm.operations import promote_requirement
+
+        root = _setup_requirements(tmp_path)
+        path = root / "modeling_project" / "REQUIREMENTS.md"
+        example = _comment_example_above_table(
+            path, "## Requirements", "| PR-001 | ex | DI-001 | e | v |"
+        )
+        first = promote_requirement(
+            root, requirement="first", source="DI-001", enforcement="e", validation_method="v"
+        )
+        assert [(e.id, e.requirement) for e in parse_requirements(path).data] == [
+            ("PR-001", "first")
+        ]
+        second = promote_requirement(
+            root, requirement="second", source="DI-001", enforcement="e", validation_method="v"
+        )
+        assert [first.ids_assigned["PR"], second.ids_assigned["PR"]] == ["PR-001", "PR-002"]
+        assert [e.id for e in parse_requirements(path).data] == ["PR-001", "PR-002"]
+        assert example in path.read_text(encoding="utf-8")
+
 
 class TestRegisterDecision:
     def test_happy_path(self, tmp_path):
@@ -1057,8 +1090,9 @@ class TestAddValidation:
             "# Validation Matrix\n\nNo registry yet.\n",
             "## Verification Registry\n\nNo table yet.\n",
             "## Verification Registry\n\nNo table yet.\n\n## Notes\n\n| Note |\n|---|\n",
+            "## Verification Registry\n\n<!-- Example:\n| ID | Status |\n|---|---|\n-->\n",
         ],
-        ids=["no heading", "no table", "table only in a later section"],
+        ids=["no heading", "no table", "table only in a later section", "table only in a comment"],
     )
     def test_missing_section_refuses(self, tmp_path, text):
         from agentic_mbse.pm.operations import add_validation
@@ -1078,6 +1112,44 @@ class TestAddValidation:
         assert not result.success
         assert "'## Verification Registry'" in result.message
         assert "VALIDATION_MATRIX.md" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_skips_commented_table_above_real_table(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        root = _setup_validation_matrix(tmp_path)
+        vm = root / "modeling_project" / "VALIDATION_MATRIX.md"
+        example = _comment_example_above_table(
+            vm,
+            "## Verification Registry",
+            "| SV-001 | ex | baseline | test | x | t |  |  | pending |",
+        )
+        fields = {"type": "baseline", "mechanism": "test", "expected": "e", "tolerance": "t"}
+        first = add_validation(root, description="first", **fields)
+        assert [(e.id, e.description) for e in parse_validation_matrix(vm).data] == [
+            ("SV-001", "first")
+        ]
+        second = add_validation(root, description="second", **fields)
+        assert [first.ids_assigned["SV"], second.ids_assigned["SV"]] == ["SV-001", "SV-002"]
+        assert [e.id for e in parse_validation_matrix(vm).data] == ["SV-001", "SV-002"]
+        assert example in vm.read_text(encoding="utf-8")
+
+    def test_refuses_row_that_would_land_in_a_comment(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        # The table's last row opens a comment that closes on the next line
+        _write_matrix(tmp_path, [_E1_ROWS["valid"] + " <!-- recheck", "with the owner -->"])
+        before = _file_bytes(tmp_path)
+        result = add_validation(
+            tmp_path,
+            description="d",
+            type="baseline",
+            mechanism="test",
+            expected="e",
+            tolerance="t",
+        )
+        assert not result.success
+        assert "comment" in result.message and "'## Verification Registry'" in result.message
         assert _file_bytes(tmp_path) == before
 
 
@@ -1429,6 +1501,42 @@ class TestRegisterIntent:
         assert "'## Analysis Questions'" in result.message
         assert "OVERVIEW.md" in result.message
         assert _file_bytes(root) == before
+
+    @pytest.mark.parametrize(
+        ("kind", "heading", "example_row", "item", "minted"),
+        [
+            pytest.param(
+                "goals",
+                "## Goals Registry",
+                "| G-001 | ex | P0 | active | s |  |",
+                lambda text: GoalInput(goal=text, priority="P0", source="s"),
+                ["G-001", "G-002"],
+                id="G",
+            ),
+            pytest.param(
+                "questions",
+                "## Analysis Questions",
+                "| AQ-001 | ex? | i | s | open |",
+                lambda text: QuestionInput(question=text, source="s"),
+                ["AQ-001", "AQ-002"],
+                id="AQ",
+            ),
+        ],
+    )
+    def test_skips_commented_table_above_real_table(
+        self, tmp_path, kind, heading, example_row, item, minted
+    ):
+        from agentic_mbse.pm.operations import register_intent
+
+        root = _setup_overview(tmp_path)
+        path = root / "modeling_project" / "OVERVIEW.md"
+        example = _comment_example_above_table(path, heading, example_row)
+        first = register_intent(root, **{kind: [item("first")]})
+        assert [e.id for e in getattr(parse_overview(path).data, kind)] == minted[:1]
+        second = register_intent(root, **{kind: [item("second")]})
+        assert [*first.ids_assigned, *second.ids_assigned] == minted
+        assert [e.id for e in getattr(parse_overview(path).data, kind)] == minted
+        assert example in path.read_text(encoding="utf-8")
 
 
 class TestImpactQuery:

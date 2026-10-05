@@ -34,3 +34,7 @@ All 14 expectations pass:
 
 - E4 at `e9fd8b1` (after phase 2): PASS. E3 at `e9fd8b1`: same result as final.
 - E4 at `9b82006` (before any change): FAIL on three expectations, `SV-035` parses, new value reads back identical, next DI is `DI-015`. Those are the three defects.
+
+## Audit advisory A4 — indented closing `---` (checked by the orchestrator against fusion-tea itself)
+
+The audit could not read fusion-tea's work-item files. Scanned 1138 frontmatter files under fusion-tea's `work/`, `modeling_project/`, and `knowledge/` on 2026-10-04: none has an indented `---` line inside its frontmatter. The stricter delimiter rule changes nothing on real data.

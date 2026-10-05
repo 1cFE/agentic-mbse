@@ -1,6 +1,6 @@
 # Implementation Plan: Escaped Pipes and Registry ID Integrity
 
-**Status:** Complete (Phases 1 to 4 complete; orchestrator E3 snapshot and E4 PASS at `b8bbf8d`, see `acceptance-evidence.md`)
+**Status:** Complete (Phases 1 to 4 complete; orchestrator E3 snapshot and E4 PASS at `b8bbf8d`, see `acceptance-evidence.md`). Post-audit fix A1 applied after the audit; see Phase 4 Completion.
 **Created:** 2026-10-04
 **Last Updated:** 2026-10-04
 **Branch:** pm-registry-integrity
@@ -536,6 +536,16 @@ None. This phase adds no behaviour.
 - [x] Fill in the Evidence Map in the Implementation Record [C1 to C6]
 - [x] Do not run E3's snapshot or E4. Record that they are ready for the orchestrator [brief]
 
+**Post-audit fix A1** [orchestrator decision 2026-10-04, `audit.md` A1]: `_insert_table_row` finds the heading and the table on comment-blanked text.
+
+- [x] Red at HEAD (`24e8a15`) before any `src/` edit: the SV case, plus the other new cases below [brief]
+- [x] `test_skips_commented_table_above_real_table` in `TestAddValidation` (SV), `TestPromoteRequirement` (PR), and `TestRegisterIntent` (`[G]`, `[AQ]`): a commented example table sits between the heading and the real table. The add lands in the real table, the parser reads it back, the next add mints above it, and the comment is unchanged [A1, R9, C3, C4]
+- [x] `TestAddValidation::test_missing_section_refuses[table only in a comment]`: the only table under the heading is inside a comment. The add refuses under R9, and every file is unchanged [A1, R9, I7]
+- [x] `TestAddValidation::test_refuses_row_that_would_land_in_a_comment`: the table's last row opens a comment that closes on the next line. The add refuses, and every file is unchanged [A1, I7; agent decision, see the note]
+- [x] `_insert_table_row` locates on `_strip_html_comments(text, keep_lines=True)` and inserts into the original lines at that index [A1, R9]
+- [x] G1 to G4 and the full suite rerun
+- [x] `design.md` D9's R9 row says the table must be outside HTML comments [orchestrator decision]
+
 **What We Know Works After This Phase:** every criterion has passing, named evidence in this repo's suite. Only the fusion-tea checks remain, and the orchestrator runs them.
 
 ---
@@ -982,6 +992,44 @@ G3 first showed 9 hunks: one new test line was over-long. It was laid out by han
 - **`spec.md` was not updated.** Its Status line and Success Criteria checkboxes still read Draft and unchecked. This session's brief allows edits only to `src/agentic_mbse/pm/`, `tests/test_pm_*.py`, and this plan. Ticking the criteria belongs to the audit or close, after E3 and E4.
 - **The Evidence Map gained an E4 row,** so the table shows that E4 is pending with the orchestrator rather than missing.
 
+**Post-audit fix A1** (2026-10-04, after the audit at `26a7e0a`; not committed).
+
+- **The defect:** `_insert_table_row` found "the table under the heading" on raw text. A commented example table above the real table became the target, so the new row was written inside the comment. The parser could not read it, and the next add minted the same ID (`audit.md` A1, probe P1).
+- **Red at HEAD (`24e8a15`)**, before any `src/` edit, with `uv run pytest tests/test_pm_operations.py -q -k "skips_commented_table or would_land_in_a_comment"` and the comment-only case by node ID:
+
+  ```
+  E   AssertionError: assert [] == [('SV-001', 'first')]
+  FAILED tests/test_pm_operations.py::TestAddValidation::test_skips_commented_table_above_real_table
+  E   AssertionError: assert [] == [('PR-001', 'first')]
+  FAILED tests/test_pm_operations.py::TestPromoteRequirement::test_skips_commented_table_above_real_table
+  E   AssertionError: assert [] == ['G-001']
+  FAILED tests/test_pm_operations.py::TestRegisterIntent::test_skips_commented_table_above_real_table[G]
+  E   AssertionError: assert [] == ['AQ-001']
+  FAILED tests/test_pm_operations.py::TestRegisterIntent::test_skips_commented_table_above_real_table[AQ]
+  E    +  where True = OperationResult(success=True, message='Added verification SV-034: d', ...).success
+  FAILED tests/test_pm_operations.py::TestAddValidation::test_refuses_row_that_would_land_in_a_comment
+  ====================== 5 failed, 167 deselected in 0.51s =======================
+  E    +  where True = OperationResult(success=True, message='Added verification SV-001: d', ...).success
+  FAILED tests/test_pm_operations.py::TestAddValidation::test_missing_section_refuses[table only in a comment]
+  ```
+
+  Each add reported success, and the parser then read no record. The SV line is the A1 case: `SV-001` was written inside the comment.
+- **The change** (`operations.py`, `_insert_table_row`): the heading and table loops run over `_strip_html_comments(text, keep_lines=True)`, the same blanking `_raw_table_rows` uses for `update-validation`. Blanking keeps line numbers, so the row goes into the original lines at the found index. A section whose only table is inside a comment refuses under R9 with `No table found under '## X'`.
+- **One case the brief did not name** [AGENT]: the table's last row opens a comment that closes on a later line. The insert point after that row is inside the comment, so the same loss would follow. After inserting, `_insert_table_row` checks that the new line reads back outside comments, and refuses otherwise. The message is `A row added under '## X' would fall inside the HTML comment that opens on line N; move that comment out of the table`. D9 does not list this refusal. `design.md` was given only the one R9 clause, so whether D9 should name it is the orchestrator's call.
+- **No change on real layouts.** On the fusion-tea copies and on all four templates, the new `_insert_table_row` returns the same text as HEAD's, or raises the same error, for `## Verification Registry`, `## Requirements`, `## Goals Registry`, and `## Analysis Questions`. HEAD's source was loaded in-process from `git show`.
+- **Tests:** 6 new cases (see the Phase 4 checklist). Every refusal compares every file's bytes before and after. `git diff e5bd0db -- 'tests/test_pm_*.py' | grep -c '^-[^-]'` still prints 0.
+- **`design.md`:** D9's R9 row now reads "no table outside HTML comments sits under it".
+
+| Gate | Result | Parity bar |
+|---|---|---|
+| G1 `pytest tests/test_pm_*.py` | 348 passed | Phase 4: 342; +6 new cases |
+| G2 `ruff check src/ tests/` | 118 repo-wide; PM-scoped check prints "All checks passed!" | ≤ 118 |
+| G3 `ruff format --check src/ tests/` | 78 files repo-wide; 8 hunks in the four edited files | ≤ 78; still 8 hunks |
+| G4 `mypy src/` | 91 errors in 19 files; 0 under `src/agentic_mbse/pm/` | ≤ 91; none in `pm/` |
+| Full suite `pytest tests/` | 2056 passed, 1 skipped, 33 deselected, 6 warnings | Phase 4: 2050 passed; +6. The 6 warnings are the same `test_extraction.py` fork warnings |
+
+G3 first showed 9 hunks: one new test line was over-long. It was laid out by hand the way `ruff format` wanted.
+
 ### Evidence Map (filled in Phase 4)
 
 `ops` is `tests/test_pm_operations.py` and `parser` is `tests/test_pm_parser.py`. Every listed test passes at `b8bbf8d`.
@@ -992,7 +1040,7 @@ G3 first showed 9 hunks: one new test line was over-long. It was laid out by han
 | C2 One escape rule | `ops::TestUpdateValidation::test_escaped_row_changes_only_status` (the spec's named test). One escape for every writer: `parser::TestEscapeTableCell` (3 tests), `ops::TestFormatTableRow::test_escapes_pipes`. Update targets exactly one row: `ops::TestSingleMatch` (3 tests) and, in `ops::TestUpdateValidation`, `test_ignores_commented_example_rows`, `test_commented_example_rows_are_not_found`, `test_ignores_rows_outside_registry_section`, `test_refuses_duplicate_rows`, `test_refuses_unparsed_row`, `test_refuses_comment_in_status_cell`, `test_refuses_row_with_inline_comment_and_leaves_file_unchanged`. `parser::TestStripHtmlComments` (3 tests) for the comment-blanked search. |
 | C3 Round-trip | `test_value_with_pipe_round_trips` in `ops::TestAddValidation` (SV), `ops::TestPromoteRequirement` (PR), and `ops::TestRegisterIntent` (G and AQ in one call). A value no cell can hold is refused, with no file changed: `ops::TestAddValidation::test_refuses_comment_marker`, `ops::TestPromoteRequirement::test_refuses_line_break`, `ops::TestRegisterIntent::test_refused_second_goal_writes_nothing`. |
 | C4 No ID minted twice | `ops::TestAddInsight::test_archive_note_reserves_di_014` (the spec's named `DI-015` test). E1. E2's seven cases. Running lists: `ops::TestApproveResearch::test_mints_above_archive_note`, `ops::TestRegisterIntent::test_multiple_goals_mint_above_unparsed`. `ops::TestAddItem::test_mints_above_invalid_item`. Reporting: `ops::TestAddValidation::test_reports_reserved_id_after_parse_warnings`. The scan itself: `ops::TestRegistryIds` (7 tests), including `test_token_boundary` over the 12 Appendix A rows (`MAG-001` is not `G-001`; a code-spanned `` `SV-034` `` counts), `test_skips_html_comments`, and `test_templates_reserve_nothing`. |
-| C5 No record lost on write | Carry forward: `test_carries_forward_invalid_item` in `ops::TestAddItem`, `ops::TestAddEpic`, and `ops::TestCloseItem`, plus E2's WI case. R1: `ops::TestAddItem::test_refuses_unreadable_frontmatter` (5 cases), `ops::TestAddItem::test_keeps_items_after_indented_dashes`, `ops::TestAddEpic::test_refuses_malformed_yaml`, `ops::TestCloseItem::test_refusal_leaves_item_active` (2 cases), and the reader in `parser::TestParseFrontmatter` (`test_indented_dashes_stay_in_block_scalar`, `test_unique_keys_rejects_repeat`, `test_unique_keys_merge_override_is_not_a_repeat`, `test_default_keeps_last_wins`). R2: `ops::TestAddItem::test_refuses_non_list_standalone`, `ops::TestAddItem::test_refuses_non_list_epic_items`, `ops::TestAddEpic::test_refuses_non_list_epics`. R3: `ops::TestAddItem::test_refuses_duplicate_epic_names`, `ops::TestCloseItem::test_refuses_duplicate_work_item_ids`. R4: `ops::TestAddItem::test_refuses_rejected_epic_quoting_warning`, `ops::TestCloseItem::test_refuses_invalid_item_quoting_warning`. R5: `ops::TestAddEpic::test_refuses_name_of_rejected_epic`. R9 (a table write that would land where the parser cannot read it): `test_missing_section_refuses` in `ops::TestPromoteRequirement` and `ops::TestAddValidation` (3 cases each), `ops::TestRegisterIntent::test_missing_questions_section_writes_nothing`. Every refusal test compares every file's bytes before and after. |
+| C5 No record lost on write | Carry forward: `test_carries_forward_invalid_item` in `ops::TestAddItem`, `ops::TestAddEpic`, and `ops::TestCloseItem`, plus E2's WI case. R1: `ops::TestAddItem::test_refuses_unreadable_frontmatter` (5 cases), `ops::TestAddItem::test_keeps_items_after_indented_dashes`, `ops::TestAddEpic::test_refuses_malformed_yaml`, `ops::TestCloseItem::test_refusal_leaves_item_active` (2 cases), and the reader in `parser::TestParseFrontmatter` (`test_indented_dashes_stay_in_block_scalar`, `test_unique_keys_rejects_repeat`, `test_unique_keys_merge_override_is_not_a_repeat`, `test_default_keeps_last_wins`). R2: `ops::TestAddItem::test_refuses_non_list_standalone`, `ops::TestAddItem::test_refuses_non_list_epic_items`, `ops::TestAddEpic::test_refuses_non_list_epics`. R3: `ops::TestAddItem::test_refuses_duplicate_epic_names`, `ops::TestCloseItem::test_refuses_duplicate_work_item_ids`. R4: `ops::TestAddItem::test_refuses_rejected_epic_quoting_warning`, `ops::TestCloseItem::test_refuses_invalid_item_quoting_warning`. R5: `ops::TestAddEpic::test_refuses_name_of_rejected_epic`. R9 (a table write that would land where the parser cannot read it): `test_missing_section_refuses` in `ops::TestPromoteRequirement` (3 cases) and `ops::TestAddValidation` (4 cases since A1), `ops::TestRegisterIntent::test_missing_questions_section_writes_nothing`. A1 layout (post-audit): `test_skips_commented_table_above_real_table` for SV, PR, G, and AQ, and `ops::TestAddValidation::test_refuses_row_that_would_land_in_a_comment`. Every refusal test compares every file's bytes before and after. |
 | C6 Nothing else changes | Existing PM tests are unchanged (removed-lines check prints 0) and pass (G1, 342). The full suite passes 2050, the base's 1932 plus the 118 new. C6.1 and C6.2 (no re-spelling; three-digit padding): the existing `ops::TestNextId` is unchanged and passes; each E2 case asserts the diff is one inserted block, so no other line was rewritten; `ops::TestRegistryIds::test_parsed_id_covers_padded_mention` (`PR-1` stays `PR-1`, next is `PR-002`). C6.3: `parser::TestSplitTableRow::test_unescaped_rows_split_as_before` (8 rows). C6.4: `parser::TestParseValidationMatrix::test_escaped_pipe_keeps_columns`. C6.5: E1 asserts the malformed `SV-035` is still warned; `ops::TestAddValidation::test_reports_reserved_id_after_parse_warnings` keeps the parse warnings first. The fusion-tea snapshot is E3's other half, run by the orchestrator. |
 | E1 | `ops::TestAddValidation::test_e1_three_record_reproduction`. Red at the base (Phase 1 record), green since Phase 2. |
 | E2 (seven cases) | `test_mints_above_unparsed_record` in `ops::TestAddValidation` (SV), `ops::TestPromoteRequirement` (PR), `ops::TestRegisterIntent` as `[G-003-intent0]` (G) and `[AQ-003-intent1]` (AQ), `ops::TestAddInsight` (DI), `ops::TestRegisterDecision` (AD), and `ops::TestAddItem` (WI). All 7 pass. |

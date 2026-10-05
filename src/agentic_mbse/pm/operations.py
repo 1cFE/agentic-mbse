@@ -422,14 +422,18 @@ def _append_section(path: Path, text: str) -> None:
 def _insert_table_row(text: str, section_heading: str, row: str) -> str:
     """Return ``text`` with ``row`` inserted after the last table line under ``section_heading``.
 
-    Raises ``ValueError`` if the heading is missing, or if no table line comes
-    before the next ``## `` heading.
+    The heading and the table are found on comment-blanked text, so a table
+    inside an HTML comment is never the target.  Raises ``ValueError`` if the
+    heading is missing, if no table line comes before the next ``## `` heading,
+    or if the row would fall inside a comment that opens on the table's last line.
     """
     lines = text.split("\n")
+    # Blanking keeps line numbers, so an index into ``visible`` is a line of ``text``
+    visible = _strip_html_comments(text, keep_lines=True).split("\n")
 
     # Find section heading
     section_start = None
-    for i, line in enumerate(lines):
+    for i, line in enumerate(visible):
         if line.strip() == section_heading:
             section_start = i
             break
@@ -439,8 +443,8 @@ def _insert_table_row(text: str, section_heading: str, row: str) -> str:
 
     # Find the last table row in this section
     last_table_line = None
-    for i in range(section_start + 1, len(lines)):
-        stripped = lines[i].strip()
+    for i in range(section_start + 1, len(visible)):
+        stripped = visible[i].strip()
         if stripped.startswith("|"):
             last_table_line = i
         elif last_table_line is not None and stripped and not stripped.startswith("|"):
@@ -457,7 +461,13 @@ def _insert_table_row(text: str, section_heading: str, row: str) -> str:
 
     # Insert after the last table line
     lines.insert(last_table_line + 1, row)
-    return "\n".join(lines)
+    new_text = "\n".join(lines)
+    if _strip_html_comments(new_text, keep_lines=True).split("\n")[last_table_line + 1] != row:
+        raise ValueError(
+            f"A row added under '{section_heading}' would fall inside the HTML comment "
+            f"that opens on line {last_table_line + 1}; move that comment out of the table"
+        )
+    return new_text
 
 
 def _append_table_row(path: Path, section_heading: str, row: str) -> None:
