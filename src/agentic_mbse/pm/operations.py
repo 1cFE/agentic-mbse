@@ -17,6 +17,8 @@ from pathlib import Path
 import yaml
 
 from agentic_mbse.pm.parser import (
+    _escape_table_cell,
+    _split_table_row,
     parse_architecture,
     parse_backlog,
     parse_knowledge,
@@ -192,8 +194,13 @@ def _format_decision_entry(entry: DecisionEntry) -> str:
 
 
 def _format_table_row(columns: list[str]) -> str:
-    """Format a markdown table data row."""
-    return "| " + " | ".join(columns) + " |"
+    """Format a markdown table data row, escaping every cell with ``_escape_table_cell``.
+
+    The space on each side of every delimiter keeps a value that ends in a
+    backslash from escaping the next delimiter.  Raises ``ValueError`` for a
+    value no row can carry.
+    """
+    return "| " + " | ".join(_escape_table_cell(c) for c in columns) + " |"
 
 
 def _append_section(path: Path, text: str) -> None:
@@ -392,15 +399,20 @@ def promote_requirement(
     existing_ids = [e.id for e in result.data]
     new_id = _next_id("PR", existing_ids)
 
-    row = _format_table_row(
-        [
-            new_id,
-            requirement.strip(),
-            source.strip(),
-            enforcement.strip(),
-            validation_method.strip(),
-        ]
-    )
+    try:
+        row = _format_table_row(
+            [
+                new_id,
+                requirement.strip(),
+                source.strip(),
+                enforcement.strip(),
+                validation_method.strip(),
+            ]
+        )
+    except ValueError as e:
+        return OperationResult(
+            success=False, message=f"Requirement not added: {e}", warnings=result.warnings
+        )
     _append_table_row(req_path, "## Requirements", row)
 
     return OperationResult(
@@ -514,19 +526,24 @@ def add_validation(
     existing_ids = [e.id for e in result.data]
     new_id = _next_id("SV", existing_ids)
 
-    row = _format_table_row(
-        [
-            new_id,
-            description.strip(),
-            vtype.value,
-            vmech.value,
-            expected.strip(),
-            tolerance.strip(),
-            source.strip(),
-            test.strip(),
-            VerificationStatus.PENDING.value,
-        ]
-    )
+    try:
+        row = _format_table_row(
+            [
+                new_id,
+                description.strip(),
+                vtype.value,
+                vmech.value,
+                expected.strip(),
+                tolerance.strip(),
+                source.strip(),
+                test.strip(),
+                VerificationStatus.PENDING.value,
+            ]
+        )
+    except ValueError as e:
+        return OperationResult(
+            success=False, message=f"Verification not added: {e}", warnings=result.warnings
+        )
     _append_table_row(val_path, "## Verification Registry", row)
 
     return OperationResult(
@@ -742,67 +759,81 @@ def register_intent(
     existing_g = [e.id for e in o_result.data.goals]
     existing_aq = [e.id for e in o_result.data.questions]
 
+    # Build every row before the first append, so a refused value writes nothing
     ids_assigned: dict[str, str] = {}
-    files_modified: list[str] = []
 
-    if goals:
-        all_g_ids = list(existing_g)
-        for g in goals:
-            for name, val in [("goal", g.goal), ("priority", g.priority), ("source", g.source)]:
-                if not val or not val.strip():
-                    return OperationResult(
-                        success=False,
-                        message=f"Goal '{g.goal}': required field '{name}' is empty",
-                        warnings=o_result.warnings,
-                    )
-            new_id = _next_id("G", all_g_ids)
-            all_g_ids.append(new_id)
-            row = _format_table_row(
-                [
-                    new_id,
-                    g.goal.strip(),
-                    g.priority.strip(),
-                    g.status.strip(),
-                    g.source.strip(),
-                    g.traced_requirements.strip(),
-                ]
+    goal_rows: list[str] = []
+    all_g_ids = list(existing_g)
+    for g in goals or []:
+        for name, val in [("goal", g.goal), ("priority", g.priority), ("source", g.source)]:
+            if not val or not val.strip():
+                return OperationResult(
+                    success=False,
+                    message=f"Goal '{g.goal}': required field '{name}' is empty",
+                    warnings=o_result.warnings,
+                )
+        new_id = _next_id("G", all_g_ids)
+        all_g_ids.append(new_id)
+        try:
+            goal_rows.append(
+                _format_table_row(
+                    [
+                        new_id,
+                        g.goal.strip(),
+                        g.priority.strip(),
+                        g.status.strip(),
+                        g.source.strip(),
+                        g.traced_requirements.strip(),
+                    ]
+                )
             )
-            _append_table_row(overview_path, "## Goals Registry", row)
-            ids_assigned[new_id] = g.goal
-        files_modified.append(str(overview_path))
+        except ValueError as e:
+            return OperationResult(
+                success=False, message=f"Goal '{g.goal}': {e}", warnings=o_result.warnings
+            )
+        ids_assigned[new_id] = g.goal
 
-    if questions:
-        all_aq_ids = list(existing_aq)
-        for q in questions:
-            for name, val in [("question", q.question), ("source", q.source)]:
-                if not val or not val.strip():
-                    return OperationResult(
-                        success=False,
-                        message=f"Question '{q.question}': required field '{name}' is empty",
-                        warnings=o_result.warnings,
-                    )
-            new_id = _next_id("AQ", all_aq_ids)
-            all_aq_ids.append(new_id)
-            row = _format_table_row(
-                [
-                    new_id,
-                    q.question.strip(),
-                    q.implies.strip(),
-                    q.source.strip(),
-                    q.status.strip(),
-                ]
+    question_rows: list[str] = []
+    all_aq_ids = list(existing_aq)
+    for q in questions or []:
+        for name, val in [("question", q.question), ("source", q.source)]:
+            if not val or not val.strip():
+                return OperationResult(
+                    success=False,
+                    message=f"Question '{q.question}': required field '{name}' is empty",
+                    warnings=o_result.warnings,
+                )
+        new_id = _next_id("AQ", all_aq_ids)
+        all_aq_ids.append(new_id)
+        try:
+            question_rows.append(
+                _format_table_row(
+                    [
+                        new_id,
+                        q.question.strip(),
+                        q.implies.strip(),
+                        q.source.strip(),
+                        q.status.strip(),
+                    ]
+                )
             )
-            _append_table_row(overview_path, "## Analysis Questions", row)
-            ids_assigned[new_id] = q.question
-        if str(overview_path) not in files_modified:
-            files_modified.append(str(overview_path))
+        except ValueError as e:
+            return OperationResult(
+                success=False, message=f"Question '{q.question}': {e}", warnings=o_result.warnings
+            )
+        ids_assigned[new_id] = q.question
+
+    for row in goal_rows:
+        _append_table_row(overview_path, "## Goals Registry", row)
+    for row in question_rows:
+        _append_table_row(overview_path, "## Analysis Questions", row)
 
     id_list = ", ".join(ids_assigned.keys())
     return OperationResult(
         success=True,
         message=f"Registered intent: {id_list}",
         ids_assigned=ids_assigned,
-        files_modified=files_modified,
+        files_modified=[str(overview_path)],
         warnings=o_result.warnings,
     )
 
@@ -1145,17 +1176,23 @@ def update_validation(
         stripped = line.strip()
         if not stripped.startswith("|"):
             continue
-        cells = [c.strip() for c in stripped.split("|")]
-        # Remove empty leading/trailing from split
-        if cells and cells[0] == "":
-            cells = cells[1:]
-        if cells and cells[-1] == "":
-            cells = cells[:-1]
+        cells = _split_table_row(stripped)
 
         if len(cells) >= 9 and cells[0] == sv_id:
             # Update the Status column (index 8)
             cells[8] = new_status.value
-            lines[i] = "| " + " | ".join(cells) + " |"
+            try:
+                lines[i] = _format_table_row(cells)
+            except ValueError:
+                # Split and format are inverses; only a comment marker in the row stops it
+                return OperationResult(
+                    success=False,
+                    message=(
+                        f"{sv_id}'s row in VALIDATION_MATRIX.md holds an HTML comment marker, "
+                        "so it cannot be rewritten. Move the comment out of the row by hand, "
+                        "then retry."
+                    ),
+                )
             found = True
             break
 

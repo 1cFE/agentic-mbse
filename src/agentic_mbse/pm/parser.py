@@ -56,6 +56,39 @@ def _strip_html_comments(text: str) -> str:
     return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
 
 
+def _split_table_row(line: str) -> list[str]:
+    r"""Split a markdown table row into stripped cell values, following GFM.
+
+    A pipe right after a backslash is content, not a delimiter, and only that
+    one backslash is dropped: ``\|`` reads as ``|`` and ``\\|`` as ``\|``.
+    Code spans get no special handling, exactly as in GFM.  The empty edge
+    cells that a leading and a trailing pipe produce are dropped.
+    """
+    cells = [c.replace("\\|", "|").strip() for c in re.split(r"(?<!\\)\|", line)]
+    # Remove empty leading/trailing from split
+    if cells and cells[0] == "":
+        cells = cells[1:]
+    if cells and cells[-1] == "":
+        cells = cells[:-1]
+    return cells
+
+
+def _escape_table_cell(value: str) -> str:
+    """Escape a value for one markdown table cell; ``_split_table_row`` reads it back.
+
+    Puts a backslash before every pipe.  Raises ``ValueError`` if the value
+    holds a line break, which no single-line row can carry, or an HTML comment
+    marker, which the parsers strip before they split rows.
+    """
+    for marker in ("\n", "\r", "<!--", "-->"):
+        if marker in value:
+            raise ValueError(
+                f"{value!r} contains {marker!r}, which a table cell cannot hold; "
+                "reword the value without it"
+            )
+    return value.replace("|", "\\|")
+
+
 def _parse_markdown_table(
     text: str,
     section_heading: str | None,
@@ -67,7 +100,8 @@ def _parse_markdown_table(
     ``text`` must be the file body AFTER frontmatter stripping and HTML comment
     removal.  Callers that use ``parse_frontmatter`` get the body naturally
     (content after the closing ``---``).  ``---`` horizontal rules in the body
-    are treated as section terminators.
+    are treated as section terminators.  Rows are split by ``_split_table_row``,
+    so a backslash-escaped pipe is cell content.
 
     Returns a list of dicts mapping column-name -> cell-value for each data row.
     """
@@ -106,12 +140,7 @@ def _parse_markdown_table(
                 break
             continue
 
-        cells = [c.strip() for c in stripped.split("|")]
-        # Remove empty leading/trailing from split
-        if cells and cells[0] == "":
-            cells = cells[1:]
-        if cells and cells[-1] == "":
-            cells = cells[:-1]
+        cells = _split_table_row(stripped)
 
         if not headers:
             # First | line is the header

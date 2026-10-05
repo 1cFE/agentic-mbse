@@ -1,6 +1,6 @@
 # Implementation Plan: Escaped Pipes and Registry ID Integrity
 
-**Status:** Draft
+**Status:** In Progress (Phase 1 complete)
 **Created:** 2026-10-04
 **Last Updated:** 2026-10-04
 **Branch:** pm-registry-integrity
@@ -161,12 +161,12 @@ class TestUpdateValidation:
 
 **Step 0. Red runs on the base, before any `src/` edit** [brief]
 
-- [ ] Add the `_E1_ROWS` and `_write_matrix` helpers to `tests/test_pm_operations.py` [E1]
-- [ ] Write `TestAddValidation::test_e1_three_record_reproduction` [E1, C1, C4]
-- [ ] Write `TestUpdateValidation::test_escaped_row_changes_only_status` [C2]
-- [ ] Write `TestAddInsight::test_archive_note_reserves_di_014`; its stencil is in Phase 2 [C4]
-- [ ] Run `uv run pytest tests/test_pm_operations.py -v -k "e1_three_record or escaped_row_changes_only_status or archive_note_reserves"`. All three must fail. Paste the failure lines into the Implementation Record [brief]
-- [ ] Mark E1 and the archive-note test `xfail(strict=True, reason="fixed in Phase 2")` [brief]
+- [x] Add the `_E1_ROWS` and `_write_matrix` helpers to `tests/test_pm_operations.py` [E1]
+- [x] Write `TestAddValidation::test_e1_three_record_reproduction` [E1, C1, C4]
+- [x] Write `TestUpdateValidation::test_escaped_row_changes_only_status` [C2]
+- [x] Write `TestAddInsight::test_archive_note_reserves_di_014`; its stencil is in Phase 2 [C4]
+- [x] Run `uv run pytest tests/test_pm_operations.py -v -k "e1_three_record or escaped_row_changes_only_status or archive_note_reserves"`. All three must fail. Paste the failure lines into the Implementation Record [brief]
+- [x] Mark E1 and the archive-note test `xfail(strict=True, reason="fixed in Phase 2")` [brief]
 
 What each red run should show at the base:
 
@@ -176,38 +176,38 @@ What each red run should show at the base:
 
 **Tests (write before the code)**
 
-- [ ] `test_pm_parser.py::TestSplitTableRow`: the five splitter cases from design.md's Validation Approach, including `\\|`, which reads as `\|` [D1, D2, C1]
-- [ ] `TestSplitTableRow::test_unescaped_rows_split_as_before`: rows without backslash-pipe split exactly as today's three-line split does [I2, C6]
-- [ ] `test_pm_parser.py::TestEscapeTableCell`: `a|b`, `a\|b`, `\\|`, and a trailing `\` survive escape-then-split. `\n`, `\r`, `<!--`, and `-->` raise `ValueError` [D3, I1, I3, R8]
-- [ ] `test_pm_parser.py::TestParseValidationMatrix::test_escaped_pipe_keeps_columns`: Description holds `|rel dev|`, and Type stays `baseline` [C1]
-- [ ] `TestFormatTableRow::test_escapes_pipes` [D3]
-- [ ] `test_value_with_pipe_round_trips` in `TestAddValidation`, `TestPromoteRequirement` (pipe in `requirement`), and `TestRegisterIntent` (goal and question) [C3]
-- [ ] `TestAddValidation::test_refuses_comment_marker` and `TestPromoteRequirement::test_refuses_line_break`: each refuses, and the file is unchanged [R8, I7]
-- [ ] `TestRegisterIntent::test_refused_second_goal_writes_nothing`: the second goal holds `<!--`, and `OVERVIEW.md` is unchanged [R8, I7]
-- [ ] `TestUpdateValidation::test_refuses_row_with_inline_comment_and_leaves_file_unchanged` [RC1, R7]
+- [x] `test_pm_parser.py::TestSplitTableRow`: the five splitter cases from design.md's Validation Approach, including `\\|`, which reads as `\|` [D1, D2, C1]
+- [x] `TestSplitTableRow::test_unescaped_rows_split_as_before`: rows without backslash-pipe split exactly as today's three-line split does [I2, C6]
+- [x] `test_pm_parser.py::TestEscapeTableCell`: `a|b`, `a\|b`, `\\|`, and a trailing `\` survive escape-then-split. `\n`, `\r`, `<!--`, and `-->` raise `ValueError` [D3, I1, I3, R8]
+- [x] `test_pm_parser.py::TestParseValidationMatrix::test_escaped_pipe_keeps_columns`: Description holds `|rel dev|`, and Type stays `baseline` [C1]
+- [x] `TestFormatTableRow::test_escapes_pipes` [D3]
+- [x] `test_value_with_pipe_round_trips` in `TestAddValidation`, `TestPromoteRequirement` (pipe in `requirement`), and `TestRegisterIntent` (goal and question) [C3]
+- [x] `TestAddValidation::test_refuses_comment_marker` and `TestPromoteRequirement::test_refuses_line_break`: each refuses, and the file is unchanged [R8, I7]
+- [x] `TestRegisterIntent::test_refused_second_goal_writes_nothing`: the second goal holds `<!--`, and `OVERVIEW.md` is unchanged [R8, I7]
+- [x] `TestUpdateValidation::test_refuses_row_with_inline_comment_and_leaves_file_unchanged` [RC1, R7]
 
 **Code**
 
-- [ ] `parser.py`: add `_split_table_row` and `_escape_table_cell` beside `_parse_markdown_table` [D1, D2, D3]
-- [ ] `parser.py:109-114`: `_parse_markdown_table` splits header and data rows with `_split_table_row` [D1]
-- [ ] `operations.py:19`: import `_split_table_row` and `_escape_table_cell` from `parser.py` [D11]
-- [ ] `operations.py:194`: `_format_table_row` escapes every cell [D3]
-- [ ] `operations.py:1148-1158`: `update_validation` splits the original line with `_split_table_row` and writes it back with `_format_table_row`. A `ValueError` from formatting becomes an R7 refusal ("the row holds an HTML comment marker; edit it by hand"), and the file is untouched [D4, RC1]
-- [ ] `operations.py:395-404` and `:517-530`: `promote_requirement` and `add_validation` format the row inside a `try`. A `ValueError` becomes a refusal that names the marker and the value [R8]
-- [ ] `operations.py:748-798`: `register_intent` first validates, mints, and formats every goal and question row, then appends them. A `ValueError` refuses before the first append [R8, I7]
+- [x] `parser.py`: add `_split_table_row` and `_escape_table_cell` beside `_parse_markdown_table` [D1, D2, D3]
+- [x] `parser.py:109-114`: `_parse_markdown_table` splits header and data rows with `_split_table_row` [D1]
+- [x] `operations.py:19`: import `_split_table_row` and `_escape_table_cell` from `parser.py` [D11]
+- [x] `operations.py:194`: `_format_table_row` escapes every cell [D3]
+- [x] `operations.py:1148-1158`: `update_validation` splits the original line with `_split_table_row` and writes it back with `_format_table_row`. A `ValueError` from formatting becomes an R7 refusal ("the row holds an HTML comment marker; edit it by hand"), and the file is untouched [D4, RC1]
+- [x] `operations.py:395-404` and `:517-530`: `promote_requirement` and `add_validation` format the row inside a `try`. A `ValueError` becomes a refusal that names the marker and the value [R8]
+- [x] `operations.py:748-798`: `register_intent` first validates, mints, and formats every goal and question row, then appends them. A `ValueError` refuses before the first append [R8, I7]
 
 ### Validation
 
 **Automated:**
 
-- [ ] G1 `uv run pytest tests/test_pm_*.py`: all pass, and E1 and the archive-note test report XFAIL
-- [ ] G2 `uv run ruff check src/ tests/` (pass rule above)
-- [ ] G3 `uv run ruff format --check src/ tests/` (pass rule above)
-- [ ] G4 `uv run mypy src/` (pass rule above)
+- [x] G1 `uv run pytest tests/test_pm_*.py`: all pass, and E1 and the archive-note test report XFAIL
+- [x] G2 `uv run ruff check src/ tests/` (pass rule above)
+- [x] G3 `uv run ruff format --check src/ tests/` (pass rule above)
+- [x] G4 `uv run mypy src/` (pass rule above)
 
 **Manual:**
 
-- [ ] In a scratch project (see Environment), run `add-validation` with a description containing `a | b`, then `update-validation --status passing SV-001`. Expect: the file holds `a \| b`, the row parses back as `a | b`, and Status is `passing`.
+- [x] In a scratch project (see Environment), run `add-validation` with a description containing `a | b`, then `update-validation --status passing SV-001`. Expect: the file holds `a \| b`, the row parses back as `a | b`, and Status is `passing`.
 
 **What We Know Works After This Phase:**
 
@@ -587,11 +587,75 @@ See [design.md#potential-risks](design.md#potential-risks) for the user-facing r
 
 ### Phase 1 Completion
 
-**Completed:**
-**Red runs (Step 0):** paste the three failure lines here.
+**Completed:** 2026-10-04. Not committed; the orchestrator commits after review.
+
+**Red runs (Step 0):** run on the base source (`e5bd0db`'s `src/`, plan commit `f08e445`) before any `src/` edit, with `uv run pytest tests/test_pm_operations.py -v -k "e1_three_record or escaped_row_changes_only_status or archive_note_reserves"`. All three failed where predicted:
+
+```
+FAILED tests/test_pm_operations.py::TestAddInsight::test_archive_note_reserves_di_014 - AssertionError: assert 'DI-012' == 'DI-015'
+FAILED tests/test_pm_operations.py::TestAddValidation::test_e1_three_record_reproduction - AssertionError: assert ['SV-033'] == ['SV-033', 'SV-034']
+FAILED tests/test_pm_operations.py::TestUpdateValidation::test_escaped_row_changes_only_status - AssertionError: [...]
+E     - | SV-034 | bar (\|rel dev\| <= 1e-6) | baseline | test | x | 1e-6 | s | t | passing |
+E     + | SV-034 | bar (\ | rel dev\ | <= 1e-6) | baseline | test | x | 1e-6 | passing | t | pending |
+======================= 3 failed, 80 deselected in 0.32s =======================
+```
+
+The escaped-row diff shows both halves of the defect: `passing` lands in the Source column while Status stays `pending`, and `\|rel dev\|` is rewritten as `\ | rel dev\ |`.
+
+After the source change, E1 still fails, but now only at its last assert: `assert 'SV-035' == 'SV-036'` (checked with `--runxfail`). The parse half passes. The archive-note test still mints `DI-012`. Both report XFAIL, as planned.
+
 **Actual Changes:**
+
+- `parser.py`:
+  - Added `_split_table_row(line)` and `_escape_table_cell(value)` between `_strip_html_comments` and `_parse_markdown_table`. The splitter is the design's `re.split(r"(?<!\\)\|")`, then unescape, strip, and today's edge-cell drop. The escape raises `ValueError` on `\n`, `\r`, `<!--`, and `-->`, then backslashes every pipe.
+  - `_parse_markdown_table` splits with `_split_table_row`. Its docstring says so.
+- `operations.py`:
+  - Imports both helpers from `parser.py`.
+  - `_format_table_row` escapes every cell. Its docstring states I3 and the `ValueError`.
+  - `promote_requirement` and `add_validation` format inside a `try`. A `ValueError` returns a refusal, with the parse warnings, before `_append_table_row`. The append stays outside the `try` until Phase 3a.
+  - `register_intent` validates, mints, and formats every goal and question row into `goal_rows` and `question_rows` first, then appends them. A refusal on any row writes nothing. The appends still read and write the file once per row; the single write is Phase 3a.
+  - `update_validation` splits with `_split_table_row` and writes back with `_format_table_row`. A `ValueError` from formatting becomes the R7 comment-marker refusal. It still takes the first matching line anywhere in the file (Phase 3a).
+- `tests/test_pm_parser.py` (23 new cases): `TestSplitTableRow` (5 named cases, plus `test_unescaped_rows_split_as_before` over 8 rows), `TestEscapeTableCell` (9 cases), and `TestParseValidationMatrix::test_escaped_pipe_keeps_columns`.
+- `tests/test_pm_operations.py` (11 new cases, 2 of them strict XFAIL): the three Step 0 tests, `TestFormatTableRow::test_escapes_pipes`, three `test_value_with_pipe_round_trips`, and four refusal tests. Each refusal test compares every file's bytes before and after.
+
+**Refusal wording** (D9 leaves wording open):
+
+- The escape's message names the value and the marker: `'a <!-- b' contains '<!--', which a table cell cannot hold; reword the value without it`.
+- Operations prefix it with what was not written: `Requirement not added: `, `Verification not added: `, `Goal '<goal>': `, or `Question '<question>': `. The last two match `register_intent`'s existing per-item messages.
+- `update_validation`'s R7 refusal does not quote the escape's message. That message tells the user to reword a value they typed, but here the fix is in the file: `SV-001's row in VALIDATION_MATRIX.md holds an HTML comment marker, so it cannot be rewritten. Move the comment out of the row by hand, then retry.` A comment marker is the only possible cause. `read_text` folds `\r` into `\n`, and the file is split on `\n`, so no cell can hold a line break.
+
+**Gates:**
+
+| Gate | Result | Parity bar |
+|---|---|---|
+| G1 `pytest tests/test_pm_*.py` | 256 passed, 2 xfailed (E1 and the archive-note test) | base 224 passed; +34 new cases |
+| G2 `ruff check src/ tests/` | 118 repo-wide; PM-scoped check prints "All checks passed!" | ≤ 118 |
+| G3 `ruff format --check src/ tests/` | 78 files repo-wide; 8 hunks in the four edited files | ≤ 78; still 8 hunks |
+| G4 `mypy src/` | 91 errors in 19 files; 0 under `src/agentic_mbse/pm/` | ≤ 91; none in `pm/` |
+
+**Manual check:** done in a scratch project holding the backlog and matrix templates. `add-validation --description "a | b"` minted `SV-001`, and the file holds `| SV-001 | a \| b | baseline | test | x | t |  |  | pending |`. `update-validation --status passing SV-001` then set Status. The row parses back as `('SV-001', 'a | b', 'passing')` with no warnings. `add-validation --description "a <!-- b"` exits 1 with the refusal above.
+
 **Issues:**
+
+- The fusion-tea copies were read but not run (allowed by the brief). In `.orchestrate-logs/ft-snapshot/*.md`, only one line contains `\|`: `VALIDATION_MATRIX.md:61`, which is `SV-035`. So by I2, no other parsed value on the copies should change. E3's snapshot is still the orchestrator's check.
+- Interim `update_validation` behaviour on a bare template, until Phase 3a:
+  - `SV-001` still matches the commented example row and rewrites it. This is unchanged from the base.
+  - `SV-002` now refuses with the comment-marker message, because that example row ends in `-->`. At the base it rewrote the comment's example row.
+  - Phase 3a's comment-blanked candidate search turns both into "not found".
+
 **Deviations:**
+
+- **New test helpers the plan did not name:**
+  - `_file_bytes(root)` maps every file under `root` to its bytes. Phases 3a and 3b should reuse it for their refusal tests.
+  - `_insight(di_id)` and `_write_knowledge(root, text)` were needed by the archive-note stencil. Phase 2's DI and `approve_research` tests can reuse them.
+- **`TestFormatTableRow::test_escapes_pipes` also pins I3.** A value ending in a backslash is formatted, then split back unchanged.
+- **`register_intent` returns `files_modified=[str(overview_path)]` unconditionally.** The old conditional bookkeeping always produced that single entry, because the function refuses up front when there is neither a goal nor a question. Its two `if goals:` / `if questions:` blocks became `for g in goals or []` loops, one nesting level shallower.
+- **No helper names changed.**
+
+**For Phase 2:**
+
+- Remove both `xfail` markers when they report XPASS. With `strict=True`, an XPASS fails the suite.
+- E1's remaining gap is exactly the scan: it mints `SV-035` today.
 
 ### Phase 2 Completion
 

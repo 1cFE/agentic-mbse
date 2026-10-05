@@ -25,6 +25,7 @@ from agentic_mbse.pm.operations import (
     _update_frontmatter_fields,
     _write_backlog,
 )
+from agentic_mbse.pm.parser import _split_table_row
 from agentic_mbse.pm.types import (
     DecisionEntry,
     DecisionStatus,
@@ -244,6 +245,11 @@ class TestFormatTableRow:
         row = _format_table_row(["PR-001", "All X SHALL Y", "DI-001", "Review", "Check"])
         assert row == "| PR-001 | All X SHALL Y | DI-001 | Review | Check |"
 
+    def test_escapes_pipes(self):
+        row = _format_table_row(["SV-001", "|x| < 1", "ends in \\"])
+        assert row == "| SV-001 | \\|x\\| < 1 | ends in \\ |"
+        assert _split_table_row(row) == ["SV-001", "|x| < 1", "ends in \\"]
+
 
 class TestAppendTableRow:
     def test_append_to_existing_table(self, tmp_path):
@@ -371,6 +377,57 @@ def _setup_validation_matrix(tmp_path):
     return tmp_path
 
 
+# The E1 reproduction rows. The labels are the reverse of fusion-tea's matrix by design:
+# here SV-034 is the escaped (valid) row and SV-035 the malformed one.
+_E1_ROWS = {
+    "valid": "| SV-033 | plain | baseline | test | x | 1e-6 | s | t | passing |",
+    "escaped": "| SV-034 | bar (\\|rel dev\\| <= 1e-6) | baseline | test | x | 1e-6 | s | t | passing |",
+    "malformed": "| SV-035 | bar (|rel dev| <= 1e-6) | baseline | test | x | 1e-6 | s | t | passing |",
+}
+
+
+def _write_matrix(root, rows):
+    """Write a VALIDATION_MATRIX.md holding only the registry table with the given rows."""
+    mdir = root / "modeling_project"
+    mdir.mkdir(exist_ok=True)
+    path = mdir / "VALIDATION_MATRIX.md"
+    path.write_text(
+        "## Verification Registry\n\n"
+        "| ID | Description | Type | Mechanism | Expected | Tolerance | Source | Test | Status |\n"
+        "|----|-------------|------|-----------|----------|-----------|--------|------|--------|\n"
+        + "".join(row + "\n" for row in rows),
+        encoding="utf-8",
+    )
+    return path
+
+
+def _file_bytes(root):
+    """Map every file under root to its bytes, so a refusal test can show nothing changed."""
+    return {p: p.read_bytes() for p in sorted(root.rglob("*")) if p.is_file()}
+
+
+def _insight(di_id):
+    """Return a valid captured InsightEntry with the given ID."""
+    return InsightEntry(
+        id=di_id,
+        title=f"Insight {di_id}",
+        source="s",
+        context="c",
+        model_implications="m",
+        analysis_implications="a",
+        status=InsightStatus.CAPTURED,
+    )
+
+
+def _write_knowledge(root, text):
+    """Write knowledge/KNOWLEDGE.md with the given text and return its path."""
+    kdir = root / "knowledge"
+    kdir.mkdir(exist_ok=True)
+    path = kdir / "KNOWLEDGE.md"
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
 class TestAddInsight:
     def test_happy_path(self, tmp_path):
         from agentic_mbse.pm.operations import add_insight
@@ -445,6 +502,23 @@ class TestAddInsight:
         assert result.success
         parsed = parse_knowledge(root / "knowledge" / "KNOWLEDGE.md")
         assert parsed.data[0].rationale == "Because physics"
+
+    @pytest.mark.xfail(strict=True, reason="fixed in Phase 2")
+    def test_archive_note_reserves_di_014(self, tmp_path):
+        from agentic_mbse.pm.operations import add_insight
+
+        records = "\n".join(_format_insight_entry(_insight(f"DI-{n:03d}")) for n in range(1, 12))
+        note = "Previous entries (DI-001 through DI-014) archived.\n\n"
+        _write_knowledge(tmp_path, "# Domain Knowledge\n\n" + note + records)
+        result = add_insight(
+            tmp_path,
+            title="t",
+            source="s",
+            context="c",
+            model_implications="m",
+            analysis_implications="a",
+        )
+        assert result.ids_assigned["DI"] == "DI-015"
 
 
 class TestSaveResearch:
@@ -521,6 +595,39 @@ class TestPromoteRequirement:
         )
         assert not result.success
         assert "DI-XXX or G-XXX" in result.message
+
+    def test_value_with_pipe_round_trips(self, tmp_path):
+        from agentic_mbse.pm.operations import promote_requirement
+
+        root = _setup_requirements(tmp_path)
+        result = promote_requirement(
+            root,
+            requirement="Margin SHALL keep |dT| under 5 K",
+            source="DI-001",
+            enforcement="e",
+            validation_method="v",
+        )
+        assert result.success
+        parsed = parse_requirements(root / "modeling_project" / "REQUIREMENTS.md")
+        assert parsed.data[0].requirement == "Margin SHALL keep |dT| under 5 K"
+        assert parsed.data[0].source == "DI-001"
+        assert parsed.data[0].validation_method == "v"
+
+    def test_refuses_line_break(self, tmp_path):
+        from agentic_mbse.pm.operations import promote_requirement
+
+        root = _setup_requirements(tmp_path)
+        before = _file_bytes(root)
+        result = promote_requirement(
+            root,
+            requirement="First line\nsecond line",
+            source="DI-001",
+            enforcement="e",
+            validation_method="v",
+        )
+        assert not result.success
+        assert "First line\\nsecond line" in result.message
+        assert _file_bytes(root) == before
 
 
 class TestRegisterDecision:
@@ -627,6 +734,62 @@ class TestAddValidation:
         )
         assert not result.success
         assert "mechanism" in result.message.lower()
+
+    def test_value_with_pipe_round_trips(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        root = _setup_validation_matrix(tmp_path)
+        result = add_validation(
+            root,
+            description="bar (|rel dev| <= 1e-6)",
+            type="baseline",
+            mechanism="test",
+            expected="|a - b| < 2",
+            tolerance="t",
+        )
+        assert result.success
+        parsed = parse_validation_matrix(root / "modeling_project" / "VALIDATION_MATRIX.md")
+        assert parsed.warnings == []
+        assert parsed.data[0].description == "bar (|rel dev| <= 1e-6)"
+        assert parsed.data[0].expected == "|a - b| < 2"
+        assert parsed.data[0].type.value == "baseline"
+
+    def test_refuses_comment_marker(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        root = _setup_validation_matrix(tmp_path)
+        before = _file_bytes(root)
+        result = add_validation(
+            root,
+            description="see <!-- note",
+            type="baseline",
+            mechanism="test",
+            expected="x",
+            tolerance="t",
+        )
+        assert not result.success
+        assert "'<!--'" in result.message
+        assert "see <!-- note" in result.message
+        assert _file_bytes(root) == before
+
+    @pytest.mark.xfail(strict=True, reason="fixed in Phase 2")
+    def test_e1_three_record_reproduction(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation
+
+        vm = _write_matrix(tmp_path, list(_E1_ROWS.values()))
+        parsed = parse_validation_matrix(vm)
+        assert [e.id for e in parsed.data] == ["SV-033", "SV-034"]
+        assert parsed.data[1].description == "bar (|rel dev| <= 1e-6)"
+        assert any(w.location == "row 2" for w in parsed.warnings)  # malformed SV-035 stays warned
+        result = add_validation(
+            tmp_path,
+            description="new",
+            type="baseline",
+            mechanism="test",
+            expected="e",
+            tolerance="t",
+        )
+        assert result.ids_assigned["SV"] == "SV-036"
 
 
 # ---------------------------------------------------------------------------
@@ -843,6 +1006,39 @@ class TestRegisterIntent:
         register_intent(root, goals=[GoalInput(goal="G1", priority="P0", source="s")])
         result = register_intent(root, goals=[GoalInput(goal="G2", priority="P1", source="s")])
         assert "G-002" in result.ids_assigned
+
+    def test_value_with_pipe_round_trips(self, tmp_path):
+        from agentic_mbse.pm.operations import register_intent
+
+        root = _setup_overview(tmp_path)
+        result = register_intent(
+            root,
+            goals=[GoalInput(goal="Keep |dT| under 5 K", priority="P0", source="s")],
+            questions=[QuestionInput(question="Is |x| bounded?", source="G-001")],
+        )
+        assert result.success
+        parsed = parse_overview(root / "modeling_project" / "OVERVIEW.md")
+        assert parsed.warnings == []
+        assert parsed.data.goals[0].goal == "Keep |dT| under 5 K"
+        assert parsed.data.goals[0].priority == "P0"
+        assert parsed.data.questions[0].question == "Is |x| bounded?"
+        assert parsed.data.questions[0].source == "G-001"
+
+    def test_refused_second_goal_writes_nothing(self, tmp_path):
+        from agentic_mbse.pm.operations import register_intent
+
+        root = _setup_overview(tmp_path)
+        before = _file_bytes(root)
+        result = register_intent(
+            root,
+            goals=[
+                GoalInput(goal="Fine goal", priority="P0", source="s"),
+                GoalInput(goal="Hidden <!-- note", priority="P1", source="s"),
+            ],
+        )
+        assert not result.success
+        assert "Hidden <!-- note" in result.message
+        assert _file_bytes(root) == before
 
 
 class TestImpactQuery:
@@ -1275,6 +1471,26 @@ class TestUpdateValidation:
         parsed = parse_validation_matrix(root / "modeling_project" / "VALIDATION_MATRIX.md")
         assert parsed.data[0].status == VerificationStatus.PASSING
         assert parsed.data[1].status == VerificationStatus.PENDING
+
+    def test_escaped_row_changes_only_status(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        vm = _write_matrix(tmp_path, [_E1_ROWS["escaped"].replace("passing", "pending")])
+        before = vm.read_text(encoding="utf-8")
+        assert update_validation(tmp_path, sv_id="SV-034", status="passing").success
+        assert vm.read_text(encoding="utf-8") == before.replace("| pending |", "| passing |")
+
+    def test_refuses_row_with_inline_comment_and_leaves_file_unchanged(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        row = "| SV-001 | ratio <!-- check --> | baseline | test | x | t | s | t | pending |"
+        vm = _write_matrix(tmp_path, [row])
+        assert [e.id for e in parse_validation_matrix(vm).data] == ["SV-001"]
+        before = _file_bytes(tmp_path)
+        result = update_validation(tmp_path, sv_id="SV-001", status="passing")
+        assert not result.success
+        assert "comment" in result.message
+        assert _file_bytes(tmp_path) == before
 
 
 # ---------------------------------------------------------------------------

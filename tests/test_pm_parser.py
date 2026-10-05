@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from agentic_mbse.pm import (
     BacklogData,
     InsightStatus,
@@ -15,6 +17,7 @@ from agentic_mbse.pm import (
     parse_traceability,
     parse_validation_matrix,
 )
+from agentic_mbse.pm.parser import _escape_table_cell, _split_table_row
 
 TEMPLATES = Path(__file__).parent.parent / "project_templates"
 FIXTURES = Path(__file__).parent / "fixtures" / "pm"
@@ -170,6 +173,20 @@ class TestParseValidationMatrix:
         assert result.data == []
         assert len(result.warnings) == 1
 
+    def test_escaped_pipe_keeps_columns(self, tmp_path):
+        f = tmp_path / "VALIDATION_MATRIX.md"
+        f.write_text(
+            "## Verification Registry\n\n"
+            "| ID | Description | Type | Mechanism | Expected | Tolerance | Source | Test | Status |\n"
+            "|----|-------------|------|-----------|----------|-----------|--------|------|--------|\n"
+            "| SV-035 | bar (\\|rel dev\\| <= 1e-6) | baseline | test | x | 1e-6 | s | t | passing |\n"
+        )
+        result = parse_validation_matrix(f)
+        assert result.warnings == []
+        assert result.data[0].description == "bar (|rel dev| <= 1e-6)"
+        assert result.data[0].type.value == "baseline"
+        assert result.data[0].status.value == "passing"
+
 
 class TestParseOverview:
     def test_populated(self, tmp_path):
@@ -279,6 +296,65 @@ class TestMarkdownTableEdgeCases:
         result = parse_requirements(f)
         assert len(result.data) == 1
         assert result.data[0].id == "PR-001"
+
+
+def _split_as_before(line):
+    """The table split used before backslash-pipe escaping, kept as the reference for I2."""
+    cells = [c.strip() for c in line.strip().split("|")]
+    if cells and cells[0] == "":
+        cells = cells[1:]
+    if cells and cells[-1] == "":
+        cells = cells[:-1]
+    return cells
+
+
+class TestSplitTableRow:
+    def test_escaped_pipe_is_content(self):
+        row = "| SV-034 | bar (\\|rel dev\\| <= 1e-6) | baseline | passing |"
+        assert _split_table_row(row) == ["SV-034", "bar (|rel dev| <= 1e-6)", "baseline", "passing"]
+
+    def test_escaped_pipe_inside_code_span(self):
+        assert _split_table_row("| `p\\|q` | x |") == ["`p|q`", "x"]
+
+    def test_bare_pipe_inside_code_span_splits(self):
+        assert _split_table_row("| `m|n` | x |") == ["`m", "n`", "x"]
+
+    def test_escaped_backslash_before_pipe_stays_one_cell(self):
+        # GFM: the pipe never splits, and only the backslash right before it is dropped
+        assert _split_table_row("| a \\\\| b | x |") == ["a \\| b", "x"]
+
+    def test_row_without_escapes_drops_edge_cells(self):
+        assert _split_table_row("| PR-001 | First | G-001 |") == ["PR-001", "First", "G-001"]
+
+    @pytest.mark.parametrize(
+        "row",
+        [
+            "| SV-001 | Cost ballpark | reasonableness | test | $3B-$15B | range | j | t | pending |",
+            "|----|-------------|------|",
+            "|SV-001|tight|cells|",
+            "| no trailing pipe | b",
+            "|  | empty edges |  |",
+            "||",
+            "   | indented | row |   ",
+            "| path\\to | ends in \\ | `code` |",
+        ],
+    )
+    def test_unescaped_rows_split_as_before(self, row):
+        assert _split_table_row(row) == _split_as_before(row)
+
+
+class TestEscapeTableCell:
+    def test_escapes_every_pipe(self):
+        assert _escape_table_cell("|a| or |b|") == "\\|a\\| or \\|b\\|"
+
+    @pytest.mark.parametrize("value", ["a|b", "a\\|b", "\\\\|", "ends in \\"])
+    def test_survives_escape_then_split(self, value):
+        assert _split_table_row(f"| {_escape_table_cell(value)} | next |") == [value, "next"]
+
+    @pytest.mark.parametrize("marker", ["\n", "\r", "<!--", "-->"])
+    def test_refuses_line_breaks_and_comment_markers(self, marker):
+        with pytest.raises(ValueError, match="cannot hold"):
+            _escape_table_cell(f"before {marker} after")
 
 
 # ---------------------------------------------------------------------------
