@@ -1,6 +1,6 @@
 # Implementation Plan: Escaped Pipes and Registry ID Integrity
 
-**Status:** In Progress (Phase 1 complete)
+**Status:** In Progress (Phases 1 and 2 complete)
 **Created:** 2026-10-04
 **Last Updated:** 2026-10-04
 **Branch:** pm-registry-integrity
@@ -275,47 +275,47 @@ def _assert_one_record_added(before: str, after: str, new_id: str, *, table: boo
 
 **Tests**
 
-- [ ] `TestRegistryIds::test_token_boundary`, parametrized over every row of design.md's Appendix A [D6, C4]
-- [ ] `TestRegistryIds`: tokens inside HTML comments do not count [D5, C4]
-- [ ] `TestRegistryIds`: one warning per distinct unparsed number, with its first spelling as the location [D7]
-- [ ] `TestRegistryIds`: a parsed `PR-1` covers a `PR-001` mention [D7]
-- [ ] `TestRegistryIds`: a missing file returns the parsed IDs and no warning [D5]
-- [ ] Module helper `_assert_one_record_added` [E2]
-- [ ] E2, SV: `TestAddValidation::test_mints_above_unparsed_record`, where the dropped row has an invalid Status [E2, C4]
-- [ ] E2, PR: `TestPromoteRequirement::test_mints_above_unparsed_record`, where the dropped row has a `**PR-00N**` ID cell [E2, C4]
-- [ ] E2, G and AQ: `TestRegisterIntent::test_mints_above_unparsed_record`, parametrized over G and AQ with decorated ID cells [E2, C4]
-- [ ] E2, DI: `TestAddInsight::test_mints_above_unparsed_record`, where the dropped record has an invalid Status [E2, C4]
-- [ ] E2, AD: `TestRegisterDecision::test_mints_above_unparsed_record`, where the dropped record has an invalid Status [E2, C4]
-- [ ] `TestApproveResearch::test_mints_above_archive_note`: two insights mint `DI-015` and `DI-016`, because the running list starts from the scan [D5, C4]
-- [ ] `TestRegisterIntent::test_multiple_goals_mint_above_unparsed`: the running list for G [D5, C4]
-- [ ] `TestAddItem::test_mints_above_invalid_item`: an `in-progress` `WI-002` makes it mint `WI-003`. This checks the ID only; the write side is fixed in Phase 3b [C4]
-- [ ] `TestAddValidation::test_reports_reserved_id_after_parse_warnings`: the parse warnings come first, then one reservation warning naming `SV-035` [D7]
+- [x] `TestRegistryIds::test_token_boundary`, parametrized over every row of design.md's Appendix A [D6, C4]
+- [x] `TestRegistryIds`: tokens inside HTML comments do not count [D5, C4]
+- [x] `TestRegistryIds`: one warning per distinct unparsed number, with its first spelling as the location [D7]
+- [x] `TestRegistryIds`: a parsed `PR-1` covers a `PR-001` mention [D7]
+- [x] `TestRegistryIds`: a missing file returns the parsed IDs and no warning [D5]
+- [x] Module helper `_assert_one_record_added` [E2]
+- [x] E2, SV: `TestAddValidation::test_mints_above_unparsed_record`, where the dropped row has an invalid Status [E2, C4]
+- [x] E2, PR: `TestPromoteRequirement::test_mints_above_unparsed_record`, where the dropped row has a `**PR-00N**` ID cell [E2, C4]
+- [x] E2, G and AQ: `TestRegisterIntent::test_mints_above_unparsed_record`, parametrized over G and AQ with decorated ID cells [E2, C4]
+- [x] E2, DI: `TestAddInsight::test_mints_above_unparsed_record`, where the dropped record has an invalid Status [E2, C4]
+- [x] E2, AD: `TestRegisterDecision::test_mints_above_unparsed_record`, where the dropped record has an invalid Status [E2, C4]
+- [x] `TestApproveResearch::test_mints_above_archive_note`: two insights mint `DI-015` and `DI-016`, because the running list starts from the scan [D5, C4]
+- [x] `TestRegisterIntent::test_multiple_goals_mint_above_unparsed`: the running list for G [D5, C4]
+- [x] `TestAddItem::test_mints_above_invalid_item`: an `in-progress` `WI-002` makes it mint `WI-003`. This checks the ID only; the write side is fixed in Phase 3b [C4]
+- [x] `TestAddValidation::test_reports_reserved_id_after_parse_warnings`: the parse warnings come first, then one reservation warning naming `SV-035` [D7]
 
 **Code**
 
-- [ ] `operations.py`, beside `_next_id`: add `_id_pattern(prefix)` with the D6 boundary, and `_registry_ids(path, prefix, parsed_ids)` returning `ParseResult[list[str]]` [D5, D6, D7]
-- [ ] `operations.py:58-70`: `_next_id` matches with `_id_pattern(prefix).fullmatch`. Its signature and padding are unchanged [D5, I5]
-- [ ] `add_insight` `:310-312`: feed `_next_id` from `_registry_ids`, with its warnings after the parse warnings [D5, D7, I4]
-- [ ] `promote_requirement` `:391-393`: same [D5, D7, I4]
-- [ ] `register_decision` `:428-430`: same [D5, D7, I4]
-- [ ] `add_validation` `:513-515`: same [D5, D7, I4]
-- [ ] `approve_research` `:672-678`: the running list starts from `_registry_ids` [D5, D7, I4]
-- [ ] `register_intent` G and AQ `:742-743`: both running lists start from `_registry_ids` [D5, D7, I4]
-- [ ] `add_item` `:966-974`: same [D5, D7, I4]
-- [ ] Remove the two strict-xfail markers once they report XPASS [brief]
+- [x] `operations.py`, beside `_next_id`: add `_id_pattern(prefix)` with the D6 boundary, and `_registry_ids(path, prefix, parsed_ids)` returning `ParseResult[list[str]]` [D5, D6, D7]
+- [x] `operations.py:58-70`: `_next_id` matches with `_id_pattern(prefix).fullmatch`. Its signature and padding are unchanged [D5, I5]
+- [x] `add_insight` `:310-312`: feed `_next_id` from `_registry_ids`, with its warnings after the parse warnings [D5, D7, I4]
+- [x] `promote_requirement` `:391-393`: same [D5, D7, I4]
+- [x] `register_decision` `:428-430`: same [D5, D7, I4]
+- [x] `add_validation` `:513-515`: same [D5, D7, I4]
+- [x] `approve_research` `:672-678`: the running list starts from `_registry_ids` [D5, D7, I4]
+- [x] `register_intent` G and AQ `:742-743`: both running lists start from `_registry_ids` [D5, D7, I4]
+- [x] `add_item` `:966-974`: same [D5, D7, I4]
+- [x] Remove the two strict-xfail markers once they report XPASS [brief]
 
 ### Validation
 
 **Automated:**
 
-- [ ] G1 `uv run pytest tests/test_pm_*.py`: all pass, with no XFAIL left
-- [ ] G2 `uv run ruff check src/ tests/`
-- [ ] G3 `uv run ruff format --check src/ tests/`
-- [ ] G4 `uv run mypy src/`
+- [x] G1 `uv run pytest tests/test_pm_*.py`: all pass, with no XFAIL left
+- [x] G2 `uv run ruff check src/ tests/`
+- [x] G3 `uv run ruff format --check src/ tests/`
+- [x] G4 `uv run mypy src/`
 
 **Manual:**
 
-- [ ] In a scratch project holding the E1 matrix, run `add-validation` through the CLI. Expect `SV-036`, with the reservation warning for `SV-035` printed on stderr.
+- [x] In a scratch project holding the E1 matrix, run `add-validation` through the CLI. Expect `SV-036`, with the reservation warning for `SV-035` printed on stderr.
 
 **What We Know Works After This Phase:**
 
@@ -659,10 +659,74 @@ After the source change, E1 still fails, but now only at its last assert: `asser
 
 ### Phase 2 Completion
 
-**Completed:**
+**Completed:** 2026-10-04. Not committed; the orchestrator commits after review.
+
+**Red runs:** the ten allocation tests were written first and run against Phase 1's source (`9aa8b57`) before any `src/` edit, with `uv run pytest tests/test_pm_operations.py -q -k "mints_above or mint_above or reports_reserved or e1_three_record or archive_note_reserves"`. Every fixture's parse precondition held, and each test failed at the ID it minted:
+
+```
+E   AssertionError: assert 'DI-002' == 'DI-003'
+E   AssertionError: assert 'PR-002' == 'PR-003'
+E   AssertionError: assert 'AD-002' == 'AD-003'
+E   AssertionError: assert 'SV-002' == 'SV-003'
+E   AssertionError: assert [] == ['SV-035']
+E   AssertionError: assert {'DI-012': 'F...13': 'Second'} == {'DI-015': 'F...16': 'Second'}
+E   AssertionError: assert ['G-002'] == ['G-003']
+E   AssertionError: assert ['AQ-002'] == ['AQ-003']
+E   AssertionError: assert {'G-002': 'fi...03': 'second'} == {'G-003': 'fi...04': 'second'}
+E   AssertionError: assert 'WI-002' == 'WI-003'
+================= 10 failed, 89 deselected, 2 xfailed in 0.56s =================
+```
+
+`TestRegistryIds` was written next, with `_registry_ids` imported at module top. Its red run is a collection `ImportError`, because the helper did not exist yet. After the source change, E1 and the archive-note test reported `XPASS(strict)`, which failed the suite as designed; both markers are now removed, and `grep -n xfail tests/test_pm_*.py` finds nothing.
+
 **Actual Changes:**
+
+- `operations.py`:
+  - Added `_id_pattern(prefix)`, the D6 regex `(?<![A-Za-z0-9])PREFIX-(\d+)(?!\d)`. Its docstring says it is the only definition of how an ID is numbered (I5).
+  - `_next_id` uses `_id_pattern(prefix).fullmatch` in place of its own `^PREFIX-(\d+)$`. Signature, padding, and the five `TestNextId` cases are unchanged.
+  - Added `_registry_ids(path, prefix, parsed_ids) -> ParseResult[list[str]]` beside `_next_id`. Data is `parsed_ids` followed by every token in the file after `_strip_html_comments`. One warning per distinct number no parsed ID holds, located at its first spelling. A missing file (`FileNotFoundError`, the parsers' idiom) returns `parsed_ids` with no warning.
+  - Imports `_strip_html_comments` from `parser.py` and `ParseResult` from `types.py`.
+  - All eight allocation sites feed `_next_id` from `_registry_ids`: `add_insight`, `promote_requirement`, `register_decision`, `add_validation`, `approve_research` (running list), `register_intent` G and AQ (two running lists), `add_item`. The local is named `taken`, after the design's "an ID is taken if the file names it."
+  - Each site returns its parse warnings, then the scan's (D7). Where a function has several returns after the scan, a local `warnings` list carries both, so refusals after the scan report them too.
+- `tests/test_pm_operations.py` (34 new cases):
+  - `TestRegistryIds` (24): `test_token_boundary` over all 12 Appendix A rows (`_APPENDIX_A`), `test_skips_html_comments`, `test_templates_reserve_nothing` (7 registry templates), `test_data_is_parsed_ids_then_tokens`, `test_one_warning_per_unparsed_number_at_first_spelling`, `test_parsed_id_covers_padded_mention`, `test_missing_file_returns_parsed_ids`.
+  - E2 (6 cases): `test_mints_above_unparsed_record` in `TestAddValidation` (invalid Status), `TestPromoteRequirement` (`**PR-002**`), `TestRegisterIntent` (G and AQ, decorated cells), `TestAddInsight` and `TestRegisterDecision` (invalid Status). Each checks the parse precondition, the minted ID, and `_assert_one_record_added`.
+  - Running lists and reporting (4): `TestApproveResearch::test_mints_above_archive_note` (`DI-015`, `DI-016`), `TestRegisterIntent::test_multiple_goals_mint_above_unparsed` (`G-003`, `G-004`), `TestAddItem::test_mints_above_invalid_item` (`WI-003`, ID only), `TestAddValidation::test_reports_reserved_id_after_parse_warnings`.
+
+**Reservation warning wording** (D7 leaves it open): `SV-035 is named in VALIDATION_MATRIX.md but is not a parsed record; its ID stays reserved`. The message names the ID itself because the CLI prints only file and message, not location (`cli/pm_cli.py:39`).
+
+**Gates:**
+
+| Gate | Result | Parity bar |
+|---|---|---|
+| G1 `pytest tests/test_pm_*.py` | 292 passed, no XFAIL | Phase 1: 256 passed + 2 xfailed; +34 new cases |
+| G2 `ruff check src/ tests/` | 118 repo-wide; PM-scoped check prints "All checks passed!" | ≤ 118 |
+| G3 `ruff format --check src/ tests/` | 78 files repo-wide; 8 hunks in the four edited files | ≤ 78; still 8 hunks |
+| G4 `mypy src/` | 91 errors in 19 files; 0 under `src/agentic_mbse/pm/` | ≤ 91; none in `pm/` |
+
+G3 first showed 10 hunks: two new test lines were over-long. They were laid out by hand the way `ruff format` wanted, without formatting the whole file, so the 8 base hunks stay as they were.
+
+**Manual check:** a scratch project held the backlog template and the E1 matrix. `agentic-mbse pm add-validation --description new --type baseline --mechanism test --expected e --tolerance t` exited 0 with `Added verification SV-036: new`, wrote `| SV-036 | new | baseline | test | e | t |  |  | pending |` after the malformed row, and printed two warnings on stderr in this order: the parser's `Invalid Type 'rel dev'` for the malformed row, then `SV-035 is named in VALIDATION_MATRIX.md but is not a parsed record; its ID stays reserved`.
+
 **Issues:**
+
+- `register_decision`'s missing-`## Key Decisions` refusal still returns no warnings, as at the base. The scan runs before it but only reads.
+- In `OVERVIEW.md`, a question's Source cell citing `G-00N` now reserves that goal number. This is the spec's accepted cost (a gap at most), and the reservation warning names the citation when no such goal parses.
+- `add_item` still rewrites `BACKLOG.md` from parsed data, so in `test_mints_above_invalid_item` the invalid `WI-002` is still deleted on write. The test checks the ID only, as planned; Phase 3b fixes the write.
+
 **Deviations:**
+
+- **Test helpers the plan did not name:** `_write_archived_knowledge(root)` (shared by the Phase 1 archive-note test, which now uses it, and the `approve_research` case), `_decision(ad_id)`, `_write_overview(root, goal_rows, question_rows)`, and the `_OVERVIEW_GOAL_ROWS` and `_OVERVIEW_QUESTION_ROWS` fixtures.
+- **`_write_raw_backlog` and `_wi` were added here, not in Phase 3b.** `test_mints_above_invalid_item` needs a backlog holding an invalid item, which `BacklogData` cannot hold. Both follow the plan's signatures. Phase 3b reuses them and only needs to tick its helper checkbox.
+- **Two tests beyond the plan's list.** `test_templates_reserve_nothing` pins B2 directly, so a template that gains an ID outside a comment fails by name rather than through a shifted first ID. `test_data_is_parsed_ids_then_tokens` pins the data contract: parsed IDs first, then every token, duplicates kept. That is the design's "parsed IDs plus every token" taken literally; `_next_id` only needs the maximum.
+- **`fullmatch` versus the old `^...$` match:** they differ only for an ID ending in a newline, which no parser emits (every record ID is a stripped cell or a regex group).
+- **No helper names changed.**
+
+**For Phase 3a and 3b:**
+
+- `promote_requirement`, `add_validation`, and `register_intent` already hold a local `warnings` list (parse plus reservation). Phase 3a's refusals should return it.
+- Phase 3b's `add_item` must keep feeding `_next_id` from `_registry_ids(backlog_path, "WI", <parsed IDs>)` after the switch to `_load_backlog`, and must keep `warnings = [*parse warnings, *taken.warnings]`.
+- `-k mints_above_unparsed` currently selects 6 cases (SV, PR, G, AQ, DI, AD). Phase 3b's WI case must keep the name `TestAddItem::test_mints_above_unparsed_record` for Phase 4's count of seven.
 
 ### Phase 3a Completion
 

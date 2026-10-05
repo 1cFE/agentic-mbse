@@ -19,6 +19,7 @@ import yaml
 from agentic_mbse.pm.parser import (
     _escape_table_cell,
     _split_table_row,
+    _strip_html_comments,
     parse_architecture,
     parse_backlog,
     parse_knowledge,
@@ -39,6 +40,7 @@ from agentic_mbse.pm.types import (
     InsightInput,
     InsightStatus,
     OperationResult,
+    ParseResult,
     ParseWarning,
     Priority,
     QuestionInput,
@@ -57,19 +59,65 @@ from agentic_mbse.pm.types import (
 # ---------------------------------------------------------------------------
 
 
+def _id_pattern(prefix: str) -> re.Pattern[str]:
+    """Return the regex for one ``PREFIX-NNN`` ID token; group 1 is its number.
+
+    The only definition of how an ID is numbered.  The prefix must not follow a
+    letter or digit, so ``MAG-001`` is not ``G-001``; a hyphen may precede it, so
+    the joined range ``DI-001-DI-014`` names both ends.  Only the digit run must
+    end, so ``SV-034a`` names SV 34.  ``PR-1`` and ``PR-001`` share number 1.
+    """
+    return re.compile(rf"(?<![A-Za-z0-9]){re.escape(prefix)}-(\d+)(?!\d)")
+
+
 def _next_id(prefix: str, existing_ids: list[str]) -> str:
     """Given a prefix ('DI', 'PR', etc.) and list of existing IDs, return next sequential ID."""
     if not existing_ids:
         return f"{prefix}-001"
     nums = []
-    pattern = re.compile(rf"^{re.escape(prefix)}-(\d+)$")
+    pattern = _id_pattern(prefix)
     for eid in existing_ids:
-        m = pattern.match(eid)
+        m = pattern.fullmatch(eid)
         if m:
             nums.append(int(m.group(1)))
     if not nums:
         return f"{prefix}-001"
     return f"{prefix}-{max(nums) + 1:03d}"
+
+
+def _registry_ids(path: Path, prefix: str, parsed_ids: list[str]) -> ParseResult[list[str]]:
+    """Return every ``prefix`` ID the registry file names, so ``_next_id`` never reuses one.
+
+    The data is ``parsed_ids`` followed by every ``_id_pattern`` token in the file
+    outside HTML comments, whether or not the parser accepted its record.  Each
+    distinct number that no parsed ID holds gets one warning, located at its
+    first spelling.  A missing file returns ``parsed_ids`` with no warning: the
+    parser has already warned, and the operation creates the file.
+    """
+    try:
+        content = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return ParseResult(data=list(parsed_ids))
+
+    pattern = _id_pattern(prefix)
+    tokens = list(pattern.finditer(_strip_html_comments(content)))
+    parsed_numbers = {int(m.group(1)) for m in map(pattern.fullmatch, parsed_ids) if m}
+    reserved: dict[int, str] = {}  # unparsed number -> its first spelling
+    for token in tokens:
+        number = int(token.group(1))
+        if number not in parsed_numbers:
+            reserved.setdefault(number, token.group(0))
+
+    warnings = [
+        ParseWarning(
+            file=str(path),
+            location=spelling,
+            message=f"{spelling} is named in {path.name} but is not a parsed record; "
+            "its ID stays reserved",
+        )
+        for spelling in reserved.values()
+    ]
+    return ParseResult(data=[*parsed_ids, *(m.group(0) for m in tokens)], warnings=warnings)
 
 
 def _update_frontmatter_fields(path: Path, updates: dict[str, str]) -> None:
@@ -315,8 +363,8 @@ def add_insight(
 
     knowledge_path = project_root / "knowledge" / "KNOWLEDGE.md"
     result = parse_knowledge(knowledge_path)
-    existing_ids = [e.id for e in result.data]
-    new_id = _next_id("DI", existing_ids)
+    taken = _registry_ids(knowledge_path, "DI", [e.id for e in result.data])
+    new_id = _next_id("DI", taken.data)
 
     entry = InsightEntry(
         id=new_id,
@@ -337,7 +385,7 @@ def add_insight(
         message=f"Added insight {new_id}: {title}",
         ids_assigned={"DI": new_id},
         files_modified=[str(knowledge_path)],
-        warnings=result.warnings,
+        warnings=[*result.warnings, *taken.warnings],
     )
 
 
@@ -396,8 +444,9 @@ def promote_requirement(
 
     req_path = project_root / "modeling_project" / "REQUIREMENTS.md"
     result = parse_requirements(req_path)
-    existing_ids = [e.id for e in result.data]
-    new_id = _next_id("PR", existing_ids)
+    taken = _registry_ids(req_path, "PR", [e.id for e in result.data])
+    warnings = [*result.warnings, *taken.warnings]
+    new_id = _next_id("PR", taken.data)
 
     try:
         row = _format_table_row(
@@ -411,7 +460,7 @@ def promote_requirement(
         )
     except ValueError as e:
         return OperationResult(
-            success=False, message=f"Requirement not added: {e}", warnings=result.warnings
+            success=False, message=f"Requirement not added: {e}", warnings=warnings
         )
     _append_table_row(req_path, "## Requirements", row)
 
@@ -420,7 +469,7 @@ def promote_requirement(
         message=f"Added requirement {new_id}: {requirement}",
         ids_assigned={"PR": new_id},
         files_modified=[str(req_path)],
-        warnings=result.warnings,
+        warnings=warnings,
     )
 
 
@@ -438,8 +487,8 @@ def register_decision(
 
     arch_path = project_root / "modeling_project" / "ARCHITECTURE.md"
     result = parse_architecture(arch_path)
-    existing_ids = [e.id for e in result.data]
-    new_id = _next_id("AD", existing_ids)
+    taken = _registry_ids(arch_path, "AD", [e.id for e in result.data])
+    new_id = _next_id("AD", taken.data)
 
     today = datetime.date.today().isoformat()
     entry = DecisionEntry(
@@ -486,7 +535,7 @@ def register_decision(
         message=f"Added decision {new_id}: {title}",
         ids_assigned={"AD": new_id},
         files_modified=[str(arch_path)],
-        warnings=result.warnings,
+        warnings=[*result.warnings, *taken.warnings],
     )
 
 
@@ -523,8 +572,9 @@ def add_validation(
 
     val_path = project_root / "modeling_project" / "VALIDATION_MATRIX.md"
     result = parse_validation_matrix(val_path)
-    existing_ids = [e.id for e in result.data]
-    new_id = _next_id("SV", existing_ids)
+    taken = _registry_ids(val_path, "SV", [e.id for e in result.data])
+    warnings = [*result.warnings, *taken.warnings]
+    new_id = _next_id("SV", taken.data)
 
     try:
         row = _format_table_row(
@@ -542,7 +592,7 @@ def add_validation(
         )
     except ValueError as e:
         return OperationResult(
-            success=False, message=f"Verification not added: {e}", warnings=result.warnings
+            success=False, message=f"Verification not added: {e}", warnings=warnings
         )
     _append_table_row(val_path, "## Verification Registry", row)
 
@@ -551,7 +601,7 @@ def add_validation(
         message=f"Added verification {new_id}: {description}",
         ids_assigned={"SV": new_id},
         files_modified=[str(val_path)],
-        warnings=result.warnings,
+        warnings=warnings,
     )
 
 
@@ -687,12 +737,13 @@ def approve_research(
     # Parse existing knowledge for ID assignment
     k_path = project_root / "knowledge" / "KNOWLEDGE.md"
     k_result = parse_knowledge(k_path)
-    existing_ids = [e.id for e in k_result.data]
+    taken = _registry_ids(k_path, "DI", [e.id for e in k_result.data])
+    warnings = [*k_result.warnings, *taken.warnings]
 
     # Build all entries in memory first
     entries: list[InsightEntry] = []
     ids_assigned: dict[str, str] = {}
-    all_ids = list(existing_ids)
+    all_ids = list(taken.data)
     for inp in insights:
         for name, val in [
             ("title", inp.title),
@@ -705,7 +756,7 @@ def approve_research(
                 return OperationResult(
                     success=False,
                     message=f"Insight '{inp.title}': required field '{name}' is empty",
-                    warnings=k_result.warnings,
+                    warnings=warnings,
                 )
 
         new_id = _next_id("DI", all_ids)
@@ -740,7 +791,7 @@ def approve_research(
         message=f"Approved research: {pending_path.name}. Created insights: {id_list}",
         ids_assigned={di_id: title for di_id, title in ids_assigned.items()},
         files_modified=[str(k_path), str(approved_path)],
-        warnings=k_result.warnings,
+        warnings=warnings,
     )
 
 
@@ -756,21 +807,22 @@ def register_intent(
 
     overview_path = project_root / "modeling_project" / "OVERVIEW.md"
     o_result = parse_overview(overview_path)
-    existing_g = [e.id for e in o_result.data.goals]
-    existing_aq = [e.id for e in o_result.data.questions]
+    taken_g = _registry_ids(overview_path, "G", [e.id for e in o_result.data.goals])
+    taken_aq = _registry_ids(overview_path, "AQ", [e.id for e in o_result.data.questions])
+    warnings = [*o_result.warnings, *taken_g.warnings, *taken_aq.warnings]
 
     # Build every row before the first append, so a refused value writes nothing
     ids_assigned: dict[str, str] = {}
 
     goal_rows: list[str] = []
-    all_g_ids = list(existing_g)
+    all_g_ids = list(taken_g.data)
     for g in goals or []:
         for name, val in [("goal", g.goal), ("priority", g.priority), ("source", g.source)]:
             if not val or not val.strip():
                 return OperationResult(
                     success=False,
                     message=f"Goal '{g.goal}': required field '{name}' is empty",
-                    warnings=o_result.warnings,
+                    warnings=warnings,
                 )
         new_id = _next_id("G", all_g_ids)
         all_g_ids.append(new_id)
@@ -789,19 +841,19 @@ def register_intent(
             )
         except ValueError as e:
             return OperationResult(
-                success=False, message=f"Goal '{g.goal}': {e}", warnings=o_result.warnings
+                success=False, message=f"Goal '{g.goal}': {e}", warnings=warnings
             )
         ids_assigned[new_id] = g.goal
 
     question_rows: list[str] = []
-    all_aq_ids = list(existing_aq)
+    all_aq_ids = list(taken_aq.data)
     for q in questions or []:
         for name, val in [("question", q.question), ("source", q.source)]:
             if not val or not val.strip():
                 return OperationResult(
                     success=False,
                     message=f"Question '{q.question}': required field '{name}' is empty",
-                    warnings=o_result.warnings,
+                    warnings=warnings,
                 )
         new_id = _next_id("AQ", all_aq_ids)
         all_aq_ids.append(new_id)
@@ -819,7 +871,7 @@ def register_intent(
             )
         except ValueError as e:
             return OperationResult(
-                success=False, message=f"Question '{q.question}': {e}", warnings=o_result.warnings
+                success=False, message=f"Question '{q.question}': {e}", warnings=warnings
             )
         ids_assigned[new_id] = q.question
 
@@ -834,7 +886,7 @@ def register_intent(
         message=f"Registered intent: {id_list}",
         ids_assigned=ids_assigned,
         files_modified=[str(overview_path)],
-        warnings=o_result.warnings,
+        warnings=warnings,
     )
 
 
@@ -994,7 +1046,7 @@ def add_item(
     b_result = parse_backlog(backlog_path)
     data = b_result.data
 
-    # Collect all WI-XXX IDs
+    # Collect all parsed WI-XXX IDs
     all_ids: list[str] = []
     for ep in data.epics:
         for item in ep.items:
@@ -1002,7 +1054,9 @@ def add_item(
     for sa in data.standalone:
         all_ids.append(sa.id)
 
-    new_id = _next_id("WI", all_ids)
+    taken = _registry_ids(backlog_path, "WI", all_ids)
+    warnings = [*b_result.warnings, *taken.warnings]
+    new_id = _next_id("WI", taken.data)
 
     if epic:
         # Find the epic
@@ -1015,7 +1069,7 @@ def add_item(
             return OperationResult(
                 success=False,
                 message=f"Epic '{epic}' not found in BACKLOG.md",
-                warnings=b_result.warnings,
+                warnings=warnings,
             )
         target_epic.items.append(
             WorkItemEntry(
@@ -1043,7 +1097,7 @@ def add_item(
         message=f"Added work item {new_id}: {name}",
         ids_assigned={"WI": new_id},
         files_modified=[str(backlog_path)],
-        warnings=b_result.warnings,
+        warnings=warnings,
     )
 
 
