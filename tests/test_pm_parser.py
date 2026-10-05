@@ -17,7 +17,7 @@ from agentic_mbse.pm import (
     parse_traceability,
     parse_validation_matrix,
 )
-from agentic_mbse.pm.parser import _escape_table_cell, _split_table_row
+from agentic_mbse.pm.parser import _escape_table_cell, _split_table_row, _strip_html_comments
 
 TEMPLATES = Path(__file__).parent.parent / "project_templates"
 FIXTURES = Path(__file__).parent / "fixtures" / "pm"
@@ -296,6 +296,20 @@ class TestMarkdownTableEdgeCases:
         result = parse_requirements(f)
         assert len(result.data) == 1
         assert result.data[0].id == "PR-001"
+
+
+class TestStripHtmlComments:
+    def test_default_removes_comments(self):
+        assert _strip_html_comments("a <!-- x -->b\n<!--\ny\n-->c") == "a b\nc"
+
+    def test_keep_lines_blanks_each_comment_but_keeps_line_count(self):
+        text = "| SV-001 | a <!-- note --> |\n<!-- example:\n| SV-002 | b |\n-->\n| SV-003 | c |"
+        blanked = _strip_html_comments(text, keep_lines=True)
+        assert blanked.split("\n") == ["| SV-001 | a  |", "", "", "", "| SV-003 | c |"]
+
+    def test_keep_lines_leaves_unclosed_comment(self):
+        text = "<!-- never closed\n| SV-001 | a |"
+        assert _strip_html_comments(text, keep_lines=True) == text
 
 
 def _split_as_before(line):

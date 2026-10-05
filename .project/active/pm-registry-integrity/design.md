@@ -133,7 +133,7 @@ All decisions below are agent-grade by construction. D2, D6, D8, and D9 settle t
   | R6 | `update-validation` | no candidate row (D4) has the ID, or several do | "not found", or every matching line |
   | R7 | `update-validation` | the one candidate row does not parse as a record, or its original line holds an HTML comment marker | fix the row by hand; if it has more cells than the header, a pipe inside a cell must be written as backslash-pipe; a comment inside the row must be moved out of it |
   | R8 | `promote-requirement`, `add-validation`, `register-intent` | a cell value holds a line break, `<!--`, or `-->` | the offending marker and the value, to reword without it |
-  | R9 | `promote-requirement`, `add-validation`, `register-intent` | a target section heading, or the table under it, is missing | the missing heading |
+  | R9 | `promote-requirement`, `add-validation`, `register-intent` | a target section heading is missing, or no table sits under it before the next `## ` heading (a table in a later section does not count) | the missing heading |
 
   - **Lookups: each piece exists once.** What counts as a match is defined once per record kind. The "exactly one" rule is implemented once.
     - **The rule.** `_single_match(matches, what, where)` in `operations.py` takes `(location, match)` pairs, returns the single pair, and raises `ValueError` naming every location when there are none or several. R3 and R6 go through it.

@@ -1,6 +1,6 @@
 # Implementation Plan: Escaped Pipes and Registry ID Integrity
 
-**Status:** In Progress (Phases 1 and 2 complete)
+**Status:** In Progress (Phases 1, 2, and 3a complete)
 **Created:** 2026-10-04
 **Last Updated:** 2026-10-04
 **Branch:** pm-registry-integrity
@@ -366,37 +366,39 @@ class TestUpdateValidation:
 
 **Tests**
 
-- [ ] `test_pm_parser.py`: `_strip_html_comments(text, keep_lines=True)` blanks each comment but keeps the line count [D4]
-- [ ] `TestSingleMatch` in `test_pm_operations.py`: returns the single pair. With no match, or with several, it raises a `ValueError` naming every location [D9, I9]
-- [ ] `TestUpdateValidation::test_refuses_duplicate_rows`: the refusal names every matching line [R6, I9]
-- [ ] `TestUpdateValidation::test_ignores_commented_example_rows` [D4, R6]
-- [ ] `TestUpdateValidation::test_ignores_rows_outside_registry_section`: an `SV-` row under another heading is not a candidate [D4]
-- [ ] `TestUpdateValidation::test_refuses_unparsed_row`: a row with raw pipes. The message says the pipe must be written as backslash-pipe, by hand [R7]
-- [ ] `TestRegisterIntent::test_missing_questions_section_writes_nothing` [R9, D10, m2]
-- [ ] `TestPromoteRequirement::test_missing_section_refuses` and `TestAddValidation::test_missing_section_refuses` [R9, I7]
+- [x] `test_pm_parser.py`: `_strip_html_comments(text, keep_lines=True)` blanks each comment but keeps the line count [D4]
+- [x] `TestSingleMatch` in `test_pm_operations.py`: returns the single pair. With no match, or with several, it raises a `ValueError` naming every location [D9, I9]
+- [x] `TestUpdateValidation::test_refuses_duplicate_rows`: the refusal names every matching line [R6, I9]
+- [x] `TestUpdateValidation::test_ignores_commented_example_rows` [D4, R6]
+- [x] `TestUpdateValidation::test_ignores_rows_outside_registry_section`: an `SV-` row under another heading is not a candidate [D4]
+- [x] `TestUpdateValidation::test_refuses_unparsed_row`: a row with raw pipes. The message says the pipe must be written as backslash-pipe, by hand [R7]
+- [x] `TestRegisterIntent::test_missing_questions_section_writes_nothing` [R9, D10, m2]
+- [x] `TestPromoteRequirement::test_missing_section_refuses` and `TestAddValidation::test_missing_section_refuses` [R9, I7]
+- [x] `test_missing_section_refuses[table only in a later section]` in both classes: the heading is present with no table under it, and a later `## ` section has a table. The operation refuses, names the heading, and leaves the file unchanged [R9, I7; orchestrator decision 2026-10-04]
 
 **Code**
 
-- [ ] `parser.py:54`: `_strip_html_comments` gains the keyword `keep_lines` (default `False`). With `True`, each comment is replaced by the newlines it held [D4]
-- [ ] `operations.py`: add `_single_match(matches, what, where)` [D9, I9]
-- [ ] `operations.py:1138-1168`: `update_validation` lists candidate rows per D4 and takes one through `_single_match` (R6). It refuses unless that row parses as a record (R7), then rewrites the original file line at that index (RC1) [D4, R6, R7]
+- [x] `parser.py:54`: `_strip_html_comments` gains the keyword `keep_lines` (default `False`). With `True`, each comment is replaced by the newlines it held [D4]
+- [x] `operations.py`: add `_single_match(matches, what, where)` [D9, I9]
+- [x] `operations.py:1138-1168`: `update_validation` lists candidate rows per D4 and takes one through `_single_match` (R6). It refuses unless that row parses as a record (R7), then rewrites the original file line at that index (RC1) [D4, R6, R7]
   - "Parses as a record" can be tested as "the row's ID is among `parse_validation_matrix`'s IDs". That test is exact because the candidate is unique.
-- [ ] `operations.py:213-245`: extract the pure `_insert_table_row(text, section_heading, row) -> str`. `_append_table_row` becomes read, insert, write, with the same signature [D10]
-- [ ] `promote_requirement` and `add_validation`: move the append into the same `try` as the format, so a missing heading or table refuses [R9, I7]
-- [ ] `register_intent`: insert every goal and question row into one in-memory copy of `OVERVIEW.md`, then write once. A `ValueError` refuses [D10, m2, R9, I7]
+- [x] `operations.py:213-245`: extract the pure `_insert_table_row(text, section_heading, row) -> str`. `_append_table_row` becomes read, insert, write, with the same signature [D10]
+- [x] `_insert_table_row`: before any table line is seen, the search stops at the next `## ` heading, so a heading with no table under it refuses [R9; orchestrator decision 2026-10-04]
+- [x] `promote_requirement` and `add_validation`: move the append into the same `try` as the format, so a missing heading or table refuses [R9, I7]
+- [x] `register_intent`: insert every goal and question row into one in-memory copy of `OVERVIEW.md`, then write once. A `ValueError` refuses [D10, m2, R9, I7]
 
 ### Validation
 
 **Automated:**
 
-- [ ] G1 `uv run pytest tests/test_pm_*.py`. The existing `TestUpdateValidation::test_happy_path` and `test_not_found` pass unchanged
-- [ ] G2 `uv run ruff check src/ tests/`
-- [ ] G3 `uv run ruff format --check src/ tests/`
-- [ ] G4 `uv run mypy src/`
+- [x] G1 `uv run pytest tests/test_pm_*.py`. The existing `TestUpdateValidation::test_happy_path` and `test_not_found` pass unchanged
+- [x] G2 `uv run ruff check src/ tests/`
+- [x] G3 `uv run ruff format --check src/ tests/`
+- [x] G4 `uv run mypy src/`
 
 **Manual:**
 
-- [ ] On a scratch matrix with two `SV-001` rows, run `update-validation`. Expect a refusal naming both lines, and no file change.
+- [x] On a scratch matrix with two `SV-001` rows, run `update-validation`. Expect a refusal naming both lines, and no file change.
 
 **What We Know Works After This Phase:**
 
@@ -730,10 +732,104 @@ G3 first showed 10 hunks: two new test lines were over-long. They were laid out 
 
 ### Phase 3a Completion
 
-**Completed:**
+**Completed:** 2026-10-04. Not committed; the orchestrator commits after review.
+
+**Red runs:** the eleven operation tests were written first and run against Phase 2's source (`e9fd8b1`) before any `src/` edit, with `uv run pytest tests/test_pm_operations.py -q -k "commented_example or refuses_duplicate_rows or outside_registry_section or refuses_unparsed_row or comment_in_status_cell or missing_section_refuses or missing_questions_section"`:
+
+```
+E   ValueError: Section heading '## Requirements' not found in /tmp/.../REQUIREMENTS.md
+E   ValueError: No table found under '## Requirements' in /tmp/.../REQUIREMENTS.md
+E   ValueError: Section heading '## Verification Registry' not found in /tmp/.../VALIDATION_MATRIX.md
+E   ValueError: No table found under '## Verification Registry' in /tmp/.../VALIDATION_MATRIX.md
+E   ValueError: Section heading '## Analysis Questions' not found in /tmp/.../OVERVIEW.md
+E   AssertionError: assert not True    (commented SV-001: success=True, 'Updated SV-001 status to passing')
+E     - SV-002 not found in VALIDATION_MATRIX.md
+E     + SV-002's row in VALIDATION_MATRIX.md holds an HTML comment marker, so it cannot be rewritten. [...]
+E   AssertionError: assert not True    (duplicate SV-033: 'Updated SV-033 status to failing')
+E   assert [4] == [10]                 (the Summary row before the registry took the write)
+E   AssertionError: assert not True    (unparsed SV-035: 'Updated SV-035 status to failing')
+E   AssertionError: assert not True    (comment in Status cell: 'Updated SV-001 status to passing')
+================= 11 failed, 1 passed, 125 deselected in 0.68s =================
+```
+
+- The one pass is `test_ignores_commented_example_rows`, as expected. At the base, the first match is already the real row. The test guards the new R6 against the template's commented `SV-001`.
+- `TestSingleMatch` was added next, with `_single_match` imported at module top. Its red run is a collection `ImportError`.
+- `TestStripHtmlComments` red: `TypeError: _strip_html_comments() got an unexpected keyword argument 'keep_lines'` (2 failed, 1 passed; the default-behaviour case passes).
+- The R9 later-section case (orchestrator decision) was red on this phase's first-pass source, before the `_insert_table_row` change: both operations reported success after writing into the later section's table.
+
+  ```
+  E   AssertionError: assert not True    (OperationResult(success=True, message='Added requirement PR-001: r', ...))
+  E   AssertionError: assert not True    (OperationResult(success=True, message='Added verification SV-001: d', ...))
+  FAILED tests/test_pm_operations.py::TestPromoteRequirement::test_missing_section_refuses[table only in a later section]
+  FAILED tests/test_pm_operations.py::TestAddValidation::test_missing_section_refuses[table only in a later section]
+  ================= 2 failed, 4 passed, 136 deselected in 0.38s ==================
+  ```
+
 **Actual Changes:**
+
+- `parser.py`: `_strip_html_comments` gains the keyword `keep_lines` (default `False`). With `True`, each comment becomes the newlines it held. The default output is unchanged.
+- `operations.py`:
+  - Added `_single_match(matches, what, where)` beside `_registry_ids`, typed with a module `TypeVar` `T` (as in `types.py`). None gives `"{what} not found in {where}"`, the wording all three existing not-found messages already use (`update_validation`, `add_item`'s epic, `close_item`). Several gives `"{what} appears N times in {where} (loc, loc); deduplicate by hand, then retry"`.
+  - Extracted `_insert_table_row(text, section_heading, row) -> str` from `_append_table_row`. `_append_table_row` is now read, insert, write, with the same signature. The loop bodies are verbatim except for one added branch (R9, orchestrator decision): before any table line is seen, the search stops at the next `## ` heading, a bare `##` included. A table under a `### ` subheading inside the section is still found, as the parser reads it.
+  - Added `_raw_table_rows(text, section_heading, row_id)`. It returns `("line N", index)` pairs for D4's candidate rows: the first line equal to the heading (the parser's `^heading\s*$`), up to the next `## ` heading, on comment-blanked text.
+  - `promote_requirement` and `add_validation` call `_append_table_row` inside the same `try` as the format, so R8 and R9 both refuse before any write.
+  - `register_intent` inserts every goal and question row into one in-memory copy of `OVERVIEW.md` and writes once. A missing section refuses with `Intent not registered in OVERVIEW.md: Section heading '## Analysis Questions' not found`.
+  - `update_validation` follows D4. It parses the matrix, takes the one candidate through `_single_match` (R6), checks R7, then splits and rewrites the original file line at that index (RC1). Every result after the parse now carries the parse warnings, as the other operations' results do.
+- `tests/test_pm_parser.py` (3 new): `TestStripHtmlComments`.
+- `tests/test_pm_operations.py` (17 new): `TestSingleMatch` (3); `TestUpdateValidation` (7): `test_ignores_commented_example_rows`, `test_commented_example_rows_are_not_found` (SV-001 and SV-002 on the bare template), `test_refuses_duplicate_rows`, `test_ignores_rows_outside_registry_section`, `test_refuses_unparsed_row`, `test_refuses_comment_in_status_cell`; `test_missing_section_refuses` in `TestPromoteRequirement` and `TestAddValidation` (3 each: no heading, no table, table only in a later section); `TestRegisterIntent::test_missing_questions_section_writes_nothing`. Every refusal test compares every file's bytes before and after.
+
+**Refusal wording** (D9 leaves it open):
+
+- R6: `SV-001 appears 2 times in VALIDATION_MATRIX.md (line 5, line 6); deduplicate by hand, then retry`. Not found keeps today's `SV-999 not found in VALIDATION_MATRIX.md`.
+- R7, the row is not a rewritable record: `SV-035's row in VALIDATION_MATRIX.md does not parse as a record, so its Status cannot be updated. Fix the row by hand, then retry: a pipe inside a cell must be written as \|, and an HTML comment must move out of the row.` The parse warnings returned with it name what is invalid.
+- R7, a comment marker in another cell: Phase 1's message, unchanged.
+- R9: `<What> not added to <FILE>: Section heading '## X' not found` or `No table found under '## X'`.
+
+**Gates:**
+
+| Gate | Result | Parity bar |
+|---|---|---|
+| G1 `pytest tests/test_pm_*.py` | 312 passed | Phase 2: 292 passed; +20 new cases. `test_happy_path` and `test_not_found` pass unchanged |
+| G2 `ruff check src/ tests/` | 118 repo-wide; PM-scoped check prints "All checks passed!" | ≤ 118 |
+| G3 `ruff format --check src/ tests/` | 78 files repo-wide; 8 hunks in the four edited files | ≤ 78; still 8 hunks |
+| G4 `mypy src/` | 91 errors in 19 files; 0 under `src/agentic_mbse/pm/` | ≤ 91; none in `pm/` |
+
+The table shows the rerun after the R9 change. G3 first showed 13 hunks: five new lines were over-long. They were laid out by hand the way `ruff format` wanted, so the 8 base hunks stay as they were. `git diff e5bd0db -- 'tests/test_pm_*.py' | grep -c '^-[^-]'` prints 0.
+
+**Manual check:** a scratch project held the backlog template and a matrix with two `SV-001` rows and a raw-pipe `SV-002`.
+
+- `update-validation --status passing SV-001` exited 1 with the R6 message naming line 5 and line 6.
+- `SV-002` exited 1 with the R7 message. The CLI also printed the parser's `Invalid Type 'rel dev'` warning.
+- The matrix's sha256 was unchanged after both.
+- On the bare template, `SV-001` exited 1 with `SV-001 not found in VALIDATION_MATRIX.md`.
+- After `add-validation --description "a | b"`, `SV-001` updated the real row (`| SV-001 | a \| b | ... | passing |`), and the commented examples were untouched.
+- The R9 reproduction (`## Requirements` with the prose `None yet.`, then a `## Glossary` table) now refuses with `Requirement not added to REQUIREMENTS.md: No table found under '## Requirements'`, and the file is unchanged.
+
 **Issues:**
+
+- **R9 case: a heading with no table under it, while a later section has one.** [AGENT] (orchestrator decision, 2026-10-04) Fixed in this phase under R9.
+  - At the base, and in this phase's first pass, the inserter took the first table in any later section. `promote_requirement` reported `Added requirement PR-001` and wrote the row into a `## Glossary` table, where `parse_requirements` does not read it.
+  - The design's "keep the loop verbatim" governed the extraction mechanics, not this behaviour. R9 is the governing rule.
+  - No fusion-tea copy was exposed: none has a `## Requirements`, `## Goals Registry`, or `## Analysis Questions` heading.
+- **Known pre-existing behaviour, left as is** (orchestrator decision, 2026-10-04): `update_validation` on a missing `VALIDATION_MATRIX.md`, and `register_intent` on a missing `OVERVIEW.md`, raise `FileNotFoundError`, as at the base. Neither is on D9's refusal list, and neither loses a record.
+- **Not updated: design.md's refusal-test table.** Its R9 row does not name the later-section case. design.md is outside this session's edit scope; this plan's Phase 3a Tests checklist records the case.
+
 **Deviations:**
+
+- **R7 checks the Status cell, not only the ID.** The plan's test was "the row's ID is among the parsed IDs". The code also requires the original line's ninth cell to equal the parsed record's Status. This closes three gaps:
+  - A comment inside the Status cell. `_format_table_row` never sees it, because the cell is overwritten before formatting. At Phase 2's source the comment was silently deleted; `test_refuses_comment_in_status_cell` now pins the refusal. RC1 says a comment-bearing row refuses.
+  - A matrix whose header puts Status somewhere other than the ninth column. Before, that write landed in the wrong cell. Header lookup is still a Non-Goal; this only refuses.
+  - A parsed row with fewer than nine cells, which would otherwise raise `IndexError`.
+- **New helper name:** `_raw_table_rows`. The design only says `update_validation` "builds its pairs from D4's candidate rows". The name matches the design's backlog finders, `_raw_epics` and `_raw_work_items`, which also feed `_single_match`.
+- **`_insert_table_row`'s two messages drop `in {path}`,** because the pure function has no path. Each caller's refusal names the file instead. So Phase 1's R8 prefixes became `Requirement not added to REQUIREMENTS.md: ` and `Verification not added to VALIDATION_MATRIX.md: `. No test asserted the old prefixes.
+- **`update_validation` returns the parse warnings** on every result after its parse, success included. This is a new diagnostic (C6.5 allows them). It is what tells the user why R7 refused.
+- **The candidate section is the first `## Verification Registry`,** as in the parser. The end test `##\s` is per line, so a bare `##` line does not end the section. That only widens it, which errs safe.
+
+**For Phase 3b:**
+
+- `_single_match(matches, what, where)` is ready. The "not found" wording matches the existing `Epic '{epic}' not found in BACKLOG.md` and `{wi_id} not found in BACKLOG.md` if `what` is `f"Epic '{name}'"` or the WI ID and `where` is `"BACKLOG.md"`. Then the existing `"not found"` and `"BACKLOG.md"` assertions (`test_pm_operations.py:948`, `:1187` at base) hold.
+- Its several-match message lists locations as given, so `_raw_epics` and `_raw_work_items` should pass the parser's `epics[i]`, `epics[i].items[j]`, and `standalone[k]` strings.
+- `_file_bytes(root)` is the refusal-test helper; `_write_raw_backlog` and `_wi` exist from Phase 2.
 
 ### Phase 3b Completion
 

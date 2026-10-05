@@ -51,9 +51,18 @@ def _warn(warnings: list[ParseWarning], file: str, location: str, message: str) 
     warnings.append(ParseWarning(file=str(file), location=location, message=message))
 
 
-def _strip_html_comments(text: str) -> str:
-    """Remove all HTML comments (<!-- ... -->) from text, including multi-line."""
-    return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+def _strip_html_comments(text: str, *, keep_lines: bool = False) -> str:
+    """Remove all HTML comments (<!-- ... -->) from text, including multi-line.
+
+    With ``keep_lines``, each comment is replaced by the newlines it held, so
+    line ``i`` of the result is line ``i`` of ``text`` with its comments blanked.
+    """
+    return re.sub(
+        r"<!--.*?-->",
+        lambda m: "\n" * m.group().count("\n") if keep_lines else "",
+        text,
+        flags=re.DOTALL,
+    )
 
 
 def _split_table_row(line: str) -> list[str]:

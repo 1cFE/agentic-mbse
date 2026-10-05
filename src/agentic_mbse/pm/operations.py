@@ -13,6 +13,7 @@ import datetime
 import re
 import shutil
 from pathlib import Path
+from typing import TypeVar
 
 import yaml
 
@@ -53,6 +54,8 @@ from agentic_mbse.pm.types import (
     WorkItemScale,
     WorkItemStatus,
 )
+
+T = TypeVar("T")
 
 # ---------------------------------------------------------------------------
 # Private helpers
@@ -118,6 +121,24 @@ def _registry_ids(path: Path, prefix: str, parsed_ids: list[str]) -> ParseResult
         for spelling in reserved.values()
     ]
     return ParseResult(data=[*parsed_ids, *(m.group(0) for m in tokens)], warnings=warnings)
+
+
+def _single_match(matches: list[tuple[str, T]], what: str, where: str) -> tuple[str, T]:
+    """Return the one ``(location, match)`` pair a targeted write may change.
+
+    The only "exactly one" rule for writes that target an existing record.
+    Raises ``ValueError`` when nothing matches ("not found") or several do,
+    naming every location so the user can deduplicate by hand.
+    """
+    if not matches:
+        raise ValueError(f"{what} not found in {where}")
+    if len(matches) > 1:
+        locations = ", ".join(location for location, _ in matches)
+        raise ValueError(
+            f"{what} appears {len(matches)} times in {where} ({locations}); "
+            "deduplicate by hand, then retry"
+        )
+    return matches[0]
 
 
 def _update_frontmatter_fields(path: Path, updates: dict[str, str]) -> None:
@@ -265,10 +286,13 @@ def _append_section(path: Path, text: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def _append_table_row(path: Path, section_heading: str, row: str) -> None:
-    """Append a row to a markdown table under a given section heading."""
-    content = path.read_text(encoding="utf-8")
-    lines = content.split("\n")
+def _insert_table_row(text: str, section_heading: str, row: str) -> str:
+    """Return ``text`` with ``row`` inserted after the last table line under ``section_heading``.
+
+    Raises ``ValueError`` if the heading is missing, or if no table line comes
+    before the next ``## `` heading.
+    """
+    lines = text.split("\n")
 
     # Find section heading
     section_start = None
@@ -278,7 +302,7 @@ def _append_table_row(path: Path, section_heading: str, row: str) -> None:
             break
 
     if section_start is None:
-        raise ValueError(f"Section heading '{section_heading}' not found in {path}")
+        raise ValueError(f"Section heading '{section_heading}' not found")
 
     # Find the last table row in this section
     last_table_line = None
@@ -291,13 +315,47 @@ def _append_table_row(path: Path, section_heading: str, row: str) -> None:
             break
         elif stripped.startswith("#") and last_table_line is not None:
             break
+        elif re.match(r"##(\s|$)", stripped):
+            # The next section starts before any table, so this section has none
+            break
 
     if last_table_line is None:
-        raise ValueError(f"No table found under '{section_heading}' in {path}")
+        raise ValueError(f"No table found under '{section_heading}'")
 
     # Insert after the last table line
     lines.insert(last_table_line + 1, row)
-    path.write_text("\n".join(lines), encoding="utf-8")
+    return "\n".join(lines)
+
+
+def _append_table_row(path: Path, section_heading: str, row: str) -> None:
+    """Append a row to a markdown table under a given section heading.
+
+    Raises ``ValueError`` from ``_insert_table_row`` before writing anything.
+    """
+    content = path.read_text(encoding="utf-8")
+    path.write_text(_insert_table_row(content, section_heading, row), encoding="utf-8")
+
+
+def _raw_table_rows(text: str, section_heading: str, row_id: str) -> list[tuple[str, int]]:
+    """Find the table rows under ``section_heading`` whose first cell is ``row_id``.
+
+    Returns ``(location, line index)`` pairs for ``_single_match``; a location
+    reads ``line N``, counting from 1.  The section runs from the first line
+    that is ``section_heading`` to the next ``## `` heading, so it holds the
+    table ``_parse_markdown_table`` reads.  HTML comments are blanked first, so
+    a commented example row never matches, and every index is a line of ``text``.
+    """
+    rows: list[tuple[str, int]] = []
+    in_section = False
+    for i, line in enumerate(_strip_html_comments(text, keep_lines=True).split("\n")):
+        stripped = line.strip()
+        if not in_section:
+            in_section = line.rstrip() == section_heading
+        elif re.match(r"##\s", line):
+            break
+        elif stripped.startswith("|") and _split_table_row(stripped)[:1] == [row_id]:
+            rows.append((f"line {i + 1}", i))
+    return rows
 
 
 def _append_csv_row(path: Path, row: dict[str, str]) -> None:
@@ -458,11 +516,13 @@ def promote_requirement(
                 validation_method.strip(),
             ]
         )
+        _append_table_row(req_path, "## Requirements", row)
     except ValueError as e:
         return OperationResult(
-            success=False, message=f"Requirement not added: {e}", warnings=warnings
+            success=False,
+            message=f"Requirement not added to {req_path.name}: {e}",
+            warnings=warnings,
         )
-    _append_table_row(req_path, "## Requirements", row)
 
     return OperationResult(
         success=True,
@@ -590,11 +650,13 @@ def add_validation(
                 VerificationStatus.PENDING.value,
             ]
         )
+        _append_table_row(val_path, "## Verification Registry", row)
     except ValueError as e:
         return OperationResult(
-            success=False, message=f"Verification not added: {e}", warnings=warnings
+            success=False,
+            message=f"Verification not added to {val_path.name}: {e}",
+            warnings=warnings,
         )
-    _append_table_row(val_path, "## Verification Registry", row)
 
     return OperationResult(
         success=True,
@@ -811,7 +873,7 @@ def register_intent(
     taken_aq = _registry_ids(overview_path, "AQ", [e.id for e in o_result.data.questions])
     warnings = [*o_result.warnings, *taken_g.warnings, *taken_aq.warnings]
 
-    # Build every row before the first append, so a refused value writes nothing
+    # Build every row before the one write, so a refused value writes nothing
     ids_assigned: dict[str, str] = {}
 
     goal_rows: list[str] = []
@@ -875,10 +937,19 @@ def register_intent(
             )
         ids_assigned[new_id] = q.question
 
-    for row in goal_rows:
-        _append_table_row(overview_path, "## Goals Registry", row)
-    for row in question_rows:
-        _append_table_row(overview_path, "## Analysis Questions", row)
+    text = overview_path.read_text(encoding="utf-8")
+    try:
+        for row in goal_rows:
+            text = _insert_table_row(text, "## Goals Registry", row)
+        for row in question_rows:
+            text = _insert_table_row(text, "## Analysis Questions", row)
+    except ValueError as e:
+        return OperationResult(
+            success=False,
+            message=f"Intent not registered in {overview_path.name}: {e}",
+            warnings=warnings,
+        )
+    overview_path.write_text(text, encoding="utf-8")
 
     id_list = ", ".join(ids_assigned.keys())
     return OperationResult(
@@ -1221,39 +1292,46 @@ def update_validation(
         )
 
     val_path = project_root / "modeling_project" / "VALIDATION_MATRIX.md"
+    result = parse_validation_matrix(val_path)
     content = val_path.read_text(encoding="utf-8")
+
+    try:
+        _, index = _single_match(
+            _raw_table_rows(content, "## Verification Registry", sv_id),
+            sv_id,
+            val_path.name,
+        )
+    except ValueError as e:
+        return OperationResult(success=False, message=str(e), warnings=result.warnings)
+
+    # Rewrite the file line only if the parser read it as this record, Status in cell 9
     lines = content.split("\n")
-
-    # Find and update the row
-    found = False
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if not stripped.startswith("|"):
-            continue
-        cells = _split_table_row(stripped)
-
-        if len(cells) >= 9 and cells[0] == sv_id:
-            # Update the Status column (index 8)
-            cells[8] = new_status.value
-            try:
-                lines[i] = _format_table_row(cells)
-            except ValueError:
-                # Split and format are inverses; only a comment marker in the row stops it
-                return OperationResult(
-                    success=False,
-                    message=(
-                        f"{sv_id}'s row in VALIDATION_MATRIX.md holds an HTML comment marker, "
-                        "so it cannot be rewritten. Move the comment out of the row by hand, "
-                        "then retry."
-                    ),
-                )
-            found = True
-            break
-
-    if not found:
+    cells = _split_table_row(lines[index].strip())
+    entry = next((e for e in result.data if e.id == sv_id), None)
+    if entry is None or cells[8:9] != [entry.status.value]:
         return OperationResult(
             success=False,
-            message=f"{sv_id} not found in VALIDATION_MATRIX.md",
+            message=(
+                f"{sv_id}'s row in {val_path.name} does not parse as a record, so its Status "
+                "cannot be updated. Fix the row by hand, then retry: a pipe inside a cell must "
+                "be written as \\|, and an HTML comment must move out of the row."
+            ),
+            warnings=result.warnings,
+        )
+
+    cells[8] = new_status.value
+    try:
+        lines[index] = _format_table_row(cells)
+    except ValueError:
+        # Split and format are inverses; only a comment marker in the row stops it
+        return OperationResult(
+            success=False,
+            message=(
+                f"{sv_id}'s row in {val_path.name} holds an HTML comment marker, "
+                "so it cannot be rewritten. Move the comment out of the row by hand, "
+                "then retry."
+            ),
+            warnings=result.warnings,
         )
 
     val_path.write_text("\n".join(lines), encoding="utf-8")
@@ -1262,6 +1340,7 @@ def update_validation(
         success=True,
         message=f"Updated {sv_id} status to {new_status.value}",
         files_modified=[str(val_path)],
+        warnings=result.warnings,
     )
 
 

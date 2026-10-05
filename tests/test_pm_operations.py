@@ -25,6 +25,7 @@ from agentic_mbse.pm.operations import (
     _next_id,
     _registry_ids,
     _render_backlog_body,
+    _single_match,
     _update_frontmatter_fields,
     _write_backlog,
 )
@@ -152,6 +153,25 @@ class TestRegistryIds:
         result = _registry_ids(tmp_path / "VALIDATION_MATRIX.md", "SV", ["SV-001"])
         assert result.data == ["SV-001"]
         assert result.warnings == []
+
+
+class TestSingleMatch:
+    def test_returns_the_one_pair(self):
+        assert _single_match([("line 5", 4)], "SV-001", "VALIDATION_MATRIX.md") == ("line 5", 4)
+
+    def test_no_match_is_not_found(self):
+        with pytest.raises(ValueError) as excinfo:
+            _single_match([], "SV-001", "VALIDATION_MATRIX.md")
+        assert str(excinfo.value) == "SV-001 not found in VALIDATION_MATRIX.md"
+
+    def test_several_matches_name_every_location(self):
+        matches = [("epics[0]", {}), ("epics[2]", {}), ("epics[3]", {})]
+        with pytest.raises(ValueError) as excinfo:
+            _single_match(matches, "Epic 'X'", "BACKLOG.md")
+        message = str(excinfo.value)
+        assert message.startswith("Epic 'X' appears 3 times in BACKLOG.md")
+        assert all(location in message for location, _ in matches)
+        assert "by hand" in message
 
 
 class TestRenderBacklogBody:
@@ -785,6 +805,30 @@ class TestPromoteRequirement:
         assert result.ids_assigned["PR"] == "PR-003"
         _assert_one_record_added(before, path.read_text(encoding="utf-8"), "PR-003", table=True)
 
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "# Requirements\n\nNo table yet.\n",
+            "## Requirements\n\nNo table yet.\n",
+            "## Requirements\n\nNo table yet.\n\n## Glossary\n\n| Term | Meaning |\n|---|---|\n",
+        ],
+        ids=["no heading", "no table", "table only in a later section"],
+    )
+    def test_missing_section_refuses(self, tmp_path, text):
+        from agentic_mbse.pm.operations import promote_requirement
+
+        mdir = tmp_path / "modeling_project"
+        mdir.mkdir()
+        (mdir / "REQUIREMENTS.md").write_text(text, encoding="utf-8")
+        before = _file_bytes(tmp_path)
+        result = promote_requirement(
+            tmp_path, requirement="r", source="DI-001", enforcement="e", validation_method="v"
+        )
+        assert not result.success
+        assert "'## Requirements'" in result.message
+        assert "REQUIREMENTS.md" in result.message
+        assert _file_bytes(tmp_path) == before
+
 
 class TestRegisterDecision:
     def test_happy_path(self, tmp_path):
@@ -1004,6 +1048,35 @@ class TestAddValidation:
         assert [w.location for w in reserved] == ["SV-035"]
         assert reserved[0].file == str(vm)
         assert "SV-035" in reserved[0].message and "reserved" in reserved[0].message
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            "# Validation Matrix\n\nNo registry yet.\n",
+            "## Verification Registry\n\nNo table yet.\n",
+            "## Verification Registry\n\nNo table yet.\n\n## Notes\n\n| Note |\n|---|\n",
+        ],
+        ids=["no heading", "no table", "table only in a later section"],
+    )
+    def test_missing_section_refuses(self, tmp_path, text):
+        from agentic_mbse.pm.operations import add_validation
+
+        mdir = tmp_path / "modeling_project"
+        mdir.mkdir()
+        (mdir / "VALIDATION_MATRIX.md").write_text(text, encoding="utf-8")
+        before = _file_bytes(tmp_path)
+        result = add_validation(
+            tmp_path,
+            description="d",
+            type="baseline",
+            mechanism="test",
+            expected="e",
+            tolerance="t",
+        )
+        assert not result.success
+        assert "'## Verification Registry'" in result.message
+        assert "VALIDATION_MATRIX.md" in result.message
+        assert _file_bytes(tmp_path) == before
 
 
 # ---------------------------------------------------------------------------
@@ -1334,6 +1407,26 @@ class TestRegisterIntent:
             ],
         )
         assert result.ids_assigned == {"G-003": "first", "G-004": "second"}
+
+    def test_missing_questions_section_writes_nothing(self, tmp_path):
+        from agentic_mbse.pm.operations import register_intent
+
+        root = _setup_overview(tmp_path)
+        path = root / "modeling_project" / "OVERVIEW.md"
+        text = path.read_text(encoding="utf-8")
+        path.write_text(
+            text.replace("## Analysis Questions", "## Open Questions"), encoding="utf-8"
+        )
+        before = _file_bytes(root)
+        result = register_intent(
+            root,
+            goals=[GoalInput(goal="g", priority="P0", source="s")],
+            questions=[QuestionInput(question="q?", source="G-001")],
+        )
+        assert not result.success
+        assert "'## Analysis Questions'" in result.message
+        assert "OVERVIEW.md" in result.message
+        assert _file_bytes(root) == before
 
 
 class TestImpactQuery:
@@ -1819,6 +1912,81 @@ class TestUpdateValidation:
         row = "| SV-001 | ratio <!-- check --> | baseline | test | x | t | s | t | pending |"
         vm = _write_matrix(tmp_path, [row])
         assert [e.id for e in parse_validation_matrix(vm).data] == ["SV-001"]
+        before = _file_bytes(tmp_path)
+        result = update_validation(tmp_path, sv_id="SV-001", status="passing")
+        assert not result.success
+        assert "comment" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_ignores_commented_example_rows(self, tmp_path):
+        from agentic_mbse.pm.operations import add_validation, update_validation
+
+        root = _setup_validation_matrix(tmp_path)  # template: example SV-001, SV-002 in <!-- -->
+        add_validation(
+            root, description="real", type="baseline", mechanism="test", expected="x", tolerance="t"
+        )
+        vm = root / "modeling_project" / "VALIDATION_MATRIX.md"
+        before = vm.read_text(encoding="utf-8")
+        assert update_validation(root, sv_id="SV-001", status="passing").success
+        real = "| SV-001 | real | baseline | test | x | t |  |  | "
+        assert vm.read_text(encoding="utf-8") == before.replace(
+            real + "pending |", real + "passing |"
+        )
+
+    @pytest.mark.parametrize("sv_id", ["SV-001", "SV-002"])
+    def test_commented_example_rows_are_not_found(self, tmp_path, sv_id):
+        from agentic_mbse.pm.operations import update_validation
+
+        root = _setup_validation_matrix(tmp_path)
+        before = _file_bytes(root)
+        result = update_validation(root, sv_id=sv_id, status="passing")
+        assert not result.success
+        assert result.message == f"{sv_id} not found in VALIDATION_MATRIX.md"
+        assert _file_bytes(root) == before
+
+    def test_refuses_duplicate_rows(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        _write_matrix(tmp_path, [_E1_ROWS["valid"], _E1_ROWS["valid"].replace("plain", "copy")])
+        before = _file_bytes(tmp_path)
+        result = update_validation(tmp_path, sv_id="SV-033", status="failing")
+        assert not result.success
+        assert "line 5" in result.message and "line 6" in result.message
+        assert _file_bytes(tmp_path) == before
+
+    def test_ignores_rows_outside_registry_section(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        row = _E1_ROWS["valid"].replace("passing", "pending")
+        vm = _write_matrix(tmp_path, [row])
+        registry = vm.read_text(encoding="utf-8")
+        table = registry.removeprefix("## Verification Registry\n\n")
+        vm.write_text(f"## Summary\n\n{table}\n{registry}\n## Archive\n\n{table}", encoding="utf-8")
+        before = vm.read_text(encoding="utf-8").split("\n")
+        assert update_validation(tmp_path, sv_id="SV-033", status="passing").success
+        after = vm.read_text(encoding="utf-8").split("\n")
+        assert [i for i, (a, b) in enumerate(zip(before, after, strict=True)) if a != b] == [10]
+        assert after[10] == row.replace("pending", "passing")
+
+    def test_refuses_unparsed_row(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        vm = _write_matrix(tmp_path, [_E1_ROWS["valid"], _E1_ROWS["malformed"]])
+        parsed = parse_validation_matrix(vm)
+        assert [e.id for e in parsed.data] == ["SV-033"]
+        before = _file_bytes(tmp_path)
+        result = update_validation(tmp_path, sv_id="SV-035", status="failing")
+        assert not result.success
+        assert "\\|" in result.message and "by hand" in result.message
+        assert result.warnings == parsed.warnings
+        assert _file_bytes(tmp_path) == before
+
+    def test_refuses_comment_in_status_cell(self, tmp_path):
+        from agentic_mbse.pm.operations import update_validation
+
+        row = "| SV-001 | d | baseline | test | x | t | s | t | pending <!-- recheck --> |"
+        vm = _write_matrix(tmp_path, [row])
+        assert [e.status for e in parse_validation_matrix(vm).data] == [VerificationStatus.PENDING]
         before = _file_bytes(tmp_path)
         result = update_validation(tmp_path, sv_id="SV-001", status="passing")
         assert not result.success
