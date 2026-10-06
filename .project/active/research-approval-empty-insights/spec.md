@@ -1,6 +1,6 @@
 # Spec: Approve Research with No New Insights
 
-**Status:** Implemented 2026-10-05 ([plan](plan.md)); audit next. Reviewed and revised 2026-10-05 ([review](spec-review.md), verdict Revise; resolutions recorded there)
+**Status:** Certified 2026-10-05 ([audit](audit.md), advisories A1-A6); close next. Implemented 2026-10-05 ([plan](plan.md)). Reviewed and revised 2026-10-05 ([review](spec-review.md), verdict Revise; resolutions recorded there)
 **Owner:** Reid W
 **Created:** 2026-10-04 09:28 PDT
 **Complexity:** LOW
@@ -13,17 +13,17 @@
 
 ## Success Criteria
 
-- [ ] [INHERITED: ../../backlog/BACKLOG.md, PM-APPROVE-RESEARCH-EMPTY-INSIGHTS] `approve-research` with explicit `--insights '[]'` succeeds, moves the existing valid pending document to `knowledge/research/approved/`, creates no DI entries or IDs, and leaves the knowledge registry unchanged. The direct Python operation has the same behavior.
-- [ ] [INFERRED] A zero-insight approval leaves `knowledge/KNOWLEDGE.md` exactly as found: byte-identical if present, still missing if missing. Its success and its warnings do not depend on that file's presence or contents.
-- [ ] Omitting the insight list stays a caller error on both surfaces.
+- [x] [INHERITED: ../../backlog/BACKLOG.md, PM-APPROVE-RESEARCH-EMPTY-INSIGHTS] `approve-research` with explicit `--insights '[]'` succeeds, moves the existing valid pending document to `knowledge/research/approved/`, creates no DI entries or IDs, and leaves the knowledge registry unchanged. The direct Python operation has the same behavior.
+- [x] [INFERRED] A zero-insight approval leaves `knowledge/KNOWLEDGE.md` exactly as found: byte-identical if present, still missing if missing. Its success and its warnings do not depend on that file's presence or contents.
+- [x] Omitting the insight list stays a caller error on both surfaces.
   - [INHERITED: ../../backlog/BACKLOG.md, PM-APPROVE-RESEARCH-EMPTY-INSIGHTS] CLI: omitting `--insights` is a usage error. Explicit emptiness is distinct from malformed JSON or an invalid insight payload.
   - [INFERRED] Python: `insights` stays a required argument, and `None` is not treated as an explicit empty list.
-- [ ] [INFERRED] Non-empty approval of a regular file inside `pending/` retains its current insight creation behavior. Existing missing-file and pending-location validation still rejects invalid requests without moving research or mutating knowledge. A pending path that is not a regular file, such as the `pending/` directory itself, or that leaves `pending/` once its `..` segments are collapsed, is refused with nothing moved, for empty and non-empty lists alike.
-- [ ] [INFERRED] A zero-insight approval is reported accurately to each observer.
+- [x] [INFERRED] Non-empty approval of a regular file inside `pending/` retains its current insight creation behavior. Existing missing-file and pending-location validation still rejects invalid requests without moving research or mutating knowledge. A pending path that is not a regular file, such as the `pending/` directory itself, or that leaves `pending/` once its `..` segments are collapsed, is refused with nothing moved, for empty and non-empty lists alike.
+- [x] [INFERRED] A zero-insight approval is reported accurately to each observer.
   - CLI user: exit code 0, and a message stating the document was approved with no insights created. The message does not end in an empty `Created insights:`.
   - Python caller: `ids_assigned` is empty, and `files_modified` lists the approved path and does not list `KNOWLEDGE.md`.
-- [ ] [INFERRED] The shipped `/research` command's approval step (`claude/commands/research.md:75-79`) tells the agent that a report approved with every insight skipped is a call with `--insights '[]'`, and no longer tells it to report assigned IDs when none exist. The `approve-research` row in `claude/skills/toolkit-awareness/SKILL.md:90` no longer implies insights are always registered.
-- [ ] [INHERITED: ../../backlog/BACKLOG.md, PM-APPROVE-RESEARCH-EMPTY-INSIGHTS] Tests cover both explicit `[]` and a missing `--insights`: "A test covers both, and asserts the document lands in `approved/` with no DI written."
+- [x] [INFERRED] The shipped `/research` command's approval step (`claude/commands/research.md:75-79`) tells the agent that a report approved with every insight skipped is a call with `--insights '[]'`, and no longer tells it to report assigned IDs when none exist. The `approve-research` row in `claude/skills/toolkit-awareness/SKILL.md:90` no longer implies insights are always registered.
+- [x] [INHERITED: ../../backlog/BACKLOG.md, PM-APPROVE-RESEARCH-EMPTY-INSIGHTS] Tests cover both explicit `[]` and a missing `--insights`: "A test covers both, and asserts the document lands in `approved/` with no DI written."
 
 ## Non-Goals
 
