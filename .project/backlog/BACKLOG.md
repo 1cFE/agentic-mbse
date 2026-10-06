@@ -78,7 +78,7 @@ Prioritized list of epics and features.
 
 **Priority**: P2
 **Effort**: 0.5 day
-**Status**: Reproduced defect; spec reviewed and revised 2026-10-05; implementation not started (originally filed 2026-08-25)
+**Status**: Implemented 2026-10-05 on branch `research-approval-empty-insights`; audit next (spec reviewed and revised 2026-10-05; originally filed 2026-08-25)
 **Spec**: [Zero-insight approval](../active/research-approval-empty-insights/spec.md)
 
 **Problem**: `approve_research` returns `success=False, message="No insights provided"` when the insight list is empty (`src/agentic_mbse/pm/operations.py:664-668`). That treats "this research approved no new domain insight" as a caller error. It is a legitimate and common outcome: a round can approve a research document that registers sources, records a bounded negative, or confirms an existing insight without minting a DI. The refusal means such a document cannot be moved from `knowledge/research/pending/` to `approved/` through the tool at all, so the operator moves the file by hand — exactly the hand-editing the PM exists to remove.

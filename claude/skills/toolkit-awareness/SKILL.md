@@ -87,7 +87,7 @@ All PM operations are atomic (mutations succeed fully or not at all) or tolerant
 | Operation | Description |
 |-----------|-------------|
 | `close-item <name>` | Archive completed work item from active to completed |
-| `approve-research <file> --insights '<json>'` | Approve pending research and register domain insights |
+| `approve-research <file> --insights '<json>'` | Approve pending research and register any accepted domain insights (`'[]'` approves with none) |
 | `trace-element --element <name> --file <path> ...` | Record model element traceability to matrix |
 | `promote-requirement --requirement <text> --source <ID>` | Promote per-item requirement to project-wide PR-XXX |
 | `register-decision --title <text> --decision <text> --rationale <text>` | Record architectural decision as AD-XXX |

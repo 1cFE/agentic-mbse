@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import datetime
+import os
 import re
 import shutil
 from pathlib import Path
@@ -913,12 +914,18 @@ def approve_research(
     pending_file: str | Path,
     insights: list[InsightInput],
 ) -> OperationResult:
-    """Approve a research file: extract insights to KNOWLEDGE.md and move to approved/."""
+    """Approve a research file: extract insights to KNOWLEDGE.md and move to approved/.
+
+    An empty ``insights`` list approves with no insights and leaves KNOWLEDGE.md
+    untouched.  ``None`` or any other non-list is refused, never read as empty.
+    """
     pending_path = Path(pending_file)
     if not pending_path.is_absolute():
         pending_path = project_root / pending_path
 
-    pending_dir = project_root / "knowledge" / "research" / "pending"
+    # Collapse ".." on both sides, so a path that leaves pending/ is caught below.
+    pending_path = Path(os.path.normpath(pending_path))
+    pending_dir = Path(os.path.normpath(project_root / "knowledge" / "research" / "pending"))
     try:
         pending_path.relative_to(pending_dir)
     except ValueError:
@@ -933,22 +940,38 @@ def approve_research(
             message=f"File not found: {pending_path}",
         )
 
-    if not insights:
+    if not pending_path.is_file():
         return OperationResult(
             success=False,
-            message="No insights provided",
+            message=(
+                f"Not a regular file: {pending_path}; name one research document in {pending_dir}"
+            ),
         )
 
-    # Parse existing knowledge for ID assignment
+    if not isinstance(insights, list):
+        return OperationResult(
+            success=False,
+            message=(
+                f"Insights must be a list of InsightInput, got {type(insights).__name__}; "
+                "pass [] to approve with no insights"
+            ),
+        )
+
+    # Parse existing knowledge for ID assignment, which only new entries need, so an
+    # empty list never reads KNOWLEDGE.md.  The truthiness test is safe only because
+    # the list check above already refused None.
     k_path = project_root / "knowledge" / "KNOWLEDGE.md"
-    k_result = parse_knowledge(k_path)
-    taken = _registry_ids(k_path, "DI", [e.id for e in k_result.data])
-    warnings = [*k_result.warnings, *taken.warnings]
+    all_ids: list[str] = []
+    warnings: list[ParseWarning] = []
+    if insights:
+        k_result = parse_knowledge(k_path)
+        taken = _registry_ids(k_path, "DI", [e.id for e in k_result.data])
+        all_ids = list(taken.data)
+        warnings = [*k_result.warnings, *taken.warnings]
 
     # Build all entries in memory first
     entries: list[InsightEntry] = []
     ids_assigned: dict[str, str] = {}
-    all_ids = list(taken.data)
     for inp in insights:
         for name, val in [
             ("title", inp.title),
@@ -991,11 +1014,14 @@ def approve_research(
     shutil.move(str(pending_path), str(approved_path))
 
     id_list = ", ".join(ids_assigned.keys())
+    created = f"Created insights: {id_list}" if ids_assigned else "No insights created"
+    files_modified = [str(k_path)] if entries else []
+    files_modified.append(str(approved_path))
     return OperationResult(
         success=True,
-        message=f"Approved research: {pending_path.name}. Created insights: {id_list}",
+        message=f"Approved research: {pending_path.name}. {created}",
         ids_assigned={di_id: title for di_id, title in ids_assigned.items()},
-        files_modified=[str(k_path), str(approved_path)],
+        files_modified=files_modified,
         warnings=warnings,
     )
 

@@ -1,6 +1,6 @@
 # Spec: Approve Research with No New Insights
 
-**Status:** Reviewed and revised 2026-10-05 ([review](spec-review.md), verdict Revise; resolutions recorded there)
+**Status:** Implemented 2026-10-05 ([plan](plan.md)); audit next. Reviewed and revised 2026-10-05 ([review](spec-review.md), verdict Revise; resolutions recorded there)
 **Owner:** Reid W
 **Created:** 2026-10-04 09:28 PDT
 **Complexity:** LOW
