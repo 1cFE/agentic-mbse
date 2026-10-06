@@ -536,6 +536,19 @@ def _append_csv_row(path: Path, row: dict[str, str]) -> None:
             writer.writerow(row)
 
 
+def _path_below(path: Path, base: Path) -> Path | None:
+    """Return the part of ``path`` below ``base`` with ".." collapsed; None if it leaves ``base``.
+
+    Only the part below ``base`` is collapsed, as text.  ``base`` is compared as
+    written, so it keeps the meaning the OS gives it, symlinks and ".." included.
+    """
+    try:
+        below = Path(os.path.normpath(path.relative_to(base)))
+    except ValueError:
+        return None
+    return None if below.parts[:1] == ("..",) else below
+
+
 # ---------------------------------------------------------------------------
 # Public operations — Phase 2: Simple append
 # ---------------------------------------------------------------------------
@@ -923,16 +936,16 @@ def approve_research(
     if not pending_path.is_absolute():
         pending_path = project_root / pending_path
 
-    # Collapse ".." on both sides, so a path that leaves pending/ is caught below.
-    pending_path = Path(os.path.normpath(pending_path))
-    pending_dir = Path(os.path.normpath(project_root / "knowledge" / "research" / "pending"))
-    try:
-        pending_path.relative_to(pending_dir)
-    except ValueError:
+    # The root is used as given, so it names what the OS says it names; ".." is
+    # collapsed only below pending/, and the check and the move use the same path.
+    pending_dir = project_root / "knowledge" / "research" / "pending"
+    below = _path_below(pending_path, pending_dir)
+    if below is None:
         return OperationResult(
             success=False,
             message=f"File '{pending_path}' is not in {pending_dir}",
         )
+    pending_path = pending_dir / below
 
     if not pending_path.exists():
         return OperationResult(

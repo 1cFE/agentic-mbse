@@ -1,6 +1,6 @@
 # Implementation Plan: Approve Research with No New Insights
 
-**Status:** Complete (implemented 2026-10-05; uncommitted at hand-off to the orchestrator)
+**Status:** Complete. Implemented 2026-10-05 at `b6d1667`; [audit](audit.md) fixes A1, A3, A4, A6 applied the same day (see Audit fixes).
 **Created:** 2026-10-05
 **Last Updated:** 2026-10-05
 **Branch:** research-approval-empty-insights (plan written at `2a229f4`)
@@ -278,6 +278,46 @@ Passed, as the plan expected (pins and guards): `test_happy_path` (now asserting
 **Deviations:**
 - `research.md` gains a blank line before the new sentence, so the change adds two source lines, not one. Without it, Markdown joins the sentence into line 79's paragraph. That would make one paragraph span two source lines, which the owner's markdown rule (one line per paragraph) forbids. With it, the sentence is its own paragraph, like the `If the user rejects the report` paragraph below it. The sentence is the design's text, character for character.
 - `active/README.md` was not in the plan's tracking list. Its row still said "implementation not started", so it was updated with the other status lines.
+
+### Audit fixes
+
+**Completed:** 2026-10-05, as a resume of the implement session per [briefs/implement_audit_fixes.md](briefs/implement_audit_fixes.md). Input: [audit.md](audit.md), verdict Certify, advisories A1-A6. Rulings: fix A1, A3, A4, A6; record A2 and A5.
+
+**A1. The document is now taken from and moved within the project the OS resolves.**
+- *Problem, reproduced at `HEAD` (`d6ea9fc`; `src/` equals `b6d1667`).* Project root `text_proj/link/..`, where `link` points to `os_proj/target`. The OS reads it as `os_proj`; `os.path.normpath` reads it as `text_proj`. Both hold `knowledge/research/pending/20260202-120000_r.md`. With `[]` and with one insight, `text_proj`'s document landed in `os_proj/knowledge/research/approved/`, `os_proj`'s document stayed pending, and the one-insight call wrote DI-001 to `os_proj`'s `KNOWLEDGE.md`.
+- *Change, the orchestrator's shape.* New private helper `_path_below(path, base)` in `src/agentic_mbse/pm/operations.py` (after `_append_csv_row`). It returns the part of `path` below `base` with `..` collapsed, or `None` if `path` is not textually under `base` or the collapsed part starts with `..`. `approve_research` builds `pending_dir` from the root as given, refuses with the existing `File '...' is not in ...` message when the helper returns `None`, and rebuilds the document path as `pending_dir / below`. That one path serves the exists check, the regular-file check, and the move. `KNOWLEDGE.md` and `approved/` are built from the same root as given, as at the base. One move and one result remain.
+- *Visible change from `b6d1667`.* The "is not in" refusal for a `..` escape now names the path as the caller gave it (`<root>/knowledge/research/pending/../../KNOWLEDGE.md`), not a textually collapsed target. A textual target can be wrong once a symlink precedes `..`, which is what the audit found. For a path without `..` the message is byte-identical to the base.
+- *One call this shape refuses that `b6d1667` accepted.* Probed at `c37ff53`, `HEAD`, and the fix: root `proj/sub/..` (no symlink) with an absolute document path `proj/knowledge/research/pending/<doc>`. `c37ff53` refuses (`is not in`), `HEAD` approved it, and the fix refuses as the base did. Matching two spellings of one directory would need symlink resolution, which D5 rejects. No shipped surface produces it: the CLI root comes from `Path.cwd()`. I judged this a consequence of the ruled shape, not a case where the shape is wrong, and recorded it in D5. The same probe confirmed that a symlink to a directory given as the document is still refused (`Not a regular file`) and that `c37ff53` approved it.
+- *Tests.*
+  - New `test_symlinked_root_with_dotdot_stays_in_os_project[empty, one]`, the audit's probe. It asserts its own premise (`os.path.samefile(root, os_proj)`, `normpath(root) == text_proj`), then that `os_proj`'s document moved into `os_proj/approved/`, `files_modified[-1]` is that file, `os_proj`'s `KNOWLEDGE.md` holds as many records as insights passed, and `text_proj`'s whole tree is unchanged.
+  - Test 5a's expected message now names the path as given. It is parametrized over two escape spellings (`leading`: `pending/../../KNOWLEDGE.md`; `behind_subdir`: `pending/sub/../../../KNOWLEDGE.md`, with `sub` existing). The second spelling catches a version that checks only the first segment for `..` without collapsing.
+  - Test 5b is unchanged and still meaningful. A root containing `..` with a relative document path must approve, and it fails if the full document path is normalized while `pending_dir` is not.
+  - New `test_dotdot_inside_pending_approves` pins the design's claim that `pending/sub/../doc.md` still works. Not in the brief; added because no test held that claim.
+- *Red against `HEAD`.* Run with `HEAD`'s `src/` (`git diff --quiet src/` clean, and `git diff --quiet b6d1667 HEAD -- src/`): 6 failed, 21 passed. Failures: `test_symlinked_root_with_dotdot_stays_in_os_project[empty]` and `[one]`, `AssertionError: assert not True` where `True = (os_proj/knowledge/research/pending/20260202-120000_r.md).exists()`; `test_dotdot_escape_refused[leading-empty]`, `[leading-one]`, `[behind_subdir-empty]`, `[behind_subdir-one]`, message mismatch, `HEAD` printing `File '<tmp>/knowledge/KNOWLEDGE.md' is not in ...` where the test expects the path as given. `test_dotdot_inside_pending_approves` and the A3 test passed at `HEAD`, as pins of existing behavior.
+
+**A3. Non-empty warnings are pinned.** New `test_non_empty_approval_returns_registry_warnings`. `KNOWLEDGE.md` holds a valid DI-001 and a DI-002 with status `bogus`, so the parser warns once (`Invalid Status 'bogus'...`) and the registry read warns once (`DI-002 ... its ID stays reserved`). A one-insight approval mints DI-003 and must return the parser's warnings first, then one reservation warning located at DI-002 in `KNOWLEDGE.md`. The pattern follows `test_reports_reserved_id_after_parse_warnings`.
+
+**Mutation check of the fixes.** Each mutation applied alone, `TestApproveResearch` and `TestPmApproveResearchMain` run, file restored (`cmp` against a saved copy). All caught:
+- The audit's suggested fix (normalize the root once and use it everywhere) → the A1 test, both sizes.
+- No collapse below `pending/` → 5a `behind_subdir`, both sizes.
+- No climb-out refusal → 5a, all four.
+- Refuse every `..` → 5b, the A1 test, and `test_dotdot_inside_pending_approves`.
+- Drop all warnings / only parse warnings / only reservation warnings (the audit's three survivors) → the A3 test, each time.
+
+**A4.** `claude/commands/research.md:81` and the design's Implementation Notes now carry the orchestrator's sentence: "If the user approves the report with no accepted insights (every candidate skipped, or none proposed), still make the call, ...". The paragraph stays separate from line 79.
+
+**A6.** This plan's **Status** line no longer says uncommitted. The backlog Problem of `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` now points at `operations.py:936-940` at `c37ff53` (checked with `git show`), not the stale `:664-668`.
+
+**A2 and A5, recorded.**
+- `PM-APPROVE-RESEARCH-MOVE-SAFETY` gains case (c), symlinks inside `pending/`. It cites the audit's probe and records the tightening that a symlink to a directory given as the document is now refused. Case (b) gains the A5 sentence.
+- The item's closing line now says this item causes none of the three gaps but makes (b) and (c) cheaper. The old "Neither gap is made worse" was no longer true once A2 and A5 were recorded. Its title, Status, Source, and Goal now name (c). Its `operations.py:910` and `:983-991` pointers are base line numbers, so they now say "at `c37ff53`".
+- Design Potential Risks gains one line for A2.
+
+**Design amendments.** D5 now describes the shape built, with one line recording that the first form normalized both full paths and why A1 showed that was wrong. It adds a rejected-alternative note for the audit's normalize-the-root suggestion (orchestrator ruling) and the refused-absolute-path consequence above. The Architecture sketch, the check-order note, and the Component Overview line for `research.md` were updated to match, and the Status line records the amendment.
+
+**Gates after the fixes.** `uv run pytest tests/`: 2079 passed, 1 skipped, 33 deselected (2073 + 6 new cases). `uv run ruff check src/ tests/`: `Found 118 errors.` `uv run ruff format --check src/ tests/`: `78 files would be reformatted, 77 files already formatted`. `uv run mypy src/`: `Found 91 errors in 19 files (checked 60 source files)`. All three equal the pre-item baseline. `ruff check` passes on the four touched Python files. `mypy` reports nothing in `pm/operations.py` or `cli/pm_cli.py`. The only `ruff format` hunks in touched files are the two pre-existing ones, with `+`/`-` lines identical to the baseline.
+
+**Not changed:** tracking status lines in `CURRENT_WORK.md`, `active/README.md`, the backlog **Status** of `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS`, and the spec's **Status**. They say certified and close next, which still holds.
 
 ---
 

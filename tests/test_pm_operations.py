@@ -2,6 +2,7 @@
 
 import datetime
 import difflib
+import os
 from pathlib import Path
 
 import pytest
@@ -1454,22 +1455,27 @@ class TestApproveResearch:
         assert _tree_state(root) == before
 
     @_LIST_SIZES
-    def test_dotdot_escape_refused(self, tmp_path, insights):
+    @pytest.mark.parametrize(
+        "escape",
+        [
+            "knowledge/research/pending/../../KNOWLEDGE.md",
+            "knowledge/research/pending/sub/../../../KNOWLEDGE.md",
+        ],
+        ids=["leading", "behind_subdir"],
+    )
+    def test_dotdot_escape_refused(self, tmp_path, insights, escape):
         from agentic_mbse.pm.operations import approve_research
 
         root = _setup_knowledge(tmp_path)
         pending_dir = root / "knowledge" / "research" / "pending"
-        pending_dir.mkdir(parents=True)  # the OS walks through pending/ to resolve the ..
+        # Without these, the exists check would refuse instead of the containment check.
+        (pending_dir / "sub").mkdir(parents=True)
         before = _tree_state(root)
 
-        result = approve_research(
-            root, pending_file="knowledge/research/pending/../../KNOWLEDGE.md", insights=insights
-        )
+        result = approve_research(root, pending_file=escape, insights=insights)
 
         assert not result.success
-        assert result.message == (
-            f"File '{root / 'knowledge' / 'KNOWLEDGE.md'}' is not in {pending_dir}"
-        )
+        assert result.message == f"File '{root / escape}' is not in {pending_dir}"
         assert _tree_state(root) == before
 
     def test_project_root_with_dotdot_approves(self, tmp_path):
@@ -1489,6 +1495,73 @@ class TestApproveResearch:
         assert result.success
         assert not doc.exists()
         assert (root / "knowledge" / "research" / "approved" / doc.name).exists()
+
+    @_LIST_SIZES
+    def test_symlinked_root_with_dotdot_stays_in_os_project(self, tmp_path, insights):
+        from agentic_mbse.pm.operations import approve_research
+
+        # The OS reads link/.. as the parent of link's target, so root is os_proj; the
+        # text reading (os.path.normpath) is text_proj. Each holds a same-name document.
+        os_proj, text_proj = tmp_path / "os_proj", tmp_path / "text_proj"
+        for proj in (os_proj, text_proj):
+            proj.mkdir()
+            _setup_knowledge(proj)
+            _pending_doc(proj).write_text(f"# {proj.name}\n", encoding="utf-8")
+        (os_proj / "target").mkdir()
+        (text_proj / "link").symlink_to(os_proj / "target", target_is_directory=True)
+        root = text_proj / "link" / ".."
+        assert os.path.samefile(root, os_proj)
+        assert Path(os.path.normpath(root)) == text_proj
+        text_before = _tree_state(text_proj)
+        name = "20260202-120000_r.md"
+
+        result = approve_research(
+            root, pending_file=f"knowledge/research/pending/{name}", insights=insights
+        )
+
+        approved = os_proj / "knowledge" / "research" / "approved" / name
+        assert result.success
+        assert not (os_proj / "knowledge" / "research" / "pending" / name).exists()
+        assert approved.read_text(encoding="utf-8") == "# os_proj\n"
+        assert os.path.samefile(result.files_modified[-1], approved)
+        assert len(parse_knowledge(os_proj / "knowledge" / "KNOWLEDGE.md").data) == len(insights)
+        assert _tree_state(text_proj) == text_before
+
+    def test_dotdot_inside_pending_approves(self, tmp_path):
+        from agentic_mbse.pm.operations import approve_research
+
+        doc = _pending_doc(tmp_path)
+        (doc.parent / "sub").mkdir()
+
+        result = approve_research(
+            tmp_path, pending_file=f"knowledge/research/pending/sub/../{doc.name}", insights=[]
+        )
+
+        approved = tmp_path / "knowledge" / "research" / "approved" / doc.name
+        assert result.success
+        assert result.files_modified == [str(approved)]
+        assert not doc.exists()
+        assert approved.read_text(encoding="utf-8") == "# Research\n"
+
+    def test_non_empty_approval_returns_registry_warnings(self, tmp_path):
+        from agentic_mbse.pm.operations import approve_research
+
+        dropped = _format_insight_entry(_insight("DI-002")).replace("captured", "bogus")
+        k_path = _write_knowledge(
+            tmp_path, _format_insight_entry(_insight("DI-001")) + "\n" + dropped
+        )
+        parse_warnings = parse_knowledge(k_path).warnings
+        assert [w.location for w in parse_warnings] == ["DI-002"]
+        doc = _pending_doc(tmp_path)
+
+        result = approve_research(tmp_path, pending_file=str(doc), insights=[_one_insight()])
+
+        assert result.ids_assigned == {"DI-003": "T"}
+        assert result.warnings[: len(parse_warnings)] == parse_warnings
+        reserved = result.warnings[len(parse_warnings) :]
+        assert [w.location for w in reserved] == ["DI-002"]
+        assert reserved[0].file == str(k_path)
+        assert "reserved" in reserved[0].message
 
     def test_blank_field_refused_before_any_write(self, tmp_path):
         from agentic_mbse.pm.operations import approve_research

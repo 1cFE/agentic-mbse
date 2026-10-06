@@ -78,7 +78,7 @@ agentic-mbse pm approve-research <file> --insights '<structured JSON of approved
 ```
 The script moves the file from `pending/` to `approved/`, assigns DI-XXX IDs, formats entries, and appends them to `knowledge/KNOWLEDGE.md`. Report the assigned IDs to the user.
 
-If the user approves the report but skips every insight, still make the call, with `--insights '[]'`. The file moves to `approved/` and no DI-XXX entries are created, so tell the user that instead of reporting IDs.
+If the user approves the report with no accepted insights (every candidate skipped, or none proposed), still make the call, with `--insights '[]'`. The file moves to `approved/` and no DI-XXX entries are created, so tell the user that instead of reporting IDs.
 
 If the user rejects the report, the file stays in `pending/` (or delete if requested).
 

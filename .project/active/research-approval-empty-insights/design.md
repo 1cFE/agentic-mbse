@@ -1,6 +1,6 @@
 # Design: Approve Research with No New Insights
 
-**Status:** Accepted by the orchestrator 2026-10-05 (D5 ratified; no separate design review)
+**Status:** Accepted by the orchestrator 2026-10-05 (D5 ratified; no separate design review). D5's shape and the `research.md` sentence amended 2026-10-05 after [audit](audit.md) A1 and A4.
 **Owner:** Reid W
 **Created:** 2026-10-05 20:49 PDT
 **Branch:** research-approval-empty-insights
@@ -63,7 +63,7 @@ Removing the guard also removes the accidental protection it gave. Today the gua
 - **D2. A missing or non-list `insights` returns a structured failure.** An `isinstance(insights, list)` check takes the old guard's place. Message: `Insights must be a list of InsightInput, got {type name}; pass [] to approve with no insights`. The signature stays `insights: list[InsightInput]`, keyword-only, no default, so omitting it still raises `TypeError` from Python itself. *Rejected: raise `TypeError` for `None`.* The module never raises for caller input, and `None` already returns `success=False` today, so an exception would change behavior for existing callers. *Rejected: no check at all.* `None` would then fail only because the build loop happens to iterate the list, as an exception. A later edit that guards the loop would turn absence into a silent approval, which is the trap the spec forbids. The type check must come before the D1 gate; that ordering is what makes the gate's truthiness test safe.
 - **D3. Messages.** Zero insights: `Approved research: {name}. No insights created`. Non-empty: unchanged, byte for byte. Both share the `Approved research: {name}.` prefix and differ only in the clause built from `ids_assigned`.
 - **D4. A pending path that is not a regular file is refused.** A `pending_path.is_file()` check runs right after the existing exists check, which keeps its `File not found` message. Message: `Not a regular file: {path}; name one research document in {pending_dir}`. Applies to empty and non-empty lists alike, per spec criterion 3.
-- **D5. The path is normalized before the containment check.** The function applies `os.path.normpath` to both sides of the comparison, the joined path and `pending_dir`, before `relative_to`, so `..` segments collapse first. Both sides need it: a Python caller may pass a `project_root` that itself contains `..`, and normalizing only the file path would then refuse a valid document. A path that escapes `pending/` gets the existing `File '...' is not in ...` refusal and names the real target. A `..` that stays inside (`pending/sub/../doc.md`) still works. **[AGENT] (ratified by orchestrator, 2026-10-05); see the note at the end of this section.** *Rejected: `Path.resolve()`.* It follows symlinks, so `pending_dir` would have to be resolved too, and a symlinked pending document would start being refused. Nobody asked for that change. *Rejected: file it under `PM-APPROVE-RESEARCH-MOVE-SAFETY`.* That would leave the `[]` call this item ships able to move `KNOWLEDGE.md` or any other file under the project into `approved/` with nothing written to show it happened.
+- **D5. `..` is collapsed only below `pending/`.** The root is used exactly as the caller gave it, so it names the directory the OS resolves, symlinks and `..` included. `pending_dir` is built from that root. The document path is taken relative to `pending_dir` with the textual `relative_to`; a failure is the existing `File '...' is not in ...` refusal. `os.path.normpath` then collapses `..` in that relative part only, and if the result climbs out (its first part is `..`) the call gets the same refusal. The document path is rebuilt as `pending_dir` joined with the collapsed part, and that one path serves the exists check, the regular-file check, and the move. The refusal names the path as the caller gave it. A `..` that stays inside (`pending/sub/../doc.md`) still works, and so does a root containing `..` with a relative document path. A document path spelled differently from the root, such as an absolute path when the root contains `..`, is refused, as at the base; matching two spellings of one directory would need symlink resolution. **[AGENT] (ratified by orchestrator, 2026-10-05; shape set by orchestrator ruling on audit A1, same day); see the note at the end of this section.** The first form applied `os.path.normpath` to both full paths; audit A1 showed that with a root holding a symlink followed by `..` it took the document from one tree and moved it into another, because `normpath` and the OS read `link/..` differently. *Rejected: `Path.resolve()`.* It follows symlinks, so `pending_dir` would have to be resolved too, and a symlinked pending document would start being refused. Nobody asked for that change. *Rejected: normalize the root once and build every path from it* (audit A1's suggestion). Every path would agree, but `normpath` of a root holding a symlink followed by `..` can name a different project than the OS resolves. *Rejected: file it under `PM-APPROVE-RESEARCH-MOVE-SAFETY`.* That would leave the `[]` call this item ships able to move `KNOWLEDGE.md` or any other file under the project into `approved/` with nothing written to show it happened.
 - **D6. Shipped wording.** Exact text is in Implementation Notes. `research.md` gains one line and keeps its existing lines. The skill row and the two argparse help strings stop implying insights are always present.
 - **D7. CLI tests run through the real parser in-process.** They call `main()` with a monkeypatched `sys.argv`, as `tests/test_cli.py:316-339` does, inside a real temp project. *Rejected: `subprocess` with `uv run agentic-mbse`.* It is slower and depends on the installed entry point. The existing subprocess tests check help text only.
 
@@ -74,8 +74,9 @@ Removing the guard also removes the accidental protection it gave. Today the gua
 The function keeps its shape: validate, number, write, report. Changes are marked.
 
 ```
-pending_path, pending_dir = normpath(both)                    # D5
-refuse unless under pending_dir; exists; is_file()            # D4 adds is_file
+below = path under pending_dir, ".." collapsed below it      # D5; refuse if not under or climbs out
+pending_path = pending_dir / below                            # D5; root used as given
+refuse unless exists; is_file()                               # D4 adds is_file
 refuse unless isinstance(insights, list)                      # D2, replaces `if not insights`
 taken_ids, warnings = [], []
 if insights: read KNOWLEDGE.md -> taken_ids, warnings         # D1
@@ -102,7 +103,7 @@ return result from entries: files_modified, ids_assigned, msg # D3
 
 - **`approve_research`** (`src/agentic_mbse/pm/operations.py:910`) carries all behavior changes: D1, D2, D3, D4, D5, plus a docstring that says an empty list approves with no insights and `None` is refused. It needs an `import os` (current imports at `:11-16`).
 - **Argparse registration** (`src/agentic_mbse/cli/pm_cli.py:560`, `:562`) gets two help-string edits. The handler is untouched.
-- **`claude/commands/research.md:75-79`** gets one added line for the all-skipped case.
+- **`claude/commands/research.md:75-79`** gets one added line for approval with no accepted insights.
 - **`claude/skills/toolkit-awareness/SKILL.md:90`** gets a reworded description cell.
 - **Tests** go in `tests/test_pm_operations.py` (class `TestApproveResearch`, `:1263`) and `tests/test_pm_cli.py` (a new class beside `TestPmApproveResearch`, `:418`). See Validation Approach.
 
@@ -115,11 +116,11 @@ return result from entries: files_modified, ids_assigned, msg # D3
 
 ## Implementation Notes
 
-- **Keep the check order.** The order is: normalize, containment, exists, `is_file`, type check, gated read. The gate is written `if insights:`, which is safe only because the type check ran first. Put a short comment on the gate saying so.
+- **Keep the check order.** The order is: containment with `..` collapsed below `pending/`, exists, `is_file`, type check, gated read. The gate is written `if insights:`, which is safe only because the type check ran first. Put a short comment on the gate saying so.
 - **Initialize for the zero path.** `warnings` and the taken-ID list start empty before the gate, so the build loop and the result need no special case.
 - **`files_modified`.** Build it as `KNOWLEDGE.md` only if entries were appended, then the approved path. This keeps today's order for non-empty approvals.
 - **Exact replacement text.** `research.md`: keep lines 75-79 as they are, and add one line after line 79:
-  > If the user approves the report but skips every insight, still make the call, with `--insights '[]'`. The file moves to `approved/` and no DI-XXX entries are created, so tell the user that instead of reporting IDs.
+  > If the user approves the report with no accepted insights (every candidate skipped, or none proposed), still make the call, with `--insights '[]'`. The file moves to `approved/` and no DI-XXX entries are created, so tell the user that instead of reporting IDs.
 - **`SKILL.md:90` description cell:**
   > Approve pending research and register any accepted domain insights (`'[]'` approves with none)
 - **`pm_cli.py:560` subcommand help:** `Approve a pending research file and record any insights`.
@@ -129,6 +130,7 @@ return result from entries: files_modified, ids_assigned, msg # D3
 
 - **Target repos keep the old instruction until re-init.** An agent running an older installed `research.md` will not know about `'[]'`. That resolves itself once the consumer moves its pin and re-runs init; see Integration Strategy.
 - **D5 refuses a path that worked before.** Only paths whose `..` segments leave `pending/` are affected. Any such path used today would have moved a file from outside the queue into `approved/`, so no valid use is lost.
+- **Symlinks inside `pending/` are trusted.** A symlinked directory inside `pending/` lets a call move a file that lives outside `pending/`, and with `[]` nothing is written to show it (audit A2). This follows from D5 not resolving symlinks, needs write access to `pending/` to set up, and the base had the same exposure with one insight; filed as case (c) of `PM-APPROVE-RESEARCH-MOVE-SAFETY`.
 
 ## Integration Strategy
 
