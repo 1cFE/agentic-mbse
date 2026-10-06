@@ -4,6 +4,33 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-06] - Approve Research with No New Insights
+
+**Type**: Item (standalone `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS`, filed 2026-08-25; branch `research-approval-empty-insights`, source last changed at `8e8d26a`, not yet merged)
+**Duration**: 2 days (spec created 2026-10-04 09:28 PDT; closed 2026-10-06)
+
+### Summary
+
+Research approved with no new domain insight now goes through the supported operation. Before this item, `approve-research` refused an explicit empty insight list with `No insights provided`, so a source-registration round, a bounded negative result, or a confirmation of existing knowledge left its document in `knowledge/research/pending/` and operators moved it by hand. Now `--insights '[]'` approves the document, moves it to `approved/`, and never reads or writes `KNOWLEDGE.md`; the result says `No insights created` and lists only the approved path. Omitting `--insights` and `--insights null` stay usage errors, and in Python `None` or a non-list returns a failure that names `[]`. The shipped `/research` approval step and the toolkit-awareness row tell agents to make the `[]` call when no insight is accepted, whether every candidate was skipped or none was proposed. Non-empty approvals are unchanged from the base for ordinary inputs. Independently certified, then re-checked after audit fixes: all seven spec criteria met, full suite 2,079 passed, and ruff and mypy finding sets identical to the base. Not checked: an agent following the new `/research` text in a live session.
+
+**Promise the product now makes.** [AGENT] (orchestrator, 2026-10-05; item spec criteria are `[INHERITED]` from the backlog or `[INFERRED]`) `approve-research` accepts an explicit empty list as "report approved, no insights." Emptiness must be stated: an omitted list is a caller error on both the CLI and the Python surface.
+
+**Decision: how the pending-path check works.** [AGENT] (orchestrator, 2026-10-05; [design D5](20261006_research-approval-empty-insights/design.md)) Removing the empty-list refusal would have let the `[]` call move the whole `pending/` directory, or reach `KNOWLEDGE.md` through a `..` path, so the path checks were tightened in this item. The project root is used exactly as the caller gave it. `..` is collapsed only in the part of the path below `pending/`, and the rebuilt path serves the exists check, the regular-file check, and the move. A path that is not a regular file, or whose `..` climbs above `pending/` (even if it comes back, such as `pending/../pending/doc.md`), is refused before anything is written. Rejected: normalizing the root, because it can name a different project than the OS resolves; and `Path.resolve()`, because it would start refusing symlinked pending documents.
+
+**Behavior found.** `os.path.normpath` collapses a symlink followed by `..` as text. For `A/link/..` where `link` points to `X/Y`, it returns `A` while the OS resolves `X`. A containment check on normalized paths beside file operations on raw paths can therefore act on two different trees ([audit](20261006_research-approval-empty-insights/audit.md) A1, probe and fix).
+
+**Downstream (fusion-tea, not in this item's scope).** After merge, fusion-tea moves its agentic-mbse pin and re-runs init to receive the changed `/research` command and toolkit-awareness skill.
+
+### Deliverables
+
+- `src/agentic_mbse/pm/operations.py` (`approve_research`: zero-insight path, list type check, regular-file and below-`pending/` refusals, derived result; helper `_path_below`) and `src/agentic_mbse/cli/pm_cli.py` (two help strings).
+- `claude/commands/research.md` (approval step) and `claude/skills/toolkit-awareness/SKILL.md` (`approve-research` row).
+- `tests/test_pm_operations.py` and `tests/test_pm_cli.py`: 23 test cases added, including three CLI tests through the real parser.
+- `.project/completed/20261006_research-approval-empty-insights/`: `spec.md`, `spec-review.md`, `design.md`, `plan.md`, `audit.md`, `product-lens.md`, `briefs/`.
+- Backlog follow-up (P3): `PM-APPROVE-RESEARCH-MOVE-SAFETY` (failed move after append, same-name overwrite in `approved/`, symlinked directory inside `pending/`).
+
+---
+
 ## [2026-10-04] - Escaped Pipes and Registry ID Integrity
 
 **Type**: Item (standalone `PM-MATRIX-ESCAPED-PIPE`, filed 2026-08-21; branch `pm-registry-integrity`, source last changed at `c3f3517`, not yet merged)

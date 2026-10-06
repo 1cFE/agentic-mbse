@@ -557,9 +557,15 @@ def register_pm_subcommands(subparsers: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_pm_add_validation)
 
     # -- approve-research --
-    p = pm_subs.add_parser("approve-research", help="Approve a research file and extract insights")
+    p = pm_subs.add_parser(
+        "approve-research", help="Approve a pending research file and record any insights"
+    )
     p.add_argument("file", help="Path to pending research file")
-    p.add_argument("--insights", required=True, help="JSON array of InsightInput objects")
+    p.add_argument(
+        "--insights",
+        required=True,
+        help="JSON array of InsightInput objects; '[]' approves with no insights",
+    )
     p.set_defaults(func=cmd_pm_approve_research)
 
     # -- register-intent --

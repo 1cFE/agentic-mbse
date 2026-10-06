@@ -5,6 +5,8 @@ import subprocess
 from pathlib import Path
 from unittest.mock import MagicMock
 
+import pytest
+
 from agentic_mbse.pm.types import (
     ImpactResult,
     InsightInput,
@@ -454,6 +456,66 @@ class TestPmApproveResearch:
         result = cmd_pm_approve_research(MockArgs(file="f.md", insights='[{"title": "t"}]'))
         assert result == EXIT_USAGE
         assert "Invalid" in capsys.readouterr().err
+
+
+def _make_research_project(root: Path) -> str:
+    """Create a project holding one pending research document; return its path relative to root."""
+    (root / "work").mkdir()
+    (root / "work" / "BACKLOG.md").write_text("---\n---\n", encoding="utf-8")
+    doc = Path("knowledge/research/pending/20260202-120000_r.md")
+    (root / doc).parent.mkdir(parents=True)
+    (root / doc).write_text("# Research\n", encoding="utf-8")
+    return str(doc)
+
+
+class TestPmApproveResearchMain:
+    """approve-research through the real parser and operation, inside a temp project."""
+
+    def test_empty_insights_approves(self, tmp_path, monkeypatch, capsys):
+        from agentic_mbse.cli import main
+
+        doc = _make_research_project(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr(
+            "sys.argv", ["agentic-mbse", "pm", "approve-research", doc, "--insights", "[]"]
+        )
+
+        assert main() == EXIT_SUCCESS
+        out, err = capsys.readouterr()
+        assert out == "Approved research: 20260202-120000_r.md. No insights created\n"
+        assert err == ""
+        approved = tmp_path / "knowledge" / "research" / "approved" / "20260202-120000_r.md"
+        assert not (tmp_path / doc).exists()
+        assert approved.read_text(encoding="utf-8") == "# Research\n"
+        assert not (tmp_path / "knowledge" / "KNOWLEDGE.md").exists()
+
+    def test_missing_insights_is_usage_error(self, tmp_path, monkeypatch, capsys):
+        from agentic_mbse.cli import main
+
+        doc = _make_research_project(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr("sys.argv", ["agentic-mbse", "pm", "approve-research", doc])
+
+        with pytest.raises(SystemExit) as exc:
+            main()
+        assert exc.value.code == EXIT_USAGE
+        assert "--insights" in capsys.readouterr().err
+        assert (tmp_path / doc).exists()
+        assert not (tmp_path / "knowledge" / "research" / "approved").exists()
+
+    def test_null_insights_is_usage_error(self, tmp_path, monkeypatch, capsys):
+        from agentic_mbse.cli import main
+
+        doc = _make_research_project(tmp_path)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr(
+            "sys.argv", ["agentic-mbse", "pm", "approve-research", doc, "--insights", "null"]
+        )
+
+        assert main() == EXIT_USAGE
+        assert "--insights must be a JSON array" in capsys.readouterr().err
+        assert (tmp_path / doc).exists()
+        assert not (tmp_path / "knowledge" / "research" / "approved").exists()
 
 
 class TestPmRegisterIntent:
