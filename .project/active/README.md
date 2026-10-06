@@ -6,7 +6,7 @@
 
 | Folder | Reconciled disposition |
 |--------|------------------------|
-| `research-approval-empty-insights` | Implemented and certified 2026-10-05 on its branch (no blockers, six advisories); close next; P2 |
+| `research-approval-empty-insights` | Implemented and certified 2026-10-05 on its branch; audit fixes re-checked and certified at `8e8d26a`; close next; P2 |
 | `native-skill-distribution` | Draft residual-work spec complete; product-lens CLEAR; existing native migration contract referenced |
 | `harness-right-size` | Implementation and bounded review complete; installed in Fusion TEA |
 | `modeling-workflow-outcomes` | Repairs and focused trials complete; native-source drift and L6 EXPOSE defect tracked separately |

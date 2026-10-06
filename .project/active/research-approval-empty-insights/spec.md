@@ -1,6 +1,6 @@
 # Spec: Approve Research with No New Insights
 
-**Status:** Certified 2026-10-05 ([audit](audit.md), advisories A1-A6); close next. Implemented 2026-10-05 ([plan](plan.md)). Reviewed and revised 2026-10-05 ([review](spec-review.md), verdict Revise; resolutions recorded there)
+**Status:** Certified 2026-10-05 ([audit](audit.md)); audit fixes A1, A3, A4, A6 re-checked and certified at `8e8d26a`; close next. Implemented 2026-10-05 ([plan](plan.md)). Reviewed and revised 2026-10-05 ([review](spec-review.md), verdict Revise; resolutions recorded there)
 **Owner:** Reid W
 **Created:** 2026-10-04 09:28 PDT
 **Complexity:** LOW
@@ -18,7 +18,7 @@
 - [x] Omitting the insight list stays a caller error on both surfaces.
   - [INHERITED: ../../backlog/BACKLOG.md, PM-APPROVE-RESEARCH-EMPTY-INSIGHTS] CLI: omitting `--insights` is a usage error. Explicit emptiness is distinct from malformed JSON or an invalid insight payload.
   - [INFERRED] Python: `insights` stays a required argument, and `None` is not treated as an explicit empty list.
-- [x] [INFERRED] Non-empty approval of a regular file inside `pending/` retains its current insight creation behavior. Existing missing-file and pending-location validation still rejects invalid requests without moving research or mutating knowledge. A pending path that is not a regular file, such as the `pending/` directory itself, or that leaves `pending/` once its `..` segments are collapsed, is refused with nothing moved, for empty and non-empty lists alike.
+- [x] [INFERRED] Non-empty approval of a regular file inside `pending/` retains its current insight creation behavior. Existing missing-file and pending-location validation still rejects invalid requests without moving research or mutating knowledge. A pending path that is not a regular file, such as the `pending/` directory itself, or whose `..` segments climb above `pending/`, is refused with nothing moved, for empty and non-empty lists alike.
 - [x] [INFERRED] A zero-insight approval is reported accurately to each observer.
   - CLI user: exit code 0, and a message stating the document was approved with no insights created. The message does not end in an empty `Created insights:`.
   - Python caller: `ids_assigned` is empty, and `files_modified` lists the approved path and does not list `KNOWLEDGE.md`.

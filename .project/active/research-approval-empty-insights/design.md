@@ -129,7 +129,7 @@ return result from entries: files_modified, ids_assigned, msg # D3
 ## Potential Risks
 
 - **Target repos keep the old instruction until re-init.** An agent running an older installed `research.md` will not know about `'[]'`. That resolves itself once the consumer moves its pin and re-runs init; see Integration Strategy.
-- **D5 refuses a path that worked before.** Only paths whose `..` segments leave `pending/` are affected. Any such path used today would have moved a file from outside the queue into `approved/`, so no valid use is lost.
+- **D5 refuses a path that worked before.** Any path whose `..` segments climb above `pending/` is refused, including one that comes back in, such as `pending/../pending/doc.md` (audit re-check R1). A path that leaves and stays out would have moved a file from outside the queue. A path that leaves and returns names a queued document, but it passes through `pending/..`, which points elsewhere when `pending/` is a symlink, so it is refused too. No shipped surface produces either spelling.
 - **Symlinks inside `pending/` are trusted.** A symlinked directory inside `pending/` lets a call move a file that lives outside `pending/`, and with `[]` nothing is written to show it (audit A2). This follows from D5 not resolving symlinks, needs write access to `pending/` to set up, and the base had the same exposure with one insight; filed as case (c) of `PM-APPROVE-RESEARCH-MOVE-SAFETY`.
 
 ## Integration Strategy

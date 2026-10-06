@@ -1,9 +1,9 @@
 # Audit: Approve Research with No New Insights
 
-**Verdict:** Certify
-**Audited:** 2026-10-05
+**Verdict:** Certify (re-checked after audit fixes; see [Re-check](#re-check-2026-10-05-audit-fixes-at-8e8d26a))
+**Audited:** 2026-10-05; re-checked 2026-10-05
 **Branch:** research-approval-empty-insights
-**Commit:** b6d1667 (base c37ff53)
+**Commit:** b6d1667 (base c37ff53); re-check at 8e8d26a
 
 ---
 
@@ -154,3 +154,92 @@ D5 is the one place the design itself falls short. It reasoned that "both sides 
 - I did not test an agent following the new `/research` text in a live session (Bet B2). SC6 is verified as text only.
 - I did not read fusion-tea. The claim that it neither calls nor parses `approve-research` is the orchestrator's.
 - Re-init delivery of the changed `research.md` and `SKILL.md` to a target repo is inferred from both files being tool-owned and listed in `MBSE_COMMANDS` and `MBSE_SKILLS`. The product-lens ran `init` in a scratch project, but I did not diff the installed copies myself.
+
+---
+
+## Re-check 2026-10-05: audit fixes at 8e8d26a
+
+**Verdict: Certify.** No blockers. The fixes do what the orchestrator's rulings say, and the A1 probe now passes. One new advisory (R1): a narrow spelling regression that the tracking notes undercount. Scope: `git diff d6ea9fc..8e8d26a` only. Everything certified above still stands.
+
+### What changed
+
+- **A1:** a new helper `_path_below` (`src/agentic_mbse/pm/operations.py:539`) collapses `..` only in the part of the document path below `pending/`, and returns nothing if that part climbs out. `approve_research` (`:938-948`) uses the root exactly as given and rebuilds the document path as `pending_dir / below`. One path then serves the exists check, the file check, and the move (`:1027`).
+- **A3:** a new test pins the warnings on a non-empty approval.
+- **A4:** `claude/commands/research.md:81` now says "with no accepted insights (every candidate skipped, or none proposed)".
+- **A6:** stale pointers are fixed.
+- **A2 and A5:** recorded in the design's Potential Risks and in `PM-APPROVE-RESEARCH-MOVE-SAFETY`.
+
+### The A1 ruling is right, and my suggested fix was wrong
+
+I suggested deriving every path from one normalized root. That would have made the paths agree with each other, but in the wrong project. In my probe (`A/link/..` with `link` pointing to `X/Y`), normalizing as text gives `A`, while the OS and the base both act on `X`. The ruled shape keeps the root's OS meaning and collapses `..` only below `pending/`, so it matches the base. Mutating the code to my suggestion makes `test_symlinked_root_with_dotdot_stays_in_os_project` fail for both list sizes.
+
+### Checks
+
+1. **The A1 probe passes for both list sizes.** I re-ran it at 8e8d26a.
+   - With `[]` and with one insight, X's document moves into X's `approved/`.
+   - With one insight, DI-001 goes to X's `KNOWLEDGE.md`.
+   - A's tree is untouched both times.
+   - This matches c37ff53's non-empty behavior.
+2. **`_path_below` is correct at its edges.** I probed each spelling at c37ff53 and 8e8d26a, with both list sizes, and diffed the file tree before and after each call.
+   - `pending` itself, `pending/` with a trailing slash, `pending/.`, and `pending/sub/..` all reach `pending/`. Each is refused as `Not a regular file`, with nothing moved. At the base, one insight moved the whole queue or raised `shutil.Error`.
+   - `pending/..` is refused as `is not in`. At the base, one insight raised `OSError`.
+   - `pending/sub/../doc.md` approves `pending/doc.md`.
+   - `pending/../../KNOWLEDGE.md` and `pending/sub/../../../outside/x.md` are refused. The message prints the path as given, and nothing is moved.
+   - An absolute path outside the project is refused, as at the base.
+   - An absolute path to the document, `doc.md/` with a trailing slash, and `pending//doc.md` all approve.
+   - A root containing `..` approves with a relative document path. With an absolute document path it is refused, as at the base.
+   - In every successful case, the file that moved is the file the checks examined. The rebuilt path is the only path the exists check, the file check, and the move use.
+3. **Non-empty behavior is still identical to the base for ordinary inputs.** I compared c37ff53 and 8e8d26a across archived, plain, and missing `KNOWLEDGE.md`, each with an absolute and a relative document path, plus three existing refusals. Message, IDs, `files_modified`, warnings, the resulting `KNOWLEDGE.md`, and the resulting tree were identical. That covers the DI-014 reservation warning and the `File not found` warning.
+4. **The new tests fail when they should.** I applied seven mutations in a worktree at 8e8d26a, one at a time; six were caught.
+   - My three earlier survivors are now caught by `test_non_empty_approval_returns_registry_warnings`: drop all non-empty warnings, drop only parse warnings, drop only registry warnings.
+   - Reverting to b6d1667's normalize-both-full-paths form fails 6 tests: `test_dotdot_escape_refused` ×4 and `test_symlinked_root_with_dotdot_stays_in_os_project` ×2. These are the six the plan reports as red against the old code.
+   - Normalizing the root once fails the same 6 tests.
+   - Removing the collapse from `_path_below` fails `test_dotdot_escape_refused[behind_subdir-*]`.
+   - **Survived:** moving the unrebuilt `project_root / pending_file` instead of the rebuilt path. The two differ only when a symlink inside `pending/` comes before a `..`, and no test builds that case. The code is correct as written, since one variable carries the path, but the comment's claim that "the check and the move use the same path" is not pinned by a test. Not a finding: no realistic edit reintroduces the raw argument.
+5. **Static gates still match the base.** I compared finding sets at c37ff53 and 8e8d26a with line numbers stripped.
+   - `ruff check`: 118 errors, same findings.
+   - `ruff format --check`: 78 files, same files.
+   - `mypy src/`: 91 errors in 19 files, same errors.
+   - The `ruff format --diff` hunks in `operations.py` and `test_pm_operations.py` are identical to the base.
+   - `ruff check` passes on both touched files.
+   - `uv run pytest tests/`: 2079 passed, 1 skipped, 33 deselected.
+6. **The design, the plan note, and the backlog item mostly describe what was built.**
+   - D5 as amended matches the code step for step, including the rejected normalize-the-root alternative and the refused absolute path. The Architecture sketch and the check-order note match.
+   - The backlog pointers are right. `operations.py:936-940`, `:910`, and `:983-991` at c37ff53 are the old guard, the function start, and the append-then-move block. Case (c) cites the probe accurately.
+   - One undercount, below as R1.
+
+### R1 (Advisory, new): a path that climbs out of `pending/` and back in is now refused
+
+`knowledge/research/pending/../pending/doc.md` names a document inside the queue.
+
+- **Before:** c37ff53 approved it with one insight, and b6d1667 approved it with either list size.
+- **Now:** 8e8d26a refuses it with `is not in`. The part below `pending/` collapses to `../pending/doc.md`, which starts with `..`.
+
+This follows from the ruled shape. A path that passes through `pending/..` names a different place if `pending/` is itself a symlink, so refusing it is the safe reading. No shipped surface produces it.
+
+The records undercount it, though:
+
+- The plan's Audit fixes note says the absolute-path case is the "one call this shape refuses that `b6d1667` accepted". This is a second one, and unlike the first, the base accepted it.
+- The design's Potential Risks says any refused `..` path "would have moved a file from outside the queue". That is not true for this spelling.
+- Spec criterion 4 asks for refusal of paths that leave `pending/` "once its `..` segments are collapsed". This path does not leave `pending/` under a full collapse.
+
+*What should change:* one clause in D5 or Potential Risks saying that any path whose `..` passes above `pending/` is refused, even if it comes back. No code change is needed.
+
+### Tracking
+
+- I updated the `CURRENT_WORK.md` Active Work line and remaining-work row, the `active/README.md` row, and the spec **Status** line. They described A1 as an open one-line fix. They now say re-checked and certified after fixes.
+- The backlog **Status** line for `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` still holds.
+- The spec criteria stay checked. SC4's A1 caveat no longer applies; R1 is a documentation note against it.
+
+### Hygiene
+
+- I used two temporary worktrees, at c37ff53 and at 8e8d26a, and removed both. The mutation worktree's `src/` was restored before removal.
+- The main tree was not edited except for these tracking lines and this section. Nothing is committed.
+- The untracked `.project/research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md` is untouched.
+
+### Not checked in this re-check
+
+- I did not separately run the new tests against b6d1667's source. The revert mutation reproduces the same six failures.
+- I did not run anything on Windows or macOS.
+- I did not re-run the product-lens, since the fixes change no product promise.
+- I did not re-audit anything outside `d6ea9fc..8e8d26a`.
