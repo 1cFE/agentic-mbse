@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-10-05
+**Last Updated**: 2026-10-06
 
 ---
 
@@ -12,7 +12,7 @@ Prioritized list of epics and features.
 
 - July constraint-wave, GAP-CLOSE, and CONSTRAINT-EXEC compatibility blockers are resolved by merged successor work. They are not pending features.
 - Docling/Pandoc research is closed; iteration-loop remains shelved. Artifact scaffolding is a draft, despite the old “spec complete” label.
-- P1 OCR/deployment gaps remain unimplemented; the PDF epic's summarization guard retains explicit item-level P2. Recent P2 registry ID reuse (closed 2026-10-04 as `PM-MATRIX-ESCAPED-PIPE`; see Completed) and empty-insight approval defects are freshly reproduced. PM operation stubs and extraction provenance gaps also remain.
+- P1 OCR/deployment gaps remain unimplemented; the PDF epic's summarization guard retains explicit item-level P2. Recent P2 registry ID reuse (closed 2026-10-04 as `PM-MATRIX-ESCAPED-PIPE`; see Completed) and empty-insight approval (closed 2026-10-06 as `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS`; see Completed) are repaired. PM operation stubs and extraction provenance gaps also remain.
 
 ### Newly tracked follow-ups — priority not assigned
 
@@ -73,22 +73,6 @@ Prioritized list of epics and features.
 ---
 
 ## P2 - Medium Priority
-
-### [PM-APPROVE-RESEARCH-EMPTY-INSIGHTS] `approve-research` refuses a research document that mints no insight
-
-**Priority**: P2
-**Effort**: 0.5 day
-**Status**: Implemented and certified 2026-10-05 on branch `research-approval-empty-insights` ([audit](../active/research-approval-empty-insights/audit.md)); close next (spec reviewed and revised 2026-10-05; originally filed 2026-08-25)
-**Spec**: [Zero-insight approval](../active/research-approval-empty-insights/spec.md)
-
-**Problem**: `approve_research` returns `success=False, message="No insights provided"` when the insight list is empty (`src/agentic_mbse/pm/operations.py:936-940` at `c37ff53`). That treats "this research approved no new domain insight" as a caller error. It is a legitimate and common outcome: a round can approve a research document that registers sources, records a bounded negative, or confirms an existing insight without minting a DI. The refusal means such a document cannot be moved from `knowledge/research/pending/` to `approved/` through the tool at all, so the operator moves the file by hand — exactly the hand-editing the PM exists to remove.
-
-**Goal**: An empty insight list approves the document and mints nothing. Distinguish it from a malformed call: a missing `--insights` argument is still an error; `--insights '[]'` is an explicit "no insights". A test covers both, and asserts the document lands in `approved/` with no DI written.
-
-**Downstream**: fusion-tea `.project/active/goal-research-seam/` — the seam's research surface registers sources under an approval gate that does not mint DIs (spec R-C3, R-C4), so it hits this refusal on every source-only round.
-
----
-
 
 ### [EXTRACT-PROVENANCE-HOOK] `extract` should return provenance JSON, or expose a `--register` hook
 
@@ -539,7 +523,7 @@ Three small items left out of `L6-EXPOSE-CONSISTENCY`: V4 still reports `.` on n
 
 **Priority**: P3
 **Status**: Filed 2026-10-05 at `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` spec review; case (c) added at its audit the same day
-**Source**: [spec review](../active/research-approval-empty-insights/spec-review.md) finding L3-4 (a) and (b); [audit](../active/research-approval-empty-insights/audit.md) A2 and A5
+**Source**: [spec review](../completed/20261006_research-approval-empty-insights/spec-review.md) finding L3-4 (a) and (b); [audit](../completed/20261006_research-approval-empty-insights/audit.md) A2 and A5
 
 **Problem**: Three gaps in how `approve_research` (`src/agentic_mbse/pm/operations.py:910` at `c37ff53`) moves the document. (a) and (b) fall short of the original contract, "File move and KNOWLEDGE.md appends are all-or-nothing" (FR-9, [PM operations spec](../completed/20260203_d4.4-operations/spec.md):181) and of the shipped claim that PM mutations "succeed fully or not at all" (`claude/skills/toolkit-awareness/SKILL.md:85`).
 
@@ -629,6 +613,7 @@ Implemented in `9cf6b3c`; the retained [spec](../active/formula-teaching-reconci
 | Pandoc Deep-Dive | 2026-03-06 | — | Research complete (Phases 1-4). Findings integrated into v4. |
 | L6-EXPOSE-CONSISTENCY: L6 EXPOSE Validation Consistency | 2026-10-04 | <1 day | V4 and completeness share V2's EXPOSE predicate (`3f442ce`); fusion-tea `models/` Level 6 issues 7,734 → 408, none added. Archived to `completed/20261004_l6-expose-consistency/` |
 | PM-MATRIX-ESCAPED-PIPE: Escaped Pipes and Registry ID Integrity | 2026-10-04 | <1 day (filed 2026-08-21) | GFM `\|` escape honoured; all seven allocators reserve every ID the registry file names; backlog writes keep unparsed records; nine refusals before any write. Certified with follow-ups. Archived to `completed/20261004_pm-registry-integrity/`. Downstream: fusion-tea fixes its `SV-034` cells by hand |
+| PM-APPROVE-RESEARCH-EMPTY-INSIGHTS: Approve Research with No New Insights | 2026-10-06 | 2 days (filed 2026-08-25) | `approve-research --insights '[]'` approves and moves the document without reading or writing `KNOWLEDGE.md`; omission and `None` stay errors; a pending path that is not a regular file or climbs above `pending/` is refused; shipped `/research` step tells agents to make the call. Certified. Archived to `completed/20261006_research-approval-empty-insights/`. Follow-up: `PM-APPROVE-RESEARCH-MOVE-SAFETY` |
 | ~~EPIC-CMDREV-001: Command System Revision~~ | — | — | **Superseded** by EPIC-ARCH-002 + EPIC-ARCH-003 |
 | ~~TASK-PDF-001: Header Consistency~~ | — | — | **Superseded** by EPIC-PDFV3-001 (Claude structure repair handles this) |
 

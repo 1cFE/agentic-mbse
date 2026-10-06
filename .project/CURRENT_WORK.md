@@ -1,6 +1,6 @@
 # Current Work
 
-**Last Updated**: 2026-10-05
+**Last Updated**: 2026-10-06
 **Checkout**: `research-approval-empty-insights`, branched from `main` at `c37ff53` after PR #15 merged.
 
 [OWNER] Reports successful operation in Fusion TEA and requested reconciliation of tracking against actual remaining work. The [status report](reports/2026-10-04-0901-status-report.md#tracking-reconciliation--progress) carries investigation progress, evidence, and limits. This refresh updates local tracking; sibling repositories were inspected read-only.
@@ -11,7 +11,6 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
-- [research-approval-empty-insights](active/research-approval-empty-insights/spec.md) — standalone `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS`; implemented on the branch 2026-10-05 per its [plan](active/research-approval-empty-insights/plan.md); certified 2026-10-05 by [audit](active/research-approval-empty-insights/audit.md) with no blockers; advisories A1, A3, A4, A6 fixed at `8e8d26a` and re-checked (Certify), A2 and A5 recorded in `PM-APPROVE-RESEARCH-MOVE-SAFETY`, one documentation note (R1) open; close next.
 - [native-skill-distribution](active/native-skill-distribution/spec.md) — standalone `NATIVE-DISTRIBUTION-RECONCILIATION`; draft spec complete; product-lens CLEAR; owner review next.
 
 ## Concrete remaining work
@@ -21,7 +20,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 | L6 EXPOSE validation | Closed 2026-10-04: certified repair archived to [completed/20261004_l6-expose-consistency](completed/20261004_l6-expose-consistency/); fusion-tea consumer validation confirmed all spec criteria in situ | None for the item. Follow-ups filed in the [backlog](backlog/BACKLOG.md): `DOCS-DOTTED-PATH-BOUNDARY` (with deep-chain regression coverage), `VALIDATE-CLI-FULL-REPORT`, `L6-COMPLETENESS-PATH-FILTER`, `L6-FORMULA-COMPLETENESS`, `L6-EXPOSE-CLEANUPS`, `L6-LIBRARY-ALIAS-SOURCE` |
 | Native skill distribution | Installed Fusion TEA workflows differ from the `native-claude-codex-skills` source; native installer remediation is uncommitted and awaits final verification | Reconcile source with consumer changes and finish installer verification before distributing that branch |
 | PM registry integrity | Closed 2026-10-04: certified repair archived to [completed/20261004_pm-registry-integrity](completed/20261004_pm-registry-integrity/); merged to `main` in PR #15 (`c37ff53`) | fusion-tea's pin is at `c37ff53` (verified in its `pyproject.toml` 2026-10-05). Remaining there: escape the two raw pipes in its `SV-034` row by hand. Follow-ups filed in the [backlog](backlog/BACKLOG.md) at P3: `PM-DASHBOARD-REPEATED-KEY`, `PM-UPDATE-VALIDATION-COMMENT`, `PM-WRITE-BACKLOG-TYPED-FORM`, `PM-R7-MESSAGE` |
-| Research approval | Implemented 2026-10-05 on `research-approval-empty-insights`: `--insights '[]'` approves and moves the document without touching `KNOWLEDGE.md`, and the shipped `/research` step tells agents to make that call | Certified 2026-10-05 ([audit](active/research-approval-empty-insights/audit.md), no blockers); audit fixes re-checked and certified at `8e8d26a`. Next: close, then `/_my_pre_pr`; P2 |
+| Research approval | Closed 2026-10-06: certified repair archived to [completed/20261006_research-approval-empty-insights](completed/20261006_research-approval-empty-insights/) on branch `research-approval-empty-insights` (not yet merged). `--insights '[]'` approves and moves the document without touching `KNOWLEDGE.md`, and the shipped `/research` step tells agents to make that call | Owner: `/_my_pre_pr`; after merge, fusion-tea moves its pin and re-runs init to pick up the `/research` text. Follow-up filed in the [backlog](backlog/BACKLOG.md) at P3: `PM-APPROVE-RESEARCH-MOVE-SAFETY` |
 | Extraction provenance | Machine-readable provenance and saved-raw-byte fidelity remain filed P2 work | Implement a scoped provenance contract; retain current downstream workarounds until then |
 
 No implementation session is currently recorded as running in this checkout. Native implementation is in a sibling worktree; its residual distribution spec is tracked here; the retained local active folders are indexed in [active/README.md](active/README.md).

@@ -1,6 +1,6 @@
 # Spec: Approve Research with No New Insights
 
-**Status:** Certified 2026-10-05 ([audit](audit.md)); audit fixes A1, A3, A4, A6 re-checked and certified at `8e8d26a`; close next. Implemented 2026-10-05 ([plan](plan.md)). Reviewed and revised 2026-10-05 ([review](spec-review.md), verdict Revise; resolutions recorded there)
+**Status:** Closed 2026-10-06. Certified 2026-10-05 ([audit](audit.md), re-checked after fixes at `8e8d26a`); reviewed and revised 2026-10-05 ([review](spec-review.md))
 **Owner:** Reid W
 **Created:** 2026-10-04 09:28 PDT
 **Complexity:** LOW
