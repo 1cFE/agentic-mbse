@@ -135,7 +135,21 @@ No findings. The spec is short and reads in one pass. The one undefined term, "k
 
 ## Resolutions
 
-[None recorded yet. The orchestrator decides per the owner's "no reserved gates" ruling and records each call here by finding ID before the spec agent revises.]
+[AGENT] Rulings by the orchestrator, 2026-10-05, under the owner's "no reserved gates" ruling. Applied to the spec the same day. New or sharpened criteria from these rulings are `[INFERRED]`; nothing was upgraded to `[NEED]` or `[HARD]`.
+
+- **L1-1 · Accepted.** Header branch is now `research-approval-empty-insights`. The `operations.py:635` pointer is replaced with `:910` (function) and `:936` (guard). `pm_cli.py:562` is kept; it is correct. The backlog Problem's `operations.py:664-668` pointer is not changed in this revision.
+- **L1-2 · Accepted.** The ID-allocation non-goal is deleted.
+- **L1-3 · Accepted.** The Known Requirement only duplicated the Non-Goal on automatic approval, so it is dropped. The Non-Goal now cites the approval gate at `claude/commands/research.md:69-71`.
+- **L1-4 · Accepted.** The backlog's test obligation is carried as an `[INHERITED]` success criterion, quoted.
+- **L2-1 · Accepted.** New `[INFERRED]` criterion: the `/research` approval step routes "report approved, every insight skipped" to `--insights '[]'` and stops asking for IDs when none exist; the `SKILL.md:90` row stops implying insights are always registered. The matching open question is removed. Wording stays with design.
+- **L3-1 · Accepted.** The reporting criterion is split by observer: CLI user (exit 0, message states no insights were created) and Python caller (`ids_assigned` empty, `files_modified` lists the approved path and not `KNOWLEDGE.md`). "CLI guidance" is dropped.
+- **L3-2 · Accepted.** New `[INFERRED]` criterion: `KNOWLEDGE.md` is left exactly as found (byte-identical; missing stays missing), and the approval's success and warnings do not depend on it. Mechanism stays with design.
+- **L3-3 · Accepted.** The omission criterion covers both surfaces: CLI usage error, and in Python `insights` stays required and `None` is not an explicit empty list.
+- **L3-4 (c) · Brought into scope, against the reviewer's recommendation.** Reason: today `approve-research knowledge/research/pending --insights '[]'` is refused only by the empty-list guard, so removing the guard lets the exact call this item ships move the whole pending queue. The fix is one validation that rejects only calls that were never valid. Criterion 3 now refuses a non-regular-file pending path with nothing moved, for empty and non-empty lists alike, and its "retains current behavior" clause is narrowed to regular files.
+- **L3-4 (a), (b) · Out of scope, filed.** Failed move after appends, and silent overwrite on a name collision in `approved/`. Neither is made worse by this change. Filed as P3 `PM-APPROVE-RESEARCH-MOVE-SAFETY` in `.project/backlog/BACKLOG.md` and linked from the spec's Non-Goals.
+- **L3-5 · Resolved.** The orchestrator searched `/home/reid/1cfe/fusion-tea` (branch `goal/magnet-material-comparison`) on 2026-10-05. No code there calls `approve-research` or parses its message; the only hits are docs and completed-item records. Message wording is a design detail, not an interface. No spec change.
+- **L4-1 · Accepted.** Next Steps points at `/_my_design`. The parked-scope bullet moved from Open Questions to Non-Goals, merged with the L3-4 (a)/(b) record. Branch fixed with L1-1.
+- **Lens 5 ·** No findings; nothing to resolve.
 
 ---
 

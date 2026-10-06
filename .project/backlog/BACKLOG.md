@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-10-04
+**Last Updated**: 2026-10-05
 
 ---
 
@@ -78,7 +78,7 @@ Prioritized list of epics and features.
 
 **Priority**: P2
 **Effort**: 0.5 day
-**Status**: Reproduced defect; draft spec complete; product-lens CLEAR; implementation not started (originally filed 2026-08-25)
+**Status**: Reproduced defect; spec reviewed and revised 2026-10-05; implementation not started (originally filed 2026-08-25)
 **Spec**: [Zero-insight approval](../active/research-approval-empty-insights/spec.md)
 
 **Problem**: `approve_research` returns `success=False, message="No insights provided"` when the insight list is empty (`src/agentic_mbse/pm/operations.py:664-668`). That treats "this research approved no new domain insight" as a caller error. It is a legitimate and common outcome: a round can approve a research document that registers sources, records a bounded negative, or confirms an existing insight without minting a DI. The refusal means such a document cannot be moved from `knowledge/research/pending/` to `approved/` through the tool at all, so the operator moves the file by hand — exactly the hand-editing the PM exists to remove.
@@ -532,6 +532,23 @@ Three small items left out of `L6-EXPOSE-CONSISTENCY`: V4 still reports `.` on n
 **Problem**: `update-validation` writes the ninth cell of the matched row and refuses (refusal R7) when that cell is not the parsed Status (`src/agentic_mbse/pm/operations.py:1449`). On a matrix with a custom header, where Status sits in another column, the refusal is correct but its message (`:1453-1455`) tells the user to escape pipes or move an HTML comment, which is not the cause.
 
 **Goal**: When the row parses but Status is not its ninth cell, the refusal says that Status must be the ninth column.
+
+---
+
+### [PM-APPROVE-RESEARCH-MOVE-SAFETY] `approve-research` can duplicate insights after a failed move, and silently overwrites a same-name approved file
+
+**Priority**: P3
+**Status**: Filed 2026-10-05 at `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` spec review
+**Source**: [spec review](../active/research-approval-empty-insights/spec-review.md) finding L3-4 (a) and (b)
+
+**Problem**: Two gaps in how `approve_research` (`src/agentic_mbse/pm/operations.py:910`) moves the document. Both fall short of the original contract, "File move and KNOWLEDGE.md appends are all-or-nothing" (FR-9, [PM operations spec](../completed/20260203_d4.4-operations/spec.md):181) and of the shipped claim that PM mutations "succeed fully or not at all" (`claude/skills/toolkit-awareness/SKILL.md:85`).
+
+- **(a) Failed move after appends.** The operation appends insights to `knowledge/KNOWLEDGE.md` before it moves the file (`operations.py:983-991`). If the move raises, the new DIs stay and the research stays pending, so a retry mints duplicates. Found by reading the code; affects only non-empty approvals.
+- **(b) Silent overwrite on a name collision.** If `knowledge/research/approved/` already holds a file with the same name, `shutil.move` replaces it without a warning. A probe at `c37ff53` confirmed the earlier approved file's content was replaced. Affects empty and non-empty approvals.
+
+Neither gap is made worse by `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS`, which brought only the directory-as-file case (L3-4 (c)) into its own scope.
+
+**Goal**: Decide how approval handles a failed move after appends and a name collision in `approved/`, so that neither duplicates insights nor destroys an approved document, and implement that decision with tests.
 
 ---
 
