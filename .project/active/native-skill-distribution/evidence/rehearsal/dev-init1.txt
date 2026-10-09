@@ -4,53 +4,47 @@ Preserving modified or untracked file: modeling_project/MODELING_PROCESS.md (use
 
 Initialized MBSE project in /home/reid/1cfe/agentic-mbse-nsd/.orchestrate-logs/rehearsal/ft-dev (dev mode)
 
-Symlinked (49):
-  @ .agents/skills/analyze-models/SKILL.md
+Symlinked (43):
+  @ .agents/skills/analyze-models
   @ .claude/skills/analyze-models
-  @ .agents/skills/audit-models/SKILL.md
+  @ .agents/skills/audit-models
   @ .claude/skills/audit-models
-  @ .agents/skills/backlog/SKILL.md
+  @ .agents/skills/backlog
   @ .claude/skills/backlog
-  @ .agents/skills/design-model/SKILL.md
+  @ .agents/skills/design-model
   @ .claude/skills/design-model
-  @ .agents/skills/epic-decomposition/SKILL.md
-  @ .agents/skills/formalize-intent/SKILL.md
+  @ .agents/skills/epic-decomposition
+  @ .agents/skills/formalize-intent
   @ .claude/skills/formalize-intent
-  @ .agents/skills/implement-model/SKILL.md
+  @ .agents/skills/implement-model
   @ .claude/skills/implement-model
-  @ .agents/skills/manage-sources/SKILL.md
+  @ .agents/skills/manage-sources
   @ .claude/skills/manage-sources
-  @ .agents/skills/model-validation/SKILL.md
-  @ .agents/skills/onboard/SKILL.md
+  @ .agents/skills/model-validation
+  @ .agents/skills/onboard
   @ .claude/skills/onboard
-  @ .agents/skills/orchestrate-modeling/SKILL.md
+  @ .agents/skills/orchestrate-modeling
   @ .claude/skills/orchestrate-modeling
-  @ .agents/skills/pdf-analysis/SKILL.md
-  @ .agents/skills/pdf-analysis/references/extraction-details.md
-  @ .agents/skills/pdf-analysis/scripts/extract_page.py
-  @ .agents/skills/plan-model/SKILL.md
+  @ .agents/skills/pdf-analysis
+  @ .agents/skills/plan-model
   @ .claude/skills/plan-model
-  @ .agents/skills/project-structure/SKILL.md
-  @ .agents/skills/python-debugger/SKILL.md
-  @ .agents/skills/python-debugger/references/debugging_internals.md
-  @ .agents/skills/python-debugger/scripts/claude_debugger.py
-  @ .agents/skills/quick-model/SKILL.md
+  @ .agents/skills/project-structure
+  @ .agents/skills/python-debugger
+  @ .agents/skills/quick-model
   @ .claude/skills/quick-model
-  @ .agents/skills/record-learning/SKILL.md
-  @ .agents/skills/requirements-tracking/SKILL.md
-  @ .agents/skills/research/SKILL.md
+  @ .agents/skills/record-learning
+  @ .agents/skills/requirements-tracking
+  @ .agents/skills/research
   @ .claude/skills/research
-  @ .agents/skills/review-model/SKILL.md
+  @ .agents/skills/review-model
   @ .claude/skills/review-model
-  @ .agents/skills/source-traceability/SKILL.md
-  @ .agents/skills/spec-model/SKILL.md
+  @ .agents/skills/source-traceability
+  @ .agents/skills/spec-model
   @ .claude/skills/spec-model
-  @ .agents/skills/status/SKILL.md
+  @ .agents/skills/status
   @ .claude/skills/status
-  @ .agents/skills/sysml-conventions/SKILL.md
-  @ .agents/skills/sysml-conventions/references/stencils.md
-  @ .agents/skills/toolkit-awareness/SKILL.md
-  @ .agents/skills/toolkit-awareness/references/python-environment.md
+  @ .agents/skills/sysml-conventions
+  @ .agents/skills/toolkit-awareness
   @ modeling_project/MODELING_GUIDE.md
   @ work/EPIC_GUIDE.md
   @ work/backlog/epic_template.md

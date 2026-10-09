@@ -1,5 +1,5 @@
 {
-  "project": ".orchestrate-logs/rehearsal/ft-dev",
+  "project": ".orchestrate-logs/probe/dev-folder-links",
   "versions": {
     "claude": "2.1.296 (Claude Code)",
     "codex": "codex-cli 0.160.0"
@@ -12,11 +12,8 @@
         "backlog",
         "design-model",
         "formalize-intent",
-        "html-explainer",
         "implement-model",
-        "manage-concept",
         "manage-sources",
-        "narrate-goal",
         "onboard",
         "orchestrate-modeling",
         "pdf-analysis",
@@ -25,10 +22,7 @@
         "quick-model",
         "record-learning",
         "research",
-        "research-acquire",
         "review-model",
-        "run-goal",
-        "run-study",
         "spec-model",
         "status"
       ],
@@ -47,15 +41,12 @@
         "analyze-models",
         "audit-models",
         "backlog",
-        "browser-inspect",
-        "concept-research-navigation",
         "design-model",
         "epic-decomposition",
         "formalize-intent",
         "implement-model",
         "manage-sources",
         "model-validation",
-        "narrate-goal",
         "onboard",
         "orchestrate-modeling",
         "pdf-analysis",
@@ -67,8 +58,6 @@
         "requirements-tracking",
         "research",
         "review-model",
-        "run-goal",
-        "run-study",
         "source-traceability",
         "spec-model",
         "status",
@@ -80,11 +69,3 @@
     }
   }
 }
-Traceback (most recent call last):
-  File "/home/reid/1cfe/agentic-mbse-nsd/.project/active/native-skills/discovery_probe.py", line 112, in <module>
-    main()
-  File "/home/reid/1cfe/agentic-mbse-nsd/.project/active/native-skills/discovery_probe.py", line 105, in main
-    assert len(results["clients"]["codex"]["names"]) == 25
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AssertionError
-(probe asserts failed; expected on a copy that has its own skills)

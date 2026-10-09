@@ -1,7 +1,7 @@
 {
   "project": ".orchestrate-logs/rehearsal/ft-plain",
   "versions": {
-    "claude": "2.1.295 (Claude Code)",
+    "claude": "2.1.296 (Claude Code)",
     "codex": "codex-cli 0.160.0"
   },
   "clients": {

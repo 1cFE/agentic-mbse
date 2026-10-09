@@ -39,19 +39,19 @@ Both modes adopt all 31 legacy links, keep `MODELING_PROCESS.md` with both MR-7 
 
 | Observed in the rehearsal | plain `init` | `init --dev` |
 |---|---|---|
-| Codex catalog | all 25 shipped skills, plus fusion-tea's 5 | **none of the 25 shipped skills**, only fusion-tea's 5 |
+| Codex catalog | all 25 shipped skills, plus fusion-tea's 5 | same |
 | Claude catalog | 18 shipped workflows and skills, 5 roles | same |
 | Tracked files rewritten in place | 34: 26 under `.agents/skills/`, `.agentic-mbse/{codex.md,install.json}`, 5 `.codex/agents/*.toml`, `modeling_project/MODELING_GUIDE.md` | 7: `.agentic-mbse/{codex.md,install.json}` and the 5 Codex roles |
-| Tracked files turned into absolute links | none | 33: all 31 files under `.agents/skills/`, `MODELING_GUIDE.md`, `work/EPIC_GUIDE.md`, each pointing into `/home/reid/1cfe/agentic-mbse/` |
+| Tracked files under `.agents/skills/` | rewritten in place (counted above) | all 31 deleted and replaced by 25 untracked absolute folder links, one per shipped skill, each `.agents/skills/<n>` → `/home/reid/1cfe/agentic-mbse/skills/<n>` |
+| Other tracked files turned into absolute links | none | 2: `MODELING_GUIDE.md`, `work/EPIC_GUIDE.md`, pointing into `/home/reid/1cfe/agentic-mbse/project_templates/` |
 | New untracked file | `.agentic-mbse/claude.md` | same |
 | Prompts | 2: `MODELING_PROCESS.md`, `work/backlog/epic_template.md` | 1: `MODELING_PROCESS.md` |
 | Hook | installed copy | link into the checkout's `hooks/` |
 | Picking up later skill or template edits | another re-init | live, for skills and templates only; agents and adapters are copies [INHERITED: spec Open Questions] |
+| A file added inside a shipped skill's folder | stays in fusion-tea; a re-init keeps it | lands in the agentic-mbse checkout's `skills/<n>/`, because the folder is a link |
 | Can run before the checkout moves | yes | no |
 
-**Why Codex sees nothing under `--dev`.** `--dev` makes each `.agents/skills/<n>/SKILL.md` a file link to an absolute path in the checkout. Codex 0.160.0 lists no such skill; it does list fusion-tea's own skills, which are relative directory links inside the project. The behaviour predates this item and is filed as a follow-up. Until it is fixed, `--dev` leaves Codex in fusion-tea without the shipped workflows, and `init --dev` prints a warning saying so (added after the rehearsal, so the rehearsal's raw output does not show it).
-
-**Recommendation (agent-grade, `spec.md:99`): plain `init`.** fusion-tea commits its Codex install. `--dev` would turn 33 of those tracked files into machine-specific links, and the rehearsal shows Codex then loses every shipped skill. fusion-tea's Codex adapter also says these instruction assets are separate from the pinned runtime (`codex.md:11`). Ratified decision 3 named `--dev`; this evidence counts against it, and the choice is yours.
+**Recommendation (agent-grade, `spec.md:99`): plain `init`.** fusion-tea commits its Codex install. `--dev` would replace 31 of those tracked files with 25 links to absolute paths on this machine, and turn 2 tracked templates into such links, so every clone of fusion-tea would carry links that resolve only here. fusion-tea's Codex adapter also says these instruction assets are separate from the pinned runtime (`codex.md:11`). Both modes now give Codex and Claude every shipped skill, so the choice rests on what fusion-tea should commit. Ratified decision 3 named `--dev`; this evidence counts against it, and the choice is yours.
 
 Commands:
 
@@ -73,9 +73,9 @@ The rehearsal saw no other prompt.
 - Check `git status`, not the report's Updated count. The installer lists every managed file it rewrites as Updated even when the bytes are unchanged (a known reporting quirk; a second run shows Updated (46) and changes nothing).
 - `git status` should match the rehearsal's:
   - Plain: the 34 modified files in the step 3 table, and `?? .agentic-mbse/claude.md` (rehearsal: `evidence/rehearsal/plain-git-status.txt`).
-  - `--dev`: 33 typechanges to links, 7 modified files, and `?? .agentic-mbse/claude.md` (`evidence/rehearsal/dev-git-status.txt`).
+  - `--dev`: 31 deleted files under `.agents/skills/`, 25 untracked folder links `?? .agents/skills/<n>`, 2 typechanges to links (`MODELING_GUIDE.md`, `work/EPIC_GUIDE.md`), 7 modified files, and `?? .agentic-mbse/claude.md` (`evidence/rehearsal/dev-git-status.txt`). `git add -A .agents/skills` records the 25 links in place of the 31 files.
 - `modeling_project/MODELING_PROCESS.md` still has its two MR-7 lines (`grep -c MR-7` prints 2).
-- Claude Code lists the workflows. Under plain `init`, Codex lists all 25 shipped skills.
+- Claude Code lists the workflows, and Codex lists all 25 shipped skills, in either mode.
 - Commit the result, including `.agentic-mbse/claude.md`.
 
 ## This repo

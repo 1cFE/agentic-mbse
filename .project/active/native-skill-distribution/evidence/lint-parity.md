@@ -4,7 +4,7 @@
 
 **Baseline:** `main` at `06ac41d`, exported with `git archive` to `.orchestrate-logs/lint-baseline/main` and synced with `uv sync --frozen` (no optional extras), plan step 1.2. Raw outputs: `.orchestrate-logs/lint-baseline/{ruff-check,ruff-format,mypy}-main.txt`.
 
-**Branch:** the integration worktree with this item's changes through the Phase 8 docs step, re-run after the audit fixes (2026-10-09) with the same file list and the same numbers below. Raw outputs: `.orchestrate-logs/lint-baseline/*-branch*.txt`. Script: `.orchestrate-logs/lint-baseline/parity.py`, plus `compare_mypy.py` for the same-environment mypy comparison.
+**Branch:** the integration worktree with this item's changes through the Phase 8 docs step, re-run after the audit fixes and again after plan Phase 9 (both 2026-10-09), each with the same file list and the same numbers below. Raw outputs: `.orchestrate-logs/lint-baseline/*-branch*.txt`. Script: `.orchestrate-logs/lint-baseline/parity.py`, plus `compare_mypy.py` for the same-environment mypy comparison.
 
 ## Files this item adds or edits (vs `main`)
 

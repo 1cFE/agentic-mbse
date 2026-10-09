@@ -20,4 +20,4 @@ unchanged: tests/conftest.py
 unchanged: tests/models/test_example.py
 unchanged: .claude/settings.json
 unchanged: .codex/config.toml
-work/backlog/epic_template.md: lrwxrwxrwx 1 reid reid 76 Oct  9 12:00 .orchestrate-logs/rehearsal/ft-dev/work/backlog/epic_template.md -> /home/reid/1cfe/agentic-mbse-nsd/project_templates/epic_template.md.template
+work/backlog/epic_template.md: lrwxrwxrwx 1 reid reid 76 Oct  9 15:02 .orchestrate-logs/rehearsal/ft-dev/work/backlog/epic_template.md -> /home/reid/1cfe/agentic-mbse-nsd/project_templates/epic_template.md.template

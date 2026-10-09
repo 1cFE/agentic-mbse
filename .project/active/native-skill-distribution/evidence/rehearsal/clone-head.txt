@@ -1,1 +1,1 @@
-clone HEAD: 2e04752 Plan records Phases 6-8 so far; probes and rehearsal wait on an orchestrator run
+clone HEAD: a42c4c9 Link each bundle folder under --dev, so Codex lists every shipped skill
