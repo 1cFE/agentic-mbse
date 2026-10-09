@@ -1,5 +1,7 @@
 """Tests for CLI module."""
 
+import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -7,14 +9,14 @@ import pytest
 import tomllib
 
 from agentic_mbse.cli import (
-    DEV_CODEX_WARNING,
     cmd_init,
     cmd_install_commands,
     cmd_validate,
     main,
 )
+from agentic_mbse.cli.installation import MANIFEST
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
-from tests.helpers.shipped import AGENTS, HOOKS, REPO_ROOT, SKILLS, kind
+from tests.helpers.shipped import AGENTS, HOOKS, REPO_ROOT, SKILLS, bundle_files, kind
 
 WORKFLOW = next(skill for skill in SKILLS if kind(skill) == "workflow")
 
@@ -417,25 +419,30 @@ class TestCLIIntegration:
 class TestCmdInitDevMode:
     """Tests for init --dev mode."""
 
-    def test_dev_creates_symlinks_for_commands(self, tmp_path):
-        """--dev creates symlinks for command files."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
-        result = cmd_init(args)
+    @pytest.mark.parametrize("assistant", ["claude", "codex", "both"])
+    @pytest.mark.parametrize("link_mode", ["symlink", "copy"])
+    def test_dev_links_each_bundle_folder_to_the_checkout(self, tmp_path, assistant, link_mode):
+        """Codex lists a linked skill folder but skips a SKILL.md file link, so --dev links folders."""
+        args = MockArgs(
+            path=str(tmp_path), force=False, dev=True, assistant=assistant, link_mode=link_mode
+        )
+        assert cmd_init(args) == EXIT_SUCCESS
 
-        assert result == EXIT_SUCCESS
-        cmd_path = tmp_path / ".agents" / "skills" / WORKFLOW / "SKILL.md"
-        assert cmd_path.is_symlink()
-        assert cmd_path.resolve() == REPO_ROOT / "skills" / WORKFLOW / "SKILL.md"
-
-    def test_dev_symlinks_orchestrator_command(self, tmp_path):
-        """--dev links the orchestrator from the source command directory."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
-        result = cmd_init(args)
-
-        assert result == EXIT_SUCCESS
-        command_path = tmp_path / ".agents" / "skills" / "orchestrate-modeling" / "SKILL.md"
-        assert command_path.is_symlink()
-        assert command_path.resolve().name == "SKILL.md"
+        files = json.loads((tmp_path / MANIFEST).read_text())["files"]
+        for skill in SKILLS:
+            shared = tmp_path / ".agents" / "skills" / skill
+            source = REPO_ROOT / "skills" / skill
+            assert os.readlink(shared) == str(source)
+            assert files[f".agents/skills/{skill}"] == f"link:{source}"
+            assert not [key for key in files if key.startswith(f".agents/skills/{skill}/")]
+            assert not (shared / "SKILL.md").is_symlink()
+            if assistant == "codex":
+                continue
+            alias = tmp_path / ".claude" / "skills" / skill
+            if link_mode == "symlink":
+                assert os.readlink(alias) == os.path.join("..", "..", ".agents", "skills", skill)
+            for inside in bundle_files(skill):
+                assert (alias / inside).resolve() == source / inside
 
     def test_dev_creates_symlinks_for_agents(self, tmp_path):
         """--dev renders agent files rather than linking them: they need resolved doc paths."""
@@ -445,16 +452,6 @@ class TestCmdInitDevMode:
         for agent in AGENTS:
             agent_path = tmp_path / ".claude" / "agents" / f"{agent}.md"
             assert agent_path.is_file() and not agent_path.is_symlink()
-
-    def test_dev_creates_symlinks_for_skills(self, tmp_path):
-        """--dev creates symlinks for skill directories."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
-        cmd_init(args)
-
-        for skill in SKILLS:
-            skill_path = tmp_path / ".claude" / "skills" / skill
-            assert skill_path.is_symlink()
-            assert skill_path.is_dir()
 
     def test_dev_creates_symlinks_for_hooks(self, tmp_path):
         """--dev links each hook to the source checkout's hooks/ folder."""
@@ -467,16 +464,18 @@ class TestCmdInitDevMode:
             assert hook_path.resolve() == REPO_ROOT / "hooks" / hook
 
     @pytest.mark.parametrize("assistant", ["claude", "codex", "both"])
-    @pytest.mark.parametrize("dev", [False, True])
-    def test_dev_warns_that_codex_cannot_see_linked_skills(self, tmp_path, capsys, dev, assistant):
-        """Codex lists no skill that --dev links into the source checkout, so init says so."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=dev, assistant=assistant)
-        assert cmd_init(args) == EXIT_SUCCESS
-        output = capsys.readouterr().out
-        codex_hidden = dev and assistant != "claude"
-        assert (DEV_CODEX_WARNING in output) == codex_hidden
-        # Without the warning's caveat, the closing steps would point Codex at $onboard.
-        assert ("Run /onboard in Claude or $onboard in Codex" in output) == (not codex_hidden)
+    def test_next_steps_are_the_same_with_and_without_dev(self, tmp_path, capsys, assistant):
+        """Both tools list every --dev skill, so --dev closes with the same steps as plain init."""
+        closing = {}
+        for dev in (False, True):
+            target = tmp_path / f"dev-{dev}"
+            target.mkdir()
+            args = MockArgs(path=str(target), force=False, dev=dev, assistant=assistant)
+            assert cmd_init(args) == EXIT_SUCCESS
+            output = capsys.readouterr().out
+            closing[dev] = output[output.index("Next steps:") :]
+        assert closing[True] == closing[False]
+        assert "Run /onboard in Claude or $onboard in Codex" in closing[True]
 
     def test_dev_refused_without_source_checkout(self, tmp_path, monkeypatch, capsys):
         """Packaged data has skills/ too, so only src/agentic_mbse marks a source checkout."""
@@ -510,36 +509,36 @@ class TestCmdInitDevMode:
         assert not (tmp_path / ".claude" / "settings.json").is_symlink()
         assert not (tmp_path / "README.md").is_symlink()
 
-    def test_dev_idempotent(self, tmp_path):
-        """Running --dev twice succeeds and updates symlinks."""
+    def test_dev_idempotent(self, tmp_path, capsys):
+        """A second --dev run keeps every folder link and preserves or copies nothing."""
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        assert cmd_init(args) == EXIT_SUCCESS
+        capsys.readouterr()
 
-        # First run
-        result1 = cmd_init(args)
-        assert result1 == EXIT_SUCCESS
+        assert cmd_init(args) == EXIT_SUCCESS
+        output = capsys.readouterr().out
+        assert "Preserving" not in output
+        assert "instead of linking it" not in output
+        for skill in SKILLS:
+            assert os.readlink(tmp_path / ".agents" / "skills" / skill) == str(
+                REPO_ROOT / "skills" / skill
+            )
 
-        # Second run
-        result2 = cmd_init(args)
-        assert result2 == EXIT_SUCCESS
+    def test_dev_over_plain_install_links_every_bundle_folder(self, tmp_path, capsys):
+        """--dev replaces each installer-owned bundle copy with one folder link."""
+        assert cmd_init(MockArgs(path=str(tmp_path), force=False, dev=False)) == EXIT_SUCCESS
+        for skill in SKILLS:
+            assert not (tmp_path / ".agents" / "skills" / skill).is_symlink()
+        capsys.readouterr()
 
-        # Symlinks should still work
-        cmd_path = tmp_path / ".agents" / "skills" / WORKFLOW / "SKILL.md"
-        assert cmd_path.is_symlink()
-
-    def test_dev_replaces_regular_file_with_symlink(self, tmp_path):
-        """--dev replaces existing regular files with symlinks."""
-        # First init without dev
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
-        cmd_init(args)
-
-        cmd_path = tmp_path / ".agents" / "skills" / WORKFLOW / "SKILL.md"
-        assert not cmd_path.is_symlink()  # Regular file
-
-        # Second init with dev
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
-        cmd_init(args)
-
-        assert cmd_path.is_symlink()  # Now a symlink
+        assert cmd_init(MockArgs(path=str(tmp_path), force=False, dev=True)) == EXIT_SUCCESS
+        output = capsys.readouterr().out
+        assert "Preserving" not in output
+        assert "instead of linking it" not in output
+        for skill in SKILLS:
+            assert os.readlink(tmp_path / ".agents" / "skills" / skill) == str(
+                REPO_ROOT / "skills" / skill
+            )
 
     def test_without_dev_copies_files(self, tmp_path):
         """Init without --dev still copies files (regression test)."""
@@ -547,6 +546,7 @@ class TestCmdInitDevMode:
         cmd_init(args)
 
         cmd_path = tmp_path / ".agents" / "skills" / WORKFLOW / "SKILL.md"
+        assert not cmd_path.parent.is_symlink()
         assert not cmd_path.is_symlink()
         assert cmd_path.exists()
 

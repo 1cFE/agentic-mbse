@@ -229,12 +229,11 @@ class Installer:
                 print(f"Preserved retired resource {key}: local modifications")
                 self.actions["skipped"].append(key)
 
-    def alias(self, source: Path, relative: str) -> bool:
-        """Create a relative directory alias if its destination can be safely replaced."""
+    def link_directory(self, relative: str, link: str) -> bool:
+        """Make an entry a directory link with text `link`, if it can be safely replaced."""
         if not self.parents(relative):
             return False
         path = self.target / relative
-        link = os.path.relpath(source, path.parent)
         if path.is_dir() and not path.is_symlink():
             entries = [p for p in path.rglob("*") if not p.is_dir() or p.is_symlink()]
             empty_dirs = [
@@ -363,15 +362,37 @@ def skill_bundles(skills: Path) -> list[Path]:
     return sorted(entry.parent for entry in skills.glob("*/SKILL.md") if entry.is_file())
 
 
+def install_dev_bundle(installer: Installer, source: Path) -> bool:
+    """Install a shared bundle for --dev as one folder link to its source checkout folder.
+
+    Codex lists a linked skill folder but skips a SKILL.md that is a file link. So a real folder
+    the installer cannot replace, because it holds owner files or edits, gets a plain copy.
+    """
+    relative = f".agents/skills/{source.name}"
+    if installer.link_directory(relative, str(source.resolve())):
+        return True
+    destination = installer.target / relative
+    if not destination.is_dir() or destination.is_symlink():
+        return False
+    if not installer.copy_tree(source, relative):
+        return False
+    print(
+        f"Copied {relative} instead of linking it to the source checkout: "
+        "the installer does not own everything in that folder"
+    )
+    return True
+
+
 def expose_to_claude(installer: Installer, source: Path, *, link_mode: str, dev: bool) -> None:
     """Give Claude a skill alias for an installed bundle, once its legacy command is retired."""
     if not installer.retire_command(source.name):
         return
     alias = f".claude/skills/{source.name}"
+    destination = installer.target / alias
+    shared = installer.target / ".agents/skills" / source.name
     if link_mode == "copy":
         installer.copy_tree(source, alias, dev=dev)
-    elif not installer.alias(installer.target / ".agents/skills" / source.name, alias):
-        destination = installer.target / alias
+    elif not installer.link_directory(alias, os.path.relpath(shared, destination.parent)):
         if destination.is_dir() and not destination.is_symlink():
             installer.copy_tree(source, alias, dev=dev)
 
@@ -382,7 +403,10 @@ def install_assistants(
     """Install shared bundles and selected native roles, instructions, and inactive hooks."""
     runtimes = ("claude", "codex") if assistant == "both" else (assistant,)
     for source in skill_bundles(data / "skills"):
-        shared_ready = installer.copy_tree(source, f".agents/skills/{source.name}", dev=dev)
+        if dev:
+            shared_ready = install_dev_bundle(installer, source)
+        else:
+            shared_ready = installer.copy_tree(source, f".agents/skills/{source.name}")
         if shared_ready and "claude" in runtimes:
             expose_to_claude(installer, source, link_mode=link_mode, dev=dev)
     for runtime in runtimes:

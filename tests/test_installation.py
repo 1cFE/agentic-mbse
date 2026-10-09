@@ -175,12 +175,91 @@ def test_copy_link_dev_transitions_preserve_owner_additions(tmp_path):
     untouched = tmp_path / ".claude/skills" / WORKFLOW
     assert untouched.is_symlink()
     cmd_init(Namespace(path=str(tmp_path), force=False, dev=True))
-    canonical = tmp_path / ".agents/skills" / WORKFLOW / "SKILL.md"
+    canonical = tmp_path / ".agents/skills" / WORKFLOW
     assert canonical.is_symlink()
     init(tmp_path, link_mode="copy")
     assert not canonical.is_symlink()
+    assert not (canonical / "SKILL.md").is_symlink()
     assert not untouched.is_symlink()
     assert (alias / "owner.md").read_text() == "keep"
+
+
+def test_dev_over_per_file_dev_install_links_each_folder(tmp_path, monkeypatch, capsys):
+    """The earlier --dev made a real folder of file links per bundle; each becomes one link."""
+    data = fake_data_root(tmp_path)
+    monkeypatch.setattr("agentic_mbse.cli._get_data_root", lambda: data)
+    target = tmp_path / "target"
+    target.mkdir()
+    earlier = Installer(target, force=False, decide=lambda path: "skip")
+    for name in SKILLS:
+        earlier.copy_tree(data / "skills" / name, f".agents/skills/{name}", dev=True)
+    earlier.save()
+    assert (target / ".agents/skills" / WORKFLOW / "SKILL.md").is_symlink()
+
+    cmd_init(Namespace(path=str(target), force=False, dev=True))
+    assert "instead of linking it" not in capsys.readouterr().out
+    files = json.loads((target / MANIFEST).read_text())["files"]
+    for name in SKILLS:
+        source = data / "skills" / name
+        assert os.readlink(target / ".agents/skills" / name) == str(source.resolve())
+        assert not [key for key in files if key.startswith(f".agents/skills/{name}/")]
+        # Replacing the folder of links removed only the links, never what they named.
+        for inside in bundle_files(name):
+            assert (source / inside).read_bytes() == (
+                REPO_ROOT / "skills" / name / inside
+            ).read_bytes()
+
+
+@pytest.mark.parametrize("force", [False, True])
+def test_dev_copies_a_bundle_folder_holding_owner_files(tmp_path, capsys, force):
+    """An owner file or edit keeps its bundle a real folder: a plain copy, never file links."""
+    init(tmp_path)
+    added = tmp_path / ".agents/skills" / WORKFLOW / "owner.md"
+    added.write_text("owner addition")
+    edited = tmp_path / ".agents/skills" / OTHER_WORKFLOW / "SKILL.md"
+    edited.write_text("owner edit")
+    capsys.readouterr()
+
+    cmd_init(Namespace(path=str(tmp_path), force=force, dev=True))
+    output = capsys.readouterr().out
+    assert added.read_text() == "owner addition"
+    assert (edited.read_text() == "owner edit") != force
+    for name in SKILLS:
+        shared = tmp_path / ".agents/skills" / name
+        blocked = name in (WORKFLOW, OTHER_WORKFLOW)
+        assert shared.is_symlink() != blocked
+        assert (f"Copied .agents/skills/{name} instead of linking it" in output) == blocked
+        assert not (shared / "SKILL.md").is_symlink()
+        if blocked:
+            for inside in bundle_files(name):
+                assert not (shared / inside).is_symlink()
+        assert (tmp_path / ".claude/skills" / name / "SKILL.md").is_file()
+    assert (tmp_path / ".agents/skills" / WORKFLOW / "SKILL.md").read_bytes() == (
+        REPO_ROOT / "skills" / WORKFLOW / "SKILL.md"
+    ).read_bytes()
+
+
+def test_plain_init_over_dev_copies_every_bundle(tmp_path, monkeypatch):
+    """Plain init replaces each --dev folder link with a copy, without writing through it."""
+    data = fake_data_root(tmp_path)
+    monkeypatch.setattr("agentic_mbse.cli._get_data_root", lambda: data)
+    target = tmp_path / "target"
+    target.mkdir()
+    cmd_init(Namespace(path=str(target), force=False, dev=True))
+    assert (target / ".agents/skills" / WORKFLOW).is_symlink()
+    sources = sorted((data / "skills").rglob("*"))
+
+    init(target)
+    assert sorted((data / "skills").rglob("*")) == sources
+    files = json.loads((target / MANIFEST).read_text())["files"]
+    for name in SKILLS:
+        shared = target / ".agents/skills" / name
+        assert not shared.is_symlink()
+        assert f".agents/skills/{name}" not in files
+        for inside in bundle_files(name):
+            assert not (shared / inside).is_symlink()
+            assert (shared / inside).read_bytes() == (data / "skills" / name / inside).read_bytes()
+            assert f".agents/skills/{name}/{inside}" in files
 
 
 def test_native_owner_configuration_preserved_with_force(tmp_path):
@@ -296,10 +375,17 @@ def test_inline_codex_agents_table_is_not_corrupted(tmp_path, capsys):
     assert tomllib.loads(config.read_text())["agents"]["owner"]["description"] == "Owner role"
 
 
-@pytest.mark.parametrize("link_mode", ["symlink", "copy"])
-@pytest.mark.parametrize("dev", [False, True])
+# Under --dev the shared folder is one link to the source, so only Claude's copy has files to retire.
+@pytest.mark.parametrize(
+    ("dev", "link_mode", "copied"),
+    [
+        (False, "symlink", ".agents/skills"),
+        (False, "copy", ".agents/skills"),
+        (True, "copy", ".claude/skills"),
+    ],
+)
 def test_bundle_retirement_prunes_only_unchanged_resources(
-    tmp_path, monkeypatch, capsys, link_mode, dev
+    tmp_path, monkeypatch, capsys, dev, link_mode, copied
 ):
     data = fake_data_root(tmp_path)
     source = data / "skills" / WORKFLOW
@@ -310,7 +396,7 @@ def test_bundle_retirement_prunes_only_unchanged_resources(
     monkeypatch.setattr("agentic_mbse.cli._get_data_root", lambda: data)
     args = Namespace(path=str(target), force=False, dev=dev, link_mode=link_mode)
     cmd_init(args)
-    bundle = f".agents/skills/{WORKFLOW}"
+    bundle = f"{copied}/{WORKFLOW}"
     canonical = target / bundle
     edited = canonical / "edited.md"
     # Replace a dev link to make a target-local edit without changing the source.
