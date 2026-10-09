@@ -1,0 +1,21 @@
+{
+  "claude": "2.1.296 (Claude Code)",
+  "cases": {
+    "ca-today-dev": {
+      "shape": "alias -> .agents/skills/n (real dir, SKILL.md file link out)",
+      "listed": true
+    },
+    "cb-alias-to-dirlink": {
+      "shape": "alias -> .agents/skills/n, which is an absolute folder link out (proposed --dev)",
+      "listed": true
+    },
+    "cc-dir-abs-out": {
+      "shape": ".claude/skills/n absolute folder link out",
+      "listed": true
+    },
+    "cd-real": {
+      "shape": "real dir",
+      "listed": true
+    }
+  }
+}

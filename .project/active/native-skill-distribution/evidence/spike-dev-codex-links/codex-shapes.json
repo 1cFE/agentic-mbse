@@ -1,0 +1,73 @@
+{
+  "codex": "codex-cli 0.160.0",
+  "cases": {
+    "a-real": {
+      "shape": "real dir, real SKILL.md",
+      "listed": true,
+      "scope": "repo",
+      "path": "/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/77343463-933a-41d0-94f6-20fe0fd4b4a2/scratchpad/codex-spike/run1/project/.agents/skills/a-real/SKILL.md"
+    },
+    "b-dir-rel-in": {
+      "shape": "dir link, relative, to real dir in .claude/skills (fusion-tea's own shape)",
+      "listed": true,
+      "scope": "repo",
+      "path": "/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/77343463-933a-41d0-94f6-20fe0fd4b4a2/scratchpad/codex-spike/run1/project/.claude/skills/b-dir-rel-in/SKILL.md"
+    },
+    "c-file-abs-out": {
+      "shape": "SKILL.md file link, absolute, outside project (today's --dev)",
+      "listed": false,
+      "scope": null,
+      "path": null
+    },
+    "d-file-rel-out": {
+      "shape": "SKILL.md file link, relative, outside project",
+      "listed": false,
+      "scope": null,
+      "path": null
+    },
+    "e-file-abs-in": {
+      "shape": "SKILL.md file link, absolute, to real file in .claude/skills",
+      "listed": false,
+      "scope": null,
+      "path": null
+    },
+    "f-file-rel-in": {
+      "shape": "SKILL.md file link, relative, to real file in .claude/skills",
+      "listed": false,
+      "scope": null,
+      "path": null
+    },
+    "g-dir-abs-out": {
+      "shape": "dir link, absolute, outside project",
+      "listed": true,
+      "scope": "repo",
+      "path": "/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/77343463-933a-41d0-94f6-20fe0fd4b4a2/scratchpad/codex-spike/run1/checkout/skills/g-dir-abs-out/SKILL.md"
+    },
+    "h-dir-rel-out": {
+      "shape": "dir link, relative, outside project",
+      "listed": true,
+      "scope": "repo",
+      "path": "/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/77343463-933a-41d0-94f6-20fe0fd4b4a2/scratchpad/codex-spike/run1/checkout/skills/h-dir-rel-out/SKILL.md"
+    },
+    "i-dir-abs-in": {
+      "shape": "dir link, absolute, to real dir in .claude/skills",
+      "listed": true,
+      "scope": "repo",
+      "path": "/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/77343463-933a-41d0-94f6-20fe0fd4b4a2/scratchpad/codex-spike/run1/project/.claude/skills/i-dir-abs-in/SKILL.md"
+    },
+    "j-chain-dir": {
+      "shape": ".agents dir link -> ../../.claude/skills/n, which is an absolute dir link outside",
+      "listed": true,
+      "scope": "repo",
+      "path": "/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/77343463-933a-41d0-94f6-20fe0fd4b4a2/scratchpad/codex-spike/run1/checkout/skills/j-chain-dir/SKILL.md"
+    },
+    "k-chain-file": {
+      "shape": ".agents dir link -> ../../.claude/skills/n (real dir) whose SKILL.md is an absolute file link outside",
+      "listed": false,
+      "scope": null,
+      "path": null
+    }
+  },
+  "errors": [],
+  "rpc_error": null
+}
