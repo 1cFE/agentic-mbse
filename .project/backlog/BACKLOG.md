@@ -19,7 +19,7 @@ Prioritized list of epics and features.
 | Item | Status | Evidence / next step |
 |------|--------|----------------------|
 | `L6-LIBRARY-ALIAS-SOURCE` | [AGENT] Filed 2026-10-04 at `L6-EXPOSE-CONSISTENCY` close; recorded limitation, not a regression | An EXPOSE alias to an attribute of a part typed by a `library/` part definition passes Level 6 even when that source value is unset, because completeness path-filters the source declaration and skips the alias ([audit](../completed/20261004_l6-expose-consistency/audit.md) advisory; design R4/B4). How required values on referenced library parts get verified is undecided |
-| `NATIVE-DISTRIBUTION-RECONCILIATION` | [AGENT] Draft residual-work spec; product-lens CLEAR | [Distribution spec](../active/native-skill-distribution/spec.md); existing migration requirements reused by reference |
+| `NATIVE-DISTRIBUTION-RECONCILIATION` | [AGENT] Draft residual-work spec; product-lens CLEAR; adopted 2026-10-06 as Item 1 of `WRAP-SPLIT` (P1) | [Distribution spec](../active/native-skill-distribution/spec.md); [epic](epic_wrap-split.md) |
 | `CMDREF-001` | [INHERITED: epic_command-refresh.md] P2 draft; scope reconciliation needed | September simplification overlaps this July proposal; inspect remaining objectives before decomposition |
 | `C4-PLAIN-SUBTYPE-DOC-TEST` | [INHERITED: ../active/c4-plain-subtype-instantiation/spec.md] Unimplemented draft | Correct stale subtype-chain docstring and add the missing behavior test; current behavior is already deliberate |
 
@@ -69,6 +69,29 @@ Prioritized list of epics and features.
 **Problem**: The `pdf-analysis` skill ships a 3-tier extraction pipeline but Tier 2 (Docling MCP) requires manual setup. Users get references to `mcp__docling__*` tools that don't exist out of the box.
 
 **Goal**: `agentic-mbse init` auto-configures Docling MCP server. Revisit design to align with v4 pipeline architecture and current best practices.
+
+---
+
+### [WRAP-SPLIT] Wrap the agentic-mbse / fusion-tea split
+
+**Priority**: P1
+**Effort**: ~9 days (5 items + 0.5 d integration)
+**Status**: Draft epic; decomposition approved by owner 2026-10-06; research seam ruled in by owner 2026-10-06 and added as Item 5 on 2026-10-08; product-lens CLEAR
+**Epic**: `.project/backlog/epic_wrap-split.md`
+**Research**: `.project/research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md`
+
+**Problem**: The goal and study layers (`run-goal`, `narrate-goal`, `run-study`) live only in fusion-tea; MR-7's enforcement sits in a tool-owned file that re-init deletes; agentic-mbse's shipped surfaces carry consumer-specific pointers and machine paths; the research acquisition seam the goal layer delegates to exists only as fusion-tea scripts; the native installer branch is 57 commits behind `main`'s content.
+
+**Goal**: Each skill installs from its owning repo (goal layer from agentic-mbse, study layer from sysml-codegen); the design-choice principle ships generally; shipped surfaces read as general rules with fusion kept only as labelled examples; nothing removed is lost to fusion-tea.
+
+**Owner decisions**: study layer and tools go to sysml-codegen; the research seam ports to agentic-mbse; fusion vocabulary acceptable as examples; no loss of information for fusion-tea (migration ledger).
+
+**Items**:
+- [ ] Item 1: Reconcile native installer source with `main` (adopts `NATIVE-DISTRIBUTION-RECONCILIATION`)
+- [ ] Item 2: Port the goal layer and the design-choice principle
+- [ ] Item 3: Move the study layer to sysml-codegen (external work, tracked here)
+- [ ] Item 4: Read-through sweep of shipped surfaces
+- [ ] Item 5: Port the research acquisition seam (spec in progress 2026-10-08)
 
 ---
 
