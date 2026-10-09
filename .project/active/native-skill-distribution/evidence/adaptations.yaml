@@ -1,0 +1,156 @@
+# Runtime adaptations: the closed list of body changes that make main's text work
+# under both Claude Code and Codex (SC2, design D4 and Appendix A). Reviewed once.
+#
+# Semantics, implemented independently by `reconcile.py write` and `reconcile.py check`:
+# - `file` is the path in the source tree after the path rule (claude/commands/<n>.md ->
+#   skills/<n>/SKILL.md, claude/skills/<n>/** -> skills/<n>/**, claude/agents/<n>.md ->
+#   agents/<n>.md; templates keep their paths).
+# - An entry applies to the body only. The body is the text below the frontmatter when a
+#   file starts with "---\n" (everything after the next line equal to "---"), otherwise the
+#   whole file. Frontmatter is never adapted; the envelope alone governs it.
+# - Entries apply in list order. `count` is the exact number of occurrences of `old` in the
+#   body at the moment the entry applies. Every occurrence is replaced by `new`.
+# - `origin` is `branch` (the native branch's own adaptation, copied verbatim) or `item1`
+#   (added by this item). `review: true` marks an entry the one-time review must judge.
+
+- id: A1
+  file: skills/onboard/SKILL.md
+  old: "**`CLAUDE.md`**"
+  new: "**`modeling_project/OVERVIEW.md` and the current assistant’s entry file (`CLAUDE.md` or `AGENTS.md`)**"
+  count: 1
+  why: >-
+    The installer's entry files point to OVERVIEW.md, so it is the one context file both
+    runtimes read; CLAUDE.md alone is Claude's entry file. Called a content change by the
+    spec review; kept as an adaptation by design.
+  origin: branch
+  review: true
+
+- id: A2
+  file: skills/onboard/SKILL.md
+  old: "`README.md` and `CLAUDE.md`"
+  new: "`README.md` and the current assistant’s entry file"
+  count: 1
+  why: Codex reads AGENTS.md, not CLAUDE.md.
+  origin: branch
+
+- id: A3
+  file: skills/onboard/SKILL.md
+  old: "in text, not AskUserQuestion"
+  new: "in text, not the host question interface"
+  count: 1
+  why: AskUserQuestion is a Claude tool name.
+  origin: branch
+
+- id: A4
+  file: skills/onboard/SKILL.md
+  old: "If sources have file paths, offer to add read permissions to `.claude/settings.json`. See **toolkit-awareness** skill for permission path format rules (use `~/path` format, not absolute paths)."
+  new: "If sources have file paths, follow the current assistant adapter’s external-source instructions and offer the relevant read-access setup."
+  count: 1
+  why: Read permissions live in .claude/settings.json only under Claude; the adapters say how each runtime grants access.
+  origin: branch
+
+- id: A5
+  file: skills/manage-sources/SKILL.md
+  old: "(and optionally `.claude/settings.json` permissions)"
+  new: "(and optionally native read-access settings)"
+  count: 1
+  why: .claude/settings.json exists only under Claude.
+  origin: branch
+
+- id: A6
+  file: skills/manage-sources/SKILL.md
+  old: "AskUserQuestion"
+  new: "the host question interface"
+  count: 4
+  why: AskUserQuestion is a Claude tool name. Its allowed-tools grant is frontmatter and stays.
+  origin: branch
+
+- id: A7
+  file: skills/manage-sources/SKILL.md
+  old: "**Offer permissions for local paths.** If the source has a local file path, offer to add read permissions to `.claude/settings.json`. See the **toolkit-awareness** skill for permission path format rules. Keep the permission workflow (read existing settings, merge, write) but don't inline the format rules here."
+  new: "**Offer access for local paths.** Follow the current assistant adapter’s external-source instructions. In Claude, offer to merge read permissions into existing settings. In Codex, check access under the active sandbox and use its approval path when needed; preserve owner configuration."
+  count: 1
+  why: The permission workflow is Claude-only; Codex grants access through its sandbox.
+  origin: branch
+
+- id: A8
+  file: skills/pdf-analysis/SKILL.md
+  old: ".claude/skills/pdf-analysis/"
+  new: ".agents/skills/pdf-analysis/"
+  count: 6
+  why: The canonical install is .agents/skills/ for both runtimes; .claude/skills/ exists only under Claude.
+  origin: branch
+
+- id: A9
+  file: skills/pdf-analysis/references/extraction-details.md
+  old: ".claude/skills/pdf-analysis/"
+  new: ".agents/skills/pdf-analysis/"
+  count: 3
+  why: Same as A8.
+  origin: branch
+
+- id: A10
+  file: skills/python-debugger/SKILL.md
+  old: "python scripts/claude_debugger.py"
+  new: "uv run python .agents/skills/python-debugger/scripts/claude_debugger.py"
+  count: 7
+  why: The script path is relative to the bundle, not the project root the agent runs from; name the canonical install path.
+  origin: branch
+
+- id: A11
+  file: skills/record-learning/SKILL.md
+  old: "AskUserQuestion"
+  new: "the host question interface"
+  count: 2
+  why: AskUserQuestion is a Claude tool name. Its allowed-tools grant is frontmatter and stays.
+  origin: branch
+
+- id: A12
+  file: skills/record-learning/SKILL.md
+  old: "(via Skill tool)"
+  new: "(through the host’s skill-loading interface)"
+  count: 1
+  why: The Skill tool is Claude's.
+  origin: branch
+
+- id: A13
+  file: skills/sysml-conventions/references/stencils.md
+  old: "Agents have read permissions via `.claude/settings.json`."
+  new: "Consult the current assistant adapter in `.agentic-mbse/` for external-document access."
+  count: 1
+  why: .claude/settings.json exists only under Claude.
+  origin: branch
+
+- id: A14
+  file: skills/toolkit-awareness/SKILL.md
+  old: "**Read `CLAUDE.md`**"
+  new: "**Read the current assistant’s project instructions (`CLAUDE.md` or `AGENTS.md`)**"
+  count: 1
+  why: Codex reads AGENTS.md, not CLAUDE.md.
+  origin: branch
+
+- id: A15
+  file: skills/toolkit-awareness/SKILL.md
+  old: "documented in `CLAUDE.md`."
+  new: "documented in the current assistant’s project instructions (`CLAUDE.md` or `AGENTS.md`)."
+  count: 1
+  why: Codex reads AGENTS.md, not CLAUDE.md.
+  origin: branch
+
+- id: A16
+  file: agents/python-debugger.md
+  old: ".claude/skills/python-debugger/"
+  new: ".agents/skills/python-debugger/"
+  count: 14
+  why: Same as A8; the role runs under both runtimes.
+  origin: branch
+
+- id: A17
+  file: project_templates/MODELING_GUIDE.md.template
+  old: "Agents have read permissions via `.claude/settings.json`; permission alone"
+  new: "Consult the current assistant adapter in `.agentic-mbse/` for external-document access; access alone"
+  count: 1
+  why: >-
+    SC4. main's get_docs_dir() resolver text stays; only its permissions sentence named
+    .claude/settings.json. Wording from the branch's guide (:273).
+  origin: item1
