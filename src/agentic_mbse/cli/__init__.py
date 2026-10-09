@@ -392,7 +392,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     symlinked = installer.actions["symlinked"]
     backed_up = installer.actions["backed_up"]
     removed = installer.actions["removed"]
-    adopted = installer.actions["adopted"]
+    adopted = installer.adopted
 
     # === Create .gitignore with standard Python ignores ===
     gitignore_path = target / ".gitignore"
@@ -605,8 +605,8 @@ Edit this file to add your domain-specific sources.
 
     if adopted:
         print(f"\nAdopted ({len(adopted)}) - links from the pre-native installer replaced:")
-        for item in adopted:
-            print(f"  A {item}")
+        for item, old in adopted.items():
+            print(f"  A {item} (was -> {old})")
 
     if created:
         print(f"\nCreated ({len(created)}):")
@@ -681,10 +681,10 @@ def cmd_install_commands(args: argparse.Namespace) -> int:
     print(
         f"Installed: {len(actions['created']) + len(actions['updated'])}, "
         f"Skipped: {len(actions['skipped'])}, Removed: {len(actions['removed'])}, "
-        f"Adopted: {len(actions['adopted'])}"
+        f"Adopted: {len(installer.adopted)}"
     )
-    for item in actions["adopted"]:
-        print(f"  A {item}")
+    for item, old in installer.adopted.items():
+        print(f"  A {item} (was -> {old})")
     return EXIT_SUCCESS
 
 

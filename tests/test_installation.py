@@ -498,7 +498,10 @@ def test_legacy_link_is_adopted_and_replaced_by_the_install(
     os.symlink(str(referent), entry)
 
     assert init(tmp_path / "target") == 0
-    assert f"A .claude/{location}/{name} (was -> {referent})" in capsys.readouterr().out
+    report = capsys.readouterr().out.splitlines()
+    assert f"  A .claude/{location}/{name} (was -> {referent})" in report
+    # Listed once: an adopted entry is not also counted as created, updated or symlinked.
+    assert not {f"  {mark} .claude/{location}/{name}" for mark in "+~@"} & set(report)
     if location == "commands":
         assert not entry.exists() and not entry.is_symlink()
         entry = tmp_path / "target/.claude/skills" / WORKFLOW

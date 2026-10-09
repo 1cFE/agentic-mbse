@@ -88,17 +88,9 @@ class Installer:
         self.decide = decide
         self.default_action: str | None = None
         self.actions: dict[str, list[str]] = {
-            k: []
-            for k in (
-                "created",
-                "updated",
-                "skipped",
-                "backed_up",
-                "symlinked",
-                "removed",
-                "adopted",
-            )
+            k: [] for k in ("created", "updated", "skipped", "backed_up", "symlinked", "removed")
         }
+        self.adopted: dict[str, str] = {}  # legacy entry -> the link text it replaced
         self.files: dict[str, str] = {}
         for name in (LEGACY_MANIFEST, MANIFEST):
             path = target / name
@@ -127,7 +119,7 @@ class Installer:
             return True
         legacy = legacy_link_target(self.target, relative)
         if legacy is not None:
-            self.actions["adopted"].append(f"{relative} (was -> {legacy})")
+            self.adopted[relative] = legacy
             return True
         action = "overwrite" if self.force else self.default_action or self.decide(relative)
         if action in ("skip_all", "overwrite_all"):
@@ -140,6 +132,11 @@ class Installer:
             backup(path)
             self.actions["backed_up"].append(relative)
         return True
+
+    def report(self, action: str, relative: str) -> None:
+        """List an installed entry under `action`, unless it is already listed as adopted."""
+        if relative not in self.adopted:
+            self.actions[action].append(relative)
 
     def write(
         self, relative: str, content: bytes, *, source: Path | None = None, dev: bool = False
@@ -164,12 +161,12 @@ class Installer:
             path.unlink()
         if dev and source:
             path.symlink_to(source.resolve())
-            self.actions["symlinked"].append(relative)
+            self.report("symlinked", relative)
         else:
             path.write_bytes(content)
             if source:
                 path.chmod(source.stat().st_mode)
-            self.actions["updated" if existed else "created"].append(relative)
+            self.report("updated" if existed else "created", relative)
         self.files[relative] = desired
         return True
 
@@ -254,7 +251,7 @@ class Installer:
             path.unlink()
         path.symlink_to(link, target_is_directory=True)
         self.files[relative] = "link:" + link
-        self.actions["symlinked"].append(relative)
+        self.report("symlinked", relative)
         return True
 
     def retire_command(self, name: str) -> bool:
