@@ -47,3 +47,10 @@ tests/corpus/page_images/
 .project/memories
 # orchestrate-stage.sh raw logs
 .orchestrate-logs/
+
+# This checkout's own install from `agentic-mbse install-commands --assistant claude`
+.agents/skills/
+.agentic-mbse/
+.claude/skills/
+.claude/agents/
+.claude/hooks/
