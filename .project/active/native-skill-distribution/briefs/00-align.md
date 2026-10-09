@@ -35,3 +35,7 @@ Operational rule this creates: no integration work runs in `/home/reid/1cfe/agen
 - `b2d077b` on `wrap-split`: committed the 2026-10-09 spec rewrite, product-lens, epic and CURRENT_WORK edits as the review baseline.
 - `86921f9` on `native-claude-codex-skills`: committed the uncommitted A–K remediation (spec's `[INFERRED]` requirement), audit verdict unchanged.
 - Read-only inputs for stage agents (which cannot read sibling repos) staged under the gitignored `.orchestrate-logs/nsd-inputs/`: native branch snapshot at `86921f9`, fusion-tea files at `403716ee3`, and `product-lens.md`.
+
+## The point, as read at Align
+
+[AGENT] (stated by the orchestrator in the Align message 2026-10-09; the owner did not object, and their verbatim ask below supports it; not an explicit owner confirmation) One place to register a skill: the tool-neutral source tree is the only installer source, carries `main`'s current text, and installs for Claude Code, Codex or both, so Items 2, 4 and 5 do not land twice or in the stale place.
