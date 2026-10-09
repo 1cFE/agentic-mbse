@@ -27,3 +27,17 @@
 - exit: 1
 - first line: bundle onboard: extra extra.md
 - last line: check --main 06ac41d: 55 files compared, 1 mismatches
+
+## CRLF reference file
+- mutation: .agents/skills/sysml-conventions/references/stencils.md: 97 LF line endings -> CRLF
+- command: `uv run python .project/active/native-skill-distribution/evidence/reconcile.py check --main 06ac41d .orchestrate-logs/check/negative/CRLF-reference-file`
+- exit: 1
+- first line: skills/sysml-conventions/references/stencils.md: bytes differ from main + adaptations
+- last line: check --main 06ac41d: 55 files compared, 1 mismatches
+
+## CRLF SKILL.md
+- mutation: .agents/skills/onboard/SKILL.md: 128 LF line endings -> CRLF
+- command: `uv run python .project/active/native-skill-distribution/evidence/reconcile.py check --main 06ac41d .orchestrate-logs/check/negative/CRLF-SKILL.md`
+- exit: 1
+- first line: skills/onboard/SKILL.md: no frontmatter
+- last line: check --main 06ac41d: 55 files compared, 5 mismatches

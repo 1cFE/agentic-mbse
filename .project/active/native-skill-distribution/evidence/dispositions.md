@@ -18,10 +18,11 @@ git diff --name-status -M 88e2489 86921f9 -- claude skills agents adapters proje
 
 ## Generated rows: bundles, tool-owned templates, agents
 
-[`check-rows.md`](check-rows.md) has one row per compared file (40), written by `reconcile.py check --main 06ac41d --rows`, with the `main` source, whether the envelope applies, and the disposition. `check.txt` shows that run: 55 files compared, 0 mismatches. `check-negative.txt` shows the same check exiting 1 on a changed body byte, a count raised by one, and an extra bundle file.
+[`check-rows.md`](check-rows.md) has one row per compared file (40), written by `reconcile.py check --main 06ac41d --rows`, with the `main` source, whether the envelope applies, and the disposition. `check.txt` shows that run: 55 files compared, 0 mismatches. `check-negative.txt` shows the same check exiting 1 on a changed body byte, a count raised by one, an extra bundle file, and CRLF line endings in a reference file or a `SKILL.md` (`check` compares raw bytes; audit advisory 9).
 
 - Every file is *take main* except the ten files the adaptation list names, which are *merge: main + A…* (`onboard` A1–A4, `manage-sources` A5–A7, `pdf-analysis` A8 and its `extraction-details.md` A9, `python-debugger` A10, `record-learning` A11–A12, `sysml-conventions/references/stencils.md` A13, `toolkit-awareness` A14–A15, `agents/python-debugger.md` A16, `MODELING_GUIDE.md.template` A17).
 - The 25 `SKILL.md` rows carry the envelope (frontmatter and preface), which is the branch's shape. That part of each file is *keep the branch*; the rest is the row's disposition.
+- **`main`'s `skills:` frontmatter key is dropped by the envelope** (inherited from the native branch; `check` expects it gone, `reconcile.py:140`). 8 workflows named their supporting skills only there (audit advisory 2). [AGENT] (orchestrator, 2026-10-09) Accepted with no change: Claude Code treats `skills:` as subagent preloading metadata, not a command dependency loader (`.project/research/20260907-162310_native-claude-codex-skills.md:54-56`), so no runtime behaviour is lost.
 
 ## Hand rows
 

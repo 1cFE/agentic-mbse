@@ -117,7 +117,7 @@ class Checker:
         if not actual.is_file():
             self.problems.append(f"{label}: missing at {actual}")
             return
-        if actual.read_text(encoding="utf-8") != expected:
+        if actual.read_bytes() != expected.encode("utf-8"):
             self.problems.append(f"{label}: bytes differ from main + adaptations")
         self.mode(label, actual, executable)
 
@@ -127,7 +127,8 @@ class Checker:
         if not actual.is_file():
             self.problems.append(f"{path}: missing at {actual}")
             return
-        frontmatter, body = split_frontmatter(actual.read_text(encoding="utf-8"))
+        # Decode the bytes as they are: read_text would turn CRLF into LF and hide it.
+        frontmatter, body = split_frontmatter(actual.read_bytes().decode("utf-8"))
         main_frontmatter, _ = split_frontmatter(main_text)
         if frontmatter is None or main_frontmatter is None:
             self.problems.append(f"{path}: no frontmatter")
