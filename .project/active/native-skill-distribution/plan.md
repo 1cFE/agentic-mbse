@@ -1,6 +1,6 @@
 # Implementation Plan: Reconcile the native installer source with `main` (WRAP-SPLIT Item 1)
 
-**Status:** Implemented; awaiting the independent audit (8.7 follows it)
+**Status:** Implemented; audit Needs Work on one blocker (B1), fixed as the orchestrator disposed; awaiting the targeted re-check
 **Created:** 2026-10-09
 **Last Updated:** 2026-10-09
 **Branch:** `nsd-integration` in the worktree `/home/reid/1cfe/agentic-mbse-nsd`, cut from `wrap-split` at the commit that carries this plan (set up by the orchestrator)
@@ -650,7 +650,7 @@ git ls-files .claude == [.claude/settings.json]; claude/ absent
   - **Out of scope:** body text beyond the list, which SC2 makes mechanical.
   - **Who:** a fresh non-author agent.
   - **Follow-ups for close:** tidy `--dev`'s `.gitignore` list (`.claude/commands/`, `.claude/.tool-hashes.json`); this repo's tracked init scaffold and its stale template copies (R7).
-- [ ] **8.7** [SC11] After the audit stage returns, not during implement: append a dated verdict update to `.project/active/native-skills/audit.md` (its `:3` reads "Needs Work"), citing this item's audit.
+- [x] **8.7** (Done by the audit itself, `cbf349c`, per its brief; the line reads Needs Work until B1's re-check.) [SC11] After the audit stage returns, not during implement: append a dated verdict update to `.project/active/native-skills/audit.md` (its `:3` reads "Needs Work"), citing this item's audit.
 
 ### Validation
 Steps 8.3–8.5 pass. `lint-parity.md` and `audit-scope.md` exist.
@@ -851,6 +851,26 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
 - 8.5 `git merge-base --is-ancestor main HEAD` exits 0; `git ls-files .claude claude` prints only `.claude/settings.json`; `claude/` is absent. Nothing after Phase 6 touched `skills/`, `agents/` or the templates, so 6.1 stands. The orchestrator's `git fetch` after the rehearsal found `origin/main` still at `06ac41d`, so no merge or re-check was needed.
 - 8.6 `evidence/audit-scope.md`: the scope, what to press on (I1-I3, `permit`'s order), out of scope, and follow-ups. After the rehearsal it also names the `--dev` Codex discovery gap and the Updated-report quirk as follow-ups, and records `make-copy.sh`'s link gap as fixed by the orchestrator.
 - The audit hand-off is ready: `evidence/audit-scope.md` lists every artifact, and all of them exist once commit step `10-rehearsal-evidence` lands.
+
+### Audit fixes
+**Completed:** 2026-10-09, from the audit (`audit.md`, `cbf349c`, Needs Work on B1) and the orchestrator's dispositions [AGENT] (`briefs/11-audit-fixes.md`). Commit steps `12-dev-codex-warning`, `13-test-pins`, `14-cleanups`, `15-check-bytes` and `16-notes` (`git add` was still gated); `verify.py` checked every boundary, with results in `.orchestrate-logs/orchestrator-run.md`.
+
+- **B1, `init --dev` gives Codex none of the shipped skills.** Cleared the way the orchestrator disposed: the limitation is stated where users meet `--dev`, and the fix is a follow-up.
+  - `cmd_init` prints `DEV_CODEX_WARNING` (`cli/__init__.py:65`) when `--dev` runs with Codex selected (`codex` or `both`). It says Codex does not list skills `--dev` installs as links, that plain `init` is the mode for Codex, and that Claude Code is not affected.
+  - The closing "Next steps" no longer sends a `--dev` user to `$onboard` in Codex: with `both` it says to run `/onboard` in Claude; with `codex` it says to re-run without `--dev` first. Plain `init` and `--dev` with `claude` print the old line.
+  - `README.md`'s `--dev` paragraph states the limitation in one sentence.
+  - `test_dev_warns_that_codex_cannot_see_linked_skills` (`tests/test_cli.py`) runs `claude`, `codex` and `both` under plain `init` and `--dev`. The warning appears exactly for `--dev` with `codex` or `both`, and the uncaveated `$onboard` line appears exactly when it does not.
+  - Follow-up, in `audit-scope.md`: `--dev` Codex discovery: spike which link shapes Codex 0.160+ lists (file links vs directory links, inside vs outside the project), then make `--dev` produce one.
+- **Advisory 1, two predicate checks unpinned.** `old_checkout` now creates `x/`, so `{old}/x/../…` names a real checkout and only the `..` check can reject it. The predicate table and the never-adopted end-to-end cases each gain an "another entry's name" row (`{old}/claude/commands/<other workflow>.md`). Mutants, applied in place by `.orchestrate-logs/mutants/run_mutants.py` with the auditor's exact old/new text and restored after each run (`before.txt`, `after.txt` there):
+  - Before: M1 (drop the `..` check) and M7 (drop name mirroring) both survived, 169 passed.
+  - After: M1 killed by the table's `x/..` row and the end-to-end `'..' segment` case; M7 killed by the table's `{other}` row and the end-to-end "another entry's name" case. 171 passed unmutated.
+- **Advisory 3, README count.** `README.md:25` no longer counts the skills; it points to `install-commands --list`.
+- **Advisory 5, three frontmatter parsers.** One `frontmatter()` helper in `installation.py` serves `bundle_kind`, `render_agent` and `register_codex_agents`. It splits on delimiter lines, so a `---` inside a value no longer breaks the agent paths, and a non-mapping `metadata` now raises `bundle_kind`'s documented `ValueError`. No shipped `SKILL.md` or agent has a stray `---` in its frontmatter, so the three parsers agreed before. A fresh `--assistant both` install is byte-identical before and after the change: 90 entries, `install.json` excluded (`.orchestrate-logs/refactor-check/`).
+- **Advisory 6, caller-less names.** `PROJECT_TEMPLATES`, `HASH_FILE`, `get_agents_dir` and `get_hooks_dir` are removed. None is referenced in `src/`, `tests/`, `scripts/`, `hooks/`, shipped text (`skills/`, `agents/`, `adapters/`, `project_templates/`, `docs/`), `CLAUDE.md`, `README.md` or `pyproject.toml`. `get_docs_dir` stays (I6).
+- **Advisory 8, sample names in tests.** Samples now come from the tree: `WORKFLOW`, `OTHER_WORKFLOW`, `SUPPORTING`, `WITH_REFERENCES` (the first bundle with a `references/` folder) and `AGENTS`. Where a test only checked that a few things exist, it now checks every bundle file or every role. Kept, because each is about one skill: the two orchestrator tests (`test_dev_symlinks_orchestrator_command`, `test_orchestrator_is_hash_tracked_and_modification_is_preserved`) and the three `syside-expert` tests about its `{SYSIDE_DOCS_PATH}` placeholder.
+- **Advisory 9, `check` read decoded text.** `reconcile.py check` now compares raw bytes in `file()` and decodes bytes without newline translation in `skill()`. Re-run on a fresh `both` install of the current tree: 55 files, 0 mismatches; `check.txt` and `check-rows.md` unchanged. `check-negative.txt` gains "CRLF reference file" and "CRLF SKILL.md": both exit 1. With the previous `reconcile.py`, both exit 0 (`.orchestrate-logs/check/negative-with-previous-reconcile.txt`).
+- **Advisories 2, 4, 7: accepted with no change** (orchestrator). The `skills:` key's disposition is now recorded in `dispositions.md`.
+- **Checks:** full pytest 2174 passed, 1 skipped, 1 xfailed (2166 plus the 6 warning cases and the 2 new predicate rows). ruff check, ruff format and mypy are clean on every changed file. Lint parity re-run with the same numbers (`lint-parity.md`): ruff check 118 = 118, ruff format 77 = 77, mypy 98 = 98 in the baseline's environment, and the 9 changed files are clean.
 
 ---
 

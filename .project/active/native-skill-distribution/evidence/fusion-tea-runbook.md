@@ -49,7 +49,7 @@ Both modes adopt all 31 legacy links, keep `MODELING_PROCESS.md` with both MR-7 
 | Picking up later skill or template edits | another re-init | live, for skills and templates only; agents and adapters are copies [INHERITED: spec Open Questions] |
 | Can run before the checkout moves | yes | no |
 
-**Why Codex sees nothing under `--dev`.** `--dev` makes each `.agents/skills/<n>/SKILL.md` a file link to an absolute path in the checkout. Codex 0.160.0 lists no such skill; it does list fusion-tea's own skills, which are relative directory links inside the project. The behaviour predates this item and is filed as a follow-up. Until it is fixed, `--dev` leaves Codex in fusion-tea without the shipped workflows.
+**Why Codex sees nothing under `--dev`.** `--dev` makes each `.agents/skills/<n>/SKILL.md` a file link to an absolute path in the checkout. Codex 0.160.0 lists no such skill; it does list fusion-tea's own skills, which are relative directory links inside the project. The behaviour predates this item and is filed as a follow-up. Until it is fixed, `--dev` leaves Codex in fusion-tea without the shipped workflows, and `init --dev` prints a warning saying so (added after the rehearsal, so the rehearsal's raw output does not show it).
 
 **Recommendation (agent-grade, `spec.md:99`): plain `init`.** fusion-tea commits its Codex install. `--dev` would turn 33 of those tracked files into machine-specific links, and the rehearsal shows Codex then loses every shipped skill. fusion-tea's Codex adapter also says these instruction assets are separate from the pinned runtime (`codex.md:11`). Ratified decision 3 named `--dev`; this evidence counts against it, and the choice is yours.
 
