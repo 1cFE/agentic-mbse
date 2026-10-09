@@ -14,7 +14,9 @@ from agentic_mbse.cli import (
     main,
 )
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
-from tests.helpers.shipped import HOOKS, REPO_ROOT, SKILLS, kind
+from tests.helpers.shipped import AGENTS, HOOKS, REPO_ROOT, SKILLS, kind
+
+WORKFLOW = next(skill for skill in SKILLS if kind(skill) == "workflow")
 
 
 class MockArgs:
@@ -145,9 +147,8 @@ class TestCmdInit:
 
         assert result == EXIT_SUCCESS
         agents_dir = tmp_path / ".claude" / "agents"
-        assert agents_dir.exists()
-        assert (agents_dir / "sysmlv2-validator.md").exists()
-        assert (agents_dir / "python-debugger.md").exists()
+        for agent in AGENTS:
+            assert (agents_dir / f"{agent}.md").exists()
 
     def test_creates_skills_directory(self, tmp_path):
         """agentic-mbse init exposes every shipped skill under .claude/skills/."""
@@ -281,10 +282,8 @@ class TestCmdInstallCommands:
 
         assert result == EXIT_SUCCESS
         commands_dir = tmp_path / ".agents" / "skills"
-        assert commands_dir.exists()
-        assert (commands_dir / "design-model" / "SKILL.md").exists()
-        assert (commands_dir / "audit-models" / "SKILL.md").exists()
-        assert (commands_dir / "orchestrate-modeling" / "SKILL.md").exists()
+        for skill in SKILLS:
+            assert (commands_dir / skill / "SKILL.md").exists()
 
     def test_replicate_setup_wraps_init(self):
         """The replication helper installs through init, not a second installer."""
@@ -296,7 +295,7 @@ class TestCmdInstallCommands:
         # Create commands dir with existing file
         commands_dir = tmp_path / ".agents" / "skills"
         commands_dir.mkdir(parents=True)
-        existing = commands_dir / "design-model" / "SKILL.md"
+        existing = commands_dir / WORKFLOW / "SKILL.md"
         existing.parent.mkdir(parents=True, exist_ok=True)
         existing.write_text("existing content")
 
@@ -314,7 +313,7 @@ class TestCmdInstallCommands:
         # Create commands dir with existing file
         commands_dir = tmp_path / ".agents" / "skills"
         commands_dir.mkdir(parents=True)
-        existing = commands_dir / "design-model" / "SKILL.md"
+        existing = commands_dir / WORKFLOW / "SKILL.md"
         existing.parent.mkdir(parents=True, exist_ok=True)
         existing.write_text("old content")
 
@@ -424,10 +423,9 @@ class TestCmdInitDevMode:
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
-        cmd_path = tmp_path / ".agents" / "skills" / "design-model" / "SKILL.md"
+        cmd_path = tmp_path / ".agents" / "skills" / WORKFLOW / "SKILL.md"
         assert cmd_path.is_symlink()
-        # Verify symlink points to source repo
-        assert "agentic-mbse" in str(cmd_path.resolve())
+        assert cmd_path.resolve() == REPO_ROOT / "skills" / WORKFLOW / "SKILL.md"
 
     def test_dev_symlinks_orchestrator_command(self, tmp_path):
         """--dev links the orchestrator from the source command directory."""
@@ -440,12 +438,13 @@ class TestCmdInitDevMode:
         assert command_path.resolve().name == "SKILL.md"
 
     def test_dev_creates_symlinks_for_agents(self, tmp_path):
-        """--dev creates symlinks for agent files."""
+        """--dev renders agent files rather than linking them: they need resolved doc paths."""
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
         cmd_init(args)
 
-        agent_path = tmp_path / ".claude" / "agents" / "python-debugger.md"
-        assert not agent_path.is_symlink()
+        for agent in AGENTS:
+            agent_path = tmp_path / ".claude" / "agents" / f"{agent}.md"
+            assert agent_path.is_file() and not agent_path.is_symlink()
 
     def test_dev_creates_symlinks_for_skills(self, tmp_path):
         """--dev creates symlinks for skill directories."""
@@ -524,7 +523,7 @@ class TestCmdInitDevMode:
         assert result2 == EXIT_SUCCESS
 
         # Symlinks should still work
-        cmd_path = tmp_path / ".agents" / "skills" / "design-model" / "SKILL.md"
+        cmd_path = tmp_path / ".agents" / "skills" / WORKFLOW / "SKILL.md"
         assert cmd_path.is_symlink()
 
     def test_dev_replaces_regular_file_with_symlink(self, tmp_path):
@@ -533,7 +532,7 @@ class TestCmdInitDevMode:
         args = MockArgs(path=str(tmp_path), force=False, dev=False)
         cmd_init(args)
 
-        cmd_path = tmp_path / ".agents" / "skills" / "design-model" / "SKILL.md"
+        cmd_path = tmp_path / ".agents" / "skills" / WORKFLOW / "SKILL.md"
         assert not cmd_path.is_symlink()  # Regular file
 
         # Second init with dev
@@ -547,7 +546,7 @@ class TestCmdInitDevMode:
         args = MockArgs(path=str(tmp_path), force=False, dev=False)
         cmd_init(args)
 
-        cmd_path = tmp_path / ".agents" / "skills" / "design-model" / "SKILL.md"
+        cmd_path = tmp_path / ".agents" / "skills" / WORKFLOW / "SKILL.md"
         assert not cmd_path.is_symlink()
         assert cmd_path.exists()
 

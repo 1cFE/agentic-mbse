@@ -20,7 +20,9 @@ from agentic_mbse.cli.installation import (
 from tests.helpers.shipped import AGENTS, HOOKS, REPO_ROOT, SKILLS, bundle_files, frontmatter, kind
 
 WORKFLOW = next(skill for skill in SKILLS if kind(skill) == "workflow")
+OTHER_WORKFLOW = next(s for s in SKILLS if kind(s) == "workflow" and s != WORKFLOW)
 SUPPORTING = next(skill for skill in SKILLS if kind(skill) == "supporting")
+WITH_REFERENCES = next(s for s in SKILLS if (REPO_ROOT / "skills" / s / "references").is_dir())
 # One shipped entry per location the pre-native installer linked: .claude/<kind>/<name>.
 LEGACY_ENTRIES = {
     "commands": f"{WORKFLOW}.md",
@@ -91,7 +93,7 @@ def test_native_install_catalog_and_roles(tmp_path, assistant, link_mode):
 
 def test_skipped_skill_edit_and_owner_resource_survive_four_inits(tmp_path):
     init(tmp_path)
-    skill = tmp_path / ".agents/skills/pdf-analysis"
+    skill = tmp_path / ".agents/skills" / WITH_REFERENCES
     entry = skill / "SKILL.md"
     relative = entry.relative_to(tmp_path).as_posix()
     original = json.loads((tmp_path / MANIFEST).read_text())["files"][relative]
@@ -106,58 +108,52 @@ def test_skipped_skill_edit_and_owner_resource_survive_four_inits(tmp_path):
 
 @pytest.mark.parametrize("modified", [False, True])
 def test_migrate_legacy_command_without_shadowing(tmp_path, modified, capsys):
-    path = tmp_path / ".claude/commands/design-model.md"
+    relative = f".claude/commands/{WORKFLOW}.md"
+    path = tmp_path / relative
     path.parent.mkdir(parents=True)
     path.write_text("Original command")
     baseline = fingerprint(path)
-    (tmp_path / LEGACY_MANIFEST).write_text(
-        json.dumps({"files": {".claude/commands/design-model.md": baseline}})
-    )
+    (tmp_path / LEGACY_MANIFEST).write_text(json.dumps({"files": {relative: baseline}}))
     if modified:
         path.write_text("Owner command")
     for _ in range(3):
         init(tmp_path)
         assert path.exists() == modified
-        assert (tmp_path / ".claude/skills/design-model").exists() != modified
+        assert (tmp_path / ".claude/skills" / WORKFLOW).exists() != modified
         if modified:
             assert path.read_text() == "Owner command"
-            assert (
-                json.loads((tmp_path / MANIFEST).read_text())["files"][
-                    ".claude/commands/design-model.md"
-                ]
-                == baseline
-            )
+            assert json.loads((tmp_path / MANIFEST).read_text())["files"][relative] == baseline
 
     if modified:
         output = capsys.readouterr().out
-        assert "Claude retains .claude/commands/design-model.md" in output
-        assert "Codex discovers .agents/skills/design-model/SKILL.md" in output
+        assert f"Claude retains {relative}" in output
+        assert f"Codex discovers .agents/skills/{WORKFLOW}/SKILL.md" in output
         assert "different versions" in output
 
 
 def test_unknown_legacy_command_is_preserved(tmp_path):
-    path = tmp_path / ".claude/commands/research.md"
+    path = tmp_path / f".claude/commands/{WORKFLOW}.md"
     path.parent.mkdir(parents=True)
-    path.write_text("Custom research")
+    path.write_text("Custom command")
     init(tmp_path)
-    assert path.read_text() == "Custom research"
-    assert not (tmp_path / ".claude/skills/research").exists()
+    assert path.read_text() == "Custom command"
+    assert not (tmp_path / ".claude/skills" / WORKFLOW).exists()
 
 
 def test_forced_command_install_never_writes_through_symlink(tmp_path):
     outside = tmp_path / "referent"
     outside.write_text("Do not change")
-    path = tmp_path / ".claude/commands/design-model.md"
+    path = tmp_path / f".claude/commands/{WORKFLOW}.md"
     path.parent.mkdir(parents=True)
     path.symlink_to(outside)
-    canonical = tmp_path / ".agents/skills/research/SKILL.md"
+    canonical = tmp_path / ".agents/skills" / SUPPORTING / "SKILL.md"
     canonical.parent.mkdir(parents=True)
     canonical.symlink_to(outside)
     assert cmd_install_commands(Namespace(directory=str(tmp_path), force=True, list=False)) == 0
     assert outside.read_text() == "Do not change"
     assert not path.exists()
     assert not canonical.is_symlink()
-    assert (tmp_path / ".claude/skills/design-model/SKILL.md").is_file()
+    assert (tmp_path / ".claude/skills" / WORKFLOW / "SKILL.md").is_file()
 
 
 def test_parent_symlink_is_preserved_even_under_force(tmp_path):
@@ -171,15 +167,15 @@ def test_parent_symlink_is_preserved_even_under_force(tmp_path):
 
 def test_copy_link_dev_transitions_preserve_owner_additions(tmp_path):
     init(tmp_path, link_mode="copy")
-    alias = tmp_path / ".claude/skills/pdf-analysis"
+    alias = tmp_path / ".claude/skills" / SUPPORTING
     (alias / "owner.md").write_text("keep")
     init(tmp_path, link_mode="symlink")
     assert not alias.is_symlink()
     assert (alias / "owner.md").read_text() == "keep"
-    untouched = tmp_path / ".claude/skills/design-model"
+    untouched = tmp_path / ".claude/skills" / WORKFLOW
     assert untouched.is_symlink()
     cmd_init(Namespace(path=str(tmp_path), force=False, dev=True))
-    canonical = tmp_path / ".agents/skills/design-model/SKILL.md"
+    canonical = tmp_path / ".agents/skills" / WORKFLOW / "SKILL.md"
     assert canonical.is_symlink()
     init(tmp_path, link_mode="copy")
     assert not canonical.is_symlink()
@@ -214,10 +210,9 @@ def test_relocated_aliases_and_support_files(tmp_path):
     init(project)
     moved = tmp_path / "relocated"
     project.rename(moved)
-    for p in (moved / ".claude/skills").iterdir():
-        assert (p / "SKILL.md").is_file()
-    assert (moved / ".claude/skills/pdf-analysis/scripts/extract_page.py").is_file()
-    assert (moved / ".claude/skills/sysml-conventions/references/stencils.md").is_file()
+    for name in SKILLS:
+        for inside in bundle_files(name):
+            assert (moved / ".claude/skills" / name / inside).is_file()
 
 
 def test_backup_then_update_and_skipped_baseline(tmp_path):
@@ -256,7 +251,7 @@ def test_native_manifest_finds_codex_only_project(tmp_path, monkeypatch):
 
 def test_empty_owner_directory_survives_copy_to_link(tmp_path):
     init(tmp_path, link_mode="copy")
-    skill = tmp_path / ".claude/skills/research"
+    skill = tmp_path / ".claude/skills" / WORKFLOW
     (skill / "my-references").mkdir()
     init(tmp_path)
     assert (skill / "my-references").is_dir()
@@ -264,16 +259,17 @@ def test_empty_owner_directory_survives_copy_to_link(tmp_path):
 
 
 def test_codex_role_registration_preserves_owner_roles_and_comments(tmp_path):
+    owned, installed_role = AGENTS[0], AGENTS[1]
     config = tmp_path / ".codex/config.toml"
     config.parent.mkdir()
-    original = '# Owner settings\n[agents."sysml-expert"]\ndescription = "My expert"\nconfig_file = "custom.toml"\n'
+    original = f'# Owner settings\n[agents."{owned}"]\ndescription = "My expert"\nconfig_file = "custom.toml"\n'
     config.write_text(original)
     init(tmp_path, assistant="codex")
     installed = config.read_text()
     parsed = tomllib.loads(installed)
     assert installed.startswith(original)
-    assert parsed["agents"]["sysml-expert"]["config_file"] == "custom.toml"
-    assert parsed["agents"]["kerml-expert"]["config_file"] == "agents/kerml-expert.toml"
+    assert parsed["agents"][owned]["config_file"] == "custom.toml"
+    assert parsed["agents"][installed_role]["config_file"] == f"agents/{installed_role}.toml"
     init(tmp_path, assistant="codex")
     assert config.read_text() == installed
 
@@ -306,7 +302,7 @@ def test_bundle_retirement_prunes_only_unchanged_resources(
     tmp_path, monkeypatch, capsys, link_mode, dev
 ):
     data = fake_data_root(tmp_path)
-    source = data / "skills/research"
+    source = data / "skills" / WORKFLOW
     for name in ("retired.md", "edited.md", "missing.md"):
         (source / name).write_text("original")
     target = tmp_path / "target"
@@ -314,7 +310,8 @@ def test_bundle_retirement_prunes_only_unchanged_resources(
     monkeypatch.setattr("agentic_mbse.cli._get_data_root", lambda: data)
     args = Namespace(path=str(target), force=False, dev=dev, link_mode=link_mode)
     cmd_init(args)
-    canonical = target / ".agents/skills/research"
+    bundle = f".agents/skills/{WORKFLOW}"
+    canonical = target / bundle
     edited = canonical / "edited.md"
     # Replace a dev link to make a target-local edit without changing the source.
     if edited.is_symlink():
@@ -334,16 +331,13 @@ def test_bundle_retirement_prunes_only_unchanged_resources(
         assert not (canonical / "retired.md").is_symlink()
         assert (canonical / "edited.md").read_text() == "owner edit"
         assert (canonical / "owner.md").read_text() == "owner addition"
-        assert ".agents/skills/research/retired.md" not in state
-        assert ".agents/skills/research/missing.md" not in state
-        assert (
-            state[".agents/skills/research/edited.md"]
-            == before[".agents/skills/research/edited.md"]
-        )
-        assert not (target / ".claude/skills/research/retired.md").exists()
+        assert f"{bundle}/retired.md" not in state
+        assert f"{bundle}/missing.md" not in state
+        assert state[f"{bundle}/edited.md"] == before[f"{bundle}/edited.md"]
+        assert not (target / ".claude/skills" / WORKFLOW / "retired.md").exists()
     output = capsys.readouterr().out
     assert "Removed (" in output
-    assert "Preserved retired resource .agents/skills/research/edited.md" in output
+    assert f"Preserved retired resource {bundle}/edited.md" in output
 
 
 def test_added_skill_and_role_need_no_other_edit(tmp_path, monkeypatch, capsys):
@@ -444,9 +438,14 @@ def test_each_installed_skill_routes_to_existing_native_adapters(tmp_path):
 
 
 def old_checkout(tmp_path: Path) -> Path:
-    """A pre-native agentic-mbse checkout after the merge: src/agentic_mbse kept, claude/ gone."""
+    """A pre-native agentic-mbse checkout after the merge: src/agentic_mbse kept, claude/ gone.
+
+    `x/` exists so that a `{old}/x/../...` link still names this checkout; only the `..` check
+    may reject it.
+    """
     root = tmp_path / "old"
     (root / "src" / "agentic_mbse").mkdir(parents=True)
+    (root / "x").mkdir()
     return root
 
 
@@ -464,6 +463,7 @@ def entry_state(path: Path) -> object:
     [
         ("{old}/claude/commands/{cmd}.md", True),
         ("{old}/claude/skills/{cmd}.md", False),  # tail does not mirror the entry
+        ("{old}/claude/commands/{other}.md", False),  # another shipped entry's name
         ("{plain}/claude/commands/{cmd}.md", False),  # root lacks src/agentic_mbse
         ("../../old/claude/commands/{cmd}.md", False),  # relative text
         ("{old}/x/../claude/commands/{cmd}.md", False),  # '..' segment
@@ -477,7 +477,7 @@ def test_legacy_link_target_accepts_exactly_what_the_old_installer_wrote(tmp_pat
     relative = f".claude/commands/{WORKFLOW}.md"
     link = tmp_path / "target" / relative
     link.parent.mkdir(parents=True)
-    written = text.format(old=old, plain=tmp_path / "plain", cmd=WORKFLOW)
+    written = text.format(old=old, plain=tmp_path / "plain", cmd=WORKFLOW, other=OTHER_WORKFLOW)
     os.symlink(written, link)  # the raw text; pathlib would normalize it
     assert legacy_link_target(tmp_path / "target", relative) == (written if adopted else None)
 
@@ -522,6 +522,7 @@ def test_legacy_link_is_adopted_and_replaced_by_the_install(
         "unshipped name",
         "non-checkout root",
         "non-mirrored tail",
+        "another entry's name",
         "relative text",
         "'..' segment",
         "real file",
@@ -539,6 +540,7 @@ def test_entries_the_old_installer_did_not_make_keep_prompt_or_preserve(tmp_path
         "unshipped name": f"{old}/claude/commands/not-shipped.md",
         "non-checkout root": f"{tmp_path}/plain/claude/commands/{WORKFLOW}.md",
         "non-mirrored tail": f"{old}/claude/skills/{WORKFLOW}.md",
+        "another entry's name": f"{old}/claude/commands/{OTHER_WORKFLOW}.md",
         "relative text": f"../../../old/claude/commands/{WORKFLOW}.md",
         "'..' segment": f"{old}/x/../claude/commands/{WORKFLOW}.md",
     }
