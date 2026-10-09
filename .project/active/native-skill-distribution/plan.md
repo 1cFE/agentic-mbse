@@ -283,13 +283,13 @@ assert failures ⊆ {hook-install tests, every test that runs init --dev, test_b
 ### Changes Required
 **See `design.md` for:** D7 (the hook), D13 (this repo's install), and Appendix B's rows for `claude/**`, `.claude/…` and `.gitignore`.
 
-- [ ] **3.1** [SC6] `git mv claude/hooks/ruff-format.sh hooks/ruff-format.sh`, then `git rm -r -q claude`. `git ls-files -s hooks/ruff-format.sh` shows mode `100755`, and `test ! -e claude` succeeds.
-- [ ] **3.2** `git rm` every tracked `.claude/` entry except `.claude/settings.json` (D13): `git ls-files .claude | grep -vx '.claude/settings.json' | xargs git rm -q`. First check the list against Appendix B: 9 commands; `.claude/skills/pdf-analysis` (the absolute link), `python-debugger`, `record-learning` and `toolkit-awareness`; 5 agents; the hook. `settings.local.json` is untracked: leave it.
-- [ ] **3.3** [SC12, I9] Add the D13 block to `.gitignore`, with a one-line comment saying it covers `install-commands --assistant claude` in this checkout: `.agents/skills/`, `.agentic-mbse/`, `.claude/skills/`, `.claude/agents/`, `.claude/hooks/`. Then `git ls-files .claude` prints only `.claude/settings.json`.
-- [ ] **3.4** Re-point `tests/test_modeling_command_contracts.py` (`main`'s version): `claude/commands/<n>.md` becomes `skills/<n>/SKILL.md`, and `"Task"` becomes `"Agent"` at `:72`. Take nothing else from the branch's version of this test.
-- [ ] **3.5** Run `uv run pytest tests/`. Compare the failures with the stencil's set and record their IDs under "Phase 3 Completion". Investigate anything outside the set before committing.
-- [ ] **3.6** Stage everything and check the rename view: `git diff --cached -M --name-status main -- claude skills agents hooks` shows an `R` line for every `SKILL.md`, every agent and the hook. An `A`/`D` pair instead of an `R` means a file lost similarity, most likely through reflow: investigate.
-- [ ] **3.7** Commit. It is intentionally red; Phase 4 restores green. `Remove claude/: hook moves to hooks/, this repo stops tracking its own install`.
+- [x] **3.1** [SC6] `git mv claude/hooks/ruff-format.sh hooks/ruff-format.sh`, then `git rm -r -q claude`. `git ls-files -s hooks/ruff-format.sh` shows mode `100755`, and `test ! -e claude` succeeds.
+- [x] **3.2** `git rm` every tracked `.claude/` entry except `.claude/settings.json` (D13): `git ls-files .claude | grep -vx '.claude/settings.json' | xargs git rm -q`. First check the list against Appendix B: 9 commands; `.claude/skills/pdf-analysis` (the absolute link), `python-debugger`, `record-learning` and `toolkit-awareness`; 5 agents; the hook. `settings.local.json` is untracked: leave it.
+- [x] **3.3** [SC12, I9] Add the D13 block to `.gitignore`, with a one-line comment saying it covers `install-commands --assistant claude` in this checkout: `.agents/skills/`, `.agentic-mbse/`, `.claude/skills/`, `.claude/agents/`, `.claude/hooks/`. Then `git ls-files .claude` prints only `.claude/settings.json`.
+- [x] **3.4** Re-point `tests/test_modeling_command_contracts.py` (`main`'s version): `claude/commands/<n>.md` becomes `skills/<n>/SKILL.md`, and `"Task"` becomes `"Agent"` at `:72`. Take nothing else from the branch's version of this test.
+- [x] **3.5** Run `uv run pytest tests/`. Compare the failures with the stencil's set and record their IDs under "Phase 3 Completion". Investigate anything outside the set before committing.
+- [x] **3.6** Stage everything and check the rename view: `git diff --cached -M --name-status main -- claude skills agents hooks` shows an `R` line for every `SKILL.md`, every agent and the hook. An `A`/`D` pair instead of an `R` means a file lost similarity, most likely through reflow: investigate.
+- [x] **3.7** Commit. It is intentionally red; Phase 4 restores green. `Remove claude/: hook moves to hooks/, this repo stops tracking its own install`.
 
 ### Validation
 - **Automated:** pytest fails only in the expected set.
@@ -733,6 +733,25 @@ See `design.md#potential-risks` (R1–R7) for the full analysis. Phase-specific 
 - `check-commit2.txt` and these notes go in a `.project/`-only commit after commit 2, so commit 2 stays `write`'s output alone.
 
 ### Phase 3 Completion
+**Completed:** 2026-10-09. Commit 3 `ea64232` (intentionally red); these notes in the following `.project/`-only commit.
+
+**Actual Changes:**
+- 3.1 `git mv claude/hooks/ruff-format.sh hooks/ruff-format.sh` (`git ls-files -s`: `100755`), then `git rm -r -q claude`. `test ! -e claude` holds.
+- 3.2 `git rm` of the 22 tracked shipped-name `.claude/` entries, matching Appendix B exactly: 9 commands; the absolute link `.claude/skills/pdf-analysis` (only the link was removed; its referent in the live checkout was not touched) and the `python-debugger`, `record-learning` and `toolkit-awareness` skill files; 5 agents; the hook. No `settings.local.json` exists in this worktree.
+- 3.3 `.gitignore` gains the D13 block with a one-line comment: `.agents/skills/`, `.agentic-mbse/`, `.claude/skills/`, `.claude/agents/`, `.claude/hooks/`. `git ls-files .claude` prints only `.claude/settings.json`.
+- 3.4 `tests/test_modeling_command_contracts.py`: 7 `claude/commands/<n>.md` paths become `skills/<n>/SKILL.md`; `:72` expects `Agent`. Nothing else changed.
+- 3.6 Rename view against `main`: all 37 `claude/` files show as `R` (25 `SKILL.md`, 5 agents, the hook, 6 other bundle files), no `A`/`D` pairs. Lowest similarity `R065` (`manage-sources`, which carries A5–A7), then `R075` (`python-debugger/SKILL.md`, A10); 9 are `R100`.
+
+**3.5 Expected-red check:** pytest 35 failed, 2066 passed. 18 are the environmental set. The other 17 all fall in the stencil's set:
+- Hook install: `test_cli.py::TestCmdInit::test_creates_hooks_directory`.
+- `init --dev`: the 10 `test_cli.py::TestCmdInitDevMode::*` tests that fail (`test_dev_creates_symlinks_for_{commands,skills,hooks,tool_templates}`, `test_dev_symlinks_orchestrator_command`, `test_dev_idempotent`, `test_dev_replaces_regular_file_with_symlink`, `test_dev_agents_resolve_placeholders`, `test_dev_updates_gitignore`, `test_dev_gitignore_idempotent`); `TestModificationDetectionIntegration::test_dev_mode_tracks_hashes`; `TestCmdInstallCommands::test_symlink_summary_describes_both_install_modes[True]` (the `dev=True` case); `test_installation.py::test_copy_link_dev_transitions_preserve_owner_additions` (calls `cmd_init(..., dev=True)`).
+- `test_installation.py::test_bundle_retirement_prunes_only_unchanged_resources[True-symlink]` and `[True-copy]` (the `[False-*]` cases pass).
+- The wheel test: `uv build` exits 2 because `pyproject.toml` force-includes the missing `claude`.
+
+Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisites`' `claude/` check (`cli/__init__.py:274`), and hooks are read from `data / "claude/hooks"` (`installation.py:339`). Non-dev installs still work only because `_get_data_root` falls through to its "last resort" source root (`cli/__init__.py:116`) once its `claude/` marker is gone. Phase 4 replaces all three keys.
+
+**Deviations:**
+- `git mv` needs the destination folder: `mkdir hooks` first. It left an empty `claude/hooks/` behind, removed with `rmdir` (git tracked nothing there).
 
 ### Phase 4 Completion
 
