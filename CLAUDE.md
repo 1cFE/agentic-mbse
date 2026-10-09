@@ -113,7 +113,7 @@ This only affects agent-invoked commands. Running the same commands directly in 
 
 ### Core Modules (`src/agentic_mbse/`)
 
-- **cli/**: CLI entry point (`agentic-mbse` command). Handles `validate`, `init`, and `install-commands` subcommands. The `init` command installs Claude commands, agents, skills, and project templates.
+- **cli/**: CLI entry point (`agentic-mbse` command). Handles `validate`, `init`, and `install-commands` subcommands. `init` installs the skills, expert roles, adapters and hook for Claude Code and Codex, plus the project templates; `install-commands` installs only the assistant integrations.
 
 - **validation/**: 6-level quality validation pyramid for SysML models:
   - Level 1: Syntax validation (via syside parser)
@@ -132,11 +132,11 @@ This only affects agent-invoked commands. Running the same commands directly in 
 
 ### Assistant Integration
 
-- **skills/**: The 15 modeling workflows and ten supporting skill bundles, shared by Claude Code and Codex.
+- **skills/**: The modeling workflows and supporting skill bundles, one folder each, shared by Claude Code and Codex. Each `SKILL.md` declares `metadata.kind` (`workflow` or `supporting`); `install-commands --list` groups by it.
 - **agents/**: Shared expert role instructions. The installer renders native Claude Markdown and Codex TOML definitions with documentation paths resolved.
 - **adapters/**: Platform tool, delegation, question, and permission guidance.
-- **claude/hooks/**: The existing inactive formatter hook script.
-- **cli/installation.py**: Shared ownership-aware installer used by `init`, `install-commands`, and the replication helper.
+- **hooks/**: The inactive formatter hook script, installed for Claude only.
+- **cli/installation.py**: The one ownership-aware installer, used by `init` and `install-commands`. It also adopts the links the pre-native installer (`init --dev`) left at `.claude/{commands,skills,agents,hooks}/<name>`: a shipped-name link into an agentic-mbse checkout's `claude/` folder is replaced by the native install and reported with its old target.
 
 ### Project Templates (`project_templates/`)
 
@@ -205,13 +205,16 @@ See [Critical: Two Contexts](#critical-two-contexts) for the full distinction. Q
 | `work/` | B (target repo) | Backlog, active/completed work items, learnings | No (created by init) |
 | `data/` | B (target repo) | Traceability matrix and structured data | No (created by init) |
 | `skills/` | B (shipped to target repos) | MBSE workflow commands users run | Yes |
+| `agents/`, `adapters/`, `hooks/` | B (shipped to target repos) | Expert roles, runtime adapters, formatter hook | Yes |
 | `tests/` | A (developing agentic-mbse) | pytest tests for Python code | Yes |
 
 ## Change Coordination
 
-The installer in `src/agentic_mbse/cli/installation.py` owns shared skills, native role rendering, aliases, and their ownership manifest. Both `init` and `install-commands` use it. `scripts/replicate_setup.sh` is a thin wrapper around `init`; asset changes belong in the common installer and packaged source trees.
+There is one installer, `src/agentic_mbse/cli/installation.py`. It owns shared skills, native role rendering, aliases, hooks and their ownership manifest; `init` and `install-commands` both call it. Asset changes belong in it and in the packaged source trees.
 
-The shared `skill_bundles()` inventory drives installation and `install-commands --list`. Keep `MBSE_COMMANDS` and `MBSE_SKILLS` aligned with the shipped workflow/supporting-skill inventory; tests check that inventory against `skills/*/SKILL.md`. Agent and hook discovery comes directly from their packaged directories.
+The source tree is the only inventory. Adding a skill means adding `skills/<name>/SKILL.md` with its `metadata.kind`; adding a role means adding `agents/<name>.md`; adding a hook means adding `hooks/<name>`. Nothing else changes: tests derive the inventory from the tree too (`tests/helpers/shipped.py`).
+
+`scripts/replicate_setup.sh` is a six-line wrapper around `init`. It installs the product into this checkout under the target-repo ownership policy, so it also writes the project scaffold. To get the workflows in this repo for development, run `uv run agentic-mbse install-commands --assistant claude` from the repo root instead: it writes only the assistant install, which `.gitignore` covers. It copies, so re-run it after editing `skills/`.
 
 ## Init File Ownership
 

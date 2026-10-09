@@ -122,7 +122,7 @@ claude -p "<prompt with file content>"
 
 ### replicate_setup.sh
 
-Development setup script that symlinks Claude commands/agents into `~/.claude/` for testing.
+Runs `agentic-mbse init` on this checkout with the target-repo ownership policy, so it installs the assistant integrations and also writes the project scaffold. To get the workflows in this repo for development without the scaffold, run `uv run agentic-mbse install-commands --assistant claude` from the repo root instead.
 
 **Usage:**
 ```bash
