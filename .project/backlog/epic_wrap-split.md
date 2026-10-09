@@ -87,7 +87,7 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 - ⚠️ The branch forked at `88e2489`, 58 commits behind `main` as of 2026-10-09 (PR #16 added `/research` and toolkit-awareness changes); eleven workflow bodies differ by 30–110 lines and the process template by 865 lines.
 - ⚠️ `adapters/{claude,codex}.md` still say "fresh stages require new agents"; fusion-tea's `.agentic-mbse/codex.md:7` carries the September author-continuity rule.
 - ⚠️ `main`'s `MODELING_GUIDE.md.template:276-282` locates pattern docs with the `get_docs_dir()` resolver, which works for source and packaged installs; its permissions sentence (`:282`) names `.claude/settings.json`, which needs Codex wording. No installer copies pattern docs into a target: fusion-tea's `.agentic-mbse/patterns/` is fusion-tea's own setup, and its note about it is target-owned.
-- ⚠️ fusion-tea's Claude side is 31 absolute symlinks into `/home/reid/1cfe/agentic-mbse/claude/` made by the old `replicate_setup.sh`, not a native install. The merge removes `claude/`, so they dangle once that checkout moves to the new `main`; today's native installer preserves them as owner files.
+- ⚠️ fusion-tea's Claude side is 31 absolute symlinks into `/home/reid/1cfe/agentic-mbse/claude/` made by `main`'s `agentic-mbse init --dev`, not a native install. The merge removes `claude/`, so they dangle once that checkout moves to the new `main`; today's native installer preserves them as owner files.
 - ❌ Independent re-review of the A–K remediations has not happened (`audit.md` still "Needs Work").
 
 **Scope**:
