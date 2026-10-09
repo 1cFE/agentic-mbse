@@ -1,0 +1,17 @@
+.claude/commands/manage-concept.md sha256:eced5b58e0c1a446058137f6cb6da3b61f4688f3a607e8ace7a7c3d5f68aaecf
+.claude/commands/research-acquire.md sha256:d5e8421013bd8d6a16e0e9069022a645b7f385ef353e536a41414c4af9bd8118
+.claude/skills/browser-inspect/SKILL.md sha256:9d19b2cd3ce20aec898fe24b23959bf1ec867b0c37d5227dd0b56c99e2a1d95d
+.claude/skills/concept-research-navigation/SKILL.md sha256:e1cf5306346a418d6ba485da198b16b23da636b20fd70f0097f248e639c04067
+.claude/skills/html-explainer/SKILL.md sha256:6ea6ebddf5e5dec2a49675b1d3334b0ced947d1b77b5168a0350c5ce91cd9320
+.claude/skills/html-explainer/explainer-guidelines.md sha256:b628b08b5e277f6c9bb86e50d680c0f41fdcbaa7c92c03a91a31cc52eee28bf8
+.claude/skills/narrate-goal/SKILL.md sha256:816f7ad74301304669106084cb5397d3046cb6de1843b678b99715f865520211
+.claude/skills/run-goal/SKILL.md sha256:4203d9abcecef59160bc8bdaf3e0fe48954943ea8577c52c7ba8d02a22f6438d
+.claude/skills/run-study/SKILL.md sha256:e3fe6bf94f78d99aed953e0fb7cd9619d5e55b4fa406279c0ffce29fce555f86
+.claude/skills/run-study/record-template.md sha256:782afc97868038b36b19a6a0e1fc620fbd17888fde78a9b3ff16c655865bf635
+.claude/skills/run-study/runbook.md sha256:ca118156dbde9770798aca621b82cfe8e6d6214afa2d55cd62ebb84574dd768d
+.claude/agents/memory-handler.md sha256:eccab40e5da872a6fa24b14cefd43312739e446236b5ebce431ee25c9ad13b84
+.agents/skills/browser-inspect -> ../../.claude/skills/browser-inspect
+.agents/skills/concept-research-navigation -> ../../.claude/skills/concept-research-navigation
+.agents/skills/narrate-goal -> ../../.claude/skills/narrate-goal
+.agents/skills/run-goal -> ../../.claude/skills/run-goal
+.agents/skills/run-study -> ../../.claude/skills/run-study

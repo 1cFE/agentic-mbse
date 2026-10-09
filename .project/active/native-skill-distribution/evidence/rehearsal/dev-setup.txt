@@ -1,0 +1,5 @@
+On branch master
+nothing to commit, working tree clean
+setup: no tracked link changed
+safe: .orchestrate-logs/rehearsal/ft-dev; legacy links into /home/reid/1cfe/agentic-mbse-nsd/claude/: 31; /home/reid/1cfe/agentic-mbse-nsd/claude exists: no
+AGENTS.md: tracked by fusion-tea

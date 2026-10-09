@@ -1,0 +1,23 @@
+MODELING_PROCESS.md: byte-identical to the reference
+MR-7 lines in MODELING_PROCESS.md: 2
+AGENTS.md carries: For this worktree, use `.agentic-mbse/patterns/` for the ins...
+AGENTS.md carries: Pattern references such as `[patterns/plant-idiom.md]` name ...
+owner entries: unchanged (17 lines)
+unchanged: pyproject.toml
+unchanged: uv.lock
+unchanged: CLAUDE.md
+unchanged: README.md
+unchanged: knowledge/SOURCE_INDEX.md
+unchanged: knowledge/KNOWLEDGE.md
+unchanged: modeling_project/OVERVIEW.md
+unchanged: modeling_project/ARCHITECTURE.md
+unchanged: modeling_project/REQUIREMENTS.md
+unchanged: modeling_project/VALIDATION_MATRIX.md
+unchanged: work/BACKLOG.md
+unchanged: work/learnings/RAW_LEARNINGS.md
+unchanged: data/traceability_matrix.csv
+unchanged: tests/conftest.py
+unchanged: tests/models/test_example.py
+unchanged: .claude/settings.json
+unchanged: .codex/config.toml
+work/backlog/epic_template.md: lrwxrwxrwx 1 reid reid 76 Oct  9 12:00 .orchestrate-logs/rehearsal/ft-plain/work/backlog/epic_template.md -> /home/reid/1cfe/agentic-mbse-nsd/project_templates/epic_template.md.template

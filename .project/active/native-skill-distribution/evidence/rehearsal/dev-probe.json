@@ -1,0 +1,57 @@
+{
+  "project": ".orchestrate-logs/rehearsal/ft-dev",
+  "versions": {
+    "claude": "2.1.295 (Claude Code)",
+    "codex": "codex-cli 0.160.0"
+  },
+  "clients": {
+    "claude": {
+      "names": [
+        "analyze-models",
+        "audit-models",
+        "backlog",
+        "design-model",
+        "formalize-intent",
+        "html-explainer",
+        "implement-model",
+        "manage-concept",
+        "manage-sources",
+        "narrate-goal",
+        "onboard",
+        "orchestrate-modeling",
+        "pdf-analysis",
+        "plan-model",
+        "python-debugger",
+        "quick-model",
+        "record-learning",
+        "research",
+        "research-acquire",
+        "review-model",
+        "run-goal",
+        "run-study",
+        "spec-model",
+        "status"
+      ],
+      "errors": [],
+      "error": null,
+      "expert_roles": [
+        "kerml-expert",
+        "python-debugger",
+        "syside-expert",
+        "sysml-expert",
+        "sysmlv2-validator"
+      ]
+    },
+    "codex": {
+      "names": [
+        "browser-inspect",
+        "concept-research-navigation",
+        "narrate-goal",
+        "run-goal",
+        "run-study"
+      ],
+      "errors": [],
+      "error": null
+    }
+  }
+}

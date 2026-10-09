@@ -1,0 +1,2 @@
+Preserved CLAUDE.md; skills load .agentic-mbse/claude.md directly
+Installed: 38, Skipped: 0, Removed: 0, Adopted: 0
