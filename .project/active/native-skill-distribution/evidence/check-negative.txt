@@ -1,0 +1,29 @@
+# reconcile.py check: baseline and negative self-check (main 06ac41d)
+
+## baseline
+- mutation: none (unmutated copy of the final install)
+- command: `uv run python .project/active/native-skill-distribution/evidence/reconcile.py check --main 06ac41d .orchestrate-logs/check/negative/baseline`
+- exit: 0
+- first line: check --main 06ac41d: 55 files compared, 0 mismatches
+- last line: check --main 06ac41d: 55 files compared, 0 mismatches
+
+## flipped body byte
+- mutation: .agents/skills/onboard/SKILL.md: byte 7865 'e' -> 'a'
+- command: `uv run python .project/active/native-skill-distribution/evidence/reconcile.py check --main 06ac41d .orchestrate-logs/check/negative/flipped-body-byte`
+- exit: 1
+- first line: skills/onboard/SKILL.md: body is not the preface plus main's adapted body
+- last line: check --main 06ac41d: 55 files compared, 1 mismatches
+
+## count + 1
+- mutation: A6 count 4 -> 5 in .orchestrate-logs/check/negative/adaptations-count-plus-one.yaml
+- command: `uv run python .project/active/native-skill-distribution/evidence/reconcile.py check --main 06ac41d --adaptations .orchestrate-logs/check/negative/adaptations-count-plus-one.yaml .orchestrate-logs/check/negative/count-+-1`
+- exit: 1
+- first line: A6 skills/manage-sources/SKILL.md: `old` occurs 4x, list says 5
+- last line: check --main 06ac41d: 55 files compared, 1 mismatches
+
+## extra bundle file
+- mutation: .agents/skills/onboard/extra.md added
+- command: `uv run python .project/active/native-skill-distribution/evidence/reconcile.py check --main 06ac41d .orchestrate-logs/check/negative/extra-bundle-file`
+- exit: 1
+- first line: bundle onboard: extra extra.md
+- last line: check --main 06ac41d: 55 files compared, 1 mismatches
