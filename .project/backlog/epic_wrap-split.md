@@ -64,7 +64,7 @@ Finish the toolkit so that every general capability built during the fusion-tea 
 - [ ] Full suites pass in agentic-mbse and sysml-codegen; fusion-tea re-installs from both installers with its protected files preserved and its three local skills removed in favour of the installed ones.
 - [ ] [OWNER] No loss of information for fusion-tea: every consumer-specific instruction removed from agentic-mbse during the sweep or the ports is recorded in a migration ledger with its new fusion-tea location, and fusion-tea's working tree holds it at that location before the agentic-mbse removal merges.
 - [ ] [OWNER] fusion-tea's MR-7 enforcement is intact after re-init: its `REQUIREMENTS.md` MR-7 is unchanged, and the hooks that lived in the tool-owned `MODELING_PROCESS.md`, `GOAL_RUNBOOK.md` and `goal.md` template are either covered by the shipped general section or re-homed in fusion-tea's user-owned files.
-- [ ] The `[INFERRED]` line in `native-skill-distribution/spec.md` saying goal/study procedures stay target-owned is amended to the owner's 2026-10-06 decision.
+- [x] The `[INFERRED]` line in `native-skill-distribution/spec.md` saying goal/study procedures stay target-owned is amended to the owner's 2026-10-06 decision (Item 1 spec update, 2026-10-09).
 - [ ] `research-acquire` installs from `agentic-mbse init`; `agentic-mbse research open | log | close | register | retire | verify` runs against fusion-tea's existing `knowledge/` with no data migration; fusion-tea's two seam scripts are deleted and its Zotero ingest registers through the installed package.
 
 ---
@@ -76,7 +76,7 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 ### Item 1: Reconcile native installer source with `main`
 
 **Type**: Code/Integration
-**Effort**: 1.5 days (spec: adopt existing, 0h; design 2h; plan 1h; execute 8h)
+**Effort**: 1.5 days (spec: adopted, updated to this scope 2026-10-09; design 2h; plan 1h; execute 8h)
 **Dependencies**: None
 
 **Objective**: Make the native Claude/Codex installer branch carry `main`'s current workflow content so there is one installer source to register new skills in.
@@ -84,13 +84,13 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 **Current State**:
 - ✅ `main` (`c37ff53`) holds the September workflow bodies and the rewritten `MODELING_PROCESS.md.template`; fusion-tea's installed copies match them.
 - ✅ Branch `native-claude-codex-skills` (worktree `/home/reid/1cfe/agentic-mbse-native-skills`, `955295b` + uncommitted A–K remediation) holds the `skills/` + `agents/` + `adapters/` layout, `skill_bundles()` discovery, hash manifest, Codex role registration.
-- ⚠️ The branch forked at `88e2489`, 57 commits behind `main`; eleven workflow bodies differ by 30–110 lines and the process template by 865 lines.
+- ⚠️ The branch forked at `88e2489`, 58 commits behind `main` as of 2026-10-09 (PR #16 added `/research` and toolkit-awareness changes); eleven workflow bodies differ by 30–110 lines and the process template by 865 lines.
 - ⚠️ `adapters/{claude,codex}.md` still say "fresh stages require new agents"; fusion-tea's `.agentic-mbse/codex.md:7` carries the September author-continuity rule.
-- ⚠️ `MODELING_GUIDE.md.template:198-202` documents only the legacy `get_docs_dir()` pattern resolver; the native installer copies patterns to `.agentic-mbse/patterns/`.
+- ⚠️ `MODELING_GUIDE.md.template:279` documents only the legacy `get_docs_dir()` pattern resolver; the native installer copies patterns to `.agentic-mbse/patterns/`.
 - ❌ Independent re-review of the A–K remediations has not happened (`audit.md` still "Needs Work").
 
 **Scope**:
-1. **Content rebase**: replace the branch's workflow bodies and templates with `main`'s content, keeping only the branch's envelope changes (frontmatter, "Before executing this skill" preface, paragraph reflow). Classify each of the sixteen observed differences per the existing spec: portable (take `main`), target-owned (leave in fusion-tea), intentional.
+1. **Content rebase**: replace the branch's workflow bodies and templates with `main`'s content, keeping the branch's envelope changes (frontmatter, "Before executing this skill" preface, paragraph reflow) and its runtime adaptation (body rewrites that make a skill work under both Claude Code and Codex, such as `.agents/skills/` script paths). Classify each of the sixteen observed differences per the existing spec: portable (take `main`), target-owned (leave in fusion-tea), intentional.
 2. **Adapter text**: carry the author-continuity sentence into both adapters; describe both pattern-directory modes in `MODELING_GUIDE.md.template`.
 3. **Integrate**: bring the branch onto `main` (rebase or merge; design decides) with the uncommitted remediation committed first. State the fate of `scripts/replicate_setup.sh`: on the branch it is already a thin wrapper around `init` (native `CLAUDE.md:212`); confirm that holds after the merge and update CLAUDE.md "Change Coordination" so Item 2's `cmd_init` changes have one place to land (product-lens epic-F2).
 4. **Verify**: fresh install into a scratch target in both runtimes; inventory test ties `skills/*/SKILL.md` to installed files; the A–K remediation re-review the existing audit asked for, bounded to installer behaviour.
@@ -137,7 +137,7 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 2. **Templates**: `GOAL_RUNBOOK.md` and the three goal templates as tool-owned templates to `work/orchestration/`; `cmd_init` creates `work/orchestration/goals/` and `work/narratives/`; add to `TOOL_OWNED_TEMPLATES` and `DEV_MODE_GITIGNORE_PATHS` (or the native equivalents); `test_goal_contract.py` as a template beside `test_models_example.py.template`, with the ADR-register half conditional on an ADR directory existing.
 3. **Decisions doc**: one shipped `docs/goal-layer-decisions.md` condensing fusion-tea ADR-0001..0007 with their `[OWNER]`/`[AGENT]` grades and fusion-tea provenance; the runbook cites it instead of `.project/adr/`. Design must settle authority (product-lens smell 1, two hand-synchronized copies): proposed stance is that the shipped doc is a dated snapshot cited by fusion-tea path and commit and is the authority for installed targets; fusion-tea's live ADRs govern fusion-tea only, and a later fusion-tea amendment reaches targets through an ordinary toolkit change, not by reference.
 4. **Design-choice principle**: a short "Preserve design choices" section in `MODELING_PROCESS.md.template` and a process-selection row ("Changed design-variable role, automatic sizing or selection policy, or demand-derived installed capacity → focused independent design review of actual bindings and downstream consumers; insufficient/sufficient supplied-design tests where applicable"); an invariants bullet in the shipped `goal.md` pointing at the target's requirements file.
-5. **Migration ledger**: create `.project/active/wrap-split-migration-ledger.md`; record each removed MR-7 hook with its fusion-tea destination (fusion-tea `REQUIREMENTS.md` MR-7 "Enforcement" paragraph, or `CLAUDE.md`), and amend the `[INFERRED]` line in `native-skill-distribution/spec.md`.
+5. **Migration ledger**: create `.project/active/wrap-split-migration-ledger.md`; record each removed MR-7 hook with its fusion-tea destination (fusion-tea `REQUIREMENTS.md` MR-7 "Enforcement" paragraph, or `CLAUDE.md`). The `[INFERRED]` line in `native-skill-distribution/spec.md` was already amended in Item 1's spec update (2026-10-09).
 
 **Out of Scope**:
 - `run-study`, `STUDY_POLICY.md`, `scripts/study/*`, `integrate.py` (Item 3).
@@ -151,7 +151,7 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 - [ ] The process template carries the new section and table row; fusion-tea's two inserted paragraphs are covered by it or re-homed, and fusion-tea's `REQUIREMENTS.md` MR-7 is byte-identical.
 - [ ] `docs/goal-layer-decisions.md` preserves each ADR's grade and cites fusion-tea by path and commit.
 - [ ] Ledger rows exist for every removed consumer-specific line; fusion-tea's working tree holds each destination before the agentic-mbse change merges.
-- [ ] `uv run pytest tests/` passes; the `[INFERRED]` line in the distribution spec is amended.
+- [ ] `uv run pytest tests/` passes.
 
 **Required Reading**: research § 1a, § 2, § 5; fusion-tea `work/orchestration/GOAL_RUNBOOK.md`; fusion-tea `.project/concepts/goal-driven-model-development-harness.md` (owner stop rules, line 198); fusion-tea `modeling_project/REQUIREMENTS.md` § MR-7 and `.project/active/modeling-intent-enforcement/spec.md`; `project_templates/MODELING_PROCESS.md.template`; CLAUDE.md "Init File Ownership".
 

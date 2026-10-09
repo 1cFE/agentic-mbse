@@ -12,7 +12,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 ## Active Work
 
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~9 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
-- [native-skill-distribution](active/native-skill-distribution/spec.md) — `NATIVE-DISTRIBUTION-RECONCILIATION`, adopted as `WRAP-SPLIT` Item 1; draft spec complete; product-lens CLEAR; `/_my_design` next.
+- [native-skill-distribution](active/native-skill-distribution/spec.md) — `NATIVE-DISTRIBUTION-RECONCILIATION`, adopted as `WRAP-SPLIT` Item 1; spec rewritten to the epic's Item 1 scope 2026-10-09; `/_my_spec_review` in a fresh session next, then `/_my_design`. First on the epic's critical path.
 - [research-seam-port](active/research-seam-port/spec.md) — `WRAP-SPLIT` Item 5: port fusion-tea's research acquisition seam (the `research-acquire` skill plus an `agentic-mbse research` CLI) and rework `/manage-sources` to follow the registry's rules. Spec drafted 2026-10-08/09; design page approved by owner 2026-10-09 ([page](mental-alignment-v2/runs/20261006-150340_research-process-end-state_fresh.html)); product-lens CLEAR. Next: `/_my_spec_review` in a fresh session. One owner question open: may a goal delegate insight approval (does not affect Item 5's code).
 
 ## Concrete remaining work
