@@ -220,13 +220,13 @@ assert check(main=8f43a09, fresh_install(commit 2)) == 0
 **See `design.md` for:** the path rule and `check`'s comparison rules (§ One-time integration flow); the envelope (D3); the list's scope and fields (D4); the 17 starting entries (Appendix A).
 
 #### `evidence/adaptations.yaml` (NEW)
-- [ ] **2.1** Seed the 17 entries from Appendix A with fields `id`, `file`, `old`, `new`, `count`, `why` and `origin`. Copy every `old` and `new` verbatim from the branch. Expand A4, A7 and A9 to verbatim strings using the word diffs (`.orchestrate-logs/nsd-design-scratch/wdiff.py`, and `.orchestrate-logs/nsd-inputs/fork-to-branch.diff`). Mark A1 `review: true` (design § Implementation Notes). A header comment states the semantics both commands implement:
+- [x] **2.1** Seed the 17 entries from Appendix A with fields `id`, `file`, `old`, `new`, `count`, `why` and `origin`. Copy every `old` and `new` verbatim from the branch. Expand A4, A7 and A9 to verbatim strings using the word diffs (`.orchestrate-logs/nsd-design-scratch/wdiff.py`, and `.orchestrate-logs/nsd-inputs/fork-to-branch.diff`). Mark A1 `review: true` (design § Implementation Notes). A header comment states the semantics both commands implement:
   - The body is the text below the frontmatter when a file starts with `---\n`, otherwise the whole file. Frontmatter is never adapted (C1).
   - Entries apply in list order. `count` is the exact number of occurrences of `old` in the body at the moment the entry applies.
 
 #### `evidence/reconcile.py` (NEW; one-time; retires with the item)
-- [ ] **2.2** Shared helpers only: read a file and its mode at a revision (`git show <rev>:<path>`, `git ls-tree -r <rev>`); load the YAML; split frontmatter by lines (the opening `---\n` and the next line equal to `---`; never `split("---", 2)`, which breaks on a `---` inside a value). Reading `main` through git, never through the working tree's `claude/`, lets both commands run after commit 3 and after `main` moves (R2).
-- [ ] **2.3** `check --main <rev> [--preface-from 86921f9] [--adaptations PATH] [--rows PATH] <installed-target>`. It shares no envelope code with `write`.
+- [x] **2.2** Shared helpers only: read a file and its mode at a revision (`git show <rev>:<path>`, `git ls-tree -r <rev>`); load the YAML; split frontmatter by lines (the opening `---\n` and the next line equal to `---`; never `split("---", 2)`, which breaks on a `---` inside a value). Reading `main` through git, never through the working tree's `claude/`, lets both commands run after commit 3 and after `main` moves (R2).
+- [x] **2.3** `check --main <rev> [--preface-from 86921f9] [--adaptations PATH] [--rows PATH] <installed-target>`. It shares no envelope code with `write`.
   - **Frontmatter, as data:** `yaml.safe_load` the installed frontmatter. It must equal `main`'s parsed frontmatter with `skills` removed, `Task` replaced by `Agent` in `allowed-tools` (string or list form), and the kind field added. The kind comes from `main`'s location: `claude/commands/` is `workflow`, `claude/skills/` is `supporting`.
   - **Preface:** taken from `--preface-from`, as the paragraph after the frontmatter in `86921f9:skills/<n>/SKILL.md`. Assert it is one string across all 25 bundles.
   - **Body, as bytes:** the installed text after the frontmatter equals `"\n" + preface + "\n\n" + adapt(main_body)`, with every entry hitting its exact `count`.
@@ -237,8 +237,8 @@ assert check(main=8f43a09, fresh_install(commit 2)) == 0
   - **Modes:** every compared file's executable bit equals `main`'s git mode.
   - **Sets:** the bundle set, each bundle's file set and the agent set match exactly.
   - **Output:** print every mismatch and exit 1 if there is any. With `--rows`, write one markdown row per compared file: path, `main` source, envelope applied (yes/no), and disposition in SC1's words (`take main`, or `merge: main + A6, A7`).
-- [ ] **2.4** [SC2] Run `check` on a fresh install of commit 1. It must exit non-zero, because the branch's text is older than `main`'s. Keep the output in `.orchestrate-logs/check/commit1.txt`. If it exits 0, `check` is broken: fix it before writing `write`.
-- [ ] **2.5** `write --main <rev>`:
+- [x] **2.4** [SC2] Run `check` on a fresh install of commit 1. It must exit non-zero, because the branch's text is older than `main`'s. Keep the output in `.orchestrate-logs/check/commit1.txt`. If it exits 0, `check` is broken: fix it before writing `write`.
+- [x] **2.5** `write --main <rev>`:
   - Applies the path rule.
   - For each `SKILL.md`, applies the D3 text transform: delete the `skills:` line, failing if indented continuation lines follow it; replace `Task` with `Agent` on the `allowed-tools` line only; append the kind field as the last key; then write `---\n\n<preface>\n\n` followed by the adapted body.
   - Applies adaptations to bodies and asserts every count.
@@ -246,15 +246,15 @@ assert check(main=8f43a09, fresh_install(commit 2)) == 0
   - Skips `claude/hooks/*`, which commit 3 moves with `git mv`. Fails on any other unexpected `claude/` path.
   - Lists, and does not delete, any file under `skills/` or `agents/` with no `main` counterpart. `check` will fail on it, and it needs a disposition in 6.4.
   - Commit the two evidence files alone (`git add` them by path): `Add one-time reconcile tooling and the reviewed adaptation list`. Fix commits to the tooling are fine later; commit 2 stays `write`'s output alone.
-- [ ] **2.6** [SC2, SC4] Regenerate, install and check:
+- [x] **2.6** [SC2, SC4] Regenerate, install and check:
   ```bash
   uv run python .project/active/native-skill-distribution/evidence/reconcile.py write --main 8f43a09
   mkdir -p .orchestrate-logs/check/commit2 && uv run agentic-mbse init .orchestrate-logs/check/commit2 --assistant both < /dev/null > /dev/null
   uv run python .project/active/native-skill-distribution/evidence/reconcile.py check --main 8f43a09 .orchestrate-logs/check/commit2 > .project/active/native-skill-distribution/evidence/check-commit2.txt 2>&1; echo "exit $?"
   ```
   Expected: `git status` shows changes only under `skills/`, `agents/` and `project_templates/` (the tool-owned templates), and `check` exits 0. A count mismatch means B1 is false for that file. Inspect it. If `main` holds another runtime-specific instance, add a reviewed entry with `origin: item1` and a `why`, then re-run. Never hand-edit `write`'s output.
-- [ ] **2.7** `uv run pytest tests/` passes. A failure here is a branch test pinning the branch's old text. Point it at `main`'s text, as the design does for the contract test.
-- [ ] **2.8** Commit `write`'s output alone: `Regenerate shipped skills, agents and tool-owned templates from main 8f43a09`.
+- [x] **2.7** `uv run pytest tests/` passes. A failure here is a branch test pinning the branch's old text. Point it at `main`'s text, as the design does for the contract test.
+- [x] **2.8** Commit `write`'s output alone: `Regenerate shipped skills, agents and tool-owned templates from main 8f43a09`.
 
 ### Validation
 - **Automated:** `check` exits non-zero on commit 1's fresh install and 0 on commit 2's. pytest passes.
@@ -716,6 +716,21 @@ See `design.md#potential-risks` (R1–R7) for the full analysis. Phase-specific 
 - 1.2's mypy count is 101, not 91. Recorded and used.
 
 ### Phase 2 Completion
+**Completed:** 2026-10-09. Tooling `e3eb308`; commit 2 (`write`'s output alone) `f68ae0a`; `check` evidence and these notes in the following `.project/`-only commit.
+
+**Actual Changes:**
+- 2.1 `evidence/adaptations.yaml`: the 17 Appendix A entries with `id`, `file`, `old`, `new`, `count`, `why`, `origin` (A1 also `review: true`); a header comment states the body-only, in-order, exact-count semantics. A4 and A7 are whole-sentence/whole-paragraph replacements (one line each in `main`); A9 is A8's strings. Before writing any code, a throwaway pass confirmed every `old` occurs exactly `count` times in `main`'s body and every `new` occurs the same number of times in the branch's body (A17's `new` is absent there by design, `origin: item1`). No `.orchestrate-logs/nsd-design-scratch/` exists in this worktree, so the word diffs were re-run with `git diff --no-index --word-diff=plain --word-diff-regex='[^[:space:]]+'` between `88e2489` and `86921f9`.
+- 2.2–2.3 and 2.5 `evidence/reconcile.py` (392 lines after `ruff format`; ruff check/format and mypy clean). Shared code is only `show`, `tree`, `load_adaptations` and `split_frontmatter`. `check` is a `Checker` class that collects mismatches; it has its own adaptation pass (reports) and its own frontmatter expectation (parsed YAML). `write` has `destination` (the path rule), `envelope` (D3 text transform), `adapt` (raises on a count mismatch) and computes every output before writing any file. `check` takes the preface from `86921f9` and asserts it is one string across the 25 bundles; `write` uses its own constant, so a typo in either fails `check`. Beyond the plan's comparisons, `check` also compares the hook set and the pattern-doc set, and reports a list entry whose file is never compared.
+- 2.4 `check --main 06ac41d` on a fresh install of commit 1 (`.orchestrate-logs/check/commit1`): **exit 1**, 55 files compared, 52 mismatches (`.orchestrate-logs/check/commit1.txt`): all 25 `SKILL.md` frontmatters (no kind yet), 23 bodies (old text or reflow), `debugging_internals.md`, `sysml-expert.md` (reflow), and the guide and process templates. `python-debugger/SKILL.md` and `source-traceability/SKILL.md` failed on frontmatter only, which shows the body comparison passes text that already equals `main` plus the list.
+- 2.6 `write --main 06ac41d`: 40 files regenerated, no file under `skills/` or `agents/` without a `main` counterpart (the mapped inventories were confirmed identical before writing). Git shows 29 changed (26 under `skills/`, `agents/sysml-expert.md`, the guide and process templates); the other 11 were already byte-equal. No mode changes. `check --main 06ac41d` on a fresh install of commit 2: **exit 0**, 55 files compared, 0 mismatches (`evidence/check-commit2.txt`). Read `skills/onboard/SKILL.md`: frontmatter with `kind: workflow` last, the preface, then `main`'s body with A1–A4.
+- The large deletion count in commit 2 (396+/1831−) is `main`'s September rewrite condensing the text, not truncation: e.g. the process template is 104 lines on `main` and after `write`, 843 on the branch; `design-model` is 39 on `main`, 43 after `write` (the envelope adds 4 lines).
+- 2.7 pytest: 19 failed, 2082 passed. 18 are the environmental set. The 19th is the wheel test seeing `main`'s `claude/` (Phase 1 note); commit 3 removes it. The contract test now passes on the regenerated template. No branch test pinned the branch's old text, so nothing was re-pointed.
+
+**B1:** holds for the 17 listed entries: every count matched on the first run, and no new entry was needed. (Unlisted runtime-specific text is not something `check` can see; Phase 4's text property tests are the guard.)
+
+**Deviations:**
+- `main` is `06ac41d` (Phase 1 note), so every command used `--main 06ac41d`.
+- `check-commit2.txt` and these notes go in a `.project/`-only commit after commit 2, so commit 2 stays `write`'s output alone.
 
 ### Phase 3 Completion
 
