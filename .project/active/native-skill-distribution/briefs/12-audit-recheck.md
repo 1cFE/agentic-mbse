@@ -1,0 +1,8 @@
+Targeted re-check of your audit (`audit.md`, verdict Needs Work on B1). The orchestrator's dispositions are in `briefs/11-audit-fixes.md`; the fixes are committed on `nsd-integration` (`783b00e` B1 warning, `728a4fe` predicate pins and tree-sampled tests, `b5fb2ed` one frontmatter parser and dead names removed, `7cf6c41` byte-exact `check`, `2c65dda` notes). Suite on HEAD `2c65dda`: 2174 passed, 1 skipped, 1 xfailed.
+
+Re-check, bounded to what changed:
+- **B1:** the orchestrator chose your second clearing route (limitation stated in the README's `--dev` paragraph and in `init --dev`'s output when Codex is selected; the fix filed as a follow-up with a spike). Confirm the warning and the caveated next steps behave as stated for `claude`/`codex`/`both` with and without `--dev`, the README sentence is accurate, and the test pins it.
+- **Advisories 1, 3, 5, 6, 8, 9:** confirm each fix; re-run your M1 and M7 mutants (they should now be killed) and the CRLF content mutation (should now fail `check`). Check that the frontmatter consolidation and the removed names changed no behaviour you can observe.
+- **Advisories 2, 4, 7:** accepted with reasons in the brief; note whether you agree.
+
+Then update `audit.md` with a dated re-check section and the final verdict, update the native audit's verdict line (`.project/active/native-skills/audit.md:3`) to match, and append your product-lens block (with the re-check's resolution) to `.project/active/native-skill-distribution/product-lens.md`. Same rules: scratch under `.orchestrate-logs/audit-scratch/`, restore anything you mutate, no commits, no background tasks. End with `ARTIFACT: .project/active/native-skill-distribution/audit.md` after a short summary.
