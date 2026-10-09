@@ -1,6 +1,6 @@
 # Audit: Native Claude and Codex skills
 
-**Verdict:** Needs Work
+**Verdict:** Needs Work (re-audited 2026-10-09 with WRAP-SPLIT Item 1: F-A to F-K hold; one open blocker, `init --dev` leaves Codex with no shipped skills; see `.project/active/native-skill-distribution/audit.md`)
 **Audited:** 2026-09-08
 **Branch:** native-claude-codex-skills (worktree `/home/reid/1cfe/agentic-mbse-native-skills`)
 **Commit:** 955295b
