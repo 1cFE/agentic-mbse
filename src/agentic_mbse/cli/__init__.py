@@ -67,6 +67,13 @@ DEV_MODE_GITIGNORE_PATHS = [
 # Hash file for tracking tool-owned file modifications
 HASH_FILE = MANIFEST
 
+# --dev links each bundle file to the source checkout; Codex 0.160 lists none of those skills.
+DEV_CODEX_WARNING = (
+    "Warning: Codex does not list skills that --dev installs as links to the source checkout, "
+    "so the MBSE skills are not available in Codex here. Use plain `agentic-mbse init` "
+    "(without --dev) for Codex. Claude Code is not affected."
+)
+
 
 def _get_data_root() -> Path:
     """Get root path for bundled data (skills/, agents/, hooks/, docs/, templates).
@@ -633,12 +640,21 @@ Edit this file to add your domain-specific sources.
         for item in skipped:
             print(f"  . {item}")
 
+    onboard = "Run /onboard in Claude or $onboard in Codex to configure your project"
+    if is_dev_mode and assistant in ("codex", "both"):
+        print(f"\n{DEV_CODEX_WARNING}")
+        onboard = (
+            "Run /onboard in Claude to configure your project (Codex cannot see $onboard under --dev)"
+            if assistant == "both"
+            else "Re-run init without --dev, then run $onboard in Codex to configure your project"
+        )
+
     if not (created or updated or symlinked or backed_up or removed or adopted):
         print("Everything up to date.")
     else:
         print("")
         print("Next steps:")
-        print("  1. Run /onboard in Claude or $onboard in Codex to configure your project")
+        print(f"  1. {onboard}")
         print(
             "  2. Or manually edit knowledge/SOURCE_INDEX.md and start with the design-model skill"
         )

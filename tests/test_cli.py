@@ -6,7 +6,13 @@ from pathlib import Path
 import pytest
 import tomllib
 
-from agentic_mbse.cli import cmd_init, cmd_install_commands, cmd_validate, main
+from agentic_mbse.cli import (
+    DEV_CODEX_WARNING,
+    cmd_init,
+    cmd_install_commands,
+    cmd_validate,
+    main,
+)
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
 from tests.helpers.shipped import HOOKS, REPO_ROOT, SKILLS, kind
 
@@ -460,6 +466,18 @@ class TestCmdInitDevMode:
             hook_path = tmp_path / ".claude" / "hooks" / hook
             assert hook_path.is_symlink()
             assert hook_path.resolve() == REPO_ROOT / "hooks" / hook
+
+    @pytest.mark.parametrize("assistant", ["claude", "codex", "both"])
+    @pytest.mark.parametrize("dev", [False, True])
+    def test_dev_warns_that_codex_cannot_see_linked_skills(self, tmp_path, capsys, dev, assistant):
+        """Codex lists no skill that --dev links into the source checkout, so init says so."""
+        args = MockArgs(path=str(tmp_path), force=False, dev=dev, assistant=assistant)
+        assert cmd_init(args) == EXIT_SUCCESS
+        output = capsys.readouterr().out
+        codex_hidden = dev and assistant != "claude"
+        assert (DEV_CODEX_WARNING in output) == codex_hidden
+        # Without the warning's caveat, the closing steps would point Codex at $onboard.
+        assert ("Run /onboard in Claude or $onboard in Codex" in output) == (not codex_hidden)
 
     def test_dev_refused_without_source_checkout(self, tmp_path, monkeypatch, capsys):
         """Packaged data has skills/ too, so only src/agentic_mbse marks a source checkout."""
