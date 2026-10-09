@@ -347,33 +347,33 @@ Total: 25 skills
 ```
 
 #### Code
-- [ ] **4.1** `src/agentic_mbse/cli/installation.py`: add `is_source_checkout` and `bundle_kind`. Hooks come from `data / "hooks"` (native `:339`).
-- [ ] **4.2** `src/agentic_mbse/cli/__init__.py`:
+- [x] **4.1** `src/agentic_mbse/cli/installation.py`: add `is_source_checkout` and `bundle_kind`. Hooks come from `data / "hooks"` (native `:339`).
+- [x] **4.2** `src/agentic_mbse/cli/__init__.py`:
   - Delete `MBSE_COMMANDS` and `MBSE_SKILLS` (native `:17-48`).
   - `_get_data_root` (`:97-117`) and `_check_dev_mode_prerequisites` (`:274-280`) use `is_source_checkout`. Their docstrings and comments stop mentioning `claude/`.
   - `get_hooks_dir` (`:135-137`) returns `hooks`.
   - `--list` (`:677-684`) groups by `bundle_kind`.
   - Leave `get_docs_dir` as is (I6). Leave `DEV_MODE_GITIGNORE_PATHS` as is (design Non-Goals; follow-up in 8.6).
   - `grep -rn "MBSE_COMMANDS\|MBSE_SKILLS" src tests scripts` prints nothing.
-- [ ] **4.3** `pyproject.toml`: `"claude"` becomes `"hooks"` in the wheel force-include (`:54`), and `"claude/"` becomes `"hooks/"` in the sdist include (`:62`). Fix the comment at `:52`.
+- [x] **4.3** `pyproject.toml`: `"claude"` becomes `"hooks"` in the wheel force-include (`:54`), and `"claude/"` becomes `"hooks/"` in the sdist include (`:62`). Fix the comment at `:52`.
 
 #### Tests (inventories become properties)
 Derive every expected set with the test's own glob over `REPO_ROOT / "skills"`, `"agents"` and `"hooks"`, not with the installer's `skill_bundles()`. A test must be able to disagree with the installer.
 
-- [ ] **4.4** [SC5] Remove the `MBSE_*` imports (`test_cli.py:8`, `test_installation.py:12`) and the assertions built on them (`test_cli.py:283-289`, `test_installation.py:35`). Replace the literal skill lists (`test_cli.py:150-160`, `:454-464`) and the counts (`test_cli.py:257-258`, `:268`; `test_installation.py:53`) with derived values. In `test_bundle_retirement_prunes_only_unchanged_resources` (`test_installation.py:285`), create `src/agentic_mbse/` in the fake root and link `hooks` instead of `claude`.
-- [ ] **4.5** [SC5] Add the stencil's fake-root test. Add the I7 test: every `skills/*/SKILL.md` has `name` equal to its folder, a `description`, a kind of `workflow` or `supporting`, no `skills:` key, and the shared preface as its first paragraph.
-- [ ] **4.6** [SC5, SC7] Add a `--list` test: every installed bundle is listed exactly once, under the section that matches its kind, and the total equals the number of `skills/*/SKILL.md`. Extend `test_native_install_catalog_and_roles` (`test_installation.py:31-59`): every file under every source bundle is present and byte-equal at `.agents/skills/<n>/…` and, for `claude` and `both`, at `.claude/skills/<n>/…`. The role count is the number of `agents/*.md`.
-- [ ] **4.7** [SC4, SC7] Text property tests over a fresh `--assistant both` install:
+- [x] **4.4** [SC5] Remove the `MBSE_*` imports (`test_cli.py:8`, `test_installation.py:12`) and the assertions built on them (`test_cli.py:283-289`, `test_installation.py:35`). Replace the literal skill lists (`test_cli.py:150-160`, `:454-464`) and the counts (`test_cli.py:257-258`, `:268`; `test_installation.py:53`) with derived values. In `test_bundle_retirement_prunes_only_unchanged_resources` (`test_installation.py:285`), create `src/agentic_mbse/` in the fake root and link `hooks` instead of `claude`.
+- [x] **4.5** [SC5] Add the stencil's fake-root test. Add the I7 test: every `skills/*/SKILL.md` has `name` equal to its folder, a `description`, a kind of `workflow` or `supporting`, no `skills:` key, and the shared preface as its first paragraph.
+- [x] **4.6** [SC5, SC7] Add a `--list` test: every installed bundle is listed exactly once, under the section that matches its kind, and the total equals the number of `skills/*/SKILL.md`. Extend `test_native_install_catalog_and_roles` (`test_installation.py:31-59`): every file under every source bundle is present and byte-equal at `.agents/skills/<n>/…` and, for `claude` and `both`, at `.claude/skills/<n>/…`. The role count is the number of `agents/*.md`.
+- [x] **4.7** [SC4, SC7] Text property tests over a fresh `--assistant both` install:
   - **Reference integrity (the deletion guard, D6 and S4):** every backticked reference whose whole content matches `^/[a-z0-9-]+$` names an installed bundle. Every `.agents/skills/<n>/…` path, with `<n>` matching `[a-z0-9-]+`, names an installed bundle, and its sub-path exists when it names a file.
   - **No `.claude/` paths:** no installed `SKILL.md`, bundle file, tool-owned template or Codex role TOML contains `.claude/`. Claude agents carry the Claude adapter, which may name `.claude/settings.json`; they are excluded by design.
   - **The guide (SC4):** the installed `modeling_project/MODELING_GUIDE.md` does not contain `.claude/settings.json`.
   - If a hit appears that is explicitly conditional on the runtime, do not add an exemption list. Return it as a B1 finding, and add a reviewed adaptation instead.
-- [ ] **4.8** [SC6] In `tests/test_cli.py`:
+- [x] **4.8** [SC6] In `tests/test_cli.py`:
   - `init` installs `.claude/hooks/ruff-format.sh` with the exec bit.
   - `init --dev` links it to a path ending in `hooks/ruff-format.sh` under the repo root.
   - `--dev` is refused, with the "requires a source checkout" message, when `_get_data_root` is monkeypatched to a folder without `src/agentic_mbse`.
   - Add `test_source_tree_has_no_claude_folder` (I5): `REPO_ROOT / "claude"` does not exist, and neither include list in `pyproject.toml` names `claude`.
-- [ ] **4.9** [SC6] In `tests/test_packaged_guidance_contract.py`, with one wheel build:
+- [x] **4.9** [SC6] In `tests/test_packaged_guidance_contract.py`, with one wheel build:
   - Read the force-included folder set from `pyproject.toml` with `tomllib`. Every file under each folder is byte-equal to its wheel member. No member starts with `agentic_mbse_data/claude/`.
   - Extract the wheel with `zipfile` into `tmp_path`. In a subprocess (`sys.executable`, `PYTHONPATH=<extracted>`), run a short script that asserts `agentic_mbse.__file__` is under the extracted folder, calls `cmd_init` on a fresh target, and prints `get_docs_dir()`. Assert every bundle, every agent and the hook are installed, and that the docs dir is under `agentic_mbse_data/docs` (I6).
   - Do not assert the exec bit here: `extractall` drops modes. Optionally, in the same build, assert that `init --dev` from the wheel is refused.
@@ -383,7 +383,7 @@ Derive every expected set with the test's own glob over `REPO_ROOT / "skills"`, 
 - **Inventory check (I4):** `grep -rnE "MBSE_COMMANDS|MBSE_SKILLS" src tests scripts` and `grep -nE "== 25|\(25\)|Total: 25|== 18|== 5\b" tests/test_cli.py tests/test_installation.py` print nothing.
 - **Manual:** `uv run agentic-mbse install-commands --list` shows Workflows (15) and Supporting skills (10), total 25.
 
-- [ ] **4.10** Commit: `Make the source tree the only inventory: MBSE lists and claude/ keys removed, hooks/ packaged`.
+- [ ] **4.10** (Saved as commit step `1-phase4`; commit pending, see Phase 4 Completion.) Commit: `Make the source tree the only inventory: MBSE lists and claude/ keys removed, hooks/ packaged`.
 
 ### What We Know Works After This Phase
 Adding a skill is adding a folder. `init`, `init --dev` and the wheel all install the hook from `hooks/`. No list or count of skills remains in `src/` or `tests/`.
@@ -422,23 +422,23 @@ def test_legacy_link_target_accepts_exactly_what_the_old_installer_wrote(tmp_pat
 - `expose_to_claude(installer: Installer, source: Path, *, link_mode: str, dev: bool) -> None`. It calls `retire_command(source.name)`. If that returns true, it makes the alias: `alias`, or `copy_tree` in copy mode, keeping the existing fallback to `copy_tree` when a real directory is in the way.
 - `init` prints, after the "Symlinked" block, `Adopted (N) - links from the pre-native installer replaced:` and then one `  A <entry> (was -> <old target>)` line per entry. The hyphen matches the existing headers. `install-commands` adds `Adopted: N` to its summary line and prints the same entry lines.
 
-- [ ] **5.1** [SC8] Write the stencil's unit test. Use a fake checkout root `<tmp>/old/src/agentic_mbse/` and a plain folder `<tmp>/plain/`. Take `{cmd}` from the source tree (the first bundle whose kind is `workflow`).
-- [ ] **5.2** [SC8] Write the end-to-end test, parametrized over the four kinds × target existing or dangling. Take the names from the source tree: a workflow, a supporting skill, an agent stem and the hook. For each case:
+- [x] **5.1** [SC8] Write the stencil's unit test. Use a fake checkout root `<tmp>/old/src/agentic_mbse/` and a plain folder `<tmp>/plain/`. Take `{cmd}` from the source tree (the first bundle whose kind is `workflow`).
+- [x] **5.2** [SC8] Write the end-to-end test, parametrized over the four kinds × target existing or dangling. Take the names from the source tree: a workflow, a supporting skill, an agent stem and the hook. For each case:
   - Create the absolute link `.claude/<kind>/<name>` into `<tmp>/old/claude/<kind>/<name>`, and run a non-interactive `init`.
   - The entry is now the installed thing. Commands: the link is gone and `.claude/skills/<n>` is the relative alias. Skills: the relative alias. Agents: a real rendered file. Hook: a real executable file.
   - The output lists `(was -> <link text>)`.
   - When the target exists, its bytes are unchanged.
-- [ ] **5.3** [SC8] Negative end-to-end cases keep today's prompt-or-preserve: an unshipped name (never visited), a non-checkout root, a non-mirrored tail, a relative link, a `..` link, a real file and a real directory. Each is left exactly as it was, and no alias shadows a preserved command.
-- [ ] **5.4** [SC8] A mixed legacy tree built from the source inventory: a dangling link for every shipped command, supporting skill, agent and hook name, plus owner entries (an unshipped command link, a real owner skill directory, a relative `.agents/skills/` owner link). Assert that the adopted count equals the number of shipped-name links created, every bundle resolves at `.claude/skills/<n>/SKILL.md`, and the owner entries are byte- and link-identical. Repeat once through `cmd_install_commands` to cover its report.
-- [ ] **5.5** [SC8] Implement.
+- [x] **5.3** [SC8] Negative end-to-end cases keep today's prompt-or-preserve: an unshipped name (never visited), a non-checkout root, a non-mirrored tail, a relative link, a `..` link, a real file and a real directory. Each is left exactly as it was, and no alias shadows a preserved command.
+- [x] **5.4** [SC8] A mixed legacy tree built from the source inventory: a dangling link for every shipped command, supporting skill, agent and hook name, plus owner entries (an unshipped command link, a real owner skill directory, a relative `.agents/skills/` owner link). Assert that the adopted count equals the number of shipped-name links created, every bundle resolves at `.claude/skills/<n>/SKILL.md`, and the owner entries are byte- and link-identical. Repeat once through `cmd_install_commands` to cover its report.
+- [x] **5.5** [SC8] Implement.
   - `legacy_link_target` follows the design's pseudo-code exactly. Split the raw `os.readlink` text on `/`. Never use `Path(text).parts`, never normalize, and never stat the referent.
   - `permit` checks it after the manifest/desired match and before `force`/`decide`. On a match it appends to a new `actions["adopted"]` bucket and returns true.
   - The loop in `install_assistants` calls `expose_to_claude` in place of the side effect inside the boolean condition at native `:311`. `retire_command` is unchanged.
   - Add the report lines, and include `adopted` in `cmd_init`'s "Everything up to date" and "Next steps" conditions (native `:659-661`).
   - Size check: `permit` grows by a few lines. `grep -n "def " src/agentic_mbse/cli/installation.py` shows only `legacy_link_target` and `expose_to_claude` as new in this phase, and no new removal API.
-  - Commit: `Adopt the old installer's links inside permit, and report them`.
-- [ ] **5.6** [SC3] Edit `adapters/claude.md:7` and `adapters/codex.md:7`. Replace the sentence that requires a new agent for every fresh stage with the continuity rule from fusion-tea's `.agentic-mbse/codex.md:7`. Read it in the pristine rehearsal copy, `.orchestrate-logs/rehearsal/fusion-tea/.agentic-mbse/codex.md`. The rule: keep a continuing author while its context is useful; independent review uses a fresh non-author agent. Word it for each runtime's delegation tool. Keep the surrounding sentences, including "do not resume an author for its audit".
-- [ ] **5.7** [SC3] Add a property test over both installed adapters. Neither says that every stage, or each fresh stage, needs a new agent (check the old phrasings, and `fresh stage` near `new agent`). Both say an author may continue while its context is useful. Both require a fresh non-author agent for independent review. Commit: `Adapters keep a continuing author and require a fresh agent only for independent review`.
+  - Commit: `Adopt the old installer's links inside permit, and report them`. (Saved as commit step `2-adoption`; commit pending.)
+- [x] **5.6** [SC3] Edit `adapters/claude.md:7` and `adapters/codex.md:7`. Replace the sentence that requires a new agent for every fresh stage with the continuity rule from fusion-tea's `.agentic-mbse/codex.md:7`. Read it in the pristine rehearsal copy, `.orchestrate-logs/rehearsal/fusion-tea/.agentic-mbse/codex.md`. The rule: keep a continuing author while its context is useful; independent review uses a fresh non-author agent. Word it for each runtime's delegation tool. Keep the surrounding sentences, including "do not resume an author for its audit".
+- [x] **5.7** [SC3] Add a property test over both installed adapters. Neither says that every stage, or each fresh stage, needs a new agent (check the old phrasings, and `fresh stage` near `new agent`). Both say an author may continue while its context is useful. Both require a fresh non-author agent for independent review. Commit: `Adapters keep a continuing author and require a fresh agent only for independent review`. (Saved as commit step `3-adapters`; commit pending.)
 
 ### Validation
 - **Automated:** `uv run pytest tests/` passes. As a one-off local check, apply `os.path.normpath` to the link text, watch the `.` and `..` cases fail, then revert.
@@ -753,9 +753,44 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
 **Deviations:**
 - `git mv` needs the destination folder: `mkdir hooks` first. It left an empty `claude/hooks/` behind, removed with `rmdir` (git tracked nothing there).
 
+**Commits for Phases 4–5 were made from saved steps, not by the implementer.** In the session that implemented Phases 4 and 5, `git add` required interactive approval, which a non-interactive stage cannot give. Each planned commit was saved instead as an exact copy of its files under `.orchestrate-logs/commit-steps/<step>/`, with a `<step>.paths` list and a `<step>.msg` message: `1-phase4` (4.10), `2-adoption` (5.5), `3-adapters` (5.7), then this notes step. `verify.py` there extracted `HEAD` into a scratch folder, overlaid the steps in order and ran the whole suite at each boundary: after `1-phase4` 2140 passed; after `2-adoption` 2164 passed; after `3-adapters` 2166 passed; each with 1 skipped (already skipped before this item) and 1 strict xfail (the docs packaging gap, Phase 4 notes). The three steps together equal the worktree's 10 changed files byte for byte.
+
 ### Phase 4 Completion
+**Completed:** 2026-10-09. Commit step `1-phase4`.
+
+**Environment re-check before starting:** after the orchestrator's `uv sync --all-extras`, pytest on commit 3 was 17 failed, 2085 passed: exactly Phase 3's expected red set, and the 18 environmental failures are gone.
+
+**Actual Changes:**
+- 4.1 `installation.py`: `is_source_checkout(root)` (`root/src/agentic_mbse` is a directory) and `bundle_kind(bundle)` (parses the `SKILL.md` frontmatter by lines, raises `ValueError` on missing frontmatter or a kind outside `BUNDLE_KINDS`). Hooks install from `data / "hooks"`.
+- 4.2 `cli/__init__.py`: `MBSE_COMMANDS` and `MBSE_SKILLS` deleted. `_get_data_root` and `_check_dev_mode_prerequisites` use `is_source_checkout`; their `claude/` comments are gone. `get_hooks_dir` returns `hooks`. `--list` prints Workflows (15), Supporting skills (10), Total: 25, all computed. `get_docs_dir` and `DEV_MODE_GITIGNORE_PATHS` untouched.
+- 4.3 `pyproject.toml`: `hooks` replaces `claude` in the wheel force-include and the sdist include; the comment names the purpose instead of listing folders.
+- 4.4–4.6 Tests derive the inventory from `tests/helpers/shipped.py` (new): `SKILLS`, `AGENTS`, `HOOKS` by the tests' own globs, plus `frontmatter`, `kind` and `bundle_files`. In `test_cli.py`: the two literal skill lists, the counts 25, and the `MBSE_*` manifest test are gone (its `replicate_setup.sh` assertion stays as `test_replicate_setup_wraps_init`); the `--list` test checks every installed bundle appears once under the heading its own frontmatter declares. In `test_installation.py`: `fake_data_root` (skills and agents copied, the rest linked, `src/agentic_mbse/` made) serves both the retirement test and the new SC5 test (`test_added_skill_and_role_need_no_other_edit`: a new workflow bundle and a new role are installed for both runtimes, the role registered in `.codex/config.toml`, the bundle listed under Workflows). The catalog test checks every file of every bundle byte-equal at `.agents/skills/` and the Claude alias, roles by name for both runtimes, and read-only sandboxing as a property (roles without `Bash`) instead of three named roles. The retirement fixture's dead `pyproject.toml` and `.git` lines are gone.
+- 4.5, 4.7 `tests/test_shipped_text.py` (new): I7 per bundle and one shared preface; over one fresh `both` install, every backticked `/name` and every `.agents/skills/<n>/…` path in installed text names an installed bundle and an existing file; no `.claude/` in bundles, tool-owned templates or decoded Codex role instructions; the guide carries `get_docs_dir()` and no `.claude/settings.json` (SC4). A pre-check scan of a fresh install found no unknown references and no `.claude/` outside the Claude adapter, so no B1 finding and no new adaptation.
+- 4.8 `test_cli.py`: hooks installed executable (derived from `hooks/`); `--dev` links each hook to `REPO_ROOT/hooks/<h>`; `test_dev_refused_without_source_checkout` (a packaged-style data root with `skills/` but no `src/agentic_mbse` is refused, target untouched); `test_source_tree_has_no_claude_folder` (I5: no `claude/` folder, no include entry with a `claude` path segment).
+- 4.9 `test_packaged_guidance_contract.py`: one module-scoped wheel build; byte equality parametrized per force-included entry read from `pyproject.toml`; the authoritative pattern doc and no `agentic_mbse_data/claude/` member; the extracted wheel run in a subprocess with `PYTHONPATH` asserts it imports from the extraction, refuses `--dev`, installs every bundle, role and hook, and resolves docs under `agentic_mbse_data/docs` (I6). No exec-bit assertion after `extractall`.
+
+**Checks:** full pytest 2140 passed, 1 skipped, 1 xfailed. `grep -rnE "MBSE_COMMANDS|MBSE_SKILLS" src tests scripts` and the count grep print nothing. `install-commands --list` shows Workflows (15), Supporting skills (10), Total: 25. ruff check, ruff format and mypy are clean on every file Phase 4 touched (two import-order findings from `tomllib` under `target-version = py310` were fixed).
+
+**Issues: a docs packaging gap that predates this item (needs an owner decision).** The plan's wheel test compares every file under every force-included folder. For `docs/` that fails: the wheel omits all of `docs/syside/python/v0.8.4/syside/` (340 tracked files; the other 789 docs files are present). The venv's `agentic_mbse_data` copy, built from the merge commit before any Phase 4 change, lacks the same folder, so this item did not cause it. No ignore rule matches and the folder is a plain directory; the root cause is inside hatchling, whose source this session could not read. It matters because the syside-expert role's `{SYSIDE_DOCS_PATH}` resolves into the packaged docs on wheel installs, fusion-tea's included. The `docs` case is marked `xfail(strict=True)` with that reason, so the suite stays green and the mark fails loudly once the folder is packaged. Fixing the packaging is outside SC6, which concerns the installed assets.
+
+**Deviations:**
+- `_get_data_root` now raises `FileNotFoundError` when neither a source checkout nor `agentic_mbse_data` exists, instead of returning the source root "and let caller handle missing files". Phase 3 showed that fallback hiding a missing marker; with `is_source_checkout` it only fires on a broken install, where installing nothing silently is worse than an error.
+- The SC5 and I7 tests and the text properties live in a new `tests/test_shipped_text.py` and `tests/helpers/shipped.py` rather than spread over `test_cli.py` and `test_installation.py`.
+- 4.9's per-folder comparison is parametrized so the docs gap can be marked on its own case (above).
 
 ### Phase 5 Completion
+**Completed:** 2026-10-09. Commit steps `2-adoption` (5.1–5.5) and `3-adapters` (5.6–5.7).
+
+**Actual Changes:**
+- 5.5 `installation.py`: `legacy_link_target(target, relative)` exactly as designed. The entry must be `.claude/<location>/<name>` with `<location>` in `LEGACY_LOCATIONS` (commands, skills, agents, hooks), and a symlink (lstat only). The raw `os.readlink` text, split on `/`, must start empty (absolute) with no empty, `.` or `..` segment after it. Its last three segments must be `claude/<location>/<name>`, and the rest must be a source checkout. The text is never normalized and the referent is never read. `permit` gains four lines after the manifest/desired check and before `force`/`decide`: on a match it records `"<relative> (was -> <text>)"` in a new `adopted` action and returns true; the existing callers then unlink and install as for any permitted entry. `expose_to_claude` takes the alias step out of the loop's boolean condition; `retire_command` is unchanged. `grep -n "def "` shows only `legacy_link_target` and `expose_to_claude` as new in this phase, and no removal API.
+- `cli/__init__.py`: `init` prints `Adopted (N) - links from the pre-native installer replaced:` after the Symlinked block, one `  A <entry> (was -> <old target>)` line each; `adopted` joins the "Everything up to date" / "Next steps" condition (the redundant `elif` became `else`). `install-commands` adds `Adopted: N` to its summary and prints the same lines.
+- 5.1–5.4 tests in `test_installation.py`, all names from the tree (`WORKFLOW`, `SUPPORTING`, `AGENTS[0]`, `HOOKS[0]`): the 7-row predicate table; each of the four locations with a live or dangling referent (adopted, reported with the old target, replaced by the alias, rendered agent or executable hook, referent bytes unchanged); the seven never-adopted cases at the command location left exactly as they were (`entry_state` compares link text, bytes or child trees), with no alias shadowing a preserved command; and a mixed legacy tree with a link for every shipped workflow, supporting skill, agent and hook plus three owner entries, through `init` (`Adopted (31)`) and `install-commands` (`Adopted: 31`).
+- 5.6 `adapters/codex.md:7` now carries fusion-tea's `.agentic-mbse/codex.md:7` sentences verbatim, so the file equals fusion-tea's copy up to fusion-tea's own target-owned paragraph. `adapters/claude.md:7` says the same for the Agent tool: "Keep a continuing author across stages and clarifications while its context remains useful. Independent criticism requires a fresh non-author agent with only its self-contained brief; never resume an author for its audit." "Independent criticism" matches `main`'s `MODELING_PROCESS.md.template:98`.
+- 5.7 `test_adapter_keeps_a_continuing_author_and_a_fresh_independent_reviewer` over both installed adapters: no sentence pairs "stage" with "new agent" (both old sentences did), and both carry the continuity, fresh non-author and no-resume rules.
+
+**Checks:** full pytest 2164 passed after adoption, 2166 after the adapters (1 skipped, 1 xfailed). Normalizing the link text with `os.path.normpath` made the `..`, `.` and trailing-slash rows fail; reverted. Manual demo (`.orchestrate-logs/adopt-demo/`, three dangling links into a fake old checkout): `install-commands --assistant claude` reported `Adopted: 3` with each old target; the command link was gone, both skills were relative aliases, and the hook was a real executable file. ruff check, ruff format and mypy clean on the touched files.
+
+**Deviations:** none in behaviour. Adopted agents and hooks also appear in the Updated list, because `write` reports any replaced entry there; the Adopted list says which of them were legacy links.
 
 ### Phase 6 Completion
 
