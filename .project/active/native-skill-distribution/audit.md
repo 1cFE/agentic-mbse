@@ -1,13 +1,181 @@
 # Audit: Reconcile the native installer source with `main` (WRAP-SPLIT Item 1)
 
-**Verdict:** Certify (after the 2026-10-09 re-check; the first pass was Needs Work on B1)
-**Audited:** 2026-10-09 (first pass and targeted re-check)
+**Verdict:** Certify (after the 2026-10-09 Phase 9 re-check: `init --dev` now gives Codex every shipped skill, and product-lens audit-F1 is FIXED on the owner's direction; the first pass was Needs Work on B1, the first re-check Certify)
+**Audited:** 2026-10-09 (first pass, targeted re-check, and Phase 9 re-check)
 **Branch:** `nsd-integration` (worktree `/home/reid/1cfe/agentic-mbse-nsd`)
-**Commit:** first pass `739a296` (code identical to `beceb6f`); re-check `46a45a1` (code identical to `2c65dda`; `46a45a1` adds only `briefs/12-audit-recheck.md`)
+**Commit:** first pass `739a296` (code identical to `beceb6f`); re-check `46a45a1` (code identical to `2c65dda`; `46a45a1` adds only `briefs/12-audit-recheck.md`); Phase 9 re-check `2e320e1` (code identical to `d314b6e`; `2e320e1` adds only `briefs/14-audit-recheck-dev.md`)
+
+---
+
+## Re-check: Phase 9 (`--dev` folder links), 2026-10-09: Certify
+
+**Result.** The fix holds. A fresh `init --dev` now gives Codex all 25 shipped skills, the same as plain `init`, under every `--assistant` choice and both link modes. The installer never deletes an owner file to make the link. The B1 warning is gone. No blockers; five advisories, none about the fix's correctness.
+
+**Authority for resolving audit-F1.** [OWNER] 2026-10-09, in chat: the owner asked for a spike ([OWNER-VERBATIM] "can you run a spike to figure it out? … would symlinking directly to .claude in the same repo work?"), then answered "yes" to the orchestrator's "Want me to run the fix?". So the disposition is fix, not defer.
+- This supersedes the first re-check's open owner decision and its warning table below.
+- The link shape is the orchestrator's choice [AGENT]: `.agents/skills/<n>` links straight to the checkout, not through `.claude/skills/`. D14 records the chain as the rejected alternative. The spike answers the owner's question: the chained shape also lists in Codex.
+
+**Scope.** `b2ff7cf..d314b6e`: `a42c4c9` (code, tests, README), `5b93cac` (evidence, rehearsal re-run), `d314b6e` (plan Phase 9, design D14, spec status). My scripts and outputs are in `.orchestrate-logs/audit-scratch/p9/`.
+
+### 1. The fix, run independently
+
+I ran `init --dev` into fresh targets and probed each with `.project/active/native-skills/discovery_probe.py` (Claude Code 2.1.296, codex-cli 0.160.0; `p9/probe_all.py`, outputs `p9/*.probe.json`). `git init` is gated for this stage, so each target got a copy of a pristine `git init` `.git`. One extra target had no `.git` of its own.
+
+| `init --dev` target | Claude skills | Claude roles | Codex skills | Errors |
+|---|---|---|---|---|
+| `--assistant both` | 18 | 5 | 25 | none |
+| `--assistant codex` | 0 | 0 | 25 | none |
+| `--assistant claude` | 18 | 5 | 25 | none |
+| `both`, no `.git` of its own | 18 | 5 | 25 | none |
+| `both --link-mode copy` | 18 | 5 | 25 | none |
+
+- The names equal `evidence/probe-dev-folder-links.json` exactly. For the `codex` target, the Codex names do.
+- Each choice gives the same numbers as plain `init` for that choice (`probe-fresh-*.json`). Codex sees 25 under `--assistant claude` in both modes, because `.agents/skills/` is always installed.
+- On disk, in every target, each of the 25 `.agents/skills/<n>` is an absolute folder link to the checkout's `skills/<n>`. No `SKILL.md` under `.agents/skills/` is a file link. No "Copied" line printed. The Next steps match plain `init`.
+
+### 2. The code
+
+- **`link_directory` is a true generalization.** The diff removes only the line that built the link text (`installation.py:232-263`). `expose_to_claude` now passes `os.path.relpath(shared, destination.parent)` (`:395`), the same text `alias` built. Nothing outside the staged native inputs still calls `alias`.
+- **The fallback never loses owner files and never makes per-file links.**
+  - `install_dev_bundle` (`:365-383`) falls back only when the destination is a real folder. It copies with `copy_tree` and no `dev` flag.
+  - A link or file that `permit` refused is not retried, so the owner is asked once. I checked this with a `decide` that counts its calls.
+  - Under `--force`, an added owner file still survives, and the folder is copied, not linked.
+- **The printed reason is not accurate in every case that reaches it.** See advisory 1.
+
+**Transitions** (`p9/transitions.py`). For the per-file case I exported the pre-fix code (`b2ff7cf`) to scratch and let it make a real per-file `--dev` install.
+
+| Transition | Result |
+|---|---|
+| Fresh, each assistant, both link modes | Folder links (probe table above) |
+| Over a real per-file `--dev` install made by `b2ff7cf` | Every bundle becomes one folder link. No per-file manifest keys remain. The old source tree is untouched. The Claude alias is unchanged. |
+| The same, with an owner file added in one bundle | That bundle is copied plainly. The owner file is kept, no file links remain, and one "Copied" line prints. |
+| Over a plain install | Folder links, no prompt |
+| Plain `init` over `--dev`; `install-commands` over `--dev` | Real copies, no prompt. Nothing is written through the link: the worktree's `git status` stays clean. |
+| `--assistant codex --dev`, then `both --dev` | Folder links; the second run adds the relative Claude alias with no prompt |
+| `--dev --link-mode copy`, a second run, then symlink mode | Claude's copy holds per-file links, which Claude lists (probe above). Symlink mode then makes the alias the relative folder link, with no prompt. |
+| A second `--dev` run | No prompt, no "Copied" line, links intact |
+| The owner's own folder link at `.agents/skills/<n>` | Preserved with one prompt. No Claude alias for it, the same as plain `init`. |
+| `--force --dev` with an owner file in a bundle | Copied, not linked; the owner file is kept |
+
+### 3. Mutations
+
+I ran `p9/mutations.py` on a scratch export of HEAD, against `test_installation.py`, `test_cli.py` and `test_shipped_text.py`. The unmutated baseline was 174 passed. Each mutant was reverted after its run, and the export was checked byte-equal to HEAD at the end. 12 of 14 were killed.
+
+| Mutant | Result | Killed by |
+|---|---|---|
+| P1 `--dev` links per file again | killed (13 tests) | the property test and the transition tests |
+| P2 no fallback: an unowned folder returns False | killed | `test_dev_copies_a_bundle_folder_holding_owner_files` |
+| P3 the fallback makes per-file links | killed | the same test |
+| P4 `link_directory` skips the ownership check | killed | the same test, `test_empty_owner_directory_survives_copy_to_link`, `test_copy_link_dev_transitions_preserve_owner_additions` |
+| P5 drop the manifest key cleanup | killed | `test_dev_over_per_file_dev_install_links_each_folder` |
+| P6 relative link text for the `--dev` folder | killed | the property test |
+| P7 the fallback prints nothing | killed | the owner-files test |
+| P8 `--force` lets the link replace an unowned folder | killed | the owner-files test, `force=True` |
+| P9 empty sub-folders count as owned | killed | the empty-owner-directory test |
+| P10 the Claude alias gets absolute link text | killed (9 tests) | the catalog and adoption tests |
+| P11 plain `copy_tree` writes through a `--dev` folder link | killed | `test_plain_init_over_dev_copies_every_bundle` |
+| P12 the fallback also retries a link or file `permit` refused | **survived** | none. Same outcome noninteractively; an interactive owner would be asked twice (advisory 2). |
+| P13 `--dev` skips the Claude alias | killed | the property test |
+| P14 a `--dev`-only line printed before "Next steps:" | **survived** | none. The Next-steps test compares only the text from "Next steps:" on (advisory 2). |
+
+### 4. The tests
+
+The tests pin the property Codex needs, and they take it from the tree (SC5, I4 hold).
+- `test_dev_links_each_bundle_folder_to_the_checkout` (`tests/test_cli.py:424`) runs every bundle in `skills/` (`tests/helpers/shipped.py`), under `claude`, `codex` and `both`, in both link modes. It asserts one folder link that reads exactly `<checkout>/skills/<n>`, its `link:` manifest entry, no per-file manifest keys, and no `SKILL.md` file link.
+- The fallback test checks that every file of a blocked bundle is a real file (`tests/test_installation.py:214`).
+- Fixtures pick bundles by kind from the tree (`WORKFLOW`, `OTHER_WORKFLOW`), not by name.
+- No test pins per-file links under `.agents/skills/` any more. The per-file shape survives only in Claude's copy mode, which Claude lists.
+- The suite still runs no live client, as before (advisory 4).
+
+### 5. Evidence and docs
+
+- **The rehearsal re-run.** I compared every file in `evidence/rehearsal/` with the first run's outputs (`.orchestrate-logs/rehearsal/prev-outputs/`).
+  - Plain mode: every file is byte-identical except the probe's Claude Code version (2.1.295 → 2.1.296).
+  - Dev mode: Codex lists 30, the 25 shipped plus fusion-tea's 5. Claude lists 24 skills and 5 roles. No errors. Adopted 31, one prompt, no "Copied" line, and git status is identical after the second run.
+- **The `provenance.py` extension does not weaken the check.** I ran the current script and a copy with the folder expansion turned off, on both re-run copies.
+  - Current script, dev mode: 39 files checked, 129 lines flagged. The output is byte-identical to the first run's `dev-provenance.txt`, and matches plain mode.
+  - Expansion off, dev mode: 8 files, 7 lines. Without the extension the check was blind.
+  - Plain mode: 129 lines either way.
+  - The expansion reads only the real files of the pristine folder, as the per-file listing did before.
+- **Runbook step 3 and step 5 match the raw outputs.**
+  - Plain: 34 `M` (26 under `.agents/skills/`), plus `?? .agentic-mbse/claude.md`, 2 prompts.
+  - Dev: 7 `M`, 31 `D`, 25 untracked folder links, 2 `T`, `?? .agentic-mbse/claude.md`, 1 prompt, the hook a link.
+  - The install mode is still the owner's choice. The recommendation is labelled agent-grade and no longer cites the Codex gap. It now rests on committing machine-specific links.
+  - One stale count, in the "This repo" section: advisory 3.
+- **The other docs match the code.**
+  - `README.md:47` is accurate against the code and the probes.
+  - D14 and plan Phase 9 match the code. Plan 9.3's claim holds: the Next-steps line is byte-equal to `783b00e~1`'s.
+  - `audit-scope.md` drops the follow-up and records the fix. The `lint-parity.md` numbers hold (§6).
+  - `spec.md` changed only its status. SC6 and SC7 now hold under `--dev` too.
+- **Leftovers.**
+  - `DEV_CODEX_WARNING` is gone from `src/` and `tests/`.
+  - The only now-false live claim is the native item's verdict line (advisory 3).
+  - Plan Phase 7's notes and its "Audit fixes" section are dated, and the latter is marked superseded. This file's earlier sections are kept as written.
+
+### 6. Gate
+
+- `uv run pytest tests/`: 2177 passed, 1 skipped, 5 deselected, 1 xfailed.
+- ruff check and ruff format --check are clean on the 9 files `lint-parity.md` lists. Repo-wide, ruff check reports 118 (recorded 118) and ruff format 77 files (recorded 77).
+- mypy in the baseline's no-extras environment reports 98 (recorded 98), and 88 in the all-extras worktree (recorded 88). None are in `cli/__init__.py` or `cli/installation.py`.
+- This re-check changed no tracked file except this one and `product-lens.md`.
+
+### Advisories (Phase 9)
+
+1. **The "Copied … instead of linking it" line can be wrong.** `install_dev_bundle` prints it whenever `copy_tree` returns, and `copy_tree` returns True even when it wrote nothing (`installation.py:377-382`). Three cases reach it (`p9/transitions.py`):
+   - **An empty real folder at `.agents/skills/<n>`.** The line says the installer "does not own everything in that folder", but the folder held nothing. The copy fills it with installer-owned files, so the next `--dev` run links it anyway.
+   - **Every file in the bundle owner-edited, without `--force`.** Nothing is copied, and each file also prints "Preserving".
+   - **A per-file `--dev` folder whose manifest was deleted.** The file links stay, so Codex lists none of those bundles, while the report says "Copied" for all 25. This needs the pre-fix `--dev` shape and a lost manifest together, so it is unlikely.
+   - **Impact:** a reader trusts a line that misstates what happened.
+   - **Fix:** print the line only when a file was written, and say "kept" otherwise. Linking an empty folder would also remove the first case.
+2. **Two behaviours are not pinned by tests (mutants P12 and P14).**
+   - **No retry after a refusal.** The guard at `installation.py:375-376` keeps a link or file that `permit` refused from being retried as a copy. Nothing tests it. Dropping it would ask an interactive owner twice about one entry.
+   - **The Next-steps test is too narrow.** `test_next_steps_are_the_same_with_and_without_dev` (`tests/test_cli.py:467`) compares only the text from "Next steps:" on. The old warning printed above that block, so a returned warning would pass.
+   - **Fix:** add a test with a `decide` that counts its calls. Compare the whole closing output, not just the Next-steps block.
+3. **Two records still describe the old state.**
+   - `.project/active/native-skills/audit.md:3`, the native item's verdict line, says "`init --dev` now warns that Codex cannot see its linked skills and the fix is a follow-up". Both halves are now false. A later agent would read it as a live Codex gap.
+   - `evidence/fusion-tea-runbook.md:89` says the clone's pytest stayed at 2166. The re-run shows 2177 (`rehearsal/clone-pytest-after.txt`; `rehearsal.md:101` has it right).
+   - **Fix:** amend the verdict line to cite Phase 9, and update the count. I left both alone, because the brief limits my writes to this file and `product-lens.md`.
+4. **Codex discovery under `--dev` rests on an undocumented Codex rule.** Codex 0.160.0 lists a skill whose folder is a link and skips one whose `SKILL.md` is a file link. That rule is known only from the spike, observed from outside. B1 was this kind of rule failing silently, and the default suite runs no client.
+   - **Fix:** keep the versions named in the evidence. Re-run `discovery_probe.py` on a `--dev` target when the Codex version in use changes. This is lens smell 4.
+5. **A redirected `.agents/skills` is reported twice (cosmetic).** When `.agents/skills` is itself a link, a bundle that exists behind it prints "Skipped … parent … is not a real directory" twice. It is also listed twice under Skipped. The cause: the fallback calls `parents()` a second time, through `copy_tree` (`installation.py:372-377`). Nothing is written, and the outside folder is untouched.
+
+### Product-lens (Phase 9 re-check)
+
+The block is appended to `product-lens.md`.
+- **audit-F1: FIXED.** The authority is the owner's, as quoted above. The lens's own clearing condition holds: a dev-mode Codex probe shows 25.
+- **Smells 5 and 6 on audit-F1 no longer fire.** The per-file baseline tests are gone, and the `--dev` route is pinned by the property Codex needs.
+- **New, all DISPOSE:** audit-F4 (advisory 1), audit-F5 (advisory 3) and smell 4 (advisory 4).
+- **Gate:** DISPOSED. No BLOCK remains in the ledger.
+
+### Certification (Phase 9 re-check)
+
+**Checked:**
+- The Phase 9 diff and the code around it.
+- Five fresh `--dev` probes.
+- 14 transitions and edge cases on the live code, including three over real installs made by the pre-fix code.
+- 14 mutants.
+- The tests, the rehearsal outputs against the first run, `provenance.py` with and without its extension, the runbook, README, D14, plan Phase 9, `audit-scope.md` and `lint-parity.md`.
+- The full gate and an independent product-lens pass.
+
+**Marked:** this file's verdict line and the product-lens block.
+
+**Not marked** (the orchestrator owns these writes); verified and ready to mark:
+- Plan Phase 9 (already checked off).
+- Spec SC6 and SC7, which now hold under `--dev` for Codex too.
+- `CURRENT_WORK.md`: certified, with audit-F1 resolved.
+- The native item's verdict line (advisory 3).
+
+**Not checked:**
+- **Probes on targets made by `git init`.** Mine used a copied pristine `.git`, plus one nested target. Both agree with the orchestrator's probe of a `git init`ed target.
+- **An interactive run.** The ask-once claim rests on a counting `decide` and on reading the code.
+- **Other versions and platforms.** Codex versions other than 0.160.0, and platforms other than Linux.
+- **A fresh rehearsal.** I compared the rehearsal's outputs and re-ran `provenance.py`, but did not re-run `rehearse.sh`.
 
 ---
 
 ## Re-check, 2026-10-09: Certify
+
+*Superseded in part by the Phase 9 re-check above. The owner chose the fix, so the warning, its table and the open owner decision below no longer describe the code.*
 
 **Result.** B1's defect is fixed. `init --dev` no longer fails silently for Codex, and the product states the limitation where users meet `--dev`. The six advisories the orchestrator chose to fix are fixed, and I verified each one. Where the code was meant to behave the same, it does: I compared it byte for byte.
 
