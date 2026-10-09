@@ -2,19 +2,31 @@
 
 import json
 import os
+import shutil
 from argparse import Namespace
 from pathlib import Path
 
 import pytest
 import tomllib
-import yaml
 
-from agentic_mbse.cli import MBSE_COMMANDS, MBSE_SKILLS, cmd_init, cmd_install_commands
+from agentic_mbse.cli import cmd_init, cmd_install_commands
 from agentic_mbse.cli.installation import LEGACY_MANIFEST, MANIFEST, Installer, fingerprint
+from tests.helpers.shipped import AGENTS, REPO_ROOT, SKILLS, bundle_files, frontmatter
 
 
 def init(target, **options):
     return cmd_init(Namespace(path=str(target), force=False, dev=False, **options))
+
+
+def fake_data_root(tmp_path: Path) -> Path:
+    """A writable package source: skills/ and agents/ copied, the rest linked to this checkout."""
+    data = tmp_path / "package"
+    for name in ("skills", "agents"):
+        shutil.copytree(REPO_ROOT / name, data / name)
+    for name in ("adapters", "hooks", "docs", "project_templates"):
+        (data / name).symlink_to(REPO_ROOT / name, target_is_directory=True)
+    (data / "src" / "agentic_mbse").mkdir(parents=True)
+    return data
 
 
 def test_fingerprint_tracks_link_without_reading_target(tmp_path):
@@ -31,32 +43,34 @@ def test_fingerprint_tracks_link_without_reading_target(tmp_path):
 @pytest.mark.parametrize("assistant", ["claude", "codex", "both"])
 @pytest.mark.parametrize("link_mode", ["symlink", "copy"])
 def test_native_install_catalog_and_roles(tmp_path, assistant, link_mode):
+    """Every file of every shipped bundle is reachable, byte-equal, for each runtime choice."""
     assert init(tmp_path, assistant=assistant, link_mode=link_mode) == 0
-    expected = {Path(n).stem for n in MBSE_COMMANDS} | set(MBSE_SKILLS)
-    assert {p.name for p in (tmp_path / ".agents/skills").iterdir()} == expected
-    for name in expected:
-        source = tmp_path / ".agents/skills" / name / "SKILL.md"
-        meta = yaml.safe_load(source.read_text().split("---", 2)[1])
-        assert meta["name"] == name
-        assert meta["description"]
-        assert "skills" not in meta
+    assert sorted(p.name for p in (tmp_path / ".agents/skills").iterdir()) == SKILLS
+    for name in SKILLS:
+        canonical = tmp_path / ".agents/skills" / name
+        alias = tmp_path / ".claude/skills" / name
         if assistant != "codex":
-            alias = tmp_path / ".claude/skills" / name
             assert alias.is_symlink() == (link_mode == "symlink")
             if alias.is_symlink():
                 assert not os.path.isabs(os.readlink(alias))
-            assert (alias / "SKILL.md").read_bytes() == source.read_bytes()
+        for inside in bundle_files(name):
+            source = (REPO_ROOT / "skills" / name / inside).read_bytes()
+            assert (canonical / inside).read_bytes() == source
+            if assistant != "codex":
+                assert (alias / inside).read_bytes() == source
     assert (tmp_path / ".claude").exists() == (assistant != "codex")
     assert (tmp_path / ".codex").exists() == (assistant != "claude")
+    if assistant != "codex":
+        assert sorted(p.stem for p in (tmp_path / ".claude/agents").glob("*.md")) == AGENTS
     if assistant != "claude":
-        roles = list((tmp_path / ".codex/agents").glob("*.toml"))
-        assert len(roles) == 5
+        roles = sorted((tmp_path / ".codex/agents").glob("*.toml"))
+        assert [p.stem for p in roles] == AGENTS
         for p in roles:
             role = tomllib.loads(p.read_text())
             assert role["name"] == p.stem
             assert "{SYS" not in role["developer_instructions"]
-            if p.stem in ("kerml-expert", "sysml-expert", "syside-expert"):
-                assert role["sandbox_mode"] == "read-only"
+            tools = frontmatter(REPO_ROOT / "agents" / f"{p.stem}.md")[0]["tools"]
+            assert (role.get("sandbox_mode") == "read-only") == ("Bash" not in tools)
 
 
 def test_skipped_skill_edit_and_owner_resource_survive_four_inits(tmp_path):
@@ -275,17 +289,7 @@ def test_inline_codex_agents_table_is_not_corrupted(tmp_path, capsys):
 def test_bundle_retirement_prunes_only_unchanged_resources(
     tmp_path, monkeypatch, capsys, link_mode, dev
 ):
-    import shutil
-
-    from agentic_mbse.cli import _get_data_root
-
-    data = tmp_path / "package"
-    shutil.copytree(_get_data_root() / "skills", data / "skills")
-    # The other package data is read-only source for this install.
-    for name in ("agents", "adapters", "claude", "docs", "project_templates"):
-        (data / name).symlink_to(_get_data_root() / name, target_is_directory=True)
-    (data / "pyproject.toml").write_text("")
-    (data / ".git").mkdir()
+    data = fake_data_root(tmp_path)
     source = data / "skills/research"
     for name in ("retired.md", "edited.md", "missing.md"):
         (source / name).write_text("original")
@@ -324,6 +328,33 @@ def test_bundle_retirement_prunes_only_unchanged_resources(
     output = capsys.readouterr().out
     assert "Removed (" in output
     assert "Preserved retired resource .agents/skills/research/edited.md" in output
+
+
+def test_added_skill_and_role_need_no_other_edit(tmp_path, monkeypatch, capsys):
+    """SC5: a new bundle folder and a new role file are installed and listed, nothing else edited."""
+    data = fake_data_root(tmp_path)
+    skill = data / "skills/new-skill"
+    skill.mkdir()
+    (skill / "SKILL.md").write_text(
+        "---\nname: new-skill\ndescription: A new workflow.\nmetadata:\n  kind: workflow\n---\n\nSteps.\n"
+    )
+    (data / "agents/new-role.md").write_text(
+        "---\nname: new-role\ndescription: A new expert.\ntools: Read, Grep\n---\n\nAdvice.\n"
+    )
+    monkeypatch.setattr("agentic_mbse.cli._get_data_root", lambda: data)
+    target = tmp_path / "target"
+    target.mkdir()
+
+    assert init(target, assistant="both") == 0
+    assert (target / ".agents/skills/new-skill/SKILL.md").is_file()
+    assert (target / ".claude/skills/new-skill/SKILL.md").is_file()
+    assert (target / ".claude/agents/new-role.md").is_file()
+    assert (target / ".codex/agents/new-role.toml").is_file()
+    assert "new-role" in tomllib.loads((target / ".codex/config.toml").read_text())["agents"]
+    capsys.readouterr()
+    cmd_install_commands(Namespace(list=True, directory=str(target), force=False))
+    workflows = capsys.readouterr().out.split("Supporting skills (")[0]
+    assert "  - new-skill\n" in workflows
 
 
 def test_pruning_does_not_follow_redirected_parent_or_manifest_path(tmp_path, capsys):

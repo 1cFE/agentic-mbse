@@ -11,41 +11,15 @@ from pathlib import Path
 import tomllib
 from dotenv import load_dotenv
 
-from agentic_mbse.cli.installation import MANIFEST, Installer, install_assistants, skill_bundles
+from agentic_mbse.cli.installation import (
+    MANIFEST,
+    Installer,
+    bundle_kind,
+    install_assistants,
+    is_source_checkout,
+    skill_bundles,
+)
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS, run_all_checks
-
-# Commands available for installation
-MBSE_COMMANDS = [
-    "analyze-models.md",
-    "audit-models.md",
-    "backlog.md",
-    "design-model.md",
-    "formalize-intent.md",
-    "implement-model.md",
-    "manage-sources.md",
-    "onboard.md",
-    "orchestrate-modeling.md",
-    "plan-model.md",
-    "quick-model.md",
-    "research.md",
-    "review-model.md",
-    "spec-model.md",
-    "status.md",
-]
-
-# Skills available for installation (directories, not files)
-MBSE_SKILLS = [
-    "epic-decomposition",
-    "model-validation",
-    "pdf-analysis",
-    "project-structure",
-    "python-debugger",
-    "record-learning",
-    "requirements-tracking",
-    "source-traceability",
-    "sysml-conventions",
-    "toolkit-awareness",
-]
 
 # Project templates split by ownership:
 # - USER_OWNED: Only created once, never auto-updated (user customizes these)
@@ -95,26 +69,24 @@ HASH_FILE = MANIFEST
 
 
 def _get_data_root() -> Path:
-    """Get root path for bundled data (claude/, docs/, templates).
+    """Get root path for bundled data (skills/, agents/, hooks/, docs/, templates).
 
     Supports two installation modes:
     1. Source checkout: agentic-mbse/src/agentic_mbse/cli/__init__.py
-       → Data at: agentic-mbse/claude/, agentic-mbse/docs/
+       → Data at: agentic-mbse/skills/, agentic-mbse/docs/
     2. Pip install: site-packages/agentic_mbse/cli/__init__.py
-       → Data at: site-packages/agentic_mbse_data/claude/, etc.
+       → Data at: site-packages/agentic_mbse_data/skills/, etc.
     """
-    # Try source checkout path first (development mode)
     source_root = Path(__file__).parent.parent.parent.parent
-    if (source_root / "claude").exists():
+    if is_source_checkout(source_root):
         return source_root
-
-    # Fallback to pip-installed package data location
     pip_data_root = Path(__file__).parent.parent.parent / "agentic_mbse_data"
-    if pip_data_root.exists():
+    if pip_data_root.is_dir():
         return pip_data_root
-
-    # Last resort: return source root and let caller handle missing files
-    return source_root
+    raise FileNotFoundError(
+        f"agentic-mbse data not found: {source_root} is not a source checkout "
+        f"and {pip_data_root} does not exist"
+    )
 
 
 def get_template_path() -> Path:
@@ -134,7 +106,7 @@ def get_skills_dir() -> Path:
 
 def get_hooks_dir() -> Path:
     """Get path to bundled hooks directory."""
-    return _get_data_root() / "claude" / "hooks"
+    return _get_data_root() / "hooks"
 
 
 def get_docs_dir() -> Path:
@@ -271,8 +243,7 @@ def _check_dev_mode_prerequisites(data_root: Path) -> tuple[bool, str | None]:
     if platform.system() == "Windows":
         return False, "Dev mode is not supported on Windows (symlinks require admin privileges)"
 
-    # Check source checkout (claude/ directory exists at root)
-    if not (data_root / "claude").exists():
+    if not is_source_checkout(data_root):
         return False, (
             "Dev mode requires a source checkout of agentic-mbse.\n"
             "Pip-installed packages cannot use dev mode.\n"
@@ -676,11 +647,14 @@ def cmd_install_commands(args: argparse.Namespace) -> int:
     """
     if args.list:
         bundles = skill_bundles(get_skills_dir())
+        kinds = {bundle.name: bundle_kind(bundle) for bundle in bundles}
         print("Available MBSE skills:")
-        for bundle in bundles:
-            print(f"  - {bundle.name}")
-        print("")
-        print(f"Total: {len(bundles)} skills")
+        for kind, heading in (("workflow", "Workflows"), ("supporting", "Supporting skills")):
+            names = [name for name, declared in kinds.items() if declared == kind]
+            print(f"\n{heading} ({len(names)}):")
+            for name in names:
+                print(f"  - {name}")
+        print(f"\nTotal: {len(bundles)} skills")
         return EXIT_SUCCESS
 
     target_dir = Path(args.directory).resolve()

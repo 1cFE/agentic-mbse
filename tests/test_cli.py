@@ -4,9 +4,11 @@ import subprocess
 from pathlib import Path
 
 import pytest
+import tomllib
 
-from agentic_mbse.cli import MBSE_COMMANDS, cmd_init, cmd_install_commands, cmd_validate, main
+from agentic_mbse.cli import cmd_init, cmd_install_commands, cmd_validate, main
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
+from tests.helpers.shipped import HOOKS, REPO_ROOT, SKILLS, kind
 
 
 class MockArgs:
@@ -142,37 +144,26 @@ class TestCmdInit:
         assert (agents_dir / "python-debugger.md").exists()
 
     def test_creates_skills_directory(self, tmp_path):
-        """agentic-mbse init creates .claude/skills/ with skill subdirs."""
+        """agentic-mbse init exposes every shipped skill under .claude/skills/."""
         args = MockArgs(path=str(tmp_path), force=False)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
-        all_skills = [
-            "epic-decomposition",
-            "model-validation",
-            "project-structure",
-            "python-debugger",
-            "record-learning",
-            "requirements-tracking",
-            "source-traceability",
-            "sysml-conventions",
-            "toolkit-awareness",
-        ]
         skills_dir = tmp_path / ".claude" / "skills"
-        for skill in all_skills:
+        for skill in SKILLS:
             assert (skills_dir / skill).is_dir()
             assert (skills_dir / skill / "SKILL.md").exists()
 
     def test_creates_hooks_directory(self, tmp_path):
-        """agentic-mbse init creates .claude/hooks/ with hook scripts."""
+        """agentic-mbse init installs every shipped hook into .claude/hooks/, executable."""
         args = MockArgs(path=str(tmp_path), force=False)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
-        hook_path = tmp_path / ".claude" / "hooks" / "ruff-format.sh"
-        assert hook_path.exists()
-        # Check executable permission
-        assert hook_path.stat().st_mode & 0o111  # Has execute bit
+        for hook in HOOKS:
+            hook_path = tmp_path / ".claude" / "hooks" / hook
+            assert hook_path.is_file() and not hook_path.is_symlink()
+            assert hook_path.stat().st_mode & 0o111  # Has execute bit
 
     def test_agent_path_substitution(self, tmp_path):
         """Agent files have documentation paths substituted during install."""
@@ -243,19 +234,28 @@ class TestCmdInit:
 class TestCmdInstallCommands:
     """Tests for cmd_install_commands function."""
 
-    def test_list_matches_installed_skills(self, tmp_path, capsys):
-        """The advertised catalog matches the bundles this command installs."""
+    def test_list_groups_every_installed_skill_under_its_kind(self, tmp_path, capsys):
+        """--list names each installed bundle once, under the heading its kind declares."""
         result = cmd_install_commands(MockArgs(list=True, directory=str(tmp_path), force=False))
         assert result == EXIT_SUCCESS
         output = capsys.readouterr().out
-        listed = {
-            line.removeprefix("  - ") for line in output.splitlines() if line.startswith("  - ")
-        }
         cmd_install_commands(MockArgs(list=False, directory=str(tmp_path), force=False))
-        installed = {path.parent.name for path in (tmp_path / ".agents/skills").glob("*/SKILL.md")}
-        assert listed == installed
-        assert len(listed) == 25
-        assert "Total: 25 skills" in output
+        installed = sorted(p.parent.name for p in (tmp_path / ".agents/skills").glob("*/SKILL.md"))
+
+        sections: dict[str, list[str]] = {}
+        for line in output.splitlines():
+            if line.endswith("):"):
+                heading = line.rsplit(" (", 1)[0]
+                sections[heading] = []
+            elif line.startswith("  - "):
+                sections[heading].append(line.removeprefix("  - "))
+        headings = {"workflow": "Workflows", "supporting": "Supporting skills"}
+        assert sorted(sum(sections.values(), [])) == installed == SKILLS
+        for skill in SKILLS:
+            assert skill in sections[headings[kind(skill)]]
+        for heading, names in sections.items():
+            assert f"{heading} ({len(names)}):" in output
+        assert f"Total: {len(SKILLS)} skills" in output
 
     @pytest.mark.parametrize("dev", [False, True])
     def test_symlink_summary_describes_both_install_modes(self, tmp_path, capsys, dev):
@@ -265,7 +265,7 @@ class TestCmdInstallCommands:
         assert "dev mode" not in header
         assert "points to source" not in header
         if not dev:
-            assert header == "Symlinked (25):"
+            assert header == f"Symlinked ({len(SKILLS)}):"
             assert "dev mode" not in output
 
     def test_installs_commands_to_directory(self, tmp_path):
@@ -280,14 +280,9 @@ class TestCmdInstallCommands:
         assert (commands_dir / "audit-models" / "SKILL.md").exists()
         assert (commands_dir / "orchestrate-modeling" / "SKILL.md").exists()
 
-    def test_command_manifests_match_shipped_files(self):
-        """Python and development manifests include every shipped command."""
-        repository_root = Path(__file__).parent.parent
-        from agentic_mbse.cli import MBSE_SKILLS
-
-        shipped = {path.parent.name for path in (repository_root / "skills").glob("*/SKILL.md")}
-        assert {Path(name).stem for name in MBSE_COMMANDS} | set(MBSE_SKILLS) == shipped
-        script = (repository_root / "scripts" / "replicate_setup.sh").read_text()
+    def test_replicate_setup_wraps_init(self):
+        """The replication helper installs through init, not a second installer."""
+        script = (REPO_ROOT / "scripts" / "replicate_setup.sh").read_text()
         assert 'agentic-mbse init "$REPO_ROOT"' in script
 
     def test_skips_existing_without_force(self, tmp_path, capsys):
@@ -451,29 +446,33 @@ class TestCmdInitDevMode:
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
         cmd_init(args)
 
-        all_skills = [
-            "epic-decomposition",
-            "model-validation",
-            "project-structure",
-            "python-debugger",
-            "record-learning",
-            "requirements-tracking",
-            "source-traceability",
-            "sysml-conventions",
-            "toolkit-awareness",
-        ]
-        for skill in all_skills:
+        for skill in SKILLS:
             skill_path = tmp_path / ".claude" / "skills" / skill
             assert skill_path.is_symlink()
             assert skill_path.is_dir()
 
     def test_dev_creates_symlinks_for_hooks(self, tmp_path):
-        """--dev creates symlinks for hook files."""
+        """--dev links each hook to the source checkout's hooks/ folder."""
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
         cmd_init(args)
 
-        hook_path = tmp_path / ".claude" / "hooks" / "ruff-format.sh"
-        assert hook_path.is_symlink()
+        for hook in HOOKS:
+            hook_path = tmp_path / ".claude" / "hooks" / hook
+            assert hook_path.is_symlink()
+            assert hook_path.resolve() == REPO_ROOT / "hooks" / hook
+
+    def test_dev_refused_without_source_checkout(self, tmp_path, monkeypatch, capsys):
+        """Packaged data has skills/ too, so only src/agentic_mbse marks a source checkout."""
+        data = tmp_path / "agentic_mbse_data"
+        for name in ("skills", "agents", "adapters", "hooks", "docs", "project_templates"):
+            (data / name).mkdir(parents=True)
+        monkeypatch.setattr("agentic_mbse.cli._get_data_root", lambda: data)
+        target = tmp_path / "target"
+        target.mkdir()
+
+        assert cmd_init(MockArgs(path=str(target), force=False, dev=True)) == EXIT_FAILURE
+        assert "requires a source checkout" in capsys.readouterr().err
+        assert not any(target.iterdir())
 
     def test_dev_creates_symlinks_for_tool_templates(self, tmp_path):
         """--dev creates symlinks for tool-owned templates."""
@@ -881,3 +880,12 @@ def test_modified_file_prompt_retries_invalid_choice(monkeypatch, capsys):
     monkeypatch.setattr("builtins.input", lambda _: next(answers))
     assert _prompt_for_modified_file("managed.md") == "backup"
     assert "Invalid choice" in capsys.readouterr().out
+
+
+def test_source_tree_has_no_claude_folder():
+    """No Claude-named source folder remains, in the checkout or in either package."""
+    assert not (REPO_ROOT / "claude").exists()
+    build = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())["tool"]["hatch"]["build"]
+    wheel = build["targets"]["wheel"]["force-include"]
+    packaged = [*wheel, *wheel.values(), *build["targets"]["sdist"]["include"]]
+    assert not [entry for entry in packaged if "claude" in entry.split("/")]

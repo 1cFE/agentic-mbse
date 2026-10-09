@@ -12,6 +12,25 @@ import yaml
 
 MANIFEST = ".agentic-mbse/install.json"
 LEGACY_MANIFEST = ".claude/.tool-hashes.json"
+BUNDLE_KINDS = ("workflow", "supporting")
+
+
+def is_source_checkout(root: Path) -> bool:
+    """Whether `root` is an agentic-mbse source checkout rather than packaged data."""
+    return (root / "src" / "agentic_mbse").is_dir()
+
+
+def bundle_kind(bundle: Path) -> str:
+    """The `metadata.kind` a bundle's SKILL.md frontmatter declares."""
+    entry = bundle / "SKILL.md"
+    lines = entry.read_text().splitlines()
+    if lines[:1] != ["---"] or "---" not in lines[1:]:
+        raise ValueError(f"{entry} has no frontmatter")
+    meta = yaml.safe_load("\n".join(lines[1 : lines.index("---", 1)]))
+    kind = meta.get("metadata", {}).get("kind")
+    if kind not in BUNDLE_KINDS:
+        raise ValueError(f"{entry} declares metadata.kind {kind!r}, not one of {BUNDLE_KINDS}")
+    return str(kind)
 
 
 def fingerprint(path: Path) -> str | None:
@@ -336,7 +355,7 @@ def install_assistants(
     if "codex" in runtimes:
         register_codex_agents(installer, data / "agents")
     if "claude" in runtimes:
-        for source in sorted((data / "claude/hooks").glob("*")):
+        for source in sorted((data / "hooks").glob("*")):
             installer.write(
                 f".claude/hooks/{source.name}", source.read_bytes(), source=source, dev=dev
             )
