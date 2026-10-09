@@ -1,6 +1,6 @@
 # Spec: Reconcile the native installer source with `main`
 
-**Status:** Implemented on `nsd-integration` (plan Phases 1–8, 2026-10-09); audit Needs Work on B1 (`init --dev` hides the shipped skills from Codex), fixed as the orchestrator disposed; awaiting the targeted re-check (`audit.md`)
+**Status:** Implemented on `nsd-integration` (plan Phases 1–9, 2026-10-09). The audit's B1 (`init --dev` hid the shipped skills from Codex) is fixed in Phase 9 at the owner's direction; awaiting the independent re-audit (`audit.md`)
 **Owner:** Reid W
 **Created:** 2026-10-04 09:28 PDT
 **Updated:** 2026-10-09: revised to apply the spec review's Resolutions (`spec-review.md`, verdict Revise) and the Align decisions (`briefs/00-align.md`). Earlier versions: the 2026-10-09 rewrite at `b2d077b`, the 2026-10-04 original at `67c4d23`.

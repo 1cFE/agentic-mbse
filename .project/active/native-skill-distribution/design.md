@@ -3,7 +3,7 @@
 **Status:** Draft (revised after design review)
 **Owner:** Reid W
 **Created:** 2026-10-09 10:00 PDT
-**Updated:** 2026-10-09: applied the design review's Resolutions (`design-review.md`, verdict Revise). The `--dev` gitignore decision was cut (S3), so the rehearsal decision moved from D13 to D12, and D13 is new (this repo's tracked `.claude/` copies, C2). The first draft is at `fc0bcb9`. 2026-10-09, later: applied two orchestrator calls. This repo's reinstall is `install-commands --assistant claude`, not `replicate_setup.sh` (D13). Its tracked scaffold cleanup is a follow-up (R7, Non-Goals).
+**Updated:** 2026-10-09: applied the design review's Resolutions (`design-review.md`, verdict Revise). The `--dev` gitignore decision was cut (S3), so the rehearsal decision moved from D13 to D12, and D13 is new (this repo's tracked `.claude/` copies, C2). The first draft is at `fc0bcb9`. 2026-10-09, later: applied two orchestrator calls. This repo's reinstall is `install-commands --assistant claude`, not `replicate_setup.sh` (D13). Its tracked scaffold cleanup is a follow-up (R7, Non-Goals). 2026-10-09, after the audit: D14 amends how `--dev` installs the shared bundles (audit B1, plan Phase 9).
 **Planning branch:** `wrap-split` (this file). Implementation: new branch `nsd-integration` in a fresh worktree (D1).
 **Spec:** `spec.md` (revised after `spec-review.md`; Align decisions in `briefs/00-align.md`)
 
@@ -165,6 +165,10 @@ These are agent-grade design decisions. They are fixed for the plan; each can be
   - **Picking up source edits:** `install-commands` always copies (it has no `--dev`). A developer re-runs it after editing `skills/` to see the change in this repo.
   - **Keeping it untracked:** `.gitignore` lines cover exactly what that command writes: `.agents/skills/`, `.agentic-mbse/`, `.claude/skills/`, `.claude/agents/` and `.claude/hooks/`. `.claude/settings.json` stays tracked; `install-commands` never writes it.
   - *Rejected: keeping the copies tracked (a dangling, machine-specific link in every clone, and a stale second registration surface that Items 2, 4 and 5 will not reach). Rejected: removing only the dangling link (the 9 stale commands would still block their aliases on the next reinstall). Rejected: reinstalling with `scripts/replicate_setup.sh` (a full `init` also writes project scaffold, including a test file pytest collects).*
+- **D14. Under `--dev`, each shared bundle is one folder link** (amendment after the audit, 2026-10-09; plan Phase 9). `.agents/skills/<n>` is an absolute link to the checkout's `skills/<n>`, instead of a real folder of per-file links. Claude's `.claude/skills/<n>` alias is unchanged: a relative link to `.agents/skills/<n>`.
+  - **Why:** Codex 0.160.0 lists no skill whose `SKILL.md` is a file link, and lists every skill whose folder is a link. Claude Code lists both shapes (`evidence/spike-dev-codex-links.md`). With per-file links, `--dev` gave Codex none of the shipped skills (audit B1). [OWNER] 2026-10-09: the owner asked for the spike and then chose the fix over the deferral the orchestrator had made.
+  - **How:** `Installer.alias` becomes `Installer.link_directory(relative, link)`, with the caller passing the link text. The Claude alias and the `--dev` folder share its ownership rule: a real folder is replaced only when every entry in it is installer-owned. A real folder holding an owner file or an edit gets a plain copy of that bundle instead, and `init` prints one line saying so. The link text is absolute, like `--dev`'s template and hook links.
+  - *Rejected: linking `.agents/skills/<n>` through `.claude/skills/<n>` (Claude's alias already points at `.agents/`, so the chain adds a hop; both shapes were proven). Rejected: falling back to per-file links (Codex skips them). Rejected: linking over a folder that holds owner files (it deletes them).*
 
 ## Architecture
 
@@ -389,7 +393,7 @@ Product-lens falsifiers (`product-lens.md:35`): (a) is covered by SC5, (b) by SC
 
 **Fixed for the plan** (agent-grade design decisions; challengeable by re-deriving against their recorded reasons, not settled):
 
-- D1–D13.
+- D1–D14.
 - The envelope definition and the body-only adaptation scope.
 - The exact legacy predicate and where it sits in `permit`.
 - `AGENTS.md` as the SC9 home.

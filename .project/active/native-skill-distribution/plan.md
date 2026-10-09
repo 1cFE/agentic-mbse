@@ -1,6 +1,6 @@
 # Implementation Plan: Reconcile the native installer source with `main` (WRAP-SPLIT Item 1)
 
-**Status:** Implemented; audit Needs Work on one blocker (B1), fixed as the orchestrator disposed; awaiting the targeted re-check
+**Status:** Implemented through Phase 9; the audit's B1 (`--dev` hid the shipped skills from Codex) is fixed in Phase 9 at the owner's direction; awaiting the independent re-audit
 **Created:** 2026-10-09
 **Last Updated:** 2026-10-09
 **Branch:** `nsd-integration` in the worktree `/home/reid/1cfe/agentic-mbse-nsd`, cut from `wrap-split` at the commit that carries this plan (set up by the orchestrator)
@@ -660,6 +660,45 @@ The branch is ready for the owner's merge decision, pending the independent audi
 
 ---
 
+## Phase 9: `init --dev` links each bundle folder, so Codex lists every shipped skill (audit B1)
+
+### Goal
+Under `--dev`, install each bundle as one folder link `.agents/skills/<n>` → the checkout's `skills/<n>`, instead of a real folder of per-file links. Codex then lists all 25 shipped skills under `--dev`, as it does under plain `init`, and the B1 warning goes.
+
+**Why, and who decided.** The audit's B1 (product-lens audit-F1): under `--dev` Codex lists none of the shipped skills. [OWNER] 2026-10-09, in chat: the owner asked for a spike ([OWNER-VERBATIM] "can you run a spike to figure it out? … would symlinking directly to .claude in the same repo work?") and then answered "yes" to running the fix, so audit-F1's disposition is fix, not defer (`briefs/00-align.md:19`: both tools install the same way in every documented mode). The link shape is the orchestrator's choice [AGENT], from the spike (`evidence/spike-dev-codex-links.md`): Codex 0.160.0 never lists a skill whose `SKILL.md` is a file link and always lists one whose folder is a link.
+
+### Assumption Under Test
+A folder link made by the installer behaves as the spike's hand-made one did: Codex 25, Claude 18, roles 5 on a fresh `init --dev`. And `Installer.alias`'s ownership rule (replace a real folder only when every entry in it is installer-owned) is the right gate for the shared folder too.
+
+### Test Stencil (write first; derived from the tree)
+```
+--dev, for assistant in {claude, codex, both} and link mode in {symlink, copy}:
+  for every bundle n in skills/:
+    readlink(.agents/skills/<n>) == resolve(<checkout>/skills/<n>)
+    manifest[.agents/skills/<n>] == "link:" + that text; no manifest key under .agents/skills/<n>/
+    .agents/skills/<n>/SKILL.md is not a file link
+transitions: --dev over the earlier per-file --dev install; --dev over plain; plain over --dev;
+  --dev over a folder holding an owner file or an edit → a plain copy, owner bytes kept, one "Copied" line
+```
+
+### Steps
+- [x] **9.1** Generalize `Installer.alias` so the caller passes the link text, and use it for both the Claude alias (relative) and the `--dev` shared folder (absolute). No second copy of the ownership logic.
+- [x] **9.2** `install_assistants`: under `--dev`, link each shared bundle folder; when a real folder the installer does not own blocks the link, copy that bundle plainly (never per-file links) and print one line saying so.
+- [x] **9.3** Remove `DEV_CODEX_WARNING` and its Next-steps branch (`cli/__init__.py:64-69`, `:627-633`).
+- [x] **9.4** Tests: the stencil's property test; the transitions; replace the warning test; re-point the tests that pinned per-file links (`tests/test_cli.py:418-426`, `tests/test_installation.py:178-181`) and the dev case of the retirement test.
+- [x] **9.5** `README.md:47`: what `--dev` now does, without the Codex caveat.
+- [x] **9.6** Gate: full pytest; ruff check and format on changed files; repo-wide counts at or below `lint-parity.md`; mypy no worse. Commit code and tests.
+- [x] **9.7** Evidence: the discovery probe on a fresh `init --dev` (`evidence/probe-dev-folder-links.json`: Codex 25, Claude 18, roles 5, no errors); the fusion-tea rehearsal re-run on the committed code; `rehearsal.md`, `fusion-tea-runbook.md` and `audit-scope.md` updated. Commit.
+- [x] **9.8** `design.md` decision amendment; check `spec.md` SC6/SC7; these notes. Commit.
+
+### Validation
+The stencil passes. The probe shows Codex 25, Claude 18, roles 5. The dev rehearsal shows Codex listing the 25 shipped skills plus fusion-tea's 5, and the plain rehearsal is unchanged in substance.
+
+### What We Know Works After This Phase
+Both tools install the same way in every documented mode: `--dev` users see every shipped skill in Codex and Claude, edits to the checkout's `skills/` reach both with no re-init, and an owner's files inside a bundle folder are never deleted to make the link.
+
+---
+
 ## Environment Setup
 
 See CLAUDE.md for the development commands. The orchestrator creates the worktree, copies `.env`, runs `uv sync` and builds the pristine fusion-tea copy before implement. Nothing in this plan creates them.
@@ -829,7 +868,7 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
 
 **Found case: fusion-tea's `epic_template.md` is a link (design-review S8).** Design-review S8 and the design's Non-Goals assumed fusion-tea's tool-owned template copies are real files. `work/backlog/epic_template.md` is an absolute link into the checkout's `project_templates/epic_template.md.template`, left by the old `--dev`, untracked and ignored (fusion-tea `.gitignore:32`). The legacy predicate covers only `.claude/<location>/<name>`, so plain `init` does not adopt it and prompts; `--dev` matches it and does not. No code change: the prompt is the correct behaviour for an unadopted entry, and the runbook answers it.
 
-**Found case: `--dev` hides every shipped skill from Codex (surfaced, not resolved).** In the dev copy, Codex 0.160.0 lists only fusion-tea's 5 skills. Under `--dev` each `.agents/skills/<n>/SKILL.md` is a file link to an absolute path outside the project; fusion-tea's own skills, which Codex does list, are relative directory links inside it. Which property makes Codex skip them was not isolated. It predates this item: native `86921f9` makes the same per-file links (`installation.py:107-109` there), and no earlier probe ran Codex on a `--dev` install. SC7's probes use plain `init` and pass. The spec says "SC6 requires `--dev` to work either way" (`spec.md:99`) and SC6 asks that `init --dev` "installs every asset", which it does; whether "still works" should also mean Codex discovers them under `--dev` is the orchestrator's or owner's call. The stage recommends a follow-up, not a fix inside Item 1: plain `init`, the recommended mode for fusion-tea, is unaffected, and the fix needs its own probe of what Codex accepts. Recorded in `rehearsal.md`, the runbook's step 3 table and `audit-scope.md`'s follow-ups.
+**Found case: `--dev` hides every shipped skill from Codex (surfaced, not resolved).** In the dev copy, Codex 0.160.0 lists only fusion-tea's 5 skills. Under `--dev` each `.agents/skills/<n>/SKILL.md` is a file link to an absolute path outside the project; fusion-tea's own skills, which Codex does list, are relative directory links inside it. Which property makes Codex skip them was not isolated. It predates this item: native `86921f9` makes the same per-file links (`installation.py:107-109` there), and no earlier probe ran Codex on a `--dev` install. SC7's probes use plain `init` and pass. The spec says "SC6 requires `--dev` to work either way" (`spec.md:99`) and SC6 asks that `init --dev` "installs every asset", which it does; whether "still works" should also mean Codex discovers them under `--dev` is the orchestrator's or owner's call. Fixed in Phase 9, after the orchestrator's spike and the owner's decision to fix it.
 
 **Found case: a second run reports unchanged files as Updated.** `Installer.write` rewrites every existing managed file it may touch and reports it as Updated whether or not the bytes changed (`installation.py:159-169`; the same in native `86921f9`). A second run reported Updated (46) in plain mode and (12) in dev mode, against the stencil's "nothing updated". Git status after the second run is identical to the first in both modes, so no tracked content changed. The runbook verifies by git status. Reporting only real changes is a follow-up.
 
@@ -849,7 +888,7 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
 - 8.3 `uv run pytest tests/`: 2166 passed, 1 skipped, 1 xfailed.
 - 8.4 `evidence/lint-parity.md`: changed files clean; ruff check 118 = 118; ruff format 78 → 77 (`tests/test_cli.py` now formatted); mypy 101 → 98 with the other 98 equal to `main` line for line. mypy is compared in the baseline's own no-extras environment, because the worktree's all-extras venv changes mypy's findings in unchanged modules (14 import errors fewer, 4 attr errors more).
 - 8.5 `git merge-base --is-ancestor main HEAD` exits 0; `git ls-files .claude claude` prints only `.claude/settings.json`; `claude/` is absent. Nothing after Phase 6 touched `skills/`, `agents/` or the templates, so 6.1 stands. The orchestrator's `git fetch` after the rehearsal found `origin/main` still at `06ac41d`, so no merge or re-check was needed.
-- 8.6 `evidence/audit-scope.md`: the scope, what to press on (I1-I3, `permit`'s order), out of scope, and follow-ups. After the rehearsal it also names the `--dev` Codex discovery gap and the Updated-report quirk as follow-ups, and records `make-copy.sh`'s link gap as fixed by the orchestrator.
+- 8.6 `evidence/audit-scope.md`: the scope, what to press on (I1-I3, `permit`'s order), out of scope, and follow-ups. After the rehearsal it also names the `--dev` Codex discovery gap (fixed in Phase 9) and the Updated-report quirk as follow-ups, and records `make-copy.sh`'s link gap as fixed by the orchestrator.
 - The audit hand-off is ready: `evidence/audit-scope.md` lists every artifact, and all of them exist once commit step `10-rehearsal-evidence` lands.
 
 ### Audit fixes
@@ -860,7 +899,7 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
   - The closing "Next steps" no longer sends a `--dev` user to `$onboard` in Codex: with `both` it says to run `/onboard` in Claude; with `codex` it says to re-run without `--dev` first. Plain `init` and `--dev` with `claude` print the old line.
   - `README.md`'s `--dev` paragraph states the limitation in one sentence.
   - `test_dev_warns_that_codex_cannot_see_linked_skills` (`tests/test_cli.py`) runs `claude`, `codex` and `both` under plain `init` and `--dev`. The warning appears exactly for `--dev` with `codex` or `both`, and the uncaveated `$onboard` line appears exactly when it does not.
-  - Follow-up, in `audit-scope.md`: `--dev` Codex discovery: spike which link shapes Codex 0.160+ lists (file links vs directory links, inside vs outside the project), then make `--dev` produce one.
+  - Superseded by Phase 9: the owner chose the fix, so the warning, its test and the README caveat are gone, and `--dev` now links each bundle folder.
 - **Advisory 1, two predicate checks unpinned.** `old_checkout` now creates `x/`, so `{old}/x/../…` names a real checkout and only the `..` check can reject it. The predicate table and the never-adopted end-to-end cases each gain an "another entry's name" row (`{old}/claude/commands/<other workflow>.md`). Mutants, applied in place by `.orchestrate-logs/mutants/run_mutants.py` with the auditor's exact old/new text and restored after each run (`before.txt`, `after.txt` there):
   - Before: M1 (drop the `..` check) and M7 (drop name mirroring) both survived, 169 passed.
   - After: M1 killed by the table's `x/..` row and the end-to-end `'..' segment` case; M7 killed by the table's `{other}` row and the end-to-end "another entry's name" case. 171 passed unmutated.
@@ -871,6 +910,44 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
 - **Advisory 9, `check` read decoded text.** `reconcile.py check` now compares raw bytes in `file()` and decodes bytes without newline translation in `skill()`. Re-run on a fresh `both` install of the current tree: 55 files, 0 mismatches; `check.txt` and `check-rows.md` unchanged. `check-negative.txt` gains "CRLF reference file" and "CRLF SKILL.md": both exit 1. With the previous `reconcile.py`, both exit 0 (`.orchestrate-logs/check/negative-with-previous-reconcile.txt`).
 - **Advisories 2, 4, 7: accepted with no change** (orchestrator). The `skills:` key's disposition is now recorded in `dispositions.md`.
 - **Checks:** full pytest 2174 passed, 1 skipped, 1 xfailed (2166 plus the 6 warning cases and the 2 new predicate rows). ruff check, ruff format and mypy are clean on every changed file. Lint parity re-run with the same numbers (`lint-parity.md`): ruff check 118 = 118, ruff format 77 = 77, mypy 98 = 98 in the baseline's environment, and the 9 changed files are clean.
+
+### Phase 9 Completion
+**Completed:** 2026-10-09. Commits `a42c4c9` (code, tests, README), `5b93cac` (evidence and rehearsal), and the docs-and-notes commit that carries this section. `git add` and `git commit` worked in this session, so no saved commit steps were needed.
+
+**Actual Changes:**
+- 9.1 `src/agentic_mbse/cli/installation.py:232`: `Installer.alias(source, relative)` became `Installer.link_directory(relative, link)`. The body is unchanged except that the caller passes the link text; the ownership rule (replace a real folder only when every entry is installer-owned and there are no empty folders, drop its per-file manifest keys, record one `link:` entry) is shared, not copied. `expose_to_claude` (`:386-397`) passes the relative text to `.agents/skills/<n>` as before.
+- 9.2 `installation.py:365-383`: new `install_dev_bundle(installer, source)`. It calls `link_directory(".agents/skills/<n>", str(source.resolve()))`. If a real folder blocks the link, it copies the bundle plainly with `copy_tree` (no `dev`) and prints `Copied .agents/skills/<n> instead of linking it to the source checkout: the installer does not own everything in that folder`. `install_assistants` (`:406-409`) calls it under `--dev` and `copy_tree` otherwise. `copy_tree`'s `dev` flag stays for Claude's copy mode.
+- 9.3 `src/agentic_mbse/cli/__init__.py`: `DEV_CODEX_WARNING` and the `--dev` Next-steps branch are deleted. The Next-steps line (`:625`) is again the one line every mode prints, byte-equal to the text before the B1 fix (`783b00e~1`).
+- 9.4 Tests, all derived from the tree:
+  - `tests/test_cli.py:424` `test_dev_links_each_bundle_folder_to_the_checkout`, over `claude`/`codex`/`both` × `symlink`/`copy`: every `.agents/skills/<n>` reads exactly `<checkout>/skills/<n>`, the manifest holds that `link:` entry and no key under the folder, no `SKILL.md` there is a file link, the symlink-mode Claude alias reads `../../.agents/skills/<n>`, and every bundle file resolves into the checkout through the alias. It replaces the three tests that pinned per-file links (`test_dev_creates_symlinks_for_commands`, `test_dev_symlinks_orchestrator_command`, `test_dev_creates_symlinks_for_skills`); the orchestrator test was one bundle of the 25 the property now covers.
+  - `tests/test_cli.py:467` `test_next_steps_are_the_same_with_and_without_dev` replaces the warning test: for each assistant, the Next-steps block of `--dev` equals plain `init`'s.
+  - `test_dev_idempotent` (`:512`, no prompt and no copy line on a second run) and `test_dev_over_plain_install_links_every_bundle_folder` (`:527`, which replaces `test_dev_replaces_regular_file_with_symlink`).
+  - `tests/test_installation.py`: `test_copy_link_dev_transitions_preserve_owner_additions` (`:168`) now checks the folder link; `test_dev_over_per_file_dev_install_links_each_folder` (`:187`); `test_dev_copies_a_bundle_folder_holding_owner_files` (`:214`, with and without `--force`); `test_plain_init_over_dev_copies_every_bundle` (`:242`). The retirement test (`:378-387`) drops its `--dev` + `symlink` case and moves its `--dev` + `copy` case to Claude's copy, the only per-file `--dev` bundle left.
+- 9.5 `README.md:47` says `--dev` links each skill folder, links the templates and the hook file by file, that both tools list the skills and see checkout edits without a re-init, that a file added inside a linked folder lands in the checkout, and that a folder with files the installer does not own is copied with a note.
+- 9.7 Evidence: `evidence/probe-dev-folder-links.json`; `rehearsal.md`, `fusion-tea-runbook.md`, `audit-scope.md` and `lint-parity.md` updated; raw outputs in `evidence/rehearsal/` replaced by the re-run.
+- 9.8 `design.md` gains D14 (Handoff now lists D1–D14). `spec.md`: only the Status line changed. No criterion's text is false: SC6 asks that `init --dev` installs every asset, SC7 is about fresh installs per runtime choice, and SC10's "tracked files that change or become symlinks" covers the new dev shape.
+
+**Decisions under the brief's leanings** [AGENT]:
+- **Link text is absolute** (`source.resolve()`), matching `--dev`'s template and hook links and their `link:` fingerprints, so a later `--dev` from another checkout replaces it as installer-owned.
+- **The fallback is a plain copy of that bundle,** chosen at the call site in `install_dev_bundle`. It runs only when the destination is a real folder, the same test `expose_to_claude` uses. A link or file that `permit` refused is not retried as a copy, so an owner is never asked twice about one entry. The copy keeps owner additions and, without `--force`, owner edits (each is a `Preserving` line). Under `--force` edits are replaced, as for any managed file, but added files still survive and the folder is still not linked: `link_directory`'s ownership check does not consult `--force`, as with the Claude alias.
+- **README goes with the code commit,** because the commit that removes the warning must not leave a README that describes it.
+- **`--link-mode copy --dev` is left as it was:** Claude's copy holds per-file links, which Claude lists (spike); the property test pins that shape.
+
+**Transitions** (all in the suite): fresh target, all three runtime choices and both link modes; `--dev` over this branch's earlier per-file `--dev` install (every folder of links becomes one link; the referents are untouched); `--dev` over a plain install; plain `init` over `--dev` (each folder link is replaced by a real copy; the manifest's `link:` baseline lets `permit` remove it without a prompt, and the source tree's file list is unchanged, so nothing was written through the link); `--dev` over a folder with an owner file or edit, with and without `--force`; a second `--dev` run.
+
+**Probe (`evidence/probe-dev-folder-links.json`):** fresh `init --dev` (`--assistant both`) into a `git init`ed target, Claude Code 2.1.296, codex-cli 0.160.0: Claude 18 skills and 5 roles, Codex 25, no errors, probe exit 0. The 7 `user-invocable: false` bundles are on disk at `.claude/skills/<n>/SKILL.md`; no `SKILL.md` under `.agents/skills/` is a file link.
+
+**Rehearsal re-run** (the stage ran `rehearse.sh` itself, on `a42c4c9`):
+- **Plain:** every output byte-identical to the first run except the probe's Claude Code version string (2.1.295 → 2.1.296).
+- **Dev:** Adopted 31; one prompt (`MODELING_PROCESS.md`), kept byte-identical with both MR-7 lines; Codex 30 skills (25 shipped plus fusion-tea's 5), Claude 24 and 5 roles; git shows 31 deleted files under `.agents/skills/`, 25 untracked folder links, 2 template typechanges, 7 modified files and `.agentic-mbse/claude.md`; Symlinked 43 (first run 49); no `Copied` line, because every shipped folder in fusion-tea was installer-owned; fusion-tea's own 5 `.agents/skills/` links unchanged; the second run leaves git status identical.
+- **Clone:** `install-commands` output, git status and resolution byte-identical; pytest 2177 passed before and after.
+
+**Issues Encountered:**
+- **The B4 check went blind to the dev bundles.** `provenance.py` reads per-file entries from the init report and skipped folders, so the first dev re-run checked 8 files and flagged 7 lines. The script (`.orchestrate-logs/rehearsal/provenance.py`, not evidence) now expands a replaced entry that was a real folder in the pristine copy into every file it held. The whole rehearsal was then re-run: dev mode flags the same 129 lines as the first run (`dev-provenance.txt` byte-identical to it), and plain mode is unchanged.
+
+**Gate:** full `uv run pytest tests/` 2177 passed, 1 skipped, 5 deselected, 1 xfailed (2174 before: 10 cases replaced, 13 added). `ruff check` and `ruff format --check` clean on the four changed Python files. Repo-wide `ruff check` 118 (baseline 118), `ruff format --check` 77 files (recorded 77), mypy 98 in the baseline's environment (recorded 98) with no error in a changed file.
+
+**Deviations from Plan:** none in behaviour. 9.4 also restructured the retirement test, which the brief did not name, because its `--dev` cases wrote into a bundle folder that is now the source itself.
 
 ---
 
