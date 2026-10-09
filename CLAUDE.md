@@ -42,7 +42,7 @@ When discussing what agentic-mbse provides to its users:
 ### Why This Matters
 
 When a work item says "the spec should include evaluatable success criteria" or "the plan should add test phases":
-- **CORRECT**: Modify `skills/spec-model.md` or `skills/plan-model.md`
+- **CORRECT**: Modify `skills/spec-model/SKILL.md` or `skills/plan-model/SKILL.md`
 - **WRONG**: Assume it means personal dev commands like `/_my_spec` or `/_my_plan`
 
 The personal dev workflow commands are used to develop THIS repo but are not shipped to users.
@@ -209,29 +209,18 @@ See [Critical: Two Contexts](#critical-two-contexts) for the full distinction. Q
 
 ## Change Coordination
 
-When modifying `scripts/replicate_setup.sh` or `cmd_init()` in `src/agentic_mbse/cli/__init__.py`:
+The installer in `src/agentic_mbse/cli/installation.py` owns shared skills, native role rendering, aliases, and their ownership manifest. Both `init` and `install-commands` use it. `scripts/replicate_setup.sh` is a thin wrapper around `init`; asset changes belong in the common installer and packaged source trees.
 
-1. Review if the same change is needed in the other
-2. Both handle the same set of commands, agents, skills, and hooks (see `MBSE_COMMANDS`, `MBSE_AGENTS`, `MBSE_SKILLS`, `MBSE_HOOKS` in `cli/__init__.py`)
-3. Both use the same placeholder substitution technique for agent paths
-
-| File | Substitutes placeholders with |
-|------|-------------------------------|
-| `cmd_init()` | Absolute path to installed package's `docs/` |
-| `replicate_setup.sh` | Absolute path to this repo's `docs/` |
+The shared `skill_bundles()` inventory drives installation and `install-commands --list`. Keep `MBSE_COMMANDS` and `MBSE_SKILLS` aligned with the shipped workflow/supporting-skill inventory; tests check that inventory against `skills/*/SKILL.md`. Agent and hook discovery comes directly from their packaged directories.
 
 ## Init File Ownership
 
-When adding new files to `cmd_init()`, categorize them as user-owned or tool-owned:
-
 | Category | Behavior | Examples |
 |----------|----------|----------|
-| **User-owned** | Create once, skip on re-init (preserve customizations) | `knowledge/SOURCE_INDEX.md`, `modeling_project/OVERVIEW.md`, `work/BACKLOG.md`, `README.md`, `.gitignore`, `.claude/settings.json` |
-| **Tool-owned** | Update unmodified files; preserve or prompt on local edits | Commands, agents, skills, hooks, `modeling_project/MODELING_GUIDE.md`, `modeling_project/MODELING_PROCESS.md`, `work/EPIC_GUIDE.md`, `work/backlog/epic_template.md` |
+| **Project documents** | Create once and preserve on re-init; `--force` replaces them | `knowledge/SOURCE_INDEX.md`, `modeling_project/OVERVIEW.md`, `work/BACKLOG.md`, `README.md`, `.gitignore` |
+| **Native instructions and settings** | Preserve existing files and values even under `--force`; append missing Codex role registrations when the TOML layout permits | `CLAUDE.md`, `AGENTS.md`, `.claude/settings.json`, `.codex/config.toml` |
+| **Managed assets** | Update unmodified files; prompt interactively or preserve local edits noninteractively; `--force` replaces current managed files | Skills, native role files, adapters, hooks, modeling guides |
 
-Use `--force` to overwrite user-owned files.
+The installer removes retired bundle resources only when their manifest baseline still matches. Locally modified retired resources and untracked owner additions remain, including under `--force`.
 
-In code, use:
-- `USER_OWNED_TEMPLATES` list for user-owned project templates
-- `TOOL_OWNED_TEMPLATES` list for tool-owned project templates
-- For non-template files, add existence check with `args.force` for user-owned, or always-update logic for tool-owned
+Use `USER_OWNED_TEMPLATES` and `TOOL_OWNED_TEMPLATES` for project templates. Route managed assets through `Installer`; apply the appropriate explicit preservation rule when adding owner documents or settings.

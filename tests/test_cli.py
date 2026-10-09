@@ -243,16 +243,30 @@ class TestCmdInit:
 class TestCmdInstallCommands:
     """Tests for cmd_install_commands function."""
 
-    def test_list_shows_commands(self, capsys):
-        """--list shows available commands."""
-        args = MockArgs(list=True, directory=".", force=False)
-        result = cmd_install_commands(args)
-
+    def test_list_matches_installed_skills(self, tmp_path, capsys):
+        """The advertised catalog matches the bundles this command installs."""
+        result = cmd_install_commands(MockArgs(list=True, directory=str(tmp_path), force=False))
         assert result == EXIT_SUCCESS
-        captured = capsys.readouterr()
-        assert "design-model.md" in captured.out
-        assert "audit-models.md" in captured.out
-        assert "orchestrate-modeling.md" in captured.out
+        output = capsys.readouterr().out
+        listed = {
+            line.removeprefix("  - ") for line in output.splitlines() if line.startswith("  - ")
+        }
+        cmd_install_commands(MockArgs(list=False, directory=str(tmp_path), force=False))
+        installed = {path.parent.name for path in (tmp_path / ".agents/skills").glob("*/SKILL.md")}
+        assert listed == installed
+        assert len(listed) == 25
+        assert "Total: 25 skills" in output
+
+    @pytest.mark.parametrize("dev", [False, True])
+    def test_symlink_summary_describes_both_install_modes(self, tmp_path, capsys, dev):
+        cmd_init(MockArgs(path=str(tmp_path), force=False, dev=dev))
+        output = capsys.readouterr().out
+        header = next(line for line in output.splitlines() if line.startswith("Symlinked ("))
+        assert "dev mode" not in header
+        assert "points to source" not in header
+        if not dev:
+            assert header == "Symlinked (25):"
+            assert "dev mode" not in output
 
     def test_installs_commands_to_directory(self, tmp_path):
         """Installs commands to .claude/commands/ directory."""
@@ -847,3 +861,23 @@ class TestDirectoryStructure:
         ]
         for d in expected_dirs:
             assert (tmp_path / d).is_dir(), f"Missing directory: {d}"
+
+
+@pytest.mark.parametrize(
+    "choice,expected",
+    [("s", "skip"), ("b", "backup"), ("o", "overwrite"), ("S", "skip_all"), ("O", "overwrite_all")],
+)
+def test_modified_file_prompt_choices(monkeypatch, choice, expected):
+    from agentic_mbse.cli import _prompt_for_modified_file
+
+    monkeypatch.setattr("builtins.input", lambda _: choice)
+    assert _prompt_for_modified_file("managed.md") == expected
+
+
+def test_modified_file_prompt_retries_invalid_choice(monkeypatch, capsys):
+    from agentic_mbse.cli import _prompt_for_modified_file
+
+    answers = iter(["invalid", "b"])
+    monkeypatch.setattr("builtins.input", lambda _: next(answers))
+    assert _prompt_for_modified_file("managed.md") == "backup"
+    assert "Invalid choice" in capsys.readouterr().out

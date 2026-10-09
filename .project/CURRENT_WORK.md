@@ -1,14 +1,16 @@
 # Current Work
 
-**Last Updated**: 2026-07-18
+**Last Updated**: 2026-09-08
 
 ---
 
 ## Active Work
 
-### Native Claude/Codex skills: implemented and test-installed
+### Native Claude/Codex skills: audit findings addressed, re-review pending
 
-Branch `native-claude-codex-skills`, worktree `/tmp/agentic-mbse-native-skills`. Shared skills, native adapters and role rendering, explicit Codex role registration, and the ownership-aware common installer are implemented. The final code suite passed 1,926 tests with one skipped and five deselected; targeted Ruff/mypy and wheel-content checks passed. The wheel was test-installed into `/home/reid/agentic-mbse-target`; both catalogs and a trusted Codex nested custom-role documentation read passed. Codex project trust must be established in the client; installation preserves personal trust settings. Full modeling execution remains unverified, including the inherited contradictory standalone `syside check` guidance. Details: `.project/active/native-skills/validation.md`. Independent workflow audit has not been run.
+Branch `native-claude-codex-skills`, worktree `/home/reid/1cfe/agentic-mbse-native-skills`. Shared skills, native adapters and roles, Codex role registration, and the common ownership-aware installer are implemented. All eleven findings from the 2026-09-08 audit are addressed, including catalog/summary output, ownership documentation, retired-resource pruning, legacy-command divergence warnings, adapter and prompt coverage, and installer action ownership. The full suite passed 1,944 tests with one skipped and five deselected; the final focused run passed 115 tests. Changed-file Ruff/format and targeted mypy passed. The rebuilt wheel refreshed `/home/reid/agentic-mbse-target`; live discovery confirmed 25 Codex skills, 18 invocable Claude skills, and five Claude roles. Five Codex roles remain registered in project config.
+
+The independent audit's Needs Work verdict remains unchanged pending re-review. The existing plan carries provenance-graded requirements; a separate retroactive spec is not required by project rules, and agent decisions remain agent-authored. Codex project trust must be established in the client; installation preserves personal trust settings. Full modeling execution remains unverified, including the inherited contradictory standalone `syside check` guidance. Details: `.project/active/native-skills/remediation.md`, original `.project/active/native-skills/validation.md`, audit `.project/active/native-skills/audit.md`, and product lens `.project/active/native-skills/product-lens.md` (gate DISPOSED).
 
 ### Constraint-Wave Item 1: Profile Semantics (complete; orchestration paused for owner discussion)
 

@@ -75,7 +75,7 @@ def test_skipped_skill_edit_and_owner_resource_survive_four_inits(tmp_path):
 
 
 @pytest.mark.parametrize("modified", [False, True])
-def test_migrate_legacy_command_without_shadowing(tmp_path, modified):
+def test_migrate_legacy_command_without_shadowing(tmp_path, modified, capsys):
     path = tmp_path / ".claude/commands/design-model.md"
     path.parent.mkdir(parents=True)
     path.write_text("Original command")
@@ -97,6 +97,12 @@ def test_migrate_legacy_command_without_shadowing(tmp_path, modified):
                 ]
                 == baseline
             )
+
+    if modified:
+        output = capsys.readouterr().out
+        assert "Claude retains .claude/commands/design-model.md" in output
+        assert "Codex discovers .agents/skills/design-model/SKILL.md" in output
+        assert "different versions" in output
 
 
 def test_unknown_legacy_command_is_preserved(tmp_path):
@@ -262,3 +268,129 @@ def test_inline_codex_agents_table_is_not_corrupted(tmp_path, capsys):
     assert config.read_text() == original
     assert "merge MBSE role registrations manually" in capsys.readouterr().out
     assert tomllib.loads(config.read_text())["agents"]["owner"]["description"] == "Owner role"
+
+
+@pytest.mark.parametrize("link_mode", ["symlink", "copy"])
+@pytest.mark.parametrize("dev", [False, True])
+def test_bundle_retirement_prunes_only_unchanged_resources(
+    tmp_path, monkeypatch, capsys, link_mode, dev
+):
+    import shutil
+
+    from agentic_mbse.cli import _get_data_root
+
+    data = tmp_path / "package"
+    shutil.copytree(_get_data_root() / "skills", data / "skills")
+    # The other package data is read-only source for this install.
+    for name in ("agents", "adapters", "claude", "docs", "project_templates"):
+        (data / name).symlink_to(_get_data_root() / name, target_is_directory=True)
+    (data / "pyproject.toml").write_text("")
+    (data / ".git").mkdir()
+    source = data / "skills/research"
+    for name in ("retired.md", "edited.md", "missing.md"):
+        (source / name).write_text("original")
+    target = tmp_path / "target"
+    target.mkdir()
+    monkeypatch.setattr("agentic_mbse.cli._get_data_root", lambda: data)
+    args = Namespace(path=str(target), force=False, dev=dev, link_mode=link_mode)
+    cmd_init(args)
+    canonical = target / ".agents/skills/research"
+    edited = canonical / "edited.md"
+    # Replace a dev link to make a target-local edit without changing the source.
+    if edited.is_symlink():
+        edited.unlink()
+    edited.write_text("owner edit")
+    (canonical / "missing.md").unlink()
+    (canonical / "owner.md").write_text("owner addition")
+    before = json.loads((target / MANIFEST).read_text())["files"]
+    for name in ("retired.md", "edited.md", "missing.md"):
+        (source / name).unlink()
+    for _ in range(2):
+        # Even force must preserve edited retired files: they are no longer current assets.
+        args.force = True
+        cmd_init(args)
+        state = json.loads((target / MANIFEST).read_text())["files"]
+        assert not (canonical / "retired.md").exists()
+        assert not (canonical / "retired.md").is_symlink()
+        assert (canonical / "edited.md").read_text() == "owner edit"
+        assert (canonical / "owner.md").read_text() == "owner addition"
+        assert ".agents/skills/research/retired.md" not in state
+        assert ".agents/skills/research/missing.md" not in state
+        assert (
+            state[".agents/skills/research/edited.md"]
+            == before[".agents/skills/research/edited.md"]
+        )
+        assert not (target / ".claude/skills/research/retired.md").exists()
+    output = capsys.readouterr().out
+    assert "Removed (" in output
+    assert "Preserved retired resource .agents/skills/research/edited.md" in output
+
+
+def test_pruning_does_not_follow_redirected_parent_or_manifest_path(tmp_path, capsys):
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "SKILL.md").write_text("entry")
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    resource = outside / "old.md"
+    resource.write_text("keep")
+    installer = Installer(tmp_path, force=True, decide=lambda _: "overwrite")
+    redirected = tmp_path / ".agents/skills/test/references"
+    redirected.parent.mkdir(parents=True)
+    redirected.symlink_to(outside, target_is_directory=True)
+    for key in (
+        ".agents/skills/test/references/old.md",
+        ".agents/skills/test/../../../outside/old.md",
+    ):
+        installer.files[key] = fingerprint(resource)
+    installer.copy_tree(source, ".agents/skills/test")
+    assert resource.read_text() == "keep"
+    assert len(installer.actions["skipped"]) == 2
+    assert "redirected path" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("decision", ["skip_all", "overwrite_all", "backup", "overwrite"])
+def test_conflict_decisions_apply_across_files_and_reinit(tmp_path, decision):
+    installer = Installer(tmp_path, force=False, decide=lambda _: "skip")
+    for name in ("one.md", "two.md"):
+        installer.write(name, b"original")
+    installer.save()
+    for name in ("one.md", "two.md"):
+        (tmp_path / name).write_text("local")
+    decisions = []
+
+    def decide(path):
+        decisions.append(path)
+        return decision
+
+    installer = Installer(tmp_path, force=False, decide=decide)
+    for name in ("one.md", "two.md"):
+        installer.write(name, b"updated")
+    installer.save()
+    assert len(decisions) == (1 if decision.endswith("_all") else 2)
+    for name in ("one.md", "two.md"):
+        assert (tmp_path / name).read_text() == ("local" if decision == "skip_all" else "updated")
+        if decision == "backup":
+            assert (tmp_path / (name + ".backup")).read_text() == "local"
+    decisions.clear()
+    installer = Installer(tmp_path, force=False, decide=decide)
+    for name in ("one.md", "two.md"):
+        installer.write(name, b"updated")
+    assert len(decisions) == (1 if decision == "skip_all" else 0)
+
+
+def test_each_installed_skill_routes_to_existing_native_adapters(tmp_path):
+    import re
+
+    from agentic_mbse.cli import _get_data_root
+
+    init(tmp_path)
+    for skill in (tmp_path / ".agents/skills").glob("*/SKILL.md"):
+        body = skill.read_text().split("---", 2)[2].lstrip()
+        preamble = body.split("\n\n", 1)[0]
+        paths = set(re.findall(r"`(\.agentic-mbse/[^`]+\.md)`", preamble))
+        assert paths == {".agentic-mbse/claude.md", ".agentic-mbse/codex.md"}, skill
+        for path in paths:
+            assert (tmp_path / path).read_bytes() == (
+                _get_data_root() / "adapters" / Path(path).name
+            ).read_bytes()

@@ -43,7 +43,7 @@ class Installer:
         self.decide = decide
         self.default_action: str | None = None
         self.actions: dict[str, list[str]] = {
-            k: [] for k in ("created", "updated", "skipped", "backed_up", "symlinked")
+            k: [] for k in ("created", "updated", "skipped", "backed_up", "symlinked", "removed")
         }
         self.files: dict[str, str] = {}
         for name in (LEGACY_MANIFEST, MANIFEST):
@@ -125,15 +125,45 @@ class Installer:
                 return False
             path.unlink()
             self.files.pop(relative, None)
+        expected = set()
         for src in sorted(source.rglob("*")):
             if src.is_file() and "__pycache__" not in src.parts:
+                destination = f"{relative}/{src.relative_to(source).as_posix()}"
+                expected.add(destination)
                 self.write(
-                    f"{relative}/{src.relative_to(source).as_posix()}",
+                    destination,
                     src.read_bytes(),
                     source=src,
                     dev=dev,
                 )
+        self.prune_bundle(relative, expected)
         return True
+
+    def prune_bundle(self, relative: str, expected: set[str]) -> None:
+        """Remove retired bundle files only when the saved baseline still matches."""
+        retired = sorted(
+            key for key in self.files if key.startswith(relative + "/") and key not in expected
+        )
+        for key in retired:
+            path = self.target / key
+            # Manifest entries must stay inside the bundle, and ancestors must not redirect.
+            if ".." in Path(key).parts or any(
+                parent.is_symlink()
+                for parent in path.parents
+                if parent != self.target and self.target in parent.parents
+            ):
+                print(f"Preserved retired resource {key}: redirected path")
+                self.actions["skipped"].append(key)
+                continue
+            if not path.exists() and not path.is_symlink():
+                del self.files[key]
+            elif fingerprint(path) == self.files[key]:
+                path.unlink()
+                del self.files[key]
+                self.actions["removed"].append(key)
+            else:
+                print(f"Preserved retired resource {key}: local modifications")
+                self.actions["skipped"].append(key)
 
     def alias(self, source: Path, relative: str) -> bool:
         """Create a relative directory alias if its destination can be safely replaced."""
@@ -177,7 +207,9 @@ class Installer:
             return True
         if not self.parents(relative) or not self.permit(relative):
             print(
-                f"Preserved /{name}: legacy command remains active; Claude skill migration deferred"
+                f"Preserved /{name}: Claude skill migration deferred. "
+                f"Claude retains {relative}; Codex discovers .agents/skills/{name}/SKILL.md. "
+                "The clients may run different versions; an existing same-name Claude skill still takes precedence."
             )
             return False
         if path.exists() or path.is_symlink():
@@ -263,14 +295,17 @@ def register_codex_agents(installer: Installer, agents: Path) -> None:
         installer.actions["updated" if content else "created"].append(relative)
 
 
+def skill_bundles(skills: Path) -> list[Path]:
+    """Return installable bundles from the packaged skill tree."""
+    return sorted(entry.parent for entry in skills.glob("*/SKILL.md") if entry.is_file())
+
+
 def install_assistants(
     installer: Installer, data: Path, *, assistant: str, link_mode: str, dev: bool
 ) -> None:
     """Install shared bundles and selected native roles, instructions, and inactive hooks."""
     runtimes = ("claude", "codex") if assistant == "both" else (assistant,)
-    for source in sorted((data / "skills").iterdir()):
-        if not source.is_dir():
-            continue
+    for source in skill_bundles(data / "skills"):
         relative = f".agents/skills/{source.name}"
         shared_ready = installer.copy_tree(source, relative, dev=dev)
         if shared_ready and "claude" in runtimes and installer.retire_command(source.name):

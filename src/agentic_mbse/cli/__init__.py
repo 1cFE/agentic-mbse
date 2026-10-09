@@ -11,7 +11,7 @@ from pathlib import Path
 import tomllib
 from dotenv import load_dotenv
 
-from agentic_mbse.cli.installation import MANIFEST, Installer, install_assistants
+from agentic_mbse.cli.installation import MANIFEST, Installer, install_assistants, skill_bundles
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS, run_all_checks
 
 # Commands available for installation
@@ -33,15 +33,6 @@ MBSE_COMMANDS = [
     "status.md",
 ]
 
-# Agents available for installation
-MBSE_AGENTS = [
-    "python-debugger.md",
-    "kerml-expert.md",
-    "sysml-expert.md",
-    "syside-expert.md",
-    "sysmlv2-validator.md",
-]
-
 # Skills available for installation (directories, not files)
 MBSE_SKILLS = [
     "epic-decomposition",
@@ -54,11 +45,6 @@ MBSE_SKILLS = [
     "source-traceability",
     "sysml-conventions",
     "toolkit-awareness",
-]
-
-# Hooks available for installation
-MBSE_HOOKS = [
-    "ruff-format.sh",
 ]
 
 # Project templates split by ownership:
@@ -418,13 +404,6 @@ def cmd_init(args: argparse.Namespace) -> int:
             print(f"Error: {error_msg}", file=sys.stderr)
             return EXIT_FAILURE
 
-    # Track what happens for summary
-    created: list[str] = []  # New files (didn't exist before)
-    updated: list[str] = []  # Tool-owned files refreshed
-    skipped: list[str] = []  # User-owned files preserved
-    symlinked: list[str] = []  # Dev mode symlinks
-    backed_up: list[str] = []  # Modified files that were backed up
-
     assistant = getattr(args, "assistant", "both")
     link_mode = getattr(args, "link_mode", "symlink")
 
@@ -435,14 +414,13 @@ def cmd_init(args: argparse.Namespace) -> int:
         return _prompt_for_modified_file(path)
 
     installer = Installer(target, force=args.force, decide=decide)
-    # Use the same action lists for assistant assets and project templates.
-    installer.actions = {
-        "created": created,
-        "updated": updated,
-        "skipped": skipped,
-        "symlinked": symlinked,
-        "backed_up": backed_up,
-    }
+    # The installer owns the action lists; project templates contribute to the same summary.
+    created = installer.actions["created"]
+    updated = installer.actions["updated"]
+    skipped = installer.actions["skipped"]
+    symlinked = installer.actions["symlinked"]
+    backed_up = installer.actions["backed_up"]
+    removed = installer.actions["removed"]
 
     # === Create .gitignore with standard Python ignores ===
     gitignore_path = target / ".gitignore"
@@ -649,7 +627,7 @@ Edit this file to add your domain-specific sources.
     print("")
 
     if symlinked:
-        print(f"Symlinked ({len(symlinked)}) - dev mode, points to source:")
+        print(f"Symlinked ({len(symlinked)}):")
         for item in symlinked:
             print(f"  @ {item}")
 
@@ -668,14 +646,19 @@ Edit this file to add your domain-specific sources.
         for item in backed_up:
             print(f"  B {item}")
 
+    if removed:
+        print(f"\nRemoved ({len(removed)}) - retired, unmodified bundle files:")
+        for item in removed:
+            print(f"  - {item}")
+
     if skipped:
         print(f"\nSkipped ({len(skipped)}) - user files preserved:")
         for item in skipped:
             print(f"  . {item}")
 
-    if not created and not updated and not symlinked and not backed_up:
+    if not created and not updated and not symlinked and not backed_up and not removed:
         print("Everything up to date.")
-    elif created or updated or symlinked or backed_up:
+    elif created or updated or symlinked or backed_up or removed:
         print("")
         print("Next steps:")
         print("  1. Run /onboard in Claude or $onboard in Codex to configure your project")
@@ -692,11 +675,12 @@ def cmd_install_commands(args: argparse.Namespace) -> int:
     Installs shared workflow skills and selected native adapters without project templates.
     """
     if args.list:
-        print("Available MBSE commands:")
-        for cmd in MBSE_COMMANDS:
-            print(f"  - {cmd}")
+        bundles = skill_bundles(get_skills_dir())
+        print("Available MBSE skills:")
+        for bundle in bundles:
+            print(f"  - {bundle.name}")
         print("")
-        print(f"Total: {len(MBSE_COMMANDS)} commands")
+        print(f"Total: {len(bundles)} skills")
         return EXIT_SUCCESS
 
     target_dir = Path(args.directory).resolve()
@@ -715,7 +699,7 @@ def cmd_install_commands(args: argparse.Namespace) -> int:
     installer.save()
     print(
         f"Installed: {len(installer.actions['created']) + len(installer.actions['updated'])}, "
-        f"Skipped: {len(installer.actions['skipped'])}"
+        f"Skipped: {len(installer.actions['skipped'])}, Removed: {len(installer.actions['removed'])}"
     )
     return EXIT_SUCCESS
 
