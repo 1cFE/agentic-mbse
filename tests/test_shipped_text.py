@@ -78,6 +78,18 @@ def test_runtime_neutral_text_names_no_claude_path(installed):
         assert ".claude/" not in text, path
 
 
+@pytest.mark.parametrize("runtime", ["claude", "codex"])
+def test_adapter_keeps_a_continuing_author_and_a_fresh_independent_reviewer(installed, runtime):
+    """SC3: stages do not force new agents; only independent criticism needs a non-author."""
+    text = " ".join((installed / f".agentic-mbse/{runtime}.md").read_text(encoding="utf-8").split())
+    sentences = re.split(r"(?<=[.;])\s+", text)
+    assert not [s for s in sentences if "stage" in s.lower() and "new agent" in s.lower()]
+    assert "Keep a continuing author across stages" in text
+    assert "while its context remains useful" in text
+    assert "Independent criticism requires a fresh non-author agent" in text
+    assert "resume an author for its audit" in text
+
+
 def test_guide_locates_pattern_docs_for_either_runtime(installed):
     """SC4: main's resolver text, with no Claude-only settings path."""
     guide = (installed / "modeling_project/MODELING_GUIDE.md").read_text(encoding="utf-8")
