@@ -1,6 +1,6 @@
 # Implementation Plan: Reconcile the native installer source with `main` (WRAP-SPLIT Item 1)
 
-**Status:** Draft
+**Status:** In Progress
 **Created:** 2026-10-09
 **Last Updated:** 2026-10-09
 **Branch:** `nsd-integration` in the worktree `/home/reid/1cfe/agentic-mbse-nsd`, cut from `wrap-split` at the commit that carries this plan (set up by the orchestrator)
@@ -138,8 +138,8 @@ else:
 
 **Pre-flight**
 
-- [ ] **1.1** Confirm the worktree. `git status --porcelain` is empty. `git branch --show-current` prints `nsd-integration`. `git log -1 --format=%h -- .project/active/native-skill-distribution/plan.md` prints a commit. `git rev-parse --short main native-claude-codex-skills` prints `8f43a09` and `86921f9`. If `main` moved, use the new SHA wherever this plan says `8f43a09`, and refresh SC1's inventory in 6.4 (design R2).
-- [ ] **1.2** [SC12] Capture `main`'s lint baseline in a scratch export. This needs no worktree bookkeeping and touches nothing in the live checkout:
+- [x] **1.1** Confirm the worktree. `git status --porcelain` is empty. `git branch --show-current` prints `nsd-integration`. `git log -1 --format=%h -- .project/active/native-skill-distribution/plan.md` prints a commit. `git rev-parse --short main native-claude-codex-skills` prints `8f43a09` and `86921f9`. If `main` moved, use the new SHA wherever this plan says `8f43a09`, and refresh SC1's inventory in 6.4 (design R2).
+- [x] **1.2** [SC12] Capture `main`'s lint baseline in a scratch export. This needs no worktree bookkeeping and touches nothing in the live checkout:
   ```bash
   mkdir -p .orchestrate-logs/lint-baseline/main && git archive main | tar -x -C .orchestrate-logs/lint-baseline/main
   cd .orchestrate-logs/lint-baseline/main && uv sync --frozen -q
@@ -151,7 +151,7 @@ else:
 
 **Merge**
 
-- [ ] **1.3** `git merge --no-ff --no-commit native-claude-codex-skills`. Resolve each path with the side in this table, and nothing else by hand:
+- [x] **1.3** `git merge --no-ff --no-commit native-claude-codex-skills`. Resolve each path with the side in this table, and nothing else by hand:
 
   | Path | Side | Command |
   |---|---|---|
@@ -164,7 +164,7 @@ else:
   | Any other conflict | not predicted | `.project/` prose: take `HEAD` and note it. Code or shipped text: stop and return it |
 
   Do not check out whole folders from the branch beyond `skills` and `agents`. `main` changed other files in `project_templates/`, `src/` and `tests/` after the fork, and git's clean merge already carries them.
-- [ ] **1.4** [SC1] Verify the resolution, then commit.
+- [x] **1.4** [SC1] Verify the resolution, then commit.
   - `git diff --cached HEAD -- claude` is empty: `main`'s `claude/` is intact.
   - `git diff --cached native-claude-codex-skills -- skills agents adapters src/agentic_mbse/cli/__init__.py src/agentic_mbse/cli/installation.py pyproject.toml scripts README.md CLAUDE.md tests/test_cli.py tests/test_installation.py tests/test_packaged_guidance_contract.py` is empty: the branch side, which `main` did not touch since the fork.
   - `git diff --cached main -- src tests docs .gitignore project_templates/EPIC_GUIDE.md.template ':!src/agentic_mbse/cli/__init__.py' ':!src/agentic_mbse/cli/installation.py' ':!tests/test_cli.py' ':!tests/test_installation.py' ':!tests/test_packaged_guidance_contract.py'` is empty: `main`'s other changes are intact.
@@ -174,12 +174,12 @@ else:
 
 **B2 probe**
 
-- [ ] **1.5** Build two scratch targets. Make each its own git repo, so neither client walks up into the worktree's `.claude/` or root:
+- [x] **1.5** Build two scratch targets. Make each its own git repo, so neither client walks up into the worktree's `.claude/` or root:
   ```bash
   for t in control metadata; do mkdir -p .orchestrate-logs/probe/b2-$t && git -C .orchestrate-logs/probe/b2-$t init -q && uv run agentic-mbse init .orchestrate-logs/probe/b2-$t --assistant both < /dev/null > .orchestrate-logs/probe/b2-$t.init.log 2>&1; done
   ```
   In `b2-metadata`, append `metadata:` and `  kind: workflow` or `  kind: supporting` as the last frontmatter key of every `.agents/skills/*/SKILL.md`. Use a throwaway snippet kept in `.orchestrate-logs/probe/`. Take the kind from `main`'s location (`git ls-tree main claude/commands claude/skills`). The Claude alias points into `.agents/skills/`, so one edit covers both clients.
-- [ ] **1.6** Run the probe on each target and keep the JSON as evidence:
+- [x] **1.6** Run the probe on each target and keep the JSON as evidence:
   ```bash
   uv run python .project/active/native-skills/discovery_probe.py .orchestrate-logs/probe/b2-control --output .project/active/native-skill-distribution/evidence/probe-b2-control.json > .orchestrate-logs/probe/b2-control.log 2>&1; echo "exit $?"
   ```
@@ -187,7 +187,7 @@ else:
   - A control run that fails is an environment problem: a client missing, a sandbox denial, or a client upgrade. Stop and return the log. The orchestrator can run the probe itself; it needs no model turns.
   - If the control run shows extra names (a client picked up the worktree's own `.claude/`), retry with targets under `/tmp` if the sandbox allows, and note it.
   - If the top-level fallback is needed, build `b2-toplevel` the same way and keep its JSON. Then `write` and `check` (Phase 2), `bundle_kind` (4.1), the I7 test (4.5) and CLAUDE.md (8.1) all use a top-level `kind:` key.
-- [ ] **1.7** Commit the probe JSON: `B2 holds: both clients list every bundle carrying metadata.kind` (or the fallback's outcome).
+- [x] **1.7** Commit the probe JSON: `B2 holds: both clients list every bundle carrying metadata.kind` (or the fallback's outcome).
 
 ### Validation
 - **Automated:** `uv run pytest tests/` passes at the merge commit.
@@ -679,13 +679,41 @@ See `design.md#potential-risks` (R1–R7) for the full analysis. Phase-specific 
 
 ## Implementation Notes
 
-[TO BE FILLED DURING IMPLEMENTATION]
+**`main` moved before integration (1.1, design R2).** `main` is `06ac41d`, one commit past `8f43a09`: PR #17 drops a `;` inside backticks on one line of `project_templates/MODELING_PROCESS.md.template` (`:71`). Every later step uses `06ac41d` where this plan says `8f43a09`. SC1's inventory in 6.4 is measured against `06ac41d`; the only difference is that one template line. `wrap-split` already carries `06ac41d` (`40bfca6`), so the merge base with `main` is `main` itself.
+
+**Environment: 18 tests fail for missing optional modules.** The worktree's venv was synced without extras. 17 tests in `tests/test_web_backend.py` need `trafilatura` (extra `web`) and `tests/test_equations.py::TestDetectEquations::test_returns_detected_equations` needs `PIL` (only through the heavy `extract-full`/`extract-tables` extras). The same 18 fail on `main`'s export with the same no-extras sync (`.orchestrate-logs/lint-baseline/main`, `uv run --frozen pytest tests/test_web_backend.py tests/test_equations.py`: 18 failed, 14 passed). Below, "pytest passes" means nothing fails outside this environmental set. The final gate (8.3) should run with the `web` extra, or record this set the same way.
 
 ### Phase 1 Completion
-**Completed:**
+**Completed:** 2026-10-09. Merge `df75d26`; B2 evidence in the Phase 1 evidence commit.
+
 **Actual Changes:**
+- 1.2 lint baseline of `main` (`06ac41d`) in `.orchestrate-logs/lint-baseline/` via `git archive` + `uv sync --frozen`: ruff check 118 findings (matches), ruff format 78 files to reformat (matches), **mypy 101 errors in 21 files, not 91**. SC12's parity uses the measured 101.
+- 1.3 merge: 14 conflicted paths, each resolved by the plan's table and nothing else by hand.
+
+  | Class | Paths | Resolution |
+  |---|---|---|
+  | `claude/**` | `claude/commands/orchestrate-modeling.md` (modify/delete). Rename detection had also moved `main`'s edits of the other renamed commands onto `skills/` | `git checkout HEAD -- claude`; `git ls-files claude` is 37 files, equal to `HEAD` |
+  | `skills/` content conflicts | `skills/{audit-models,design-model,implement-model,plan-model,quick-model,review-model,spec-model}/SKILL.md` (7) | `git checkout native-claude-codex-skills -- skills agents`. No index path under `skills/` or `agents/` was missing from the branch tree, so no `main`-only file was carried in by directory-rename detection |
+  | Templates changed on both | `project_templates/MODELING_GUIDE.md.template`, `MODELING_PROCESS.md.template` | branch side; commit 2 regenerates them |
+  | `main` test changed on both | `tests/test_modeling_command_contracts.py` | `main`'s side; re-pointed in commit 3 |
+  | Planning state | `.project/CURRENT_WORK.md` | `wrap-split`'s side |
+  | Added on both, differ | `.project/active/spike-native-skill-install/findings.md`, `installer-findings.md` | `main`'s side. They differ only by `main`'s added 2026-10-04 status line (2 lines each). For 6.4 |
+  | Added on both, identical | `.project/research/20260907-162310_native-claude-codex-skills.md` | no conflict; same bytes on both sides |
+
+- 1.4 the three `git diff --cached` checks printed nothing (`claude` vs `HEAD`; branch-side paths vs the branch; `main`'s other changes vs `main`).
+- 1.5–1.6 B2 probe. Two `git init`ed targets under `.orchestrate-logs/probe/`, each a fresh `init --assistant both` of the merge. `b2-metadata` got `metadata:` / `  kind: <k>` as the last frontmatter key of all 25 `.agents/skills/*/SKILL.md` (throwaway `.orchestrate-logs/probe/inject_kind.py`; kind from `main`'s `claude/commands/` vs `claude/skills/`: 15 workflow, 10 supporting; all 25 still parse as YAML). Probe on each, Claude Code 2.1.295 and codex-cli 0.160.0: both exit 0 with the probe's own asserts passing. Claude 18 names, Codex 25, roles 5, no errors, and **the name lists are identical between control and treatment**. Evidence: `evidence/probe-b2-control.json`, `evidence/probe-b2-metadata.json`.
+
+**B2 decision:** keep `metadata.kind` (D6). No top-level fallback needed.
+
 **Issues:**
+- pytest at the merge: 20 failed, 2081 passed. 18 are the environmental set above. The other two are direct consequences of the plan's own resolution, not merge defects:
+  - `tests/test_modeling_command_contracts.py::test_canonical_flow_marks_optional_and_completion_stages`: `main`'s test reads `project_templates/MODELING_PROCESS.md.template`, which 1.3 deliberately takes from the branch side (old text). Commit 2 regenerates it from `main`.
+  - `tests/test_packaged_guidance_contract.py::test_built_wheel_carries_the_authoritative_guidance_bytes`: the branch's test asserts no `agentic_mbse_data/claude/commands/` member, and the merge keeps `main`'s `claude/` for regeneration, which the wheel force-includes. Commit 3 removes `claude/`; Phase 4 fixes the force-include.
+
 **Deviations:**
+- 1.4 expected `uv run pytest tests/` to pass at the merge. It cannot, for the two reasons above; the plan's own resolution table predicts both. No resolution was changed.
+- `main` SHA `06ac41d` replaces `8f43a09` throughout (plan step 1.1 rule).
+- 1.2's mypy count is 101, not 91. Recorded and used.
 
 ### Phase 2 Completion
 
