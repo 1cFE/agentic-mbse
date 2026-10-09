@@ -4,7 +4,7 @@
 **Status**: Draft
 **Priority**: High
 **Created**: 2026-10-06
-**Estimated Effort**: ~9 days across 5 items (one item lives in sysml-codegen)
+**Estimated Effort**: ~10 days across 5 items (one item lives in sysml-codegen)
 
 ---
 
@@ -76,42 +76,52 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 ### Item 1: Reconcile native installer source with `main`
 
 **Type**: Code/Integration
-**Effort**: 1.5 days (spec: adopted, updated to this scope 2026-10-09; design 2h; plan 1h; execute 8h)
+**Effort**: 2 days (spec: adopted, updated to this scope 2026-10-09 and revised after spec review; design 2h; plan 1h; execute 12h). Raised from 1.5 days for the Align decisions (legacy-symlink adoption, `claude/` removal, fusion-tea runbook); reflow, a separate A–K re-review and pattern installation were shed.
 **Dependencies**: None
 
 **Objective**: Make the native Claude/Codex installer branch carry `main`'s current workflow content so there is one installer source to register new skills in.
 
 **Current State**:
-- ✅ `main` (`c37ff53`) holds the September workflow bodies and the rewritten `MODELING_PROCESS.md.template`; fusion-tea's installed copies match them.
-- ✅ Branch `native-claude-codex-skills` (worktree `/home/reid/1cfe/agentic-mbse-native-skills`, `955295b` + uncommitted A–K remediation) holds the `skills/` + `agents/` + `adapters/` layout, `skill_bundles()` discovery, hash manifest, Codex role registration.
+- ✅ `main` (`8f43a09`) holds the September workflow bodies and the rewritten `MODELING_PROCESS.md.template`; fusion-tea's installed copies match `c37ff53`, which predates PR #16.
+- ✅ Branch `native-claude-codex-skills` (worktree `/home/reid/1cfe/agentic-mbse-native-skills`, `86921f9`, A–K remediation committed) holds the `skills/` + `agents/` + `adapters/` layout, `skill_bundles()` discovery, hash manifest, Codex role registration. It still keeps `MBSE_COMMANDS`/`MBSE_SKILLS` lists that tests compare against `skills/`, so a new skill takes two edits.
 - ⚠️ The branch forked at `88e2489`, 58 commits behind `main` as of 2026-10-09 (PR #16 added `/research` and toolkit-awareness changes); eleven workflow bodies differ by 30–110 lines and the process template by 865 lines.
 - ⚠️ `adapters/{claude,codex}.md` still say "fresh stages require new agents"; fusion-tea's `.agentic-mbse/codex.md:7` carries the September author-continuity rule.
-- ⚠️ `MODELING_GUIDE.md.template:279` documents only the legacy `get_docs_dir()` pattern resolver; the native installer copies patterns to `.agentic-mbse/patterns/`.
+- ⚠️ `main`'s `MODELING_GUIDE.md.template:276-282` locates pattern docs with the `get_docs_dir()` resolver, which works for source and packaged installs; its permissions sentence (`:282`) names `.claude/settings.json`, which needs Codex wording. No installer copies pattern docs into a target: fusion-tea's `.agentic-mbse/patterns/` is fusion-tea's own setup, and its note about it is target-owned.
+- ⚠️ fusion-tea's Claude side is 31 absolute symlinks into `/home/reid/1cfe/agentic-mbse/claude/` made by the old `replicate_setup.sh`, not a native install. The merge removes `claude/`, so they dangle once that checkout moves to the new `main`; today's native installer preserves them as owner files.
 - ❌ Independent re-review of the A–K remediations has not happened (`audit.md` still "Needs Work").
 
 **Scope**:
-1. **Content rebase**: replace the branch's workflow bodies and templates with `main`'s content, keeping the branch's envelope changes (frontmatter, "Before executing this skill" preface, paragraph reflow) and its runtime adaptation (body rewrites that make a skill work under both Claude Code and Codex, such as `.agents/skills/` script paths). Classify each of the sixteen observed differences per the existing spec: portable (take `main`), target-owned (leave in fusion-tea), intentional.
-2. **Adapter text**: carry the author-continuity sentence into both adapters; describe both pattern-directory modes in `MODELING_GUIDE.md.template`.
-3. **Integrate**: bring the branch onto `main` (rebase or merge; design decides) with the uncommitted remediation committed first. State the fate of `scripts/replicate_setup.sh`: on the branch it is already a thin wrapper around `init` (native `CLAUDE.md:212`); confirm that holds after the merge and update CLAUDE.md "Change Coordination" so Item 2's `cmd_init` changes have one place to land (product-lens epic-F2).
-4. **Verify**: fresh install into a scratch target in both runtimes; inventory test ties `skills/*/SKILL.md` to installed files; the A–K remediation re-review the existing audit asked for, bounded to installer behaviour.
+1. **Content rebase**: replace the branch's workflow bodies and templates with `main`'s content, keeping only the branch's envelope (frontmatter and the "Before executing this skill" preface, with no paragraph reflow) and a closed, reviewed list of runtime adaptations (body changes that make a skill work under both Claude Code and Codex, such as `.agents/skills/` script paths). Give every difference against `main` a disposition per spec SC1: take `main`, keep the branch, merge, or target-owned.
+2. **Adapter and guide text**: carry the author-continuity sentence into both adapters; the guide template takes `main`'s `get_docs_dir()` resolver text, with its `.claude/settings.json` sentence adapted for Codex.
+3. **One source tree**: remove `claude/` (the hook moves out of `claude/hooks/`) so plain `init`, `init --dev` and a built wheel still install everything; drop the hand-maintained `MBSE_*` lists so a skill registers in one place.
+4. **Legacy adoption**: the installer adopts the old installer's symlinks (shipped names at old `.claude/` locations pointing into an agentic-mbse `claude/` folder, even when dangling), replaces them without writing through them, reports each with its old target, and leaves everything else to today's prompt-or-preserve behaviour. Shown by installing over a copy of fusion-tea.
+5. **fusion-tea runbook**: ledger rows and a proposed fusion-tea change that moves its target-owned text out of files a re-init overwrites; a post-merge runbook for the owner, rehearsed on a copy (pin move first, then the fusion-tea change, then `init` or `init --dev` with each mode's observed effects, keeping `MODELING_PROCESS.md`).
+6. **Integrate**: bring the branch onto `main` (rebase or merge; design decides) in a worktree, never by switching branches in `/home/reid/1cfe/agentic-mbse`. State the fate of `scripts/replicate_setup.sh`: on the branch it is already a thin wrapper around `init` (native `CLAUDE.md:212`); confirm that holds after the merge and update CLAUDE.md "Change Coordination" so Item 2's `cmd_init` changes have one place to land (product-lens epic-F2).
+7. **Verify**: fresh install into a scratch target under `claude`, `codex` and `both`; this item's independent audit covers the A–K remediations together with this item's installer changes.
 
 **Out of Scope**:
 - New workflow names, new runtimes, token-savings measurement, fusion-tea's full study suite.
 - Registering `run-goal`, `narrate-goal` (Item 2) or anything study-related (Item 3).
+- Pattern-doc installation into targets (`main`'s resolver text already locates the packaged docs).
+- The merge, any push, and writes to fusion-tea's real tree, including the post-merge re-init: these are the owner's.
 
-**Success Criteria**:
-- [ ] Every one of the sixteen bundle differences has a recorded disposition (spec criterion 1).
-- [ ] After install, the fifteen workflow bodies and the process template equal `main`'s content modulo envelope; a diff script in the item's evidence shows it.
-- [ ] Both adapters carry the author-continuity rule; the guide template names both pattern locations.
-- [ ] Fresh Claude and Codex installs discover all workflows and expert roles; re-init preserves protected files and does not write through symlinks.
-- [ ] Branch merged to `main`; `uv run pytest tests/` passes; the inferred fresh-stage-context rule in the native plan is reconciled with the September risk-based review (spec open question 3).
+**Success Criteria** (full wording in the spec):
+- [ ] Every difference between the branch's shipped files and `main`'s has a recorded disposition (spec SC1).
+- [ ] Bundles, the three changed tool-owned templates and the pattern docs equal `main` except for the envelope (frontmatter and preface, no reflow) and a closed, reviewed list of runtime adaptations (SC2).
+- [ ] Both adapters carry the author-continuity rule; the guide template carries `main`'s resolver text, readable under Codex (SC3, SC4).
+- [ ] A skill registers in one place, with no hand-maintained list; no `claude/` folder remains, and `init`, `init --dev` and a built wheel install everything including the hook (SC5, SC6).
+- [ ] Fresh `claude`, `codex` and `both` installs discover all workflows and expert roles; re-init preserves protected files and does not write through symlinks (SC7).
+- [ ] Installing over a copy of fusion-tea adopts exactly the old installer's symlinks and reports each one (SC8).
+- [ ] fusion-tea's target-owned text has ledger rows and a proposed move into fusion-tea-owned files; the owner has a post-merge runbook rehearsed on a copy (SC9, SC10).
+- [ ] An integration branch carrying `main`'s full history plus the native work passes pytest, ruff and mypy and is ready for the owner to merge; an independent audit covers the A–K remediations and this item's installer changes (SC11, SC12).
 
 **Required Reading**: `.project/active/native-skill-distribution/spec.md`; `/home/reid/1cfe/agentic-mbse-native-skills/.project/active/native-skills/{plan,remediation,audit}.md`; `/home/reid/1cfe/fusion-tea/.project/active/harness-right-size/{report.md,installed.json}`; research § 4.
 
 **Deliverables**:
 - `.project/active/native-skill-distribution/{design,plan}.md` (spec already exists)
-- Difference-disposition table and install verification record under `.project/active/native-skill-distribution/evidence/`
-- Merged branch
+- Difference-disposition table, runtime-adaptation list and install verification record under `.project/active/native-skill-distribution/evidence/`
+- Ledger rows, the proposed fusion-tea change, and the rehearsed post-merge runbook
+- Integration branch ready for the owner to merge
 
 ---
 
@@ -306,9 +316,11 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 
 **Critical path.** 1 → 2 → Item 5's run-goal relabel → fusion-tea re-install check (the epic's integration evidence). Item 3 runs in parallel from day one. Item 4 runs after Item 1, alongside Item 2. Item 5's code, skill and tests run after Item 1, alongside Item 2; only its relabel step waits for Item 2.
 
+**Sequencing rule while Item 1 runs.** Items 2, 4 and 5 can write specs and designs while Item 1 runs, but must not register or edit shipped files until Item 1's merge lands.
+
 **Decomposition rationale.** Five items, one per repo-and-type boundary: installer packaging (1), agentic-mbse instruction text (2), sysml-codegen code plus its skill (3), agentic-mbse hygiene (4), agentic-mbse code plus its skill (5). Item 5 was the research's proposed fifth item; the owner ruled it in on 2026-10-06 (epic-F1). It stays separate from Item 2 because Item 2 is at the two-day ceiling and Item 5 is Python code with its own tests, not instruction text. Item 2 is at the two-day ceiling because the design-choice principle touches the same templates the goal port touches; splitting it would create two items editing one file.
 
-**De-risking.** The only untested bet is Item 3's import repackaging of `scripts.study`; it is a half-hour check at the top of that item's spec. Item 1 carries the known risk that the sixteen bundle differences hide a consumer customization; the existing spec already requires a per-difference disposition.
+**De-risking.** The only untested bet is Item 3's import repackaging of `scripts.study`; it is a half-hour check at the top of that item's spec. Item 1 carries the known risk that a branch difference hides a consumer customization; its spec requires a per-difference disposition.
 
 **Integration evidence for the epic.** After Items 1–4: re-init fusion-tea from the agentic-mbse installer and `sysml-codegen install-commands`, remove its three local skills, run its study and orchestration suites, and confirm every ledger destination exists. That is the epic-level check; no separate epic audit if the item evidence covers it.
 
@@ -352,16 +364,16 @@ Item 3 (study → sysml-codegen; none) ─────────────�
 
 ## Timeline
 
-**Total Effort**: ~9 days
+**Total Effort**: ~10 days
 
 | Item | Effort | Dependencies |
 |------|--------|--------------|
-| Item 1: Reconcile native source | 1.5 d | None |
+| Item 1: Reconcile native source | 2 d | None |
 | Item 2: Goal layer + principle | 2 d | Item 1 |
 | Item 3: Study layer → sysml-codegen | 2 d | None (parallel) |
 | Item 4: Shipped-surface sweep | 1 d | Item 1 |
 | Item 5: Research seam port + `/manage-sources` | 2.5 d | Item 1; Item 2 for the relabel step |
-| Epic integration: fusion-tea re-install | 0.5 d | Items 1–5 |
+| Epic integration: fusion-tea re-install | 0.5 d | Items 1–5. fusion-tea's Claude-side switch (its legacy `claude/` symlinks to installed skills) moves forward to Item 1's merge, run by the owner from Item 1's runbook; the rest stays here |
 
 ---
 
@@ -418,5 +430,5 @@ Gate: CLEAR
 
 ---
 
-**Last Updated**: 2026-10-08
+**Last Updated**: 2026-10-09 (Item 1 section, timeline and sequencing rule aligned with the revised Item 1 spec)
 **Next Action**: `/_my_spec` on Item 5 (in progress 2026-10-08); `/_my_design` on Item 1 (spec exists) and `/_my_spec` on Item 3 in parallel.
