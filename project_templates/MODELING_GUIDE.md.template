@@ -1,6 +1,6 @@
 # SysML Modeling Guide
 
-Quick reference for SysML v2 modeling. Each section names detailed pattern docs; use the [Pattern Documentation Index](#pattern-documentation-index) to locate them in the installed toolkit.
+Quick reference for SysML v2 modeling. Each section links to detailed pattern docs.
 
 > **Note**: For project-specific patterns and customizations, see [REQUIREMENTS.md](REQUIREMENTS.md).
 
@@ -147,8 +147,7 @@ calc my_calc { in value = other_part.exposed_attr; }
 > [patterns/cross-file-binding.md]
 
 **Calculation input binding** (pick by where the value lives):
-- own part's attribute → make the names differ: `in radius_in = radius;` — never the
-  self-named `in radius = radius`, which binds the input to itself and is refused;
+- own part's attribute → make the names differ: `in radius_in = radius;` — never the self-named `in radius = radius`, which binds the input to itself and is refused;
 - another part → name the occurrence path: `in driver_cost = driver.cost;`;
 - owner-qualified → anchors to the exact feature owned by the named usage.
 > [patterns/plant-idiom.md] - "Binding a modelled value into a calculation" is the authoritative rule
@@ -178,9 +177,7 @@ calc my_calc { in value = other_part.exposed_attr; }
 
 ### Why Regression Testing Matters
 
-The library/usage separation pattern enables model reuse but introduces regression risk:
-when you modify a library definition to support a new design, existing designs that
-depend on it may break. Regression tests detect these breakages automatically.
+The library/usage separation pattern enables model reuse but introduces regression risk: when you modify a library definition to support a new design, existing designs that depend on it may break. Regression tests detect these breakages automatically.
 
 ### Test Structure
 
@@ -265,7 +262,7 @@ syside check models/library/file.sysml
 
 - Check examples in `models/library/`
 - Review `OVERVIEW.md` for project status
-- Review `knowledge/SOURCE_INDEX.md` for domain knowledge sources
+- Review `SOURCE_INDEX.md` for domain knowledge sources
 - Use `/research` command to explore sources
 
 ---
@@ -273,13 +270,7 @@ syside check models/library/file.sysml
 <!-- SKILL: moves to sysml-conventions -->
 ## Pattern Documentation Index
 
-Pattern references such as `[patterns/plant-idiom.md]` name files under the installed toolkit's pattern directory, not the target project's directories. Locate it with the installed environment:
-
-```bash
-uv run python -c 'from agentic_mbse.cli import get_docs_dir; print(get_docs_dir() / "patterns")'
-```
-
-Read the named file under the returned directory. This resolver works for source and packaged installations. Agents have read permissions via `.claude/settings.json`; permission alone does not load the reference.
+All pattern docs are in the agentic-mbse `docs/patterns/` directory. Consult the current assistant adapter in `.agentic-mbse/` for external-document access.
 
 | Pattern Doc | Covers |
 |-------------|--------|

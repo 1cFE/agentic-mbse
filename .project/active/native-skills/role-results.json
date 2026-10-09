@@ -1,0 +1,14 @@
+{
+  "untrusted_role": {
+    "final_result": "The smoke test failed: the spawn tool returned `unknown agent_type 'sysml-expert'`.\n\nThe custom role did not spawn, and the file was not read. No substitute or other agents were launched; no files were edited."
+  },
+  "process_registered_role": {
+    "final_result": "NATIVE_ROLE_OK `/tmp/mbse-native-wheel/agentic_mbse_data/docs/sysmlv2/SysML_Spec_v2_Part1/INDEX.md`"
+  },
+  "untrusted_nested": {
+    "final_result": "Blocked: the stage agent\u2019s nested spawn failed with `unknown agent_type 'syside-expert'`.\n\nNo substitute agents were spawned and no files were edited."
+  },
+  "trusted_nested": {
+    "final_result": "Success: `NESTED_ROLE_OK`\n\nThe nested `syside-expert` read `/tmp/mbse-native-wheel/agentic_mbse_data/docs/syside/api/README.md`."
+  }
+}

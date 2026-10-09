@@ -55,4 +55,12 @@ def test_built_wheel_carries_the_authoritative_guidance_bytes(tmp_path: Path) ->
 
     with zipfile.ZipFile(wheels[0]) as wheel:
         packaged = wheel.read(PACKAGED_PLANT_IDIOM)
+        for folder in ("skills", "agents", "adapters"):
+            for source in (REPO_ROOT / folder).rglob("*"):
+                if source.is_file() and "__pycache__" not in source.parts:
+                    member = "agentic_mbse_data/" + source.relative_to(REPO_ROOT).as_posix()
+                    assert wheel.read(member) == source.read_bytes(), member
+        assert not any(
+            name.startswith("agentic_mbse_data/claude/commands/") for name in wheel.namelist()
+        )
     assert packaged == (REPO_ROOT / PLANT_IDIOM).read_bytes()

@@ -99,7 +99,7 @@ Questions the models must be able to answer. Each question implies modeling scop
 - [REQUIREMENTS.md](REQUIREMENTS.md) - Project-specific modeling rules
 - [VALIDATION_MATRIX.md](VALIDATION_MATRIX.md) - System verification criteria
 - `../knowledge/SOURCE_INDEX.md` - Domain knowledge sources
-- `CLAUDE.md` - Project instructions for Claude Code
+- `CLAUDE.md` / `AGENTS.md` - Project instructions for the selected assistant
 
 **Related repositories:**
 <!-- List any related repos -->

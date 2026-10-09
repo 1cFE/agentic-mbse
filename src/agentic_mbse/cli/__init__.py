@@ -4,14 +4,14 @@ import argparse
 import json
 import platform
 import shutil
-import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 import tomllib
 from dotenv import load_dotenv
 
-from agentic_mbse.extraction.base import compute_source_hash
+from agentic_mbse.cli.installation import MANIFEST, Installer, install_assistants, skill_bundles
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS, run_all_checks
 
 # Commands available for installation
@@ -33,15 +33,6 @@ MBSE_COMMANDS = [
     "status.md",
 ]
 
-# Agents available for installation
-MBSE_AGENTS = [
-    "python-debugger.md",
-    "kerml-expert.md",
-    "sysml-expert.md",
-    "syside-expert.md",
-    "sysmlv2-validator.md",
-]
-
 # Skills available for installation (directories, not files)
 MBSE_SKILLS = [
     "epic-decomposition",
@@ -54,11 +45,6 @@ MBSE_SKILLS = [
     "source-traceability",
     "sysml-conventions",
     "toolkit-awareness",
-]
-
-# Hooks available for installation
-MBSE_HOOKS = [
-    "ruff-format.sh",
 ]
 
 # Project templates split by ownership:
@@ -95,6 +81,9 @@ DEV_MODE_GITIGNORE_PATHS = [
     ".claude/skills/",
     ".claude/hooks/",
     ".claude/.tool-hashes.json",
+    ".agents/skills/",
+    ".codex/agents/",
+    ".agentic-mbse/",
     "modeling_project/MODELING_GUIDE.md",
     "modeling_project/MODELING_PROCESS.md",
     "work/EPIC_GUIDE.md",
@@ -102,7 +91,7 @@ DEV_MODE_GITIGNORE_PATHS = [
 ]
 
 # Hash file for tracking tool-owned file modifications
-HASH_FILE = ".claude/.tool-hashes.json"
+HASH_FILE = MANIFEST
 
 
 def _get_data_root() -> Path:
@@ -128,11 +117,6 @@ def _get_data_root() -> Path:
     return source_root
 
 
-def get_commands_dir() -> Path:
-    """Get path to bundled commands directory."""
-    return _get_data_root() / "claude" / "commands"
-
-
 def get_template_path() -> Path:
     """Get path to SOURCE_INDEX.md template."""
     return _get_data_root() / "SOURCE_INDEX.md.template"
@@ -140,12 +124,12 @@ def get_template_path() -> Path:
 
 def get_agents_dir() -> Path:
     """Get path to bundled agents directory."""
-    return _get_data_root() / "claude" / "agents"
+    return _get_data_root() / "agents"
 
 
 def get_skills_dir() -> Path:
     """Get path to bundled skills directory."""
-    return _get_data_root() / "claude" / "skills"
+    return _get_data_root() / "skills"
 
 
 def get_hooks_dir() -> Path:
@@ -166,14 +150,14 @@ def get_project_templates_dir() -> Path:
 def find_project_root() -> Path | None:
     """Walk up from CWD to find a project root.
 
-    Looks for work/BACKLOG.md (primary) or .claude/ (fallback).
+    Looks for work/BACKLOG.md, the native install manifest, or legacy .claude/.
     Returns None if neither found.
     """
     current = Path.cwd()
     while True:
         if (current / "work" / "BACKLOG.md").exists():
             return current
-        if (current / ".claude").exists():
+        if (current / MANIFEST).is_file() or (current / ".claude").is_dir():
             return current
         parent = current.parent
         if parent == current:
@@ -298,75 +282,6 @@ def _check_dev_mode_prerequisites(data_root: Path) -> tuple[bool, str | None]:
     return True, None
 
 
-def _get_git_commit() -> str:
-    """Get short git commit hash of agentic-mbse source.
-
-    Returns 'unknown' if not in a git repo or git not available.
-    """
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True,
-            text=True,
-            cwd=_get_data_root(),  # Run in agentic-mbse source dir
-        )
-        if result.returncode == 0:
-            return result.stdout.strip()
-    except Exception:
-        pass
-    return "unknown"
-
-
-def _load_tool_hashes(target: Path) -> dict | None:
-    """Load hash file, return None if doesn't exist."""
-    hash_path = target / HASH_FILE
-    if not hash_path.exists():
-        return None
-    return json.loads(hash_path.read_text())
-
-
-def _save_tool_hashes(target: Path, hashes: dict) -> None:
-    """Save hash file."""
-    hash_path = target / HASH_FILE
-    hash_path.parent.mkdir(parents=True, exist_ok=True)
-    hash_path.write_text(json.dumps(hashes, indent=2) + "\n")
-
-
-def _check_modification(path: Path, stored_hashes: dict | None, relative_path: str) -> bool:
-    """Check if file was modified since install.
-
-    Returns True if file exists AND has been modified from installed version.
-    Returns False if file doesn't exist OR matches stored hash.
-    """
-    if not path.exists():
-        return False
-    if stored_hashes is None:
-        # First time tracking - treat as not modified
-        # (backwards compatibility: existing installs without hashes)
-        return False
-    stored_hash = stored_hashes.get("files", {}).get(relative_path)
-    if stored_hash is None:
-        # File not in hash store - new file type, treat as not modified
-        return False
-    current_hash = compute_source_hash(path)
-    return current_hash != stored_hash
-
-
-def _backup_file(path: Path) -> Path:
-    """Create backup of file with .backup extension.
-
-    If .backup exists, uses .backup.1, .backup.2, etc.
-    Returns path to backup file.
-    """
-    backup_path = path.with_suffix(path.suffix + ".backup")
-    counter = 1
-    while backup_path.exists():
-        backup_path = path.with_suffix(f"{path.suffix}.backup.{counter}")
-        counter += 1
-    shutil.copy(path, backup_path)
-    return backup_path
-
-
 def _prompt_for_modified_file(path: str) -> str:
     """Prompt user for action on modified file.
 
@@ -397,104 +312,6 @@ def _prompt_for_modified_file(path: str) -> str:
             print("  Invalid choice. Please enter s, b, o, S, or O.")
 
 
-def _install_file_with_hash(
-    src: Path,
-    dst: Path,
-    is_dev_mode: bool,
-    was_modified: bool = False,
-    user_action: str = "overwrite",
-) -> tuple[str, str | None]:
-    """Install a file by copying or symlinking, returning hash.
-
-    Args:
-        src: Source file path
-        dst: Destination file path
-        is_dev_mode: If True, create symlink; if False, copy
-        was_modified: If True, file had local modifications
-        user_action: 'skip', 'backup', or 'overwrite'
-
-    Returns:
-        Tuple of (action_taken, content_hash_or_none)
-        - action_taken: "created", "updated", "symlinked", "skipped", "backed_up_and_updated"
-        - content_hash_or_none: SHA256 of installed content (None if symlinked or skipped)
-    """
-    existed = dst.exists() or dst.is_symlink()
-
-    # Handle modified file based on user choice
-    if was_modified and user_action == "skip":
-        return ("skipped", None)
-
-    if was_modified and user_action == "backup":
-        backup_path = _backup_file(dst)
-        print(f"    Backed up to: {backup_path.name}")
-
-    # Remove existing file or symlink before creating new one
-    if existed:
-        dst.unlink()
-
-    if is_dev_mode:
-        dst.symlink_to(src.resolve())
-        return ("re-symlinked" if existed else "symlinked", None)
-    else:
-        shutil.copy(src, dst)
-        content_hash = compute_source_hash(dst)
-        if was_modified and user_action == "backup":
-            return ("backed_up_and_updated", content_hash)
-        return ("updated" if existed else "created", content_hash)
-
-
-def _install_file(src: Path, dst: Path, is_dev_mode: bool) -> str:
-    """Install a file by copying or symlinking.
-
-    Args:
-        src: Source file path
-        dst: Destination file path
-        is_dev_mode: If True, create symlink; if False, copy
-
-    Returns:
-        Action taken: "created", "updated", "symlinked", or "re-symlinked"
-    """
-    existed = dst.exists() or dst.is_symlink()
-
-    # Remove existing file or symlink before creating new one
-    if existed:
-        dst.unlink()
-
-    if is_dev_mode:
-        dst.symlink_to(src.resolve())
-        return "re-symlinked" if existed else "symlinked"
-    else:
-        shutil.copy(src, dst)
-        return "updated" if existed else "created"
-
-
-def _install_directory(src: Path, dst: Path, is_dev_mode: bool) -> str:
-    """Install a directory by copying or symlinking.
-
-    Args:
-        src: Source directory path
-        dst: Destination directory path
-        is_dev_mode: If True, create symlink; if False, copy tree
-
-    Returns:
-        Action taken: "created", "updated", "symlinked", or "re-symlinked"
-    """
-    existed = dst.exists() or dst.is_symlink()
-
-    if existed:
-        if dst.is_symlink():
-            dst.unlink()
-        else:
-            shutil.rmtree(dst)
-
-    if is_dev_mode:
-        dst.symlink_to(src.resolve())
-        return "re-symlinked" if existed else "symlinked"
-    else:
-        shutil.copytree(src, dst, dirs_exist_ok=True)
-        return "updated" if existed else "created"
-
-
 def _update_gitignore_for_dev_mode(target: Path) -> bool:
     """Add tool-owned paths to .gitignore for dev mode.
 
@@ -505,6 +322,10 @@ def _update_gitignore_for_dev_mode(target: Path) -> bool:
     Returns True if .gitignore was modified, False if paths already present.
     """
     gitignore_path = target / ".gitignore"
+
+    if gitignore_path.is_symlink():
+        print("Preserved symlinked .gitignore; add dev-mode ignore paths manually")
+        return False
 
     # Read existing content
     existing_content = ""
@@ -553,18 +374,18 @@ def cmd_init(args: argparse.Namespace) -> int:
     - modeling_project/ structure (OVERVIEW, ARCHITECTURE, REQUIREMENTS, etc.) [mixed]
     - work/ structure (BACKLOG, EPIC_GUIDE, epic template, active, completed, etc.) [mixed]
     - data/traceability_matrix.csv (element traceability) [user-owned]
-    - .claude/commands/ with MBSE commands [tool-owned]
-    - .claude/agents/ with AI agents [tool-owned]
+    - .agents/skills/ with shared workflows and supporting resources [managed]
+    - Native expert roles and entry instructions for selected assistants [managed]
     - .claude/skills/ with skills [tool-owned]
     - .claude/hooks/ with hooks [tool-owned]
     - .claude/settings.json with read permissions [user-owned]
     - tests/ structure with example test files [user-owned]
 
     File ownership behavior:
-    - Tool-owned files are always updated (to get latest versions)
+    - Managed files update when unmodified; local edits are preserved or prompt
     - User-owned files are skipped if they exist (preserves customizations)
 
-    Use --force to overwrite ALL files including user-owned ones.
+    Use --force to replace files; existing native instructions and settings remain owner-owned.
     """
     target = Path(args.path or ".").resolve()
 
@@ -583,66 +404,27 @@ def cmd_init(args: argparse.Namespace) -> int:
             print(f"Error: {error_msg}", file=sys.stderr)
             return EXIT_FAILURE
 
-    # Track what happens for summary
-    created: list[str] = []  # New files (didn't exist before)
-    updated: list[str] = []  # Tool-owned files refreshed
-    skipped: list[str] = []  # User-owned files preserved
-    symlinked: list[str] = []  # Dev mode symlinks
-    backed_up: list[str] = []  # Modified files that were backed up
+    assistant = getattr(args, "assistant", "both")
+    link_mode = getattr(args, "link_mode", "symlink")
 
-    # === Load existing hashes and detect modifications ===
-    stored_hashes = _load_tool_hashes(target) if not is_dev_mode else None
-    new_hashes: dict[str, str] = {}  # Will collect hashes during install
+    def decide(path: str) -> str:
+        if not sys.stdin.isatty():
+            print(f"Preserving modified or untracked file: {path} (use --force to replace)")
+            return "skip"
+        return _prompt_for_modified_file(path)
 
-    # Build list of tool-owned files that have been modified
-    modified_files: list[str] = []
-    if not is_dev_mode and not args.force and stored_hashes:
-        # Check commands
-        for cmd in MBSE_COMMANDS:
-            rel_path = f".claude/commands/{cmd}"
-            if _check_modification(target / rel_path, stored_hashes, rel_path):
-                modified_files.append(rel_path)
-        # Check agents
-        for agent in MBSE_AGENTS:
-            rel_path = f".claude/agents/{agent}"
-            if _check_modification(target / rel_path, stored_hashes, rel_path):
-                modified_files.append(rel_path)
-        # Check hooks
-        for hook in MBSE_HOOKS:
-            rel_path = f".claude/hooks/{hook}"
-            if _check_modification(target / rel_path, stored_hashes, rel_path):
-                modified_files.append(rel_path)
-        # Check tool-owned templates
-        for _, dest_path in TOOL_OWNED_TEMPLATES:
-            if _check_modification(target / dest_path, stored_hashes, dest_path):
-                modified_files.append(dest_path)
-
-    # Prompt user for modified files
-    user_decisions: dict[str, str] = {}
-    default_action: str | None = None
-
-    if modified_files:
-        print(f"\n{len(modified_files)} tool-owned file(s) have local modifications:")
-        for f in modified_files:
-            print(f"  - {f}")
-
-        for f in modified_files:
-            if default_action:
-                user_decisions[f] = default_action
-            else:
-                action = _prompt_for_modified_file(f)
-                if action == "skip_all":
-                    default_action = "skip"
-                    user_decisions[f] = "skip"
-                elif action == "overwrite_all":
-                    default_action = "overwrite"
-                    user_decisions[f] = "overwrite"
-                else:
-                    user_decisions[f] = action
+    installer = Installer(target, force=args.force, decide=decide)
+    # The installer owns the action lists; project templates contribute to the same summary.
+    created = installer.actions["created"]
+    updated = installer.actions["updated"]
+    skipped = installer.actions["skipped"]
+    symlinked = installer.actions["symlinked"]
+    backed_up = installer.actions["backed_up"]
+    removed = installer.actions["removed"]
 
     # === Create .gitignore with standard Python ignores ===
     gitignore_path = target / ".gitignore"
-    if gitignore_path.exists() and not args.force:
+    if (gitignore_path.exists() or gitignore_path.is_symlink()) and not args.force:
         skipped.append(".gitignore")
     else:
         gitignore_content = """\
@@ -701,8 +483,10 @@ htmlcov/
 Thumbs.db
 
 # agentic-mbse tool state (machine-local)
-.claude/.tool-hashes.json
+.agentic-mbse/install.json
 """
+        if gitignore_path.is_symlink():
+            gitignore_path.unlink()
         gitignore_path.write_text(gitignore_content)
         created.append(".gitignore")
 
@@ -710,10 +494,13 @@ Thumbs.db
     source_index_path = target / "knowledge" / "SOURCE_INDEX.md"
     template_path = get_template_path()
 
-    if source_index_path.exists() and not args.force:
+    if (source_index_path.exists() or source_index_path.is_symlink()) and not args.force:
         skipped.append("knowledge/SOURCE_INDEX.md")
     else:
-        source_index_path.parent.mkdir(parents=True, exist_ok=True)
+        if not installer.parents("knowledge/SOURCE_INDEX.md"):
+            return EXIT_FAILURE
+        if source_index_path.is_symlink():
+            source_index_path.unlink()
         if template_path.exists():
             shutil.copy(template_path, source_index_path)
         else:
@@ -734,130 +521,10 @@ Edit this file to add your domain-specific sources.
             source_index_path.write_text(minimal_template)
         created.append("knowledge/SOURCE_INDEX.md")
 
-    # === Create .claude/commands/ and install commands (TOOL-OWNED) ===
-    commands_dir = target / ".claude" / "commands"
-    commands_dir.mkdir(parents=True, exist_ok=True)
-
-    source_commands = get_commands_dir()
-    for cmd in MBSE_COMMANDS:
-        src = source_commands / cmd
-        dst = commands_dir / cmd
-        rel_path = f".claude/commands/{cmd}"
-        if src.exists():
-            was_modified = rel_path in modified_files
-            user_action = user_decisions.get(rel_path, "overwrite")
-            action, content_hash = _install_file_with_hash(
-                src, dst, is_dev_mode, was_modified, user_action
-            )
-            if content_hash:
-                new_hashes[rel_path] = content_hash
-            if "symlink" in action:
-                symlinked.append(rel_path)
-            elif action == "skipped":
-                skipped.append(rel_path)
-            elif action == "backed_up_and_updated":
-                backed_up.append(rel_path)
-            elif action == "updated":
-                updated.append(rel_path)
-            else:
-                created.append(rel_path)
-
-    # === Install agents with path substitution (TOOL-OWNED) ===
-    agents_dir = target / ".claude" / "agents"
-    agents_dir.mkdir(parents=True, exist_ok=True)
-
+    install_assistants(
+        installer, data_root, assistant=assistant, link_mode=link_mode, dev=is_dev_mode
+    )
     docs_path = get_docs_dir()
-    source_agents = get_agents_dir()
-    for agent in MBSE_AGENTS:
-        src = source_agents / agent
-        dst = agents_dir / agent
-        rel_path = f".claude/agents/{agent}"
-        if src.exists():
-            if is_dev_mode:
-                # Symlink directly - placeholders remain in source
-                action = _install_file(src, dst, is_dev_mode=True)
-                symlinked.append(rel_path)
-            else:
-                # Check modification and get user decision
-                was_modified = rel_path in modified_files
-                user_action = user_decisions.get(rel_path, "overwrite")
-
-                if was_modified and user_action == "skip":
-                    skipped.append(rel_path)
-                    continue
-
-                existed = dst.exists() or dst.is_symlink()
-
-                if was_modified and user_action == "backup":
-                    backup_path = _backup_file(dst)
-                    print(f"    Backed up to: {backup_path.name}")
-
-                if existed:
-                    dst.unlink()
-
-                # Copy with placeholder substitution
-                content = src.read_text()
-                content = content.replace("{SYSML_DOCS_PATH}", f"{docs_path}/sysmlv2")
-                content = content.replace("{SYSIDE_DOCS_PATH}", f"{docs_path}/syside")
-                dst.write_text(content)
-
-                # Compute and store hash
-                new_hashes[rel_path] = compute_source_hash(dst)
-
-                if was_modified and user_action == "backup":
-                    backed_up.append(rel_path)
-                elif existed:
-                    updated.append(rel_path)
-                else:
-                    created.append(rel_path)
-
-    # === Install skills (TOOL-OWNED) ===
-    skills_dir = target / ".claude" / "skills"
-    skills_dir.mkdir(parents=True, exist_ok=True)
-
-    source_skills = get_skills_dir()
-    for skill in MBSE_SKILLS:
-        src = source_skills / skill
-        dst = skills_dir / skill
-        if src.exists() and src.is_dir():
-            action = _install_directory(src, dst, is_dev_mode)
-            if "symlink" in action:
-                symlinked.append(f".claude/skills/{skill}/")
-            elif action == "updated":
-                updated.append(f".claude/skills/{skill}/")
-            else:
-                created.append(f".claude/skills/{skill}/")
-
-    # === Install hooks (TOOL-OWNED) ===
-    hooks_dir = target / ".claude" / "hooks"
-    hooks_dir.mkdir(parents=True, exist_ok=True)
-
-    source_hooks = get_hooks_dir()
-    for hook in MBSE_HOOKS:
-        src = source_hooks / hook
-        dst = hooks_dir / hook
-        rel_path = f".claude/hooks/{hook}"
-        if src.exists():
-            was_modified = rel_path in modified_files
-            user_action = user_decisions.get(rel_path, "overwrite")
-            action, content_hash = _install_file_with_hash(
-                src, dst, is_dev_mode, was_modified, user_action
-            )
-            # Preserve execute permission (symlinks inherit from target)
-            if not is_dev_mode and action not in ("skipped",):
-                dst.chmod(src.stat().st_mode)
-            if content_hash:
-                new_hashes[rel_path] = content_hash
-            if "symlink" in action:
-                symlinked.append(rel_path)
-            elif action == "skipped":
-                skipped.append(rel_path)
-            elif action == "backed_up_and_updated":
-                backed_up.append(rel_path)
-            elif action == "updated":
-                updated.append(rel_path)
-            else:
-                created.append(rel_path)
 
     # === Create project structure (4-directory architecture) ===
     for subdir in [
@@ -878,11 +545,10 @@ Edit this file to add your domain-specific sources.
         "models/library",
         "models/designs",
     ]:
-        (target / subdir).mkdir(parents=True, exist_ok=True)
+        installer.parents(subdir + "/.directory")
 
     # === Create tests/models/ directory for model regression tests ===
-    tests_models_dir = target / "tests" / "models"
-    tests_models_dir.mkdir(parents=True, exist_ok=True)
+    installer.parents("tests/models/.directory")
 
     templates_dir = get_project_templates_dir()
 
@@ -890,84 +556,68 @@ Edit this file to add your domain-specific sources.
     for template_name, dest_path in USER_OWNED_TEMPLATES:
         src = templates_dir / template_name
         dst = target / dest_path
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        if dst.exists() and not args.force:
+        if not installer.parents(dest_path):
+            continue
+        if (dst.exists() or dst.is_symlink()) and not args.force:
             skipped.append(dest_path)
             continue
         if src.exists():
+            if dst.is_symlink():
+                dst.unlink()
             shutil.copy(src, dst)
             created.append(dest_path)
 
     # === Install traceability matrix CSV (USER-OWNED) ===
     csv_src = templates_dir / "data" / "traceability_matrix.csv"
     csv_dst = target / "data" / "traceability_matrix.csv"
-    if csv_dst.exists() and not args.force:
+    if (csv_dst.exists() or csv_dst.is_symlink()) and not args.force:
         skipped.append("data/traceability_matrix.csv")
-    elif csv_src.exists():
+    elif csv_src.exists() and installer.parents("data/traceability_matrix.csv"):
+        if csv_dst.is_symlink():
+            csv_dst.unlink()
         shutil.copy(csv_src, csv_dst)
         created.append("data/traceability_matrix.csv")
 
-    # === Tool-owned templates (always update) ===
+    # === Tool-owned templates use the shared ownership policy ===
     for template_name, dest_path in TOOL_OWNED_TEMPLATES:
         src = templates_dir / template_name
-        dst = target / dest_path
-        dst.parent.mkdir(parents=True, exist_ok=True)
         if src.exists():
-            was_modified = dest_path in modified_files
-            user_action = user_decisions.get(dest_path, "overwrite")
-            action, content_hash = _install_file_with_hash(
-                src, dst, is_dev_mode, was_modified, user_action
-            )
-            if content_hash:
-                new_hashes[dest_path] = content_hash
-            if "symlink" in action:
-                symlinked.append(dest_path)
-            elif action == "skipped":
-                skipped.append(dest_path)
-            elif action == "backed_up_and_updated":
-                backed_up.append(dest_path)
-            elif action == "updated":
-                updated.append(dest_path)
-            else:
-                created.append(dest_path)
+            installer.write(dest_path, src.read_bytes(), source=src, dev=is_dev_mode)
 
     # === Create .claude/settings.json with permissions (USER-OWNED) ===
     settings_path = target / ".claude" / "settings.json"
 
-    if settings_path.exists() and not args.force:
-        skipped.append(".claude/settings.json")
-    else:
-        permissions: list[str] = []
+    if assistant in ("claude", "both") and installer.parents(".claude/settings.json"):
+        if settings_path.exists() or settings_path.is_symlink():
+            skipped.append(".claude/settings.json")
+        else:
+            permissions: list[str] = []
 
-        # Add permissions for bundled docs (used by specialist agents)
-        docs_permission_path = _to_claude_permission_path(str(docs_path))
-        permissions.extend(
-            [
-                f"Read({docs_permission_path}/**)",
-                f"Grep({docs_permission_path}/**)",
-                f"Glob({docs_permission_path}/**)",
-            ]
-        )
+            # Add permissions for bundled docs (used by specialist agents)
+            docs_permission_path = _to_claude_permission_path(str(docs_path))
+            permissions.extend(
+                [
+                    f"Read({docs_permission_path}/**)",
+                    f"Grep({docs_permission_path}/**)",
+                    f"Glob({docs_permission_path}/**)",
+                ]
+            )
 
-        # Add permissions for editable dependencies from pyproject.toml
-        editable_paths = _detect_editable_deps(target)
-        for p in editable_paths:
-            permissions.append(f"Read({_to_claude_permission_path(p)}/**)")
+            # Add permissions for editable dependencies from pyproject.toml
+            editable_paths = _detect_editable_deps(target)
+            for p in editable_paths:
+                permissions.append(f"Read({_to_claude_permission_path(p)}/**)")
 
-        settings = {"permissions": {"allow": permissions}}
-        settings_path.write_text(json.dumps(settings, indent=2) + "\n")
-        created.append(f".claude/settings.json ({len(permissions)} permissions)")
+            settings = {"permissions": {"allow": permissions}}
+            settings_path.write_text(json.dumps(settings, indent=2) + "\n")
+            created.append(f".claude/settings.json ({len(permissions)} permissions)")
 
     # === Update .gitignore for dev mode ===
     if is_dev_mode:
         if _update_gitignore_for_dev_mode(target):
             updated.append(".gitignore (added dev mode paths)")
 
-    # === Save tool hashes (normal mode only) ===
-    if not is_dev_mode and new_hashes:
-        _save_tool_hashes(
-            target, {"version": "1.0.0", "commit": _get_git_commit(), "files": new_hashes}
-        )
+    installer.save()
 
     # === Print summary ===
     if is_dev_mode:
@@ -977,7 +627,7 @@ Edit this file to add your domain-specific sources.
     print("")
 
     if symlinked:
-        print(f"Symlinked ({len(symlinked)}) - dev mode, points to source:")
+        print(f"Symlinked ({len(symlinked)}):")
         for item in symlinked:
             print(f"  @ {item}")
 
@@ -996,18 +646,25 @@ Edit this file to add your domain-specific sources.
         for item in backed_up:
             print(f"  B {item}")
 
+    if removed:
+        print(f"\nRemoved ({len(removed)}) - retired, unmodified bundle files:")
+        for item in removed:
+            print(f"  - {item}")
+
     if skipped:
         print(f"\nSkipped ({len(skipped)}) - user files preserved:")
         for item in skipped:
             print(f"  . {item}")
 
-    if not created and not updated and not symlinked and not backed_up:
+    if not created and not updated and not symlinked and not backed_up and not removed:
         print("Everything up to date.")
-    elif created or updated or symlinked or backed_up:
+    elif created or updated or symlinked or backed_up or removed:
         print("")
         print("Next steps:")
-        print("  1. Run /onboard to configure your project and learn the workflow")
-        print("  2. Or manually edit knowledge/SOURCE_INDEX.md and start with /design-model")
+        print("  1. Run /onboard in Claude or $onboard in Codex to configure your project")
+        print(
+            "  2. Or manually edit knowledge/SOURCE_INDEX.md and start with the design-model skill"
+        )
 
     return EXIT_SUCCESS
 
@@ -1015,14 +672,15 @@ Edit this file to add your domain-specific sources.
 def cmd_install_commands(args: argparse.Namespace) -> int:
     """Install MBSE commands to a project.
 
-    Copies MBSE command files to .claude/commands/ in target directory.
+    Installs shared workflow skills and selected native adapters without project templates.
     """
     if args.list:
-        print("Available MBSE commands:")
-        for cmd in MBSE_COMMANDS:
-            print(f"  - {cmd}")
+        bundles = skill_bundles(get_skills_dir())
+        print("Available MBSE skills:")
+        for bundle in bundles:
+            print(f"  - {bundle.name}")
         print("")
-        print(f"Total: {len(MBSE_COMMANDS)} commands")
+        print(f"Total: {len(bundles)} skills")
         return EXIT_SUCCESS
 
     target_dir = Path(args.directory).resolve()
@@ -1030,32 +688,19 @@ def cmd_install_commands(args: argparse.Namespace) -> int:
         print(f"Error: Directory does not exist: {args.directory}", file=sys.stderr)
         return EXIT_FAILURE
 
-    commands_target = target_dir / ".claude" / "commands"
-    commands_target.mkdir(parents=True, exist_ok=True)
-
-    source_commands = get_commands_dir()
-    installed = 0
-    skipped = 0
-
-    for cmd in MBSE_COMMANDS:
-        src = source_commands / cmd
-        dst = commands_target / cmd
-
-        if not src.exists():
-            print(f"Warning: Source not found: {cmd}", file=sys.stderr)
-            continue
-
-        if dst.exists() and not args.force:
-            print(f"Skipping (exists): {cmd} (use --force to overwrite)")
-            skipped += 1
-            continue
-
-        shutil.copy(src, dst)
-        print(f"Installed: {cmd}")
-        installed += 1
-
-    print("")
-    print(f"Installed: {installed}, Skipped: {skipped}")
+    installer = Installer(target_dir, force=args.force, decide=lambda path: "skip")
+    install_assistants(
+        installer,
+        _get_data_root(),
+        assistant=getattr(args, "assistant", "both"),
+        link_mode=getattr(args, "link_mode", "symlink"),
+        dev=False,
+    )
+    installer.save()
+    print(
+        f"Installed: {len(installer.actions['created']) + len(installer.actions['updated'])}, "
+        f"Skipped: {len(installer.actions['skipped'])}, Removed: {len(installer.actions['removed'])}"
+    )
     return EXIT_SUCCESS
 
 
@@ -1100,7 +745,7 @@ def main() -> int:
     # init command
     init_parser = subparsers.add_parser(
         "init",
-        help="Initialize project with SOURCE_INDEX.md and .claude/commands/",
+        help="Initialize a modeling project with shared skills and native assistant adapters",
     )
     init_parser.add_argument(
         "path",
@@ -1110,12 +755,24 @@ def main() -> int:
     init_parser.add_argument(
         "--force",
         action="store_true",
-        help="Overwrite ALL files including user-owned ones (SOURCE_INDEX.md, OVERVIEW.md, settings.json, etc.)",
+        help="Replace modified assets and project templates; preserve native settings and instructions",
     )
     init_parser.add_argument(
         "--dev",
         action="store_true",
         help="Development mode: symlink tool-owned files instead of copying (requires source checkout)",
+    )
+    init_parser.add_argument(
+        "--assistant",
+        choices=("claude", "codex", "both"),
+        default="both",
+        help="Assistant integrations to install (default: both)",
+    )
+    init_parser.add_argument(
+        "--link-mode",
+        choices=("symlink", "copy"),
+        default="symlink",
+        help="Claude skill aliases: relative symlinks or copies",
     )
     init_parser.set_defaults(func=cmd_init)
 
@@ -1140,6 +797,8 @@ def main() -> int:
         action="store_true",
         help="Overwrite existing command files",
     )
+    install_parser.add_argument("--assistant", choices=("claude", "codex", "both"), default="both")
+    install_parser.add_argument("--link-mode", choices=("symlink", "copy"), default="symlink")
     install_parser.set_defaults(func=cmd_install_commands)
 
     # status command
@@ -1171,7 +830,8 @@ def main() -> int:
         parser.print_help()
         return EXIT_SUCCESS
 
-    return args.func(args)
+    handler: Callable[[argparse.Namespace], int] = args.func
+    return handler(args)
 
 
 if __name__ == "__main__":

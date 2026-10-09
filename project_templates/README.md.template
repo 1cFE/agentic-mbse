@@ -28,7 +28,7 @@ Each document has **one clear purpose**:
 | Document | Purpose | Managed By |
 |----------|---------|------------|
 | **README.md** | Project overview (this file) | You |
-| **CLAUDE.md** | AI operating rules, environment setup | You |
+| **CLAUDE.md / AGENTS.md** | AI operating rules, environment setup | You |
 | **knowledge/SOURCE_INDEX.md** | Domain knowledge sources | `/manage-sources` |
 | **knowledge/KNOWLEDGE.md** | Curated domain insights | `/research` |
 | **modeling_project/OVERVIEW.md** | Project goals and intent | You |
@@ -44,7 +44,7 @@ Each document has **one clear purpose**:
 
 **You edit directly:**
 - `README.md` - Project-specific setup instructions
-- `CLAUDE.md` - Environment rules (virtualenv, PYTHONPATH, lint)
+- `CLAUDE.md` / `AGENTS.md` - Environment rules (virtualenv, PYTHONPATH, lint)
 - `modeling_project/OVERVIEW.md` - Project goals, success criteria
 - `modeling_project/ARCHITECTURE.md` - Model architecture decisions
 - `modeling_project/REQUIREMENTS.md` - Project-specific modeling rules
@@ -74,11 +74,13 @@ agentic-mbse init [path]
 # Validate SysML models (6-level quality checks)
 agentic-mbse validate [models/]
 
-# Just install/update slash commands
+# Install/update skills and native adapters without project templates
 agentic-mbse install-commands [--force]
 ```
 
-### Slash Commands (in Claude Code)
+### Modeling Skills
+
+Use `/name` in Claude Code or `$name` in Codex. The table uses Claude notation; each name refers to the same shared skill.
 
 | Command | Purpose |
 |---------|---------|
