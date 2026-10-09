@@ -139,6 +139,8 @@ The tests pin the property Codex needs, and they take it from the tree (SC5, I4 
    - **Fix:** keep the versions named in the evidence. Re-run `discovery_probe.py` on a `--dev` target when the Codex version in use changes. This is lens smell 4.
 5. **A redirected `.agents/skills` is reported twice (cosmetic).** When `.agents/skills` is itself a link, a bundle that exists behind it prints "Skipped … parent … is not a real directory" twice. It is also listed twice under Skipped. The cause: the fallback calls `parents()` a second time, through `copy_tree` (`installation.py:372-377`). Nothing is written, and the outside folder is untouched.
 
+**Orchestrator verification of the advisory fixes (2026-10-09, not a re-audit).** Advisory 3: `b1d5d23`. Advisories 1, 2, 5 and the advisory 4 follow-up: `03d1510`, `5ab5cb6` (`briefs/15-phase9-advisories.md`, notes in `plan.md` Phase 9). The orchestrator read the diff (`installation.py:365-409`, `:417-419`), ran the full suite (2186 passed, 1 skipped, 5 deselected, 1 xfailed), and re-applied mutants P12 (drop the no-retry guard: 2 tests fail) and P14 (print a line above the closing block under `--dev`: 3 tests fail), reverting both. The fallback now prints one line chosen from the outcome: a Codex warning while `SKILL.md` is still a file link, "Kept" when nothing was written, "Copied" otherwise.
+
 ### Product-lens (Phase 9 re-check)
 
 The block is appended to `product-lens.md`.

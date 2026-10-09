@@ -1,6 +1,6 @@
 # Implementation Plan: Reconcile the native installer source with `main` (WRAP-SPLIT Item 1)
 
-**Status:** Implemented through Phase 9; the audit's B1 (`--dev` hid the shipped skills from Codex) is fixed in Phase 9 at the owner's direction; awaiting the independent re-audit
+**Status:** Implemented through Phase 9; the audit's B1 (`--dev` hid the shipped skills from Codex) is fixed in Phase 9 at the owner's direction; the independent Phase 9 re-check certified it, and its advisories 1–5 are done (`audit.md` § "Re-check: Phase 9")
 **Created:** 2026-10-09
 **Last Updated:** 2026-10-09
 **Branch:** `nsd-integration` in the worktree `/home/reid/1cfe/agentic-mbse-nsd`, cut from `wrap-split` at the commit that carries this plan (set up by the orchestrator)
