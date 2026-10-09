@@ -13,6 +13,8 @@ import yaml
 MANIFEST = ".agentic-mbse/install.json"
 LEGACY_MANIFEST = ".claude/.tool-hashes.json"
 BUNDLE_KINDS = ("workflow", "supporting")
+# Where the pre-native installer linked entries: .claude/<location>/<name>.
+LEGACY_LOCATIONS = ("commands", "skills", "agents", "hooks")
 
 
 def is_source_checkout(root: Path) -> bool:
@@ -31,6 +33,30 @@ def bundle_kind(bundle: Path) -> str:
     if kind not in BUNDLE_KINDS:
         raise ValueError(f"{entry} declares metadata.kind {kind!r}, not one of {BUNDLE_KINDS}")
     return str(kind)
+
+
+def legacy_link_target(target: Path, relative: str) -> str | None:
+    """The link text, if the pre-native installer made this entry; otherwise None.
+
+    That installer linked `.claude/<location>/<name>` to `<checkout>/claude/<location>/<name>` with
+    `resolve()`, so its text is absolute, has no `.` or `..` segment, and mirrors the entry.
+    The raw text is checked, never normalized, and the referent is never read.
+    """
+    parts = relative.split("/")
+    if len(parts) != 3 or parts[0] != ".claude" or parts[1] not in LEGACY_LOCATIONS:
+        return None
+    path = target / relative
+    if not path.is_symlink():
+        return None
+    text = os.readlink(path)
+    segments = text.split("/")
+    if segments[0] != "" or any(s in ("", ".", "..") for s in segments[1:]):
+        return None
+    if segments[-3:] != ["claude", parts[1], parts[2]]:
+        return None
+    if not is_source_checkout(Path("/" + "/".join(segments[1:-3]))):
+        return None
+    return text
 
 
 def fingerprint(path: Path) -> str | None:
@@ -62,7 +88,16 @@ class Installer:
         self.decide = decide
         self.default_action: str | None = None
         self.actions: dict[str, list[str]] = {
-            k: [] for k in ("created", "updated", "skipped", "backed_up", "symlinked", "removed")
+            k: []
+            for k in (
+                "created",
+                "updated",
+                "skipped",
+                "backed_up",
+                "symlinked",
+                "removed",
+                "adopted",
+            )
         }
         self.files: dict[str, str] = {}
         for name in (LEGACY_MANIFEST, MANIFEST):
@@ -89,6 +124,10 @@ class Installer:
             return True
         current = fingerprint(path)
         if current is not None and current in (self.files.get(relative), desired):
+            return True
+        legacy = legacy_link_target(self.target, relative)
+        if legacy is not None:
+            self.actions["adopted"].append(f"{relative} (was -> {legacy})")
             return True
         action = "overwrite" if self.force else self.default_action or self.decide(relative)
         if action in ("skip_all", "overwrite_all"):
@@ -319,22 +358,28 @@ def skill_bundles(skills: Path) -> list[Path]:
     return sorted(entry.parent for entry in skills.glob("*/SKILL.md") if entry.is_file())
 
 
+def expose_to_claude(installer: Installer, source: Path, *, link_mode: str, dev: bool) -> None:
+    """Give Claude a skill alias for an installed bundle, once its legacy command is retired."""
+    if not installer.retire_command(source.name):
+        return
+    alias = f".claude/skills/{source.name}"
+    if link_mode == "copy":
+        installer.copy_tree(source, alias, dev=dev)
+    elif not installer.alias(installer.target / ".agents/skills" / source.name, alias):
+        destination = installer.target / alias
+        if destination.is_dir() and not destination.is_symlink():
+            installer.copy_tree(source, alias, dev=dev)
+
+
 def install_assistants(
     installer: Installer, data: Path, *, assistant: str, link_mode: str, dev: bool
 ) -> None:
     """Install shared bundles and selected native roles, instructions, and inactive hooks."""
     runtimes = ("claude", "codex") if assistant == "both" else (assistant,)
     for source in skill_bundles(data / "skills"):
-        relative = f".agents/skills/{source.name}"
-        shared_ready = installer.copy_tree(source, relative, dev=dev)
-        if shared_ready and "claude" in runtimes and installer.retire_command(source.name):
-            alias = f".claude/skills/{source.name}"
-            if link_mode == "copy":
-                installer.copy_tree(source, alias, dev=dev)
-            elif not installer.alias(installer.target / relative, alias):
-                destination = installer.target / alias
-                if destination.is_dir() and not destination.is_symlink():
-                    installer.copy_tree(source, alias, dev=dev)
+        shared_ready = installer.copy_tree(source, f".agents/skills/{source.name}", dev=dev)
+        if shared_ready and "claude" in runtimes:
+            expose_to_claude(installer, source, link_mode=link_mode, dev=dev)
     for runtime in runtimes:
         adapter = (data / "adapters" / f"{runtime}.md").read_text()
         installer.write(f".agentic-mbse/{runtime}.md", adapter.encode())

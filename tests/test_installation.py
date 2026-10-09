@@ -10,8 +10,24 @@ import pytest
 import tomllib
 
 from agentic_mbse.cli import cmd_init, cmd_install_commands
-from agentic_mbse.cli.installation import LEGACY_MANIFEST, MANIFEST, Installer, fingerprint
-from tests.helpers.shipped import AGENTS, REPO_ROOT, SKILLS, bundle_files, frontmatter
+from agentic_mbse.cli.installation import (
+    LEGACY_MANIFEST,
+    MANIFEST,
+    Installer,
+    fingerprint,
+    legacy_link_target,
+)
+from tests.helpers.shipped import AGENTS, HOOKS, REPO_ROOT, SKILLS, bundle_files, frontmatter, kind
+
+WORKFLOW = next(skill for skill in SKILLS if kind(skill) == "workflow")
+SUPPORTING = next(skill for skill in SKILLS if kind(skill) == "supporting")
+# One shipped entry per location the pre-native installer linked: .claude/<kind>/<name>.
+LEGACY_ENTRIES = {
+    "commands": f"{WORKFLOW}.md",
+    "skills": SUPPORTING,
+    "agents": f"{AGENTS[0]}.md",
+    "hooks": HOOKS[0],
+}
 
 
 def init(target, **options):
@@ -425,3 +441,153 @@ def test_each_installed_skill_routes_to_existing_native_adapters(tmp_path):
             assert (tmp_path / path).read_bytes() == (
                 _get_data_root() / "adapters" / Path(path).name
             ).read_bytes()
+
+
+def old_checkout(tmp_path: Path) -> Path:
+    """A pre-native agentic-mbse checkout after the merge: src/agentic_mbse kept, claude/ gone."""
+    root = tmp_path / "old"
+    (root / "src" / "agentic_mbse").mkdir(parents=True)
+    return root
+
+
+def entry_state(path: Path) -> object:
+    """An entry as it stands, without following links: its link text, bytes, or child states."""
+    if path.is_symlink():
+        return ("link", os.readlink(path))
+    if path.is_file():
+        return ("file", path.read_bytes())
+    return ("dir", sorted((child.name, entry_state(child)) for child in path.iterdir()))
+
+
+@pytest.mark.parametrize(
+    "text, adopted",
+    [
+        ("{old}/claude/commands/{cmd}.md", True),
+        ("{old}/claude/skills/{cmd}.md", False),  # tail does not mirror the entry
+        ("{plain}/claude/commands/{cmd}.md", False),  # root lacks src/agentic_mbse
+        ("../../old/claude/commands/{cmd}.md", False),  # relative text
+        ("{old}/x/../claude/commands/{cmd}.md", False),  # '..' segment
+        ("{old}/./claude/commands/{cmd}.md", False),  # '.' segment, which pathlib would hide
+        ("{old}/claude/commands/{cmd}.md/", False),  # empty segment
+    ],
+)
+def test_legacy_link_target_accepts_exactly_what_the_old_installer_wrote(tmp_path, text, adopted):
+    old = old_checkout(tmp_path)
+    (tmp_path / "plain").mkdir()
+    relative = f".claude/commands/{WORKFLOW}.md"
+    link = tmp_path / "target" / relative
+    link.parent.mkdir(parents=True)
+    written = text.format(old=old, plain=tmp_path / "plain", cmd=WORKFLOW)
+    os.symlink(written, link)  # the raw text; pathlib would normalize it
+    assert legacy_link_target(tmp_path / "target", relative) == (written if adopted else None)
+
+
+@pytest.mark.parametrize("referent_exists", [True, False])
+@pytest.mark.parametrize("location", LEGACY_ENTRIES)
+def test_legacy_link_is_adopted_and_replaced_by_the_install(
+    tmp_path, capsys, location, referent_exists
+):
+    name = LEGACY_ENTRIES[location]
+    referent = old_checkout(tmp_path) / "claude" / location / name
+    old_file = referent / "SKILL.md" if location == "skills" else referent
+    if referent_exists:
+        old_file.parent.mkdir(parents=True)
+        old_file.write_text("old installer's copy")
+    entry = tmp_path / "target/.claude" / location / name
+    entry.parent.mkdir(parents=True)
+    os.symlink(str(referent), entry)
+
+    assert init(tmp_path / "target") == 0
+    assert f"A .claude/{location}/{name} (was -> {referent})" in capsys.readouterr().out
+    if location == "commands":
+        assert not entry.exists() and not entry.is_symlink()
+        entry = tmp_path / "target/.claude/skills" / WORKFLOW
+    if location in ("commands", "skills"):
+        assert entry.is_symlink() and not os.path.isabs(os.readlink(entry))
+        assert (entry / "SKILL.md").is_file()
+    else:
+        assert entry.is_file() and not entry.is_symlink()
+    if location == "hooks":
+        assert entry.stat().st_mode & 0o111
+    if referent_exists:
+        assert old_file.read_text() == "old installer's copy"
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "unshipped name",
+        "non-checkout root",
+        "non-mirrored tail",
+        "relative text",
+        "'..' segment",
+        "real file",
+        "real directory",
+    ],
+)
+def test_entries_the_old_installer_did_not_make_keep_prompt_or_preserve(tmp_path, case):
+    old = old_checkout(tmp_path)
+    (tmp_path / "plain" / "src").mkdir(parents=True)
+    target = tmp_path / "target"
+    commands = target / ".claude/commands"
+    commands.mkdir(parents=True)
+    entry = commands / ("not-shipped.md" if case == "unshipped name" else f"{WORKFLOW}.md")
+    links = {
+        "unshipped name": f"{old}/claude/commands/not-shipped.md",
+        "non-checkout root": f"{tmp_path}/plain/claude/commands/{WORKFLOW}.md",
+        "non-mirrored tail": f"{old}/claude/skills/{WORKFLOW}.md",
+        "relative text": f"../../../old/claude/commands/{WORKFLOW}.md",
+        "'..' segment": f"{old}/x/../claude/commands/{WORKFLOW}.md",
+    }
+    if case in links:
+        os.symlink(links[case], entry)
+    elif case == "real file":
+        entry.write_text("owner command")
+    else:
+        entry.mkdir()
+        (entry / "notes.md").write_text("owner notes")
+    before = entry_state(entry)
+
+    assert init(target) == 0
+    assert entry_state(entry) == before
+    # A preserved command keeps Claude on it: no skill alias may shadow it.
+    assert (target / ".claude/skills" / WORKFLOW).is_symlink() == (case == "unshipped name")
+
+
+@pytest.mark.parametrize("command", ["init", "install-commands"])
+def test_mixed_legacy_tree_adopts_every_shipped_link_and_keeps_owner_entries(
+    tmp_path, capsys, command
+):
+    old = old_checkout(tmp_path)
+    target = tmp_path / "target"
+    shipped = [
+        *(f"commands/{s}.md" for s in SKILLS if kind(s) == "workflow"),
+        *(f"skills/{s}" for s in SKILLS if kind(s) == "supporting"),
+        *(f"agents/{a}.md" for a in AGENTS),
+        *(f"hooks/{h}" for h in HOOKS),
+    ]
+    for entry in shipped:
+        link = target / ".claude" / entry
+        link.parent.mkdir(parents=True, exist_ok=True)
+        os.symlink(f"{old}/claude/{entry}", link)
+    owner_skill = target / ".claude/skills/owner-skill"
+    owner_skill.mkdir()
+    (owner_skill / "SKILL.md").write_text("---\nname: owner-skill\n---\n")
+    owner_command = target / ".claude/commands/owner-command.md"
+    os.symlink(f"{old}/claude/commands/owner-command.md", owner_command)
+    owner_link = target / ".agents/skills/owner-skill"
+    owner_link.parent.mkdir(parents=True)
+    os.symlink("../../.claude/skills/owner-skill", owner_link)
+    owners = [owner_skill, owner_command, owner_link]
+    before = [entry_state(p) for p in owners]
+
+    if command == "init":
+        assert init(target) == 0
+        assert f"Adopted ({len(shipped)})" in capsys.readouterr().out
+    else:
+        args = Namespace(directory=str(target), force=False, list=False)
+        assert cmd_install_commands(args) == 0
+        assert f"Adopted: {len(shipped)}" in capsys.readouterr().out
+    for skill in SKILLS:
+        assert (target / ".claude/skills" / skill / "SKILL.md").is_file(), skill
+    assert [entry_state(p) for p in owners] == before

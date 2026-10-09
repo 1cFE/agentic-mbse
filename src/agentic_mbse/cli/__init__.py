@@ -392,6 +392,7 @@ def cmd_init(args: argparse.Namespace) -> int:
     symlinked = installer.actions["symlinked"]
     backed_up = installer.actions["backed_up"]
     removed = installer.actions["removed"]
+    adopted = installer.actions["adopted"]
 
     # === Create .gitignore with standard Python ignores ===
     gitignore_path = target / ".gitignore"
@@ -602,6 +603,11 @@ Edit this file to add your domain-specific sources.
         for item in symlinked:
             print(f"  @ {item}")
 
+    if adopted:
+        print(f"\nAdopted ({len(adopted)}) - links from the pre-native installer replaced:")
+        for item in adopted:
+            print(f"  A {item}")
+
     if created:
         print(f"\nCreated ({len(created)}):")
         for item in created:
@@ -627,9 +633,9 @@ Edit this file to add your domain-specific sources.
         for item in skipped:
             print(f"  . {item}")
 
-    if not created and not updated and not symlinked and not backed_up and not removed:
+    if not (created or updated or symlinked or backed_up or removed or adopted):
         print("Everything up to date.")
-    elif created or updated or symlinked or backed_up or removed:
+    else:
         print("")
         print("Next steps:")
         print("  1. Run /onboard in Claude or $onboard in Codex to configure your project")
@@ -671,10 +677,14 @@ def cmd_install_commands(args: argparse.Namespace) -> int:
         dev=False,
     )
     installer.save()
+    actions = installer.actions
     print(
-        f"Installed: {len(installer.actions['created']) + len(installer.actions['updated'])}, "
-        f"Skipped: {len(installer.actions['skipped'])}, Removed: {len(installer.actions['removed'])}"
+        f"Installed: {len(actions['created']) + len(actions['updated'])}, "
+        f"Skipped: {len(actions['skipped'])}, Removed: {len(actions['removed'])}, "
+        f"Adopted: {len(actions['adopted'])}"
     )
+    for item in actions["adopted"]:
+        print(f"  A {item}")
     return EXIT_SUCCESS
 
 
