@@ -86,7 +86,7 @@ After moving `/home/reid/1cfe/agentic-mbse` to the merged `main`, run this from 
 uv run agentic-mbse install-commands --assistant claude --link-mode symlink
 ```
 
-It copies the skills, so re-run it after editing `skills/`. The rehearsal on a scratch clone of the branch printed `Installed: 38, Skipped: 0, Removed: 0, Adopted: 0`, left `git status` empty, kept `CLAUDE.md`, resolved all 25 bundles at `.claude/skills/<n>/SKILL.md` with the 5 agents and the hook, and left pytest at 2166 passed before and after.
+It copies the skills, so re-run it after editing `skills/`. The rehearsal on a scratch clone of the branch printed `Installed: 38, Skipped: 0, Removed: 0, Adopted: 0`, left `git status` empty, kept `CLAUDE.md`, resolved all 25 bundles at `.claude/skills/<n>/SKILL.md` with the 5 agents and the hook, and left pytest at 2177 passed before and after (re-run after Phase 9; the first run showed 2166).
 
 ## Your choice, does not block: fusion-tea's pattern note
 

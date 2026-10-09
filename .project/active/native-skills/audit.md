@@ -1,6 +1,6 @@
 # Audit: Native Claude and Codex skills
 
-**Verdict:** Certify (re-audited 2026-10-09 with WRAP-SPLIT Item 1: F-A to F-K hold; B1 cleared on re-check, `init --dev` now warns that Codex cannot see its linked skills and the fix is a follow-up; see `.project/active/native-skill-distribution/audit.md`)
+**Verdict:** Certify (re-audited 2026-10-09 with WRAP-SPLIT Item 1: F-A to F-K hold; B1 fixed in that item's Phase 9, where `init --dev` links each skill folder so Codex lists every shipped skill; see `.project/active/native-skill-distribution/audit.md`)
 **Audited:** 2026-09-08
 **Branch:** native-claude-codex-skills (worktree `/home/reid/1cfe/agentic-mbse-native-skills`)
 **Commit:** 955295b
