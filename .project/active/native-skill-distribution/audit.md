@@ -1,9 +1,91 @@
 # Audit: Reconcile the native installer source with `main` (WRAP-SPLIT Item 1)
 
-**Verdict:** Needs Work
-**Audited:** 2026-10-09
+**Verdict:** Certify (after the 2026-10-09 re-check; the first pass was Needs Work on B1)
+**Audited:** 2026-10-09 (first pass and targeted re-check)
 **Branch:** `nsd-integration` (worktree `/home/reid/1cfe/agentic-mbse-nsd`)
-**Commit:** `739a296` (code identical to `beceb6f`; `739a296` adds only `briefs/10-audit.md`)
+**Commit:** first pass `739a296` (code identical to `beceb6f`); re-check `46a45a1` (code identical to `2c65dda`; `46a45a1` adds only `briefs/12-audit-recheck.md`)
+
+---
+
+## Re-check, 2026-10-09: Certify
+
+**Result.** B1's defect is fixed. `init --dev` no longer fails silently for Codex, and the product states the limitation where users meet `--dev`. The six advisories the orchestrator chose to fix are fixed, and I verified each one. Where the code was meant to behave the same, it does: I compared it byte for byte.
+
+**One decision is left, and it is the owner's.** It concerns whether to defer real `--dev` support for Codex. No code work is outstanding for it.
+- The orchestrator recorded that deferral as agent-grade (`briefs/11-audit-fixes.md`).
+- The product-lens ledger accepts only an owner disposition for a BLOCK, so it keeps audit-F1 open until the owner rules.
+- `_my_pre_pr` and `_my_close` enforce that. The merge gate, where the owner rules, is owner-reserved anyway.
+
+**Scope.** Only what changed: `783b00e`, `728a4fe`, `b5fb2ed`, `7cf6c41` and `2c65dda`.
+
+**Checks.**
+- The full suite on HEAD gives 2174 passed, 1 skipped, 1 xfailed.
+- ruff check and ruff format are clean on the 9 changed files.
+- mypy reports nothing in the changed files. Its all-extras total is unchanged at 88.
+
+### B1: cleared
+
+- **The warning and the next step behave as stated.** I ran `init` for each runtime, with and without `--dev`, twice each (`.orchestrate-logs/audit-scratch/b1_matrix.py`, output `b1-matrix.txt`):
+
+  | Install | Warning | Next step 1 |
+  |---|---|---|
+  | plain `init`, `claude` / `codex` / `both` | none | "Run /onboard in Claude or $onboard in Codex …" |
+  | `--dev`, `claude` | none | same |
+  | `--dev`, `codex` | printed | "Re-run init without --dev, then run $onboard in Codex …" |
+  | `--dev`, `both` | printed | "Run /onboard in Claude … (Codex cannot see $onboard under --dev)" |
+
+  The second run prints the same lines.
+- **The warning's advice works.** The warning text (`cli/__init__.py:65-69`) says to use plain `init` for Codex. A plain `init --assistant codex` over a `--dev` Codex install replaced all 31 links with real files, with no prompt.
+- **The README sentence is accurate.** `README.md:47` says Codex does not list skills installed as such links, says to use a normal install for Codex, and says `init --dev` warns. That matches the evidence (`evidence/rehearsal/dev-probe.json`). The evidence is for Codex 0.160.0, which the code comment names; the README states it without a version.
+- **The test pins it.** `test_dev_warns_that_codex_cannot_see_linked_skills` (`tests/test_cli.py:471`) covers all six combinations. All three mutants I aimed at it are killed:
+  - warning only for `codex`;
+  - warning printed but the plain `$onboard` step kept;
+  - warning for every `--dev` install.
+- **What stays open.** Codex discovery under `--dev` is a follow-up with a spike (`evidence/audit-scope.md`).
+- **Why I clear B1 anyway.** My clearing route (b) asked the owner to record the deferral; the orchestrator recorded it instead. The harm B1 named was silent success plus a false instruction, and both are gone. The deferral itself is owner-visible at the owner-reserved merge gate, and the lens ledger holds it for the owner's word.
+
+### Advisories fixed (1, 3, 5, 6, 8, 9)
+
+- **Advisory 1, predicate pins: fixed.**
+   - `old_checkout` now creates `x/` (`tests/test_installation.py:448`), so the `..` rows name a real checkout.
+   - The predicate table and the never-adopted cases gain an "another entry's name" row (`:466`, `:525`, `:543`).
+   - I re-ran the mutant set on a scratch export of HEAD (171 passed unmutated). M1 (drop `..`) is now killed by the `x/..` row, and M7 (drop name mirroring) by the `{other}` row.
+   - Overall, 20 of 23 mutants are killed. The three survivors (M14, M15, M17) are the same redundant or equivalent ones as the first pass (`recheck-installer-mutations.txt`).
+- **Advisory 3, README count: fixed.** `README.md:25` points to `install-commands --list` instead of counting.
+   - Residual nit: `README.md:29` still says "five native expert roles", the same kind of count for roles.
+- **Advisory 5, one frontmatter parser: fixed, with no behaviour change.**
+   - One `frontmatter()` (`installation.py:25`) serves `bundle_kind`, `render_agent` and `register_codex_agents`.
+   - I ran the old module (`739a296`) and the new one through `install_assistants` on the same data, for every runtime, link mode and `--dev` setting. All 12 installs are byte-identical, including the manifest and every report list (`parser_equivalence.py`). `bundle_kind` agrees on all 25 bundles.
+   - Only the two intended changes differ. A `---` inside a frontmatter value used to raise `KeyError` and now parses. A non-mapping `metadata` used to raise `AttributeError` and now raises the documented `ValueError`.
+- **Advisory 6, caller-less names: fixed.**
+   - `PROJECT_TEMPLATES`, `HASH_FILE`, `get_agents_dir` and `get_hooks_dir` are gone. Nothing names them in `src/`, `tests/`, `scripts/`, `hooks/`, shipped text, `docs/`, `CLAUDE.md`, `README.md`, `pyproject.toml`, or the staged fusion-tea inputs.
+   - `get_docs_dir` stays, and its I6 test passes.
+   - One stale reference remains, in a finished spike's throwaway probe (`.project/active/spike-native-skill-install/installer_probe.py:41`, `cli.HASH_FILE`). It would fail if anyone re-ran it.
+- **Advisory 8, sample names in tests: fixed.**
+   - Samples now come from the tree. Where a test only checked that a few things exist, it now checks every bundle file or every role.
+   - Tests that are about one skill keep its name, correctly: the two `orchestrate-modeling` tests and the two `syside-expert` placeholder tests.
+   - Residual nit: `test_force_overwrites_agents` (`tests/test_cli.py:223`) still uses `syside-expert` as a plain sample. It is not about the placeholder, although the plan counts it among them.
+- **Advisory 9, byte-exact `check`: fixed.**
+   - On a fresh install of HEAD, `reconcile.py check` reports 55 files and 0 mismatches.
+   - All 15 of my content mutations now fail it, the CRLF reference file included (`recheck-check-mutations.txt`).
+   - The recorded negatives agree: `check-negative.txt` adds two CRLF cases, and both exit 1.
+
+### Advisories accepted (2, 4, 7): I agree
+
+- **2, the `skills:` key.**
+  - The cited research (`.project/research/20260907-162310_native-claude-codex-skills.md:54`) records that Claude documents `skills` as subagent preloading metadata, not a command dependency loader. Codex was not a runtime on `main`.
+  - So nothing a runtime acted on is lost against `main`.
+  - What is lost is a written mapping, for 8 workflows, that a reader could use. The research's own `[AGENT]` line allowed removing it (`:56`). The disposition is now in `dispositions.md`.
+- **4, A1.** Both runtimes see the context. Writing it to two files is a style point.
+- **7, `epic_template.md`.** Runbook step 4 answers it, and nothing fusion-tea wrote is lost.
+
+### Product-lens
+
+The first-pass block and a re-check block are appended to `product-lens.md`. The re-check block records:
+
+- **audit-F2:** FIXED.
+- **audit-F3:** DEFERRED, agent-grade.
+- **audit-F1:** still BLOCK, waiting only on the owner's disposition. The limitation is now visible and pinned; the deferral of the fix is agent-grade.
 
 ---
 
@@ -56,7 +138,9 @@ One thing holds certification. `init --dev`, a documented install mode whose def
 
 ## Blockers
 
-**B1. `init --dev` leaves Codex with no shipped skills, and says nothing about it.**
+The sections from here to the appendix are the first pass, kept as written. The re-check above records what changed.
+
+**B1. `init --dev` leaves Codex with no shipped skills, and says nothing about it.** *Status: cleared on the 2026-10-09 re-check (limitation now stated and pinned; the fix is a follow-up whose deferral awaits the owner).*
 
 - **What happens.** Under `--dev`, `Installer.write` makes every bundle file an absolute link into the source checkout (`installation.py:162-164`, called per file from `copy_tree` at `:184-193`). Codex lists none of those skills. In the dev rehearsal, Codex's catalog held only fusion-tea's 5 own skills (`evidence/rehearsal/dev-probe.json`); under plain `init` it held all 25 (`plain-probe.json`). Claude still sees the skills through its relative alias.
 - **Why it blocks.** The default is `--assistant both`, and the command exits 0. Its closing message tells the user to "Run /onboard in Claude or $onboard in Codex" (`cli/__init__.py:641`), a skill Codex cannot find under `--dev`. README's `--dev` paragraph (`README.md:49`) carries no caveat. The owner asked that both runtimes install the same way (`briefs/00-align.md:19`). The spec says SC6 "requires `--dev` to work either way" (`spec.md:99`). SC11 makes this audit certify the installer as it now stands, so a defect inherited from the native branch is in scope here.
@@ -249,15 +333,21 @@ The report-once change adds `Installer.adopted` and `report`. That is an orchest
 - 20 installer mutants.
 - An independent product-lens pass.
 
-**Marked:** only the native audit's verdict line (`.project/active/native-skills/audit.md:3`), as the brief directs.
+**Marked:**
 
-**Not marked:** per the brief, I left the plan, spec, epic, `CURRENT_WORK.md` and `product-lens.md` untouched; the orchestrator owns those writes. Once B1 clears, these are verified and can be marked:
+- **First pass:** the native audit's verdict line (`.project/active/native-skills/audit.md:3`).
+- **Re-check:** that line again, now Certify, and the two lens blocks appended to `product-lens.md`. Both briefs direct these writes.
 
-- Plan Phases 1–8, with 8.7 done by the verdict-line edit.
-- Spec SC1–SC5, SC8–SC12.
-- SC6 and SC7 after B1's re-check.
+**Not marked:** the plan, spec, epic and `CURRENT_WORK.md`, per both briefs; the orchestrator owns those writes. As of the re-check, these are verified and can be marked:
 
-The lens block in the appendix is ready to append to `product-lens.md`.
+- Plan Phases 1–8 and the "Audit fixes" notes.
+- Spec SC1–SC12.
+- **SC7 holds for the standard install under every runtime choice.** Under `--dev` with Codex, the install no longer points the user at a skill Codex cannot see. Codex discovery under `--dev` remains a documented limitation and a follow-up, and its deferral awaits the owner (lens audit-F1).
+
+**Not checked in the re-check:**
+
+- External importers of the four removed names, such as sysml-codegen. They are outside this worktree, and only fusion-tea's staged inputs were searched.
+- A live Codex probe of the new `--dev` install. The warning's claim rests on the first pass's recorded `dev-probe.json`.
 
 **Not checked:**
 
@@ -271,7 +361,7 @@ The lens block in the appendix is ready to append to `product-lens.md`.
 
 ---
 
-## Appendix: product-lens verdict block (for the orchestrator to append to `product-lens.md`)
+## Appendix: first-pass product-lens verdict block (appended to `product-lens.md` at the re-check, followed by the re-check block)
 
 ```
 ## audit — 2026-10-09 — rev nsd-integration @ beceb6f

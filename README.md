@@ -26,7 +26,7 @@ This installs every modeling workflow and supporting skill for Claude Code and C
 
 - `.agents/skills/<name>/`: shared bundles, including scripts and reference files.
 - `.claude/skills/<name>`: relative aliases to those bundles.
-- `.claude/agents/` and `.codex/agents/`: five native expert roles rendered from shared instructions.
+- `.claude/agents/` and `.codex/agents/`: the native expert roles, rendered from `agents/`.
 - `.claude/hooks/`: the formatter hook script, for Claude only and not activated.
 - `CLAUDE.md` and `AGENTS.md`: native entry instructions, created only when absent.
 - `knowledge/`, `modeling_project/`, `work/`, `data/`, and `models/`: modeling project structure.
