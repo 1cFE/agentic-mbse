@@ -366,20 +366,46 @@ def install_dev_bundle(installer: Installer, source: Path) -> bool:
     """Install a shared bundle for --dev as one folder link to its source checkout folder.
 
     Codex lists a linked skill folder but skips a SKILL.md that is a file link. So a real folder
-    the installer cannot replace, because it holds owner files or edits, gets a plain copy.
+    the installer cannot replace, because it holds owner files or edits, gets a plain copy, and
+    one line says what the copy did.
     """
     relative = f".agents/skills/{source.name}"
+    # Checked once here, so the copy below cannot report a redirected .agents/skills again.
+    if not installer.parents(relative):
+        return False
     if installer.link_directory(relative, str(source.resolve())):
         return True
     destination = installer.target / relative
+    # A link or file that permit refused is not retried as a copy, which would ask again.
     if not destination.is_dir() or destination.is_symlink():
         return False
+    was_empty = not any(destination.iterdir())
+    # The plain copy lists every file it writes as created or updated.
+    written = (installer.actions["created"], installer.actions["updated"])
+    before = sum(map(len, written))
     if not installer.copy_tree(source, relative):
         return False
-    print(
-        f"Copied {relative} instead of linking it to the source checkout: "
-        "the installer does not own everything in that folder"
-    )
+    if (destination / "SKILL.md").is_symlink():
+        print(
+            f"Warning: Codex will not list the {source.name} skill: {relative}/SKILL.md is a file "
+            f"link, which Codex skips. Remove {relative} and re-run init --dev, "
+            "or re-run it with --force"
+        )
+    elif sum(map(len, written)) == before:
+        print(
+            f"Kept {relative} instead of linking it to the source checkout: "
+            "the installer does not own everything in that folder and wrote no file into it"
+        )
+    elif was_empty:
+        print(
+            f"Copied {relative} instead of linking it to the source checkout: "
+            "an empty folder was already there. The next --dev run links it"
+        )
+    else:
+        print(
+            f"Copied {relative} instead of linking it to the source checkout: "
+            "the installer does not own everything in that folder"
+        )
     return True
 
 
@@ -388,6 +414,9 @@ def expose_to_claude(installer: Installer, source: Path, *, link_mode: str, dev:
     if not installer.retire_command(source.name):
         return
     alias = f".claude/skills/{source.name}"
+    # Checked once here, so the copy fallback cannot report a redirected .claude/skills again.
+    if not installer.parents(alias):
+        return
     destination = installer.target / alias
     shared = installer.target / ".agents/skills" / source.name
     if link_mode == "copy":

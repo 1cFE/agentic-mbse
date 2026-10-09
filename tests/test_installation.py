@@ -15,6 +15,7 @@ from agentic_mbse.cli.installation import (
     MANIFEST,
     Installer,
     fingerprint,
+    install_dev_bundle,
     legacy_link_target,
 )
 from tests.helpers.shipped import AGENTS, HOOKS, REPO_ROOT, SKILLS, bundle_files, frontmatter, kind
@@ -216,19 +217,26 @@ def test_dev_copies_a_bundle_folder_holding_owner_files(tmp_path, capsys, force)
     init(tmp_path)
     added = tmp_path / ".agents/skills" / WORKFLOW / "owner.md"
     added.write_text("owner addition")
-    edited = tmp_path / ".agents/skills" / OTHER_WORKFLOW / "SKILL.md"
-    edited.write_text("owner edit")
+    edited = [
+        tmp_path / ".agents/skills" / OTHER_WORKFLOW / f for f in bundle_files(OTHER_WORKFLOW)
+    ]
+    for path in edited:
+        path.write_text("owner edit")
     capsys.readouterr()
 
     cmd_init(Namespace(path=str(tmp_path), force=force, dev=True))
     output = capsys.readouterr().out
     assert added.read_text() == "owner addition"
-    assert (edited.read_text() == "owner edit") != force
+    assert all((path.read_text() == "owner edit") != force for path in edited)
     for name in SKILLS:
         shared = tmp_path / ".agents/skills" / name
         blocked = name in (WORKFLOW, OTHER_WORKFLOW)
+        # Without --force every file of OTHER_WORKFLOW is preserved, so nothing is copied there.
+        kept = name == OTHER_WORKFLOW and not force
         assert shared.is_symlink() != blocked
-        assert (f"Copied .agents/skills/{name} instead of linking it" in output) == blocked
+        copied = f"Copied .agents/skills/{name} instead of linking it"
+        assert (copied in output) == (blocked and not kept)
+        assert (f"Kept .agents/skills/{name} instead of linking it" in output) == kept
         assert not (shared / "SKILL.md").is_symlink()
         if blocked:
             for inside in bundle_files(name):
@@ -237,6 +245,111 @@ def test_dev_copies_a_bundle_folder_holding_owner_files(tmp_path, capsys, force)
     assert (tmp_path / ".agents/skills" / WORKFLOW / "SKILL.md").read_bytes() == (
         REPO_ROOT / "skills" / WORKFLOW / "SKILL.md"
     ).read_bytes()
+
+
+def test_dev_copies_into_an_empty_bundle_folder_then_links_it(tmp_path, capsys):
+    """An empty folder is no proof of ownership, so --dev copies into it; the copy is then owned."""
+    shared = tmp_path / ".agents/skills" / WORKFLOW
+    shared.mkdir(parents=True)
+
+    cmd_init(Namespace(path=str(tmp_path), force=False, dev=True))
+    output = capsys.readouterr().out
+    assert (
+        f"Copied .agents/skills/{WORKFLOW} instead of linking it to the source checkout: "
+        "an empty folder was already there. The next --dev run links it" in output
+    )
+    assert "does not own" not in output
+    for inside in bundle_files(WORKFLOW):
+        assert not (shared / inside).is_symlink()
+        assert (shared / inside).read_bytes() == (
+            REPO_ROOT / "skills" / WORKFLOW / inside
+        ).read_bytes()
+
+    cmd_init(Namespace(path=str(tmp_path), force=False, dev=True))
+    assert "instead of linking it" not in capsys.readouterr().out
+    assert os.readlink(shared) == str(REPO_ROOT / "skills" / WORKFLOW)
+
+
+@pytest.mark.parametrize("repair", ["remove the folder", "--force"])
+def test_dev_warns_when_a_kept_bundle_hides_from_codex(tmp_path, monkeypatch, capsys, repair):
+    """A per-file --dev folder whose manifest is lost keeps its SKILL.md link, which Codex skips."""
+    data = fake_data_root(tmp_path)
+    monkeypatch.setattr("agentic_mbse.cli._get_data_root", lambda: data)
+    target = tmp_path / "target"
+    target.mkdir()
+    # The earlier --dev shape, a real folder of file links, with no manifest saved.
+    earlier = Installer(target, force=False, decide=lambda path: "skip")
+    earlier.copy_tree(data / "skills" / WORKFLOW, f".agents/skills/{WORKFLOW}", dev=True)
+    shared = target / ".agents/skills" / WORKFLOW
+
+    cmd_init(Namespace(path=str(target), force=False, dev=True))
+    output = capsys.readouterr().out
+    assert (shared / "SKILL.md").is_symlink()
+    assert (
+        f"Warning: Codex will not list the {WORKFLOW} skill: "
+        f".agents/skills/{WORKFLOW}/SKILL.md is a file link, which Codex skips." in output
+    )
+    assert f".agents/skills/{WORKFLOW} instead of linking it" not in output
+
+    # Each repair the warning names gives the bundle its folder link.
+    if repair == "remove the folder":
+        shutil.rmtree(shared)
+    else:
+        cmd_init(Namespace(path=str(target), force=True, dev=True))
+        assert not (shared / "SKILL.md").is_symlink()
+    cmd_init(Namespace(path=str(target), force=False, dev=True))
+    assert "Codex will not list" not in capsys.readouterr().out
+    assert os.readlink(shared) == str((data / "skills" / WORKFLOW).resolve())
+
+
+@pytest.mark.parametrize("entry", ["link", "file"])
+def test_dev_asks_once_about_an_entry_it_may_not_replace(tmp_path, entry):
+    """A link or file refused at .agents/skills/<n> is not retried as a copy, so one question."""
+    relative = f".agents/skills/{WORKFLOW}"
+    path = tmp_path / relative
+    path.parent.mkdir(parents=True)
+    if entry == "link":
+        elsewhere = tmp_path / "mine"
+        elsewhere.mkdir()
+        (elsewhere / "SKILL.md").write_text("owner skill")
+        path.symlink_to(elsewhere, target_is_directory=True)
+    else:
+        path.write_text("owner file")
+    before = fingerprint(path)
+    asked = []
+
+    def decide(relative: str) -> str:
+        asked.append(relative)
+        return "skip"
+
+    installer = Installer(tmp_path, force=False, decide=decide)
+    assert not install_dev_bundle(installer, REPO_ROOT / "skills" / WORKFLOW)
+    assert asked == [relative]
+    assert installer.actions["skipped"] == [relative]
+    assert fingerprint(path) == before
+
+
+@pytest.mark.parametrize("dev", [False, True])
+@pytest.mark.parametrize("folder", [".agents/skills", ".claude/skills"])
+def test_a_redirected_skills_folder_is_reported_once(tmp_path, capsys, folder, dev):
+    """A link refused for a redirected parent is not retried as a copy, so one Skipped line."""
+    outside = tmp_path / "outside"
+    (outside / WORKFLOW).mkdir(parents=True)
+    (outside / WORKFLOW / "owner.md").write_text("keep")
+    target = tmp_path / "target"
+    (target / folder).parent.mkdir(parents=True)
+    (target / folder).symlink_to(outside, target_is_directory=True)
+
+    cmd_init(Namespace(path=str(target), force=False, dev=dev))
+    lines = capsys.readouterr().out.splitlines()
+    for name in SKILLS:
+        relative = f"{folder}/{name}"
+        assert len([line for line in lines if line.startswith(f"Skipped {relative}: ")]) == 1
+        assert lines.count(f"  . {relative}") == 1
+    assert sorted(p.relative_to(outside).as_posix() for p in outside.rglob("*")) == [
+        WORKFLOW,
+        f"{WORKFLOW}/owner.md",
+    ]
 
 
 def test_plain_init_over_dev_copies_every_bundle(tmp_path, monkeypatch):

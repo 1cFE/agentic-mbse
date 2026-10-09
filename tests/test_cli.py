@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -465,17 +466,24 @@ class TestCmdInitDevMode:
 
     @pytest.mark.parametrize("assistant", ["claude", "codex", "both"])
     def test_next_steps_are_the_same_with_and_without_dev(self, tmp_path, capsys, assistant):
-        """Both tools list every --dev skill, so --dev closes with the same steps as plain init."""
+        """Both tools list every --dev skill, so --dev closes the same way as plain init.
+
+        The closing output is everything after the report's last listed entry, so a line printed
+        between the lists and "Next steps:" counts.
+        """
+        report_entry = re.compile(r"  [@A+~B.-] ")
         closing = {}
         for dev in (False, True):
             target = tmp_path / f"dev-{dev}"
             target.mkdir()
             args = MockArgs(path=str(target), force=False, dev=dev, assistant=assistant)
             assert cmd_init(args) == EXIT_SUCCESS
-            output = capsys.readouterr().out
-            closing[dev] = output[output.index("Next steps:") :]
+            lines = capsys.readouterr().out.splitlines()
+            last_entry = max(i for i, line in enumerate(lines) if report_entry.match(line))
+            closing[dev] = lines[last_entry + 1 :]
         assert closing[True] == closing[False]
-        assert "Run /onboard in Claude or $onboard in Codex" in closing[True]
+        assert closing[True][:2] == ["", "Next steps:"]
+        assert "Run /onboard in Claude or $onboard in Codex" in closing[True][2]
 
     def test_dev_refused_without_source_checkout(self, tmp_path, monkeypatch, capsys):
         """Packaged data has skills/ too, so only src/agentic_mbse marks a source checkout."""
