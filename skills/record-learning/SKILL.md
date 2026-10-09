@@ -9,6 +9,8 @@ description: >
   "let's document this", "record what we discovered"
 allowed-tools: Read, Write, AskUserQuestion
 user-invocable: true
+metadata:
+  kind: supporting
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -69,7 +71,8 @@ When a learning has domain implications, **also suggest creating a DI-XXX entry*
 
 ### If Agent-Invoked (through the host’s skill-loading interface)
 
-1. **Reflect on what was discovered**: Even if you know what you learned, explicitly articulate the problem, solution, and generalization. Reflection improves comprehension.
+1. **Reflect on what was discovered**: Even if you know what you learned, explicitly
+   articulate the problem, solution, and generalization. Reflection improves comprehension.
 
 2. **Determine category**: Import Pattern | Syntax Gotcha | Error Interpretation | Workaround | Best Practice
 
@@ -142,7 +145,8 @@ Tried to use `sum(collection)` for cost aggregation but got unresolved reference
 
 ### Solution
 ```sysml
-private import NumericalFunctions::sum; attribute total : Real = sum(costs);
+private import NumericalFunctions::sum;
+attribute total : Real = sum(costs);
 ```
 
 ### Generalization

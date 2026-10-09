@@ -8,6 +8,8 @@ description: >
   Provides the two-tier requirements structure, PR-XXX format, and promotion path.
 allowed-tools: Read, Grep, Glob
 user-invocable: false
+metadata:
+  kind: supporting
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -84,7 +86,7 @@ Modeling requirements exist at two tiers: tool-owned baseline rules (MODELING_GU
 - **Project-wide**: Constrains all modeling work, not just one feature
 - **Worth tracking**: The cost of non-compliance is high enough to justify enforcement
 
-The `trace-element` AP-7 script handles mechanical promotion: assigns PR-XXX ID, enforces format, validates source references.
+The `promote-requirement` PM operation handles mechanical promotion: assigns the PR-XXX ID, enforces format, and validates source references.
 
 ## Enforcement Methods
 

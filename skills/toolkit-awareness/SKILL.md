@@ -10,6 +10,8 @@ description: >
   Ensures Claude uses the actual installed toolchain instead of guessing commands.
 allowed-tools: Read, Grep, Glob
 user-invocable: false
+metadata:
+  kind: supporting
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -90,7 +92,7 @@ All PM operations are atomic (mutations succeed fully or not at all) or tolerant
 | Operation | Description |
 |-----------|-------------|
 | `close-item <name>` | Archive completed work item from active to completed |
-| `approve-research <file> --insights '<json>'` | Approve pending research and register domain insights |
+| `approve-research <file> --insights '<json>'` | Approve pending research and register any accepted domain insights (`'[]'` approves with none) |
 | `trace-element --element <name> --file <path> ...` | Record model element traceability to matrix |
 | `promote-requirement --requirement <text> --source <ID>` | Promote per-item requirement to project-wide PR-XXX |
 | `register-decision --title <text> --decision <text> --rationale <text>` | Record architectural decision as AD-XXX |
@@ -111,7 +113,7 @@ Consult `README.md` for full details. Complete command list grouped by function:
 | `/design-model` | Make model architecture decisions |
 | `/plan-model` | Create implementation plan with phases |
 | `/implement-model` | Execute plan, write SysML |
-| `/quick-model` | Rapid single-file model creation |
+| `/quick-model` | Understood local corrections with focused evidence |
 | `/review-model` | Review model quality and correctness |
 | `/formalize-intent` | Convert informal intent to formal SysML |
 

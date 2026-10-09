@@ -8,6 +8,8 @@ description: >
   Provides the canonical syntax rules and patterns for SysML v2 modeling.
 allowed-tools: Read, Grep, Glob
 user-invocable: false
+metadata:
+  kind: supporting
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -37,7 +39,10 @@ Every SysML element is either a **definition** (reusable type in `library/`) or 
 | Attributes | `snake_case` | `attribute flow_rate : Real` |
 | Packages | `lowercase_underscores` | `package thermal_components` |
 
-**Quoted names are fine.** Multi-word quoted names (`'Fusion Power Plant'`, `'HIF Driver'`) are supported everywhere a name appears. Codegen sanitizes them to valid identifiers (`Fusion_Power_Plant`) — the identifier is *derived*, you do not write it. Use the readable quoted name.
+**Quoted names are fine.** Multi-word quoted names (`'Fusion Power Plant'`, `'HIF Driver'`)
+are supported everywhere a name appears. Codegen sanitizes them to valid identifiers
+(`Fusion_Power_Plant`) — the identifier is *derived*, you do not write it. Use the
+readable quoted name.
 
 ## Definition vs Usage Rule
 
@@ -73,7 +78,10 @@ For directory placement of definitions and usages, see the **project-structure**
 | Computation on calc output: `= calc.power * 0.95` | **VIOLATION** — extract to calc def |
 | Self-reference or dotted path: `= self.x`, `= a.b.c` | **VIOLATION** — extract to calc def |
 
-A design attribute may reference same-part siblings inline (a FORMULA) for simple arithmetic and unit conversions. For any real or reusable calculation — and always when the value depends on a calc output or another part — express it as a `calc def` in `library/analyses/`, not inline.
+A design attribute may reference same-part siblings inline (a FORMULA) for simple
+arithmetic and unit conversions. For any real or reusable calculation — and always when
+the value depends on a calc output or another part — express it as a `calc def` in
+`library/analyses/`, not inline.
 
 ## Standard Imports
 
@@ -142,9 +150,19 @@ assert constraint temp_ok : TempLimit {
 
 Three rules, and each one bites:
 
-1. **Only the assert family executes.** A bare `constraint`, a `require constraint`, an `assume constraint`, and a `satisfy` reference are visible, cataloged descriptions that **never run**. Writing one where you meant a gate is the single most common way a model ships with no check at all. Use them when you mean to describe; use `assert` when you mean to check.
-2. **Bind formals; don't inline the predicate.** `assert constraint TempLimit { temperature < 1000 [K] }` parses, but an inline predicate resolves its names by reaching into surrounding scope, and a unit literal inside the predicate is a frequent block. Binding every formal to a real value in scope makes the wiring explicit and lowerable. It is also the form `@inapplicable:` works on — see below.
-3. **Units go on the binding, not inside the predicate.** `in temperature = wall_temp_k;` where the attribute carries `[K]`. Codegen carries the authored unit text into port metadata and performs **no conversion**; two consumers of one shared value that annotate different units fail closed with `SI_RENDERING_COLLISION`, naming the key. Fix the model, not the diagnostic.
+1. **Only the assert family executes.** A bare `constraint`, a `require constraint`, an
+   `assume constraint`, and a `satisfy` reference are visible, cataloged descriptions that **never
+   run**. Writing one where you meant a gate is the single most common way a model ships with no
+   check at all. Use them when you mean to describe; use `assert` when you mean to check.
+2. **Bind formals; don't inline the predicate.** `assert constraint TempLimit { temperature < 1000
+   [K] }` parses, but an inline predicate resolves its names by reaching into surrounding scope, and
+   a unit literal inside the predicate is a frequent block. Binding every formal to a real value in
+   scope makes the wiring explicit and lowerable. It is also the form `@inapplicable:` works on —
+   see below.
+3. **Units go on the binding, not inside the predicate.** `in temperature = wall_temp_k;` where the
+   attribute carries `[K]`. Codegen carries the authored unit text into port metadata and performs
+   **no conversion**; two consumers of one shared value that annotate different units fail closed
+   with `SI_RENDERING_COLLISION`, naming the key. Fix the model, not the diagnostic.
 
 **Marking a constraint inapplicable** — the marker goes on a gate that **does not run**:
 ```sysml
@@ -161,13 +179,26 @@ part def VacuumSystem {
     }
 }
 ```
-An `@inapplicable:` marker is the **only** way a gate leaves the feasibility denominator. Without one, an asserted gate that never ran keeps the report at `partial_coverage` rather than `full_satisfaction` — which is the point: an unassessed gate must not read as a passing one.
+An `@inapplicable:` marker is the **only** way a gate leaves the feasibility denominator. Without
+one, an asserted gate that never ran keeps the report at `partial_coverage` rather than
+`full_satisfaction` — which is the point: an unassessed gate must not read as a passing one.
 
-⚠️ **Marking a gate that actually runs is refused, not honoured.** Put this same marked constraint on a part that *is* instantiated and generation fails by name: *"marked inapplicable but produced 1 executable entries."* That is D9. A marker states a gate is out of the feasible set; it is not a switch that silences a live check. Accepted and refused shapes are both pinned as sysml-codegen fixtures — `constraint_coverage_all_inapplicable` and `constraint_coverage_eligible_inapplicable`.
+⚠️ **Marking a gate that actually runs is refused, not honoured.** Put this same marked constraint on
+a part that *is* instantiated and generation fails by name: *"marked inapplicable but produced 1
+executable entries."* That is D9. A marker states a gate is out of the feasible set; it is not a
+switch that silences a live check. Accepted and refused shapes are both pinned as sysml-codegen
+fixtures — `constraint_coverage_all_inapplicable` and `constraint_coverage_eligible_inapplicable`.
 
-⚠️ **The marker only reaches the domain on the bindings form.** On an inline-predicate constraint SysIDE silently drops the doc comment, so the marker never arrives and the gate stays in the denominator with no warning. This is `[INLINE-PREDICATE-MARKER-DROP]`, open. Until it closes, an inline-form disposition has to be recorded in the fixture's `PROVENANCE.md` instead of in source. **Decide before you author:** bindings form → the marker works; inline form → PROVENANCE carries it. Worked case: sysml-codegen `tests/fixtures/catf_mfe_gated`, B1–B5 — five markers written, zero carried. The loud detector is `tests/conformance/test_constraint_population_oracle.py` rule 3.
+⚠️ **The marker only reaches the domain on the bindings form.** On an inline-predicate constraint
+SysIDE silently drops the doc comment, so the marker never arrives and the gate stays in the
+denominator with no warning. This is `[INLINE-PREDICATE-MARKER-DROP]`, open. Until it closes, an
+inline-form disposition has to be recorded in the fixture's `PROVENANCE.md` instead of in source.
+**Decide before you author:** bindings form → the marker works; inline form → PROVENANCE carries it.
+Worked case: sysml-codegen `tests/fixtures/catf_mfe_gated`, B1–B5 — five markers written, zero
+carried. The loud detector is `tests/conformance/test_constraint_population_oracle.py` rule 3.
 
-**Equality intent — check which of four you have before writing `==`.** An equality gate over a parameter you meant to vary does not judge the design, it deletes the degree of freedom.
+**Equality intent — check which of four you have before writing `==`.** An equality gate over a
+parameter you meant to vary does not judge the design, it deletes the degree of freedom.
 
 | Intent | Do this instead |
 |---|---|
@@ -176,7 +207,8 @@ An `@inapplicable:` marker is the **only** way a gate leaves the feasibility den
 | Feasibility gate | Prefer a one-sided inequality; if a quantity must equal a value, fix it as an input rather than search for it and then constrain it. |
 | Composition closure | Derive the last term by construction, or fall back to a banded check. |
 
-The authority copy is the lifecycle contract's "Equality intent and authoring policy" in sysml-codegen (`.project/concepts/constraint-execution-authoritative-lifecycle-contract.md`).
+The authority copy is the lifecycle contract's "Equality intent and authoring policy" in
+sysml-codegen (`.project/concepts/constraint-execution-authoritative-lifecycle-contract.md`).
 
 **Cross-file binding:**
 ```sysml
@@ -185,11 +217,14 @@ calc my_calc { in value = other_part.exposed_attr; }
 ```
 
 **Calculation input binding — pick the form by where the value lives:**
-- attribute on the part that owns the calc → make the names differ: `in radius_in = radius;` (never the self-named `in radius = radius` — refused, not reinterpreted);
+- attribute on the part that owns the calc → make the names differ: `in radius_in = radius;`
+  (never the self-named `in radius = radius` — refused, not reinterpreted);
 - value on another part → name the occurrence path: `in driver_cost = driver.cost;`;
-- owner-qualified (`comp_a::length`) → resolves to the exact feature owned by that usage; a definition-owned leaf falls back to positional occurrence search instead.
+- owner-qualified (`comp_a::length`) → resolves to the exact feature owned by that usage;
+  a definition-owned leaf falls back to positional occurrence search instead.
 
-The authoritative copy of this rule is agentic-mbse `docs/patterns/plant-idiom.md`, "Binding a modelled value into a calculation".
+The authoritative copy of this rule is agentic-mbse `docs/patterns/plant-idiom.md`,
+"Binding a modelled value into a calculation".
 
 **Semantic operators:**
 - `=` — fixed value (cannot be overridden)

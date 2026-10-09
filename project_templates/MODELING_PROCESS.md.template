@@ -1,843 +1,104 @@
-# SysMLv2 Modeling Architecture Process
+# Modeling Process
+
+Build models that explain the system and support their intended use. Requirements state the outcome, design explains the system and its dependencies, and validation supplies evidence. Scale the preparation to the uncertainty and consequences of the change.
 
 ## Command-Level Modeling Flow
 
-This section is the canonical map for building models. Individual commands own their stage-specific method. `EPIC_GUIDE.md` owns decomposition detail. Use this map to choose an entry point, decide which optional stages add confidence, and determine when modeling work is complete.
+Skills are available tools. Choose them from the uncertainty and affected consumers, not the line count or work-item label. The main agent owns delivery and may carry out the whole change or delegate scoped work.
 
-### Choose an Entry Point
+- **Trivial change:** `/quick-model` handles an understood correction with affected-consumer checks.
+- **Standard work:** track one cohesive outcome with native PM metadata and a short `spec.md`. Design and plan may be sections of that record when separate documents add no value.
+- **Epic work:** `/backlog` separates independently useful outcomes and dependency handoffs. See `work/EPIC_GUIDE.md`.
 
-- **Trivial change:** use `/quick-model`, validate the affected model surface, and report the result.
-- **Standard work:** enter at the earliest unsatisfied stage in the Standard flow below. Existing, approved artifacts satisfy their stage; inspect their content rather than relying only on presence.
-- **Epic work:** use `/backlog` to define and decompose the epic into complete Standard items before implementation. Register backlog state through `agentic-mbse pm` commands.
-- **Unclear objective or authority gap:** start with `/research`, then route the resulting evidence into Standard work or an Epic.
+Optional stages: `/research`, `/spec-model`, `/design-model`, `/review-model`, `/plan-model`, `/implement-model`, and `/audit-models` can each be brief, combined, or skipped when their responsibility is already satisfied or does not apply. Do not create empty stage artifacts. An explicitly requested review still runs. Skipping a stage does not remove an applicable evidence obligation below.
 
-### Standard Work
+## Process Selection
 
-```text
-[/research] → /spec-model → /design-model → [/review-model]
-  → /plan-model → /implement-model → /audit-models → report
-```
+Before editing, record the intended behavior, affected definitions and consumers, source basis, and selected checks/reviews in the existing work record. A few sentences suffice. Search references and inspect inherited definitions and bindings; a local edit can affect other instances. Unknown impact calls for a bounded dependency investigation before choosing the final scope.
 
-Optional stages are shown in brackets:
+| Evidence about the change | Required response |
+|---|---|
+| Existing pattern and source interpretation; affected consumers known; expected behavior directly checkable | Main agent edits and verifies. No independent review required. |
+| New or reinterpreted source value, equation, unit conversion, physical assumption, or domain of applicability | Focused independent source/math review using original evidence, units, assumptions, and off-reference behavior. Resolve source interpretation before relying on it. |
+| New modeling pattern or changed ownership, specialization, public interface, or binding semantics | Focused independent design review before dependent implementation; check surrounding producer/consumer interfaces and the applicable pattern. |
+| Shared definition or calculation changes | Identify affected instances and test relevant consumer behavior, including preserved behavior. Shared use alone does not require a full audit. |
+| Coupled changes across model families/subsystems, architectural restructuring, or material uncertainty remaining after focused checks | Substantive independent design/integration assessment. Inspect interacting assumptions and coverage; use `/review-model` or `/audit-models` for the unresolved scope. |
+| Mechanical correction to already reviewed work | Recheck the diff and affected evidence. Reuse the reviewer when review is needed; no new full audit by default. |
 
-- Use `/research` when the objective depends on missing, uncertain, or conflicting authority sources.
-- Use `/review-model` when an independent design critique would reduce architectural or integration risk. It is advisory; resolve material findings before planning.
+Combine related review questions in one independent session when the evidence overlaps. A completed source/design review does not automatically require a second completion audit. Complex work needs positive independent assessment of its consequential design choices and integrated behavior; one continuing reviewer can cover both. Report unverified behavior explicitly instead of declaring completion on a missing check.
 
-`/audit-models` is mandatory for Standard work. A positive independent audit is the completion boundary. Closing or archiving the work item is a separate owner action through `/backlog close` or `/status close`.
+## Artifact Contracts
 
-### Epic Work
+Preserve native PM registration and required `spec.md` frontmatter for tracked items. Keep the intended outcome, supported use, source authority, acceptance conditions, decisions, and verification results in that record or linked existing evidence. `/spec-model` captures missing requirements; `/design-model` resolves design uncertainty; `/plan-model` supplies a checklist when sequencing or interruption recovery needs it. A short change can use one record. Larger work can use separate `design.md` and `plan.md` documents. Cite decisions instead of restating them.
 
-An Epic is a dependency graph of complete Standard items, never a set of workflow phases. Execute an item only after its declared dependencies are satisfied. Parallel work also requires non-overlapping model write surfaces; serial execution is the safe default. Validate the integrated model after each parallel wave.
+## Review Brief and Context Limits
 
-Each item follows the full Standard flow through a positive item audit. After every item passes, run a fresh Epic audit with `/audit-models`. That audit checks the epic success criteria, every item audit, and cross-item integration. A positive Epic audit is the Epic completion boundary; the owner still decides whether to close or archive it.
+Independent judgment uses a fresh non-author context without inherited author conversation. Supply a self-contained brief with the exact question, candidate revision, entry files/sections, relevant requirements/pattern excerpts, original source evidence, and available verification results. The reviewer checks primary evidence, not only the author's summary. Include surrounding interfaces or source context needed to challenge the premise.
 
-### Stage Responsibilities
+For a focused review, default to at most six tool calls and a 300-word return. Batch related reads. The brief must explicitly forbid recursive project orientation, reading whole trails or precedent collections, nested delegation, and full-suite reruns. If evidence is missing or the scope will exceed the budget, return the named missing evidence and reason for expansion; do not silently broaden or issue a pass. The coordinator supplies that evidence or grants a specific broader assignment. These are starting budgets, not limits on correctness.
 
-| Stage | Responsibility | Durable evidence |
-|-------|----------------|------------------|
-| `/research` | Resolve an authority or domain-knowledge gap | Research and approved insights |
-| `/spec-model` | Define evaluatable model requirements and success criteria | `spec.md` |
-| `/design-model` | Decide architecture and prove risky syntax or structure | `design.md`, prototype validation |
-| `/review-model` | Critique the design in an independent context | Review findings |
-| `/plan-model` | Sequence implementation and validation work | `plan.md` |
-| `/implement-model` | Execute the plan and produce model and test changes | Models, tests, completed plan |
-| `/audit-models` | Independently verify the applicable completion contract | Audit report and validation evidence |
+For complex review, name the system claims, interacting surfaces, and evidence to assess; set a larger explicit investigation budget appropriate to that scope. Allow dependency tracing and independent calculations where they address a real uncertainty. Do not use the focused budget to certify a complex change. Return material findings, evidence, and limits; optional improvements do not block delivery.
 
-**Quick Links:**
-- **Navigation & finding code** → [models/README.md](../models/README.md)
-- **SysML syntax & patterns** → [MODELING_GUIDE.md](MODELING_GUIDE.md)
-- **You are here** - Command flow, design workflow, and process
-- **Architecture overview** → [OVERVIEW.md](OVERVIEW.md)
-
-**Use this document for:**
-- Designing new models efficiently (3-phase workflow)
-- Avoiding common process mistakes (discovering library late, etc.)
-- Parallel agent launching strategies
-- Quick SysML syntax patterns reference
-
-**Quick references:**
-- **Detailed syntax patterns** → See [MODELING_GUIDE.md](MODELING_GUIDE.md)
-- **Finding existing code** → See [models/README.md](../models/README.md)
-
----
+Reuse deposited test results when candidate revision, tested scope, and environment apply. Independently reproduce a check when there is a concrete doubt or a missing result, and explain why. A review is not a second execution of the author's entire test plan. Send repairs to the same reviewer as a diff with affected evidence.
 
 ## MBSE Methodology: Four Integrated Views
 
-This process uses the **Four Integrated Views** approach to systems modeling:
+The model must connect the following views for the system claims in scope. Scale their detail to the engineering question and inspect inherited relationships before adding new ones.
 
-### View 1: Requirements View
-- Mission objectives
-- Stakeholder requirements
-- Derived technical requirements
-- Verification cases
+| View | What it establishes | Connection to the other views |
+|---|---|---|
+| Requirements | Intended outcomes, limits, and verification criteria | Identify the behavior and component properties needed to satisfy them and the evidence that verifies them |
+| Behavior | Functions, operating modes, and relevant energy, material, or signal exchanges | Identify which components perform the functions and which operating assumptions the analysis represents |
+| Structure | Components, decomposition, owned properties, and interfaces | Ground analytical inputs, outputs, and aggregation in identifiable component occurrences and exchanges |
+| Analysis | Equations, constraints, performance, and cost estimates | Use the modeled properties and behavior to evaluate requirements within a stated domain |
 
-### View 2: Behavioral View
-- Function hierarchy
-- Physics behaviors
-- Operational sequences
-- Energy and material flows
+For a changed system claim, preserve an inspectable path through the relevant requirements, behavior, components/interfaces, analytical bindings, and verification evidence. Use model relationships and existing traceability records; record an approximation or unsupported relationship in the design with its consequence for supported use. An omitted relationship that defeats the claim prevents completion. Declaration counts and diagrams alone do not demonstrate integration.
 
-### View 3: Structural View
-- System decomposition
-- Component specifications (geometry, materials, mass, volume)
-- Interfaces and connections
-- Spatial relationships
+## Architecture & Design
 
-### View 4: Analysis View
-- Physics calculations
-- Engineering calculations
-- Performance metrics
-- Cost calculations (if applicable)
-- Constraints and validation
+- **Own quantities and responsibilities.** Give shared physical quantities identifiable owners and bind consumers to those owners. Distinguish quantities with different meanings, such as installed capacity and operating demand. Trace relevant functions and exchanges to the components that perform them.
+- **Design across dependencies.** Inspect affected producers, consumers, inherited definitions, and assemblies. A public-input change or expanded supported use requires checking assumptions inherited from the narrower use. Aggregate from modeled component occurrences where the result claims to represent that structure.
+- **Separate reusable logic from configuration.** Discover existing library definitions before adding new ones. Keep reusable definitions in the library and concept-specific assemblies, values, and wiring in designs. Apply the calculation placement and binding rules below.
+- **Make execution dependencies explicit.** Keep imports and calculation dependencies acyclic where required by the execution route. Physical feedback loops still belong in the system description; explain how the analysis solves or approximates them. Probe unfamiliar constructs through the intended execution route, since parsing establishes only syntax support.
 
-### Integration Pattern
+## Technical Patterns: Read at the Point of Use
 
-```
-Requirements ──satisfy──> Functions ──allocatedTo──> Components
-     ↑                                                    ↓
-     └────── verifiedBy ←──── Analyses ←──── properties ─┘
-```
+Read the relevant section of `MODELING_GUIDE.md` and its detailed pattern reference before designing or changing the corresponding construct. Detailed references live in the toolkit's `docs/patterns/` directory; the guide provides navigation. These summaries preserve the failure-derived rules without duplicating their full examples.
 
-Every component:
-- Has properties (geometry, materials, mass)
-- Allocates functions (what it does)
-- Satisfies requirements (with verification)
-- Participates in analyses
-- Enforces constraints (physical laws, engineering limits)
+| When changing | Rule to preserve | Detailed reference |
+|---|---|---|
+| Calculation placement | Put `calc def` in the library. Design attributes may use literals, static expressions, pure EXPOSE, and simple arithmetic/unit conversions over same-part siblings. Move computation on calc outputs, self-reference, or other dotted attribute expressions into library calculations. | `adr002-calculations.md` |
+| Calculation input binding | For a local attribute, use different names: `in volume_in = volume;`. For another part, name the occurrence: `in driver_cost = driver.cost;`. Owner-qualified references must resolve to the exact owning usage. A self-named `in volume = volume` binds to itself. | `plant-idiom.md`, “Binding a modelled value into a calculation” (authoritative binding rule) |
+| Cross-file interfaces | Expose a calculation result as a producer attribute; consumers bind that interface instead of reaching into the producer's calculation internals. Use explicit, private imports by default. | `expose-pattern.md`, `cross-file-binding.md` |
+| Assignments, defaults, or specialization | Choose operators for the intended binding and override semantics. | `semantic-operators.md` |
+| Functions, interfaces, or constraints | Relate functions to components and exchanges to interfaces; distinguish declared constraints from checks actually evaluated by the supported tools. | `mbse-concepts.md`, `constraints.md` |
 
----
+Research reads the four-view framework when investigating system modeling and captures the source-supported relationships and gaps. Design applies the architecture principles and selects relevant technical references. Implementation reads those references before authoring the constructs. Audit checks the affected relationships and failure modes against actual model and execution evidence. Reuse already loaded, current guidance within a continuing context.
 
-A structured workflow for designing and implementing SysMLv2 models, optimized for the design-model and plan-model commands.
+## Evidence and Responsibility
 
-## Overview
+The model item owns its intended meaning and coherent model/executable changes. Identify downstream consumer work needed before the broader outcome is ready. Integration proves the assembled package; studies own their experiments and interpretations. Follow the target project's owning procedures at these boundaries rather than compensating for missing model relationships in a caller.
 
-This process ensures:
-- **No wasted effort** - Front-load discovery to avoid rework
-- **Efficient context usage** - Parallel exploration, targeted reads
-- **High quality** - Systematic validation, traceability
-- **Reusability** - Library-first approach
+Maintain a traceable path from outcome or finding to authority, decision, responsible work, and evidence. Use the project's existing requirement identifiers, citations, validation registry, and audit records. Source facts, assumptions, and agent choices retain their provenance across artifacts.
 
-**Time allocation** (for typical design task):
-- Phase 1 (Discovery): 30%
-- Phase 2 (Architecture): 40%
-- Phase 3 (Specification): 30%
+Select checks for actual failure modes and affected behavior. Distinguish source fidelity, translation agreement, numerical correctness, engineering applicability, and consumer behavior where relevant. A source path is not evidence that a number was transcribed correctly; agreement with a formula mirror does not independently validate the formula. See the **model-validation** skill for execution and reporting guidance.
 
----
+Preserve owner-reserved decisions and any independent interpretation checkpoint required by the target project. Ordinary execution decisions can remain with the author or coordinator. Surface source conflicts and premise surprises before dependent work proceeds.
 
-## Phase 1: Discovery & Analysis (30%)
+## Durable Handoff and Closure
 
-**Goal**: Understand requirements, existing models, and available libraries BEFORE making design decisions.
+The author owns carrying consequential reusable decisions and discoveries into the applicable architecture, knowledge, requirement, and verification records before handoff. Use native PM operations and preserve source authority and owner-reserved approvals. Select what future work needs; a routine correction need not create new project-wide entries.
 
-### 1.1 Read Core Documents (Sequential)
+Before archiving, check the acceptance evidence and the reviews selected by “Process Selection” against the current change. Resolve missing or failed required evidence; do not commission an audit solely because the item is Standard or is being closed. Use `pm close-item` under existing owner authorization. That operation mutates records; it does not validate the outcome. Report independent certification only for the scope actually reviewed.
 
-```markdown
-☐ Read requirement specification (e.g., spec.md)
-☐ Read models/README.md for library overview
-☐ Review MODELING_GUIDE.md for patterns
-☐ Check knowledge/SOURCE_INDEX.md for domain knowledge sources
-☐ Check knowledge/KNOWLEDGE.md for existing domain insights
-```
+The PM epic `completed` rollup means all items are closed. Assess cross-item integration using applicable item evidence and independent review of remaining consequential interactions; a separate epic audit is needed only when existing reviews do not cover that scope.
 
-**Output**: Clear understanding of what needs to be modeled.
+## Context and Parallel Work
 
-### 1.2 Library & Existing Model Discovery (Parallel)
+Keep a continuing author when its context remains useful. Resume it after answers or repairs; start a replacement when stale context or a distinct job warrants it. Independent criticism uses a fresh non-author context without inherited author conversation. Default delegated work to a fresh self-contained brief. Use a full-context fork only when the task actually requires that conversation; do not fork a long pipeline merely to preserve the main window.
 
-**Launch agents in parallel** to maximize speed:
+The main agent may offload bounded research, source lookup, dependency discovery, or implementation at its discretion. A delegated job needs its outcome, relevant source/artifact references, write ownership, constraints, expected evidence, and an explicit scope/tool-call budget. Read the relevant sections first and expand when dependencies require it. Use specialists for concrete questions, not a standing roster.
 
-Use the current assistant adapter in `.agentic-mbse/` to launch these independent tasks, queuing work within the host’s concurrency limits:
+Parallelize work when neither its writes nor its conclusions are likely to invalidate the other task. Name an owner for shared package generation, registries, and integration. Context separation does not isolate filesystem writes; separate worktrees still need coordination over shared resources. Queue work within the host's capacity.
 
-- **Repository explorer:** Map calculation definitions in `models/library/`: physics calculations, components, materials, and constraints. Return names, file locations, inputs, and outputs.
-- **sysml-expert:** Explain cross-file attribute bindings, calculation instantiation, and circular dependency prevention with concrete examples.
-- **kerml-expert:** Explain package imports, relevant standard-library functions, and numerical base types with examples.
-- **General agent:** Analyze the reference baseline at the source path. Extract calculation flow, expected numerical values, and formulas with file/line references.
-
-Gather the results before choosing the model design.
-
-### 1.3 Read Existing Models (Parallel)
-
-The `read_file` sketches below describe file reads; use the host’s available tools.
-
-**After** library discovery, read relevant existing models:
-
-```python
-# Use parallel Read calls
-read_file("models/designs/{design}/system.sysml")
-read_file("models/designs/{design}/physics.sysml")
-read_file("models/library/physics/calculations.sysml")
-# ... other relevant files
-```
-
-**Guideline**: Read 4-6 files in parallel (balance speed vs context usage).
-
-### 1.4 Discovery Checklist
-
-```markdown
-☐ All library calc defs identified (don't reinvent the wheel!)
-☐ SysMLv2 cross-file patterns understood
-☐ Existing design instances reviewed
-☐ Baseline calculations extracted
-☐ Cross-file dependencies mapped
-☐ Expected validation values documented
-```
-
-**Common mistake**: Skipping library discovery → designing inline calcs that already exist in library.
-
-**Time saved**: 30% of total design time by front-loading discovery.
-
----
-
-## Phase 2: Architecture & Design (40%)
-
-**Goal**: Make architectural decisions and design dataflow before writing specifications. Record architectural decisions in [ARCHITECTURE.md](ARCHITECTURE.md).
-
-### 2.1 Dataflow Design
-
-**Critical**: Design unidirectional dataflow to prevent circular dependencies.
-
-```
-┌─────────────────────────────────────────────────────┐
-│                 Geometry Layer                       │
-│  geometry.sysml (dimensions, spatial relationships) │
-└───────────────┬─────────────────────────────────────┘
-                ↓ (imports)
-┌─────────────────────────────────────────────────────┐
-│            Structural Components Layer               │
-│  component_a.sysml, component_b.sysml, etc.         │
-│  • Import geometry                                   │
-│  • Calculate component properties                    │
-│  • EXPOSE attributes for integration                 │
-└───────────────┬─────────────────────────────────────┘
-                ↓ (imports)
-┌─────────────────────────────────────────────────────┐
-│               Physics/Analysis Layer                 │
-│  physics.sysml                                       │
-│  • Import library calc defs                          │
-│  • Import structural components                      │
-│  • Bind calc inputs to component attributes          │
-│  • Calculate performance metrics                     │
-└───────────────┬─────────────────────────────────────┘
-                ↓ (imports)
-┌─────────────────────────────────────────────────────┐
-│            System Integration Layer                  │
-│  system.sysml                                        │
-│  • Aggregate all subsystems                          │
-│  • Top-level requirements verification               │
-└─────────────────────────────────────────────────────┘
-```
-
-**Key principle**: Data flows DOWN, never UP (no circular imports).
-
-### 2.2 Library vs Inline Decision
-
-Check [REQUIREMENTS.md](REQUIREMENTS.md) for project-specific rules on calculation placement.
-
-```markdown
-Choose library calc defs when:
-☑ Calc def exists in library/
-☑ Calculation is reusable across designs
-☑ Calculation is well-documented with references
-
-Choose inline calc when:
-☑ Design-specific one-off calculation
-☑ Exploratory/temporary calculation (refactor to library later)
-☑ Calculation couples tightly to single component
-```
-
-**Default**: Library first. Only go inline if specific reason.
-
-### 2.2.1 Calculation Placement (ADR-002)
-
-**Before designing calculations, answer these questions:**
-
-```
-Am I creating...
-├─ A reusable or non-trivial calculation? → calc def in library/
-├─ A true static expression (ONLY literals)? → OK in designs/
-├─ Simple arithmetic over same-part siblings? → inline FORMULA, OK in designs/
-├─ A value computed from a calc output? → calc def in library/ + EXPOSE pattern
-├─ A self-reference or dotted path? → ❌ VIOLATION - use calc def
-└─ A simple constant? → literal in designs/
-```
-
-**Key Rule:** A design attribute may reference **same-part siblings** inline (`= radius * 2.0`) as a convenience for simple arithmetic and unit conversions. It may NOT compute on a calc output (`= calc.power * 0.95`), reference itself, or reach through a dotted path — those must be refactored to calc defs in `library/`. For any real or reusable calculation, prefer a calc def regardless.
-
-**Checkpoint:**
-- [ ] All reusable/non-trivial calc defs identified and placed in `models/library/`
-- [ ] No calc defs planned for `models/designs/`
-- [ ] Inline design expressions reference only same-part siblings (no calc-output arithmetic, self-reference, or dotted paths)
-- [ ] EXPOSE patterns are pure value propagation (no arithmetic on calc outputs)
-
-### 2.2.2 Calculation Input Binding — pick the form by where the value lives
-
-- **Attribute on the part that owns the calc → make the names differ (D-5).** Name the calc def's formal apart from the attribute (`in volume_in = volume;`). **Never** write the self-named form `in volume = volume` — the reference resolves to the calc's own input, the value never arrives, and generation refuses the model (`SI_SELF_BINDING`).
-- **Value on another part → name the occurrence path (D-7):** `in driver_cost = driver.cost;`.
-- **Owner-qualified (`my_component::volume`) is a supported alternative** for the local case: it anchors to the exact feature owned by that usage (with multiple owner occurrences the route refuses rather than guessing). D-5 is the recommended local form.
-
-The authoritative copy of this rule is agentic-mbse `docs/patterns/plant-idiom.md`, "Binding a modelled value into a calculation".
-
-### 2.3 Cross-File Coupling Architecture
-
-**Pattern for exposing calculated values:**
-
-```sysml
-// In component.sysml
-package MyComponent {
-    private import LibraryCalcs::ComponentCalculation;
-
-    part my_component {
-        // Internal geometry
-        attribute volume : Real = 150.0;
-        attribute surface_area : Real = 500.0;
-
-        // Internal calculation. The calc def names its formals with an `_in`
-        // suffix (D-5: make the names differ), so each bare reference lands on
-        // the part's own attribute.
-        calc component_calc : ComponentCalculation {
-            in volume_in = volume;
-            in surface_area_in = surface_area;
-        }
-
-        // EXPOSED ATTRIBUTE (for other files to import)
-        attribute calculated_value : Real = component_calc.result;
-    }
-}
-
-// In physics.sysml
-package MyPhysics {
-    private import MyComponent::my_component;  // Import component
-
-    part physics {
-        calc system_calc : SystemCalculation {
-            // Bind to cross-file attribute
-            in component_value = my_component.calculated_value;
-        }
-    }
-}
-```
-
-**Key steps**:
-1. Component calculates its own values
-2. Component exposes result via attribute
-3. Consumer imports component package
-4. Consumer binds calc input to component.attribute
-
-### 2.4 File Organization Decision
-
-```markdown
-New calc defs (reusable):
-→ models/library/calculations/ (general calculations)
-→ models/library/analyses/ (cross-cutting analyses)
-
-New component instances:
-→ models/designs/{design_name}/ (design-specific)
-
-Updates to existing:
-→ Same file location (maintain structure)
-```
-
-### 2.5 Architecture Checklist
-
-```markdown
-☐ Dataflow direction defined (geometry → structural → physics)
-☐ Library vs inline decisions documented
-☐ Cross-file coupling points identified
-☐ File creation/update list drafted
-☐ Circular dependency check performed
-☐ Validation strategy defined
-```
-
-**Output**: Architecture document with:
-- Dataflow diagram
-- List of files to create/update
-- Cross-file binding specifications
-- Validation targets
-
----
-
-## Phase 3: Specification & Documentation (30%)
-
-**Goal**: Provide complete implementation specifications with traceability. Check [REQUIREMENTS.md](REQUIREMENTS.md) for project-specific modeling rules.
-
-### 3.1 File-by-File Specifications
-
-For each file to create/update:
-
-```markdown
-### File: models/library/analyses/calculations.sysml
-
-**Status**: NEW FILE
-**Purpose**: Reusable calculations for subsystems
-**Dependencies**: None (pure calculations)
-**Imports**: ScalarValues, SI, ISQ
-
-**Content**:
-[Provide complete code or detailed pseudo-code]
-
-**Validation**:
-- Expected values from baseline
-- Tolerance: ±X%
-
-**Traceability**:
-- Reference: source_file.py lines XX-YY
-```
-
-**Detail level**: Enough for implementation without guessing.
-
-### 3.2 Calc Def Specifications
-
-For each new calc def:
-
-```markdown
-#### Calc Def: MyCalculation
-
-**Purpose**: Calculate [what it calculates]
-
-**Inputs**:
-- param_a : Real [units] - Description
-- param_b : Real [units] - Description
-
-**Outputs**:
-- result : Real [units] - Description
-
-**Formula**:
-```python
-intermediate = param_a * factor result = intermediate + param_b
-```
-
-**Source**: reference_file.py lines XX-YY
-**Validation**: Compare to baseline → expect ~XX ± YY%
-
-**Constraints**:
-- param_a must be > 0
-- result > 0
-```
-
-### 3.3 Cross-File Binding Specifications
-
-Document all cross-file attribute bindings:
-
-```markdown
-### Cross-File Bindings: physics.sysml
-
-| Calc Input | Source File | Source Attribute | Notes |
-|------------|-------------|------------------|-------|
-| input_a | component_a.sysml | component_a.exposed_value | Description |
-| input_b | component_b.sysml | component_b.exposed_value | Description |
-
-**Import statements required**:
-```sysml
-private import ComponentA::component_a; private import ComponentB::component_b;
-```
-```
-
-### 3.4 Validation Plan
-
-Update [VALIDATION_MATRIX.md](VALIDATION_MATRIX.md) with verification criteria as you define them.
-
-```markdown
-## Validation Strategy
-
-### Expected Values (from baseline)
-
-| Metric | Expected | Tolerance | Source |
-|--------|----------|-----------|--------|
-| Metric 1 | XX | ±X% | source_file.py line XX |
-| Metric 2 | YY | ±Y% | source_file.py line YY |
-
-### Validation Commands
-
-```bash
-# 1. Parse all modified files
-agentic-mbse validate models/designs/{design}/
-
-# 2. Run integration validation
-pytest tests/test_validation.py -v
-```
-
-### Constraint Validation
-
-All SysML constraints must hold:
-- EnergyConservation
-- PositiveValues
-- EngineeringLimits
-
-### ADR-002 Compliance Validation
-
-Before completing validation phase:
-
-- [ ] **No calc defs in designs/**: `grep -r "calc def" models/designs/` returns empty
-- [ ] **No unsupported derived expressions**: no design attribute computes on a calc output, references itself, or uses a dotted path (inline FORMULA over same-part siblings is OK)
-- [ ] **Calc usages wire correctly**: All calc usages bind to library calc defs
-```
-
-### 3.5 Traceability Matrix
-
-```markdown
-## Traceability: SysML ↔ Reference
-
-| SysML Element | Reference Source | Lines | Notes |
-|---------------|-----------------|-------|-------|
-| CalcDef1 | source.py | XX-YY | Description |
-| CalcDef2 | source.py | XX-YY | Description |
-```
-
-### 3.6 Implementation Checklist
-
-```markdown
-## Implementation Phases
-
-### Phase 1: Library Foundations
-☐ Create models/library/analyses/calculations.sysml
-  ☐ CalcDef1
-  ☐ CalcDef2
-☐ Parse validation
-☐ Unit test (if applicable)
-
-### Phase 2: Structural Components
-☐ Update component files
-  ☐ Import calculations
-  ☐ Add calc instances
-  ☐ Expose attributes
-☐ Parse validation for all
-
-### Phase 3: Physics Integration
-☐ Update physics.sysml
-  ☐ Import library calc defs
-  ☐ Import structural component packages
-  ☐ Bind cross-file attributes
-  ☐ Add constraints
-☐ Parse validation
-☐ Cross-file binding validation
-
-### Phase 4: System Integration & Validation
-☐ Update system.sysml
-☐ Run full parse validation
-☐ Compare to baseline
-☐ Document any deviations
-☐ Update traceability matrix
-```
-
-### 3.7 Specification Checklist
-
-```markdown
-☐ All file changes detailed (new files + updates)
-☐ All calc defs specified (inputs, outputs, formulas)
-☐ All cross-file bindings documented
-☐ Validation plan with expected values
-☐ Traceability matrix complete
-☐ Implementation checklist created
-☐ Common pitfalls documented
-```
-
----
-
-## Phase 4: Implementation Workflow
-
-**Goal**: Execute implementation through prototyping, validation, planning, and refinement phases.
-
-**Overview**: Implementation includes early validation through prototyping to catch issues when they're cheap to fix.
-
-```
-Design (Phase 1-3) → Prototype → Validate → Plan Refinement → Implement → Verify
-```
-
-### 4.1 Prototype Implementation (Design Phase - Stages 6-8)
-
-**Timing**: Happens during `/design-model` command (Stages 6-8)
-
-**Goal**: Create working .sysml files to validate design early
-
-**Process**:
-1. **Stage 6: Prototype & Validate**
-   - Create .sysml files in actual locations (models/library/ or models/designs/)
-   - Sufficient to validate approach (not fully polished)
-   - Run quality validation (critical levels must pass)
-   - Check integration with existing models
-   - Generate validation report
-
-2. **Stage 7: Iterate if Needed**
-   - If validation fails: fix issues, update design, re-validate
-   - Categorize issues: syntax, structural, integration, circular dependencies
-   - Document iterations in design.md
-
-3. **Stage 8: User Approval with Evidence**
-   - Present: design.md + validation report + working prototype
-   - User sees concrete evidence (not just design document)
-   - User approves with validation data
-
-**Output**:
-- Validated prototype passing critical levels
-- Validation report documenting quality status
-- Design.md with prototype file locations
-
-**Benefit**: Issues caught at 10x lower cost than during implementation
-
-### 4.2 Refinement Planning (Plan Phase)
-
-**Timing**: Happens during `/plan-model` command
-
-**Context**: Planning happens AFTER prototype exists
-
-**Goal**: Organize refinement of validated prototype to production quality
-
-**Process**:
-1. Read design.md and prototype validation report
-2. Review prototype files (what's working, what needs refinement)
-3. Break refinement into phases:
-   - Phase 1: Complete documentation (full doc comments with citations)
-   - Phase 2: Add full constraints (all physics/engineering limits)
-   - Phase 3: Comprehensive integration (cross-file bindings, imports)
-   - Phase 4: Final validation (all levels, baseline comparison)
-4. Run feasibility checks on planned refinements
-5. Document prototype baseline in plan.md
-
-**Output**:
-- Plan.md with refinement phases
-- Prototype baseline documented
-- Feasibility concerns noted
-
-**Key Difference**: Plan focuses on HOW to refine existing prototype, not WHAT to create from scratch
-
-### 4.3 Implementation Execution (Implementation Phase)
-
-**Timing**: Happens during `/implement-model` command
-
-**Context**: Refining validated prototype per plan
-
-**Goal**: Execute refinement phases to production quality
-
-**Process**:
-1. **Stage 1**: Read plan, design, and prototype files
-2. **For each phase**:
-   - Refine existing files (add docs, constraints, integration)
-   - Run quality validation after each phase
-   - Update plan.md with progress
-3. **Final validation**:
-   - All quality levels pass
-   - Baseline comparison within thresholds
-   - Traceability complete
-
-**Output**:
-- Production-quality models
-- All quality levels passing
-- Complete documentation and traceability
-
-### 4.4 Workflow Comparison
-
-**Old Workflow** (deprecated):
-```
-Design → Plan → Implement → [Discover issues late] → Rework
-```
-- Issues found during implementation (expensive)
-- Circular dependencies discovered after coding
-- No validation until end
-
-**New Workflow**:
-```
-Design → Prototype → Validate → [Fix issues cheap] → Plan Refinement → Implement → Verify
-```
-- Issues found during prototyping (10x cheaper)
-- Validation happens before planning
-- Iterative refinement of validated code
-
-### 4.5 Implementation Checklist
-
-```markdown
-☐ Prototype created during design phase
-☐ Prototype passes critical validation levels
-☐ Validation report reviewed and approved
-☐ Refinement plan created with prototype baseline
-☐ Feasibility checks passed
-☐ Implementation refines prototype per plan
-☐ Each phase validated incrementally
-☐ Final validation: all levels pass
-☐ Baseline comparison within thresholds
-☐ Traceability matrix complete
-```
-
-**Critical Success Factors**:
-- Don't skip prototyping (catches 80% of issues early)
-- Don't plan before validating (plan may be infeasible)
-- Don't implement without plan (leads to rework)
-- Validate incrementally (don't wait until end)
-
----
-
-## SysML Syntax Reference
-
-For detailed SysMLv2 patterns including:
-- Package imports and namespaces
-- Calc def definitions and instantiation
-- Cross-file attribute binding
-- Part definitions and instantiation
-- Constraints and conditional logic
-- Geometry calculations
-
-**See [MODELING_GUIDE.md](MODELING_GUIDE.md)** - the authoritative syntax reference.
-
----
-
-## Common Pitfalls & Solutions
-
-### Pitfall 1: Discovering library calc defs late
-
-**Problem**: Design inline calcs, then discover library versions exist.
-
-**Solution**:
-```bash
-# ALWAYS run this FIRST in discovery phase
-grep -r "calc def" models/library/
-```
-
-**Time saved**: 30% of design time
-
-### Pitfall 2: Sequential file exploration
-
-**Problem**: Reading files one-by-one is slow.
-
-**Solution**: Use parallel Read calls
-```python
-# Good: Parallel
-read_file("file1.sysml")
-read_file("file2.sysml")
-read_file("file3.sysml")
-
-# Bad: Sequential (requires multiple messages)
-read_file("file1.sysml")
-# ... wait for result ...
-read_file("file2.sysml")
-```
-
-**Time saved**: 3x faster for exploration
-
-### Pitfall 3: Circular dependencies
-
-**Problem**: file_a.sysml imports file_b.sysml, file_b.sysml imports file_a.sysml
-
-**Solution**: Design unidirectional dataflow (geometry → structural → physics)
-
-### Pitfall 4: Forgetting to expose attributes
-
-**Problem**: Cross-file binding fails because attribute not accessible
-
-**Solution**: Always expose calc outputs
-```sysml
-part my_component {
-    calc internal_calc : SomeCalc { ... }
-
-    // EXPOSE for cross-file access
-    attribute exposed_result : Real = internal_calc.output;
-}
-```
-
-### Pitfall 5: Using public imports everywhere
-
-**Problem**: Namespace pollution, harder to trace dependencies
-
-**Solution**: Default to `private import`, only use `public import` when re-exporting
-
-### Pitfall 6: Insufficient validation targets
-
-**Problem**: Can't validate implementation without expected values
-
-**Solution**: Extract baseline values during discovery phase
-```markdown
-Expected: metric = XX ± Y% (baseline source)
-```
-
----
-
-## Pre-Flight Checklist
-
-Before starting design-model or plan-model:
-
-```markdown
-☐ Read models/README.md
-☐ Read requirement spec
-☐ Launch parallel discovery (Explore + sysml-expert + baseline analysis)
-☐ Check library for existing calc defs
-☐ Map existing model structure
-☐ Define dataflow direction
-☐ Identify cross-file dependencies
-☐ Extract validation targets
-```
-
----
-
-## Tools & Commands
-
-### Discovery Phase
-
-```bash
-# Find all calc defs in library
-find models/library -name "*.sysml" -exec grep -Hn "calc def" {} \;
-
-# Find specific calculations
-grep -r "calc def.*Power" models/library/
-
-# Find cross-file imports
-grep -r "import.*MyDesign" models/designs/
-
-# List package structure
-find models -type d | sort
-```
-
-### Validation Phase
-
-```bash
-# Validate models
-agentic-mbse validate models/
-
-# Parse single file
-syside check models/designs/{design}/file.sysml
-
-# Run integration tests
-pytest tests/test_validation.py -v
-```
-
-### Traceability
-
-```bash
-# Find references
-grep -r "Reference:" models/
-
-# Find source citations
-grep -r "Source:" models/
-```
-
----
-
-## Success Metrics
-
-A well-designed model specification should have:
-
-- **No rework**: Library discovered before inline design
-- **Complete traceability**: Every calc mapped to source
-- **Clear validation**: Expected values with tolerances
-- **No circular deps**: Unidirectional dataflow
-- **Efficient context**: Parallel exploration, targeted reads
-- **Implementation ready**: Can code without further research
-
-**Quality indicators**:
-- Specification completeness: 90%+
-- Implementation questions: < 3
-- Parse validation: 100% pass
-- Baseline deviation: Within tolerances
-
----
-
-## References
-
-- **models/README.md** - Directory structure and library reference
-- **MODELING_GUIDE.md** - SysMLv2 patterns and best practices
-- **OVERVIEW.md** - Project goals and intent
-- **ARCHITECTURE.md** - Model architecture decisions
-- **REQUIREMENTS.md** - Project-specific modeling rules
-- **VALIDATION_MATRIX.md** - System verification criteria
-- **knowledge/SOURCE_INDEX.md** - Domain knowledge sources
-- **knowledge/KNOWLEDGE.md** - Curated domain insights
-- **SysMLv2 Specification** - https://www.omg.org/spec/SysML
-
----
-
-**Last Updated**: <!-- YYYY-MM-DD --> **Patterns Validated**: See [MODELING_GUIDE.md](MODELING_GUIDE.md) Pattern Validation Status section
+For interruption recovery, keep the remaining checklist and consequential decisions current. A new author inspects native artifacts and actual completed work before repeating actions.

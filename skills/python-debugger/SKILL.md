@@ -1,6 +1,8 @@
 ---
 name: python-debugger
 description: Programmatic Python debugging with breakpoints, state inspection, and stack traces. Use when debugging Python code that requires inspecting variable values at specific lines, understanding program state at runtime, capturing exception context, or when print-debugging is insufficient. Triggers on requests to "set a breakpoint", "inspect variables at line X", "debug this Python script", "capture the state when this crashes", or "trace execution".
+metadata:
+  kind: supporting
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.

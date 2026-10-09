@@ -3,6 +3,8 @@ name: status
 description: Present project state dashboard with intelligent interpretation and recommendations
 allowed-tools: [Read, Grep, Glob, Bash, Agent, Write, Edit, AskUserQuestion]
 user-invocable: true
+metadata:
+  kind: workflow
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -10,7 +12,9 @@ Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.
 
 # Status Command
 
-**Purpose:** Understand PROJECT STATE — what's done, what's active, what's blocked, what to do next. **Input:** Mode (default, `decompose <epic>`, or `close <item>`) **Output:** Dashboard with interpretation and recommendations; or epic decomposition; or archived work item
+**Purpose:** Understand PROJECT STATE — what's done, what's active, what's blocked, what to do next.
+**Input:** Mode (default, `decompose <epic>`, or `close <item>`)
+**Output:** Dashboard with interpretation and recommendations; or epic decomposition; or archived work item
 
 This command layers intelligent interpretation on top of deterministic project state. The script computes facts (items done, validation status, coverage); the agent interprets them (what's blocked, what's ready, what needs attention).
 
@@ -47,7 +51,7 @@ Layer intelligence on top of the dashboard output:
 - **Gap analysis** — PR-XXX requirements without satisfying elements, G-XXX goals with no work items, AQ-XXX questions still open
 - **Recommendations** — specific next actions ("complete WI-003 phase 2, then start WI-005", "run `/audit-models` — 3 PR-XXX rules are untested")
 
-Present the dashboard and interpretation to the user.
+Distinguish an epic's PM rollup “all items closed” from independent acceptance of its outcomes and integration; inspect the linked epic audit before claiming the latter. Present the dashboard and interpretation to the user.
 
 ### Mode: Decompose Epic
 
@@ -73,56 +77,14 @@ agentic-mbse pm add-item --epic '<epic-name>' --name '<item-name>' --scale stand
 
 ### Mode: Close Work Item
 
-Invoked as `/status close <item>`. This is a two-part flow: deterministic archive, then agent-driven project feedback.
+Invoked as `/status close <item>`. Read “Durable Handoff and Closure” in `modeling_project/MODELING_PROCESS.md`. Inspect acceptance evidence and reviews required by “Process Selection” for the current change before calling `agentic-mbse pm close-item <WI-XXX>`. Resolve missing required evidence; closure alone does not trigger an audit. Use the owner's existing closure authorization; do not add a repeat confirmation.
 
-#### Part 1: Archive
-
-Call the AP-7 script to archive the work item:
-
-```bash
-agentic-mbse pm close-item <WI-XXX>
-```
-
-The script sets all artifact Status fields to their completion values (spec.md → `completed`, design.md → `complete`, plan.md → `complete`), moves the directory to `work/completed/YYYYMMDD_{WI-XXX}_{name}/`, updates `work/BACKLOG.md` status to completed, and returns confirmation with the archive path. All mutations are atomic.
-
-> **Note**: If the close-item script is not yet available (Epic 4), perform the archive manually: move the directory and update BACKLOG.md frontmatter.
-
-#### Part 2: Project Document Review
-
-After archiving, prompt the user with four trigger questions. These surface project-level learnings from the completed work:
-
-**REQUIREMENTS.md**: "Did you discover a modeling pattern during this work item that should be a project-wide rule? (e.g., 'all power calculations must account for recirculating power fraction')"
-- If yes: help the user identify which DI-XXX insight or G-XXX goal the requirement derives from, draft the requirement text, then call:
-  ```bash
-  agentic-mbse pm promote-requirement --requirement "<drafted requirement text>" --source <DI-XXX or G-XXX>
-  ```
-
-**ARCHITECTURE.md**: "Did you make a structural decision that future work items need to know about? (e.g., 'HTS and LTS magnets need separate library packages due to 3x cost difference')"
-- If yes: help draft an AD-XXX entry, then call:
-  ```bash
-  agentic-mbse pm register-decision --title "<title>" --decision "<decision text>" --rationale "<rationale>"
-  ```
-
-**VALIDATION_MATRIX.md**: "Should any new system-level verification criteria be added? (e.g., 'total capital cost must be in $3B-$15B range')"
-- If yes: help draft an SV-XXX entry, then call:
-  ```bash
-  agentic-mbse pm add-validation --description "<description>" --type <reasonableness|baseline|physical|relationship|rollup> --mechanism <model|test|manual> --expected "<expected value>" --tolerance "<tolerance>"
-  ```
-
-**KNOWLEDGE.md**: "Did you learn something about the domain that isn't captured yet? (e.g., 'PyFECONS treats all magnets uniformly but real costs diverge at scale')"
-- If yes: help draft a DI-XXX entry, then call:
-  ```bash
-  agentic-mbse pm add-insight --title "<title>" --source "work-item:<WI-XXX>/<artifact>" --context "<context>" --model-implications "<implications>" --analysis-implications "<implications>" --rationale "<why captured>"
-  ```
-
-For each "no", move on. The user doesn't need to justify skipping — these are prompts, not gates.
+The native operation archives the item and updates its records. It does not verify audit evidence. Carry any warranted durable decisions or discoveries through the applicable native PM operations, preserving owner-reserved approvals.
 
 ## Guidelines
 
 - The dashboard must be grounded in file-system state, not memory. Read the actual files every time.
 - Interpretation adds value only when it's specific. "Things look good" is useless. "WI-003 is active:implementing phase 2/3, no blockers, validation passing" is useful.
-- The close flow trigger questions must be concrete and answerable from recent experience. Don't ask abstract questions — ask about specific patterns, decisions, and discoveries from the work just completed.
-- All four trigger questions are optional. The user may answer "no" to all of them. That's fine.
 - AP-7 scripts own all state mutations. The agent drafts content; scripts handle file operations, ID assignment, and format enforcement.
 
 ---

@@ -3,6 +3,8 @@ name: manage-sources
 description: Add, remove, or review authority sources in SOURCE_INDEX.md
 allowed-tools: [Read, Grep, Glob, Bash, Agent, Write, Edit, AskUserQuestion]
 user-invocable: true
+metadata:
+  kind: workflow
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -10,7 +12,9 @@ Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.
 
 # Manage Sources Command
 
-**Purpose:** Configure SOURCES — add, remove, or review authority sources that MBSE commands use for domain knowledge. **Input:** None (interactive) **Output:** Updated `knowledge/SOURCE_INDEX.md` (and optionally native read-access settings)
+**Purpose:** Configure SOURCES — add, remove, or review authority sources that MBSE commands use for domain knowledge.
+**Input:** None (interactive)
+**Output:** Updated `knowledge/SOURCE_INDEX.md` (and optionally native read-access settings)
 
 SOURCE_INDEX.md is the registry of authority sources for the project. Commands like `/research`, `/design-model`, and `/audit-models` read it to discover what domain knowledge is available.
 

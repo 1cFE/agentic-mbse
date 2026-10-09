@@ -3,6 +3,8 @@ name: research
 description: Explore authority sources and capture approved domain insights into the knowledge base
 allowed-tools: [Read, Grep, Glob, Bash, Agent, Write, Edit, AskUserQuestion, WebSearch, WebFetch]
 user-invocable: true
+metadata:
+  kind: workflow
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -10,7 +12,9 @@ Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.
 
 # Research Command
 
-**Purpose:** LEARN from external sources — explore authority sources, produce a research document, and capture approved domain insights (DI-XXX) into the knowledge base. **Input:** Research question or topic **Output:** Research document in `knowledge/research/pending/` (moved to `approved/` on approval) + DI-XXX entries in `knowledge/KNOWLEDGE.md`
+**Purpose:** LEARN from external sources — explore authority sources, produce a research document, and capture approved domain insights (DI-XXX) into the knowledge base.
+**Input:** Research question or topic
+**Output:** Research document in `knowledge/research/pending/` (moved to `approved/` on approval) + DI-XXX entries in `knowledge/KNOWLEDGE.md`
 
 Research is the primary curation gate (AP-6): raw findings pass through user review before entering the knowledge base. The agent generates content; scripts handle file operations and registry updates (AP-7); the user makes approval decisions.
 
@@ -33,30 +37,17 @@ Read to understand what's already known and what sources are available:
 
 If the user mentions specific files, read them fully before proceeding. Check related epics in `work/backlog/` for background that shapes the research question.
 
-### 2. Research in Parallel
+For system or model research, read “MBSE Methodology: Four Integrated Views” in `modeling_project/MODELING_PROCESS.md`. Capture source-supported components, functions, interfaces, operating modes, and their relationship to the analysis where relevant to the question. Identify missing evidence and distinguish source facts from proposed modeling choices. For a syntax or execution question, use the process's technical-pattern table to select the relevant reference.
 
-Spawn appropriate agents based on research type:
+### 2. Resolve the Research Question
 
-**Codebase Research** (Python scripts, tests):
-- Explore agent: Find all files related to topic
-- general-purpose agent: Analyze implementation details
+Use existing sources and patterns first. Consult a specialist for a concrete uncertainty that warrants it; the question-to-agent table below is a guide, not a roster. Parallelize independent questions with clear scope and write ownership within host capacity. Reuse useful context for follow-up questions.
 
-**Model Research** (SysMLv2 files):
-- Explore agent: Find relevant models in `models/library/` and `models/designs/`
-- sysml-expert agent: Get SysML modeling patterns (structural modeling, interface patterns, constraint modeling)
-- kerml-expert agent: Get KerML standard library functions, base types, language features
-- general-purpose agent: Parse and analyze SysML definitions
-
-**Domain Research** (sources from SOURCE_INDEX.md):
-- Read local materials in `knowledge/sources/` and paths listed in SOURCE_INDEX.md
-- Analyze codebase sources from SOURCE_INDEX.md for integration questions
-- Use WebSearch / WebFetch for information not covered by local sources
-
-Launch related agents in parallel. Wait for all agents to complete before proceeding.
+Read relevant local materials and registered codebase sources. Use WebSearch / WebFetch where local authority is insufficient. Follow dependencies in the evidence before relying on a conclusion.
 
 ### 3. Synthesize and Write
 
-Read all files identified by agents completely. Cross-reference findings across sources. Extract actionable insights — focus on what matters for modeling decisions.
+Read the source sections needed to assess the findings, expanding when dependencies or conflicts require it. Cross-reference findings across sources. Extract actionable insights — focus on what matters for modeling decisions.
 
 Write the research document content. The agent calls a script to save it — do not write the file directly:
 ```
@@ -91,6 +82,8 @@ agentic-mbse pm approve-research <file> --insights '<structured JSON of approved
 ```
 The script moves the file from `pending/` to `approved/`, assigns DI-XXX IDs, formats entries, and appends them to `knowledge/KNOWLEDGE.md`. Report the assigned IDs to the user.
 
+If the user approves the report with no accepted insights (every candidate skipped, or none proposed), still make the call, with `--insights '[]'`. The file moves to `approved/` and no DI-XXX entries are created, so tell the user that instead of reporting IDs.
+
 If the user rejects the report, the file stays in `pending/` (or delete if requested).
 
 ## What Good Output Looks Like
@@ -119,7 +112,7 @@ Depth should match the research scope. A targeted syntax question needs less tha
 | Codebase exploration | `Explore` |
 | Deep code analysis | `general-purpose` |
 
-Spawn multiple agents in parallel for independent questions. Cross-reference findings before making recommendations.
+Use agents when their concrete questions justify delegation. Cross-reference findings before making recommendations.
 
 ## Guidelines
 

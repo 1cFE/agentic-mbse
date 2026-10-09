@@ -3,6 +3,8 @@ name: backlog
 description: Manage work items — add, decompose epics, and close completed work
 allowed-tools: [Read, Grep, Glob, Bash, Agent, Write, Edit, AskUserQuestion]
 user-invocable: true
+metadata:
+  kind: workflow
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -10,7 +12,9 @@ Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.
 
 # Backlog Command
 
-**Purpose:** Manage WORK ITEMS — add new items with scale assessment, decompose epics, and close completed work. **Input:** Mode and optional arguments: `/backlog add [source]`, `/backlog decompose <epic>`, `/backlog close [item]` **Output:** Updated `work/BACKLOG.md`, epic files in `work/backlog/`, archived work in `work/completed/`
+**Purpose:** Manage WORK ITEMS — add new items with scale assessment, decompose epics, and close completed work.
+**Input:** Mode and optional arguments: `/backlog add [source]`, `/backlog decompose <epic>`, `/backlog close [item]`
+**Output:** Updated `work/BACKLOG.md`, epic files in `work/backlog/`, archived work in `work/completed/`
 
 When invoked without arguments, ask: "Would you like to add work items, decompose an epic, or close completed work?"
 
@@ -40,7 +44,8 @@ Present scale assessment: "This looks like a [scale] change. Agree?" Let the use
 ```
 agentic-mbse pm add-item --name "<name>" --scale standard --priority <P0|P1|P2|P3> --goal <G-XXX>
 ```
-For an Epic, write and approve its epic file as described below, then register it with `pm add-epic`. The script updates BACKLOG.md YAML frontmatter and re-renders the markdown body. Do not edit BACKLOG.md directly for state transitions.
+For an Epic, write and approve its epic file as described below, then register it with `pm add-epic`.
+The script updates BACKLOG.md YAML frontmatter and re-renders the markdown body. Do not edit BACKLOG.md directly for state transitions.
 
 Confirm additions and suggest next steps: `/spec-model` for P0 Standard items, `/backlog decompose` for Epics.
 
@@ -69,7 +74,8 @@ Updated: <YYYY-MM-DD>
 
 The body is free-form: executive summary, context, per-item breakdowns with scope and dependencies, sequencing rationale, success criteria, risks. Depth matches complexity.
 
-Present the decomposition to the user. Iterate until approved. On approval, register the epic, then register its sub-items using the epic priority:
+Present the decomposition to the user. Iterate until approved. On approval, register the epic, then
+register its sub-items using the epic priority:
 ```
 agentic-mbse pm add-epic --name "<epic-name>" --priority <P0|P1|P2|P3> --file "work/backlog/epic-{name}.md" --goal <G-XXX>
 agentic-mbse pm add-item --name "<item>" --scale standard --priority <P0|P1|P2|P3> --epic "<epic-name>"
@@ -79,25 +85,9 @@ agentic-mbse pm add-item --name "<item>" --scale standard --priority <P0|P1|P2|P
 
 If no item specified, scan `work/active/` for completed items — read each `spec.md` frontmatter for Status. Present candidates.
 
-**Verify completion** before closing:
-- Read `work/active/{WI-XXX}_{name}/spec.md` — are all acceptance criteria met?
-- Read `plan.md` — are all phases complete (all checkboxes checked)?
-- Run `agentic-mbse validate` on the relevant models — do Levels 1-3 pass?
-- Check `modeling_project/VALIDATION_MATRIX.md` — are related SV-XXX entries passing?
+Read “Durable Handoff and Closure” in `modeling_project/MODELING_PROCESS.md`. Inspect acceptance evidence and reviews required by “Process Selection” for the current change. Resolve missing or failed required evidence before closing; an independent audit is not mandatory for every Standard item. Reuse applicable evidence rather than rerunning checks merely to archive.
 
-Present assessment to the user. If incomplete, recommend what remains.
-
-**On user confirmation**, close via AP-7 script:
-```
-agentic-mbse pm close-item <WI-XXX>
-```
-The script sets all artifact Status fields to their completion values (spec.md → `completed`, design.md → `complete`, plan.md → `complete`), moves the directory to `work/completed/YYYYMMDD_{WI-XXX}_{name}/`, and updates BACKLOG.md status. All mutations are atomic.
-
-**Project document review.** After closing, prompt the user with specific questions:
-- "Did you discover a modeling pattern that should be a project-wide rule?" → If yes, help draft and call `agentic-mbse pm promote-requirement`
-- "Did you make a structural decision that future work needs to know?" → If yes, help draft and call `agentic-mbse pm register-decision`
-- "Should any new verification criteria be added?" → If yes, help draft and call `agentic-mbse pm add-validation`
-- "Did you learn something about the domain not yet captured?" → If yes, help draft and call `agentic-mbse pm add-insight`
+Under the owner's existing closure authorization, use `agentic-mbse pm close-item <WI-XXX>`. The operation archives and updates state; it does not validate audit evidence. Carry warranted durable decisions and discoveries through native PM operations, preserving source authority and owner-reserved approvals.
 
 ## Guidelines
 
@@ -109,4 +99,4 @@ The script sets all artifact Status fields to their completion values (spec.md �
 
 ---
 
-**Related Commands:** After add → `/spec-model` (Standard) or `/quick-model` (Trivial) | Before close → `/audit-models` | For research → `/research` before adding items
+**Related Commands:** After add → `/spec-model` (Standard) or `/quick-model` (Trivial) | Before close → acceptance evidence and risk-triggered reviews | For research → `/research` before adding items

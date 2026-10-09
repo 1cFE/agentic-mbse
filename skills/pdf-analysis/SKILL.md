@@ -8,6 +8,8 @@ description: >
   (pymupdf4llm → Docling MCP → image fallback) with memory-safe single-page workflows.
 allowed-tools: Read, Write, Bash, Glob, Grep
 user-invocable: true
+metadata:
+  kind: supporting
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -47,9 +49,11 @@ For pages with complex tables or layouts, use the Docling MCP server. **Critical
 uv run python .agents/skills/pdf-analysis/scripts/extract_page.py <pdf_path> <page> --mode pdf --output /tmp/page_<N>.pdf
 ```
 
-**Step 2** — Convert via Docling MCP: Use `mcp__docling__convert_document_into_docling_document` with source `/tmp/page_<N>.pdf`. This returns a `document_key`.
+**Step 2** — Convert via Docling MCP:
+Use `mcp__docling__convert_document_into_docling_document` with source `/tmp/page_<N>.pdf`. This returns a `document_key`.
 
-**Step 3** — Export to markdown: Use `mcp__docling__export_docling_document_to_markdown` with the document key.
+**Step 3** — Export to markdown:
+Use `mcp__docling__export_docling_document_to_markdown` with the document key.
 
 **Timeout/failure** — If Docling is slow (>30s) or unresponsive, fall back to Tier 3. Do not retry.
 

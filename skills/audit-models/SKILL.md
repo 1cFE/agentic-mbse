@@ -3,140 +3,43 @@ name: audit-models
 description: Verify SysML model accuracy against baseline sources, project requirements, and architectural decisions
 allowed-tools: [Read, Grep, Glob, Bash, Agent, Write, Edit, AskUserQuestion]
 user-invocable: true
+metadata:
+  kind: workflow
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
 
 
-# Audit Models Command
+# Audit Models
 
-**Purpose:** VERIFY models — independent verification against baseline sources, project standards, and architectural decisions. **Input:** A work item in `work/active/`, an Epic file in `work/backlog/`, OR specific model files/directory to audit **Output:** Audit report saved to `work/analysis/`
+Use the assigned scope and “Review Brief and Context Limits” in `modeling_project/MODELING_PROCESS.md`. For a focused question, read only the supplied entry sections and primary evidence within the brief’s budget; return missing evidence before expanding. Apply the broader checks below only to claims in scope. Save a short finding in the existing work record or requested evidence path; a separate report is useful for a substantive assessment.
 
-The audit operates at three scopes:
+Independently assess whether the model supports its promised outcomes and intended use. Run as a fresh non-author reviewer without inherited author conversation. For a substantive audit, save `work/analysis/YYYYMMDD-HHMMSS_audit_{scope}.md` and link it from the work item or epic.
 
-- **Work item audit** — the final stage of the `spec → design → plan → implement → audit` pipeline. Verifies a specific work item's models against its spec's acceptance criteria AND project-level standards. Invoke with a work item path.
-- **Epic audit** — the final integration stage after every Epic item has a positive work item audit. Verifies epic success criteria, item audit evidence, and cross-item integration obligations. Invoke with an Epic file path.
-- **Project audit** — a health check across models. Verifies against project-level standards only (no per-item spec). Invoke with model file paths or a directory.
+## Choose the Scope
 
-When invoked without arguments, ask which scope the user wants.
+- **Work item audit:** verify the spec outcomes, changed behavior, and affected dependencies/consumers. Read the plan's evidence and relevant design sections; expand where a finding requires it.
+- **Epic audit:** verify epic success criteria, item audit evidence, dependency handoffs, and cross-item integration. Positive item audits do not establish the integrated outcome by themselves.
+- **Project audit:** assess the requested broader system claims against project requirements, source evidence, and actual model coverage.
 
-## Skills Referenced
+Use the already authorized scope or clarify what is to be assessed. State the examined revision, supported use, and evidence limits. A narrow audit must not read as certification of every parameter or engineering assumption.
 
-- **model-validation**: Quality pyramid (6 levels), verification thresholds (PASS ≤1%, WARN 1-5%, FAIL >5%), CLI commands. Consult for threshold definitions, validation commands, and interpreting results.
-- **source-traceability**: Citation patterns, confidence assessment, traceability matrix schema. Consult when evaluating doc comment quality and traceability completeness.
-- **requirements-tracking**: PR-XXX format, EARS syntax, compliance checking. Consult when assessing models against project requirements.
+## Verify the Outcome
 
-## Verification Obligations
+Read the four-view completion obligation and relevant architecture/pattern rules in `modeling_project/MODELING_PROCESS.md`, the applicable requirements and architectural decisions, and the implementation. Check the physical and behavioral relationships behind the calculations where they matter to the claim. Trace the affected claim through requirements, behavior, component occurrences/interfaces, analytical bindings, and verification evidence. Component ownership, interfaces, analytical bindings, and consumer interpretation must agree. Check that documented approximations still support the claim; an inventory of declarations does not establish this. When calculation wiring changes, inspect which occurrence each input resolves to and check that relevant public-input changes reach its consumers.
 
-Every audit must evaluate the following against the models in scope. Present the audit scope and applicable obligations to the user before starting.
+Read `modeling_project/VALIDATION_MATRIX.md` and identify existing criteria affected by this change, including those omitted from the supplied spec or plan. Assess their evidence within scope; retain applicable unchanged evidence and mark unresolved coverage unverified.
 
-### Numerical Accuracy
+Select independent checks for the real risks: original defect counterexamples, changed public-input behavior, source-image comparisons, dimensional identities, numerical boundaries, or an affected consumer's outputs. Use justified tolerances. A copied formula, a preserved graph, or a baseline match alone cannot establish independent physical validity.
 
-For every parameter value in the audited models, trace back to its baseline source from `knowledge/SOURCE_INDEX.md` and compare. Apply thresholds per the **model-validation** skill. For each parameter, report: model value with file:line, baseline value with source file:line, discrepancy %, and PASS/WARN/FAIL status.
+Inspect deposited validation and regression results using **model-validation** guidance. Independently reproduce a check only for missing evidence or a concrete doubt; name that reason. Do not rerun full batteries as a default audit step. Reuse unchanged evidence where its scope, revision, and environment remain applicable; explain gaps, skips, and inherited failures rather than counting them as passes.
 
-Special cases:
-- **Calculated values**: Evaluate the baseline calculation, show steps
-- **Unit mismatches**: Convert and note the conversion
-- **Arrays/lists**: Compare element-by-element, report max discrepancy
-- **Model param not in baseline**: Report as "design-specific"
-- **Baseline param not in model**: Report as "not implemented"
+Follow the target project's citation requirements. Check that relevant references resolve and support the claim; documentation presence and source accuracy are different checks. Update evaluable SV-XXX entries through `agentic-mbse pm update-validation` using `passing`, `failing`, or `pending`. Required evidence that cannot be obtained stays unverified.
 
-### Source Traceability
+## Report and Resolve
 
-Every definition (part def, calc def, attribute def) in the audited models must have:
-- A doc comment citing its authority source with file:line references (per **source-traceability** skill)
-- An entry in `data/traceability_matrix.csv` linking it to DI-XXX knowledge and/or PR-XXX requirements
+Report the scope, outcome-by-outcome verdict with evidence, material findings, and remaining limitations. Distinguish source fidelity, translation agreement, numerical accuracy, engineering applicability, and consumer behavior where relevant; no separate report per category is required.
 
-Report definitions missing citations and definitions missing traceability matrix entries as separate categories.
+A positive verdict requires the applicable completion contract to be met, with no unresolved finding that defeats it. A failed check needs a concrete explanation and repair or owner decision. After repair, independently recheck the finding and affected relationships; repeat broader checks only when the change warrants it.
 
-### Programmatic Validation
-
-Run `agentic-mbse validate` against the audited models. Report results for all 6 levels. Levels 1-3 failures are critical and must be resolved. Level 4-6 issues are findings to report.
-
-### PR-XXX Compliance
-
-Read `modeling_project/REQUIREMENTS.md`. For **each** PR-XXX that applies to the audited scope, determine whether the models satisfy it. Report pass/fail per requirement with specific evidence — which model elements satisfy or violate, with file:line references.
-
-### AD-XXX Adherence
-
-Read `modeling_project/ARCHITECTURE.md`. For **each** AD-XXX decision relevant to the audited scope, verify the models are consistent. Report deviations with specific evidence — what the decision requires vs what the models actually do.
-
-### SV-XXX Evaluation
-
-Read `modeling_project/VALIDATION_MATRIX.md`. For each SV-XXX criterion the audit can evaluate, determine current status and update it: `agentic-mbse pm update-validation <SV-XXX> --status <passing|failing|pending>`
-
-SV-XXX entries with `Mechanism: test` that require the downstream pipeline (codegen → teax) — report as "not yet verifiable" if the pipeline isn't operational.
-
-### Work Item Acceptance (work item audit only)
-
-When auditing a specific work item, also read:
-- `work/active/{WI-XXX}_{name}/spec.md` — MR-XXX requirements and acceptance criteria
-- `work/active/{WI-XXX}_{name}/design.md` — design decisions and validation report
-- `work/active/{WI-XXX}_{name}/plan.md` — implementation plan and completion gates
-
-Verify **each** MR-XXX requirement is satisfied by the implemented models. Verify all spec acceptance criteria are met. Verify all plan completion gates passed. This is the independent verification that implementation is complete.
-
-### Epic Integration (Epic audit only)
-
-When auditing an Epic, read its file and the spec, design, plan, and item audit report for every registered item. Verify:
-
-- every epic success criterion has concrete evidence;
-- every item audit has a positive verdict and no unresolved finding that affects the Epic;
-- dependency handoffs and shared interfaces agree across item boundaries;
-- integrated models pass the applicable six-level validation and regression tests;
-- no cross-item integration obligation remains parked or unverified.
-
-Report each epic success criterion and item audit separately. A collection of positive item audits is necessary but does not replace cross-item integration verification.
-
-## Process
-
-1. **Scope** — determine work item, Epic, or project audit. Identify target models, locate baseline sources, load project standards (REQUIREMENTS.md, ARCHITECTURE.md, VALIDATION_MATRIX.md, traceability_matrix.csv). For work item audits, read the spec/design/plan chain. For Epic audits, read the Epic file and every item artifact chain and audit report. Present scope and get user confirmation.
-
-2. **Verify** — execute each applicable verification obligation. Use parallel reads for multiple model files. Read baseline source files once and cache values. For large audits, work incrementally by file or subsystem.
-
-3. **Analyze** — for each WARN/FAIL: check doc comments for deviation rationale, check for unit issues, determine if design decision or error. Every FAIL needs a concrete recommendation: correct the value, document the intentional deviation, or confirm it's by design.
-
-4. **Promote patterns** — if the audit reveals a recurring structural pattern worth codifying as an architectural decision, propose it to the user. If approved: `agentic-mbse pm register-decision --title "<title>" --decision "<text>" --rationale "<text>"`
-
-5. **Report** — generate the audit report and save to `work/analysis/YYYYMMDD-HHMMSS_audit_{scope}.md`. Present summary to user with overall status, statistics per category, and critical findings. Offer follow-ups: fix FAILs and re-audit, add traceability for gaps, create work items for significant issues (`/backlog`).
-
-6. **Close offer** (work item audit only) — if the audit verdict is positive (all MR-XXX satisfied, all spec acceptance criteria met, Levels 1-3 passing), ask the user whether they want to close the work item. Use `the host question interface` with options: "Close this work item" (archives to completed, updates all Status fields) and "Keep open" (no state change — user may want further work or re-audit). If the user confirms close:
-   ```
-   agentic-mbse pm close-item <WI-XXX>
-   ```
-   Then proceed to the project document review trigger questions (same as `/backlog close` and `/status close`):
-   - "Did you discover a modeling pattern that should be a project-wide rule?" → `agentic-mbse pm promote-requirement`
-   - "Did you make a structural decision that future work needs to know?" → `agentic-mbse pm register-decision`
-   - "Should any new verification criteria be added?" → `agentic-mbse pm add-validation`
-   - "Did you learn something about the domain not yet captured?" → `agentic-mbse pm add-insight`
-
-## What Good Output Looks Like
-
-An audit report should contain:
-
-- **Executive Summary** — overall status, statistics per category, key findings
-- **Validation Results** — `agentic-mbse validate` output for all 6 levels
-- **Numerical Verification Table** — every parameter: model value + location, baseline value + source, discrepancy %, status
-- **Critical Issues (FAIL)** — each with: values, locations, discrepancy, analysis, recommendation
-- **Warnings (WARN)** — same structure, lighter analysis
-- **Traceability Gaps** — definitions missing citations, definitions missing traceability matrix entries
-- **PR-XXX Compliance** — per-requirement pass/fail with evidence (file:line)
-- **AD-XXX Adherence** — deviations with evidence
-- **SV-XXX Status Updates** — criteria evaluated, new statuses, criteria not yet verifiable
-- **MR-XXX Verification** (work item audit only) — per-requirement pass/fail, spec acceptance criteria results
-- **Epic Integration Verification** (Epic audit only) — epic success criteria, item audit status, dependency handoffs, and cross-item integration evidence
-- **Recommendations** — immediate actions, follow-up actions, promotable patterns
-- **Audit Metadata** — models audited with paths, baseline source, thresholds, date
-
-## Guidelines
-
-- If baseline source is not accessible, stop — cannot verify numerical accuracy without it
-- If models don't parse, stop — request parse error fixes before auditing
-- If traceability is missing for a parameter, attempt name-based matching and ask the user to confirm
-- Unmapped parameters are a traceability gap, not necessarily an accuracy issue — report separately
-- The audit report is evidence — be specific with file paths, line numbers, exact values, percentage discrepancies
-- For work item audits: the spec defines what "done" means. If the spec says it, the audit verifies it.
-
----
-
-**Related Commands:** Before → `/implement-model` (work item pipeline) or ensure models parse (`agentic-mbse validate --level 1`) | After → fix issues, re-audit | Related → `/research` (knowledge updates may trigger re-audit)
+Check that consequential reusable decisions and discoveries have reached their applicable durable records. The owner decides whether to close or archive. On explicit authorization, follow “Durable Handoff and Closure” in `modeling_project/MODELING_PROCESS.md` and use `agentic-mbse pm close-item <WI-XXX>`.

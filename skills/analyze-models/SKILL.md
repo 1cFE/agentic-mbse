@@ -3,6 +3,8 @@ name: analyze-models
 description: Analyze current model state and produce structured reports on structure, compliance, and health
 allowed-tools: [Read, Grep, Glob, Bash, Agent, Write, Edit, AskUserQuestion]
 user-invocable: true
+metadata:
+  kind: workflow
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -10,7 +12,9 @@ Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.
 
 # Analyze Models Command
 
-**Purpose:** UNDERSTAND current model state — structure, compliance, and health indicators. **Input:** User-specified analysis scope (which models, which aspects) **Output:** `work/analysis/YYYYMMDD-HHMMSS_topic.md`
+**Purpose:** UNDERSTAND current model state — structure, compliance, and health indicators.
+**Input:** User-specified analysis scope (which models, which aspects)
+**Output:** `work/analysis/YYYYMMDD-HHMMSS_topic.md`
 
 This is internal analysis — examining what's already built, not exploring external sources (that's `/research`). It produces operational intelligence: reports that inform what to work on next, where debt is accumulating, and whether the models meet project standards.
 

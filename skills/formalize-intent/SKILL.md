@@ -3,6 +3,8 @@ name: formalize-intent
 description: Extract structured goals and analysis questions from raw intent documents into OVERVIEW.md
 allowed-tools: [Read, Grep, Glob, Bash, Agent, Write, Edit, AskUserQuestion]
 user-invocable: true
+metadata:
+  kind: workflow
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -10,7 +12,9 @@ Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.
 
 # Formalize Intent Command
 
-**Purpose:** EXTRACT goals (G-XXX) and analysis questions (AQ-XXX) from raw intent documents, turning project prose into the structured entries that drive all downstream modeling work. **Input:** Documents in `modeling_project/intent/` + existing `modeling_project/OVERVIEW.md` **Output:** Updated `modeling_project/OVERVIEW.md` (Goals Registry and Analysis Questions tables)
+**Purpose:** EXTRACT goals (G-XXX) and analysis questions (AQ-XXX) from raw intent documents, turning project prose into the structured entries that drive all downstream modeling work.
+**Input:** Documents in `modeling_project/intent/` + existing `modeling_project/OVERVIEW.md`
+**Output:** Updated `modeling_project/OVERVIEW.md` (Goals Registry and Analysis Questions tables)
 
 This is the bridge between "why are we doing this project?" and "what must the models do?" Goals and questions formalized here become the demand signal that `/spec-model` reads when scoping work items. Every G-XXX eventually drives modeling requirements (MR-XXX in specs, PR-XXX in project rules). Every AQ-XXX implies structural requirements on the models — if the models can't answer the question, they're incomplete.
 

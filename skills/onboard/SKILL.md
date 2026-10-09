@@ -3,6 +3,8 @@ name: onboard
 description: Set up a new MBSE project with goals, sources, architecture sketch, and initial backlog
 allowed-tools: [Read, Grep, Glob, Bash, Agent, Write, Edit, AskUserQuestion]
 user-invocable: true
+metadata:
+  kind: workflow
 ---
 
 Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
@@ -10,7 +12,9 @@ Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.
 
 # Onboard Command
 
-**Purpose:** SET UP a new project — configure the project structure, establish goals and sources, sketch initial architecture, and create a starting backlog. **Input:** None (interactive) **Output:** Populated project files across `knowledge/`, `modeling_project/`, `work/`, and `models/`
+**Purpose:** SET UP a new project — configure the project structure, establish goals and sources, sketch initial architecture, and create a starting backlog.
+**Input:** None (interactive)
+**Output:** Populated project files across `knowledge/`, `modeling_project/`, `work/`, and `models/`
 
 Onboarding bridges the gap between `agentic-mbse init` (which creates empty templates) and productive modeling work. By the end, the project has enough context for `/spec-model` to produce meaningful specs.
 
