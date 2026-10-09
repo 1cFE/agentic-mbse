@@ -1,6 +1,6 @@
 # Implementation Plan: Reconcile the native installer source with `main` (WRAP-SPLIT Item 1)
 
-**Status:** In Progress
+**Status:** Implemented; awaiting the independent audit (8.7 follows it)
 **Created:** 2026-10-09
 **Last Updated:** 2026-10-09
 **Branch:** `nsd-integration` in the worktree `/home/reid/1cfe/agentic-mbse-nsd`, cut from `wrap-split` at the commit that carries this plan (set up by the orchestrator)
@@ -383,7 +383,7 @@ Derive every expected set with the test's own glob over `REPO_ROOT / "skills"`, 
 - **Inventory check (I4):** `grep -rnE "MBSE_COMMANDS|MBSE_SKILLS" src tests scripts` and `grep -nE "== 25|\(25\)|Total: 25|== 18|== 5\b" tests/test_cli.py tests/test_installation.py` print nothing.
 - **Manual:** `uv run agentic-mbse install-commands --list` shows Workflows (15) and Supporting skills (10), total 25.
 
-- [ ] **4.10** (Saved as commit step `1-phase4`; commit pending, see Phase 4 Completion.) Commit: `Make the source tree the only inventory: MBSE lists and claude/ keys removed, hooks/ packaged`.
+- [x] **4.10** (Commit `b961e56`, from saved step `1-phase4`.) Commit: `Make the source tree the only inventory: MBSE lists and claude/ keys removed, hooks/ packaged`.
 
 ### What We Know Works After This Phase
 Adding a skill is adding a folder. `init`, `init --dev` and the wheel all install the hook from `hooks/`. No list or count of skills remains in `src/` or `tests/`.
@@ -436,9 +436,9 @@ def test_legacy_link_target_accepts_exactly_what_the_old_installer_wrote(tmp_pat
   - The loop in `install_assistants` calls `expose_to_claude` in place of the side effect inside the boolean condition at native `:311`. `retire_command` is unchanged.
   - Add the report lines, and include `adopted` in `cmd_init`'s "Everything up to date" and "Next steps" conditions (native `:659-661`).
   - Size check: `permit` grows by a few lines. `grep -n "def " src/agentic_mbse/cli/installation.py` shows only `legacy_link_target` and `expose_to_claude` as new in this phase, and no new removal API.
-  - Commit: `Adopt the old installer's links inside permit, and report them`. (Saved as commit step `2-adoption`; commit pending.)
+  - Commit: `Adopt the old installer's links inside permit, and report them`. (Commit `0d01117`, from saved step `2-adoption`.)
 - [x] **5.6** [SC3] Edit `adapters/claude.md:7` and `adapters/codex.md:7`. Replace the sentence that requires a new agent for every fresh stage with the continuity rule from fusion-tea's `.agentic-mbse/codex.md:7`. Read it in the pristine rehearsal copy, `.orchestrate-logs/rehearsal/fusion-tea/.agentic-mbse/codex.md`. The rule: keep a continuing author while its context is useful; independent review uses a fresh non-author agent. Word it for each runtime's delegation tool. Keep the surrounding sentences, including "do not resume an author for its audit".
-- [x] **5.7** [SC3] Add a property test over both installed adapters. Neither says that every stage, or each fresh stage, needs a new agent (check the old phrasings, and `fresh stage` near `new agent`). Both say an author may continue while its context is useful. Both require a fresh non-author agent for independent review. Commit: `Adapters keep a continuing author and require a fresh agent only for independent review`. (Saved as commit step `3-adapters`; commit pending.)
+- [x] **5.7** [SC3] Add a property test over both installed adapters. Neither says that every stage, or each fresh stage, needs a new agent (check the old phrasings, and `fresh stage` near `new agent`). Both say an author may continue while its context is useful. Both require a fresh non-author agent for independent review. Commit: `Adapters keep a continuing author and require a fresh agent only for independent review`. (Commit `f6eab7a`, from saved step `3-adapters`.)
 
 ### Validation
 - **Automated:** `uv run pytest tests/` passes. As a one-off local check, apply `os.path.normpath` to the link text, watch the `.` and `..` cases fail, then revert.
@@ -476,7 +476,7 @@ probe(fresh both):   the probe's own asserts pass
   3. Add one extra file inside one installed bundle.
 
   All three must exit non-zero. One that exits 0 is a bug in `check`: fix it, then re-run 6.1 and 6.2.
-- [ ] **6.3** (Waiting: `probes.sh` in `.orchestrate-logs/orchestrator-run.md`; needs `git init`.) [SC7] Probe three fresh installs. Each is a `git init`ed target under `.orchestrate-logs/probe/fresh-<a>/` for `a` in `claude`, `codex` and `both`, with JSON to `evidence/probe-fresh-<a>.json`.
+- [x] **6.3** (Run by the orchestrator with `.orchestrate-logs/probe/probes.sh`; results in `evidence/rehearsal.md`.) [SC7] Probe three fresh installs. Each is a `git init`ed target under `.orchestrate-logs/probe/fresh-<a>/` for `a` in `claude`, `codex` and `both`, with JSON to `evidence/probe-fresh-<a>.json`.
   - **`claude`:** Claude lists every bundle not marked `user-invocable: false` (derive the number; 18 today) and the 5 roles. Codex also lists all 25, because `.agents/skills/` is always written; record it.
   - **`codex`:** Codex lists all 25, and Claude lists none (there is no `.claude/`). The probe's own asserts fail by design here; read the JSON.
   - **`both`:** the probe's own asserts pass.
@@ -497,7 +497,7 @@ probe(fresh both):   the probe's own asserts pass
     - The three target-owned passages: `codex.md:11` and `MODELING_GUIDE.md:276` go to fusion-tea's `AGENTS.md`, with ledger rows. The MR-7 paragraphs at `MODELING_PROCESS.md:17` and `:34` are kept at runbook step 4 until Item 2.
     - This repo's `.claude/` copies: removed (D13). This repo's tracked tool-owned template copies: kept, known stale (R7).
     - The branch's reflow-only changes, and the branch adaptations `main` made unnecessary: dropped (design Appendix A, last paragraph).
-- [ ] **6.5** (Saved as commit step `6-content-evidence`; the probe JSONs follow after 6.3 runs.) Commit: `Evidence: shipped text equals main except the reviewed list; both clients discover every bundle`.
+- [x] **6.5** (Content evidence in `a57b843`; the probe JSONs in commit step `10-rehearsal-evidence`.) Commit: `Evidence: shipped text equals main except the reviewed list; both clients discover every bundle`.
 
 ### Validation
 `check.txt` shows exit 0. `check-negative.txt` shows three non-zero exits. The three probe JSONs meet the expectations. Every row category in 6.4 is present.
@@ -546,7 +546,7 @@ second init: nothing adopted, created or updated
   - **The `.codex-test` paragraph** → `AGENTS.md`.
   - **The pattern-location note** → `AGENTS.md`. Per D10 and S2, the row also records: after re-init, Codex reads two conflicting instructions (the guide's `get_docs_dir()` resolver, and `AGENTS.md`'s `.agentic-mbse/patterns/`); that worktree copy equals `main`'s docs today, but no installer refreshes it; the note's stated reason, separation from the pinned runtime, ends at runbook step 1; whether to keep it, drop it or copy it into `CLAUDE.md` after step 1 is the owner's choice.
   - **The MR-7 paragraphs** (`MODELING_PROCESS.md:17`, `:34`) → stay in place, kept at runbook step 4; Item 2 lands the general section.
-- [ ] **7.4** (Waiting: `rehearse.sh` in `.orchestrate-logs/orchestrator-run.md`.) [SC8, SC9, SC10] Rehearse plain `init` on `ft-plain`. Raw outputs go to `evidence/rehearsal/`.
+- [x] **7.4** (Run by the orchestrator with `.orchestrate-logs/rehearsal/rehearse.sh`.) [SC8, SC9, SC10] Rehearse plain `init` on `ft-plain`. Raw outputs go to `evidence/rehearsal/`.
   1. Record the pre-state: the `owner-entries.py` output, and `find .claude -maxdepth 2 -type l -printf '%p -> %l\n'` run in the copy.
   2. `git -C <copy> apply --check <patch>` (SC9's apply check). Then apply it and commit it in the copy.
   3. From the worktree root: `uv run agentic-mbse init .orchestrate-logs/rehearsal/ft-plain < /dev/null > .project/active/native-skill-distribution/evidence/rehearsal/plain-init1.txt 2>&1`.
@@ -561,12 +561,12 @@ second init: nothing adopted, created or updated
      - Which of the 13 hand-updated payloads (`.orchestrate-logs/nsd-inputs/fusion-tea/harness-right-size/installed.json`) were replaced with no prompt.
   7. Probe: `uv run python .project/active/native-skills/discovery_probe.py .orchestrate-logs/rehearsal/ft-plain --output .project/active/native-skill-distribution/evidence/rehearsal/plain-probe.json`. Its exact-count asserts fail, because fusion-tea's own skills and commands also appear; read the JSON. Claude's names include every shipped bundle not marked `user-invocable: false` (18), there are 5 roles, Codex's names include all 25, and there are no errors. On disk: the 7 reference skills at `.claude/skills/<n>/SKILL.md`, and `.claude/hooks/ruff-format.sh` as a real executable file.
   8. Run the same `init` a second time, with output to `plain-init2.txt`: nothing adopted, created or updated, and the same `Preserving` lines.
-- [ ] **7.5** (Waiting: `rehearse.sh`.) [SC8, SC10] Rehearse `init --dev` on `ft-dev`: the same steps with `--dev`, outputs named `dev-*`. Also record:
+- [x] **7.5** (`rehearse.sh`.) [SC8, SC10] Rehearse `init --dev` on `ft-dev`: the same steps with `--dev`, outputs named `dev-*`. Also record:
   - The tracked Codex files that became absolute links into the worktree's `skills/`. In the real run they would point into `/home/reid/1cfe/agentic-mbse/skills/`.
   - The `.gitignore` diff. R5 predicts none, because the old dev block's marker line is already present.
   - The hook is a link to `hooks/ruff-format.sh`.
   - `git -C /home/reid/1cfe/agentic-mbse-nsd status --porcelain` is unchanged by the run, so nothing was written through a `--dev` link into the source.
-- [ ] **7.6** (Waiting: `rehearse.sh`.) [SC10, D13] Rehearse this repo's own reinstall on a scratch clone (design § Implementation Notes, "The scratch-clone check"):
+- [x] **7.6** (`rehearse.sh`.) [SC10, D13] Rehearse this repo's own reinstall on a scratch clone (design § Implementation Notes, "The scratch-clone check"):
   ```bash
   git clone -q --branch nsd-integration /home/reid/1cfe/agentic-mbse-nsd .orchestrate-logs/rehearsal/repo-clone && cp .env .orchestrate-logs/rehearsal/repo-clone/
   cd .orchestrate-logs/rehearsal/repo-clone && uv sync --frozen -q && uv run pytest tests/ -q | tail -1     # baseline
@@ -575,14 +575,14 @@ second init: nothing adopted, created or updated
   uv run pytest tests/ -q | tail -1       # must equal the baseline
   ```
   Also confirm that every bundle resolves at `.claude/skills/<n>/SKILL.md`, that the agents and the hook are present, and that `CLAUDE.md` was preserved. If `uv sync` cannot run in the clone, run both pytest passes as `uv run --project /home/reid/1cfe/agentic-mbse-nsd --directory .orchestrate-logs/rehearsal/repo-clone pytest tests/ -q` and note it.
-- [ ] **7.7** (Waiting on 7.4-7.6 results.) [SC8, SC10] Write `evidence/rehearsal.md`:
+- [x] **7.7** [SC8, SC10] Write `evidence/rehearsal.md`:
   - Setup: the copy method and the safety check.
   - The patch's apply check.
   - One section per mode with the results of steps 4–8.
   - A side-by-side table of the two modes' observed effects. Runbook step 3 uses it.
   - The scratch-clone results.
   - Known differences from the real run. The rehearsal used the worktree's CLI, so rendered agents and `.claude/settings.json` record the worktree's docs path; fusion-tea's own CLI would record its `.venv` (R3). The copy's links dangle; plain `init` run before the checkout moves sees live links, which 5.2's existing-target cases cover.
-- [ ] **7.8** (Waiting on 7.4-7.6 results.) [SC10] Write `evidence/fusion-tea-runbook.md` for the owner. Every step in it is the owner's.
+- [x] **7.8** [SC10] Write `evidence/fusion-tea-runbook.md` for the owner. Every step in it is the owner's.
   - **Before:** the owner merges `nsd-integration` to `main` and pushes. The PR description says the branch also carries `wrap-split`'s planning commits for other items (`research-seam-port`, the epic). Do not delete or move any agentic-mbse checkout before step 3 (R4).
   - **Warning:** fusion-tea's Claude side is broken from the moment `/home/reid/1cfe/agentic-mbse` moves to the merged `main` until step 3 finishes. Plain `init` from fusion-tea's own environment can run before that move, which removes the window (R6). `--dev` must run after it.
   - **Step 1, move the pin.** [INHERITED: the 2026-10-04 pin move to `c37ff53`, fusion-tea commit `a2abea8df`] First confirm agentic-mbse's dependencies are unchanged between `c37ff53` and the merged SHA. Edit the `rev` in fusion-tea's `pyproject.toml` (`[tool.uv.sources]`). Replace the old SHA with the new one in `uv.lock` by hand (two occurrences on the agentic-mbse `source =` line). Do not run `uv lock`: under uv 0.10 it fails because of sysml-codegen's path source. Run `uv sync --frozen`. That sync is exact; last time it removed `playwright`, `pyee` and `syside-license`, restored with `uv pip install --no-deps playwright==1.58.0 pyee==13.0.1 syside-license==0.3.6`. `uv lock --check` then reports the lock fresh. PR #16's `/research` step needs this move (`--insights '[]'`).
@@ -594,7 +594,7 @@ second init: nothing adopted, created or updated
   - **Step 5, verify:** the Adopted count is 31; `git status` matches the rehearsal's; Claude Code lists the workflows.
   - **This repo:** after moving `/home/reid/1cfe/agentic-mbse` to the merged `main`, run `uv run agentic-mbse install-commands --assistant claude --link-mode symlink` from its root. Re-run it after editing `skills/` (D13).
   - **Owner choice, does not block:** keep, drop, or copy into `CLAUDE.md` fusion-tea's pattern note after step 1, with the ledger row's facts.
-- [ ] **7.9** (Patch and ledger saved as commit step `7-fusion-tea-prep`; rehearsal evidence follows.) Commit: `Evidence: fusion-tea rehearsal adopts 31 links with no loss; runbook and patch for the owner`.
+- [x] **7.9** (Patch and ledger in `5e812aa`; rehearsal evidence and the runbook in commit step `10-rehearsal-evidence`.) Commit: `Evidence: fusion-tea rehearsal adopts 31 links with no loss; runbook and patch for the owner`.
 
 ### Validation
 `rehearsal.md` shows, for both modes: Adopted (31); no unexplained B4 flags; `MODELING_PROCESS.md` kept; owner entries unchanged; catalogs as expected; an idempotent second run. The scratch clone stays clean with an unchanged pytest result. The patch passes `git apply --check`. The runbook covers steps 1–5, the warning, this repo's step and both parked owner choices.
@@ -627,7 +627,7 @@ git ls-files .claude == [.claude/settings.json]; claude/ absent
   - **Change Coordination:** there is one installer. Adding a skill is adding its folder with the kind field, and nothing else. Delete the "keep `MBSE_COMMANDS` and `MBSE_SKILLS` aligned" sentence. `scripts/replicate_setup.sh` is the six-line `init` wrapper that installs the product into a checkout under the target-repo policy, and it also writes project scaffold. `uv run agentic-mbse install-commands --assistant claude` is what a developer runs to get the workflows in this repo, re-run after editing `skills/`.
   - **Init File Ownership and the Directory Clarification table:** use `hooks/` and `skills/`; no row names `claude/`.
   - `README.md`'s installer paragraph matches. `scripts/README.md:125` describes `replicate_setup.sh`; make that line match too.
-- [ ] **8.2** (Saved as commit step `8a-docs`.) Commit: `Docs describe the one installer and how a developer installs the workflows here`.
+- [x] **8.2** (Commit `ae1dc53`.) Commit: `Docs describe the one installer and how a developer installs the workflows here`.
 - [x] **8.3** [SC12] `uv run pytest tests/` passes. Record the summary line.
 - [x] **8.4** [SC12] Lint parity against the baseline from 1.2:
   ```bash
@@ -644,7 +644,7 @@ git ls-files .claude == [.claude/settings.json]; claude/ absent
   - Fixing a pre-existing finding in a file this item edits (for example `cli/__init__.py`) is in scope. Fixing other files is not.
 
   Write `evidence/lint-parity.md`: the commands, `main`'s and the branch's totals, the changed-file list and the comparison result.
-- [ ] **8.5** (Checks done; saved as commit step `8b-gate-evidence`. `git fetch` waits in `orchestrator-run.md`.) [SC12] `git merge-base --is-ancestor main HEAD && echo ok`; `git ls-files .claude` prints only `.claude/settings.json`; `test ! -e claude`. If anything after Phase 6 touched `skills/`, `agents/` or the templates, re-run 6.1. Commit: `Gate: pytest passes and lint holds main's parity`.
+- [x] **8.5** (Commit `9d4901b`; the orchestrator's fetch found `origin/main` still at `06ac41d`.) [SC12] `git merge-base --is-ancestor main HEAD && echo ok`; `git ls-files .claude` prints only `.claude/settings.json`; `test ! -e claude`. If anything after Phase 6 touched `skills/`, `agents/` or the templates, re-run 6.1. Commit: `Gate: pytest passes and lint holds main's parity`.
 - [x] **8.6** [SC11] Write `evidence/audit-scope.md` for the orchestrator's audit stage (D11).
   - **In scope:** the installer diff, `git diff 88e2489 HEAD -- src/agentic_mbse/cli pyproject.toml tests/test_installation.py tests/test_cli.py tests/test_packaged_guidance_contract.py`, which covers A–K and this item together; the A–K checklist (`.project/active/native-skills/remediation.md`); `adaptations.yaml` (A1 flagged); `reconcile.py`'s transform and check code; `check.txt` and `check-negative.txt`; `rehearsal.md`, the runbook and the patch.
   - **Out of scope:** body text beyond the list, which SC2 makes mechanical.
@@ -756,7 +756,7 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
 **Commits for Phases 4–5 were made from saved steps, not by the implementer.** In the session that implemented Phases 4 and 5, `git add` required interactive approval, which a non-interactive stage cannot give. Each planned commit was saved instead as an exact copy of its files under `.orchestrate-logs/commit-steps/<step>/`, with a `<step>.paths` list and a `<step>.msg` message: `1-phase4` (4.10), `2-adoption` (5.5), `3-adapters` (5.7), then this notes step. `verify.py` there extracted `HEAD` into a scratch folder, overlaid the steps in order and ran the whole suite at each boundary: after `1-phase4` 2140 passed; after `2-adoption` 2164 passed; after `3-adapters` 2166 passed; each with 1 skipped (already skipped before this item) and 1 strict xfail (the docs packaging gap, Phase 4 notes). The three steps together equal the worktree's 10 changed files byte for byte.
 
 ### Phase 4 Completion
-**Completed:** 2026-10-09. Commit step `1-phase4`.
+**Completed:** 2026-10-09. Commit `b961e56` (saved step `1-phase4`).
 
 **Environment re-check before starting:** after the orchestrator's `uv sync --all-extras`, pytest on commit 3 was 17 failed, 2085 passed: exactly Phase 3's expected red set, and the 18 environmental failures are gone.
 
@@ -779,7 +779,7 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
 - 4.9's per-folder comparison is parametrized so the docs gap can be marked on its own case (above).
 
 ### Phase 5 Completion
-**Completed:** 2026-10-09. Commit steps `2-adoption` (5.1–5.5) and `3-adapters` (5.6–5.7).
+**Completed:** 2026-10-09. Commits `0d01117` (5.1–5.5) and `f6eab7a` (5.6–5.7), from saved steps `2-adoption` and `3-adapters`.
 
 **Actual Changes:**
 - 5.5 `installation.py`: `legacy_link_target(target, relative)` exactly as designed. The entry must be `.claude/<location>/<name>` with `<location>` in `LEGACY_LOCATIONS` (commands, skills, agents, hooks), and a symlink (lstat only). The raw `os.readlink` text, split on `/`, must start empty (absolute) with no empty, `.` or `..` segment after it. Its last three segments must be `claude/<location>/<name>`, and the rest must be a source checkout. The text is never normalized and the referent is never read. `permit` gains four lines after the manifest/desired check and before `force`/`decide`: on a match it records `"<relative> (was -> <text>)"` in a new `adopted` action and returns true; the existing callers then unlink and install as for any permitted entry. `expose_to_claude` takes the alias step out of the loop's boolean condition; `retire_command` is unchanged. `grep -n "def "` shows only `legacy_link_target` and `expose_to_claude` as new in this phase, and no removal API.
@@ -792,20 +792,21 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
 
 **Deviations:** none in behaviour. Adopted agents and hooks also appear in the Updated list, because `write` reports any replaced entry there; the Adopted list says which of them were legacy links.
 
-**Report-once change (orchestrator call after Phase 5, commit step `5-report-once`).** Adopted agents, hooks and skill aliases were also listed under Updated or Symlinked, so a reader counting "replaced with no prompt" counted them twice. The installer now keeps adoptions as a map (entry → the link text it replaced) and routes `write`'s and `alias`'s reporting through `Installer.report`, which skips an entry already listed as adopted; the `actions` dict is back to its six buckets. The per-location adoption test asserts the entry appears under no other bucket; making `report` list everything fails it for skills, agents and hooks (commands were never double-listed). Suite 2166 passed.
+**Report-once change (orchestrator call after Phase 5, commit `cae6688`).** Adopted agents, hooks and skill aliases were also listed under Updated or Symlinked, so a reader counting "replaced with no prompt" counted them twice. The installer now keeps adoptions as a map (entry → the link text it replaced) and routes `write`'s and `alias`'s reporting through `Installer.report`, which skips an entry already listed as adopted; the `actions` dict is back to its six buckets. The per-location adoption test asserts the entry appears under no other bucket; making `report` list everything fails it for skills, agents and hooks (commands were never double-listed). Suite 2166 passed.
 
-**Commands this session could not run.** In this session `git add`/`commit`, `git init`, `git -C <other repo>`, `git clone`, `git fetch`, `cp -a`, `bash -n` and `uv sync --directory` all needed approval. Prepared commits are in `.orchestrate-logs/commit-steps/` as before; the rest is written, with exact commands and output locations, in `.orchestrate-logs/orchestrator-run.md` (probes for 6.3, `rehearse.sh` for 7.4-7.6, `git fetch` for 8.5).
+**Commands this session could not run.** In this session `git add`/`commit`, `git init`, `git -C <other repo>`, `git clone`, `git fetch`, `cp -a`, `bash -n` and `uv sync --directory` all needed approval. Prepared commits are in `.orchestrate-logs/commit-steps/` as before; the rest is written, with exact commands and output locations, in `.orchestrate-logs/orchestrator-run.md` (probes for 6.3, `rehearse.sh` for 7.4-7.6, `git fetch` for 8.5). The orchestrator ran all of them; the final session still could not run `git add`, so its evidence and notes are commit steps `10-rehearsal-evidence` and `11-notes`, with the same `verify.py` check.
 
 ### Phase 6 Completion
-**Status:** 6.1, 6.2 and 6.4 done; 6.3 waits on the orchestrator's `probes.sh`. Commit step `6-content-evidence`.
+**Completed:** 2026-10-09. Content evidence in `a57b843`; the probe JSONs in commit step `10-rehearsal-evidence`.
 
 - 6.1 `check --main 06ac41d --rows` on a fresh `both` install (`.orchestrate-logs/check/final`): 55 files compared, 0 mismatches (`evidence/check.txt`); 40 rows in `evidence/check-rows.md`, 10 of them "merge: main + A…".
 - 6.2 `evidence/check-negative.txt` (`.orchestrate-logs/negative_check.py`, each case on its own copy): baseline exit 0; one body byte changed in `onboard/SKILL.md` exit 1 ("body is not the preface plus main's adapted body"); A6 count 4 → 5 exit 1 ("A6 … occurs 4x, list says 5"); an extra `onboard/extra.md` exit 1 ("bundle onboard: extra extra.md").
-- 6.3 **Not done here; the first attempt is discarded.** `git init` is gated, so the probes ran on plain folders. The Codex-only target, which has no `.claude/`, showed Claude listing 12 skills and 5 roles: the old tracked `.claude/` set of this repo (9 commands, 3 supporting skills, 5 agents), found above the worktree (the sandbox does not let the stage look there). So plain-folder results cannot show isolated role discovery, and all three JSONs were moved to `.orchestrate-logs/probe/contaminated-nogit/`. `.orchestrate-logs/probe/probes.sh` repeats the step on `git init`ed targets, as the plan requires, and adds the on-disk checks.
+- 6.3 **First attempt discarded.** `git init` is gated for the stage, so the first probes ran on plain folders. The Codex-only target, which has no `.claude/`, showed Claude listing 12 skills and 5 roles: the old tracked `.claude/` set of this repo (9 commands, 3 supporting skills, 5 agents), found above the worktree. Plain-folder results cannot show isolated discovery, so those JSONs sit in `.orchestrate-logs/probe/contaminated-nogit/`, not in evidence.
+- 6.3 **Isolated run.** The orchestrator ran `.orchestrate-logs/probe/probes.sh` on three `git init`ed targets (Claude Code 2.1.295, codex-cli 0.160.0). `claude`: Claude 18 skills and 5 roles, Codex 25, exit 0. `codex`: Claude none, Codex 25, exit 1 by design. `both`: 18, 5 and 25, exit 0. No errors in any. The 7 `user-invocable: false` bundles and the hook are on disk in `claude` and `both` (`.orchestrate-logs/probe/probes.log`). JSONs: `evidence/probe-fresh-{claude,codex,both}.json`; table in `evidence/rehearsal.md`.
 - 6.4 `evidence/dispositions.md`: the inventory by command against `06ac41d` (16 bundles, 3 templates, 2 pattern docs changed on `main`; branch-only: 2 user-owned templates, 2 agents by reflow, the adapters), the generated rows, and the hand rows from the plan, including the `main` test whose contract the envelope changes (`test_modeling_command_contracts.py:72`).
 
 ### Phase 7 Completion
-**Status:** 7.1-7.3 done; 7.4-7.9 wait on the orchestrator's `rehearse.sh`. Commit step `7-fusion-tea-prep` (patch and ledger).
+**Completed:** 2026-10-09. Patch and ledger in `5e812aa`; rehearsal evidence and the runbook in commit step `10-rehearsal-evidence`. The orchestrator ran `.orchestrate-logs/rehearsal/rehearse.sh` (the stage could not run `git -C`, `git clone` or `cp -a`); the stage read the outputs and did not re-run any install.
 
 - 7.1 `.orchestrate-logs/rehearsal/owner-entries.py` (unshipped entries as link text or file hashes; on the pristine copy: fusion-tea's 2 commands, 9 skill files across 6 skills, 1 agent, and the 5 relative `.agents/skills/` links) and `provenance.py`. `provenance.py` reads the init output's Updated, Symlinked and Removed lists. For each replaced file it lists removed lines that no agentic-mbse revision of the file's source carries (`git log --all`), compares Codex roles on decoded instructions with doc paths folded back to placeholders, and marks whether each flagged line now sits in `AGENTS.md`.
 - 7.2 `evidence/fusion-tea-target-owned.patch`, generated by `.orchestrate-logs/rehearsal/make_patch.py` from the pristine copy (the plan's `git -C ft-patch diff` is gated). It appends a heading naming both sources, then `codex.md:11` and `MODELING_GUIDE.md:276` verbatim; `+++` names only `b/AGENTS.md` (I8). `git apply --check` runs in `rehearse.sh`.
@@ -815,10 +816,29 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
   - Two would-be prompts: `modeling_project/MODELING_PROCESS.md`, as planned, and `work/backlog/epic_template.md`, which the plan did not predict (next bullet).
   - `provenance.py` flagged both SC9 passages, as "NOT KEPT" only because the dry copy had no patch, and the same `codex.md:11` paragraph inside each Codex role's instructions.
   - The other flagged lines are envelope text from an earlier, uncommitted native build: YAML block-list `allowed-tools` lines, quoted descriptions, and a generated "Supporting skills: …" line, identical across the workflows. No other text was flagged.
-- **Safety finding: the pristine copy links into the live checkout.** fusion-tea's `work/backlog/epic_template.md` is an absolute link to `/home/reid/1cfe/agentic-mbse/project_templates/epic_template.md.template`. `make-copy.sh` re-points only `.claude/` links, so the plan's safety check (`find … -lname '/home/reid/1cfe/agentic-mbse/*'` prints nothing) fails on every copy. The design's Non-Goals assumed fusion-tea's template copies are real files; this one is not. The stage found it after the dry-run install, because the sandbox blocks that `find` for the stage. The dry install did not write through it: the link is not managed, so `permit` preserved it non-interactively ("Preserving modified or untracked file: work/backlog/epic_template.md"), and the installer never writes through links (I1); the link was unchanged. `rehearse.sh` now re-points every live-checkout link into the worktree, where the same template exists, commits that as setup, and stops before installing if any remain. The runbook must cover this prompt.
+- **Safety finding: the pristine copy links into the live checkout.** fusion-tea's `work/backlog/epic_template.md` is an absolute link to `/home/reid/1cfe/agentic-mbse/project_templates/epic_template.md.template`. `make-copy.sh` re-points only `.claude/` links, so the plan's safety check (`find … -lname '/home/reid/1cfe/agentic-mbse/*'` prints nothing) fails on every copy. The design's Non-Goals assumed fusion-tea's template copies are real files; this one is not. The stage found it after the dry-run install, because the sandbox blocks that `find` for the stage. The dry install did not write through it: the link is not managed, so `permit` preserved it non-interactively ("Preserving modified or untracked file: work/backlog/epic_template.md"), and the installer never writes through links (I1); the link was unchanged. `rehearse.sh` re-points every live-checkout link into the worktree, where the same template exists, commits that as setup, and stops before installing if any remain. The orchestrator then fixed `make-copy.sh` to re-point every link into `/home/reid/1cfe/agentic-mbse/` and rebuilt the pristine copy (32 links re-pointed), so `rehearse.sh`'s own re-pointing found nothing to do ("setup: no tracked link changed").
+- 7.4–7.5 **Results** (`evidence/rehearsal.md`, raw files in `evidence/rehearsal/`). Copies by `cp -a` of the rebuilt pristine copy; both passed the safety check with 31 dangling legacy links. `git apply --check` passed on both.
+  - Both modes: Adopted (31); `MODELING_PROCESS.md` byte-identical with 2 MR-7 lines; both SC9 passages in `AGENTS.md`; fusion-tea's own entries unchanged; `pyproject.toml`, `uv.lock`, `.gitignore` and every user-owned file unchanged; the worktree untouched; Claude lists 18 shipped skills and 5 roles; the 7 reference skills on disk; a second run leaves git status identical.
+  - Plain: prompts for `MODELING_PROCESS.md` and `work/backlog/epic_template.md`; 34 tracked files rewritten in place (26 under `.agents/skills/`, `codex.md`, `install.json`, 5 Codex roles, `MODELING_GUIDE.md`) and `.agentic-mbse/claude.md` created untracked; Updated (39), of which 6 had identical bytes; hook a real executable; Codex lists all 25.
+  - Dev: prompts for `MODELING_PROCESS.md` only; 33 tracked files become absolute links (31 under `.agents/skills/`, `MODELING_GUIDE.md`, `EPIC_GUIDE.md`) and 7 are rewritten; `.gitignore` unchanged (R5 holds); hook a link into `hooks/`; **Codex lists none of the 25 shipped skills** (found case below).
+  - B4: 129 flagged lines in each mode. 7 are the two SC9 passages, now in `AGENTS.md` (the `codex.md:11` paragraph in `codex.md` and the 5 Codex roles, and the guide note). The other 122 are envelope text from an earlier, uncommitted native build: 102 block-list `allowed-tools` lines, 11 generated "Supporting skills" lines, 9 quoted-description lines. No target-owned loss.
+  - The 13 hand-updated payloads: the 11 `SKILL.md` files and `work/EPIC_GUIDE.md` are replaced with no prompt (plain: `EPIC_GUIDE.md` with identical bytes); `MODELING_PROCESS.md` is kept at its prompt.
+- 7.6 Scratch clone at `2e04752`: pytest 2166 passed, 1 skipped, 1 xfailed before and after `install-commands --assistant claude --link-mode symlink` (`Installed: 38 … Adopted: 0`); `git status --porcelain` empty; all 25 bundles resolve; 5 agents and the hook present; `CLAUDE.md` unchanged.
+- 7.7 `evidence/rehearsal.md`: setup, both modes side by side, B4, the fresh-install probes (6.3), the clone, three found cases and the known differences from the real run.
+- 7.8 `evidence/fusion-tea-runbook.md`, from the draft in `.orchestrate-logs/rehearsal/runbook-draft.md`. Both parked owner choices are presented and not decided: the install mode (plain `init` recommended, agent-grade, now with the Codex finding as evidence) and the pattern note after step 1. Step 4 carries the orchestrator's call [AGENT]: `MODELING_PROCESS.md` → `s`; `epic_template.md` → `o`, because the entry is a link an old `--dev` made into the checkout's tool-owned template, untracked and ignored in fusion-tea, so overwriting loses nothing fusion-tea wrote. That note is ledger-free: it is not target-owned text.
+
+**Found case: fusion-tea's `epic_template.md` is a link (design-review S8).** Design-review S8 and the design's Non-Goals assumed fusion-tea's tool-owned template copies are real files. `work/backlog/epic_template.md` is an absolute link into the checkout's `project_templates/epic_template.md.template`, left by the old `--dev`, untracked and ignored (fusion-tea `.gitignore:32`). The legacy predicate covers only `.claude/<location>/<name>`, so plain `init` does not adopt it and prompts; `--dev` matches it and does not. No code change: the prompt is the correct behaviour for an unadopted entry, and the runbook answers it.
+
+**Found case: `--dev` hides every shipped skill from Codex (surfaced, not resolved).** In the dev copy, Codex 0.160.0 lists only fusion-tea's 5 skills. Under `--dev` each `.agents/skills/<n>/SKILL.md` is a file link to an absolute path outside the project; fusion-tea's own skills, which Codex does list, are relative directory links inside it. Which property makes Codex skip them was not isolated. It predates this item: native `86921f9` makes the same per-file links (`installation.py:107-109` there), and no earlier probe ran Codex on a `--dev` install. SC7's probes use plain `init` and pass. The spec says "SC6 requires `--dev` to work either way" (`spec.md:99`) and SC6 asks that `init --dev` "installs every asset", which it does; whether "still works" should also mean Codex discovers them under `--dev` is the orchestrator's or owner's call. The stage recommends a follow-up, not a fix inside Item 1: plain `init`, the recommended mode for fusion-tea, is unaffected, and the fix needs its own probe of what Codex accepts. Recorded in `rehearsal.md`, the runbook's step 3 table and `audit-scope.md`'s follow-ups.
+
+**Found case: a second run reports unchanged files as Updated.** `Installer.write` rewrites every existing managed file it may touch and reports it as Updated whether or not the bytes changed (`installation.py:159-169`; the same in native `86921f9`). A second run reported Updated (46) in plain mode and (12) in dev mode, against the stencil's "nothing updated". Git status after the second run is identical to the first in both modes, so no tracked content changed. The runbook verifies by git status. Reporting only real changes is a follow-up.
+
+**Deviations:**
+- Copies came from `cp -a` of the pristine copy inside `rehearse.sh`, not from `make-copy.sh` per run. The pristine copy itself was built by `make-copy.sh`.
+- 7.4 step 8's "nothing … updated" does not hold for the report (found case above); it holds for the files.
 
 ### Phase 8 Completion
-**Status:** 8.1, 8.3, 8.4 and 8.6 done; 8.5's checks done except `git fetch`; 8.7 follows the audit. Commit steps `8a-docs` and `8b-gate-evidence`.
+**Completed:** 2026-10-09, except 8.7, which follows the audit. Commits `ae1dc53` (docs) and `9d4901b` (gate evidence); the `audit-scope.md` update in commit step `10-rehearsal-evidence`.
 
 - 8.1 `CLAUDE.md`:
   - `cli/` describes `init` and `install-commands`.
@@ -828,12 +848,9 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
   - `README.md` gains the hook bullet and one sentence on adoption; `scripts/README.md:125` now describes `replicate_setup.sh` truthfully.
 - 8.3 `uv run pytest tests/`: 2166 passed, 1 skipped, 1 xfailed.
 - 8.4 `evidence/lint-parity.md`: changed files clean; ruff check 118 = 118; ruff format 78 → 77 (`tests/test_cli.py` now formatted); mypy 101 → 98 with the other 98 equal to `main` line for line. mypy is compared in the baseline's own no-extras environment, because the worktree's all-extras venv changes mypy's findings in unchanged modules (14 import errors fewer, 4 attr errors more).
-- 8.5 `git merge-base --is-ancestor main HEAD` exits 0; `git ls-files .claude claude` prints only `.claude/settings.json`; `claude/` is absent. Nothing after Phase 6 touched `skills/`, `agents/` or the templates, so 6.1 stands. `main` and `origin/main` are both `06ac41d` as of the last fetch; a fresh `git fetch` waits in `orchestrator-run.md`.
-- 8.6 `evidence/audit-scope.md`: the scope, what to press on (I1-I3, `permit`'s order), out of scope, and follow-ups (the `--dev` gitignore list, R7, the docs packaging gap, `make-copy.sh`'s link gap).
-
-### Phase 7 Completion
-
-### Phase 8 Completion
+- 8.5 `git merge-base --is-ancestor main HEAD` exits 0; `git ls-files .claude claude` prints only `.claude/settings.json`; `claude/` is absent. Nothing after Phase 6 touched `skills/`, `agents/` or the templates, so 6.1 stands. The orchestrator's `git fetch` after the rehearsal found `origin/main` still at `06ac41d`, so no merge or re-check was needed.
+- 8.6 `evidence/audit-scope.md`: the scope, what to press on (I1-I3, `permit`'s order), out of scope, and follow-ups. After the rehearsal it also names the `--dev` Codex discovery gap and the Updated-report quirk as follow-ups, and records `make-copy.sh`'s link gap as fixed by the orchestrator.
+- The audit hand-off is ready: `evidence/audit-scope.md` lists every artifact, and all of them exist once commit step `10-rehearsal-evidence` lands.
 
 ---
 
