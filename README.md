@@ -22,7 +22,7 @@ agentic-mbse validate models/
 agentic-mbse init
 ```
 
-This installs all 15 modeling workflows and ten supporting skills for Claude Code and Codex:
+This installs every modeling workflow and supporting skill for Claude Code and Codex (`agentic-mbse install-commands --list` lists them):
 
 - `.agents/skills/<name>/`: shared bundles, including scripts and reference files.
 - `.claude/skills/<name>`: relative aliases to those bundles.

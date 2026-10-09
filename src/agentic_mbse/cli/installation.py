@@ -22,14 +22,23 @@ def is_source_checkout(root: Path) -> bool:
     return (root / "src" / "agentic_mbse").is_dir()
 
 
+def frontmatter(path: Path) -> tuple[dict, str]:
+    """A markdown file's YAML frontmatter mapping, and the text after its closing `---` line."""
+    lines = path.read_text().splitlines(keepends=True)
+    delimiters = [i for i, line in enumerate(lines) if line.rstrip("\r\n") == "---"]
+    if delimiters[:1] != [0] or len(delimiters) < 2:
+        raise ValueError(f"{path} has no frontmatter")
+    meta = yaml.safe_load("".join(lines[1 : delimiters[1]]))
+    if not isinstance(meta, dict):
+        raise ValueError(f"{path} frontmatter is not a mapping")
+    return meta, "".join(lines[delimiters[1] + 1 :])
+
+
 def bundle_kind(bundle: Path) -> str:
     """The `metadata.kind` a bundle's SKILL.md frontmatter declares."""
     entry = bundle / "SKILL.md"
-    lines = entry.read_text().splitlines()
-    if lines[:1] != ["---"] or "---" not in lines[1:]:
-        raise ValueError(f"{entry} has no frontmatter")
-    meta = yaml.safe_load("\n".join(lines[1 : lines.index("---", 1)]))
-    kind = meta.get("metadata", {}).get("kind")
+    metadata = frontmatter(entry)[0].get("metadata")
+    kind = metadata.get("kind") if isinstance(metadata, dict) else None
     if kind not in BUNDLE_KINDS:
         raise ValueError(f"{entry} declares metadata.kind {kind!r}, not one of {BUNDLE_KINDS}")
     return str(kind)
@@ -289,8 +298,7 @@ class Installer:
 
 def render_agent(source: Path, docs: Path, assistant: str, adapter: str) -> str:
     """Render shared expert instructions into a native Claude or Codex envelope."""
-    _, header, body = source.read_text().split("---", 2)
-    meta = yaml.safe_load(header)
+    meta, body = frontmatter(source)
     body = body.replace("{SYSML_DOCS_PATH}", str(docs / "sysmlv2")).replace(
         "{SYSIDE_DOCS_PATH}", str(docs / "syside")
     )
@@ -326,7 +334,7 @@ def register_codex_agents(installer: Installer, agents: Path) -> None:
     existing = tomllib.loads(content).get("agents", {})
     additions = []
     for source in sorted(agents.glob("*.md")):
-        meta = yaml.safe_load(source.read_text().split("---", 2)[1])
+        meta = frontmatter(source)[0]
         if meta["name"] in existing:
             continue
         name = json.dumps(meta["name"])

@@ -44,9 +44,6 @@ TOOL_OWNED_TEMPLATES = [
     ("epic_template.md.template", "work/backlog/epic_template.md"),
 ]
 
-# Combined for backwards compatibility
-PROJECT_TEMPLATES = USER_OWNED_TEMPLATES + TOOL_OWNED_TEMPLATES
-
 # Paths to add to .gitignore in dev mode (symlinks are machine-specific)
 DEV_MODE_GITIGNORE_PATHS = [
     "# Tool-owned files (managed by agentic-mbse init --dev)",
@@ -63,9 +60,6 @@ DEV_MODE_GITIGNORE_PATHS = [
     "work/EPIC_GUIDE.md",
     "work/backlog/epic_template.md",
 ]
-
-# Hash file for tracking tool-owned file modifications
-HASH_FILE = MANIFEST
 
 # --dev links each bundle file to the source checkout; Codex 0.160 lists none of those skills.
 DEV_CODEX_WARNING = (
@@ -101,19 +95,9 @@ def get_template_path() -> Path:
     return _get_data_root() / "SOURCE_INDEX.md.template"
 
 
-def get_agents_dir() -> Path:
-    """Get path to bundled agents directory."""
-    return _get_data_root() / "agents"
-
-
 def get_skills_dir() -> Path:
     """Get path to bundled skills directory."""
     return _get_data_root() / "skills"
-
-
-def get_hooks_dir() -> Path:
-    """Get path to bundled hooks directory."""
-    return _get_data_root() / "hooks"
 
 
 def get_docs_dir() -> Path:
