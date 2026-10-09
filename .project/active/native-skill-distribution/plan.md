@@ -949,6 +949,36 @@ Mechanism, read in the code: `--dev` is refused by `_check_dev_mode_prerequisite
 
 **Deviations from Plan:** none in behaviour. 9.4 also restructured the retirement test, which the brief did not name, because its `--dev` cases wrote into a bundle folder that is now the source itself.
 
+#### Re-check advisories
+
+**Completed:** 2026-10-09, from the Phase 9 re-check (`audit.md` § "Advisories (Phase 9)") and the orchestrator's brief [AGENT] (`briefs/15-phase9-advisories.md`). Commit `03d1510` (code and tests) and the notes commit that carries this section. The orchestrator did advisory 3 (`b1d5d23`).
+
+- **Advisory 1: the fallback line says what happened.** `install_dev_bundle` (`installation.py:365-409`) prints one line per blocked bundle, chosen from the outcome. It counts the files the plain copy reports as created or updated, and checks whether `SKILL.md` is still a file link afterwards. The Codex check comes first, so that gap never reads as a copy.
+  - `SKILL.md` still a file link: `Warning: Codex will not list the <n> skill: .agents/skills/<n>/SKILL.md is a file link, which Codex skips. Remove .agents/skills/<n> and re-run init --dev, or re-run it with --force`.
+  - Nothing written: `Kept .agents/skills/<n> instead of linking it to the source checkout: the installer does not own everything in that folder and wrote no file into it`.
+  - Files written into a folder that was empty: `Copied .agents/skills/<n> instead of linking it to the source checkout: an empty folder was already there. The next --dev run links it`. `link_directory`'s empty-folder rule is unchanged.
+  - Files written otherwise: the old line, `Copied .agents/skills/<n> instead of linking it to the source checkout: the installer does not own everything in that folder`.
+- **Advisory 2: two behaviours pinned.**
+  - `test_dev_asks_once_about_an_entry_it_may_not_replace` (`tests/test_installation.py:306`, an owner's link and an owner's file) uses a `decide` that records its calls. It asserts one call, one Skipped entry, and the owner's entry unchanged.
+  - `test_next_steps_are_the_same_with_and_without_dev` (`tests/test_cli.py:468`) now compares every line after the report's last listed entry, not only the text from "Next steps:" on.
+  - Mutants, with the auditor's exact text (`.orchestrate-logs/advisories-p9/mutants.py`, output `mutants.txt`): P12 and P14 both survive on `fb73b47` and are killed on `03d1510`. P12 is killed by the two ask-once cases, P14 by the three Next-steps cases.
+- **Advisory 5: a redirected `.agents/skills` is reported once.** `install_dev_bundle` checks the destination's parents once, before linking (`:373-375`), so the copy fallback never repeats a failing check. The redirect check inside `link_directory` and `copy_tree` is unchanged. Where it passes, the added check creates only the parent folders `link_directory` would create.
+- **Advisory 4: recorded** in `evidence/audit-scope.md`'s follow-ups, with the probe's full path.
+- **Tests for advisory 1,** samples from the tree:
+  - `test_dev_copies_a_bundle_folder_holding_owner_files` (`:215`) now edits every file of `OTHER_WORKFLOW`, so without `--force` it expects Kept. It had pinned the false Copied line, because that bundle has one file.
+  - `test_dev_copies_into_an_empty_bundle_folder_then_links_it` (`:250`): the empty-folder line, then a folder link on the next run.
+  - `test_dev_warns_when_a_kept_bundle_hides_from_codex` (`:274`): builds the old per-file shape with no manifest, checks the warning, then checks that each named repair ends in the folder link.
+  - `test_a_redirected_skills_folder_is_reported_once` (`:334`): `.agents/skills` and `.claude/skills`, plain and `--dev`; every bundle is printed and listed once, and the outside folder is untouched.
+- **Observed on real targets** (`.orchestrate-logs/advisories-p9/lines.py`, output `lines.txt`): each case prints its one line. A real `b2ff7cf` per-file `--dev` install with its manifest deleted prints the warning for all 25 bundles and no Copied or Kept line. A redirected `.agents/skills` or `.claude/skills` prints one Skipped line and one Skipped entry.
+
+**Deviations from the brief** [AGENT]:
+- **The warning does not suggest plain `init`.** Plain `init` does not repair that folder. With no manifest, it preserves each file link ("Preserving …"), so `SKILL.md` stays a file link (`.orchestrate-logs/advisories-p9/fix_advice.py`). Two repairs work, and the line names them: remove the folder and re-run `--dev` (the link at once), or `--dev --force` (a plain copy now, the link on the next `--dev`).
+- **The Claude alias gets the same one-time parents check** (`expose_to_claude`, `:417-419`). A redirected `.claude/skills` holding the bundle was reported twice from the same cause, in plain mode too. The fix is the same two lines, pinned by the same test.
+
+**Rehearsal:** not re-run. The fusion-tea rehearsal's init outputs hold no fallback line and no redirected-parent line, so neither changed path ran there.
+
+**Gate:** full `uv run pytest tests/` 2186 passed, 1 skipped, 5 deselected, 1 xfailed (2177 plus 9 new cases). `ruff check` and `ruff format --check` clean on the three changed Python files. Repo-wide `ruff check` 118 (record 118), `ruff format --check` 77 files (record 77), mypy 98 in the baseline's environment (record 98) and 88 in the worktree, none in a changed file.
+
 ---
 
 **Status:** Draft → In Progress → Complete
