@@ -1,6 +1,6 @@
 # Spec: Reconcile the native installer source with `main`
 
-**Status:** Implementation In Progress (plan Phases 1–5 of 8 done on `nsd-integration`, 2026-10-09)
+**Status:** Implementation In Progress (plan Phases 1–5 done and 6–8 partly done on `nsd-integration`, 2026-10-09; the discovery probes and the fusion-tea rehearsal wait on an orchestrator run)
 **Owner:** Reid W
 **Created:** 2026-10-04 09:28 PDT
 **Updated:** 2026-10-09: revised to apply the spec review's Resolutions (`spec-review.md`, verdict Revise) and the Align decisions (`briefs/00-align.md`). Earlier versions: the 2026-10-09 rewrite at `b2d077b`, the 2026-10-04 original at `67c4d23`.
