@@ -73,11 +73,12 @@ Finish the toolkit so that every general capability built during the fusion-tea 
 
 Owner decisions in the header apply to every item. Each item's spec inherits the two owner success criteria (no loss of information for fusion-tea; MR-7 enforcement intact) and writes to the shared migration ledger at `.project/active/wrap-split-migration-ledger.md` (Item 2 creates and owns the file; Items 3 and 4 append under their own headings).
 
-### Item 1: Reconcile native installer source with `main`
+### Item 1: Reconcile native installer source with `main` ✅
 
 **Type**: Code/Integration
 **Effort**: 2 days (spec: adopted, updated to this scope 2026-10-09 and revised after spec review; design 2h; plan 1h; execute 12h). Raised from 1.5 days for the Align decisions (legacy-symlink adoption, `claude/` removal, fusion-tea runbook); reflow, a separate A–K re-review and pattern installation were shed.
 **Dependencies**: None
+**Closed**: 2026-10-09, certified; archived to `.project/completed/20261009_native-skill-distribution/`. On branch `nsd-integration`, awaiting the owner's merge and the post-merge fusion-tea runbook.
 
 **Objective**: Make the native Claude/Codex installer branch carry `main`'s current workflow content so there is one installer source to register new skills in.
 
@@ -106,14 +107,14 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 - The merge, any push, and writes to fusion-tea's real tree, including the post-merge re-init: these are the owner's.
 
 **Success Criteria** (full wording in the spec):
-- [ ] Every difference between the branch's shipped files and `main`'s has a recorded disposition (spec SC1).
-- [ ] Bundles, the three changed tool-owned templates and the pattern docs equal `main` except for the envelope (frontmatter and preface, no reflow) and a closed, reviewed list of runtime adaptations (SC2).
-- [ ] Both adapters carry the author-continuity rule; the guide template carries `main`'s resolver text, readable under Codex (SC3, SC4).
-- [ ] A skill registers in one place, with no hand-maintained list; no `claude/` folder remains, and `init`, `init --dev` and a built wheel install everything including the hook (SC5, SC6).
-- [ ] Fresh `claude`, `codex` and `both` installs discover all workflows and expert roles; re-init preserves protected files and does not write through symlinks (SC7).
-- [ ] Installing over a copy of fusion-tea adopts exactly the old installer's symlinks and reports each one (SC8).
-- [ ] fusion-tea's target-owned text has ledger rows and a proposed move into fusion-tea-owned files; the owner has a post-merge runbook rehearsed on a copy (SC9, SC10).
-- [ ] An integration branch carrying `main`'s full history plus the native work passes pytest, ruff and mypy and is ready for the owner to merge; an independent audit covers the A–K remediations and this item's installer changes (SC11, SC12).
+- [x] Every difference between the branch's shipped files and `main`'s has a recorded disposition (spec SC1).
+- [x] Bundles, the three changed tool-owned templates and the pattern docs equal `main` except for the envelope (frontmatter and preface, no reflow) and a closed, reviewed list of runtime adaptations (SC2).
+- [x] Both adapters carry the author-continuity rule; the guide template carries `main`'s resolver text, readable under Codex (SC3, SC4).
+- [x] A skill registers in one place, with no hand-maintained list; no `claude/` folder remains, and `init`, `init --dev` and a built wheel install everything including the hook (SC5, SC6).
+- [x] Fresh `claude`, `codex` and `both` installs discover all workflows and expert roles; re-init preserves protected files and does not write through symlinks (SC7).
+- [x] Installing over a copy of fusion-tea adopts exactly the old installer's symlinks and reports each one (SC8).
+- [x] fusion-tea's target-owned text has ledger rows and a proposed move into fusion-tea-owned files; the owner has a post-merge runbook rehearsed on a copy (SC9, SC10).
+- [x] An integration branch carrying `main`'s full history plus the native work passes pytest, ruff and mypy and is ready for the owner to merge; an independent audit covers the A–K remediations and this item's installer changes (SC11, SC12).
 
 **Required Reading**: `.project/active/native-skill-distribution/spec.md`; `/home/reid/1cfe/agentic-mbse-native-skills/.project/active/native-skills/{plan,remediation,audit}.md`; `/home/reid/1cfe/fusion-tea/.project/active/harness-right-size/{report.md,installed.json}`; research § 4.
 

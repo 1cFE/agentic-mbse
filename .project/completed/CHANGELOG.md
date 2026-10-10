@@ -4,6 +4,41 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-09] - Native Skill Distribution
+
+**Type**: Item (`WRAP-SPLIT` Item 1, adopts `NATIVE-DISTRIBUTION-RECONCILIATION`; branch `nsd-integration` in worktree `/home/reid/1cfe/agentic-mbse-nsd`, source last changed at `03d1510`, not yet merged)
+**Duration**: 5 days (spec created 2026-10-04 09:28 PDT; closed 2026-10-09)
+
+### Summary
+
+agentic-mbse now has one installer source. Before this item, `main` held the current workflow text in the old shape (`claude/` plus hand-kept `MBSE_*` lists, Claude Code only), while the native branch held the new `skills/` + `agents/` + `adapters/` installer for Claude Code and Codex with text 58 commits behind. fusion-tea ran both at once, its Claude side as 31 absolute links into this checkout's `claude/`. Now one tree (`skills/`, `agents/`, `adapters/`, `hooks/`, `project_templates/`) carries `main`'s text and installs the same way for both clients; `claude/` and the `MBSE_*` lists are gone, so a skill registers by adding its folder. A script regenerated the shipped text from `main` and checks it byte for byte: 55 files, 0 mismatches, apart from the frontmatter, the shared preface and 17 reviewed runtime adaptations. Re-init over fusion-tea's old links replaces all 31 without a prompt and reports each one. Rehearsed on copies of fusion-tea in both modes: nothing target-owned lost, and `MODELING_PROCESS.md` byte-identical with both MR-7 lines. Independently audited (Needs Work on B1, then Certify), and re-checked after Phase 9: suite 2,186 passed, ruff and mypy at `main`'s parity. Not checked: a live modeling session in either client after install; discovery was probed, behaviour was not.
+
+**Promise the product now makes.** [OWNER-VERBATIM] at Align, 2026-10-09: "can we just move all of the claude commands over to skill format, and install them in the same way? how do we simplify this". `agentic-mbse init` installs every shipped skill from one tree for Claude Code and Codex, in plain and `--dev` modes, and adding `skills/<name>/SKILL.md` is the whole registration: install, listing and tests derive from the tree.
+
+**Decision: recognising the old installer's links.** [AGENT] (ratified by owner at Align, 2026-10-09: remove `claude/` with no shim, and the installer adopts the old links; [design](20261009_native-skill-distribution/design.md)) A `.claude/{commands,skills,agents,hooks}/<name>` link is replaced without a prompt only when its raw text is absolute, has no empty, `.` or `..` segment, ends in `claude/<location>/<name>`, and its root is an agentic-mbse source checkout. The text is never normalized and the referent is never read, so a dangling link is adopted and a link into any other tree keeps the prompt-or-preserve rule. Rejected: normalizing the text, which can name a different tree than the link resolves to.
+
+**Decision: `--dev` links skill folders, not files.** [OWNER] 2026-10-09 chose to fix rather than defer audit B1; the shape is [AGENT] from the orchestrator's spike ([design D14](20261009_native-skill-distribution/design.md), [spike](20261009_native-skill-distribution/evidence/spike-dev-codex-links.md)). Under `--dev` each `.agents/skills/<n>` is one absolute folder link into the checkout; Claude's `.claude/skills/<n>` alias still links to it. A real folder holding files the installer does not own gets a plain copy instead, with one line saying what happened. Rejected: per-file links (the native branch's shape), which Codex skips.
+
+**Behavior found.**
+- Codex 0.160.0 never lists a skill whose `SKILL.md` is a file link (absolute or relative, inside or outside the project) and reports no error; it lists a skill whose folder is a link, wherever the link points and through chains of folder links. Claude Code 2.1.296 lists both shapes ([spike](20261009_native-skill-distribution/evidence/spike-dev-codex-links.md)).
+- `codex app-server --stdio` answers `skills/list` with no login and no model turn, and `claude -p` answers the stream-json `initialize` control request the same way; `completed/20261009_native-skills/discovery_probe.py` uses both to probe discovery.
+- The hatchling wheel build omits `docs/syside/python/v0.8.4/syside/` (340 files) with no matching ignore rule; the cause was not found (`WHEEL-DOCS-SYSIDE-GAP`).
+
+**Downstream (fusion-tea, the owner's).** After the merge: move the pin, apply the `AGENTS.md` patch that carries fusion-tea's two target-owned passages, re-init (plain `init` recommended; `--dev` would commit machine-specific links), answer `s` for `MODELING_PROCESS.md` ([runbook](20261009_native-skill-distribution/evidence/fusion-tea-runbook.md)). This checkout then runs `uv run agentic-mbse install-commands --assistant claude`.
+
+### Deliverables
+
+- `src/agentic_mbse/cli/installation.py` (tree-derived bundles and kinds, `is_source_checkout`, legacy-link adoption in `permit`, `link_directory`, `install_dev_bundle`, `expose_to_claude`, report-once) and `src/agentic_mbse/cli/__init__.py` (`MBSE_*` lists and dead names removed, `--list` by kind, Adopted report); `pyproject.toml` wheel includes.
+- The shipped tree: `skills/` (25 bundles), `agents/`, `adapters/` (author-continuity rule), `hooks/ruff-format.sh` (moved), `project_templates/`; `claude/` removed; this repo's tracked `.claude/` copies untracked.
+- Tests: `tests/test_shipped_text.py` and `tests/helpers/shipped.py` (new); `tests/test_installation.py`, `tests/test_cli.py`, `tests/test_packaged_guidance_contract.py` updated to tree-derived properties.
+- Docs: `CLAUDE.md`, `README.md`, `scripts/README.md`.
+- `.project/completed/20261009_native-skill-distribution/`: `spec.md`, `spec-review.md`, `design.md`, `design-review.md`, `plan.md` (9 phases), `audit.md`, `product-lens.md`, `briefs/` (00–15), `evidence/` (`reconcile.py`, `adaptations.yaml`, dispositions, check and probe results, rehearsal and raw outputs, `fusion-tea-target-owned.patch`, `fusion-tea-runbook.md`, `lint-parity.md`, the `--dev` link spike).
+- `.project/completed/20261009_native-skills/`: the native branch's item (plan, A–K remediation, validation, `discovery_probe.py`), re-certified by this item's audit.
+- `.project/active/wrap-split-migration-ledger.md` (created; Item 1 rows; Item 2 owns it).
+- Backlog follow-ups (P3): `NATIVE-DISCOVERY-LIVE-TEST`, `WHEEL-DOCS-SYSIDE-GAP`, `INSTALL-DEV-GITIGNORE-STALE`, `INSTALL-REPORT-UNCHANGED-UPDATED`, `REPO-INIT-SCAFFOLD-STALE`.
+
+---
+
 ## [2026-10-06] - Approve Research with No New Insights
 
 **Type**: Item (standalone `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS`, filed 2026-08-25; branch `research-approval-empty-insights`, source last changed at `8e8d26a`, not yet merged)
