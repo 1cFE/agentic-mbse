@@ -49,9 +49,12 @@ Repository = "https://github.com/yourorg/agentic-mbse"
 [tool.hatch.build.targets.wheel]
 packages = ["src/agentic_mbse"]
 
-# Include claude/, docs/, and project_templates/ directories for CLI to access at runtime
+# Package the installer's source tree and docs as agentic_mbse_data/ for the CLI to read at runtime
 [tool.hatch.build.targets.wheel.force-include]
-"claude" = "agentic_mbse_data/claude"
+"skills" = "agentic_mbse_data/skills"
+"agents" = "agentic_mbse_data/agents"
+"adapters" = "agentic_mbse_data/adapters"
+"hooks" = "agentic_mbse_data/hooks"
 "docs" = "agentic_mbse_data/docs"
 "project_templates" = "agentic_mbse_data/project_templates"
 "SOURCE_INDEX.md.template" = "agentic_mbse_data/SOURCE_INDEX.md.template"
@@ -59,7 +62,10 @@ packages = ["src/agentic_mbse"]
 [tool.hatch.build.targets.sdist]
 include = [
     "src/",
-    "claude/",
+    "skills/",
+    "agents/",
+    "adapters/",
+    "hooks/",
     "docs/",
     "project_templates/",
     "SOURCE_INDEX.md.template",

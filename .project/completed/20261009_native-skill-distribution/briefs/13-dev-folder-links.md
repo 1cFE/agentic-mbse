@@ -1,0 +1,38 @@
+.project/active/native-skill-distribution/plan.md
+
+## Brief from the orchestrator
+
+Fix `init --dev` so Codex lists every shipped skill, on branch `nsd-integration` (worktree `/home/reid/1cfe/agentic-mbse-nsd`, HEAD `e202396`). Add it to `plan.md` as Phase 9, implement it, and record it.
+
+### Why, and who decided
+
+- The audit's B1 / product-lens audit-F1: under `init --dev`, Codex lists none of the 25 shipped skills, because each `.agents/skills/<n>/SKILL.md` is a file link into the source checkout. The orchestrator had cleared B1 by a warning and deferred the fix; the lens kept it BLOCKED for the owner.
+- [OWNER] 2026-10-09, in chat: the owner asked for a spike ([OWNER-VERBATIM] "can you run a spike to figure it out? … would symlinking directly to .claude in the same repo work?"), then answered "yes" to "Want me to run the fix?". So audit-F1's owner disposition is **fix it**, not defer. This serves the point at `briefs/00-align.md:19`: both tools install the same way, in every documented mode.
+- The spike (orchestrator, committed `e202396`): `evidence/spike-dev-codex-links.md`, with scripts and JSON in `evidence/spike-dev-codex-links/`. Read it first. In short: Codex 0.160.0 never lists a skill whose `SKILL.md` is a file link (five variants), and always lists a skill whose folder is a link (absolute or relative, inside or outside the project, and chained through `.claude/skills/`). Claude Code 2.1.296 lists every shape. A real `init --dev` with each `.agents/skills/<n>` hand-converted to one folder link probes Codex 25, Claude 18, roles 5.
+
+### The change
+
+[AGENT, orchestrator] Under `--dev`, install each bundle as **one folder link** `.agents/skills/<n>` → the checkout's `skills/<n>`, instead of a real folder of per-file links. Claude's `.claude/skills/<n>` alias stays as it is (a relative folder link to `.agents/skills/<n>`); the spike shows Claude follows that chain. Linking `.agents` straight to the checkout was chosen over chaining through `.claude/skills/` because Claude's alias already points at `.agents` and the chain adds a hop for nothing; both shapes were proven.
+
+Constraints and my leanings (decide the details, and record each in the Phase 9 notes):
+
+1. **Reuse, don't duplicate, the ownership logic.** `Installer.alias` (`installation.py:232-264`) already replaces a real folder only when every entry in it is installer-owned, drops that folder's per-file manifest keys and records one `link:` entry. Generalize it (for example, let the caller pass the link text) rather than writing a second copy. Leaning: the `--dev` folder link is **absolute** (`source.resolve()`), matching today's `--dev` file links and hook link and their `link:` fingerprints.
+2. **Never delete what the installer does not own.** When `.agents/skills/<n>` is a real folder holding a file the installer does not own (or a modified one), it cannot become a link. Leaning: fall back to a plain copy of that bundle (what `init` without `--dev` does, so the owner's files survive and Codex still lists the skill) and print one line saying that bundle was copied, not linked, and why. Do not fall back to per-file links: Codex skips those.
+3. **Transitions both ways must hold and be tested:** fresh target; `--dev` over this branch's earlier per-file `--dev` install; `--dev` over a plain install; plain `init` over a `--dev` folder-link install (today's `copy_tree` handles a symlinked bundle path through `permit`; confirm, don't assume); `--assistant codex --dev` (no Claude alias); `--link-mode copy --dev` (Claude's copy keeps its per-file links, which Claude lists; leave it unless you find a reason).
+4. **Remove the B1 workaround.** Delete `DEV_CODEX_WARNING` and its use (`cli/__init__.py:65-69`, `:628-633`) so the next steps read the same in every mode; replace `tests/test_cli.py:471`'s warning test with tests of the new behaviour. Rewrite `README.md:47`'s `--dev` paragraph to say what `--dev` now does (each skill folder linked; templates linked) without the Codex caveat.
+5. **Tests pin the property Codex needs, derived from the tree** (SC5, I4): under `--dev`, every bundle in `skills/` is a folder link whose target is that bundle in the checkout, and no `SKILL.md` under `.agents/skills/` is a file link. Update the tests that pin the per-file shape (for example `tests/test_cli.py:418-426`, `tests/test_installation.py:178-181`). The default suite has no test that runs an external `codex` binary (`shutil.which` is only ever patched); keep it that way unless you find an existing pattern for live-client tests. Discovery proof goes in evidence (item 7).
+6. **Design and plan.** Add Phase 9 to `plan.md` in the existing format, checked off as you go, with notes. Add one decision amendment to `design.md` recording per-bundle folder links under `--dev`, citing the spike and the owner's disposition. Check whether `spec.md` needs any change (SC6/SC7); change it only if a criterion's text is now false, and say which.
+7. **Evidence.**
+   - Run `.project/active/native-skills/discovery_probe.py` on a fresh `init --dev` scratch target (under `.orchestrate-logs/`) and save the JSON as `evidence/probe-dev-folder-links.json`; it must show Codex 25, Claude 18, roles 5, no errors.
+   - Re-run the fusion-tea rehearsal: commit the code first (the script clones the committed branch), then `bash .orchestrate-logs/rehearsal/rehearse.sh > .orchestrate-logs/rehearsal/rehearse.log 2>&1` from the worktree root. It copies from the pristine copy `.orchestrate-logs/rehearsal/fusion-tea` and never touches real fusion-tea. The plain-mode outputs should not change in substance; say so or say what did. In the dev outputs, Codex should now list the 25 shipped skills plus fusion-tea's 5.
+   - Update `evidence/rehearsal.md` (found case 1 is now fixed, with the new numbers) and `evidence/fusion-tea-runbook.md`: the step 3 table's `--dev` column (Codex catalog, the files turned into links, anything else that changed), the "Why Codex sees nothing under `--dev`" paragraph (remove it), step 5's `--dev` `git status` expectation, and the recommendation's reasoning. The install-mode choice stays the owner's; the recommendation may stay plain `init` for the reason that still holds (committed machine-specific links), but it must no longer cite the Codex gap.
+   - Remove the `--dev` Codex follow-up from `evidence/audit-scope.md`'s follow-up list and the plan notes, pointing to Phase 9.
+
+### Rules
+
+- Worktree and scratch only. No writes to `/home/reid/1cfe/agentic-mbse` (the owner's live checkout, which fusion-tea's Claude side reads), the native worktree, or `/home/reid/1cfe/fusion-tea`. Do not switch branches.
+- Do not edit `audit.md` or `product-lens.md`; the independent re-audit after you updates them.
+- Gate (SC12 parity rule, `evidence/lint-parity.md`): full `uv run pytest tests/` green; `ruff check` and `ruff format --check` clean on every file you change, and no repo-wide count above the recorded baseline; `mypy` no worse on changed files. Update `evidence/lint-parity.md` if a number moves.
+- Commit as you go, one commit per coherent step (code + tests; evidence and rehearsal; docs and notes), subject leading with the decision. If `git` is blocked, prepare commit steps under `.orchestrate-logs/commit-steps/` with a `verify.py` run, as before, and say so.
+- No background tasks. Finish in this session.
+- End with a summary: what changed (file:line), the decisions you made under the leanings above, the transition test results, the probe numbers, what the rehearsal changed in each mode, the gate numbers, and the commits. Then `ARTIFACT: .project/active/native-skill-distribution/plan.md`.

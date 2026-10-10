@@ -1,0 +1,169 @@
+.agents/skills/analyze-models/SKILL.md: 1 lines removed, 0 in no agentic-mbse version
+.agents/skills/audit-models/SKILL.md: 10 lines removed, 10 in no agentic-mbse version
+    [NOT KEPT] allowed-tools:
+    [NOT KEPT] - Read
+    [NOT KEPT] - Grep
+    [NOT KEPT] - Glob
+    [NOT KEPT] - Bash
+    [NOT KEPT] - Agent
+    [NOT KEPT] - Write
+    [NOT KEPT] - Edit
+    [NOT KEPT] - AskUserQuestion
+    [NOT KEPT] Supporting skills: `model-validation`, `source-traceability`, `requirements-tracking`. Read their installed guidance when relevant.
+.agents/skills/backlog/SKILL.md: 11 lines removed, 11 in no agentic-mbse version
+    [NOT KEPT] description: "Manage work items \u2014 add, decompose epics, and close completed work"
+    [NOT KEPT] allowed-tools:
+    [NOT KEPT] - Read
+    [NOT KEPT] - Grep
+    [NOT KEPT] - Glob
+    [NOT KEPT] - Bash
+    [NOT KEPT] - Agent
+    [NOT KEPT] - Write
+    [NOT KEPT] - Edit
+    [NOT KEPT] - AskUserQuestion
+    [NOT KEPT] Supporting skills: `epic-decomposition`. Read their installed guidance when relevant.
+.agents/skills/design-model/SKILL.md: 11 lines removed, 11 in no agentic-mbse version
+    [NOT KEPT] allowed-tools:
+    [NOT KEPT] - Read
+    [NOT KEPT] - Grep
+    [NOT KEPT] - Glob
+    [NOT KEPT] - Bash
+    [NOT KEPT] - Agent
+    [NOT KEPT] - Write
+    [NOT KEPT] - Edit
+    [NOT KEPT] - AskUserQuestion
+    [NOT KEPT] - WebSearch
+    [NOT KEPT] Supporting skills: `sysml-conventions`, `project-structure`, `model-validation`, `source-traceability`, `requirements-tracking`. Read their installed guidance when relevant.
+.agents/skills/epic-decomposition/SKILL.md: 0 lines removed, 0 in no agentic-mbse version
+.agents/skills/formalize-intent/SKILL.md: 1 lines removed, 0 in no agentic-mbse version
+.agents/skills/implement-model/SKILL.md: 10 lines removed, 10 in no agentic-mbse version
+    [NOT KEPT] allowed-tools:
+    [NOT KEPT] - Read
+    [NOT KEPT] - Grep
+    [NOT KEPT] - Glob
+    [NOT KEPT] - Bash
+    [NOT KEPT] - Agent
+    [NOT KEPT] - Write
+    [NOT KEPT] - Edit
+    [NOT KEPT] - AskUserQuestion
+    [NOT KEPT] Supporting skills: `sysml-conventions`, `model-validation`, `project-structure`, `source-traceability`, `requirements-tracking`. Read their installed guidance when relevant.
+.agents/skills/manage-sources/SKILL.md: 1 lines removed, 0 in no agentic-mbse version
+.agents/skills/model-validation/SKILL.md: 2 lines removed, 2 in no agentic-mbse version
+    [NOT KEPT] description: 'Use when choosing model checks, running the six-level validator, interpreting diagnostics, or assessing regression, source, numerical, and integration evidence.
+    [NOT KEPT]   '
+.agents/skills/onboard/SKILL.md: 1 lines removed, 0 in no agentic-mbse version
+.agents/skills/orchestrate-modeling/SKILL.md: 10 lines removed, 10 in no agentic-mbse version
+    [NOT KEPT] allowed-tools:
+    [NOT KEPT] - Read
+    [NOT KEPT] - Grep
+    [NOT KEPT] - Glob
+    [NOT KEPT] - Bash
+    [NOT KEPT] - Agent
+    [NOT KEPT] - Write
+    [NOT KEPT] - Edit
+    [NOT KEPT] - AskUserQuestion
+    [NOT KEPT] Supporting skills: `epic-decomposition`, `project-structure`, `source-traceability`, `requirements-tracking`. Read their installed guidance when relevant.
+.agents/skills/pdf-analysis/SKILL.md: 2 lines removed, 0 in no agentic-mbse version
+.agents/skills/pdf-analysis/references/extraction-details.md: 0 lines removed, 0 in no agentic-mbse version
+.agents/skills/pdf-analysis/scripts/extract_page.py: 0 lines removed, 0 in no agentic-mbse version
+.agents/skills/plan-model/SKILL.md: 10 lines removed, 10 in no agentic-mbse version
+    [NOT KEPT] allowed-tools:
+    [NOT KEPT] - Read
+    [NOT KEPT] - Grep
+    [NOT KEPT] - Glob
+    [NOT KEPT] - Bash
+    [NOT KEPT] - Agent
+    [NOT KEPT] - Write
+    [NOT KEPT] - Edit
+    [NOT KEPT] - AskUserQuestion
+    [NOT KEPT] Supporting skills: `model-validation`, `sysml-conventions`, `project-structure`. Read their installed guidance when relevant.
+.agents/skills/project-structure/SKILL.md: 2 lines removed, 2 in no agentic-mbse version
+    [NOT KEPT] description: 'Use when asking about "project structure", "where does this go", "library vs designs", "file organization", "directory", "EXPOSE pattern", "project files", "4-directory model", "knowledge directory", "modeling_project", "work directory", "data directory", "OVERVIEW.md", "ARCHITECTURE.md", "REQUIREMENTS.md", "BACKLOG.md", or when deciding where to place new files or model elements. Provides the 4-directory information architecture and model file organization rules.
+    [NOT KEPT]   '
+.agents/skills/python-debugger/SKILL.md: 0 lines removed, 0 in no agentic-mbse version
+.agents/skills/python-debugger/references/debugging_internals.md: 0 lines removed, 0 in no agentic-mbse version
+.agents/skills/python-debugger/scripts/claude_debugger.py: 0 lines removed, 0 in no agentic-mbse version
+.agents/skills/quick-model/SKILL.md: 10 lines removed, 10 in no agentic-mbse version
+    [NOT KEPT] allowed-tools:
+    [NOT KEPT] - Read
+    [NOT KEPT] - Grep
+    [NOT KEPT] - Glob
+    [NOT KEPT] - Bash
+    [NOT KEPT] - Agent
+    [NOT KEPT] - Write
+    [NOT KEPT] - Edit
+    [NOT KEPT] - AskUserQuestion
+    [NOT KEPT] Supporting skills: `sysml-conventions`, `model-validation`. Read their installed guidance when relevant.
+.agents/skills/record-learning/SKILL.md: 2 lines removed, 0 in no agentic-mbse version
+.agents/skills/requirements-tracking/SKILL.md: 2 lines removed, 2 in no agentic-mbse version
+    [NOT KEPT] description: 'Use when asking about "requirement", "PR-XXX", "MR-XXX", "project rule", "modeling rule", "compliance", "enforcement", "promote requirement", "REQUIREMENTS.md", "two-tier", "MR-XXX to PR-XXX", "EARS format", "validation method", "design review", or when deciding how to write, enforce, or promote modeling requirements. Provides the two-tier requirements structure, PR-XXX format, and promotion path.
+    [NOT KEPT]   '
+.agents/skills/research/SKILL.md: 12 lines removed, 12 in no agentic-mbse version
+    [NOT KEPT] allowed-tools:
+    [NOT KEPT] - Read
+    [NOT KEPT] - Grep
+    [NOT KEPT] - Glob
+    [NOT KEPT] - Bash
+    [NOT KEPT] - Agent
+    [NOT KEPT] - Write
+    [NOT KEPT] - Edit
+    [NOT KEPT] - AskUserQuestion
+    [NOT KEPT] - WebSearch
+    [NOT KEPT] - WebFetch
+    [NOT KEPT] Supporting skills: `source-traceability`. Read their installed guidance when relevant.
+.agents/skills/review-model/SKILL.md: 10 lines removed, 10 in no agentic-mbse version
+    [NOT KEPT] allowed-tools:
+    [NOT KEPT] - Read
+    [NOT KEPT] - Grep
+    [NOT KEPT] - Glob
+    [NOT KEPT] - Bash
+    [NOT KEPT] - Agent
+    [NOT KEPT] - Write
+    [NOT KEPT] - Edit
+    [NOT KEPT] - AskUserQuestion
+    [NOT KEPT] Supporting skills: `sysml-conventions`, `model-validation`, `project-structure`, `requirements-tracking`. Read their installed guidance when relevant.
+.agents/skills/source-traceability/SKILL.md: 0 lines removed, 0 in no agentic-mbse version
+.agents/skills/spec-model/SKILL.md: 10 lines removed, 10 in no agentic-mbse version
+    [NOT KEPT] allowed-tools:
+    [NOT KEPT] - Read
+    [NOT KEPT] - Grep
+    [NOT KEPT] - Glob
+    [NOT KEPT] - Bash
+    [NOT KEPT] - Agent
+    [NOT KEPT] - Write
+    [NOT KEPT] - Edit
+    [NOT KEPT] - AskUserQuestion
+    [NOT KEPT] Supporting skills: `project-structure`, `source-traceability`, `model-validation`, `requirements-tracking`. Read their installed guidance when relevant.
+.agents/skills/status/SKILL.md: 10 lines removed, 10 in no agentic-mbse version
+    [NOT KEPT] allowed-tools:
+    [NOT KEPT] - Read
+    [NOT KEPT] - Grep
+    [NOT KEPT] - Glob
+    [NOT KEPT] - Bash
+    [NOT KEPT] - Agent
+    [NOT KEPT] - Write
+    [NOT KEPT] - Edit
+    [NOT KEPT] - AskUserQuestion
+    [NOT KEPT] Supporting skills: `epic-decomposition`, `requirements-tracking`. Read their installed guidance when relevant.
+.agents/skills/sysml-conventions/SKILL.md: 13 lines removed, 0 in no agentic-mbse version
+.agents/skills/sysml-conventions/references/stencils.md: 0 lines removed, 0 in no agentic-mbse version
+.agents/skills/toolkit-awareness/SKILL.md: 5 lines removed, 2 in no agentic-mbse version
+    [NOT KEPT] description: 'This skill should be used when the user asks about "validation", "validate models", "run checks", "quality checks", "codegen readiness", "TEA pipeline", "how to validate", "run the pipeline", "toolkit", "available commands", "what tools do we have", "PM operations", "project management", "agentic-mbse pm", "agentic-mbse status", "project files", "directory structure", or when answering questions about project workflow, build steps, or CI processes. Ensures Claude uses the actual installed toolchain instead of guessing commands.
+    [NOT KEPT]   '
+.agents/skills/toolkit-awareness/references/python-environment.md: 0 lines removed, 0 in no agentic-mbse version
+.agentic-mbse/codex.md: 1 lines removed, 1 in no agentic-mbse version
+    [in AGENTS.md] For this worktree, use `.agentic-mbse/patterns/` for the installed modeling pattern references named by skills and the guide. These instruction assets are separate from the pinned runtime. Use `.codex-test/run` for toolkit/Python commands as documented in `.project/codex-test-setup.md`.
+.codex/agents/kerml-expert.toml: 1 lines removed, 1 in no agentic-mbse version
+    [in AGENTS.md] For this worktree, use `.agentic-mbse/patterns/` for the installed modeling pattern references named by skills and the guide. These instruction assets are separate from the pinned runtime. Use `.codex-test/run` for toolkit/Python commands as documented in `.project/codex-test-setup.md`.
+.codex/agents/python-debugger.toml: 1 lines removed, 1 in no agentic-mbse version
+    [in AGENTS.md] For this worktree, use `.agentic-mbse/patterns/` for the installed modeling pattern references named by skills and the guide. These instruction assets are separate from the pinned runtime. Use `.codex-test/run` for toolkit/Python commands as documented in `.project/codex-test-setup.md`.
+.codex/agents/syside-expert.toml: 1 lines removed, 1 in no agentic-mbse version
+    [in AGENTS.md] For this worktree, use `.agentic-mbse/patterns/` for the installed modeling pattern references named by skills and the guide. These instruction assets are separate from the pinned runtime. Use `.codex-test/run` for toolkit/Python commands as documented in `.project/codex-test-setup.md`.
+.codex/agents/sysml-expert.toml: 2 lines removed, 1 in no agentic-mbse version
+    [in AGENTS.md] For this worktree, use `.agentic-mbse/patterns/` for the installed modeling pattern references named by skills and the guide. These instruction assets are separate from the pinned runtime. Use `.codex-test/run` for toolkit/Python commands as documented in `.project/codex-test-setup.md`.
+.codex/agents/sysmlv2-validator.toml: 1 lines removed, 1 in no agentic-mbse version
+    [in AGENTS.md] For this worktree, use `.agentic-mbse/patterns/` for the installed modeling pattern references named by skills and the guide. These instruction assets are separate from the pinned runtime. Use `.codex-test/run` for toolkit/Python commands as documented in `.project/codex-test-setup.md`.
+modeling_project/MODELING_GUIDE.md: 1 lines removed, 1 in no agentic-mbse version
+    [in AGENTS.md] Pattern references such as `[patterns/plant-idiom.md]` name files in this worktree's `.agentic-mbse/patterns/` directory. Read that installed copy for workflow guidance; it is versioned separately from the pinned executable runtime. The installation record is `.project/workflow-installation-20260913.md`.
+work/EPIC_GUIDE.md: 0 lines removed, 0 in no agentic-mbse version
+TOTAL flagged lines: 129

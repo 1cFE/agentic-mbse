@@ -1,0 +1,8 @@
+epic-decomposition: ok
+model-validation: ok
+project-structure: ok
+requirements-tracking: ok
+source-traceability: ok
+sysml-conventions: ok
+toolkit-awareness: ok
+hook: .orchestrate-logs/rehearsal/ft-dev/.claude/hooks/ruff-format.sh -> /home/reid/1cfe/agentic-mbse-nsd/hooks/ruff-format.sh

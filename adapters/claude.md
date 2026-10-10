@@ -1,0 +1,9 @@
+# Claude Code adapter
+
+Invoke modeling workflows as `/spec-model`, `/orchestrate-modeling`, and the other installed skill names. If `/status` invokes the built-in client status, explicitly ask to use the installed modeling `status` skill. Skills share `.agents/skills/`; `.claude/skills/` contains aliases or copies. Read referenced skill files explicitly; frontmatter is not a skill dependency loader.
+
+Use the native Read/search/edit/shell, web, image, and question tools. AskUserQuestion is appropriate where a workflow requests choices; preserve text questions where specified. Wait for required owner answers. Use Skill when explicitly loading a workflow. Existing allowed-tools metadata grants Claude permissions; it is not a capability restriction.
+
+Use Agent for delegation (older clients call it Task). Choose Explore for repository discovery and general-purpose for stage work; use the installed expert role names for specialized work. Keep a continuing author across stages and clarifications while its context remains useful. Independent criticism requires a fresh non-author agent with only its self-contained brief; never resume an author for its audit. Stage agents may delegate expert subtasks. Respect the host’s nesting/concurrency limits and queue independent work when slots are full. If required nesting is unavailable, report the blocker rather than treating parent self-review as independent evidence.
+
+For external sources, read `.claude/settings.json`, offer the needed Read permissions, and merge approved additions without removing existing settings. Paths under the user home use `~/path/**`; absolute paths outside it use `//absolute/path/**`. A single leading slash is relative to the settings file. MCP tools require a separately configured server; discover its actual exposed tools. The bundled formatter script is not registered as a hook by the installer.

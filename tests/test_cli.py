@@ -1,16 +1,30 @@
 """Tests for CLI module."""
+
+import json
+import os
 import re
 import subprocess
 from pathlib import Path
 
 import pytest
+import tomllib
 
-from agentic_mbse.cli import MBSE_COMMANDS, cmd_init, cmd_install_commands, cmd_validate, main
+from agentic_mbse.cli import (
+    cmd_init,
+    cmd_install_commands,
+    cmd_validate,
+    main,
+)
+from agentic_mbse.cli.installation import MANIFEST
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
+from tests.helpers.shipped import AGENTS, HOOKS, REPO_ROOT, SKILLS, bundle_files, kind
+
+WORKFLOW = next(skill for skill in SKILLS if kind(skill) == "workflow")
 
 
 class MockArgs:
     """Mock argparse namespace."""
+
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -87,7 +101,7 @@ class TestCmdInit:
         args = MockArgs(path=str(tmp_path), force=False)
         cmd_init(args)
 
-        claude_dir = tmp_path / ".claude" / "commands"
+        claude_dir = tmp_path / ".agents" / "skills"
         assert claude_dir.exists()
         assert claude_dir.is_dir()
 
@@ -136,36 +150,30 @@ class TestCmdInit:
 
         assert result == EXIT_SUCCESS
         agents_dir = tmp_path / ".claude" / "agents"
-        assert agents_dir.exists()
-        assert (agents_dir / "sysmlv2-validator.md").exists()
-        assert (agents_dir / "python-debugger.md").exists()
+        for agent in AGENTS:
+            assert (agents_dir / f"{agent}.md").exists()
 
     def test_creates_skills_directory(self, tmp_path):
-        """agentic-mbse init creates .claude/skills/ with skill subdirs."""
+        """agentic-mbse init exposes every shipped skill under .claude/skills/."""
         args = MockArgs(path=str(tmp_path), force=False)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
-        all_skills = [
-            "epic-decomposition", "model-validation", "project-structure",
-            "python-debugger", "record-learning", "requirements-tracking",
-            "source-traceability", "sysml-conventions", "toolkit-awareness",
-        ]
         skills_dir = tmp_path / ".claude" / "skills"
-        for skill in all_skills:
+        for skill in SKILLS:
             assert (skills_dir / skill).is_dir()
             assert (skills_dir / skill / "SKILL.md").exists()
 
     def test_creates_hooks_directory(self, tmp_path):
-        """agentic-mbse init creates .claude/hooks/ with hook scripts."""
+        """agentic-mbse init installs every shipped hook into .claude/hooks/, executable."""
         args = MockArgs(path=str(tmp_path), force=False)
         result = cmd_init(args)
 
         assert result == EXIT_SUCCESS
-        hook_path = tmp_path / ".claude" / "hooks" / "ruff-format.sh"
-        assert hook_path.exists()
-        # Check executable permission
-        assert hook_path.stat().st_mode & 0o111  # Has execute bit
+        for hook in HOOKS:
+            hook_path = tmp_path / ".claude" / "hooks" / hook
+            assert hook_path.is_file() and not hook_path.is_symlink()
+            assert hook_path.stat().st_mode & 0o111  # Has execute bit
 
     def test_agent_path_substitution(self, tmp_path):
         """Agent files have documentation paths substituted during install."""
@@ -236,16 +244,39 @@ class TestCmdInit:
 class TestCmdInstallCommands:
     """Tests for cmd_install_commands function."""
 
-    def test_list_shows_commands(self, capsys):
-        """--list shows available commands."""
-        args = MockArgs(list=True, directory=".", force=False)
-        result = cmd_install_commands(args)
-
+    def test_list_groups_every_installed_skill_under_its_kind(self, tmp_path, capsys):
+        """--list names each installed bundle once, under the heading its kind declares."""
+        result = cmd_install_commands(MockArgs(list=True, directory=str(tmp_path), force=False))
         assert result == EXIT_SUCCESS
-        captured = capsys.readouterr()
-        assert "design-model.md" in captured.out
-        assert "audit-models.md" in captured.out
-        assert "orchestrate-modeling.md" in captured.out
+        output = capsys.readouterr().out
+        cmd_install_commands(MockArgs(list=False, directory=str(tmp_path), force=False))
+        installed = sorted(p.parent.name for p in (tmp_path / ".agents/skills").glob("*/SKILL.md"))
+
+        sections: dict[str, list[str]] = {}
+        for line in output.splitlines():
+            if line.endswith("):"):
+                heading = line.rsplit(" (", 1)[0]
+                sections[heading] = []
+            elif line.startswith("  - "):
+                sections[heading].append(line.removeprefix("  - "))
+        headings = {"workflow": "Workflows", "supporting": "Supporting skills"}
+        assert sorted(sum(sections.values(), [])) == installed == SKILLS
+        for skill in SKILLS:
+            assert skill in sections[headings[kind(skill)]]
+        for heading, names in sections.items():
+            assert f"{heading} ({len(names)}):" in output
+        assert f"Total: {len(SKILLS)} skills" in output
+
+    @pytest.mark.parametrize("dev", [False, True])
+    def test_symlink_summary_describes_both_install_modes(self, tmp_path, capsys, dev):
+        cmd_init(MockArgs(path=str(tmp_path), force=False, dev=dev))
+        output = capsys.readouterr().out
+        header = next(line for line in output.splitlines() if line.startswith("Symlinked ("))
+        assert "dev mode" not in header
+        assert "points to source" not in header
+        if not dev:
+            assert header == f"Symlinked ({len(SKILLS)}):"
+            assert "dev mode" not in output
 
     def test_installs_commands_to_directory(self, tmp_path):
         """Installs commands to .claude/commands/ directory."""
@@ -253,30 +284,22 @@ class TestCmdInstallCommands:
         result = cmd_install_commands(args)
 
         assert result == EXIT_SUCCESS
-        commands_dir = tmp_path / ".claude" / "commands"
-        assert commands_dir.exists()
-        assert (commands_dir / "design-model.md").exists()
-        assert (commands_dir / "audit-models.md").exists()
-        assert (commands_dir / "orchestrate-modeling.md").exists()
+        commands_dir = tmp_path / ".agents" / "skills"
+        for skill in SKILLS:
+            assert (commands_dir / skill / "SKILL.md").exists()
 
-    def test_command_manifests_match_shipped_files(self):
-        """Python and development manifests include every shipped command."""
-        repository_root = Path(__file__).parent.parent
-        shipped = {path.name for path in (repository_root / "claude" / "commands").glob("*.md")}
-        script = (repository_root / "scripts" / "replicate_setup.sh").read_text()
-        match = re.search(r"for cmd in (?P<commands>.*?); do", script, re.DOTALL)
-
-        assert match is not None
-        replicated = set(match.group("commands").replace("\\", "").split())
-        assert set(MBSE_COMMANDS) == shipped
-        assert replicated == shipped
+    def test_replicate_setup_wraps_init(self):
+        """The replication helper installs through init, not a second installer."""
+        script = (REPO_ROOT / "scripts" / "replicate_setup.sh").read_text()
+        assert 'agentic-mbse init "$REPO_ROOT"' in script
 
     def test_skips_existing_without_force(self, tmp_path, capsys):
         """Skips existing files without --force."""
         # Create commands dir with existing file
-        commands_dir = tmp_path / ".claude" / "commands"
+        commands_dir = tmp_path / ".agents" / "skills"
         commands_dir.mkdir(parents=True)
-        existing = commands_dir / "design-model.md"
+        existing = commands_dir / WORKFLOW / "SKILL.md"
+        existing.parent.mkdir(parents=True, exist_ok=True)
         existing.write_text("existing content")
 
         args = MockArgs(list=False, directory=str(tmp_path), force=False)
@@ -286,14 +309,15 @@ class TestCmdInstallCommands:
         # Should not overwrite
         assert existing.read_text() == "existing content"
         captured = capsys.readouterr()
-        assert "Skipping" in captured.out
+        assert "Skipped: 1" in captured.out
 
     def test_overwrites_with_force(self, tmp_path):
         """Overwrites existing files with --force."""
         # Create commands dir with existing file
-        commands_dir = tmp_path / ".claude" / "commands"
+        commands_dir = tmp_path / ".agents" / "skills"
         commands_dir.mkdir(parents=True)
-        existing = commands_dir / "design-model.md"
+        existing = commands_dir / WORKFLOW / "SKILL.md"
+        existing.parent.mkdir(parents=True, exist_ok=True)
         existing.write_text("old content")
 
         args = MockArgs(list=False, directory=str(tmp_path), force=True)
@@ -325,17 +349,13 @@ class TestMain:
         model_file = tmp_path / "test.sysml"
         model_file.write_text("package Test {}")
 
-        monkeypatch.setattr("sys.argv", [
-            "agentic-mbse", "validate", str(tmp_path)
-        ])
+        monkeypatch.setattr("sys.argv", ["agentic-mbse", "validate", str(tmp_path)])
         result = main()
         assert result in [EXIT_SUCCESS, EXIT_FAILURE]
 
     def test_init_subcommand_exists(self, monkeypatch, tmp_path):
         """Init subcommand is registered and works."""
-        monkeypatch.setattr("sys.argv", [
-            "agentic-mbse", "init", str(tmp_path)
-        ])
+        monkeypatch.setattr("sys.argv", ["agentic-mbse", "init", str(tmp_path)])
         result = main()
         assert result == EXIT_SUCCESS
 
@@ -400,57 +420,83 @@ class TestCLIIntegration:
 class TestCmdInitDevMode:
     """Tests for init --dev mode."""
 
-    def test_dev_creates_symlinks_for_commands(self, tmp_path):
-        """--dev creates symlinks for command files."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
-        result = cmd_init(args)
+    @pytest.mark.parametrize("assistant", ["claude", "codex", "both"])
+    @pytest.mark.parametrize("link_mode", ["symlink", "copy"])
+    def test_dev_links_each_bundle_folder_to_the_checkout(self, tmp_path, assistant, link_mode):
+        """Codex lists a linked skill folder but skips a SKILL.md file link, so --dev links folders."""
+        args = MockArgs(
+            path=str(tmp_path), force=False, dev=True, assistant=assistant, link_mode=link_mode
+        )
+        assert cmd_init(args) == EXIT_SUCCESS
 
-        assert result == EXIT_SUCCESS
-        cmd_path = tmp_path / ".claude" / "commands" / "design-model.md"
-        assert cmd_path.is_symlink()
-        # Verify symlink points to source repo
-        assert "agentic-mbse" in str(cmd_path.resolve())
-
-    def test_dev_symlinks_orchestrator_command(self, tmp_path):
-        """--dev links the orchestrator from the source command directory."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
-        result = cmd_init(args)
-
-        assert result == EXIT_SUCCESS
-        command_path = tmp_path / ".claude" / "commands" / "orchestrate-modeling.md"
-        assert command_path.is_symlink()
-        assert command_path.resolve().name == "orchestrate-modeling.md"
+        files = json.loads((tmp_path / MANIFEST).read_text())["files"]
+        for skill in SKILLS:
+            shared = tmp_path / ".agents" / "skills" / skill
+            source = REPO_ROOT / "skills" / skill
+            assert os.readlink(shared) == str(source)
+            assert files[f".agents/skills/{skill}"] == f"link:{source}"
+            assert not [key for key in files if key.startswith(f".agents/skills/{skill}/")]
+            assert not (shared / "SKILL.md").is_symlink()
+            if assistant == "codex":
+                continue
+            alias = tmp_path / ".claude" / "skills" / skill
+            if link_mode == "symlink":
+                assert os.readlink(alias) == os.path.join("..", "..", ".agents", "skills", skill)
+            for inside in bundle_files(skill):
+                assert (alias / inside).resolve() == source / inside
 
     def test_dev_creates_symlinks_for_agents(self, tmp_path):
-        """--dev creates symlinks for agent files."""
+        """--dev renders agent files rather than linking them: they need resolved doc paths."""
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
         cmd_init(args)
 
-        agent_path = tmp_path / ".claude" / "agents" / "python-debugger.md"
-        assert agent_path.is_symlink()
-
-    def test_dev_creates_symlinks_for_skills(self, tmp_path):
-        """--dev creates symlinks for skill directories."""
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
-        cmd_init(args)
-
-        all_skills = [
-            "epic-decomposition", "model-validation", "project-structure",
-            "python-debugger", "record-learning", "requirements-tracking",
-            "source-traceability", "sysml-conventions", "toolkit-awareness",
-        ]
-        for skill in all_skills:
-            skill_path = tmp_path / ".claude" / "skills" / skill
-            assert skill_path.is_symlink()
-            assert skill_path.is_dir()
+        for agent in AGENTS:
+            agent_path = tmp_path / ".claude" / "agents" / f"{agent}.md"
+            assert agent_path.is_file() and not agent_path.is_symlink()
 
     def test_dev_creates_symlinks_for_hooks(self, tmp_path):
-        """--dev creates symlinks for hook files."""
+        """--dev links each hook to the source checkout's hooks/ folder."""
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
         cmd_init(args)
 
-        hook_path = tmp_path / ".claude" / "hooks" / "ruff-format.sh"
-        assert hook_path.is_symlink()
+        for hook in HOOKS:
+            hook_path = tmp_path / ".claude" / "hooks" / hook
+            assert hook_path.is_symlink()
+            assert hook_path.resolve() == REPO_ROOT / "hooks" / hook
+
+    @pytest.mark.parametrize("assistant", ["claude", "codex", "both"])
+    def test_next_steps_are_the_same_with_and_without_dev(self, tmp_path, capsys, assistant):
+        """Both tools list every --dev skill, so --dev closes the same way as plain init.
+
+        The closing output is everything after the report's last listed entry, so a line printed
+        between the lists and "Next steps:" counts.
+        """
+        report_entry = re.compile(r"  [@A+~B.-] ")
+        closing = {}
+        for dev in (False, True):
+            target = tmp_path / f"dev-{dev}"
+            target.mkdir()
+            args = MockArgs(path=str(target), force=False, dev=dev, assistant=assistant)
+            assert cmd_init(args) == EXIT_SUCCESS
+            lines = capsys.readouterr().out.splitlines()
+            last_entry = max(i for i, line in enumerate(lines) if report_entry.match(line))
+            closing[dev] = lines[last_entry + 1 :]
+        assert closing[True] == closing[False]
+        assert closing[True][:2] == ["", "Next steps:"]
+        assert "Run /onboard in Claude or $onboard in Codex" in closing[True][2]
+
+    def test_dev_refused_without_source_checkout(self, tmp_path, monkeypatch, capsys):
+        """Packaged data has skills/ too, so only src/agentic_mbse marks a source checkout."""
+        data = tmp_path / "agentic_mbse_data"
+        for name in ("skills", "agents", "adapters", "hooks", "docs", "project_templates"):
+            (data / name).mkdir(parents=True)
+        monkeypatch.setattr("agentic_mbse.cli._get_data_root", lambda: data)
+        target = tmp_path / "target"
+        target.mkdir()
+
+        assert cmd_init(MockArgs(path=str(target), force=False, dev=True)) == EXIT_FAILURE
+        assert "requires a source checkout" in capsys.readouterr().err
+        assert not any(target.iterdir())
 
     def test_dev_creates_symlinks_for_tool_templates(self, tmp_path):
         """--dev creates symlinks for tool-owned templates."""
@@ -471,60 +517,62 @@ class TestCmdInitDevMode:
         assert not (tmp_path / ".claude" / "settings.json").is_symlink()
         assert not (tmp_path / "README.md").is_symlink()
 
-    def test_dev_idempotent(self, tmp_path):
-        """Running --dev twice succeeds and updates symlinks."""
+    def test_dev_idempotent(self, tmp_path, capsys):
+        """A second --dev run keeps every folder link and preserves or copies nothing."""
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
+        assert cmd_init(args) == EXIT_SUCCESS
+        capsys.readouterr()
 
-        # First run
-        result1 = cmd_init(args)
-        assert result1 == EXIT_SUCCESS
+        assert cmd_init(args) == EXIT_SUCCESS
+        output = capsys.readouterr().out
+        assert "Preserving" not in output
+        assert "instead of linking it" not in output
+        for skill in SKILLS:
+            assert os.readlink(tmp_path / ".agents" / "skills" / skill) == str(
+                REPO_ROOT / "skills" / skill
+            )
 
-        # Second run
-        result2 = cmd_init(args)
-        assert result2 == EXIT_SUCCESS
+    def test_dev_over_plain_install_links_every_bundle_folder(self, tmp_path, capsys):
+        """--dev replaces each installer-owned bundle copy with one folder link."""
+        assert cmd_init(MockArgs(path=str(tmp_path), force=False, dev=False)) == EXIT_SUCCESS
+        for skill in SKILLS:
+            assert not (tmp_path / ".agents" / "skills" / skill).is_symlink()
+        capsys.readouterr()
 
-        # Symlinks should still work
-        cmd_path = tmp_path / ".claude" / "commands" / "design-model.md"
-        assert cmd_path.is_symlink()
-
-    def test_dev_replaces_regular_file_with_symlink(self, tmp_path):
-        """--dev replaces existing regular files with symlinks."""
-        # First init without dev
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
-        cmd_init(args)
-
-        cmd_path = tmp_path / ".claude" / "commands" / "design-model.md"
-        assert not cmd_path.is_symlink()  # Regular file
-
-        # Second init with dev
-        args = MockArgs(path=str(tmp_path), force=False, dev=True)
-        cmd_init(args)
-
-        assert cmd_path.is_symlink()  # Now a symlink
+        assert cmd_init(MockArgs(path=str(tmp_path), force=False, dev=True)) == EXIT_SUCCESS
+        output = capsys.readouterr().out
+        assert "Preserving" not in output
+        assert "instead of linking it" not in output
+        for skill in SKILLS:
+            assert os.readlink(tmp_path / ".agents" / "skills" / skill) == str(
+                REPO_ROOT / "skills" / skill
+            )
 
     def test_without_dev_copies_files(self, tmp_path):
         """Init without --dev still copies files (regression test)."""
         args = MockArgs(path=str(tmp_path), force=False, dev=False)
         cmd_init(args)
 
-        cmd_path = tmp_path / ".claude" / "commands" / "design-model.md"
+        cmd_path = tmp_path / ".agents" / "skills" / WORKFLOW / "SKILL.md"
+        assert not cmd_path.parent.is_symlink()
         assert not cmd_path.is_symlink()
         assert cmd_path.exists()
 
     @pytest.mark.skipif(
         __import__("platform").system() == "Windows",
-        reason="Windows test not applicable on non-Windows"
+        reason="Windows test not applicable on non-Windows",
     )
-    def test_dev_agents_keep_placeholders(self, tmp_path):
-        """--dev mode agents are symlinked with placeholders intact."""
+    def test_dev_agents_resolve_placeholders(self, tmp_path):
+        """Native roles are rendered with usable documentation paths in dev mode."""
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
         cmd_init(args)
 
         agent_path = tmp_path / ".claude" / "agents" / "syside-expert.md"
-        assert agent_path.is_symlink()
+        assert not agent_path.is_symlink()
         # Source files have placeholders, symlink should too
         content = agent_path.read_text()
-        assert "{SYSIDE_DOCS_PATH}" in content
+        assert "{SYSIDE_DOCS_PATH}" not in content
+        assert "/docs/syside" in content
 
     def test_dev_updates_gitignore(self, tmp_path):
         """--dev adds tool-owned paths to .gitignore."""
@@ -574,244 +622,6 @@ class TestCmdInitDevMode:
         assert "# Tool-owned files (managed by agentic-mbse init --dev)" not in content
 
 
-class TestHashUtilities:
-    """Tests for hash computation and storage."""
-
-    def test_compute_file_hash_returns_sha256(self, tmp_path):
-        """compute_source_hash returns consistent SHA256 hex string."""
-        test_file = tmp_path / "test.txt"
-        test_file.write_text("hello world")
-
-        from agentic_mbse.extraction.base import compute_source_hash
-        hash1 = compute_source_hash(test_file)
-        hash2 = compute_source_hash(test_file)
-
-        assert hash1 == hash2  # Deterministic
-        assert len(hash1) == 64  # SHA256 hex length
-        assert all(c in '0123456789abcdef' for c in hash1)
-
-    def test_load_save_tool_hashes_roundtrip(self, tmp_path):
-        """Hash file can be saved and loaded."""
-        from agentic_mbse.cli import _load_tool_hashes, _save_tool_hashes
-
-        hashes = {
-            "version": "1.0.0",
-            "commit": "abc1234",
-            "files": {"test.md": "deadbeef" * 8}
-        }
-        _save_tool_hashes(tmp_path, hashes)
-        loaded = _load_tool_hashes(tmp_path)
-
-        assert loaded == hashes
-
-    def test_load_tool_hashes_returns_none_if_missing(self, tmp_path):
-        """Returns None if hash file doesn't exist."""
-        from agentic_mbse.cli import _load_tool_hashes
-        assert _load_tool_hashes(tmp_path) is None
-
-
-
-class TestModificationDetection:
-    """Tests for file modification detection."""
-
-    def test_check_modification_no_hash_file(self, tmp_path):
-        """Returns False when no hash file exists (backwards compat)."""
-        from agentic_mbse.cli import _check_modification
-
-        test_file = tmp_path / "test.md"
-        test_file.write_text("content")
-
-        result = _check_modification(test_file, None, "test.md")
-        assert result is False
-
-    def test_check_modification_file_not_in_hashes(self, tmp_path):
-        """Returns False when file not tracked in hash store."""
-        from agentic_mbse.cli import _check_modification
-
-        test_file = tmp_path / "test.md"
-        test_file.write_text("content")
-        hashes = {"version": "1.0", "commit": "abc", "files": {}}
-
-        result = _check_modification(test_file, hashes, "test.md")
-        assert result is False
-
-    def test_check_modification_hash_matches(self, tmp_path):
-        """Returns False when file matches stored hash."""
-        from agentic_mbse.cli import _check_modification
-        from agentic_mbse.extraction.base import compute_source_hash
-
-        test_file = tmp_path / "test.md"
-        test_file.write_text("content")
-        file_hash = compute_source_hash(test_file)
-        hashes = {"version": "1.0", "commit": "abc", "files": {"test.md": file_hash}}
-
-        result = _check_modification(test_file, hashes, "test.md")
-        assert result is False
-
-    def test_check_modification_hash_differs(self, tmp_path):
-        """Returns True when file differs from stored hash."""
-        from agentic_mbse.cli import _check_modification
-
-        test_file = tmp_path / "test.md"
-        test_file.write_text("modified content")
-        hashes = {"version": "1.0", "commit": "abc", "files": {"test.md": "oldhash" * 8}}
-
-        result = _check_modification(test_file, hashes, "test.md")
-        assert result is True
-
-    def test_check_modification_file_missing(self, tmp_path):
-        """Returns False when file doesn't exist."""
-        from agentic_mbse.cli import _check_modification
-
-        missing_file = tmp_path / "missing.md"
-        hashes = {"version": "1.0", "commit": "abc", "files": {"missing.md": "hash"}}
-
-        result = _check_modification(missing_file, hashes, "missing.md")
-        assert result is False
-
-
-class TestBackupFile:
-    """Tests for file backup functionality."""
-
-    def test_backup_creates_backup_file(self, tmp_path):
-        """Creates .backup file."""
-        from agentic_mbse.cli import _backup_file
-
-        original = tmp_path / "test.md"
-        original.write_text("original content")
-
-        backup_path = _backup_file(original)
-
-        assert backup_path.exists()
-        assert backup_path.name == "test.md.backup"
-        assert backup_path.read_text() == "original content"
-
-    def test_backup_handles_existing_backup(self, tmp_path):
-        """Uses .backup.1, .backup.2 if .backup exists."""
-        from agentic_mbse.cli import _backup_file
-
-        original = tmp_path / "test.md"
-        original.write_text("v3")
-        (tmp_path / "test.md.backup").write_text("v1")
-        (tmp_path / "test.md.backup.1").write_text("v2")
-
-        backup_path = _backup_file(original)
-
-        assert backup_path.name == "test.md.backup.2"
-        assert backup_path.read_text() == "v3"
-
-
-class TestPromptForModifiedFile:
-    """Tests for user prompt function."""
-
-    def test_prompt_returns_skip(self, monkeypatch):
-        """Returns 'skip' when user enters 's'."""
-        from agentic_mbse.cli import _prompt_for_modified_file
-        monkeypatch.setattr('builtins.input', lambda _: 's')
-
-        result = _prompt_for_modified_file("test.md")
-        assert result == 'skip'
-
-    def test_prompt_returns_backup(self, monkeypatch):
-        """Returns 'backup' when user enters 'b'."""
-        from agentic_mbse.cli import _prompt_for_modified_file
-        monkeypatch.setattr('builtins.input', lambda _: 'b')
-
-        result = _prompt_for_modified_file("test.md")
-        assert result == 'backup'
-
-    def test_prompt_returns_overwrite(self, monkeypatch):
-        """Returns 'overwrite' when user enters 'o'."""
-        from agentic_mbse.cli import _prompt_for_modified_file
-        monkeypatch.setattr('builtins.input', lambda _: 'o')
-
-        result = _prompt_for_modified_file("test.md")
-        assert result == 'overwrite'
-
-    def test_prompt_returns_skip_all(self, monkeypatch):
-        """Returns 'skip_all' when user enters 'S'."""
-        from agentic_mbse.cli import _prompt_for_modified_file
-        monkeypatch.setattr('builtins.input', lambda _: 'S')
-
-        result = _prompt_for_modified_file("test.md")
-        assert result == 'skip_all'
-
-    def test_prompt_returns_overwrite_all(self, monkeypatch):
-        """Returns 'overwrite_all' when user enters 'O'."""
-        from agentic_mbse.cli import _prompt_for_modified_file
-        monkeypatch.setattr('builtins.input', lambda _: 'O')
-
-        result = _prompt_for_modified_file("test.md")
-        assert result == 'overwrite_all'
-
-
-class TestInstallFileWithHash:
-    """Tests for _install_file_with_hash with hash return value."""
-
-    def test_install_file_returns_hash_on_copy(self, tmp_path):
-        """Returns content hash when copying file."""
-        from agentic_mbse.cli import _install_file_with_hash
-        from agentic_mbse.extraction.base import compute_source_hash
-
-        src = tmp_path / "src.md"
-        dst = tmp_path / "dst.md"
-        src.write_text("content")
-
-        action, content_hash = _install_file_with_hash(src, dst, is_dev_mode=False)
-
-        assert action == "created"
-        assert content_hash == compute_source_hash(dst)
-
-    def test_install_file_returns_none_hash_on_symlink(self, tmp_path):
-        """Returns None hash when symlinking (dev mode)."""
-        from agentic_mbse.cli import _install_file_with_hash
-
-        src = tmp_path / "src.md"
-        dst = tmp_path / "dst.md"
-        src.write_text("content")
-
-        action, content_hash = _install_file_with_hash(src, dst, is_dev_mode=True)
-
-        assert action == "symlinked"
-        assert content_hash is None
-
-    def test_install_file_skips_when_requested(self, tmp_path):
-        """Returns 'skipped' and None hash when skip requested."""
-        from agentic_mbse.cli import _install_file_with_hash
-
-        src = tmp_path / "src.md"
-        dst = tmp_path / "dst.md"
-        src.write_text("new content")
-        dst.write_text("old content")
-
-        action, content_hash = _install_file_with_hash(
-            src, dst, is_dev_mode=False,
-            was_modified=True, user_action='skip'
-        )
-
-        assert action == "skipped"
-        assert content_hash is None
-        assert dst.read_text() == "old content"  # Unchanged
-
-    def test_install_file_backs_up_when_requested(self, tmp_path):
-        """Creates backup and updates when backup requested."""
-        from agentic_mbse.cli import _install_file_with_hash
-
-        src = tmp_path / "src.md"
-        dst = tmp_path / "dst.md"
-        src.write_text("new content")
-        dst.write_text("old content")
-
-        action, content_hash = _install_file_with_hash(
-            src, dst, is_dev_mode=False,
-            was_modified=True, user_action='backup'
-        )
-
-        assert action == "backed_up_and_updated"
-        assert dst.read_text() == "new content"
-        assert (tmp_path / "dst.md.backup").read_text() == "old content"
-
-
 class TestModificationDetectionIntegration:
     """Integration tests for modification detection in cmd_init."""
 
@@ -820,13 +630,13 @@ class TestModificationDetectionIntegration:
         args = MockArgs(path=str(tmp_path), force=False, dev=False)
         cmd_init(args)
 
-        hash_file = tmp_path / ".claude" / ".tool-hashes.json"
+        hash_file = tmp_path / ".agentic-mbse" / "install.json"
         assert hash_file.exists()
 
         import json
+
         hashes = json.loads(hash_file.read_text())
         assert "version" in hashes
-        assert "commit" in hashes
         assert "files" in hashes
         assert len(hashes["files"]) > 0
 
@@ -836,11 +646,12 @@ class TestModificationDetectionIntegration:
         """The new command participates in normal tool-owned modification handling."""
         import json
 
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
         args = MockArgs(path=str(tmp_path), force=False, dev=False)
         cmd_init(args)
-        command_path = tmp_path / ".claude" / "commands" / "orchestrate-modeling.md"
-        hashes = json.loads((tmp_path / ".claude" / ".tool-hashes.json").read_text())
-        relative_path = ".claude/commands/orchestrate-modeling.md"
+        command_path = tmp_path / ".agents" / "skills" / "orchestrate-modeling" / "SKILL.md"
+        hashes = json.loads((tmp_path / ".agentic-mbse" / "install.json").read_text())
+        relative_path = ".agents/skills/orchestrate-modeling/SKILL.md"
 
         assert relative_path in hashes["files"]
         command_path.write_text("# Owner modification", encoding="utf-8")
@@ -853,22 +664,24 @@ class TestModificationDetectionIntegration:
         assert relative_path in capsys.readouterr().out
         assert command_path.read_text(encoding="utf-8") == "# Owner modification"
 
-    def test_dev_mode_no_hash_file(self, tmp_path):
-        """Dev mode does not create hash file."""
+    def test_dev_mode_tracks_hashes(self, tmp_path):
+        """Dev links have persistent ownership for safe transitions back to copies."""
         args = MockArgs(path=str(tmp_path), force=False, dev=True)
         cmd_init(args)
 
-        hash_file = tmp_path / ".claude" / ".tool-hashes.json"
-        assert not hash_file.exists()
+        hash_file = tmp_path / ".agentic-mbse" / "install.json"
+        assert hash_file.exists()
 
     def test_reinit_no_modification_no_prompt(self, tmp_path, monkeypatch, capsys):
         """Re-init without modifications doesn't prompt."""
         # Track if input() was called
         input_called = []
+
         def fake_input(prompt):
             input_called.append(prompt)
-            return 'o'
-        monkeypatch.setattr('builtins.input', fake_input)
+            return "o"
+
+        monkeypatch.setattr("builtins.input", fake_input)
 
         # First init
         args = MockArgs(path=str(tmp_path), force=False, dev=False)
@@ -882,6 +695,7 @@ class TestModificationDetectionIntegration:
     def test_reinit_with_modification_prompts(self, tmp_path, monkeypatch):
         """Re-init with modification prompts user."""
         # First init
+        monkeypatch.setattr("sys.stdin.isatty", lambda: True)
         args = MockArgs(path=str(tmp_path), force=False, dev=False)
         cmd_init(args)
 
@@ -891,10 +705,12 @@ class TestModificationDetectionIntegration:
 
         # Track prompts
         prompted_files = []
+
         def fake_input(prompt):
             prompted_files.append(prompt)
-            return 's'  # Skip
-        monkeypatch.setattr('builtins.input', fake_input)
+            return "s"  # Skip
+
+        monkeypatch.setattr("builtins.input", fake_input)
 
         # Re-init
         cmd_init(args)
@@ -914,7 +730,7 @@ class TestModificationDetectionIntegration:
 
         # Track if prompted
         prompted = []
-        monkeypatch.setattr('builtins.input', lambda _: prompted.append(1) or 'o')
+        monkeypatch.setattr("builtins.input", lambda _: prompted.append(1) or "o")
 
         # Re-init with force
         args = MockArgs(path=str(tmp_path), force=True, dev=False)
@@ -930,7 +746,7 @@ class TestModificationDetectionIntegration:
 
         gitignore = tmp_path / ".gitignore"
         content = gitignore.read_text()
-        assert ".claude/.tool-hashes.json" in content
+        assert ".agentic-mbse/install.json" in content
 
 
 class TestNewTemplates:
@@ -1069,3 +885,32 @@ class TestDirectoryStructure:
         ]
         for d in expected_dirs:
             assert (tmp_path / d).is_dir(), f"Missing directory: {d}"
+
+
+@pytest.mark.parametrize(
+    "choice,expected",
+    [("s", "skip"), ("b", "backup"), ("o", "overwrite"), ("S", "skip_all"), ("O", "overwrite_all")],
+)
+def test_modified_file_prompt_choices(monkeypatch, choice, expected):
+    from agentic_mbse.cli import _prompt_for_modified_file
+
+    monkeypatch.setattr("builtins.input", lambda _: choice)
+    assert _prompt_for_modified_file("managed.md") == expected
+
+
+def test_modified_file_prompt_retries_invalid_choice(monkeypatch, capsys):
+    from agentic_mbse.cli import _prompt_for_modified_file
+
+    answers = iter(["invalid", "b"])
+    monkeypatch.setattr("builtins.input", lambda _: next(answers))
+    assert _prompt_for_modified_file("managed.md") == "backup"
+    assert "Invalid choice" in capsys.readouterr().out
+
+
+def test_source_tree_has_no_claude_folder():
+    """No Claude-named source folder remains, in the checkout or in either package."""
+    assert not (REPO_ROOT / "claude").exists()
+    build = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())["tool"]["hatch"]["build"]
+    wheel = build["targets"]["wheel"]["force-include"]
+    packaged = [*wheel, *wheel.values(), *build["targets"]["sdist"]["include"]]
+    assert not [entry for entry in packaged if "claude" in entry.split("/")]

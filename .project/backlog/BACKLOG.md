@@ -19,7 +19,7 @@ Prioritized list of epics and features.
 | Item | Status | Evidence / next step |
 |------|--------|----------------------|
 | `L6-LIBRARY-ALIAS-SOURCE` | [AGENT] Filed 2026-10-04 at `L6-EXPOSE-CONSISTENCY` close; recorded limitation, not a regression | An EXPOSE alias to an attribute of a part typed by a `library/` part definition passes Level 6 even when that source value is unset, because completeness path-filters the source declaration and skips the alias ([audit](../completed/20261004_l6-expose-consistency/audit.md) advisory; design R4/B4). How required values on referenced library parts get verified is undecided |
-| `NATIVE-DISTRIBUTION-RECONCILIATION` | [AGENT] Draft residual-work spec; product-lens CLEAR | [Distribution spec](../active/native-skill-distribution/spec.md); existing migration requirements reused by reference |
+| `NATIVE-DISTRIBUTION-RECONCILIATION` | [AGENT] Draft residual-work spec; product-lens CLEAR; adopted 2026-10-06 as Item 1 of `WRAP-SPLIT` (P1) | [Distribution spec](../active/native-skill-distribution/spec.md); [epic](epic_wrap-split.md) |
 | `CMDREF-001` | [INHERITED: epic_command-refresh.md] P2 draft; scope reconciliation needed | September simplification overlaps this July proposal; inspect remaining objectives before decomposition |
 | `C4-PLAIN-SUBTYPE-DOC-TEST` | [INHERITED: ../active/c4-plain-subtype-instantiation/spec.md] Unimplemented draft | Correct stale subtype-chain docstring and add the missing behavior test; current behavior is already deliberate |
 
@@ -69,6 +69,29 @@ Prioritized list of epics and features.
 **Problem**: The `pdf-analysis` skill ships a 3-tier extraction pipeline but Tier 2 (Docling MCP) requires manual setup. Users get references to `mcp__docling__*` tools that don't exist out of the box.
 
 **Goal**: `agentic-mbse init` auto-configures Docling MCP server. Revisit design to align with v4 pipeline architecture and current best practices.
+
+---
+
+### [WRAP-SPLIT] Wrap the agentic-mbse / fusion-tea split
+
+**Priority**: P1
+**Effort**: ~9 days (5 items + 0.5 d integration)
+**Status**: Draft epic; decomposition approved by owner 2026-10-06; research seam ruled in by owner 2026-10-06 and added as Item 5 on 2026-10-08; product-lens CLEAR
+**Epic**: `.project/backlog/epic_wrap-split.md`
+**Research**: `.project/research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md`
+
+**Problem**: The goal and study layers (`run-goal`, `narrate-goal`, `run-study`) live only in fusion-tea; MR-7's enforcement sits in a tool-owned file that re-init deletes; agentic-mbse's shipped surfaces carry consumer-specific pointers and machine paths; the research acquisition seam the goal layer delegates to exists only as fusion-tea scripts; the native installer branch is 57 commits behind `main`'s content.
+
+**Goal**: Each skill installs from its owning repo (goal layer from agentic-mbse, study layer from sysml-codegen); the design-choice principle ships generally; shipped surfaces read as general rules with fusion kept only as labelled examples; nothing removed is lost to fusion-tea.
+
+**Owner decisions**: study layer and tools go to sysml-codegen; the research seam ports to agentic-mbse; fusion vocabulary acceptable as examples; no loss of information for fusion-tea (migration ledger).
+
+**Items**:
+- [x] Item 1: Reconcile native installer source with `main` (adopts `NATIVE-DISTRIBUTION-RECONCILIATION`) ✅ closed 2026-10-09, awaiting owner merge
+- [ ] Item 2: Port the goal layer and the design-choice principle
+- [ ] Item 3: Move the study layer to sysml-codegen (external work, tracked here)
+- [ ] Item 4: Read-through sweep of shipped surfaces
+- [ ] Item 5: Port the research acquisition seam (spec in progress 2026-10-08)
 
 ---
 
@@ -537,6 +560,66 @@ Three small items left out of `L6-EXPOSE-CONSISTENCY`: V4 still reports `.` on n
 
 ---
 
+### [NATIVE-DISCOVERY-LIVE-TEST] Discovery by Claude Code and Codex is checked only by a hand-run probe
+
+**Priority**: P3
+**Status**: Filed 2026-10-09 at the close of `NATIVE-DISTRIBUTION-RECONCILIATION` (WRAP-SPLIT Item 1)
+**Source**: [Phase 9 re-check](../completed/20261009_native-skill-distribution/audit.md) advisory 4; [spike](../completed/20261009_native-skill-distribution/evidence/spike-dev-codex-links.md)
+
+**Problem**: Whether each client lists the installed skills rests on client behaviour nobody documents. Codex 0.160.0 lists a skill whose folder is a link and silently skips one whose `SKILL.md` is a file link; `init --dev` hid every shipped skill from Codex for that reason until Phase 9. The default suite runs no client, so a client upgrade that changes link handling would pass every test. The only check is `.project/completed/20261009_native-skills/discovery_probe.py`, run by hand.
+
+**Goal**: An opt-in test (skipped when `claude` or `codex` is not on `PATH`) that installs into scratch targets under plain `init` and `init --dev` and asserts both clients list every bundle in `skills/` and every role in `agents/`, with counts derived from the tree. Run it when either client's version changes.
+
+---
+
+### [WHEEL-DOCS-SYSIDE-GAP] The built wheel omits `docs/syside/python/v0.8.4/syside/`
+
+**Priority**: P3
+**Status**: Filed 2026-10-09 at the close of `NATIVE-DISTRIBUTION-RECONCILIATION`; older than that item
+**Source**: [plan](../completed/20261009_native-skill-distribution/plan.md) Phase 4 notes; `tests/test_packaged_guidance_contract.py:38` (`DOCS_GAP`, strict xfail)
+
+**Problem**: The wheel leaves out all 340 files under `docs/syside/python/v0.8.4/syside/`; the other docs files are present. No ignore rule matches and the folder is a plain directory, so the cause is inside hatchling and was not found. No shipped instruction names that folder today (the syside role names `api/`, `automator/` and `examples/`), so wheel installs such as fusion-tea's lose nothing they are told to read.
+
+**Goal**: Find why hatchling drops the folder and package it, or decide it should not ship and drop it from the comparison. The strict xfail fails loudly once the folder is packaged.
+
+---
+
+### [INSTALL-DEV-GITIGNORE-STALE] `--dev`'s `.gitignore` list names two paths the installer no longer writes
+
+**Priority**: P3
+**Status**: Filed 2026-10-09 at the close of `NATIVE-DISTRIBUTION-RECONCILIATION` (cut from its scope at design review, S3)
+**Source**: [audit](../completed/20261009_native-skill-distribution/audit.md) accepted follow-ups
+
+**Problem**: `DEV_MODE_GITIGNORE_PATHS` (`src/agentic_mbse/cli/__init__.py:50`, `:54`) still adds `.claude/commands/` and `.claude/.tool-hashes.json`, which the native installer never creates. The lines do no harm but tell a reader those paths are managed.
+
+**Goal**: Make the list name exactly what `init --dev` writes, derived from the installer where practical.
+
+---
+
+### [INSTALL-REPORT-UNCHANGED-UPDATED] Re-init reports every managed file as Updated even when its bytes are unchanged
+
+**Priority**: P3
+**Status**: Filed 2026-10-09 at the close of `NATIVE-DISTRIBUTION-RECONCILIATION`; older than that item
+**Source**: [audit](../completed/20261009_native-skill-distribution/audit.md) accepted follow-ups; [fusion-tea runbook](../completed/20261009_native-skill-distribution/evidence/fusion-tea-runbook.md) step 5
+
+**Problem**: `Installer.write` rewrites and reports any existing managed file (`src/agentic_mbse/cli/installation.py:178`), so a second run prints Updated (46) while `git status` is empty. Readers must verify with git instead of the report.
+
+**Goal**: Report a file as Updated only when its bytes or link change; leave unchanged files out of the report (or count them separately).
+
+---
+
+### [REPO-INIT-SCAFFOLD-STALE] This repo tracks an init scaffold with stale tool-owned template copies
+
+**Priority**: P3
+**Status**: Filed 2026-10-09 at the close of `NATIVE-DISTRIBUTION-RECONCILIATION` (design R7, out of its scope)
+**Source**: [design](../completed/20261009_native-skill-distribution/design.md) R7 and Non-Goals
+
+**Problem**: agentic-mbse tracks `modeling_project/`, `work/`, `knowledge/` and `data/`, including copies of tool-owned templates (`modeling_project/MODELING_GUIDE.md`, `modeling_project/MODELING_PROCESS.md`, `work/EPIC_GUIDE.md`) that no longer match `project_templates/`. A reader can mistake them for current shipped text.
+
+**Goal**: Decide whether this repo keeps a tracked scaffold; then either refresh it from `project_templates/` or untrack it, as was done for `.claude/`.
+
+---
+
 ## Disposition Records
 
 ### [ITEM-SYNC-F1] SysIDE self-named-recursion vendor note (evaluation-time finding)
@@ -614,6 +697,7 @@ Implemented in `9cf6b3c`; the retained [spec](../active/formula-teaching-reconci
 | L6-EXPOSE-CONSISTENCY: L6 EXPOSE Validation Consistency | 2026-10-04 | <1 day | V4 and completeness share V2's EXPOSE predicate (`3f442ce`); fusion-tea `models/` Level 6 issues 7,734 → 408, none added. Archived to `completed/20261004_l6-expose-consistency/` |
 | PM-MATRIX-ESCAPED-PIPE: Escaped Pipes and Registry ID Integrity | 2026-10-04 | <1 day (filed 2026-08-21) | GFM `\|` escape honoured; all seven allocators reserve every ID the registry file names; backlog writes keep unparsed records; nine refusals before any write. Certified with follow-ups. Archived to `completed/20261004_pm-registry-integrity/`. Downstream: fusion-tea fixes its `SV-034` cells by hand |
 | PM-APPROVE-RESEARCH-EMPTY-INSIGHTS: Approve Research with No New Insights | 2026-10-06 | 2 days (filed 2026-08-25) | `approve-research --insights '[]'` approves and moves the document without reading or writing `KNOWLEDGE.md`; omission and `None` stay errors; a pending path that is not a regular file or climbs above `pending/` is refused; shipped `/research` step tells agents to make the call. Certified. Archived to `completed/20261006_research-approval-empty-insights/`. Follow-up: `PM-APPROVE-RESEARCH-MOVE-SAFETY` |
+| NATIVE-DISTRIBUTION-RECONCILIATION (WRAP-SPLIT Item 1): Native Skill Distribution | 2026-10-09 | 5 days | One `skills/` + `agents/` + `adapters/` + `hooks/` tree carrying `main`'s text installs for Claude Code and Codex; `claude/` and the `MBSE_*` lists removed, so a skill registers by its folder; re-init adopts the pre-native `--dev` links; `--dev` links skill folders so Codex lists them; fusion-tea runbook rehearsed on copies. Certified. On `nsd-integration`, awaiting owner merge. Archived to `completed/20261009_native-skill-distribution/` (with the native branch's `completed/20261009_native-skills/`). Follow-ups: `NATIVE-DISCOVERY-LIVE-TEST`, `WHEEL-DOCS-SYSIDE-GAP`, `INSTALL-DEV-GITIGNORE-STALE`, `INSTALL-REPORT-UNCHANGED-UPDATED`, `REPO-INIT-SCAFFOLD-STALE` |
 | ~~EPIC-CMDREV-001: Command System Revision~~ | — | — | **Superseded** by EPIC-ARCH-002 + EPIC-ARCH-003 |
 | ~~TASK-PDF-001: Header Consistency~~ | — | — | **Superseded** by EPIC-PDFV3-001 (Claude structure repair handles this) |
 

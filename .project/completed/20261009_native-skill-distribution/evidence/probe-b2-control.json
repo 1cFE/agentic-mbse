@@ -1,0 +1,71 @@
+{
+  "project": ".orchestrate-logs/probe/b2-control",
+  "versions": {
+    "claude": "2.1.295 (Claude Code)",
+    "codex": "codex-cli 0.160.0"
+  },
+  "clients": {
+    "claude": {
+      "names": [
+        "analyze-models",
+        "audit-models",
+        "backlog",
+        "design-model",
+        "formalize-intent",
+        "implement-model",
+        "manage-sources",
+        "onboard",
+        "orchestrate-modeling",
+        "pdf-analysis",
+        "plan-model",
+        "python-debugger",
+        "quick-model",
+        "record-learning",
+        "research",
+        "review-model",
+        "spec-model",
+        "status"
+      ],
+      "errors": [],
+      "error": null,
+      "expert_roles": [
+        "kerml-expert",
+        "python-debugger",
+        "syside-expert",
+        "sysml-expert",
+        "sysmlv2-validator"
+      ]
+    },
+    "codex": {
+      "names": [
+        "analyze-models",
+        "audit-models",
+        "backlog",
+        "design-model",
+        "epic-decomposition",
+        "formalize-intent",
+        "implement-model",
+        "manage-sources",
+        "model-validation",
+        "onboard",
+        "orchestrate-modeling",
+        "pdf-analysis",
+        "plan-model",
+        "project-structure",
+        "python-debugger",
+        "quick-model",
+        "record-learning",
+        "requirements-tracking",
+        "research",
+        "review-model",
+        "source-traceability",
+        "spec-model",
+        "status",
+        "sysml-conventions",
+        "toolkit-awareness"
+      ],
+      "errors": [],
+      "error": null
+    }
+  }
+}

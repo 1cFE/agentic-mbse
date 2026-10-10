@@ -1,0 +1,33 @@
+ delete mode 100644 .agents/skills/analyze-models/SKILL.md
+ delete mode 100644 .agents/skills/audit-models/SKILL.md
+ delete mode 100644 .agents/skills/backlog/SKILL.md
+ delete mode 100644 .agents/skills/design-model/SKILL.md
+ delete mode 100644 .agents/skills/epic-decomposition/SKILL.md
+ delete mode 100644 .agents/skills/formalize-intent/SKILL.md
+ delete mode 100644 .agents/skills/implement-model/SKILL.md
+ delete mode 100644 .agents/skills/manage-sources/SKILL.md
+ delete mode 100644 .agents/skills/model-validation/SKILL.md
+ delete mode 100644 .agents/skills/onboard/SKILL.md
+ delete mode 100644 .agents/skills/orchestrate-modeling/SKILL.md
+ delete mode 100644 .agents/skills/pdf-analysis/SKILL.md
+ delete mode 100644 .agents/skills/pdf-analysis/references/extraction-details.md
+ delete mode 100755 .agents/skills/pdf-analysis/scripts/extract_page.py
+ delete mode 100644 .agents/skills/plan-model/SKILL.md
+ delete mode 100644 .agents/skills/project-structure/SKILL.md
+ delete mode 100644 .agents/skills/python-debugger/SKILL.md
+ delete mode 100644 .agents/skills/python-debugger/references/debugging_internals.md
+ delete mode 100644 .agents/skills/python-debugger/scripts/claude_debugger.py
+ delete mode 100644 .agents/skills/quick-model/SKILL.md
+ delete mode 100644 .agents/skills/record-learning/SKILL.md
+ delete mode 100644 .agents/skills/requirements-tracking/SKILL.md
+ delete mode 100644 .agents/skills/research/SKILL.md
+ delete mode 100644 .agents/skills/review-model/SKILL.md
+ delete mode 100644 .agents/skills/source-traceability/SKILL.md
+ delete mode 100644 .agents/skills/spec-model/SKILL.md
+ delete mode 100644 .agents/skills/status/SKILL.md
+ delete mode 100644 .agents/skills/sysml-conventions/SKILL.md
+ delete mode 100644 .agents/skills/sysml-conventions/references/stencils.md
+ delete mode 100644 .agents/skills/toolkit-awareness/SKILL.md
+ delete mode 100644 .agents/skills/toolkit-awareness/references/python-environment.md
+ mode change 100644 => 120000 modeling_project/MODELING_GUIDE.md
+ mode change 100644 => 120000 work/EPIC_GUIDE.md

@@ -279,7 +279,7 @@ Pattern references such as `[patterns/plant-idiom.md]` name files under the inst
 uv run python -c 'from agentic_mbse.cli import get_docs_dir; print(get_docs_dir() / "patterns")'
 ```
 
-Read the named file under the returned directory. This resolver works for source and packaged installations. Agents have read permissions via `.claude/settings.json`; permission alone does not load the reference.
+Read the named file under the returned directory. This resolver works for source and packaged installations. Consult the current assistant adapter in `.agentic-mbse/` for external-document access; access alone does not load the reference.
 
 | Pattern Doc | Covers |
 |-------------|--------|

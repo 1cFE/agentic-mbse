@@ -1,0 +1,1 @@
+git apply --check /home/reid/1cfe/agentic-mbse-nsd/.project/active/native-skill-distribution/evidence/fusion-tea-target-owned.patch: ok

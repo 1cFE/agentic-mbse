@@ -1,0 +1,96 @@
+Preserved CLAUDE.md; skills load .agentic-mbse/claude.md directly
+Preserved AGENTS.md; skills load .agentic-mbse/codex.md directly
+Preserving modified or untracked file: modeling_project/MODELING_PROCESS.md (use --force to replace)
+
+Initialized MBSE project in /home/reid/1cfe/agentic-mbse-nsd/.orchestrate-logs/rehearsal/ft-dev (dev mode)
+
+Symlinked (54):
+  @ .agents/skills/analyze-models
+  @ .claude/skills/analyze-models
+  @ .agents/skills/audit-models
+  @ .claude/skills/audit-models
+  @ .agents/skills/backlog
+  @ .claude/skills/backlog
+  @ .agents/skills/design-model
+  @ .claude/skills/design-model
+  @ .agents/skills/epic-decomposition
+  @ .claude/skills/epic-decomposition
+  @ .agents/skills/formalize-intent
+  @ .claude/skills/formalize-intent
+  @ .agents/skills/implement-model
+  @ .claude/skills/implement-model
+  @ .agents/skills/manage-sources
+  @ .claude/skills/manage-sources
+  @ .agents/skills/model-validation
+  @ .claude/skills/model-validation
+  @ .agents/skills/onboard
+  @ .claude/skills/onboard
+  @ .agents/skills/orchestrate-modeling
+  @ .claude/skills/orchestrate-modeling
+  @ .agents/skills/pdf-analysis
+  @ .claude/skills/pdf-analysis
+  @ .agents/skills/plan-model
+  @ .claude/skills/plan-model
+  @ .agents/skills/project-structure
+  @ .claude/skills/project-structure
+  @ .agents/skills/python-debugger
+  @ .claude/skills/python-debugger
+  @ .agents/skills/quick-model
+  @ .claude/skills/quick-model
+  @ .agents/skills/record-learning
+  @ .claude/skills/record-learning
+  @ .agents/skills/requirements-tracking
+  @ .claude/skills/requirements-tracking
+  @ .agents/skills/research
+  @ .claude/skills/research
+  @ .agents/skills/review-model
+  @ .claude/skills/review-model
+  @ .agents/skills/source-traceability
+  @ .claude/skills/source-traceability
+  @ .agents/skills/spec-model
+  @ .claude/skills/spec-model
+  @ .agents/skills/status
+  @ .claude/skills/status
+  @ .agents/skills/sysml-conventions
+  @ .claude/skills/sysml-conventions
+  @ .agents/skills/toolkit-awareness
+  @ .claude/skills/toolkit-awareness
+  @ .claude/hooks/ruff-format.sh
+  @ modeling_project/MODELING_GUIDE.md
+  @ work/EPIC_GUIDE.md
+  @ work/backlog/epic_template.md
+
+Updated (12) - tool-managed files refreshed:
+  ~ .agentic-mbse/claude.md
+  ~ .claude/agents/kerml-expert.md
+  ~ .claude/agents/python-debugger.md
+  ~ .claude/agents/syside-expert.md
+  ~ .claude/agents/sysml-expert.md
+  ~ .claude/agents/sysmlv2-validator.md
+  ~ .agentic-mbse/codex.md
+  ~ .codex/agents/kerml-expert.toml
+  ~ .codex/agents/python-debugger.toml
+  ~ .codex/agents/syside-expert.toml
+  ~ .codex/agents/sysml-expert.toml
+  ~ .codex/agents/sysmlv2-validator.toml
+
+Skipped (15) - user files preserved:
+  . .gitignore
+  . knowledge/SOURCE_INDEX.md
+  . README.md
+  . modeling_project/OVERVIEW.md
+  . work/BACKLOG.md
+  . work/learnings/RAW_LEARNINGS.md
+  . knowledge/KNOWLEDGE.md
+  . modeling_project/ARCHITECTURE.md
+  . modeling_project/REQUIREMENTS.md
+  . modeling_project/VALIDATION_MATRIX.md
+  . tests/models/test_example.py
+  . tests/conftest.py
+  . data/traceability_matrix.csv
+  . modeling_project/MODELING_PROCESS.md
+  . .claude/settings.json
+
+Next steps:
+  1. Run /onboard in Claude or $onboard in Codex to configure your project
+  2. Or manually edit knowledge/SOURCE_INDEX.md and start with the design-model skill

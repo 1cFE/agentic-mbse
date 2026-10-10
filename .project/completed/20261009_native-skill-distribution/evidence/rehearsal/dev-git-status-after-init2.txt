@@ -1,0 +1,66 @@
+ M .agentic-mbse/codex.md
+ M .agentic-mbse/install.json
+ D .agents/skills/analyze-models/SKILL.md
+ D .agents/skills/audit-models/SKILL.md
+ D .agents/skills/backlog/SKILL.md
+ D .agents/skills/design-model/SKILL.md
+ D .agents/skills/epic-decomposition/SKILL.md
+ D .agents/skills/formalize-intent/SKILL.md
+ D .agents/skills/implement-model/SKILL.md
+ D .agents/skills/manage-sources/SKILL.md
+ D .agents/skills/model-validation/SKILL.md
+ D .agents/skills/onboard/SKILL.md
+ D .agents/skills/orchestrate-modeling/SKILL.md
+ D .agents/skills/pdf-analysis/SKILL.md
+ D .agents/skills/pdf-analysis/references/extraction-details.md
+ D .agents/skills/pdf-analysis/scripts/extract_page.py
+ D .agents/skills/plan-model/SKILL.md
+ D .agents/skills/project-structure/SKILL.md
+ D .agents/skills/python-debugger/SKILL.md
+ D .agents/skills/python-debugger/references/debugging_internals.md
+ D .agents/skills/python-debugger/scripts/claude_debugger.py
+ D .agents/skills/quick-model/SKILL.md
+ D .agents/skills/record-learning/SKILL.md
+ D .agents/skills/requirements-tracking/SKILL.md
+ D .agents/skills/research/SKILL.md
+ D .agents/skills/review-model/SKILL.md
+ D .agents/skills/source-traceability/SKILL.md
+ D .agents/skills/spec-model/SKILL.md
+ D .agents/skills/status/SKILL.md
+ D .agents/skills/sysml-conventions/SKILL.md
+ D .agents/skills/sysml-conventions/references/stencils.md
+ D .agents/skills/toolkit-awareness/SKILL.md
+ D .agents/skills/toolkit-awareness/references/python-environment.md
+ M .codex/agents/kerml-expert.toml
+ M .codex/agents/python-debugger.toml
+ M .codex/agents/syside-expert.toml
+ M .codex/agents/sysml-expert.toml
+ M .codex/agents/sysmlv2-validator.toml
+ T modeling_project/MODELING_GUIDE.md
+ T work/EPIC_GUIDE.md
+?? .agentic-mbse/claude.md
+?? .agents/skills/analyze-models
+?? .agents/skills/audit-models
+?? .agents/skills/backlog
+?? .agents/skills/design-model
+?? .agents/skills/epic-decomposition
+?? .agents/skills/formalize-intent
+?? .agents/skills/implement-model
+?? .agents/skills/manage-sources
+?? .agents/skills/model-validation
+?? .agents/skills/onboard
+?? .agents/skills/orchestrate-modeling
+?? .agents/skills/pdf-analysis
+?? .agents/skills/plan-model
+?? .agents/skills/project-structure
+?? .agents/skills/python-debugger
+?? .agents/skills/quick-model
+?? .agents/skills/record-learning
+?? .agents/skills/requirements-tracking
+?? .agents/skills/research
+?? .agents/skills/review-model
+?? .agents/skills/source-traceability
+?? .agents/skills/spec-model
+?? .agents/skills/status
+?? .agents/skills/sysml-conventions
+?? .agents/skills/toolkit-awareness

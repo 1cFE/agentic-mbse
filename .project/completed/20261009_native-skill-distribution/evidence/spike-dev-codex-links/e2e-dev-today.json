@@ -1,0 +1,45 @@
+{
+  "project": "/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/77343463-933a-41d0-94f6-20fe0fd4b4a2/scratchpad/codex-spike/e2e",
+  "versions": {
+    "claude": "2.1.296 (Claude Code)",
+    "codex": "codex-cli 0.160.0"
+  },
+  "clients": {
+    "claude": {
+      "names": [
+        "analyze-models",
+        "audit-models",
+        "backlog",
+        "design-model",
+        "formalize-intent",
+        "implement-model",
+        "manage-sources",
+        "onboard",
+        "orchestrate-modeling",
+        "pdf-analysis",
+        "plan-model",
+        "python-debugger",
+        "quick-model",
+        "record-learning",
+        "research",
+        "review-model",
+        "spec-model",
+        "status"
+      ],
+      "errors": [],
+      "error": null,
+      "expert_roles": [
+        "kerml-expert",
+        "python-debugger",
+        "syside-expert",
+        "sysml-expert",
+        "sysmlv2-validator"
+      ]
+    },
+    "codex": {
+      "names": [],
+      "errors": [],
+      "error": null
+    }
+  }
+}

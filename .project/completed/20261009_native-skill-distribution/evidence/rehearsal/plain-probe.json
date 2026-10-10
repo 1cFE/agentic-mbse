@@ -1,0 +1,82 @@
+{
+  "project": ".orchestrate-logs/rehearsal/ft-plain",
+  "versions": {
+    "claude": "2.1.296 (Claude Code)",
+    "codex": "codex-cli 0.160.0"
+  },
+  "clients": {
+    "claude": {
+      "names": [
+        "analyze-models",
+        "audit-models",
+        "backlog",
+        "design-model",
+        "formalize-intent",
+        "html-explainer",
+        "implement-model",
+        "manage-concept",
+        "manage-sources",
+        "narrate-goal",
+        "onboard",
+        "orchestrate-modeling",
+        "pdf-analysis",
+        "plan-model",
+        "python-debugger",
+        "quick-model",
+        "record-learning",
+        "research",
+        "research-acquire",
+        "review-model",
+        "run-goal",
+        "run-study",
+        "spec-model",
+        "status"
+      ],
+      "errors": [],
+      "error": null,
+      "expert_roles": [
+        "kerml-expert",
+        "python-debugger",
+        "syside-expert",
+        "sysml-expert",
+        "sysmlv2-validator"
+      ]
+    },
+    "codex": {
+      "names": [
+        "analyze-models",
+        "audit-models",
+        "backlog",
+        "browser-inspect",
+        "concept-research-navigation",
+        "design-model",
+        "epic-decomposition",
+        "formalize-intent",
+        "implement-model",
+        "manage-sources",
+        "model-validation",
+        "narrate-goal",
+        "onboard",
+        "orchestrate-modeling",
+        "pdf-analysis",
+        "plan-model",
+        "project-structure",
+        "python-debugger",
+        "quick-model",
+        "record-learning",
+        "requirements-tracking",
+        "research",
+        "review-model",
+        "run-goal",
+        "run-study",
+        "source-traceability",
+        "spec-model",
+        "status",
+        "sysml-conventions",
+        "toolkit-awareness"
+      ],
+      "errors": [],
+      "error": null
+    }
+  }
+}
