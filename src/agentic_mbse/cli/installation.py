@@ -17,6 +17,7 @@ LEGACY_MANIFEST = ".claude/.tool-hashes.json"
 # - Installer(target, *, force, decide, manifest), where decide answers "skip", "overwrite",
 #   "backup", "skip_all" or "overwrite_all";
 # - Installer.parents, Installer.write and Installer.save;
+# - Installer.files, the loaded ownership baseline: relative path -> recorded fingerprint;
 # - Installer.actions, with its keys "created", "updated", "skipped", "backed_up", "symlinked"
 #   and "removed";
 # - install_bundle and frontmatter.
