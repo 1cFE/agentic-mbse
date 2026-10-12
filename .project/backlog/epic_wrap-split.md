@@ -131,6 +131,7 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 **Type**: Implementation (instruction text, templates, installer registration)
 **Effort**: 2 days (spec 2h, design 2h, plan 1h, execute 10h)
 **Dependencies**: Item 1 (register once, on the reconciled `skills/` layout)
+**Closed**: 2026-10-12, certified; archived to `.project/completed/20261012_goal-layer-port/`. On branch `goal-layer-port`, awaiting the owner's merge. fusion-tea branch `goal-layer-mr7` merges after the post-merge fusion-tea runbook (F2).
 
 **Objective**: Ship `run-goal` and `narrate-goal` with their runbook, templates and contract test from agentic-mbse, and ship MR-7's principle as a general section of the process template.
 
@@ -164,12 +165,12 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 - [x] Ledger rows exist for every removed consumer-specific line; fusion-tea's working tree holds each destination before the agentic-mbse change merges.
 - [x] `uv run pytest tests/` passes.
 
-Audit note (2026-10-12, `active/goal-layer-port/audit.md`): the unchecked criterion was superseded by the owner's 2026-10-11 direction (Align record). The rule ships as `docs/patterns/design-choices.md` with a "Process Selection" row and a point-of-use row, not as a process-template section. fusion-tea's two paragraphs are covered by it, and MR-7 is rewritten as fusion-tea's application of the rule. Every item-spec criterion passes.
+Audit note (2026-10-12, `completed/20261012_goal-layer-port/audit.md`): the unchecked criterion was superseded by the owner's 2026-10-11 direction (Align record). The rule ships as `docs/patterns/design-choices.md` with a "Process Selection" row and a point-of-use row, not as a process-template section. fusion-tea's two paragraphs are covered by it, and MR-7 is rewritten as fusion-tea's application of the rule. Every item-spec criterion passes.
 
 **Required Reading**: research § 1a, § 2, § 5; fusion-tea `work/orchestration/GOAL_RUNBOOK.md`; fusion-tea `.project/concepts/goal-driven-model-development-harness.md` (owner stop rules, line 198); fusion-tea `modeling_project/REQUIREMENTS.md` § MR-7 and `.project/active/modeling-intent-enforcement/spec.md`; `project_templates/MODELING_PROCESS.md.template`; CLAUDE.md "Init File Ownership".
 
 **Deliverables**:
-- `.project/active/goal-layer-port/{spec,design,plan}.md`
+- `.project/completed/20261012_goal-layer-port/{spec,design,plan}.md`
 - `skills/run-goal/`, `skills/narrate-goal/`, four new templates, `docs/goal-layer-decisions.md`, installer and test changes
 - `.project/active/wrap-split-migration-ledger.md` (created here)
 
@@ -235,20 +236,23 @@ Audit note (2026-10-12, `active/goal-layer-port/audit.md`): the unchecked criter
 - ⚠️ Authority pointers into other repos' internals: `claude/skills/sysml-conventions/SKILL.md:184-206`, `docs/patterns/constraints.md:66-71,460-479`, `docs/patterns/plant-idiom.md:8,70,115` (sysml-codegen `.project/concepts/` and `tests/fixtures/` paths); `docs/source-index.md:83-99` (a developer's `/home/reid/PyFECONS` checkout).
 - ⚠️ Hard-coded machine paths: `tests/test_index.py:355,365`, `scripts/benchmark_corpus.py:18`, `scripts/README.md:148-231`, `claude/agents/python-debugger.md:75-112`.
 - ⚠️ Consumer-only instructions: `claude/commands/analyze-models.md:65` ("magnet system test coverage"), `claude/skills/toolkit-awareness/references/python-environment.md:41` (lists `sysml-codegen, teax` as dependencies), `claude/skills/record-learning/SKILL.md:136`, `tests/test_sysml/test_adr002.py:281` (skipped test needing consumer models), `sysml/helpers.py:8` and `validation/level4_constraints.py:6` naming a specific runtime.
+- ⚠️ Handed over by Item 2 at its close (2026-10-12; [evidence README](../completed/20261012_goal-layer-port/evidence/README.md)):
+  - The goal runbook joins discovery-log rows to "a committed record's § 15" (`project_templates/GOAL_RUNBOOK.md.template:261,271`), a section number in the study layer's record template. Name the section by its role ("the record's findings section"), and say the join applies where the target runs the study layer (Item 2 audit advisory 4).
+  - Item 2 edited files outside its own to place the design-choice rule; the read-through covers each: `MODELING_PROCESS.md.template` (Process Selection row, seed clause, point-of-use row, binding-row semicolon), `MODELING_GUIDE.md.template` (index row), `docs/patterns/README.md`, `docs/patterns/constraints.md`, `skills/sysml-conventions/SKILL.md` and `references/stencils.md`, `skills/requirements-tracking/SKILL.md`, and one pointer each in `spec-model`, `review-model`, `model-validation` and `orchestrate-modeling`.
 - ✅ Acceptable as examples under the owner's bar: plant-idiom pins, `FusionTea_*` naming, check-corpus PDFs, `'Toroidal Field Coil'`, fusion-flavoured test data, sysml-codegen named as a downstream in seam docs and code comments.
 
 **Scope**:
 1. **Authority pointers**: replace cross-repo `.project/` and `tests/fixtures/` citations with the rule stated in place plus "measured against a reference model" wording; keep `@pinned` excerpts in `plant-idiom.md` untouched (they are the drift contract's data).
 2. **Machine paths**: `/home/reid` → relative or placeholder paths; the `test_index.py` cwd becomes the repo root fixture.
 3. **Consumer-only instructions**: generalize or delete the lines above; remove the skipped CATF test.
-3a. **README.md**: bring the repo README's "what `init` creates" list in line with `cmd_init` (it still names `modeling_pm/` and a root `SOURCE_INDEX.md`, `README.md:29-30,47,75`) and include the goal-layer directories Item 2 adds; README is in the read-through record (product-lens epic-F4).
+3a. **README.md**: bring the repo README's "what `init` creates" list in line with `cmd_init` (it still names `modeling_pm/` and a root `SOURCE_INDEX.md`, `README.md:29-30,47,75`) and include the goal-layer directories and the `tests/orchestration/test_narrative_links.py` test Item 2 adds; README is in the read-through record (product-lens epic-F4).
 4. **Example labelling**: where a fusion example stands as the only illustration of a rule (`package-naming.md`, `source-index.md`, `README.md.template:223`), add a one-line "example" marker or a second neutral example so the rule reads as general.
 5. **Guard**: a pytest over shipped surfaces that fails on `/home/<user>` paths and on citations of `fusion-tea/`, `sysml-codegen/.project`, `sysml-codegen/tests/fixtures` as authority; vocabulary is not checked.
 6. **Ledger**: every removed consumer-specific line gets a row with its fusion-tea destination (usually `CLAUDE.md` or `knowledge/SOURCE_INDEX.md`).
 
 **Out of Scope**:
 - Renaming fusion-flavoured test data (`p_fusion`, `MagnetCostCalc`, `IfeDriver`); replacing the check-corpus PDFs; editing `plant-idiom.md` pinned excerpts; `docs/sysmlv2`, `docs/syside`.
-- Files Item 2 or Item 3 own (`MODELING_PROCESS.md.template`, the goal and study bundles).
+- Files Item 3 owns (the study bundles). Item 2's files (`MODELING_PROCESS.md.template`, the goal bundles) get the read-through and the handed-over changes above; their method text is Item 2's checked port and stays as is.
 
 **Success Criteria**:
 - [ ] The guard test exists, passes, and fails when a `/home/reid` path or a cross-repo internal citation is reintroduced (demonstrated by one reverted edit in evidence).

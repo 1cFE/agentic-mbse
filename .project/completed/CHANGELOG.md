@@ -4,6 +4,50 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-12] - Goal Layer Port
+
+**Type**: Item (`WRAP-SPLIT` Item 2; branch `goal-layer-port` in worktree `/home/reid/1cfe/agentic-mbse-goal-layer`, base `33511c4`, not yet merged)
+**Duration**: 2 days (spec created 2026-10-11; closed 2026-10-12)
+
+### Summary
+
+agentic-mbse now ships the goal layer and the design-choice rule. Before this item, `run-goal`, `narrate-goal`, their runbook and templates lived only in fusion-tea and cited fusion-tea internals as authority. fusion-tea's MR-7 enforcement rested on two paragraphs pasted into a tool-owned file that a re-init replaces. Now `init` installs both skills, `work/orchestration/GOAL_RUNBOOK.md`, three goal templates, `work/orchestration/goals/`, `work/narratives/` and a narrative-link test, with no pointer into fusion-tea. fusion-tea's seven goal-layer decision records ship as a dated snapshot, `docs/goal-layer-decisions.md`. The design-choice rule is stated once, in `docs/patterns/design-choices.md`. The process template reaches it from three places: a "Process Selection" row that routes design-choice changes to independent design review, a point-of-use row, and a clause on the installed-capacity seed sentence. All 41 hunks that differ from fusion-tea's originals are classified, and none changes the method. A fresh agent ran in a scratch target, installed from a wheel, with user-level config shut out. Using only installed files, it grounded a goal, opened round 1, and read the pattern without being told to. The fusion-tea re-init was rehearsed on a copy: nothing lost, and the walk from fusion-tea's `CLAUDE.md` through MR-7 to the shipped rule resolves. Independently audited (Certify with follow-ups, then Certify): suite 2,217 passed, ruff and mypy at `main`'s parity. Not checked: a goal run past round 1; the goal skills under Codex beyond install and listing; the fusion-tea pin move.
+
+**Promise the product now makes.** [OWNER-VERBATIM] at Align, 2026-10-11: "it is important that you find the right level for this rule -- we have specific patterns which agentic-mbse is supposed to enforce, this should fit into that". [AGENT] reading of it, which the owner reads at PR: the design-choice rule is one of agentic-mbse's patterns, stated once in `docs/patterns/design-choices.md`, routed to independent design review by "Process Selection", and pinned by `tests/test_modeling_command_contracts.py`. `init` installs the goal layer as general capability with no consumer pointers (`tests/test_goal_layer.py`).
+
+**Decision: one home for the rule, in the pattern set.** [AGENT] ([design](20261012_goal-layer-port/design.md)) The full rule, a validated wrong/right SysML pair and a Verification section live in `docs/patterns/design-choices.md`. The process template carries only rows that point at it, as it does for every other pattern. Equality intent (`docs/patterns/constraints.md`, `sysml-conventions`) is its sibling, and each names the other. Rejected: the epic's proposed process-template section, which would make the template the one place a full rule is written out.
+
+**Decision: the seed clause forbids one direction.** [AGENT] (fresh review PASS, [delta check](20261012_goal-layer-port/evidence/sc6-delta-check.md)) The clause reads "do not set installed capacity, equipment, or inventory from required performance", which is MR-7's direction. Rejected: "do not set one from the other", which would also forbid running equipment at its installed capacity.
+
+**Decision: the goal-layer decision record is a dated snapshot.** [INHERITED: epic Item 2 scope 3, product-lens smell 1], adopted by the design. `docs/goal-layer-decisions.md` condenses fusion-tea ADR-0001..0007 at `2b1e9f9d5` with their grades and is the authority for installed targets; fusion-tea's live ADRs govern fusion-tea only. Rejected: two copies kept in step by hand.
+
+**Decision: the shipped contract test checks narrative links only.** [AGENT] (ratified by owner at Align, 2026-10-11: "fine") The ADR-register check stays in fusion-tea, because an installed target reads the snapshot instead of keeping a register.
+
+**Decision: MR-7 becomes fusion-tea's application of the pattern.** The owner's direction above supersedes the epic's "MR-7 byte-identical" criterion. The wording is [AGENT], checked sentence by sentence against MR-7 by a fresh reviewer ([crosswalk](20261012_goal-layer-port/evidence/sc6-crosswalk.md)). MR-7 now opens "This project MUST apply agentic-mbse's design-choice pattern, which this entry does not restate" and keeps only fusion-tea's application: the goal invariant, conductor models, depth work.
+
+**Decision: the item stayed whole over the two-day ceiling.** [AGENT] at spec review. The estimate is about 2.4 days; the overrun comes from the MR-7 rewrite and the fusion-tea branch, which Align moved into this item.
+
+**Behavior found.**
+- `claude -p --setting-sources project,local` drops user-level settings, instructions, skills, commands and agents and keeps authentication. With the toolkit installed from a wheel into a scratch venv, that gives a clean fresh-target agent run. `--bare` also drops the target's own `CLAUDE.md` and needs an API key ([dry run](20261012_goal-layer-port/evidence/dry-run/install.md)).
+- `init` renders `.codex/agents/*.toml` with the docs path of the environment it runs from, so running it from another checkout rewrites a target's three role files ([fusion-tea runbook](20261012_goal-layer-port/evidence/fusion-tea-runbook.md), step 4).
+- `_update_gitignore_for_dev_mode` (`src/agentic_mbse/cli/__init__.py`) returns early when its marker line exists, so a re-init never appends new `--dev` ignore lines (`INSTALL-DEV-GITIGNORE-REINIT`).
+- A design that sets installed capacity from demand passes `agentic-mbse validate` at all six levels; only review catches it (`tests/test_design_choices_example.py`).
+
+**Downstream (fusion-tea, the owner's).** Branch `goal-layer-mr7` (worktree `/home/reid/1cfe/fusion-tea-goal-layer`, base `b06585709`, unpushed) holds three commits. F1 `32bd4529a` rewrites MR-7, adds `CLAUDE.md` § "Goal layer in this repository", and brings the goal files to the shipped bytes. `1b8d6fbff` repoints 21 narrative links that fusion-tea PR #122 missed; without it fusion-tea `main` fails `test_goal_contract.py`, and it can go to `main` alone. `715a11e6e` re-syncs the runbook after the audit follow-ups. After this item merges at M, F2 moves the pin to M, removes the local goal skills, re-inits and verifies ([runbook](20261012_goal-layer-port/evidence/fusion-tea-runbook.md)). `goal-layer-mr7` merges only after F2.
+
+### Deliverables
+
+- Skills: `skills/run-goal/`, `skills/narrate-goal/` (new); one pointer each in `spec-model`, `review-model`, `model-validation`; tier text in `requirements-tracking`; `orchestrate-modeling` names `/run-goal`; a cross-reference line and an index row in `sysml-conventions`.
+- Templates: `GOAL_RUNBOOK.md`, `goal.md`, `trail.md`, `learnings.md` and `test_narrative_links.py` (new, tool-owned); `MODELING_PROCESS.md.template` (Process Selection row, seed clause, point-of-use row, binding-row semicolon); `MODELING_GUIDE.md.template` index row.
+- Docs: `docs/patterns/design-choices.md` and `docs/goal-layer-decisions.md` (new); `docs/patterns/README.md` and `constraints.md` one line each; `CLAUDE.md` template list.
+- Installer: `src/agentic_mbse/cli/__init__.py` (`TOOL_OWNED_TEMPLATES`, `work/orchestration/goals/`, `work/narratives/`, `--dev` ignore lines).
+- Tests: `tests/test_goal_layer.py`, `tests/test_design_choices_example.py` and `tests/fixtures/sump_pump/` (new); `tests/test_modeling_command_contracts.py`, `tests/test_packaged_guidance_contract.py` extended.
+- `.project/completed/20261012_goal-layer-port/`: `spec.md`, `spec-review.md`, `design.md`, `design-review.md`, `plan.md`, `audit.md`, `product-lens.md`, `briefs/` (8), `evidence/` (install and grep outputs, SC5 reach trace and reverted edit, SC6 crosswalk and delta check, SC10 decision-record check, SC12 hunks, the dry run, fusion-tea branch diffs and rehearsal, `fusion-tea-runbook.md`).
+- `.project/active/wrap-split-migration-ledger.md` § Item 2 (the ledger stays active for Items 3 and 4).
+- Follow-ups: backlog P3 `INSTALL-DEV-GITIGNORE-REINIT` and `DESIGN-CHOICE-ATTRIBUTE-LISTING`; epic Item 4 takes the runbook's "§ 15" reference and the list of edits outside this item's own files.
+
+---
+
 ## [2026-10-11] - native-skill-rollout
 
 **Type**: Change
