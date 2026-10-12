@@ -1,6 +1,6 @@
 # Implementation Plan: goal-layer-port (`WRAP-SPLIT` Item 2)
 
-**Status:** Implementation in progress (P1–P2 done)
+**Status:** Implementation in progress (P1–P3 done)
 **Created:** 2026-10-11
 **Last Updated:** 2026-10-11
 
@@ -272,20 +272,20 @@ def test_goal_close_heading_is_named():
 
 See `design.md` D8, D10, D11, D17, Appendix A8, Appendix B and § Implementation Notes (keep fusion's line structure).
 
-- [ ] Write the test; see it fail.
-- [ ] Copy the bytes first, then edit only the listed lines:
+- [x] Write the test; see it fail.
+- [x] Copy the bytes first, then edit only the listed lines:
   - fusion `.claude/skills/run-goal/SKILL.md` → `skills/run-goal/SKILL.md`;
   - fusion `.claude/skills/narrate-goal/SKILL.md` → `skills/narrate-goal/SKILL.md`;
   - fusion `work/orchestration/GOAL_RUNBOOK.md` → `project_templates/GOAL_RUNBOOK.md.template`;
   - fusion `work/orchestration/goal-templates/{goal,trail,learnings}.md` → `project_templates/{goal,trail,learnings}.md.template`.
-- [ ] Bundle envelope, both skills:
+- [x] Bundle envelope, both skills:
   - list-form `allowed-tools`;
   - `metadata:` / `kind: workflow`;
   - the shared preface and blank-line layout copied from `skills/orchestrate-modeling/SKILL.md:9-12`;
   - fusion's multi-line `description` kept.
-- [ ] Apply A8: runbook `:84`, `:100`, `:139`, the trigger row after `:73`, `goal.md:29`, `run-goal:53`.
-- [ ] Apply the Appendix B rows quoted there. Use the table below where B gives only a gist. Find each line by its text, since the inserted trigger row shifts later line numbers by one.
-- [ ] `learnings.md.template` stays byte-identical.
+- [x] Apply A8: runbook `:84`, `:100`, `:139`, the trigger row after `:73`, `goal.md:29`, `run-goal:53`.
+- [x] Apply the Appendix B rows quoted there. Use the table below where B gives only a gist. Find each line by its text, since the inserted trigger row shifts later line numbers by one.
+- [x] `learnings.md.template` stays byte-identical.
 
 | fusion line | New text | Class |
 |---|---|---|
@@ -312,15 +312,26 @@ See `design.md` D8, D10, D11, D17, Appendix A8, Appendix B and § Implementation
 
 ### Checks
 
-- [ ] `diff -U0` each ported file against its fusion original. Every hunk is one of the rows above, A8, or a quoted Appendix B row, and nothing else. P7 classes them formally.
-- [ ] `tests/test_shipped_text.py` passes. The two new bundles join its envelope and preface checks with no test edit.
-- [ ] The shared checks, including the SC2 grep.
+- [x] `diff -U0` each ported file against its fusion original. Every hunk is one of the rows above, A8, or a quoted Appendix B row, and nothing else. P7 classes them formally.
+- [x] `tests/test_shipped_text.py` passes. The two new bundles join its envelope and preface checks with no test edit.
+- [x] The shared checks, including the SC2 grep.
 
 **Commit:** `Port run-goal, narrate-goal, the goal runbook and goal templates with the method unchanged`
 
 **What we know works:** the shipped goal text is general, keeps fusion's sections, and is installable as bundles.
 
 **Progress notes:**
+
+- **Done 2026-10-11.** Added `skills/run-goal/SKILL.md`, `skills/narrate-goal/SKILL.md`, `project_templates/{GOAL_RUNBOOK,goal,trail,learnings}.md.template` and `tests/test_goal_layer.py` (the stencil's three tests, unchanged apart from a module docstring). Each file started as a byte copy of its snapshot original; the edits were exact-match replacements that each had to hit once.
+- **Hunks** (`diff -U0` against the snapshot). run-goal 10: three envelope, `:20`, `:49`, `:53`, `:55`, `:61`, `:63`, `:73`. narrate-goal 4: three envelope, `:77`. Runbook 21: `:7`, `:13`, `:31`, `:41`, the trigger row after `:73`, `:84`, `:94`, `:100`, `:106`, `:139`, `:205`, `:232`, `:260`, `:262`, `:270`, `:272`, `:276`, `:286`, `:288-289` (one hunk), `:295`, `:299-305` (one hunk, holding the `:304` rewording). goal 1 (`:29`). trail 1 (the appended close section). learnings 0 (`cmp` silent). Every hunk is a row of the table above, an A8 hook, a quoted Appendix B row or the envelope. P7 classes them formally.
+- **A8 checked by script against `design.md`.** `goal.md:29`, `run-goal:53` and the trigger row match byte-for-byte.
+- **Interpretation: the resolver command at runbook `:84`.** A8 writes `print(get_docs_dir() / \"patterns\")` because the whole new sentence sits inside double quotes in the design. Shipped as written, the backslashes are a Python `SyntaxError` (checked). The runbook carries `"patterns"` unescaped, the way A6 and D4 write the same command. Otherwise `:84` matches A8 byte-for-byte. The command runs and prints a `patterns` directory holding `design-choices.md`.
+- **Envelope.** List-form `allowed-tools` with fusion's tool lists unchanged (no tool added); `metadata.kind: workflow` after `user-invocable`; the shared preface copied byte-for-byte from `orchestrate-modeling:10`, with the same one blank line before and two after. Fusion's multi-line `description` blocks are kept.
+- **Wording notes.** New text uses straight apostrophes, as the plan and design quote it; fusion's own text keeps its curly ones, so `run-goal:55` now holds both ("the stage's installed skill" beside "project’s prescribed launcher"). `run-goal:73` drops "indexed in `INDEX.md`" along with the path, as this plan's row gives it.
+- **For P4.** `narrate-goal` (`:82` now) names `tests/orchestration/test_narrative_links.py`, which P4 installs. In a fresh `init` today, the only repo paths the goal text names that are missing are `work/narratives/`, `work/orchestration/GOAL_RUNBOOK.md` and `work/orchestration/goal-templates/`, all P4's; `knowledge/research/` and the rest exist. The two bundles already install into `.agents/skills/` with no installer change, and `install-commands --list` names both.
+- **For P5.** The goal text names ADR-0001..0007 only. The record must carry a "Sources" section (runbook `:41`) and ADR-0003's 2026-08-27 amendment (`:94`, `:262`); § The decisions behind this gives the `get_docs_dir()` command at `:296`.
+- **For P7.** The goal hooks now sit at runbook `:74` (trigger row), `:85` (§ Grounding a goal), `:101` (§ Opening and closing a round) and `:140` (§ Running one task), each one line below fusion's because of the inserted row; `goal.md:29`; `run-goal:58` (five lines below fusion's `:53`, from the envelope).
+- **Shared checks.** `uv run pytest tests/`: 2197 passed, 1 skipped, 1 xfailed. The baseline after P2 was 2192 passed: three new tests, plus the two new bundles in the per-skill envelope test. `tests/test_shipped_text.py` passes with no edit. `ruff check src/ tests/`: 118, unchanged; the new test passes `ruff check` and `ruff format --check`. `mypy src/`: 88 errors in 18 files, below the 98 recorded at P1; this phase changes no `src/` file, so the drop comes from the all-extras venv. SC2 grep: no output. `.project/` grep: runbook `:13` only, the two-PM "for example" wording.
 
 ---
 
@@ -787,4 +798,4 @@ See `design.md` § Potential Risks. By phase:
 
 ---
 
-**Status**: Implementation in progress (P1–P2 done)
+**Status**: Implementation in progress (P1–P3 done)
