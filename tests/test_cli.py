@@ -870,6 +870,8 @@ class TestDirectoryStructure:
             "knowledge/research/pending",
             "knowledge/research/approved",
             "knowledge/research/impacts",
+            "knowledge/research/requests/runs",
+            "knowledge/research/requests/negatives",
             "knowledge/sources",
             "modeling_project",
             "modeling_project/intent",
@@ -885,6 +887,94 @@ class TestDirectoryStructure:
         ]
         for d in expected_dirs:
             assert (tmp_path / d).is_dir(), f"Missing directory: {d}"
+
+
+RESEARCH_IGNORE_BLOCK = (
+    "# agentic-mbse research registry (machine-local)\n"
+    "knowledge/.staging/\n"
+    "knowledge/.registry.lock\n"
+)
+
+
+def _git_ignores(root: Path, *paths: str) -> bool:
+    """Whether git, in a fresh repository at `root`, ignores every one of `paths`."""
+    if not (root / ".git").exists():
+        subprocess.run(["git", "init", "-q", str(root)], check=True)
+    checked = subprocess.run(
+        ["git", "-C", str(root), "check-ignore", "--no-index", *paths],
+        capture_output=True,
+        text=True,
+    )
+    return checked.stdout.splitlines() == list(paths)
+
+
+class TestResearchRegistryGitignore:
+    """No target tracks the research registry's staging area or lock, however it was initialized."""
+
+    def test_a_fresh_init_ignores_the_staging_area_and_the_lock(self, tmp_path):
+        cmd_init(MockArgs(path=str(tmp_path), force=False))
+
+        assert RESEARCH_IGNORE_BLOCK in (tmp_path / ".gitignore").read_text()
+        assert _git_ignores(
+            tmp_path, "knowledge/.staging/0123abcd/output.md", "knowledge/.registry.lock"
+        )
+
+    def test_re_init_appends_the_missing_lines_once(self, tmp_path, capsys):
+        gitignore = tmp_path / ".gitignore"
+        gitignore.write_text("# the project's own\n.env\n")
+
+        cmd_init(MockArgs(path=str(tmp_path), force=False))
+        out = capsys.readouterr().out
+        cmd_init(MockArgs(path=str(tmp_path), force=False))
+
+        assert gitignore.read_text() == "# the project's own\n.env\n\n" + RESEARCH_IGNORE_BLOCK
+        assert "~ .gitignore (added research registry ignore lines)" in out
+        assert "added research registry ignore lines" not in capsys.readouterr().out
+        assert _git_ignores(tmp_path, "knowledge/.staging/x", "knowledge/.registry.lock")
+
+    def test_re_init_appends_only_the_line_that_is_missing(self, tmp_path):
+        gitignore = tmp_path / ".gitignore"
+        gitignore.write_text(".env\nknowledge/.staging/\n")
+
+        cmd_init(MockArgs(path=str(tmp_path), force=False))
+
+        assert gitignore.read_text() == (
+            ".env\nknowledge/.staging/\n\n"
+            "# agentic-mbse research registry (machine-local)\nknowledge/.registry.lock\n"
+        )
+
+    def test_a_gitignore_with_both_lines_is_left_byte_for_byte(self, tmp_path, capsys):
+        gitignore = tmp_path / ".gitignore"
+        original = ".env\nknowledge/.staging/  \nknowledge/.registry.lock\n# end"
+        gitignore.write_text(original)
+
+        cmd_init(MockArgs(path=str(tmp_path), force=False))
+
+        assert gitignore.read_text() == original
+        assert "research registry ignore lines" not in capsys.readouterr().out
+        assert _git_ignores(tmp_path, "knowledge/.staging/x", "knowledge/.registry.lock")
+
+    def test_an_empty_gitignore_gets_the_block_alone(self, tmp_path):
+        gitignore = tmp_path / ".gitignore"
+        gitignore.write_text("")
+
+        cmd_init(MockArgs(path=str(tmp_path), force=False))
+
+        assert gitignore.read_text() == RESEARCH_IGNORE_BLOCK
+
+    def test_a_symlinked_gitignore_is_left_alone_with_a_message(self, tmp_path, capsys):
+        shared = tmp_path / "shared.gitignore"
+        shared.write_text(".env\n")
+        (tmp_path / ".gitignore").symlink_to(shared)
+
+        cmd_init(MockArgs(path=str(tmp_path), force=False))
+
+        assert (tmp_path / ".gitignore").is_symlink()
+        assert shared.read_text() == ".env\n"
+        assert (
+            "Preserved symlinked .gitignore; add the research registry ignore lines manually: "
+            "knowledge/.staging/, knowledge/.registry.lock"
+        ) in capsys.readouterr().out
 
 
 @pytest.mark.parametrize(

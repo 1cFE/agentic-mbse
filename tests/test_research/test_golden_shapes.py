@@ -19,7 +19,9 @@ from package code. Where each file came from:
 - `receipts/*.json`: `source_registry._write_receipt`, for a registration and a
   pre-capture hold-out refusal in one run.
 - `manifest/*.jsonl`: `source_registry._manifest_row` and `_append_manifest_row`.
-- `seam.json`, `seam/`: `research_seam.request_key`, `open_run`, `log_*` and `close`.
+- `seam.json`, `seam/`: `research_seam.request_key`, `open_run`, `log_*` and `close`,
+  run from a scratch directory with `knowledge/research/requests` as the seam's
+  home and the seam's clock fixed. The tests here run the package the same way.
 - `index/hand_curated*`: a case the snapshot cannot produce, since it had no
   hand-curated writer. The block is the entry shape `docs/source-index.md` gives
   (heading, Type, Location, Use for, Validation), inserted into the frozen
@@ -28,9 +30,10 @@ from package code. Where each file came from:
 The register-then-retire round trips compare a registry with its own earlier bytes.
 """
 
+import importlib
 import json
 from dataclasses import replace
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -55,6 +58,15 @@ from agentic_mbse.research.manifest import append_manifest_row
 from agentic_mbse.research.register import manifest_row
 from agentic_mbse.research.retire import retire
 from agentic_mbse.research.runs import write_receipt
+from agentic_mbse.research.seam import (
+    SeamHome,
+    close,
+    log_candidate,
+    log_failure,
+    log_search,
+    open_run,
+    request_key,
+)
 from tests.test_research.conftest import NO_GUARD
 
 GOLDEN = Path(__file__).parent / "golden"
@@ -205,3 +217,73 @@ def test_register_then_retire_restores_the_registry(case, tree_with_one_registra
     assert retire(result.slug, "round trip", paths=paths, guard=NO_GUARD).outcome == "retired"
 
     assert (paths.index.read_bytes(), paths.manifest.read_bytes()) == before
+
+
+# --- the seam's run directory ----------------------------------------------------------
+
+seam_module = importlib.import_module("agentic_mbse.research.seam")
+
+#: The instant the snapshot's clock was fixed at when the seam goldens were derived.
+SEAM_NOW = datetime(2026, 10, 12, 9, 30, tzinfo=timezone.utc)
+
+
+def test_request_key_matches_the_snapshot():
+    golden = _golden_json("seam.json")
+    assert request_key(golden["request"]) == golden["request_key"]
+
+
+@pytest.fixture
+def seam_home(tmp_path, monkeypatch) -> SeamHome:
+    """The seam home at the relative path the snapshot ran with, its clock fixed at `SEAM_NOW`."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(seam_module, "_now", lambda: SEAM_NOW)
+    home = SeamHome(root=Path("knowledge/research/requests"))
+    home.root.mkdir(parents=True)
+    return home
+
+
+def _open(home: SeamHome, request: dict) -> Path:
+    request_path = home.root / f"{request['request_id']}.json"
+    request_path.write_text(json.dumps(request))
+    opened = open_run(request_path, home=home)
+    assert opened.outcome == "opened" and opened.run_dir is not None, opened.message
+    return opened.run_dir
+
+
+def test_a_bounded_negative_run_matches_the_snapshot_bytes(seam_home):
+    run_dir = _open(seam_home, _golden_json("seam.json")["request"])
+    log_search(run_dir, "widget coil current density")
+    log_candidate(run_dir, "https://example.org/a", "rejected", "paywalled")
+    log_failure(run_dir, "https://example.org/b", "404", disposition="closed")
+    close(run_dir, adequacy="exhausted")
+
+    golden_run = GOLDEN / "seam" / "negative_run"
+    assert f"{run_dir}\n" == (golden_run / "run_dir.txt").read_text()
+    for name in ("run.json", "run.jsonl", "process_log.md", "return.json"):
+        assert (run_dir / name).read_bytes() == (golden_run / name).read_bytes(), name
+    (negative,) = seam_home.negatives.iterdir()
+    assert negative.read_bytes() == (GOLDEN / "seam" / "negative.json").read_bytes()
+
+
+def test_a_registered_run_matches_the_snapshot_bytes(seam_home):
+    request = _golden_json("seam.json")["request"] | {"request_id": "REQ-902", "consumer": "WI-902"}
+    run_dir = _open(seam_home, request)
+    write_receipt(
+        run_dir,
+        outcome="registered",
+        candidate="http://127.0.0.1:8000/utf8.html",
+        slug="widget_coil_note",
+        path="knowledge/sources/widget_coil_note/",
+        source_id="99d8ff05c9631996c0d62b5c3ac53be01bcbdc92d76e9a18ad95096080336bed",
+        triage="keeper",
+        reason="",
+        rule_id=None,
+        captured=True,
+        at=SEAM_NOW,
+    )
+    close(run_dir)
+
+    golden_run = GOLDEN / "seam" / "registered_run"
+    for name in ("run.json", "return.json"):
+        assert (run_dir / name).read_bytes() == (golden_run / name).read_bytes(), name
+    assert not seam_home.negatives.exists()

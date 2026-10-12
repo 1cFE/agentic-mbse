@@ -57,7 +57,7 @@ from agentic_mbse.research.paths import (
     registry_lock,
     sweep_stale_staging,
 )
-from agentic_mbse.research.runs import read_receipts, run_limits, write_receipt
+from agentic_mbse.research.runs import Triage, read_receipts, run_limits, write_receipt
 from agentic_mbse.research.sources import (
     KeyedFileSource,
     Source,
@@ -75,7 +75,6 @@ Outcome = Literal[
     "precondition_failed",
     "limit_reached",
 ]
-Triage = Literal["keeper", "rejected"]
 
 DEFAULT_BUDGET = 0.0
 

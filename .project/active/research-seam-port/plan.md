@@ -1,6 +1,6 @@
 # Implementation Plan: Port the research acquisition seam, and bring `/manage-sources` under its rules
 
-**Status:** Implementation in progress (P1, P2, P3, P4 complete)
+**Status:** Implementation in progress (P1, P2, P3, P4, P5 complete)
 **Created:** 2026-10-12
 **Last Updated:** 2026-10-12
 **Work item:** `WRAP-SPLIT` Item 5, branch `research-seam-port`, worktree `/home/reid/1cfe/agentic-mbse-research-seam`
@@ -555,30 +555,98 @@ def test_outside_a_project_root_refuses_in_one_line(tmp_path, monkeypatch, capsy
 
 **Tests first, by Appendix B row.**
 
-- [ ] `test_golden_shapes.py`: request key; return and negative key order. I1 is complete.
-- [ ] Move `test_negative.py`, `test_return_contract.py` and `test_triage_queue.py`. Update imports; the triage CLI tests go through `agentic-mbse research log`.
-- [ ] `test_research_cli.py` (new): the root check (D15); exit codes for each subcommand, including `open` on a malformed request (2) and on a request a negative answers (3); one-line errors for `RegistrationError`, `RetirementError`, a capture timeout and `SeamError` (Behaviour Changes); `register` prints the snapshot's JSON fields (`source_registry.py:1336-1346`); `verify` prints through `format_finding`; `add-entry`/`remove-entry` output and exit codes and the `sources` line (Architecture § CLI surface). The two CLI tests deferred from `test_retire.py` land here.
-- [ ] `tests/test_cli.py`: `TestDirectoryStructure` (`:861`) adds `knowledge/research/requests/runs` and `knowledge/research/requests/negatives`. New init tests: a fresh `.gitignore` has both ignore lines under the header; re-init appends missing lines to an existing `.gitignore`, once; a symlinked `.gitignore` is left alone with a message (Implementation Notes "Init"; criterion 1).
+- [x] `test_golden_shapes.py`: request key; return and negative key order. I1 is complete.
+- [x] Move `test_negative.py`, `test_return_contract.py` and `test_triage_queue.py`. Update imports; the triage CLI tests go through `agentic-mbse research log`.
+- [x] `test_research_cli.py` (new): the root check (D15); exit codes for each subcommand, including `open` on a malformed request (2) and on a request a negative answers (3); one-line errors for `RegistrationError`, `RetirementError`, a capture timeout and `SeamError` (Behaviour Changes); `register` prints the snapshot's JSON fields (`source_registry.py:1336-1346`); `verify` prints through `format_finding`; `add-entry`/`remove-entry` output and exit codes and the `sources` line (Architecture § CLI surface). The two CLI tests deferred from `test_retire.py` land here.
+- [x] `tests/test_cli.py`: `TestDirectoryStructure` (`:861`) adds `knowledge/research/requests/runs` and `knowledge/research/requests/negatives`. New init tests: a fresh `.gitignore` has both ignore lines under the header; re-init appends missing lines to an existing `.gitignore`, once; a symlinked `.gitignore` is left alone with a message (Implementation Notes "Init"; criterion 1).
 
 **Code.**
 
-- [ ] `research/seam.py`: per Component Overview. Reads receipts and the run log only through `runs.py`; never imports the registry modules (Architecture, first bullet).
-- [ ] `cli/research_cli.py`: `register_research_subcommands`; the scripts' flags; the root check; output and exit codes (Architecture § CLI surface).
-- [ ] `cli/__init__.py`: wire `register_research_subcommands` beside `register_pm_subcommands` (`:798-800`); the two directories in the list near `:500`; the ignore lines in the fresh `.gitignore` (`:392-457`) and an append helper modelled on `_update_gitignore_for_dev_mode` (`:278-291`), reported under Updated; the `cmd_init` docstring.
+- [x] `research/seam.py`: per Component Overview. Reads receipts and the run log only through `runs.py`; never imports the registry modules (Architecture, first bullet).
+- [x] `cli/research_cli.py`: `register_research_subcommands`; the scripts' flags; the root check; output and exit codes (Architecture § CLI surface).
+- [x] `cli/__init__.py`: wire `register_research_subcommands` beside `register_pm_subcommands` (`:798-800`); the two directories in the list near `:500`; the ignore lines in the fresh `.gitignore` (`:392-457`) and an append helper modelled on `_update_gitignore_for_dev_mode` (`:278-291`), reported under Updated; the `cmd_init` docstring.
 
 **Satisfies:** D15; I1 (complete), I7 (class from receipts and run log only); criterion 1 (directories and ignore lines); criterion 3 (four classes).
 
 ### Validation
 
-- [ ] Exit check.
-- [ ] Manual: `uv run agentic-mbse research --help` lists `open`, `log`, `close`, `register`, `retire`, `verify`, `sources`, `add-entry`, `remove-entry`.
-- [ ] Manual: from the worktree root, `uv run agentic-mbse research verify` exits 0 and `uv run agentic-mbse research sources` lists no commented example as an entry. Both are read-only; `git status` shows no change under `knowledge/`.
+- [x] Exit check.
+- [x] Manual: `uv run agentic-mbse research --help` lists `open`, `log`, `close`, `register`, `retire`, `verify`, `sources`, `add-entry`, `remove-entry`.
+- [x] Manual: from the worktree root, `uv run agentic-mbse research verify` exits 0 and `uv run agentic-mbse research sources` lists no commented example as an entry. Both are read-only; `git status` shows no change under `knowledge/`.
 
 **What we know works after P5:** a target initialised from this branch has the request directories and the ignore lines, and every seam and registry action is one CLI call with a one-line error and a stable exit code.
 
 ### Implementation Notes
 
-_To fill during implementation._
+#### Phase 5 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,667 passed, 1 skipped, 1 xfailed, 14 deselected, 0 failed (P4 2,559 passed; 108 new). Deselected unchanged: no new `slow` test.
+- `uv run pytest tests/test_research -m ""`: 453 passed.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this item adds or edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a research or CLI file this item touches.
+- Manual: `uv run agentic-mbse research --help` lists the nine subcommands. From the worktree root, `research verify` prints `\n0 fault(s), 0 legacy entry(ies)` and exits 0, and `research sources` prints nothing (the template's commented examples are not entries) and exits 0. Neither created anything: `knowledge/` still holds only `KNOWLEDGE.md` and `SOURCE_INDEX.md`, and `git status` shows no change there.
+
+**The O1 call through the CLI.** `agentic-mbse research verify` prints each finding with `format_finding`, then an empty line, then `{faults} fault(s), {legacy} legacy entry(ies)`, and exits 1 only when a finding is a fault. That is the snapshot's `_run_verify` (`source_registry.py:1301-1308`). Pinned by `test_verify_prints_each_finding_then_the_summary_and_exits_1_on_a_fault` and `test_verify_on_a_clean_registry_prints_only_the_summary`. For O1 step 4: `research register --url <existing>` prints `{"outcome": "duplicate", …}` and exits 1; `research open <request a negative answers>` prints the refusal and exits 3. Every subcommand needs `knowledge/` in the current directory, so run them from the fusion-tea worktree root.
+
+**What changed.**
+
+- `research/seam.py` (new), the port of `research_seam.py`:
+  - `SeamHome`, `default_home()` (relative `knowledge/research/requests`, as `default_paths()` is), `request_key`, `open_run`, `log_search`, `log_candidate`, `log_failure`, `log_fault`, `close`, `SeamError`.
+  - `OpenResult(outcome, message, run_dir)` with outcome `opened`, `invalid_request` or `answered_by_negative`. The snapshot carried the exit code itself; the CLI now maps the outcome to 0, 2 or 3.
+  - `close` returns a `SeamReturn` TypedDict (functional form, since `class` is a keyword) with `RegisteredEntry` and `QueuedEntry`. The negative stays a plain dict: `open_run` rewrites older negatives whose shape it does not own.
+  - Class precedence, queue sources, limit naming, negative writing and reopen history are the snapshot's, message for message. It reads receipts and the run log only through `runs.py` and imports nothing from the registry (I7).
+  - The clock is one private `_now()`. The golden tests patch it, as `.orchestrate-logs/golden/derive.py` patched the snapshot's `_utc_now` and `_utc_stamp`.
+- `research/runs.py`: `start_run` (receipts dir, `run.json`, empty run log, process-log heading) and `write_return`, so the run directory's layout has one owner. `Triage` moved here from `register.py`: receipts, the run log and both CLI flags use it. `register.py` imports it.
+- `cli/research_cli.py` (new): `register_research_subcommands` and one `cmd_research` that checks for an operation, then for `knowledge/` in the current directory, then calls the subcommand's handler.
+  - `open`, `log`, `close`, `register`, `retire`, `verify` take the scripts' flags and print what the scripts printed (`source_registry.py:1246-1346`, `research_seam.py:396-459`).
+  - `sources` prints `<label> <type> <title> — <location>`, with `(no type)` and `(no location)` for a hand-placed block that lacks either.
+  - `add-entry` (with `--replace`) and `remove-entry` print `{"outcome", "reason"}`, plus `rule_id` and `offsets` for a hold-out hit, and exit 0 only for `added`, `replaced` and `removed`.
+  - Exit codes: 0 success; 1 for a refusal, a fault finding, the root check and every one-line error; 2 for usage errors (argparse's, a missing `--triage` or `--reason`, no subcommand) and an `open` on an unusable request; 3 for an `open` a negative answers.
+  - One-line errors on stderr, each `Error: …`: the root check, `SeamError` (`log`, `close`), `RegistrationError`, a capture timeout, `RetirementError`, a missing index for `sources`, and a `register --run` directory that is not a run.
+- `cli/__init__.py`:
+  - `main(argv=None)`, so tests call `main(["research", …])`.
+  - `register_research_subcommands` wired after `pm`.
+  - `knowledge/research/requests/runs` and `…/negatives` in the directory list.
+  - `RESEARCH_GITIGNORE_HEADER` and `RESEARCH_GITIGNORE_PATHS` (`knowledge/.staging/`, `knowledge/.registry.lock`, the strings fusion-tea's `.gitignore:35-36` holds). A new `.gitignore` ends with the header and both lines. `_add_research_gitignore_paths` runs on every init: it appends any missing line to an existing regular `.gitignore` (the header only if absent) and reports `.gitignore (added research registry ignore lines)` under Updated. A symlinked one is left alone with a message naming the lines.
+  - The `cmd_init` docstring.
+- Tests:
+  - Moved: `test_negative.py`, `test_return_contract.py`, `test_triage_queue.py`, with neutral requests. The triage CLI tests go through `agentic-mbse research log` from a project root.
+  - `test_golden_shapes.py`: the request key, and two runs (a bounded negative and a registration) whose `run.json`, `run.jsonl`, `process_log.md`, `return.json`, run directory name and negative equal the snapshot's bytes. This is stronger than the plan's key order. I1 is complete.
+  - `test_research_cli.py` (new, 49 tests): the root check for all nine subcommands, and that `knowledge/` itself is not a root; exit codes for each subcommand; every one-line error; `register`'s field order for a registration and a duplicate; a hold-out hit's rule and offsets for `register`, `retire` and `add-entry`; `verify`'s exact output; the `sources` labels; the entry round trip; a whole run (open, log, register `--run`, close, verify) through the CLI. It also holds the two CLI retire tests deferred from P4.
+  - The CLI half of the waiver test: `--holdout-ack` exits 2 (`unrecognized arguments`) with nothing written, and `register --help` lists exactly ten flags, so no flag under any name can carry a candidate past the guard.
+  - `tests/test_cli.py`: the two directories in `TestDirectoryStructure`; `TestResearchRegistryGitignore` checks with `git check-ignore` that a fresh init ignores both paths. It also checks that re-init appends missing lines once, appends only the missing line, leaves a `.gitignore` that has both byte for byte, gives an empty `.gitignore` the block alone, and leaves a symlinked one with the message.
+- Mutation-checked, each mutation applied alone and the source restored after; every one fails at least one test:
+  - In `seam.py`: an unsorted `where_to_look` in the key (4 fail), `BLOCKER` above `OPERATOR_QUEUE` (1, after adding `test_a_queued_candidate_outranks_a_run_scoped_fault`; it survived before), a fault blocking whatever the receipts say (1), two return keys swapped (3), an undispositioned failure read as closed (1), the reopen history dropped (1), an absolute run directory (1).
+  - In `research_cli.py`: no root check (10), `open`'s 3 mapped to 2 (1), no `--run` check (1), a capture timeout not caught (1), entry writes always exiting 0 (7), `verify`'s two counts swapped (1), `references` not printed (1), `log`'s companion check skipped (1).
+  - Survived, and cannot be seen: swapping `reason` and `slug` in the print order, because no outcome sets both.
+
+**Deviations and decisions** (none changes a byte fusion-tea writes or reads, or an exit code the scripts gave).
+
+- The snapshot's comment on class precedence was wrong and is not ported as written. It said a run-scoped fault "outranks the queue only when the run never got as far as a candidate". In the code, a fault never outranks a queued candidate; it gives `BLOCKER` only when nothing was queued or registered and no receipt exists. The code is unchanged; the docstring says what it does, and the new test pins it.
+- `log`'s two usage errors print `Error: --candidate requires --triage` and `Error: --failure requires --reason` on stderr. The snapshot printed `ERROR: …` on stdout. Exit 2 is unchanged.
+- `log` picks the step by `is not None`. The snapshot tested truthiness, so `--search ""` fell through and logged a fault with reason `None`, which then crashed `close`. An empty value is now logged as given.
+- [AGENT] `register --run <dir>` refuses in one line, before any registry work, when `<dir>` has no `run.json`. In the snapshot the same call crashed at the limit rung with a traceback, or wrote `receipts/` into the stray directory when a refusal came first. The package's `register` is unchanged; the check is the CLI's.
+- `register`'s `--use-for` help says "which question it serves" (snapshot: "which RQ", a consumer's term).
+- `add-entry --type` takes any string, with the four types in its help, so a wrong type gets the package's JSON `precondition_failed`, not an argparse error.
+- `open` still prints its refusals on stdout, as the snapshot did: the agent reads them as the seam's answer, not as tool errors.
+- The `.gitignore` match strips trailing whitespace only. git ignores a pattern's trailing spaces but not its leading ones, so `  knowledge/.staging/` does not count as present.
+- `open_run` reads the request as UTF-8 (snapshot: the locale default, UTF-8 on every machine this runs on).
+- Not handled, as in the snapshot: a request that is valid JSON but not an object, or that is not UTF-8, raises a traceback; `request_id` is used as a path segment unchecked.
+
+**For the next phase.**
+
+- P6 skill text (`research-acquire`):
+  - `open` prints two lines on success, the message and then the run directory, and exits 0. A malformed request prints the reason and exits 2: the skill reports `BLOCKER` itself. A request a negative answers exits 3, naming the negative and `--override-reason`.
+  - `log <run_dir> --search Q`, `--candidate REF --triage keeper|rejected [--note]`, `--failure REF --reason R [--disposition queued|closed]`, `--fault R`.
+  - `register (--url|--local-pdf) --title --use-for --validation --caveat --run <run_dir> [--triage]` prints the registration JSON; exit 0 only for `registered`.
+  - `close <run_dir> [--adequacy exhausted|limit_reached]` prints the return JSON.
+  - Every call runs from the project root; elsewhere it exits 1 with one stderr line. Errors are one stderr line starting `Error:`.
+- P6 `manage-sources`: `research sources` lines are `<registered|hand-curated|unregistered> <type> <title> — <location>`. `add-entry --title --type --location --use-for --validation [--replace]` and `remove-entry --title` print `{"outcome", "reason"}`. `retire --slug --reason` prints the removal on success and a JSON refusal otherwise.
+- P6 docs: the hook guide can say the CLI always runs from the project root, so a guard's own relative paths resolve there.
 
 ---
 

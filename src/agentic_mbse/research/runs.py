@@ -9,15 +9,19 @@ closed, `return.json`.
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, Literal, TypedDict, cast
 
 RUN_META = "run.json"
 RUN_LOG = "run.jsonl"
 PROCESS_LOG = "process_log.md"
 RECEIPTS = "receipts"
 RETURN_FILE = "return.json"
+
+#: What triage decided about a candidate, as the run log and its receipts record it.
+Triage = Literal["keeper", "rejected"]
 
 
 class Receipt(TypedDict):
@@ -34,6 +38,22 @@ class Receipt(TypedDict):
     rule_id: str | None
     captured: bool
     at: str
+
+
+def start_run(run_dir: Path, meta: dict[str, Any], log_heading: str) -> None:
+    """Create a new run directory: an empty `receipts/`, `run.json`, an empty run log, and a process log opening with `log_heading`.
+
+    Refuses, with `FileExistsError`, a directory that already exists.
+    """
+    (run_dir / RECEIPTS).mkdir(parents=True)
+    (run_dir / RUN_META).write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    (run_dir / RUN_LOG).touch()
+    (run_dir / PROCESS_LOG).write_text(log_heading, encoding="utf-8")
+
+
+def write_return(run_dir: Path, payload: Mapping[str, Any]) -> None:
+    """Write the run's `return.json`, replacing any earlier one."""
+    (run_dir / RETURN_FILE).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def is_run_dir(run_dir: Path) -> bool:
