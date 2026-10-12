@@ -1,6 +1,6 @@
 # Implementation Plan: goal-layer-port (`WRAP-SPLIT` Item 2)
 
-**Status:** Implementation in progress (P1 done)
+**Status:** Implementation in progress (P1–P2 done)
 **Created:** 2026-10-11
 **Last Updated:** 2026-10-11
 
@@ -167,21 +167,21 @@ def test_pattern_sysml_is_an_excerpt_of_the_fixture():
 
 See `design.md` § Component Overview "agentic-mbse, rule placement" and Appendix A1–A5.
 
-- [ ] Write the test; see it fail.
-- [ ] `docs/patterns/design-choices.md`: copy A1 verbatim (`design.md:332-463`, the text between the `~~~~` fences). Then apply carried items 1, 3 and 4, and nothing else.
-- [ ] `project_templates/MODELING_PROCESS.md.template` (line numbers are before any edit, so work bottom-up):
+- [x] Write the test; see it fail.
+- [x] `docs/patterns/design-choices.md`: copy A1 verbatim (`design.md:332-463`, the text between the `~~~~` fences). Then apply carried items 1, 3 and 4, and nothing else.
+- [x] `project_templates/MODELING_PROCESS.md.template` (line numbers are before any edit, so work bottom-up):
   - the A2 "Process Selection" row after `:23`;
   - carried item 2's sentence at `:59`;
   - the A2 Technical Patterns row after `:74`;
   - the A2 `:71` semicolon.
-- [ ] A3, one paragraph each: in `docs/patterns/constraints.md` after `:70`, and in `skills/sysml-conventions/SKILL.md` after `:212`.
-- [ ] One index row each. Description: "Design choices: evaluate the supplied design; sizing and selection policies stay separate".
+- [x] A3, one paragraph each: in `docs/patterns/constraints.md` after `:70`, and in `skills/sysml-conventions/SKILL.md` after `:212`.
+- [x] One index row each. Description: "Design choices: evaluate the supplied design; sizing and selection policies stay separate".
   - `docs/patterns/README.md`, its pattern table (rows around `:15-21`);
   - `project_templates/MODELING_GUIDE.md.template`, the Pattern Documentation Index (rows around `:288-293`);
   - `skills/sysml-conventions/references/stencils.md`, its pattern table (rows around `:87-93`).
-- [ ] `skills/requirements-tracking/SKILL.md`: A4.
-- [ ] `skills/review-model/SKILL.md`: A5 after `:28`. `skills/model-validation/SKILL.md`: A5 after `:52`.
-- [ ] `evidence/sc6-crosswalk.md`, the derivation record. One row per sentence:
+- [x] `skills/requirements-tracking/SKILL.md`: A4.
+- [x] `skills/review-model/SKILL.md`: A5 after `:28`. `skills/model-validation/SKILL.md`: A5 after `:52`.
+- [x] `evidence/sc6-crosswalk.md`, the derivation record. One row per sentence:
   - Sources: MR-7 fusion `REQUIREMENTS.md:89-107`, process paragraphs fusion `MODELING_PROCESS.md:17,:34`, goal hooks fusion `run-goal/SKILL.md:53,:55`, `GOAL_RUNBOOK.md:84,:100,:139`, `goal.md:29`.
   - Columns: source sentence | shipped location (`file` § section), or fusion-tea home with a one-line reason it is fusion-only | source grade | note.
   - Goal-hook rows name their A8 destinations. P7 verifies them against the ported text.
@@ -193,15 +193,29 @@ See `design.md` § Component Overview "agentic-mbse, rule placement" and Appendi
 
 ### Checks
 
-- [ ] `grep -c 'design-choices.md' project_templates/MODELING_PROCESS.md.template` → 3 (row, clause, row).
-- [ ] `git diff --stat docs/patterns/constraints.md skills/sysml-conventions/SKILL.md` → 2 insertions each, 0 deletions.
-- [ ] The shared checks (`tests/test_shipped_text.py` covers the template as runtime-neutral text).
+- [x] `grep -c 'design-choices.md' project_templates/MODELING_PROCESS.md.template` → 3 (row, clause, row).
+- [x] `git diff --stat docs/patterns/constraints.md skills/sysml-conventions/SKILL.md` → 2 insertions each, 0 deletions.
+- [x] The shared checks (`tests/test_shipped_text.py` covers the template as runtime-neutral text). Same baseline as P1; see Progress notes.
 
 **Commit:** `Add the design-choice pattern and place it: Process Selection row, point-of-use row, sibling links, tier text; SC6 crosswalk`
 
 **What we know works:** the rule has one statement and the routes the existing skills already follow.
 
 **Progress notes:**
+
+- **Done 2026-10-11.** Added `docs/patterns/design-choices.md` and `evidence/sc6-crosswalk.md`. Edited `project_templates/MODELING_PROCESS.md.template`, `project_templates/MODELING_GUIDE.md.template`, `docs/patterns/{README,constraints}.md`, `skills/sysml-conventions/{SKILL.md,references/stencils.md}`, `skills/requirements-tracking/SKILL.md`, `skills/review-model/SKILL.md`, `skills/model-validation/SKILL.md`. Added `test_pattern_sysml_is_an_excerpt_of_the_fixture` to `tests/test_design_choices_example.py`.
+- **`design-choices.md`.** Copied byte-for-byte from `design.md:332-463`, then carried items 1, 3 and 4 as exact-match replacements. `diff` against the A1 text shows only those five changed spots (three "must" sentences, the identity sentence, the `---`). The owner quote in the grade paragraph matches fusion `REQUIREMENTS.md:89` with its curly quotes.
+- **Template.** A2 rows taken from `design.md:470` and `:476` by line, carried item 2's sentence at `:59`, the `:71` semicolon. `grep -c` → 3.
+- **Excerpt test.** A mutation check (changing `0.25` to `0.30` in the doc's right block, in memory) makes the test report the drifted line.
+- **Deviation: `model-validation` placement.** In the file as it stands (unchanged since the design), `:52` is the "Public consumers" bullet, not the last one. I inserted the A5 bullet literally after `:52`, so it sits between "Public consumers" and "Translation" in the same evidence list. Both the design and the plan say "after `:52`".
+- **Choice: A3 line in `constraints.md` is one line.** That file's prose is hard-wrapped at about 100 columns, and the brief says to match an existing file. I kept A3 as one line because Invariant 4 says the diff adds one line, this phase's check expects 2 insertions, and A3 is given as one line. Flag for the auditor if wrapping is wanted; wrapping would make the diff 5 insertions.
+- **Choice: index rows sit after the `constraints.md` row** in all three tables, beside the sibling. The plan names the tables, not the position.
+- **Choice: `requirements-tracking:43`.** The existing example ends at a closing quote with no period. I added the period so A4's appended sentence starts a new sentence. No other change to that line.
+- **Crosswalk.** 74 rows; every quoted source sentence is checked verbatim against the snapshot, and a reverse check shows no sentence of MR-7 `:89-107`, process `:17`/`:34` or the goal hooks is left out (only MR-7's grade tag remains, carried in the grade column). Grades: the principle OWNER-VERBATIM, the enforcement request OWNER, everything else AGENT, ratified (MR-7 `:89`; fusion `modeling-intent-enforcement/spec.md:7`). `run-goal:55` is graded AGENT with a note: the snapshot has no history, so which of its sentences the 2026-09-20 change added is not recorded.
+- **For P3 and P7.** Goal-hook rows name their A8 destinations by runbook section: `:84` § Grounding a goal, `:100` § Opening and closing a round, `:139` § Running one task (checked in the snapshot). P7 confirms them in the ported file.
+- **For O1.** The delta check covers carried items 1–4 (listed with grades in the crosswalk's closing notes). One older wording note for the reviewer's context: Acceptance says "Unknown compliance does not count" where MR-7 says "cannot count"; both review rounds judged it kept.
+- **For O2.** `MODELING_GUIDE.md.template` changed (one index row), so fusion's re-init updates `MODELING_GUIDE.md`; the rehearsal expects that.
+- **Shared checks.** `uv run pytest tests/`: 18 failed, 2174 passed; the failure set is identical to P1's (missing optional extras). `ruff check src/ tests/` 118 and `mypy src/` 98, unchanged from `57644b9`. The test file passes `ruff check` and `ruff format --check`. `tests/test_shipped_text.py`, `tests/test_modeling_command_contracts.py` and `tests/test_packaged_guidance_contract.py` pass.
 
 ---
 
@@ -771,4 +785,4 @@ See `design.md` § Potential Risks. By phase:
 
 ---
 
-**Status**: Implementation in progress (P1 done)
+**Status**: Implementation in progress (P1–P2 done)

@@ -68,6 +68,8 @@ would challenge it against, is the authority copy: sysml-codegen
 authoring policy". **This is not a second authority** — it is the same instruction, rendered where
 the instructed reader is. If the two ever disagree, the contract governs.
 
+**Related:** the binding-side sibling is [design-choices.md](design-choices.md). An exact equality over a parameter you meant to vary deletes a degree of freedom; a binding that sets installed capacity from demand deletes a design choice. Both keep the design space open.
+
 Coverage and headline semantics are recorded in ADR-009 (sysml-codegen
 docs/architecture/modeling-assumptions.md §9).
 

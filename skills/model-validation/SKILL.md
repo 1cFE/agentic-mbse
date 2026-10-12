@@ -50,6 +50,7 @@ Select evidence according to the claim:
 - Numerical behavior: use an independent identity/reference and relevant boundary or counterexample cases. Choose tolerances from the quantities and numerical risk; small percentages are not universally acceptable.
 - Structure and behavior: check ownership, physical relationships, operating assumptions, and agreement with analytical bindings where relevant.
 - Public consumers: change a supported input through its normal route and check intended downstream effects, including what should remain unchanged.
+- Design choices: where the design-choice row of the technical-pattern table in `modeling_project/MODELING_PROCESS.md` applies, check the actual bindings against `design-choices.md` and run its acceptance checks.
 - Translation: compare generated and manual execution, while recognizing that shared formulas can share an error.
 
 Write kept tests for meaningful regressions where practical. A definition-existence test verifies existence, not its physical role; a mirror test verifies agreement, not independent correctness. Avoid tests whose only expectation is the current implementation's graph or output.

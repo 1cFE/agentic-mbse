@@ -210,6 +210,8 @@ parameter you meant to vary does not judge the design, it deletes the degree of 
 The authority copy is the lifecycle contract's "Equality intent and authoring policy" in
 sysml-codegen (`.project/concepts/constraint-execution-authoritative-lifecycle-contract.md`).
 
+Its binding-side sibling is agentic-mbse `docs/patterns/design-choices.md`: a calculation or binding that sets installed capacity from demand deletes a design choice in the same way.
+
 **Cross-file binding:**
 ```sysml
 private import OtherPackage::other_part;

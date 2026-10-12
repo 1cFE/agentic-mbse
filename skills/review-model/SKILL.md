@@ -26,6 +26,7 @@ Start with the intended outcome and supported use, then inspect the proposed des
 - Are relevant quantities and interfaces owned consistently, including downstream effects?
 - Do the cited sources and chosen approximations support the intended use?
 - Would the proposed checks expose the likely failure, or only confirm the author's chosen representation?
+- Do calculations and bindings evaluate the supplied design rather than choose it? Where the design-choice row of the technical-pattern table in `modeling_project/MODELING_PROCESS.md` applies, check the actual bindings against `design-choices.md`.
 
 Apply relevant project requirements, architecture decisions, and conventions. Use existing tooling evidence for mechanical checks; do not repeat it without a reason. Research or prototype results demonstrate only what they actually exercised.
 

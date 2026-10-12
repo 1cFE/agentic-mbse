@@ -17,6 +17,7 @@ Patterns provide definitive syntax references and usage guidance for common SysM
 | [doc-comments.md](doc-comments.md) | Documentation standards and citation patterns |
 | [conditionals.md](conditionals.md) | Conditional expression syntax (`if COND? VALUE else VALUE`) |
 | [constraints.md](constraints.md) | Constraint syntax with assert/require/assume prefixes |
+| [design-choices.md](design-choices.md) | Design choices: evaluate the supplied design; sizing and selection policies stay separate |
 | [cross-file-binding.md](cross-file-binding.md) | Cross-file imports and attribute binding |
 | [semantic-operators.md](semantic-operators.md) | `=` vs `default :=` vs `:>>` vs `:>` - critical for correct AST generation |
 | [syntax-reference.md](syntax-reference.md) | Quick reference for common SysML v2 syntax patterns |
