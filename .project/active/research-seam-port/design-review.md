@@ -120,7 +120,31 @@ The Overview, Core Concept and Architecture give a reader the model in one pass:
 
 ## Resolutions
 
-[Filled in during Stage 4. This run is non-interactive; the orchestrator feeds the must-fix items to the design author once.]
+Applied by the design author on 2026-10-12, per `briefs/design_revision.md`, in `design.md` in place. One line per item: what changed, and where.
+
+- **M1.** `add-entry` and `--replace` run the guard (`check_input_path` on a non-URL Location; `scan_terms` on title, Location, Use for, Validation); a hit refuses `holdout_hit`, a fault refuses as D4. Where: D11, Core Concept, Architecture § The hook and § CLI surface, I4, `manage-sources` paragraph, `test_entries` in Appendix B.
+- **M2.** Any key in `[tool.agentic-mbse.research]` other than `holdout-guard`, or a non-string value, gives the failing guard. Where: D4, Architecture § The hook, Behaviour Changes row 2, I4, `test_holdout.py` row.
+- **M3.** The re-run claim is gone; after registering an obtained copy, the skill reports the new `knowledge/sources/<slug>/` location, as the guide's "Act on a queued source" does. Where: `manage-sources` paragraph (Component Overview).
+- **M4.** O1 now adds the hook table (step 2) before parity and the guard check (steps 3 and 4). Where: Appendix D, O1.
+- **M5.** A raised `RegistrationError` or `subprocess.TimeoutExpired` writes no receipt and propagates, as today; I2 covers returned outcomes. Where: Architecture § register ladder, I2, Behaviour Changes preamble and CLI row.
+- **A1.** New Behaviour Changes row: the three `precondition_failed` refusals land in `OPERATOR_QUEUE` → `OWNER_GATE`, with named reason prefixes; `close` unchanged. The `research-acquire` outcome table, the guide and `manage-sources` call such a reason a seam repair. Where: Behaviour Changes, Component Overview (both skill paragraphs).
+- **A2.** A post-capture guard fault carries the captured `source_id` and counts as captured; `_spent_a_capture` otherwise ports exactly. Where: Behaviour Changes row 2, Implementation Notes "Copy, then split", `test_holdout.py` row.
+- **A3.** Standard importlib recipe (`sys.modules` before `exec_module`, removed on failure); the hook guide says a guard's relative paths resolve against the current directory. Where: Implementation Notes "Hook loading".
+- **A4.** D10 now says a block ends at the next heading outside a comment or at a line that opens a comment; `test_entries` removes a hand-placed entry above the template's commented examples and checks they survive byte for byte. Where: D10, Behaviour Changes, Architecture § index, Appendix B "New in agentic-mbse".
+- **A5.** I1 pins key order, exact insertion bytes at both anchors and the fallback, the batch block against the snapshot's, and register-then-retire round trips; the insertion and fallback bytes are stated. Where: I1, Architecture § Insertion bytes.
+- **A6.** Location normalization and title matching rules; `remove-entry`/`--replace` match hand-curated entries only and refuse none or several; `add-entry` refuses an existing hand-curated title. Where: Architecture § Locations and titles, D11, D12, `test_entries`.
+- **A7.** `unregistered` entries are owner drift resolved by hand then `verify`; the skill reports and does not change them. Where: `manage-sources` paragraph.
+- **A8.** The queued-candidate listing reads only the latest run per `request_id`. Where: `manage-sources` paragraph.
+- **A9.** `KeyedFileSource.__post_init__` checks `key` against `[A-Za-z0-9_]+`. Where: Exact wording § The keyed kind.
+- **A10.** `__main__.py` moved to P1; P1 split into support modules plus golden tests, then P2 capture and the ladder plus chain tests; phases renumbered P1–P6 and effort re-estimated (about 22h execute, about 3.5 days). Where: Next-Stage Handoff.
+- **A11.** O1 parity compares finding lines only, records both exit codes, runs the old script with `uv run --no-sync python`, and passes on exactly two `legacy block_without_row` lines for the two baseline orphan directories. Where: Appendix D, O1 steps 1 and 3.
+- **A12.** With the orchestrator's verified facts: deletions in `zotero_ingest.py`/`zotero_lib.py` are definite; `RAW_DIR`, `SOURCES_DIR`, `GROUP_ID` and `EXTRACT_OUTPUT` stay; the two other Zotero scripts stay unchanged and are import-checked; historical records keep their references. Where: Appendix A (fusion-tea), Appendix D O1 step 5.
+- **A13.** The two manifest tests move to the package; a conftest session check replaces `test_hermetic_paths.py`; a recording fake guard pins `retire`'s argument shapes, and fusion-tea's wiring test adds a barred local-PDF and a barred-slug `retire` case. Where: Appendix B, Implementation Notes "Test fixtures" and "`retire`'s guard calls".
+- **A14.** D12 classes `block_without_row` by the block's directory against `orphan_source_dirs`; fusion-tea's two such blocks are `legacy`, and its `verify` stays at exit 0. Where: D12, Appendix D O1 step 3, Potential Risks, Key Bets B1.
+- **A15.** The ledger's pointer row adds `R-D5`/`R-D6` (guide `:144`) and the inline `R-*`, `audit F*`, `WI-033` ids; the shipped guide drops the closed `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` bullet. Where: Appendix C.
+- **A16.** I8 and its test use the word-bounded spec pattern `\baries\b`. Where: I8.
+- **A17.** O2's scratch project sets the GitLab extra index so `syside==0.8.4` resolves. Where: Appendix D, O2.
+- **A18.** I6 is scoped to agentic-mbse's shipped code and skills, and names fusion-tea's `re_extract_sources` as outside it. Where: I6.
 
 ---
 

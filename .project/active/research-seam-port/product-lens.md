@@ -33,3 +33,26 @@ Gate: CLEAR
 - Scope grows by owner ruling ([OWNER-VERBATIM] 2026-10-09, option (a)): `/manage-sources` becomes direct user management that follows and enforces the registry's rules. Owner-originated, so it widens the point rather than narrowing it; the fresh `/_my_spec_review` checks the new requirements.
 Gate: CLEAR
 ```
+
+```
+## design — 2026-10-12 — rev .project/active/research-seam-port/design.md (branch research-seam-port @ 58af700)
+Note: run inline by the design reviewer. ~/.claude/scripts/product-lens.md is outside this stage's sandbox and could not be read, so this block follows the format of the blocks above.
+Point (re-derived): a fresh target brings an outside source into `knowledge/` through one checked door (installed `research-acquire` skill + `agentic-mbse research` CLI) with no fusion-tea code; a user curating by hand uses a shipped `/manage-sources` that goes through the same door and enforces the same rules; fusion-tea switches with no migration and no lost instruction.   [source: [OWNER-VERBATIM] 2026-10-06 "yes, we need this capability in agentic-mbse", grade: owner; [OWNER-VERBATIM] 2026-10-09 "MORE useful as a general skill which allows direct user management while it folows and enforces the rules", grade: owner; epic no-loss 2026-10-06, grade: INHERITED (owner); spec Known Requirements, grades as marked there.] The design's "The Point" matches.
+Falsifier: (A)–(C) as in the spec block, plus (D) a `/manage-sources` write that bypasses a registry rule the seam enforces.
+Findings:
+- design-F1 [DO]    `add-entry` / `add-entry --replace` (D11) write a hand-curated index block with no hold-out check, so in a guarded target (fusion-tea) a user can point the index at quarantined material through the shipped skill. Falsifier (D) fires for the hold-out rule. — [OWNER-VERBATIM] 2026-10-09 (owner) — disposition: proposed — design-review M1 (run the configured guard on add-entry; fail closed). A gap in one command, not a contradiction of the approach, so not Rework.
+- design-F2 [DO]    A misspelled key in `[tool.agentic-mbse.research]` (e.g. `holdout_guard`) yields the no-op guard silently (design Architecture, "The hook"). Falsifier (C) fires: a configured hold-out becomes waivable by typo. — spec-F3 above (AGENT, FIXED in spec) names "a mistyped config" — disposition: proposed — design-review M2 (unknown key in the table is a configuration fault).
+- design-F3 [DO]    The "resolve a queued candidate" action claims a re-run returns `REGISTERED` as a duplicate; for a paywalled URL resolved with `--local-pdf` the URL dedupe cannot match (`source_registry.py:409-426`), so the shipped skill would instruct a re-run that re-queues or registers a landing page. — spec [INFERRED] queue requirement (AGENT) — disposition: proposed — design-review M3.
+Smells: (1) two representations synced by hand — RESOLVED by D7 (fusion-tea imports the package's writers) and D17 (shipped ADR condensation is a dated snapshot; commit-pinned citation in the ledger). (2) consumer compensating for a producer guarantee — `capture.py` keeps the extractor workaround; carried, out of scope by spec Non-Goal `EXTRACT-PROVENANCE-HOOK`; not newly fired. (3) invariant ownership moved without saying so — checked: D3–D7 and D15 each state the move; D4/D14 route seam faults to `OPERATOR_QUEUE` (owner gate) rather than `BLOCKER`, stated as an outcome change but not as a class change — advisory A1, not fired.
+Checked and clean: request key, class precedence, receipt/return/negative shapes and Zotero row/block shapes survive the split (verified against the snapshot); criterion 5 grep is a test (I8); the guard protocol matches fusion-tea's module unchanged; criterion-7 actions each map to a CLI call.
+Gate: DISPOSED (design-F1, design-F2, design-F3 as must-fix M1–M3) — no owner-grade contradiction of the approach; recommendation proceed once M1–M3 are applied.
+```
+
+```
+## design — 2026-10-12 — rev .project/active/research-seam-port/design.md (after revision)
+Resolves:
+- design-F1: FIXED — authority: owner ([OWNER-VERBATIM] 2026-10-09) — basis: D11 and I4 now run the configured guard on `add-entry` and `--replace`, failing closed (review M1); checked by orchestrator.
+- design-F2: FIXED — authority: AGENT (spec-F3) — basis: D4 and I4 make any key other than `holdout-guard` a configuration fault (review M2); checked by orchestrator.
+- design-F3: FIXED — authority: AGENT — basis: the queued-candidate action reports the registered location and no longer claims a re-run returns `REGISTERED` (review M3).
+Gate: CLEAR
+```
