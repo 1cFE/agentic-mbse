@@ -223,7 +223,8 @@ def test_a_block_ends_where_a_comment_opens(knowledge_tree):
     text = template.replace(heading, heading + entry, 1)
 
     (block,) = parse_index(text, project_root=knowledge_tree.root.parent)
-    assert text[block.end :].startswith("<!-- Add your domain sources below.")
+    assert text[block.end :] == template.split(heading, 1)[1]
+    assert text[block.end :].startswith("<!--")
     assert without_block(text, block) == template
 
 

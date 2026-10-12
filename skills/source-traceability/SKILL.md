@@ -30,7 +30,8 @@ Every model element traces to an authority source. Traceability is recorded duri
 - `/spec-model` — defining traceability requirements for success criteria
 - `/audit-models` — verifying traceability completeness and baseline comparison
 - `/research` — domain source investigation and citation patterns
-- `/manage-sources` — configuring authority sources in SOURCE_INDEX.md
+- `/manage-sources` — adding, removing and curating sources by hand, through `agentic-mbse research`
+- `/research-acquire` — citing the sources a research request registered
 
 ## The Durable Traceability Chain
 
@@ -60,20 +61,31 @@ Each source entry follows this format:
 
 ```markdown
 ### [Source Name]
-- **Type**: codebase | documentation | database | reference
+- **Type**: codebase | documentation | database | reference | url | local_pdf
 - **Location**: path or URL
-- **Use For**: what questions this source answers
+- **Use for**: what questions this source answers
 - **Validation**: how to verify against this source, or "N/A"
 ```
 
-**Source types**:
+Entries are never written by hand: `/manage-sources` adds and removes them through `agentic-mbse research`. The `docs/source-index.md` guide in the installed toolkit's docs directory shows both entry shapes in full.
+
+**Hand-curated types.** Added and removed with `/manage-sources` (`agentic-mbse research add-entry`, `remove-entry`). Location is anywhere except `knowledge/sources/`.
 
 | Type | Description | How Commands Use It |
-|------|-------------|---------------------|
+|---|---|---|
 | `codebase` | Code repository | Launch Explore agents to analyze |
-| `documentation` | PDF, markdown, text files | Read/search for relevant sections |
-| `database` | API or database endpoint | Query for data |
-| `reference` | Books, papers, standards | Note for citations, don't deep-analyze |
+| `documentation` | PDF, markdown or text files kept outside `knowledge/sources/` | Read/search for relevant sections |
+| `database` | API or database endpoint | Query for data (future) |
+| `reference` | Books, papers, standards that are not captured | Note for citations, don't deep-analyze |
+
+**Registered types.** Written and removed only by `agentic-mbse research register` and `retire`. Location is always `knowledge/sources/<slug>/`, backed by a `MANIFEST.jsonl` row.
+
+| Type | Description | How Commands Use It |
+|---|---|---|
+| `url` | A web page or online PDF, captured with its raw copy and hashes | Read `output.md` under Location; cite the Location; weigh the Caveat |
+| `local_pdf` | A PDF from this machine, captured with its raw copy and hashes | Same as `url` |
+
+A registered entry also carries **Caveat** and an `#### Extended Metadata` block (origin, Source ID, hashes, date). An unattended batch caller registers entries of type `documentation` with empty Use for and Validation; they are registered all the same. `agentic-mbse research sources` lists every entry labelled registered or hand-curated.
 
 ## Doc Comment Content Requirements
 
@@ -96,6 +108,7 @@ For doc comment syntax and format, see the **sysml-conventions** skill.
 | Online | `URL (accessed YYYY-MM-DD)` | `https://example.com (accessed 2026-01-15)` |
 | Standard | `Standard ID, Section/Clause` | `ISO 19514:2017, Clause 7.3` |
 | Research | `knowledge/research/approved/YYYYMMDD_topic.md` | `knowledge/research/approved/20260115_thermal.md` |
+| Registered source | The entry's Location, the extraction in it, and a section or page | `knowledge/sources/widget_coil_note/output.md, Table 2` |
 
 **Codebase citations must include line numbers** for parameters extracted from code. This enables automated verification during audits.
 

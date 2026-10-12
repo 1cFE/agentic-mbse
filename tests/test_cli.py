@@ -335,6 +335,23 @@ class TestCmdInstallCommands:
         assert result == EXIT_FAILURE
 
 
+class TestResearchAcquireInstall:
+    """The acquisition skill ships like every workflow: listed, and installed by a fresh init."""
+
+    def test_list_names_research_acquire_among_the_workflows(self, tmp_path, capsys):
+        args = MockArgs(list=True, directory=str(tmp_path), force=False)
+        assert cmd_install_commands(args) == EXIT_SUCCESS
+        output = capsys.readouterr().out
+        workflows = output.split("Workflows (", 1)[1].split("Supporting skills (", 1)[0]
+        assert "  - research-acquire\n" in workflows
+
+    def test_fresh_init_installs_research_acquire_for_both_assistants(self, tmp_path):
+        assert cmd_init(MockArgs(path=str(tmp_path), force=False)) == EXIT_SUCCESS
+        shipped = (REPO_ROOT / "skills" / "research-acquire" / "SKILL.md").read_bytes()
+        for installed in (".agents/skills", ".claude/skills"):
+            assert (tmp_path / installed / "research-acquire" / "SKILL.md").read_bytes() == shipped
+
+
 class TestMain:
     """Tests for main entry point."""
 

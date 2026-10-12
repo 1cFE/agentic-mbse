@@ -1,6 +1,6 @@
 # Implementation Plan: Port the research acquisition seam, and bring `/manage-sources` under its rules
 
-**Status:** Implementation in progress (P1, P2, P3, P4, P5 complete)
+**Status:** Implementation complete (P1–P6); orchestrator steps O1 (rest) and O2 remain
 **Created:** 2026-10-12
 **Last Updated:** 2026-10-12
 **Work item:** `WRAP-SPLIT` Item 5, branch `research-seam-port`, worktree `/home/reid/1cfe/agentic-mbse-research-seam`
@@ -679,37 +679,83 @@ def test_the_runbook_maps_every_seam_class():
 
 **Tests first, by Appendix B row.**
 
-- [ ] `test_command_contract.py`: move, rewritten for `skills/research-acquire/SKILL.md` and `docs/research-seam.md`. The skill calls `agentic-mbse research open | log | register | close` and never names a registry file as something to edit. The guide covers the four classes, the three operator actions and the blind spot. The upstream-filings test becomes "the guide names the capture gaps". The skill's outcome table carries the seam-repair line (review A1). The `.gitignore` negation test is dropped.
-- [ ] `test_shipped_contracts.py` (new): `manage-sources` calls `research sources`, `register`, `add-entry`, `remove-entry` and `retire` and states its never-edit rule; `run-goal` and the runbook as in the stencil (criterion 8).
-- [ ] `test_no_consumer_names.py`: extend I8 to `skills/research-acquire/` and `docs/research-seam.md`.
-- [ ] `install-commands --list` names `research-acquire`, and a fresh `init` installs it (criterion 1). Put these beside the existing install tests in `tests/test_cli.py` or `tests/test_installation.py`.
+- [x] `test_command_contract.py`: move, rewritten for `skills/research-acquire/SKILL.md` and `docs/research-seam.md`. The skill calls `agentic-mbse research open | log | register | close` and never names a registry file as something to edit. The guide covers the four classes, the three operator actions and the blind spot. The upstream-filings test becomes "the guide names the capture gaps". The skill's outcome table carries the seam-repair line (review A1). The `.gitignore` negation test is dropped.
+- [x] `test_shipped_contracts.py` (new): `manage-sources` calls `research sources`, `register`, `add-entry`, `remove-entry` and `retire` and states its never-edit rule; `run-goal` and the runbook as in the stencil (criterion 8).
+- [x] `test_no_consumer_names.py`: extend I8 to `skills/research-acquire/` and `docs/research-seam.md`.
+- [x] `install-commands --list` names `research-acquire`, and a fresh `init` installs it (criterion 1). Put these beside the existing install tests in `tests/test_cli.py` or `tests/test_installation.py`.
 
 **Text.** Use the design's exact wording where it gives one.
 
-- [ ] `skills/research-acquire/SKILL.md` (new): from the snapshot's `research-acquire.md`, per the last paragraph of Component Overview.
-- [ ] `docs/research-seam.md` (new): operator guide, hook guide and § Decisions (D17). The hook guide says a guard must import on its own and that its relative paths resolve against the project root (Implementation Notes "Hook loading"). Keep the Nb3Sn request and the EPFL preprint, labelled as examples. The BLOCKER example names a fault logged after `open` (Align). Drop the closed `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` bullet (A15). Say that re-registering a retired title reuses its slug and `verify` reports it (Non-Goals).
-- [ ] `skills/manage-sources/SKILL.md`: rewrite to the shape in Component Overview.
-- [ ] `skills/run-goal/SKILL.md:66,68` and `project_templates/GOAL_RUNBOOK.md.template:289`: the exact texts (D16).
-- [ ] `docs/source-index.md` (§ Source Types exact text; File Format; Command Behavior steps 1 and 4) and `skills/source-traceability/SKILL.md:55-76`, which mirrors it.
-- [ ] `SOURCE_INDEX.md.template` at the repo root: the type comment, the placeholder line as a comment, and "Adding New Sources" (Appendix A).
-- [ ] `skills/onboard/SKILL.md:59,63` and `skills/toolkit-awareness/SKILL.md` (Integration Strategy).
-- [ ] `.project/active/wrap-split-migration-ledger.md`: the Item 5 section with the Appendix C rows.
+- [x] `skills/research-acquire/SKILL.md` (new): from the snapshot's `research-acquire.md`, per the last paragraph of Component Overview.
+- [x] `docs/research-seam.md` (new): operator guide, hook guide and § Decisions (D17). The hook guide says a guard must import on its own and that its relative paths resolve against the project root (Implementation Notes "Hook loading"). Keep the Nb3Sn request and the EPFL preprint, labelled as examples. The BLOCKER example names a fault logged after `open` (Align). Drop the closed `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` bullet (A15). Say that re-registering a retired title reuses its slug and `verify` reports it (Non-Goals).
+- [x] `skills/manage-sources/SKILL.md`: rewrite to the shape in Component Overview.
+- [x] `skills/run-goal/SKILL.md:66,68` and `project_templates/GOAL_RUNBOOK.md.template:289`: the exact texts (D16).
+- [x] `docs/source-index.md` (§ Source Types exact text; File Format; Command Behavior steps 1 and 4) and `skills/source-traceability/SKILL.md:55-76`, which mirrors it.
+- [x] `SOURCE_INDEX.md.template` at the repo root: the type comment, the placeholder line as a comment, and "Adding New Sources" (Appendix A).
+- [x] `skills/onboard/SKILL.md:59,63` and `skills/toolkit-awareness/SKILL.md` (Integration Strategy).
+- [x] `.project/active/wrap-split-migration-ledger.md`: the Item 5 section with the Appendix C rows.
 
 **Satisfies:** D16, D17; I6, I8; criteria 1 (skill installed and listed), 5 and 8; the text half of criterion 7.
 
 ### Validation
 
-- [ ] Exit check.
-- [ ] `uv run pytest tests/test_goal_layer.py` passes. Its `SC2` pattern (`tests/test_goal_layer.py:33-37`) scans `run-goal` and the runbook, so the new text must not name `holdout`, `research_seam` or `source_registry`.
-- [ ] `tests/test_research` passes after the template edit. The placeholder line becoming a comment changes where D10 ends a block, and the behaviour tests use the live template.
-- [ ] Manual: `grep -riE "fusion-tea|MR-[0-9]|\baries\b|zotero|\.project/" skills/research-acquire docs/research-seam.md src/agentic_mbse/research` prints nothing (criterion 5's own evidence).
-- [ ] Manual: `grep -rn "SOURCE_INDEX.md\|MANIFEST.jsonl\|RETIRED.jsonl" skills/` shows no hit that tells anyone to edit the file (I6, B4).
+- [x] Exit check.
+- [x] `uv run pytest tests/test_goal_layer.py` passes. Its `SC2` pattern (`tests/test_goal_layer.py:33-37`) scans `run-goal` and the runbook, so the new text must not name `holdout`, `research_seam` or `source_registry`.
+- [x] `tests/test_research` passes after the template edit. The placeholder line becoming a comment changes where D10 ends a block, and the behaviour tests use the live template.
+- [x] Manual: `grep -riE "fusion-tea|MR-[0-9]|\baries\b|zotero|\.project/" skills/research-acquire docs/research-seam.md src/agentic_mbse/research` prints nothing (criterion 5's own evidence).
+- [x] Manual: `grep -rn "SOURCE_INDEX.md\|MANIFEST.jsonl\|RETIRED.jsonl" skills/` shows no hit that tells anyone to edit the file (I6, B4).
 
 **What we know works after P6:** `init` from this branch installs a target that can acquire and curate sources with shipped files alone. Criteria 1, 3, 5, 8 and 9 are met in this repo.
 
 ### Implementation Notes
 
-_To fill during implementation._
+#### Phase 6 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,748 passed, 1 skipped, 1 xfailed, 14 deselected, 0 failed (P5 2,667 passed; 81 new). Deselected unchanged: no new `slow` test.
+- `uv run pytest tests/test_research -m ""`: 531 passed.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this phase adds or edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline. This phase changes no `src/` file.
+- `uv run pytest tests/test_goal_layer.py`: 11 passed; the new `run-goal` and runbook text clear its SC2 pattern.
+- Manual: criterion 5's grep over `skills/research-acquire`, `docs/research-seam.md` and `src/agentic_mbse/research` prints nothing. `grep -rn "SOURCE_INDEX.md\|MANIFEST.jsonl\|RETIRED.jsonl" skills/` has no hit that tells anyone to edit those files: the hits are pointers to read the index, descriptions, and `manage-sources`' own never-edit rule. `git status` shows no change under the worktree's `knowledge/`.
+
+**What changed.**
+
+- `skills/research-acquire/SKILL.md` (new, `kind: workflow`, tools Bash, Read, Grep, Glob, WebSearch, WebFetch): the snapshot command's six steps, four standing rules and two tables, in the shipped skills' shape (Purpose/Input/Output, Skills Referenced, Process, Related Commands). Its calls are `uv run agentic-mbse research open | log | register | close`, with the exit codes P5 fixed: `open` exits 3 on a recorded negative and 2 on a malformed request, where the agent reports `BLOCKER` itself. "Citable under MR-4" became "citable as the source's location (see the **source-traceability** skill)". The outcome table has the seam-repair row under `precondition_failed` (review A1). The guide is located with `get_docs_dir()`, as the runbook does.
+- `docs/research-seam.md` (new): the operator guide, the hold-out hook guide, hand-curated entries, the Python API (the thirteen D2 names and a `KeyedFileSource` example), the capture gaps in words, and § Decisions, record 0008 condensed under the snapshot-authority stance (D17). The Nb3Sn request and the EPFL preprint stay, each labelled as an example. The `BLOCKER` example is a fault logged after `open`; a malformed request is the agent's own `BLOCKER` (Align). The closed `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` bullet is gone (A15). A retired title reusing its slug is in "What this does not protect you from" (Non-Goals).
+- `skills/manage-sources/SKILL.md`, rewritten to the design's shape: read state with `research sources`; add asks "can the toolkit capture it?" and goes to `register` or `add-entry`; remove is `retire` or `remove-entry`; edit is `add-entry --replace`; "Resolve a Queued Candidate" reads `queued` from the newest run of each request, registers an obtained copy and reports its location without re-running the request (review M3), shows hold-out hits and seam repairs and registers neither; an `unregistered` entry is reported and left alone (review A7). The never-edit rule names `SOURCE_INDEX.md`, `MANIFEST.jsonl`, `RETIRED.jsonl` and `knowledge/sources/`.
+- `skills/run-goal/SKILL.md:66,68` and `project_templates/GOAL_RUNBOOK.md.template` § The native seams: the design's exact texts (D16). The class table is indented under the `research` bullet so it stays part of that list item; its text is the design's.
+- `docs/source-index.md`: File Format shows both entry shapes and says neither is written by hand; § Source Types is the design's exact two tables and paragraph; a Caveat field detail; Command Behavior steps 1 and 4 say `init` creates a missing index and sources are added through `/manage-sources`.
+- `skills/source-traceability/SKILL.md`: the same two tables and paragraph, the format's "Use For" corrected to "Use for", `/research-acquire` in "When to Reference", and a citation row for a registered source.
+- `SOURCE_INDEX.md.template`: the type comment names both kinds of type; the placeholder line is now a comment saying entries are added at the end of the section; "Adding New Sources" points at `/manage-sources` and the CLI.
+- `skills/onboard/SKILL.md` step 3 adds listed sources by `manage-sources`' "Add a Source" steps. `skills/toolkit-awareness/SKILL.md` gains the `uv run agentic-mbse research <subcommand>` line and a `/research-acquire` row.
+- `.project/active/wrap-split-migration-ledger.md`: the Item 5 section, Appendix C's ten rows plus one (below). Homes on the fusion-tea branch are marked "pending O1 branch".
+- Tests:
+  - `tests/test_research/shipped_text.py` (new): reads a Markdown section, fenced blocks, and every `agentic-mbse research` call in a text's bash blocks; builds a parser holding only the `research` subcommands.
+  - `test_command_contract.py` (moved, rewritten): the skill's frontmatter, its four subcommands, its standing rules, its request fields, its own `BLOCKER`, its seam-repair row and class table; no registry file name, `--index`, `--summarize` or `--budget` in it. The guide's four classes, its `BLOCKER` example, the three operator actions, the blind spot, the seam repairs under "Act on a queued source", the capture gaps, all six `verify` kinds, the retired-slug note and the identity decision. The hook guide's TOML block is the design's, and its example guard file, configured as shown, loads and answers through the package's wrapper. Every CLI call shown in the skill and the guide parses under the real `research` parser.
+  - `test_shipped_contracts.py` (new): `manage-sources` makes its changes through `sources`, `register`, `add-entry` (with `--replace`), `remove-entry`, `retire` and `verify`, and every call it shows parses; its never-edit rule; its queue and `unregistered` rules. No shipped skill keeps one of the four old hand-edit instructions. `onboard` and `toolkit-awareness` name the CLI. `run-goal` names the seam and points at the runbook, which alone holds the class table (D16). The type tables in the guide and the traceability skill equal `HAND_CURATED_TYPES` and `REGISTRY_KINDS`, and the skill's rows equal the guide's. The template points new sources at the CLI.
+  - `test_no_consumer_names.py`: I8 now covers `skills/research-acquire/` and `docs/research-seam.md`, and fails if any of the three roots is missing.
+  - `tests/test_cli.py` `TestResearchAcquireInstall`: `install-commands --list` names `research-acquire` among the workflows; a fresh `init` installs it byte for byte under `.agents/skills/` and `.claude/skills/` (criterion 1).
+- Mutation-checked, each mutation applied alone and the file restored after; each fails at least one test: a bad `--triage` value in the skill, the skill's own `BLOCKER` dropped, a seam-repair prefix dropped from the outcome table, a consumer name in the guide, the example guard answering a dict, `retire` shown without `--slug`, `RETIRED.jsonl` dropped from `manage-sources`' rule, `manage-sources` told to re-run the request, the old `onboard` hand-edit sentence restored, a wrong registered type in the guide's table (2 fail), and a wrong row in the runbook's class table.
+
+**Deviations and decisions.**
+
+- `test_index_writer.py::test_a_block_ends_where_a_comment_opens` pinned the old template's first comment text (`"<!-- Add your domain sources below."`), so the template edit failed it. It now asserts that the text after the block is the rest of the template and starts with `<!--`. The byte-for-byte cut assertion beside it is unchanged. No other test or golden value moved; the frozen goldens under `golden/index/` keep the old template, as the golden-fixtures rule intends.
+- [AGENT] The skill tells the agent to `log --fault` when it cannot search at all (for example, no web search tool). The snapshot command never named `--fault`, so no agent following it could reach a computed `BLOCKER`, and the Align decision makes the guide's `BLOCKER` example a fault logged after `open`. The class rules are unchanged.
+- [AGENT] The skill lists the request fields, because the design's `run-goal` text points there ("fields in the `research-acquire` skill"). It says `request_id` names the run directory, so keep it to letters, digits and dashes: P5 noted that `request_id` is used as a path segment unchecked.
+- [AGENT] Rule 4 adds one sentence: the hook sees only what reaches `register`, so a project's quarantine rule applies before any search or fetch. It carries the `run-goal` text's "Apply any source-quarantine rule the project states before any fetch" to an agent that runs the skill without a goal brief.
+- The guide's offline example no longer points at the test suite's fixtures, which are not shipped. It serves a page from a folder the reader chooses, in a scratch project. One ledger row beyond Appendix C records the removed pointer (its home is agentic-mbse's own `tests/test_research/conftest.py`).
+- Appendix C cites `.project/backlog/BACKLOG.md:735` for the upstream filings. Line 735 is `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` (completed); `EXTRACT-PROVENANCE-HOOK` (open) is at `:100`. The ledger row cites both.
+- The guide documents `add-entry`'s refusals, `sources` labels and the Python API, which the snapshot guide had no counterpart for; their content is the P4 and P5 behaviour.
+- `manage-sources` keeps `Write` and `Edit` in `allowed-tools`: the read-access offer merges permissions into the assistant's settings file. The never-edit rule is prose, as B4 accepts.
+
+**For the audit and the orchestrator.**
+
+- Not changed, outside this phase's file list (Appendix A): `project_templates/README.md.template` lists `/manage-sources` but not `/research-acquire`, and `toolkit-awareness` tells agents to trust the target's README for commands; `skills/project-structure/SKILL.md:80` still spells the field "Use For"; `cli/__init__.py:520-534` keeps an inline fallback index, written only when the packaged template is missing, whose text says "Edit this file to add your domain-specific sources." Each is a one-line follow-up if the owner wants it.
+- O2b's five `/manage-sources` calls map to the skill's Add (register; add-entry), the read-state listing, and Remove (retire; remove-entry).
 
 ---
 
@@ -751,4 +797,4 @@ Owner-paced, after the owner merges this branch: move fusion-tea's pin and re-in
 
 ---
 
-**Next step:** `/_my_implement` P1.
+**Next step:** orchestrator O1 (rest) and O2, then `/_my_audit`.

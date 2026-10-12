@@ -1,6 +1,6 @@
 # Spec: Port the research acquisition seam, and bring `/manage-sources` under its rules
 
-**Status:** Implementation in progress (P1 to P5 of 6 complete, 2026-10-12). Approved for design 2026-10-12; spec review skipped, see `briefs/align.md`
+**Status:** Implementation complete (P1 to P6, 2026-10-12); orchestrator O1 and O2 checks and the audit remain. Approved for design 2026-10-12; spec review skipped, see `briefs/align.md`
 **Owner:** Reid W
 **Created:** 2026-10-08
 **Refreshed:** 2026-10-12, against `main` at `ac5fb1a` after Items 1 and 2 merged
