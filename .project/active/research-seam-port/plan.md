@@ -1,6 +1,6 @@
 # Implementation Plan: Port the research acquisition seam, and bring `/manage-sources` under its rules
 
-**Status:** Implementation in progress (P1 complete)
+**Status:** Implementation in progress (P1, P2 complete)
 **Created:** 2026-10-12
 **Last Updated:** 2026-10-12
 **Work item:** `WRAP-SPLIT` Item 5, branch `research-seam-port`, worktree `/home/reid/1cfe/agentic-mbse-research-seam`
@@ -182,7 +182,7 @@ def test_keyed_batch_block_equals_the_snapshot_block():
 - The anchor rule keeps the snapshot's prefix match (a line starting with either heading) and skips comments. An anchor on the file's first line now counts; the snapshot needed a newline before it.
 - The end-of-file fallback adds no leading newline to an empty file. The design says to add one "if the file does not end with one"; an empty file has no last line to separate from. No golden case covers an empty index, and P2 refuses a missing one.
 - `KeyedFileSource` also refuses a blank `kind` or `key_field`, besides the design's three refusals. Same caller error, same `ValueError`.
-- The staging sweep treats only `FileNotFoundError` as "vanished" (the snapshot caught every `OSError`).
+- The staging sweep counts an entry it cannot stat as fresh on any `OSError`, as the snapshot does. P1 had narrowed this to `FileNotFoundError`, an unlisted behaviour change that let a permission error crash a registration; the orchestrator had it restored in P2, with a regression test.
 - Not handled: a `<!--` inside inline code opens a comment for the parser. No shipped or fusion-tea index has one.
 
 **For the next phases.**
@@ -222,31 +222,67 @@ def test_a_failed_commit_on_a_fresh_target_leaves_no_manifest(knowledge_tree, lo
 
 **Tests first, by Appendix B row.**
 
-- [ ] `test_golden_shapes.py`: manifest-row key order for `url`, `local_pdf` and keyed rows, against the P1 golden data.
-- [ ] Move `test_register_url_chain.py`, `test_register_pdf_chain.py`, `test_duplicate.py`, `test_staging_concurrency.py` and `test_rollback.py`. Update imports and rung names; `zotero_key` absence assertions read "no key field". `test_rollback.py` gains the no-manifest case (I3).
-- [ ] Move `test_receipts.py`. The pre-capture refusal passes `guard=FakeGuard(...)` and uses its term. Add I2: every returned outcome writes exactly one receipt; a raised `RegistrationError` or `subprocess.TimeoutExpired` writes none (review M5).
-- [ ] `test_zotero_path_contract.py`, second half: keyed dedupe with a neutral key. Old rows carrying the key field and no `source_kind` match before any fetch (I5).
-- [ ] New cases in the chain files: a URL `register` without the web extra refuses `precondition_failed`, reason starting `URL capture needs the web extra:`, no capture spent (D14). A missing `SOURCE_INDEX.md` refuses `precondition_failed`, reason starting `source index missing:`, before capture (Behaviour Changes).
-- [ ] `test_capture.py` (new): with `subprocess.run` patched to record argv, the extractor command starts `[sys.executable, "-m", "agentic_mbse", "extract"]` and never carries `--index` or `--summarize` (D13, I7).
+- [x] `test_golden_shapes.py`: manifest-row key order for `url`, `local_pdf` and keyed rows, against the P1 golden data.
+- [x] Move `test_register_url_chain.py`, `test_register_pdf_chain.py`, `test_duplicate.py`, `test_staging_concurrency.py` and `test_rollback.py`. Update imports and rung names; `zotero_key` absence assertions read "no key field". `test_rollback.py` gains the no-manifest case (I3).
+- [x] Move `test_receipts.py`. The pre-capture refusal passes `guard=FakeGuard(...)` and uses its term. Add I2: every returned outcome writes exactly one receipt; a raised `RegistrationError` or `subprocess.TimeoutExpired` writes none (review M5).
+- [x] `test_zotero_path_contract.py`, second half: keyed dedupe with a neutral key. Old rows carrying the key field and no `source_kind` match before any fetch (I5).
+- [x] New cases in the chain files: a URL `register` without the web extra refuses `precondition_failed`, reason starting `URL capture needs the web extra:`, no capture spent (D14). A missing `SOURCE_INDEX.md` refuses `precondition_failed`, reason starting `source index missing:`, before capture (Behaviour Changes).
+- [x] `test_capture.py` (new): with `subprocess.run` patched to record argv, the extractor command starts `[sys.executable, "-m", "agentic_mbse", "extract"]` and never carries `--index` or `--summarize` (D13, I7).
 
 **Code.**
 
-- [ ] `research/holdout.py`, minimal: the two protocols (design § Exact wording) and the no-op guard. In P2, `register(..., guard=None)` uses the no-op guard; P3 replaces that default.
-- [ ] `research/capture.py`: per Component Overview. Import `check_web_deps` lazily (Implementation Notes "Hook loading").
-- [ ] `research/register.py`: the ladder in the design's order (Architecture § register ladder); each rung a module-level function (Implementation Notes "Rollback tests"); `_spent_a_capture` ported exactly (Implementation Notes "Copy, then split").
-- [ ] `research/__init__.py`: add the register-side D2 names.
+- [x] `research/holdout.py`, minimal: the two protocols (design § Exact wording) and the no-op guard. In P2, `register(..., guard=None)` uses the no-op guard; P3 replaces that default.
+- [x] `research/capture.py`: per Component Overview. Import `check_web_deps` lazily (Implementation Notes "Hook loading").
+- [x] `research/register.py`: the ladder in the design's order (Architecture § register ladder); each rung a module-level function (Implementation Notes "Rollback tests"); `_spent_a_capture` ported exactly (Implementation Notes "Copy, then split").
+- [x] `research/__init__.py`: add the register-side D2 names.
 
 **Satisfies:** D6, D13, D14; I1 (row key orders), I2, I3, I5, I7; criterion 3 for `registered`, `duplicate`, `capture_failed`, `precondition_failed` and `limit_reached`.
 
 ### Validation
 
-- [ ] Exit check. The URL-chain tests need the `web` extra (`uv sync --all-extras`). They must run, not skip.
+- [x] Exit check. The URL-chain tests need the `web` extra (`uv sync --all-extras`). They must run, not skip.
 
 **What we know works after P2:** a URL or a local PDF registers end to end through the real extractor; refusals write nothing; a failed commit leaves the four artifacts byte-identical, or absent if they were absent; receipts match the snapshot's.
 
 ### Implementation Notes
 
-_To fill during implementation._
+#### Phase 2 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,383 passed, 1 skipped, 1 xfailed, 13 deselected, 0 failed (P1 2,325 passed; 58 new). Deselected rose from 5 to 13 by the eight `slow` tests in `tests/test_research`.
+- `uv run pytest tests/test_research -m ""`: 174 passed, the eight `slow` tests included. The URL-chain tests ran under the `web` extra; none skipped.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this item adds or edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a research file.
+
+**What changed.**
+
+- `research/holdout.py`, minimal: the `HoldoutMatch` and `HoldoutGuard` protocols (design § Exact wording) and `NO_HOLDOUT_GUARD`. `register(..., guard=None)` uses `NO_HOLDOUT_GUARD` until P3.
+- `research/capture.py`: `capture(source, staging, *, budget) -> Captured | CaptureFailure`, `extractor_command` (`[sys.executable, "-m", "agentic_mbse", "extract", target, "--save-source", "--output", staging, "--budget", budget]`), `web_capture_available()` (imports `check_web_deps` lazily), `sha256_of`, and the snapshot's flattening and raw-artifact read-off. `CAPTURE_TIMEOUT_S`, `EXTRACT_OUTPUT` and `STAGED_INPUT_DIR` live here. A `CaptureFailure` carries the reason; `register` turns it into `capture_failed`, so `capture.py` never imports `register.py`.
+- `research/register.py`: `register`, `RegistrationResult` (with an `Outcome` literal), `RegistrationError`, `manifest_row` (public, so the golden test builds rows with it), `DEFAULT_BUDGET`, `STALE_STAGING_AGE_S` and a `Triage` literal. The ladder is the design's order: sweep, metadata, input file, index exists, hold-out on input path, identity and title, pre-fetch dedupe, `max_captures`, web extra for URLs, capture, hold-out on extract and raw artifact, dedupe on `source_id`, commit. `_spent_a_capture` is the snapshot's, unchanged.
+- The commit rungs are module-level names in `register.py`: `_rename_into_sources`, then `append_manifest_row` and `insert_block`, imported there from `manifest.py` and `index.py`. The snapshot's one-line wrappers around those two were not ported. The rollback uses `mark_manifest`/`roll_back_manifest`, so a fresh target's manifest is removed, not truncated.
+- The two new refusals: `source index missing: <index path>` and `URL capture needs the web extra: install agentic-mbse[web]`, both `precondition_failed`, both before any capture. Tests simulate a missing extra with `sys.modules["trafilatura"] = None`, which makes the real `check_web_deps` fail.
+- `research/__init__.py`: adds `register`, `RegistrationResult`, `RegistrationError` (ten D2 names).
+- `research/sources.py`: `UrlSource.kind` and `LocalPdfSource.kind` are typed `Literal["url"]` and `Literal["local_pdf"]`, so `register` passes the kind to `render_seam_block` without a cast.
+- `research/paths.py`: the orchestrator's correction. `_modified_at` catches `OSError` again, as the snapshot does; Phase 1's note is amended.
+- Tests: `test_register_url_chain.py`, `test_register_pdf_chain.py`, `test_duplicate.py`, `test_staging_concurrency.py`, `test_rollback.py` and `test_receipts.py` moved; `test_zotero_path_contract.py` gained its second half; `test_capture.py` is new; `test_golden_shapes.py` gained the manifest rows. `conftest.py` gained `registry_state` (index and manifest bytes, or None when absent, plus source and raw entries) and `assert_nothing_written` (a fresh tree: no source, raw copy or staging entry, an absent or empty manifest, and the index still the live template byte for byte). "Zotero key absent" assertions became "the row's fields equal the golden row's fields, in order".
+- Tests beyond the plan's list: the `OSError` sweep regression (mutation-checked: it fails with `FileNotFoundError`); the capture-count quirk pinned on its own; every-outcome-one-receipt over all six outcomes in one run; triage recorded; a slow local-PDF rollback that the raw copy is removed; a slow keyed registration end to end (batch block, key line, key as slug suffix, row fields); a batch caller needs only a title; the block lands before the shipped template's anchor.
+- Manifest goldens compare the appended bytes, not only key order, because `manifest_row` takes its date as an argument.
+
+**Deviations and decisions** (none changes a byte fusion-tea writes or reads).
+
+- `test_same_bytes_at_a_different_url_is_a_duplicate` never reached the check it names in the snapshot. Its alias `./utf8.html` normalizes to the first URL (`posixpath.normpath`), so the pre-fetch URL check caught it. The alias is now `utf8.html?alias=1`: normalization keeps the query and the fixture server ignores it, so the source-id dedupe after capture is what refuses it, and the test asserts that reason.
+- `_commit` reads `date.today()` once and hands it to the row and the block. The snapshot read it in each writer, so a commit straddling midnight could carry two dates.
+- Ported tests that checked "the reason mentions the field" now check the exact snapshot message.
+- Two snapshot comments were wrong and are not ported as written. The `_spent_a_capture` comment said only a post-capture duplicate or hold-out hit carries a source id. In fact a pre-fetch duplicate of a row with a `source_id` carries one (the quirk the design keeps), and a post-capture hold-out hit carries none, so it does not count against `max_captures`. The code is unchanged; the new comment says what it does.
+
+**For the next phases.**
+
+- P3: every guard call is in `_input_identity_holdout_hit` and `_post_capture_refusal`, and every read of a match is in `_holdout_refusal`; the wrapper goes around those. A2's post-capture fault must carry `captured.source_id`, and `_spent_a_capture` must then count a `precondition_failed` with a source id; leave the post-capture hold-out hit uncounted, as the snapshot does. Replace `NO_HOLDOUT_GUARD` as the default with `load_holdout_guard(paths.project_root)`. `FakeGuard(terms=(SEALED_TOKEN,))` already drives the receipts test.
+- P4: in test modules, get the `register` module with `importlib.import_module("agentic_mbse.research.register")`. The package attribute `register` is the function (D1's module name and D2's function name collide), so `from agentic_mbse.research import register as module` returns the function. `retire` is not a D2 name, so `agentic_mbse.research.retire` stays the module. `assert_nothing_written` compares against the live template, so it suits fresh trees only; round trips use `registry_state`.
+- P5: the CLI's `register` prints the snapshot's fields (`source_registry.py:1336-1346`); `RegistrationResult` keeps the snapshot's field names. `DEFAULT_BUDGET` and `Triage` are in `register.py` for the flags.
 
 ---
 

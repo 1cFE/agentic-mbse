@@ -28,7 +28,10 @@ from pathlib import Path
 
 import pytest
 
+from agentic_mbse.research import KeyedFileSource, LocalPdfSource, RegistryPaths, UrlSource
 from agentic_mbse.research.index import insert_block, render_batch_block, render_seam_block
+from agentic_mbse.research.manifest import append_manifest_row
+from agentic_mbse.research.register import manifest_row
 from agentic_mbse.research.runs import write_receipt
 
 GOLDEN = Path(__file__).parent / "golden"
@@ -87,3 +90,31 @@ def test_receipts_match_the_snapshot_names_and_bytes(tmp_path):
     assert [p.name for p in written] == [p.name for p in golden]
     for ours, snapshot in zip(written, golden, strict=True):
         assert ours.read_bytes() == snapshot.read_bytes()
+
+
+def _manifest_source(kind: str, inputs: dict):
+    path = Path(inputs["local_pdf_path"])
+    if kind == "url":
+        return UrlSource(url=inputs["url"])
+    if kind == "local_pdf":
+        return LocalPdfSource(path=path)
+    return KeyedFileSource(
+        path=path, key_label="Key", key_display="not in a row", **inputs["keyed"]
+    )
+
+
+@pytest.mark.parametrize("kind", ["url", "local_pdf", "keyed"])
+def test_manifest_rows_match_the_snapshot_bytes(kind, tmp_path):
+    """Fields, their order and their values, as the line the snapshot appended."""
+    inputs = _golden_json("manifest/inputs.json")
+    paths = RegistryPaths(knowledge_dir=tmp_path)
+    row = manifest_row(
+        _manifest_source(kind, inputs),
+        **inputs["rows"][kind],
+        source_id=inputs["source_id"],
+        raw_artifact_sha256=inputs["raw_artifact_sha256"],
+        extract_sha256=inputs["extract_sha256"],
+        extracted=date.fromisoformat(inputs["date_extracted"]),
+    )
+    append_manifest_row(paths, row)
+    assert paths.manifest.read_bytes() == (GOLDEN / "manifest" / f"{kind}.jsonl").read_bytes()

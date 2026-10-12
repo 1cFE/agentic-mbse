@@ -257,3 +257,34 @@ class RecordingGuard:
     def scan_file(self, path: Path) -> list[FakeMatch]:
         self.calls.append(("scan_file", path))
         return self.inner.scan_file(path)
+
+
+# --- what a tree holds -----------------------------------------------------------
+
+
+def _entry_names(directory: Path) -> list[str]:
+    """The entries of a directory, sorted. An absent directory has none."""
+    return sorted(path.name for path in directory.iterdir()) if directory.is_dir() else []
+
+
+def registry_state(tree: KnowledgeTree) -> tuple[bytes | None, bytes | None, list[str], list[str]]:
+    """The index and manifest bytes (None when absent), and the source and raw entries."""
+    return (
+        tree.index.read_bytes() if tree.index.exists() else None,
+        tree.manifest.read_bytes() if tree.manifest.exists() else None,
+        _entry_names(tree.sources),
+        _entry_names(tree.raw),
+    )
+
+
+def assert_nothing_written(tree: KnowledgeTree) -> None:
+    """Assert a fresh tree still holds no registration and no leftover staging.
+
+    The manifest and staging may be absent or empty, as a refusal may leave them.
+    The index must still be the shipped template, byte for byte.
+    """
+    assert _entry_names(tree.sources) == []
+    assert _entry_names(tree.raw) == []
+    assert _entry_names(tree.paths.staging) == []
+    assert not tree.manifest.exists() or tree.manifest.read_bytes() == b""
+    assert tree.index.read_bytes() == get_template_path().read_bytes()

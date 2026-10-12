@@ -41,7 +41,7 @@ class UrlSource:
 
     url: str
 
-    kind: ClassVar[str] = "url"
+    kind: ClassVar[Literal["url"]] = "url"
     index_profile: ClassVar[IndexProfile] = "seam"
 
     @property
@@ -67,7 +67,7 @@ class LocalPdfSource:
 
     path: Path
 
-    kind: ClassVar[str] = "local_pdf"
+    kind: ClassVar[Literal["local_pdf"]] = "local_pdf"
     index_profile: ClassVar[IndexProfile] = "seam"
 
     @property

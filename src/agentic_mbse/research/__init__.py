@@ -6,6 +6,7 @@ contract for everything else.
 
 from agentic_mbse.research.manifest import load_manifest_rows
 from agentic_mbse.research.paths import RegistryPaths, default_paths
+from agentic_mbse.research.register import RegistrationError, RegistrationResult, register
 from agentic_mbse.research.sources import (
     KeyedFileSource,
     LocalPdfSource,
@@ -16,9 +17,12 @@ from agentic_mbse.research.sources import (
 __all__ = [
     "KeyedFileSource",
     "LocalPdfSource",
+    "RegistrationError",
+    "RegistrationResult",
     "RegistryPaths",
     "SourceMetadata",
     "UrlSource",
     "default_paths",
     "load_manifest_rows",
+    "register",
 ]

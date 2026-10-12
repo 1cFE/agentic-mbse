@@ -97,8 +97,12 @@ def sweep_stale_staging(paths: RegistryPaths, *, older_than_s: float) -> None:
 
 
 def _modified_at(path: Path) -> float:
-    """The entry's mtime, or now if it vanished meanwhile, so a racing attempt is never swept."""
+    """The entry's mtime, or now if it cannot be stat'ed.
+
+    An entry that vanished meanwhile, or that a permission error hides, counts as
+    fresh: the sweep leaves it alone rather than failing the registration it runs in.
+    """
     try:
         return path.stat().st_mtime
-    except FileNotFoundError:
+    except OSError:
         return time.time()
