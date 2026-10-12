@@ -12,6 +12,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 ## Active Work
 
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
+- [study-layer-to-codegen](active/study-layer-to-codegen/README.md) — `WRAP-SPLIT` Item 3: ship `run-study`, the study tools and `integrate` from sysml-codegen. Orchestrated run started 2026-10-12; spec, design and plan approved in sysml-codegen (branch `study-layer-to-codegen`); implementing. This repository's part is the `installer/v1` API (`0843fe2`, branch `study-layer-to-codegen`). fusion-tea adopts after merge by runbook.
 - [research-seam-port](active/research-seam-port/spec.md) — `WRAP-SPLIT` Item 5: port fusion-tea's research acquisition seam (the `research-acquire` skill plus an `agentic-mbse research` CLI) and rework `/manage-sources` to follow the registry's rules. Spec drafted 2026-10-08/09; design page approved by owner 2026-10-09 ([page](mental-alignment-v2/runs/20261006-150340_research-process-end-state_fresh.html)); product-lens CLEAR. Next: `/_my_spec_review` in a fresh session. One owner question open: may a goal delegate insight approval (does not affect Item 5's code).
 
 ## Concrete remaining work
