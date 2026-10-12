@@ -34,3 +34,11 @@ Resolves:
 - smell 1: ESCALATED — authority: AGENT — basis: unchanged; the decision record's home and authority stay a design question.
 Gate: CLEAR
 ```
+
+```
+## spec — 2026-10-11 — rev .project/active/goal-layer-port/spec.md (spec-review resolutions applied; no re-run)
+- spec-F4(a): basis amended — authority: AGENT (orchestrator call on spec-review L2-1) — the "patterns" reading stays [INFERRED], but the spec now maps the nearest existing pattern, Equality intent (docs/patterns/constraints.md:46-69, sysml-conventions:200-211), as the rule's sibling and checks the relation in SC5(h), instead of noting that SC5 covers both readings.
+- spec-F3: basis unchanged; the summary also now says design works from MR-7's text, and "not automatically violations" and "a calculation or binding" are restored to MR-7's force (spec-review L1-1).
+- No finding reopened: the review's resolutions narrow nothing the point requires. The trigger keeps MR-7's own enforcement scope (orchestrator call L3-3), so fusion-tea's enforcement chain in SC8 is unchanged.
+Gate: CLEAR
+```
