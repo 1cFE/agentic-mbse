@@ -1,0 +1,20 @@
+ M .agentic-mbse/install.json
+ M .agents/skills/model-validation/SKILL.md
+D  .agents/skills/narrate-goal
+ M .agents/skills/orchestrate-modeling/SKILL.md
+ M .agents/skills/requirements-tracking/SKILL.md
+ M .agents/skills/review-model/SKILL.md
+D  .agents/skills/run-goal
+ M .agents/skills/sysml-conventions/SKILL.md
+ M .agents/skills/sysml-conventions/references/stencils.md
+D  .claude/skills/narrate-goal/SKILL.md
+D  .claude/skills/run-goal/SKILL.md
+ M .codex/agents/kerml-expert.toml
+ M .codex/agents/syside-expert.toml
+ M .codex/agents/sysml-expert.toml
+ M .gitignore
+ M AGENTS.md
+ M modeling_project/MODELING_GUIDE.md
+?? .agents/skills/narrate-goal/
+?? .agents/skills/run-goal/
+?? tests/orchestration/test_narrative_links.py

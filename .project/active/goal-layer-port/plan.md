@@ -782,6 +782,8 @@ Follows `design.md` Appendix D2, and records each output into the F2 runbook's "
 
 **Progress notes:**
 
+- Done 2026-10-12 by the orchestrator; every SC8 check passes (`evidence/fusion-tea/rehearsal/`, runbook "Observed" slots filled). Found and fixed on the branch: fusion-tea `main`'s PR #122 archived `demo-depth-rubric` but missed 21 goal-narrative links, so fusion-tea's own narrative check fails on `main`; `1b8d6fbff` repoints them (link targets only) and can be cherry-picked to `main` alone. Rehearsal artifact: `.codex/agents/*.toml` re-rendered with this worktree's docs path because `init` ran from here.
+
 ### O3: SC4 dry run from a wheel
 
 Follows `design.md` Appendix D3 and needs P1–P8. Independent of O1 and O2.
