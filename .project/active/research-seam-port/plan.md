@@ -512,17 +512,17 @@ uv run --no-sync python -c "import sys; from agentic_mbse.research import defaul
 
 The CLI lands in P5, so this run calls `verify.py` through Python. It runs now so that a parser mismatch (B1) surfaces before the CLI and the skills are built on the parser. The command differs from Appendix D O1 step 3 only in how `verify` is invoked; the pass rule is the same.
 
-- [ ] In the fusion-tea worktree `/home/reid/1cfe/fusion-tea-research-seam` (branch `research-seam-port`), install this branch editable into the worktree's own environment, never into the main checkout's: `uv pip install --reinstall --no-deps -e /home/reid/1cfe/agentic-mbse-research-seam`. Run everything with `uv run --no-sync`.
-- [ ] O1 step 2: add the hook table (design § Exact wording) to the worktree's `pyproject.toml` (review M4).
-- [ ] O1 step 3, Python form, from the worktree root:
+- [x] In the fusion-tea worktree `/home/reid/1cfe/fusion-tea-research-seam` (branch `research-seam-port`), install this branch editable into the worktree's own environment, never into the main checkout's: `uv pip install --reinstall --no-deps -e /home/reid/1cfe/agentic-mbse-research-seam`. Run everything with `uv run --no-sync`.
+- [x] O1 step 2: add the hook table (design § Exact wording) to the worktree's `pyproject.toml` (review M4). Done on the fusion-tea branch before the guard check (`evidence/o1-fusion-tea-branch.md`), not before this early run; `verify` does not ask the guard.
+- [x] O1 step 3, Python form, from the worktree root:
 
   ```bash
   uv run --no-sync python scripts/source_registry.py verify > old.txt; echo $?
   uv run --no-sync python -c "import sys; from agentic_mbse.research import default_paths; from agentic_mbse.research.verify import verify, format_finding; r = verify(default_paths()); print('\n'.join(format_finding(f) for f in r.findings)); sys.exit(1 if r.has_faults else 0)" > new.txt; echo $?
   ```
 
-- [ ] Pass (Appendix D O1 step 3): every finding line of `old.txt` is in `new.txt`; the only extra lines are two `legacy block_without_row` lines, for `knowledge/sources/iter_cryoplant_iter_org` and `knowledge/sources/eu_demo_rw_tf_coil_conductor_dematte_bruzzone`; both commands exit 0. Record both outputs and exit codes in `evidence/o1-parity.md`.
-- [ ] On a mismatch, B1 is false. Stop before P5 and take the differing lines to the owner; the design names the remedy as a migration or a compatibility rule. Do not adjust the pass rule to fit.
+- [x] Pass (Appendix D O1 step 3): every finding line of `old.txt` is in `new.txt`; the only extra lines are two `legacy block_without_row` lines, for `knowledge/sources/iter_cryoplant_iter_org` and `knowledge/sources/eu_demo_rw_tf_coil_conductor_dematte_bruzzone`; both commands exit 0. Record both outputs and exit codes in `evidence/o1-parity.md`. Recorded in `evidence/o1-parity-early.md` (audit A2: the file name differs).
+- [x] On a mismatch, B1 is false. Stop before P5 and take the differing lines to the owner; the design names the remedy as a migration or a compatibility rule. Do not adjust the pass rule to fit. Not triggered: no mismatch.
 
 ---
 
@@ -763,15 +763,15 @@ def test_the_runbook_maps_every_seam_class():
 
 ### O1, the rest (Appendix D O1, fusion-tea branch)
 
-- [ ] Step 3 again, in the CLI form Appendix D writes (`uv run --no-sync agentic-mbse research verify > new.txt; echo $?`). Its finding lines must equal the early run's.
-- [ ] Step 4: the duplicates and the guard, each refusing before any fetch; `git status` shows only the `pyproject.toml` change.
-- [ ] Step 5: the rest of Appendix A, with its re-greps, import checks, research and Zotero suites, and the Appendix C homes. Evidence in `evidence/o1-parity.md` (criteria 4 and 6).
+- [x] Step 3 again, in the CLI form Appendix D writes (`uv run --no-sync agentic-mbse research verify > new.txt; echo $?`). Its finding lines must equal the early run's. Recorded in `evidence/o1-parity-early.md` § After P5.
+- [x] Step 4: the duplicates and the guard, each refusing before any fetch; `git status` shows only the `pyproject.toml` change. Duplicates in `evidence/o1-parity-early.md` (Python API, the function the CLI calls); the guard in `evidence/o1-fusion-tea-branch.md`.
+- [x] Step 5: the rest of Appendix A, with its re-greps, import checks, research and Zotero suites, and the Appendix C homes. Evidence in `evidence/o1-parity.md` (criteria 4 and 6). Recorded in `evidence/o1-fusion-tea-branch.md` (fusion-tea `940500788`).
 
 ### O2, dry runs from a built wheel (Appendix D O2)
 
-- [ ] Build the wheel from this branch (`uv build`) and set up the scratch target as Appendix D says, with the GitLab extra index so `syside==0.8.4` resolves (A17).
-- [ ] O2a, criterion 2: request `REQ-001-01`, with the URL pre-check and its named fallback. Evidence in `evidence/o2a-dry-run.md`.
-- [ ] O2b, criterion 7: the five `/manage-sources` calls and their CLI checks. Evidence in `evidence/o2b-dry-run.md`.
+- [x] Build the wheel from this branch (`uv build`) and set up the scratch target as Appendix D says, with the GitLab extra index so `syside==0.8.4` resolves (A17).
+- [x] O2a, criterion 2: request `REQ-001-01`, with the URL pre-check and its named fallback. Evidence in `evidence/o2a-dry-run.md`. Recorded in `evidence/dry-run/README.md`; the request asked about copper, not the design's aluminium 6061 (audit A4).
+- [x] O2b, criterion 7: the five `/manage-sources` calls and their CLI checks. Evidence in `evidence/o2b-dry-run.md`. Recorded in `evidence/dry-run/README.md`.
 
 Then `/_my_audit`, which Align kept because the port runs against live registry data. The run stops before `close` and `pre_pr` (Align).
 

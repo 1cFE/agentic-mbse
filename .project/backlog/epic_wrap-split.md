@@ -270,7 +270,7 @@ Audit note (2026-10-12, `completed/20261012_goal-layer-port/audit.md`): the unch
 
 ---
 
-### Item 5: Port the research acquisition seam
+### Item 5: Port the research acquisition seam ✅
 
 **Type**: Code/Integration (Python package code, two skills, installer)
 **Effort**: 2.5 days (spec 2h, design 3h, plan 1h, execute 14h). Over the two-day ceiling by the `/manage-sources` rework ([OWNER] 2026-10-09), kept in this item rather than a sixth because both touch the same index rules.
@@ -301,12 +301,14 @@ Audit note (2026-10-12, `completed/20261012_goal-layer-port/audit.md`): the unch
 - Changing the seam's behaviour: outcome classes, refusal ladder, request-key rule, receipt and manifest shapes port as they are.
 
 **Success Criteria**:
-- [ ] `agentic-mbse install-commands --list` names `research-acquire`; a fresh init contains it and the two request directories.
-- [ ] The ported tests pass in agentic-mbse with no fusion-tea on the path; `agentic-mbse research verify` on a copy of fusion-tea's `knowledge/` reports the same findings as `scripts/source_registry.py verify` does today.
-- [ ] A fresh target runs one request end to end through the installed skill and CLI (dry run recorded in evidence).
-- [ ] `grep -iE "fusion-tea|MR-[0-9]|aries|zotero|\.project/"` over the shipped skill, guide and `src/agentic_mbse/research/` returns nothing outside labelled examples.
-- [ ] Using only the shipped `manage-sources`, a user adds a capturable document (registered), adds a non-capturable source, removes a registered source (retired), and lists both kinds.
-- [ ] fusion-tea's research and Zotero suites pass against the installed package with its two scripts deleted; ledger rows exist for every removed line.
+- [x] `agentic-mbse install-commands --list` names `research-acquire`; a fresh init contains it and the two request directories.
+- [x] The ported tests pass in agentic-mbse with no fusion-tea on the path; `agentic-mbse research verify` on a copy of fusion-tea's `knowledge/` reports the same findings as `scripts/source_registry.py verify` does today.
+- [x] A fresh target runs one request end to end through the installed skill and CLI (dry run recorded in evidence).
+- [x] `grep -iE "fusion-tea|MR-[0-9]|aries|zotero|\.project/"` over the shipped skill, guide and `src/agentic_mbse/research/` returns nothing outside labelled examples.
+- [x] Using only the shipped `manage-sources`, a user adds a capturable document (registered), adds a non-capturable source, removes a registered source (retired), and lists both kinds.
+- [x] fusion-tea's research and Zotero suites pass against the installed package with its two scripts deleted; ledger rows exist for every removed line.
+
+Certified by `/_my_audit` 2026-10-12 (`.project/active/research-seam-port/audit.md`), with follow-ups F1–F3. The grep above is checked in the spec's word-bounded form (`\baries\b`, design review A16); unbounded, `aries` matches "boundaries" in `research/index.py`. The fusion-tea criterion holds on fusion-tea branch `research-seam-port` (`940500788`) and reaches fusion-tea `main` at O3.
 
 **Required Reading**: research § 1c; the mental-model page above; fusion-tea `.claude/commands/research-acquire.md`, `scripts/{research_seam,source_registry,holdout_guard}.py`, `docs/research_seam_operator_guide.md`, `.project/adr/0008-source-identity-raw-bytes-sha256.md`.
 
