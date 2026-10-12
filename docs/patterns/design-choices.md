@@ -48,7 +48,7 @@ A review must record compliance for the affected scope as compliant, violated or
 
 ## Validated Pattern
 
-A sump basin and a drain pump. The library calculates the flow the pump must remove; the design decides which pump is installed. Reference fixture: agentic-mbse `tests/fixtures/sump_pump/`.
+A sump basin and a drain pump. The library calculates the flow the pump must remove; the design decides which pump is installed. Both excerpts come from one model that passes all six validation levels.
 
 **Wrong: the pump is sized from demand.** ADR-002 allows this placement (a library calc, exposed in the design), and every validation level passes. The design is still selected inside the model: installed capacity follows required flow, and exposing `sizing_margin` does not make it a choice.
 

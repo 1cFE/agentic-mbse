@@ -1,8 +1,8 @@
 # Implementation Plan: goal-layer-port (`WRAP-SPLIT` Item 2)
 
-**Status:** Implementation in progress (P1–P8 done; O0–O3 next)
+**Status:** Implementation complete; audited 2026-10-12 (Certify with follow-ups); audit follow-ups 1, 2, 3, 5 and 7 applied
 **Created:** 2026-10-11
-**Last Updated:** 2026-10-11
+**Last Updated:** 2026-10-12
 
 ## Source Documents
 
@@ -840,6 +840,23 @@ Stop after writing `### T-001 start` in trail.md. If you reach any other point w
 
 ---
 
+## Audit follow-ups
+
+The audit (`audit.md`, Certify with follow-ups) lists seven advisories. Advisories 1, 2, 3, 5 and 7 are applied in one commit, at the orchestrator's call. Advisory 4 (the runbook's "§ 15") is left to Item 3 or Item 4. Advisory 6 (the dry-run record) is not part of this commit.
+
+**Progress notes:**
+
+- **Done 2026-10-12.** Tests first: the two new tests failed before the text edits, each for the missing text.
+- **1, runbook trigger row.** The condition cell of `GOAL_RUNBOOK.md.template:74` is now the "Process Selection" row's (`MODELING_PROCESS.md.template:24`), word for word. It gains "(a quantity moves between chosen and calculated, or a design choice leaves the public interface)". Its response cell is unchanged. `tests/test_modeling_command_contracts.py::test_goal_runbook_trigger_condition_is_the_process_selection_condition` asserts the two condition cells are identical. SC12: `sc12/runbook.diff` is regenerated with its recorded command (still 21 hunks; only RB-5's line changed), and RB-5 now says the condition is "Process Selection"'s and the response is A8's.
+- **2, review pins.** Both trigger-row tests read the row's cells through one helper, `design_choice_trigger` (`tests/test_modeling_command_contracts.py`), and assert the response cell requires "independent design review". Mutation check: changing "Focused independent design review" to "Focused design review" in either row fails that row's test; both rows restored.
+- **3, spec-model.** The preservation-obligations bullet (`skills/spec-model/SKILL.md:30`) gains the orchestrator's sentence verbatim. It is appended to that bullet rather than added as a new bullet: the list's items are noun phrases, and the sentence elaborates "applicable preservation obligations". `test_spec_model_points_at_the_design_choice_pattern` pins it. The spec-model row of `sc5d-reach-trace.md` now starts at `:30` (the line names the pattern, so it is hop 1) as well as `:15`, and its Result line records the addition. The Item 4 list in `evidence/README.md` names `spec-model`.
+- **5, no-fusion test.** `test_goal_text_points_at_nothing_in_fusion_tea` (`tests/test_goal_layer.py`) skips an `@2b1e9f9d5` line only in `docs/goal-layer-decisions.md`, as the module docstring already said. Mutation check: with "The authority for this limit is fusion-tea@2b1e9f9d5 `work/orchestration/GOAL_RUNBOOK.md`." appended to the runbook, the narrowed test fails at `GOAL_RUNBOOK.md.template:307`, and the pre-change test from `HEAD` passes. With the runbook restored, the narrowed test passes. The shell SC2 grep in Shared checks still drops `@2b1e9f9d5` lines in every file; run with the exemption limited to the record, it also prints nothing.
+- **7, pattern fixture sentence.** `docs/patterns/design-choices.md:51` drops "Reference fixture: agentic-mbse `tests/fixtures/sump_pump/`." for "Both excerpts come from one model that passes all six validation levels." `tests/test_design_choices_example.py::test_pattern_sysml_is_an_excerpt_of_the_fixture` is unchanged and passes.
+- **Deviation from the design.** The shipped runbook row and the pattern's § Validated Pattern paragraph now differ from design Appendix A8 and A1. The design is left as approved; these notes record the change.
+- **Shared checks.** `uv run pytest tests/`: 2217 passed, 1 skipped, 1 xfailed (the two new tests). `ruff check src/ tests/`: 118, none in a touched file; the two touched test files pass `ruff format --check`. `mypy src/`: 88. SC2 grep: no output. `.project/` grep: runbook `:13` and record `:13`, the two-PM "for example" wording.
+
+---
+
 ## Post-merge (not executed in this run): F2
 
 After the owner merges `goal-layer-port`, F2 runs on `goal-layer-mr7` from `evidence/fusion-tea-runbook.md` (P8, rehearsed in O2): pin move, local goal skills removed, re-init, and the resolver hop in fusion-tea's own environment. Then the owner pushes and merges `goal-layer-mr7`. fusion `main` keeps its local goal files and pin `adbef75` until then (Invariant 6).
@@ -861,4 +878,4 @@ See `design.md` § Potential Risks. By phase:
 
 ---
 
-**Status**: Implementation in progress (P1–P8 done; O0–O3 next)
+**Status**: Implementation complete; audited 2026-10-12; audit follow-ups 1, 2, 3, 5 and 7 applied

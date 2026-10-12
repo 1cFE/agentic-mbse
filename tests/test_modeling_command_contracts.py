@@ -121,15 +121,29 @@ def section(text: str, heading: str) -> str:
     return text.split(f"## {heading}\n", 1)[1].split("\n## ", 1)[0]
 
 
-def test_process_selection_routes_design_choice_changes():
-    rows = section(
-        read_repo_file("project_templates/MODELING_PROCESS.md.template"), "Process Selection"
-    )
+def design_choice_trigger(path: str, heading: str) -> tuple[str, str]:
+    """The condition and response cells of the design-choice row in a section's trigger table."""
+    (row,) = [
+        row
+        for row in section(read_repo_file(path), heading).splitlines()
+        if row.startswith("| Changed design-variable role")
+    ]
+    condition, response = (cell.strip() for cell in row.strip("|").split("|"))
+    return condition, response
 
-    assert any(
-        "Changed design-variable role" in row and "design-choices.md" in row
-        for row in rows.splitlines()
-    )
+
+PROCESS_SELECTION = ("project_templates/MODELING_PROCESS.md.template", "Process Selection")
+GOAL_RUNBOOK_TRIGGERS = (
+    "project_templates/GOAL_RUNBOOK.md.template",
+    "Review scope and evidence reuse",
+)
+
+
+def test_process_selection_routes_design_choice_changes():
+    _, response = design_choice_trigger(*PROCESS_SELECTION)
+
+    assert "independent design review" in response
+    assert "design-choices.md" in response
 
 
 def test_point_of_use_table_has_the_design_choice_row():
@@ -146,21 +160,30 @@ def test_point_of_use_table_has_the_design_choice_row():
 
 
 def test_goal_runbook_trigger_table_mirrors_the_design_choice_row():
-    rows = section(
-        read_repo_file("project_templates/GOAL_RUNBOOK.md.template"),
-        "Review scope and evidence reuse",
-    )
+    _, response = design_choice_trigger(*GOAL_RUNBOOK_TRIGGERS)
 
-    assert any(
-        "Changed design-variable role" in row and "design-choice pattern" in row
-        for row in rows.splitlines()
-    )
+    assert "independent design review" in response
+    assert "design-choice pattern" in response
+
+
+def test_goal_runbook_trigger_condition_is_the_process_selection_condition():
+    """The runbook's row mirrors "Process Selection"; a narrowed copy would skip review."""
+    runbook_condition, _ = design_choice_trigger(*GOAL_RUNBOOK_TRIGGERS)
+    process_condition, _ = design_choice_trigger(*PROCESS_SELECTION)
+
+    assert runbook_condition == process_condition
 
 
 def test_goal_template_points_at_the_design_choice_pattern():
     goal = read_repo_file("project_templates/goal.md.template")
 
     assert "apply the design-choice pattern (`design-choices.md`" in goal
+
+
+def test_spec_model_points_at_the_design_choice_pattern():
+    spec = read_repo_file("skills/spec-model/SKILL.md")
+
+    assert "name the design choices the consumer must keep (`design-choices.md`)" in spec
 
 
 def test_design_choice_pattern_and_equality_intent_name_each_other():

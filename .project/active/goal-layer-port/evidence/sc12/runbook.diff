@@ -1,5 +1,5 @@
 --- .orchestrate-logs/fusion-tea-snapshot/work/orchestration/GOAL_RUNBOOK.md	2026-10-11 21:04:00.000000000 -0700
-+++ project_templates/GOAL_RUNBOOK.md.template	2026-10-11 23:38:52.976387515 -0700
++++ project_templates/GOAL_RUNBOOK.md.template	2026-10-12 00:20:29.697548182 -0700
 @@ -7 +7 @@
 -**Why the layer is shaped this way** is in `.project/adr/` — seven records, listed at the end. This runbook cites them and does not restate them.
 +**Why the layer is shaped this way** is in the goal-layer decision record — seven records, listed at the end. This runbook cites them and does not restate them.
@@ -13,7 +13,7 @@
 -> **The critic is never the author's session.** — `[OWNER]`, `.project/concepts/goal-driven-model-development-harness.md:47` (success criterion 5)
 +> **The critic is never the author's session.** — `[OWNER]`, goal-layer decision record, Sources (success criterion 5)
 @@ -73,0 +74 @@
-+| Changed design-variable role, new or changed automatic sizing or selection policy, or installed capacity, equipment, or inventory bound to computed demand | Focused independent design review of the actual equations, bindings, and downstream consumers against the design-choice pattern, before dependent implementation |
++| Changed design-variable role (a quantity moves between chosen and calculated, or a design choice leaves the public interface), new or changed automatic sizing or selection policy, or installed capacity, equipment, or inventory bound to computed demand | Focused independent design review of the actual equations, bindings, and downstream consumers against the design-choice pattern, before dependent implementation |
 @@ -84 +85 @@
 -For a model-changing goal, read `modeling_project/REQUIREMENTS.md` and carry applicable requirements into its invariants. MR-7 governs design-variable assignment, automatic equipment selection and demand-versus-installed-capacity meaning. Grounding must identify the choices the goal is intended to preserve or investigate, not assume the current input/output split is authoritative. An existing grounded goal needs a dated amendment when a newly surfaced requirement changes its strategy; do not rewrite its historical contract.
 +For a model-changing goal, read `modeling_project/REQUIREMENTS.md` and the design-choice pattern, and carry applicable requirements and the design-choice pattern into its invariants. The design-choice pattern is `design-choices.md` in the installed toolkit's pattern directory (`uv run python -c 'from agentic_mbse.cli import get_docs_dir; print(get_docs_dir() / "patterns")'`); it governs design-variable roles, automatic equipment selection and demand-versus-installed-capacity meaning. Grounding must identify the choices the goal is intended to preserve or investigate, not assume the current input/output split is authoritative. An existing grounded goal needs a dated amendment when a newly surfaced requirement changes its strategy; do not rewrite its historical contract.

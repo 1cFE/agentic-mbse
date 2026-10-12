@@ -24,7 +24,7 @@ From design § Integration Strategy. Each was made only where placing the design
 - `project_templates/MODELING_PROCESS.md.template` (the "Process Selection" row, the "Architecture & Design" clause, the technical-pattern row and the binding-row semicolon) and the `project_templates/MODELING_GUIDE.md.template` pattern index row;
 - `docs/patterns/README.md` (index row) and `docs/patterns/constraints.md` (one cross-reference line);
 - `skills/sysml-conventions/SKILL.md` (one cross-reference line) and `skills/sysml-conventions/references/stencils.md` (index row);
-- `skills/requirements-tracking/SKILL.md` (tier text), `skills/review-model/SKILL.md` and `skills/model-validation/SKILL.md` (one pointer each), and `skills/orchestrate-modeling/SKILL.md:57` (names `/run-goal`).
+- `skills/requirements-tracking/SKILL.md` (tier text), `skills/spec-model/SKILL.md`, `skills/review-model/SKILL.md` and `skills/model-validation/SKILL.md` (one pointer each), and `skills/orchestrate-modeling/SKILL.md:57` (names `/run-goal`).
 
 One gap for the same read-through: the repo `README.md` § Initialize Project lists what `init` installs but does not name `tests/`, where the goal layer now installs `tests/orchestration/test_narrative_links.py`.
 

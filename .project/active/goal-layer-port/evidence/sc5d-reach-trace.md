@@ -1,8 +1,8 @@
 # SC5(d): Reach Trace to the Design-Choice Pattern
 
-**Item:** goal-layer-port (`WRAP-SPLIT` Item 2), Phase 8. **Checked:** 2026-10-11, against the files at `7a5a3a3`.
+**Item:** goal-layer-port (`WRAP-SPLIT` Item 2), Phase 8. **Checked:** 2026-10-11, against the files at `7a5a3a3`. The `spec-model` row was rechecked on 2026-10-12, after audit advisory 3 added its pointer.
 
-**Result.** Every route in design Appendix E holds in the final files. Each reaches `docs/patterns/design-choices.md` in at most two named hops. No gap was found, so no pointer was added (D4).
+**Result.** Every route in design Appendix E holds in the final files. Each reaches `docs/patterns/design-choices.md` in at most two named hops. No gap was found, so Phase 8 added no pointer (D4). The audit then found that `spec-model` met the rule only at review scope, and advisory 3 added a spec-time pointer.
 
 ## How to read the table
 
@@ -15,7 +15,7 @@
 
 | From | Route starts at | Hop 1 | Hop 2 | Holds |
 |---|---|---|---|---|
-| `spec-model` | `skills/spec-model/SKILL.md:15` "Use “Process Selection” in `modeling_project/MODELING_PROCESS.md`" | `MODELING_PROCESS.md:24`, the design-choice row: "against the design-choice pattern (`design-choices.md`; see Technical Patterns)" | `design-choices.md` | yes |
+| `spec-model` | `skills/spec-model/SKILL.md:30`, the preservation-obligations bullet; and `:15` "Use “Process Selection” in `modeling_project/MODELING_PROCESS.md`" | From `:30`, the line itself: "name the design choices the consumer must keep (`design-choices.md`)", where the `:76` row applies. From `:15`, `MODELING_PROCESS.md:24`, the design-choice row: "against the design-choice pattern (`design-choices.md`; see Technical Patterns)" | `design-choices.md` | yes |
 | `design-model` | `skills/design-model/SKILL.md:21`, reads "Architecture & Design" and uses "its technical-pattern table" | `MODELING_PROCESS.md:60` clause and `:76` row | `design-choices.md` | yes |
 | `implement-model` | `skills/implement-model/SKILL.md:25`, "Before changing calculations, bindings, … read the applicable reference selected by the technical-pattern table" | `MODELING_PROCESS.md:76` | `design-choices.md` | yes |
 | `quick-model` | `skills/quick-model/SKILL.md:21`, "use the technical-pattern table … to load guidance for the constructs being changed" | `MODELING_PROCESS.md:76` | `design-choices.md` | yes |

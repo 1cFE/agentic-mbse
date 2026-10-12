@@ -69,8 +69,9 @@ PATH_REF = re.compile(
 
 def test_goal_text_points_at_nothing_in_fusion_tea():
     for path in GOAL_SOURCES:
-        for n, line in enumerate((REPO_ROOT / path).read_text(encoding="utf-8").splitlines(), 1):
-            if "@2b1e9f9d5" in line:  # a provenance citation in the decision record
+        source = REPO_ROOT / path
+        for n, line in enumerate(source.read_text(encoding="utf-8").splitlines(), 1):
+            if source == RECORD and "@2b1e9f9d5" in line:  # a provenance citation
                 continue
             assert not SC2.search(line), f"{path}:{n}"
             assert ".project/" not in line or "for example" in line, f"{path}:{n}"

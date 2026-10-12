@@ -71,7 +71,7 @@ Any stage can be brief or skipped when its responsibility is already satisfied o
 |---|---|
 | New or reinterpreted equation or source | Focused independent source/math check against original evidence before dependent scientific work |
 | Changed ownership or interfaces, or a new modeling pattern | Focused independent design review before implementation |
-| Changed design-variable role, new or changed automatic sizing or selection policy, or installed capacity, equipment, or inventory bound to computed demand | Focused independent design review of the actual equations, bindings, and downstream consumers against the design-choice pattern, before dependent implementation |
+| Changed design-variable role (a quantity moves between chosen and calculated, or a design choice leaves the public interface), new or changed automatic sizing or selection policy, or installed capacity, equipment, or inventory bound to computed demand | Focused independent design review of the actual equations, bindings, and downstream consumers against the design-choice pattern, before dependent implementation |
 | Shared definition changes | Enumerate consumers and check affected instances; broaden when impact is unknown |
 | Coupled architecture, multiple model families, or failed coverage | Substantive independent integration audit across affected paths |
 | Routine work with none of these triggers | Coordinator records applicable validation and why further review is unnecessary |
