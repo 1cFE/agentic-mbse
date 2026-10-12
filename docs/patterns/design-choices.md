@@ -44,7 +44,7 @@ In the existing spec, design or goal record, list the affected quantities, units
 
 For each repaired or introduced capacity or fit relationship, use the supported execution route to exercise an insufficient and a sufficient supplied design within the performance model's domain. Check that the selected design is unchanged, the constraint result changes meaningfully, and inventory and cost follow the selected design. Where the intended interface lets demand vary while hardware is held fixed, test that separately. An unsupported-domain case must remain explicitly unsupported, with no manufactured success. For an operating-point closure or a cost proxy where these tests do not apply, record why and check its stated assumptions instead.
 
-A review must record compliance for the affected scope as compliant, violated or unverified, with evidence. Unknown compliance does not count as completed remediation.
+A review must record compliance for the affected scope as compliant, violated or unverified, with evidence. Unknown compliance cannot count as completed remediation.
 
 ## Validated Pattern
 

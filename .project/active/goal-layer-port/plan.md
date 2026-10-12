@@ -74,6 +74,8 @@ grep -n '\.project/' $GOAL_TEXT 2>/dev/null | grep -v '@2b1e9f9d5'     # → onl
 
 Lines carrying `@2b1e9f9d5` are provenance citations in the decision record, which SC2 exempts.
 
+**Orchestrator note (after P2, 2026-10-11).** The worktree venv now has every extra (`uv sync --all-extras`, matching the main checkout); with it the full suite passes (2192 passed, 1 skipped, 1 xfailed). `ruff check src/ tests/` (118) and `mypy src/` (98) fail on `main` at `57644b9` before any change here, so SC11's lint and type checks are judged as parity with `main`, as Item 1 did: no new finding in a file this item touches, and the counts do not rise.
+
 Evidence goes in `.project/active/goal-layer-port/evidence/` (written `evidence/` below).
 
 ---
