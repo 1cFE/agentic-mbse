@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.11, pytest-9.0.2, pluggy-1.6.0
+rootdir: <scratch>/ft-rehearsal
+configfile: pyproject.toml
+plugins: cov-7.0.0, Faker-40.1.2
+collected 3 items
+
+tests/orchestration/test_goal_contract.py ..                             [ 66%]
+tests/orchestration/test_narrative_links.py .                            [100%]
+
+============================== 3 passed in 0.12s ===============================

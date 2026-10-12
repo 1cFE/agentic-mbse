@@ -1,0 +1,39 @@
+--- .orchestrate-logs/fusion-tea-snapshot/tests/orchestration/test_goal_contract.py	2026-10-11 21:04:00.000000000 -0700
++++ project_templates/test_narrative_links.py.template	2026-10-11 23:25:52.510494628 -0700
+@@ -1 +1 @@
+-"""Records remain findable and presentation links resolve.
++"""Presentation links resolve.
+@@ -7 +6,0 @@
+-import yaml
+@@ -9,23 +8,2 @@
+-ADR_FILE = re.compile(r"^\d{4}-.*\.md$")
+-
+-
+-def _frontmatter(path):
+-    return yaml.safe_load(path.read_text().split("---", 2)[1])
+-
+-
+-def test_register_is_coherent(repo_root):
+-    """I12: every register id resolves to one file; every file is indexed."""
+-    adr = repo_root / ".project" / "adr"
+-    files = {p.name.split("-")[0] for p in adr.glob("*.md") if ADR_FILE.match(p.name)}
+-    assert files, "the register holds at least one record"
+-    indexed = set(re.findall(r"^- (\d{4}) · ", (adr / "INDEX.md").read_text(), re.M))
+-    assert files == indexed
+-
+-    for p in sorted(adr.glob("*.md")):
+-        if not ADR_FILE.match(p.name):
+-            continue
+-        fm = _frontmatter(p)
+-        assert fm["provenance"], f"{p.name} carries a capture-fidelity provenance grade"
+-        if fm["promoted_to"] is not None:
+-            promoted = repo_root / str(fm["promoted_to"]).split(":")[0]
+-            assert promoted.exists(), f"{p.name} names an existing promoted surface"
++# absolute(), not resolve(): under `init --dev` this file is a link into the toolkit.
++REPO_ROOT = Path(__file__).absolute().parents[2]
+@@ -43,3 +21,2 @@
+-
+-def test_narrative_evidence_links_resolve(repo_root):
+-    for path in (repo_root / "work/narratives").glob("*.md"):
++def test_narrative_evidence_links_resolve():
++    for path in (REPO_ROOT / "work/narratives").glob("*.md"):

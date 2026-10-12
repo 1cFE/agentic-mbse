@@ -289,6 +289,7 @@ Read the named file under the returned directory. This resolver works for source
 | `doc-comments.md` | Documentation standards, citation formats |
 | `conditionals.md` | Conditional expression syntax |
 | `constraints.md` | Constraint syntax and prefixes |
+| `design-choices.md` | Design choices: evaluate the supplied design; sizing and selection policies stay separate |
 | `cross-file-binding.md` | Cross-file imports and bindings |
 | `semantic-operators.md` | `=` vs `default :=` vs `:>>` vs `:>` |
 | `syntax-reference.md` | 10 syntax patterns quick reference |

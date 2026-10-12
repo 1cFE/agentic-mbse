@@ -27,7 +27,7 @@ Ask only questions whose answers materially change scope, meaning, or success. U
 Keep the spec proportional to the work:
 
 - Problem and intended use, including the structural or behavioral understanding needed alongside numerical results.
-- Requirements and success criteria with source provenance, meaningful expected behavior, and applicable preservation obligations.
+- Requirements and success criteria with source provenance, meaningful expected behavior, and applicable preservation obligations. Where the design-choice row of the technical-pattern table in `modeling_project/MODELING_PROCESS.md` applies, name the design choices the consumer must keep (`design-choices.md`).
 - Scope and supported-domain limits, affected consumers, assumptions, and unresolved questions.
 - References to the epic, research, and governing project decisions.
 

@@ -1,0 +1,175 @@
+# SC1 install evidence (goal-layer-port Phase 4)
+#
+# Captured 2026-10-12T06:26:25Z at agentic-mbse 339ca27 plus the Phase 4 working tree.
+# Each init runs non-interactively (< /dev/null) into a new empty directory. Its output is
+# filtered to lines naming the goal layer (grep -E 'Initialized|run-goal|narrate-goal|orchestration|narratives|gitignore'); the exit status is printed in full.
+
+$ uv run agentic-mbse install-commands --list
+Available MBSE skills:
+
+Workflows (17):
+  - analyze-models
+  - audit-models
+  - backlog
+  - design-model
+  - formalize-intent
+  - implement-model
+  - manage-sources
+  - narrate-goal
+  - onboard
+  - orchestrate-modeling
+  - plan-model
+  - quick-model
+  - research
+  - review-model
+  - run-goal
+  - spec-model
+  - status
+
+Supporting skills (10):
+  - epic-decomposition
+  - model-validation
+  - pdf-analysis
+  - project-structure
+  - python-debugger
+  - record-learning
+  - requirements-tracking
+  - source-traceability
+  - sysml-conventions
+  - toolkit-awareness
+
+Total: 27 skills
+[exit 0]
+
+## --assistant claude
+
+$ uv run agentic-mbse init /tmp/sc1-claude-KnKnwB --assistant claude < /dev/null | grep -E 'Initialized|run-goal|narrate-goal|orchestration|narratives|gitignore'
+Initialized MBSE project in /tmp/sc1-claude-KnKnwB
+  @ .claude/skills/narrate-goal
+  @ .claude/skills/run-goal
+  + .gitignore
+  + .agents/skills/narrate-goal/SKILL.md
+  + .agents/skills/run-goal/SKILL.md
+  + work/orchestration/GOAL_RUNBOOK.md
+  + work/orchestration/goal-templates/goal.md
+  + work/orchestration/goal-templates/trail.md
+  + work/orchestration/goal-templates/learnings.md
+  + tests/orchestration/test_narrative_links.py
+[init exit 0]
+
+$ (cd /tmp/sc1-claude-KnKnwB && ls -d .agents/skills/run-goal .agents/skills/narrate-goal work/orchestration/GOAL_RUNBOOK.md work/orchestration/goal-templates/goal.md work/orchestration/goal-templates/trail.md work/orchestration/goal-templates/learnings.md tests/orchestration/test_narrative_links.py work/orchestration/goals work/narratives)
+.agents/skills/narrate-goal
+.agents/skills/run-goal
+tests/orchestration/test_narrative_links.py
+work/narratives
+work/orchestration/GOAL_RUNBOOK.md
+work/orchestration/goals
+work/orchestration/goal-templates/goal.md
+work/orchestration/goal-templates/learnings.md
+work/orchestration/goal-templates/trail.md
+
+$ (cd /tmp/sc1-claude-KnKnwB && ls .agents/skills/run-goal .agents/skills/narrate-goal)
+.agents/skills/narrate-goal:
+SKILL.md
+
+.agents/skills/run-goal:
+SKILL.md
+
+## --assistant codex
+
+$ uv run agentic-mbse init /tmp/sc1-codex-Tk2388 --assistant codex < /dev/null | grep -E 'Initialized|run-goal|narrate-goal|orchestration|narratives|gitignore'
+Initialized MBSE project in /tmp/sc1-codex-Tk2388
+  + .gitignore
+  + .agents/skills/narrate-goal/SKILL.md
+  + .agents/skills/run-goal/SKILL.md
+  + work/orchestration/GOAL_RUNBOOK.md
+  + work/orchestration/goal-templates/goal.md
+  + work/orchestration/goal-templates/trail.md
+  + work/orchestration/goal-templates/learnings.md
+  + tests/orchestration/test_narrative_links.py
+[init exit 0]
+
+$ (cd /tmp/sc1-codex-Tk2388 && ls -d .agents/skills/run-goal .agents/skills/narrate-goal work/orchestration/GOAL_RUNBOOK.md work/orchestration/goal-templates/goal.md work/orchestration/goal-templates/trail.md work/orchestration/goal-templates/learnings.md tests/orchestration/test_narrative_links.py work/orchestration/goals work/narratives)
+.agents/skills/narrate-goal
+.agents/skills/run-goal
+tests/orchestration/test_narrative_links.py
+work/narratives
+work/orchestration/GOAL_RUNBOOK.md
+work/orchestration/goals
+work/orchestration/goal-templates/goal.md
+work/orchestration/goal-templates/learnings.md
+work/orchestration/goal-templates/trail.md
+
+$ (cd /tmp/sc1-codex-Tk2388 && ls .agents/skills/run-goal .agents/skills/narrate-goal)
+.agents/skills/narrate-goal:
+SKILL.md
+
+.agents/skills/run-goal:
+SKILL.md
+
+## --assistant both
+
+$ uv run agentic-mbse init /tmp/sc1-both-JpQk7j --assistant both < /dev/null | grep -E 'Initialized|run-goal|narrate-goal|orchestration|narratives|gitignore'
+Initialized MBSE project in /tmp/sc1-both-JpQk7j
+  @ .claude/skills/narrate-goal
+  @ .claude/skills/run-goal
+  + .gitignore
+  + .agents/skills/narrate-goal/SKILL.md
+  + .agents/skills/run-goal/SKILL.md
+  + work/orchestration/GOAL_RUNBOOK.md
+  + work/orchestration/goal-templates/goal.md
+  + work/orchestration/goal-templates/trail.md
+  + work/orchestration/goal-templates/learnings.md
+  + tests/orchestration/test_narrative_links.py
+[init exit 0]
+
+$ (cd /tmp/sc1-both-JpQk7j && ls -d .agents/skills/run-goal .agents/skills/narrate-goal work/orchestration/GOAL_RUNBOOK.md work/orchestration/goal-templates/goal.md work/orchestration/goal-templates/trail.md work/orchestration/goal-templates/learnings.md tests/orchestration/test_narrative_links.py work/orchestration/goals work/narratives)
+.agents/skills/narrate-goal
+.agents/skills/run-goal
+tests/orchestration/test_narrative_links.py
+work/narratives
+work/orchestration/GOAL_RUNBOOK.md
+work/orchestration/goals
+work/orchestration/goal-templates/goal.md
+work/orchestration/goal-templates/learnings.md
+work/orchestration/goal-templates/trail.md
+
+$ (cd /tmp/sc1-both-JpQk7j && ls .agents/skills/run-goal .agents/skills/narrate-goal)
+.agents/skills/narrate-goal:
+SKILL.md
+
+.agents/skills/run-goal:
+SKILL.md
+
+## --dev (--assistant both)
+
+$ uv run agentic-mbse init /tmp/sc1-dev-6O6Ral --dev < /dev/null | grep -E 'Initialized|run-goal|narrate-goal|orchestration|narratives|gitignore'
+Initialized MBSE project in /tmp/sc1-dev-6O6Ral (dev mode)
+  @ .agents/skills/narrate-goal
+  @ .claude/skills/narrate-goal
+  @ .agents/skills/run-goal
+  @ .claude/skills/run-goal
+  @ work/orchestration/GOAL_RUNBOOK.md
+  @ work/orchestration/goal-templates/goal.md
+  @ work/orchestration/goal-templates/trail.md
+  @ work/orchestration/goal-templates/learnings.md
+  @ tests/orchestration/test_narrative_links.py
+  + .gitignore
+  ~ .gitignore (added dev mode paths)
+[init exit 0]
+
+$ (cd /tmp/sc1-dev-6O6Ral && ls -ld .agents/skills/run-goal .agents/skills/narrate-goal work/orchestration/GOAL_RUNBOOK.md work/orchestration/goal-templates/goal.md work/orchestration/goal-templates/trail.md work/orchestration/goal-templates/learnings.md tests/orchestration/test_narrative_links.py work/orchestration/goals work/narratives)
+lrwxrwxrwx .agents/skills/narrate-goal -> /home/reid/1cfe/agentic-mbse-goal-layer/skills/narrate-goal
+lrwxrwxrwx .agents/skills/run-goal -> /home/reid/1cfe/agentic-mbse-goal-layer/skills/run-goal
+lrwxrwxrwx tests/orchestration/test_narrative_links.py -> /home/reid/1cfe/agentic-mbse-goal-layer/project_templates/test_narrative_links.py.template
+drwxrwxr-x work/narratives
+lrwxrwxrwx work/orchestration/GOAL_RUNBOOK.md -> /home/reid/1cfe/agentic-mbse-goal-layer/project_templates/GOAL_RUNBOOK.md.template
+drwxrwxr-x work/orchestration/goals
+lrwxrwxrwx work/orchestration/goal-templates/goal.md -> /home/reid/1cfe/agentic-mbse-goal-layer/project_templates/goal.md.template
+lrwxrwxrwx work/orchestration/goal-templates/learnings.md -> /home/reid/1cfe/agentic-mbse-goal-layer/project_templates/learnings.md.template
+lrwxrwxrwx work/orchestration/goal-templates/trail.md -> /home/reid/1cfe/agentic-mbse-goal-layer/project_templates/trail.md.template
+
+$ grep -nE '^(work/orchestration/|tests/orchestration/)' /tmp/sc1-dev-6O6Ral/.gitignore
+70:work/orchestration/GOAL_RUNBOOK.md
+71:work/orchestration/goal-templates/
+72:tests/orchestration/test_narrative_links.py

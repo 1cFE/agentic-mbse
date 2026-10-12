@@ -1,0 +1,11 @@
+Skill	run-goal
+Bash	cd <scratch>/goal-dry-run/target; cat .agentic-mbse/claude.md; ls -R work/orchestration modeling_project | head -50; wc -l work/orchestration/GOAL_RUNBOOK.md
+Read	<scratch>/goal-dry-run/target/work/orchestration/GOAL_RUNBOOK.md
+Bash	cd <scratch>/goal-dry-run/target; for f in work/orchestration/goal-templates/*; do echo "=== $f"; cat $f; done; echo ===OV; cat modeling_project/OVERVIEW.md; echo ===REQ; cat modeling_project/REQUIREMENTS.md; git ls-files | grep -v '^\\.' | head -80
+Bash	cd <scratch>/goal-dry-run/target; cat models/designs/station/station.sysml models/library/drainage.sysml; cat knowledge/KNOWLEDGE.md knowledge/SOURCE_INDEX.md work/BACKLOG.md README.md | head -150; cat tests/models/test_example.py; git rev-parse HEAD; uv run python -c 'from agentic_mbse.cli import get_docs_dir; print(get_docs_dir())'
+Bash	cat <scratch>/goal-dry-run/venv/lib/python3.12/site-packages/agentic_mbse_data/docs/patterns/design-choices.md
+Grep	Process Selection
+Bash	cd <scratch>/goal-dry-run/target; mkdir -p work/orchestration/goals/sump-overflow && cp work/orchestration/goal-templates/learnings.md work/orchestration/goals/sump-overflow/ && sed -i 's/<goal name>/sump-overflow/' work/orchestration/goals/sump-overflow/learnings.md; git log --oneline -1 -- models/library/drainage.sysml models/designs/station/station.sysml modeling_project/REQUIREMENTS.md knowledge/KNOWLEDGE.md knowledge/SOURCE_INDEX.md work/BACKLOG.md
+Write	<scratch>/goal-dry-run/target/work/orchestration/goals/sump-overflow/learnings.md
+Write	<scratch>/goal-dry-run/target/work/orchestration/goals/sump-overflow/goal.md
+Write	<scratch>/goal-dry-run/target/work/orchestration/goals/sump-overflow/trail.md

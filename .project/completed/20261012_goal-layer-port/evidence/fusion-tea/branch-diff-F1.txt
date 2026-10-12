@@ -1,0 +1,309 @@
+diff --git a/CLAUDE.md b/CLAUDE.md
+index f9fbe29e9..1b3179816 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -4,6 +4,16 @@
+ 
+ Before planning or changing model equations, parameter roles, equipment/capacity bindings or demand-based costs, read [MR-7](modeling_project/REQUIREMENTS.md#mr-7-preserve-design-choices-separate-evaluation-from-design-selection) and apply its evidence and review checks through `modeling_project/MODELING_PROCESS.md`. Goal agents carry the same requirement through `work/orchestration/GOAL_RUNBOOK.md`. Existing sizing code and passing depth scores do not authorize a fixed design-variable assignment. This pointer is shared by Claude and Codex through `AGENTS.md`; the requirement itself has one authoritative home.
+ 
++## Goal layer in this repository
++
++`run-goal`, `narrate-goal`, `work/orchestration/GOAL_RUNBOOK.md` and its templates are installed by agentic-mbse and name the research, integration and study procedures generally. Here they are:
++
++- **Research:** `/research-acquire` (`.claude/commands/research-acquire.md`) drives search and triage. Form request files at `knowledge/research/requests/REQ-*.json`; `scripts/research_seam.py` keeps run bookkeeping and `scripts/source_registry.py register` ingests. Protocol: `docs/research_seam_operator_guide.md`. Every researcher applies the clean-room screen (`knowledge/holdout/aries-cs/PROTOCOL.md`) before any fetch.
++- **Integration:** `scripts/integrate.py` (`.project/adr/0009-integration-is-a-fixed-point-proof.md`); guide `docs/integration_seam_operator_guide.md`.
++- **Studies:** `.claude/skills/run-study/runbook.md` and `modeling_project/STUDY_POLICY.md`. Discovery logs are `exploration/<pkg>/studies/DISCOVERY_LOG.md`; `tests/study/test_records.py::test_findings_join_the_discovery_log` checks the join.
++- **Decision records:** this repository's goal-layer ADRs stay in `.project/adr/` and govern it; installed targets use agentic-mbse's dated snapshot.
++- **Launcher:** in the Codex test worktree use `.codex-test/run` (`AGENTS.md`); otherwise `uv run`.
++
+ ## Project Overview
+ 
+ **Project**: Fusion TEA (Techno-Economic Analysis)
+diff --git a/modeling_project/MODELING_PROCESS.md b/modeling_project/MODELING_PROCESS.md
+index 5eaf54599..ed798740f 100644
+--- a/modeling_project/MODELING_PROCESS.md
++++ b/modeling_project/MODELING_PROCESS.md
+@@ -14,8 +14,6 @@ Optional stages: `/research`, `/spec-model`, `/design-model`, `/review-model`, `
+ 
+ ## Process Selection
+ 
+-For changes to design variables, equipment/capacity bindings, sizing, operating-point closure or demand-based costing, apply [REQUIREMENTS.md MR-7](REQUIREMENTS.md#mr-7-preserve-design-choices-separate-evaluation-from-design-selection) before selecting a process. This applies to direct edits and inherited patterns as well as new work. Stage compression does not waive its evidence or review obligations.
+-
+ Before editing, record the intended behavior, affected definitions and consumers, source basis, and selected checks/reviews in the existing work record. A few sentences suffice. Search references and inspect inherited definitions and bindings; a local edit can affect other instances. Unknown impact calls for a bounded dependency investigation before choosing the final scope.
+ 
+ | Evidence about the change | Required response |
+@@ -23,6 +21,7 @@ Before editing, record the intended behavior, affected definitions and consumers
+ | Existing pattern and source interpretation; affected consumers known; expected behavior directly checkable | Main agent edits and verifies. No independent review required. |
+ | New or reinterpreted source value, equation, unit conversion, physical assumption, or domain of applicability | Focused independent source/math review using original evidence, units, assumptions, and off-reference behavior. Resolve source interpretation before relying on it. |
+ | New modeling pattern or changed ownership, specialization, public interface, or binding semantics | Focused independent design review before dependent implementation; check surrounding producer/consumer interfaces and the applicable pattern. |
++| Changed design-variable role (a quantity moves between chosen and calculated, or a design choice leaves the public interface), new or changed automatic sizing or selection policy, or installed capacity, equipment, or inventory bound to computed demand | Focused independent design review before dependent implementation. Inspect the actual equations, bindings, and downstream consumers, including costs, against the design-choice pattern (`design-choices.md`; see Technical Patterns). |
+ | Shared definition or calculation changes | Identify affected instances and test relevant consumer behavior, including preserved behavior. Shared use alone does not require a full audit. |
+ | Coupled changes across model families/subsystems, architectural restructuring, or material uncertainty remaining after focused checks | Substantive independent design/integration assessment. Inspect interacting assumptions and coverage; use `/review-model` or `/audit-models` for the unresolved scope. |
+ | Mechanical correction to already reviewed work | Recheck the diff and affected evidence. Reuse the reviewer when review is needed; no new full audit by default. |
+@@ -31,8 +30,6 @@ Combine related review questions in one independent session when the evidence ov
+ 
+ ## Artifact Contracts
+ 
+-For MR-7 work, the spec identifies the design choices the consumer must retain. The design records the affected variable roles, physical relationships, selection policies, authority and actual binding paths. The implementation preserves those choices through generated/native execution and downstream costs. Review checks those bindings rather than inferring compliance from names such as `required`, `selected` or `sizing_mode`. Acceptance includes MR-7's applicable insufficient/sufficient design tests and explicit validity limits. Carry the MR-7 evidence into the handoff; do not call a repair complete on depth scores or baseline reproduction alone. Prospective depth assessments also follow `.project/completed/20261011_demo-depth-rubric/application-policy.md`; historical rubric bytes and grades remain unchanged.
+-
+ Preserve native PM registration and required `spec.md` frontmatter for tracked items. Keep the intended outcome, supported use, source authority, acceptance conditions, decisions, and verification results in that record or linked existing evidence. `/spec-model` captures missing requirements; `/design-model` resolves design uncertainty; `/plan-model` supplies a checklist when sequencing or interruption recovery needs it. A short change can use one record. Larger work can use separate `design.md` and `plan.md` documents. Cite decisions instead of restating them.
+ 
+ ## Review Brief and Context Limits
+@@ -60,14 +57,14 @@ For a changed system claim, preserve an inspectable path through the relevant re
+ 
+ ## Architecture & Design
+ 
+-- **Own quantities and responsibilities.** Give shared physical quantities identifiable owners and bind consumers to those owners. Distinguish quantities with different meanings, such as installed capacity and operating demand. Trace relevant functions and exchanges to the components that perform them.
++- **Own quantities and responsibilities.** Give shared physical quantities identifiable owners and bind consumers to those owners. Distinguish quantities with different meanings, such as installed capacity and operating demand, and do not set installed capacity, equipment, or inventory from required performance; see `design-choices.md` (Technical Patterns below). Trace relevant functions and exchanges to the components that perform them.
+ - **Design across dependencies.** Inspect affected producers, consumers, inherited definitions, and assemblies. A public-input change or expanded supported use requires checking assumptions inherited from the narrower use. Aggregate from modeled component occurrences where the result claims to represent that structure.
+ - **Separate reusable logic from configuration.** Discover existing library definitions before adding new ones. Keep reusable definitions in the library and concept-specific assemblies, values, and wiring in designs. Apply the calculation placement and binding rules below.
+ - **Make execution dependencies explicit.** Keep imports and calculation dependencies acyclic where required by the execution route. Physical feedback loops still belong in the system description; explain how the analysis solves or approximates them. Probe unfamiliar constructs through the intended execution route, since parsing establishes only syntax support.
+ 
+ ## Technical Patterns: Read at the Point of Use
+ 
+-Read the relevant section of `MODELING_GUIDE.md` and its detailed pattern reference before designing or changing the corresponding construct. Detailed references live in `.agentic-mbse/patterns/`; the guide provides navigation. These summaries preserve the failure-derived rules without duplicating their full examples.
++Read the relevant section of `MODELING_GUIDE.md` and its detailed pattern reference before designing or changing the corresponding construct. Detailed references live in the toolkit's `docs/patterns/` directory; the guide provides navigation. These summaries preserve the failure-derived rules without duplicating their full examples.
+ 
+ | When changing | Rule to preserve | Detailed reference |
+ |---|---|---|
+@@ -76,6 +73,7 @@ Read the relevant section of `MODELING_GUIDE.md` and its detailed pattern refere
+ | Cross-file interfaces | Expose a calculation result as a producer attribute; consumers bind that interface instead of reaching into the producer's calculation internals. Use explicit, private imports by default. | `expose-pattern.md`, `cross-file-binding.md` |
+ | Assignments, defaults, or specialization | Choose operators for the intended binding and override semantics. | `semantic-operators.md` |
+ | Functions, interfaces, or constraints | Relate functions to components and exchanges to interfaces; distinguish declared constraints from checks actually evaluated by the supported tools. | `mbse-concepts.md`, `constraints.md` |
++| Design variables, equipment or capacity bindings, sizing, operating-point closure, or demand-based costs | Evaluate the supplied design and report insufficiency; do not set installed equipment, inventory, or capacity from required performance. State which quantities each analysis specifies and which it solves for, with their authority. | `design-choices.md` |
+ 
+ Research reads the four-view framework when investigating system modeling and captures the source-supported relationships and gaps. Design applies the architecture principles and selects relevant technical references. Implementation reads those references before authoring the constructs. Audit checks the affected relationships and failure modes against actual model and execution evidence. Reuse already loaded, current guidance within a continuing context.
+ 
+diff --git a/modeling_project/REQUIREMENTS.md b/modeling_project/REQUIREMENTS.md
+index 5e807af9a..944c9464e 100644
+--- a/modeling_project/REQUIREMENTS.md
++++ b/modeling_project/REQUIREMENTS.md
+@@ -88,23 +88,11 @@ The project SHOULD define documented modeling patterns — templates, convention
+ 
+ **Authority:** [OWNER-VERBATIM, 2026-09-20] “As soon as you start introducing ‘sizing’, then you are basically pre-defining which design parameters are ‘free’ and which are ‘derived’. this is explicitly what we wanted to avoid.” [OWNER] Requested implementation of enforcement across goal and modeling agents. The application and enforcement below are [AGENT] interpretations ratified by that implementation request, not additional owner-originated requirements. Source: `.project/completed/20261011_modeling-intent-enforcement/spec.md`.
+ 
+-The model MUST distinguish physical relationships and performance limits from policies that choose a design. A calculation or binding MUST NOT silently remove a design choice by setting installed equipment, inventory or capacity from required performance. Which quantities a particular analysis specifies and which it solves for MUST be explicit in that analysis's contract, with their authority recorded. An existing calculation direction, reference design or depth target is not authority to fix that choice for every use of the component.
++This project MUST apply agentic-mbse's design-choice pattern, which this entry does not restate: `design-choices.md` in the installed toolkit's pattern directory (`uv run python -c 'from agentic_mbse.cli import get_docs_dir; print(get_docs_dir() / "patterns")'`; `modeling_project/MODELING_GUIDE.md` § Pattern Documentation Index). The pattern states the rule, the evidence to record and the acceptance tests; its review trigger is `modeling_project/MODELING_PROCESS.md` § Process Selection. MR-7 records only this project's application:
+ 
+-**Application:**
+-
+-- Keep physical demand, installed design/capacity and any suggested design separate. Evaluate the supplied design; report insufficient capacity or fit instead of automatically enlarging it. An explicitly authorized sizing/search study may propose choices, but its policy must be separately identifiable and its selected design evaluable without rerunning that policy.
+-- A numerical routine may have directional inputs and outputs. Document how that direction relates to the supported analysis and the available design choices; implementation convenience does not authorize hiding a design-selection rule inside a physical component. This requirement does not prescribe an acausal solver or make every mathematically related quantity independently specifiable at once.
+-- Ordinary physical balances, geometry identities and operating-point calculations are not automatically violations. Explain their selected independent quantities and assumptions. In particular, calculating required flow is not evidence of installed pump capacity, and calculating required area is not permission to bind it to installed exchanger area.
+-- Report empirical validity separately from physical adequacy. An unsupported conductor field or temperature is a conductor-performance-model limitation. It is neither a failed physical constraint nor permission to extrapolate silently. Invalid/unsupported evaluation must not be reported as a pass.
+-- A supplied equipment choice must remain the basis of its represented inventory and cost. A demand-scaled cost proxy must disclose the assumed demand-matched equipment and missing installed-capacity evaluation; it must not be presented as a fully evaluated chosen design.
+-
+-**Required evidence, proportional to the affected model:** In the existing spec/design or goal record, list the affected quantities, units, physical relationships, current/proposed roles (chosen, calculated, requirement, installed capacity, policy-selected), the binding location, and authority for any role change. A small change can use a short paragraph; multiple changed choices need a table. A parameter disappearing from the public interface or becoming a calculated binding must be called out explicitly. Defaults, mode switches and multipliers must not conceal automatic adequacy.
+-
+-**Enforcement:** Goal grounding and each affected strategy/task carry MR-7 as an invariant. Model design review inspects the actual equations and bindings, including downstream part attributes and cost consumers. A changed design-variable assignment or automatic selection policy triggers the independent design review required by `MODELING_PROCESS.md`. Existing code and prior passing depth grades do not waive this check.
+-
+-**Acceptance:** For each repaired or introduced capacity/fit relationship, use the supported execution route to exercise an insufficient and a sufficient supplied design within the performance model's domain. Verify that the selected design is unchanged, the constraint changes meaningfully, and inventory/cost follow the selected design. Where the intended interface permits varying demand while holding hardware fixed, test that separately. An unsupported-domain case must remain explicitly unsupported, with no manufactured success. For operating-point closures or cost proxies where those tests do not apply, document the reason and check their stated assumptions instead. A review must record MR-7 compliant, violated or unverified for the affected scope with evidence; unknown compliance cannot count as completed remediation.
+-
+-**Examples:** `capacity = required_flow * margin`, bound as installed capacity, is an automatic design-selection rule even if `margin` is exposed. `required_area` compared with independently selected installed area preserves the distinction. `volume = area * length` is a geometry identity, not an automatic adequacy rule. Replacing one hidden fixed choice with another does not resolve the architectural issue.
++- **Invariant.** Goal grounding and each affected strategy and task carry MR-7 as an invariant (`work/orchestration/GOAL_RUNBOOK.md` § Grounding a goal).
++- **Conductor models.** An unsupported conductor field or temperature is a conductor-performance-model limitation (`design-choices.md`, rule 6).
++- **Depth work.** A depth target or a prior passing depth grade is not authority to fix a design choice and does not waive the review. Prospective depth assessments also follow `.project/completed/20261011_demo-depth-rubric/application-policy.md`; historical rubric bytes and grades remain unchanged.
+ 
+ ---
+ 
+@@ -162,4 +150,4 @@ Each phase of the process MUST produce committed artifacts. Knowledge transforms
+ 
+ ---
+ 
+-**Last Updated**: 2026-09-20 (MR-7)
++**Last Updated**: 2026-10-11 (MR-7 cites the shipped design-choice pattern)
+diff --git a/work/orchestration/GOAL_RUNBOOK.md b/work/orchestration/GOAL_RUNBOOK.md
+index 11cba960f..666857405 100644
+--- a/work/orchestration/GOAL_RUNBOOK.md
++++ b/work/orchestration/GOAL_RUNBOOK.md
+@@ -4,13 +4,13 @@ How to run a goal: what you do at each stage, what you write, where it goes, and
+ 
+ This runbook states obligations, not decisions. What question is worth asking, which strategy to try, what a study result means, and when to stop are the operator's and the round agent's to argue. This file says only that they must be argued, in what shape, and where the argument lands.
+ 
+-**Why the layer is shaped this way** is in `.project/adr/` — seven records, listed at the end. This runbook cites them and does not restate them.
++**Why the layer is shaped this way** is in the goal-layer decision record — seven records, listed at the end. This runbook cites them and does not restate them.
+ 
+ ## What this is, and what it is not
+ 
+ A goal is a grounded question someone wants answered, pursued in rounds. A round is one agent's bounded attempt at one strategy. Under a strategy the round agent coordinates bounded tasks. Each round ends in a written result and a record of review coverage: independent review where triggered, or the evidence and reason that further review adds no coverage.
+ 
+-The goal layer decides *what to work on next and what the evidence means*. It does not do the work. The work happens in the native workflows — the coding PM in `.project/`, the modeling PM in `work/`, the research pipeline, the study runbook — and each of those keeps its own stage records exactly as it does today.
++The goal layer decides *what to work on next and what the evidence means*. It does not do the work. The work happens in the native workflows — the modeling PM in `work/`, a second PM where the target runs one (for example a coding PM in `.project/`), the research procedure, and the study procedure where one is installed — and each of those keeps its own stage records exactly as it does today.
+ 
+ So the goal layer **cites, and never restates**. If you find yourself copying a work item's status, a study's numbers, or a spec's requirements into `trail.md`, stop: that is now a second copy that will disagree with the first. Write the path, write what it *meant* for the goal, and move on.
+ 
+@@ -28,7 +28,7 @@ Three things this is not:
+ | `work/orchestration/goals/<goal>/trail.md` | What has happened, and what was decided? | The round agent, append-only |
+ | `work/orchestration/goals/<goal>/learnings.md` | What does this run now know? | The round result proposes; closure accepts under the review rule below |
+ | `work/orchestration/GOAL_RUNBOOK.md` | How do I do the next thing? | This file. One copy |
+-| `.project/adr/` | Why is it this way? | Whoever decides, at the time |
++| The goal-layer decision record (§ The decisions behind this) | Why is it this way? | agentic-mbse, as a dated record |
+ 
+ Nothing is duplicated across them, so nothing can disagree. If you cannot find where something goes, it probably belongs in a native artifact and the trail should cite it.
+ 
+@@ -38,7 +38,7 @@ Templates for the three goal files are at `work/orchestration/goal-templates/`.
+ 
+ When independent review is triggered, "fresh" has the owner's definition:
+ 
+-> **The critic is never the author's session.** — `[OWNER]`, `.project/concepts/goal-driven-model-development-harness.md:47` (success criterion 5)
++> **The critic is never the author's session.** — `[OWNER]`, goal-layer decision record, Sources (success criterion 5)
+ 
+ That is a *session* boundary, not a work boundary. It is stronger than "someone who did not do the work," and the difference matters: an agent can honestly claim it did not do a particular piece of work while still carrying the whole round in its context. Reading your own round with your own reasoning still in front of you is not a review.
+ 
+@@ -71,6 +71,7 @@ Any stage can be brief or skipped when its responsibility is already satisfied o
+ |---|---|
+ | New or reinterpreted equation or source | Focused independent source/math check against original evidence before dependent scientific work |
+ | Changed ownership or interfaces, or a new modeling pattern | Focused independent design review before implementation |
++| Changed design-variable role, new or changed automatic sizing or selection policy, or installed capacity, equipment, or inventory bound to computed demand | Focused independent design review of the actual equations, bindings, and downstream consumers against the design-choice pattern, before dependent implementation |
+ | Shared definition changes | Enumerate consumers and check affected instances; broaden when impact is unknown |
+ | Coupled architecture, multiple model families, or failed coverage | Substantive independent integration audit across affected paths |
+ | Routine work with none of these triggers | Coordinator records applicable validation and why further review is unnecessary |
+@@ -81,7 +82,7 @@ Reuse verified results when the revision, scope, and environment remain valid; c
+ 
+ ## Grounding a goal
+ 
+-For a model-changing goal, read `modeling_project/REQUIREMENTS.md` and carry applicable requirements into its invariants. MR-7 governs design-variable assignment, automatic equipment selection and demand-versus-installed-capacity meaning. Grounding must identify the choices the goal is intended to preserve or investigate, not assume the current input/output split is authoritative. An existing grounded goal needs a dated amendment when a newly surfaced requirement changes its strategy; do not rewrite its historical contract.
++For a model-changing goal, read `modeling_project/REQUIREMENTS.md` and the design-choice pattern, and carry applicable requirements and the design-choice pattern into its invariants. The design-choice pattern is `design-choices.md` in the installed toolkit's pattern directory (`uv run python -c 'from agentic_mbse.cli import get_docs_dir; print(get_docs_dir() / "patterns")'`); it governs design-variable roles, automatic equipment selection and demand-versus-installed-capacity meaning. Grounding must identify the choices the goal is intended to preserve or investigate, not assume the current input/output split is authoritative. An existing grounded goal needs a dated amendment when a newly surfaced requirement changes its strategy; do not rewrite its historical contract.
+ 
+ **Do:** sit with the operator and write `goal.md` from the template. Everything in it is meant to be stable for the life of the goal, so take the time.
+ 
+@@ -91,19 +92,19 @@ For a model-changing goal, read `modeling_project/REQUIREMENTS.md` and carry app
+ 
+ **Who checks it:** the operator, and any session asked to run the goal. A goal hollow in **any** of the five field classes — grounding evidence, answer contract (§ Answered when), invariants, limits, or reserved gates — is not grounded and **authorizes no task**, not one, not a small one: refuse to open a round or start a task, and name the missing class. Grounding evidence has the mechanical tell (empty means `Status: draft`); the other four are checked by reading the file. Grounding is what stops a run from spending a week on a question the repository already answered.
+ 
+-*(Amended 2026-08-27 `[OWNER]`. The shipped rule defended grounding evidence alone; a five-session probe measured cold sessions running full tasks on goals missing invariants, limits, or reserved gates — `.project/completed/20260827_goal-cold-pickup-proof/gate-probe-record.md`. Written rule promoted on that recorded failure, per the hardening rule.)*
++*(Amended 2026-08-27 `[OWNER]`. The shipped rule defended grounding evidence alone; a five-session probe measured cold sessions running full tasks on goals missing invariants, limits, or reserved gates — goal-layer decision record, ADR-0003 (2026-08-27 amendment). Written rule promoted on that recorded failure, per the hardening rule.)*
+ 
+ Revisions to a grounded goal are rare and are written as dated amendments, never by editing what is there.
+ 
+ ## Opening and closing a round
+ 
+-Before a strategy changes a design quantity's role, record its MR-7 justification and affected binding/consumer paths. Treat an automatic sizing policy or removal of a design choice as a modeling/interface decision, not routine arithmetic. Existing authorized choices can proceed; a premise conflict or an unresolved material owner choice stops only dependent work. Depth-target attainment and numerical regression success cannot substitute for the MR-7 assessment. For prospective depth work, also read `.project/completed/20261011_demo-depth-rubric/application-policy.md`.
++Before a strategy changes a design quantity's role, record its justification under the design-choice pattern and affected binding/consumer paths. Treat an automatic sizing policy or removal of a design choice as a modeling/interface decision, not routine arithmetic. Existing authorized choices can proceed; a premise conflict or an unresolved material owner choice stops only dependent work. Score or quality-target attainment and numerical regression success cannot substitute for the design-choice assessment.
+ 
+ **Do:** open a round by writing one strategy revision. Then run tasks under it until the round closes.
+ 
+ **Write:** `## Round N — <strategy-slug>`, then `### Strategy revision — YYYY-MM-DD` carrying the approach, the assumptions it rests on, the conditions under which you would abandon it, the model increment you intend, and the study question you intend. **No future task list** (ADR-0001). If you can predict all the tasks, the strategy is a plan and the round has stopped being an experiment.
+ 
+-**A round is bounded.** At most one promoted pin and at most one committed study. A *pin* is the exact package version a study runs against — promoting one fixes what "the model" means for that study, so that two results are comparable. The study layer owns the term and its identity rules (`.claude/skills/run-study/runbook.md`; `modeling_project/STUDY_POLICY.md`). That is the bound that makes a round finite and comparable.
++**A round is bounded.** At most one promoted pin and at most one committed study. A *pin* is the exact package version a study runs against — promoting one fixes what "the model" means for that study, so that two results are comparable. The study layer owns the term and its identity rules, where a target installs one. That is the bound that makes a round finite and comparable.
+ 
+ **A round closes on exactly one of six triggers:**
+ 
+@@ -136,7 +137,7 @@ Scope is a reviewable record, not a technical sandbox. The coordinator checks sc
+ 
+ **3. Do the work through the native workflow.** Routine native stage changes stay in native artifacts and create no goal entries. A spec being written, a plan phase being checked off, a validation running — none of that is a goal event.
+ 
+-For tasks affecting MR-7, include the requirement and intended design choices in every delegated modeling/review brief. At return, inspect the design-role record and applicable behavior-test evidence. Record compliance as compliant, violated or unverified; a modeled component, passing baseline or rubric score alone cannot establish it. Required independent design review covers the actual variable assignment and downstream bindings before dependent implementation; its integration recheck covers the executed behavior.
++For tasks affecting design choices, include the applicable requirements, the design-choice pattern and intended design choices in every delegated modeling/review brief. At return, inspect the design-role record and applicable behavior-test evidence. Record compliance as compliant, violated or unverified; a modeled component, passing baseline or score alone cannot establish it. Required independent design review covers the actual variable assignment and downstream bindings before dependent implementation; its integration recheck covers the executed behavior.
+ 
+ **4. Write the return.** `### T-00N return — YYYY-MM-DD` with the outcome, one of six:
+ 
+@@ -202,7 +203,7 @@ The coordinator may close routine rounds directly. If required independent cover
+ 
+ **The review never resumes the closed round.** If it finds work left undone, that is the next round's, and it says so.
+ 
+-After coverage is complete, the coordinator or reviewer recommends the owner-held close or writes the next strategy revision, opening round N+1. The owner retains the goal's close rule.
++After coverage is complete, the coordinator or reviewer recommends the owner-held close or writes the next strategy revision, opening round N+1. The owner retains the goal's close rule. The owner's close is recorded as `## Goal close — YYYY-MM-DD` at the end of `trail.md`, with the ruling and the disposition.
+ 
+ ## Timing of review coverage
+ 
+@@ -229,7 +230,7 @@ A task's authority rests on the native artifacts it cited. If one of them change
+ 
+ **This is a reading, not a machine check.** No goal procedure compares a cited digest against a stored or computed one, and no goal procedure recomputes one — that mechanism is the stale-authority guard on the hardening path, barred until a real run shows this reading failing (ADR-0003, ADR-0006). **Digests are read by people.** A citation digest tells a reader which version was cited; that is its whole job.
+ 
+-**Writing a citation.** For a tracked artifact, `<path>@<commit-sha>`. Git already supplies the content digest, so nothing new is needed. For evidence that is not tracked, cite the tracked native record that already hashes it: a study store is cited through its committed record directory `@<sha>`, whose `snapshot.json` carries the store identity and fingerprints; an R2-synced research binary is cited through its tracked extracted markdown `@<sha>`. Where nothing native hashes it, cite the path and write **"unpinned; no native digest"** in the citation, so a reader can see the citation pins nothing rather than mistake it for one that does.
++**Writing a citation.** For a tracked artifact, `<path>@<commit-sha>`. Git already supplies the content digest, so nothing new is needed. For evidence that is not tracked, cite the tracked native record that already hashes it: a study store is cited through the committed study record that carries the store's identity `@<sha>`; an externally stored research binary is cited through its tracked extracted text `@<sha>`. Where nothing native hashes it, cite the path and write **"unpinned; no native digest"** in the citation, so a reader can see the citation pins nothing rather than mistake it for one that does.
+ 
+ ## Resuming an interruption
+ 
+@@ -257,9 +258,9 @@ Every goal restates these numbers in its own `Limits` section, explicitly. They
+ 
+ ## The discovery log
+ 
+-`exploration/<pkg>/studies/DISCOVERY_LOG.md` is the study producer's record of findings, one row per finding sighting, joined to a committed record's § 15 by `<study-id>#<n>`. This is the goal layer's **own pen's** one write outside the goal directory. Work a task performs through a native workflow's own operation — a `pm add-item`, a spec written through the owning PM — is that workflow's write, not the goal layer's (§ What this is, and what it is not).
++The study layer's discovery log is the study producer's record of findings, one row per finding sighting, joined to a committed record's § 15 by `<study-id>#<n>`. This is the goal layer's **own pen's** one write outside the goal directory. Work a task performs through a native workflow's own operation — a `pm add-item`, a spec written through the owning PM — is that workflow's write, not the goal layer's (§ What this is, and what it is not).
+ 
+-*(Amended 2026-08-27. The prior sentence — "a goal round has exactly one write outside its own directory" — contradicted this file's own routing of findings to native work items through the owning PM. The reading above was recorded before the Item 4 proof run and validated in it: the round agent read it the same way unprompted.)*
++*(Amended 2026-08-27. The prior sentence — "a goal round has exactly one write outside its own directory" — contradicted this file's own routing of findings to native work items through the owning PM. The reading above was recorded before the 2026-08-27 proof run (goal-layer decision record, ADR-0003) and validated in it: the round agent read it the same way unprompted.)*
+ 
+ **What a round owes.** Every open row the round's evidence touched gets a disposition: one of `model fix | research | declared seam | upstream filing`, its status, the responsible task or owner, and what changed or the concrete next reference. **No touched row returns as `unrouted`** (ADR-0004).
+ 
+@@ -267,13 +268,13 @@ Every goal restates these numbers in its own `Limits` section, explicitly. They
+ 
+ **How to read it.** Scan the whole file **for the id**, and take the newest matching row as that finding's current state. Do not stop at the first row you hit; the first row is the sighting, and the sighting is exactly the state you are trying to update.
+ 
+-**Never mint an id.** A goal round may append only under an id a committed record's § 15 already carries. A row citing an unknown id breaks the join and fails `tests/study/test_records.py::test_findings_join_the_discovery_log` for that record.
++**Never mint an id.** A goal round may append only under an id a committed record's § 15 already carries. A row citing an unknown id breaks the join and fails the study layer's join check for that record.
+ 
+-**A finding the round discovers itself is not a discovery-log row.** It has a home, and the trail cites it: `learnings.md` if it is accepted meaning; a native work item through the owning PM if it is work; the research seam if it is a question; an ADR if it is a decision. If it genuinely needs to be a log row, it needs a study to sight it.
++**A finding the round discovers itself is not a discovery-log row.** It has a home, and the trail cites it: `learnings.md` if it is accepted meaning; a native work item through the owning PM if it is work; the research seam if it is a question; the target's decision record if it is a decision. If it genuinely needs to be a log row, it needs a study to sight it.
+ 
+ ## The native seams
+ 
+-What a round invokes, and what it gets back. The two `study.*` seams are the study layer's; its obligations, step by step, are in `.claude/skills/run-study/runbook.md`, and its rules are in `modeling_project/STUDY_POLICY.md`. A goal round invokes that runbook and reads what it deposits — it never restates its steps here.
++What a round invokes, and what it gets back. The two `study.*` seams are the study layer's; its obligations, step by step, are in the study layer's runbook, and its rules are in its policy, where a target installs one. A goal round invokes that runbook and reads what it deposits — it never restates its steps here.
+ 
+ | Seam | Invoke with | Native return | The goal-level question |
+ |---|---|---|---|
+@@ -283,23 +284,23 @@ What a round invokes, and what it gets back. The two `study.*` seams are the stu
+ | `study.execute` | pin, question, protocol rulings | committed study record or blocker | Did it run against the exact contract? |
+ | `study.read` | committed record only | native synthesis and findings | What does the evidence establish? |
+ 
+-**Every seam is native now. A goal round still may not silently absorb a seam repair.**
++**Each seam is the procedure the target installs. A goal round still may not silently absorb a seam repair.**
+ 
+-- **`research`** is native: `scripts/source_registry.py` is the one write door into `knowledge/`, `scripts/research_seam.py` carries a bounded request and computes its return from receipts on disk, and `/research-acquire` drives search and triage between them. Operator guide: `docs/research_seam_operator_guide.md`. (Repaired by GSTH Item 2; row flipped on the first live registrations — WI-033, 2026-08-28.)
+-- **`integrate`** is native: `scripts/integrate.py` proves regeneration → verification → pin in one invocation and returns exactly one `CANDIDATE` pin and fingerprints or a named `BLOCKER`; it performs nothing and commits nothing (ADR-0009 — a fixed-point proof, not a mutator). Operator guide: `docs/integration_seam_operator_guide.md`. (Repaired by GSTH Item 3; row flipped on the first live goal-round invocation — GSTH Item 6, goal `p-pump-fence`, 2026-08-29.)
++- **`research`** is the research procedure the project's instructions name; otherwise `/research` and `/manage-sources`.
++- **`integrate`** is the integration procedure the target installs, where it has one.
+ 
+ "May not silently absorb" means: if a task finds itself repairing a seam rather than invoking its documented procedure, that is a `PREREQUISITE` return naming the seam, not a quiet expansion of scope. A seam repair has its own owner and its own failure contract.
+ 
+ ## The decisions behind this
+ 
+-Cited, not restated. Read the record when you want to challenge the rule.
++Cited, not restated. Read the record when you want to challenge the rule. The records are `goal-layer-decisions.md` in the installed toolkit's docs directory (`uv run python -c 'from agentic_mbse.cli import get_docs_dir; print(get_docs_dir())'`).
+ 
+ | Record | What it decides |
+ |---|---|
+-| [ADR-0001](../../.project/adr/0001-strategy-and-task.md) | One bounded task at a time, under one revisable strategy with no forward task list |
+-| [ADR-0002](../../.project/adr/0002-round-boundary.md) | Bounded rounds with written results and risk-based closure coverage |
+-| [ADR-0003](../../.project/adr/0003-lean-first-persistence.md) | Prose files and native facts first; the hardening path and what promotes it |
+-| [ADR-0004](../../.project/adr/0004-finding-disposition.md) | Joined disposition rows, appended, never editing a sighting |
+-| [ADR-0005](../../.project/adr/0005-review-topology.md) | Required coverage before dependent execution and at closure, with evidence reuse |
+-| [ADR-0006](../../.project/adr/0006-goal-evidence-seam.md) | Citing `.project/` by path and digest, while each PM stays natively mutated |
+-| [ADR-0007](../../.project/adr/0007-supersession.md) | The task is the authority unit; the finding is the traceability unit |
++| ADR-0001 | One bounded task at a time, under one revisable strategy with no forward task list |
++| ADR-0002 | Bounded rounds with written results and risk-based closure coverage |
++| ADR-0003 | Prose files and native facts first; the hardening path and what promotes it |
++| ADR-0004 | Joined disposition rows, appended, never editing a sighting |
++| ADR-0005 | Required coverage before dependent execution and at closure, with evidence reuse |
++| ADR-0006 | Citing a second PM's records by path and digest, while each PM stays natively mutated |
++| ADR-0007 | The task is the authority unit; the finding is the traceability unit |
+diff --git a/work/orchestration/goal-templates/goal.md b/work/orchestration/goal-templates/goal.md
+index ace913482..20b2eddc0 100644
+--- a/work/orchestration/goal-templates/goal.md
++++ b/work/orchestration/goal-templates/goal.md
+@@ -26,7 +26,7 @@ What a comparison must preserve for results from different rounds to mean the sa
+ 
+ - **Package:** the pin, the package identity, whatever must not move under the comparison.
+ - **Comparison:** what "better" means, and what would change it.
+-- **Modeling requirements:** applicable entries from `modeling_project/REQUIREMENTS.md`. For MR-7, identify the design choices this goal preserves or investigates and any explicitly authorized design-selection policy; do not inherit a variable's role merely because the current implementation uses it.
++- **Modeling requirements:** applicable entries from `modeling_project/REQUIREMENTS.md`. For a model-changing goal, apply the design-choice pattern (`design-choices.md`; `GOAL_RUNBOOK.md` § Grounding a goal says where it is): identify the design choices this goal preserves or investigates and any explicitly authorized design-selection policy; do not inherit a variable's role merely because the current implementation uses it.
+ 
+ ## Grounding evidence
+ 
+diff --git a/work/orchestration/goal-templates/trail.md b/work/orchestration/goal-templates/trail.md
+index 89d55ac81..ec9a53088 100644
+--- a/work/orchestration/goal-templates/trail.md
++++ b/work/orchestration/goal-templates/trail.md
+@@ -80,3 +80,8 @@ The review never resumes the closed round.
+ - **Kind:** `interruption | limit | cap | owner gate | handoff | external mutation`. `handoff` is an agent that reached a gate needing a fresh session it cannot start (`GOAL_RUNBOOK.md` § What "fresh" means).
+ - **What is true on disk:** the native state, read as truth.
+ - **What the owner must see:** the decision or the unresolved item.
++
++## Goal close — YYYY-MM-DD
++
++- **Ruling:** the owner's close ruling, quoted or cited.
++- **Disposition:** closed on § Answered when, or closed by redirect, and why.

@@ -42,6 +42,11 @@ TOOL_OWNED_TEMPLATES = [
     ("MODELING_PROCESS.md.template", "modeling_project/MODELING_PROCESS.md"),
     ("EPIC_GUIDE.md.template", "work/EPIC_GUIDE.md"),
     ("epic_template.md.template", "work/backlog/epic_template.md"),
+    ("GOAL_RUNBOOK.md.template", "work/orchestration/GOAL_RUNBOOK.md"),
+    ("goal.md.template", "work/orchestration/goal-templates/goal.md"),
+    ("trail.md.template", "work/orchestration/goal-templates/trail.md"),
+    ("learnings.md.template", "work/orchestration/goal-templates/learnings.md"),
+    ("test_narrative_links.py.template", "tests/orchestration/test_narrative_links.py"),
 ]
 
 # Paths to add to .gitignore in dev mode (symlinks are machine-specific)
@@ -59,6 +64,9 @@ DEV_MODE_GITIGNORE_PATHS = [
     "modeling_project/MODELING_PROCESS.md",
     "work/EPIC_GUIDE.md",
     "work/backlog/epic_template.md",
+    "work/orchestration/GOAL_RUNBOOK.md",
+    "work/orchestration/goal-templates/",
+    "tests/orchestration/test_narrative_links.py",
 ]
 
 
@@ -327,14 +335,16 @@ def cmd_init(args: argparse.Namespace) -> int:
     - knowledge/SOURCE_INDEX.md (domain knowledge discovery) [user-owned]
     - knowledge/KNOWLEDGE.md (domain insight registry) [user-owned]
     - modeling_project/ structure (OVERVIEW, ARCHITECTURE, REQUIREMENTS, etc.) [mixed]
-    - work/ structure (BACKLOG, EPIC_GUIDE, epic template, active, completed, etc.) [mixed]
+    - work/ structure (BACKLOG, EPIC_GUIDE, epic template, goal runbook and templates,
+      active, completed, etc.) [mixed]
     - data/traceability_matrix.csv (element traceability) [user-owned]
     - .agents/skills/ with shared workflows and supporting resources [managed]
     - Native expert roles and entry instructions for selected assistants [managed]
     - .claude/skills/ with skills [tool-owned]
     - .claude/hooks/ with hooks [tool-owned]
     - .claude/settings.json with read permissions [user-owned]
-    - tests/ structure with example test files [user-owned]
+    - tests/ structure with example test files [user-owned] and the narrative-link test
+      [tool-owned]
 
     File ownership behavior:
     - Managed files update when unmodified; local edits are preserved or prompt
@@ -497,6 +507,8 @@ Edit this file to add your domain-specific sources.
         "work/completed",
         "work/analysis",
         "work/learnings",
+        "work/orchestration/goals",
+        "work/narratives",
         "data",
         "models/library",
         "models/designs",

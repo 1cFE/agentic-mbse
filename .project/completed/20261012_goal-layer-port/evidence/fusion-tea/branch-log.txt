@@ -1,0 +1,3 @@
+715a11e6e Goal runbook at the shipped bytes after the audit follow-ups
+1b8d6fbff Repoint goal-narrative links to the archived demo-depth-rubric
+32bd4529a MR-7 applies agentic-mbse's design-choice pattern; goal files at the shipped bytes

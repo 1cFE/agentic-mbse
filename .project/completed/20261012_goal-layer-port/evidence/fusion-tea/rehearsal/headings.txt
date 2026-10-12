@@ -1,0 +1,50 @@
+# Runbook headings cited by fusion-tea records, checked on the re-initialized copy
+1  ## Review scope and evidence reuse
+1  ## What "fresh" means
+1  ## Grounding a goal
+1  ## The fresh review
+1  ## When a cited artifact moves
+1  ## The pre-execution disposition checkpoint
+1  ## Limits
+1  ## Opening and closing a round
+1  ## Running one task
+1  ## Resuming an interruption
+1  ## The decisions behind this
+
+# Citations in fusion-tea records (grep '§' for GOAL_RUNBOOK), unique section names
+     26 Grounding a goal
+      2 Grounding a goal exists to stop a run spending a round on a question the repository can already answer
+      2 Limits defaults
+      1 Limits has no such row
+      1 Limits has no such row and this session does not invent one
+     11 Opening and closing a round
+      1 Opening and closing a round closes a round on an owner gate
+      2 Resuming an interruption
+      1 Resuming an interruption requires
+      2 Review scope and evidence reuse
+      1 Review scope is met
+      1 Round boundary and ADR
+      4 Running one task
+      1 Running one task requires the start line ahead of the first native side effect precisely so an interruption leaves a trace
+     18 The discovery log
+      1 The discovery log and ADR
+      1 The discovery log names as the goal layer
+      2 The five surfaces
+      1 The five surfaces gives that file only one writer
+     44 The fresh review
+      1 The fresh review after recording any owner ruling append-only
+      1 The fresh review covers only the
+      7 The native seams
+      1 The native seams is flipped per the archived Item
+      1 The native seams makes a
+      1 The native seams says a goal round "may not silently absorb" the
+     30 The pre-execution disposition checkpoint
+      4 The pre-execution disposition checkpoint and
+      1 The pre-execution disposition checkpoint reviews a reading
+      2 What
+     10 What "fresh" means
+      1 What fresh means
+      1 What "fresh" means bars it from the round review
+      4 What this is
+      4 When a cited artifact moves
+H2 headings identical to fusion-tea's runbook at 2b1e9f9d5

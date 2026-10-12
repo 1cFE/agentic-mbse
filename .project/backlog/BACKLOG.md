@@ -88,7 +88,7 @@ Prioritized list of epics and features.
 
 **Items**:
 - [x] Item 1: Reconcile native installer source with `main` (adopts `NATIVE-DISTRIBUTION-RECONCILIATION`) ✅ closed 2026-10-09, awaiting owner merge
-- [ ] Item 2: Port the goal layer and the design-choice principle
+- [x] Item 2: Port the goal layer and the design-choice principle ✅ closed 2026-10-12, awaiting owner merge
 - [ ] Item 3: Move the study layer to sysml-codegen (external work, tracked here)
 - [ ] Item 4: Read-through sweep of shipped surfaces
 - [ ] Item 5: Port the research acquisition seam (spec in progress 2026-10-08)
@@ -596,6 +596,30 @@ Three small items left out of `L6-EXPOSE-CONSISTENCY`: V4 still reports `.` on n
 
 ---
 
+### [INSTALL-DEV-GITIGNORE-REINIT] Re-init never adds new `--dev` ignore lines to a target that already has the section
+
+**Priority**: P3
+**Status**: Filed 2026-10-12 at the close of `goal-layer-port` (`WRAP-SPLIT` Item 2; design § Potential Risks, plan Phase 4 notes)
+**Source**: [evidence README](../completed/20261012_goal-layer-port/evidence/README.md) § Follow-ups for close to file
+
+**Problem**: `_update_gitignore_for_dev_mode` (`src/agentic_mbse/cli/__init__.py`) returns early when its marker line is already in `.gitignore`. A target first initialized with `--dev` before Item 2 therefore never gets the three goal-layer ignore lines on re-init, and the new links show as untracked. Fresh `--dev` installs are correct.
+
+**Goal**: Re-init appends any missing lines inside the existing `--dev` section. Same function as `INSTALL-DEV-GITIGNORE-STALE`; fix the two together.
+
+---
+
+### [DESIGN-CHOICE-ATTRIBUTE-LISTING] List which attributes in a design are supplied values and which are calculated
+
+**Priority**: P3
+**Status**: Filed 2026-10-12 at the close of `goal-layer-port` (`WRAP-SPLIT` Item 2; spec § Non-Goals). A candidate, not a commitment.
+**Source**: [evidence README](../completed/20261012_goal-layer-port/evidence/README.md) § Follow-ups for close to file
+
+**Problem**: The design-choice rule (`docs/patterns/design-choices.md`) is enforced only by review. Validation levels 1–6 cannot check it, because a validator cannot tell a physical identity from a design-selection policy: a design that sets installed capacity from demand passes all six (`tests/test_design_choices_example.py`). The reviewer has to find, by reading, which attributes are supplied and which are bound expressions.
+
+**Goal**: A per-design listing of literal versus bound attributes that the review the rule requires can read, so a quantity that moved between supplied and calculated shows up as a diff. It reports; it does not judge the rule.
+
+---
+
 ### [INSTALL-REPORT-UNCHANGED-UPDATED] Re-init reports every managed file as Updated even when its bytes are unchanged
 
 **Priority**: P3
@@ -697,6 +721,7 @@ Implemented in `9cf6b3c`; the retained [spec](../active/formula-teaching-reconci
 | L6-EXPOSE-CONSISTENCY: L6 EXPOSE Validation Consistency | 2026-10-04 | <1 day | V4 and completeness share V2's EXPOSE predicate (`3f442ce`); fusion-tea `models/` Level 6 issues 7,734 → 408, none added. Archived to `completed/20261004_l6-expose-consistency/` |
 | PM-MATRIX-ESCAPED-PIPE: Escaped Pipes and Registry ID Integrity | 2026-10-04 | <1 day (filed 2026-08-21) | GFM `\|` escape honoured; all seven allocators reserve every ID the registry file names; backlog writes keep unparsed records; nine refusals before any write. Certified with follow-ups. Archived to `completed/20261004_pm-registry-integrity/`. Downstream: fusion-tea fixes its `SV-034` cells by hand |
 | PM-APPROVE-RESEARCH-EMPTY-INSIGHTS: Approve Research with No New Insights | 2026-10-06 | 2 days (filed 2026-08-25) | `approve-research --insights '[]'` approves and moves the document without reading or writing `KNOWLEDGE.md`; omission and `None` stay errors; a pending path that is not a regular file or climbs above `pending/` is refused; shipped `/research` step tells agents to make the call. Certified. Archived to `completed/20261006_research-approval-empty-insights/`. Follow-up: `PM-APPROVE-RESEARCH-MOVE-SAFETY` |
+| GOAL-LAYER-PORT (WRAP-SPLIT Item 2): Goal Layer Port | 2026-10-12 | 2 days | `init` installs `run-goal`, `narrate-goal`, the goal runbook, three goal templates and a narrative-link test with no fusion-tea pointers; fusion-tea ADR-0001..0007 ship as the dated snapshot `docs/goal-layer-decisions.md`; the design-choice rule is stated once in `docs/patterns/design-choices.md` and routed by the process template's "Process Selection" and point-of-use rows; fresh-target dry run and fusion-tea re-init rehearsal pass. Certified. On `goal-layer-port`, awaiting owner merge; fusion-tea `goal-layer-mr7` follows after F2. Archived to `completed/20261012_goal-layer-port/`. Follow-ups: `INSTALL-DEV-GITIGNORE-REINIT`, `DESIGN-CHOICE-ATTRIBUTE-LISTING`; Item 4 takes the runbook's "§ 15" reference |
 | NATIVE-DISTRIBUTION-RECONCILIATION (WRAP-SPLIT Item 1): Native Skill Distribution | 2026-10-09 | 5 days | One `skills/` + `agents/` + `adapters/` + `hooks/` tree carrying `main`'s text installs for Claude Code and Codex; `claude/` and the `MBSE_*` lists removed, so a skill registers by its folder; re-init adopts the pre-native `--dev` links; `--dev` links skill folders so Codex lists them; fusion-tea runbook rehearsed on copies. Certified. On `nsd-integration`, awaiting owner merge. Archived to `completed/20261009_native-skill-distribution/` (with the native branch's `completed/20261009_native-skills/`). Follow-ups: `NATIVE-DISCOVERY-LIVE-TEST`, `WHEEL-DOCS-SYSIDE-GAP`, `INSTALL-DEV-GITIGNORE-STALE`, `INSTALL-REPORT-UNCHANGED-UPDATED`, `REPO-INIT-SCAFFOLD-STALE` |
 | ~~EPIC-CMDREV-001: Command System Revision~~ | — | — | **Superseded** by EPIC-ARCH-002 + EPIC-ARCH-003 |
 | ~~TASK-PDF-001: Header Consistency~~ | — | — | **Superseded** by EPIC-PDFV3-001 (Claude structure repair handles this) |

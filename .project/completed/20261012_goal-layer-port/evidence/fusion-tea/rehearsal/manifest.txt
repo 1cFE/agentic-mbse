@@ -1,0 +1,6 @@
+work/orchestration/GOAL_RUNBOOK.md	manifest=MATCH	sha256=d1daab2483cb
+work/orchestration/goal-templates/goal.md	manifest=MATCH	sha256=5b0e30e4cd81
+work/orchestration/goal-templates/trail.md	manifest=MATCH	sha256=9a92309826ab
+work/orchestration/goal-templates/learnings.md	manifest=MATCH	sha256=49663be44d83
+tests/orchestration/test_narrative_links.py	manifest=MATCH	sha256=dbf7ac06d41f
+modeling_project/MODELING_PROCESS.md	manifest=MATCH	sha256=798b5c1f559a

@@ -21,7 +21,7 @@ Two-tier requirements structure, PR-XXX format, promotion path, and enforcement 
 
 ## Core Principle
 
-Modeling requirements exist at two tiers: tool-owned baseline rules (MODELING_GUIDE.md) that apply to all projects, and user-owned extensions (REQUIREMENTS.md) that capture project-specific rules. Per-feature MR-XXX requirements are ephemeral — only significant, durable ones are promoted to project-wide PR-XXX entries.
+Modeling requirements exist at two tiers: tool-owned baseline rules that apply to all projects (`MODELING_GUIDE.md`, `MODELING_PROCESS.md`, and the toolkit pattern references they name), and user-owned extensions (`REQUIREMENTS.md`) that capture project-specific rules. A project rule that applies a baseline rule cites it and states only the project's application. Per-feature MR-XXX requirements are ephemeral — only significant, durable ones are promoted to project-wide PR-XXX entries.
 
 ## When to Reference
 
@@ -35,12 +35,12 @@ Modeling requirements exist at two tiers: tool-owned baseline rules (MODELING_GU
 
 | Tier | File | Owner | Contains | Stability |
 |------|------|-------|----------|-----------|
-| **Baseline** | `modeling_project/MODELING_GUIDE.md` | Tool (updated by `agentic-mbse init`) | Universal SysML modeling rules | Stable across versions |
+| **Baseline** | `modeling_project/MODELING_GUIDE.md`, `modeling_project/MODELING_PROCESS.md`, toolkit `docs/patterns/` | Tool (updated by `agentic-mbse init`) | Universal modeling and process rules, such as design-choice preservation (`design-choices.md`) | Stable across versions |
 | **Extensions** | `modeling_project/REQUIREMENTS.md` | User | Project-specific rules (PR-XXX) | Grows slowly, deliberately |
 
-**What belongs in MODELING_GUIDE.md**: Rules correct for all SysML v2 projects. Example: "calc defs go in library/, not in designs/"
+**What belongs in the baseline**: Rules correct for all projects. Examples: "calc defs go in library/, not in designs/"; "a binding does not set installed capacity from demand".
 
-**What belongs in REQUIREMENTS.md**: Rules specific to this project's goals. Example: "all costed components must expose capital_cost"
+**What belongs in REQUIREMENTS.md**: Rules specific to this project's goals. Example: "all costed components must expose capital_cost". A project's application of a baseline rule also belongs here, citing the baseline rule rather than restating it.
 
 ## PR-XXX Entity Format
 
@@ -131,6 +131,7 @@ The model SHALL [action] [object] [condition].
 | Tracking per-feature MR-XXX at project level | MR-XXX stays in spec.md; only PR-XXX in REQUIREMENTS.md |
 | Writing vague requirements ("model should be good") | Use EARS format with specific, measurable criteria |
 | Editing MODELING_GUIDE.md for project rules | Project-specific rules go in REQUIREMENTS.md |
+| Restating a baseline rule in REQUIREMENTS.md | Cite the baseline rule; record only the project's application |
 | Skipping Source column in PR-XXX | Every requirement traces to a G-XXX goal or DI-XXX insight |
 
 ## Related Skills

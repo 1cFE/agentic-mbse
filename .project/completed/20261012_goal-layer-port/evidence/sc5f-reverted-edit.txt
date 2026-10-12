@@ -1,0 +1,63 @@
+# SC5(f) reverted edit: the design-choice row removed from "Process Selection"
+# Captured 2026-10-11 in P6, from the worktree root at c7e5204 plus the uncommitted P6 pins.
+
+$ sed -i "/^| Changed design-variable role/d" project_templates/MODELING_PROCESS.md.template
+
+$ git diff project_templates/MODELING_PROCESS.md.template
+diff --git a/project_templates/MODELING_PROCESS.md.template b/project_templates/MODELING_PROCESS.md.template
+index 20f44bb..b54503d 100644
+--- a/project_templates/MODELING_PROCESS.md.template
++++ b/project_templates/MODELING_PROCESS.md.template
+@@ -21,7 +21,6 @@ Before editing, record the intended behavior, affected definitions and consumers
+ | Existing pattern and source interpretation; affected consumers known; expected behavior directly checkable | Main agent edits and verifies. No independent review required. |
+ | New or reinterpreted source value, equation, unit conversion, physical assumption, or domain of applicability | Focused independent source/math review using original evidence, units, assumptions, and off-reference behavior. Resolve source interpretation before relying on it. |
+ | New modeling pattern or changed ownership, specialization, public interface, or binding semantics | Focused independent design review before dependent implementation; check surrounding producer/consumer interfaces and the applicable pattern. |
+-| Changed design-variable role (a quantity moves between chosen and calculated, or a design choice leaves the public interface), new or changed automatic sizing or selection policy, or installed capacity, equipment, or inventory bound to computed demand | Focused independent design review before dependent implementation. Inspect the actual equations, bindings, and downstream consumers, including costs, against the design-choice pattern (`design-choices.md`; see Technical Patterns). |
+ | Shared definition or calculation changes | Identify affected instances and test relevant consumer behavior, including preserved behavior. Shared use alone does not require a full audit. |
+ | Coupled changes across model families/subsystems, architectural restructuring, or material uncertainty remaining after focused checks | Substantive independent design/integration assessment. Inspect interacting assumptions and coverage; use `/review-model` or `/audit-models` for the unresolved scope. |
+ | Mechanical correction to already reviewed work | Recheck the diff and affected evidence. Reuse the reviewer when review is needed; no new full audit by default. |
+
+$ uv run pytest tests/test_modeling_command_contracts.py -q
+============================= test session starts ==============================
+platform linux -- Python 3.12.11, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/reid/1cfe/agentic-mbse-goal-layer
+configfile: pyproject.toml
+plugins: cov-7.0.0, Faker-40.1.2
+collected 15 items
+
+tests/test_modeling_command_contracts.py ........F......                 [100%]
+
+=================================== FAILURES ===================================
+_____________ test_process_selection_routes_design_choice_changes ______________
+tests/test_modeling_command_contracts.py:129: in test_process_selection_routes_design_choice_changes
+    assert any(
+E   assert False
+E    +  where False = any(<generator object test_process_selection_routes_design_choice_changes.<locals>.<genexpr> at 0x7dae5cf43100>)
+=========================== short test summary info ============================
+FAILED tests/test_modeling_command_contracts.py::test_process_selection_routes_design_choice_changes
+========================= 1 failed, 14 passed in 0.07s =========================
+
+$ git restore project_templates/MODELING_PROCESS.md.template
+$ git status --short project_templates/MODELING_PROCESS.md.template
+
+$ uv run pytest tests/test_modeling_command_contracts.py -q
+============================= test session starts ==============================
+platform linux -- Python 3.12.11, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/reid/1cfe/agentic-mbse-goal-layer
+configfile: pyproject.toml
+plugins: cov-7.0.0, Faker-40.1.2
+collected 15 items
+
+tests/test_modeling_command_contracts.py ...............                 [100%]
+
+============================== 15 passed in 0.05s ==============================
+
+# The other pins, each checked the same way in P6 (one mutation, run the file, `git restore`):
+# point-of-use row deleted from MODELING_PROCESS.md.template  -> test_point_of_use_table_has_the_design_choice_row fails
+# trigger row deleted from GOAL_RUNBOOK.md.template            -> test_goal_runbook_trigger_table_mirrors_the_design_choice_row fails
+# "(`design-choices.md`" removed from goal.md.template         -> test_goal_template_points_at_the_design_choice_pattern fails
+# sibling line deleted from docs/patterns/constraints.md       -> test_design_choice_pattern_and_equality_intent_name_each_other fails
+# sibling line deleted from skills/sysml-conventions/SKILL.md  -> test_design_choice_pattern_and_equality_intent_name_each_other fails
+# an obligation sentence appended to skills/review-model       -> test_design_choice_obligations_are_stated_once fails
+# "See MR-7." appended to docs/patterns/design-choices.md      -> test_design_choice_pattern_names_no_project_authority fails
+# After each restore, `git status --short` showed only the uncommitted test file.
