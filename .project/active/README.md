@@ -8,7 +8,7 @@
 |--------|------------------------|
 | `harness-right-size` | Implementation and bounded review complete; installed in Fusion TEA |
 | `modeling-workflow-outcomes` | Repairs and focused trials complete; native-source drift and L6 EXPOSE defect tracked separately |
-| `spike-native-skill-install` | Research/probes complete; native implementation and remediation live in sibling `agentic-mbse-native-skills` |
+| `spike-native-skill-install` | Research/probes complete; the native implementation and remediation merged in PR #18 and are archived at [completed/20261009_native-skills](../completed/20261009_native-skills/) |
 | `constraint-wave-profile-semantics` | Audited implementation integrated; July orchestration pause is historical |
 | `gap-profile-totalization` | Complete and integrated; external normalization blocker resolved |
 | `constraint-exec-remediation` | Certified implementation integrated; old paired-compatibility next step discharged by later evidence |
