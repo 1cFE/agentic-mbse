@@ -4,6 +4,15 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-11] - native-skill-rollout
+
+**Type**: Change
+
+### Summary
+Rolled out native skill distribution after PR #18 merged (`adbef75`, 2026-10-10). This checkout installs its workflows with `install-commands --assistant claude`. fusion-tea moved its pin and re-initialized, adopting all 31 legacy links (its PR #121). sysml-codegen's five tracked links into the removed `claude/` now point at `agents/` and `skills/` (its PR #17). The item's runbook had missed sysml-codegen as a consumer of this checkout's folder layout.
+
+---
+
 ## [2026-10-09] - Native Skill Distribution
 
 **Type**: Item (`WRAP-SPLIT` Item 1, adopts `NATIVE-DISTRIBUTION-RECONCILIATION`; branch `nsd-integration` in worktree `/home/reid/1cfe/agentic-mbse-nsd`, source last changed at `03d1510`, not yet merged)
