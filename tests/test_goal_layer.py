@@ -17,7 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from agentic_mbse.cli import cmd_init
+from agentic_mbse.cli import cmd_init, get_docs_dir
 from tests.helpers.shipped import REPO_ROOT
 
 GOAL_SOURCES = [
@@ -27,6 +27,8 @@ GOAL_SOURCES = [
     "project_templates/goal.md.template",
     "project_templates/trail.md.template",
     "project_templates/learnings.md.template",
+    "project_templates/test_narrative_links.py.template",
+    "docs/goal-layer-decisions.md",
 ]
 SC2 = re.compile(
     r"fusion-tea|MR-[0-9]|\.codex-test|stellarator|exploration/|\.claude/|/home/|research_seam"
@@ -58,6 +60,11 @@ GOAL_FILES = [
     "work/orchestration/goal-templates/learnings.md",
     "tests/orchestration/test_narrative_links.py",
 ]
+RECORD = REPO_ROOT / "docs/goal-layer-decisions.md"
+# A repo path the goal text names, in prose or inside a command.
+PATH_REF = re.compile(
+    r"(?<![\w./-])((?:work|modeling_project|knowledge|tests|models|data)/[\w./<>-]*)"
+)
 
 
 def test_goal_text_points_at_nothing_in_fusion_tea():
@@ -127,3 +134,23 @@ def test_narrative_link_test_fails_then_passes_in_the_target(tmp_path, dev):
     (tmp_path / "work/orchestration/goals/g/e.md").write_text("e\n")
     fixed = run_narrative_test(tmp_path)
     assert fixed.returncode == 0, fixed.stdout
+
+
+def test_every_cited_adr_is_in_the_decision_record():
+    carried = set(re.findall(r"^### (ADR-\d{4})", RECORD.read_text(encoding="utf-8"), re.M))
+    assert carried == {f"ADR-000{n}" for n in range(1, 8)}
+    for path in GOAL_SOURCES:
+        cited = set(re.findall(r"ADR-\d{4}", (REPO_ROOT / path).read_text(encoding="utf-8")))
+        assert cited <= carried, path
+
+
+def test_installed_goal_references_resolve(tmp_path):
+    """Every repo path the installed goal text names exists in a fresh target (spec SC3)."""
+    init(tmp_path)
+    for path in GOAL_FILES + [f".agents/skills/{s}/SKILL.md" for s in ("run-goal", "narrate-goal")]:
+        for ref in PATH_REF.findall((tmp_path / path).read_text(encoding="utf-8")):
+            if "<" in ref:  # a `<placeholder>` path is one a goal creates
+                continue
+            assert (tmp_path / ref.rstrip(".")).exists(), f"{path} names {ref}"
+    assert (get_docs_dir() / "patterns/design-choices.md").is_file()
+    assert (get_docs_dir() / "goal-layer-decisions.md").is_file()

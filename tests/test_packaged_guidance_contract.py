@@ -106,6 +106,24 @@ def test_built_wheel_carries_the_authoritative_document_and_no_claude_folder(whe
         assert not [n for n in archive.namelist() if n.startswith("agentic_mbse_data/claude/")]
 
 
+@pytest.mark.parametrize(
+    "source",
+    [
+        "docs/patterns/design-choices.md",
+        "docs/goal-layer-decisions.md",
+        "project_templates/GOAL_RUNBOOK.md.template",
+    ],
+)
+def test_built_wheel_carries_the_resolver_reached_goal_layer_documents(
+    wheel: Path, source: str
+) -> None:
+    """The installed goal runbook reaches these through `get_docs_dir()` or installs them.
+    The whole-`docs` comparison above is a known xfail, so a missing new document would
+    pass unseen there."""
+    with zipfile.ZipFile(wheel) as archive:
+        assert archive.read(f"agentic_mbse_data/{source}") == (REPO_ROOT / source).read_bytes()
+
+
 def test_extracted_wheel_installs_every_asset(wheel: Path, tmp_path: Path) -> None:
     """`init` from the wheel's own data installs every bundle, role and hook, and the
     docs resolver points into the packaged data (I6). `--dev` is refused there."""

@@ -1,6 +1,6 @@
 # Implementation Plan: goal-layer-port (`WRAP-SPLIT` Item 2)
 
-**Status:** Implementation in progress (P1–P4 done)
+**Status:** Implementation in progress (P1–P5 done)
 **Created:** 2026-10-11
 **Last Updated:** 2026-10-11
 
@@ -479,27 +479,39 @@ The SC2 test from P3 now covers the two added sources. Its `@2b1e9f9d5` skip exe
 
 See `design.md` D7, § Component Overview "docs/goal-layer-decisions.md", and Appendix B's decision-record rows.
 
-- [ ] Write the tests; see them fail.
-- [ ] `docs/goal-layer-decisions.md`, written from fusion `.project/adr/0001-0007` and the concept file:
+- [x] Write the tests; see them fail.
+- [x] `docs/goal-layer-decisions.md`, written from fusion `.project/adr/0001-0007` and the concept file:
   - the opening: the authority stance, the amendment clause, and ADR-0006's two-PM condition;
   - one `### ADR-000N — <title>` entry each: the current decision as amended, its grade(s) and dates, its invariants in short, and `fusion-tea .project/adr/000N-<slug>.md@2b1e9f9d5`;
   - the amendments the runbook cites: ADR-0003's 2026-08-27 five-class promotion (runbook `:94`, `:262`) and its 2026-09-11 independence boundary (runbook `:48`);
   - a closing "Sources the runbook cites": the critic definition (concept `:47`), goals being general (`:198`), the 2026-08-27 probe amendment, the 2026-09-14 process-sizing request.
   - Shed item 1: if the budget is short, write the entries as one table (decision | grade | provenance).
-- [ ] If `test_installed_goal_references_resolve` names a path a fresh target lacks, reword the goal text so it marks the path as supplied by the target or by another procedure (SC3). Do not add an allowlist that hides it.
-- [ ] `tests/test_packaged_guidance_contract.py`: add `test_built_wheel_carries_the_resolver_reached_goal_layer_documents(wheel)`. It asserts that `agentic_mbse_data/docs/patterns/design-choices.md`, `agentic_mbse_data/docs/goal-layer-decisions.md` and `agentic_mbse_data/project_templates/GOAL_RUNBOOK.md.template` are in the wheel, with source bytes.
-- [ ] `evidence/sc10-decision-record.md`, one row per ADR: the `provenance` from the fusion frontmatter (snapshot) | the grade the record carries | the cited path at `2b1e9f9d5` | match.
+- [x] If `test_installed_goal_references_resolve` names a path a fresh target lacks, reword the goal text so it marks the path as supplied by the target or by another procedure (SC3). Do not add an allowlist that hides it.
+- [x] `tests/test_packaged_guidance_contract.py`: add `test_built_wheel_carries_the_resolver_reached_goal_layer_documents(wheel)`. It asserts that `agentic_mbse_data/docs/patterns/design-choices.md`, `agentic_mbse_data/docs/goal-layer-decisions.md` and `agentic_mbse_data/project_templates/GOAL_RUNBOOK.md.template` are in the wheel, with source bytes.
+- [x] `evidence/sc10-decision-record.md`, one row per ADR: the `provenance` from the fusion frontmatter (snapshot) | the grade the record carries | the cited path at `2b1e9f9d5` | match.
 
 ### Checks
 
-- [ ] The new tests pass. The runbook names the resolver for both documents: `grep -n "get_docs_dir" project_templates/GOAL_RUNBOOK.md.template` → `§ Grounding a goal` and `§ The decisions behind this`.
-- [ ] The shared checks.
+- [x] The new tests pass. The runbook names the resolver for both documents: `grep -n "get_docs_dir" project_templates/GOAL_RUNBOOK.md.template` → `§ Grounding a goal` and `§ The decisions behind this`.
+- [x] The shared checks.
 
 **Commit:** `Add the goal-layer decision record and check that installed goal references resolve`
 
 **What we know works:** SC2's ADR clause, SC3 and SC10, and the wheel carries both resolver-reached documents.
 
 **Progress notes:**
+
+- **Done 2026-10-11.** Added `docs/goal-layer-decisions.md` and `evidence/sc10-decision-record.md`. Edited `tests/test_goal_layer.py` (the narrative-test template and the record join `GOAL_SOURCES`; `RECORD`, `PATH_REF` and the two stencil tests) and `tests/test_packaged_guidance_contract.py` (the wheel test). Before the record existed, the three affected tests failed on the missing file only.
+- **The record.** An opening section, "How This Record Governs": the authority stance, the amendment clause (a later source amendment reaches targets only through an ordinary agentic-mbse change to this file, never by reference), how grades are read, and ADR-0006's two-PM condition. Then one `### ADR-000N — <title>` entry each, with Grade, Decision as amended, each dated amendment, Why (with rejected alternatives in one sentence), Invariants and Source. The Source line quotes the fusion frontmatter's provenance field verbatim and cites `fusion-tea .project/adr/000N-<slug>.md@2b1e9f9d5`. A closing "Sources the Runbook Cites" holds the critic definition (concept `:47`), goals being general (`:198`), the 2026-08-27 probe amendment and the 2026-09-14 process-sizing request. Not shed: full entries, not a table.
+- **Choice: a "Why" line per entry.** The plan lists decision, grades, dates, invariants and provenance. I added a short Why with the rejected alternatives because the runbook sends a reader to the record "when you want to challenge the rule", and an `[AGENT]` decision is challenged against its recorded reasoning (capture fidelity).
+- **Generalized, not copied.** ADR-0006's title becomes "…may cite a second PM's records…" (the runbook's two-PM wording). Study-layer invariants become "where a target installs a study layer". The proof-run amendments keep their measurements, verdicts and grades but drop fusion's goal slugs, item numbers, domain question and record paths. The 2026-08-27 "`:234`/`:244` contradiction" is written as "a contradiction between two runbook lines", because the snapshot does not show which lines those were. The full list is in `evidence/sc10-decision-record.md`.
+- **Two sources the snapshot cannot confirm**, recorded as such in the record and the evidence: the probe record (cited as the path fusion's runbook names at `2b1e9f9d5`; the file is not in the snapshot), and the 2026-09-14 request's wording (no source in the snapshot quotes it; the record says so).
+- **Deviation: the path check is wider than the stencil.** The stencil's `PATH_REF` matched only a path that fills a whole backtick span, so it missed paths inside commands, such as `narrate-goal`'s `uv run pytest tests/orchestration/test_narrative_links.py -q`. The test now matches a repo path anywhere in the installed text, skips paths holding a `<placeholder>` (a goal creates those), and strips a sentence-ending period. It finds 11 distinct fixed paths across the seven installed files; all exist in a fresh target. Mutation check: renaming that path in `skills/narrate-goal/SKILL.md` fails the test with `.agents/skills/narrate-goal/SKILL.md names tests/orchestration/test_narrative_link.py`; restored.
+- **SC3: no rewording needed.** Every fixed path the installed goal text names exists after `init`. The placeholder paths are under `work/orchestration/goals/<goal>/` and `work/narratives/<…>`, both directories `init` creates.
+- **Wheel test.** Parametrized over the three files; each must be in the wheel under `agentic_mbse_data/` with the source bytes. Passes. The whole-`docs` comparison stays the known strict xfail.
+- **For P6.** `GOAL_SOURCES` now has eight entries, including the record. P6's `test_design_choice_obligations_are_stated_once` searches `skills/`, `project_templates/` and `docs/patterns/`; the record is in `docs/`, not `docs/patterns/`, and states none of the three obligation phrases.
+- **For P8.** The install grep's resolver line should show both `design-choices.md` and `goal-layer-decisions.md` existing; they do in this checkout.
+- **Shared checks.** `uv run pytest tests/`: 2208 passed, 1 skipped, 1 xfailed (P4: 2203; plus two goal-layer tests and three wheel cases). `ruff check src/ tests/`: 118, unchanged; both touched test files pass `ruff check` and `ruff format --check`. `mypy src/`: 88, unchanged (no `src/` change). SC2 grep over the eight goal-text files: no output. `.project/` grep: runbook `:13` and record `:13`, both the two-PM "for example" wording. `get_docs_dir` in the runbook: `:85` (§ Grounding a goal) and `:296` (§ The decisions behind this).
 
 ---
 
@@ -811,4 +823,4 @@ See `design.md` § Potential Risks. By phase:
 
 ---
 
-**Status**: Implementation in progress (P1–P4 done)
+**Status**: Implementation in progress (P1–P5 done)
