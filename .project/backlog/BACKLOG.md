@@ -644,6 +644,18 @@ Three small items left out of `L6-EXPOSE-CONSISTENCY`: V4 still reports `.` on n
 
 ---
 
+### [GOAL-DELEGATED-INSIGHT-APPROVAL] May a goal delegate insight approval, with `pm approve-research` recording who approved?
+
+**Priority**: P3 (owner to set)
+**Status**: Filed 2026-10-12 at the Align of `research-seam-port` (WRAP-SPLIT Item 5); an open owner question carried from its spec
+**Source**: [research-seam-port spec](../active/research-seam-port/spec.md) "Open Questions"; the research-process design page (`.project/mental-alignment-v2/runs/20261006-150340_research-process-end-state_fresh.html`)
+
+**Problem**: An unattended goal can acquire a source and read it, but every accepted insight waits for a human `pm approve-research` call. Today nothing records who approved an insight, so the approval cannot be delegated to an agent and audited afterwards.
+
+**Goal**: The owner decides whether a goal may delegate insight approval. A yes means `pm approve-research` records the approver and the goal layer says when delegation applies; a no is recorded in the goal layer's decisions so unattended goals stop at each research task by design.
+
+---
+
 ## Disposition Records
 
 ### [ITEM-SYNC-F1] SysIDE self-named-recursion vendor note (evaluation-time finding)
