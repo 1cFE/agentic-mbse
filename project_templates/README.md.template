@@ -91,7 +91,8 @@ Use `/name` in Claude Code or `$name` in Codex. The table uses Claude notation; 
 | `/plan-model {feature}` | Plan implementation phases |
 | `/implement-model {feature}` | Create SysML files |
 | `/audit-models` | Validate against sources |
-| `/manage-sources` | Add/remove domain sources |
+| `/research-acquire` | Bring an outside source into `knowledge/` through `agentic-mbse research` |
+| `/manage-sources` | Add, list and remove sources by hand, under the registry's rules |
 | `/backlog add [source]` | Add work items |
 | `/backlog close` | Archive completed work |
 | `/record-learning` | Capture session insights |
@@ -176,8 +177,9 @@ models/
 knowledge/                   # "What do we know?"
 ├── SOURCE_INDEX.md          #   Domain knowledge sources
 ├── KNOWLEDGE.md             #   Curated domain insights
-├── sources/                 #   Local reference materials
+├── sources/                 #   Registered sources (written by agentic-mbse research)
 └── research/                #   Research pipeline
+    ├── requests/            #     Acquisition requests, runs and negatives
     ├── pending/             #     Unapproved research
     └── approved/            #     User-approved research
 

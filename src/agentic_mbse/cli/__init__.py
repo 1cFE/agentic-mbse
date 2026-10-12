@@ -529,7 +529,7 @@ This file tells MBSE commands where to find domain knowledge sources.
 ## How This File Is Used
 
 MBSE commands read this file to discover what reference sources exist.
-Edit this file to add your domain-specific sources.
+Add sources with `/manage-sources`, which writes this file through `agentic-mbse research`.
 """
             source_index_path.write_text(minimal_template)
         created.append("knowledge/SOURCE_INDEX.md")
