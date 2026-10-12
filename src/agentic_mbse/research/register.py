@@ -28,7 +28,15 @@ from agentic_mbse.research.capture import (
     sha256_of,
     web_capture_available,
 )
-from agentic_mbse.research.holdout import NO_HOLDOUT_GUARD, HoldoutGuard, HoldoutMatch
+from agentic_mbse.research.holdout import (
+    HoldoutGuard,
+    HoldoutGuardError,
+    HoldoutHit,
+    first_file_hit,
+    first_term_hit,
+    input_path_hit,
+    load_holdout_guard,
+)
 from agentic_mbse.research.index import (
     SOURCES_PREFIX,
     insert_block,
@@ -120,18 +128,18 @@ def register(
     """Capture, hold-out check and register one source.
 
     Returns a result for every refusal: blank metadata, a missing input file or
-    index, a hold-out hit, a duplicate, a spent capture limit, a missing web
-    extra, a failed capture. Raises `RegistrationError` when a commit rung
-    failed, with the registry left as it was, and `subprocess.TimeoutExpired`
-    when capture overran.
+    index, a hold-out hit, a guard that cannot answer, a duplicate, a spent
+    capture limit, a missing web extra, a failed capture. Raises
+    `RegistrationError` when a commit rung failed, with the registry left as it
+    was, and `subprocess.TimeoutExpired` when capture overran.
 
-    `paths` defaults to the project in the current directory, and `guard` to one
-    that holds nothing out. Given `run_dir`, the attempt counts against the run's
-    `max_captures`, and every returned outcome writes one receipt there; a raised
-    error writes none.
+    `paths` defaults to the project in the current directory, and `guard` to the
+    one that project's `pyproject.toml` names (`load_holdout_guard`). Given
+    `run_dir`, the attempt counts against the run's `max_captures`, and every
+    returned outcome writes one receipt there; a raised error writes none.
     """
     paths = paths if paths is not None else default_paths()
-    guard = guard if guard is not None else NO_HOLDOUT_GUARD
+    guard = guard if guard is not None else load_holdout_guard(paths.project_root)
     result = _attempt(source, metadata, paths=paths, guard=guard, budget=budget, run_dir=run_dir)
     if run_dir is not None:
         write_receipt(
@@ -234,9 +242,12 @@ def _pre_capture_refusal(
     if not paths.index.is_file():
         return _precondition_failed(f"source index missing: {paths.index}")
 
-    hit = _input_identity_holdout_hit(source, metadata, guard)
+    try:
+        hit = _input_identity_holdout_hit(source, metadata, guard)
+    except HoldoutGuardError as fault:
+        return _precondition_failed(str(fault))
     if hit is not None:
-        return hit
+        return _holdout_refusal(hit)
 
     existing = _row_matching_input_identity(source, paths)
     if existing is not None:
@@ -268,20 +279,20 @@ def _blank_required_fields(source: Source, metadata: SourceMetadata) -> list[str
 
 def _input_identity_holdout_hit(
     source: Source, metadata: SourceMetadata, guard: HoldoutGuard
-) -> RegistrationResult | None:
+) -> HoldoutHit | None:
     """Check what the caller handed in: the input path, the URL or key, and the title.
 
     The destination slug is newly minted and could never match, so it is not checked.
     """
     staged = source.staged_input
     if staged is not None:
-        path_match = guard.check_input_path(staged)
-        if path_match is not None:
-            return _holdout_refusal(path_match)
+        hit = input_path_hit(guard, staged)
+        if hit is not None:
+            return hit
     for text in (source.identity, metadata.title):
-        matches = guard.scan_terms(text)
-        if matches:
-            return _holdout_refusal(matches[0])
+        hit = first_term_hit(guard, text)
+        if hit is not None:
+            return hit
     return None
 
 
@@ -326,16 +337,31 @@ def _post_capture_refusal(
     captured: Captured, *, paths: RegistryPaths, guard: HoldoutGuard
 ) -> RegistrationResult | None:
     """The hold-out scan of what was captured, then dedupe on the bytes as fetched."""
-    for artifact in (captured.extract, captured.raw_artifact):
-        matches = guard.scan_file(artifact)
-        if matches:
-            return _holdout_refusal(matches[0])
+    try:
+        hit = _captured_holdout_hit(captured, guard)
+    except HoldoutGuardError as fault:
+        # The capture is spent, so the refusal carries its source id and counts against
+        # the run's max_captures.
+        return RegistrationResult(
+            outcome="precondition_failed", reason=str(fault), source_id=captured.source_id
+        )
+    if hit is not None:
+        return _holdout_refusal(hit)
 
     existing = first_matching_row(paths, lambda row: row.get("source_id") == captured.source_id)
     if existing is not None:
         return _duplicate_of(
             existing, reason=f"same bytes already registered (source_id {captured.source_id})"
         )
+    return None
+
+
+def _captured_holdout_hit(captured: Captured, guard: HoldoutGuard) -> HoldoutHit | None:
+    """The first barred term in the extract, then in the raw artifact."""
+    for artifact in (captured.extract, captured.raw_artifact):
+        hit = first_file_hit(guard, artifact)
+        if hit is not None:
+            return hit
     return None
 
 
@@ -346,13 +372,13 @@ def _precondition_failed(reason: str) -> RegistrationResult:
     return RegistrationResult(outcome="precondition_failed", reason=reason)
 
 
-def _holdout_refusal(match: HoldoutMatch) -> RegistrationResult:
+def _holdout_refusal(hit: HoldoutHit) -> RegistrationResult:
     """Record the rule that fired and where, never the content that fired it."""
     return RegistrationResult(
         outcome="holdout_hit",
-        reason=f"{match.rule_id} matched {match.count}x",
-        rule_id=match.rule_id,
-        offsets=match.offsets,
+        reason=f"{hit.rule_id} matched {hit.count}x",
+        rule_id=hit.rule_id,
+        offsets=hit.offsets,
     )
 
 
@@ -524,7 +550,12 @@ def _spent_a_capture(result: RegistrationResult) -> bool:
     """True when the extractor ran for this attempt, which is what `max_captures` counts."""
     if result.outcome in _POST_CAPTURE_OUTCOMES:
         return True
-    # A duplicate found after capture carries the captured source id. So does one
-    # found before the fetch when the row it matched has one; the count has always
-    # included those, so a run's limit means what it meant before.
-    return result.outcome in {"duplicate", "holdout_hit"} and result.source_id is not None
+    # A duplicate found after capture carries the captured source id, and so does a
+    # guard fault after capture. A duplicate found before the fetch carries one too
+    # when the row it matched has one; the count has always included those, so a
+    # run's limit means what it meant before. A hold-out hit after capture carries
+    # none, and has never counted.
+    return (
+        result.outcome in {"duplicate", "holdout_hit", "precondition_failed"}
+        and result.source_id is not None
+    )

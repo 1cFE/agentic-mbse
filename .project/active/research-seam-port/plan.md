@@ -1,6 +1,6 @@
 # Implementation Plan: Port the research acquisition seam, and bring `/manage-sources` under its rules
 
-**Status:** Implementation in progress (P1, P2 complete)
+**Status:** Implementation in progress (P1, P2, P3 complete)
 **Created:** 2026-10-12
 **Last Updated:** 2026-10-12
 **Work item:** `WRAP-SPLIT` Item 5, branch `research-seam-port`, worktree `/home/reid/1cfe/agentic-mbse-research-seam`
@@ -313,27 +313,68 @@ def test_a_misconfigured_guard_refuses_with_a_receipt(line, knowledge_tree, gene
 
 **Tests first, by Appendix B row.**
 
-- [ ] `test_holdout.py`, agentic-mbse half: move the fake-guard cases (content, URL, title, input path, no waiver flag). Add: no config registers; a missing file, a missing function, a raising guard and an unknown config key each refuse `precondition_failed` with a receipt; a post-capture fault carries the captured `source_id` and counts as captured (review A2).
-- [ ] `test_hook_config.py` (new): an absent or empty table gives the no-op guard; every D4 fault gives the failing guard; config is read from `<knowledge dir>/../pyproject.toml`, so a test tree never loads the cwd's guard (D5); a guard using dataclasses with postponed annotations loads, and a failed load leaves no private module in `sys.modules` (review A3); a guard importing a sibling module fails closed.
-- [ ] Public API: `agentic_mbse.research.__all__` equals the thirteen D2 names exactly.
+- [x] `test_holdout.py`, agentic-mbse half: move the fake-guard cases (content, URL, title, input path, no waiver flag). Add: no config registers; a missing file, a missing function, a raising guard and an unknown config key each refuse `precondition_failed` with a receipt; a post-capture fault carries the captured `source_id` and counts as captured (review A2).
+- [x] `test_hook_config.py` (new): an absent or empty table gives the no-op guard; every D4 fault gives the failing guard; config is read from `<knowledge dir>/../pyproject.toml`, so a test tree never loads the cwd's guard (D5); a guard using dataclasses with postponed annotations loads, and a failed load leaves no private module in `sys.modules` (review A3); a guard importing a sibling module fails closed.
+- [x] Public API: `agentic_mbse.research.__all__` equals the thirteen D2 names exactly.
 
 **Code.**
 
-- [ ] `research/holdout.py`, complete per Component Overview and Architecture § The hook: `load_holdout_guard`, the failing guard, and one wrapper around every guard call and every read of a returned match.
-- [ ] `research/register.py`: `guard=None` now means `load_holdout_guard(paths.project_root)`. Every guard call goes through the wrapper.
-- [ ] `research/__init__.py`: add `HoldoutGuard`, `HoldoutMatch`, `load_holdout_guard`. D2 is complete.
+- [x] `research/holdout.py`, complete per Component Overview and Architecture § The hook: `load_holdout_guard`, the failing guard, and one wrapper around every guard call and every read of a returned match.
+- [x] `research/register.py`: `guard=None` now means `load_holdout_guard(paths.project_root)`. Every guard call goes through the wrapper.
+- [x] `research/__init__.py`: add `HoldoutGuard`, `HoldoutMatch`, `load_holdout_guard`. D2 is complete.
 
 **Satisfies:** D2, D3, D4, D5; I4 (register half); criterion 3 for `holdout_hit` through a test-supplied hook.
 
 ### Validation
 
-- [ ] Exit check.
+- [x] Exit check.
 
 **What we know works after P3:** a target with no guard registers freely. A target whose guard is broken, incomplete, raising or misspelled refuses every registration, with a receipt and a reason that names the guard.
 
 ### Implementation Notes
 
-_To fill during implementation._
+#### Phase 3 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,440 passed, 1 skipped, 1 xfailed, 13 deselected, 0 failed (P2 2,383 passed; 57 new). Deselected unchanged: no new `slow` test.
+- `uv run pytest tests/test_research -m ""`: 231 passed.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this item adds or edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a research file.
+
+**What changed.**
+
+- `research/holdout.py`, complete:
+  - `load_holdout_guard(project_root)` reads `[tool.agentic-mbse.research]` from `project_root / "pyproject.toml"`. No file, no table or an empty table gives `NO_HOLDOUT_GUARD`. A relative `holdout-guard` path resolves against the project root; an absolute one is used as written.
+  - Every fault gives `_UnavailableGuard`, whose every check raises `HoldoutGuardError`: unreadable or invalid TOML, `[tool]`, `[tool.agentic-mbse]` or the research table not being a table, any key other than `holdout-guard`, a value that is not a non-blank string, no file at the path, a file that is not a `.py` module, a load that raises (including a sibling import), and a missing or non-callable function. Loading never raises.
+  - The loader is the importlib recipe: the module goes into `sys.modules` under `_agentic_mbse_holdout_guard_<digest of its resolved path>` before `exec_module`, and is popped if the load or the function check fails. The digest keeps two projects' guards apart in one process. The loaded guard is `_FileGuard`, a frozen dataclass holding the module's three functions.
+  - The one wrapper: `input_path_hit`, `first_term_hit` and `first_file_hit` each run one check through `_ask` and read the first match into a frozen `HoldoutHit(rule_id, count, offsets)`. Any exception from the guard, and any answer outside the protocol's shape (a scan that is not a sequence, a match with no non-empty `rule_id`, no integer `count` or no integer `offsets`), becomes `HoldoutGuardError`. Nothing outside `holdout.py` touches a guard's own objects.
+  - `HoldoutGuardError`'s message is `hold-out guard unavailable: <detail>`, so every caller's refusal reason carries the prefix the skills key on (Behaviour Changes, review A1). It is not a D2 name; callers import it from `agentic_mbse.research.holdout`.
+- `research/register.py`: `guard=None` means `load_holdout_guard(paths.project_root)`, loaded on every call. Both hold-out rungs go through the wrapper and catch `HoldoutGuardError`. Before capture, a fault returns `precondition_failed` with the error as its reason. After capture, it returns `precondition_failed` with `source_id=captured.source_id`, and `_spent_a_capture` now counts a `precondition_failed` that carries a source id (review A2). A hold-out hit after capture still carries none and still does not count, as in the snapshot. `_holdout_refusal` takes a `HoldoutHit`.
+- `research/__init__.py`: adds `HoldoutGuard`, `HoldoutMatch`, `load_holdout_guard`. `__all__` is the thirteen D2 names.
+- Tests:
+  - `conftest.py` gains `GUARD_FILE_SOURCE` (a target-style guard file: stdlib only, a dataclass `Match` under postponed annotations, barring `SEALED_TOKEN` and `*/sealed/*`) and `write_research_config`.
+  - `test_holdout.py` (new): the moved fake-guard cases (content, URL, title, input path), with `capture` patched to fail so "before any fetch" is checked, not assumed. A configured guard file bars content and an input path and lets a clean page through. No configuration registers the marker page. Eight broken configurations (misspelled key, unknown key beside a working guard, empty value, integer value, missing file, failing load, missing function, raising check) each refuse `precondition_failed` with one receipt, `captured: false`, and nothing written. Six caller-supplied faults (a raise in the input-path or term check, four malformed answers) do the same. A fault after capture carries the fetched bytes' digest, writes `captured: true`, and makes the next attempt `limit_reached` under `max_captures: 1`.
+  - `test_hook_config.py` (new): no configuration in four forms holds nothing out even with a guard file present; a guard file loads and answers with its matches (the A3 dataclass case); an absolute path loads; seventeen faults each make all three checks raise with the prefix and the fault named; three failed loads leave no new `sys.modules` entry; a broken config in the current directory is not read (D5); a relative guard path resolves against the project root, not the current directory.
+  - `test_public_api.py` (new): `__all__` is the thirteen names and each resolves.
+- Every case that refuses on a fault uses a source that registers when the fault is absent, so a bypass makes it fail. Mutation-checked, each mutation applied alone and the source restored after: a load fault giving the no-op guard (24 tests fail), unknown keys ignored (4), `_ask` returning no hit on a raise (4), a non-sequence scan answer read as no hit (1), a fault before capture read as no hit (14), a fault after capture read as no hit (1), no `sys.modules` entry before `exec_module` (12), the module left behind on a failed load (2) or on a missing function (1), config read from the current directory (12), a guard path resolved against the current directory (15), the fault after capture not counted (1), and the old no-op default (11).
+
+**Deviations and decisions** (none changes a byte fusion-tea writes or reads).
+
+- A malformed answer is a fault. The snapshot read a scan result with `if matches:`, so a guard returning `None` would have passed everything. D4 lists missing, unloadable, incomplete and raising guards; a guard that answers in the wrong shape is broken in the same way (Behaviour Changes row 2: "broken or raising guard"), so it refuses too. fusion-tea's guard always answers lists of its frozen `Match`, so nothing changes for it.
+- The guard loads on every `register` call, with no cache. The snapshot imported its guard once per process. A Python caller looping over `register` (fusion-tea's batch ingest) now runs the guard file once per item; fusion-tea's guard reads its protocol file on every check anyway, so the extra cost is one module execution per item. The gain is that a config or guard edit takes effect on the next call.
+- The plan's "no waiver flag" case is only half portable here: the snapshot checked that the CLI parser rejects `--holdout-ack`. `test_no_parameter_can_waive_a_hit` pins `register`'s parameter list instead. P5 should add the CLI form to `test_research_cli.py`.
+- The stencil registers a local PDF. The broken-configuration cases register a loopback URL instead, so a bypassing mutation registers in about a second rather than running the PDF pipeline. The caller-supplied fault cases use the local PDF, so the input-path check's call site is covered too.
+- `KeyboardInterrupt` and `SystemExit` from a guard are not caught; they propagate, and nothing registers.
+- `ruff`'s isort, at the project's `target-version = "py310"`, sorts `import tomllib` with third-party imports. Left as ruff orders it.
+
+**For the next phases.**
+
+- P4: `retire` and `add_entry` take `guard: HoldoutGuard | None = None` and default to `load_holdout_guard(paths.project_root)`, as `register` does. Ask the guard only through `input_path_hit` and `first_term_hit`, catch `HoldoutGuardError`, and refuse with `str(fault)` as the reason, so the `hold-out guard unavailable:` prefix carries through. A hit is a `HoldoutHit`; its `rule_id` and `offsets` feed the `holdout_hit` refusal. `RecordingGuard` sees the calls exactly as `retire` makes them: the wrapper passes the path or text through unchanged. Use `ScriptedGuard` from `test_holdout.py` (or move it to `conftest.py`) for the I4 retire and add-entry fault cases.
+- P5: the CLI needs no guard flag; `register` loads the project's guard itself. Add the `--holdout-ack` rejection test. A guard fault is a returned `precondition_failed`, so it prints like any refusal; only `RegistrationError`, `RetirementError`, a capture timeout and `SeamError` need the one-line error path.
+- P6: the hook guide documents the table, the path rule (relative to the project root), the fault list above, the prefix, and that a guard must import on its own: a sibling import fails to load (`test_hook_config.py` pins it).
 
 ---
 

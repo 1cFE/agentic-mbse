@@ -239,6 +239,57 @@ NO_GUARD = FakeGuard()
 SEALED_TOKEN = "sealed-widget-07"
 
 
+#: A guard file as a target writes one: standard library only, a dataclass match,
+#: postponed annotations. It bars `SEALED_TOKEN` in text and files, and input
+#: paths with a `sealed` directory in them.
+GUARD_FILE_SOURCE = f'''\
+from __future__ import annotations
+
+from dataclasses import dataclass
+from fnmatch import fnmatch
+from pathlib import Path
+
+BARRED_TERM = "{SEALED_TOKEN}"
+BARRED_PATH = "*/sealed/*"
+
+
+@dataclass(frozen=True)
+class Match:
+    rule_id: str
+    count: int
+    offsets: tuple[int, ...]
+
+
+def check_input_path(path: Path) -> Match | None:
+    if fnmatch(path.as_posix(), BARRED_PATH):
+        return Match(rule_id=f"path:{{BARRED_PATH}}", count=1, offsets=(0,))
+    return None
+
+
+def scan_terms(text: str) -> list[Match]:
+    lowered = text.lower()
+    offsets = []
+    start = lowered.find(BARRED_TERM)
+    while start != -1:
+        offsets.append(start)
+        start = lowered.find(BARRED_TERM, start + 1)
+    if not offsets:
+        return []
+    return [Match(rule_id=f"term:{{BARRED_TERM}}", count=len(offsets), offsets=tuple(offsets))]
+
+
+def scan_file(path: Path) -> list[Match]:
+    return scan_terms(path.read_text(encoding="utf-8", errors="replace"))
+'''
+
+
+def write_research_config(project_root: Path, table_body: str) -> None:
+    """Write the project's `pyproject.toml` with `table_body` under `[tool.agentic-mbse.research]`."""
+    (project_root / "pyproject.toml").write_text(
+        f"[tool.agentic-mbse.research]\n{table_body}\n", encoding="utf-8"
+    )
+
+
 @dataclass
 class RecordingGuard:
     """Records every call in order, then answers as `inner` does."""
