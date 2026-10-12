@@ -34,6 +34,17 @@ keyed: PMXLGPKG tea_dt_mfe_cost_analysis -> duplicate | already registered as te
 
 The URL row matched before any fetch. The `zotero_key` row (written by the pre-port Zotero ingest, no `source_kind`) matched through `KeyedFileSource(..., "zotero", "zotero_key", ...)`.
 
+## After P5 (`a6d31e9`): through the real CLI — PASS
+
+- `agentic-mbse research verify`: exit 0; finding lines identical to the old script's apart from the two expected `block_without_row` lines; summary `0 fault(s), 5 legacy entry(ies)`.
+- Negative refusal: `research open knowledge/research/requests/REQ-MCR-STRUCTURE-01.json` and `python scripts/research_seam.py open` on the same file both exit 3 with byte-identical output, so the request key is unchanged:
+
+```
+a bounded negative already answers this request (key be0d1ba92fa0c9a66be0bb10802c2d9c7e904f3dd5547e6136212996a2e3119b): knowledge/research/requests/negatives/be0d1ba92fa0c9a66be0bb10802c2d9c7e904f3dd5547e6136212996a2e3119b.json. Read it. To search again, supply --override-reason.
+```
+
+`git status` clean afterwards. The guard check remains, on the fusion-tea branch after P6 (review M4).
+
 ## Still to run (after P6)
 
 The negative-refusal check (`research open` on the request the recorded negative answers) needs the P5 CLI. The guard check needs the hook table in fusion-tea's `pyproject.toml` (review M4). Both run on the fusion-tea branch after P6, with the comparison re-run through the real CLI.
