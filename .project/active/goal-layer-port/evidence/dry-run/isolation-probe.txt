@@ -1,0 +1,3 @@
+1. No. None of my instructions are titled "Capture Fidelity", "Working Voice" or "Markdown Authoring".
+2. No. None of my skills or slash commands has a name starting with `_my_`.
+3. None. I wasn't given any CLAUDE.md file or memory file contents. I was only told that a memory directory exists at `/home/reid/.claude/projects/-tmp/memory/`, and no MEMORY.md index was loaded.
