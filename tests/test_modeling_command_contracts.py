@@ -1,5 +1,6 @@
 """Contract tests for the shipped modeling workflow commands and documentation."""
 
+import re
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -113,3 +114,83 @@ def test_orchestrator_does_not_embed_a_runtime_or_automatic_close():
         "automatically archive",
     ):
         assert prohibited not in command
+
+
+def section(text: str, heading: str) -> str:
+    """The body of a `## heading` section, up to the next H2."""
+    return text.split(f"## {heading}\n", 1)[1].split("\n## ", 1)[0]
+
+
+def test_process_selection_routes_design_choice_changes():
+    rows = section(
+        read_repo_file("project_templates/MODELING_PROCESS.md.template"), "Process Selection"
+    )
+
+    assert any(
+        "Changed design-variable role" in row and "design-choices.md" in row
+        for row in rows.splitlines()
+    )
+
+
+def test_point_of_use_table_has_the_design_choice_row():
+    rows = section(
+        read_repo_file("project_templates/MODELING_PROCESS.md.template"),
+        "Technical Patterns: Read at the Point of Use",
+    )
+
+    assert any(
+        row.startswith("| Design variables, equipment or capacity bindings")
+        and row.endswith("`design-choices.md` |")
+        for row in rows.splitlines()
+    )
+
+
+def test_goal_runbook_trigger_table_mirrors_the_design_choice_row():
+    rows = section(
+        read_repo_file("project_templates/GOAL_RUNBOOK.md.template"),
+        "Review scope and evidence reuse",
+    )
+
+    assert any(
+        "Changed design-variable role" in row and "design-choice pattern" in row
+        for row in rows.splitlines()
+    )
+
+
+def test_goal_template_points_at_the_design_choice_pattern():
+    goal = read_repo_file("project_templates/goal.md.template")
+
+    assert "apply the design-choice pattern (`design-choices.md`" in goal
+
+
+def test_design_choice_pattern_and_equality_intent_name_each_other():
+    assert "[design-choices.md](design-choices.md)" in read_repo_file(
+        "docs/patterns/constraints.md"
+    )
+    assert "docs/patterns/design-choices.md" in read_repo_file("skills/sysml-conventions/SKILL.md")
+    assert "[constraints.md](constraints.md)" in read_repo_file("docs/patterns/design-choices.md")
+
+
+def test_design_choice_obligations_are_stated_once():
+    """Only the pattern states the rule's obligations; everything else points at it."""
+    shipped = [
+        path
+        for folder in ("skills", "project_templates", "docs/patterns")
+        for path in sorted((REPO_ROOT / folder).rglob("*"))
+        if path.is_file()
+    ]
+    pattern = REPO_ROOT / "docs/patterns/design-choices.md"
+
+    for obligation in (
+        "must be evaluable without rerunning the policy",
+        "Unknown compliance cannot count as completed remediation",
+        "must not conceal automatic adequacy",
+    ):
+        stating = [p for p in shipped if obligation in p.read_text(encoding="utf-8")]
+        assert stating == [pattern], obligation
+
+
+def test_design_choice_pattern_names_no_project_authority():
+    pattern = read_repo_file("docs/patterns/design-choices.md")
+
+    assert not re.search(r"MR-[0-9]|fusion|rubric|depth|\.project/", pattern, re.IGNORECASE)

@@ -1,6 +1,6 @@
 # Implementation Plan: goal-layer-port (`WRAP-SPLIT` Item 2)
 
-**Status:** Implementation in progress (P1–P5 done)
+**Status:** Implementation in progress (P1–P6 done)
 **Created:** 2026-10-11
 **Last Updated:** 2026-10-11
 
@@ -550,25 +550,33 @@ def test_goal_template_points_at_the_design_choice_pattern():
 
 ### Steps
 
-- [ ] Add the four tests above, plus:
+- [x] Add the four tests above, plus:
   - `test_design_choice_pattern_and_equality_intent_name_each_other`: `[design-choices.md](design-choices.md)` in `docs/patterns/constraints.md`; `docs/patterns/design-choices.md` in `skills/sysml-conventions/SKILL.md`; `[constraints.md](constraints.md)` in `design-choices.md`.
   - `test_design_choice_obligations_are_stated_once` (SC5(a)): "must be evaluable without rerunning the policy", "Unknown compliance does not count as completed remediation" and "must not conceal automatic adequacy" each occur in `docs/patterns/design-choices.md` and in no other file under `skills/`, `project_templates/` or `docs/patterns/`.
   - `test_design_choice_pattern_names_no_project_authority` (SC5(g)): `design-choices.md` matches neither `MR-[0-9]`, `fusion`, `rubric`, `depth` nor `\.project/`.
-- [ ] Show the reverted edit in `evidence/sc5f-reverted-edit.txt`:
+- [x] Show the reverted edit in `evidence/sc5f-reverted-edit.txt`:
   - delete the design-choice row from "Process Selection" in `project_templates/MODELING_PROCESS.md.template`;
   - capture `git diff` and `uv run pytest tests/test_modeling_command_contracts.py -q` (expect `test_process_selection_routes_design_choice_changes` to fail);
   - `git restore project_templates/MODELING_PROCESS.md.template`, rerun, and append the passing output.
-- [ ] Confirm `git status --short project_templates/` is empty before committing.
+- [x] Confirm `git status --short project_templates/` is empty before committing.
 
 ### Checks
 
-- [ ] The shared checks.
+- [x] The shared checks.
 
 **Commit:** `Pin the design-choice placement in the contract tests`
 
 **What we know works:** SC5(a), (f), (g) and (h) are enforced by tests, and a removal is shown failing.
 
 **Progress notes:**
+
+- **Done 2026-10-11.** Added seven tests and a `section()` helper to `tests/test_modeling_command_contracts.py`, and `evidence/sc5f-reverted-edit.txt`. No shipped file changed.
+- **Deviation: the SC5(a) phrase follows the pattern as committed.** The plan's step names "Unknown compliance does not count as completed remediation". Commit `f454835` (after P2) restored MR-7's wording in the pattern, which now reads "Unknown compliance cannot count as completed remediation". The test pins the current sentence; the old one is in no shipped file.
+- **Tests, beyond the stencil.** `test_design_choice_obligations_are_stated_once` reads every file under `skills/`, `project_templates/` and `docs/patterns/` (all UTF-8) and asserts that the pattern is the only file holding each phrase. `test_design_choice_pattern_names_no_project_authority` ignores case, so "Fusion" or "Depth" also fail it; the pattern is clean either way. The stencil's four tests are as written, apart from `ruff format` line breaks.
+- **Reverted edit.** Deleting the "Process Selection" design-choice row fails `test_process_selection_routes_design_choice_changes` (1 failed, 14 passed); after `git restore`, 15 passed. The capture has the diff and both runs. I also mutated each other pin once (point-of-use row, runbook trigger row, goal-template pointer, each sibling line, an obligation restated in `review-model`, "MR-7" added to the pattern); each fails its named test. The list is at the end of the evidence file. `git status --short project_templates/` was empty before the commit.
+- **SC5(h).** The sibling test pins the two cross-reference lines and the pattern's link back. The "adds only cross-reference lines" half stays a diff check: P2 recorded 2 insertions and 0 deletions in each file, and P7 or the audit re-reads the diff.
+- **For P7.** P6 touched no ported goal file, so the hunk counts P3 and P4 recorded still stand.
+- **Shared checks.** `uv run pytest tests/`: 2215 passed, 1 skipped, 1 xfailed (P5: 2208; plus seven). `ruff check src/ tests/`: 118, unchanged; the touched test file passes `ruff check` and `ruff format --check`. `mypy src/`: 88, unchanged. SC2 grep: no output. `.project/` grep: runbook `:13` and record `:13`, the two-PM "for example" wording.
 
 ---
 
@@ -823,4 +831,4 @@ See `design.md` § Potential Risks. By phase:
 
 ---
 
-**Status**: Implementation in progress (P1–P5 done)
+**Status**: Implementation in progress (P1–P6 done)

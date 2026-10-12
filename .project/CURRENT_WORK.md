@@ -13,7 +13,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 - [research-seam-port](active/research-seam-port/spec.md) — `WRAP-SPLIT` Item 5: port fusion-tea's research acquisition seam (the `research-acquire` skill plus an `agentic-mbse research` CLI) and rework `/manage-sources` to follow the registry's rules. Spec drafted 2026-10-08/09; design page approved by owner 2026-10-09 ([page](mental-alignment-v2/runs/20261006-150340_research-process-end-state_fresh.html)); product-lens CLEAR. Next: `/_my_spec_review` in a fresh session. One owner question open: may a goal delegate insight approval (does not affect Item 5's code).
-- [goal-layer-port](active/goal-layer-port/spec.md) — `WRAP-SPLIT` Item 2: ship `run-goal` and `narrate-goal` with their runbook, templates and contract test, and fit the design-choice rule (fusion-tea MR-7's principle) into agentic-mbse's enforcement system; branch `goal-layer-port` in worktree `/home/reid/1cfe/agentic-mbse-goal-layer`, orchestrated. Implementation in progress (P1–P5 of the plan done), 2026-10-11.
+- [goal-layer-port](active/goal-layer-port/spec.md) — `WRAP-SPLIT` Item 2: ship `run-goal` and `narrate-goal` with their runbook, templates and contract test, and fit the design-choice rule (fusion-tea MR-7's principle) into agentic-mbse's enforcement system; branch `goal-layer-port` in worktree `/home/reid/1cfe/agentic-mbse-goal-layer`, orchestrated. Implementation in progress (P1–P6 of the plan done), 2026-10-11.
 
 ## Concrete remaining work
 
