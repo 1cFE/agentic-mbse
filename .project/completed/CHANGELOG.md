@@ -4,6 +4,15 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-12] - goal-layer-rollout
+
+**Type**: Change
+
+### Summary
+Rolled out the goal layer after PR #21 merged (`ac5fb1a`, 2026-10-12). fusion-tea moved its pin to `ac5fb1a`, removed its local `run-goal` and `narrate-goal`, and re-initialized, so both skills, the goal runbook and templates and `MODELING_PROCESS.md` are now installed copies, and MR-7 cites `docs/patterns/design-choices.md` (its PR #124, merged as `85d61613f`). The narrative-link fix landed separately as its PR #123. The item's runbook expected `init` to leave the Codex role files alone. Run from a separate worktree with its own `.venv`, `init` wrote that venv's path into the three `.codex/agents/*-expert.toml` roles and their manifest entries, so F2 kept the committed roles and entries, which carry the main checkout's path.
+
+---
+
 ## [2026-10-12] - Goal Layer Port
 
 **Type**: Item (`WRAP-SPLIT` Item 2; branch `goal-layer-port` in worktree `/home/reid/1cfe/agentic-mbse-goal-layer`, base `33511c4`, not yet merged)
