@@ -20,19 +20,42 @@ from package code. Where each file came from:
   pre-capture hold-out refusal in one run.
 - `manifest/*.jsonl`: `source_registry._manifest_row` and `_append_manifest_row`.
 - `seam.json`, `seam/`: `research_seam.request_key`, `open_run`, `log_*` and `close`.
+- `index/hand_curated*`: a case the snapshot cannot produce, since it had no
+  hand-curated writer. The block is the entry shape `docs/source-index.md` gives
+  (heading, Type, Location, Use for, Validation), inserted into the frozen
+  shipped template with the snapshot's own insertion at `## How This File Is Used`.
+
+The register-then-retire round trips compare a registry with its own earlier bytes.
 """
 
 import json
+from dataclasses import replace
 from datetime import date, datetime
 from pathlib import Path
 
 import pytest
 
-from agentic_mbse.research import KeyedFileSource, LocalPdfSource, RegistryPaths, UrlSource
-from agentic_mbse.research.index import insert_block, render_batch_block, render_seam_block
+from agentic_mbse.research import (
+    KeyedFileSource,
+    LocalPdfSource,
+    RegistryPaths,
+    SourceMetadata,
+    UrlSource,
+    register,
+)
+from agentic_mbse.research.index import (
+    HandCuratedEntry,
+    add_entry,
+    insert_block,
+    render_batch_block,
+    render_hand_curated_block,
+    render_seam_block,
+)
 from agentic_mbse.research.manifest import append_manifest_row
 from agentic_mbse.research.register import manifest_row
+from agentic_mbse.research.retire import retire
 from agentic_mbse.research.runs import write_receipt
+from tests.test_research.conftest import NO_GUARD
 
 GOLDEN = Path(__file__).parent / "golden"
 
@@ -118,3 +141,67 @@ def test_manifest_rows_match_the_snapshot_bytes(kind, tmp_path):
     )
     append_manifest_row(paths, row)
     assert paths.manifest.read_bytes() == (GOLDEN / "manifest" / f"{kind}.jsonl").read_bytes()
+
+
+def test_add_entry_bytes_on_the_shipped_template(tmp_path):
+    paths = RegistryPaths(knowledge_dir=tmp_path / "knowledge")
+    paths.knowledge_dir.mkdir()
+    paths.index.write_bytes((GOLDEN / "index" / "anchor_how_this_file.before.md").read_bytes())
+    entry = HandCuratedEntry(**_golden_json("index/hand_curated_inputs.json"))
+
+    assert (
+        render_hand_curated_block(entry) == (GOLDEN / "index" / "hand_curated_block.md").read_text()
+    )
+    assert add_entry(entry, paths=paths, guard=NO_GUARD).outcome == "added"
+    assert paths.index.read_bytes() == (GOLDEN / "index" / "hand_curated.after.md").read_bytes()
+
+
+ROUND_TRIP_METADATA = SourceMetadata(
+    title="Widget Coil Note",
+    use_for="Synthetic winding-pack geometry; exercises the round trip.",
+    validation="Compare against the fixture page itself.",
+    caveat="A test fixture.",
+)
+
+
+@pytest.fixture
+def tree_with_one_registration(tmp_path, local_site):
+    """A registry whose index starts as a golden `before` file and that already holds one source.
+
+    The earlier registration means the manifest exists before the round trip, so
+    the round trip has bytes to restore rather than a file to leave empty.
+    """
+
+    def make(case: str) -> RegistryPaths:
+        paths = RegistryPaths(knowledge_dir=tmp_path / case / "knowledge")
+        paths.sources.mkdir(parents=True)
+        paths.index.write_bytes((GOLDEN / "index" / f"{case}.before.md").read_bytes())
+        earlier = register(
+            UrlSource(url=local_site.url("utf8.html")),
+            ROUND_TRIP_METADATA,
+            paths=paths,
+            guard=NO_GUARD,
+        )
+        assert earlier.outcome == "registered", earlier.reason
+        return paths
+
+    return make
+
+
+@pytest.mark.parametrize("case", ["anchor_how_sources", "anchor_how_this_file", "eof_newline"])
+def test_register_then_retire_restores_the_registry(case, tree_with_one_registration, local_site):
+    paths = tree_with_one_registration(case)
+    before = (paths.index.read_bytes(), paths.manifest.read_bytes())
+
+    result = register(
+        UrlSource(url=local_site.url("latin1.html")),
+        replace(ROUND_TRIP_METADATA, title="Cable Note"),
+        paths=paths,
+        guard=NO_GUARD,
+    )
+    assert result.outcome == "registered", result.reason
+    assert result.slug is not None
+    assert (paths.index.read_bytes(), paths.manifest.read_bytes()) != before
+    assert retire(result.slug, "round trip", paths=paths, guard=NO_GUARD).outcome == "retired"
+
+    assert (paths.index.read_bytes(), paths.manifest.read_bytes()) == before

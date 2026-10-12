@@ -1,6 +1,6 @@
 # Implementation Plan: Port the research acquisition seam, and bring `/manage-sources` under its rules
 
-**Status:** Implementation in progress (P1, P2, P3 complete)
+**Status:** Implementation in progress (P1, P2, P3, P4 complete)
 **Created:** 2026-10-12
 **Last Updated:** 2026-10-12
 **Work item:** `WRAP-SPLIT` Item 5, branch `research-seam-port`, worktree `/home/reid/1cfe/agentic-mbse-research-seam`
@@ -405,28 +405,106 @@ def test_register_then_retire_restores_the_registry(case, tree_with_one_registra
 
 **Tests first, by Appendix B row.**
 
-- [ ] `test_golden_shapes.py`: the bytes a hand-curated `add-entry` writes; register-then-retire round trips at each anchor and at the fallback (I1). Start each round trip from a tree with one earlier registration so the manifest exists before it. On a fresh tree the manifest ends empty rather than absent, which the "nothing written" helper accepts (design Implementation Notes "Test fixtures").
-- [ ] `test_retire.py`: move with the fake guard barring a path and a term. A recording fake guard asserts the calls `check_input_path(Path(slug))`, then `check_input_path(Path("knowledge/sources") / slug)` with that literal path, then `scan_terms(slug)` (Implementation Notes "`retire`'s guard calls"). Add: a guard fault refuses `retire` (I4). The two CLI tests (`test_cli_prints_the_removal_and_the_retired_line`, `test_cli_refusal_exits_nonzero_with_the_reason`) wait for P5.
-- [ ] `test_verify.py`: move. Add `block_without_row` (`legacy` when its directory is in `orphan_source_dirs`, `fault` otherwise; D12), hand-curated entries not reported, commented blocks ignored, and `format_finding` reproducing the snapshot's line (`source_registry.py:1304`).
-- [ ] `test_entries.py` (new; Appendix B "New in agentic-mbse"): `sources` labels; `add-entry`, `--replace` and `remove-entry` refusals for a duplicate, a missing and an ambiguous title and for a normalized `./knowledge/sources/…` Location; guard hits and guard faults (review M1); removing a hand-placed entry above the template's commented examples leaves the examples and the placeholder line byte for byte (review A4). Refusals write nothing (I2).
+- [x] `test_golden_shapes.py`: the bytes a hand-curated `add-entry` writes; register-then-retire round trips at each anchor and at the fallback (I1). Start each round trip from a tree with one earlier registration so the manifest exists before it. On a fresh tree the manifest ends empty rather than absent, which the "nothing written" helper accepts (design Implementation Notes "Test fixtures").
+- [x] `test_retire.py`: move with the fake guard barring a path and a term. A recording fake guard asserts the calls `check_input_path(Path(slug))`, then `check_input_path(Path("knowledge/sources") / slug)` with that literal path, then `scan_terms(slug)` (Implementation Notes "`retire`'s guard calls"). Add: a guard fault refuses `retire` (I4). The two CLI tests (`test_cli_prints_the_removal_and_the_retired_line`, `test_cli_refusal_exits_nonzero_with_the_reason`) wait for P5.
+- [x] `test_verify.py`: move. Add `block_without_row` (`legacy` when its directory is in `orphan_source_dirs`, `fault` otherwise; D12), hand-curated entries not reported, commented blocks ignored, and `format_finding` reproducing the snapshot's line (`source_registry.py:1304`).
+- [x] `test_entries.py` (new; Appendix B "New in agentic-mbse"): `sources` labels; `add-entry`, `--replace` and `remove-entry` refusals for a duplicate, a missing and an ambiguous title and for a normalized `./knowledge/sources/…` Location; guard hits and guard faults (review M1); removing a hand-placed entry above the template's commented examples leaves the examples and the placeholder line byte for byte (review A4). Refusals write nothing (I2).
 
 **Code.**
 
-- [ ] `research/index.py`: `add_entry` (guarded per D11), `remove_entry` and `list_entries`, each a read-modify-write under `registry_lock`.
-- [ ] `research/retire.py`: per Component Overview; rungs module-level; guard calls as pinned above, under the lock and before the slug pattern check.
-- [ ] `research/verify.py`: per Component Overview and D12; keep `row_without_block`'s raw-text substring check (Implementation Notes). Keep `VerifyReport.has_faults`, and add `format_finding(finding) -> str` here, so the P5 CLI and the orchestrator's O1 call print the same bytes.
+- [x] `research/index.py`: `add_entry` (guarded per D11), `remove_entry` and `list_entries`, each a read-modify-write under `registry_lock`.
+- [x] `research/retire.py`: per Component Overview; rungs module-level; guard calls as pinned above, under the lock and before the slug pattern check.
+- [x] `research/verify.py`: per Component Overview and D12; keep `row_without_block`'s raw-text substring check (Implementation Notes). Keep `VerifyReport.has_faults`, and add `format_finding(finding) -> str` here, so the P5 CLI and the orchestrator's O1 call print the same bytes.
 
 **Satisfies:** D10, D11, D12; I1 (entry bytes, round trips), I2 (retire and entry refusals), I3 (retire half), I4 (retire and add-entry); criterion 3 for `retire` and `verify`.
 
 ### Validation
 
-- [ ] Exit check.
+- [x] Exit check.
 
 **What we know works after P4:** every registry write in the package holds the lock and passes the guard, and `verify` reports the missing direction (an index block with no row), classed against the baseline.
 
 ### Implementation Notes
 
-_To fill during implementation._
+#### Phase 4 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,559 passed, 1 skipped, 1 xfailed, 14 deselected, 0 failed (P3 2,440 passed; 119 new). Deselected rose from 13 to 14 by one new `slow` test (the local-PDF retirement).
+- `uv run pytest tests/test_research -m ""`: 351 passed.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this item adds or edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a research file.
+
+**The O1 call.** The orchestrator's early parity run works as the plan writes it. From the fusion-tea worktree root:
+
+```bash
+uv run --no-sync python scripts/source_registry.py verify > old.txt; echo $?
+uv run --no-sync python -c "import sys; from agentic_mbse.research import default_paths; from agentic_mbse.research.verify import verify, format_finding; r = verify(default_paths()); print('\n'.join(format_finding(f) for f in r.findings)); sys.exit(1 if r.has_faults else 0)" > new.txt; echo $?
+```
+
+- Rehearsed here on two synthetic fusion-shaped projects under `/tmp` (anchor `## How Sources Are Used`, a baseline with one orphan directory and one loose file, a hand-made block over the orphan directory, a hand-curated block), running the snapshot's own `source_registry.py verify` beside the call above, with the Python string taken verbatim from this plan. A `pyzotero` stub with a `Zotero` class stood in for the missing package; fusion-tea has the real one.
+  - Legacy-only project: both exit 0. Every snapshot finding line is in `new.txt`; the one extra line is `legacy  block_without_row    knowledge/sources/orphan_pages — SOURCE_INDEX.md block with no manifest row`.
+  - Project with every fault kind (retired directory back, stray directory, row without block, row without directory): both exit 1, with the same lines plus that one extra.
+  - Neither command wrote anything: no `.registry.lock`, no `.staging/`.
+- From this worktree's root the call exits 0, prints one empty line (no findings), and leaves `knowledge/` unchanged. With no findings `new.txt` holds one blank line; the comparison reads finding lines only, so it does not matter.
+- `format_finding` is the snapshot's `f"{klass:7} {kind:20} {path} — {detail}"` (`source_registry.py:1304`). The new kind's detail is `SOURCE_INDEX.md block with no manifest row`, and its path is `knowledge/sources/<slug>` with no trailing slash, as the baseline lists directories.
+
+**What changed.**
+
+- `research/index.py`, hand-curated entries:
+  - `HandCuratedEntry` (title, type, location, use for, validation), `render_hand_curated_block`, `entry_label`, and the frozen results `ListedEntry` (label, title, type, location) and `EntryResult` (outcome, reason, rule id, offsets). `HAND_CURATED_TYPES` holds the four types.
+  - `list_entries(paths)`: every entry in file order, labelled `registered`, `hand-curated` or `unregistered`.
+  - `add_entry`, `replace_entry` and `remove_entry`. Field checks, the index check and the guard run before the lock; the title match and the write run under it. `add_entry` and `replace_entry` take `guard: HoldoutGuard | None = None`, defaulting to `load_holdout_guard(paths.project_root)` as `register` does. They check a Location that is not a URL with `check_input_path(Path(location))`, then scan the title, Location, Use for and Validation, in that order.
+- `research/retire.py`: `retire(slug, reason, *, paths=None, guard=None)`, `RetirementResult`, `RetirementError`, and the `Removed` and `RetiredLine` TypedDicts. The ladder, messages and refusal order are the snapshot's (`source_registry.py:898-1177`). The guard calls are `Path(slug)`, then the literal `Path("knowledge/sources") / slug`, then `scan_terms(slug)`, under the lock and before the slug pattern check. A guard fault refuses `precondition_failed` with the `hold-out guard unavailable:` reason. The rungs are module-level: `_park`, `write_manifest_without` (imported from `manifest.py`), `_write_index_without`, `_append_retired_line`.
+- `research/verify.py`: `verify`, `format_finding`, `Finding`, `VerifyReport` (`has_faults` kept), `Baseline`, `load_baseline`, `load_retired`. Three passes in the snapshot's order: source directories, index blocks, manifest rows. The blocks pass now also reports `block_without_row` (D12). `row_without_block` keeps the raw-text substring check.
+- Golden data: `golden/index/hand_curated_inputs.json`, `hand_curated_block.md` and `hand_curated.after.md`, from a new `derive_hand_curated()` in `.orchestrate-logs/golden/derive.py`. There is no snapshot writer for these. The block is the File Format's entry shape, and its insertion into the frozen template uses the snapshot's replace expression. Only these three files were written; the rest of `golden/` is unchanged.
+- Tests:
+  - `test_golden_shapes.py`: the add-entry bytes on the frozen template, and register-then-retire round trips at both anchors and the end-of-file fallback, each starting from a tree with one earlier registration.
+  - `test_retire.py` (moved): the fake guard bars a registry path, a hold-out path and the token; a recording guard pins the three calls, including for a malformed slug.
+  - `test_verify.py` (moved): `block_without_row` as fault and as legacy, under four Location spellings and an absolute path; hand-curated entries and commented blocks are not findings; `format_finding` against hand-written snapshot-format lines.
+  - `test_entries.py` (new): labels; add, replace and remove; every refusal with nothing written; guard hits and faults for add and replace; the A4 case.
+  - `conftest.py` now holds `ScriptedGuard`, moved from `test_holdout.py`.
+- Tests beyond the plan's list:
+  - Every entry write and `retire` waits for the registry lock.
+  - Each of `retire`'s drift refusals (two rows, two blocks, no block, no directory).
+  - A half-written `RETIRED.jsonl` line is cut back, or the file removed when the attempt created it.
+  - A slow local-PDF retirement that removes the raw copy, or puts the directory back when parking the raw copy fails.
+  - A hand-curated entry naming a slug blocks its retirement.
+  - Retiring a fresh target's only source leaves the template and an empty manifest.
+  - `verify`'s finding order.
+  - A misconfigured project guard refuses both `retire` and `add_entry`.
+- Mutation-checked, each mutation applied alone and the source restored after; every one fails at least one test:
+  - In `verify.py`: no block findings (8 fail), `block_without_row` classed against `loose_files` (1), hand-curated blocks not skipped (1), kind padded to 19 (4).
+  - In `retire.py`: the guard given the tree's path (3), the guard only after the slug check (4), a guard fault read as no hit (4), a created log left behind on rollback (1), no lock (1), references ignored (3).
+  - In `index.py`: `add_entry` without the lock (1), the entry guard skipped (20), an entry guard fault read as no hit (7), the Location not normalized (4), titles matched among registered entries too (3), blocks not ending at a comment (1), a URL Location path-checked (1), a comment opener allowed (2), the type unchecked (4).
+
+**Deviations and decisions** (none changes a byte fusion-tea writes or reads).
+
+- `--replace` is its own function, `replace_entry`, not a flag on `add_entry`: the two refuse on opposite title conditions. P5 maps `add-entry --replace` to it.
+- [AGENT] An entry's type must be one of the four hand-curated types, else `precondition_failed`. The design says the registered types are written only by `register`. It does not list this refusal, but without it `add-entry --type url` would write a `url` entry with no row.
+- [AGENT] A field with a line break or `<!--` refuses. A line break would end the block early, and a comment opener would hide the rest of the index from the parser.
+- [AGENT] Fields are written stripped, and the Location normalized: an absolute path inside the project becomes relative, keeping the index portable (D15's reason). An absolute path outside the project is kept.
+- "Hand-curated" means the block's Location names no directory under `knowledge/sources/` (its slug is None). This one test serves labels, the add refusal, title matching and `verify`. A Location of exactly `knowledge/sources/`, the directory itself, therefore counts as hand-curated.
+- `list_entries` and `verify` take no lock and create nothing, not even `.registry.lock`, so P5's read-only checks leave `git status` clean. The plan listed `list_entries` among the locked read-modify-writes; it only reads. The snapshot's `verify` took no lock either.
+- `replace_entry` and `remove_entry`, given a title only a registered entry has, refuse with a pointer: "…; the entry with that title is under knowledge/sources/, so retire it by its slug". `remove_entry` does not ask the guard, since a removal lets nothing in.
+- `retire` gains a `_park` rung: the snapshot inlined the two renames. Rollback now moves back exactly the artifacts that were parked.
+- `RetirementResult.removed` is None on a refusal (snapshot: `{}`), and `VerifyReport.findings` is a tuple (snapshot: list). Both are in memory only.
+- `retire`, `verify` and `list_entries` read the index as UTF-8, where the snapshot used the locale default. They are the same on every machine this runs on.
+- The moved retire and verify tests use neutral names and the fake guard where the snapshot's used fusion-tea's guard and paths.
+
+**For the next phases.**
+
+- P5 CLI:
+  - `sources` → `list_entries`, which raises `FileNotFoundError` on a missing index; print one line for it. A hand-placed block may lack Type or Location (`None`), so pick a placeholder for the `<label> <type> <title> — <location>` line.
+  - `add-entry` → `add_entry`; `add-entry --replace` → `replace_entry`; `remove-entry --title` → `remove_entry`. Print `{"outcome", "reason"}`, plus `rule_id` and `offsets` for `holdout_hit`. Exit 0 only for `added`, `replaced` and `removed`.
+  - `retire` → `retire`: port `_run_retire`'s output (`source_registry.py:1311-1333`) from `RetirementResult.removed` and `retired_line`. A refusal prints its payload with `rule_id`, `offsets` and `references` when set.
+  - `verify` → `verify`: print `format_finding` per finding, then the snapshot's summary `\n{faults} fault(s), {legacy} legacy entry(ies)`; exit 1 when `has_faults`.
+  - The one-line error path catches `RetirementError` (in `retire.py`).
+  - None of these are D2 names: import them from `agentic_mbse.research.index`, `.retire` and `.verify`.
+- P5 tests: the two CLI retire tests deferred from `test_retire.py` (`test_cli_prints_the_removal_and_the_retired_line`, `test_cli_refusal_exits_nonzero_with_the_reason`). Build them on the `two_sources` fixture pattern in `test_retire.py`.
+- P6: the template's placeholder line becomes a comment. That moves where a hand-placed entry's block ends in the A4 test, but the test compares against the live template, so it stays meaningful. `test_golden_shapes.py` reads the frozen `anchor_how_this_file.before.md`, so P6 cannot move the add-entry golden.
 
 ---
 

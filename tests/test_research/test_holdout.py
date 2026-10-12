@@ -11,7 +11,7 @@ import hashlib
 import importlib
 import inspect
 import shutil
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -24,6 +24,7 @@ from tests.test_research.conftest import (
     SEALED_TOKEN,
     FakeGuard,
     FakeMatch,
+    ScriptedGuard,
     assert_nothing_written,
     write_research_config,
 )
@@ -243,30 +244,6 @@ def test_a_broken_configured_guard_refuses_with_a_receipt(
     assert receipt["reason"] == result.reason
     assert receipt["captured"] is False
     assert_nothing_written(knowledge_tree)
-
-
-@dataclass(frozen=True)
-class ScriptedGuard:
-    """A guard whose checks give fixed answers, except the check named in `raises_in`, which raises."""
-
-    input_path_answer: object = None
-    terms_answer: object = ()
-    file_answer: object = ()
-    raises_in: str | None = None
-
-    def _answer(self, check: str, answer: object) -> object:
-        if check == self.raises_in:
-            raise RuntimeError(f"{check} could not run")
-        return answer
-
-    def check_input_path(self, path):
-        return self._answer("check_input_path", self.input_path_answer)
-
-    def scan_terms(self, text):
-        return self._answer("scan_terms", self.terms_answer)
-
-    def scan_file(self, path):
-        return self._answer("scan_file", self.file_answer)
 
 
 @pytest.mark.parametrize(

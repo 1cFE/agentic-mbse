@@ -235,6 +235,31 @@ class FakeGuard:
 #: A guard that bars nothing, for tests that are not about the hold-out.
 NO_GUARD = FakeGuard()
 
+
+@dataclass(frozen=True)
+class ScriptedGuard:
+    """A guard whose checks give fixed answers, except the check named in `raises_in`, which raises."""
+
+    input_path_answer: object = None
+    terms_answer: object = ()
+    file_answer: object = ()
+    raises_in: str | None = None
+
+    def _answer(self, check: str, answer: object) -> object:
+        if check == self.raises_in:
+            raise RuntimeError(f"{check} could not run")
+        return answer
+
+    def check_input_path(self, path):
+        return self._answer("check_input_path", self.input_path_answer)
+
+    def scan_terms(self, text):
+        return self._answer("scan_terms", self.terms_answer)
+
+    def scan_file(self, path):
+        return self._answer("scan_file", self.file_answer)
+
+
 #: The token `fixtures/web/marker.html` carries for the fake guard to bar.
 SEALED_TOKEN = "sealed-widget-07"
 
