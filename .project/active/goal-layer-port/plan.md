@@ -1,6 +1,6 @@
 # Implementation Plan: goal-layer-port (`WRAP-SPLIT` Item 2)
 
-**Status:** Draft
+**Status:** Implementation in progress (P1 done)
 **Created:** 2026-10-11
 **Last Updated:** 2026-10-11
 
@@ -115,20 +115,25 @@ def test_only_right_reports_fit_and_only_wrong_sizes_the_pump():
 
 ### Steps
 
-- [ ] Write the test above; run it and see it fail (no fixture yet).
-- [ ] Copy `.orchestrate-logs/design-scratch/{seed,right,wrong}/models/` to `tests/fixtures/sump_pump/{seed,right,wrong}/models/`. If the scratch copies are missing, rebuild them from Appendix F.
-- [ ] Add `tests/fixtures/sump_pump/README.md` holding Appendix F's README line.
-- [ ] Run `uv run agentic-mbse validate tests/fixtures/sump_pump/<tree>/models --complete` once per tree. Expect all six levels green, and one admitted numerical constraint in `right/`.
+- [x] Write the test above; run it and see it fail (no fixture yet).
+- [x] Copy `.orchestrate-logs/design-scratch/{seed,right,wrong}/models/` to `tests/fixtures/sump_pump/{seed,right,wrong}/models/`. If the scratch copies are missing, rebuild them from Appendix F.
+- [x] Add `tests/fixtures/sump_pump/README.md` holding Appendix F's README line.
+- [x] Run `uv run agentic-mbse validate tests/fixtures/sump_pump/<tree>/models --complete` once per tree. Expect all six levels green, and one admitted numerical constraint in `right/`.
 
 ### Checks
 
-- [ ] The test passes, then the shared checks.
+- [x] The test passes, then the shared checks (see Progress notes: no new failure; the baseline is not green).
 
 **Commit:** `Add the sump/pump fixture: seed, right and wrong trees, validated at all six levels`
 
 **What we know works:** the pattern's example and the dry-run seed are one validated model in the repo.
 
 **Progress notes:**
+
+- **Done 2026-10-11.** Added `tests/test_design_choices_example.py` and `tests/fixtures/sump_pump/{seed,right,wrong}/models/` plus `README.md`. The trees are byte copies of `.orchestrate-logs/design-scratch/` (`diff -r` silent), which match Appendix F.
+- **Validation.** `agentic-mbse validate <tree>/models --complete`: all three trees pass six levels. Level 4 reports `Admitted numerical: 1` for `right/` and 0 for `seed/` and `wrong/`. The seed has no fit check, so the dry run's goal needs a model change.
+- **Test, beyond the stencil.** The six-level test asserts the level list `[1..6]`, `overall_success` and no issues as three assertions, so a failure names what broke. One added test runs Level 4 on `right/` and asserts one admitted and no malformed numerical constraint: the right form's fit check is one an execution route can evaluate. The stencil's text test is kept as written.
+- **Shared checks, baseline not green (pre-existing, not this item).** `uv run pytest tests/`: 18 failures before and after this phase, the same set. All come from optional extras this worktree's venv lacks: `PIL` (`tests/test_equations.py::TestDetectEquations::test_returns_detected_equations`) and `trafilatura`/`bs4` (17 in `tests/test_web_backend.py`). `uv sync --locked` reports nothing to change. `ruff check src/ tests/` reports 118 errors and `mypy src/` 98, the same counts on a clean checkout of `57644b9`; this branch has no `src/` or `tests/` diff against `main`. The new test file passes `ruff check` and `ruff format --check`. Later phases compare against this baseline.
 
 ---
 
@@ -766,4 +771,4 @@ See `design.md` § Potential Risks. By phase:
 
 ---
 
-**Status**: Draft
+**Status**: Implementation in progress (P1 done)

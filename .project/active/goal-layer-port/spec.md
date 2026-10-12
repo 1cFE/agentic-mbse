@@ -1,6 +1,6 @@
 # Spec: Port the goal layer, and fit the design-choice rule into agentic-mbse's enforcement system
 
-**Status:** Draft (revised 2026-10-11 after spec review)
+**Status:** Implementation in progress (revised 2026-10-11 after spec review)
 **Owner:** Reid W
 **Created:** 2026-10-11
 **Complexity:** HIGH (behaviour-preserving port of ~600 lines of instruction text across two repos, plus placing one rule across several enforcement levels)
