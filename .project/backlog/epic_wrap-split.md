@@ -126,7 +126,7 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 
 ---
 
-### Item 2: Port the goal layer and the design-choice principle
+### Item 2: Port the goal layer and the design-choice principle ✅
 
 **Type**: Implementation (instruction text, templates, installer registration)
 **Effort**: 2 days (spec 2h, design 2h, plan 1h, execute 10h)
@@ -156,13 +156,15 @@ Owner decisions in the header apply to every item. Each item's spec inherits the
 - Changing fusion-tea's `REQUIREMENTS.md` MR-7 text or its goal/narrative data.
 
 **Success Criteria**:
-- [ ] `agentic-mbse install-commands --list` names `run-goal` and `narrate-goal`; a fresh init contains the runbook, three templates, the two directories and the contract test template.
-- [ ] `grep -E "fusion-tea|MR-7|\.codex-test|stellarator|exploration/" ` over the shipped runbook, templates and the two skills returns nothing; every former consumer path has a generic replacement or a ledger row.
-- [ ] A fresh target can ground a goal and open a round following only installed files (dry run recorded in evidence).
+- [x] `agentic-mbse install-commands --list` names `run-goal` and `narrate-goal`; a fresh init contains the runbook, three templates, the two directories and the contract test template.
+- [x] `grep -E "fusion-tea|MR-7|\.codex-test|stellarator|exploration/" ` over the shipped runbook, templates and the two skills returns nothing; every former consumer path has a generic replacement or a ledger row.
+- [x] A fresh target can ground a goal and open a round following only installed files (dry run recorded in evidence).
 - [ ] The process template carries the new section and table row; fusion-tea's two inserted paragraphs are covered by it or re-homed, and fusion-tea's `REQUIREMENTS.md` MR-7 is byte-identical.
-- [ ] `docs/goal-layer-decisions.md` preserves each ADR's grade and cites fusion-tea by path and commit.
-- [ ] Ledger rows exist for every removed consumer-specific line; fusion-tea's working tree holds each destination before the agentic-mbse change merges.
-- [ ] `uv run pytest tests/` passes.
+- [x] `docs/goal-layer-decisions.md` preserves each ADR's grade and cites fusion-tea by path and commit.
+- [x] Ledger rows exist for every removed consumer-specific line; fusion-tea's working tree holds each destination before the agentic-mbse change merges.
+- [x] `uv run pytest tests/` passes.
+
+Audit note (2026-10-12, `active/goal-layer-port/audit.md`): the unchecked criterion was superseded by the owner's 2026-10-11 direction (Align record). The rule ships as `docs/patterns/design-choices.md` with a "Process Selection" row and a point-of-use row, not as a process-template section. fusion-tea's two paragraphs are covered by it, and MR-7 is rewritten as fusion-tea's application of the rule. Every item-spec criterion passes.
 
 **Required Reading**: research § 1a, § 2, § 5; fusion-tea `work/orchestration/GOAL_RUNBOOK.md`; fusion-tea `.project/concepts/goal-driven-model-development-harness.md` (owner stop rules, line 198); fusion-tea `modeling_project/REQUIREMENTS.md` § MR-7 and `.project/active/modeling-intent-enforcement/spec.md`; `project_templates/MODELING_PROCESS.md.template`; CLAUDE.md "Init File Ownership".
 

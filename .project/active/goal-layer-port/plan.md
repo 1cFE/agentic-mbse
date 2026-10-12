@@ -60,10 +60,10 @@ agentic-mbse ships general capability that a target gets from `init`. This item 
 
 Run from the worktree root. Every agentic-mbse phase ends with:
 
-- [ ] `uv run pytest tests/` → all pass, no new xfail
-- [ ] `uv run ruff check src/ tests/` → clean
-- [ ] `uv run mypy src/` → clean
-- [ ] From P3 on, the SC2 grep over the goal-layer files that exist so far → no output:
+- [x] `uv run pytest tests/` → all pass, no new xfail
+- [x] `uv run ruff check src/ tests/` → clean (judged at `main` parity per the orchestrator note below: 118, none in a touched file; audit 2026-10-12)
+- [x] `uv run mypy src/` → clean (judged at `main` parity: 88, none in a touched file; audit 2026-10-12)
+- [x] From P3 on, the SC2 grep over the goal-layer files that exist so far → no output:
 
 ```bash
 SC2='fusion-tea|MR-[0-9]|\.codex-test|stellarator|exploration/|\.claude/|/home/|research_seam|source_registry|integrate\.py|STUDY_POLICY|holdout|ARIES|aries-cs|demo-depth-rubric|depth target|GSTH|WI-0[0-9]'
@@ -711,12 +711,12 @@ If the permission classifier blocks writes under `$FT`, write the phase's fusion
 
 Runs D3 step 1 early, so a dependency or license failure surfaces before O3.
 
-- [ ] `D=/tmp/goal-dry-run-smoke-$(date +%Y%m%d-%H%M%S)`; `mkdir -p $D`; `uv build $AM --wheel --out-dir $D/dist`
-- [ ] `uv venv $D/venv --python 3.12`; `uv pip install --python $D/venv/bin/python $D/dist/agentic_mbse-*.whl --extra-index-url https://gitlab.com/api/v4/projects/69960816/packages/pypi/simple`
-- [ ] `mkdir $D/target`; `env PATH=$D/venv/bin:$PATH VIRTUAL_ENV=$D/venv agentic-mbse init $D/target --assistant claude < /dev/null`
-- [ ] With the same `PATH` and `VIRTUAL_ENV`, from `$D/target` (`uv run --directory $D/target …`): `uv run python -c 'from agentic_mbse.cli import get_docs_dir; print(get_docs_dir())'` must print `$D/venv/…/agentic_mbse_data/docs` (R2-A2).
-- [ ] `SYSIDE_LICENSE_KEY=<from $AM/.env> agentic-mbse validate <seed models copy> --complete` passes.
-- [ ] Record the commands and outcomes in `$E/dry-run/install.md` for O3. No commit needed until O3.
+- [x] `D=/tmp/goal-dry-run-smoke-$(date +%Y%m%d-%H%M%S)`; `mkdir -p $D`; `uv build $AM --wheel --out-dir $D/dist`
+- [x] `uv venv $D/venv --python 3.12`; `uv pip install --python $D/venv/bin/python $D/dist/agentic_mbse-*.whl --extra-index-url https://gitlab.com/api/v4/projects/69960816/packages/pypi/simple`
+- [x] `mkdir $D/target`; `env PATH=$D/venv/bin:$PATH VIRTUAL_ENV=$D/venv agentic-mbse init $D/target --assistant claude < /dev/null`
+- [x] With the same `PATH` and `VIRTUAL_ENV`, from `$D/target` (`uv run --directory $D/target …`): `uv run python -c 'from agentic_mbse.cli import get_docs_dir; print(get_docs_dir())'` must print `$D/venv/…/agentic_mbse_data/docs` (R2-A2).
+- [x] `SYSIDE_LICENSE_KEY=<from $AM/.env> agentic-mbse validate <seed models copy> --complete` passes.
+- [x] Record the commands and outcomes in `$E/dry-run/install.md` for O3. No commit needed until O3.
 
 - O0 done 2026-10-11: wheel built, installed, `init` rc 0, resolver printed the packaged docs, seed validated 6/6. Folded into `evidence/dry-run/install.md`.
 
@@ -726,7 +726,7 @@ Runs D3 step 1 early, so a dependency or license failure surfaces before O3.
 
 Needs P1–P8 committed. F1 copies template bytes, so a later template change means repeating steps 3–6 as a second F1 commit.
 
-- [ ] **Delta check (SC6 condition, `design.md` § Validation Approach).** Dispatch a fresh non-author reviewer with a focused brief: six tool calls, 300 words.
+- [x] **Delta check (SC6 condition, `design.md` § Validation Approach).** Dispatch a fresh non-author reviewer with a focused brief: six tool calls, 300 words.
   - Inputs: `docs/patterns/design-choices.md`, the template's three design-choice lines, `design.md` A1/A2, this plan's "Carried into this plan" items 1–4, and MR-7 at snapshot `REQUIREMENTS.md:89-107`.
   - Question: does each change after round 2 keep MR-7's force and scope?
   - Record the verdict in `$E/sc6-delta-check.md`. A fail is fixed in agentic-mbse before step 3.
@@ -735,18 +735,18 @@ Needs P1–P8 committed. F1 copies template bytes, so a later template change me
   - `git -C $FT status --short` → empty;
   - `git -C $FT merge-base --is-ancestor 2b1e9f9d5 HEAD`.
   - If `$FT` is absent: `git -C /home/reid/1cfe/fusion-tea worktree add -b goal-layer-mr7 $FT 2b1e9f9d5`.
-- [ ] 1. Apply A6 to `$FT/modeling_project/REQUIREMENTS.md`. The `:87` heading and the `:89` authority line stay byte-identical. A6's body replaces `:91-107`, and whatever separates MR-7 from `## Process Requirements` stays. `:165` changes per A6, with today's date.
-- [ ] 2. Insert A7 into `$FT/CLAUDE.md` after the "Design-choice preservation" section (`:5`), before `## Project Overview`.
-- [ ] 3. Copy the templates:
+- [x] 1. Apply A6 to `$FT/modeling_project/REQUIREMENTS.md`. The `:87` heading and the `:89` authority line stay byte-identical. A6's body replaces `:91-107`, and whatever separates MR-7 from `## Process Requirements` stays. `:165` changes per A6, with today's date.
+- [x] 2. Insert A7 into `$FT/CLAUDE.md` after the "Design-choice preservation" section (`:5`), before `## Project Overview`.
+- [x] 3. Copy the templates:
   - `cp $AM/project_templates/MODELING_PROCESS.md.template $FT/modeling_project/MODELING_PROCESS.md`
   - `cp $AM/project_templates/GOAL_RUNBOOK.md.template $FT/work/orchestration/GOAL_RUNBOOK.md`
   - for `t` in goal, trail, learnings: `cp $AM/project_templates/$t.md.template $FT/work/orchestration/goal-templates/$t.md`
-- [ ] 4. Anchors:
+- [x] 4. Anchors:
   - `grep -nx '### MR-7: Preserve Design Choices; Separate Evaluation from Design Selection' $FT/modeling_project/REQUIREMENTS.md`;
   - `grep -n 'mr-7-preserve-design-choices-separate-evaluation-from-design-selection' $FT/CLAUDE.md $FT/.project/active/demo-depth-rubric/application-policy.md` → both hit.
-- [ ] 5. `cmp` each copied file against its template → silent (SC7).
-- [ ] 6. `git -C $FT add` exactly the seven paths, then commit. Subject: "MR-7 applies agentic-mbse's design-choice pattern; goal files at the shipped bytes". Body: "Do not merge before the pin commit (F2)." and the agentic-mbse SHA the bytes came from. No push.
-- [ ] 7. Capture to `$E/fusion-tea/`:
+- [x] 5. `cmp` each copied file against its template → silent (SC7).
+- [x] 6. `git -C $FT add` exactly the seven paths, then commit. Subject: "MR-7 applies agentic-mbse's design-choice pattern; goal files at the shipped bytes". Body: "Do not merge before the pin commit (F2)." and the agentic-mbse SHA the bytes came from. No push.
+- [x] 7. Capture to `$E/fusion-tea/`:
   - `git -C $FT diff 2b1e9f9d5..HEAD > branch-diff-F1.txt`;
   - `git -C $FT log --oneline 2b1e9f9d5..HEAD > branch-log.txt`.
   - Check each ledger destination appears in the diff, or already exists at `2b1e9f9d5`.
@@ -761,21 +761,21 @@ Needs P1–P8 committed. F1 copies template bytes, so a later template change me
 
 Follows `design.md` Appendix D2, and records each output into the F2 runbook's "Observed" slots.
 
-- [ ] `R=/tmp/ft-rehearsal-$(date +%Y%m%d-%H%M%S)`; `git -C $FT worktree add --detach $R HEAD`
-- [ ] Simulate F2 without the pin:
+- [x] `R=/tmp/ft-rehearsal-$(date +%Y%m%d-%H%M%S)`; `git -C $FT worktree add --detach $R HEAD`
+- [x] Simulate F2 without the pin:
   - `git -C $R rm -r -q .claude/skills/run-goal .claude/skills/narrate-goal .agents/skills/run-goal .agents/skills/narrate-goal`;
   - delete the `!.claude/skills/narrate-goal/` and `!.claude/skills/run-goal/` lines from `$R/.gitignore`;
   - in `$R/AGENTS.md:5`, "Local goal and study skills" → "Local study skills";
   - `rm $R/modeling_project/MODELING_PROCESS.md $R/work/orchestration/GOAL_RUNBOOK.md $R/work/orchestration/goal-templates/{goal,trail,learnings}.md`.
-- [ ] `uv run --project $AM agentic-mbse init $R < /dev/null > $E/fusion-tea/rehearsal/init.txt 2>&1`. Expect no "Preserving" line for goal or process files, and `MODELING_GUIDE.md` updated silently.
-- [ ] Capture into `$E/fusion-tea/rehearsal/`:
+- [x] `uv run --project $AM agentic-mbse init $R < /dev/null > $E/fusion-tea/rehearsal/init.txt 2>&1`. Expect no "Preserving" line for goal or process files, and `MODELING_GUIDE.md` updated silently.
+- [x] Capture into `$E/fusion-tea/rehearsal/`:
   - `git -C $R status --short` → `git-status.txt`;
   - manifest entries in `$R/.agentic-mbse/install.json` against `sha256sum` of the runbook, three goal templates, the narrative test and `MODELING_PROCESS.md` → `manifest.txt`;
   - `git -C $R status --short -- work/orchestration/goals work/narratives` → `goal-data-status.txt` (expect empty);
   - `uv run --project $AM --directory $R pytest tests/orchestration --confcutdir=$R/tests/orchestration -o addopts= -p no:cacheprovider -q` → `pytest.txt`. Both tests must pass over the 12 narratives. On an import clash with this repo's `tests` package, add `--import-mode=importlib` and record it;
   - `grep -n '^## ' $R/work/orchestration/GOAL_RUNBOOK.md`, against the headings cited by `STUDY_POLICY.md:162`, the run-study runbook `:75,:219` and the goal files → `headings.txt`;
   - the SC8 chain walk → `chain.md`, each link with its resolved file. The links: `CLAUDE.md:5` → MR-7 heading → `design-choices.md`, through the resolver in this worktree's environment (record that fusion's pin `adbef75` lacks the file, so this shows the chain's shape, not fusion's runtime) → the "Process Selection" row in `$R/modeling_project/MODELING_PROCESS.md`. Then the installed goal template, runbook and `.agents/skills/run-goal/SKILL.md` → `design-choices.md` and `modeling_project/REQUIREMENTS.md`. Then `repair-goal-prompt.md:18`, listed and not edited.
-- [ ] Fill the F2 runbook's "Observed in the rehearsal" slots from these files.
+- [x] Fill the F2 runbook's "Observed in the rehearsal" slots from these files.
 - [ ] `git -C $FT worktree remove --force $R`
 
 **Commit (agentic-mbse):** `Evidence: fusion-tea re-init rehearsal (SC8)`
@@ -788,16 +788,16 @@ Follows `design.md` Appendix D2, and records each output into the F2 runbook's "
 
 Follows `design.md` Appendix D3 and needs P1–P8. Independent of O1 and O2.
 
-- [ ] Toolkit: repeat O0's first two steps in a fresh `D=/tmp/goal-dry-run-<stamp>`. Then `unzip -l $D/dist/*.whl | grep -E 'docs/patterns/design-choices.md|docs/goal-layer-decisions.md|GOAL_RUNBOOK.md.template'` → three hits.
-- [ ] Target:
+- [x] Toolkit: repeat O0's first two steps in a fresh `D=/tmp/goal-dry-run-<stamp>`. Then `unzip -l $D/dist/*.whl | grep -E 'docs/patterns/design-choices.md|docs/goal-layer-decisions.md|GOAL_RUNBOOK.md.template'` → three hits.
+- [x] Target:
   - `mkdir $D/target`, then init with `PATH` and `VIRTUAL_ENV` set as in O0;
   - `cp -r $AM/tests/fixtures/sump_pump/seed/models/. $D/target/models/`;
   - `git -C $D/target init -q`, `git -C $D/target add -A`, `git -C $D/target -c user.name=dry-run -c user.email=dry-run@example.invalid commit -qm "Seed: sump/pump station"`;
   - repeat O0's resolver check from `$D/target`. If it does not print the scratch venv's packaged docs, stop and record; do not run the agent.
-- [ ] Agent: run `claude -p "$(cat $D/brief.md)" --output-format stream-json --verbose > $D/transcript.jsonl` in `$D/target`, with:
+- [x] Agent: run `claude -p "$(cat $D/brief.md)" --output-format stream-json --verbose > $D/transcript.jsonl` in `$D/target`, with:
   - `PATH=$D/venv/bin:$PATH`, `VIRTUAL_ENV=$D/venv` and `SYSIDE_LICENSE_KEY` set;
   - no user-level instructions, skills or memory reaching the agent, and authentication still working. The orchestrator picks the mechanism and the permission flags, and records both.
-- [ ] The brief, saved as `$D/brief.md` and `$E/dry-run/brief.md`. This is the final wording within D3, and it names neither design choices nor the pattern:
+- [x] The brief, saved as `$D/brief.md` and `$E/dry-run/brief.md`. This is the final wording within D3, and it names neither design choices nor the pattern:
 
 ```text
 You are working in a SysML modeling project. Use the project's installed goal workflow, the run-goal skill, to ground a new goal and open its first round. Follow the installed files. No one is available to answer questions.
@@ -816,19 +816,19 @@ The operator's answers, given in advance:
 Stop after writing `### T-001 start` in trail.md. If you reach any other point where the operator would have to answer, write a `### Stop` entry of kind `handoff` in trail.md saying what is needed, and stop.
 ```
 
-- [ ] Evidence into `$E/dry-run/`:
+- [x] Evidence into `$E/dry-run/`:
   - `goal.md` and `trail.md` from `$D/target/work/orchestration/goals/sump-overflow/`;
   - `read-files.txt`: `jq -r 'select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | [.name, (.input.file_path // .input.command // .input.pattern // "")] | @tsv' $D/transcript.jsonl`;
   - `init-message.json`: `jq 'select(.type=="system" and .subtype=="init")' $D/transcript.jsonl`, the user-level config the agent could see;
   - `install.md`: the wheel name, install command, isolation mechanism and permission flags. Never the license key.
-- [ ] `$E/dry-run/checks.md`, pass or fail per line:
+- [x] `$E/dry-run/checks.md`, pass or fail per line:
   - `goal.md` reads `grounded`, with all five field classes filled, and its grounding evidence cites the fixture;
   - `trail.md` holds `## Round 1`, `### Strategy revision`, `### T-001 scope` and `### T-001 start`;
   - `goal.md` § Invariants names the installed pump capacity as a supplied choice the goal preserves;
   - `read-files.txt` includes `design-choices.md` (B1);
   - the first resolver call printed the scratch venv's path (R2-A2);
   - no read path points into `$AM` or at fusion-tea.
-- [ ] Failure handling:
+- [x] Failure handling:
   - If the agent stopped on a gap in the brief, fix that operator answer, re-run once, and keep both runs' evidence.
   - If B1 fails (`design-choices.md` was never read), record it and surface it to the owner as evidence against B1. Do not change D1 in this run.
 
