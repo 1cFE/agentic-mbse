@@ -720,6 +720,8 @@ Runs D3 step 1 early, so a dependency or license failure surfaces before O3.
 
 ### O1: fresh delta check, then the fusion-tea F1 commit (SC6, SC7)
 
+**Orchestrator note (before O1, 2026-10-11).** fusion-tea `main` moved to `b06585709` (its PR #122) after the snapshot. It archived `modeling-intent-enforcement` and `demo-depth-rubric` from `.project/active/` to `.project/completed/20261011_*` and updated their path citations in MR-7's authority line, `MODELING_PROCESS.md:34` and `GOAL_RUNBOOK.md:100`; no other change touches a file F1 or F2 replaces (`git diff 2b1e9f9d5 origin/main` over those paths). So `goal-layer-mr7` is re-cut from `b06585709` (it had no commits), the `:89` authority line stays byte-identical to `b06585709`'s, and A6's depth bullet and step 4's anchor check use `.project/completed/20261011_demo-depth-rubric/application-policy.md`. Evidence that cites fusion files at `2b1e9f9d5` (snapshot, SC12, crosswalk "Was in") stays valid as written.
+
 Needs P1–P8 committed. F1 copies template bytes, so a later template change means repeating steps 3–6 as a second F1 commit.
 
 - [ ] **Delta check (SC6 condition, `design.md` § Validation Approach).** Dispatch a fresh non-author reviewer with a focused brief: six tool calls, 300 words.
