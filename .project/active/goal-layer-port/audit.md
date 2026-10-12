@@ -142,3 +142,40 @@ Checked and marked:
 - Codex runtime behavior beyond installation.
 - `main`'s ruff and mypy counts. I took 118 and 88 from the plan; I confirmed only that touched files add none.
 - The contents of `.codex/agents/*.toml`.
+
+---
+
+## Round 2 — 2026-10-12
+
+**Final verdict: Certify.** Six of the seven advisories are closed. Advisory 4 is deferred to Item 3 or Item 4, as recorded. No change introduces a new issue.
+
+**Scope:** commits `35e9623`, `9d94efa` and `3f3df71` (`HEAD`), plus fusion-tea `715a11e6e` as seen in the captured evidence. I did not re-audit anything else.
+
+**Tests:** `uv run pytest tests/` gives 2217 passed, 1 skipped, 1 xfailed; the two new tests account for the change from Round 1. The two changed test files pass `ruff check` and `ruff format --check`.
+
+**Do the tests bite?** Yes. I fed each test a broken version of its file in memory, editing nothing on disk:
+
+| Change fed to the test | Result |
+|---|---|
+| "Process Selection" design-choice row's response weakened to "Main agent edits and verifies" | `test_process_selection_routes_design_choice_changes` fails |
+| The runbook row's response weakened to a coordinator check | `test_goal_runbook_trigger_table_mirrors_the_design_choice_row` fails |
+| The runbook condition loses "or a design choice leaves the public interface" | `test_goal_runbook_trigger_condition_is_the_process_selection_condition` fails |
+| The "Process Selection" condition widened alone | the same test fails |
+| The "Process Selection" design-choice row deleted | the routing test fails |
+| The `spec-model` pointer reworded | `test_spec_model_points_at_the_design_choice_pattern` fails |
+| A runbook line citing "fusion-tea@2b1e9f9d5" as authority | `test_goal_text_points_at_nothing_in_fusion_tea` fails at the runbook |
+| A provenance line added to the decision record | the same test passes, as it should |
+
+**Advisory by advisory:**
+
+1. **Closed.** The runbook's trigger condition (`project_templates/GOAL_RUNBOOK.md.template:74`) now equals the "Process Selection" condition word for word. `tests/test_modeling_command_contracts.py:169` keeps the two equal, so the hand-kept copy is now test-enforced.
+2. **Closed.** Both routing tests now read the row's response cell and require "independent design review" (`:145`, `:165`). `design_choice_trigger` (`:124`) also fails if the row is missing or appears twice.
+3. **Closed.** `skills/spec-model/SKILL.md:30` now tells the spec author to name the design choices the consumer must keep wherever the point-of-use row applies. That row covers the wider scope, so the spec stage now meets the rule outside review scope. It is a stage duty plus a pointer, like the `review-model` and `model-validation` lines, and the stated-once test still passes. The reach trace's `spec-model` row is updated.
+4. **Deferred** to Item 3 or Item 4, as recorded.
+5. **Closed.** `tests/test_goal_layer.py:74` skips a provenance line only in `docs/goal-layer-decisions.md`. The plan's shell grep is narrowed the same way: it now matches `grep -n`'s `file:line:` prefix for the record only.
+6. **Closed.** `evidence/dry-run/install.md:18` and `checks.md` now say the agent ran the resolver itself (`read-files.txt:5`) before reading the pattern. The correction is marked as one.
+7. **Closed.** `docs/patterns/design-choices.md:51` no longer names a repo path. The new sentence, that both excerpts come from one model passing all six levels, is true: `tests/test_design_choices_example.py` validates the `right/` and `wrong/` trees over their shared library.
+
+**fusion-tea re-sync:** confirmed. In the updated `evidence/fusion-tea/branch-diff.txt`, the branch's file hashes for the runbook (`de28cfa7d`), `MODELING_PROCESS.md` (`ed798740f`), `goal.md` (`20b2eddc0`) and `trail.md` (`ec9a53088`) equal this branch's committed templates. `branch-log.txt` lists `715a11e6e`. The F2 runbook names all three branch commits. Its delete-then-`init` step also writes any later template bytes.
+
+**One observation, not a finding.** The SC8 rehearsal ran before the runbook row changed, so its manifest hash for `GOAL_RUNBOOK.md` (`rehearsal/manifest.txt`) is now stale. The change is one table cell and touches no heading, path or check SC8 relies on. F2 step 5 re-verifies the manifest at the merged commit.
