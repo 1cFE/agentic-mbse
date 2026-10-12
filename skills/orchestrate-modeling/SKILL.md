@@ -54,7 +54,7 @@ For Trivial work, use `/quick-model` and verify its targeted evidence. A new unc
 - **Reserved gate:** park dependent work until the owner decides; continue independent authorized work.
 - **Premise surprise:** surface conflicting evidence and its consequence before dependent conclusions proceed.
 
-Source conflicts, supported-scope changes, and intentional major baseline deviations require explicit treatment rather than routine approval. Preserve any interpretation checkpoints imposed by the target project's goal or study workflow.
+Source conflicts, supported-scope changes, and intentional major baseline deviations require explicit treatment rather than routine approval. Preserve any interpretation checkpoints imposed by the goal workflow (`/run-goal`) or the target project's study workflow.
 
 ## Bound Repair and Finish
 

@@ -1,6 +1,6 @@
 # Implementation Plan: goal-layer-port (`WRAP-SPLIT` Item 2)
 
-**Status:** Implementation in progress (P1–P3 done)
+**Status:** Implementation in progress (P1–P4 done)
 **Created:** 2026-10-11
 **Last Updated:** 2026-10-11
 
@@ -399,32 +399,45 @@ Under `--dev` the test file is a link into this repo. If its root resolved throu
 
 See `design.md` D9, D12, § Component Overview "agentic-mbse, goal layer", and § Implementation Notes on the narrative test.
 
-- [ ] Write the tests; see them fail.
-- [ ] `project_templates/test_narrative_links.py.template`. Start from fusion `tests/orchestration/test_goal_contract.py`:
+- [x] Write the tests; see them fail.
+- [x] `project_templates/test_narrative_links.py.template`. Start from fusion `tests/orchestration/test_goal_contract.py`:
   - keep `_local_link_targets` and `test_narrative_evidence_links_resolve`;
   - drop the ADR-register check and the `yaml` import;
   - replace the `repo_root` fixture with a module-level `REPO_ROOT = Path(__file__).absolute().parents[2]`, never `.resolve()`.
-- [ ] `src/agentic_mbse/cli/__init__.py`:
+- [x] `src/agentic_mbse/cli/__init__.py`:
   - five `TOOL_OWNED_TEMPLATES` entries (`:40-45`): `GOAL_RUNBOOK.md.template` → `work/orchestration/GOAL_RUNBOOK.md`; `goal.md.template`, `trail.md.template`, `learnings.md.template` → `work/orchestration/goal-templates/*.md`; `test_narrative_links.py.template` → `tests/orchestration/test_narrative_links.py`;
   - `work/orchestration/goals` and `work/narratives` in the `cmd_init` subdirectory list (`:486-503`);
   - the three `DEV_MODE_GITIGNORE_PATHS` lines (`:48-62`), as in the design.
-- [ ] `skills/orchestrate-modeling/SKILL.md:57` (D12; shed item 3): "…imposed by the goal workflow (`/run-goal`) or the target project's study workflow."
-- [ ] This repo's `CLAUDE.md`: add the five templates to the "Tool-owned" list, and the goal runbook and templates to the "Managed assets" examples in "Init File Ownership".
-- [ ] Capture SC1 into `evidence/sc1-install.txt`:
+- [x] `skills/orchestrate-modeling/SKILL.md:57` (D12; shed item 3): "…imposed by the goal workflow (`/run-goal`) or the target project's study workflow."
+- [x] This repo's `CLAUDE.md`: add the five templates to the "Tool-owned" list, and the goal runbook and templates to the "Managed assets" examples in "Init File Ownership".
+- [x] Capture SC1 into `evidence/sc1-install.txt`:
   - `uv run agentic-mbse install-commands --list`;
   - for each of `claude`, `codex` and `both`, `uv run agentic-mbse init <tmp> --assistant <a> < /dev/null`, then `ls` of the two bundles, five goal files and two directories;
   - the same for `init --dev`, with `ls -l` of the goal files and the three ignore lines.
 
 ### Checks
 
-- [ ] The new tests pass, including both `dev` cases of the narrative test.
-- [ ] The shared checks. `tests/test_shipped_text.py` now reads the five new destinations as runtime-neutral text.
+- [x] The new tests pass, including both `dev` cases of the narrative test.
+- [x] The shared checks. `tests/test_shipped_text.py` now reads the five new destinations as runtime-neutral text.
 
 **Commit:** `Install the goal layer: tool-owned templates, goal directories, dev ignore lines, narrative-link test`
 
 **What we know works:** SC1, and the contract test runs correctly from a copy and from a `--dev` link.
 
 **Progress notes:**
+
+- **Done 2026-10-11.** Added `project_templates/test_narrative_links.py.template` and `evidence/sc1-install.txt`. Edited `src/agentic_mbse/cli/__init__.py`, `skills/orchestrate-modeling/SKILL.md`, `CLAUDE.md` and `tests/test_goal_layer.py`.
+- **Installer.** Five `TOOL_OWNED_TEMPLATES` entries after `epic_template`, the three `DEV_MODE_GITIGNORE_PATHS` lines at the end of the list, and `work/orchestration/goals` and `work/narratives` after `work/learnings` in the `cmd_init` subdirectory list. No `Installer` change: the goal files go through the existing tool-owned loop, so `--dev` links them and a plain init copies them. I also brought the `cmd_init` docstring's "Creates" list up to date (goal runbook and templates under `work/`, the narrative-link test as tool-owned under `tests/`); the plan did not name this.
+- **Narrative-link template.** Four hunks against fusion `tests/orchestration/test_goal_contract.py`: the docstring's first line ("Records remain findable and presentation links resolve." → "Presentation links resolve.", because the register check is gone); the `yaml` import; the ADR-register block (`ADR_FILE`, `_frontmatter`, `test_register_is_coherent`) replaced by `REPO_ROOT = Path(__file__).absolute().parents[2]` with a one-line comment saying why not `resolve()`; and the test's `repo_root` fixture replaced by `REPO_ROOT`. That last hunk also drops one of fusion's three blank lines before the test, so the file has the usual two; it sits inside the fixture hunk and adds none. `_local_link_targets` is byte-identical. The template passes `ruff check`.
+- **Tests, beyond the stencil.** `run_narrative_test` returns the completed process, not only its exit code, so a failure prints pytest's output. The broken-link case also asserts that the output names `unresolved link ../orchestration/goals/g/e.md`, so exit code 1 cannot come from some other failing test. The fixed case uses `mkdir()` without `parents`, so it also needs `work/orchestration/goals/` from init. The install test asserts each file in its own loop so a failure names the missing path.
+- **D9 mutation check.** With the template's root switched to `.resolve()`, `test_narrative_link_test_fails_then_passes_in_the_target[True]` fails (`assert 0 == 1`: the linked test read the checkout's parent folder, found no narratives, and passed) and `[False]` still passes. Restored to `.absolute()`; both pass.
+- **`orchestrate-modeling:57`** now reads "…imposed by the goal workflow (`/run-goal`) or the target project's study workflow." `/run-goal` is an installed bundle, so `test_installed_references_name_installed_skills` accepts it.
+- **`CLAUDE.md`.** Three Tool-owned lines (the three goal templates on one line) and "the goal runbook and templates" in the Managed assets examples.
+- **SC1 evidence.** `install-commands --list` names `narrate-goal` and `run-goal` as workflows (27 skills). Each of `claude`, `codex`, `both` creates the two bundles, the five goal files and the two directories; `--dev` links the bundles and the five goal files into this checkout, and its `.gitignore` carries the three lines (`:70-72`). Each init's output is filtered to goal-layer lines; the header of the file says so.
+- **For P5.** `GOAL_FILES` is defined, and the test file has the `init` helper P5's stencil calls. The new template is not yet in `GOAL_SOURCES`; P5's stencil adds it with the record.
+- **For P7.** The narrative-test diff has the four hunks above. The ADR-register check's removal has no Appendix C row of its own: Appendix C's "Narrative check path" row and spec `:99` cover it (fusion's own test, with that check, stays). P7 should decide whether that row is enough or whether P8 adds one.
+- **Known gap, unchanged (design § Non-Goals).** A target already initialized with `--dev` keeps its old ignore section: `_update_gitignore_for_dev_mode` returns early when the marker line is present, so the three new lines are not appended on re-init. This is the dev-mode ignore-marker follow-up P8 lists.
+- **Shared checks.** `uv run pytest tests/`: 2203 passed, 1 skipped, 1 xfailed (P3: 2197; plus six new tests). The 6 warnings all come from `tests/test_extraction.py` (fork in a threaded process), not this phase. `ruff check src/ tests/`: 118, unchanged; the touched files pass `ruff check`, and `tests/test_goal_layer.py` passes `ruff format --check`. `mypy src/`: 88, unchanged, with none in `cli/__init__.py`. SC2 grep over the goal text including the new template: no output; `.project/` only at runbook `:13`, the two-PM "for example" wording.
 
 ---
 
@@ -798,4 +811,4 @@ See `design.md` § Potential Risks. By phase:
 
 ---
 
-**Status**: Implementation in progress (P1–P3 done)
+**Status**: Implementation in progress (P1–P4 done)

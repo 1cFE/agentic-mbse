@@ -157,6 +157,9 @@ Templates installed by `init` command to bootstrap new MBSE projects:
 - `MODELING_PROCESS.md.template` → `modeling_project/MODELING_PROCESS.md`
 - `EPIC_GUIDE.md.template` → `work/EPIC_GUIDE.md`
 - `epic_template.md.template` → `work/backlog/epic_template.md`
+- `GOAL_RUNBOOK.md.template` → `work/orchestration/GOAL_RUNBOOK.md`
+- `goal.md.template`, `trail.md.template`, `learnings.md.template` → `work/orchestration/goal-templates/*.md`
+- `test_narrative_links.py.template` → `tests/orchestration/test_narrative_links.py`
 
 **Data templates** (user-owned):
 - `data/traceability_matrix.csv` → `data/traceability_matrix.csv`
@@ -222,7 +225,7 @@ The source tree is the only inventory. Adding a skill means adding `skills/<name
 |----------|----------|----------|
 | **Project documents** | Create once and preserve on re-init; `--force` replaces them | `knowledge/SOURCE_INDEX.md`, `modeling_project/OVERVIEW.md`, `work/BACKLOG.md`, `README.md`, `.gitignore` |
 | **Native instructions and settings** | Preserve existing files and values even under `--force`; append missing Codex role registrations when the TOML layout permits | `CLAUDE.md`, `AGENTS.md`, `.claude/settings.json`, `.codex/config.toml` |
-| **Managed assets** | Update unmodified files; prompt interactively or preserve local edits noninteractively; `--force` replaces current managed files | Skills, native role files, adapters, hooks, modeling guides |
+| **Managed assets** | Update unmodified files; prompt interactively or preserve local edits noninteractively; `--force` replaces current managed files | Skills, native role files, adapters, hooks, modeling guides, the goal runbook and templates |
 
 The installer removes retired bundle resources only when their manifest baseline still matches. Locally modified retired resources and untracked owner additions remain, including under `--force`.
 
