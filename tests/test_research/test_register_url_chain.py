@@ -187,6 +187,39 @@ def test_without_the_web_extra_a_url_is_refused_before_capture(
     assert_nothing_written(knowledge_tree)
 
 
+@pytest.mark.parametrize("field", ["title", "use_for", "validation", "caveat"])
+def test_caller_prose_that_opens_a_comment_is_refused_before_capture(
+    field, local_site, knowledge_tree, run_dir, no_capture
+):
+    """Written into the index, `<!--` would hide every later block, and the anchor, from the parser."""
+    metadata = replace(METADATA, **{field: getattr(METADATA, field) + " <!-- stray marker"})
+
+    result = _register(local_site, knowledge_tree, metadata=metadata, run_dir=run_dir)
+
+    assert result.outcome == "precondition_failed"
+    assert result.reason == f"{field} must not open an HTML comment"
+    (receipt,) = read_receipts(run_dir)
+    assert receipt["reason"] == result.reason
+    assert receipt["captured"] is False
+    assert_nothing_written(knowledge_tree)
+
+
+def test_a_url_that_opens_a_comment_is_refused_before_capture(
+    local_site, knowledge_tree, run_dir, no_capture
+):
+    """The seam block writes the URL as given, so it is checked like the prose."""
+    url = local_site.url("utf8.html") + "?note=<!--"
+
+    result = register(UrlSource(url=url), METADATA, paths=knowledge_tree.paths, run_dir=run_dir)
+
+    assert result.outcome == "precondition_failed"
+    assert result.reason == "url must not open an HTML comment"
+    (receipt,) = read_receipts(run_dir)
+    assert receipt["candidate"] == url
+    assert receipt["captured"] is False
+    assert_nothing_written(knowledge_tree)
+
+
 def test_a_missing_source_index_is_refused_before_capture(local_site, knowledge_tree, run_dir):
     knowledge_tree.index.unlink()
 

@@ -147,7 +147,7 @@ It prints JSON, and exits 0 only for `registered`. Read the `outcome`:
 | `duplicate` | The source is already registered under `existing_slug`. Use it; do not try again. |
 | `holdout_hit` | Stop on that candidate. It is queued for the operator, rule id and all. |
 | `capture_failed` | Try once more if the reason looks transient. Otherwise it is already receipted and queued for the operator; move on. |
-| `precondition_failed` | You left out metadata, or named a file that is not there. Fix and retry. |
+| `precondition_failed` | You left out metadata, wrote `<!--` in a field, or named a file that is not there. Fix and retry. |
 | `precondition_failed`, reason starting `hold-out guard unavailable:`, `URL capture needs the web extra:` or `source index missing:` | The seam needs repair, not the source. Report the reason; do not retry, and do not hand the candidate on as a source to obtain. |
 | `limit_reached` | The run has spent its captures. Go to step 5. |
 
@@ -159,7 +159,7 @@ If `register` prints one `Error:` line instead of JSON, nothing was registered a
 uv run agentic-mbse research close <run-dir> --adequacy exhausted
 ```
 
-Use `--adequacy limit_reached` if you stopped because of a declared limit rather than because you ran out of places to look.
+Use `--adequacy limit_reached` if you stopped because of a declared limit rather than because you ran out of places to look. The flag matters only when the run comes back `BOUNDED_NEGATIVE`: it is recorded in the negative, and it changes neither the class nor `return.json`.
 
 `close` computes the class; you do not declare it. `registered` comes from the receipts alone, so if you believed the search found nothing but a source was registered, the return says `REGISTERED`. That is the mechanism working. `queued` comes from the receipts and from your `log --failure` entries, because a paywall is something only you saw.
 

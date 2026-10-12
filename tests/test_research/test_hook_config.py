@@ -166,7 +166,37 @@ FAULTS = [
         "[tool.agentic-mbse.research] is not a table",
         id="research is not a table",
     ),
+    pytest.param(
+        '[tool.agentic-mbse.reseach]\nholdout-guard = "guard.py"\n',
+        {"guard.py": GUARD_FILE_SOURCE},
+        "unknown key 'reseach' in [tool.agentic-mbse]; its only key is 'research'",
+        id="misspelled research table",
+    ),
+    pytest.param(
+        '[tool.agentic-mbse]\nstrict = true\n\n[tool.agentic-mbse.research]\nholdout-guard = "guard.py"\n',
+        {"guard.py": GUARD_FILE_SOURCE},
+        "unknown key 'strict' in [tool.agentic-mbse]",
+        id="unknown key beside the research table",
+    ),
+    pytest.param(
+        '[tool.agentic_mbse.research]\nholdout-guard = "guard.py"\n',
+        {"guard.py": GUARD_FILE_SOURCE},
+        "[tool.agentic_mbse] is not read; the toolkit's table is [tool.agentic-mbse]",
+        id="underscore toolkit table",
+    ),
+    pytest.param(
+        '[tool.agentic_mbse]\nstrict = true\n\n[tool.agentic-mbse.research]\nholdout-guard = "guard.py"\n',
+        {"guard.py": GUARD_FILE_SOURCE},
+        "[tool.agentic_mbse] is not read",
+        id="underscore table beside the right one",
+    ),
     pytest.param("tool = 3\n", {}, "[tool] is not a table", id="tool is not a table"),
+    pytest.param(
+        "[tool]\nagentic-mbse = 3\n",
+        {},
+        "[tool.agentic-mbse] is not a table",
+        id="toolkit table is not a table",
+    ),
     pytest.param(_research('holdout-guard = "missing.py"'), {}, "no file at", id="missing file"),
     pytest.param(
         _research('holdout-guard = "guards"'),

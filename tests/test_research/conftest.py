@@ -7,6 +7,7 @@ relative to the current directory, a session check fails the suite if anything
 lands in this repository's own `knowledge/` directory.
 """
 
+import importlib
 import json
 import re
 import shutil
@@ -162,6 +163,18 @@ def generated_pdf(tmp_path_factory) -> Path:
     document.save(path)
     document.close()
     return path
+
+
+@pytest.fixture
+def no_capture(monkeypatch):
+    """Fail the test if the attempt reaches capture."""
+    # The package attribute `register` is the function, so the module comes from importlib.
+    register_module = importlib.import_module("agentic_mbse.research.register")
+
+    def fetched(*args, **kwargs):
+        raise AssertionError("the attempt reached capture")
+
+    monkeypatch.setattr(register_module, "capture", fetched)
 
 
 # --- run directories -----------------------------------------------------------

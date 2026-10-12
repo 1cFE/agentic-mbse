@@ -297,6 +297,8 @@ What a round invokes, and what it gets back. The two `study.*` seams are the stu
 
   When `open` refuses there is no `return.json`. A malformed request is `BLOCKER`; a request a recorded negative already answers is `BOUNDED_NEGATIVE`, citing that negative.
 
+  An `OPERATOR_QUEUE` whose every queued candidate is a seam repair (the `research-acquire` report says which reasons are) gives the owner nothing to obtain. Record `PREREQUISITE` naming the seam, as the rule below says.
+
 - **`integrate`** is the integration procedure the target installs, where it has one.
 
 "May not silently absorb" means: if a task finds itself repairing a seam rather than invoking its documented procedure, that is a `PREREQUISITE` return naming the seam, not a quiet expansion of scope. A seam repair has its own owner and its own failure contract.

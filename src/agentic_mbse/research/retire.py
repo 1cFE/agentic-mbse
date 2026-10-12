@@ -346,7 +346,7 @@ def _append_retired_line(paths: RegistryPaths, line: RetiredLine) -> None:
 
 
 def _roll_back(before: _Before, parked: Sequence[tuple[Path, Path]], paths: RegistryPaths) -> None:
-    """Undo the rungs in reverse: the log, the index, the manifest, then each parked artifact."""
+    """Undo the rungs in reverse: the log, the index, the manifest, then each parked artifact still parked."""
     if before.retired_length is None:
         paths.retired.unlink(missing_ok=True)
     else:
@@ -355,4 +355,6 @@ def _roll_back(before: _Before, parked: Sequence[tuple[Path, Path]], paths: Regi
     paths.index.write_bytes(before.index)
     paths.manifest.write_bytes(before.manifest)
     for original, spot in reversed(parked):
-        spot.rename(original)
+        # Something outside may have removed a parked artifact; the rest still goes back.
+        if spot.exists():
+            spot.rename(original)

@@ -10,6 +10,7 @@ actually wrote.
 import hashlib
 import importlib
 import json
+import shutil
 from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
@@ -444,6 +445,32 @@ def test_failure_at_each_rung_leaves_everything(rung, knowledge_tree, two_source
     assert (gone.path / "output.md").is_file() and (kept.path / "output.md").is_file()
     assert not list(knowledge_tree.paths.staging.iterdir())
     assert verify(knowledge_tree.paths).findings == ()
+
+
+def test_a_parked_artifact_that_vanished_is_skipped_on_rollback(
+    knowledge_tree, two_sources, monkeypatch
+):
+    """Something outside removed the parked directory before a later rung failed.
+
+    The rollback still puts the files back, and the error names the rung, not the
+    missing directory.
+    """
+    _, gone, _ = two_sources
+    before = _state(knowledge_tree)
+
+    def vanish_then_fail(*args, **kwargs):
+        for parked in knowledge_tree.paths.staging.glob("*/sources/*"):
+            shutil.rmtree(parked)
+        raise OSError("injected failure after parking")
+
+    monkeypatch.setattr(retire_module, "write_manifest_without", vanish_then_fail)
+    with pytest.raises(RetirementError, match="after parking"):
+        retire(gone.slug, REASON, paths=knowledge_tree.paths)
+
+    index, manifest, _, raw, retired = _state(knowledge_tree)
+    assert (index, manifest, raw, retired) == (before[0], before[1], before[3], before[4])
+    assert not gone.path.exists()
+    assert not list(knowledge_tree.paths.staging.iterdir())
 
 
 @pytest.mark.parametrize("earlier_retirement", [False, True], ids=["no log yet", "log exists"])

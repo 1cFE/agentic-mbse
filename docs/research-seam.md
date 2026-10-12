@@ -36,6 +36,8 @@ The three prose flags are required and there is no default for them. An index en
 
 `--title` is required as well, and is not derived from anything. The slug and the index heading are built from it, and a filename-derived guess would put a wrong name on a permanent registry entry.
 
+No text written into the index block may contain `<!--`: the title, the three prose flags, the URL or the local path. In the index it would open an HTML comment that hides every later entry from the registry, so `register` refuses it as `precondition_failed` before any capture.
+
 It prints JSON. `outcome` is one of:
 
 | outcome | meaning |
@@ -44,7 +46,7 @@ It prints JSON. `outcome` is one of:
 | `duplicate` | Already in the registry. `existing_slug` and `existing_path` name it. |
 | `holdout_hit` | The project's hold-out hook matched. Nothing was written. `rule_id` names the rule. |
 | `capture_failed` | The extractor could not produce a usable extraction. |
-| `precondition_failed` | Required metadata missing, the input file is not there, or the seam itself needs repair (below). |
+| `precondition_failed` | Required metadata missing, a field holding `<!--`, the input file is not there, or the seam itself needs repair (below). |
 | `limit_reached` | Only with `--run`: this run has spent its capture budget. |
 
 Exit code is 0 only for `registered`.
@@ -148,6 +150,8 @@ uv run agentic-mbse research register --url https://example.org/a \
 uv run agentic-mbse research close "$RUN" --adequacy exhausted
 ```
 
+`--adequacy` says why the search was enough: `exhausted` (the default) or `limit_reached`. It matters only when the run comes back `BOUNDED_NEGATIVE`, where it is recorded in the negative. It changes neither the class nor `return.json`. When a declared limit did stop the search, `close` records `limit_reached` in the negative whatever the flag says.
+
 `close` writes `return.json` in the run directory and prints it. The run directory also holds `run.json` (the request's identity and limits), `run.jsonl` and `process_log.md` (the log, for code and for people), and `receipts/` (one per `register --run` attempt).
 
 `open` exits 2 on a request it cannot use, and 3 on one a recorded negative already answers.
@@ -187,7 +191,7 @@ One case reads as a queue but is about the seam. A seam-repair refusal (see Regi
 
 An entry in `registered[]` carries `pre_existing: true` when the source was already in the registry and this run found it again. The request is still answered; the flag records that this run did not write it.
 
-`limit_reached` names which declared limit stopped the search, `max_captures` or `max_searches`, or is null.
+`limit_reached` names which declared limit stopped the search, or is null. `close` computes it from the record, not from `--adequacy`. It is `max_captures` only when a `register --run` was refused `limit_reached`, so a run that spent its last capture on a registration and tried no more reads null. It is `max_searches` when the logged searches reached that limit.
 
 A goal round maps each class to a task outcome. The table is in the goal runbook, `GOAL_RUNBOOK.md` § The native seams.
 
@@ -343,7 +347,7 @@ Some projects hold material out of the repository: a sealed paper, a validation 
 holdout-guard = "scripts/holdout_guard.py"
 ```
 
-The table's only key is `holdout-guard`. Any other key is a fault, because a misspelled key would otherwise switch the guard off without a word.
+The table's only key is `holdout-guard`. Any other key is a fault, because a misspelled key would otherwise switch the guard off without a word. The table's name is checked the same way: `[tool.agentic-mbse]` holds only `research`, so any other key there (a misspelled `[tool.agentic-mbse.reseach]`, say) is a fault, and so is a `[tool.agentic_mbse]` table.
 
 **Write the guard** as a Python file with three functions:
 
@@ -407,8 +411,9 @@ A match refuses as `holdout_hit` with the rule id, and nothing in the seam can w
 
 **It fails closed.** If the guard cannot answer, nothing it would check gets through. Each of these faults refuses every `register`, `retire` and `add-entry` as `precondition_failed`, with a reason that starts `hold-out guard unavailable:` and names the fault:
 
-- `pyproject.toml` cannot be read, or `[tool.agentic-mbse.research]` is not a table
-- a key other than `holdout-guard`, or a value that is not a non-empty path
+- `pyproject.toml` cannot be read, or `[tool]`, `[tool.agentic-mbse]` or `[tool.agentic-mbse.research]` is not a table
+- a key other than `research` in `[tool.agentic-mbse]`, or a `[tool.agentic_mbse]` table
+- a key other than `holdout-guard` in the research table, or a value that is not a non-empty path
 - no file at the path, or a file that is not a Python module
 - the file raises while loading, or lacks one of the three functions
 - a check raises, or answers in the wrong shape: a scan that is not a list, or a match without a `rule_id`, an integer `count` or integer `offsets`
@@ -448,7 +453,7 @@ result = register(source, SourceMetadata(title="Widget Handbook, 3rd edition"))
 
 ## Known capture gaps
 
-`register` captures with `agentic-mbse extract --save-source`, at budget 0. It never passes `--index` or `--summarize`, which start a model session, because the seam is run by an agent. The extractor does not yet hand back provenance in the shape the registry needs, so the capture step works around four gaps:
+`register` captures with `agentic-mbse extract --save-source`, at budget 0 by default. `register --budget <usd>` passes another value to `extract`; above 0, the PDF pipeline may call Claude to improve tables and pages, spending up to that amount. The `research-acquire` skill never passes it. `register` never passes `--index` or `--summarize`, which start a model session, because the seam is run by an agent. The extractor does not yet hand back provenance in the shape the registry needs, so the capture step works around four gaps:
 
 - The PDF pipeline writes nested output, which the registry flattens into `knowledge/sources/<slug>/`.
 - `--save-source` writes no `raw.pdf` for a local PDF, so the registry keeps a copy of the input in `knowledge/raw/` itself.

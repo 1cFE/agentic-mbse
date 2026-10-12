@@ -40,6 +40,7 @@ from agentic_mbse.research.holdout import (
 from agentic_mbse.research.index import (
     SOURCES_PREFIX,
     insert_block,
+    opens_a_comment,
     render_batch_block,
     render_seam_block,
 )
@@ -126,9 +127,10 @@ def register(
 ) -> RegistrationResult:
     """Capture, hold-out check and register one source.
 
-    Returns a result for every refusal: blank metadata, a missing input file or
-    index, a hold-out hit, a guard that cannot answer, a duplicate, a spent
-    capture limit, a missing web extra, a failed capture. Raises
+    Returns a result for every refusal: blank metadata, block text that would
+    open an HTML comment in the index, a missing input file or index, a hold-out
+    hit, a guard that cannot answer, a duplicate, a spent capture limit, a
+    missing web extra, a failed capture. Raises
     `RegistrationError` when a commit rung failed, with the registry left as it
     was, and `subprocess.TimeoutExpired` when capture overran.
 
@@ -235,6 +237,13 @@ def _pre_capture_refusal(
     blank = _blank_required_fields(source, metadata)
     if blank:
         return _precondition_failed(f"caller must supply non-empty {', '.join(blank)}")
+    opening = [
+        name
+        for name, text in _caller_text_in_block(source, metadata).items()
+        if opens_a_comment(text)
+    ]
+    if opening:
+        return _precondition_failed(f"{', '.join(opening)} must not open an HTML comment")
     staged = source.staged_input
     if staged is not None and not staged.is_file():
         return _precondition_failed(f"input file not found: {staged}")
@@ -274,6 +283,23 @@ def _blank_required_fields(source: Source, metadata: SourceMetadata) -> list[str
             "caveat": metadata.caveat,
         }
     return [name for name, value in fields.items() if not value.strip()]
+
+
+def _caller_text_in_block(source: Source, metadata: SourceMetadata) -> dict[str, str]:
+    """The caller's text that the source's index block writes as given, by field name, in block order."""
+    if isinstance(source, KeyedFileSource):
+        return {
+            "title": metadata.title,
+            "key_label": source.key_label,
+            "key_display": source.key_display,
+        }
+    return {
+        "title": metadata.title,
+        "use_for": metadata.use_for,
+        "validation": metadata.validation,
+        "caveat": metadata.caveat,
+        **({"url": source.url} if isinstance(source, UrlSource) else {"path": str(source.path)}),
+    }
 
 
 def _input_identity_holdout_hit(

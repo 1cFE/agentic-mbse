@@ -7,11 +7,13 @@ on every run.
 import hashlib
 import json
 import re
+import shutil
 from pathlib import Path
 
 import pytest
 
 from agentic_mbse.research import LocalPdfSource, SourceMetadata, load_manifest_rows, register
+from agentic_mbse.research.runs import read_receipts
 from tests.test_research.conftest import assert_nothing_written
 
 FRONTMATTER_HASH = re.compile(r'^content_hash_sha256: "([0-9a-f]{64})"', re.MULTILINE)
@@ -99,6 +101,25 @@ def test_missing_local_pdf_is_a_precondition_failure(knowledge_tree, tmp_path):
     result = register(LocalPdfSource(path=absent), METADATA, paths=knowledge_tree.paths)
     assert result.outcome == "precondition_failed"
     assert result.reason == f"input file not found: {absent}"
+    assert_nothing_written(knowledge_tree)
+
+
+def test_an_input_path_that_opens_a_comment_is_refused_before_capture(
+    knowledge_tree, generated_pdf, run_dir, no_capture, tmp_path
+):
+    """The seam block writes the input path as its Origin Path, so it is checked like the prose."""
+    odd = tmp_path / "scans <!-- 2026" / generated_pdf.name
+    odd.parent.mkdir()
+    shutil.copy(generated_pdf, odd)
+
+    result = register(
+        LocalPdfSource(path=odd), METADATA, paths=knowledge_tree.paths, run_dir=run_dir
+    )
+
+    assert result.outcome == "precondition_failed"
+    assert result.reason == "path must not open an HTML comment"
+    (receipt,) = read_receipts(run_dir)
+    assert receipt["captured"] is False
     assert_nothing_written(knowledge_tree)
 
 

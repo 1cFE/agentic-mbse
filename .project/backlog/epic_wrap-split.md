@@ -308,7 +308,7 @@ Audit note (2026-10-12, `completed/20261012_goal-layer-port/audit.md`): the unch
 - [x] Using only the shipped `manage-sources`, a user adds a capturable document (registered), adds a non-capturable source, removes a registered source (retired), and lists both kinds.
 - [x] fusion-tea's research and Zotero suites pass against the installed package with its two scripts deleted; ledger rows exist for every removed line.
 
-Certified by `/_my_audit` 2026-10-12 (`.project/active/research-seam-port/audit.md`), with follow-ups F1–F3. The grep above is checked in the spec's word-bounded form (`\baries\b`, design review A16); unbounded, `aries` matches "boundaries" in `research/index.py`. The fusion-tea criterion holds on fusion-tea branch `research-seam-port` (`940500788`) and reaches fusion-tea `main` at O3.
+Certified by `/_my_audit` 2026-10-12 (`.project/active/research-seam-port/audit.md`), with follow-ups F1–F3, which plan Phase 7 fixed the same day. The grep above is checked in the spec's word-bounded form (`\baries\b`, design review A16); unbounded, `aries` matches "boundaries" in `research/index.py`. The fusion-tea criterion holds on fusion-tea branch `research-seam-port` (`940500788`) and reaches fusion-tea `main` at O3.
 
 **Required Reading**: research § 1c; the mental-model page above; fusion-tea `.claude/commands/research-acquire.md`, `scripts/{research_seam,source_registry,holdout_guard}.py`, `docs/research_seam_operator_guide.md`, `.project/adr/0008-source-identity-raw-bytes-sha256.md`.
 

@@ -44,13 +44,15 @@ SOURCES_PREFIX = "knowledge/sources/"
 #: The types a hand-curated entry may have. Registered types are the registry's to write.
 HAND_CURATED_TYPES = ("codebase", "documentation", "database", "reference")
 
+COMMENT_OPENER = "<!--"
+
 EntryLabel = Literal["registered", "hand-curated", "unregistered"]
 EntryOutcome = Literal["added", "replaced", "removed", "holdout_hit", "precondition_failed"]
 
 _HEADING_RE = re.compile(r"^(?:### |## |# )", re.MULTILINE)
 _BLOCK_HEADING_RE = re.compile(r"^### (?P<title>.*)$", re.MULTILINE)
 _ANCHOR_RE = re.compile("^(?:" + "|".join(map(re.escape, ANCHOR_HEADINGS)) + ")", re.MULTILINE)
-_COMMENT_RE = re.compile(r"<!--.*?(?:-->|\Z)", re.DOTALL)
+_COMMENT_RE = re.compile(re.escape(COMMENT_OPENER) + r".*?(?:-->|\Z)", re.DOTALL)
 _FIELD_RE = re.compile(r"^- \*\*(?P<name>[^*]+)\*\*:(?P<value>.*)$", re.MULTILINE)
 _SLUG_RE = re.compile(re.escape(SOURCES_PREFIX) + r"(?P<slug>[^/\s]+)")
 
@@ -146,6 +148,15 @@ def parse_index(index_text: str, *, project_root: Path) -> list[IndexBlock]:
             )
         )
     return blocks
+
+
+def opens_a_comment(text: str) -> bool:
+    """True when `text` holds `<!--`.
+
+    Written into the index, it would open a comment that hides everything after
+    it from the parser, up to the next `-->` or the end of the file.
+    """
+    return COMMENT_OPENER in text
 
 
 def normalize_location(location: str, project_root: Path) -> str:
@@ -470,7 +481,7 @@ def _entry_refusal(
 
 
 def _breaks_a_block(value: str) -> bool:
-    return "\n" in value or "\r" in value or "<!--" in value
+    return "\n" in value or "\r" in value or opens_a_comment(value)
 
 
 def _entry_holdout_hit(entry: HandCuratedEntry, guard: HoldoutGuard) -> HoldoutHit | None:

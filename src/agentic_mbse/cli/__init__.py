@@ -685,7 +685,8 @@ Add sources with `/manage-sources`, which writes this file through `agentic-mbse
         print("Next steps:")
         print("  1. Run /onboard in Claude or $onboard in Codex to configure your project")
         print(
-            "  2. Or manually edit knowledge/SOURCE_INDEX.md and start with the design-model skill"
+            "  2. Or add sources with /manage-sources in Claude or $manage-sources in Codex,"
+            " and start with the design-model skill"
         )
 
     return EXIT_SUCCESS

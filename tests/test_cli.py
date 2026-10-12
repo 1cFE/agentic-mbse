@@ -96,6 +96,16 @@ class TestCmdInit:
         content = source_index.read_text()
         assert "Source Index" in content
 
+    def test_next_steps_add_sources_through_manage_sources(self, tmp_path, capsys):
+        """A hand-edited index skips the registry's lock and hold-out guard, so init never suggests one."""
+        assert cmd_init(MockArgs(path=str(tmp_path), force=False)) == EXIT_SUCCESS
+        out = capsys.readouterr().out
+        closing = out[out.index("Next steps:") :]
+
+        assert "/manage-sources in Claude or $manage-sources in Codex" in closing
+        assert "SOURCE_INDEX.md" not in closing
+        assert "edit" not in closing
+
     def test_creates_claude_directory(self, tmp_path):
         """Creates .claude/commands/ directory."""
         args = MockArgs(path=str(tmp_path), force=False)

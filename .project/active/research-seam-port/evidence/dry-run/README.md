@@ -32,6 +32,7 @@ The method follows `.project/completed/20261012_goal-layer-port/evidence/dry-run
 
 ## O2a, criterion 2: one request end to end — PASS
 
+- **Why copper.** The orchestrator chose a copper thermal-conductivity question instead of the design's aluminium 6061 density request (Appendix D), because the shipped `research-acquire` skill uses the aluminium request as its own example, and a dry run that repeats the example tests less.
 - **Pre-check.** `agentic-mbse extract https://en.wikipedia.org/wiki/Copper --save-source --output <scratch>/precheck --budget 0` returned rc 0 (`ok … 191,029 chars, backend: trafilatura`). The output has `| Thermal conductivity | 401 W/(m⋅K) |`. No swap was needed.
 - **Request.** `knowledge/research/requests/REQ-001-01.json` holds the specified fields (`o2a-request.json`). They match the installed skill's request section (`.claude/skills/research-acquire/SKILL.md:44-66`) and the code's `REQUIRED_REQUEST_FIELDS` (`agentic_mbse/research/seam.py:37-44`). No mismatch.
 - **Prompt.** `Follow the research-acquire skill on knowledge/research/requests/REQ-001-01.json.`

@@ -8,7 +8,6 @@ register, so a test here fails if a broken guard is bypassed.
 """
 
 import hashlib
-import importlib
 import inspect
 import shutil
 from dataclasses import replace
@@ -29,9 +28,6 @@ from tests.test_research.conftest import (
     write_research_config,
 )
 
-# The package attribute `register` is the function, so the module comes from importlib.
-register_module = importlib.import_module("agentic_mbse.research.register")
-
 METADATA = SourceMetadata(
     title="Widget Coil Note",
     use_for="Synthetic winding-pack geometry; exercises the hold-out checks.",
@@ -42,16 +38,6 @@ METADATA = SourceMetadata(
 SEALED_GUARD = FakeGuard(terms=(SEALED_TOKEN,), path_globs=("*/sealed/*",))
 
 FAULT_PREFIX = "hold-out guard unavailable: "
-
-
-@pytest.fixture
-def no_capture(monkeypatch):
-    """Fail the test if the attempt reaches capture."""
-
-    def fetched(*args, **kwargs):
-        raise AssertionError("the attempt reached capture")
-
-    monkeypatch.setattr(register_module, "capture", fetched)
 
 
 @pytest.fixture
@@ -241,6 +227,45 @@ def test_a_broken_configured_guard_refuses_with_a_receipt(
     assert fragment in result.reason
     (receipt,) = read_receipts(run_dir)
     assert receipt["outcome"] == "precondition_failed"
+    assert receipt["reason"] == result.reason
+    assert receipt["captured"] is False
+    assert_nothing_written(knowledge_tree)
+
+
+@pytest.mark.parametrize(
+    ("table", "fragment"),
+    [
+        pytest.param(
+            "[tool.agentic-mbse.reseach]",
+            "unknown key 'reseach' in [tool.agentic-mbse]",
+            id="research misspelled",
+        ),
+        pytest.param(
+            "[tool.agentic_mbse.research]",
+            "[tool.agentic_mbse] is not read",
+            id="underscore toolkit table",
+        ),
+    ],
+)
+def test_a_misspelled_table_name_refuses_with_a_receipt(
+    table, fragment, local_site, knowledge_tree, run_dir
+):
+    """The guard named under the misspelled table would load and answer; ignored, `utf8.html` registers."""
+    root = knowledge_tree.paths.project_root
+    (root / "pyproject.toml").write_text(f'{table}\nholdout-guard = "guard.py"\n')
+    (root / "guard.py").write_text(GUARD_FILE_SOURCE)
+
+    result = register(
+        UrlSource(url=local_site.url("utf8.html")),
+        METADATA,
+        paths=knowledge_tree.paths,
+        run_dir=run_dir,
+    )
+
+    assert result.outcome == "precondition_failed"
+    assert result.reason.startswith(FAULT_PREFIX)
+    assert fragment in result.reason
+    (receipt,) = read_receipts(run_dir)
     assert receipt["reason"] == result.reason
     assert receipt["captured"] is False
     assert_nothing_written(knowledge_tree)

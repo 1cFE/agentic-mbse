@@ -28,7 +28,12 @@ from typing import Any, Protocol
 import tomllib
 
 GUARD_KEY = "holdout-guard"
-_TABLE_PATH = ("tool", "agentic-mbse", "research")
+_TOOL_TABLE = ("tool",)
+_TOOLKIT_TABLE = ("tool", "agentic-mbse")
+_RESEARCH_TABLE = ("tool", "agentic-mbse", "research")
+# The toolkit's table name with an underscore. The toolkit never reads it, so a
+# table there is a misspelling.
+_UNDERSCORE_SPELLING = "agentic_mbse"
 _CHECKS = ("check_input_path", "scan_terms", "scan_file")
 
 # A loaded guard is registered under a private name derived from its file, so two
@@ -197,10 +202,12 @@ def load_holdout_guard(project_root: Path) -> HoldoutGuard:
 
     No `[tool.agentic-mbse.research]` table, or an empty one, gives a guard that
     holds nothing out. Any fault gives a guard whose every check raises
-    `HoldoutGuardError` naming it: unreadable TOML, a key other than
-    `holdout-guard`, a value that is not a non-empty string, a file that is
-    missing or will not load, or a missing function. Loading itself never
-    raises, so the fault surfaces at the first check, where the caller refuses.
+    `HoldoutGuardError` naming it: unreadable TOML, a key other than `research`
+    in `[tool.agentic-mbse]` or other than `holdout-guard` in its research
+    table, a `[tool.agentic_mbse]` table, a value that is not a non-empty
+    string, a file that is missing or will not load, or a missing function.
+    Loading itself never raises, so the fault surfaces at the first check,
+    where the caller refuses.
     """
     try:
         guard_file = _configured_guard_file(project_root)
@@ -222,13 +229,7 @@ def _configured_guard_file(project_root: Path) -> Path | None:
     table = _research_table(config, pyproject)
     if table is None:
         return None
-    unknown = sorted(set(table) - {GUARD_KEY})
-    if unknown:
-        # A misspelled key would otherwise switch the guard off without a word.
-        raise HoldoutGuardError(
-            f"{pyproject}: unknown key {', '.join(map(repr, unknown))} in "
-            f"[tool.agentic-mbse.research]; its only key is {GUARD_KEY!r}"
-        )
+    _refuse_unknown_keys(table, _RESEARCH_TABLE, GUARD_KEY, pyproject)
     if GUARD_KEY not in table:
         return None
     value = table[GUARD_KEY]
@@ -238,18 +239,53 @@ def _configured_guard_file(project_root: Path) -> Path | None:
 
 
 def _research_table(config: dict[str, Any], pyproject: Path) -> dict[str, Any] | None:
-    """`[tool.agentic-mbse.research]`, or None when absent. Anything but a table on the way is a fault."""
-    table = config
-    for depth, key in enumerate(_TABLE_PATH, start=1):
-        if key not in table:
-            return None
-        section = table[key]
-        if not isinstance(section, dict):
-            raise HoldoutGuardError(
-                f"{pyproject}: [{'.'.join(_TABLE_PATH[:depth])}] is not a table"
-            )
-        table = section
+    """`[tool.agentic-mbse.research]`, or None when absent.
+
+    The toolkit owns `[tool.agentic-mbse]` and reads only `research` there, so
+    any other key in it is a fault, and so is a `[tool.agentic_mbse]` table.
+    Anything but a table on the way is a fault too.
+    """
+    tool = _subtable(config, _TOOL_TABLE, pyproject)
+    if tool is None:
+        return None
+    if _UNDERSCORE_SPELLING in tool:
+        raise HoldoutGuardError(
+            f"{pyproject}: [tool.{_UNDERSCORE_SPELLING}] is not read; "
+            f"the toolkit's table is {_dotted(_TOOLKIT_TABLE)}"
+        )
+    toolkit = _subtable(tool, _TOOLKIT_TABLE, pyproject)
+    if toolkit is None:
+        return None
+    _refuse_unknown_keys(toolkit, _TOOLKIT_TABLE, _RESEARCH_TABLE[-1], pyproject)
+    return _subtable(toolkit, _RESEARCH_TABLE, pyproject)
+
+
+def _subtable(
+    parent: dict[str, Any], table_path: tuple[str, ...], pyproject: Path
+) -> dict[str, Any] | None:
+    """The table at the end of `table_path`, read from its parent, or None when absent."""
+    if table_path[-1] not in parent:
+        return None
+    table = parent[table_path[-1]]
+    if not isinstance(table, dict):
+        raise HoldoutGuardError(f"{pyproject}: {_dotted(table_path)} is not a table")
     return table
+
+
+def _refuse_unknown_keys(
+    table: dict[str, Any], table_path: tuple[str, ...], only_key: str, pyproject: Path
+) -> None:
+    """Raise when the table holds any key but `only_key`, since a misspelling would switch the guard off."""
+    unknown = sorted(set(table) - {only_key})
+    if unknown:
+        raise HoldoutGuardError(
+            f"{pyproject}: unknown key {', '.join(map(repr, unknown))} in "
+            f"{_dotted(table_path)}; its only key is {only_key!r}"
+        )
+
+
+def _dotted(table_path: tuple[str, ...]) -> str:
+    return f"[{'.'.join(table_path)}]"
 
 
 def _load_guard_file(guard_file: Path) -> HoldoutGuard:

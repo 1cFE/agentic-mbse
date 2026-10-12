@@ -1,6 +1,6 @@
 # Implementation Plan: Port the research acquisition seam, and bring `/manage-sources` under its rules
 
-**Status:** Implementation complete (P1–P6); orchestrator steps O1 (rest) and O2 remain
+**Status:** Implementation complete (P1–P6, then P7 for the audit follow-ups); O1 and O2 passed; certified with follow-ups by `/_my_audit`, all fixed in P7. O3 waits for the owner's merge
 **Created:** 2026-10-12
 **Last Updated:** 2026-10-12
 **Work item:** `WRAP-SPLIT` Item 5, branch `research-seam-port`, worktree `/home/reid/1cfe/agentic-mbse-research-seam`
@@ -521,7 +521,7 @@ The CLI lands in P5, so this run calls `verify.py` through Python. It runs now s
   uv run --no-sync python -c "import sys; from agentic_mbse.research import default_paths; from agentic_mbse.research.verify import verify, format_finding; r = verify(default_paths()); print('\n'.join(format_finding(f) for f in r.findings)); sys.exit(1 if r.has_faults else 0)" > new.txt; echo $?
   ```
 
-- [x] Pass (Appendix D O1 step 3): every finding line of `old.txt` is in `new.txt`; the only extra lines are two `legacy block_without_row` lines, for `knowledge/sources/iter_cryoplant_iter_org` and `knowledge/sources/eu_demo_rw_tf_coil_conductor_dematte_bruzzone`; both commands exit 0. Record both outputs and exit codes in `evidence/o1-parity.md`. Recorded in `evidence/o1-parity-early.md` (audit A2: the file name differs).
+- [x] Pass (Appendix D O1 step 3): every finding line of `old.txt` is in `new.txt`; the only extra lines are two `legacy block_without_row` lines, for `knowledge/sources/iter_cryoplant_iter_org` and `knowledge/sources/eu_demo_rw_tf_coil_conductor_dematte_bruzzone`; both commands exit 0. Both outputs and exit codes are recorded in `evidence/o1-parity-early.md`.
 - [x] On a mismatch, B1 is false. Stop before P5 and take the differing lines to the owner; the design names the remedy as a migration or a compatibility rule. Do not adjust the pass rule to fit. Not triggered: no mismatch.
 
 ---
@@ -765,19 +765,91 @@ def test_the_runbook_maps_every_seam_class():
 
 - [x] Step 3 again, in the CLI form Appendix D writes (`uv run --no-sync agentic-mbse research verify > new.txt; echo $?`). Its finding lines must equal the early run's. Recorded in `evidence/o1-parity-early.md` § After P5.
 - [x] Step 4: the duplicates and the guard, each refusing before any fetch; `git status` shows only the `pyproject.toml` change. Duplicates in `evidence/o1-parity-early.md` (Python API, the function the CLI calls); the guard in `evidence/o1-fusion-tea-branch.md`.
-- [x] Step 5: the rest of Appendix A, with its re-greps, import checks, research and Zotero suites, and the Appendix C homes. Evidence in `evidence/o1-parity.md` (criteria 4 and 6). Recorded in `evidence/o1-fusion-tea-branch.md` (fusion-tea `940500788`).
+- [x] Step 5: the rest of Appendix A, with its re-greps, import checks, research and Zotero suites, and the Appendix C homes (criteria 4 and 6). Evidence in `evidence/o1-fusion-tea-branch.md` (fusion-tea `940500788`).
 
 ### O2, dry runs from a built wheel (Appendix D O2)
 
 - [x] Build the wheel from this branch (`uv build`) and set up the scratch target as Appendix D says, with the GitLab extra index so `syside==0.8.4` resolves (A17).
-- [x] O2a, criterion 2: request `REQ-001-01`, with the URL pre-check and its named fallback. Evidence in `evidence/o2a-dry-run.md`. Recorded in `evidence/dry-run/README.md`; the request asked about copper, not the design's aluminium 6061 (audit A4).
-- [x] O2b, criterion 7: the five `/manage-sources` calls and their CLI checks. Evidence in `evidence/o2b-dry-run.md`. Recorded in `evidence/dry-run/README.md`.
+- [x] O2a, criterion 2: request `REQ-001-01`, with the URL pre-check and its named fallback. Evidence in `evidence/dry-run/README.md` § O2a and its `o2a-*` streams. The request asked about copper, not the design's aluminium 6061; the README says why.
+- [x] O2b, criterion 7: the five `/manage-sources` calls and their CLI checks. Evidence in `evidence/dry-run/README.md` § O2b and its `o2b-*` streams.
 
 Then `/_my_audit`, which Align kept because the port runs against live registry data. The run stops before `close` and `pre_pr` (Align).
 
 ### O3, post-merge (listed, not scheduled)
 
 Owner-paced, after the owner merges this branch: move fusion-tea's pin and re-init, per Appendix D O3. Not part of this plan's execution.
+
+---
+
+## Phase 7: audit follow-ups
+
+### Goal
+
+Fix the audit's three follow-ups (F1–F3) and its unrecorded change U4 before merge, and apply advisories A2–A6 (`audit.md`; brief `briefs/implement-audit-fixes.md`). A1 stays as the scripts had it.
+
+### Changes
+
+**Tests first.** Each new test failed before its fix (17 of them; the shipped-text test landed with its text).
+
+- [x] F1: `register` refuses `<!--` in any text its index block writes as given, as `precondition_failed` before capture, with a receipt under `--run`. One test per field kind: the four seam fields, the URL, the local path, and a keyed source's title, key label and key display.
+- [x] F2: `init`'s closing step 2 points at `/manage-sources`. No test pinned the old wording; a new one pins the new.
+- [x] F3: a key under `[tool.agentic-mbse]` other than `research`, or a `[tool.agentic_mbse]` table, is a guard fault. Loader tests for both spellings, and a `register` test for each that would register with the fault ignored. D4 and the hook guide updated.
+- [x] U4: `retire`'s rollback skips a parked artifact that no longer exists, as the snapshot did. One test.
+- [x] A2: evidence names in the ledger preamble and this plan point at files that exist.
+- [x] A4: `evidence/dry-run/README.md` says why O2a asked about copper.
+- [x] A3, A5, A6: the runbook's seam-repair clause, `--adequacy` in the skill and guide, `--budget` in the guide.
+
+### Validation
+
+- [x] Exit check.
+
+### Implementation Notes
+
+#### Phase 7 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,767 passed, 1 skipped, 1 xfailed, 14 deselected, 0 failed (P6 2,748 passed; 19 new). Deselected unchanged: no new `slow` test.
+- `uv run pytest tests/test_research -m ""`: 549 passed (P6 531; 18 new, the nineteenth is in `tests/test_cli.py`).
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this phase edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a file this phase edits.
+- `uv run pytest tests/test_goal_layer.py`: 11 passed; the runbook's new paragraph clears its SC2 pattern.
+- Criterion 5's grep over `skills/research-acquire`, `docs/research-seam.md` and `src/agentic_mbse/research` prints nothing. `git status` shows no change under the worktree's `knowledge/`.
+
+**What changed.**
+
+- F1, code:
+  - `research/index.py`: `COMMENT_OPENER` and `opens_a_comment(text)`. The comment regex and `add-entry`'s field check both use them, so the parser and both writers agree on what opens a comment.
+  - `research/register.py`: `_caller_text_in_block(source, metadata)` returns the caller's text the block writes as given, by field name, in block order. A seam block writes `title`, `use_for`, `validation`, `caveat` and `url` or `path`; a batch block writes `title`, `key_label` and `key_display`. `_pre_capture_refusal` refuses right after the blank-field check with `<fields> must not open an HTML comment`, the style of `add-entry`'s `… must be one line and must not open an HTML comment`. The refusal is a returned `precondition_failed`, so `--run` receipts it with `captured: false`.
+- F1, tests: `test_register_url_chain.py` (the four prose fields, the URL), `test_register_pdf_chain.py` (a local path), `test_zotero_path_contract.py` (a keyed source's title, key label and display). Each uses `no_capture` or `extractor_calls`, so it fails if the attempt reaches capture, and checks the receipt and that nothing was written. `no_capture` moved from `test_holdout.py` to `conftest.py`.
+- F2: `cli/__init__.py` step 2 now reads "Or add sources with /manage-sources in Claude or $manage-sources in Codex, and start with the design-model skill". `TestCmdInit::test_next_steps_add_sources_through_manage_sources` pins it and that the closing names no `SOURCE_INDEX.md` and no "edit".
+- F3:
+  - `research/holdout.py`: `_research_table` walks `[tool]`, then `[tool.agentic-mbse]`, then its research table. A `[tool.agentic_mbse]` key under `[tool]` raises "`[tool.agentic_mbse]` is not read; the toolkit's table is `[tool.agentic-mbse]`". Any key in `[tool.agentic-mbse]` but `research` raises "unknown key 'reseach' in `[tool.agentic-mbse]`; its only key is 'research'". `_refuse_unknown_keys` serves this table and the research table, and `_subtable` gives each level its "is not a table" fault.
+  - Tests: five new loader faults in `test_hook_config.py` (a misspelled research table, an unknown key beside the right one, the underscore table alone and beside the right one, `[tool.agentic-mbse]` not a table). In `test_holdout.py`, both spellings name a working guard and register `utf8.html` unless the fault refuses it.
+  - Text: D4, the Architecture hook bullet, I4 and the guard row of Behaviour Changes in `design.md`; the table-name rule and fault list in `docs/research-seam.md` § The hold-out hook.
+- U4: `retire.py` `_roll_back` moves a parked artifact back only if it is still parked. `test_retire.py::test_a_parked_artifact_that_vanished_is_skipped_on_rollback` deletes the parked directory and then fails the next rung: the index, manifest, raw entries and `RETIRED.jsonl` come back, the error names the rung, and staging is empty. Before the fix the rollback raised `FileNotFoundError` and left staging behind.
+- Advisories:
+  - A2: the ledger's Item 5 preamble names `evidence/o1-fusion-tea-branch.md` for the O1 step 5 record. This plan's O1 and O2 lines name `evidence/o1-parity-early.md`, `evidence/o1-fusion-tea-branch.md` and `evidence/dry-run/README.md` with its `o2a-*`/`o2b-*` streams. Every `evidence/` path in the plan, spec, design and the Item 5 ledger rows now exists.
+  - A4: `evidence/dry-run/README.md` § O2a opens with why the orchestrator chose copper.
+  - A3: the runbook's § The native seams gains a paragraph under the class table: an `OPERATOR_QUEUE` whose every queued candidate is a seam repair is `PREREQUISITE` naming the seam. The design's D16 text carries it; `test_shipped_contracts.py` pins it.
+  - A5: the skill's close step and the guide's "Running an invocation" say `--adequacy` matters only for a `BOUNDED_NEGATIVE` run, where it goes in the negative, and changes neither the class nor `return.json`. The guide also says when `close` sets `limit_reached`: `max_captures` only after a `register --run` refused `limit_reached`, so a run that spent its last capture on a registration reads null; `max_searches` when the logged searches reach the limit. This is `seam.py` `close` and `_limit_reached`.
+  - A6: the guide's "Known capture gaps" says budget 0 is the default, that `register --budget` passes another value to `extract`, where above 0 the PDF pipeline may call Claude to improve tables and pages up to that amount (`extraction/pipeline.py:445,541`), and that the skill never passes it.
+- The skill's and the guide's `precondition_failed` rows name a field holding `<!--`; the guide's register section says which fields and why.
+- Status synced: `spec.md`, `CURRENT_WORK.md` and the epic's Item 5 note say the follow-ups are fixed. `design.md` has a second Revised line for the audit.
+- Mutation-checked, each applied alone and the file restored after: the title dropped from the batch fields (1 test fails), the `[tool.agentic-mbse]` key check removed (3 fail). The U4, F2 and underscore-table tests failed before their fixes, which is the same check.
+
+**Deviations and decisions.**
+
+- [AGENT] F1 also covers the URL and the local path. The brief lists the title, the three sentences and a keyed source's label and display. The seam block also writes the URL or the input path as given (`Source URL`, `Origin Path`), so a file named `scans <!-- 2026/note.pdf` would hide the index the same way. A batch block writes no path, and a keyed source's `key` is already limited to `[A-Za-z0-9_]+`.
+- [AGENT] Line breaks are not refused in `register`, though the audit's F1 suggested it alongside `<!--`. The brief scopes F1 to `<!--`. A line break is not a hazard the new parser added: a block ends at a heading line, as the snapshot's parser ended it, and at a line opening a comment, which the `<!--` check already prevents. Refusing it could turn a batch title with a line break into a new refusal for an unattended ingest.
+- The F1 check sits right after the blank-field check, before the input-file and index checks. Its order only decides which reason shows when more than one applies, and the field checks are the cheapest.
+- The F3 table-name fault blocks nothing today: `cli/__init__.py:221` reads `[tool.uv.sources]` and nothing in agentic-mbse reads another key under `[tool.agentic-mbse]`. Adding one later means adding it to the allowed keys in `holdout.py`.
+- U4 keeps the snapshot's skip for a vanished parked artifact. The artifact is gone either way. Raising from the rollback would hide the rung's own error and leave staging behind.
+- Not applied, outside the brief: A1, by the brief's instruction; A7's two text leftovers (`skills/project-structure/SKILL.md:80` still spells the field "Use For"; the epic's Item 5 grep line still shows the unbounded `aries`, which the epic's certification note already explains).
+
+**For the merge.** Nothing in this phase changes what fusion-tea writes or reads. fusion-tea's index has no `<!--` (`evidence/o1-baseline.md`), and its table is spelled `[tool.agentic-mbse.research]` (`evidence/o1-fusion-tea-branch.md`). A Zotero item whose title holds `<!--` would now refuse as `precondition_failed` in its batch ingest, where it used to break the index.
 
 ---
 
@@ -797,4 +869,4 @@ Owner-paced, after the owner merges this branch: move fusion-tea's pin and re-in
 
 ---
 
-**Next step:** orchestrator O1 (rest) and O2, then `/_my_audit`.
+**Next step:** the owner merges this branch, then O3 (`evidence/fusion-tea-runbook.md`).

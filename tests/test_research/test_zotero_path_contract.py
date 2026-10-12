@@ -9,6 +9,7 @@ the key is a neutral one, to show the caller names it.
 import json
 import re
 import subprocess
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
@@ -17,6 +18,7 @@ import pytest
 from agentic_mbse.research import KeyedFileSource, SourceMetadata, load_manifest_rows, register
 from agentic_mbse.research.index import render_batch_block
 from agentic_mbse.research.runs import read_receipts
+from tests.test_research.conftest import assert_nothing_written
 
 FIELD_RE = re.compile(r"^- \*\*(?P<name>[^*]+)\*\*:", re.MULTILINE)
 
@@ -166,6 +168,32 @@ def test_a_batch_caller_supplies_only_a_title(knowledge_tree, inbox_pdf, extract
 
     titled = register(_keyed(inbox_pdf), SourceMetadata(title="Paper"), paths=knowledge_tree.paths)
     assert titled.outcome == "capture_failed"  # past every precondition, into capture
+
+
+@pytest.mark.parametrize(
+    ("field", "title", "changes"),
+    [
+        pytest.param("title", "Paper <!-- draft", {}, id="title"),
+        pytest.param("key_label", "Paper", {"key_label": "Catalog <!-- Key"}, id="key_label"),
+        pytest.param("key_display", "Paper", {"key_display": "lib:<!--ABC123"}, id="key_display"),
+    ],
+)
+def test_batch_block_text_that_opens_a_comment_is_refused_before_capture(
+    field, title, changes, knowledge_tree, inbox_pdf, extractor_calls, run_dir
+):
+    """The batch block writes the title and the key's label and display text as given."""
+    source = replace(_keyed(inbox_pdf), **changes)
+
+    result = register(
+        source, SourceMetadata(title=title), paths=knowledge_tree.paths, run_dir=run_dir
+    )
+
+    assert result.outcome == "precondition_failed"
+    assert result.reason == f"{field} must not open an HTML comment"
+    assert extractor_calls == []
+    (receipt,) = read_receipts(run_dir)
+    assert receipt["captured"] is False
+    assert_nothing_written(knowledge_tree)
 
 
 @pytest.mark.slow

@@ -132,6 +132,13 @@ def test_the_runbook_maps_every_seam_class():
     assert "the research procedure the project's instructions name" not in seams
 
 
+def test_a_queue_of_seam_repairs_is_a_prerequisite_in_the_runbook():
+    """The runbook's own rule makes a seam repair `PREREQUISITE`, so the class table yields to it."""
+    seams = section(_read(RUNBOOK), "## The native seams")
+    assert "An `OPERATOR_QUEUE` whose every queued candidate is a seam repair" in seams
+    assert "Record `PREREQUISITE` naming the seam" in seams
+
+
 # --- the source types ------------------------------------------------------------------------
 
 
