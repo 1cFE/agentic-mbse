@@ -42,3 +42,21 @@ Gate: CLEAR
 - No finding reopened: the review's resolutions narrow nothing the point requires. The trigger keeps MR-7's own enforcement scope (orchestrator call L3-3), so fusion-tea's enforcement chain in SC8 is unchanged.
 Gate: CLEAR
 ```
+
+Design-review lens, run by `/_my_design_review` as a fresh general-purpose agent with the same fallback method (the canonical script was again unreadable). Dispositions are in `design-review.md`: design-F1 and F2 → M1, F5 → M2, F3 → A3, F4 → A9, smell 1 → A7.
+
+```
+## design — 2026-10-11 — rev .project/active/goal-layer-port/design.md (goal-layer-port @ 892ba8d)
+Point (re-derived): agentic-mbse is a domain-agnostic toolkit whose shipped surfaces state general rules. Item 2 makes the goal layer installable from `init` with nothing pointing at fusion-tea, and places the design-choice principle among the patterns agentic-mbse already enforces, so MR-7 becomes fusion-tea's application of it and fusion-tea loses nothing.   [source: README.md:3; docs/patterns/README.md:7,32; epic_wrap-split.md:13,19,22,65-66,135-161; briefs/align.md:7,12; spec.md:80-96]
+Falsifier: A modeler who follows the "Technical Patterns" row finds a process memo with no construct to write or check, so the rule reads as a renumbered fusion requirement rather than a pattern. Or a fresh target cannot ground a goal, or fusion-tea after re-init loses a line or depends on a kept edit to a tool-owned file.
+Findings:
+- design-F1 [DO] A1 has no SysML and no Verification section. Every other pattern doc has 8–23 SysML blocks, and the README asks for "syntax rules, examples, common mistakes, and verification notes". A1's examples are pseudo-equations. — docs/patterns/README.md:7,32 (INHERITED), serving align :12 (OWNER-VERBATIM) — disposition: proposed — add a wrong/right SysML pair (supplied installed capacity, calculated required flow, one-sided assert constraint as the fit check, matching Equality intent's feasibility-gate row); the D16 sump/pump fixture already has this shape. Add a Verification section.
+- design-F2 [DO] A1's Related Patterns omits adr002-calculations.md, whose Inline FORMULA and EXPOSE forms make `attribute installed_capacity = required_flow * margin;` legal placement. Nothing says placement and role are separate checks. — AGENT — disposition: proposed — add one Related Patterns line.
+- design-F3 [DO] A target cannot follow A1's authority pointer: `git log -- docs/patterns/design-choices.md` has no history in an installed package, and the SC6 crosswalk lives in `.project/` evidence. The head tag also dates a 2026-09-20 ratification onto wording written 2026-10-11, which the owner first reads at PR. — capture-fidelity law 1; spec SC3, SC6 (INHERITED) — disposition: proposed — cite the derivation by path@commit as D7 does; grade the generalization separately.
+- design-F4 [DON'T] A1 "What to Record" says "generated and native execution", a two-route setup agentic-mbse never defines; A1 elsewhere says "supported execution route". — SC5(g), epic :19 (INHERITED; wording slip) — disposition: proposed — "every supported execution route".
+- design-F5 [DON'T] A1 § Review restates the three-clause trigger that A2's Process Selection row and A8's runbook row also state: three copies kept in step by hand. — SC5(a), Invariant 1 (AGENT) — disposition: proposed — A1 names "Process Selection" and keeps only what the review inspects.
+Smell (a) consumer-compensates: NOT FIRED — F2's remove-then-init is a recorded one-time adoption, with git as backup; the dry run's venv is a stated environment assumption every pattern reference shares.
+Smell (b) invariant-ownership change unstated: NOT FIRED — each move is stated: MR-7's obligations move to the shipped pattern (Core Concept; A1; A6), decision authority splits between targets and fusion-tea (D7; A7), and the trigger moves to the shipped Process Selection table.
+smell 1 (decision record authority): OPEN — authority: AGENT — D7 and A7 say which copy governs whom, but not what happens when fusion-tea amends ADR-0001..0007; the epic proposes "an ordinary toolkit change, not by reference" (epic_wrap-split.md:148). One sentence in D7 and atop the decision record closes it.
+Gate: DISPOSED — five proposed findings and smell 1's amendment clause need visible dispositions. No owner-grade contradiction; neither smell fired.
+```
