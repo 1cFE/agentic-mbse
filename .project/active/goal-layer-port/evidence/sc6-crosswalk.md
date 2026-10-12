@@ -17,7 +17,7 @@ This is the derivation record for the design-choice rule. It maps every sentence
 - **AGENT, ratified** — agent-written application and enforcement text, ratified by that implementation request. MR-7 says so itself (`:89`), and fusion `.project/active/modeling-intent-enforcement/spec.md:7` grades the process and goal-hook edits the same way.
 - The generalization into agentic-mbse (removing fusion terms, choosing the levels) is `[AGENT]` 2026-10-11, at the owner's direction ("it is important that you find the right level for this rule"). It adds no owner-originated content. The pattern's closing grade paragraph says this in a target.
 
-**Shipped locations.** "Pattern" is `docs/patterns/design-choices.md`. "Process template" is `project_templates/MODELING_PROCESS.md.template`. Goal-layer destinations are the Appendix A8 texts, which Phase 3 ports; Phase 7 checks those rows against the ported files.
+**Shipped locations.** "Pattern" is `docs/patterns/design-choices.md`. "Process template" is `project_templates/MODELING_PROCESS.md.template`. Goal-layer destinations are the Appendix A8 texts as Phase 3 ported them; Phase 7 confirmed those rows against the ported files.
 
 ## MR-7 (`REQUIREMENTS.md:89-107`)
 
@@ -84,7 +84,7 @@ The heading (`:87`) and the labels "**Application:**", "**Required evidence…**
 
 ## Goal-layer hooks
 
-Destinations are the Appendix A8 texts and the Appendix B / plan Phase 3 rows. Phase 3 ports them; Phase 7 checks each destination against the ported text and corrects it if the text moved.
+Destinations are the Appendix A8 texts and the Appendix B / plan Phase 3 rows, as Phase 3 ported them.
 
 | Source sentence | Shipped location, or fusion-tea home and reason | Source grade | Note |
 |---|---|---|---|
@@ -112,7 +112,7 @@ Destinations are the Appendix A8 texts and the Appendix B / plan Phase 3 rows. P
 | `goal.md:29` "**Modeling requirements:** applicable entries from `modeling_project/REQUIREMENTS.md`." | `project_templates/goal.md.template`, same bullet, unchanged. | AGENT, ratified | |
 | `goal.md:29` "For MR-7, identify the design choices this goal preserves or investigates and any explicitly authorized design-selection policy; do not inherit a variable's role merely because the current implementation uses it." | `project_templates/goal.md.template`, same bullet (A8: "For a model-changing goal, apply the design-choice pattern (`design-choices.md`; …)"). | AGENT, ratified | |
 
-The runbook section names above are where the hooks sit in fusion's runbook (`:84` under "Grounding a goal", `:100` under "Opening and closing a round", `:139` under "Running one task"). Phase 7 confirms them in the ported file.
+Phase 7 confirmed every destination above against the ported text (2026-10-11, `sc12-hunks.md`): each sentence sits in the section its row names, with the wording the row gives, and no location needed correcting. In the ported files the hooks are at `GOAL_RUNBOOK.md.template:74` (trigger row, § Review scope and evidence reuse), `:85` (§ Grounding a goal), `:101` (§ Opening and closing a round) and `:140` (§ Running one task); `skills/run-goal/SKILL.md:58` and `:60` (§ Model changes); and `goal.md.template:29` (§ Invariants).
 
 ## Shipped text with no MR-7 sentence behind it
 

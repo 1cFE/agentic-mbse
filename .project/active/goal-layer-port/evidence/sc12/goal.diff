@@ -1,0 +1,5 @@
+--- .orchestrate-logs/fusion-tea-snapshot/work/orchestration/goal-templates/goal.md	2026-10-11 21:04:00.000000000 -0700
++++ project_templates/goal.md.template	2026-10-11 23:38:53.345007255 -0700
+@@ -29 +29 @@
+-- **Modeling requirements:** applicable entries from `modeling_project/REQUIREMENTS.md`. For MR-7, identify the design choices this goal preserves or investigates and any explicitly authorized design-selection policy; do not inherit a variable's role merely because the current implementation uses it.
++- **Modeling requirements:** applicable entries from `modeling_project/REQUIREMENTS.md`. For a model-changing goal, apply the design-choice pattern (`design-choices.md`; `GOAL_RUNBOOK.md` § Grounding a goal says where it is): identify the design choices this goal preserves or investigates and any explicitly authorized design-selection policy; do not inherit a variable's role merely because the current implementation uses it.

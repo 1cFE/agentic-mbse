@@ -1,0 +1,15 @@
+--- .orchestrate-logs/fusion-tea-snapshot/.claude/skills/narrate-goal/SKILL.md	2026-10-11 21:04:00.000000000 -0700
++++ skills/narrate-goal/SKILL.md	2026-10-11 23:35:27.101132136 -0700
+@@ -5 +5 @@
+-allowed-tools: Bash, Read, Write, Edit, Glob, Grep
++allowed-tools: [Bash, Read, Write, Edit, Glob, Grep]
+@@ -6,0 +7,2 @@
++metadata:
++  kind: workflow
+@@ -8,0 +11,3 @@
++Before executing this skill, read `.agentic-mbse/claude.md` in Claude Code or `.agentic-mbse/codex.md` in Codex. Resolve supporting paths from this skill’s installed directory; keep generated outputs in the project or a temporary directory. Read referenced skills from `.agents/skills/<name>/SKILL.md` when their guidance is needed.
++
++
+@@ -77 +82 @@
+-2. Run `uv run pytest tests/orchestration/test_goal_contract.py -q`. Fix failures caused by the new narrative. If an unrelated contract failure remains, stop and report it without editing outside this skill's boundary.
++2. Run `uv run pytest tests/orchestration/test_narrative_links.py -q`. Fix failures caused by the new narrative. If an unrelated contract failure remains, stop and report it without editing outside this skill's boundary.

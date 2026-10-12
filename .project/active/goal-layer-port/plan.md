@@ -1,6 +1,6 @@
 # Implementation Plan: goal-layer-port (`WRAP-SPLIT` Item 2)
 
-**Status:** Implementation in progress (P1–P6 done)
+**Status:** Implementation in progress (P1–P7 done)
 **Created:** 2026-10-11
 **Last Updated:** 2026-10-11
 
@@ -607,21 +607,30 @@ grep -c '^@@' $E/*.diff   # each count must equal that file's rows in sc12-hunks
 
 ### Steps
 
-- [ ] Produce the diffs above. `diff` exits 1 when files differ; that is expected.
-- [ ] `evidence/sc12-hunks.md`: one row per hunk, giving file, `@@` header and class. The six classes (spec SC12 plus D17): consumer path generalized; design-choice hook generalized; decision-record citation; recorded-practice addition; deletion with ledger row (name the Appendix C row); bundle envelope. Any hunk that drops a consumer-specific instruction names its ledger row, whatever its class.
-- [ ] A hunk with no class fails the phase. Fix the shipped file, rerun P3–P6's tests, and regenerate the diffs.
-- [ ] Re-check the goal-hook rows of `evidence/sc6-crosswalk.md` against the ported text, and correct their locations if the text moved.
+- [x] Produce the diffs above. `diff` exits 1 when files differ; that is expected.
+- [x] `evidence/sc12-hunks.md`: one row per hunk, giving file, `@@` header and class. The six classes (spec SC12 plus D17): consumer path generalized; design-choice hook generalized; decision-record citation; recorded-practice addition; deletion with ledger row (name the Appendix C row); bundle envelope. Any hunk that drops a consumer-specific instruction names its ledger row, whatever its class.
+- [x] A hunk with no class fails the phase. Fix the shipped file, rerun P3–P6's tests, and regenerate the diffs.
+- [x] Re-check the goal-hook rows of `evidence/sc6-crosswalk.md` against the ported text, and correct their locations if the text moved.
 
 ### Checks
 
-- [ ] `grep -c '^@@'` per file equals that file's row count in `sc12-hunks.md`. No row has an empty class.
-- [ ] The shared checks.
+- [x] `grep -c '^@@'` per file equals that file's row count in `sc12-hunks.md`. No row has an empty class.
+- [x] The shared checks.
 
 **Commit:** `Evidence: SC12 hunk classification of every ported goal file`
 
 **What we know works:** SC12, and the method-preservation half of the spec.
 
 **Progress notes:**
+
+- **Done 2026-10-11.** Added `evidence/sc12-hunks.md` and the seven diffs in `evidence/sc12/`, made with the stencil's commands. Amended three sentences of `evidence/sc6-crosswalk.md`. No shipped file changed.
+- **Result.** 41 hunks, each with exactly one class: run-goal 10, narrate-goal 4, runbook 21, goal 1, trail 1, learnings 0, narrative test 4. By class: consumer path 14, decision-record citation 9, bundle envelope 6, design-choice hook 6, deletion with ledger row 4, recorded practice 2. No hunk is a method change, so no shipped file needed fixing. The counts match P3's and P4's notes.
+- **Hunk ids.** Each row has an id (`RG-n`, `NG-n`, `RB-n`, `GT-1`, `TT-1`, `NT-n`) so the P8 ledger's evidence column can cite them. A script confirmed that each file's rows carry the diff's `@@` headers in order, that the row count equals `grep -c '^@@'`, and that no class is empty.
+- **One-class calls.** Three hunks hold two kinds of change, and each is classed by what it mostly does, with the other part named in the row. RG-5 (fusion `:49`, the dropped Codex sentence) is "deletion with ledger row": its `.agentic-mbse/codex.md` half now sits in the preface (RG-3). RB-21 (the ADR table) is "decision-record citation": it also holds the `:304` two-PM rewording. NT-3 is "deletion with ledger row" for the ADR-register block: `diff` joins the two added `REPO_ROOT` lines to it because they are adjacent, and NT-4 is the consumer-path hunk they belong to.
+- **Method check.** Three hunks fall inside the runbook's method lists, and none changes a step, list member or value: RB-3 (the decision-record surface's location and writer; still five surfaces), RB-4 (the critic quote's source only) and RB-11 (appends where the close is recorded). The integrate seam's dropped description (RB-19) is fusion's implementation; the seam table, which carries each seam's invocation and native return, is unchanged.
+- **Crosswalk.** Every goal-hook destination holds in the ported text; no location needed correcting. The three sentences that said Phase 7 would check now record the confirmation and the ported line numbers: runbook `:74`, `:85`, `:101`, `:140`; `run-goal:58`, `:60`; `goal.md:29`.
+- **For P8.** Ledger rows are named in `sc12-hunks.md` by Appendix C's "Text left out" lead, plus "ADR-register check" (NG-4, NT-1–NT-3), the row the orchestrator asked P8 to add. P8's ledger must use those names. Rows with no hunk of their own: "The two MR-7 process paragraphs", "`.agentic-mbse/patterns/` location line", "Binding-row semicolon", "MR-7 general application…" (fusion's process and requirements files, not ported goal files) and "Local `run-goal`, `narrate-goal`…" (F2). Their evidence is the crosswalk and the fusion branch diff.
+- **Shared checks.** `uv run pytest tests/`: 2215 passed, 1 skipped, 1 xfailed (unchanged from P6). `ruff check src/ tests/`: 118, unchanged. `mypy src/`: 88, unchanged. SC2 grep: no output. `.project/` grep: runbook `:13` and record `:13`, the two-PM "for example" wording.
 
 ---
 
@@ -831,4 +840,4 @@ See `design.md` § Potential Risks. By phase:
 
 ---
 
-**Status**: Implementation in progress (P1–P6 done)
+**Status**: Implementation in progress (P1–P7 done)
