@@ -1,0 +1,1 @@
+{"request_id": "REQ-001-01", "question": "What is the thermal conductivity of pure copper at room temperature?", "consumer": "WI-001", "gap_type": "unsourced_value", "priority": "P2", "where_to_look": ["en.wikipedia.org/wiki/Copper"], "limits": {"max_searches": 2, "max_captures": 1}}
