@@ -45,3 +45,8 @@ Each entry keeps the decision as amended, its grades and dates, its invariants a
 - `tests/test_goal_layer.py::test_every_cited_adr_is_in_the_decision_record`: the record's `### ADR-` headings are exactly ADR-0001..0007, and every `ADR-NNNN` in the goal text (the two skills, runbook, three templates, the narrative test and the record) is among them. Passes.
 - `tests/test_goal_layer.py::test_goal_text_points_at_nothing_in_fusion_tea` now covers the record and the narrative-test template. Every record line that names fusion-tea or `.project/` carries `@2b1e9f9d5`, except the opening's two-PM line, which uses the "for example" wording. Passes.
 - Reachability: `grep -n get_docs_dir project_templates/GOAL_RUNBOOK.md.template` → `:85` (§ Grounding a goal, the pattern directory) and `:296` (§ The decisions behind this, the docs directory holding `goal-layer-decisions.md`). `test_installed_goal_references_resolve` asserts `get_docs_dir() / "goal-layer-decisions.md"` exists; `test_built_wheel_carries_the_resolver_reached_goal_layer_documents` asserts the wheel carries it with source bytes.
+
+**Orchestrator verification, 2026-10-11** (fusion-tea is out of the implement stage's reach):
+
+- `git -C /home/reid/1cfe/fusion-tea cat-file -e 2b1e9f9d5:.project/completed/20260827_goal-cold-pickup-proof/gate-probe-record.md` succeeds: the probe record exists at the cited commit.
+- `git grep -n "2026-09-14" 2b1e9f9d5 -- .project/adr/ work/orchestration/GOAL_RUNBOOK.md` finds the request only by reference (ADR-0002:17, ADR-0003:17, ADR-0005:17,19; runbook :66), never quoted. The record's "wording not quoted" note is correct.
