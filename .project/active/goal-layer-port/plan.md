@@ -1,6 +1,6 @@
 # Implementation Plan: goal-layer-port (`WRAP-SPLIT` Item 2)
 
-**Status:** Implementation in progress (P1–P7 done)
+**Status:** Implementation in progress (P1–P8 done; O0–O3 next)
 **Created:** 2026-10-11
 **Last Updated:** 2026-10-11
 
@@ -656,13 +656,13 @@ uv run python -c 'from agentic_mbse.cli import get_docs_dir as d; print([(p, p.e
 
 ### Steps
 
-- [ ] `evidence/sc2-sc3-install.txt`: the commands above with their output, plus `ls -R` of the installed goal files.
-- [ ] `evidence/sc5d-reach-trace.md`: Appendix E's table, each hop verified against the final files and given its current `file:line`. A hop that does not hold is a gap. Add a one-line pointer only where the trace shows one (D4), then rerun the shared checks.
-- [ ] `.project/active/wrap-split-migration-ledger.md`, new "Item 2 — goal-layer-port" section:
+- [x] `evidence/sc2-sc3-install.txt`: the commands above with their output, plus `ls -R` of the installed goal files.
+- [x] `evidence/sc5d-reach-trace.md`: Appendix E's table, each hop verified against the final files and given its current `file:line`. A hop that does not hold is a gap. Add a one-line pointer only where the trace shows one (D4), then rerun the shared checks.
+- [x] `.project/active/wrap-split-migration-ledger.md`, new "Item 2 — goal-layer-port" section:
   - Appendix C's rows in Item 1's four columns. Evidence column: `goal-layer-port/evidence/fusion-tea/branch-diff-F1.txt` (O1 creates it) and the SC12 hunk ids;
   - the merge order from `design.md` § Integration Strategy;
   - amend the header sentence "The owner applies every fusion-tea change": Item 2's fusion-tea changes are made by the orchestrator on `goal-layer-mr7` and merged by the owner (Align record).
-- [ ] `evidence/fusion-tea-runbook.md`, the F2 runbook, written from Appendix D4 in the shape of Item 1's (`.project/completed/20261009_native-skill-distribution/evidence/fusion-tea-runbook.md`):
+- [x] `evidence/fusion-tea-runbook.md`, the F2 runbook, written from Appendix D4 in the shape of Item 1's (`.project/completed/20261009_native-skill-distribution/evidence/fusion-tea-runbook.md`):
   - Before you start: agentic-mbse `goal-layer-port` merged as M; record M's SHA.
   - Step 1, pin move: `rev` and `uv.lock` by hand; `uv sync --frozen --extra e2e`; diff `uv pip list` before and after and restore anything removed (earlier moves restored `syside-license==0.3.6` with `uv pip install --no-deps`, and `greenlet`).
   - Step 2: the SHA in `tests/test_dependency_provenance.py`.
@@ -671,22 +671,33 @@ uv run python -c 'from agentic_mbse.cli import get_docs_dir as d; print([(p, p.e
   - Step 5: the O2 verification list, with the resolver hop in fusion's own environment: `uv run --no-sync python -c 'from agentic_mbse.cli import get_docs_dir; p = get_docs_dir() / "patterns" / "design-choices.md"; print(p, p.exists())'`.
   - Step 6: commit; the owner pushes and merges.
   - Leave one "Observed in the rehearsal" slot per step for O2 to fill.
-- [ ] `evidence/README.md`:
+- [x] `evidence/README.md`:
   - one line per SC naming its evidence file, or the orchestrator phase that creates it;
   - the list of edits outside this item's files, for Item 4 (`design.md` § Integration Strategy);
   - the two follow-ups for close to file: the dev-mode ignore-marker gap, and the per-design literal/bound attribute listing.
 
 ### Checks
 
-- [ ] The install grep prints nothing, and both resolver paths exist.
-- [ ] Every Appendix C row is in the ledger with a destination.
-- [ ] The shared checks.
+- [x] The install grep prints nothing, and both resolver paths exist.
+- [x] Every Appendix C row is in the ledger with a destination.
+- [x] The shared checks.
 
 **Commit:** `Evidence and ledger: Item 2 ledger section, reach trace, install grep, F2 runbook`
 
 **What we know works:** everything this repo can prove without fusion-tea or a live agent.
 
 **Progress notes:**
+
+- **Done 2026-10-11.** Added `evidence/sc2-sc3-install.txt`, `evidence/sc5d-reach-trace.md`, `evidence/fusion-tea-runbook.md` and `evidence/README.md`. Edited `.project/active/wrap-split-migration-ledger.md` (header sentence, new Item 2 section). No shipped file changed.
+- **Install grep.** A fresh plain `init`: the SC2 grep over the two bundles, `work/orchestration/` and `tests/orchestration/` prints nothing; both resolver paths exist. Beyond the stencil, the capture also holds the `.project/` grep (only runbook `:13`, the two-PM "for example" wording), the ADR ids the installed text names (exactly ADR-0001..0007), and a run of `tests/test_goal_layer.py` and `tests/test_shipped_text.py` (44 passed) for SC3's path check.
+- **Reach trace.** All twelve Appendix E routes hold in the final files, each in at most two named hops, with current `file:line`. No gap, so no pointer was added (D4). The trace records how a bare `design-choices.md` in the modeling-process rows is located (`MODELING_PROCESS.md.template:67`, then the guide's resolver at `MODELING_GUIDE.md.template:279`); this is the lookup every technical-pattern reference uses, so it is not counted as a hop.
+- **Ledger.** The 16 Appendix C rows in Item 1's four columns, plus the orchestrator's dedicated row for the ADR-register check (`test_register_is_coherent`, which stays in fusion-tea's `tests/orchestration/test_goal_contract.py`; after F2 narrate-goal's validation step runs only the narrative-link check). A script confirmed every Appendix C row is present with a home and evidence, and every ledger name `sc12-hunks.md` uses matches a row. Evidence cells cite `fusion-tea/branch-diff-F1.txt` (O1), the SC12 hunk ids, and homes that already exist at `2b1e9f9d5`. The header sentence now says the owner applied Item 1's fusion-tea changes and the orchestrator makes Item 2's on `goal-layer-mr7`, merged by the owner. The merge order follows design § Integration Strategy.
+- **Deviation: "Was in" cells wider than Appendix C.** Three rows also list the lines whose SC12 hunks name them: "Goal-layer ADRs" adds runbook `:272` (RB-16), the research and integration rows add `:286` (RB-18), and "Coding PM" adds `:304` (RB-21). The "two MR-7 process paragraphs" row notes that it closes Item 1's row of that name; Item 1's row is left as written.
+- **F2 runbook.** Item 1's shape: Before you start, six steps, each with an "Observed in the rehearsal" slot for O2 (seven slots, one also under Before you start). Steps 1 and 2 cannot be rehearsed; the intro says so. Two checks were added to "Before you start" beyond D4, for the orchestrator to keep or drop: (1) `git diff adbef75 M -- pyproject.toml` must be empty, because the hand-edited lock assumes unchanged dependencies (empty at this branch today); (2) a diff of fusion-tea `origin/main` against `2b1e9f9d5` over the files F1 and F2 replace, because a goal-file or `MODELING_PROCESS.md` edit made on fusion-tea `main` after the snapshot would be dropped by the switch. Step 1 places the old SHA in `uv.lock` on the agentic-mbse `source =` line and in fusion-tea's requires-dist entry, from earlier pin moves; neither file is in the snapshot, so the step also has the reader `grep -c` the old SHA before and after.
+- **Evidence README.** One line per SC, the Item 4 list from design § Integration Strategy, and the two follow-ups for close. Added for Item 4: the repo `README.md` § Initialize Project names no `tests/` path, where the goal layer now installs its narrative-link test.
+- **For O1.** The ledger's evidence cells name `fusion-tea/branch-diff-F1.txt` and `sc6-delta-check.md`; O1's step 7 check ("each ledger destination appears in the diff, or already exists at `2b1e9f9d5`") covers ADR-0009, the concept file and the probe record, which the snapshot does not hold.
+- **For O2.** Fill the seven slots in `fusion-tea-runbook.md`. Step 5's checks are the plan's O2 capture list.
+- **Shared checks.** `uv run pytest tests/`: 2215 passed, 1 skipped, 1 xfailed (unchanged). `ruff check src/ tests/`: 118, unchanged. `mypy src/`: 88, unchanged. SC2 grep: no output. `.project/` grep: runbook `:13` and record `:13`, the two-PM "for example" wording.
 
 ---
 
@@ -840,4 +851,4 @@ See `design.md` § Potential Risks. By phase:
 
 ---
 
-**Status**: Implementation in progress (P1–P7 done)
+**Status**: Implementation in progress (P1–P8 done; O0–O3 next)

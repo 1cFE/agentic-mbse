@@ -1,0 +1,65 @@
+# SC2 and SC3 install evidence (goal-layer-port Phase 8)
+#
+# Captured 2026-10-12T06:48:05Z at agentic-mbse 7a5a3a3 (the Phase 7 commit; Phase 8 changes no shipped file).
+# A plain init runs non-interactively into a new empty directory, $T. The grep covers every installed goal-layer file:
+# the two skill bundles, the runbook and templates under work/orchestration/, and the narrative-link test.
+# The pattern and the decision record are not installed; the resolver reaches them in the toolkit (the resolver command below).
+# grep exits 1 when it finds nothing; each exit status is printed.
+
+$ T=$(mktemp -d); uv run agentic-mbse init $T < /dev/null > /dev/null
+[exit 0]
+
+$ SC2='fusion-tea|MR-[0-9]|\.codex-test|stellarator|exploration/|\.claude/|/home/|research_seam|source_registry|integrate\.py|STUDY_POLICY|holdout|ARIES|aries-cs|demo-depth-rubric|depth target|GSTH|WI-0[0-9]'
+$ grep -rnE "$SC2" $T/.agents/skills/run-goal $T/.agents/skills/narrate-goal $T/work/orchestration $T/tests/orchestration
+[exit 1]
+
+# SC2's .project/ clause: only the two-PM "for example" wording.
+$ grep -rn '\.project/' $T/.agents/skills/run-goal $T/.agents/skills/narrate-goal $T/work/orchestration $T/tests/orchestration
+$T/work/orchestration/GOAL_RUNBOOK.md:13:The goal layer decides *what to work on next and what the evidence means*. It does not do the work. The work happens in the native workflows — the modeling PM in `work/`, a second PM where the target runs one (for example a coding PM in `.project/`), the research procedure, and the study procedure where one is installed — and each of those keeps its own stage records exactly as it does today.
+[exit 0]
+
+# SC2's ADR clause: every ADR id the installed text names (the record carries ADR-0001..0007).
+$ grep -rhoE 'ADR-[0-9]{4}' $T/.agents/skills/run-goal $T/.agents/skills/narrate-goal $T/work/orchestration $T/tests/orchestration | sort -u
+ADR-0001
+ADR-0002
+ADR-0003
+ADR-0004
+ADR-0005
+ADR-0006
+ADR-0007
+
+# SC3: the resolver reaches both documents. This checkout's environment resolves to its own docs/;
+# a wheel install resolves to agentic_mbse_data/docs (tests/test_packaged_guidance_contract.py; dry run O3).
+$ uv run python -c 'from agentic_mbse.cli import get_docs_dir as d; print([(p, p.exists()) for p in (d()/"patterns/design-choices.md", d()/"goal-layer-decisions.md")])'
+[(PosixPath('/home/reid/1cfe/agentic-mbse-goal-layer/docs/patterns/design-choices.md'), True), (PosixPath('/home/reid/1cfe/agentic-mbse-goal-layer/docs/goal-layer-decisions.md'), True)]
+[exit 0]
+
+# SC3: every fixed repo path the installed goal text names exists after init, and the shipped-text checks pass.
+$ uv run pytest tests/test_goal_layer.py tests/test_shipped_text.py -q -p no:cacheprovider
+============================== 44 passed in 1.69s ==============================
+[exit 0]
+
+$ cd $T && ls -R .agents/skills/run-goal .agents/skills/narrate-goal work/orchestration work/narratives tests/orchestration
+.agents/skills/narrate-goal:
+SKILL.md
+
+.agents/skills/run-goal:
+SKILL.md
+
+tests/orchestration:
+test_narrative_links.py
+
+work/narratives:
+
+work/orchestration:
+GOAL_RUNBOOK.md
+goals
+goal-templates
+
+work/orchestration/goals:
+
+work/orchestration/goal-templates:
+goal.md
+learnings.md
+trail.md
+[exit 0]
