@@ -718,6 +718,8 @@ Runs D3 step 1 early, so a dependency or license failure surfaces before O3.
 - [ ] `SYSIDE_LICENSE_KEY=<from $AM/.env> agentic-mbse validate <seed models copy> --complete` passes.
 - [ ] Record the commands and outcomes in `$E/dry-run/install.md` for O3. No commit needed until O3.
 
+- O0 done 2026-10-11: wheel built, installed, `init` rc 0, resolver printed the packaged docs, seed validated 6/6. Folded into `evidence/dry-run/install.md`.
+
 ### O1: fresh delta check, then the fusion-tea F1 commit (SC6, SC7)
 
 **Orchestrator note (before O1, 2026-10-11).** fusion-tea `main` moved to `b06585709` (its PR #122) after the snapshot. It archived `modeling-intent-enforcement` and `demo-depth-rubric` from `.project/active/` to `.project/completed/20261011_*` and updated their path citations in MR-7's authority line, `MODELING_PROCESS.md:34` and `GOAL_RUNBOOK.md:100`; no other change touches a file F1 or F2 replaces (`git diff 2b1e9f9d5 origin/main` over those paths). So `goal-layer-mr7` is re-cut from `b06585709` (it had no commits), the `:89` authority line stays byte-identical to `b06585709`'s, and A6's depth bullet and step 4's anchor check use `.project/completed/20261011_demo-depth-rubric/application-policy.md`. Evidence that cites fusion files at `2b1e9f9d5` (snapshot, SC12, crosswalk "Was in") stays valid as written.
@@ -752,6 +754,8 @@ Needs P1–P8 committed. F1 copies template bytes, so a later template change me
 **Commit (agentic-mbse):** `Evidence: SC6 delta check and fusion-tea F1 branch diff`
 
 **Progress notes:**
+
+- Done 2026-10-11 by the orchestrator. Delta check PASS (`evidence/sc6-delta-check.md`); its minor point taken at `64ae4ed`. F1 is fusion-tea `32bd4529a` on `goal-layer-mr7`, cut from `b06585709` (see the note at the top of O1). Six paths, not seven: `learnings.md` already matched. MR-7 opens with "MUST apply" (one call beyond A6, recorded in `evidence/fusion-tea/destinations-F1.md`). Every ledger destination exists on the branch.
 
 ### O2: SC8 rehearsal on a disposable copy of the F1 tip
 
@@ -829,6 +833,8 @@ Stop after writing `### T-001 start` in trail.md. If you reach any other point w
 **Commit (agentic-mbse):** `Evidence: fresh-target dry run from a wheel (SC4)`
 
 **Progress notes:**
+
+- Done 2026-10-11 by the orchestrator, one run, all six checks PASS (`evidence/dry-run/checks.md`). Isolation by `--setting-sources project,local`, probed first (`evidence/dry-run/install.md`). The agent ran no resolver command; it read `design-choices.md` at the packaged docs path that the installed `.claude/settings.json` names.
 
 ---
 
