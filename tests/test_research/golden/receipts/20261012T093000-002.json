@@ -1,0 +1,13 @@
+{
+  "attempt": 2,
+  "outcome": "holdout_hit",
+  "candidate": "https://example.org/mirror/sealed-widget-07.pdf",
+  "slug": null,
+  "path": null,
+  "source_id": null,
+  "triage": "keeper",
+  "reason": "term:sealed-widget-07 matched 1x",
+  "rule_id": "term:sealed-widget-07",
+  "captured": false,
+  "at": "2026-10-12T09:30:00+00:00"
+}

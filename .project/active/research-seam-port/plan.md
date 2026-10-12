@@ -1,6 +1,6 @@
 # Implementation Plan: Port the research acquisition seam, and bring `/manage-sources` under its rules
 
-**Status:** Draft
+**Status:** Implementation in progress (P1 complete)
 **Created:** 2026-10-12
 **Last Updated:** 2026-10-12
 **Work item:** `WRAP-SPLIT` Item 5, branch `research-seam-port`, worktree `/home/reid/1cfe/agentic-mbse-research-seam`
@@ -107,43 +107,90 @@ def test_keyed_batch_block_equals_the_snapshot_block():
 
 **Golden data, first of all.**
 
-- [ ] Write a scratch derivation script at `.orchestrate-logs/golden/derive.py` (gitignored; keep it as provenance). It imports the snapshot's scripts by path. `pyzotero` is not installed here, so put a stub module in `sys.modules` first (`dotenv` is installed; `holdout_guard` reads its protocol lazily). Fix the date, because blocks and rows carry `date.today()`.
-- [ ] Derive and save: a fixed request and its key (`research_seam.request_key`, `:70-83`); the index before and after one `append_source_index_entry` at `## How Sources Are Used`, for a seam block and a batch block (`zotero_ingest.py:225-350`, with `SOURCE_INDEX_PATH` patched); the Zotero batch block for fixed inputs; the key order of a receipt (`source_registry.py:1217-1229`), of `url`, `local_pdf` and Zotero manifest rows (`:667-686` with each source's `row_extras`), and of a return and a negative (run the snapshot's `close` on a temp run directory).
-- [ ] Copy the outputs into `tests/test_research/golden/`. Add the cases the snapshot cannot produce from the design's stated bytes (Architecture § Insertion bytes): insertion before `## How This File Is Used`, and the end-of-file fallback with and without a trailing newline. The docstring of `test_golden_shapes.py` names the snapshot function each expectation came from.
+- [x] Write a scratch derivation script at `.orchestrate-logs/golden/derive.py` (gitignored; keep it as provenance). It imports the snapshot's scripts by path. `pyzotero` is not installed here, so put a stub module in `sys.modules` first (`dotenv` is installed; `holdout_guard` reads its protocol lazily). Fix the date, because blocks and rows carry `date.today()`.
+- [x] Derive and save: a fixed request and its key (`research_seam.request_key`, `:70-83`); the index before and after one `append_source_index_entry` at `## How Sources Are Used`, for a seam block and a batch block (`zotero_ingest.py:225-350`, with `SOURCE_INDEX_PATH` patched); the Zotero batch block for fixed inputs; the key order of a receipt (`source_registry.py:1217-1229`), of `url`, `local_pdf` and Zotero manifest rows (`:667-686` with each source's `row_extras`), and of a return and a negative (run the snapshot's `close` on a temp run directory).
+- [x] Copy the outputs into `tests/test_research/golden/`. Add the cases the snapshot cannot produce from the design's stated bytes (Architecture § Insertion bytes): insertion before `## How This File Is Used`, and the end-of-file fallback with and without a trailing newline. The docstring of `test_golden_shapes.py` names the snapshot function each expectation came from.
 
 **Tests, by Appendix B row.**
 
-- [ ] `__init__.py`: move.
-- [ ] `conftest.py`, agentic-mbse half: shipped-template tree with no manifest, `local_site`, pymupdf `generated_pdf`, `run_dir`, `FakeGuard` and a recording variant (used in P4), plus the session check that the suite creates nothing under the repo root's `knowledge/` (design Implementation Notes "Test fixtures", review A13).
-- [ ] `fixtures/web/`: move `utf8.html`, `latin1.html`, `marker.html`. Replace `marker.html`'s sealed-paper token with a neutral token the fake guard bars.
-- [ ] `test_golden_shapes.py` (new, I1), P1 cases: insertion bytes at both anchors and both fallback forms; the keyed batch block equals the snapshot's Zotero block; receipt key order.
-- [ ] `test_index_writer.py`: move, rewritten for both anchors, the end-of-file fallback (replacing "missing anchor raises"), comment masking and the keyed batch block. Add the D10 block ends (the next heading outside a comment, or a line opening a comment) and Location normalization (Architecture § Locations and titles).
-- [ ] `test_zotero_path_contract.py`, first half: batch-block field order and values, with a neutral key. Keyed dedupe waits for P2.
-- [ ] `test_manifest.py` (new): `test_load_manifest_rows_returns_every_row` and `test_truncate_manifest_restores_recorded_byte_length` move here, plus append. Add the absent-aware rollback: rolling back to a "no manifest" mark removes the file (I3; Research Findings on `zotero_lib.py:111-114`).
-- [ ] `test_sources.py` (new): `KeyedFileSource.__post_init__` refusals for `kind`, `key_field` and `key` (design § The keyed kind, review A9); `slugify`; URL normalization.
-- [ ] `test_main_module.py` (new): `python -m agentic_mbse --help` exits 0 (D13).
-- [ ] `test_no_consumer_names.py` (new, I8): the criterion-5 pattern over `src/agentic_mbse/research/`. P6 adds the skill and guide.
+- [x] `__init__.py`: move.
+- [x] `conftest.py`, agentic-mbse half: shipped-template tree with no manifest, `local_site`, pymupdf `generated_pdf`, `run_dir`, `FakeGuard` and a recording variant (used in P4), plus the session check that the suite creates nothing under the repo root's `knowledge/` (design Implementation Notes "Test fixtures", review A13).
+- [x] `fixtures/web/`: move `utf8.html`, `latin1.html`, `marker.html`. Replace `marker.html`'s sealed-paper token with a neutral token the fake guard bars.
+- [x] `test_golden_shapes.py` (new, I1), P1 cases: insertion bytes at both anchors and both fallback forms; the keyed batch block equals the snapshot's Zotero block; receipt key order.
+- [x] `test_index_writer.py`: move, rewritten for both anchors, the end-of-file fallback (replacing "missing anchor raises"), comment masking and the keyed batch block. Add the D10 block ends (the next heading outside a comment, or a line opening a comment) and Location normalization (Architecture § Locations and titles).
+- [x] `test_zotero_path_contract.py`, first half: batch-block field order and values, with a neutral key. Keyed dedupe waits for P2.
+- [x] `test_manifest.py` (new): `test_load_manifest_rows_returns_every_row` and `test_truncate_manifest_restores_recorded_byte_length` move here, plus append. Add the absent-aware rollback: rolling back to a "no manifest" mark removes the file (I3; Research Findings on `zotero_lib.py:111-114`).
+- [x] `test_sources.py` (new): `KeyedFileSource.__post_init__` refusals for `kind`, `key_field` and `key` (design § The keyed kind, review A9); `slugify`; URL normalization.
+- [x] `test_main_module.py` (new): `python -m agentic_mbse --help` exits 0 (D13).
+- [x] `test_no_consumer_names.py` (new, I8): the criterion-5 pattern over `src/agentic_mbse/research/`. P6 adds the skill and guide.
 
 **Code.**
 
-- [ ] `src/agentic_mbse/__main__.py` (D13).
-- [ ] `research/__init__.py`: exports only the D2 names that exist so far. The list is complete at P3.
-- [ ] `research/paths.py`, `research/manifest.py`, `research/sources.py`: per Component Overview, D6, D8.
-- [ ] `research/runs.py`: per Component Overview. The receipt writer takes the receipt fields as keyword arguments and builds the dict in the snapshot's order, so P1 pins receipt key order without `register.py`.
-- [ ] `research/index.py`: the parser (D10; masking keeps offsets, per Implementation Notes), the anchor rule and insertion bytes (D9), seam and batch block rendering, cut and replace, Location normalization and title matching. `add_entry`, `remove_entry` and `list_entries` wait for P4.
+- [x] `src/agentic_mbse/__main__.py` (D13).
+- [x] `research/__init__.py`: exports only the D2 names that exist so far. The list is complete at P3.
+- [x] `research/paths.py`, `research/manifest.py`, `research/sources.py`: per Component Overview, D6, D8.
+- [x] `research/runs.py`: per Component Overview. The receipt writer takes the receipt fields as keyword arguments and builds the dict in the snapshot's order, so P1 pins receipt key order without `register.py`.
+- [x] `research/index.py`: the parser (D10; masking keeps offsets, per Implementation Notes), the anchor rule and insertion bytes (D9), seam and batch block rendering, cut and replace, Location normalization and title matching. `add_entry`, `remove_entry` and `list_entries` wait for P4.
 
 **Satisfies:** D6, D8, D9, D10, D13, D18 (fixtures); I1 (P1 cases), I3 (manifest half), I8 (package half).
 
 ### Validation
 
-- [ ] Exit check.
-- [ ] Manual: `uv run python -m agentic_mbse extract --help` prints the `extract` usage.
+- [x] Exit check.
+- [x] Manual: `uv run python -m agentic_mbse extract --help` prints the `extract` usage.
 
 **What we know works after P1:** the package writes index blocks byte-identical to the snapshot's at either anchor, appends correctly at end of file, keeps receipt key order, and rolls back a manifest that did not exist.
 
 ### Implementation Notes
 
-_To fill during implementation: what changed, issues, deviations._
+#### Phase 1 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,325 passed, 1 skipped, 1 xfailed, 5 deselected, 0 failed (baseline 2,217 passed; 108 new).
+- `uv run pytest tests/test_research -m ""`: 108 passed. No `slow` test lands in P1.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a new file.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a new file.
+- Manual: `uv run python -m agentic_mbse extract --help` prints the `extract` usage. `test_main_module.py` now checks this too.
+
+**What changed.**
+
+- Golden data in `tests/test_research/golden/`, derived once by `.orchestrate-logs/golden/derive.py` (gitignored, kept as provenance) with the clock fixed at 2026-10-12T09:30:00Z. The script stubs `pyzotero` in `sys.modules`; nothing was installed. It derives more than the plan listed, so later phases read frozen data instead of recomputing:
+  - `index/`: the seam block (url and local_pdf), the batch block, both inserted at `## How Sources Are Used`, plus the three design-derived cases (other anchor, end of file with and without a final newline). `anchor_how_this_file.before.md` is the shipped template frozen as of today, so P6's template edit cannot move it.
+  - `manifest/{url,local_pdf,keyed}.jsonl`: the snapshot's rows as the bytes it appends, not just key order. Inputs in `manifest/inputs.json`.
+  - `receipts/`: two receipts in one run (a registration, then a pre-capture hold-out refusal), with the snapshot's file names and bytes.
+  - `seam.json` (request and key) and `seam/`: a bounded-negative run (`run.json`, `run.jsonl`, `process_log.md`, `return.json`, and the negative) and a registered run's `return.json`. Paths in them are relative, from a `knowledge/research/requests` home.
+- `src/agentic_mbse/__main__.py`: runs `agentic_mbse.cli.main`.
+- `src/agentic_mbse/research/`:
+  - `paths.py`: `RegistryPaths(knowledge_dir)` derives the eight paths and `project_root`; `default_paths()`, `registry_lock`, and `sweep_stale_staging(paths, older_than_s=…)`. The age is the caller's: register passes `4 * CAPTURE_TIMEOUT_S` in P2.
+  - `manifest.py`: `load_manifest_rows`, `first_matching_row`, `append_manifest_row`, `mark_manifest` / `roll_back_manifest` (a mark of `None` length means "no manifest", and rollback removes the file), `write_manifest_without`.
+  - `sources.py`: the three source kinds, `SourceMetadata`, `slugify`, `normalize_url`. `index_profile` is `"seam"` or `"batch"`.
+  - `runs.py`: the run-directory names, `Receipt` (TypedDict), `write_receipt(run_dir, *, …, at)` building the dict in the snapshot's order, `read_receipts`, `is_run_dir`, `read_run_meta`, `run_limits`, `append_run_log`, `read_run_log`.
+  - `index.py`: `parse_index(text, project_root=…)` → `IndexBlock(start, end, text, title, type, location, slug)`; `normalize_location`; `blocks_titled`; `with_block_inserted` (pure) and `insert_block` (file); `without_block`; `with_block_replaced`; `render_seam_block`; `render_batch_block`.
+  - `__init__.py`: the seven D2 names that exist so far.
+- Tests in `tests/test_research/`: `conftest.py`, `fixtures/web/` (the marker token is now `sealed-widget-07`), `test_golden_shapes.py`, `test_index_writer.py`, `test_zotero_path_contract.py` (first half), `test_manifest.py`, `test_sources.py`, `test_main_module.py`, `test_no_consumer_names.py`, and `test_runs.py`. The last is not in the plan; it covers the run-log and receipt functions, which have no other caller until P2 and P5.
+- The key tests were mutation-checked: dropping one newline from the insertion fails the three anchor goldens; removing the comment boundary fails the A4 case; unmasking comments fails five parser tests; a test writing `knowledge/.registry.lock` at the repo root fails the session check.
+
+**Deviations and decisions** (snapshot vs. this code; none changes a byte fusion-tea writes or reads).
+
+- The clock is an argument. `write_receipt` takes `at: datetime`, and both renderers take `added: date`, so the goldens pin file names and bytes. The callers (P2) pass `datetime.now(timezone.utc)` and `date.today()`.
+- `render_seam_block(source_kind, origin)` replaces the snapshot's two optional origin fields: the label follows the kind (`url` → Source URL, `local_pdf` → Origin Path). Its Raw SHA256 line is written from `source_id`, which equals the raw digest in every snapshot call. "Requires source_url or origin_path" became "requires an origin".
+- The batch block always has a key line. The snapshot's keyless batch block had no caller left (local PDFs use the seam profile), so `test_local_pdf_block_omits_zotero_key` was not moved.
+- A Location's slug is its first path segment under `knowledge/sources/`, with or without a trailing `/`. The snapshot's regex required the slash. Every Location the registry writes has it, so fusion-tea's index parses the same (O1 checks this); a hand-written `knowledge/sources/x` is now seen by `verify` and `retire`.
+- The anchor rule keeps the snapshot's prefix match (a line starting with either heading) and skips comments. An anchor on the file's first line now counts; the snapshot needed a newline before it.
+- The end-of-file fallback adds no leading newline to an empty file. The design says to add one "if the file does not end with one"; an empty file has no last line to separate from. No golden case covers an empty index, and P2 refuses a missing one.
+- `KeyedFileSource` also refuses a blank `kind` or `key_field`, besides the design's three refusals. Same caller error, same `ValueError`.
+- The staging sweep treats only `FileNotFoundError` as "vanished" (the snapshot caught every `OSError`).
+- Not handled: a `<!--` inside inline code opens a comment for the parser. No shipped or fusion-tea index has one.
+
+**For the next phases.**
+
+- P2: keep each commit rung a module-level name in `register.py`. Importing `append_manifest_row` and `insert_block` into `register.py` makes them patchable there. Use `mark_manifest`/`roll_back_manifest` for the fresh-target rollback. The golden manifest rows carry `date_extracted` 2026-10-12, so the row builder should take the date as `render_*` does, or the test compares key order only. `capture.py` has no `capture_target` on sources: use `source.url` for a `UrlSource` and `staged_input` otherwise. Add the "nothing written" helper to `conftest.py` (accepts an absent or empty manifest and staging). `generated_pdf` is drawn with pymupdf and not yet exercised by capture.
+- P3: `knowledge_tree.root.parent` is `tmp_path / "project"`, its own directory, so a test's `pyproject.toml` there never meets run directories in `tmp_path`.
+- P4: `IndexBlock.location` is already normalized and `slug` set. Entry labels, `add_entry`, `remove_entry`, `list_entries` and a baseline-writing tree fixture are still to come. Guards: `FakeGuard`, `RecordingGuard`, `NO_GUARD` and `SEALED_TOKEN` are in `conftest.py`; import them with `from tests.test_research.conftest import …`, as `tests/test_sysml` does.
+- P5: the seam goldens are under `golden/seam*`. `runs.py` has no `SeamError`: `seam.py` checks `is_run_dir` and raises its own error.
 
 ---
 

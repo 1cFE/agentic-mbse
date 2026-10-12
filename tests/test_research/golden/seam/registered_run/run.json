@@ -1,0 +1,12 @@
+{
+  "request_id": "REQ-902",
+  "request_key": "e389c5a43e81bf56dbb63363643eaeb127f19cfbf2020cb881b4b06e11341b46",
+  "request_path": "knowledge/research/requests/REQ-902.json",
+  "home_root": "knowledge/research/requests",
+  "limits": {
+    "max_searches": 2,
+    "max_captures": 1
+  },
+  "opened_at": "2026-10-12T09:30:00+00:00",
+  "override_reason": null
+}

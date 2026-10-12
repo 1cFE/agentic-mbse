@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-12T09:30:00+00:00",
+  "receipts": [
+    {
+      "outcome": "registered",
+      "candidate": "http://127.0.0.1:8000/utf8.html",
+      "slug": "widget_coil_note",
+      "path": "knowledge/sources/widget_coil_note/",
+      "source_id": "99d8ff05c9631996c0d62b5c3ac53be01bcbdc92d76e9a18ad95096080336bed",
+      "triage": "keeper",
+      "reason": "",
+      "rule_id": null,
+      "captured": true
+    },
+    {
+      "outcome": "holdout_hit",
+      "candidate": "https://example.org/mirror/sealed-widget-07.pdf",
+      "slug": null,
+      "path": null,
+      "source_id": null,
+      "triage": "keeper",
+      "reason": "term:sealed-widget-07 matched 1x",
+      "rule_id": "term:sealed-widget-07",
+      "captured": false
+    }
+  ]
+}

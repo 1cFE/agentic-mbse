@@ -1,0 +1,27 @@
+{
+  "source_id": "99d8ff05c9631996c0d62b5c3ac53be01bcbdc92d76e9a18ad95096080336bed",
+  "raw_artifact_sha256": "17a9d6515507487f7b2509a58186f7b692c8f5eb84c42feb3baafd3a7f5d9eb9",
+  "extract_sha256": "2e139b97b5e2558ca00fd80b805f764b5cb9e548e1dd2c8bc423a5276a59082c",
+  "date_extracted": "2026-10-12",
+  "url": "http://127.0.0.1:8000/utf8.html",
+  "local_pdf_path": "inbox/widget_coil_note.pdf",
+  "keyed": {
+    "kind": "zotero",
+    "key_field": "zotero_key",
+    "key": "ABCD1234"
+  },
+  "rows": {
+    "url": {
+      "title": "Widget Coil Note",
+      "slug": "widget_coil_note"
+    },
+    "local_pdf": {
+      "title": "Widget Coil Note",
+      "slug": "widget_coil_note"
+    },
+    "keyed": {
+      "title": "Batch Paper",
+      "slug": "batch_paper"
+    }
+  }
+}
