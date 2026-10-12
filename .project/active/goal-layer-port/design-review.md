@@ -292,3 +292,53 @@ Orchestrator calls, 2026-10-11. All `[AGENT]` (orchestrator); none is an owner d
 1. Record resolutions above.
 2. Return to `/_my_design` and point it at this review. The reviewer does not edit the design.
 3. Once the design is revised, M3's exact wording is the condition of the SC6 check. If A1 changes beyond these fixes, a fresh reviewer diff-checks it before F1 copies template bytes.
+
+---
+
+## Round 2 — 2026-10-11
+
+**Scope:** the revision in `e25a85c`. I re-checked A1, A2 and A6 against the SC6 table and fusion `REQUIREMENTS.md:87-107`, confirmed M1, M2 and M4, and read only the changed text for new issues.
+
+**Verdict: Approve.** The SC6 check passes on A1 as now written (design.md:331-464). Any later change to A1 still gets a fresh diff check before F1 copies template bytes, as the Validation table says (design.md:261).
+
+### SC6 re-check
+
+- **M3 is applied verbatim** in rules 3, 5 and 7, and in rule 2's evaluability clause (design.md:352-357).
+- **The author's extra change is accepted.** Rule 2's "Its policy stays separately identifiable" became "must stay". MR-7 says "must be separately identifiable" (`REQUIREMENTS.md:95`). That is the same force, and it fixes the same slip M3 fixed elsewhere.
+- **The advisories are applied.** A9's execution route is at :367. A12 restores "empirical validity" and "physical adequacy" at :356. The added "empirically supported domain" follows MR-7's own framing at `:98`, and "never reported as a pass" still covers every unsupported evaluation.
+- **A2 is consistent.** The "Process Selection" and Technical Patterns rows are unchanged. The `:59` clause "do not set one from the other" (design.md:472) is broader than MR-7, which is directional. It fits the bullet's "own quantities" theme, though: setting demand from installed capacity would also hide a shortfall. Acceptable as written.
+- **A6 loses nothing.** It names "Process Selection" as the trigger's home. The conductor bullet is trimmed to the application plus "rule 6", and rule 6 carries the general clause. The authority line, invariant and depth work are unchanged (design.md:501-509).
+- **The grade paragraph passes.** Only the principle is presented as owner-originated. The generalization is dated and stays `[AGENT]`, with no unreachable pointer (design.md:463).
+- **One miss of my own from round 1.** The SC6 table marked three present-tense sentences "Kept":
+  - rule 7's first sentence, "stays the basis" (MR-7 `:99`: "must remain");
+  - Acceptance, "stays explicitly unsupported" (MR-7 `:105`: "must remain");
+  - Acceptance, "A review records compliance" (MR-7 `:105`: "must record").
+
+  These are the M3 pattern in unchanged text. Advisory: change them to MR-7's words when P1 writes the file. That is consistent with rule 2 and needs no design round.
+
+### Must-fix items from round 1
+
+- **M1: resolved.**
+  - A1 now has a Validated Pattern, wrong and right, plus Verification, the `adr002-calculations.md` and `semantic-operators.md` lines, and a closing grade paragraph.
+  - The snippets match `.orchestrate-logs/design-scratch/{right,wrong}/models/designs/station/station.sysml`.
+  - I re-ran `agentic-mbse validate --complete` on both trees. Both pass all six levels, and `right/` reports one admitted numerical constraint. That confirms Appendix F and the Verification claim.
+  - The fixture's numbers fit: required flow = 0.30 − 0.005 × 12 = 0.24 m³/s, against 0.25 supplied.
+- **M2: resolved.** A1 § Review points at "Process Selection" (design.md:372). Invariant 1 names it as the trigger's one home, with the runbook row as its mirror (:150). The runbook row is labelled a mirror (:533), and A6 points at "Process Selection".
+- **M4: resolved.** D3 (design.md:620-648) now has:
+  - the toolkit from a wheel in a scratch venv;
+  - a no-user-config requirement, with the mechanism recorded in evidence;
+  - every operator-owned answer pre-stated, with a `handoff` Stop instead of a question;
+  - a seed with no fit check (Appendix F `seed/`), and a model-changing question;
+  - a brief that does not name the pattern;
+  - B1 and `goal.md` § Invariants in the pass condition.
+
+### New issues in the changed text
+
+No new must-fix. Four advisories for the plan:
+
+- **R2-A1. D3 step 2 needs `mkdir target` first** (design.md:624). `cmd_init` fails on a missing directory (`cli/__init__.py:347-350`).
+- **R2-A2. D3 step 3 sets only `PATH` for the venv** (design.md:627). The runbook's resolver is `uv run python -c …`, and the target has no `pyproject.toml`. Outside a project, `uv run` finds a virtual environment through `VIRTUAL_ENV` or a `.venv` directory. A venv that is only on `PATH` may lose to a uv-managed Python. I could not run this check in my sandbox, so treat it as unverified. Fix: also set `VIRTUAL_ENV`, as the round-1 design did, and check the agent's first resolver call in the transcript.
+- **R2-A3. Verification step 1 doesn't say what an identity passes as** (design.md:460). It says a supplied value passes, and an expression reaching demand is a selection rule. It is silent on an identity over other supplied values, such as `volume = area * length`, which rule 5 allows. Add "an identity over supplied values passes".
+- **R2-A4. The grade paragraph reads as part of Verification** (design.md:463). It sits under that heading. A `---` before it would mark it as the document's close, the way Equality intent's stanza closes its section.
+
+**Next Steps:** `/_my_plan`. The plan carries R2-A1 to R2-A4 and the three round-1 wording misses above into P1 and P5. None needs another design round.
