@@ -68,7 +68,7 @@ Run from the worktree root. Every agentic-mbse phase ends with:
 ```bash
 SC2='fusion-tea|MR-[0-9]|\.codex-test|stellarator|exploration/|\.claude/|/home/|research_seam|source_registry|integrate\.py|STUDY_POLICY|holdout|ARIES|aries-cs|demo-depth-rubric|depth target|GSTH|WI-0[0-9]'
 GOAL_TEXT="skills/run-goal/SKILL.md skills/narrate-goal/SKILL.md project_templates/GOAL_RUNBOOK.md.template project_templates/goal.md.template project_templates/trail.md.template project_templates/learnings.md.template project_templates/test_narrative_links.py.template docs/goal-layer-decisions.md"
-grep -nE "$SC2" $GOAL_TEXT 2>/dev/null | grep -v '@2b1e9f9d5'          # → no output
+grep -nE "$SC2" $GOAL_TEXT 2>/dev/null | grep -v '^docs/goal-layer-decisions.md:.*@2b1e9f9d5'   # → no output (provenance exempt in the decision record only)
 grep -n '\.project/' $GOAL_TEXT 2>/dev/null | grep -v '@2b1e9f9d5'     # → only the two-PM "for example" wording
 ```
 
@@ -836,7 +836,7 @@ Stop after writing `### T-001 start` in trail.md. If you reach any other point w
 
 **Progress notes:**
 
-- Done 2026-10-11 by the orchestrator, one run, all six checks PASS (`evidence/dry-run/checks.md`). Isolation by `--setting-sources project,local`, probed first (`evidence/dry-run/install.md`). The agent ran no resolver command; it read `design-choices.md` at the packaged docs path that the installed `.claude/settings.json` names.
+- Done 2026-10-11 by the orchestrator, one run, all six checks PASS (`evidence/dry-run/checks.md`). Isolation by `--setting-sources project,local`, probed first (`evidence/dry-run/install.md`). The agent ran the resolver itself during its grounding survey (`read-files.txt:5`) and read `design-choices.md` under the printed packaged path (corrected after audit advisory 6).
 
 ---
 
