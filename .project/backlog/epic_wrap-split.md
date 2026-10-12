@@ -304,7 +304,7 @@ Audit note (2026-10-12, `completed/20261012_goal-layer-port/audit.md`): the unch
 - [x] `agentic-mbse install-commands --list` names `research-acquire`; a fresh init contains it and the two request directories.
 - [x] The ported tests pass in agentic-mbse with no fusion-tea on the path; `agentic-mbse research verify` on a copy of fusion-tea's `knowledge/` reports the same findings as `scripts/source_registry.py verify` does today.
 - [x] A fresh target runs one request end to end through the installed skill and CLI (dry run recorded in evidence).
-- [x] `grep -iE "fusion-tea|MR-[0-9]|aries|zotero|\.project/"` over the shipped skill, guide and `src/agentic_mbse/research/` returns nothing outside labelled examples.
+- [x] `grep -iE "fusion-tea|MR-[0-9]|\baries\b|zotero|\.project/"` (word-bounded `aries`, corrected 2026-10-12 at Item 5 design review) over the shipped skill, guide and `src/agentic_mbse/research/` returns nothing outside labelled examples.
 - [x] Using only the shipped `manage-sources`, a user adds a capturable document (registered), adds a non-capturable source, removes a registered source (retired), and lists both kinds.
 - [x] fusion-tea's research and Zotero suites pass against the installed package with its two scripts deleted; ledger rows exist for every removed line.
 

@@ -279,3 +279,28 @@ The implementation follows D1–D18 and I1–I8.
 - **Codex.** I did not exercise it; the dry runs ran Claude only.
 - **Two `manage-sources` paths.** `--replace` and "Resolve a queued candidate" are covered by unit tests only, not by a dry run.
 - **Concurrency.** I did not stress-test the registry lock under real concurrent writers beyond the ported `test_staging_concurrency.py`.
+
+---
+
+## Follow-ups resolved (orchestrator, 2026-10-12)
+
+Fixed before merge in Phase 7, commit `469e2f9`. The orchestrator verified the fixes itself and did not re-run the audit, because each is small and checked objectively.
+
+- **F1 fixed.** `register` refuses `<!--` in every caller-supplied field it writes into the index block, as `precondition_failed` before capture, with a receipt under `--run`. The fields are the title, the three sentences, a keyed source's label and display, and the URL or local path. The check is shared with `add-entry` (`index.py` `opens_a_comment`). The Behaviour Changes table has the row.
+- **F2 fixed.** `init`'s closing output points at `/manage-sources`, and a test pins the line.
+- **F3 fixed.** A key under `[tool.agentic-mbse]` other than `research`, or a `[tool.agentic_mbse]` table, is a configuration fault, and the guard fails closed. D4, I4 and the hook guide are updated. Tests cover both spellings with a source that registers when the fault is absent.
+- **U4 reverted to the snapshot.** `retire`'s rollback skips a parked artifact that has vanished.
+- **Advisories applied:** evidence file names fixed (A2); the runbook maps an all-seam-repair queue to `PREREQUISITE` (A3, pinned by a contract test); the dry-run README says why O2a asked about copper (A4); `--adequacy` and `--budget` are documented exactly (A5, A6).
+- **Not applied:**
+  - A7 (`skills/project-structure/SKILL.md:80` "Use For") is left to Item 4's read-through.
+  - Refusing line breaks in `register` is not taken. The old scripts accepted them, and refusing could reject fusion-tea's unattended batch ingest.
+  - The failed-final-index-write rollback is unchanged, as in the old scripts.
+- **Verification, run by the orchestrator at `469e2f9`:**
+  - `uv run pytest tests/`: 2,767 passed, 1 skipped, 1 xfailed, 14 deselected, 0 failed.
+  - `uv run pytest tests/test_research -m ""`: 549 passed.
+  - ruff 118 and mypy 88 (the baselines).
+  - Criterion 5's grep returns nothing.
+  - The phase reports that 17 of its 19 new tests failed before their fix.
+- **Dry-run evidence:** the wheel was built at `d49d119`. Phase 7 changed `register` refusals for `<!--` text, a config-fault rule, and skill and guide wording, and none of these touches the paths O2a and O2b exercised. The dry runs were not repeated.
+
+**Verdict after follow-ups: Certify.**
