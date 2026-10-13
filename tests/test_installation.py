@@ -1,5 +1,6 @@
 """Installer lifecycle regressions across platforms, aliases, migration, and ownership."""
 
+import hashlib
 import json
 import os
 import shutil
@@ -11,12 +12,16 @@ import tomllib
 
 from agentic_mbse.cli import cmd_init, cmd_install_commands
 from agentic_mbse.cli.installation import (
+    INSTALLER_API_VERSION,
     LEGACY_MANIFEST,
     MANIFEST,
     Installer,
     fingerprint,
+    install_assistants,
+    install_bundle,
     install_dev_bundle,
     legacy_link_target,
+    skill_bundles,
 )
 from tests.helpers.shipped import AGENTS, HOOKS, REPO_ROOT, SKILLS, bundle_files, frontmatter, kind
 
@@ -31,6 +36,8 @@ LEGACY_ENTRIES = {
     "agents": f"{AGENTS[0]}.md",
     "hooks": HOOKS[0],
 }
+# Another repository's manifest, for bundles it installs through Installer.
+FOREIGN_MANIFEST = ".foreign-tool/install.json"
 
 
 def init(target, **options):
@@ -795,3 +802,212 @@ def test_mixed_legacy_tree_adopts_every_shipped_link_and_keeps_owner_entries(
     for skill in SKILLS:
         assert (target / ".claude/skills" / skill / "SKILL.md").is_file(), skill
     assert [entry_state(p) for p in owners] == before
+
+
+def foreign_bundle(tmp_path: Path) -> Path:
+    """Another repository's skill bundle, named apart from every shipped one."""
+    source = tmp_path / "foreign-source" / "foreign-skill"
+    (source / "references").mkdir(parents=True)
+    (source / "SKILL.md").write_text(
+        "---\nname: foreign-skill\ndescription: Another tool's workflow.\nmetadata:\n  kind: workflow\n---\n\nSteps.\n"
+    )
+    (source / "references/guide.md").write_text("Guide.\n")
+    return source
+
+
+def install_foreign(target: Path, source: Path) -> Installer:
+    """Install the foreign bundle as another repository does: its own manifest, never prompting."""
+    installer = Installer(target, force=False, decide=lambda _: "skip", manifest=FOREIGN_MANIFEST)
+    install_bundle(installer, source, runtimes=("claude", "codex"), link_mode="symlink", dev=False)
+    installer.save()
+    return installer
+
+
+def skill_layout(target: Path) -> dict[str, object]:
+    """The skill folders a target holds, as they stand."""
+    folders = (".agents/skills", ".claude/skills")
+    return {f: entry_state(target / f) for f in folders if (target / f).is_dir()}
+
+
+def test_custom_manifest_round_trip_never_writes_the_agentic_mbse_manifest(tmp_path):
+    """An unmodified file is updated and an edited one kept, recorded only in the custom manifest."""
+    first = Installer(tmp_path, force=False, decide=lambda _: "skip", manifest=FOREIGN_MANIFEST)
+    for name in ("unmodified.md", "edited.md"):
+        first.write(name, b"original")
+    first.save()
+    (tmp_path / "edited.md").write_text("owner edit")
+
+    second = Installer(tmp_path, force=False, decide=lambda _: "skip", manifest=FOREIGN_MANIFEST)
+    for name in ("unmodified.md", "edited.md"):
+        second.write(name, b"updated")
+    second.save()
+    assert (tmp_path / "unmodified.md").read_text() == "updated"
+    assert (tmp_path / "edited.md").read_text() == "owner edit"
+    assert second.actions["updated"] == ["unmodified.md"]
+    assert second.actions["skipped"] == ["edited.md"]
+    assert json.loads((tmp_path / FOREIGN_MANIFEST).read_text())["files"] == {
+        "unmodified.md": hashlib.sha256(b"updated").hexdigest(),
+        # The skipped edit keeps its baseline, so the next run still sees an edit.
+        "edited.md": hashlib.sha256(b"original").hexdigest(),
+    }
+    assert not (tmp_path / MANIFEST).parent.exists()
+
+
+def test_custom_manifest_saves_only_its_own_entries_beside_both_agentic_mbse_manifests(tmp_path):
+    """Neither agentic-mbse manifest seeds a custom one, and both are left as they were."""
+    for name, relative in ((LEGACY_MANIFEST, "legacy.md"), (MANIFEST, "current.md")):
+        (tmp_path / relative).write_text("agentic-mbse's")
+        manifest = tmp_path / name
+        manifest.parent.mkdir(parents=True, exist_ok=True)
+        manifest.write_text(json.dumps({"files": {relative: fingerprint(tmp_path / relative)}}))
+    before = {name: (tmp_path / name).read_bytes() for name in (LEGACY_MANIFEST, MANIFEST)}
+    asked = []
+
+    def decide(relative: str) -> str:
+        asked.append(relative)
+        return "skip"
+
+    installer = Installer(tmp_path, force=False, decide=decide, manifest=FOREIGN_MANIFEST)
+    for relative in ("legacy.md", "current.md", "foreign.md"):
+        installer.write(relative, b"foreign")
+    installer.save()
+    # Files only agentic-mbse's manifests record are not this installer's, so it asks.
+    assert asked == ["legacy.md", "current.md"]
+    assert json.loads((tmp_path / FOREIGN_MANIFEST).read_text())["files"] == {
+        "foreign.md": hashlib.sha256(b"foreign").hexdigest()
+    }
+    assert {name: (tmp_path / name).read_bytes() for name in before} == before
+
+
+@pytest.mark.parametrize("dev", [False, True])
+@pytest.mark.parametrize("link_mode", ["symlink", "copy"])
+@pytest.mark.parametrize("assistant", ["both", "codex"])
+def test_install_bundle_gives_the_layout_install_assistants_gives(
+    tmp_path, assistant, link_mode, dev
+):
+    """Bundle by bundle, install_bundle writes the same skill folders and baselines."""
+    whole, each = tmp_path / "whole", tmp_path / "each"
+    whole.mkdir()
+    each.mkdir()
+    reference = Installer(whole, force=False, decide=lambda _: "skip")
+    install_assistants(reference, REPO_ROOT, assistant=assistant, link_mode=link_mode, dev=dev)
+    runtimes = ("claude", "codex") if assistant == "both" else (assistant,)
+    installer = Installer(each, force=False, decide=lambda _: "skip")
+    for source in skill_bundles(REPO_ROOT / "skills"):
+        install_bundle(installer, source, runtimes=runtimes, link_mode=link_mode, dev=dev)
+
+    assert sorted(os.listdir(each / ".agents/skills")) == SKILLS
+    assert skill_layout(each) == skill_layout(whole)
+    bundles = (".agents/skills/", ".claude/skills/")
+    assert installer.files == {k: v for k, v in reference.files.items() if k.startswith(bundles)}
+
+
+@pytest.mark.parametrize("foreign_first", [True, False])
+@pytest.mark.parametrize("command", ["init", "install-commands"])
+def test_a_foreign_bundle_survives_init_and_install_commands(
+    tmp_path, capsys, command, foreign_first
+):
+    """Each installer keeps to its own manifest: neither prunes, asks about or claims the other's."""
+    source = foreign_bundle(tmp_path)
+    target = tmp_path / "target"
+    target.mkdir()
+    order = ["foreign", command] if foreign_first else [command, "foreign"]
+    # Twice, so each installer also runs over the other's completed install.
+    for step in order * 2:
+        if step == "foreign":
+            assert install_foreign(target, source).actions["skipped"] == []
+        elif step == "init":
+            assert init(target) == 0
+        else:
+            args = Namespace(directory=str(target), force=False, list=False)
+            assert cmd_install_commands(args) == 0
+
+    assert "foreign-skill" not in capsys.readouterr().out
+    alias = target / ".claude/skills/foreign-skill"
+    assert os.readlink(alias) == "../../.agents/skills/foreign-skill"
+    for inside in ("SKILL.md", "references/guide.md"):
+        assert (alias / inside).read_bytes() == (source / inside).read_bytes()
+    theirs = json.loads((target / FOREIGN_MANIFEST).read_text())["files"]
+    assert sorted(theirs) == [
+        ".agents/skills/foreign-skill/SKILL.md",
+        ".agents/skills/foreign-skill/references/guide.md",
+        ".claude/skills/foreign-skill",
+    ]
+    ours = json.loads((target / MANIFEST).read_text())["files"]
+    assert not [key for key in ours if "foreign-skill" in key]
+    for skill in SKILLS:
+        assert (target / ".claude/skills" / skill / "SKILL.md").is_file(), skill
+
+
+def test_installer_api_version_covers_the_surface_other_repositories_call(tmp_path):
+    """Each name `installer/v1` covers, called as another repository calls it.
+
+    A change to any of these shapes fails here: change INSTALLER_API_VERSION with it.
+    """
+    from agentic_mbse.cli.installation import frontmatter as read_frontmatter
+
+    assert INSTALLER_API_VERSION == "installer/v1"
+    source = foreign_bundle(tmp_path)
+    meta, body = read_frontmatter(source / "SKILL.md")
+    assert meta["metadata"] == {"kind": "workflow"}
+    assert body == "\nSteps.\n"
+
+    # The decide vocabulary, over two conflicts each: an `_all` answer is asked once for both.
+    outcomes = {
+        "skip": ("owner", 2),
+        "overwrite": ("installed", 2),
+        "backup": ("installed", 2),
+        "skip_all": ("owner", 1),
+        "overwrite_all": ("installed", 1),
+    }
+    for answer, (text, questions) in outcomes.items():
+        conflicts = tmp_path / answer
+        conflicts.mkdir()
+        names = ["one.md", "two.md"]
+        for name in names:
+            (conflicts / name).write_text("owner")
+        asked: list[str] = []
+
+        def decide(relative: str) -> str:
+            asked.append(relative)
+            return answer
+
+        installer = Installer(conflicts, force=False, decide=decide, manifest=FOREIGN_MANIFEST)
+        assert [installer.write(name, b"installed") for name in names] == [text == "installed"] * 2
+        assert len(asked) == questions, answer
+        assert [(conflicts / name).read_text() for name in names] == [text] * 2, answer
+        assert installer.actions["skipped"] == (names if text == "owner" else []), answer
+        assert installer.actions["backed_up"] == (names if answer == "backup" else []), answer
+
+    target = tmp_path / "target"
+    target.mkdir()
+    installer = Installer(target, force=False, decide=lambda _: "skip", manifest=FOREIGN_MANIFEST)
+    assert installer.parents(".claude/commands/foreign.md")
+    assert (target / ".claude/commands").is_dir()
+    (target / "redirected").symlink_to(tmp_path, target_is_directory=True)
+    assert not installer.parents("redirected/file.md")
+    assert installer.write(".claude/commands/foreign.md", b"command")
+    install_bundle(installer, source, runtimes=("claude",), link_mode="symlink", dev=False)
+    installer.save()
+    assert installer.actions == {
+        "created": [
+            ".claude/commands/foreign.md",
+            ".agents/skills/foreign-skill/SKILL.md",
+            ".agents/skills/foreign-skill/references/guide.md",
+        ],
+        "updated": [],
+        "skipped": ["redirected/file.md"],
+        "backed_up": [],
+        "symlinked": [".claude/skills/foreign-skill"],
+        "removed": [],
+    }
+    assert json.loads((target / FOREIGN_MANIFEST).read_text()) == {
+        "version": 2,
+        "files": installer.files,
+    }
+    assert sorted(installer.files) == [
+        ".agents/skills/foreign-skill/SKILL.md",
+        ".agents/skills/foreign-skill/references/guide.md",
+        ".claude/commands/foreign.md",
+        ".claude/skills/foreign-skill",
+    ]

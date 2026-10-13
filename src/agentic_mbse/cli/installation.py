@@ -12,6 +12,16 @@ import yaml
 
 MANIFEST = ".agentic-mbse/install.json"
 LEGACY_MANIFEST = ".claude/.tool-hashes.json"
+# Other repositories install their own bundles through this surface, with their own manifest.
+# Change this string whenever any of it changes shape:
+# - Installer(target, *, force, decide, manifest), where decide answers "skip", "overwrite",
+#   "backup", "skip_all" or "overwrite_all";
+# - Installer.parents, Installer.write and Installer.save;
+# - Installer.files, the loaded ownership baseline: relative path -> recorded fingerprint;
+# - Installer.actions, with its keys "created", "updated", "skipped", "backed_up", "symlinked"
+#   and "removed";
+# - install_bundle and frontmatter.
+INSTALLER_API_VERSION = "installer/v1"
 BUNDLE_KINDS = ("workflow", "supporting")
 # Where the pre-native installer linked entries: .claude/<location>/<name>.
 LEGACY_LOCATIONS = ("commands", "skills", "agents", "hooks")
@@ -89,19 +99,32 @@ def backup(path: Path) -> Path:
 
 
 class Installer:
-    """Reconcile managed entries while retaining the baseline of skipped edits."""
+    """Reconcile managed entries while retaining the baseline of skipped edits.
 
-    def __init__(self, target: Path, *, force: bool, decide: Callable[[str], str]):
+    Ownership is recorded in `manifest`, relative to `target`. Only agentic-mbse's own manifest
+    also inherits the pre-native installer's baseline; any other manifest is read alone.
+    """
+
+    def __init__(
+        self,
+        target: Path,
+        *,
+        force: bool,
+        decide: Callable[[str], str],
+        manifest: str = MANIFEST,
+    ) -> None:
         self.target = target
         self.force = force
         self.decide = decide
+        self.manifest = manifest
         self.default_action: str | None = None
         self.actions: dict[str, list[str]] = {
             k: [] for k in ("created", "updated", "skipped", "backed_up", "symlinked", "removed")
         }
         self.adopted: dict[str, str] = {}  # legacy entry -> the link text it replaced
         self.files: dict[str, str] = {}
-        for name in (LEGACY_MANIFEST, MANIFEST):
+        baselines = (LEGACY_MANIFEST, MANIFEST) if manifest == MANIFEST else (manifest,)
+        for name in baselines:
             path = target / name
             if path.exists():
                 self.files.update(json.loads(path.read_text())["files"])
@@ -285,9 +308,9 @@ class Installer:
 
     def save(self) -> None:
         """Atomically save ownership, including unchanged baselines for skipped files."""
-        if not self.parents(MANIFEST):
+        if not self.parents(self.manifest):
             raise ValueError("Cannot save installation manifest through a redirected parent")
-        path = self.target / MANIFEST
+        path = self.target / self.manifest
         temporary = path.with_suffix(".tmp")
         if temporary.exists() or temporary.is_symlink():
             temporary.unlink()
@@ -426,18 +449,30 @@ def expose_to_claude(installer: Installer, source: Path, *, link_mode: str, dev:
             installer.copy_tree(source, alias, dev=dev)
 
 
+def install_bundle(
+    installer: Installer, source: Path, *, runtimes: tuple[str, ...], link_mode: str, dev: bool
+) -> None:
+    """Install one skill bundle at `.agents/skills/<name>` and, for Claude, its skill alias.
+
+    `runtimes` names the assistants being installed; the alias is made only when it has "claude".
+    `link_mode` is "symlink" or "copy" and shapes that alias. `dev` links the shared folder to
+    `source` instead of copying it.
+    """
+    if dev:
+        shared_ready = install_dev_bundle(installer, source)
+    else:
+        shared_ready = installer.copy_tree(source, f".agents/skills/{source.name}")
+    if shared_ready and "claude" in runtimes:
+        expose_to_claude(installer, source, link_mode=link_mode, dev=dev)
+
+
 def install_assistants(
     installer: Installer, data: Path, *, assistant: str, link_mode: str, dev: bool
 ) -> None:
     """Install shared bundles and selected native roles, instructions, and inactive hooks."""
     runtimes = ("claude", "codex") if assistant == "both" else (assistant,)
     for source in skill_bundles(data / "skills"):
-        if dev:
-            shared_ready = install_dev_bundle(installer, source)
-        else:
-            shared_ready = installer.copy_tree(source, f".agents/skills/{source.name}")
-        if shared_ready and "claude" in runtimes:
-            expose_to_claude(installer, source, link_mode=link_mode, dev=dev)
+        install_bundle(installer, source, runtimes=runtimes, link_mode=link_mode, dev=dev)
     for runtime in runtimes:
         adapter = (data / "adapters" / f"{runtime}.md").read_text()
         installer.write(f".agentic-mbse/{runtime}.md", adapter.encode())

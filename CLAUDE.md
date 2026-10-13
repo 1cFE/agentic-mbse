@@ -213,7 +213,7 @@ See [Critical: Two Contexts](#critical-two-contexts) for the full distinction. Q
 
 ## Change Coordination
 
-There is one installer, `src/agentic_mbse/cli/installation.py`. It owns shared skills, native role rendering, aliases, hooks and their ownership manifest; `init` and `install-commands` both call it. Asset changes belong in it and in the packaged source trees.
+There is one installer, `src/agentic_mbse/cli/installation.py`. It owns shared skills, native role rendering, aliases, hooks and their ownership manifest; `init` and `install-commands` both call it. Asset changes belong in it and in the packaged source trees. Other repositories install their own bundles through `Installer` with their own manifest, and `INSTALLER_API_VERSION` marks that surface: its comment lists what it covers, and the string changes whenever any of it changes shape.
 
 The source tree is the only inventory. Adding a skill means adding `skills/<name>/SKILL.md` with its `metadata.kind`; adding a role means adding `agents/<name>.md`; adding a hook means adding `hooks/<name>`. Nothing else changes: tests derive the inventory from the tree too (`tests/helpers/shipped.py`).
 
