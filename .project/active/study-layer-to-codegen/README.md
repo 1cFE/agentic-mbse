@@ -13,10 +13,10 @@ The item's spec, design, plan and evidence live in sysml-codegen, because the co
 | Repo | Branch | Worktree | Head |
 |---|---|---|---|
 | sysml-codegen | `study-layer-to-codegen` (base `aa35f06`) | `/home/reid/1cfe/sysml-codegen-study-layer` | see `git log` |
-| agentic-mbse | `study-layer-to-codegen` (base `ac5fb1a`) | `/home/reid/1cfe/agentic-mbse-study-layer` | see `git log` |
+| agentic-mbse | `study-layer-to-codegen` (base `ac5fb1a`, `main` merged in at `2eae2f6` after #23), [PR #24](https://github.com/1cFE/agentic-mbse/pull/24) | `/home/reid/1cfe/agentic-mbse-study-layer` | see `git log` |
 | fusion-tea | `study-layer-adoption` (base `c42ed1d8a`) | `/home/reid/1cfe/fusion-tea-study-layer` | `aab9b9ba3` |
 
-**Merge order.** agentic-mbse first (sysml-codegen's `install-commands` needs `installer/v1`). Then set sysml-codegen's `INSTALLER_API_REVISION` (`cli/install.py`) and the README's minimum revision to the agentic-mbse merge SHA, run `adr.sh index` when merging sysml-codegen `main` (ADRs 0011–0014 landed there), and merge sysml-codegen. fusion-tea's `study-layer-adoption` merges only after the adoption runbook's switch (steps 5–7).
+**Merge order.** agentic-mbse first (sysml-codegen's `install-commands` needs `installer/v1`). Its PR #24 sits on `main` after #23, so fusion-tea's agentic-mbse pin moves once, to #24's merge commit, for Items 3 and 5 ([OWNER] 2026-10-12). Then set sysml-codegen's `INSTALLER_API_REVISION` (`cli/install.py`) and the README's minimum revision to the agentic-mbse merge SHA, run `adr.sh index` when merging sysml-codegen `main` (ADRs 0011–0014 landed there), and merge sysml-codegen. fusion-tea's `study-layer-adoption` merges only after the adoption runbook's switch (steps 5–7).
 
 **Close checklist** (from the re-audit):
 - Move the adoption runbook into this folder **together with what it cites**: sysml-codegen `evidence/fusion-tea/` (wrappers, `routes.sed`, patches, `check_anchors.py`), `evidence/read-through.md` and `evidence/rehearsal/`. sysml-codegen deletes item folders at close, and the runbook's `$EV` paths point there.
