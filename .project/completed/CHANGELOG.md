@@ -6,7 +6,7 @@ Historical record of completed work.
 
 ## [2026-10-12] - Study Layer to sysml-codegen
 
-**Type**: Item (`WRAP-SPLIT` Item 3; code in sysml-codegen [PR #20](https://github.com/1cFE/sysml-codegen/pull/20), merged as `b5663c0`; installer API in agentic-mbse [PR #24](https://github.com/1cFE/agentic-mbse/pull/24), merged as `d42c8b9`; fusion-tea adoption in fusion-tea [PR #127](https://github.com/1cFE/fusion-tea/pull/127) (the agentic-mbse pin) and [PR #128](https://github.com/1cFE/fusion-tea/pull/128) (the switch), stacked)
+**Type**: Item (`WRAP-SPLIT` Item 3; code in sysml-codegen [PR #20](https://github.com/1cFE/sysml-codegen/pull/20), merged as `b5663c0`; installer API in agentic-mbse [PR #24](https://github.com/1cFE/agentic-mbse/pull/24), merged as `d42c8b9`; fusion-tea adoption in fusion-tea [PR #127](https://github.com/1cFE/fusion-tea/pull/127) (the agentic-mbse pin) and [PR #128](https://github.com/1cFE/fusion-tea/pull/128) (the switch), stacked; #128 reached `main` through [PR #129](https://github.com/1cFE/fusion-tea/pull/129), merged as `47b4c612d`)
 **Duration**: 1 day (spec created 2026-10-12; closed 2026-10-12)
 
 ### Summary
