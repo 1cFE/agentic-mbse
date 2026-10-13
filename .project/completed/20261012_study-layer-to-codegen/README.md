@@ -16,9 +16,9 @@ fusion-tea's study layer now ships from sysml-codegen. `sysml-codegen install-co
 | Repo | Change | PR |
 |---|---|---|
 | agentic-mbse | `installer/v1`: `Installer(manifest=...)`, `install_bundle()`, `INSTALLER_API_VERSION` (`0843fe2`, `70d78d0`); Item 3 tracking and ledger rows | [#24](https://github.com/1cFE/agentic-mbse/pull/24), merged as `d42c8b9`, on top of #23 |
-| sysml-codegen | `sysml_codegen.study`, `install-commands`, `sysml-codegen study`, the shipped skill text, ADRs 0015–0017, P-007, the close | [#20](https://github.com/1cFE/sysml-codegen/pull/20) |
+| sysml-codegen | `sysml_codegen.study`, `install-commands`, `sysml-codegen study`, the shipped skill text, ADRs 0015–0017, P-007, the close | [#20](https://github.com/1cFE/sysml-codegen/pull/20), merged as `b5663c0` |
 | fusion-tea | agentic-mbse pin to `d42c8b9` (one move for Items 3 and 5) with Item 5's switch | [#127](https://github.com/1cFE/fusion-tea/pull/127) |
-| fusion-tea | `study-layer-adoption`: the 75 moved lines' homes, the sysml-codegen pin move and the study-layer switch (`d58a899c1`); record in `evidence/adoption-20261012.md` | [#128](https://github.com/1cFE/fusion-tea/pull/128), stacked on #127 |
+| fusion-tea | `study-layer-adoption`: the 75 moved lines' homes, the sysml-codegen pin move and the study-layer switch (`d58a899c1`), pinned to `b5663c0` (`d2f1aef20`); record in `evidence/adoption-20261012.md` | [#128](https://github.com/1cFE/fusion-tea/pull/128), stacked on #127 |
 
 ## Key decisions
 
