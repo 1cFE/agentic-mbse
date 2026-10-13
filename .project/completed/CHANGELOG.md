@@ -4,6 +4,54 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-12] - Research Seam Port
+
+**Type**: Item (`WRAP-SPLIT` Item 5; branch `research-seam-port` in worktree `/home/reid/1cfe/agentic-mbse-research-seam`, base `ac5fb1a`, not yet merged)
+**Duration**: 5 days (spec created 2026-10-08; closed 2026-10-12)
+
+### Summary
+
+A target can now bring an outside source into `knowledge/` with proof that it is there, using only what `agentic-mbse init` installs. Before this item the capability lived only in fusion-tea, as one prompt and two scripts (about 1,800 lines), and the installed `run-goal` pointed at a procedure no other target had. It now ships as the typed `agentic_mbse.research` package (twelve modules), the `agentic-mbse research` CLI (`open`, `log`, `close`, `register`, `retire`, `verify`, plus `sources`, `add-entry` and `remove-entry` for hand-curated entries) and the `research-acquire` skill. Behaviour is the scripts' except for the changes listed in the design's Behaviour Changes table, each with a reason; golden tests pin the receipt, return, negative, manifest-row and index-block bytes. `/manage-sources` was rewritten to the owner's ruling: a user manages sources by hand, and every write goes through the CLI under its lock, hold-out check and duplicate check. `run-goal` names the skill and CLI, and the goal runbook maps each seam class to a task outcome. On fusion-tea's live registry, `verify` prints the old script's findings plus two expected legacy lines, existing URL and Zotero rows refuse as duplicates before any fetch, and `open` on the recorded negative refuses with byte-identical output, so the request key survived. Fresh agents in scratch targets, installed from a wheel, ran one request to `REGISTERED` and all five `/manage-sources` actions with no direct file edits ($1.07). Independently audited (Certify with follow-ups; all three fixed, then Certify): suite 2,767 passed (baseline 2,217), `tests/test_research -m ""` 549 passed, ruff and mypy at `main`'s counts. Not checked: either skill under Codex; a live Zotero batch ingest (fusion-tea's tests pass); the fusion-tea pin move.
+
+**Promises the product now makes.** [OWNER-VERBATIM] 2026-10-06: "yes, we need this capability in agentic-mbse." `init` installs `research-acquire`, the `agentic-mbse research` CLI and the `knowledge/research/requests/{runs,negatives}` directories, and keeps `knowledge/.staging/` and `knowledge/.registry.lock` out of git on fresh and existing targets (`tests/test_cli.py`). [OWNER-VERBATIM] 2026-10-09 on `/manage-sources`: "MORE useful as a general skill which allows direct user management while it folows and enforces the rules". The shipped skill never edits `SOURCE_INDEX.md`, the manifest, `RETIRED.jsonl` or `knowledge/sources/`; every change is an `agentic-mbse research` call ([dry run](20261012_research-seam-port/evidence/dry-run/README.md), O2b).
+
+**Decision: the hold-out guard is a file the project names, and it fails closed.** [AGENT] (design D3–D5, review M1–M2, audit F3) A target names a Python file in `[tool.agentic-mbse.research]`; with none, nothing is held out. A guard that is missing, unloadable, incomplete, raising or answering in the wrong shape refuses every registration as `precondition_failed` with a receipt, and so does an unknown key, an unknown sub-table under `[tool.agentic-mbse]`, or a `[tool.agentic_mbse]` table. `add-entry` runs the same guard. Rejected: entry points (fusion-tea's `scripts/` is not a package); ignoring unknown keys, which lets a typo switch the guard off.
+
+**Decision: one owner for the registry's writers.** [AGENT] (design D6–D7) `KeyedFileSource` replaces `ZoteroSource`; the caller names the kind, the manifest key field and the index label, so existing `zotero_key` rows still match with no consumer name in shipped code. fusion-tea's Zotero ingest registers through the package. Rejected: a generic `external_key` field with a `zotero_key` alias; two copies of the index and manifest writers.
+
+**Decision: new entries go before either anchor heading, else at the end of the index.** [AGENT] (design D9–D10) The shipped template's `## How This File Is Used` and fusion-tea's `## How Sources Are Used` both count. Headings inside HTML comments are ignored, and a block ends where a comment opens. `register` and `add-entry` refuse text containing `<!--`, which would hide the rest of the index from the parser (audit F1).
+
+**Decision: an index entry with no manifest row is reported, as legacy when its directory was already orphaned.** [AGENT] (design D12) `verify` reports `block_without_row`, graded `legacy` when the directory is in the baseline's `orphan_source_dirs`, so fusion-tea's ITER Cryoplant and Demattè & Bruzzone blocks keep its `verify` at exit 0. Whether to register them is the owner's call on the fusion-tea side (Align, 2026-10-12).
+
+**Decision: the seam-class to task-outcome table lives in the goal runbook.** [AGENT] (ratified by owner at Item 2's Align, 2026-10-11, "fine"; placement design D16) REGISTERED → COMPLETE, OPERATOR_QUEUE → OWNER_GATE, BLOCKER → PREREQUISITE, BOUNDED_NEGATIVE → BOUNDED_NEGATIVE, in § The native seams; a queue holding only seam repairs maps to PREREQUISITE. `run-goal` points to it.
+
+**Decision: ADR-0008 ships as a dated snapshot.** [AGENT] (design D17) Source identity is condensed into `docs/research-seam.md` § Decisions by date and record id; the commit-pinned citation is in the migration ledger, because the guide is under the no-consumer-names grep. Rejected: `docs/goal-layer-decisions.md`, since identity is a seam rule the goal layer only consumes.
+
+**Decision: malformed requests are refused as before.** [AGENT] (Align, 2026-10-12; owner did not object) `open` refuses a malformed request with no run directory, and the skill tells the agent to report `BLOCKER` itself. The guide's computed-`BLOCKER` example is a fault logged after `open`.
+
+**Decision: the item stayed whole over its estimate.** [AGENT] at design revision. About 3.5 days against the epic's 2.5; the overrun comes from the package restructure, the `/manage-sources` CLI commands and fusion-tea work the estimate did not count.
+
+**Behaviour found.**
+- In this repo, 18 tests fail without the `web` extra, so a fresh worktree needs `uv sync --all-extras` before its baseline (`.orchestrate-logs/baseline-*.txt` in the worktree).
+- In a fusion-tea worktree with agentic-mbse installed editable, a plain `uv run` re-syncs to the pinned commit and undoes the install; use `uv run --no-sync`. Capture therefore starts the extractor with the running interpreter (`python -m agentic_mbse`, design D13).
+- In fusion-tea, `uv lock` under uv 0.10 fails on sysml-codegen's path source, so a pin move hand-edits the two SHA lines in `uv.lock` ([runbook](20261012_research-seam-port/evidence/fusion-tea-runbook.md), step 1).
+- A fresh target has no `MANIFEST.jsonl`, and the old rollback truncated it unconditionally, which raises; fusion-tea never hit this. The port's rollback removes a manifest the attempt created.
+
+**Downstream (fusion-tea, the owner's).** Branch `research-seam-port` (worktree `/home/reid/1cfe/fusion-tea-research-seam`, base `c42ed1d8a`, unpushed) holds `940500788`. It deletes the two scripts, the local `/research-acquire` command, the old operator guide and 16 test files; moves Zotero ingest onto the package; names the guard in `pyproject.toml`; and rewrites `CLAUDE.md:11` with an ADR-0008 amendment line. Its research suite passes (34 tests, from 167: 140 moved to agentic-mbse or retired, 7 added), and a hold-out fixture refuses as `holdout_hit` through its own guard ([evidence](20261012_research-seam-port/evidence/o1-fusion-tea-branch.md)). After this item merges at M, O3 moves the pin to M, updates the provenance test and re-inits; the branch merges only with that pin move.
+
+### Deliverables
+
+- Package: `src/agentic_mbse/research/` (twelve modules: `paths`, `manifest`, `index`, `sources`, `capture`, `holdout`, `register`, `retire`, `verify`, `runs`, `seam`, `__init__`), `src/agentic_mbse/__main__.py`, `src/agentic_mbse/cli/research_cli.py`.
+- Installer: `src/agentic_mbse/cli/__init__.py` (the `research` subcommand, the two request directories, the two `.gitignore` lines for existing targets, the `init` message pointing at `/manage-sources`).
+- Skills: `skills/research-acquire/` (new); `skills/manage-sources/` rewritten; `run-goal`, `source-traceability`, `onboard`, `toolkit-awareness` edited.
+- Templates and docs: `GOAL_RUNBOOK.md.template` (class-to-outcome table), `SOURCE_INDEX.md.template`, `README.md.template`; `docs/research-seam.md` (new), `docs/source-index.md`.
+- Tests: `tests/test_research/` (new, with golden data), `tests/test_cli.py` extended.
+- `.project/completed/20261012_research-seam-port/`: `spec.md`, `design.md`, `design-review.md`, `plan.md`, `audit.md`, `product-lens.md`, `briefs/` (8), `evidence/` (O1 baseline and parity, the fusion-tea branch record, `fusion-tea-runbook.md`, the O2 dry runs).
+- `.project/active/wrap-split-migration-ledger.md` § Item 5 (the ledger stays active for Items 3 and 4).
+- Follow-ups: backlog P3 `REGISTER-INDEX-ROLLBACK` and `RESEARCH-OPEN-REQUEST-CHECKS`; owner question `GOAL-DELEGATED-INSIGHT-APPROVAL`; epic Item 4 takes the "Use For" spelling in `project-structure` and the README template's missing goal-skill rows.
+
+---
+
 ## [2026-10-12] - Goal Layer Port
 
 **Type**: Item (`WRAP-SPLIT` Item 2; branch `goal-layer-port` in worktree `/home/reid/1cfe/agentic-mbse-goal-layer`, base `33511c4`, not yet merged)

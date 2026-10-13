@@ -91,7 +91,7 @@ Prioritized list of epics and features.
 - [x] Item 2: Port the goal layer and the design-choice principle ✅ closed 2026-10-12, awaiting owner merge
 - [ ] Item 3: Move the study layer to sysml-codegen (external work, tracked here)
 - [ ] Item 4: Read-through sweep of shipped surfaces
-- [ ] Item 5: Port the research acquisition seam (spec in progress 2026-10-08)
+- [x] Item 5: Port the research acquisition seam ✅ closed 2026-10-12, awaiting owner merge
 
 ---
 
@@ -648,11 +648,35 @@ Three small items left out of `L6-EXPOSE-CONSISTENCY`: V4 still reports `.` on n
 
 **Priority**: P3 (owner to set)
 **Status**: Filed 2026-10-12 at the Align of `research-seam-port` (WRAP-SPLIT Item 5); an open owner question carried from its spec
-**Source**: [research-seam-port spec](../active/research-seam-port/spec.md) "Open Questions"; the research-process design page (`.project/mental-alignment-v2/runs/20261006-150340_research-process-end-state_fresh.html`)
+**Source**: [research-seam-port spec](../completed/20261012_research-seam-port/spec.md) "Open Questions"; the research-process design page (`.project/mental-alignment-v2/runs/20261006-150340_research-process-end-state_fresh.html`)
 
 **Problem**: An unattended goal can acquire a source and read it, but every accepted insight waits for a human `pm approve-research` call. Today nothing records who approved an insight, so the approval cannot be delegated to an agent and audited afterwards.
 
 **Goal**: The owner decides whether a goal may delegate insight approval. A yes means `pm approve-research` records the approver and the goal layer says when delegation applies; a no is recorded in the goal layer's decisions so unattended goals stop at each research task by design.
+
+---
+
+### [REGISTER-INDEX-ROLLBACK] `register` does not restore `SOURCE_INDEX.md` when the index write itself fails partway
+
+**Priority**: P3
+**Status**: Filed 2026-10-12 at the close of `research-seam-port` (`WRAP-SPLIT` Item 5)
+**Source**: [audit](../completed/20261012_research-seam-port/audit.md) advisory A1
+
+**Problem**: `register`'s rollback restores the manifest, the raw copy and the source directory, but not the index (`src/agentic_mbse/research/register.py:557`). If the index write fails partway, for example on a full disk, `SOURCE_INDEX.md` is left truncated. fusion-tea's old script behaved the same, so the port kept it. But the design's invariant I3 and the shipped guide (`docs/research-seam.md:69`, "the manifest and the index come back byte-identical") claim more than the code does.
+
+**Goal**: `_commit` saves the index bytes before writing and the rollback restores them, as `retire` already does (`src/agentic_mbse/research/retire.py:268-269,355`). A test makes the index write fail partway and checks the bytes come back.
+
+---
+
+### [RESEARCH-OPEN-REQUEST-CHECKS] `agentic-mbse research open` crashes on some malformed requests and trusts `request_id` as a path segment
+
+**Priority**: P3
+**Status**: Filed 2026-10-12 at the close of `research-seam-port` (`WRAP-SPLIT` Item 5)
+**Source**: [plan](../completed/20261012_research-seam-port/plan.md) Phase 5 notes ("Not handled, as in the snapshot")
+
+**Problem**: `open_run` (`src/agentic_mbse/research/seam.py:148`) catches only an unreadable file or invalid JSON. A request that is valid JSON but not an object, or is not UTF-8, ends in a traceback instead of the `invalid_request` refusal. `request_id` becomes a directory name under `knowledge/research/requests/runs/` unchecked, so a value with `/` or `..` writes the run outside it. The `research-acquire` skill tells agents to keep it to letters, digits and dashes, but nothing enforces that. fusion-tea's old script behaved the same.
+
+**Goal**: `open` refuses each case as `invalid_request` (exit 2, no run directory), with a test per case. Check first that no request fusion-tea has recorded breaks the new `request_id` rule.
 
 ---
 
@@ -733,6 +757,7 @@ Implemented in `9cf6b3c`; the retained [spec](../active/formula-teaching-reconci
 | L6-EXPOSE-CONSISTENCY: L6 EXPOSE Validation Consistency | 2026-10-04 | <1 day | V4 and completeness share V2's EXPOSE predicate (`3f442ce`); fusion-tea `models/` Level 6 issues 7,734 → 408, none added. Archived to `completed/20261004_l6-expose-consistency/` |
 | PM-MATRIX-ESCAPED-PIPE: Escaped Pipes and Registry ID Integrity | 2026-10-04 | <1 day (filed 2026-08-21) | GFM `\|` escape honoured; all seven allocators reserve every ID the registry file names; backlog writes keep unparsed records; nine refusals before any write. Certified with follow-ups. Archived to `completed/20261004_pm-registry-integrity/`. Downstream: fusion-tea fixes its `SV-034` cells by hand |
 | PM-APPROVE-RESEARCH-EMPTY-INSIGHTS: Approve Research with No New Insights | 2026-10-06 | 2 days (filed 2026-08-25) | `approve-research --insights '[]'` approves and moves the document without reading or writing `KNOWLEDGE.md`; omission and `None` stay errors; a pending path that is not a regular file or climbs above `pending/` is refused; shipped `/research` step tells agents to make the call. Certified. Archived to `completed/20261006_research-approval-empty-insights/`. Follow-up: `PM-APPROVE-RESEARCH-MOVE-SAFETY` |
+| RESEARCH-SEAM-PORT (WRAP-SPLIT Item 5): Research Seam Port | 2026-10-12 | 5 days (spec 2026-10-08; built 2026-10-12) | The research acquisition seam ships from agentic-mbse: the typed `agentic_mbse.research` package, the `agentic-mbse research` CLI (`open`, `log`, `close`, `register`, `retire`, `verify`, plus `sources`, `add-entry`, `remove-entry`) and the `research-acquire` skill, with fusion-tea's behaviour preserved except a listed set of changes; the hold-out guard is a project-named hook that fails closed; `/manage-sources` writes only through the CLI; `verify` parity, duplicate and negative checks pass on fusion-tea's live registry; fresh-agent dry runs pass for both skills. Certified. On `research-seam-port`, awaiting owner merge; fusion-tea `research-seam-port` (`940500788`) follows after the O3 pin move. Archived to `completed/20261012_research-seam-port/`. Follow-ups: `REGISTER-INDEX-ROLLBACK`, `RESEARCH-OPEN-REQUEST-CHECKS`; Item 4 takes two text leftovers |
 | GOAL-LAYER-PORT (WRAP-SPLIT Item 2): Goal Layer Port | 2026-10-12 | 2 days | `init` installs `run-goal`, `narrate-goal`, the goal runbook, three goal templates and a narrative-link test with no fusion-tea pointers; fusion-tea ADR-0001..0007 ship as the dated snapshot `docs/goal-layer-decisions.md`; the design-choice rule is stated once in `docs/patterns/design-choices.md` and routed by the process template's "Process Selection" and point-of-use rows; fresh-target dry run and fusion-tea re-init rehearsal pass. Certified. On `goal-layer-port`, awaiting owner merge; fusion-tea `goal-layer-mr7` follows after F2. Archived to `completed/20261012_goal-layer-port/`. Follow-ups: `INSTALL-DEV-GITIGNORE-REINIT`, `DESIGN-CHOICE-ATTRIBUTE-LISTING`; Item 4 takes the runbook's "§ 15" reference |
 | NATIVE-DISTRIBUTION-RECONCILIATION (WRAP-SPLIT Item 1): Native Skill Distribution | 2026-10-09 | 5 days | One `skills/` + `agents/` + `adapters/` + `hooks/` tree carrying `main`'s text installs for Claude Code and Codex; `claude/` and the `MBSE_*` lists removed, so a skill registers by its folder; re-init adopts the pre-native `--dev` links; `--dev` links skill folders so Codex lists them; fusion-tea runbook rehearsed on copies. Certified. On `nsd-integration`, awaiting owner merge. Archived to `completed/20261009_native-skill-distribution/` (with the native branch's `completed/20261009_native-skills/`). Follow-ups: `NATIVE-DISCOVERY-LIVE-TEST`, `WHEEL-DOCS-SYSIDE-GAP`, `INSTALL-DEV-GITIGNORE-STALE`, `INSTALL-REPORT-UNCHANGED-UPDATED`, `REPO-INIT-SCAFFOLD-STALE` |
 | ~~EPIC-CMDREV-001: Command System Revision~~ | — | — | **Superseded** by EPIC-ARCH-002 + EPIC-ARCH-003 |

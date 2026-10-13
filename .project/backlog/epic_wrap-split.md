@@ -239,6 +239,9 @@ Audit note (2026-10-12, `completed/20261012_goal-layer-port/audit.md`): the unch
 - ⚠️ Handed over by Item 2 at its close (2026-10-12; [evidence README](../completed/20261012_goal-layer-port/evidence/README.md)):
   - The goal runbook joins discovery-log rows to "a committed record's § 15" (`project_templates/GOAL_RUNBOOK.md.template:261,271`), a section number in the study layer's record template. Name the section by its role ("the record's findings section"), and say the join applies where the target runs the study layer (Item 2 audit advisory 4).
   - Item 2 edited files outside its own to place the design-choice rule; the read-through covers each: `MODELING_PROCESS.md.template` (Process Selection row, seed clause, point-of-use row, binding-row semicolon), `MODELING_GUIDE.md.template` (index row), `docs/patterns/README.md`, `docs/patterns/constraints.md`, `skills/sysml-conventions/SKILL.md` and `references/stencils.md`, `skills/requirements-tracking/SKILL.md`, and one pointer each in `spec-model`, `review-model`, `model-validation` and `orchestrate-modeling`.
+- ⚠️ Handed over by Item 5 at its close (2026-10-12; [audit](../completed/20261012_research-seam-port/audit.md) A7, [plan](../completed/20261012_research-seam-port/plan.md) Phase 6 notes):
+  - `skills/project-structure/SKILL.md:80` still spells the index field "Use For"; `docs/source-index.md`, the other source skills and the blocks the registry writes say "Use for".
+  - `project_templates/README.md.template` lists `/research-acquire` but has no rows for `/run-goal` or `/narrate-goal`, and `toolkit-awareness` tells agents to trust the target's README for its commands.
 - ✅ Acceptable as examples under the owner's bar: plant-idiom pins, `FusionTea_*` naming, check-corpus PDFs, `'Toroidal Field Coil'`, fusion-flavoured test data, sysml-codegen named as a downstream in seam docs and code comments.
 
 **Scope**:
@@ -275,6 +278,7 @@ Audit note (2026-10-12, `completed/20261012_goal-layer-port/audit.md`): the unch
 **Type**: Code/Integration (Python package code, two skills, installer)
 **Effort**: 2.5 days (spec 2h, design 3h, plan 1h, execute 14h). Over the two-day ceiling by the `/manage-sources` rework ([OWNER] 2026-10-09), kept in this item rather than a sixth because both touch the same index rules.
 **Dependencies**: Item 1 (register the skill once, on the reconciled `skills/` layout). Item 2 only for scope step 6 (relabel the shipped `run-goal`'s research references); the rest of the item does not wait on it.
+**Closed**: 2026-10-12, certified; archived to `.project/completed/20261012_research-seam-port/`. On branch `research-seam-port`, awaiting the owner's merge. fusion-tea branch `research-seam-port` (`940500788`) merges after the post-merge fusion-tea runbook (O3) moves the pin.
 
 **Objective**: Ship the research acquisition seam from agentic-mbse: the `research-acquire` skill (a prompt file) as an installed skill, and its bookkeeping and registry code as `agentic-mbse research` subcommands, so a target can bring a source into `knowledge/` through one checked door without fusion-tea's scripts.
 
@@ -308,12 +312,12 @@ Audit note (2026-10-12, `completed/20261012_goal-layer-port/audit.md`): the unch
 - [x] Using only the shipped `manage-sources`, a user adds a capturable document (registered), adds a non-capturable source, removes a registered source (retired), and lists both kinds.
 - [x] fusion-tea's research and Zotero suites pass against the installed package with its two scripts deleted; ledger rows exist for every removed line.
 
-Certified by `/_my_audit` 2026-10-12 (`.project/active/research-seam-port/audit.md`), with follow-ups F1–F3, which plan Phase 7 fixed the same day. The grep above is checked in the spec's word-bounded form (`\baries\b`, design review A16); unbounded, `aries` matches "boundaries" in `research/index.py`. The fusion-tea criterion holds on fusion-tea branch `research-seam-port` (`940500788`) and reaches fusion-tea `main` at O3.
+Certified by `/_my_audit` 2026-10-12 (`.project/completed/20261012_research-seam-port/audit.md`), with follow-ups F1–F3, which plan Phase 7 fixed the same day. The grep above is checked in the spec's word-bounded form (`\baries\b`, design review A16); unbounded, `aries` matches "boundaries" in `research/index.py`. The fusion-tea criterion holds on fusion-tea branch `research-seam-port` (`940500788`) and reaches fusion-tea `main` at O3.
 
 **Required Reading**: research § 1c; the mental-model page above; fusion-tea `.claude/commands/research-acquire.md`, `scripts/{research_seam,source_registry,holdout_guard}.py`, `docs/research_seam_operator_guide.md`, `.project/adr/0008-source-identity-raw-bytes-sha256.md`.
 
 **Deliverables**:
-- `.project/active/research-seam-port/{spec,design,plan}.md`
+- `.project/completed/20261012_research-seam-port/{spec,design,plan}.md`
 - `src/agentic_mbse/research/`, CLI subcommands, `research-acquire` skill, `docs/research-seam.md`, `tests/test_research/`, installer changes
 - Appended section in `.project/active/wrap-split-migration-ledger.md`
 

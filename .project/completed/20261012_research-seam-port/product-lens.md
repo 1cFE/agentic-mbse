@@ -70,3 +70,12 @@ Smells: (3) correctness depends on downstream knowledge of an internal represent
 Checked and clean: (A) O2a, fresh target from the wheel with no fusion-tea on any path, ends `REGISTERED` with all four artifacts and a receipt; (B) O1 parity, `verify` lines equal plus the two expected legacy lines, URL and `zotero_key` duplicates refuse before fetch, the negative refusal is byte-identical, so the request key is unchanged; (C) the class comes from receipts and the run log only (`seam.py` imports only `runs.py`), the commit is four-or-nothing with an absent-aware rollback, no flag waives a hold-out hit, identity is still the raw-bytes SHA-256; (D) `manage-sources` makes every change through the CLI, and O2b's five sessions made no Write or Edit call.
 Gate: CLEAR — no owner-grade contradiction of the approach; impl-F1..F3 go to follow-ups.
 ```
+
+```
+## audit — 2026-10-12 — rev branch research-seam-port @ 469e2f9 (after follow-ups; recorded at close)
+Resolves:
+- impl-F1: FIXED — authority: owner ([OWNER-VERBATIM] 2026-10-09) — basis: `init`'s closing step points at `/manage-sources` (audit F2, plan Phase 7); verified by orchestrator.
+- impl-F2: FIXED — authority: AGENT (design D10) — basis: `register` refuses `<!--` in any text its index block writes, before capture (audit F1); listed in the Behaviour Changes table.
+- impl-F3: FIXED — authority: AGENT (spec-F3) — basis: an unknown sub-table under `[tool.agentic-mbse]` or a `[tool.agentic_mbse]` table is a configuration fault (audit F3, design D4).
+Gate: CLEAR
+```
