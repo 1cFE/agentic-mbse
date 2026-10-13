@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-10-06
+**Last Updated**: 2026-10-13
 
 ---
 
@@ -18,6 +18,7 @@ Prioritized list of epics and features.
 
 | Item | Status | Evidence / next step |
 |------|--------|----------------------|
+| `GENERATOR-SUBSET-PATTERNS` | [AGENT] Filed 2026-10-13 at owner request from consumer project dc3 (WI-008); priority not assigned | Capture, teach and enforce: (1) positional binding of calc-usage inputs (KerML: a Step's parameter redefines the type's parameter at the same position; a reordered `in x = …` silently swaps values) — validator check; (2) the generator's executable subset (part-owned asserts, numeric predicates, `sum` only, fixed arity, exact design counts, one-level named subsetting, compose by specialized defs, String metadata) — pattern doc and L6 parity with generator refusals; (3) SysIDE evaluator-author notes; (4) expert-agent dispatch guidance. [Item](item_generator-subset-patterns.md) |
 | `L6-LIBRARY-ALIAS-SOURCE` | [AGENT] Filed 2026-10-04 at `L6-EXPOSE-CONSISTENCY` close; recorded limitation, not a regression | An EXPOSE alias to an attribute of a part typed by a `library/` part definition passes Level 6 even when that source value is unset, because completeness path-filters the source declaration and skips the alias ([audit](../completed/20261004_l6-expose-consistency/audit.md) advisory; design R4/B4). How required values on referenced library parts get verified is undecided |
 | `NATIVE-DISTRIBUTION-RECONCILIATION` | [AGENT] Draft residual-work spec; product-lens CLEAR; adopted 2026-10-06 as Item 1 of `WRAP-SPLIT` (P1) | [Distribution spec](../active/native-skill-distribution/spec.md); [epic](epic_wrap-split.md) |
 | `CMDREF-001` | [INHERITED: epic_command-refresh.md] P2 draft; scope reconciliation needed | September simplification overlaps this July proposal; inspect remaining objectives before decomposition |
