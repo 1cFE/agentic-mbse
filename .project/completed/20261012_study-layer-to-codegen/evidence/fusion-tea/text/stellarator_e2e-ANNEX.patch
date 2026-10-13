@@ -1,0 +1,11 @@
+--- a/exploration/stellarator_e2e/studies/ANNEX.md
++++ b/exploration/stellarator_e2e/studies/ANNEX.md
+@@ -2,7 +2,7 @@
+ 
+ Package fact, not rule. The universal runbook links to a section here at each step that needs something only true of this package; nothing in this file is an instruction, and nothing in it is inlined into the runbook.
+ 
+-Four sections, named exactly as the runbook links them. The two the runbook treats as optional -- `§ Loader exception and glue` and `§ Era pin` -- do not exist for this package: since the stellarator model migration (2026-08-21) it is sealed at runtime contract 2.0.0 and runs on stock teax with no adapter and no glue (`studies/AFTER_MIGRATION_RECORD.md`).
++Four sections, named exactly as the runbook links them. The two that `modeling_project/STUDY_POLICY.md` § 6 adds for a package needing an adapter -- `§ Loader exception and glue` and `§ Era pin` -- do not exist for this package: since the stellarator model migration (2026-08-21) it is sealed at runtime contract 2.0.0 and runs on stock teax with no adapter and no glue (`studies/AFTER_MIGRATION_RECORD.md`).
+ 
+ ---
+ 

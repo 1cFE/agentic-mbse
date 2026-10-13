@@ -176,7 +176,7 @@ Audit note (2026-10-12, `completed/20261012_goal-layer-port/audit.md`): the unch
 
 ---
 
-### Item 3: Move the study layer to sysml-codegen
+### Item 3: Move the study layer to sysml-codegen ✅
 
 **Type**: Code/Integration (external work in `/home/reid/1cfe/sysml-codegen`; tracked here)
 **Effort**: 2 days (spec 2h, design 3h, plan 1h, execute 10h; the installer ownership work is inside this budget, at the expense of fixture breadth)
@@ -206,17 +206,17 @@ Audit note (2026-10-12, `completed/20261012_goal-layer-port/audit.md`): the unch
 - The goal layer (Item 2).
 
 **Success Criteria**:
-- [ ] `sysml-codegen install-commands` installs `run-study` (skill, runbook, record template) and the policy template into a fresh target.
-- [ ] The tools run from the installed package against the neutral fixture: indicators, preflight, verify and integrate each complete or fail closed as documented; the moved tests pass in sysml-codegen.
-- [ ] fusion-tea's study suite passes with its copies replaced by wrappers or removed, and one existing study record re-verifies unchanged.
-- [ ] The ported runbook and skill contain no fusion-tea path, package name or key prefix (the `test_generic` grep, extended to the instruction files).
-- [ ] Ledger rows exist for every fusion-specific line removed from the ported text, with its fusion-tea destination (policy §6–8/§10, annex, or CLAUDE.md).
-- [ ] sysml-codegen and agentic-mbse full suites pass.
+- [x] `sysml-codegen install-commands` installs `run-study` (skill, runbook, record template) and the policy template into a fresh target.
+- [x] The tools run from the installed package against the neutral fixture: indicators, preflight, verify and integrate each complete or fail closed as documented; the moved tests pass in sysml-codegen.
+- [x] fusion-tea's study suite passes with its copies replaced by wrappers or removed, and one existing study record re-verifies unchanged. Met as spec SC9 defines it (2026-10-12, `completed/20261012_study-layer-to-codegen/evidence/adoption-20261012.md`): the suite gives the same results before and after the switch. Its 22 failures come from the generator move's gate-2 refusals and an existing collection error, not from the switch. The one record whose identity still recomputes recomputes unchanged; its `verify` cannot re-run because its stores are not committed.
+- [x] The ported runbook and skill contain no fusion-tea path, package name or key prefix (the `test_generic` grep, extended to the instruction files).
+- [x] Ledger rows exist for every fusion-specific line removed from the ported text, with its fusion-tea destination (policy §6–8/§10, annex, or CLAUDE.md).
+- [x] sysml-codegen and agentic-mbse full suites pass. Apart from failures that also occur on each `main`: sysml-codegen's `test_self_binding_guidance_contract`, and agentic-mbse's missing-`PIL` test.
 
 **Required Reading**: research § 1b and Open Question 1; fusion-tea `.claude/skills/run-study/*`; fusion-tea `modeling_project/STUDY_POLICY.md`; fusion-tea `.project/concepts/run-study-skill.md` (owner factoring, lines 19–27, 142–143); fusion-tea `tests/study/test_generic.py` and `conftest.py`; `/home/reid/1cfe/sysml-codegen/src/sysml_codegen/cli/__init__.py` install-commands.
 
 **Deliverables**:
-- `.project/active/study-layer-to-codegen/{spec,design,plan}.md` (in this repo, tracking the external work)
+- `.project/active/study-layer-to-codegen/{spec,design,plan}.md` (in this repo, tracking the external work). Delivered in sysml-codegen instead (orchestrator decision D2); archived as `.project/completed/20261012_study-layer-to-codegen/`, with the artifacts at sysml-codegen `4dfe275`.
 - sysml-codegen: skill files, policy template, `study` package, entry points, fixture, tests
 - fusion-tea: wrappers/removals, ledger citations by commit
 - Appended section in `.project/active/wrap-split-migration-ledger.md`

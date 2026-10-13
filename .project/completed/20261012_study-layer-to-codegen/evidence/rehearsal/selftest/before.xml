@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" tests="6">
+<testcase classname="tests.study.test_a" name="test_ok" time="0.1"/>
+<testcase classname="tests.study.test_a" name="test_turns_red" time="0.1"/>
+<testcase classname="tests.study.test_a" name="test_fails_same" time="0.1"><failure message="assert 1 == 2 at /tmp/pytest-of-reid/pytest-12/x0/f">tb</failure></testcase>
+<testcase classname="tests.study.test_a" name="test_fails_other" time="0.1"><failure message="assert 1 == 2">tb</failure></testcase>
+<testcase classname="tests.study.test_a" name="test_vanishes" time="0.1"/>
+<testcase classname="tests.study.test_a" name="test_skipped" time="0.1"><skipped type="pytest.skip" message="no teax"/></testcase>
+<testcase classname="tests.study.test_a" name="test_fails_relative" time="0.1"><failure message="assert 1 == 0; evidence: ../../pytest-of-reid/pytest-12/integration-success0/out/read_coverage.json">tb</failure></testcase>
+</testsuite></testsuites>

@@ -1,0 +1,10 @@
+[tool.sysml-codegen.integrate]
+environment = ["STOP_PARSER_WHEEL_TARGET", "STOP_PARSER_AGENTIC_WHEEL", "STOP_PARSER_CODEGEN_WHEEL", "STOP_PARSER_COSTINGFE_WHEEL", "STOP_PARSER_TEAX_ROOT"]
+backup-prefix = "fusion-tea-integration-backup-"
+record-distributions = { costingfe = "1costingfe" }
+[tool.sysml-codegen.integrate.gates.pinned-packages]
+target = "tests/test_dependency_provenance.py"
+checked = "the pinned package revisions and installed wheel artifacts"
+[tool.sysml-codegen.integrate.gates.model-family-spine]
+target = "tests/models/test_model_family_spines.py"
+checked = "the canonical tree, the family twins and the tracked census"

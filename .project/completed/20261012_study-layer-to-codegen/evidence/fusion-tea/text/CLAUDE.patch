@@ -1,0 +1,18 @@
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -250,6 +250,15 @@
+ 
+ **agentic-mbse**: MBSE workflow commands, 6-level model validation, and PDF extraction (v4 pipeline with quality gates and ensemble table detection). Installed as editable dependency. Source code at `~/1cfe/agentic-mbse`.
+ 
++## Study layer
++
++The run-study skill (skill, runbook, record template, annex template, integration guide) and the study tools ship from sysml-codegen. `uv run --no-sync sysml-codegen install-commands . < /dev/null` installs the skill under `.agents/skills/run-study/`, linked from `.claude/skills/run-study`, and records it in `.sysml-codegen/install.json`. Do not edit the installed copies: a fix goes to sysml-codegen. fusion-tea's own study facts live here:
++
++- `modeling_project/STUDY_POLICY.md`, this repository's ratified rulebook: § 6 names the two execution routes and the adapter, glue and era-pin rules; § 12 names the studies directories, `exploration/<pkg>/studies/`; § 13 holds the citations behind rules the installed text states without them. A re-install never overwrites it.
++- `exploration/<pkg>/studies/ANNEX.md`: each package's annex.
++- `docs/integration_seam_operator_guide.md`: fusion-tea's supplement to the installed integration guide — the invocation, the environment, the sealed wheels, the declaration and the second-checkout procedure.
++- `scripts/study/*.py` and `scripts/integrate.py` are aliases of the installed `sysml_codegen.study` modules, so `python scripts/study/<tool>.py` and `python scripts/integrate.py` keep working. Records written before the switch name these paths in `tools[].path`; read the prefix as the tool's era, never as a file to open.
++
+ ## Live Deployments from `main`
+ 
+ A push to `main` publishes to public sites.

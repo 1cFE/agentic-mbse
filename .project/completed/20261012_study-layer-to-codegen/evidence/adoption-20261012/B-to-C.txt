@@ -1,0 +1,357 @@
+before: 1861 tests; passed 1837, failed 13, error 9, skipped 2
+after: 1861 tests; passed 1837, failed 13, error 9, skipped 2
+failing in both, differently: tests.study.test_integrate_internal_error::test_a_seam_internal_error_exits_two_and_names_where_it_died
+  before: failed: AssertionError: exit 1 would say the seam judged and refused
+assert 1 == 2
+ +  where 1 = <function main at 0x<address>>(['--audited-work', 'exploration/stellarator_e2e/generated@HEAD', '--models-root', '/home/reid/1cfe/fusion-tea-study-la...rkspace/models', '--package', '/home/reid/1cfe/fusion-tea-study-layer/.integration_workspace/pkg/stellarator_tea', ...])
+ +    where <function main at 0x<address>> = integrate.main
+  after:  failed: AssertionError: exit 1 would say the seam judged and refused
+assert 1 == 2
+ +  where 1 = <function main at 0x<address>>(['--audited-work', 'exploration/stellarator_e2e/generated@HEAD', '--models-root', '/tmp/claude-1000/-home-reid-1cfe-ag...cfe-agentic-mbse/8552c715-dee4-4a8a-8421-4029b4d8f180/scratchpad/ft-C/.integration_workspace/pkg/stellarator_tea', ...])
+ +    where <function main at 0x<address>> = integrate.main
+failing in both, differently: tests.study.test_integrate_rerun::test_the_second_run_is_a_candidate_not_a_refusal
+  before: failed: AssertionError: first run: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "../../../..<pytest-tmp>/test_the_second_run_is_a_candi0/first/moved_files.txt"
+    ]
+  }
+assert 'BLOCKER' == 'CANDIDATE'
+  
+  - CANDIDATE
+  + BLOCKER
+  after:  failed: AssertionError: first run: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "<pytest-tmp>/test_the_second_run_is_a_candi0/first/moved_files.txt"
+    ]
+  }
+assert 'BLOCKER' == 'CANDIDATE'
+  
+  - CANDIDATE
+  + BLOCKER
+failing in both, differently: tests.study.test_integrate_rerun::test_two_runs_return_the_same_identity
+  before: failed: AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "../../../..<pytest-tmp>/test_two_runs_return_the_same_0/a/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/home/reid/1cfe/fusion-tea-study-layer/.venv/bin/python3', '/home/reid/1cfe/fusion-tea-study-l...            evidence: ../../../..<pytest-tmp>/test_two_runs_return_the_same_0/a/moved_files.txt\n').returncode
+  after:  failed: AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "<pytest-tmp>/test_two_runs_return_the_same_0/a/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/8552c715-dee4-4a8a-8421-4029b4d8f180/scratchpad/...             evidence: <pytest-tmp>/test_two_runs_return_the_same_0/a/moved_files.txt\n').returncode
+failing in both, differently: tests.study.test_integrate_stock_route::test_the_return_rebuilds_the_stock_commands
+  before: failed: AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "../../../..<pytest-tmp>/test_the_return_rebuilds_the_s0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/home/reid/1cfe/fusion-tea-study-layer/.venv/bin/python3', '/home/reid/1cfe/fusion-tea-study-l...          evidence: ../../../..<pytest-tmp>/test_the_return_rebuilds_the_s0/out/moved_files.txt\n').returncode
+  after:  failed: AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "<pytest-tmp>/test_the_return_rebuilds_the_s0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/8552c715-dee4-4a8a-8421-4029b4d8f180/scratchpad/...           evidence: <pytest-tmp>/test_the_return_rebuilds_the_s0/out/moved_files.txt\n').returncode
+failing in both, differently: tests.study.test_integrate_success::test_committed_package_yields_one_candidate
+  before: error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "../../../..<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/home/reid/1cfe/fusion-tea-study-layer/.venv/bin/python3', '/home/reid/1cfe/fusion-tea-study-l... moved\n             evidence: ../../../..<pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+  after:  error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/8552c715-dee4-4a8a-8421-4029b4d8f180/scratchpad/...) moved\n             evidence: <pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+failing in both, differently: tests.study.test_integrate_success::test_every_candidate_field_resolves
+  before: error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "../../../..<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/home/reid/1cfe/fusion-tea-study-layer/.venv/bin/python3', '/home/reid/1cfe/fusion-tea-study-l... moved\n             evidence: ../../../..<pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+  after:  error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/8552c715-dee4-4a8a-8421-4029b4d8f180/scratchpad/...) moved\n             evidence: <pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+failing in both, differently: tests.study.test_integrate_success::test_the_candidate_names_the_lineage_the_request_named
+  before: error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "../../../..<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/home/reid/1cfe/fusion-tea-study-layer/.venv/bin/python3', '/home/reid/1cfe/fusion-tea-study-l... moved\n             evidence: ../../../..<pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+  after:  error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/8552c715-dee4-4a8a-8421-4029b4d8f180/scratchpad/...) moved\n             evidence: <pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+failing in both, differently: tests.study.test_integrate_success::test_the_package_is_byte_identical_before_and_after
+  before: error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "../../../..<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/home/reid/1cfe/fusion-tea-study-layer/.venv/bin/python3', '/home/reid/1cfe/fusion-tea-study-l... moved\n             evidence: ../../../..<pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+  after:  error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/8552c715-dee4-4a8a-8421-4029b4d8f180/scratchpad/...) moved\n             evidence: <pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+failing in both, differently: tests.study.test_integrate_success::test_the_pin_is_the_manifests_own_value_not_a_new_number
+  before: error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "../../../..<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/home/reid/1cfe/fusion-tea-study-layer/.venv/bin/python3', '/home/reid/1cfe/fusion-tea-study-l... moved\n             evidence: ../../../..<pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+  after:  error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/8552c715-dee4-4a8a-8421-4029b4d8f180/scratchpad/...) moved\n             evidence: <pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+failing in both, differently: tests.study.test_integrate_success::test_the_preflight_results_the_run_produced_read_six_of_six
+  before: error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "../../../..<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/home/reid/1cfe/fusion-tea-study-layer/.venv/bin/python3', '/home/reid/1cfe/fusion-tea-study-l... moved\n             evidence: ../../../..<pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+  after:  error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/8552c715-dee4-4a8a-8421-4029b4d8f180/scratchpad/...) moved\n             evidence: <pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+failing in both, differently: tests.study.test_integrate_success::test_the_toolchain_the_candidate_ran_under_is_recorded
+  before: error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "../../../..<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/home/reid/1cfe/fusion-tea-study-layer/.venv/bin/python3', '/home/reid/1cfe/fusion-tea-study-l... moved\n             evidence: ../../../..<pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+  after:  error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/8552c715-dee4-4a8a-8421-4029b4d8f180/scratchpad/...) moved\n             evidence: <pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+failing in both, differently: tests.study.test_integrate_success::test_the_verification_summary_the_candidate_cites_reads_pass
+  before: error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "../../../..<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/home/reid/1cfe/fusion-tea-study-layer/.venv/bin/python3', '/home/reid/1cfe/fusion-tea-study-l... moved\n             evidence: ../../../..<pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+  after:  error: failed on setup with "AssertionError: {
+    "gate": "regeneration",
+    "producer": "sysml-codegen generate",
+    "scope": "request",
+    "mode": "refused",
+    "condition": "package-not-integrated",
+    "detail": "regenerating on the pin rewrote the package, so what is committed is not the integrated form of the model it was generated from \u2014 3 file(s) moved",
+    "expected": null,
+    "actual": null,
+    "evidence": [
+      "<pytest-tmp>/integration-success0/out/moved_files.txt"
+    ]
+  }
+assert 1 == 0
+ +  where 1 = CompletedProcess(args=['/tmp/claude-1000/-home-reid-1cfe-agentic-mbse/8552c715-dee4-4a8a-8421-4029b4d8f180/scratchpad/...) moved\n             evidence: <pytest-tmp>/integration-success0/out/moved_files.txt\n').returncode"
+pass rule: BROKEN (12 test(s) passed before and did not after, or changed failure message)

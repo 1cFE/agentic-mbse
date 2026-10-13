@@ -1,0 +1,47 @@
+{
+  "preloaded_by_the_moved_driver": [
+    "_locale",
+    "_posixsubprocess",
+    "_sysconfigdata__x86_64-linux-gnu",
+    "collections.abc",
+    "contextlib",
+    "fcntl",
+    "locale",
+    "select",
+    "selectors",
+    "signal",
+    "subprocess",
+    "sysconfig",
+    "sysml_codegen",
+    "sysml_codegen.study",
+    "sysml_codegen.study.read_coverage",
+    "sysml_codegen.study.roots"
+  ],
+  "standard_library": {
+    "_locale": null,
+    "_posixsubprocess": null,
+    "_sysconfigdata__x86_64-linux-gnu": "/usr/lib/python3.12/__pycache__/_sysconfigdata__x86_64-linux-gnu.cpython-312.pyc",
+    "collections.abc": "/usr/lib/python3.12/collections/__pycache__/abc.cpython-312.pyc",
+    "contextlib": "/usr/lib/python3.12/__pycache__/contextlib.cpython-312.pyc",
+    "fcntl": null,
+    "locale": "/usr/lib/python3.12/__pycache__/locale.cpython-312.pyc",
+    "select": null,
+    "selectors": "/usr/lib/python3.12/__pycache__/selectors.cpython-312.pyc",
+    "signal": "/usr/lib/python3.12/__pycache__/signal.cpython-312.pyc",
+    "subprocess": "/usr/lib/python3.12/__pycache__/subprocess.cpython-312.pyc",
+    "sysconfig": "/usr/lib/python3.12/__pycache__/sysconfig.cpython-312.pyc"
+  },
+  "not_standard_library": [
+    "sysml_codegen",
+    "sysml_codegen.study",
+    "sysml_codegen.study.read_coverage",
+    "sysml_codegen.study.roots"
+  ],
+  "installed_package_modules": [
+    "sysml_codegen",
+    "sysml_codegen.study",
+    "sysml_codegen.study.roots"
+  ],
+  "closure_check": "every standard-library module is loaded by importing sysml_codegen.study.roots or by reading sysconfig's build-time TZPATH",
+  "installed_package_check": "not_standard_library less the original driver's own tool modules renamed by TOOL_PATHS; every one is in the installed sysml_codegen package"
+}

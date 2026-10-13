@@ -1,0 +1,61 @@
+{
+  "about": "Rule 2 of parity.py: noise tokens, each masked where it occurs, never a whole field. `scope` is where a pattern applies: `all`, or one output kind (`stdout`, `stderr`, `path` for out/ file names, a file suffix, or one file name). @SCRATCH@ and @TOKEN@ stand for a run's own scratch root and read-coverage token.",
+  "patterns": [
+    {
+      "id": "scratch-root",
+      "regex": "@SCRATCH@",
+      "replacement": "<S>",
+      "scope": "all",
+      "reason": "Absolute temporary paths. Every run of one parity session shares this root, so masking it changes no comparison; it keeps the committed cases free of the session stamp."
+    },
+    {
+      "id": "read-coverage-token",
+      "regex": "@TOKEN@",
+      "replacement": "<token>",
+      "scope": "all",
+      "reason": "integrate mints a fresh uuid4 hex per gate-7 run (receipt invocation, read-coverage-tmp-<token> scratch directory). Only that run's own token is masked."
+    },
+    {
+      "id": "backup-directory",
+      "regex": "fusion-tea-integration-backup-[a-z0-9_]{8}",
+      "replacement": "fusion-tea-integration-backup-<random>",
+      "scope": "all",
+      "reason": "tempfile.mkdtemp's random eight-character suffix on integrate's package backup."
+    },
+    {
+      "id": "pytest-timing",
+      "regex": " in [0-9]+\\.[0-9]+s\\b",
+      "replacement": " in <seconds>s",
+      "scope": "all",
+      "reason": "pytest's wall-clock summary (`1 failed in 0.12s`) inside gate 1a and 5 details."
+    },
+    {
+      "id": "junit-clock",
+      "regex": "\\b(time|timestamp)=\"[^\"]*\"",
+      "replacement": "\\1=\"<clock>\"",
+      "scope": ".xml",
+      "reason": "pytest's junit writer records each suite's start time and every duration. The same pytest timing tokens as `in N.NNs`, in the junit evidence file gates 1a and 5 cite."
+    },
+    {
+      "id": "traceback-location",
+      "regex": "File \"[^\"]+\", line [0-9]+",
+      "replacement": "File \"<path>\", line <n>",
+      "scope": "seam_traceback.txt",
+      "reason": "Traceback frames name the tool's own file and line, which the move changes by construction (B1, B2)."
+    },
+    {
+      "id": "atomic-write-temp",
+      "regex": "(/\\.[^/\"']+?)\\.[a-z0-9_]{8}\\.tmp\\b",
+      "replacement": "\\1.<random>.tmp",
+      "scope": "all",
+      "reason": "common.write_document writes through tempfile.mkstemp(prefix='.<name>.', suffix='.tmp'), whose eight-character middle is random. Read coverage lists the attempt in attempted_new_output_creations."
+    },
+    {
+      "id": "teax-staging-directory",
+      "regex": "/_work/staging/[0-9a-f]{32}/",
+      "replacement": "/_work/staging/<uuid>/",
+      "scope": "all",
+      "reason": "teax's runner stages each attempt under a fresh uuid4-hex directory. Read coverage lists the staged write in attempted_new_output_creations."
+    }
+  ]
+}

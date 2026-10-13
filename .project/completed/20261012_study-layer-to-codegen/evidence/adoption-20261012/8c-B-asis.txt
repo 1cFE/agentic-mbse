@@ -1,0 +1,13 @@
+[integrate] BLOCKER
+  pass         repo     pinned-packages: tests/test_dependency_provenance.py passed
+  fail         request  teax-revision: the teax checkout at /home/reid/1cfe/teax is not the revision the request named
+  not reached  request  regeneration: the sequence stopped before this gate
+  not reached  request  handwritten-preservation: the sequence stopped before this gate
+  not reached  request  census-snapshot: the sequence stopped before this gate
+  not reached  repo     model-family-spine: the sequence stopped before this gate
+  not reached  request  manifest: the sequence stopped before this gate
+  not reached  request  preflight: the sequence stopped before this gate
+  not reached  request  verification: the sequence stopped before this gate
+  not reached  request  lineage: the sequence stopped before this gate
+[integrate] refused at teax-revision (scripts/integrate.py, toolchain-drift): the teax checkout at /home/reid/1cfe/teax is not the revision the request named
+exit 1

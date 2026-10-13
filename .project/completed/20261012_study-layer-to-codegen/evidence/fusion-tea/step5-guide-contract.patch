@@ -1,0 +1,98 @@
+--- a/tests/study/test_integrate_guide_contract.py
++++ b/tests/study/test_integrate_guide_contract.py
+@@ -1,18 +1,16 @@
+-"""The operator guide is walked by strangers, so what it must contain is a test.
++"""fusion-tea's supplement to the installed integration guide keeps fusion-tea's own facts.
+ 
+-SC6 is judged by a fresh session that did not build the seam. That judgement is not
+-automatable, but its preconditions are: a guide missing a condition slug, an environment
+-variable or an exit code cannot possibly pass the walk, and it should fail here first
+-rather than waste the walk. These tests check the guide is complete, not that it is good.
++The general operator guide ships with sysml-codegen in the run-study bundle, and
++sysml-codegen's suite holds it to the seam's code: every condition slug, environment
++variable, exit code, flag and gate. This repository's supplement,
++`docs/integration_seam_operator_guide.md`, carries what is true only here. These tests keep
++the two facts a stranger could find nowhere else: where the sealed wheels live, and the
++decision of record.
+ """
+ 
+-from __future__ import annotations
+-
+ import re
+ from pathlib import Path
+ 
+-from scripts import integrate
+-
+ REPO_ROOT = Path(__file__).resolve().parents[2]
+ GUIDE = REPO_ROOT / "docs" / "integration_seam_operator_guide.md"
+ ADR = REPO_ROOT / ".project" / "adr" / "0009-integration-is-a-fixed-point-proof.md"
+@@ -22,68 +20,14 @@
+     return GUIDE.read_text()
+ 
+ 
+-def test_guide_enumerates_every_condition_slug():
+-    body = guide()
+-    missing = [slug for slug in integrate.CONDITIONS if slug not in body]
+-    assert missing == [], "a caller reading these slugs has nowhere to look them up"
+-    assert len(integrate.CONDITIONS) == 15
+-
+-
+-def test_guide_lists_every_environment_variable_the_seam_requires():
+-    body = guide()
+-    assert [name for name in integrate.REQUIRED_ENV if name not in body] == []
+-
+-
+-def test_guide_states_every_exit_code():
+-    body = guide()
+-    for code in ("exit 0", "exit 1", "exit 2"):
+-        assert code in body
+-
+-
+-def test_guide_names_every_flag_the_seam_accepts():
+-    """An input with no stated source is an input the walker has to guess at."""
+-    body = guide()
+-    flags = [
+-        action.option_strings[0]
+-        for action in integrate.build_parser()._actions
+-        if action.option_strings and action.option_strings[0] != "-h"
+-    ]
+-    assert [flag for flag in flags if flag not in body] == []
+-
+-
+-def test_guide_names_every_gate_and_its_scope():
+-    body = guide()
+-    assert [gate.name for gate in integrate.GATES if gate.name not in body] == []
+-    assert "scope" in body and "repo" in body and "request" in body
+-
+-
+-def test_guide_states_the_repo_scoped_gates_and_the_census_scope():
+-    body = guide()
+-    assert "--census-file" in body and "gate 4" in body
+-    assert "judge the repository" in body
+-
+-
+-def test_guide_states_the_prove_do_not_perform_boundary():
+-    """The counter-intuitive consequence, in the operator's words, not the designer's."""
+-    body = guide()
+-    assert "regenerated and committed" in body
+-    assert "modeling item" in body
+-
+-
+ def test_guide_records_the_sealed_wheel_home():
+     body = guide()
+     assert "stop-parser-sealed-wheels" in body
+     assert "WHEEL_HASHES" in body
+ 
+ 
+-def test_guide_states_what_the_seam_does_not_check():
+-    body = guide()
+-    assert "assert_read_set_covered" in body
+-    assert "unrecorded" in body, "the open verify.py teax.revision row is not discharged"
+-
+-
+ def test_the_decision_of_record_is_filed_and_indexed():
+     assert ADR.is_file()
+     index = (REPO_ROOT / ".project" / "adr" / "INDEX.md").read_text()
+-    assert re.search(r"^- 0009 \u00b7 ", index, re.M), "0009 missing from the register index"
++    assert re.search(r"^- 0009 · ", index, re.M), "0009 missing from the register index"
+     assert ADR.name in guide()

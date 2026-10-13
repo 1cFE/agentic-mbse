@@ -1,0 +1,329 @@
+--- a/docs/integration_seam_operator_guide.md
++++ b/docs/integration_seam_operator_guide.md
+@@ -1,28 +1,14 @@
+-# Operating the integration seam
++# Operating the integration seam in fusion-tea
+ 
+-`scripts/integrate.py` answers one question: **is there exactly one verified, study-ready candidate for this package — and if not, what stopped it?**
++The general operator guide ships with sysml-codegen, in the run-study bundle: `.agents/skills/run-study/integration-guide.md`, also reachable as `.claude/skills/run-study/integration-guide.md`. `sysml-codegen install-commands` installs it. It holds everything that is true of the seam in any project: the ten gates, the fifteen conditions and what to do about each, the exit codes, the project's declaration, the project-root rule, the snapshot rule, and what the seam writes. Read it first.
+ 
+-You give it an audited model change, the package that claims to be its integrated form, and the lineage you expect. It runs ten gates in the producers' own order and writes one JSON document. Either you get a `CANDIDATE` naming the package, its manifest, its pin and both fingerprints, or you get a `BLOCKER` naming the one producer that stopped the sequence and where its own output sits.
+-
+-You do not need to have built the seam to run it. This page is everything you need.
++This page is fusion-tea's supplement: what is true of the seam only here. Each section names the general guide's section it adds to. `scripts/integrate.py` is fusion-tea's alias of the installed seam, so `python scripts/integrate.py …` and `sysml-codegen study integrate …` are the same command in this repository.
+ 
+ ---
+ 
+-## The one thing to know first
+-
+-**The seam proves; it does not perform.**
+-
+-It re-runs every producing step *in place* and requires each one to change nothing. It regenerates the package into itself and demands zero moved bytes. It recaptures the snapshot and demands the tracked file back. It recomputes the manifest's pin and demands the recorded value.
++## The full invocation in fusion-tea
+ 
+-So the seam **refuses model work that has not yet been regenerated and committed.** If you get a refusal at the regeneration gate, that is not a bug in the seam and re-running it will not help. It means the modeling item that made the change is not finished: go back and regenerate, recapture, re-pin and commit there. Then run the seam.
+-
+-The seam is the gate on the hop. It is not the hand that performs it.
+-
+----
+-
+-## The full invocation, first
+-
+-Read this before anything else, so you do not discover `--census-file` late.
++Adds to the general guide's "The full invocation, first".
+ 
+ ```bash
+ uv run --env-file ~/1cfe/agentic-mbse/.env --env-file .venv/integration.env \
+@@ -46,31 +32,20 @@
+ 
+ A full run takes about 15–20 seconds. Most of it is the model-family spine suite and the baseline execution.
+ 
+----
++## Where each input comes from in fusion-tea
+ 
+-## Where each input comes from
++Adds to the general guide's "Where each input comes from".
+ 
+-Nine inputs. Four of them are optional to `argparse` but **not** optional to the answer: leave one out and its gate reports *could not run*, which is a `BLOCKER`, not a pass.
++- `--audited-work`: the work item you are integrating, cited `PATH@COMMIT` — ADR-0006's citation form (`.project/adr/0006-goal-evidence-seam.md`).
++- `--models-root`: for the stellarator package, `exploration/stellarator_e2e/models`.
++- `--manifest`: the study-package manifest beside the route, `studies/manifest.json` in the package's studies directory (`modeling_project/STUDY_POLICY.md` § 12).
++- `--groups`: the axis declaration preflight calls `--groups`. The known-answer declaration under `tests/study/data/` is the usual one.
++- `--census-file`: `tests/models/data/mfe_census.json`.
++- `--expected-teax-revision`: `git -C "$STOP_PARSER_TEAX_ROOT" rev-parse HEAD` at the revision the audited work ran under. It is the same revision `git -C "$TEAX_SIMKIT_PATH" rev-parse HEAD` reads, because `TEAX_SIMKIT_PATH` lies inside that checkout.
+ 
+-| Flag | Where you get it | Required? |
+-|---|---|---|
+-| `--audited-work` | The work item you are integrating, cited `PATH@COMMIT` — ADR-0006's citation form. Repeat it for several items. | Yes |
+-| `--models-root` | The SysML tree the package was generated from. For the stellarator package: `exploration/stellarator_e2e/models`. | Yes |
+-| `--package` | The generated package root. Supply it **once**; two values refuse as ambiguous lineage. | Yes |
+-| `--manifest` | The study-package manifest beside the route, `studies/manifest.json`. Once, same rule. | Yes |
+-| `--groups` | The axis declaration `preflight.py` calls `--groups`. The known-answer declaration under `tests/study/data/` is the usual one. | Yes |
+-| `--out-dir` | Anywhere you like, as long as it resolves **outside** the package root. Everything the run produces lands here. A directory outside the repository works, and is cited with `../` segments that resolve from the repository root — see "Reading the answer". | Yes |
+-| `--route-sys-path`, `--route-module`, `--route-callable` | The package's own study route — the module holding `execute_baseline`. The seam invokes it rather than importing it, so it stays generic. | Yes |
+-| `--census-file` | `tests/models/data/mfe_census.json`. **Reaches gate 4 and nothing else** — see below. | Gate 4 cannot judge without it |
+-| `--expected-semantic-fingerprint` | `contracts/model_contract.json` → `semantic_fingerprint`, as recorded by the audited work. | Gate 9 cannot judge without it |
+-| `--expected-executable-fingerprint` | `contracts/package_contract.json` → `executable_fingerprint`. | Gate 9 cannot judge without it |
+-| `--expected-teax-revision` | `git -C "$STOP_PARSER_TEAX_ROOT" rev-parse HEAD` at the revision the audited work ran under. **You** supply it; the seam does not record a pin of its own, because a self-recorded pin re-records itself on drift and could never refuse. | Gate 1b cannot judge without it |
++## The environment in fusion-tea
+ 
+----
+-
+-## The environment
+-
+-Every producer the seam invokes needs this, and so does any study consuming the candidate afterwards. Copy-pasteable:
++Adds to the general guide's "The environment".
+ 
+ ```bash
+ # The SysIDE licence. Generation and snapshot capture will not run without it.
+@@ -82,21 +57,25 @@
+ export STOP_PARSER_CODEGEN_WHEEL=/home/reid/1cfe/stop-parser-sealed-wheels/sysml_codegen-0.1.1-py3-none-any.whl
+ export STOP_PARSER_COSTINGFE_WHEEL=/home/reid/1cfe/stop-parser-sealed-wheels/1costingfe-0.1.0-py3-none-any.whl
+ 
+-# The teax checkout. verify.py imports simkit from under this root and does no sys.path work.
++# The teax checkout, and teax's simkit root inside it. The seam reads the teax revision from
++# TEAX_SIMKIT_PATH; verify imports simkit from the environment and does no sys.path work.
+ export STOP_PARSER_TEAX_ROOT=/home/reid/1cfe/teax
++export TEAX_SIMKIT_PATH=$STOP_PARSER_TEAX_ROOT/packages/teax-simkit
+ ```
+ 
+ **The sealed wheels.** `/home/reid/1cfe/stop-parser-sealed-wheels/` holds the three wheel files whose sha256 values are pinned in `tests/test_dependency_provenance.py::WHEEL_HASHES`. They are outside the repository and are not installed by `uv`. If gate 1a refuses with a hash mismatch, check that these three paths point at those files before reading it as toolchain drift — verify with `sha256sum` against `WHEEL_HASHES`.
+ 
+-**Two `--env-file` flags instead of `export`.** The repository keeps the six `STOP_PARSER_*` values in `.venv/integration.env` (gitignored), so the whole environment is two flags on `uv run`:
++**Two `--env-file` flags instead of `export`.** The repository keeps the six `STOP_PARSER_*` values and `TEAX_SIMKIT_PATH` in `.venv/integration.env` (gitignored), so the whole environment is two flags on `uv run`:
+ 
+ ```bash
+ uv run --env-file ~/1cfe/agentic-mbse/.env --env-file .venv/integration.env python scripts/integrate.py ...
+ ```
+ 
+-The seam adds two things to whatever it inherits, for every subprocess it launches: the repository root and `$STOP_PARSER_TEAX_ROOT/packages/teax-simkit` on `PYTHONPATH`, and `STUDY_REQUIRE_TEAX=1` so a teax-dependent producer fails loudly instead of skipping and reporting green. If you invoke a producer by hand, do the same.
++**All six variables are checked before any producer runs.** Gate 0 sweeps `SYSIDE_LICENSE_KEY` and the five variables fusion-tea's declaration lists. `tests/test_dependency_provenance.py` reads the four wheel variables inside its *test body*, so an absent one raises a `KeyError` that pytest records as a test failure — which any seam that let gate 1a run first would report as a genuine toolchain refusal.
++
++## Running from a second checkout or worktree
+ 
+-**Running from a second checkout or worktree.** Both files above are checkout-local facts, and `uv run` is not usable from a secondary checkout: it resolves that checkout's own venv, and the seam launches every producer via `sys.executable`, so the producers would run outside the sealed environment (`--no-sync` does not redirect this). The working pattern, proven by the 2026-08-29 route-equivalence exercise, is to run the primary checkout's sealed interpreter directly, from the secondary checkout's root, with the environment sourced:
++Adds to the general guide's "The environment". Both files above are checkout-local facts, and `uv run` is not usable from a secondary checkout: it resolves that checkout's own venv, and the seam launches every producer via `sys.executable`, so the producers would run outside the sealed environment (`--no-sync` does not redirect this). The working pattern, proven by the 2026-08-29 route-equivalence exercise, is to run the primary checkout's sealed interpreter directly, from the secondary checkout's root, with the environment sourced:
+ 
+ ```bash
+ set -a
+@@ -108,135 +87,35 @@
+ 
+ `STOP_PARSER_WHEEL_TARGET` keeps naming the primary checkout's `site-packages` — that is correct, because that venv's interpreter is the one running. This is the one documented exception to the repository's always-`uv` rule, scoped to secondary checkouts (CLAUDE.md § Python Environment).
+ 
+-**All six variables are checked before any producer runs.** That is deliberate. `tests/test_dependency_provenance.py` reads the four wheel variables inside its *test body*, so an absent one raises a `KeyError` that pytest records as a test failure — which any seam that let gate 1a run first would report as a genuine toolchain refusal. Checking first is what keeps "you forgot to export a variable" from reading as "your toolchain drifted".
+-
+----
+-
+-## Reading the answer
+-
+-The return is at `<out-dir>/integration_return.json`, and a human-readable summary goes to stderr. If your request was rejected before it could be accepted at all — a missing input, an `--out-dir` inside the package — the document goes to **stdout** instead, because there was nowhere to write it.
+-
+-### Exit codes
+-
+-| Code | Meaning | What to do |
+-|---|---|---|
+-| **exit 0** | `CANDIDATE`. One verified, study-ready identity. | Cite it in your study. |
+-| **exit 1** | `BLOCKER`. The seam judged and stopped. | Read `blocker.condition` and act on the table below. |
+-| **exit 2** | The seam itself broke. It did **not** judge the package. | Read `seam_traceback.txt` in the out-dir. This is a defect in the seam, not a result about your package. |
+-
+-### A `CANDIDATE`
+-
+-```json
+-{ "class": "CANDIDATE", "exit_code": 0,
+-  "candidate": { "package": "...", "manifest": "...", "pin": "...",
+-                 "semantic_fingerprint": "...", "executable_fingerprint": "...",
+-                 "identity_document": "...", "baseline_result": "...",
+-                 "verification_summary": "..." },
+-  "blocker": null,
+-  "gates": [ /* ten entries, all "pass" */ ] }
+-```
+-
+-**Every path is relative to the repository root**, not to your working directory and not to `--out-dir`. An `--out-dir` outside the repository is cited with leading `../` segments — `--out-dir /tmp/integration-run` gives `identity_document: "../../../../tmp/integration-run/package_identity.json"` — which resolves correctly *from the repository root and nowhere else*. Run the citation commands below from the repository root, or join each path onto it yourself.
+-
+-**`candidate.package` is the path the package root resolves to, which may not be the one you typed.** The tracked stellarator root is a symlink: pass `--package exploration/stellarator_e2e/pkg/stellarator_tea` and the candidate names `exploration/stellarator_e2e/generated`. That is deliberate — every gate digests, backs up and compares the real tree — and both paths name the same package.
+-
+-`pin` is the manifest's own `fingerprints.indicator_inputs.digest` — the seam mints no identity of its own, it names the ones the producers already compute.
+-
+-### A `BLOCKER`
+-
+-```json
+-{ "class": "BLOCKER", "exit_code": 1, "candidate": null,
+-  "blocker": { "gate": "...", "producer": "...", "scope": "repo|request",
+-               "mode": "refused|could_not_run", "condition": "...",
+-               "detail": "...", "expected": null, "actual": null,
+-               "evidence": ["..."] },
+-  "gates": [ /* every gate before the stop, then "not reached" */ ] }
+-```
+-
+-Three fields carry the weight:
+-
+-- **`mode`** — `refused` means the producer ran and returned a negative verdict. `could_not_run` means something stopped it before it could judge anything. A goal caller's retry rule reads this: an inability to run may be an operational accident worth an identical retry; a refusal is a result about the candidate.
+-- **`condition`** — one of fourteen stable slugs. The table below is what to do about each.
+-- **`scope`** — `repo` or `request`. See the next section; on a gate-1a or gate-5 refusal this is the first thing to check.
+-
+-Each row in `gates` carries one of four statuses, and the difference between the last two is the one to get right:
+-
+-- **`pass`** — the gate ran and said yes.
+-- **`fail`** — the gate ran and refused. The stopping gate's own row says this, with the blocker's detail.
+-- **`did not run`** — the gate was reached and could not judge. The stopping gate's row says this when `mode` is `could_not_run`.
+-- **`not reached`** — the sequence never got to this gate. It tells you nothing about it, one way or the other.
+-
+-So the gate that stopped the run always carries its own verdict. Only the gates strictly after it read `not reached`.
+-
+----
+-
+-## The ten gates, in order
+-
+-The sequence stops at the first gate that is not a pass. The numbering is the requirements' — step 1 splits into two producers, so ten rows carry nine step numbers. `gate` in the return is the slug in the second column.
+-
+-| # | `gate` | `scope` | Who judges it |
+-|---|---|---|---|
+-| 0 | `preconditions` | request | The seam: inputs resolve, all six environment variables are exported, `simkit` imports, the package tree is git-clean. Not one of the ten; it runs before any producer. |
+-| 1a | `pinned-packages` | repo | `tests/test_dependency_provenance.py` — the pinned revisions and the installed wheel artifacts. |
+-| 1b | `teax-revision` | request | The seam: `git -C $STOP_PARSER_TEAX_ROOT rev-parse HEAD` against `--expected-teax-revision`. No producer exists for this anywhere; the gap is filed. |
+-| 2 | `regeneration` | request | `sysml-codegen generate --smart-regen --preserve-handwritten`, in place, required to rewrite no byte outside `handwritten/`. |
+-| 3 | `handwritten-preservation` | request | The same comparison over `handwritten/`, which regeneration must never open. |
+-| 4 | `census-snapshot` | request | Snapshot recapture against the tracked file, byte for byte; and the entry-point census re-derived from the sealed package against `--census-file`. |
+-| 5 | `model-family-spine` | repo | `tests/models/test_model_family_spines.py` — the canonical tree, the family twins, the tracked census. |
+-| 6 | `manifest` | request | `scripts/study/manifest.py` — the manifest is this package's, its pin recomputes, and resolved pipeline references are covered. |
+-| 7 | `preflight` | request | `scripts/study/preflight.py gates` — the six mechanical gates a study passes. Baseline execution happens just before this, and its failure is reported here as *could not run*. |
+-| 8 | `verification` | request | `scripts/study/verify.py` — oracle parity and re-derived verdicts, over the store this run executed. |
+-| 9 | `lineage` | request | The seam: the live fingerprints against the pair the request named. Last, because a package that failed an earlier gate has no lineage worth reporting. |
+-
+-The seam mints nothing of its own except the two comparisons it has no producer for — the teax revision and the lineage — and both are against values **you** supply.
+-
+----
+-
+-## Two gates judge the repository, not your package
+-
+-`pinned-packages` (gate 1a) and `model-family-spine` (gate 5) carry `scope: repo`. Their producers accept no package argument by construction: the provenance suite reads `pyproject.toml`, `uv.lock` and the installed wheels, and the spine suite generates from the repository's canonical `models/` tree and compares against the tracked `tests/models/data/mfe_census.json`.
+-
+-**Consequence you will meet in practice:** a dirty or mid-edit working tree can refuse gate 5 for reasons that have nothing to do with `--package`. If gate 5 refuses, check `scope` first, then check whether your working tree is clean, before you go looking at the package.
+-
+-This is not a defect. Those two gates close the *other* end of the lineage chain that gates 4, 6 and 7 close at the package end.
+-
+-## `--census-file` reaches gate 4 and nothing else
+-
+-Gate 4 compares the file you pass against the sealed package: its entry-point count, its classification, and the semantic fingerprint it was derived against.
+-
+-Gate 5 reads the **tracked** `tests/models/data/mfe_census.json` whatever you passed. It is the spine suite's own input and the flag does not reach it. If you pass a census from somewhere else, gate 4 judges that one and gate 5 still judges the tracked one.
+-
+----
+-
+-## The fifteen conditions, and what to do about each
+-
+-The right-hand column is the class a goal-layer caller maps the slug to. That mapping lives here, not in the seam: it is the goal layer's vocabulary and a native tool should not depend on it.
++## fusion-tea's declaration
+ 
+-| `condition` | What happened | What you do | Goal class |
+-|---|---|---|---|
+-| `input-missing` | A required flag was absent, or an optional one its gate needed. | Add the flag. `detail` names it. | `STRATEGY_BLOCKER` |
+-| `input-invalid` | Something you supplied is unusable: `--out-dir` inside the package, a path that does not resolve, two `--package` values, or zero-or-several `*.snapshot.json` beside the models root. | Fix the value. You supplied it; do not re-supply the same thing. | `STRATEGY_BLOCKER` |
+-| `env-missing` | A variable was not exported, or a producer could not run past the environment sweep. | Export the variable from the block above, or read `detail` for the producer that could not run. | `MECHANICAL_FAILURE` |
+-| `toolchain-drift` | A pinned wheel, an installed revision, or the teax checkout is not what was expected. | Check the sealed-wheel paths first, **and** that `STOP_PARSER_WHEEL_TARGET` names the `site-packages` of the interpreter actually running — from a second checkout or worktree the default venv fails that check as a path mismatch, which is environment misconfiguration, not drift (see § Running from a second checkout or worktree). Only if both are right has the toolchain genuinely moved and the audited work's lineage no longer held. | `STRATEGY_BLOCKER` |
+-| `package-not-integrated` | Regenerating on the pin rewrote the package, or the tree was not git-clean. | **Go back to the modeling item.** Regenerate, recapture, re-pin, commit there. Re-running the seam will not change this. | `PREREQUISITE` |
+-| `handwritten-lost` | Regeneration did not preserve a hand-written implementation. | Same: the modeling item's work. A stubbed normative file is a failed gate even when the seal is clean. | `PREREQUISITE` |
+-| `census-stale` | The census does not match the sealed package, or is bound to a different semantic fingerprint. | Re-derive `tests/models/data/mfe_census.json` from the new package. Never hand-patch it to match. | `PREREQUISITE` |
+-| `snapshot-drift` | The recaptured snapshot is not the tracked one, byte for byte. | Check the toolchain-pin gate's result first — the snapshot pins toolchain versions as well as model content. If the pin is clean, the model state moved and the snapshot needs recapturing in the modeling item. | `PREREQUISITE` |
+-| `repo-lineage-broken` | The model-family spine suite refused: the canonical tree, the twins, or the tracked census. | Read the junit file the blocker cites. Check `scope` — this is about the repository, not your package. | `STRATEGY_BLOCKER` |
+-| `manifest-stale` | The manifest is not this package's, or its pin does not recompute over the live package. | Re-pin the manifest against the package, in the modeling item that changed it. | `STRATEGY_BLOCKER` |
+-| `read-coverage-refused` | Baseline Python-observable file reads lacked a fresh successful receipt, read an undeclared dependency, changed a dependency, or attempted unsupported child/descriptor access. | Inspect `read_coverage.json`; repair dependency declarations or route behavior. Do not bypass the check. | `STRATEGY_BLOCKER` |
+-| `preflight-refused` | One or more of preflight's six checks failed. | Open the whole `preflight_results.json` the blocker cites — it reports all six whatever happened, and more than one may have failed. | `STRATEGY_BLOCKER` |
+-| `verification-refused` | `verify.py` returned non-zero. | Read `verify_stderr.txt` in the out-dir. See the caveat below. | `STRATEGY_BLOCKER` |
+-| `lineage-mismatch` | The package verifies cleanly but is not the lineage you named. | Compare `expected` and `actual` in the blocker. Either you named the wrong lineage or you are integrating the wrong package. | `STRATEGY_BLOCKER` |
+-| `seam-internal-error` | The seam raised. It did not judge anything. | Read `seam_traceback.txt`. File it against the seam. | `MECHANICAL_FAILURE` |
++Adds to the general guide's "The project's declaration". fusion-tea's `pyproject.toml` declares both repo-scope gates, the five variables its gate-1a producer reads, the 1costingFE distribution its returns record, and its backup prefix:
+ 
+-**Caveat on `verification-refused`.** `verify.py` returns 1 for every cause and writes no summary when it refuses, so the seam cannot separate "verification failed" from "verify could not run" from its output. The seam checks verify's one environmental precondition itself at gate 0 — that `simkit` imports under the environment the subprocess will get — so past that a non-zero exit is read as a refusal. A teax import failure that probe did not predict will therefore arrive labelled `refused`. That shortfall is filed against `scripts/study/verify.py`.
+-
+----
+-
+-## Citing a candidate in a study
+-
+-The candidate's fields are the study's inputs. Nothing else is needed, and no seam code is involved:
++```toml
++[tool.sysml-codegen.integrate]
++environment = ["STOP_PARSER_WHEEL_TARGET", "STOP_PARSER_AGENTIC_WHEEL", "STOP_PARSER_CODEGEN_WHEEL", "STOP_PARSER_COSTINGFE_WHEEL", "STOP_PARSER_TEAX_ROOT"]
++backup-prefix = "fusion-tea-integration-backup-"
++record-distributions = { costingfe = "1costingfe" }
++[tool.sysml-codegen.integrate.gates.pinned-packages]
++target = "tests/test_dependency_provenance.py"
++checked = "the pinned package revisions and installed wheel artifacts"
++[tool.sysml-codegen.integrate.gates.model-family-spine]
++target = "tests/models/test_model_family_spines.py"
++checked = "the canonical tree, the family twins and the tracked census"
++```
++
++- **Gate 1a** runs `tests/test_dependency_provenance.py` — the pinned revisions and the installed wheel artifacts. The provenance suite reads `pyproject.toml`, `uv.lock` and the installed wheels.
++- **Gate 5** runs `tests/models/test_model_family_spines.py` — the canonical tree, the family twins, the tracked census. The spine suite generates from the repository's canonical `models/` tree and compares against the tracked `tests/models/data/mfe_census.json`.
++- Gate 5 reads the **tracked** `tests/models/data/mfe_census.json` whatever you passed. It is the spine suite's own input and the flag does not reach it.
++- A `census-stale` refusal means: re-derive `tests/models/data/mfe_census.json` from the new package. Never hand-patch it to match.
++
++## Reading a fusion-tea answer
++
++Adds to the general guide's "Reading the answer" and its conditions table.
++
++- **The stellarator package root is a symlink.** Pass `--package exploration/stellarator_e2e/pkg/stellarator_tea` and the candidate names `exploration/stellarator_e2e/generated`. Both paths name the same package.
++- **`toolchain-drift`.** Check the sealed-wheel paths first, **and** that `STOP_PARSER_WHEEL_TARGET` names the `site-packages` of the interpreter actually running — from a second checkout or worktree the default venv fails that check as a path mismatch, which is environment misconfiguration, not drift (see § Running from a second checkout or worktree). Only if both are right has the toolchain genuinely moved and the audited work's lineage no longer held.
++- **Citing a candidate**, in this repository's form:
+ 
+ ```bash
+ uv run --env-file ~/1cfe/agentic-mbse/.env --env-file .venv/integration.env \
+@@ -248,49 +127,21 @@
+     --baseline-result "$(jq -r .candidate.baseline_result <out-dir>/integration_return.json)"
+ ```
+ 
+-**The one thing you derive rather than read: the store path.** `verify.py` needs `--store`, and the return does not carry it, because the route does not return one — it records a `store_id` inside the baseline result. Resolve it in two lines: read `executed_under.store_id` from the `baseline_result` the candidate cites; it is repo-relative when the run's output directory was under the repo root, and a bare filename otherwise, in which case the store is at `<out-dir>/_work/<that filename>`.
+-
+-Run these **from the repository root**: every path in the return resolves against it.
+-
+-Record the candidate's `pin` and both fingerprints in the study record. They are the lineage that study's results belong to.
+-
+----
+-
+-## What the seam writes, and where
+-
+-Evidence lands under `--out-dir`. Rollback copies use the system temporary directory; `backup-location.json` records their location. They remain available after the invocation for recovery, subject to system temporary-file cleanup. Study import aliases also use temporary directories and are removed at normal process exit. Keep `TMPDIR` outside the repository. Native result stores and reports remain under `--out-dir`.
+-
+-| File | What it is |
+-|---|---|
+-| `integration_return.json` | The return. |
+-| `clean.json` | `preflight.py clean`'s own result over the package tree. |
+-| `junit/*.xml` | The two pytest producers' junit reports, one per gate. |
+-| `recaptured.snapshot.json` | Gate 4's recapture. |
+-| `manifest_read_coverage.json`, `read_coverage.json` | Static resolved-reference membership and the baseline Python read receipt, respectively. The latter includes source declarations, observed hashes, violations and limits. |
+-| `package_identity.json`, `baseline_result.json`, `_work/*.db` | What executing the manifest's pinned baseline point deposited. |
+-| `preflight_results.json`, `verification_summary.json`, `verify_stderr.txt` | The two stock study gates' own output. |
+-| `backup-location.json` | Location of the external package copy made before the first mutating gate. |
+-| `moved_files.txt` | Only on a byte-movement refusal: every path that moved. |
+-| `seam_traceback.txt` | Only on exit 2. |
+-
+----
+-
+-## What the seam does not check
++- **Temporary files.** Study import aliases also use temporary directories and are removed at normal process exit.
+ 
+-Stated so you do not assume otherwise.
++## Open rows fusion-tea tracks against the seam
+ 
+-- **File coverage is scoped to the baseline's Python-observable opens.** Gate 6 resolves pipeline references and calls `assert_read_set_covered`; the indicator report also calls this assertion. Gate 7 observes the route from import through baseline execution and requires a fresh successful `read_coverage.json` before preflight. Package seal and manifest identities cover package artifacts; exact declarations cover route/scripts/teax Python sources and teax installation metadata. The receipt has a canonical `dependency_digest` over declared and observed identities, also recorded in gate 7 detail; it is separate from the sealed executable and indicator pin. Baseline scratch files use a fresh `TMPDIR` under the output directory. Atomic rename admission follows only newly created regular files to absent output destinations. Moves and deletions revoke admission at the source and descendants; incoming undeclared contents revoke destination admission. Hardlinks do not establish new-output admission. SQLite connections must start with an absent output database and absent WAL/SHM/journal sidecars; reconnects may use only that invocation's newly admitted store. This prevents stock baseline reuse of old cases without claiming observation of native SQLite bytes. Actual imported bytecode hashes are recorded alongside source identity; this does not prove source equivalence. Runtime files are hashed at first observed access and rechecked, not attested as an installation image. Newly created output files may be reread; pre-existing outputs are not automatically admitted. Audited subprocess/fork/exec attempts and integer-descriptor read-opens refuse. Native C/SQLite reads, directory metadata, mmap/direct syscalls, pre-opened handles, environment/network reads and post-observer execution remain outside observation. Hash checks have TOCTOU gaps, including transient restored mutations. One baseline establishes no coverage for other points or unexecuted branches. This is a cooperative check, not a sandbox.
++- Gate 1b has no producer anywhere; the gap is filed.
++- **`verification-refused`.** A teax import failure the gate-0 probe did not predict arrives labelled `refused`. That shortfall is filed against `scripts/study/verify.py`.
++- **`verify.py` records `teax.revision: "unrecorded"`.** The seam records the checkout's git revision in the return's `toolchain` block, but that does **not** discharge the open row against `verify.py`.
+ - **Gate 5's refusal path is not covered by a test.** Its pass path and its could-not-run path are; driving a real refusal out of it would need an edit to a tracked file or to a frozen producer. The shared junit-to-refusal mapping *is* proven, by gate 1a's wheel-hash fixture.
+-- **`verify.py` records `teax.revision: "unrecorded"`.** Stock teax exposes no `__version__`. The seam records the checkout's git revision in the return's `toolchain` block, but that does **not** discharge the open row against `verify.py`.
+-
+----
+ 
+ ## Related
+ 
+ - `.project/adr/0009-integration-is-a-fixed-point-proof.md` — why the seam proves rather than performs.
+-- `scripts/study/preflight.py`, `scripts/study/verify.py`, `scripts/study/manifest.py` — the producers, each with its own module docstring.
+ - `tests/study/test_integrate_*.py` — the seam's own tests, including five real refusals from real producers.
++- `modeling_project/STUDY_POLICY.md` § 12 — where each package's studies directory is.
+ 
+-## Keep disposable execution files outside the repository
++## Historical reproduction scripts
+ 
+-Run pytest with its default temporary directory, or set `--basetemp` to a fresh external directory. Do not point it into an evidence directory. Keep JUnit XML and useful logs with the evidence. For historical reproduction scripts with an `--out` option, choose a new external directory; retain the resulting native stores, artifact JSON and verification receipts deliberately, rather than committing copied package/tool trees. Do not rewrite frozen scripts to change their temporary paths. Narrow ignore rules cover import aliases and the old archive review's pytest workspace if those historical scripts are replayed.
++Adds to the general guide's "Keep disposable execution files outside the project". For historical reproduction scripts with an `--out` option, choose a new external directory; retain the resulting native stores, artifact JSON and verification receipts deliberately, rather than committing copied package/tool trees. Do not rewrite frozen scripts to change their temporary paths. Narrow ignore rules cover import aliases and the old archive review's pytest workspace if those historical scripts are replayed.
