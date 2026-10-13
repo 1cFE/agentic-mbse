@@ -1,0 +1,40 @@
+--- a/modeling_project/STUDY_POLICY.md
++++ b/modeling_project/STUDY_POLICY.md
+@@ -119,6 +119,20 @@
+ 
+ **To confirm at Item 5 spec time** (from the upstream epic's delivered docs, not assumed here): the exact delivered mechanics for the A/B instance-swap study — whether two design-instance packages under one comparison query, or one package with a swapped entry-model binding. Do not improvise a wrapper if the delivered semantics differ; that is a spec-stage question.
+ 
++### Execution routes
++
++The installed run-study runbook runs "the execution route the study policy's § Execution routes names" at steps 5, 8 and 9. In fusion-tea, this subsection names them, built from the constructs above.
++
++Two routes, and no third. The **`teax-study` CLI** runs plain Cartesian grids on a stock-loadable package. A **study-local direct-API definition** (`StudyRunner` + `PreparedListStrategy`) runs coordinated axis-group blocks, and is the only route for a package needing an adapter. A record's § 10 names its route as `teax-study CLI` or `study-local direct-API`.
++
++**A package that needs an adapter.** Its annex carries two more sections, `§ Loader exception and glue` and `§ Era pin`; a package on the stock route has neither. They bind these runbook steps:
++
++- Step 5 reads `§ Loader exception and glue` with `§ Baseline pin`, and the study fails closed when an adapter's own self-check fails.
++- Step 8: if the route is the adapter route, disclose the glue in the record's § 10: per rung, what the harness supplies that the model does not, why the model cannot, and which claims that scopes. A package with no adapter has no `§ Loader exception and glue` section, and the record says "glue ledger: none".
++- Steps 9 and 13 read `§ Era pin` when the annex has one; a package on stock teax has none. While the package runs under an era pin, the report states that pin as a reproduce prerequisite at the claim site, not only in a provenance footnote. A record's `teax.era_pin` names the era pin and its worktree path, or is null when none.
++
++These rules stood in the run-study runbook and record template until those shipped from sysml-codegen, written generally (WRAP-SPLIT Item 3).
++
+ ---
+ 
+ ## 7. Hypotheses the first study round tests — [AGENT]
+@@ -160,3 +174,16 @@
+ The owner's process-simplification request permits brief or skipped stages when their responsibilities are satisfied or inapplicable. Record the reason or reused evidence; preserve this policy's scientific rules, owner rulings, source quarantine, executable gates, frozen record correctness, and runtime contracts. Existing verification can be reused when its revision, scope, and environment are still valid.
+ 
+ Review follows `work/orchestration/GOAL_RUNBOOK.md` § Review scope and evidence reuse. New or reinterpreted equations/sources require a focused independent source/math check against original evidence. Ownership/interface changes and new modeling patterns require focused design review before implementation. Shared definition changes require consumer enumeration and checks, broadened if impact is unknown. Coupled architecture, multiple model families, or failed coverage require substantive independent integration review. Routine studies do not require stacked preflight critics, administrators, disposition critics, and round critics; use applicable evidence once. The main agent may execute directly and delegate scoped research or review with self-contained briefs.
++
++## 12. Locations
++
++The installed run-study text names one *studies directory* per studied package, written `<studies-dir>`. In fusion-tea it is `exploration/<pkg>/studies/`, where `<pkg>` is the package's directory under `exploration/` — for example `exploration/stellarator_e2e/studies/`. It holds the package's `ANNEX.md`, its `DISCOVERY_LOG.md`, and one `<study-id>/` directory per record: a record is at `exploration/<pkg>/studies/<study-id>/`, and its log at `exploration/<pkg>/studies/DISCOVERY_LOG.md`.
++
++## 13. Provenance of the installed study text
++
++The run-study skill, runbook and record template ship from sysml-codegen, written generally, so they state these rules without fusion-tea's citations. The citations, as they stood at fusion-tea `b06585709`:
++
++- Runbook step 7, the restated-window rule: `20260905-stored-energy-basis`, pre-execution critique F1; goal `stored-energy-basis` L-008; added 2026-09-06 `[OWNER]`.
++- Record template, the snapshot fields now marked "(fixed by the tool's schema)": they were marked **(Item 3)**, copied from `.project/completed/20260821_run-study-indicators/design.md`, and are not the record contract's to rename.
++- Record template, the oracle's `source_digest`: the manifest carries no digest (gap G1, run-study-cold-pickup).
++- Record template, rule 1's flattened fingerprint names: settled by orchestrator ruling 2026-08-19; the plan raised it as an open seam.

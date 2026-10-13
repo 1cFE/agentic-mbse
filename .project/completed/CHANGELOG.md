@@ -4,6 +4,38 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-12] - Study Layer to sysml-codegen
+
+**Type**: Item (`WRAP-SPLIT` Item 3; code in sysml-codegen [PR #20](https://github.com/1cFE/sysml-codegen/pull/20), merged as `b5663c0`; installer API in agentic-mbse [PR #24](https://github.com/1cFE/agentic-mbse/pull/24), merged as `d42c8b9`; fusion-tea adoption in fusion-tea [PR #127](https://github.com/1cFE/fusion-tea/pull/127) (the agentic-mbse pin) and [PR #128](https://github.com/1cFE/fusion-tea/pull/128) (the switch), stacked)
+**Duration**: 1 day (spec created 2026-10-12; closed 2026-10-12)
+
+### Summary
+
+A target can now run a parameter study using only what sysml-codegen installs. Before this item the study layer (the `run-study` skill, seven study modules and `integrate.py`) existed only in fusion-tea, written against its paths and packages. It now ships from sysml-codegen. `install-commands` installs `run-study` (skill, runbook, record template, annex template, integration guide) and a study-policy template that it never overwrites, for Claude Code and Codex. The tools run as `sysml-codegen study indicators|preflight|verify|integrate` from the `sysml_codegen.study` package. A target declares its own repo gates and environment in `pyproject.toml`. sysml-codegen installs through this repo's `Installer` with its own manifest (`installer/v1`, this repo's part), so neither tool's installer removes the other's files. Behaviour matches fusion-tea's tools on 28 of 28 parity cases, apart from a closed list of 13 changes (B1–B13), each with a reason. A wheel install into an empty project passed 25 of 25 checks. A fresh agent ran a whole study from the installed files only, its record passed five record checks, and a second agent wrote the synthesis from the record alone. Independently audited: Certify with follow-ups; the one blocker (setting `PYTHONTZPATH` switched off `integrate`'s read-coverage gate) was fixed with a regression test. fusion-tea then switched by the runbook ([record](20261012_study-layer-to-codegen/evidence/adoption-20261012.md)). Its study suite gives the same 22 failures before and after the switch. Of those, 21 are gate-2 refusals caused by the generator move, which clear when the stellarator package is regenerated. The one record whose sealed identity still recomputes recomputes unchanged, and `integrate` stops at the same gate before and after.
+
+**Promises the product now makes.** sysml-codegen P-007: targets install the study layer from sysml-codegen, versioned with the generator whose contracts it reads ([OWNER] epic header, 2026-10-06).
+
+**Decision: one distribution.** [AGENT] (design D6) The tools live in the sysml-codegen distribution, so the code that reads a package's contracts is always the version that wrote them. Rejected: a separate distribution, and copying tool files into each target.
+
+**Decision: an installer API version, not a version bump.** [AGENT] (design DD5; sysml-codegen ADR-0016) sysml-codegen's 22 committed snapshots refuse a different agentic-mbse version, so agentic-mbse stays 0.1.3. `INSTALLER_API_VERSION = "installer/v1"` marks the surface (`Installer(manifest=...)`, `install_bundle()`, `Installer.files`), and `install-commands` checks it before writing, naming `d42c8b9`.
+
+**Decision: fusion-tea adopts after merge, by runbook.** [AGENT] (design D1, D10) Its sysml-codegen pin was 214 commits behind, and moving it moves the generator its packages are built with. The runbook and its kit live in this folder, since sysml-codegen deletes item folders at close. The owner merged #24 on top of #23 so fusion-tea's agentic-mbse pin moves once for Items 3 and 5 ([OWNER] 2026-10-12).
+
+**Behaviour found.**
+- A fusion-tea venv on uv's managed CPython 3.12.11 makes the original read-coverage observer refuse on `/dev/urandom` (no `getrandom`); build fusion-tea venvs on `/usr/bin/python3.12`, its own interpreter.
+- git's pathspec `*` crosses `/`, so a glob over `exploration/*/studies/study_route.py` also matches the route copies inside committed records; name the files.
+- `tempfile`'s first-use probe lands in `/tmp` unless `TMPDIR` is set, and gate 7 refuses it as an undeclared read; both seams set `TMPDIR` inside the out directory.
+- fusion-tea's original `integrate` runs `uv run sysml-codegen generate` without `--no-sync`, which re-syncs the venv to the lock mid-suite.
+
+### Deliverables
+
+- agentic-mbse: `src/agentic_mbse/cli/installation.py` (`installer/v1`), `tests/test_installation.py` (five tests), one `CLAUDE.md` sentence; `.project/active/wrap-split-migration-ledger.md` § Item 3 (75 rows); `.project/completed/20261012_study-layer-to-codegen/` (README, brief, the adoption runbook and its kit, the adoption record).
+- sysml-codegen: `src/sysml_codegen/study/` (eight ported modules plus `roots`, `census`, `declarations`, seven schemas), `cli/install.py`, `cli/study.py`, `assets/` (skill, command, policy template), the station fixture and tests, ADRs 0015–0017, P-007; the item's artifacts at `4dfe275:.project/active/study-layer-to-codegen/`.
+- fusion-tea: the homes of 75 moved lines (`699b0a74d`, `aab9b9ba3`), the agentic-mbse pin move (`148cc2ed4`), the study-layer switch (`d58a899c1`).
+- Follow-ups in sysml-codegen's backlog: `STUDY-RECORD-RESUME`, `STUDY-ROUTE-POINT-RUNNER`, `INTEGRATE-CALLER-ERROR-AS-SEAM-FAULT`, `VERIFY-MISSING-STORE-TRACEBACK`, `STUDY-PORTED-MYPY-OVERRIDES`, `STUDY-CHECK-RECORD`, `STUDY-PORTED-SMELLS`, `READ-COVERAGE-STALE-BYTECODE` (found at adoption), and `STUDY-GLUE-LEDGER-SEMANTICS` (owner's call).
+
+---
+
 ## [2026-10-12] - Research Seam Port
 
 **Type**: Item (`WRAP-SPLIT` Item 5; branch `research-seam-port` in worktree `/home/reid/1cfe/agentic-mbse-research-seam`, base `ac5fb1a`, not yet merged)

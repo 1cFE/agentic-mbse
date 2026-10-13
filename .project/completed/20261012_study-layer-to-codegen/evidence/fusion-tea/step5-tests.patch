@@ -1,0 +1,562 @@
+Adoption runbook step 5: fusion-tea's test edits for the switch to the installed study tools.
+
+Made against fusion-tea b06585709's tests/, per design Appendix H3's table. Apply from fusion-tea's
+root with `patch -p1 < step5-tests.patch`, after the wrappers and `git rm -r scripts/study/schemas`.
+test_integrate_guide_contract.py is not here: its reduction is already in fusion-tea's O4 commit
+699b0a74d. patch(1) skips this preamble.
+
+By Appendix H3 row:
+- schema home (DD1): conftest.py SCHEMA_DIR is the installed package's schemas/; test_absolute_tolerances,
+  test_indicator_operands and test_record_template read their schema through it.
+- teax (B7, DD10): conftest.py gains a session fixture that sets TEAX_SIMKIT_PATH from
+  STOP_PARSER_TEAX_ROOT; test_read_coverage:254, test_single_point_gate:24,:50 and
+  test_study_publication_fail_closed:215 name the simkit root; test_integrate_preconditions:202,:211-213
+  remove or read TEAX_SIMKIT_PATH, since integrate.TEAX_SIMKIT_SUBPATH is gone.
+- tool home and tool paths (D7, B2): test_common, test_read_coverage:191, test_output_contract
+  (the digest recomputes under roots.TOOL_HOME), test_verify:234, test_preflight_gates:139,
+  test_integrate_preconditions:146,:148,:167, test_integrate_lineage:29, test_integrate_refusals:56,:224,:246.
+- gate 0's sweep (B4): test_integrate_preconditions:94 parametrizes over REQUIRED_ENV plus the declared
+  environment, so it needs step 6's declaration in pyproject.toml.
+- census (B11): test_integrate_refusals:166 names sysml_codegen/study/census.py::by_entry_type, and
+  tests/models/test_model_family_spines.py imports the shipped helper as _by_entry_type.
+
+Beyond the table, each found by reading every test that names scripts/ after the switch:
+- test_read_coverage's observed_route fixture gives its driver SYSML_CODEGEN_PROJECT_ROOT, as the
+  seam's environment does (B1). Its packages sit in tmp_path, in no git work tree, and run_route now
+  refuses before observing when no root can be named. In a switched copy of b06585709, 32 of the
+  file's 45 tests fail with "RootError: no project root" without this edit, and all 45 pass with it.
+- test_generic's schema-contract test reads the installed schemas/: scripts/study/schemas is removed.
+- test_integrate_restore's no-mtime test reads integrate's own source through integrate.__file__:
+  scripts/integrate.py is now a wrapper, and grepping it would pass without testing the seam.
+- test_integrate_restore's backup test fakes two things the installed seam calls differently.
+  integrate.run gets a request carrying package, as a list, the way argparse's --package
+  (action=append) does: the seam finds the project root from that single --package before
+  anything else (integrate.project_anchor), and the old fake, with only out_dir, raised
+  AttributeError there. assert_environment's fake takes (env, declaration), the installed
+  signature; the one-argument fake raised TypeError, which the seam reports as exit 2.
+
+diff -ruN a/tests/models/test_model_family_spines.py b/tests/models/test_model_family_spines.py
+--- a/tests/models/test_model_family_spines.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/models/test_model_family_spines.py	2026-10-12 11:54:12.802613920 -0700
+@@ -39,6 +39,8 @@
+ import os
+ from pathlib import Path
+ 
++from sysml_codegen.study.census import by_entry_type as _by_entry_type
++
+ import pytest
+ import yaml
+ from sysml_codegen.cli import GenerationConfig, run_codegen
+@@ -175,13 +177,6 @@
+     return json.loads((output / "contracts" / "model_contract.json").read_text())
+ 
+ 
+-def _by_entry_type(output: Path) -> dict[str, set[str]]:
+-    by_type: dict[str, set[str]] = {}
+-    for parameter in _contract(output)["parameters"]:
+-        by_type.setdefault(parameter["entry_type"], set()).add(parameter["qualified_name"])
+-    return by_type
+-
+-
+ def _consumers_of(output: Path, source: tuple[str, str]) -> set[tuple[str, str]]:
+     """Complete ``(module, formal)`` port identities wired to one ``(group, key)``.
+ 
+diff -ruN a/tests/study/conftest.py b/tests/study/conftest.py
+--- a/tests/study/conftest.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/conftest.py	2026-10-12 11:54:12.795619948 -0700
+@@ -5,6 +5,7 @@
+ factory (added in Phase 4), which copies into ``tmp_path``.
+ """
+ 
++import importlib.resources
+ import io
+ import itertools
+ import json
+@@ -24,7 +25,8 @@
+ REPO_ROOT = Path(__file__).resolve().parents[2]
+ REAL_PACKAGE = REPO_ROOT / "exploration" / "stellarator_e2e" / "pkg" / "stellarator_tea"
+ REAL_MANIFEST = REPO_ROOT / "exploration" / "stellarator_e2e" / "studies" / "manifest.json"
+-SCHEMA_DIR = REPO_ROOT / "scripts" / "study" / "schemas"
++#: The schemas ship inside the installed study package (design DD1).
++SCHEMA_DIR = importlib.resources.files("sysml_codegen.study") / "schemas"
+ DATA_DIR = Path(__file__).parent / "data"
+ 
+ 
+@@ -246,6 +248,20 @@
+ TEAX_SIMKIT_SUBPATH = "packages/teax-simkit"
+ 
+ 
++@pytest.fixture(scope="session", autouse=True)
++def _teax_simkit_path():
++    """The installed study tools find teax only through ``TEAX_SIMKIT_PATH``, a simkit root.
++
++    Derived here from ``STOP_PARSER_TEAX_ROOT`` for the whole suite, so the teax tree the
++    tools and read coverage declare is the one the fixtures below put on ``sys.path``.
++    """
++    root = os.environ.get(TEAX_ROOT_ENV)
++    with pytest.MonkeyPatch.context() as patch:
++        if root:
++            patch.setenv("TEAX_SIMKIT_PATH", str(Path(root) / TEAX_SIMKIT_SUBPATH))
++        yield
++
++
+ def _unavailable_teax(reason: str):
+     if os.environ.get("STUDY_REQUIRE_TEAX") == "1":
+         pytest.fail(reason)
+diff -ruN a/tests/study/test_absolute_tolerances.py b/tests/study/test_absolute_tolerances.py
+--- a/tests/study/test_absolute_tolerances.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_absolute_tolerances.py	2026-10-12 11:54:12.795807072 -0700
+@@ -8,6 +8,7 @@
+ import pytest
+ 
+ from scripts.study import manifest, verify
++from tests.study.conftest import SCHEMA_DIR
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+ DECLARATION = {'channel': 'residual', 'value': 1e-7, 'units': 'MW',
+@@ -69,7 +70,7 @@
+     doc = document()
+     doc['absolute_tolerances'] = [copy.deepcopy(DECLARATION)]
+     manifest.validate(doc)
+-    schema = json.loads((ROOT / 'scripts/study/schemas/study_package_manifest.v1.schema.json').read_text())
++    schema = json.loads((SCHEMA_DIR / 'study_package_manifest.v1.schema.json').read_text())
+     jsonschema.validate(doc, schema)
+     manifest.validate(document())  # Old manifests remain valid.
+ 
+diff -ruN a/tests/study/test_common.py b/tests/study/test_common.py
+--- a/tests/study/test_common.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_common.py	2026-10-12 11:54:12.796103263 -0700
+@@ -53,7 +53,7 @@
+ 
+ def test_the_tool_source_digest_carries_its_file_list(repo_root):
+     """One recipe id must not silently mean two things across three tools."""
+-    files = ("scripts/study/common.py", "scripts/study/identity.py")
++    files = ("sysml_codegen/study/common.py", "sysml_codegen/study/identity.py")
+     computed = common.tool_source_digest(files)
+     assert computed["recipe"] == "tool-source-digest/v1"
+     assert [f["path"] for f in computed["files"]] == list(files)
+@@ -64,15 +64,15 @@
+     from scripts.study import manifest as manifest_mod
+ 
+     theirs = manifest_mod.tool_source_digest()
+-    mine = common.tool_source_digest(("scripts/study/common.py",))
++    mine = common.tool_source_digest(("sysml_codegen/study/common.py",))
+     assert set(theirs) == set(mine)
+     assert set(theirs["files"][0]) == set(mine["files"][0])
+ 
+ 
+ def test_a_missing_tool_source_file_fails_naming_it():
+     with pytest.raises(common.ToolError) as exc:
+-        common.tool_source_digest(("scripts/study/no_such_tool.py",))
+-    assert "scripts/study/no_such_tool.py" in str(exc.value)
++        common.tool_source_digest(("sysml_codegen/study/no_such_tool.py",))
++    assert "sysml_codegen/study/no_such_tool.py" in str(exc.value)
+ 
+ 
+ def test_read_json_names_the_file_and_what_it_wanted(tmp_path):
+diff -ruN a/tests/study/test_generic.py b/tests/study/test_generic.py
+--- a/tests/study/test_generic.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_generic.py	2026-10-12 11:54:12.802735823 -0700
+@@ -4,6 +4,8 @@
+ logic. This is the grep that keeps the two apart.
+ """
+ 
++import importlib.resources
++
+ import pytest
+ 
+ TOOL_MODULES = [
+@@ -59,7 +61,8 @@
+ def test_the_schema_files_are_the_committed_contract(repo_root):
+     """Item 3's three schemas must exist; Item 4 adds its own to the same directory,
+     so this is a subset assertion, not an exact listing."""
+-    found = sorted(p.name for p in (repo_root / "scripts" / "study" / "schemas").glob("*.json"))
++    schemas = importlib.resources.files("sysml_codegen.study") / "schemas"
++    found = sorted(p.name for p in schemas.iterdir() if p.name.endswith(".json"))
+     assert {
+         "axis_declaration.v1.schema.json",
+         "indicators.v1.schema.json",
+diff -ruN a/tests/study/test_indicator_operands.py b/tests/study/test_indicator_operands.py
+--- a/tests/study/test_indicator_operands.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_indicator_operands.py	2026-10-12 11:54:12.795908916 -0700
+@@ -6,6 +6,7 @@
+ import jsonschema
+ import pytest
+ from scripts.study import indicators as tool, manifest
++from tests.study.conftest import SCHEMA_DIR
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+ PACKAGE = ROOT / "exploration/ife_e2e/generated"
+@@ -77,7 +78,7 @@
+     ]}))
+     declaration = tool.read_axis_declaration(path)
+     report = tool.build_report(PACKAGE, manifest.load(STUDIES / "manifest.json"), declaration, [])
+-    jsonschema.validate(report, json.loads((ROOT / "scripts/study/schemas/indicators.v1.schema.json").read_text()))
++    jsonschema.validate(report, json.loads((SCHEMA_DIR / "indicators.v1.schema.json").read_text()))
+     assert len(report["groups"]) == 2
+     assert report["axis_declaration"]["subset"] is False
+     assert {g["axis"] for g in report["groups"]} == {"beam_energy_mj", "frequency"}
+diff -ruN a/tests/study/test_integrate_lineage.py b/tests/study/test_integrate_lineage.py
+--- a/tests/study/test_integrate_lineage.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_integrate_lineage.py	2026-10-12 11:54:12.801926759 -0700
+@@ -26,7 +26,7 @@
+ 
+     blocker = document["blocker"]
+     assert blocker["gate"] == "lineage"
+-    assert blocker["producer"] == "scripts/integrate.py"
++    assert blocker["producer"] == "sysml_codegen/study/integrate.py"
+     assert blocker["scope"] == "request"
+     assert blocker["mode"] == "refused"
+     assert blocker["condition"] == "lineage-mismatch"
+diff -ruN a/tests/study/test_integrate_preconditions.py b/tests/study/test_integrate_preconditions.py
+--- a/tests/study/test_integrate_preconditions.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_integrate_preconditions.py	2026-10-12 11:54:12.801823298 -0700
+@@ -20,6 +20,7 @@
+ import pytest
+ 
+ from scripts import integrate
++from sysml_codegen.study.declarations import load_declaration
+ 
+ REPO_ROOT = Path(__file__).resolve().parents[2]
+ REAL_PACKAGE = REPO_ROOT / "exploration" / "stellarator_e2e" / "pkg" / "stellarator_tea"
+@@ -91,7 +92,9 @@
+     return dict(os.environ)
+ 
+ 
+-@pytest.mark.parametrize("missing", integrate.REQUIRED_ENV)
++@pytest.mark.parametrize(
++    "missing", integrate.REQUIRED_ENV + load_declaration(REPO_ROOT).environment
++)
+ def test_each_env_var_unset_refuses_at_gate_zero(tmp_path, full_env, missing):
+     env = {name: value for name, value in full_env.items() if name != missing}
+     done = run_seam_raw(request_argv(tmp_path / "out"), env)
+@@ -143,9 +146,9 @@
+ def test_the_return_document_is_complete_on_every_exit_path(tmp_path):
+     document = run_seam(drop_flag(request_argv(tmp_path / "out"), "--groups"), tmp_path / "out")
+     assert document["schema_version"] == "integration-seam-return/v1"
+-    assert document["tool"]["path"] == "scripts/integrate.py"
++    assert document["tool"]["path"] == "sysml_codegen/study/integrate.py"
+     assert document["tool"]["source_digest"]["recipe"] == "tool-source-digest/v1"
+-    assert document["command"][0] == "scripts/integrate.py"
++    assert document["command"][0] == "sysml_codegen/study/integrate.py"
+     assert document["candidate"] is None
+     assert document["exit_code"] == 1
+     assert set(document["toolchain"]) == {
+@@ -164,7 +167,7 @@
+     with pytest.raises(ValueError, match="closed set"):
+         integrate.SeamBlocker(
+             gate="preconditions",
+-            producer="scripts/integrate.py",
++            producer="sysml_codegen/study/integrate.py",
+             scope="request",
+             mode="could_not_run",
+             condition="not-a-real-slug",
+@@ -198,8 +201,8 @@
+ 
+ 
+ def test_simkit_probe_refuses_without_the_teax_root(monkeypatch):
+-    """Absence requires removing both the explicit checkout and inherited import paths."""
+-    monkeypatch.delenv("STOP_PARSER_TEAX_ROOT", raising=False)
++    """Absence requires removing both the explicit simkit root and inherited import paths."""
++    monkeypatch.delenv("TEAX_SIMKIT_PATH", raising=False)
+     monkeypatch.delenv("PYTHONPATH", raising=False)
+     env = integrate.seam_env()
+     assert integrate.simkit_module_path(env) is None
+@@ -208,9 +211,9 @@
+ 
+ def test_simkit_probe_finds_inherited_path_without_explicit_teax_root(full_env, monkeypatch):
+     """The probe reports imports the producer can perform, including inherited ones."""
+-    teax_root = full_env["STOP_PARSER_TEAX_ROOT"]
+-    monkeypatch.delenv("STOP_PARSER_TEAX_ROOT", raising=False)
+-    monkeypatch.setenv("PYTHONPATH", str(Path(teax_root) / integrate.TEAX_SIMKIT_SUBPATH))
++    simkit_root = full_env["TEAX_SIMKIT_PATH"]
++    monkeypatch.delenv("TEAX_SIMKIT_PATH", raising=False)
++    monkeypatch.setenv("PYTHONPATH", simkit_root)
+     env = integrate.seam_env()
+     assert integrate.simkit_module_path(env) is not None
+     assert independently_can_import_simkit(env) is True
+diff -ruN a/tests/study/test_integrate_refusals.py b/tests/study/test_integrate_refusals.py
+--- a/tests/study/test_integrate_refusals.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_integrate_refusals.py	2026-10-12 11:54:12.802064240 -0700
+@@ -53,7 +53,7 @@
+ 
+     blocker = document["blocker"]
+     assert blocker["gate"] == "teax-revision"
+-    assert blocker["producer"] == "scripts/integrate.py"
++    assert blocker["producer"] == "sysml_codegen/study/integrate.py"
+     assert blocker["scope"] == "request"
+     assert blocker["mode"] == "refused"
+     assert blocker["condition"] == "toolchain-drift"
+@@ -163,7 +163,7 @@
+ 
+     blocker = document["blocker"]
+     assert blocker["gate"] == "census-snapshot"
+-    assert blocker["producer"] == "tests/models/test_model_family_spines.py::_by_entry_type"
++    assert blocker["producer"] == "sysml_codegen/study/census.py::by_entry_type"
+     assert blocker["scope"] == "request"
+     assert blocker["mode"] == "refused"
+     assert blocker["condition"] == "census-stale"
+@@ -221,7 +221,7 @@
+ 
+     blocker = document["blocker"]
+     assert blocker["gate"] == "manifest"
+-    assert blocker["producer"] == "scripts/study/manifest.py"
++    assert blocker["producer"] == "sysml_codegen/study/manifest.py"
+     assert blocker["mode"] == "refused"
+     assert blocker["condition"] == "manifest-stale"
+     assert "indicator-input fingerprint mismatch" in blocker["detail"]
+@@ -243,7 +243,7 @@
+ 
+     blocker = document["blocker"]
+     assert blocker["gate"] == "preflight"
+-    assert blocker["producer"] == "scripts/study/preflight.py"
++    assert blocker["producer"] == "sysml_codegen/study/preflight.py"
+     assert blocker["mode"] == "refused"
+     assert blocker["condition"] == "preflight-refused"
+     assert "manifest_currency" in blocker["detail"]
+diff -ruN a/tests/study/test_integrate_restore.py b/tests/study/test_integrate_restore.py
+--- a/tests/study/test_integrate_restore.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_integrate_restore.py	2026-10-12 11:54:12.802829049 -0700
+@@ -93,7 +93,7 @@
+ def test_no_mtime_is_read_anywhere_in_the_seam():
+     """95 of 153 files move mtime on a byte-identical regeneration; a detector built on
+     that reports a false positive on every re-run."""
+-    source = (REPO_ROOT / "scripts" / "integrate.py").read_text()
++    source = Path(integrate.__file__).read_text()
+     assert "st_mtime" not in source
+     assert "getmtime" not in source
+ 
+@@ -107,7 +107,7 @@
+     request = SimpleNamespace(package=package, out_dir=out)
+     monkeypatch.setattr(integrate, 'build_request', lambda args: request)
+     monkeypatch.setattr(integrate, 'seam_env', lambda: {})
+-    monkeypatch.setattr(integrate, 'assert_environment', lambda env: None)
++    monkeypatch.setattr(integrate, 'assert_environment', lambda env, declaration: None)
+     monkeypatch.setattr(integrate, 'assert_package_clean', lambda request, env: None)
+ 
+     def sequence(request, env, state, results):
+@@ -122,7 +122,7 @@
+     monkeypatch.setattr(integrate, 'run_sequence', sequence)
+     monkeypatch.setattr(integrate, 'build_candidate', lambda request, state: {})
+     monkeypatch.setattr(integrate, 'build_return', lambda **kwargs: {'exit_code': 2 if kwargs['blocker'] else 0})
+-    document, _ = integrate.run(SimpleNamespace(out_dir=str(out)), [])
++    document, _ = integrate.run(SimpleNamespace(package=[str(package)], out_dir=str(out)), [])
+     assert document['exit_code'] == 0
+     backup = Path(json.loads((out / 'backup-location.json').read_text())['backup'])
+     assert (backup / CONTRACT).is_file()
+diff -ruN a/tests/study/test_output_contract.py b/tests/study/test_output_contract.py
+--- a/tests/study/test_output_contract.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_output_contract.py	2026-10-12 11:54:12.802234206 -0700
+@@ -17,6 +17,7 @@
+ import pytest
+ 
+ from scripts.study import manifest
++from sysml_codegen.study import roots
+ from tests.study.conftest import (
+     KNOWN_ANSWER_DECLARATION,
+     REAL_MANIFEST,
+@@ -174,17 +175,17 @@
+     assert loaded.digest == hashlib.sha256(real_manifest_path.read_bytes()).hexdigest()
+ 
+ 
+-def test_tool_source_digest_recomputes(repo_root):
++def test_tool_source_digest_recomputes():
+     """M5: the digest is over an explicitly named file list, under its own recipe id."""
+     computed = manifest.tool_source_digest()
+     assert computed["recipe"] == "tool-source-digest/v1"
+     lines = ["tool-source-digest/v1"] + [
+-        f"{rel} {hashlib.sha256((repo_root / rel).read_bytes()).hexdigest()}"
++        f"{rel} {hashlib.sha256((roots.TOOL_HOME / rel).read_bytes()).hexdigest()}"
+         for rel in sorted(manifest.TOOL_SOURCE_FILES)
+     ]
+     expected = hashlib.sha256(("\n".join(lines) + "\n").encode("utf-8")).hexdigest()
+     assert computed["digest"] == expected
+-    assert any(p.startswith("scripts/study/schemas/") for p in manifest.TOOL_SOURCE_FILES)
++    assert any(p.startswith("sysml_codegen/study/schemas/") for p in manifest.TOOL_SOURCE_FILES)
+ 
+ 
+ def test_schema_files_carry_the_two_load_bearing_descriptions(load_schema):
+@@ -314,7 +315,7 @@
+     carries per-file digests so a record's tool revision names what it covered
+     (Item 4 coordination, orchestrator 2026-08-20)."""
+     tool = _report()["tool"]
+-    assert tool["path"] == "scripts/study/indicators.py"
++    assert tool["path"] == "sysml_codegen/study/indicators.py"
+     assert tool["source_digest"] == manifest.tool_source_digest()
+     assert set(tool["source_digest"]) == {"recipe", "digest", "files"}
+     assert all(set(f) == {"path", "sha256"} for f in tool["source_digest"]["files"])
+diff -ruN a/tests/study/test_preflight_gates.py b/tests/study/test_preflight_gates.py
+--- a/tests/study/test_preflight_gates.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_preflight_gates.py	2026-10-12 11:54:12.802460881 -0700
+@@ -136,7 +136,7 @@
+     digest = document["tool"]["source_digest"]
+     assert digest["recipe"] == "tool-source-digest/v1"
+     assert [f["path"] for f in digest["files"]] == sorted(f["path"] for f in digest["files"])
+-    assert "scripts/study/preflight.py" in [f["path"] for f in digest["files"]]
++    assert "sysml_codegen/study/preflight.py" in [f["path"] for f in digest["files"]]
+ 
+ 
+ def test_the_sibling_scan_is_advisory_and_can_never_fail(gates_document):
+diff -ruN a/tests/study/test_read_coverage.py b/tests/study/test_read_coverage.py
+--- a/tests/study/test_read_coverage.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_read_coverage.py	2026-10-12 11:54:12.801414447 -0700
+@@ -11,10 +11,18 @@
+ 
+ from scripts import integrate
+ from scripts.study import read_coverage as coverage
++from sysml_codegen.study import roots
+ 
+ 
+ @pytest.fixture
+ def observed_route(tmp_path):
++    """A probe route over a one-file package; ``tmp_path`` is its project.
++
++    The package sits in no git work tree, so the driver runs with
++    ``SYSML_CODEGEN_PROJECT_ROOT`` naming the project, as the seam hands it to every
++    producer: without a root, ``run_route`` refuses before observing. ``env`` builds that
++    environment for the tests that go through ``integrate.execute_baseline``.
++    """
+     package = tmp_path / "package"
+     (package / "contracts").mkdir(parents=True)
+     value = package / "value.json"
+@@ -39,16 +47,19 @@
+             + '    return {}\n'
+         )
+ 
++    def with_root():
++        return {**os.environ, roots.PROJECT_ROOT_ENV: str(tmp_path)}
++
+     def run(body):
+         write(body)
+         done = subprocess.run([sys.executable, '-c', integrate.ROUTE_DRIVER_SOURCE,
+                                str(route), 'probe_route', 'execute', str(out),
+                                str(package), str(manifest), 'test-token'],
+-                              text=True, capture_output=True)
++                              text=True, capture_output=True, env=with_root())
+         return done, json.loads((out / 'read_coverage.json').read_text())
+ 
+     return SimpleNamespace(package=package, route=route, manifest=manifest, out=out,
+-                           request=request, run=run, write=write)
++                           request=request, run=run, write=write, env=with_root)
+ 
+ 
+ def test_declared_package_manifest_and_source_reads(observed_route):
+@@ -155,7 +166,7 @@
+ except RuntimeError:
+     pass''')
+     with pytest.raises(integrate.SeamBlocker) as caught:
+-        integrate.execute_baseline(observed_route.request, dict(os.environ))
++        integrate.execute_baseline(observed_route.request, observed_route.env())
+     assert caught.value.condition == 'read-coverage-refused'
+     receipt = json.loads((observed_route.out / 'read_coverage.json').read_text())
+     assert receipt['violations']
+@@ -188,7 +199,7 @@
+ 
+ def test_integration_tool_identity_includes_new_dependencies():
+     identity = integrate.common.tool_source_digest(integrate.TOOL_SOURCE_FILES)
+-    assert {'scripts/study/indicators.py', 'scripts/study/read_coverage.py'} <= {entry['path'] for entry in identity['files']}
++    assert {'sysml_codegen/study/indicators.py', 'sysml_codegen/study/read_coverage.py'} <= {entry['path'] for entry in identity['files']}
+ 
+ 
+ def test_static_gate_rejects_unpinned_pipeline_reference(synthetic_copy, tmp_path):
+@@ -212,7 +223,7 @@
+ def test_route_failure_preserves_earlier_violation(observed_route):
+     observed_route.write('try:\n    (package_dir / "unknown.txt").read_text()\nexcept RuntimeError:\n    pass\nraise ValueError("route failed too")')
+     with pytest.raises(integrate.SeamBlocker) as caught:
+-        integrate.execute_baseline(observed_route.request, dict(os.environ))
++        integrate.execute_baseline(observed_route.request, observed_route.env())
+     receipt = json.loads((observed_route.out / 'read_coverage.json').read_text())
+     assert receipt['violations']
+     assert receipt['route_error'] == 'ValueError: route failed too'
+@@ -251,7 +262,7 @@
+     metadata = teax / 'packages/teax-simkit/probe.egg-info/entry_points.txt'
+     metadata.parent.mkdir(parents=True)
+     metadata.write_text('original')
+-    monkeypatch.setenv('STOP_PARSER_TEAX_ROOT', str(teax))
++    monkeypatch.setenv('TEAX_SIMKIT_PATH', str(teax / 'packages/teax-simkit'))
+     done, receipt = observed_route.run(f'Path({str(metadata)!r}).read_text()\nPath({str(metadata)!r}).write_text("changed")')
+     assert done.returncode != 0
+     assert 'changed after read' in str(receipt['violations'])
+@@ -261,7 +272,7 @@
+ def test_route_exception_without_coverage_violation_is_could_not_run(observed_route):
+     observed_route.write('(package_dir / "value.json").read_text()\nraise ValueError("unsupported physics domain")')
+     with pytest.raises(integrate.SeamBlocker) as caught:
+-        integrate.execute_baseline(observed_route.request, dict(os.environ))
++        integrate.execute_baseline(observed_route.request, observed_route.env())
+     assert caught.value.mode == integrate.COULD_NOT_RUN
+     assert caught.value.condition != 'read-coverage-refused'
+     receipt = json.loads((observed_route.out / 'read_coverage.json').read_text())
+@@ -335,7 +346,7 @@
+         db.execute("INSERT INTO old_data VALUES ('old contents')")
+     observed_route.write('import sqlite3\nwith sqlite3.connect(out / "old.db") as db:\n    db.execute("SELECT * FROM old_data").fetchall()')
+     with pytest.raises(integrate.SeamBlocker) as caught:
+-        integrate.execute_baseline(observed_route.request, dict(os.environ))
++        integrate.execute_baseline(observed_route.request, observed_route.env())
+     assert caught.value.condition == 'read-coverage-refused'
+     receipt = json.loads((observed_route.out / 'read_coverage.json').read_text())
+     assert 'SQLite store must be new' in str(receipt['violations'])
+diff -ruN a/tests/study/test_record_template.py b/tests/study/test_record_template.py
+--- a/tests/study/test_record_template.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_record_template.py	2026-10-12 11:54:12.796005057 -0700
+@@ -11,8 +11,10 @@
+ import json
+ import re
+ 
++from tests.study.conftest import SCHEMA_DIR
++
+ TEMPLATE = ".claude/skills/run-study/record-template.md"
+-SCHEMA = "scripts/study/schemas/verification_summary.v1.schema.json"
++SCHEMA = SCHEMA_DIR / "verification_summary.v1.schema.json"
+ 
+ 
+ def _source_digest_blocks(text: str) -> list[str]:
+@@ -39,6 +41,6 @@
+ 
+ 
+ def test_emitted_schema_requires_files(repo_root):
+-    schema = json.loads((repo_root / SCHEMA).read_text())
++    schema = json.loads(SCHEMA.read_text())
+     digest = json.dumps(schema)
+     assert '"required": ["recipe", "digest", "files"]' in digest
+diff -ruN a/tests/study/test_single_point_gate.py b/tests/study/test_single_point_gate.py
+--- a/tests/study/test_single_point_gate.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_single_point_gate.py	2026-10-12 11:54:12.801546858 -0700
+@@ -22,6 +22,7 @@
+ 
+ def _runner(monkeypatch, stock_simkit_path):
+     monkeypatch.setenv("STOP_PARSER_TEAX_ROOT", str(stock_simkit_path.parents[1]))
++    monkeypatch.setenv("TEAX_SIMKIT_PATH", str(stock_simkit_path))
+     return importlib.import_module("exploration.stellarator_e2e.run_stellaris_single")
+ 
+ 
+@@ -48,6 +49,7 @@
+ def historical_cli_result(stock_simkit_path, tmp_path):
+     env = dict(os.environ)
+     env["STOP_PARSER_TEAX_ROOT"] = str(stock_simkit_path.parents[1])
++    env["TEAX_SIMKIT_PATH"] = str(stock_simkit_path)
+     done = subprocess.run(
+         [sys.executable, str(RUNNER)],
+         cwd=REPO_ROOT,
+diff -ruN a/tests/study/test_study_publication_fail_closed.py b/tests/study/test_study_publication_fail_closed.py
+--- a/tests/study/test_study_publication_fail_closed.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_study_publication_fail_closed.py	2026-10-12 11:54:12.801663807 -0700
+@@ -213,6 +213,7 @@
+ 
+ def _command(monkeypatch, stock_simkit_path):
+     monkeypatch.setenv("STOP_PARSER_TEAX_ROOT", str(stock_simkit_path.parents[1]))
++    monkeypatch.setenv("TEAX_SIMKIT_PATH", str(stock_simkit_path))
+     return importlib.import_module(
+         "exploration.stellarator_e2e.study.run_design_search"
+     )
+diff -ruN a/tests/study/test_verify.py b/tests/study/test_verify.py
+--- a/tests/study/test_verify.py	2026-10-11 21:35:34.000000000 -0700
++++ b/tests/study/test_verify.py	2026-10-12 11:54:12.802352131 -0700
+@@ -231,7 +231,7 @@
+ 
+ 
+ def test_the_command_carries_no_absolute_paths(summary):
+-    assert summary["command"][0] == "scripts/study/verify.py"
++    assert summary["command"][0] == "sysml_codegen/study/verify.py"
+     for path_field in (
+         summary["package"]["path"],
+         summary["manifest"]["path"],

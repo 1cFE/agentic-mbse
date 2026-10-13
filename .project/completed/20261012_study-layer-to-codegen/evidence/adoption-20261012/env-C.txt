@@ -1,0 +1,6 @@
+# 2026-10-13T03:54:25Z in <FTC> at 3cab2b92c
+Python 3.12.3
+agentic-mbse              0.1.3
+sysml-codegen             0.1.1
+teax HEAD 8d877460ac4f6f264561d916e40c1708adb13397
+SYSIDE_LICENSE_KEY=set

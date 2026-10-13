@@ -1,0 +1,3 @@
+exploration/stellarator_e2e/generated/contracts/package_contract.json
+exploration/stellarator_e2e/generated/modules/mfe_fuel_cycle/fuel_inventory.py
+exploration/stellarator_e2e/generated/schemas/fuel_inventory_output.py

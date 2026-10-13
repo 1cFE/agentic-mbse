@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" tests="5">
+<testcase classname="tests.study.test_a" name="test_ok" time="0.3"><skipped type="pytest.skip" message="TEAX_SIMKIT_PATH is not set"/></testcase>
+<testcase classname="tests.study.test_a" name="test_turns_red" time="0.1"><failure message="AssertionError: scripts/study/x.py != sysml_codegen/study/x.py">tb</failure></testcase>
+<testcase classname="tests.study.test_a" name="test_fails_same" time="0.1"><failure message="assert 1 == 2 at /tmp/pytest-of-reid/pytest-99/x0/f">tb2</failure></testcase>
+<testcase classname="tests.study.test_a" name="test_fails_other" time="0.1"><error message="fixture missing">tb</error></testcase>
+<testcase classname="tests.study.test_a" name="test_skipped" time="0.1"><skipped type="pytest.skip" message="no teax"/></testcase>
+<testcase classname="tests.study.test_a" name="test_fails_relative" time="0.1"><failure message="assert 1 == 0; evidence: ../../pytest-of-reid/pytest-99/integration-success0/out/read_coverage.json">tb</failure></testcase>
+</testsuite></testsuites>
