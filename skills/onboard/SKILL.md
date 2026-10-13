@@ -56,11 +56,11 @@ Wait for the user to respond before proceeding.
 
 ### 3. Configure Sources
 
-If the user listed sources, register them in `knowledge/SOURCE_INDEX.md`. Format entries per the **source-traceability** skill (Name, Type, Location, Use For, Validation).
+If the user listed sources, add each one by the **manage-sources** skill's "Add a Source" steps. A web page, an online PDF or a PDF on this machine is registered with `agentic-mbse research register`, with a title and its Use for, Validation and Caveat sentences. Any other source becomes a hand-curated entry with `agentic-mbse research add-entry`, with one of the types in the **source-traceability** skill. Ask for any detail the user's answer left out.
 
 If sources have file paths, follow the current assistant adapter’s external-source instructions and offer the relevant read-access setup.
 
-If no sources yet, leave SOURCE_INDEX.md with guidance on adding them later via `/manage-sources`.
+If no sources yet, leave `knowledge/SOURCE_INDEX.md` as `init` created it; it already says how to add them later with `/manage-sources`.
 
 ### 4. Populate Project Files
 

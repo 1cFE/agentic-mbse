@@ -1,0 +1,63 @@
+# Setup checks (raw), wheel built at d49d119 (worktree HEAD later moved to 5e70d26 with .project-only commits cd5548e, 5e70d26; no shipped file changed)
+## wheel entries
+936 agentic_mbse/research/__init__.py
+5554 agentic_mbse/research/capture.py
+10800 agentic_mbse/research/holdout.py
+20920 agentic_mbse/research/index.py
+2511 agentic_mbse/research/manifest.py
+3337 agentic_mbse/research/paths.py
+19145 agentic_mbse/research/register.py
+13419 agentic_mbse/research/retire.py
+4574 agentic_mbse/research/runs.py
+16022 agentic_mbse/research/seam.py
+5018 agentic_mbse/research/sources.py
+7914 agentic_mbse/research/verify.py
+32646 agentic_mbse_data/docs/research-seam.md
+9900 agentic_mbse_data/skills/manage-sources/SKILL.md
+11073 agentic_mbse_data/skills/research-acquire/SKILL.md
+## venv install (selected lines)
+ + agentic-mbse==0.1.3 (from file:///tmp/claude-1000/-home-reid-1cfe-agentic-mbse/581ef20b-ac97-4a85-951d-c6d180acd020/scratchpad/seam-dry-run/dist/agentic_mbse-0.1.3-py3-none-any.whl)
+ + pymupdf4llm==1.28.2
+ + syside==0.8.4
+ + trafilatura==2.3.1
+## o2a-target: git log (first commit = init state)
+f536f15 init state (agentic-mbse d49d119 wheel)
+## o2a-target: init rc 0; tail of init output
+  @ .claude/skills/research
+  @ .claude/skills/research-acquire
+  + .gitignore
+  + .agents/skills/research/SKILL.md
+  + .agents/skills/research-acquire/SKILL.md
+Next steps:
+## o2a-target: dirs
+knowledge/research/requests/negatives
+knowledge/research/requests/runs
+## o2a-target: .gitignore lines
+59:knowledge/.staging/
+60:knowledge/.registry.lock
+## o2a-target: install-commands --list (research-acquire line)
+17:  - research-acquire
+## o2a-target: installed skills identical to worktree source
+identical
+## o2b-target: git log (first commit = init state)
+f536f15 init state (agentic-mbse d49d119 wheel)
+## o2b-target: init rc 0; tail of init output
+  @ .claude/skills/research
+  @ .claude/skills/research-acquire
+  + .gitignore
+  + .agents/skills/research/SKILL.md
+  + .agents/skills/research-acquire/SKILL.md
+Next steps:
+## o2b-target: dirs
+knowledge/research/requests/negatives
+knowledge/research/requests/runs
+## o2b-target: .gitignore lines
+59:knowledge/.staging/
+60:knowledge/.registry.lock
+## o2b-target: install-commands --list (research-acquire line)
+17:  - research-acquire
+## o2b-target: installed skills identical to worktree source
+identical
+## O2a pre-check
+   ok   https://en.wikipedia.org/wiki/Copper (191,029 chars, backend: trafilatura)
+        → /tmp/claude-1000/-home-reid-1cfe-agentic-mbse/581ef20b-ac97-4a85-951d-c6d180acd020/scratchpad/seam-dry-run/precheck/output.md

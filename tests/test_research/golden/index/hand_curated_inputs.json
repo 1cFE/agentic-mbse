@@ -1,0 +1,7 @@
+{
+  "title": "Reference Implementation",
+  "type": "codebase",
+  "location": "/srv/reference/widget-model",
+  "use_for": "Cross-checking widget sizing formulas against an existing implementation",
+  "validation": "Compare model outputs against its sizing routine"
+}

@@ -80,6 +80,7 @@ The primary CLI tool is `agentic-mbse`. Always invoke via `uv run`:
 uv run agentic-mbse validate models/    # Validation
 uv run agentic-mbse status              # Project status dashboard
 uv run agentic-mbse pm <operation>      # Project management operations
+uv run agentic-mbse research <subcommand>  # Source acquisition and the source registry
 uv run agentic-mbse --help              # Discover commands
 ```
 
@@ -132,7 +133,8 @@ Consult `README.md` for full details. Complete command list grouped by function:
 | Command | Purpose |
 |---------|---------|
 | `/research` | Deep-dive into domain knowledge |
-| `/manage-sources` | Add/remove domain sources |
+| `/research-acquire` | Find and register sources for one research request |
+| `/manage-sources` | Add, edit and remove domain sources by hand, through the registry |
 
 ### Project Files
 

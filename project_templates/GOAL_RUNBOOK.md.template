@@ -286,7 +286,19 @@ What a round invokes, and what it gets back. The two `study.*` seams are the stu
 
 **Each seam is the procedure the target installs. A goal round still may not silently absorb a seam repair.**
 
-- **`research`** is the research procedure the project's instructions name; otherwise `/research` and `/manage-sources`.
+- **`research`** is the installed `research-acquire` skill and the `agentic-mbse research` CLI it calls; reading what it registers is `/research`. The seam computes one class per request and writes it to `return.json`. The goal layer maps the class to a task outcome and never defines classes:
+
+  | Seam class | Task outcome | Next step |
+  |---|---|---|
+  | `REGISTERED` | `COMPLETE` | Schedule a reading task (`/research`) on the registered paths |
+  | `OPERATOR_QUEUE` | `OWNER_GATE` | The owner obtains, or rules on, each queued candidate |
+  | `BLOCKER` | `PREREQUISITE` | Repair the seam or the request as its own scoped task |
+  | `BOUNDED_NEGATIVE` | `BOUNDED_NEGATIVE` | A real no; cite the negative file |
+
+  When `open` refuses there is no `return.json`. A malformed request is `BLOCKER`; a request a recorded negative already answers is `BOUNDED_NEGATIVE`, citing that negative.
+
+  An `OPERATOR_QUEUE` whose every queued candidate is a seam repair (the `research-acquire` report says which reasons are) gives the owner nothing to obtain. Record `PREREQUISITE` naming the seam, as the rule below says.
+
 - **`integrate`** is the integration procedure the target installs, where it has one.
 
 "May not silently absorb" means: if a task finds itself repairing a seam rather than invoking its documented procedure, that is a `PREREQUISITE` return naming the seam, not a quiet expansion of scope. A seam repair has its own owner and its own failure contract.

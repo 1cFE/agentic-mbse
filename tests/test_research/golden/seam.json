@@ -1,0 +1,18 @@
+{
+  "request": {
+    "request_id": "REQ-901",
+    "question": "What is the winding-pack current density of the widget coil?",
+    "consumer": "WI-901",
+    "gap_type": "unsourced_value",
+    "priority": "P2",
+    "where_to_look": [
+      "example.org/widgets",
+      "example.com/coils"
+    ],
+    "limits": {
+      "max_searches": 2,
+      "max_captures": 1
+    }
+  },
+  "request_key": "76e28595ce50b46737232f79ab8641eebe08a247631648660a04d4b6092181f2"
+}

@@ -1,0 +1,13 @@
+{
+  "attempt": 1,
+  "outcome": "registered",
+  "candidate": "https://en.wikipedia.org/wiki/Copper",
+  "slug": "copper_wikipedia",
+  "path": "knowledge/sources/copper_wikipedia/",
+  "source_id": "0df720b415c6b0d8158666138f89a69138e72ca283cfc6bb3ec5b3de307703de",
+  "triage": "keeper",
+  "reason": "",
+  "rule_id": null,
+  "captured": true,
+  "at": "2026-10-12T21:15:09.045526+00:00"
+}

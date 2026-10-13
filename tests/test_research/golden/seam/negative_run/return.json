@@ -1,0 +1,10 @@
+{
+  "request_id": "REQ-901",
+  "run": "knowledge/research/requests/runs/REQ-901/20261012T093000000000",
+  "class": "BOUNDED_NEGATIVE",
+  "registered": [],
+  "queued": [],
+  "negative": "knowledge/research/requests/negatives/76e28595ce50b46737232f79ab8641eebe08a247631648660a04d4b6092181f2.json",
+  "limit_reached": null,
+  "reason": "the search ran and found no usable source"
+}
