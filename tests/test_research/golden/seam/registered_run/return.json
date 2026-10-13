@@ -1,0 +1,17 @@
+{
+  "request_id": "REQ-902",
+  "run": "knowledge/research/requests/runs/REQ-902/20261012T093000000000",
+  "class": "REGISTERED",
+  "registered": [
+    {
+      "slug": "widget_coil_note",
+      "path": "knowledge/sources/widget_coil_note/",
+      "source_id": "99d8ff05c9631996c0d62b5c3ac53be01bcbdc92d76e9a18ad95096080336bed",
+      "pre_existing": false
+    }
+  ],
+  "queued": [],
+  "negative": null,
+  "limit_reached": null,
+  "reason": "at least one source is registered and citable"
+}

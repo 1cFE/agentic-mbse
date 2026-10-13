@@ -5,11 +5,12 @@ Commands read this file to discover what references are available for research a
 
 ## Primary Sources
 
-<!-- Add your domain sources below. Each source should have: -->
-<!-- - **Type**: codebase | documentation | database | reference -->
-<!-- - **Location**: Absolute or relative path, or URL -->
+<!-- Add and remove sources with /manage-sources (see "Adding New Sources" below). Each source has: -->
+<!-- - **Type**: codebase | documentation | database | reference for a hand-curated entry; url | local_pdf for a registered one -->
+<!-- - **Location**: Absolute or relative path, or URL; a registered source's is knowledge/sources/<slug>/ -->
 <!-- - **Use for**: What questions this source answers -->
 <!-- - **Validation**: How it's used for validation (or N/A) -->
+<!-- A registered entry also has a **Caveat** and an Extended Metadata block with its hashes. -->
 
 <!--
 ### Reference Implementation
@@ -31,7 +32,7 @@ Commands read this file to discover what references are available for research a
 - **Validation**: N/A
 -->
 
-(No primary sources configured yet - commands will ask for references as needed)
+<!-- New entries are added at the end of this section, just above "How This File Is Used". With none yet, commands ask for references as needed. -->
 
 ## How This File Is Used
 
@@ -48,8 +49,8 @@ If this file is empty or missing, commands will:
 
 ## Adding New Sources
 
-To add a source:
-1. Add a new `### Source Name` heading under `## Primary Sources`
-2. Include all four fields: Type, Location, Use for, Validation
-3. Remove the commented examples above once you have real sources
+Add, edit and remove sources with `/manage-sources`. It makes every change through `agentic-mbse research`, which checks each source and takes a lock a hand edit does not:
+1. A web page, an online PDF or a PDF on this machine is registered with `agentic-mbse research register`, which captures a copy into `knowledge/sources/`
+2. Any other source becomes a hand-curated entry with `agentic-mbse research add-entry`
+3. `agentic-mbse research retire` and `remove-entry` take them out again, and `agentic-mbse research sources` lists them all
 4. Changes take effect on the next command run

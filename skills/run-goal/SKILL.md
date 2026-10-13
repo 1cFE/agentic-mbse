@@ -63,9 +63,9 @@ The main agent may execute directly or delegate bounded work. For eligible paral
 
 ### Research
 
-Start with internal sources: `knowledge/SOURCE_INDEX.md` (registered sources), `knowledge/KNOWLEDGE.md` (domain insights), and `knowledge/research/` (prior research). Use the research procedure the project's instructions name; otherwise `/research` and `/manage-sources`.
+Start with internal sources: `knowledge/SOURCE_INDEX.md` (registered and hand-curated sources), `knowledge/KNOWLEDGE.md` (domain insights), and `knowledge/research/` (prior research). New sources come in only through the installed `research-acquire` skill, which runs `agentic-mbse research open | log | register | close`; reading registered sources is `/research`.
 
-When external sources are needed, execute the research procedure directly or delegate independent requests to fresh agents: Claude Code `Agent` with `subagent_type: "general-purpose"`; Codex `spawn_agent` with `fork_turns: "none"`. A delegated brief names the exact question, entry sources, original evidence, and return budget; deposit it at `evidence/`. Apply any source-quarantine rule the project states before any fetch. The main agent remains free to use research skills itself.
+When external sources are needed, write one request file per question at `knowledge/research/requests/<request-id>.json` (fields in the `research-acquire` skill) and run the skill on it directly, or delegate independent requests to fresh agents: Claude Code `Agent` with `subagent_type: "general-purpose"`; Codex `spawn_agent` with `fork_turns: "none"`. A delegated brief names the request file, the original evidence, and the return budget; deposit it at `evidence/`. Apply any source-quarantine rule the project states before any fetch. Record the task outcome that the class in the run's `return.json` maps to (`GOAL_RUNBOOK.md` § The native seams). The main agent remains free to use research skills itself.
 
 ### Fresh critics
 

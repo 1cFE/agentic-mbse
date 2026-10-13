@@ -49,6 +49,14 @@ TOOL_OWNED_TEMPLATES = [
     ("test_narrative_links.py.template", "tests/orchestration/test_narrative_links.py"),
 ]
 
+# The research registry's staging area and lock, which no target tracks. `init` writes
+# these into a new .gitignore and appends any that are missing to an existing one.
+RESEARCH_GITIGNORE_HEADER = "# agentic-mbse research registry (machine-local)"
+RESEARCH_GITIGNORE_PATHS = [
+    "knowledge/.staging/",
+    "knowledge/.registry.lock",
+]
+
 # Paths to add to .gitignore in dev mode (symlinks are machine-specific)
 DEV_MODE_GITIGNORE_PATHS = [
     "# Tool-owned files (managed by agentic-mbse init --dev)",
@@ -306,6 +314,36 @@ def _update_gitignore_for_dev_mode(target: Path) -> bool:
     return True
 
 
+def _add_research_gitignore_paths(target: Path) -> bool:
+    """Append any research registry ignore line an existing .gitignore lacks.
+
+    A target's .gitignore is created once and kept on re-init, so a target
+    initialized before the research registry shipped gets the lines this way. The missing lines go at the end, under the header unless the file
+    already has it. A symlinked .gitignore is left alone, with a message.
+
+    Returns True if .gitignore was modified.
+    """
+    gitignore_path = target / ".gitignore"
+    if gitignore_path.is_symlink():
+        print(
+            "Preserved symlinked .gitignore; add the research registry ignore lines manually: "
+            + ", ".join(RESEARCH_GITIGNORE_PATHS)
+        )
+        return False
+
+    existing_content = gitignore_path.read_text()
+    # git ignores a pattern's trailing spaces but not its leading ones.
+    present = {line.rstrip() for line in existing_content.splitlines()}
+    missing = [path for path in RESEARCH_GITIGNORE_PATHS if path not in present]
+    if not missing:
+        return False
+    header = [] if RESEARCH_GITIGNORE_HEADER in present else [RESEARCH_GITIGNORE_HEADER]
+    section = "\n".join([*header, *missing]) + "\n"
+    kept = existing_content.rstrip()
+    gitignore_path.write_text(f"{kept}\n\n{section}" if kept else section)
+    return True
+
+
 # Load environment variables from .env file (for SYSIDE_LICENSE_KEY, etc.)
 load_dotenv()
 
@@ -331,9 +369,12 @@ def cmd_init(args: argparse.Namespace) -> int:
     """Initialize project with agentic-mbse configuration.
 
     Creates:
-    - .gitignore (standard Python ignores including .env) [user-owned]
+    - .gitignore (standard Python ignores including .env, and the research registry's
+      staging area and lock) [user-owned; on re-init, any missing research registry
+      ignore line is appended]
     - knowledge/SOURCE_INDEX.md (domain knowledge discovery) [user-owned]
     - knowledge/KNOWLEDGE.md (domain insight registry) [user-owned]
+    - knowledge/research/requests/runs/ and negatives/ (the research seam's run records)
     - modeling_project/ structure (OVERVIEW, ARCHITECTURE, REQUIREMENTS, etc.) [mixed]
     - work/ structure (BACKLOG, EPIC_GUIDE, epic template, goal runbook and templates,
       active, completed, etc.) [mixed]
@@ -450,11 +491,17 @@ Thumbs.db
 
 # agentic-mbse tool state (machine-local)
 .agentic-mbse/install.json
+
 """
+        gitignore_content += (
+            "\n".join([RESEARCH_GITIGNORE_HEADER, *RESEARCH_GITIGNORE_PATHS]) + "\n"
+        )
         if gitignore_path.is_symlink():
             gitignore_path.unlink()
         gitignore_path.write_text(gitignore_content)
         created.append(".gitignore")
+    if _add_research_gitignore_paths(target):
+        updated.append(".gitignore (added research registry ignore lines)")
 
     # === Create knowledge/SOURCE_INDEX.md from template ===
     source_index_path = target / "knowledge" / "SOURCE_INDEX.md"
@@ -482,7 +529,7 @@ This file tells MBSE commands where to find domain knowledge sources.
 ## How This File Is Used
 
 MBSE commands read this file to discover what reference sources exist.
-Edit this file to add your domain-specific sources.
+Add sources with `/manage-sources`, which writes this file through `agentic-mbse research`.
 """
             source_index_path.write_text(minimal_template)
         created.append("knowledge/SOURCE_INDEX.md")
@@ -498,6 +545,8 @@ Edit this file to add your domain-specific sources.
         "knowledge/research/pending",
         "knowledge/research/approved",
         "knowledge/research/impacts",
+        "knowledge/research/requests/runs",
+        "knowledge/research/requests/negatives",
         "knowledge/sources",
         "modeling_project",
         "modeling_project/intent",
@@ -636,7 +685,8 @@ Edit this file to add your domain-specific sources.
         print("Next steps:")
         print("  1. Run /onboard in Claude or $onboard in Codex to configure your project")
         print(
-            "  2. Or manually edit knowledge/SOURCE_INDEX.md and start with the design-model skill"
+            "  2. Or add sources with /manage-sources in Claude or $manage-sources in Codex,"
+            " and start with the design-model skill"
         )
 
     return EXIT_SUCCESS
@@ -684,8 +734,8 @@ def cmd_install_commands(args: argparse.Namespace) -> int:
     return EXIT_SUCCESS
 
 
-def main() -> int:
-    """Main entry point."""
+def main(argv: list[str] | None = None) -> int:
+    """Main entry point. `argv` defaults to the process's arguments."""
     parser = argparse.ArgumentParser(
         prog="agentic-mbse",
         description="Domain-agnostic MBSE toolkit for AI-assisted systems engineering",
@@ -799,12 +849,17 @@ def main() -> int:
 
     register_pm_subcommands(subparsers)
 
+    # research command group (delegated to research_cli module)
+    from agentic_mbse.cli.research_cli import register_research_subcommands
+
+    register_research_subcommands(subparsers)
+
     # extract command (delegated to extract_cli module)
     from agentic_mbse.cli.extract_cli import register_extract_subcommand
 
     register_extract_subcommand(subparsers)
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if not args.command:
         parser.print_help()

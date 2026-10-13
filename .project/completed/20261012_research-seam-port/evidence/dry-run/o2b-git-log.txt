@@ -1,0 +1,127 @@
+ea05abb after O2b call 5 (remove codebase)
+
+ knowledge/SOURCE_INDEX.md | 6 ------
+ 1 file changed, 6 deletions(-)
+4929fc3 after O2b call 4 (retire PDF)
+
+ knowledge/MANIFEST.jsonl                     |   1 -
+ knowledge/RETIRED.jsonl                      |   1 +
+ knowledge/SOURCE_INDEX.md                    |  16 ----------------
+ knowledge/raw/widget_note.pdf                | Bin 869 -> 0 bytes
+ knowledge/sources/widget_note/decisions.json |  10 ----------
+ knowledge/sources/widget_note/metrics.json   |   9 ---------
+ knowledge/sources/widget_note/output.md      |  10 ----------
+ 7 files changed, 1 insertion(+), 46 deletions(-)
+01eab95 after O2b call 2 (add codebase)
+
+ knowledge/SOURCE_INDEX.md | 6 ++++++
+ 1 file changed, 6 insertions(+)
+b402258 after O2b call 1 (add PDF)
+
+ knowledge/MANIFEST.jsonl                     |   1 +
+ knowledge/SOURCE_INDEX.md                    |  16 ++++++++++++++++
+ knowledge/raw/widget_note.pdf                | Bin 0 -> 869 bytes
+ knowledge/sources/widget_note/decisions.json |  10 ++++++++++
+ knowledge/sources/widget_note/metrics.json   |   9 +++++++++
+ knowledge/sources/widget_note/output.md      |  10 ++++++++++
+ 6 files changed, 46 insertions(+)
+10a7275 fixture: widget_note.pdf
+
+ docs/widget_note.pdf | Bin 0 -> 869 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+f536f15 init state (agentic-mbse d49d119 wheel)
+
+ .agentic-mbse/claude.md                            |   9 +
+ .agents/skills/analyze-models/SKILL.md             | 101 ++++++
+ .agents/skills/audit-models/SKILL.md               |  45 +++
+ .agents/skills/backlog/SKILL.md                    | 102 ++++++
+ .agents/skills/design-model/SKILL.md               |  43 +++
+ .agents/skills/epic-decomposition/SKILL.md         | 131 +++++++
+ .agents/skills/formalize-intent/SKILL.md           | 101 ++++++
+ .agents/skills/implement-model/SKILL.md            |  37 ++
+ .agents/skills/manage-sources/SKILL.md             | 169 ++++++++++
+ .agents/skills/model-validation/SKILL.md           |  64 ++++
+ .agents/skills/narrate-goal/SKILL.md               |  84 +++++
+ .agents/skills/onboard/SKILL.md                    | 128 +++++++
+ .agents/skills/orchestrate-modeling/SKILL.md       |  63 ++++
+ .agents/skills/pdf-analysis/SKILL.md               | 112 ++++++
+ .../pdf-analysis/references/extraction-details.md  | 136 ++++++++
+ .../skills/pdf-analysis/scripts/extract_page.py    | 139 ++++++++
+ .agents/skills/plan-model/SKILL.md                 |  41 +++
+ .agents/skills/project-structure/SKILL.md          | 163 +++++++++
+ .agents/skills/python-debugger/SKILL.md            | 119 +++++++
+ .../references/debugging_internals.md              | 108 ++++++
+ .../python-debugger/scripts/claude_debugger.py     | 371 ++++++++++++++++++++
+ .agents/skills/quick-model/SKILL.md                |  23 ++
+ .agents/skills/record-learning/SKILL.md            | 175 ++++++++++
+ .agents/skills/requirements-tracking/SKILL.md      | 140 ++++++++
+ .agents/skills/research-acquire/SKILL.md           | 187 ++++++++++
+ .agents/skills/research/SKILL.md                   | 128 +++++++
+ .agents/skills/review-model/SKILL.md               |  49 +++
+ .agents/skills/run-goal/SKILL.md                   |  78 +++++
+ .agents/skills/source-traceability/SKILL.md        | 169 ++++++++++
+ .agents/skills/spec-model/SKILL.md                 |  53 +++
+ .agents/skills/status/SKILL.md                     |  92 +++++
+ .agents/skills/sysml-conventions/SKILL.md          | 256 ++++++++++++++
+ .../sysml-conventions/references/stencils.md       |  98 ++++++
+ .agents/skills/toolkit-awareness/SKILL.md          | 171 ++++++++++
+ .../references/python-environment.md               |  41 +++
+ .claude/agents/kerml-expert.md                     | 179 ++++++++++
+ .claude/agents/python-debugger.md                  | 253 ++++++++++++++
+ .claude/agents/syside-expert.md                    | 263 +++++++++++++++
+ .claude/agents/sysml-expert.md                     | 242 +++++++++++++
+ .claude/agents/sysmlv2-validator.md                | 375 +++++++++++++++++++++
+ .claude/hooks/ruff-format.sh                       |  25 ++
+ .claude/settings.json                              |   9 +
+ .claude/skills/analyze-models                      |   1 +
+ .claude/skills/audit-models                        |   1 +
+ .claude/skills/backlog                             |   1 +
+ .claude/skills/design-model                        |   1 +
+ .claude/skills/epic-decomposition                  |   1 +
+ .claude/skills/formalize-intent                    |   1 +
+ .claude/skills/implement-model                     |   1 +
+ .claude/skills/manage-sources                      |   1 +
+ .claude/skills/model-validation                    |   1 +
+ .claude/skills/narrate-goal                        |   1 +
+ .claude/skills/onboard                             |   1 +
+ .claude/skills/orchestrate-modeling                |   1 +
+ .claude/skills/pdf-analysis                        |   1 +
+ .claude/skills/plan-model                          |   1 +
+ .claude/skills/project-structure                   |   1 +
+ .claude/skills/python-debugger                     |   1 +
+ .claude/skills/quick-model                         |   1 +
+ .claude/skills/record-learning                     |   1 +
+ .claude/skills/requirements-tracking               |   1 +
+ .claude/skills/research                            |   1 +
+ .claude/skills/research-acquire                    |   1 +
+ .claude/skills/review-model                        |   1 +
+ .claude/skills/run-goal                            |   1 +
+ .claude/skills/source-traceability                 |   1 +
+ .claude/skills/spec-model                          |   1 +
+ .claude/skills/status                              |   1 +
+ .claude/skills/sysml-conventions                   |   1 +
+ .claude/skills/toolkit-awareness                   |   1 +
+ .gitignore                                         |  60 ++++
+ CLAUDE.md                                          |   3 +
+ README.md                                          | 240 +++++++++++++
+ data/traceability_matrix.csv                       |   1 +
+ knowledge/KNOWLEDGE.md                             |  19 ++
+ knowledge/SOURCE_INDEX.md                          |  56 +++
+ modeling_project/ARCHITECTURE.md                   |  40 +++
+ modeling_project/MODELING_GUIDE.md                 | 302 +++++++++++++++++
+ modeling_project/MODELING_PROCESS.md               | 106 ++++++
+ modeling_project/OVERVIEW.md                       | 105 ++++++
+ modeling_project/REQUIREMENTS.md                   |  14 +
+ modeling_project/VALIDATION_MATRIX.md              |  30 ++
+ tests/conftest.py                                  |  44 +++
+ tests/models/test_example.py                       | 154 +++++++++
+ tests/orchestration/test_narrative_links.py        |  24 ++
+ work/BACKLOG.md                                    |  35 ++
+ work/EPIC_GUIDE.md                                 | 188 +++++++++++
+ work/backlog/epic_template.md                      | 100 ++++++
+ work/learnings/RAW_LEARNINGS.md                    |  18 +
+ work/orchestration/GOAL_RUNBOOK.md                 | 316 +++++++++++++++++
+ work/orchestration/goal-templates/goal.md          |  58 ++++
+ work/orchestration/goal-templates/learnings.md     |  15 +
+ work/orchestration/goal-templates/trail.md         |  87 +++++
+ 93 files changed, 7315 insertions(+)

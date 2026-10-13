@@ -1,0 +1,17 @@
+{
+  "request_id": "REQ-001-01",
+  "run": "knowledge/research/requests/runs/REQ-001-01/20261012T211447786845",
+  "class": "REGISTERED",
+  "registered": [
+    {
+      "slug": "copper_wikipedia",
+      "path": "knowledge/sources/copper_wikipedia/",
+      "source_id": "0df720b415c6b0d8158666138f89a69138e72ca283cfc6bb3ec5b3de307703de",
+      "pre_existing": false
+    }
+  ],
+  "queued": [],
+  "negative": null,
+  "limit_reached": null,
+  "reason": "at least one source is registered and citable"
+}

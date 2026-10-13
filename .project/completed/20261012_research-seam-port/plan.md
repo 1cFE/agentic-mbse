@@ -1,0 +1,872 @@
+# Implementation Plan: Port the research acquisition seam, and bring `/manage-sources` under its rules
+
+**Status:** Implementation complete (P1–P6, then P7 for the audit follow-ups); O1 and O2 passed; certified with follow-ups by `/_my_audit`, all fixed in P7. O3 waits for the owner's merge
+**Created:** 2026-10-12
+**Last Updated:** 2026-10-12
+**Work item:** `WRAP-SPLIT` Item 5, branch `research-seam-port`, worktree `/home/reid/1cfe/agentic-mbse-research-seam`
+
+## Source Documents
+
+- **Spec:** `spec.md` (criteria 1–9 are cited below as "criterion *n*").
+- **Design:** `design.md`, revised after review. D1–D18, I1–I8 and Appendices A–D are cited by number. Component details, exact texts and the test assignments (Appendix B) live there, not here.
+- **Review:** `design-review.md`. M1–M5 and A1–A18 are applied in the design (see its Resolutions).
+- **Align:** `briefs/align.md`. **O1 baseline:** `evidence/o1-baseline.md`.
+- **Code to port:** `.orchestrate-logs/fusion-tea-snapshot/` (fusion-tea `0a833b9f7`, current as of `c42ed1d8a`). Read-only. Cited below as "snapshot".
+
+## The Point
+
+A target brings an outside source into `knowledge/` through one checked door, with proof it is there, using only what `agentic-mbse init` installs. [OWNER-VERBATIM] 2026-10-06: "yes, we need this capability in agentic-mbse."
+
+A user managing sources by hand goes through the same door. [OWNER-VERBATIM] 2026-10-09, on `/manage-sources`: "MORE useful as a general skill which allows direct user management while it folows and enforces the rules".
+
+[INHERITED: epic, owner no-loss 2026-10-06] fusion-tea switches over with no data migration and no lost instruction. Its 123 manifest rows, 61 run directories and one bounded negative are read as they are.
+
+Why now: the installed `run-goal` (Item 2) delegates every acquisition to this seam. Without it, an installed goal layer points at a procedure no other target has.
+
+So the work is checked against more than the design. fusion-tea's live data must still read the same (O1). A fresh target with no fusion-tea code must be able to acquire a source and curate by hand (O2a, O2b).
+
+## Implementation Strategy
+
+**Phasing rationale.** The phases are the design's Next-Stage Handoff, P1–P6. The order follows "copy, then split" (design § Implementation Notes): pin the on-disk shapes first, then move code module by module under those pins, leaves before the ladders that use them.
+
+- **P1** freezes every byte-level expectation from the snapshot and lands the support modules.
+- **P2** moves the riskiest code: the register ladder, capture, and commit/rollback. The hook is a no-op stub.
+- **P3** adds the hook's fail-closed paths while the ladder is fresh.
+- **P4** finishes the registry (hand-curated entries, `retire`, `verify`). That unlocks the first check against real data, O1 parity.
+- **P5** adds the seam bookkeeper, the CLI and `init`: the surfaces a target touches.
+- **P6** is text: skills, docs, templates, and their contract tests.
+
+**How the golden tests land (I1).** The brief asks for the I1 golden tests before the first code moves. The design asks for each to land in the phase that moves its code, before that code. This plan does both. P1 derives every golden expectation from the snapshot once and freezes it as test data. Each later phase opens by adding the golden tests for the code it moves, reading that frozen data. No expectation is ever computed from ported code.
+
+**Critical path.** P1 golden data → P2 ladder → P3 hook → P4 `verify` → **Orchestrator: O1 parity** → P5 CLI → P6 skills → **Orchestrator: O1 rest, O2a, O2b** → `/_my_audit`.
+
+**First proof point.** End of P1: the package's insertion bytes at `## How Sources Are Used` equal the snapshot's for the same inputs, and a keyed batch block equals the snapshot's Zotero block. The first proof against real data is O1 parity, right after P4.
+
+**Biggest risks** (full list: design § Potential Risks):
+
+- **The new parser reads fusion-tea's index differently (bet B1).** O1 parity runs right after P4, before the CLI and skills are built on the parser.
+- **A fresh target breaks where fusion-tea never did** (no manifest, the shipped index's other anchor and its commented examples). Every behaviour test builds its tree from the shipped template with no manifest file, from P1 on (D18).
+- **P6's template edit silently changes what earlier byte tests mean.** The golden fixtures rule below keeps byte tests off the live template.
+- **Effort.** Design estimate P1–P6 is 18.5h, plus O1 1.5h and O2 1.5h.
+
+## Conventions for every phase
+
+**Exit check.** The same for every phase. Run from the worktree root.
+
+- [ ] `uv run pytest tests/` shows no new failures: 0 failed and 0 errors; 1 skipped and 1 xfailed, as in the baseline; passed at least 2,217 and rising with new tests; deselected rising only by new `slow` tests. Baseline: `.orchestrate-logs/baseline-pytest.txt` (2,217 passed, 1 skipped, 1 xfailed, 5 deselected at `ac5fb1a`, under `uv sync --all-extras`).
+- [ ] `uv run pytest tests/test_research -m ""` passes, so the ported `slow` tests run too.
+- [ ] `uv run ruff check src/ tests/` reports at most 118 findings (`.orchestrate-logs/baseline-ruff.txt`), none in a file this item adds or edits.
+- [ ] `uv run mypy src/` reports at most 88 errors (`.orchestrate-logs/baseline-mypy.txt`), none in a file this item adds or edits. No baseline finding sits in a file this item edits, so any finding there is new.
+- [ ] One commit for the phase, with a subject that leads with what changed (for example "Add research package support modules and golden shape tests").
+
+**Commit when resumed.** An implement stage started fresh commits itself. A resumed one cannot. It writes `.orchestrate-logs/commit-steps/P<n>.md` with the commit subject and body, the exact `git add` path list and the exit-check output, and the orchestrator commits.
+
+**Boundaries.**
+
+- Do not edit `src/agentic_mbse/cli/installation.py`; Item 3's branch edits it. `pyproject.toml` and `scripts/replicate_setup.sh` also stay unchanged (Appendix A).
+- Stages read fusion-tea only through the snapshot. They never touch fusion-tea, `~/.claude/`, anything outside this worktree, or `claude -p`. Steps marked **Orchestrator** are not stage work.
+- Do not change ladder order or messages while splitting. The behaviour changes are exactly the design's Behaviour Changes table.
+- Typing per design § Implementation Notes "mypy and ruff". Run `uv run ruff format` on new files only.
+- The worktree root has a `knowledge/` directory (`KNOWLEDGE.md`, `SOURCE_INDEX.md`). `default_paths()` is cwd-relative, so a test that forgets to inject paths writes there. The conftest session check (P1) catches it.
+
+**Golden fixtures rule.** Byte-level golden tests read frozen inputs and expected outputs from `tests/test_research/golden/`, never the live template, so P6's template edit cannot move them. Behaviour tests build their tree from the live shipped template (`get_template_path()`, which reads `SOURCE_INDEX.md.template` at the repo root) with no manifest file (D18). Round-trip tests compare a tree against its own before-bytes. Both stay meaningful when the template changes.
+
+---
+
+## Phase 1: Support modules, `__main__`, and the golden data
+
+### Goal
+
+Freeze the byte-level expectations and land the modules everything else stands on, before any ladder code moves.
+
+### Assumption under test
+
+The snapshot's on-disk shapes (index insertion bytes, the Zotero batch block, receipt key order, manifest rollback) can be reproduced by small typed modules that name no consumer. The shipped index, with its other anchor, its commented examples and no manifest, works with them.
+
+### Test stencil (write first)
+
+Function names are the implementer's; the design leaves them open.
+
+```python
+# tests/test_research/test_golden_shapes.py
+GOLDEN = Path(__file__).parent / "golden"
+
+@pytest.mark.parametrize("case", ["anchor_how_sources", "anchor_how_this_file", "eof_newline", "eof_no_newline"])
+def test_insertion_bytes(case, tmp_path):
+    index = tmp_path / "SOURCE_INDEX.md"
+    index.write_bytes((GOLDEN / f"index/{case}.before.md").read_bytes())
+    insert_block(index, (GOLDEN / "index/block.md").read_text())
+    assert index.read_bytes() == (GOLDEN / f"index/{case}.after.md").read_bytes()
+
+def test_keyed_batch_block_equals_the_snapshot_block():
+    block = render_batch_block(**BATCH_INPUTS, key_label="Zotero Key", key_display="5428393:ABCD1234")
+    assert block == (GOLDEN / "index/batch_block.md").read_text()
+```
+
+### Changes
+
+**Golden data, first of all.**
+
+- [x] Write a scratch derivation script at `.orchestrate-logs/golden/derive.py` (gitignored; keep it as provenance). It imports the snapshot's scripts by path. `pyzotero` is not installed here, so put a stub module in `sys.modules` first (`dotenv` is installed; `holdout_guard` reads its protocol lazily). Fix the date, because blocks and rows carry `date.today()`.
+- [x] Derive and save: a fixed request and its key (`research_seam.request_key`, `:70-83`); the index before and after one `append_source_index_entry` at `## How Sources Are Used`, for a seam block and a batch block (`zotero_ingest.py:225-350`, with `SOURCE_INDEX_PATH` patched); the Zotero batch block for fixed inputs; the key order of a receipt (`source_registry.py:1217-1229`), of `url`, `local_pdf` and Zotero manifest rows (`:667-686` with each source's `row_extras`), and of a return and a negative (run the snapshot's `close` on a temp run directory).
+- [x] Copy the outputs into `tests/test_research/golden/`. Add the cases the snapshot cannot produce from the design's stated bytes (Architecture § Insertion bytes): insertion before `## How This File Is Used`, and the end-of-file fallback with and without a trailing newline. The docstring of `test_golden_shapes.py` names the snapshot function each expectation came from.
+
+**Tests, by Appendix B row.**
+
+- [x] `__init__.py`: move.
+- [x] `conftest.py`, agentic-mbse half: shipped-template tree with no manifest, `local_site`, pymupdf `generated_pdf`, `run_dir`, `FakeGuard` and a recording variant (used in P4), plus the session check that the suite creates nothing under the repo root's `knowledge/` (design Implementation Notes "Test fixtures", review A13).
+- [x] `fixtures/web/`: move `utf8.html`, `latin1.html`, `marker.html`. Replace `marker.html`'s sealed-paper token with a neutral token the fake guard bars.
+- [x] `test_golden_shapes.py` (new, I1), P1 cases: insertion bytes at both anchors and both fallback forms; the keyed batch block equals the snapshot's Zotero block; receipt key order.
+- [x] `test_index_writer.py`: move, rewritten for both anchors, the end-of-file fallback (replacing "missing anchor raises"), comment masking and the keyed batch block. Add the D10 block ends (the next heading outside a comment, or a line opening a comment) and Location normalization (Architecture § Locations and titles).
+- [x] `test_zotero_path_contract.py`, first half: batch-block field order and values, with a neutral key. Keyed dedupe waits for P2.
+- [x] `test_manifest.py` (new): `test_load_manifest_rows_returns_every_row` and `test_truncate_manifest_restores_recorded_byte_length` move here, plus append. Add the absent-aware rollback: rolling back to a "no manifest" mark removes the file (I3; Research Findings on `zotero_lib.py:111-114`).
+- [x] `test_sources.py` (new): `KeyedFileSource.__post_init__` refusals for `kind`, `key_field` and `key` (design § The keyed kind, review A9); `slugify`; URL normalization.
+- [x] `test_main_module.py` (new): `python -m agentic_mbse --help` exits 0 (D13).
+- [x] `test_no_consumer_names.py` (new, I8): the criterion-5 pattern over `src/agentic_mbse/research/`. P6 adds the skill and guide.
+
+**Code.**
+
+- [x] `src/agentic_mbse/__main__.py` (D13).
+- [x] `research/__init__.py`: exports only the D2 names that exist so far. The list is complete at P3.
+- [x] `research/paths.py`, `research/manifest.py`, `research/sources.py`: per Component Overview, D6, D8.
+- [x] `research/runs.py`: per Component Overview. The receipt writer takes the receipt fields as keyword arguments and builds the dict in the snapshot's order, so P1 pins receipt key order without `register.py`.
+- [x] `research/index.py`: the parser (D10; masking keeps offsets, per Implementation Notes), the anchor rule and insertion bytes (D9), seam and batch block rendering, cut and replace, Location normalization and title matching. `add_entry`, `remove_entry` and `list_entries` wait for P4.
+
+**Satisfies:** D6, D8, D9, D10, D13, D18 (fixtures); I1 (P1 cases), I3 (manifest half), I8 (package half).
+
+### Validation
+
+- [x] Exit check.
+- [x] Manual: `uv run python -m agentic_mbse extract --help` prints the `extract` usage.
+
+**What we know works after P1:** the package writes index blocks byte-identical to the snapshot's at either anchor, appends correctly at end of file, keeps receipt key order, and rolls back a manifest that did not exist.
+
+### Implementation Notes
+
+#### Phase 1 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,325 passed, 1 skipped, 1 xfailed, 5 deselected, 0 failed (baseline 2,217 passed; 108 new).
+- `uv run pytest tests/test_research -m ""`: 108 passed. No `slow` test lands in P1.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a new file.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a new file.
+- Manual: `uv run python -m agentic_mbse extract --help` prints the `extract` usage. `test_main_module.py` now checks this too.
+
+**What changed.**
+
+- Golden data in `tests/test_research/golden/`, derived once by `.orchestrate-logs/golden/derive.py` (gitignored, kept as provenance) with the clock fixed at 2026-10-12T09:30:00Z. The script stubs `pyzotero` in `sys.modules`; nothing was installed. It derives more than the plan listed, so later phases read frozen data instead of recomputing:
+  - `index/`: the seam block (url and local_pdf), the batch block, both inserted at `## How Sources Are Used`, plus the three design-derived cases (other anchor, end of file with and without a final newline). `anchor_how_this_file.before.md` is the shipped template frozen as of today, so P6's template edit cannot move it.
+  - `manifest/{url,local_pdf,keyed}.jsonl`: the snapshot's rows as the bytes it appends, not just key order. Inputs in `manifest/inputs.json`.
+  - `receipts/`: two receipts in one run (a registration, then a pre-capture hold-out refusal), with the snapshot's file names and bytes.
+  - `seam.json` (request and key) and `seam/`: a bounded-negative run (`run.json`, `run.jsonl`, `process_log.md`, `return.json`, and the negative) and a registered run's `return.json`. Paths in them are relative, from a `knowledge/research/requests` home.
+- `src/agentic_mbse/__main__.py`: runs `agentic_mbse.cli.main`.
+- `src/agentic_mbse/research/`:
+  - `paths.py`: `RegistryPaths(knowledge_dir)` derives the eight paths and `project_root`; `default_paths()`, `registry_lock`, and `sweep_stale_staging(paths, older_than_s=…)`. The age is the caller's: register passes `4 * CAPTURE_TIMEOUT_S` in P2.
+  - `manifest.py`: `load_manifest_rows`, `first_matching_row`, `append_manifest_row`, `mark_manifest` / `roll_back_manifest` (a mark of `None` length means "no manifest", and rollback removes the file), `write_manifest_without`.
+  - `sources.py`: the three source kinds, `SourceMetadata`, `slugify`, `normalize_url`. `index_profile` is `"seam"` or `"batch"`.
+  - `runs.py`: the run-directory names, `Receipt` (TypedDict), `write_receipt(run_dir, *, …, at)` building the dict in the snapshot's order, `read_receipts`, `is_run_dir`, `read_run_meta`, `run_limits`, `append_run_log`, `read_run_log`.
+  - `index.py`: `parse_index(text, project_root=…)` → `IndexBlock(start, end, text, title, type, location, slug)`; `normalize_location`; `blocks_titled`; `with_block_inserted` (pure) and `insert_block` (file); `without_block`; `with_block_replaced`; `render_seam_block`; `render_batch_block`.
+  - `__init__.py`: the seven D2 names that exist so far.
+- Tests in `tests/test_research/`: `conftest.py`, `fixtures/web/` (the marker token is now `sealed-widget-07`), `test_golden_shapes.py`, `test_index_writer.py`, `test_zotero_path_contract.py` (first half), `test_manifest.py`, `test_sources.py`, `test_main_module.py`, `test_no_consumer_names.py`, and `test_runs.py`. The last is not in the plan; it covers the run-log and receipt functions, which have no other caller until P2 and P5.
+- The key tests were mutation-checked: dropping one newline from the insertion fails the three anchor goldens; removing the comment boundary fails the A4 case; unmasking comments fails five parser tests; a test writing `knowledge/.registry.lock` at the repo root fails the session check.
+
+**Deviations and decisions** (snapshot vs. this code; none changes a byte fusion-tea writes or reads).
+
+- The clock is an argument. `write_receipt` takes `at: datetime`, and both renderers take `added: date`, so the goldens pin file names and bytes. The callers (P2) pass `datetime.now(timezone.utc)` and `date.today()`.
+- `render_seam_block(source_kind, origin)` replaces the snapshot's two optional origin fields: the label follows the kind (`url` → Source URL, `local_pdf` → Origin Path). Its Raw SHA256 line is written from `source_id`, which equals the raw digest in every snapshot call. "Requires source_url or origin_path" became "requires an origin".
+- The batch block always has a key line. The snapshot's keyless batch block had no caller left (local PDFs use the seam profile), so `test_local_pdf_block_omits_zotero_key` was not moved.
+- A Location's slug is its first path segment under `knowledge/sources/`, with or without a trailing `/`. The snapshot's regex required the slash. Every Location the registry writes has it, so fusion-tea's index parses the same (O1 checks this); a hand-written `knowledge/sources/x` is now seen by `verify` and `retire`.
+- The anchor rule keeps the snapshot's prefix match (a line starting with either heading) and skips comments. An anchor on the file's first line now counts; the snapshot needed a newline before it.
+- The end-of-file fallback adds no leading newline to an empty file. The design says to add one "if the file does not end with one"; an empty file has no last line to separate from. No golden case covers an empty index, and P2 refuses a missing one.
+- `KeyedFileSource` also refuses a blank `kind` or `key_field`, besides the design's three refusals. Same caller error, same `ValueError`.
+- The staging sweep counts an entry it cannot stat as fresh on any `OSError`, as the snapshot does. P1 had narrowed this to `FileNotFoundError`, an unlisted behaviour change that let a permission error crash a registration; the orchestrator had it restored in P2, with a regression test.
+- Not handled: a `<!--` inside inline code opens a comment for the parser. No shipped or fusion-tea index has one.
+
+**For the next phases.**
+
+- P2: keep each commit rung a module-level name in `register.py`. Importing `append_manifest_row` and `insert_block` into `register.py` makes them patchable there. Use `mark_manifest`/`roll_back_manifest` for the fresh-target rollback. The golden manifest rows carry `date_extracted` 2026-10-12, so the row builder should take the date as `render_*` does, or the test compares key order only. `capture.py` has no `capture_target` on sources: use `source.url` for a `UrlSource` and `staged_input` otherwise. Add the "nothing written" helper to `conftest.py` (accepts an absent or empty manifest and staging). `generated_pdf` is drawn with pymupdf and not yet exercised by capture.
+- P3: `knowledge_tree.root.parent` is `tmp_path / "project"`, its own directory, so a test's `pyproject.toml` there never meets run directories in `tmp_path`.
+- P4: `IndexBlock.location` is already normalized and `slug` set. Entry labels, `add_entry`, `remove_entry`, `list_entries` and a baseline-writing tree fixture are still to come. Guards: `FakeGuard`, `RecordingGuard`, `NO_GUARD` and `SEALED_TOKEN` are in `conftest.py`; import them with `from tests.test_research.conftest import …`, as `tests/test_sysml` does.
+- P5: the seam goldens are under `golden/seam*`. `runs.py` has no `SeamError`: `seam.py` checks `is_run_dir` and raises its own error.
+
+---
+
+## Phase 2: Capture and the register ladder, with a no-op guard
+
+### Goal
+
+Move the ladder, capture, commit and rollback (the code that writes four files or nothing) under the P1 pins.
+
+### Assumption under test
+
+The ladder splits across `capture.py` and `register.py` with order, messages, receipts and rollback unchanged. The two new refusals (missing index, missing web extra) land before any capture is spent.
+
+### Test stencil (write first)
+
+```python
+# tests/test_research/test_rollback.py (moved; rung names point into register.py)
+def test_a_failed_commit_on_a_fresh_target_leaves_no_manifest(knowledge_tree, local_site, monkeypatch):
+    assert not knowledge_tree.manifest.exists()              # a fresh target has none
+    before = knowledge_tree.index.read_bytes()
+    monkeypatch.setattr(register_module, RUNGS["after_manifest_append"], boom)
+    with pytest.raises(RegistrationError):
+        register(UrlSource(url=local_site.url("utf8.html")), METADATA, paths=knowledge_tree.paths)
+    assert not knowledge_tree.manifest.exists()
+    assert knowledge_tree.index.read_bytes() == before
+```
+
+### Changes
+
+**Tests first, by Appendix B row.**
+
+- [x] `test_golden_shapes.py`: manifest-row key order for `url`, `local_pdf` and keyed rows, against the P1 golden data.
+- [x] Move `test_register_url_chain.py`, `test_register_pdf_chain.py`, `test_duplicate.py`, `test_staging_concurrency.py` and `test_rollback.py`. Update imports and rung names; `zotero_key` absence assertions read "no key field". `test_rollback.py` gains the no-manifest case (I3).
+- [x] Move `test_receipts.py`. The pre-capture refusal passes `guard=FakeGuard(...)` and uses its term. Add I2: every returned outcome writes exactly one receipt; a raised `RegistrationError` or `subprocess.TimeoutExpired` writes none (review M5).
+- [x] `test_zotero_path_contract.py`, second half: keyed dedupe with a neutral key. Old rows carrying the key field and no `source_kind` match before any fetch (I5).
+- [x] New cases in the chain files: a URL `register` without the web extra refuses `precondition_failed`, reason starting `URL capture needs the web extra:`, no capture spent (D14). A missing `SOURCE_INDEX.md` refuses `precondition_failed`, reason starting `source index missing:`, before capture (Behaviour Changes).
+- [x] `test_capture.py` (new): with `subprocess.run` patched to record argv, the extractor command starts `[sys.executable, "-m", "agentic_mbse", "extract"]` and never carries `--index` or `--summarize` (D13, I7).
+
+**Code.**
+
+- [x] `research/holdout.py`, minimal: the two protocols (design § Exact wording) and the no-op guard. In P2, `register(..., guard=None)` uses the no-op guard; P3 replaces that default.
+- [x] `research/capture.py`: per Component Overview. Import `check_web_deps` lazily (Implementation Notes "Hook loading").
+- [x] `research/register.py`: the ladder in the design's order (Architecture § register ladder); each rung a module-level function (Implementation Notes "Rollback tests"); `_spent_a_capture` ported exactly (Implementation Notes "Copy, then split").
+- [x] `research/__init__.py`: add the register-side D2 names.
+
+**Satisfies:** D6, D13, D14; I1 (row key orders), I2, I3, I5, I7; criterion 3 for `registered`, `duplicate`, `capture_failed`, `precondition_failed` and `limit_reached`.
+
+### Validation
+
+- [x] Exit check. The URL-chain tests need the `web` extra (`uv sync --all-extras`). They must run, not skip.
+
+**What we know works after P2:** a URL or a local PDF registers end to end through the real extractor; refusals write nothing; a failed commit leaves the four artifacts byte-identical, or absent if they were absent; receipts match the snapshot's.
+
+### Implementation Notes
+
+#### Phase 2 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,383 passed, 1 skipped, 1 xfailed, 13 deselected, 0 failed (P1 2,325 passed; 58 new). Deselected rose from 5 to 13 by the eight `slow` tests in `tests/test_research`.
+- `uv run pytest tests/test_research -m ""`: 174 passed, the eight `slow` tests included. The URL-chain tests ran under the `web` extra; none skipped.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this item adds or edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a research file.
+
+**What changed.**
+
+- `research/holdout.py`, minimal: the `HoldoutMatch` and `HoldoutGuard` protocols (design § Exact wording) and `NO_HOLDOUT_GUARD`. `register(..., guard=None)` uses `NO_HOLDOUT_GUARD` until P3.
+- `research/capture.py`: `capture(source, staging, *, budget) -> Captured | CaptureFailure`, `extractor_command` (`[sys.executable, "-m", "agentic_mbse", "extract", target, "--save-source", "--output", staging, "--budget", budget]`), `web_capture_available()` (imports `check_web_deps` lazily), `sha256_of`, and the snapshot's flattening and raw-artifact read-off. `CAPTURE_TIMEOUT_S`, `EXTRACT_OUTPUT` and `STAGED_INPUT_DIR` live here. A `CaptureFailure` carries the reason; `register` turns it into `capture_failed`, so `capture.py` never imports `register.py`.
+- `research/register.py`: `register`, `RegistrationResult` (with an `Outcome` literal), `RegistrationError`, `manifest_row` (public, so the golden test builds rows with it), `DEFAULT_BUDGET`, `STALE_STAGING_AGE_S` and a `Triage` literal. The ladder is the design's order: sweep, metadata, input file, index exists, hold-out on input path, identity and title, pre-fetch dedupe, `max_captures`, web extra for URLs, capture, hold-out on extract and raw artifact, dedupe on `source_id`, commit. `_spent_a_capture` is the snapshot's, unchanged.
+- The commit rungs are module-level names in `register.py`: `_rename_into_sources`, then `append_manifest_row` and `insert_block`, imported there from `manifest.py` and `index.py`. The snapshot's one-line wrappers around those two were not ported. The rollback uses `mark_manifest`/`roll_back_manifest`, so a fresh target's manifest is removed, not truncated.
+- The two new refusals: `source index missing: <index path>` and `URL capture needs the web extra: install agentic-mbse[web]`, both `precondition_failed`, both before any capture. Tests simulate a missing extra with `sys.modules["trafilatura"] = None`, which makes the real `check_web_deps` fail.
+- `research/__init__.py`: adds `register`, `RegistrationResult`, `RegistrationError` (ten D2 names).
+- `research/sources.py`: `UrlSource.kind` and `LocalPdfSource.kind` are typed `Literal["url"]` and `Literal["local_pdf"]`, so `register` passes the kind to `render_seam_block` without a cast.
+- `research/paths.py`: the orchestrator's correction. `_modified_at` catches `OSError` again, as the snapshot does; Phase 1's note is amended.
+- Tests: `test_register_url_chain.py`, `test_register_pdf_chain.py`, `test_duplicate.py`, `test_staging_concurrency.py`, `test_rollback.py` and `test_receipts.py` moved; `test_zotero_path_contract.py` gained its second half; `test_capture.py` is new; `test_golden_shapes.py` gained the manifest rows. `conftest.py` gained `registry_state` (index and manifest bytes, or None when absent, plus source and raw entries) and `assert_nothing_written` (a fresh tree: no source, raw copy or staging entry, an absent or empty manifest, and the index still the live template byte for byte). "Zotero key absent" assertions became "the row's fields equal the golden row's fields, in order".
+- Tests beyond the plan's list: the `OSError` sweep regression (mutation-checked: it fails with `FileNotFoundError`); the capture-count quirk pinned on its own; every-outcome-one-receipt over all six outcomes in one run; triage recorded; a slow local-PDF rollback that the raw copy is removed; a slow keyed registration end to end (batch block, key line, key as slug suffix, row fields); a batch caller needs only a title; the block lands before the shipped template's anchor.
+- Manifest goldens compare the appended bytes, not only key order, because `manifest_row` takes its date as an argument.
+
+**Deviations and decisions** (none changes a byte fusion-tea writes or reads).
+
+- `test_same_bytes_at_a_different_url_is_a_duplicate` never reached the check it names in the snapshot. Its alias `./utf8.html` normalizes to the first URL (`posixpath.normpath`), so the pre-fetch URL check caught it. The alias is now `utf8.html?alias=1`: normalization keeps the query and the fixture server ignores it, so the source-id dedupe after capture is what refuses it, and the test asserts that reason.
+- `_commit` reads `date.today()` once and hands it to the row and the block. The snapshot read it in each writer, so a commit straddling midnight could carry two dates.
+- Ported tests that checked "the reason mentions the field" now check the exact snapshot message.
+- Two snapshot comments were wrong and are not ported as written. The `_spent_a_capture` comment said only a post-capture duplicate or hold-out hit carries a source id. In fact a pre-fetch duplicate of a row with a `source_id` carries one (the quirk the design keeps), and a post-capture hold-out hit carries none, so it does not count against `max_captures`. The code is unchanged; the new comment says what it does.
+
+**For the next phases.**
+
+- P3: every guard call is in `_input_identity_holdout_hit` and `_post_capture_refusal`, and every read of a match is in `_holdout_refusal`; the wrapper goes around those. A2's post-capture fault must carry `captured.source_id`, and `_spent_a_capture` must then count a `precondition_failed` with a source id; leave the post-capture hold-out hit uncounted, as the snapshot does. Replace `NO_HOLDOUT_GUARD` as the default with `load_holdout_guard(paths.project_root)`. `FakeGuard(terms=(SEALED_TOKEN,))` already drives the receipts test.
+- P4: in test modules, get the `register` module with `importlib.import_module("agentic_mbse.research.register")`. The package attribute `register` is the function (D1's module name and D2's function name collide), so `from agentic_mbse.research import register as module` returns the function. `retire` is not a D2 name, so `agentic_mbse.research.retire` stays the module. `assert_nothing_written` compares against the live template, so it suits fresh trees only; round trips use `registry_state`.
+- P5: the CLI's `register` prints the snapshot's fields (`source_registry.py:1336-1346`); `RegistrationResult` keeps the snapshot's field names. `DEFAULT_BUDGET` and `Triage` are in `register.py` for the flags.
+
+---
+
+## Phase 3: The hold-out hook
+
+### Goal
+
+Load the target's guard from `pyproject.toml`, and fail closed on every fault, including an unknown config key.
+
+### Assumption under test
+
+Bet B2 (three checks express a target's hold-out rule) and D3–D5: a guard named by file path loads like fusion-tea's module, and no load or call fault lets a registration through.
+
+### Test stencil (write first)
+
+```python
+# tests/test_research/test_hook_config.py
+@pytest.mark.parametrize("line", ['holdout_guard = "guard.py"', 'holdout-guard = ""', "holdout-guard = 3", 'holdout-guard = "missing.py"'])
+def test_a_misconfigured_guard_refuses_with_a_receipt(line, knowledge_tree, generated_pdf, run_dir):
+    (knowledge_tree.root.parent / "pyproject.toml").write_text(f"[tool.agentic-mbse.research]\n{line}\n")
+    result = register(LocalPdfSource(path=generated_pdf), METADATA, paths=knowledge_tree.paths, run_dir=run_dir)
+    assert result.outcome == "precondition_failed"
+    assert result.reason.startswith("hold-out guard unavailable:")
+    assert len(read_receipts(run_dir)) == 1
+```
+
+### Changes
+
+**Tests first, by Appendix B row.**
+
+- [x] `test_holdout.py`, agentic-mbse half: move the fake-guard cases (content, URL, title, input path, no waiver flag). Add: no config registers; a missing file, a missing function, a raising guard and an unknown config key each refuse `precondition_failed` with a receipt; a post-capture fault carries the captured `source_id` and counts as captured (review A2).
+- [x] `test_hook_config.py` (new): an absent or empty table gives the no-op guard; every D4 fault gives the failing guard; config is read from `<knowledge dir>/../pyproject.toml`, so a test tree never loads the cwd's guard (D5); a guard using dataclasses with postponed annotations loads, and a failed load leaves no private module in `sys.modules` (review A3); a guard importing a sibling module fails closed.
+- [x] Public API: `agentic_mbse.research.__all__` equals the thirteen D2 names exactly.
+
+**Code.**
+
+- [x] `research/holdout.py`, complete per Component Overview and Architecture § The hook: `load_holdout_guard`, the failing guard, and one wrapper around every guard call and every read of a returned match.
+- [x] `research/register.py`: `guard=None` now means `load_holdout_guard(paths.project_root)`. Every guard call goes through the wrapper.
+- [x] `research/__init__.py`: add `HoldoutGuard`, `HoldoutMatch`, `load_holdout_guard`. D2 is complete.
+
+**Satisfies:** D2, D3, D4, D5; I4 (register half); criterion 3 for `holdout_hit` through a test-supplied hook.
+
+### Validation
+
+- [x] Exit check.
+
+**What we know works after P3:** a target with no guard registers freely. A target whose guard is broken, incomplete, raising or misspelled refuses every registration, with a receipt and a reason that names the guard.
+
+### Implementation Notes
+
+#### Phase 3 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,440 passed, 1 skipped, 1 xfailed, 13 deselected, 0 failed (P2 2,383 passed; 57 new). Deselected unchanged: no new `slow` test.
+- `uv run pytest tests/test_research -m ""`: 231 passed.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this item adds or edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a research file.
+
+**What changed.**
+
+- `research/holdout.py`, complete:
+  - `load_holdout_guard(project_root)` reads `[tool.agentic-mbse.research]` from `project_root / "pyproject.toml"`. No file, no table or an empty table gives `NO_HOLDOUT_GUARD`. A relative `holdout-guard` path resolves against the project root; an absolute one is used as written.
+  - Every fault gives `_UnavailableGuard`, whose every check raises `HoldoutGuardError`: unreadable or invalid TOML, `[tool]`, `[tool.agentic-mbse]` or the research table not being a table, any key other than `holdout-guard`, a value that is not a non-blank string, no file at the path, a file that is not a `.py` module, a load that raises (including a sibling import), and a missing or non-callable function. Loading never raises.
+  - The loader is the importlib recipe: the module goes into `sys.modules` under `_agentic_mbse_holdout_guard_<digest of its resolved path>` before `exec_module`, and is popped if the load or the function check fails. The digest keeps two projects' guards apart in one process. The loaded guard is `_FileGuard`, a frozen dataclass holding the module's three functions.
+  - The one wrapper: `input_path_hit`, `first_term_hit` and `first_file_hit` each run one check through `_ask` and read the first match into a frozen `HoldoutHit(rule_id, count, offsets)`. Any exception from the guard, and any answer outside the protocol's shape (a scan that is not a sequence, a match with no non-empty `rule_id`, no integer `count` or no integer `offsets`), becomes `HoldoutGuardError`. Nothing outside `holdout.py` touches a guard's own objects.
+  - `HoldoutGuardError`'s message is `hold-out guard unavailable: <detail>`, so every caller's refusal reason carries the prefix the skills key on (Behaviour Changes, review A1). It is not a D2 name; callers import it from `agentic_mbse.research.holdout`.
+- `research/register.py`: `guard=None` means `load_holdout_guard(paths.project_root)`, loaded on every call. Both hold-out rungs go through the wrapper and catch `HoldoutGuardError`. Before capture, a fault returns `precondition_failed` with the error as its reason. After capture, it returns `precondition_failed` with `source_id=captured.source_id`, and `_spent_a_capture` now counts a `precondition_failed` that carries a source id (review A2). A hold-out hit after capture still carries none and still does not count, as in the snapshot. `_holdout_refusal` takes a `HoldoutHit`.
+- `research/__init__.py`: adds `HoldoutGuard`, `HoldoutMatch`, `load_holdout_guard`. `__all__` is the thirteen D2 names.
+- Tests:
+  - `conftest.py` gains `GUARD_FILE_SOURCE` (a target-style guard file: stdlib only, a dataclass `Match` under postponed annotations, barring `SEALED_TOKEN` and `*/sealed/*`) and `write_research_config`.
+  - `test_holdout.py` (new): the moved fake-guard cases (content, URL, title, input path), with `capture` patched to fail so "before any fetch" is checked, not assumed. A configured guard file bars content and an input path and lets a clean page through. No configuration registers the marker page. Eight broken configurations (misspelled key, unknown key beside a working guard, empty value, integer value, missing file, failing load, missing function, raising check) each refuse `precondition_failed` with one receipt, `captured: false`, and nothing written. Six caller-supplied faults (a raise in the input-path or term check, four malformed answers) do the same. A fault after capture carries the fetched bytes' digest, writes `captured: true`, and makes the next attempt `limit_reached` under `max_captures: 1`.
+  - `test_hook_config.py` (new): no configuration in four forms holds nothing out even with a guard file present; a guard file loads and answers with its matches (the A3 dataclass case); an absolute path loads; seventeen faults each make all three checks raise with the prefix and the fault named; three failed loads leave no new `sys.modules` entry; a broken config in the current directory is not read (D5); a relative guard path resolves against the project root, not the current directory.
+  - `test_public_api.py` (new): `__all__` is the thirteen names and each resolves.
+- Every case that refuses on a fault uses a source that registers when the fault is absent, so a bypass makes it fail. Mutation-checked, each mutation applied alone and the source restored after: a load fault giving the no-op guard (24 tests fail), unknown keys ignored (4), `_ask` returning no hit on a raise (4), a non-sequence scan answer read as no hit (1), a fault before capture read as no hit (14), a fault after capture read as no hit (1), no `sys.modules` entry before `exec_module` (12), the module left behind on a failed load (2) or on a missing function (1), config read from the current directory (12), a guard path resolved against the current directory (15), the fault after capture not counted (1), and the old no-op default (11).
+
+**Deviations and decisions** (none changes a byte fusion-tea writes or reads).
+
+- A malformed answer is a fault. The snapshot read a scan result with `if matches:`, so a guard returning `None` would have passed everything. D4 lists missing, unloadable, incomplete and raising guards; a guard that answers in the wrong shape is broken in the same way (Behaviour Changes row 2: "broken or raising guard"), so it refuses too. fusion-tea's guard always answers lists of its frozen `Match`, so nothing changes for it.
+- The guard loads on every `register` call, with no cache. The snapshot imported its guard once per process. A Python caller looping over `register` (fusion-tea's batch ingest) now runs the guard file once per item; fusion-tea's guard reads its protocol file on every check anyway, so the extra cost is one module execution per item. The gain is that a config or guard edit takes effect on the next call.
+- The plan's "no waiver flag" case is only half portable here: the snapshot checked that the CLI parser rejects `--holdout-ack`. `test_no_parameter_can_waive_a_hit` pins `register`'s parameter list instead. P5 should add the CLI form to `test_research_cli.py`.
+- The stencil registers a local PDF. The broken-configuration cases register a loopback URL instead, so a bypassing mutation registers in about a second rather than running the PDF pipeline. The caller-supplied fault cases use the local PDF, so the input-path check's call site is covered too.
+- `KeyboardInterrupt` and `SystemExit` from a guard are not caught; they propagate, and nothing registers.
+- `ruff`'s isort, at the project's `target-version = "py310"`, sorts `import tomllib` with third-party imports. Left as ruff orders it.
+
+**For the next phases.**
+
+- P4: `retire` and `add_entry` take `guard: HoldoutGuard | None = None` and default to `load_holdout_guard(paths.project_root)`, as `register` does. Ask the guard only through `input_path_hit` and `first_term_hit`, catch `HoldoutGuardError`, and refuse with `str(fault)` as the reason, so the `hold-out guard unavailable:` prefix carries through. A hit is a `HoldoutHit`; its `rule_id` and `offsets` feed the `holdout_hit` refusal. `RecordingGuard` sees the calls exactly as `retire` makes them: the wrapper passes the path or text through unchanged. Use `ScriptedGuard` from `test_holdout.py` (or move it to `conftest.py`) for the I4 retire and add-entry fault cases.
+- P5: the CLI needs no guard flag; `register` loads the project's guard itself. Add the `--holdout-ack` rejection test. A guard fault is a returned `precondition_failed`, so it prints like any refusal; only `RegistrationError`, `RetirementError`, a capture timeout and `SeamError` need the one-line error path.
+- P6: the hook guide documents the table, the path rule (relative to the project root), the fault list above, the prefix, and that a guard must import on its own: a sibling import fails to load (`test_hook_config.py` pins it).
+
+---
+
+## Phase 4: Hand-curated entries, `sources`, `retire`, `verify`
+
+### Goal
+
+Finish the registry: guarded hand-curated writes for `/manage-sources`, removal, and drift reporting that sees an index block with no row.
+
+### Assumption under test
+
+The comment-aware parser and Location normalization read a real index as the old parser did (bet B1; O1 checks it right after this phase). A `register` then `retire` leaves the index and manifest byte-identical at each anchor and at the fallback.
+
+### Test stencil (write first)
+
+```python
+# tests/test_research/test_golden_shapes.py
+@pytest.mark.parametrize("case", ["anchor_how_sources", "anchor_how_this_file", "eof_newline"])
+def test_register_then_retire_restores_the_registry(case, tree_with_one_registration, local_site):
+    tree = tree_with_one_registration(case)                   # manifest exists before the round trip
+    before = (tree.index.read_bytes(), tree.manifest.read_bytes())
+    result = register(UrlSource(url=local_site.url("latin1.html")), METADATA, paths=tree.paths, guard=NO_GUARD)
+    retire(result.slug, "round trip", paths=tree.paths, guard=NO_GUARD)
+    assert (tree.index.read_bytes(), tree.manifest.read_bytes()) == before
+```
+
+### Changes
+
+**Tests first, by Appendix B row.**
+
+- [x] `test_golden_shapes.py`: the bytes a hand-curated `add-entry` writes; register-then-retire round trips at each anchor and at the fallback (I1). Start each round trip from a tree with one earlier registration so the manifest exists before it. On a fresh tree the manifest ends empty rather than absent, which the "nothing written" helper accepts (design Implementation Notes "Test fixtures").
+- [x] `test_retire.py`: move with the fake guard barring a path and a term. A recording fake guard asserts the calls `check_input_path(Path(slug))`, then `check_input_path(Path("knowledge/sources") / slug)` with that literal path, then `scan_terms(slug)` (Implementation Notes "`retire`'s guard calls"). Add: a guard fault refuses `retire` (I4). The two CLI tests (`test_cli_prints_the_removal_and_the_retired_line`, `test_cli_refusal_exits_nonzero_with_the_reason`) wait for P5.
+- [x] `test_verify.py`: move. Add `block_without_row` (`legacy` when its directory is in `orphan_source_dirs`, `fault` otherwise; D12), hand-curated entries not reported, commented blocks ignored, and `format_finding` reproducing the snapshot's line (`source_registry.py:1304`).
+- [x] `test_entries.py` (new; Appendix B "New in agentic-mbse"): `sources` labels; `add-entry`, `--replace` and `remove-entry` refusals for a duplicate, a missing and an ambiguous title and for a normalized `./knowledge/sources/…` Location; guard hits and guard faults (review M1); removing a hand-placed entry above the template's commented examples leaves the examples and the placeholder line byte for byte (review A4). Refusals write nothing (I2).
+
+**Code.**
+
+- [x] `research/index.py`: `add_entry` (guarded per D11), `remove_entry` and `list_entries`, each a read-modify-write under `registry_lock`.
+- [x] `research/retire.py`: per Component Overview; rungs module-level; guard calls as pinned above, under the lock and before the slug pattern check.
+- [x] `research/verify.py`: per Component Overview and D12; keep `row_without_block`'s raw-text substring check (Implementation Notes). Keep `VerifyReport.has_faults`, and add `format_finding(finding) -> str` here, so the P5 CLI and the orchestrator's O1 call print the same bytes.
+
+**Satisfies:** D10, D11, D12; I1 (entry bytes, round trips), I2 (retire and entry refusals), I3 (retire half), I4 (retire and add-entry); criterion 3 for `retire` and `verify`.
+
+### Validation
+
+- [x] Exit check.
+
+**What we know works after P4:** every registry write in the package holds the lock and passes the guard, and `verify` reports the missing direction (an index block with no row), classed against the baseline.
+
+### Implementation Notes
+
+#### Phase 4 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,559 passed, 1 skipped, 1 xfailed, 14 deselected, 0 failed (P3 2,440 passed; 119 new). Deselected rose from 13 to 14 by one new `slow` test (the local-PDF retirement).
+- `uv run pytest tests/test_research -m ""`: 351 passed.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this item adds or edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a research file.
+
+**The O1 call.** The orchestrator's early parity run works as the plan writes it. From the fusion-tea worktree root:
+
+```bash
+uv run --no-sync python scripts/source_registry.py verify > old.txt; echo $?
+uv run --no-sync python -c "import sys; from agentic_mbse.research import default_paths; from agentic_mbse.research.verify import verify, format_finding; r = verify(default_paths()); print('\n'.join(format_finding(f) for f in r.findings)); sys.exit(1 if r.has_faults else 0)" > new.txt; echo $?
+```
+
+- Rehearsed here on two synthetic fusion-shaped projects under `/tmp` (anchor `## How Sources Are Used`, a baseline with one orphan directory and one loose file, a hand-made block over the orphan directory, a hand-curated block), running the snapshot's own `source_registry.py verify` beside the call above, with the Python string taken verbatim from this plan. A `pyzotero` stub with a `Zotero` class stood in for the missing package; fusion-tea has the real one.
+  - Legacy-only project: both exit 0. Every snapshot finding line is in `new.txt`; the one extra line is `legacy  block_without_row    knowledge/sources/orphan_pages — SOURCE_INDEX.md block with no manifest row`.
+  - Project with every fault kind (retired directory back, stray directory, row without block, row without directory): both exit 1, with the same lines plus that one extra.
+  - Neither command wrote anything: no `.registry.lock`, no `.staging/`.
+- From this worktree's root the call exits 0, prints one empty line (no findings), and leaves `knowledge/` unchanged. With no findings `new.txt` holds one blank line; the comparison reads finding lines only, so it does not matter.
+- `format_finding` is the snapshot's `f"{klass:7} {kind:20} {path} — {detail}"` (`source_registry.py:1304`). The new kind's detail is `SOURCE_INDEX.md block with no manifest row`, and its path is `knowledge/sources/<slug>` with no trailing slash, as the baseline lists directories.
+
+**What changed.**
+
+- `research/index.py`, hand-curated entries:
+  - `HandCuratedEntry` (title, type, location, use for, validation), `render_hand_curated_block`, `entry_label`, and the frozen results `ListedEntry` (label, title, type, location) and `EntryResult` (outcome, reason, rule id, offsets). `HAND_CURATED_TYPES` holds the four types.
+  - `list_entries(paths)`: every entry in file order, labelled `registered`, `hand-curated` or `unregistered`.
+  - `add_entry`, `replace_entry` and `remove_entry`. Field checks, the index check and the guard run before the lock; the title match and the write run under it. `add_entry` and `replace_entry` take `guard: HoldoutGuard | None = None`, defaulting to `load_holdout_guard(paths.project_root)` as `register` does. They check a Location that is not a URL with `check_input_path(Path(location))`, then scan the title, Location, Use for and Validation, in that order.
+- `research/retire.py`: `retire(slug, reason, *, paths=None, guard=None)`, `RetirementResult`, `RetirementError`, and the `Removed` and `RetiredLine` TypedDicts. The ladder, messages and refusal order are the snapshot's (`source_registry.py:898-1177`). The guard calls are `Path(slug)`, then the literal `Path("knowledge/sources") / slug`, then `scan_terms(slug)`, under the lock and before the slug pattern check. A guard fault refuses `precondition_failed` with the `hold-out guard unavailable:` reason. The rungs are module-level: `_park`, `write_manifest_without` (imported from `manifest.py`), `_write_index_without`, `_append_retired_line`.
+- `research/verify.py`: `verify`, `format_finding`, `Finding`, `VerifyReport` (`has_faults` kept), `Baseline`, `load_baseline`, `load_retired`. Three passes in the snapshot's order: source directories, index blocks, manifest rows. The blocks pass now also reports `block_without_row` (D12). `row_without_block` keeps the raw-text substring check.
+- Golden data: `golden/index/hand_curated_inputs.json`, `hand_curated_block.md` and `hand_curated.after.md`, from a new `derive_hand_curated()` in `.orchestrate-logs/golden/derive.py`. There is no snapshot writer for these. The block is the File Format's entry shape, and its insertion into the frozen template uses the snapshot's replace expression. Only these three files were written; the rest of `golden/` is unchanged.
+- Tests:
+  - `test_golden_shapes.py`: the add-entry bytes on the frozen template, and register-then-retire round trips at both anchors and the end-of-file fallback, each starting from a tree with one earlier registration.
+  - `test_retire.py` (moved): the fake guard bars a registry path, a hold-out path and the token; a recording guard pins the three calls, including for a malformed slug.
+  - `test_verify.py` (moved): `block_without_row` as fault and as legacy, under four Location spellings and an absolute path; hand-curated entries and commented blocks are not findings; `format_finding` against hand-written snapshot-format lines.
+  - `test_entries.py` (new): labels; add, replace and remove; every refusal with nothing written; guard hits and faults for add and replace; the A4 case.
+  - `conftest.py` now holds `ScriptedGuard`, moved from `test_holdout.py`.
+- Tests beyond the plan's list:
+  - Every entry write and `retire` waits for the registry lock.
+  - Each of `retire`'s drift refusals (two rows, two blocks, no block, no directory).
+  - A half-written `RETIRED.jsonl` line is cut back, or the file removed when the attempt created it.
+  - A slow local-PDF retirement that removes the raw copy, or puts the directory back when parking the raw copy fails.
+  - A hand-curated entry naming a slug blocks its retirement.
+  - Retiring a fresh target's only source leaves the template and an empty manifest.
+  - `verify`'s finding order.
+  - A misconfigured project guard refuses both `retire` and `add_entry`.
+- Mutation-checked, each mutation applied alone and the source restored after; every one fails at least one test:
+  - In `verify.py`: no block findings (8 fail), `block_without_row` classed against `loose_files` (1), hand-curated blocks not skipped (1), kind padded to 19 (4).
+  - In `retire.py`: the guard given the tree's path (3), the guard only after the slug check (4), a guard fault read as no hit (4), a created log left behind on rollback (1), no lock (1), references ignored (3).
+  - In `index.py`: `add_entry` without the lock (1), the entry guard skipped (20), an entry guard fault read as no hit (7), the Location not normalized (4), titles matched among registered entries too (3), blocks not ending at a comment (1), a URL Location path-checked (1), a comment opener allowed (2), the type unchecked (4).
+
+**Deviations and decisions** (none changes a byte fusion-tea writes or reads).
+
+- `--replace` is its own function, `replace_entry`, not a flag on `add_entry`: the two refuse on opposite title conditions. P5 maps `add-entry --replace` to it.
+- [AGENT] An entry's type must be one of the four hand-curated types, else `precondition_failed`. The design says the registered types are written only by `register`. It does not list this refusal, but without it `add-entry --type url` would write a `url` entry with no row.
+- [AGENT] A field with a line break or `<!--` refuses. A line break would end the block early, and a comment opener would hide the rest of the index from the parser.
+- [AGENT] Fields are written stripped, and the Location normalized: an absolute path inside the project becomes relative, keeping the index portable (D15's reason). An absolute path outside the project is kept.
+- "Hand-curated" means the block's Location names no directory under `knowledge/sources/` (its slug is None). This one test serves labels, the add refusal, title matching and `verify`. A Location of exactly `knowledge/sources/`, the directory itself, therefore counts as hand-curated.
+- `list_entries` and `verify` take no lock and create nothing, not even `.registry.lock`, so P5's read-only checks leave `git status` clean. The plan listed `list_entries` among the locked read-modify-writes; it only reads. The snapshot's `verify` took no lock either.
+- `replace_entry` and `remove_entry`, given a title only a registered entry has, refuse with a pointer: "…; the entry with that title is under knowledge/sources/, so retire it by its slug". `remove_entry` does not ask the guard, since a removal lets nothing in.
+- `retire` gains a `_park` rung: the snapshot inlined the two renames. Rollback now moves back exactly the artifacts that were parked.
+- `RetirementResult.removed` is None on a refusal (snapshot: `{}`), and `VerifyReport.findings` is a tuple (snapshot: list). Both are in memory only.
+- `retire`, `verify` and `list_entries` read the index as UTF-8, where the snapshot used the locale default. They are the same on every machine this runs on.
+- The moved retire and verify tests use neutral names and the fake guard where the snapshot's used fusion-tea's guard and paths.
+
+**For the next phases.**
+
+- P5 CLI:
+  - `sources` → `list_entries`, which raises `FileNotFoundError` on a missing index; print one line for it. A hand-placed block may lack Type or Location (`None`), so pick a placeholder for the `<label> <type> <title> — <location>` line.
+  - `add-entry` → `add_entry`; `add-entry --replace` → `replace_entry`; `remove-entry --title` → `remove_entry`. Print `{"outcome", "reason"}`, plus `rule_id` and `offsets` for `holdout_hit`. Exit 0 only for `added`, `replaced` and `removed`.
+  - `retire` → `retire`: port `_run_retire`'s output (`source_registry.py:1311-1333`) from `RetirementResult.removed` and `retired_line`. A refusal prints its payload with `rule_id`, `offsets` and `references` when set.
+  - `verify` → `verify`: print `format_finding` per finding, then the snapshot's summary `\n{faults} fault(s), {legacy} legacy entry(ies)`; exit 1 when `has_faults`.
+  - The one-line error path catches `RetirementError` (in `retire.py`).
+  - None of these are D2 names: import them from `agentic_mbse.research.index`, `.retire` and `.verify`.
+- P5 tests: the two CLI retire tests deferred from `test_retire.py` (`test_cli_prints_the_removal_and_the_retired_line`, `test_cli_refusal_exits_nonzero_with_the_reason`). Build them on the `two_sources` fixture pattern in `test_retire.py`.
+- P6: the template's placeholder line becomes a comment. That moves where a hand-placed entry's block ends in the A4 test, but the test compares against the live template, so it stays meaningful. `test_golden_shapes.py` reads the frozen `anchor_how_this_file.before.md`, so P6 cannot move the add-entry golden.
+
+---
+
+## Orchestrator: O1 parity, early (after P4 commits, before P5 starts)
+
+The CLI lands in P5, so this run calls `verify.py` through Python. It runs now so that a parser mismatch (B1) surfaces before the CLI and the skills are built on the parser. The command differs from Appendix D O1 step 3 only in how `verify` is invoked; the pass rule is the same.
+
+- [x] In the fusion-tea worktree `/home/reid/1cfe/fusion-tea-research-seam` (branch `research-seam-port`), install this branch editable into the worktree's own environment, never into the main checkout's: `uv pip install --reinstall --no-deps -e /home/reid/1cfe/agentic-mbse-research-seam`. Run everything with `uv run --no-sync`.
+- [x] O1 step 2: add the hook table (design § Exact wording) to the worktree's `pyproject.toml` (review M4). Done on the fusion-tea branch before the guard check (`evidence/o1-fusion-tea-branch.md`), not before this early run; `verify` does not ask the guard.
+- [x] O1 step 3, Python form, from the worktree root:
+
+  ```bash
+  uv run --no-sync python scripts/source_registry.py verify > old.txt; echo $?
+  uv run --no-sync python -c "import sys; from agentic_mbse.research import default_paths; from agentic_mbse.research.verify import verify, format_finding; r = verify(default_paths()); print('\n'.join(format_finding(f) for f in r.findings)); sys.exit(1 if r.has_faults else 0)" > new.txt; echo $?
+  ```
+
+- [x] Pass (Appendix D O1 step 3): every finding line of `old.txt` is in `new.txt`; the only extra lines are two `legacy block_without_row` lines, for `knowledge/sources/iter_cryoplant_iter_org` and `knowledge/sources/eu_demo_rw_tf_coil_conductor_dematte_bruzzone`; both commands exit 0. Both outputs and exit codes are recorded in `evidence/o1-parity-early.md`.
+- [x] On a mismatch, B1 is false. Stop before P5 and take the differing lines to the owner; the design names the remedy as a migration or a compatibility rule. Do not adjust the pass rule to fit. Not triggered: no mismatch.
+
+---
+
+## Phase 5: Seam bookkeeping, the CLI, and `init`
+
+### Goal
+
+Port `open | log | close`, put all nine subcommands behind one thin CLI, and make `init` prepare a target for them.
+
+### Assumption under test
+
+The request key and class precedence survive the move unchanged; a changed key would silently reopen fusion-tea's recorded negative. The project-root rule (D15) holds for every subcommand.
+
+### Test stencil (write first)
+
+```python
+# tests/test_research/test_golden_shapes.py
+def test_request_key_matches_the_snapshot():
+    golden = json.loads((GOLDEN / "seam.json").read_text())
+    assert request_key(golden["request"]) == golden["request_key"]
+
+# tests/test_research/test_research_cli.py
+def test_outside_a_project_root_refuses_in_one_line(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)                               # no knowledge/ here
+    assert main(["research", "verify"]) != 0
+    assert len(capsys.readouterr().err.strip().splitlines()) == 1
+```
+
+### Changes
+
+**Tests first, by Appendix B row.**
+
+- [x] `test_golden_shapes.py`: request key; return and negative key order. I1 is complete.
+- [x] Move `test_negative.py`, `test_return_contract.py` and `test_triage_queue.py`. Update imports; the triage CLI tests go through `agentic-mbse research log`.
+- [x] `test_research_cli.py` (new): the root check (D15); exit codes for each subcommand, including `open` on a malformed request (2) and on a request a negative answers (3); one-line errors for `RegistrationError`, `RetirementError`, a capture timeout and `SeamError` (Behaviour Changes); `register` prints the snapshot's JSON fields (`source_registry.py:1336-1346`); `verify` prints through `format_finding`; `add-entry`/`remove-entry` output and exit codes and the `sources` line (Architecture § CLI surface). The two CLI tests deferred from `test_retire.py` land here.
+- [x] `tests/test_cli.py`: `TestDirectoryStructure` (`:861`) adds `knowledge/research/requests/runs` and `knowledge/research/requests/negatives`. New init tests: a fresh `.gitignore` has both ignore lines under the header; re-init appends missing lines to an existing `.gitignore`, once; a symlinked `.gitignore` is left alone with a message (Implementation Notes "Init"; criterion 1).
+
+**Code.**
+
+- [x] `research/seam.py`: per Component Overview. Reads receipts and the run log only through `runs.py`; never imports the registry modules (Architecture, first bullet).
+- [x] `cli/research_cli.py`: `register_research_subcommands`; the scripts' flags; the root check; output and exit codes (Architecture § CLI surface).
+- [x] `cli/__init__.py`: wire `register_research_subcommands` beside `register_pm_subcommands` (`:798-800`); the two directories in the list near `:500`; the ignore lines in the fresh `.gitignore` (`:392-457`) and an append helper modelled on `_update_gitignore_for_dev_mode` (`:278-291`), reported under Updated; the `cmd_init` docstring.
+
+**Satisfies:** D15; I1 (complete), I7 (class from receipts and run log only); criterion 1 (directories and ignore lines); criterion 3 (four classes).
+
+### Validation
+
+- [x] Exit check.
+- [x] Manual: `uv run agentic-mbse research --help` lists `open`, `log`, `close`, `register`, `retire`, `verify`, `sources`, `add-entry`, `remove-entry`.
+- [x] Manual: from the worktree root, `uv run agentic-mbse research verify` exits 0 and `uv run agentic-mbse research sources` lists no commented example as an entry. Both are read-only; `git status` shows no change under `knowledge/`.
+
+**What we know works after P5:** a target initialised from this branch has the request directories and the ignore lines, and every seam and registry action is one CLI call with a one-line error and a stable exit code.
+
+### Implementation Notes
+
+#### Phase 5 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,667 passed, 1 skipped, 1 xfailed, 14 deselected, 0 failed (P4 2,559 passed; 108 new). Deselected unchanged: no new `slow` test.
+- `uv run pytest tests/test_research -m ""`: 453 passed.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this item adds or edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a research or CLI file this item touches.
+- Manual: `uv run agentic-mbse research --help` lists the nine subcommands. From the worktree root, `research verify` prints `\n0 fault(s), 0 legacy entry(ies)` and exits 0, and `research sources` prints nothing (the template's commented examples are not entries) and exits 0. Neither created anything: `knowledge/` still holds only `KNOWLEDGE.md` and `SOURCE_INDEX.md`, and `git status` shows no change there.
+
+**The O1 call through the CLI.** `agentic-mbse research verify` prints each finding with `format_finding`, then an empty line, then `{faults} fault(s), {legacy} legacy entry(ies)`, and exits 1 only when a finding is a fault. That is the snapshot's `_run_verify` (`source_registry.py:1301-1308`). Pinned by `test_verify_prints_each_finding_then_the_summary_and_exits_1_on_a_fault` and `test_verify_on_a_clean_registry_prints_only_the_summary`. For O1 step 4: `research register --url <existing>` prints `{"outcome": "duplicate", …}` and exits 1; `research open <request a negative answers>` prints the refusal and exits 3. Every subcommand needs `knowledge/` in the current directory, so run them from the fusion-tea worktree root.
+
+**What changed.**
+
+- `research/seam.py` (new), the port of `research_seam.py`:
+  - `SeamHome`, `default_home()` (relative `knowledge/research/requests`, as `default_paths()` is), `request_key`, `open_run`, `log_search`, `log_candidate`, `log_failure`, `log_fault`, `close`, `SeamError`.
+  - `OpenResult(outcome, message, run_dir)` with outcome `opened`, `invalid_request` or `answered_by_negative`. The snapshot carried the exit code itself; the CLI now maps the outcome to 0, 2 or 3.
+  - `close` returns a `SeamReturn` TypedDict (functional form, since `class` is a keyword) with `RegisteredEntry` and `QueuedEntry`. The negative stays a plain dict: `open_run` rewrites older negatives whose shape it does not own.
+  - Class precedence, queue sources, limit naming, negative writing and reopen history are the snapshot's, message for message. It reads receipts and the run log only through `runs.py` and imports nothing from the registry (I7).
+  - The clock is one private `_now()`. The golden tests patch it, as `.orchestrate-logs/golden/derive.py` patched the snapshot's `_utc_now` and `_utc_stamp`.
+- `research/runs.py`: `start_run` (receipts dir, `run.json`, empty run log, process-log heading) and `write_return`, so the run directory's layout has one owner. `Triage` moved here from `register.py`: receipts, the run log and both CLI flags use it. `register.py` imports it.
+- `cli/research_cli.py` (new): `register_research_subcommands` and one `cmd_research` that checks for an operation, then for `knowledge/` in the current directory, then calls the subcommand's handler.
+  - `open`, `log`, `close`, `register`, `retire`, `verify` take the scripts' flags and print what the scripts printed (`source_registry.py:1246-1346`, `research_seam.py:396-459`).
+  - `sources` prints `<label> <type> <title> — <location>`, with `(no type)` and `(no location)` for a hand-placed block that lacks either.
+  - `add-entry` (with `--replace`) and `remove-entry` print `{"outcome", "reason"}`, plus `rule_id` and `offsets` for a hold-out hit, and exit 0 only for `added`, `replaced` and `removed`.
+  - Exit codes: 0 success; 1 for a refusal, a fault finding, the root check and every one-line error; 2 for usage errors (argparse's, a missing `--triage` or `--reason`, no subcommand) and an `open` on an unusable request; 3 for an `open` a negative answers.
+  - One-line errors on stderr, each `Error: …`: the root check, `SeamError` (`log`, `close`), `RegistrationError`, a capture timeout, `RetirementError`, a missing index for `sources`, and a `register --run` directory that is not a run.
+- `cli/__init__.py`:
+  - `main(argv=None)`, so tests call `main(["research", …])`.
+  - `register_research_subcommands` wired after `pm`.
+  - `knowledge/research/requests/runs` and `…/negatives` in the directory list.
+  - `RESEARCH_GITIGNORE_HEADER` and `RESEARCH_GITIGNORE_PATHS` (`knowledge/.staging/`, `knowledge/.registry.lock`, the strings fusion-tea's `.gitignore:35-36` holds). A new `.gitignore` ends with the header and both lines. `_add_research_gitignore_paths` runs on every init: it appends any missing line to an existing regular `.gitignore` (the header only if absent) and reports `.gitignore (added research registry ignore lines)` under Updated. A symlinked one is left alone with a message naming the lines.
+  - The `cmd_init` docstring.
+- Tests:
+  - Moved: `test_negative.py`, `test_return_contract.py`, `test_triage_queue.py`, with neutral requests. The triage CLI tests go through `agentic-mbse research log` from a project root.
+  - `test_golden_shapes.py`: the request key, and two runs (a bounded negative and a registration) whose `run.json`, `run.jsonl`, `process_log.md`, `return.json`, run directory name and negative equal the snapshot's bytes. This is stronger than the plan's key order. I1 is complete.
+  - `test_research_cli.py` (new, 49 tests): the root check for all nine subcommands, and that `knowledge/` itself is not a root; exit codes for each subcommand; every one-line error; `register`'s field order for a registration and a duplicate; a hold-out hit's rule and offsets for `register`, `retire` and `add-entry`; `verify`'s exact output; the `sources` labels; the entry round trip; a whole run (open, log, register `--run`, close, verify) through the CLI. It also holds the two CLI retire tests deferred from P4.
+  - The CLI half of the waiver test: `--holdout-ack` exits 2 (`unrecognized arguments`) with nothing written, and `register --help` lists exactly ten flags, so no flag under any name can carry a candidate past the guard.
+  - `tests/test_cli.py`: the two directories in `TestDirectoryStructure`; `TestResearchRegistryGitignore` checks with `git check-ignore` that a fresh init ignores both paths. It also checks that re-init appends missing lines once, appends only the missing line, leaves a `.gitignore` that has both byte for byte, gives an empty `.gitignore` the block alone, and leaves a symlinked one with the message.
+- Mutation-checked, each mutation applied alone and the source restored after; every one fails at least one test:
+  - In `seam.py`: an unsorted `where_to_look` in the key (4 fail), `BLOCKER` above `OPERATOR_QUEUE` (1, after adding `test_a_queued_candidate_outranks_a_run_scoped_fault`; it survived before), a fault blocking whatever the receipts say (1), two return keys swapped (3), an undispositioned failure read as closed (1), the reopen history dropped (1), an absolute run directory (1).
+  - In `research_cli.py`: no root check (10), `open`'s 3 mapped to 2 (1), no `--run` check (1), a capture timeout not caught (1), entry writes always exiting 0 (7), `verify`'s two counts swapped (1), `references` not printed (1), `log`'s companion check skipped (1).
+  - Survived, and cannot be seen: swapping `reason` and `slug` in the print order, because no outcome sets both.
+
+**Deviations and decisions** (none changes a byte fusion-tea writes or reads, or an exit code the scripts gave).
+
+- The snapshot's comment on class precedence was wrong and is not ported as written. It said a run-scoped fault "outranks the queue only when the run never got as far as a candidate". In the code, a fault never outranks a queued candidate; it gives `BLOCKER` only when nothing was queued or registered and no receipt exists. The code is unchanged; the docstring says what it does, and the new test pins it.
+- `log`'s two usage errors print `Error: --candidate requires --triage` and `Error: --failure requires --reason` on stderr. The snapshot printed `ERROR: …` on stdout. Exit 2 is unchanged.
+- `log` picks the step by `is not None`. The snapshot tested truthiness, so `--search ""` fell through and logged a fault with reason `None`, which then crashed `close`. An empty value is now logged as given.
+- [AGENT] `register --run <dir>` refuses in one line, before any registry work, when `<dir>` has no `run.json`. In the snapshot the same call crashed at the limit rung with a traceback, or wrote `receipts/` into the stray directory when a refusal came first. The package's `register` is unchanged; the check is the CLI's.
+- `register`'s `--use-for` help says "which question it serves" (snapshot: "which RQ", a consumer's term).
+- `add-entry --type` takes any string, with the four types in its help, so a wrong type gets the package's JSON `precondition_failed`, not an argparse error.
+- `open` still prints its refusals on stdout, as the snapshot did: the agent reads them as the seam's answer, not as tool errors.
+- The `.gitignore` match strips trailing whitespace only. git ignores a pattern's trailing spaces but not its leading ones, so `  knowledge/.staging/` does not count as present.
+- `open_run` reads the request as UTF-8 (snapshot: the locale default, UTF-8 on every machine this runs on).
+- Not handled, as in the snapshot: a request that is valid JSON but not an object, or that is not UTF-8, raises a traceback; `request_id` is used as a path segment unchecked.
+
+**For the next phase.**
+
+- P6 skill text (`research-acquire`):
+  - `open` prints two lines on success, the message and then the run directory, and exits 0. A malformed request prints the reason and exits 2: the skill reports `BLOCKER` itself. A request a negative answers exits 3, naming the negative and `--override-reason`.
+  - `log <run_dir> --search Q`, `--candidate REF --triage keeper|rejected [--note]`, `--failure REF --reason R [--disposition queued|closed]`, `--fault R`.
+  - `register (--url|--local-pdf) --title --use-for --validation --caveat --run <run_dir> [--triage]` prints the registration JSON; exit 0 only for `registered`.
+  - `close <run_dir> [--adequacy exhausted|limit_reached]` prints the return JSON.
+  - Every call runs from the project root; elsewhere it exits 1 with one stderr line. Errors are one stderr line starting `Error:`.
+- P6 `manage-sources`: `research sources` lines are `<registered|hand-curated|unregistered> <type> <title> — <location>`. `add-entry --title --type --location --use-for --validation [--replace]` and `remove-entry --title` print `{"outcome", "reason"}`. `retire --slug --reason` prints the removal on success and a JSON refusal otherwise.
+- P6 docs: the hook guide can say the CLI always runs from the project root, so a guard's own relative paths resolve there.
+
+---
+
+## Phase 6: Skills, docs, templates, contract tests
+
+### Goal
+
+Ship the procedure and make every shipped instruction point at the CLI: the new `research-acquire` skill and guide, `/manage-sources` rewritten, the `run-goal` relabel and the class-to-outcome table.
+
+### Assumption under test
+
+Bet B4: after this phase no shipped skill tells anyone to edit the registry files by hand. Criterion 5: no consumer name in the shipped skill, guide or package.
+
+### Test stencil (write first)
+
+```python
+# tests/test_research/test_shipped_contracts.py
+def test_run_goal_names_the_installed_seam():
+    text = (REPO_ROOT / "skills/run-goal/SKILL.md").read_text()
+    assert "research-acquire" in text and "agentic-mbse research" in text
+    assert "Use the research procedure the project's instructions name" not in text
+
+def test_the_runbook_maps_every_seam_class():
+    runbook = (REPO_ROOT / "project_templates/GOAL_RUNBOOK.md.template").read_text()
+    for row in ("| `REGISTERED` | `COMPLETE` |", "| `OPERATOR_QUEUE` | `OWNER_GATE` |", "| `BLOCKER` | `PREREQUISITE` |", "| `BOUNDED_NEGATIVE` | `BOUNDED_NEGATIVE` |"):
+        assert row in runbook
+```
+
+### Changes
+
+**Tests first, by Appendix B row.**
+
+- [x] `test_command_contract.py`: move, rewritten for `skills/research-acquire/SKILL.md` and `docs/research-seam.md`. The skill calls `agentic-mbse research open | log | register | close` and never names a registry file as something to edit. The guide covers the four classes, the three operator actions and the blind spot. The upstream-filings test becomes "the guide names the capture gaps". The skill's outcome table carries the seam-repair line (review A1). The `.gitignore` negation test is dropped.
+- [x] `test_shipped_contracts.py` (new): `manage-sources` calls `research sources`, `register`, `add-entry`, `remove-entry` and `retire` and states its never-edit rule; `run-goal` and the runbook as in the stencil (criterion 8).
+- [x] `test_no_consumer_names.py`: extend I8 to `skills/research-acquire/` and `docs/research-seam.md`.
+- [x] `install-commands --list` names `research-acquire`, and a fresh `init` installs it (criterion 1). Put these beside the existing install tests in `tests/test_cli.py` or `tests/test_installation.py`.
+
+**Text.** Use the design's exact wording where it gives one.
+
+- [x] `skills/research-acquire/SKILL.md` (new): from the snapshot's `research-acquire.md`, per the last paragraph of Component Overview.
+- [x] `docs/research-seam.md` (new): operator guide, hook guide and § Decisions (D17). The hook guide says a guard must import on its own and that its relative paths resolve against the project root (Implementation Notes "Hook loading"). Keep the Nb3Sn request and the EPFL preprint, labelled as examples. The BLOCKER example names a fault logged after `open` (Align). Drop the closed `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` bullet (A15). Say that re-registering a retired title reuses its slug and `verify` reports it (Non-Goals).
+- [x] `skills/manage-sources/SKILL.md`: rewrite to the shape in Component Overview.
+- [x] `skills/run-goal/SKILL.md:66,68` and `project_templates/GOAL_RUNBOOK.md.template:289`: the exact texts (D16).
+- [x] `docs/source-index.md` (§ Source Types exact text; File Format; Command Behavior steps 1 and 4) and `skills/source-traceability/SKILL.md:55-76`, which mirrors it.
+- [x] `SOURCE_INDEX.md.template` at the repo root: the type comment, the placeholder line as a comment, and "Adding New Sources" (Appendix A).
+- [x] `skills/onboard/SKILL.md:59,63` and `skills/toolkit-awareness/SKILL.md` (Integration Strategy).
+- [x] `.project/active/wrap-split-migration-ledger.md`: the Item 5 section with the Appendix C rows.
+
+**Satisfies:** D16, D17; I6, I8; criteria 1 (skill installed and listed), 5 and 8; the text half of criterion 7.
+
+### Validation
+
+- [x] Exit check.
+- [x] `uv run pytest tests/test_goal_layer.py` passes. Its `SC2` pattern (`tests/test_goal_layer.py:33-37`) scans `run-goal` and the runbook, so the new text must not name `holdout`, `research_seam` or `source_registry`.
+- [x] `tests/test_research` passes after the template edit. The placeholder line becoming a comment changes where D10 ends a block, and the behaviour tests use the live template.
+- [x] Manual: `grep -riE "fusion-tea|MR-[0-9]|\baries\b|zotero|\.project/" skills/research-acquire docs/research-seam.md src/agentic_mbse/research` prints nothing (criterion 5's own evidence).
+- [x] Manual: `grep -rn "SOURCE_INDEX.md\|MANIFEST.jsonl\|RETIRED.jsonl" skills/` shows no hit that tells anyone to edit the file (I6, B4).
+
+**What we know works after P6:** `init` from this branch installs a target that can acquire and curate sources with shipped files alone. Criteria 1, 3, 5, 8 and 9 are met in this repo.
+
+### Implementation Notes
+
+#### Phase 6 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,748 passed, 1 skipped, 1 xfailed, 14 deselected, 0 failed (P5 2,667 passed; 81 new). Deselected unchanged: no new `slow` test.
+- `uv run pytest tests/test_research -m ""`: 531 passed.
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this phase adds or edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline. This phase changes no `src/` file.
+- `uv run pytest tests/test_goal_layer.py`: 11 passed; the new `run-goal` and runbook text clear its SC2 pattern.
+- Manual: criterion 5's grep over `skills/research-acquire`, `docs/research-seam.md` and `src/agentic_mbse/research` prints nothing. `grep -rn "SOURCE_INDEX.md\|MANIFEST.jsonl\|RETIRED.jsonl" skills/` has no hit that tells anyone to edit those files: the hits are pointers to read the index, descriptions, and `manage-sources`' own never-edit rule. `git status` shows no change under the worktree's `knowledge/`.
+
+**What changed.**
+
+- `skills/research-acquire/SKILL.md` (new, `kind: workflow`, tools Bash, Read, Grep, Glob, WebSearch, WebFetch): the snapshot command's six steps, four standing rules and two tables, in the shipped skills' shape (Purpose/Input/Output, Skills Referenced, Process, Related Commands). Its calls are `uv run agentic-mbse research open | log | register | close`, with the exit codes P5 fixed: `open` exits 3 on a recorded negative and 2 on a malformed request, where the agent reports `BLOCKER` itself. "Citable under MR-4" became "citable as the source's location (see the **source-traceability** skill)". The outcome table has the seam-repair row under `precondition_failed` (review A1). The guide is located with `get_docs_dir()`, as the runbook does.
+- `docs/research-seam.md` (new): the operator guide, the hold-out hook guide, hand-curated entries, the Python API (the thirteen D2 names and a `KeyedFileSource` example), the capture gaps in words, and § Decisions, record 0008 condensed under the snapshot-authority stance (D17). The Nb3Sn request and the EPFL preprint stay, each labelled as an example. The `BLOCKER` example is a fault logged after `open`; a malformed request is the agent's own `BLOCKER` (Align). The closed `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` bullet is gone (A15). A retired title reusing its slug is in "What this does not protect you from" (Non-Goals).
+- `skills/manage-sources/SKILL.md`, rewritten to the design's shape: read state with `research sources`; add asks "can the toolkit capture it?" and goes to `register` or `add-entry`; remove is `retire` or `remove-entry`; edit is `add-entry --replace`; "Resolve a Queued Candidate" reads `queued` from the newest run of each request, registers an obtained copy and reports its location without re-running the request (review M3), shows hold-out hits and seam repairs and registers neither; an `unregistered` entry is reported and left alone (review A7). The never-edit rule names `SOURCE_INDEX.md`, `MANIFEST.jsonl`, `RETIRED.jsonl` and `knowledge/sources/`.
+- `skills/run-goal/SKILL.md:66,68` and `project_templates/GOAL_RUNBOOK.md.template` § The native seams: the design's exact texts (D16). The class table is indented under the `research` bullet so it stays part of that list item; its text is the design's.
+- `docs/source-index.md`: File Format shows both entry shapes and says neither is written by hand; § Source Types is the design's exact two tables and paragraph; a Caveat field detail; Command Behavior steps 1 and 4 say `init` creates a missing index and sources are added through `/manage-sources`.
+- `skills/source-traceability/SKILL.md`: the same two tables and paragraph, the format's "Use For" corrected to "Use for", `/research-acquire` in "When to Reference", and a citation row for a registered source.
+- `SOURCE_INDEX.md.template`: the type comment names both kinds of type; the placeholder line is now a comment saying entries are added at the end of the section; "Adding New Sources" points at `/manage-sources` and the CLI.
+- `skills/onboard/SKILL.md` step 3 adds listed sources by `manage-sources`' "Add a Source" steps. `skills/toolkit-awareness/SKILL.md` gains the `uv run agentic-mbse research <subcommand>` line and a `/research-acquire` row.
+- `.project/active/wrap-split-migration-ledger.md`: the Item 5 section, Appendix C's ten rows plus one (below). Homes on the fusion-tea branch are marked "pending O1 branch".
+- Tests:
+  - `tests/test_research/shipped_text.py` (new): reads a Markdown section, fenced blocks, and every `agentic-mbse research` call in a text's bash blocks; builds a parser holding only the `research` subcommands.
+  - `test_command_contract.py` (moved, rewritten): the skill's frontmatter, its four subcommands, its standing rules, its request fields, its own `BLOCKER`, its seam-repair row and class table; no registry file name, `--index`, `--summarize` or `--budget` in it. The guide's four classes, its `BLOCKER` example, the three operator actions, the blind spot, the seam repairs under "Act on a queued source", the capture gaps, all six `verify` kinds, the retired-slug note and the identity decision. The hook guide's TOML block is the design's, and its example guard file, configured as shown, loads and answers through the package's wrapper. Every CLI call shown in the skill and the guide parses under the real `research` parser.
+  - `test_shipped_contracts.py` (new): `manage-sources` makes its changes through `sources`, `register`, `add-entry` (with `--replace`), `remove-entry`, `retire` and `verify`, and every call it shows parses; its never-edit rule; its queue and `unregistered` rules. No shipped skill keeps one of the four old hand-edit instructions. `onboard` and `toolkit-awareness` name the CLI. `run-goal` names the seam and points at the runbook, which alone holds the class table (D16). The type tables in the guide and the traceability skill equal `HAND_CURATED_TYPES` and `REGISTRY_KINDS`, and the skill's rows equal the guide's. The template points new sources at the CLI.
+  - `test_no_consumer_names.py`: I8 now covers `skills/research-acquire/` and `docs/research-seam.md`, and fails if any of the three roots is missing.
+  - `tests/test_cli.py` `TestResearchAcquireInstall`: `install-commands --list` names `research-acquire` among the workflows; a fresh `init` installs it byte for byte under `.agents/skills/` and `.claude/skills/` (criterion 1).
+- Mutation-checked, each mutation applied alone and the file restored after; each fails at least one test: a bad `--triage` value in the skill, the skill's own `BLOCKER` dropped, a seam-repair prefix dropped from the outcome table, a consumer name in the guide, the example guard answering a dict, `retire` shown without `--slug`, `RETIRED.jsonl` dropped from `manage-sources`' rule, `manage-sources` told to re-run the request, the old `onboard` hand-edit sentence restored, a wrong registered type in the guide's table (2 fail), and a wrong row in the runbook's class table.
+
+**Deviations and decisions.**
+
+- `test_index_writer.py::test_a_block_ends_where_a_comment_opens` pinned the old template's first comment text (`"<!-- Add your domain sources below."`), so the template edit failed it. It now asserts that the text after the block is the rest of the template and starts with `<!--`. The byte-for-byte cut assertion beside it is unchanged. No other test or golden value moved; the frozen goldens under `golden/index/` keep the old template, as the golden-fixtures rule intends.
+- [AGENT] The skill tells the agent to `log --fault` when it cannot search at all (for example, no web search tool). The snapshot command never named `--fault`, so no agent following it could reach a computed `BLOCKER`, and the Align decision makes the guide's `BLOCKER` example a fault logged after `open`. The class rules are unchanged.
+- [AGENT] The skill lists the request fields, because the design's `run-goal` text points there ("fields in the `research-acquire` skill"). It says `request_id` names the run directory, so keep it to letters, digits and dashes: P5 noted that `request_id` is used as a path segment unchecked.
+- [AGENT] Rule 4 adds one sentence: the hook sees only what reaches `register`, so a project's quarantine rule applies before any search or fetch. It carries the `run-goal` text's "Apply any source-quarantine rule the project states before any fetch" to an agent that runs the skill without a goal brief.
+- The guide's offline example no longer points at the test suite's fixtures, which are not shipped. It serves a page from a folder the reader chooses, in a scratch project. One ledger row beyond Appendix C records the removed pointer (its home is agentic-mbse's own `tests/test_research/conftest.py`).
+- Appendix C cites `.project/backlog/BACKLOG.md:735` for the upstream filings. Line 735 is `PM-APPROVE-RESEARCH-EMPTY-INSIGHTS` (completed); `EXTRACT-PROVENANCE-HOOK` (open) is at `:100`. The ledger row cites both.
+- The guide documents `add-entry`'s refusals, `sources` labels and the Python API, which the snapshot guide had no counterpart for; their content is the P4 and P5 behaviour.
+- `manage-sources` keeps `Write` and `Edit` in `allowed-tools`: the read-access offer merges permissions into the assistant's settings file. The never-edit rule is prose, as B4 accepts.
+
+**For the audit and the orchestrator.**
+
+- Not changed, outside this phase's file list (Appendix A): `project_templates/README.md.template` lists `/manage-sources` but not `/research-acquire`, and `toolkit-awareness` tells agents to trust the target's README for commands; `skills/project-structure/SKILL.md:80` still spells the field "Use For"; `cli/__init__.py:520-534` keeps an inline fallback index, written only when the packaged template is missing, whose text says "Edit this file to add your domain-specific sources." Each is a one-line follow-up if the owner wants it.
+- O2b's five `/manage-sources` calls map to the skill's Add (register; add-entry), the read-state listing, and Remove (retire; remove-entry).
+
+---
+
+## After P6: orchestrator steps
+
+### O1, the rest (Appendix D O1, fusion-tea branch)
+
+- [x] Step 3 again, in the CLI form Appendix D writes (`uv run --no-sync agentic-mbse research verify > new.txt; echo $?`). Its finding lines must equal the early run's. Recorded in `evidence/o1-parity-early.md` § After P5.
+- [x] Step 4: the duplicates and the guard, each refusing before any fetch; `git status` shows only the `pyproject.toml` change. Duplicates in `evidence/o1-parity-early.md` (Python API, the function the CLI calls); the guard in `evidence/o1-fusion-tea-branch.md`.
+- [x] Step 5: the rest of Appendix A, with its re-greps, import checks, research and Zotero suites, and the Appendix C homes (criteria 4 and 6). Evidence in `evidence/o1-fusion-tea-branch.md` (fusion-tea `940500788`).
+
+### O2, dry runs from a built wheel (Appendix D O2)
+
+- [x] Build the wheel from this branch (`uv build`) and set up the scratch target as Appendix D says, with the GitLab extra index so `syside==0.8.4` resolves (A17).
+- [x] O2a, criterion 2: request `REQ-001-01`, with the URL pre-check and its named fallback. Evidence in `evidence/dry-run/README.md` § O2a and its `o2a-*` streams. The request asked about copper, not the design's aluminium 6061; the README says why.
+- [x] O2b, criterion 7: the five `/manage-sources` calls and their CLI checks. Evidence in `evidence/dry-run/README.md` § O2b and its `o2b-*` streams.
+
+Then `/_my_audit`, which Align kept because the port runs against live registry data. The run stops before `close` and `pre_pr` (Align).
+
+### O3, post-merge (listed, not scheduled)
+
+Owner-paced, after the owner merges this branch: move fusion-tea's pin and re-init, per Appendix D O3. Not part of this plan's execution.
+
+---
+
+## Phase 7: audit follow-ups
+
+### Goal
+
+Fix the audit's three follow-ups (F1–F3) and its unrecorded change U4 before merge, and apply advisories A2–A6 (`audit.md`; brief `briefs/implement-audit-fixes.md`). A1 stays as the scripts had it.
+
+### Changes
+
+**Tests first.** Each new test failed before its fix (17 of them; the shipped-text test landed with its text).
+
+- [x] F1: `register` refuses `<!--` in any text its index block writes as given, as `precondition_failed` before capture, with a receipt under `--run`. One test per field kind: the four seam fields, the URL, the local path, and a keyed source's title, key label and key display.
+- [x] F2: `init`'s closing step 2 points at `/manage-sources`. No test pinned the old wording; a new one pins the new.
+- [x] F3: a key under `[tool.agentic-mbse]` other than `research`, or a `[tool.agentic_mbse]` table, is a guard fault. Loader tests for both spellings, and a `register` test for each that would register with the fault ignored. D4 and the hook guide updated.
+- [x] U4: `retire`'s rollback skips a parked artifact that no longer exists, as the snapshot did. One test.
+- [x] A2: evidence names in the ledger preamble and this plan point at files that exist.
+- [x] A4: `evidence/dry-run/README.md` says why O2a asked about copper.
+- [x] A3, A5, A6: the runbook's seam-repair clause, `--adequacy` in the skill and guide, `--budget` in the guide.
+
+### Validation
+
+- [x] Exit check.
+
+### Implementation Notes
+
+#### Phase 7 Completion
+
+**Completed:** 2026-10-12.
+
+**Exit check.**
+
+- `uv run pytest tests/`: 2,767 passed, 1 skipped, 1 xfailed, 14 deselected, 0 failed (P6 2,748 passed; 19 new). Deselected unchanged: no new `slow` test.
+- `uv run pytest tests/test_research -m ""`: 549 passed (P6 531; 18 new, the nineteenth is in `tests/test_cli.py`).
+- `uv run ruff check src/ tests/`: 118 findings, the baseline; none in a file this phase edits.
+- `uv run mypy src/`: 88 errors in 18 files, the baseline; none in a file this phase edits.
+- `uv run pytest tests/test_goal_layer.py`: 11 passed; the runbook's new paragraph clears its SC2 pattern.
+- Criterion 5's grep over `skills/research-acquire`, `docs/research-seam.md` and `src/agentic_mbse/research` prints nothing. `git status` shows no change under the worktree's `knowledge/`.
+
+**What changed.**
+
+- F1, code:
+  - `research/index.py`: `COMMENT_OPENER` and `opens_a_comment(text)`. The comment regex and `add-entry`'s field check both use them, so the parser and both writers agree on what opens a comment.
+  - `research/register.py`: `_caller_text_in_block(source, metadata)` returns the caller's text the block writes as given, by field name, in block order. A seam block writes `title`, `use_for`, `validation`, `caveat` and `url` or `path`; a batch block writes `title`, `key_label` and `key_display`. `_pre_capture_refusal` refuses right after the blank-field check with `<fields> must not open an HTML comment`, the style of `add-entry`'s `… must be one line and must not open an HTML comment`. The refusal is a returned `precondition_failed`, so `--run` receipts it with `captured: false`.
+- F1, tests: `test_register_url_chain.py` (the four prose fields, the URL), `test_register_pdf_chain.py` (a local path), `test_zotero_path_contract.py` (a keyed source's title, key label and display). Each uses `no_capture` or `extractor_calls`, so it fails if the attempt reaches capture, and checks the receipt and that nothing was written. `no_capture` moved from `test_holdout.py` to `conftest.py`.
+- F2: `cli/__init__.py` step 2 now reads "Or add sources with /manage-sources in Claude or $manage-sources in Codex, and start with the design-model skill". `TestCmdInit::test_next_steps_add_sources_through_manage_sources` pins it and that the closing names no `SOURCE_INDEX.md` and no "edit".
+- F3:
+  - `research/holdout.py`: `_research_table` walks `[tool]`, then `[tool.agentic-mbse]`, then its research table. A `[tool.agentic_mbse]` key under `[tool]` raises "`[tool.agentic_mbse]` is not read; the toolkit's table is `[tool.agentic-mbse]`". Any key in `[tool.agentic-mbse]` but `research` raises "unknown key 'reseach' in `[tool.agentic-mbse]`; its only key is 'research'". `_refuse_unknown_keys` serves this table and the research table, and `_subtable` gives each level its "is not a table" fault.
+  - Tests: five new loader faults in `test_hook_config.py` (a misspelled research table, an unknown key beside the right one, the underscore table alone and beside the right one, `[tool.agentic-mbse]` not a table). In `test_holdout.py`, both spellings name a working guard and register `utf8.html` unless the fault refuses it.
+  - Text: D4, the Architecture hook bullet, I4 and the guard row of Behaviour Changes in `design.md`; the table-name rule and fault list in `docs/research-seam.md` § The hold-out hook.
+- U4: `retire.py` `_roll_back` moves a parked artifact back only if it is still parked. `test_retire.py::test_a_parked_artifact_that_vanished_is_skipped_on_rollback` deletes the parked directory and then fails the next rung: the index, manifest, raw entries and `RETIRED.jsonl` come back, the error names the rung, and staging is empty. Before the fix the rollback raised `FileNotFoundError` and left staging behind.
+- Advisories:
+  - A2: the ledger's Item 5 preamble names `evidence/o1-fusion-tea-branch.md` for the O1 step 5 record. This plan's O1 and O2 lines name `evidence/o1-parity-early.md`, `evidence/o1-fusion-tea-branch.md` and `evidence/dry-run/README.md` with its `o2a-*`/`o2b-*` streams. Every `evidence/` path in the plan, spec, design and the Item 5 ledger rows now exists.
+  - A4: `evidence/dry-run/README.md` § O2a opens with why the orchestrator chose copper.
+  - A3: the runbook's § The native seams gains a paragraph under the class table: an `OPERATOR_QUEUE` whose every queued candidate is a seam repair is `PREREQUISITE` naming the seam. The design's D16 text carries it; `test_shipped_contracts.py` pins it.
+  - A5: the skill's close step and the guide's "Running an invocation" say `--adequacy` matters only for a `BOUNDED_NEGATIVE` run, where it goes in the negative, and changes neither the class nor `return.json`. The guide also says when `close` sets `limit_reached`: `max_captures` only after a `register --run` refused `limit_reached`, so a run that spent its last capture on a registration reads null; `max_searches` when the logged searches reach the limit. This is `seam.py` `close` and `_limit_reached`.
+  - A6: the guide's "Known capture gaps" says budget 0 is the default, that `register --budget` passes another value to `extract`, where above 0 the PDF pipeline may call Claude to improve tables and pages up to that amount (`extraction/pipeline.py:445,541`), and that the skill never passes it.
+- The skill's and the guide's `precondition_failed` rows name a field holding `<!--`; the guide's register section says which fields and why.
+- Status synced: `spec.md`, `CURRENT_WORK.md` and the epic's Item 5 note say the follow-ups are fixed. `design.md` has a second Revised line for the audit.
+- Mutation-checked, each applied alone and the file restored after: the title dropped from the batch fields (1 test fails), the `[tool.agentic-mbse]` key check removed (3 fail). The U4, F2 and underscore-table tests failed before their fixes, which is the same check.
+
+**Deviations and decisions.**
+
+- [AGENT] F1 also covers the URL and the local path. The brief lists the title, the three sentences and a keyed source's label and display. The seam block also writes the URL or the input path as given (`Source URL`, `Origin Path`), so a file named `scans <!-- 2026/note.pdf` would hide the index the same way. A batch block writes no path, and a keyed source's `key` is already limited to `[A-Za-z0-9_]+`.
+- [AGENT] Line breaks are not refused in `register`, though the audit's F1 suggested it alongside `<!--`. The brief scopes F1 to `<!--`. A line break is not a hazard the new parser added: a block ends at a heading line, as the snapshot's parser ended it, and at a line opening a comment, which the `<!--` check already prevents. Refusing it could turn a batch title with a line break into a new refusal for an unattended ingest.
+- The F1 check sits right after the blank-field check, before the input-file and index checks. Its order only decides which reason shows when more than one applies, and the field checks are the cheapest.
+- The F3 table-name fault blocks nothing today: `cli/__init__.py:221` reads `[tool.uv.sources]` and nothing in agentic-mbse reads another key under `[tool.agentic-mbse]`. Adding one later means adding it to the allowed keys in `holdout.py`.
+- U4 keeps the snapshot's skip for a vanished parked artifact. The artifact is gone either way. Raising from the rollback would hide the rung's own error and leave staging behind.
+- Not applied, outside the brief: A1, by the brief's instruction; A7's two text leftovers (`skills/project-structure/SKILL.md:80` still spells the field "Use For"; the epic's Item 5 grep line still shows the unbounded `aries`, which the epic's certification note already explains).
+
+**For the merge.** Nothing in this phase changes what fusion-tea writes or reads. fusion-tea's index has no `<!--` (`evidence/o1-baseline.md`), and its table is spelled `[tool.agentic-mbse.research]` (`evidence/o1-fusion-tea-branch.md`). A Zotero item whose title holds `<!--` would now refuse as `precondition_failed` in its batch ingest, where it used to break the index.
+
+---
+
+## Spec criteria: where each is met
+
+| Criterion | Met in | Evidence |
+|---|---|---|
+| 1. Install, list, directories, ignore lines | P5 (directories, ignore lines), P6 (skill listed) | `tests/test_cli.py`, P6 install test |
+| 2. End to end in a fresh target | after P6 | O2a |
+| 3. Ported tests: four classes, six outcomes, `retire`, `verify` | P2–P5 | `uv run pytest tests/test_research -m ""` |
+| 4. Parity on fusion-tea data | after P4 (early), after P6 | O1 steps 3–4 |
+| 5. No consumer names | P1 (package), P6 (skill, guide) | `test_no_consumer_names.py` |
+| 6. fusion-tea after the port | after P6 | O1 step 5 |
+| 7. `/manage-sources` by hand | P4 (functions), P5 (CLI), P6 (skill) | O2b |
+| 8. `run-goal` relabel and mapping | P6 | `test_shipped_contracts.py` |
+| 9. Suite, ruff, mypy | every phase | exit check |
+
+---
+
+**Next step:** the owner merges this branch, then O3 (`evidence/fusion-tea-runbook.md`).

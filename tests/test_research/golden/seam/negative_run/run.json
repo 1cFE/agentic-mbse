@@ -1,0 +1,12 @@
+{
+  "request_id": "REQ-901",
+  "request_key": "76e28595ce50b46737232f79ab8641eebe08a247631648660a04d4b6092181f2",
+  "request_path": "knowledge/research/requests/REQ-901.json",
+  "home_root": "knowledge/research/requests",
+  "limits": {
+    "max_searches": 2,
+    "max_captures": 1
+  },
+  "opened_at": "2026-10-12T09:30:00+00:00",
+  "override_reason": null
+}

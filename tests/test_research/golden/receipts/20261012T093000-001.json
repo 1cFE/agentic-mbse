@@ -1,0 +1,13 @@
+{
+  "attempt": 1,
+  "outcome": "registered",
+  "candidate": "http://127.0.0.1:8000/utf8.html",
+  "slug": "widget_coil_note",
+  "path": "knowledge/sources/widget_coil_note/",
+  "source_id": "99d8ff05c9631996c0d62b5c3ac53be01bcbdc92d76e9a18ad95096080336bed",
+  "triage": "keeper",
+  "reason": "",
+  "rule_id": null,
+  "captured": true,
+  "at": "2026-10-12T09:30:00+00:00"
+}

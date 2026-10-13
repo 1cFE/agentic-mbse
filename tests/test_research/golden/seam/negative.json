@@ -1,0 +1,23 @@
+{
+  "request_key": "76e28595ce50b46737232f79ab8641eebe08a247631648660a04d4b6092181f2",
+  "request_id": "REQ-901",
+  "queries": [
+    "widget coil current density"
+  ],
+  "candidates": [
+    {
+      "ref": "https://example.org/a",
+      "triage": "rejected",
+      "note": "paywalled"
+    }
+  ],
+  "failures": [
+    {
+      "ref": "https://example.org/b",
+      "reason": "404"
+    }
+  ],
+  "adequacy": "exhausted",
+  "reopened": [],
+  "recorded_at": "2026-10-12T09:30:00+00:00"
+}
