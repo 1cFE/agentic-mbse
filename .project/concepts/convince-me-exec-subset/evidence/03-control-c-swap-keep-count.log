@@ -1,0 +1,13 @@
+# control: checked example replaced by unchecked one, count unchanged
+# tree=/tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/tree-c manifest=/home/reid/src/agentic-mbse/convince-me-exec-subset/evidence/03-manifest.yaml
+$ C3_ROOT=/tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/tree-c C3_MANIFEST=/home/reid/src/agentic-mbse/convince-me-exec-subset/evidence/03-manifest.yaml uv run pytest -q -p no:cacheprovider /home/reid/src/agentic-mbse/convince-me-exec-subset/evidence/03-harness-test.py
+E   AssertionError: 1 fence(s) with no manifest entry (new or edited content):
+E       docs/patterns/adr002-calculations.md#inline-formula-vs-calc-def@6fd8a98564de
+E     1 manifest entr(y/ies) whose fence no longer exists:
+E       docs/patterns/adr002-calculations.md#inline-formula-vs-calc-def@d41275d9f42a
+E   assert (not ['docs/patterns/adr002-calculations.md#inline-formula-vs-calc-def@6fd8a98564de'])
+E   Failed: fence missing from tree (see inventory test)
+FAILED convince-me-exec-subset/evidence/03-harness-test.py::test_every_fence_has_exactly_one_entry
+FAILED convince-me-exec-subset/evidence/03-harness-test.py::test_entry_holds[s/patterns/adr002-calculations.md#inline-formula-vs-calc-def@d41275d9f42a]
+======================== 2 failed, 211 passed in 11.63s ========================
+# pytest exit: 1

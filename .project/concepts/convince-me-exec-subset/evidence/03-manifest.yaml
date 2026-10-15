@@ -1,0 +1,690 @@
+fences:
+- id: skills/project-structure/SKILL.md#expose-pattern@7cc9d4def149
+  category: fragment
+  reason: does not parse standalone
+- id: skills/record-learning/SKILL.md#solution@aa1f3b0c11d5
+  category: fragment
+  reason: does not parse standalone
+- id: skills/record-learning/SKILL.md#solution@c967230f06b8
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: skills/sysml-conventions/SKILL.md#definition-vs-usage-rule@4096e09811d6
+  wrapped: true
+  category: definition
+- id: skills/sysml-conventions/SKILL.md#standard-imports@5b653193bc91
+  category: fragment
+  reason: does not parse standalone
+- id: skills/sysml-conventions/SKILL.md#doc-comment-format@a6bdf4f3923a
+  wrapped: false
+  category: definition
+- id: skills/sysml-conventions/SKILL.md#key-syntax-patterns@5c5530e2bbf4
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: skills/sysml-conventions/SKILL.md#key-syntax-patterns@22345ab29609
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: skills/sysml-conventions/SKILL.md#key-syntax-patterns@56e3484e6749
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: skills/sysml-conventions/SKILL.md#key-syntax-patterns@26b7883d4122
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: skills/sysml-conventions/references/stencils.md#part-definition@047a38442929
+  context:
+  - 010.harness.sysml
+  - 010.prelude.sysml
+  wrapped: true
+  category: executable
+  must_emit:
+  - mass
+  omits:
+  - material
+- id: skills/sysml-conventions/references/stencils.md#calc-definition@5cddbbb5080e
+  wrapped: true
+  category: executable
+- id: skills/sysml-conventions/references/stencils.md#constraint-definition@c656bef04f2f
+  wrapped: true
+  category: definition
+- id: skills/sysml-conventions/references/stencils.md#connection-definition@73f0a22ccdc8
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: agents/kerml-expert.md#import-pattern-guidance@9465637d3175
+  wrapped: false
+  category: definition
+- id: agents/kerml-expert.md#topicfunction-name@c962347d9acf
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: agents/kerml-expert.md#response-format@00a2e96efad7
+  category: fragment
+  reason: does not parse standalone
+- id: agents/sysml-expert.md#example-pattern-part-with-ports@70ed2f62e03a
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: agents/sysml-expert.md#example-pattern-requirement-with-constraint@e3ccdd24abbc
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: agents/sysml-expert.md#definition-syntax@af02ed5730a8
+  category: fragment
+  reason: does not parse standalone
+- id: agents/sysml-expert.md#usage-syntax@a35aeaea809e
+  category: fragment
+  reason: does not parse standalone
+- id: agents/sysml-expert.md#example@ea7f74b450c1
+  category: fragment
+  reason: does not parse standalone
+- id: project_templates/MODELING_GUIDE.md.template#the-expose-pattern@7cc9d4def149
+  category: fragment
+  reason: does not parse standalone
+- id: project_templates/MODELING_GUIDE.md.template#documentation-standards@a6bdf4f3923a
+  wrapped: false
+  category: definition
+- id: project_templates/MODELING_GUIDE.md.template#standard-imports@5b653193bc91
+  category: fragment
+  reason: does not parse standalone
+- id: project_templates/MODELING_GUIDE.md.template#key-syntax-patterns@5c5530e2bbf4
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: project_templates/MODELING_GUIDE.md.template#key-syntax-patterns@8713223fc883
+  wrapped: true
+  category: native-only
+  expect_codes:
+  - SI_CONSTRAINT_BLOCKED
+  - SI_OCCURRENCE_MISSING
+- id: project_templates/MODELING_GUIDE.md.template#key-syntax-patterns@26b7883d4122
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: project_templates/README.md.template#sysml-quick-reference@7b44f72747d2
+  wrapped: true
+  category: definition
+- id: docs/patterns/adr002-calculations.md#valid-patterns-in-design-files@3b97c089e4f5
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/adr002-calculations.md#inline-formula-vs-calc-def@7648af5347e6
+  wrapped: true
+  category: executable
+- id: docs/patterns/adr002-calculations.md#inline-formula-vs-calc-def@d41275d9f42a
+  wrapped: true
+  category: executable
+- id: docs/patterns/adr002-calculations.md#multiplicity-cost-aggregation@70997e356f4f
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/adr002-calculations.md#multiplicity-cost-aggregation@d775fb3f66dd
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/adr002-calculations.md#putting-calc-def-in-designs@fc7994c20c95
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/adr002-calculations.md#self-reference-or-dotted-path-in-an-inline-formula@624820f51f49
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/adr002-calculations.md#computation-on-calc-output@e52e29810654
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/common-mistakes.md#dont-definition-and-usage-in-same-package@8d24775f2a6f
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/common-mistakes.md#do-separate-library-and-designs@91f6f369454b
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/common-mistakes.md#dont-undocumented-elements@c5d51b90d9e2
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/common-mistakes.md#do-document-thoroughly@416a8ce57b8d
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/common-mistakes.md#dont-inconsistent-naming@b50059ecc5d6
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/common-mistakes.md#do-follow-conventions@a41df3fa20f8
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/common-mistakes.md#dont-put-calc-defs-in-designs@95833be182f2
+  wrapped: true
+  category: executable
+- id: docs/patterns/common-mistakes.md#do-keep-calc-defs-in-library@d32957531ac0
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/common-mistakes.md#dont-compute-on-a-calc-output-or-reach-outside-the-part@f2c079593bbd
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/common-mistakes.md#do-use-calc-def-with-expose@18b37b9dd34d
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/common-mistakes.md#dont-omit-units@1ef780503fbb
+  wrapped: false
+  category: definition
+- id: docs/patterns/common-mistakes.md#do-always-specify-units@76556d30d0e1
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/common-mistakes.md#dont-use-across-types-in-definitions@1267951d3d29
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/common-mistakes.md#do-bind-in-usages@91f28de403e2
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/common-mistakes.md#dont-plain-constraint-block@69d5be4c7fa9
+  wrapped: true
+  category: executable
+- id: docs/patterns/common-mistakes.md#do-use-the-assert-prefix@4e7330b1baaf
+  wrapped: true
+  category: native-only
+  expect_codes:
+  - SI_CONSTRAINT_BLOCKED
+  - SI_OCCURRENCE_MISSING
+- id: docs/patterns/common-mistakes.md#dont-reuse-package-names@23bf93f1fa3a
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/common-mistakes.md#do-unique-package-names@883bcb5b7bb3
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/common-mistakes.md#dont-import-type-when-you-need-instance@e207c7771366
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/common-mistakes.md#do-import-the-instance@e7223c05bcf6
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/conditionals.md#basic-conditional@5c5530e2bbf4
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/conditionals.md#chained-conditionals@6d89485eb435
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/conditionals.md#enum-conditionals@45055c2b66d8
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/conditionals.md#in-calc-definitions@81ef3c59514b
+  context:
+  - 060.harness.sysml
+  wrapped: true
+  category: native-only
+  expect_codes:
+  - SI_EVIDENCE_INCOMPLETE
+- id: docs/patterns/conditionals.md#c-style-ternary-wrong@03202659d614
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/conditionals.md#if-then-else-endif-wrong@239e931262c5
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/conditionals.md#missing-after-condition-wrong@066c5c441ce9
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/conditionals.md#conditional-expression-example@bc2f5e135e2c
+  wrapped: true
+  category: native-only
+  expect_codes:
+  - SI_EVIDENCE_INCOMPLETE
+- id: docs/patterns/conditionals.md#type-specialization-example@f93b5b7e3088
+  wrapped: true
+  category: native-only
+  expect_codes:
+  - SI_EVIDENCE_INCOMPLETE
+- id: docs/patterns/constraints.md#quick-reference@59d14de7b236
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/constraints.md#assert-constraint-most-common@2a98cf466c81
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/constraints.md#require-constraint@e45de11455ea
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/constraints.md#assume-constraint@e716c4d61d00
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/constraints.md#in-part-definitions@6992a31519dd
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/constraints.md#in-calc-definitions@7bac6211bb79
+  context:
+  - 071.harness.sysml
+  wrapped: true
+  category: native-only
+  expect_codes:
+  - SI_CONSTRAINT_UNATTACHED
+- id: docs/patterns/constraints.md#in-design-usages@6bb8fbfe9b32
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/constraints.md#logical-operators@c7cde77bd156
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/constraints.md#range-constraints@ea20835c0140
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/constraints.md#equality-constraints@3c76e19e805a
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/constraints.md#not-a-check-plain-constraint-block-no-prefix@ea604306a9cc
+  wrapped: true
+  category: executable
+- id: docs/patterns/constraints.md#correct-with-prefix@850d0d4280f0
+  wrapped: true
+  category: native-only
+  expect_codes:
+  - SI_CONSTRAINT_BLOCKED
+  - SI_OCCURRENCE_MISSING
+- id: docs/patterns/constraints.md#wrong-missing-doc-comment@569401f86a56
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/constraints.md#wrong-overly-complex-single-constraint@16cf03dc28fa
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/constraints.md#real-valued-equality-use-a-two-inequality-band-not@e7f7b7859ae2
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/constraints.md#constraint-definitions-reusable@2febb00b0d38
+  wrapped: true
+  category: native-only
+  expect_codes: []
+  expect_message: name-safety violation
+- id: docs/patterns/constraints.md#how-to-write-it@29d599109de0
+  wrapped: true
+  category: definition
+- id: docs/patterns/cross-file-binding.md#quick-reference@453fe7ad7790
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/cross-file-binding.md#step-1-create-producer-with-exposed-attribute@68157bd0d176
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/cross-file-binding.md#step-2-import-instance-in-consumer@216ee8eef4b0
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/cross-file-binding.md#import-instance-for-cross-file-binding@747c13f42cfb
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/cross-file-binding.md#import-definition-for-type-usage@24fedb4f2b77
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/cross-file-binding.md#import-all-use-sparingly@4fc57ea2b50a
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/cross-file-binding.md#pattern-1-direct-instance-import@bd75abd30a92
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/cross-file-binding.md#pattern-2-nested-instance-import@3ccba0f4b5e8
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/cross-file-binding.md#pattern-3-multiple-imports@d6679bae3b3f
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/cross-file-binding.md#wrong-importing-definition-instead-of-instance@f9f927ddb17e
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/cross-file-binding.md#correct-import-the-instance@41d98c21a4c8
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/cross-file-binding.md#wrong-qualified-reference-without-import@cce52e31cadf
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/cross-file-binding.md#correct-import-first-then-reference@fea6c940ae67
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/cross-file-binding.md#wrong-missing-expose-in-producer@c81ccc91b4f7
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/cross-file-binding.md#correct-expose-the-output@4983819c56f2
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/cross-file-binding.md#error-no-type-named-x-found@e4a0df001936
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/cross-file-binding.md#error-unresolved-reference@7be9cc6cf606
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/definitions-usages.md#definitions-library@797ad6aad38b
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/definitions-usages.md#usages-designs@7e4c8e645fdf
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/definitions-usages.md#simple-specialization@0ba73df52a03
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/definitions-usages.md#abstract-base-pattern@5781e36972a9
+  wrapped: true
+  category: definition
+- id: docs/patterns/definitions-usages.md#usage-specialization@8d3ff7a7f62c
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/definitions-usages.md#mixing-definitions-and-usages-in-same-package@7adc149c06ce
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/definitions-usages.md#correct-separate-library-and-designs@3bfa100a7e52
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/definitions-usages.md#using-wrong-naming-convention@0303f8034b9e
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/definitions-usages.md#putting-calc-defs-in-designs@7843ac060738
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/design-choices.md#validated-pattern@5a9b5cc555b4
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/design-choices.md#validated-pattern@639d10032824
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/doc-comments.md#quick-reference@8d2739189d12
+  wrapped: false
+  category: definition
+- id: docs/patterns/doc-comments.md#full-doc-comment-template@c74582ee5d6d
+  wrapped: false
+  category: definition
+- id: docs/patterns/doc-comments.md#attributes-recommended@eb95b3075c90
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/doc-comments.md#physical-laws-no-external-citation@a04d03a74fb2
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/doc-comments.md#literature-citation@c58b0c25b3b5
+  wrapped: false
+  category: native-only
+  expect_codes:
+  - SI_EVIDENCE_INCOMPLETE
+- id: docs/patterns/doc-comments.md#codebase-derived@4f926e6fdc9a
+  wrapped: false
+  category: native-only
+  expect_codes:
+  - SI_EVIDENCE_INCOMPLETE
+- id: docs/patterns/doc-comments.md#engineering-standards@2b509643f6b7
+  wrapped: false
+  category: definition
+- id: docs/patterns/doc-comments.md#minimal-documentation@5329167a2014
+  wrapped: true
+  category: executable
+- id: docs/patterns/doc-comments.md#library-more-detail@c30c03964d40
+  wrapped: false
+  category: definition
+- id: docs/patterns/doc-comments.md#designs-less-detail@7cb37ede3de6
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/doc-comments.md#missing-doc-comment-entirely@e98ddd8e4d1f
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/doc-comments.md#missing-sourcereference@b7ecd521fb6b
+  wrapped: false
+  category: negative
+  expect_codes:
+  - SI_EVIDENCE_INCOMPLETE
+- id: docs/patterns/doc-comments.md#outdated-documentation@87d123fb102a
+  wrapped: false
+  category: negative
+  expect_codes:
+  - SI_ID_UNSTABLE
+- id: docs/patterns/expose-pattern.md#quick-reference@50ea93e909ca
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/expose-pattern.md#2-cross-file-access@dade6a88396f
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/expose-pattern.md#producer-side-expose@f307aa941078
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/expose-pattern.md#consumer-side-transitive-binding@050641ec3063
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/expose-pattern.md#library-calculation-definition@71a811c2ce1e
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/expose-pattern.md#design-producer-with-expose@40c5d2cb338f
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/expose-pattern.md#design-consumer-using-exposed-value@154f466914bc
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/expose-pattern.md#expose-surfacing-an-expose-name-becomes-an-output@4c94fe87feec
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/expose-pattern.md#dont-create-circular-expose-chains@2636c889166b
+  wrapped: true
+  category: negative
+  expect_codes:
+  - SI_ALIAS_CYCLE
+- id: docs/patterns/expose-pattern.md#dont-expose-and-re-bind-directly@d31c62196ebc
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/expose-pattern.md#dont-expose-without-clear-naming@7b040022d3d8
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/expose-pattern.md#same-file-direct-ok@ca1ff2e5d891
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/expose-pattern.md#cross-file-expose-required@cc9df304607f
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/expose-pattern.md#forgetting-to-import-the-instance@32ad308bedcb
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/expose-pattern.md#exposing-with-wrong-type@8fa8f94d5321
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/mbse-concepts.md#library-define-the-pattern@eac8dfc61ee4
+  wrapped: false
+  category: definition
+- id: docs/patterns/mbse-concepts.md#design-specific-allocation@ad3b15881e9a
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/mbse-concepts.md#pattern-2-parametric-constraint@466a740975dc
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/mbse-concepts.md#pattern-3-costanalysis-calculation@944b1ea7f1a8
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/mbse-concepts.md#cost-aggregation-over-multiplicities@70997e356f4f
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/mbse-concepts.md#pattern-4-interface-definition@1fd370eff0d1
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/mbse-concepts.md#connection-pattern@076994343102
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/mbse-concepts.md#parameterized-multiplicity-pattern@270defeb21c6
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/mbse-concepts.md#allocation-forgetting-action-in-definition@1bd605284042
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/mbse-concepts.md#cost-using-hardcoded-values-instead-of-sum@1025dc888bfb
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/mbse-concepts.md#interface-describe-and-verify-conservation-separately@9c738470974e
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/package-naming.md#invalid-syntax-qualified-package-names@5892eb1ce20a
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/package-naming.md#incorrect-pattern-same-package-name-in-multiple-files@61c2b60885bc
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/package-naming.md#pattern-1-nested-sub-packages-hierarchical-organization@d7bf4682324f
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/package-naming.md#pattern-2-unique-top-level-names-with-aggregator@8931c4744589
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/package-naming.md#pattern-3-single-file-per-package@ef2bf4d7498a
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/package-naming.md#package-hierarchy-example@2c4de5a9e77a
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/package-naming.md#reusing-package-name-across-files@5d5772d89c29
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/package-naming.md#deep-nesting-without-need@d0039c00c284
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/package-naming.md#inconsistent-naming-hierarchy@5559135de62e
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/package-naming.md#using-in-package-declarations@d840241c2ee6
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/plant-idiom.md#the-core-shape@84bbec85e1ce
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#the-value-is-an-attribute-on-the-part-that-owns-the-calculation-make-the-names-differ-d-5@e5b88067f672
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#the-value-is-an-attribute-on-the-part-that-owns-the-calculation-make-the-names-differ-d-5@884421fcdbd5
+  wrapped: true
+  category: definition
+- id: docs/patterns/plant-idiom.md#the-value-lives-on-another-part-name-the-occurrence-path-d-7@831b21f2fce2
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#qualifying-by-owner-d-6-the-behavior-follows-who-owns-the-resolved-feature@8fd3c5927941
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#qualifying-by-owner-d-6-the-behavior-follows-who-owns-the-resolved-feature@83df65783bde
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#qualifying-by-owner-d-6-the-behavior-follows-who-owns-the-resolved-feature@96b77804c05e
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#qualifying-by-owner-d-6-the-behavior-follows-who-owns-the-resolved-feature@22801c85b124
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#the-refused-form-in-x-x-binds-the-calculation-input-to-itself@02c0f7674967
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#retyping-to-pull-in-a-subtypes-calcs-d2@d0d96392f7ab
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#the-whole-plant-value-idiom-the-headline@ee737e9cbee2
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#the-whole-plant-value-idiom-the-headline@b4ae08892ece
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#the-whole-plant-value-idiom-the-headline@c1299969c157
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#the-whole-plant-value-idiom-the-headline@027073192b2d
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#cross-part-chains-and-expose@bd41145f79df
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/plant-idiom.md#the-indexed-form-is-valid-sysml-and-not-implemented@3bf14dd5bb95
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#operator-1-bindingassignment@55e766db3063
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#operator-2-default-default-value@70a78694f27a
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/semantic-operators.md#correct-use-case-type-specialization-within-hierarchy@a41477772bdf
+  wrapped: true
+  category: native-only
+  expect_codes:
+  - SI_TYPE_INVALID
+- id: docs/patterns/semantic-operators.md#correct-use-case-usage-based-dataflow@d019e0ce3e71
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/semantic-operators.md#value-carrying-redefinition-use-the-bare-form@c0c47fef72d6
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/semantic-operators.md#value-carrying-redefinition-use-the-bare-form@cab817b3ea5f
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/semantic-operators.md#value-carrying-redefinition-use-the-bare-form@e0fc939d7d49
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/semantic-operators.md#operator-4-subsetting@5a9d4acd94e8
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#definitions-declare-structure-only@5e9e4c82d408
+  wrapped: true
+  category: executable
+- id: docs/patterns/semantic-operators.md#usages-establish-dataflow@7964da95683c
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#deprecated-cross-type-redefinition-in-definitions@5a095d5556f8
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#multi-level-aliasing-patterns@334efbd2137e
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#circular-dependencies@f0ae2c5f4007
+  wrapped: true
+  category: native-only
+  expect_codes:
+  - SI_EDGE_DANGLING
+- id: docs/patterns/semantic-operators.md#binding-expressions---for-runtime-dataflow@0a7432003ab4
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#redefinitions---for-structural-identity@52677580bc08
+  category: fragment
+  reason: does not parse standalone
+- id: docs/patterns/semantic-operators.md#not-a-check-plain-constraint-block@ef26f1a70533
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#correct-assert-prefix@3e0df8cbb94a
+  context:
+  - 192.harness.sysml
+  - 192.prelude.sysml
+  wrapped: true
+  category: native-only
+  expect_codes:
+  - SI_EVIDENCE_INCOMPLETE
+- id: docs/patterns/semantic-operators.md#part-redefinition-pattern@ed252360255a
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#part-redefinition-pattern@a4f5b1c34dee
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#part-redefinition-pattern@a3bf425a2236
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#using-for-dataflow-in-definitions@ad4ecefe8d4c
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#forgetting-constraint-prefix@21448cedd0fc
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/semantic-operators.md#confusing-and-default@ec72010bcffb
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/syntax-reference.md#syntax-1-package-imports@4af73d21ea0b
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/syntax-reference.md#syntax-2-calc-def-definition@a8ea8bc5545b
+  context:
+  - 200.harness.sysml
+  wrapped: true
+  category: native-only
+  expect_codes:
+  - SI_CONSTRAINT_UNATTACHED
+- id: docs/patterns/syntax-reference.md#syntax-3-calc-def-instantiation@42d0f7c15151
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/syntax-reference.md#syntax-4-cross-file-attribute-binding@ca5167abd9ac
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/syntax-reference.md#syntax-5-attribute-with-units@fda326ed5ad3
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/syntax-reference.md#syntax-6-constraints@2a98cf466c81
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/syntax-reference.md#syntax-7-geometry-calculations@803978b552b2
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/syntax-reference.md#syntax-8-part-definition@0eeaf87f2da8
+  wrapped: true
+  category: definition
+- id: docs/patterns/syntax-reference.md#syntax-9-part-instantiation@e08cb537d200
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/syntax-reference.md#syntax-10-conditional-expressions@89bde1ea6983
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/syntax-reference.md#wrong-missing-import-for-cross-file-binding@a18747fddaea
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/syntax-reference.md#wrong-using-definition-instead-of-instance@58a972debabe
+  category: fragment
+  reason: parses, but names definitions it does not include
+- id: docs/patterns/syntax-reference.md#wrong-forgetting-units@ca9b2648cf17
+  wrapped: true
+  category: definition

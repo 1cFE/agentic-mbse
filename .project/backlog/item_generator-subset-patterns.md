@@ -1,6 +1,7 @@
 # GENERATOR-SUBSET-PATTERNS — capture, teach and enforce the patterns a consumer project hit
 
 **Status**: [AGENT] Filed 2026-10-13 at owner request ("file a ticket in its backlog to make sure these patterns are captured, known and enforced"). Priority not assigned.
+**Absorbed**: [AGENT] 2026-10-14 into epic [EXEC-SUBSET-CONTRACT](epic_executable-subset-contract.md), pending owner approval. § 1 → Item 4; § 2 → Items 1, 2, 3 and 5; § 3 → Item 5; § 4 → Item 6. This file stays as the origin evidence. The epic corrects two points here: positional binding was already known in sysml-codegen (POSITIONAL-FORMAL-REDEFINITION, 2026-08-21) and fusion-tea; and dc3's audited model had no actual swaps (0 mismatches at `808464d`, `7fb0cd9` and HEAD).
 **Origin**: consumer project dc3, goal `study-ready-baseline`, work item WI-008. The project rewrote an audited native SysML comparison so sysml-codegen `b5663c07` could generate it, with agentic-mbse `8b027bbc` and SysIDE 0.8.4.
 **Evidence** (dc3 is a local repository; paths are cited at its commit `67d5d7b`):
 - `work/learnings/RAW_LEARNINGS.md`: 10 dated entries.

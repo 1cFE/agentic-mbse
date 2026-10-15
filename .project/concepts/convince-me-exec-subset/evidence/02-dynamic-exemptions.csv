@@ -1,0 +1,7 @@
+site_id,reason
+sysml_codegen/snapshot/instance_graph.py::_diagnostic_from_data::coded-DYNAMIC::code::1,"replay of a recorded diagnostic code; validated by ElaborationCode(...)/ReadinessCode(...) construction, so it cannot introduce a new code"
+agentic_mbse/sysml/executable_profile.py::_walk_arithmetic::coded-DYNAMIC::derived::1,DEBT: executable_profile builds this reason string at run time; the end state needs a closed reason vocabulary so the set of reasons is enumerable
+agentic_mbse/sysml/executable_profile.py::_walk_value::coded-DYNAMIC::f'block_{operator}'::1,DEBT: executable_profile builds this reason string at run time; the end state needs a closed reason vocabulary so the set of reasons is enumerable
+agentic_mbse/sysml/executable_profile.py::_walk_comparison::coded-DYNAMIC::reason::1,DEBT: executable_profile builds this reason string at run time; the end state needs a closed reason vocabulary so the set of reasons is enumerable
+agentic_mbse/sysml/executable_profile.py::_walk_comparison::coded-DYNAMIC::reason::2,DEBT: executable_profile builds this reason string at run time; the end state needs a closed reason vocabulary so the set of reasons is enumerable
+agentic_mbse/sysml/executable_profile.py::_walk_proposition::coded-DYNAMIC::f'warn_non_numerical_{operator}'::1,DEBT: executable_profile builds this reason string at run time; the end state needs a closed reason vocabulary so the set of reasons is enumerable

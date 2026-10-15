@@ -1,0 +1,44 @@
+## control A: existing code, new site
+@@ -2739,3 +2739,11 @@
+         )
+         if diagnostic not in self._graph.diagnostics:
+             self._graph.diagnostics.append(diagnostic)
++
++
++def _refuse_string_metadata(element):
++    """Control: a new public refusal using an existing code."""
++    raise ElaborationInvariantError(
++        ElaborationCode.SI_EVIDENCE_INCOMPLETE,
++        "String attributes are not executable",
++    )
+sites enumerated: 501; baseline: 500; classified keys: 65; dynamic exemptions: 6
+FAIL: 1 problem(s)
+  R2 new unreviewed refusal site sysml_codegen/elaboration/elaborate.py::_refuse_string_metadata::coded::SI_EVIDENCE_INCOMPLETE::1 at sysml_codegen/elaboration/elaborate.py:2746 in _refuse_string_metadata
+exit=1
+
+## control B: new enum member + new site
+@@ -33,6 +33,7 @@
+     EXTRACTION_DIAGNOSTIC_BLOCKING = "EXTRACTION_DIAGNOSTIC_BLOCKING"
+     #: Not a statement about the model. This one names a defect in the
+     #: generator itself, so a user can tell "your model" from "our bug".
++    SI_STRING_METADATA_UNSUPPORTED = "SI_STRING_METADATA_UNSUPPORTED"
+     SI_INTERNAL_DEFECT = "SI_INTERNAL_DEFECT"
+ 
+ 
+@@ -2739,3 +2739,11 @@
+         )
+         if diagnostic not in self._graph.diagnostics:
+             self._graph.diagnostics.append(diagnostic)
++
++
++def _refuse_string_metadata(element):
++    """Control: a new public refusal with a new code."""
++    raise ElaborationInvariantError(
++        ElaborationCode.SI_STRING_METADATA_UNSUPPORTED,
++        "String attributes are not executable",
++    )
+sites enumerated: 501; baseline: 500; classified keys: 65; dynamic exemptions: 6
+FAIL: 2 problem(s)
+  R1 unclassified code SI_STRING_METADATA_UNSUPPORTED (coded) at sysml_codegen/elaboration/elaborate.py:2746 in _refuse_string_metadata
+  R2 new unreviewed refusal site sysml_codegen/elaboration/elaborate.py::_refuse_string_metadata::coded::SI_STRING_METADATA_UNSUPPORTED::1 at sysml_codegen/elaboration/elaborate.py:2746 in _refuse_string_metadata
+exit=1

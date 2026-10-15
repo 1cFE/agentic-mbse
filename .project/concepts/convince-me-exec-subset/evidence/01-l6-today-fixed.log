@@ -1,0 +1,43 @@
+$ uv run agentic-mbse validate --level=6 /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-fixed/models  (cwd=/home/reid/src/agentic-mbse, 2026-10-15T13:48:35+00:00)
+
+======================================================================
+SysML Quality Validation
+Models path: /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-fixed/models
+Mode: Fail-fast
+Running: Level 6 only
+======================================================================
+
+============================================================
+Level 6: Architecture & Pipeline Readiness
+============================================================
+
+✅ Level 6: Architecture & Pipeline Readiness
+   Calc defs checked: 14
+   Calc usages checked: 40
+   Bindings validated: 228
+   Design attrs checked: 72
+   Manifests checked: 0
+   L6_MISSING_QUALIFIED_NAME: 0
+   L6_INVALID_QUALIFIED_NAME: 0
+   L6_CALC_DEF_NO_OUTPUT: 0
+   L6_CALC_DEF_NO_DIRECTION: 0
+   L6_INVALID_BINDING_FORMAT: 0
+   L6_DESIGN_ATTR_INCOMPLETE: 0
+   L6_DESIGN_ATTR_UNEXTRACTABLE: 0
+   L6_ANONYMOUS_RETURN: 0
+   L6_BODY_ASSIGNMENT_IMPL_LOSS: 0
+   V4_STATIC_FUNCTION_INVOCATION: 0
+   L6_CONSTRAINT_MALFORMED_NUMERICAL: 0
+   L6_CONSTRAINT_NON_NUMERICAL: 0
+   L6_CALC_DEF_NO_INSTANTIATION: 0
+   L6_ATTR_REDEF_EXPR_DROPPED: 0
+
+======================================================================
+Summary
+======================================================================
+Checks run: 1
+✅ Passed: 1
+❌ Failed: 0
+
+✅ All quality checks passed!
+exit=0

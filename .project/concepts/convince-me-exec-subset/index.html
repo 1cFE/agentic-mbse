@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Executable subset: design, evidence and open decisions</title>
+<style>
+:root {
+  --bg: #fbfaf7; --surface: #ffffff; --ink: #1d1d1b; --muted: #66645e; --line: #dedbd2;
+  --accent: #2357c6; --accent-tint: #e6eefc; --ref: #b3261e; --ref-tint: #fbe5e3;
+  --ok: #1f7a43; --ok-tint: #e3f3e8; --warn: #9a6200; --warn-tint: #fdf1d8; --code-bg: #f4f2ec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161614; --surface: #1e1e1b; --ink: #ebe9e3; --muted: #a29f97; --line: #3a3833;
+    --accent: #7aa5ff; --accent-tint: #1c2a46; --ref: #ff8a80; --ref-tint: #3d1a18;
+    --ok: #6fcf94; --ok-tint: #173323; --warn: #f0c060; --warn-tint: #3a2e12; --code-bg: #232320;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161614; --surface: #1e1e1b; --ink: #ebe9e3; --muted: #a29f97; --line: #3a3833;
+  --accent: #7aa5ff; --accent-tint: #1c2a46; --ref: #ff8a80; --ref-tint: #3d1a18;
+  --ok: #6fcf94; --ok-tint: #173323; --warn: #f0c060; --warn-tint: #3a2e12; --code-bg: #232320;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 820px; margin: 0 auto; padding: 40px 16px 80px; }
+h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 16px; }
+h2 { font-size: 1.3rem; margin: 48px 0 12px; }
+.big { font-size: 1.3rem; line-height: 1.5; background: var(--accent-tint); border-left: 4px solid var(--accent); padding: 16px 20px; border-radius: 6px; }
+ul, ol { padding-left: 22px; }
+li { margin: 6px 0; }
+code { font: 0.86em ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg); padding: 1px 4px; border-radius: 4px; }
+pre { font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
+th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; font-size: 0.85rem; }
+.scroll { overflow-x: auto; }
+.ok { color: var(--ok); font-weight: 700; }
+.warn { color: var(--warn); font-weight: 700; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; margin: 12px 0; }
+.decide { background: var(--warn-tint); border: 1px solid var(--warn); border-radius: 10px; padding: 14px 18px; }
+details { margin: 10px 0; }
+summary { cursor: pointer; color: var(--muted); }
+svg { width: 100%; height: auto; display: block; margin: 8px 0; }
+svg text { fill: var(--ink); font-family: system-ui, sans-serif; }
+svg .sub { fill: var(--muted); }
+svg .rb { fill: var(--accent-tint); stroke: var(--accent); stroke-width: 2; }
+svg .rd { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+svg .rf { fill: var(--ref-tint); stroke: var(--ref); stroke-width: 2; }
+svg .ar { stroke: var(--accent); stroke-width: 2; fill: none; }
+svg .cmp { stroke: var(--ref); stroke-width: 2; fill: none; stroke-dasharray: 7 5; }
+svg .ha { fill: var(--accent); }
+svg .hr { fill: var(--ref); }
+svg .reflabel { fill: var(--ref); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>What we're building, and how we test it</h1>
+<p class="big">A shared rulebook describes a defined set of execution capabilities. L6, codegen and guidance use those decisions. Independent tests compare the rulebook with the generator on retained boundary models.</p>
+<p><strong>Status:</strong> draft epic and feasibility prototypes. The production profile, integrated <code>check</code> command and new snapshot-policy integration are not implemented or proven by this explainer.</p>
+
+<h2>The problem today</h2>
+<ul>
+<li>The generator, L6 and guidance have useful existing shared contracts, but incomplete agreement about supported execution shapes.</li>
+<li>dc3's native models used constructs the generator could not handle. <strong>They did not pass L6 cleanly:</strong> L6 reported String and constraint findings but missed other capability boundaries. The owner explicitly allowed a native result with generated readiness parked.</li>
+<li>Earlier work tested prefix semantics, attachment, and particular binding guidance separately. It did not systematically test complete published examples across those dimensions. Known hazards also remained in fixture notes and backlog entries.</li>
+</ul>
+
+<h2>The proposed design</h2>
+<svg viewBox="0 0 800 470" role="img" aria-label="One rulebook read by the L6 checker, the generator and the docs; a referee test compares the rulebook with the real generator">
+  <defs>
+    <marker id="ha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ha"/></marker>
+    <marker id="hr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="hr"/></marker>
+  </defs>
+
+  <rect class="rb" x="280" y="20" width="240" height="96" rx="10"/>
+  <text x="400" y="52" font-size="19" font-weight="700" text-anchor="middle">Rulebook</text>
+  <text x="400" y="76" font-size="14" class="sub" text-anchor="middle">shared execution capabilities,</text>
+  <text x="400" y="96" font-size="14" class="sub" text-anchor="middle">outcomes and tested remedies</text>
+
+  <path class="ar" d="M330,116 L150,206" marker-end="url(#ha)"/>
+  <path class="ar" d="M400,116 L400,206" marker-end="url(#ha)"/>
+  <path class="ar" d="M470,116 L650,206" marker-end="url(#ha)"/>
+  <text x="410" y="166" font-size="13" class="sub">all three read it</text>
+
+  <rect class="rd" x="40" y="210" width="210" height="96" rx="10"/>
+  <text x="145" y="242" font-size="17" font-weight="700" text-anchor="middle">L6 validator</text>
+  <text x="145" y="266" font-size="14" class="sub" text-anchor="middle">reports assessed capabilities</text>
+  <text x="145" y="286" font-size="14" class="sub" text-anchor="middle">and unverified checks</text>
+
+  <rect class="rd" x="295" y="210" width="210" height="96" rx="10"/>
+  <text x="400" y="242" font-size="17" font-weight="700" text-anchor="middle">Generator</text>
+  <text x="400" y="266" font-size="14" class="sub" text-anchor="middle">uses rules with shared facts;</text>
+  <text x="400" y="286" font-size="14" class="sub" text-anchor="middle">also runs its own preflight</text>
+
+  <rect class="rd" x="550" y="210" width="210" height="96" rx="10"/>
+  <text x="655" y="242" font-size="17" font-weight="700" text-anchor="middle">Docs</text>
+  <text x="655" y="266" font-size="14" class="sub" text-anchor="middle">"what's supported" page</text>
+  <text x="655" y="286" font-size="14" class="sub" text-anchor="middle">is built from the rulebook</text>
+
+  <rect class="rf" x="230" y="360" width="340" height="96" rx="10"/>
+  <text x="400" y="390" font-size="17" font-weight="700" text-anchor="middle">Independent tests (codegen CI)</text>
+  <text x="400" y="414" font-size="14" class="sub" text-anchor="middle">runs boundary fixtures through both;</text>
+  <text x="400" y="434" font-size="14" class="sub" text-anchor="middle">fails on covered disagreements</text>
+
+  <path class="cmp" d="M400,360 L400,310" marker-end="url(#hr)"/>
+  <path class="cmp" d="M570,408 L785,408 L785,60 L524,60" marker-end="url(#hr)"/>
+  <text x="590" y="400" font-size="13" class="reflabel">compares</text>
+</svg>
+<ul>
+<li><strong>Rulebook:</strong> shared facts and pure capability decisions, with exact context, admitted/refused/excluded/omitted outcomes, evidence and remedies. The proposal keeps it in agentic-mbse so L6 needs no reverse dependency; policy ownership still needs a documented boundary decision.</li>
+<li><strong>L6:</strong> reports the supported structural assessment and any checks it could not complete. It does not promise to predict every generation or runtime failure.</li>
+<li><strong>Generator and <code>check</code>:</strong> use shared decisions once their required facts are available, including occurrence evidence where needed. Both use the same read-only preparation path through elaboration, projection and generation preflight. <code>check</code> stops before output mutation; passing it does not certify runtime or handwritten implementation correctness.</li>
+<li><strong>Guidance:</strong> the capability page is rendered from reviewed records. Separate example tests verify published recommendations and expected limitations.</li>
+<li><strong>Independent “referee” tests:</strong> run refused cases and accepted near-neighbors through the rulebook and the underlying generator route <em>without the new screen</em>. Covered disagreements fail CI. This cannot prove agreement for every possible model.</li>
+</ul>
+
+<p>Two additional controls broaden coverage:</p>
+<ul>
+<li><strong>Refusal inventory:</strong> enumerate recognized diagnostic constructors, factories and raises, then classify their meaning and ownership. New recognized sites fail the inventory guard until reviewed. A static scanner has syntax and reachability limits; annotations do not establish behavioral coverage.</li>
+<li><strong>Example manifest:</strong> account for executable examples, definitions, expected negatives, native-only cases and justified fragments. Hash-pinning a fragment detects edits; it does not prove the example executes.</li>
+</ul>
+
+<h2>One example, traced through</h2>
+<div class="box">
+<strong>A modeler puts an <code>assert constraint</code> inside a calc.</strong>
+<ol>
+<li>The shared rule records the pinned generator's attachment refusal and its tested boundary.</li>
+<li>L6 reports that assessed capability with its location and remedy, alongside independently evaluable findings.</li>
+<li>The rendered docs explain part-owned assertions as an alternative, including the semantic difference: a generated verdict alone does not preserve a native fail-closed guard.</li>
+<li>The fixture independently verifies the refusal and the admitted alternative. Other unresolved execution requirements remain visible.</li>
+</ol>
+</div>
+<div class="box">
+<strong>A developer adds a recognized refusal site.</strong>
+<ol>
+<li>The inventory guard fails until the site is reviewed and classified.</li>
+<li>A shared capability refusal gets a rule, diagnostic mapping and boundary fixtures. A codegen-specific, malformed-input, environmental or snapshot check gets its own appropriate coverage instead.</li>
+<li>The independent tests verify behavior on covered cases; rendering and example checks enforce the affected guidance contract.</li>
+</ol>
+</div>
+
+<h2>What the prototypes establish</h2>
+<p>The scripts and captured logs below are throwaway evidence at pinned versions. They are not the shipped L6 implementation.</p>
+<div class="scroll"><table>
+<tr><th>Question</th><th>Observed result and limit</th></tr>
+<tr><td>Can a shared screen report the dc3 categories in one run?</td><td>It reports findings covering B1–B8: 240 blocking findings, 4 excluded predicates and 32 String omissions. The repaired tree has 0 blocking findings and 30 String omissions. Findings can overlap; the part-instantiation detector is approximate. This is category coverage, not 240 independently reproduced generator refusals.</td></tr>
+<tr><td>Do independent tests expose disagreements?</td><td>Across 22 retained fixtures, 21 agree and 1 refusal is missed. Disabling a rule and making another overbroad also fail. A first-cut list-input rule was naturally disproved by accepted neighbors. The baseline differential deliberately remains red for the recorded missing case.</td></tr>
+<tr><td>Can the inventory guard detect additions?</td><td>The scanner records 500 candidate sites: 441 codegen and 59 agentic-mbse, including forwarding/plumbing. The planted recognized refusal additions fail. This is not proof of 500 distinct reachable public refusals or detection of every possible new failure path.</td></tr>
+<tr><td>How much guidance gets behavioral evidence?</td><td>Of 212 fences: 9 executable, 14 native-only and 3 negative entries receive generation verdicts; 17 are checked definitions; 169 are hash-pinned fragments. Separately, 41 fences load in the initial standalone/import-wrapped parser inventory. These are different measurements.</td></tr>
+<tr><td>Does the positional detector work on its fixtures?</td><td>All 17 fixture expectations match, the dc3 mutation is detected, and injected inspection failure is visible. The scan also finds 125 fusion-tea mismatches. This is a prototype, not a general correctness proof.</td></tr>
+</table></div>
+
+<h2>Boundary findings incorporated into the epic</h2>
+<ul>
+<li><strong>List inputs:</strong> an <code>ordered nonunique</code> calc input bound to a scalar generates in the retained fixture. A literal sequence actual <code>(a, b)</code> is refused. Do not ban the declaration or assume every other list form is supported.</li>
+<li><strong>Arithmetic actuals:</strong> <code>in v = rate * fuel_code</code> is refused in its fixture. It is now explicit candidate ES-012, beyond dc3's categories.</li>
+<li><strong>Computed reason strings:</strong> five call sites exceed the prototype scanner's resolver, but production already has a fixed 27-member <code>REASON_CODES</code> set and rejects unknown reasons. Map and test those emissions; a new enum is not required by this finding.</li>
+<li><strong>Uncoded sites:</strong> 137 free-text and 130 builtin candidate sites need classification. Public capability failures need stable reasons; not every exception needs a new code or an unreachable-model justification. The old ten-day estimate has been withdrawn.</li>
+<li><strong>Silent losses:</strong> each known family needs retained semantic presence/absence evidence, including allowed metadata omission. Name-substring checks in the prototype are preliminary.</li>
+<li><strong>Part counts:</strong> production must use effective reachable occurrences and resolved bounds. A typing or exact redefinition elsewhere cannot settle another instance's bounds.</li>
+</ul>
+
+<h2>Input order: a demonstrated cross-route mismatch</h2>
+<p>For the retained subtraction model with intended <code>a = 10</code> and <code>b = 3</code>, reversed unprefixed declarations <code>in b = 3; in a = 10;</code> evaluate to <strong>−7 natively and 7 through the pinned generator and TEAx</strong>. Reversed explicit <code>in :&gt;&gt; b = 3; in :&gt;&gt; a = 10;</code> evaluates to 7 on both tested routes. Deliberate explicit renaming is also valid.</p>
+<p>Item 4 records resolved implicit mismatches without treating every rename as an error. It must retain the cross-route counterexample and record an upstream disposition. Generation success is insufficient evidence of agreement with native semantics.</p>
+<p><strong>fusion-tea:</strong> the prototype and independent rerun report 125 mismatches at the pinned revision. The complete affected fusion-tea routes were not regenerated or evaluated in this investigation, so their harmlessness is not established. The approved policy blocks new mismatches and keeps explicitly pinned legacy cases as visible warnings until a separately authorized migration.</p>
+
+<h2>What remains unproven</h2>
+<ul>
+<li>Coverage outside the retained fixtures; the independent oracle is finite and several rules need richer occurrence/context evidence.</li>
+<li>The new shared read-only <code>check</code> path, snapshot authority integration, replay parity and package-skew behavior.</li>
+<li>Semantic omission assertions beyond the prototype's text-name checks.</li>
+<li>Executable guidance coverage beyond the current manifest; some fragments are useful teaching material and need not become runnable unless that broader scope is selected.</li>
+</ul>
+
+<h2>Agreed scope and requirements</h2>
+<p>The owner approved D1, D2 and D3. These are requirements for the planned work, not implemented behavior; other design decisions remain in the epic, which is the authoritative decision record.</p>
+<div class="decide">
+<ul>
+<li><strong>D1 — Approved:</strong> block new positional mismatches; warn on explicitly pinned legacy cases until migration. Migration is separate work, and accepting legacy warnings does not certify native/generated equivalence.</li>
+<li><strong>D2 — Approved:</strong> inspect and classify all 500 recorded candidate sites (441 codegen, 59 agentic-mbse), reconciling changes at implementation time. Account for each as in scope, already handled elsewhere, or explicit follow-up. Implement only the scoped shared checks; this does not commit to building 500 rules.</li>
+<li><strong>D3 — Approved:</strong> retained executable or exact expected-negative evidence for 100% of generated-use recommendations and remedies. Justified pure teaching fragments can remain exempt.</li>
+</ul>
+</div>
+<p>Other design decisions remain in the epic: shared policy ownership, exclusion/metadata severity, remaining capability gaps and coordinated guidance changes. The plan does not add language support or authorize edits to consumer models by itself.</p>
+
+<h2>Evidence</h2>
+<p>Scripts, fixtures and raw logs are in <code>.project/concepts/convince-me-exec-subset/evidence/</code>. Runs on 2026-10-15 used agentic-mbse <code>d546a00f</code>, sysml-codegen <code>b5663c07</code>, dc3 <code>808464d</code> / <code>60b44d5</code>, fusion-tea <code>f96ad312</code> and SysIDE 0.8.4. Prototype runs changed no production source. This explainer and the epic were subsequently corrected; raw logs preserve the original observations and labels.</p>
+<p>Read the accompanying audit clarifications in <a href="evidence/01-README.md">screen evidence</a>, <a href="evidence/02-README.md">inventory evidence</a>, <a href="evidence/03-README.md">example evidence</a> and <a href="evidence/04-README.md">binding evidence</a>. The inventory baseline and classifications are prototype drafts, not owner-reviewed approval.</p>
+<details><summary>Prototype screen on the old dc3 model (one run)</summary><pre>$ uv run python -I convince-me-exec-subset/evidence/01-screen.py $S/dc3-base/models --json convince-me-exec-subset/evidence/01-screen-baseline.json   (cwd=/home/reid/src/agentic-mbse, 2026-10-15T13:58:22+00:00)
+PROTOTYPE subset screen — one run over $S/dc3-base/models
+controls: disable=- overbroad=-
+rule    dc3    status     outcome          findings  reuse
+ES-001  B1     checked    refused               164  NEW fact: assertion owner metatype (syside owner)
+ES-003  B2     checked    refused                29  NEW fact: sequence-valued argument bound to a calc input
+ES-004  B3     checked    refused                15  NEW fact: part multiplicity bounds + approximate instantiation
+ES-005  B4/B5  checked    refused                23  REUSED: reference_use.inspect_reference_uses admission (sum only)
+ES-006  B6     checked    refused                 5  NEW fact: conditional operator (&#x27;if&#x27;)
+ES-007  B8     checked    refused/excluded        8  REUSED: executable_profile via L6 check_constraint_executability
+ES-010  B7     checked    omitted/refused        32  NEW fact: String values (both spellings); refused when bound into a calc input
+
+… (47 more lines in evidence/01-screen-baseline.log)</pre></details>
+<details><summary>Independent differential: 21 agreements and one missed refusal</summary><pre>$ X=1 uv run python -I convince-me-exec-subset/evidence/01-differential.py   (cwd=/home/reid/src/agentic-mbse, 2026-10-15T13:58:54+00:00)
+controls: SCREEN_DISABLE=- SCREEN_OVERBROAD=- SCREEN_ES003_V1=-
+fixture                                        codegen (screen bypassed)                screen                       verdict
+es001_admitted_part_assert                     generated                                admitted                     AGREE
+es001_refused_calc_def_assert                  refused SI_CONSTRAINT_UNATTACHED         refused ES-001               AGREE
+es001_refused_calc_usage_assert                refused SI_CONSTRAINT_UNATTACHED         refused ES-001               AGREE
+es003_admitted_fixed_arity                     generated                                admitted                     AGREE
+es003_neighbor_exact_ordered_param             generated                                admitted                     AGREE
+es003_neighbor_ordered_param_scalar_arg        generated                                admitted                     AGREE
+es003_refused_ordered_nonunique                refused SI_EXPRESSION_SOURCE_UNSUPPORTED refused ES-003               AGREE
+es004_admitted_exact_redefinition              generated                                admitted                     AGREE
+es004_admitted_uninstantiated_template         generated                                admitted                     AGREE
+es004_refused_range_parts                      refused SI_MULTIPLICITY_UNSUPPORTED      refused ES-004               AGREE
+es004_refused_unbounded_parts                  refused SI_MULTIPLICITY_UNRESOLVED       refused ES-004               AGREE
+es005_admitted_explicit_multiply               generated                                admitted                     AGREE
+es005_refused_product                          refused SI_EXPRESSION_SOURCE_UNSUPPORTED refused ES-005               AGREE
+es005_refused_size                             refused SI_EXPRESSION_SOURCE_UNSUPPORTED refused ES-005               AGREE
+es006_admitted_arithmetic_min                  generated                                admitted                     AGREE
+es006_refused_conditional                      refused SI_EVIDENCE_INCOMPLETE           refused ES-006               AGREE
+es007_admitted_numeric_and                     generated                                admitted                     AGREE
+es007_refused_boolean_mixed                    refused SI_CONSTRAINT_BLOCKED            refused ES-007               AGREE
+es010_admitted_numeric_value                   generated                                admitted                     AGREE
+es010_omitted_string_value                     generated +omits fuel_unit               admitted +omits ES-010       AGREE
+es010_refused_string_calc_input                refused SI_RENDERING_COLLISION           refused ES-010 +omits ES-010 AGREE
+unmapped_expression_calc_arg                   refused SI_EXPRESSION_SOURCE_UNSUPPORTED admitted                     MISSED
+
+tally: AGREE=21, MISSED=1
+FAILED: unmapped_expression_calc_arg.sysml MISSED
+exit=1</pre></details>
+<details><summary>Differential control: rule turned off on purpose</summary><pre>$ SCREEN_DISABLE=ES-001 uv run python -I convince-me-exec-subset/evidence/01-differential.py   (cwd=/home/reid/src/agentic-mbse, 2026-10-15T13:58:54+00:00)
+controls: SCREEN_DISABLE=ES-001 SCREEN_OVERBROAD=- SCREEN_ES003_V1=-
+fixture                                        codegen (screen bypassed)                screen                       verdict
+es001_admitted_part_assert                     generated                                admitted                     AGREE
+es001_refused_calc_def_assert                  refused SI_CONSTRAINT_UNATTACHED         admitted                     MISSED
+es001_refused_calc_usage_assert                refused SI_CONSTRAINT_UNATTACHED         admitted                     MISSED
+es003_admitted_fixed_arity                     generated                                admitted                     AGREE
+es003_neighbor_exact_ordered_param             generated                                admitted                     AGREE
+es003_neighbor_ordered_param_scalar_arg        generated                                admitted                     AGREE
+es003_refused_ordered_nonunique                refused SI_EXPRESSION_SOURCE_UNSUPPORTED refused ES-003               AGREE
+es004_admitted_exact_redefinition              generated                                admitted                     AGREE
+es004_admitted_uninstantiated_template         generated                                admitted                     AGREE
+es004_refused_range_parts                      refused SI_MULTIPLICITY_UNSUPPORTED      refused ES-004               AGREE
+es004_refused_unbounded_parts                  refused SI_MULTIPLICITY_UNRESOLVED       refused ES-004               AGREE
+es005_admitted_explicit_multiply               generated                                admitted                     AGREE
+es005_refused_product                          refused SI_EXPRESSION_SOURCE_UNSUPPORTED refused ES-005               AGREE
+es005_refused_size                             refused SI_EXPRESSION_SOURCE_UNSUPPORTED refused ES-005               AGREE
+es006_admitted_arithmetic_min                  generated                                admitted                     AGREE
+es006_refused_conditional                      refused SI_EVIDENCE_INCOMPLETE           refused ES-006               AGREE
+es007_admitted_numeric_and                     generated                                admitted                     AGREE
+es007_refused_boolean_mixed                    refused SI_CONSTRAINT_BLOCKED            refused ES-007               AGREE
+es010_admitted_numeric_value                   generated                                admitted                     AGREE
+es010_omitted_string_value                     generated +omits fuel_unit               admitted +omits ES-010       AGREE
+es010_refused_string_calc_input                refused SI_RENDERING_COLLISION           refused ES-010 +omits ES-010 AGREE
+unmapped_expression_calc_arg                   refused SI_EXPRESSION_SOURCE_UNSUPPORTED admitted                     MISSED
+
+tally: AGREE=19, MISSED=3
+FAILED: es001_refused_calc_def_assert.sysml MISSED; es001_refused_calc_usage_assert.sysml MISSED; unmapped_expression_calc_arg.sysml MISSED
+exit=1</pre></details>
+<details><summary>Inventory control: planted recognized refusal sites</summary><pre>## control A: existing code, new site
+@@ -2739,3 +2739,11 @@
+         )
+         if diagnostic not in self._graph.diagnostics:
+             self._graph.diagnostics.append(diagnostic)
++
++
++def _refuse_string_metadata(element):
++    &quot;&quot;&quot;Control: a new public refusal using an existing code.&quot;&quot;&quot;
++    raise ElaborationInvariantError(
++        ElaborationCode.SI_EVIDENCE_INCOMPLETE,
++        &quot;String attributes are not executable&quot;,
++    )
+sites enumerated: 501; baseline: 500; classified keys: 65; dynamic exemptions: 6
+FAIL: 1 problem(s)
+  R2 new unreviewed refusal site sysml_codegen/elaboration/elaborate.py::_refuse_string_metadata::coded::SI_EVIDENCE_INCOMPLETE::1 at sysml_codegen/elaboration/elaborate.py:2746 in _refuse_string_metadata
+exit=1
+
+## control B: new enum member + new site
+@@ -33,6 +33,7 @@
+     EXTRACTION_DIAGNOSTIC_BLOCKING = &quot;EXTRACTION_DIAGNOSTIC_BLOCKING&quot;
+     #: Not a statement about the model. This one names a defect in the
+     #: generator itself, so a user can tell &quot;your model&quot; from &quot;our bug&quot;.
++    SI_STRING_METADATA_UNSUPPORTED = &quot;SI_STRING_METADATA_UNSUPPORTED&quot;
+     SI_INTERNAL_DEFECT = &quot;SI_INTERNAL_DEFECT&quot;
+ 
+ 
+@@ -2739,3 +2739,11 @@
+         )
+         if diagnostic not in self._graph.diagnostics:
+             self._graph.diagnostics.append(diagnostic)
++
++
++def _refuse_string_metadata(element):
++    &quot;&quot;&quot;Control: a new public refusal with a new code.&quot;&quot;&quot;
++    raise ElaborationInvariantError(
++        ElaborationCode.SI_STRING_METADATA_UNSUPPORTED,
++        &quot;String attributes are not executable&quot;,
++    )
+sites enumerated: 501; baseline: 500; classified keys: 65; dynamic exemptions: 6
+FAIL: 2 problem(s)
+  R1 unclassified code SI_STRING_METADATA_UNSUPPORTED (coded) at sysml_codegen/elaboration/elaborate.py:2746 in _refuse_string_metadata
+  R2 new unreviewed refusal site sysml_codegen/elaboration/elaborate.py::_refuse_string_metadata::coded::SI_STRING_METADATA_UNSUPPORTED::1 at sysml_codegen/elaboration/elaborate.py:2746 in _refuse_string_metadata
+exit=1</pre></details>
+<details><summary>Input order: native versus generated values</summary><pre>syside 0.8.4; python /home/reid/src/dc3/.venv/bin/python
+calc def: calc def Sub { in a : Real; in b : Real; return r : Real = a - b; }  (a = 10, b = 3; intended a - b = 7)
+
+== Native (SysIDE Compiler.evaluate_feature) ==
+spelling                                 body                                    value  matches intent
+in-order unprefixed                      in a = 10; in b = 3;                        7  True
+reversed unprefixed                      in b = 3; in a = 10;                       -7  False
+reversed explicit :&gt;&gt;                    in :&gt;&gt; b = 3; in :&gt;&gt; a = 10;                7  True
+explicit rename (local redefines a)      in local redefines a = 10; in b = 3;        7  True
+
+== Native, on the generator fixtures themselves (attribute result) ==
+gen_byname     native plant.result = 7.0
+gen_reversed   native plant.result = -7.0
+
+== Generated (sysml-codegen generate -&gt; sealed load -&gt; TEAx execute_pipeline) ==
+gen_byname     wiring {&#x27;a&#x27;: &#x27;float positional_by_name_params.PositionalByName__plant__big&#x27;, &#x27;b&#x27;: &#x27;float positional_by_name_params.PositionalByName__plant__small&#x27;}
+gen_byname     generated plant.result = 7.0  matches intent True
+gen_reversed   wiring {&#x27;a&#x27;: &#x27;float positional_reversed_params.PositionalReversed__plant__big&#x27;, &#x27;b&#x27;: &#x27;float positional_reversed_params.PositionalReversed__plant__small&#x27;}
+gen_reversed   generated plant.result = 7.0  matches intent True</pre></details>
+
+</main>
+</body>
+</html>

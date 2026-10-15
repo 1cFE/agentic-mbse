@@ -1,0 +1,545 @@
+## f003  (skills/sysml-conventions/SKILL.md#definition-vs-usage-rule@4096e09811d6)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f003/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f003/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=1 codes=[]
+  | - ERROR: Unsupported operator '^' in attribute 'FenceWrap::primary_hx::heat_transfer_area' at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f003/models/example.sysml:14
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f005  (skills/sysml-conventions/SKILL.md#doc-comment-format@a6bdf4f3923a)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f005/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f005/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f010-ctx  (skills/sysml-conventions/references/stencils.md#part-definition@047a38442929)  context=True
+generate generated rc=0 codes=[] py_files=15
+  | INFO: Generated implementation backlog: IMPLEMENTATION_BACKLOG.md
+  | INFO: Generating runnable tests...
+  | INFO: Generated test file with 1 test classes
+  | INFO: Generated runnable tests: test_implementations_runnable.py
+  | INFO: Sealing package...
+  | INFO: Code generation complete
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f011  (skills/sysml-conventions/references/stencils.md#calc-definition@5cddbbb5080e)  context=False
+generate generated rc=0 codes=[] py_files=10
+  | INFO: Generated implementation backlog: IMPLEMENTATION_BACKLOG.md
+  | INFO: Generating runnable tests...
+  | INFO: Generated test file with 0 test classes
+  | INFO: Generated runnable tests: test_implementations_runnable.py
+  | INFO: Sealing package...
+  | INFO: Code generation complete
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f012  (skills/sysml-conventions/references/stencils.md#constraint-definition@c656bef04f2f)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f012/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f012/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f014  (agents/kerml-expert.md#import-pattern-guidance@9465637d3175)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f014/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f014/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f023  (project_templates/MODELING_GUIDE.md.template#documentation-standards@a6bdf4f3923a)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f023/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f023/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f026  (project_templates/MODELING_GUIDE.md.template#key-syntax-patterns@8713223fc883)  context=False
+generate refused rc=1 codes=['SI_CONSTRAINT_BLOCKED', 'SI_OCCURRENCE_MISSING'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f026/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f026/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_CONSTRAINT_BLOCKED: FenceWrap__TempLimit: constraint profile blocked execution: block_unknown_exact_unit: ordering '<' needs exact units for both Quantity operands. Declare the exact modeled units. [example.sysml:6]; SI_OCCURRENCE_MISSING: FenceWrap__TempLimit: reference='temperature': leaf declaration d2d57ba6-d81b-5e08-a8c2-594290106089 is absent from the element index [root-0/example.sysml:6]
+L6 rc=1 codes=['L6_CONSTRAINT_MALFORMED_NUMERICAL']
+  | - ERROR: Constraint 'FenceWrap::TempLimit' is a malformed numerical statement: comparison (block_unknown_exact_unit) at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f026/models/example.sysml:6
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f028  (project_templates/README.md.template#sysml-quick-reference@7b44f72747d2)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f028/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f028/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f030  (docs/patterns/adr002-calculations.md#inline-formula-vs-calc-def@7648af5347e6)  context=False
+generate generated rc=0 codes=[] py_files=17
+  | INFO: Generated implementation backlog: IMPLEMENTATION_BACKLOG.md
+  | INFO: Generating runnable tests...
+  | INFO: Generated test file with 0 test classes
+  | INFO: Generated runnable tests: test_implementations_runnable.py
+  | INFO: Sealing package...
+  | INFO: Code generation complete
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f031  (docs/patterns/adr002-calculations.md#inline-formula-vs-calc-def@d41275d9f42a)  context=False
+generate generated rc=0 codes=[] py_files=15
+  | INFO: Generated implementation backlog: IMPLEMENTATION_BACKLOG.md
+  | INFO: Generating runnable tests...
+  | INFO: Generated test file with 1 test classes
+  | INFO: Generated runnable tests: test_implementations_runnable.py
+  | INFO: Sealing package...
+  | INFO: Code generation complete
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f043  (docs/patterns/common-mistakes.md#dont-put-calc-defs-in-designs@95833be182f2)  context=False
+generate generated rc=0 codes=[] py_files=10
+  | INFO: Generated implementation backlog: IMPLEMENTATION_BACKLOG.md
+  | INFO: Generating runnable tests...
+  | INFO: Generated test file with 0 test classes
+  | INFO: Generated runnable tests: test_implementations_runnable.py
+  | INFO: Sealing package...
+  | INFO: Code generation complete
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f047  (docs/patterns/common-mistakes.md#dont-omit-units@1ef780503fbb)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f047/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f047/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f051  (docs/patterns/common-mistakes.md#dont-plain-constraint-block@69d5be4c7fa9)  context=False
+generate generated rc=0 codes=[] py_files=14
+  | INFO: Generated implementation backlog: IMPLEMENTATION_BACKLOG.md
+  | INFO: Generating runnable tests...
+  | INFO: Generated test file with 0 test classes
+  | INFO: Generated runnable tests: test_implementations_runnable.py
+  | INFO: Sealing package...
+  | INFO: Code generation complete
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f052  (docs/patterns/common-mistakes.md#do-use-the-assert-prefix@4e7330b1baaf)  context=False
+generate refused rc=1 codes=['SI_CONSTRAINT_BLOCKED', 'SI_OCCURRENCE_MISSING'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f052/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f052/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_CONSTRAINT_BLOCKED: FenceWrap__TempLimit: constraint profile blocked execution: block_unknown_exact_unit: ordering '<' needs exact units for both Quantity operands. Declare the exact modeled units. [example.sysml:7]; SI_OCCURRENCE_MISSING: FenceWrap__TempLimit: reference='temperature': leaf declaration d2d57ba6-d81b-5e08-a8c2-594290106089 is absent from the element index [root-0/example.sysml:9]
+L6 rc=1 codes=['L6_CONSTRAINT_MALFORMED_NUMERICAL']
+  | - ERROR: Constraint 'FenceWrap::TempLimit' is a malformed numerical statement: comparison (block_unknown_exact_unit) at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f052/models/example.sysml:7
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f060  (docs/patterns/conditionals.md#in-calc-definitions@81ef3c59514b)  context=False
+generate refused rc=1 codes=['SI_EVIDENCE_INCOMPLETE'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f060/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f060/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: if x > y? x - y else y - x: reference='if x > y? x - y else y - x': inspect_reference_uses: resolved reference has no exact target [root-0/example.sysml:9]
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f060-ctx  (docs/patterns/conditionals.md#in-calc-definitions@81ef3c59514b)  context=True
+generate refused rc=1 codes=['SI_EVIDENCE_INCOMPLETE'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f060-ctx/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f060-ctx/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: if x > y? x - y else y - x: reference='if x > y? x - y else y - x': inspect_reference_uses: resolved reference has no exact target [root-0/example.sysml:9]
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f064  (docs/patterns/conditionals.md#conditional-expression-example@bc2f5e135e2c)  context=False
+generate refused rc=1 codes=['SI_EVIDENCE_INCOMPLETE'] py_files=0
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f064/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: if temperature < 100? 0.95
+  |     else if temperature < 300? 0.85
+  |     else 0.60: reference='if temperature < 100? 0.95\n    else if temperature < 300? 0.85\n    else 0.60': inspect_reference_uses: resolved reference has no exact target [root-0/example.sysml:8]
+L6 rc=1 codes=[]
+  | - ERROR: Unsupported operator 'if' in attribute 'FenceWrap::efficiency' at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f064/models/example.sysml:7
+  | - ERROR: Unsupported operator '<' in attribute 'FenceWrap::efficiency' at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f064/models/example.sysml:7
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f065  (docs/patterns/conditionals.md#type-specialization-example@f93b5b7e3088)  context=False
+generate refused rc=1 codes=['SI_EVIDENCE_INCOMPLETE'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f065/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f065/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: <model>: reference='FenceWrap::PowerBalanceCalcBase': Calc def 'PowerBalanceCalcBase' extracted with zero output attributes. A pipeline module needs at least one output channel. Likely cause: the calc def declares no result — add one, e.g. 'out attribute y : Real = <expr>' or 'return y : Real = <expr>'. (An anonymous 'return' is reported separately.) [root-0/example.sysml:7]
+L6 rc=1 codes=['L6_CALC_DEF_NO_OUTPUT']
+  | - ERROR: Calc def 'FenceWrap::PowerBalanceCalcBase' has no output parameters at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f065/models/example.sysml:7
+  | - ERROR: Calc def 'FenceWrap::PowerBalanceCalcDT' has no output parameters at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f065/models/example.sysml:11
+  | - ERROR: Calc def 'FenceWrap::PowerBalanceCalcDD' has no output parameters at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f065/models/example.sysml:16
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f071  (docs/patterns/constraints.md#in-calc-definitions@7bac6211bb79)  context=False
+generate refused rc=1 codes=['SI_CONSTRAINT_UNATTACHED'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f071/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f071/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_CONSTRAINT_UNATTACHED: FenceWrap::PowerCalculation::ReasonablePower: reference='FenceWrap::PowerCalculation::ReasonablePower': constraint FenceWrap::PowerCalculation::ReasonablePower (96ac12e0-1a16-5134-85dd-562dd6d016b3) is asserted (inline) but its owner FenceWrap::PowerCalculation (calc_def) provides no attachment: owner_kind_unattachable [root-0/example.sysml:11]
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f071-ctx  (docs/patterns/constraints.md#in-calc-definitions@7bac6211bb79)  context=True
+generate refused rc=1 codes=['SI_CONSTRAINT_UNATTACHED'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f071-ctx/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f071-ctx/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_CONSTRAINT_UNATTACHED: FenceWrap::PowerCalculation::ReasonablePower: reference='FenceWrap::PowerCalculation::ReasonablePower': constraint FenceWrap::PowerCalculation::ReasonablePower (96ac12e0-1a16-5134-85dd-562dd6d016b3) is asserted (inline) but its owner FenceWrap::PowerCalculation (calc_def) provides no attachment: owner_kind_unattachable [root-0/example.sysml:11]
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f076  (docs/patterns/constraints.md#not-a-check-plain-constraint-block-no-prefix@ea604306a9cc)  context=False
+generate generated rc=0 codes=[] py_files=14
+  | INFO: Generated implementation backlog: IMPLEMENTATION_BACKLOG.md
+  | INFO: Generating runnable tests...
+  | INFO: Generated test file with 0 test classes
+  | INFO: Generated runnable tests: test_implementations_runnable.py
+  | INFO: Sealing package...
+  | INFO: Code generation complete
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f077  (docs/patterns/constraints.md#correct-with-prefix@850d0d4280f0)  context=False
+generate refused rc=1 codes=['SI_CONSTRAINT_BLOCKED', 'SI_OCCURRENCE_MISSING'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f077/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f077/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_CONSTRAINT_BLOCKED: FenceWrap__TempLimit: constraint profile blocked execution: block_unknown_exact_unit: ordering '<' needs exact units for both Quantity operands. Declare the exact modeled units. [example.sysml:7]; SI_OCCURRENCE_MISSING: FenceWrap__TempLimit: reference='temperature': leaf declaration d2d57ba6-d81b-5e08-a8c2-594290106089 is absent from the element index [root-0/example.sysml:9]
+L6 rc=1 codes=['L6_CONSTRAINT_MALFORMED_NUMERICAL']
+  | - ERROR: Constraint 'FenceWrap::TempLimit' is a malformed numerical statement: comparison (block_unknown_exact_unit) at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f077/models/example.sysml:7
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f081  (docs/patterns/constraints.md#constraint-definitions-reusable@2febb00b0d38)  context=False
+generate error rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f081/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f081/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | INFO: Built computation graph with 2 modules
+  | ERROR: Code generation failed: Constraint name-safety violation: constraint_id='FenceWrap__component__mass_positive__c4612f3c34b54d55', usage_qualified_name='FenceWrap::component::mass_positive': scope='predicate', kind='generated_binding_overlap', final_binding='value' collides with generated binding 'value'; identities=[raw_name='value', qualified_name='FenceWrap::PositiveReal::value']
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f082  (docs/patterns/constraints.md#how-to-write-it@29d599109de0)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f082/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f082/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | WARNING: Extraction diagnostic: [advisory/vacuous_asserted_gate] ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f082/models/example.sysml:18:5: asserted constraint FenceWrap::VacuumSystem::vac_ok can never be checked: its owner FenceWrap::VacuumSystem is not typed by any part usage in the model, so nothing instantiates it
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f103  (docs/patterns/definitions-usages.md#abstract-base-pattern@5781e36972a9)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f103/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f103/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f111  (docs/patterns/doc-comments.md#quick-reference@8d2739189d12)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f111/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f111/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f112  (docs/patterns/doc-comments.md#full-doc-comment-template@c74582ee5d6d)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f112/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f112/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f115  (docs/patterns/doc-comments.md#literature-citation@c58b0c25b3b5)  context=False
+generate refused rc=1 codes=['SI_EVIDENCE_INCOMPLETE'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f115/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f115/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: <model>: reference="'Empirical Scaling'": Calc def 'Empirical_Scaling' extracted with zero output attributes. A pipeline module needs at least one output channel. Likely cause: the calc def declares no result — add one, e.g. 'out attribute y : Real = <expr>' or 'return y : Real = <expr>'. (An anonymous 'return' is reported separately.) [root-0/example.sysml:1]
+L6 rc=1 codes=['L6_CALC_DEF_NO_OUTPUT']
+  | - ERROR: Calc def ''Empirical Scaling'' has no output parameters at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f115/models/example.sysml:1
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f116  (docs/patterns/doc-comments.md#codebase-derived@4f926e6fdc9a)  context=False
+generate refused rc=1 codes=['SI_EVIDENCE_INCOMPLETE'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f116/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f116/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: <model>: reference="'Algorithm Implementation'": Calc def 'Algorithm_Implementation' extracted with zero output attributes. A pipeline module needs at least one output channel. Likely cause: the calc def declares no result — add one, e.g. 'out attribute y : Real = <expr>' or 'return y : Real = <expr>'. (An anonymous 'return' is reported separately.) [root-0/example.sysml:1]
+L6 rc=1 codes=['L6_CALC_DEF_NO_OUTPUT']
+  | - ERROR: Calc def ''Algorithm Implementation'' has no output parameters at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f116/models/example.sysml:1
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f117  (docs/patterns/doc-comments.md#engineering-standards@2b509643f6b7)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f117/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f117/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f118  (docs/patterns/doc-comments.md#minimal-documentation@5329167a2014)  context=False
+generate generated rc=0 codes=[] py_files=14
+  | INFO: Generated implementation backlog: IMPLEMENTATION_BACKLOG.md
+  | INFO: Generating runnable tests...
+  | INFO: Generated test file with 0 test classes
+  | INFO: Generated runnable tests: test_implementations_runnable.py
+  | INFO: Sealing package...
+  | INFO: Code generation complete
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f119  (docs/patterns/doc-comments.md#library-more-detail@c30c03964d40)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f119/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f119/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f122  (docs/patterns/doc-comments.md#missing-sourcereference@b7ecd521fb6b)  context=False
+generate refused rc=1 codes=['SI_EVIDENCE_INCOMPLETE'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f122/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f122/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: <model>: reference="'Scaling Law'": Calc def 'Scaling_Law' extracted with zero output attributes. A pipeline module needs at least one output channel. Likely cause: the calc def declares no result — add one, e.g. 'out attribute y : Real = <expr>' or 'return y : Real = <expr>'. (An anonymous 'return' is reported separately.) [root-0/example.sysml:2]
+L6 rc=1 codes=['L6_CALC_DEF_NO_OUTPUT', 'L6_MISSING_QUALIFIED_NAME']
+  | - ERROR: Calc def 'Scaling Law' has no qualified_name at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f122/models/example.sysml:8
+  | - ERROR: Calc def ''Scaling Law'' has no output parameters at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f122/models/example.sysml:2
+  | - ERROR: Calc def 'None' has no output parameters at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f122/models/example.sysml:8
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f123  (docs/patterns/doc-comments.md#outdated-documentation@87d123fb102a)  context=False
+generate refused rc=1 codes=['SI_ID_UNSTABLE'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f123/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f123/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_ID_UNSTABLE: <model>: PartDefinition has no reload-stable qualified declaration identity
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f132  (docs/patterns/expose-pattern.md#dont-create-circular-expose-chains@2636c889166b)  context=False
+generate refused rc=1 codes=['SI_ALIAS_CYCLE'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f132/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f132/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_ALIAS_CYCLE: FenceWrap__b__value_b: typed alias cycle reaches 'FenceWrap__b__value_b' [root-0/example.sysml:12]; SI_ALIAS_CYCLE: FenceWrap__a__value_a: typed alias cycle reaches 'FenceWrap__a__value_a' [root-0/example.sysml:8]
+L6 rc=1 codes=[]
+  | - ERROR: Derived expression references design attributes: ['value_b'] at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f132/models/example.sysml:8
+  | - ERROR: Derived expression references design attributes: ['value_a'] at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f132/models/example.sysml:12
+  | - ERROR: Unsupported operator '.' in attribute 'FenceWrap::a::value_a' at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f132/models/example.sysml:8
+  | - ERROR: Unsupported operator '.' in attribute 'FenceWrap::b::value_b' at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f132/models/example.sysml:12
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f139  (docs/patterns/mbse-concepts.md#library-define-the-pattern@eac8dfc61ee4)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f139/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f139/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f162  (docs/patterns/plant-idiom.md#the-value-is-an-attribute-on-the-part-that-owns-the-calculation-make-the-names-differ-d-5@884421fcdbd5)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f162/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f162/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f178  (docs/patterns/semantic-operators.md#correct-use-case-type-specialization-within-hierarchy@a41477772bdf)  context=False
+generate refused rc=1 codes=['SI_TYPE_INVALID'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f178/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f178/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_TYPE_INVALID: FenceWrap::SpecializedCalculation::input: reference='FenceWrap::SpecializedCalculation::input': extract_type: feature has 0 typings; expected exactly one qualified typing [root-0/example.sysml:15]
+L6 rc=1 codes=['L6_CALC_DEF_NO_OUTPUT']
+  | - ERROR: Calc def 'FenceWrap::SpecializedCalculation' has no output parameters at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f178/models/example.sysml:13
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f184  (docs/patterns/semantic-operators.md#definitions-declare-structure-only@5e9e4c82d408)  context=False
+generate generated rc=0 codes=[] py_files=10
+  | INFO: Generated implementation backlog: IMPLEMENTATION_BACKLOG.md
+  | INFO: Generating runnable tests...
+  | INFO: Generated test file with 0 test classes
+  | INFO: Generated runnable tests: test_implementations_runnable.py
+  | INFO: Sealing package...
+  | INFO: Code generation complete
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f188  (docs/patterns/semantic-operators.md#circular-dependencies@f0ae2c5f4007)  context=False
+generate refused rc=1 codes=['SI_EDGE_DANGLING'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f188/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f188/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_EDGE_DANGLING: FenceWrap__system__calc_a: typed producer dependency cycle: FenceWrap__system__calc_a -> FenceWrap__system__calc_b
+L6 rc=1 codes=['L6_ATTR_REDEF_EXPR_DROPPED']
+  | - ERROR: Unsupported operator '.' in attribute 'FenceWrap::system::calc_a::x' at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f188/models/example.sysml:20
+  | - ERROR: Unsupported operator '.' in attribute 'FenceWrap::system::calc_b::y' at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f188/models/example.sysml:24
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f192-ctx  (docs/patterns/semantic-operators.md#correct-assert-prefix@3e0df8cbb94a)  context=True
+generate refused rc=1 codes=['SI_EVIDENCE_INCOMPLETE'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f192-ctx/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f192-ctx/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: <model>: reference='FenceWrap::CorrectConstraint': Calc def 'CorrectConstraint' extracted with zero output attributes. A pipeline module needs at least one output channel. Likely cause: the calc def declares no result — add one, e.g. 'out attribute y : Real = <expr>' or 'return y : Real = <expr>'. (An anonymous 'return' is reported separately.) [root-0/example.sysml:8]
+L6 rc=1 codes=['L6_CALC_DEF_NO_OUTPUT', 'L6_CONSTRAINT_MALFORMED_NUMERICAL']
+  | - ERROR: Calc def 'FenceWrap::CorrectConstraint' has no output parameters at file:///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f192-ctx/models/example.sysml:8
+  | - ERROR: Constraint 'FenceWrap::CorrectConstraint::TempLimit' is a malformed numerical statement: comparison (block_ordering_category_pair) at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f192-ctx/models/example.sysml:11
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f200  (docs/patterns/syntax-reference.md#syntax-2-calc-def-definition@a8ea8bc5545b)  context=False
+generate refused rc=1 codes=['SI_CONSTRAINT_UNATTACHED'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f200/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f200/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_CONSTRAINT_UNATTACHED: FenceWrap::MyCalculation::Reasonable: reference='FenceWrap::MyCalculation::Reasonable': constraint FenceWrap::MyCalculation::Reasonable (2d379d56-6bd2-55bc-9d81-ecf5ffdd9780) is asserted (inline) but its owner FenceWrap::MyCalculation (calc_def) provides no attachment: owner_kind_unattachable [root-0/example.sysml:28]
+L6 rc=1 codes=['L6_CONSTRAINT_MALFORMED_NUMERICAL']
+  | - ERROR: Constraint 'FenceWrap::MyCalculation::Reasonable' is a malformed numerical statement: comparison (block_ordering_category_pair) at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f200/models/example.sysml:28
+  | - ERROR: Constraint 'FenceWrap::MyCalculation::Reasonable' is a malformed numerical statement: comparison (block_ordering_category_pair) at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f200/models/example.sysml:28
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f200-ctx  (docs/patterns/syntax-reference.md#syntax-2-calc-def-definition@a8ea8bc5545b)  context=True
+generate refused rc=1 codes=['SI_CONSTRAINT_UNATTACHED'] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f200-ctx/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f200-ctx/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Model failed exact-route validation: SI_CONSTRAINT_UNATTACHED: FenceWrap::MyCalculation::Reasonable: reference='FenceWrap::MyCalculation::Reasonable': constraint FenceWrap::MyCalculation::Reasonable (2d379d56-6bd2-55bc-9d81-ecf5ffdd9780) is asserted (inline) but its owner FenceWrap::MyCalculation (calc_def) provides no attachment: owner_kind_unattachable [root-0/example.sysml:28]
+L6 rc=1 codes=['L6_CONSTRAINT_MALFORMED_NUMERICAL']
+  | - ERROR: Constraint 'FenceWrap::MyCalculation::Reasonable' is a malformed numerical statement: comparison (block_ordering_category_pair) at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f200-ctx/models/example.sysml:28
+  | - ERROR: Constraint 'FenceWrap::MyCalculation::Reasonable' is a malformed numerical statement: comparison (block_ordering_category_pair) at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f200-ctx/models/example.sysml:28
+  | ✅ Passed: 0
+  | ❌ Failed: 1
+
+## f206  (docs/patterns/syntax-reference.md#syntax-8-part-definition@0eeaf87f2da8)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f206/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f206/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | WARNING: Extraction diagnostic: [advisory/vacuous_asserted_gate] ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f206/models/example.sysml:32:5: asserted constraint FenceWrap::'Component Type'::GeometryPositive can never be checked: its owner FenceWrap::'Component Type' is not typed by any part usage in the model, so nothing instantiates it
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0
+
+## f211  (docs/patterns/syntax-reference.md#wrong-forgetting-units@ca9b2648cf17)  context=False
+generate nothing-to-generate rc=1 codes=[] py_files=0
+  | INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f211/models
+  | INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/runs/f211/generated
+  | INFO: Package name: generated_code
+  | INFO: Building pipeline context...
+  | ERROR: Code generation failed: No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.
+L6 rc=0 codes=[]
+  | ✅ Passed: 1
+  | ❌ Failed: 0

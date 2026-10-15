@@ -1,0 +1,35 @@
+$ uv run python /home/reid/src/agentic-mbse/convince-me-exec-subset/evidence/01-codegen-oracle.py /home/reid/src/agentic-mbse/convince-me-exec-subset/evidence/01-fixtures --json /home/reid/src/agentic-mbse/convince-me-exec-subset/evidence/01-codegen-oracle.json   (cwd=/home/reid/src/sysml-codegen, 2026-10-15T13:57:20+00:00)
+es001_admitted_part_assert.sysml              exit=0 codes=- omitted=-
+es001_refused_calc_def_assert.sysml           exit=1 codes=['SI_CONSTRAINT_UNATTACHED'] omitted=-
+    ERROR: Model failed exact-route validation: SI_CONSTRAINT_UNATTACHED: fx::Eff2::f1: reference='fx::Eff2::f1': constraint fx::Eff2::f1 (2029e523-6777-5867-96f5-a022b7c3aaa5) is asserted (definition_typed) but its owner fx
+es001_refused_calc_usage_assert.sysml         exit=1 codes=['SI_CONSTRAINT_UNATTACHED'] omitted=-
+    ERROR: Model failed exact-route validation: SI_CONSTRAINT_UNATTACHED: <model>: reference='fx::Site::path': constraint owner does not match a supported mapped metatype: fx::Site::path [root-0/es001_refused_calc_usage_asse
+es003_admitted_fixed_arity.sysml              exit=0 codes=- omitted=-
+es003_neighbor_exact_ordered_param.sysml      exit=0 codes=- omitted=-
+es003_neighbor_ordered_param_scalar_arg.sysml exit=0 codes=- omitted=-
+es003_refused_ordered_nonunique.sysml         exit=1 codes=['SI_EXPRESSION_SOURCE_UNSUPPORTED'] omitted=-
+    ERROR: Model is not ready for the exact route: SI_EXPRESSION_SOURCE_UNSUPPORTED: fx__Site__t.xs: reference='a, b': unsupported exact source form expression_source ('a, b') [root-0/es003_refused_ordered_nonunique.sysml:7]
+es004_admitted_exact_redefinition.sysml       exit=0 codes=- omitted=-
+es004_admitted_uninstantiated_template.sysml  exit=0 codes=- omitted=-
+es004_refused_range_parts.sysml               exit=1 codes=['SI_MULTIPLICITY_UNSUPPORTED'] omitted=-
+    ERROR: Model failed exact-route validation: SI_MULTIPLICITY_UNSUPPORTED: <model>: reference='fx::Rack::servers': range multiplicity on 'servers' is outside the supported occurrence model [root-0/es004_refused_range_parts
+es004_refused_unbounded_parts.sysml           exit=1 codes=['SI_MULTIPLICITY_UNRESOLVED'] omitted=-
+    ERROR: Model failed exact-route validation: SI_MULTIPLICITY_UNRESOLVED: <model>: reference='fx::Rack::servers': upper multiplicity on 'servers' is not a known finite integer [root-0/es004_refused_unbounded_parts.sysml:5]
+es005_admitted_explicit_multiply.sysml        exit=0 codes=- omitted=-
+es005_refused_product.sysml                   exit=1 codes=['SI_EXPRESSION_SOURCE_UNSUPPORTED'] omitted=-
+    ERROR: Model failed exact-route validation: SI_EXPRESSION_SOURCE_UNSUPPORTED: NumericalFunctions::product((a, b)): reference='NumericalFunctions::product((a, b))': inspect_reference_uses: invocation of 'NumericalFunction
+es005_refused_size.sysml                      exit=1 codes=['SI_EXPRESSION_SOURCE_UNSUPPORTED'] omitted=-
+    ERROR: Model failed exact-route validation: SI_EXPRESSION_SOURCE_UNSUPPORTED: SequenceFunctions::size((a, b)): reference='SequenceFunctions::size((a, b))': inspect_reference_uses: invocation of 'SequenceFunctions::size' 
+es006_admitted_arithmetic_min.sysml           exit=0 codes=- omitted=-
+es006_refused_conditional.sysml               exit=1 codes=['SI_EVIDENCE_INCOMPLETE'] omitted=-
+    ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: if a < b ? a else b: reference='if a < b ? a else b': inspect_reference_uses: resolved reference has no exact target [root-0/es006_refused_conditional.s
+es007_admitted_numeric_and.sysml              exit=0 codes=- omitted=-
+es007_refused_boolean_mixed.sysml             exit=1 codes=['SI_CONSTRAINT_BLOCKED'] omitted=-
+    ERROR: Model failed exact-route validation: SI_CONSTRAINT_BLOCKED: fx__site__c: constraint profile blocked execution: block_non_numerical_containment: the numerical assertion contains a non-numerical feature_ref and gene
+es010_admitted_numeric_value.sysml            exit=0 codes=- omitted=-
+es010_omitted_string_value.sysml              exit=0 codes=- omitted=['fx__gen__fuel_unit']
+es010_refused_string_calc_input.sysml         exit=1 codes=['SI_RENDERING_COLLISION'] omitted=-
+    ERROR: Code generation failed: exact graph projection failed: SI_RENDERING_COLLISION: the public EntryPoint seam cannot carry non-numeric default 'liter': reference='fx__gen__fuel_unit' [root-0/es010_refused_string_calc_
+unmapped_expression_calc_arg.sysml            exit=1 codes=['SI_EXPRESSION_SOURCE_UNSUPPORTED'] omitted=-
+    ERROR: Model is not ready for the exact route: SI_EXPRESSION_SOURCE_UNSUPPORTED: fx__Gen__t.v: reference='rate * fuel_code': unsupported exact source form expression_source ('rate * fuel_code') [root-0/unmapped_expressio
+exit=0

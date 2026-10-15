@@ -1,0 +1,240 @@
+{
+ "ES-001": {
+  "category": "B1",
+  "status": "checked",
+  "outcome": "refused",
+  "findings": [],
+  "unverified": [],
+  "reuse": "NEW fact: assertion owner metatype (syside owner)"
+ },
+ "ES-003": {
+  "category": "B2",
+  "status": "checked",
+  "outcome": "refused",
+  "findings": [],
+  "unverified": [],
+  "reuse": "NEW fact: sequence-valued argument bound to a calc input"
+ },
+ "ES-004": {
+  "category": "B3",
+  "status": "checked",
+  "outcome": "refused",
+  "findings": [],
+  "unverified": [],
+  "reuse": "NEW fact: part multiplicity bounds + approximate instantiation"
+ },
+ "ES-005": {
+  "category": "B4/B5",
+  "status": "checked",
+  "outcome": "refused",
+  "findings": [],
+  "unverified": [],
+  "reuse": "REUSED: reference_use.inspect_reference_uses admission (sum only)"
+ },
+ "ES-006": {
+  "category": "B6",
+  "status": "checked",
+  "outcome": "refused",
+  "findings": [],
+  "unverified": [],
+  "reuse": "NEW fact: conditional operator ('if')"
+ },
+ "ES-007": {
+  "category": "B8",
+  "status": "checked",
+  "outcome": "refused/excluded",
+  "findings": [],
+  "unverified": [],
+  "reuse": "REUSED: executable_profile via L6 check_constraint_executability"
+ },
+ "ES-010": {
+  "category": "B7",
+  "status": "checked",
+  "outcome": "omitted/refused",
+  "findings": [
+   {
+    "location": "designs/dc_native/dc_site.sysml:26",
+    "reference": "dc_native_site::dc_site::genset::fuel_unit",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:48",
+    "reference": "dc_native_site::dc_site::mppt::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:51",
+    "reference": "dc_native_site::dc_site::mppt::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:59",
+    "reference": "dc_native_site::dc_site::genset_rectifier::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:62",
+    "reference": "dc_native_site::dc_site::genset_rectifier::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:81",
+    "reference": "dc_native_site::dc_site::source_bus::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:48",
+    "reference": "dc_native_facility::'DC Native Facility'::electrical::bus_converter::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:59",
+    "reference": "dc_native_facility::'DC Native Facility'::electrical::aux_inverter::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:81",
+    "reference": "dc_native_facility::'DC Native Facility'::it_system::rack_1::distribution_kind",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:97",
+    "reference": "dc_native_facility::'DC Native Facility'::it_system::rack_2::distribution_kind",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:125",
+    "reference": "dc_native_facility::'DC Native Facility'::cooling::liquid_class",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/examples/source_load_example.sysml:41",
+    "reference": "dc3_source_load_example::illustrative_scenario::genset::fuel_unit",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:45",
+    "reference": "ac_coupled_facility::'AC Coupled Facility'::electrical::mv_transformer::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:51",
+    "reference": "ac_coupled_facility::'AC Coupled Facility'::electrical::ups::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:57",
+    "reference": "ac_coupled_facility::'AC Coupled Facility'::electrical::pdu::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:81",
+    "reference": "ac_coupled_facility::'AC Coupled Facility'::it_system::rack_1::distribution_kind",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:97",
+    "reference": "ac_coupled_facility::'AC Coupled Facility'::it_system::rack_2::distribution_kind",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:125",
+    "reference": "ac_coupled_facility::'AC Coupled Facility'::cooling::liquid_class",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:26",
+    "reference": "ac_coupled_site::ac_site::genset::fuel_unit",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:48",
+    "reference": "ac_coupled_site::ac_site::mppt::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:51",
+    "reference": "ac_coupled_site::ac_site::mppt::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:59",
+    "reference": "ac_coupled_site::ac_site::pv_inverter::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:62",
+    "reference": "ac_coupled_site::ac_site::pv_inverter::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:70",
+    "reference": "ac_coupled_site::ac_site::pv_transformer::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:73",
+    "reference": "ac_coupled_site::ac_site::pv_transformer::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:81",
+    "reference": "ac_coupled_site::ac_site::genset_transformer::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:84",
+    "reference": "ac_coupled_site::ac_site::genset_transformer::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:94",
+    "reference": "ac_coupled_site::ac_site::bess_transformer::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:97",
+    "reference": "ac_coupled_site::ac_site::bess_transformer::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:116",
+    "reference": "ac_coupled_site::ac_site::source_bus::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   }
+  ],
+  "unverified": [],
+  "reuse": "NEW fact: String values (both spellings); refused when bound into a calc input",
+  "l6_today_unextractable": 0
+ }
+}

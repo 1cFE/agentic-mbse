@@ -1,0 +1,3 @@
+sites enumerated: 500; baseline: 500; classified keys: 65; dynamic exemptions: 6
+PASS: every refusal site is reviewed, every code classified, every non-literal code exempted with a reason
+exit=0

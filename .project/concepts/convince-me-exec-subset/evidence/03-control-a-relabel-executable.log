@@ -1,0 +1,8 @@
+# control: calc-owned assert example relabelled executable
+# tree=/tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/tree-a manifest=/tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/manifest-a.yaml
+$ C3_ROOT=/tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/tree-a C3_MANIFEST=/tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/c3/manifest-a.yaml uv run pytest -q -p no:cacheprovider /home/reid/src/agentic-mbse/convince-me-exec-subset/evidence/03-harness-test.py
+E   AssertionError: marked executable but the generator refused: ['SI_CONSTRAINT_UNATTACHED'] ERROR: Model failed exact-route validation: SI_CONSTRAINT_UNATTACHED: FenceWrap::PowerCalculation::ReasonablePower: reference='FenceWrap::PowerCalculation::ReasonablePower': constraint FenceWrap::PowerCalculation::ReasonablePower (96ac12e0-1a16-5134-85dd-562dd6d016b3) is asserted (inline) but its ow
+E   assert 1 == 0
+FAILED convince-me-exec-subset/evidence/03-harness-test.py::test_entry_holds[docs/patterns/constraints.md#in-calc-definitions@7bac6211bb79]
+======================== 1 failed, 212 passed in 12.35s ========================
+# pytest exit: 1

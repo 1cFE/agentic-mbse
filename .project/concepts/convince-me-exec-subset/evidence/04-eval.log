@@ -1,0 +1,19 @@
+syside 0.8.4; python /home/reid/src/dc3/.venv/bin/python
+calc def: calc def Sub { in a : Real; in b : Real; return r : Real = a - b; }  (a = 10, b = 3; intended a - b = 7)
+
+== Native (SysIDE Compiler.evaluate_feature) ==
+spelling                                 body                                    value  matches intent
+in-order unprefixed                      in a = 10; in b = 3;                        7  True
+reversed unprefixed                      in b = 3; in a = 10;                       -7  False
+reversed explicit :>>                    in :>> b = 3; in :>> a = 10;                7  True
+explicit rename (local redefines a)      in local redefines a = 10; in b = 3;        7  True
+
+== Native, on the generator fixtures themselves (attribute result) ==
+gen_byname     native plant.result = 7.0
+gen_reversed   native plant.result = -7.0
+
+== Generated (sysml-codegen generate -> sealed load -> TEAx execute_pipeline) ==
+gen_byname     wiring {'a': 'float positional_by_name_params.PositionalByName__plant__big', 'b': 'float positional_by_name_params.PositionalByName__plant__small'}
+gen_byname     generated plant.result = 7.0  matches intent True
+gen_reversed   wiring {'a': 'float positional_reversed_params.PositionalReversed__plant__big', 'b': 'float positional_reversed_params.PositionalReversed__plant__small'}
+gen_reversed   generated plant.result = 7.0  matches intent True

@@ -1,0 +1,1486 @@
+{
+ "ES-001": {
+  "category": "B1",
+  "status": "checked",
+  "outcome": "refused",
+  "findings": [
+   {
+    "location": "designs/dc_native/dc_site.sysml:98",
+    "reference": "dc_native_site::dc_site::pv_feed_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::pv_feed_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:102",
+    "reference": "dc_native_site::dc_site::pv_feed_efficiency::factor_01",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::pv_feed_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:105",
+    "reference": "dc_native_site::dc_site::pv_feed_efficiency::factor_02",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::pv_feed_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:110",
+    "reference": "dc_native_site::dc_site::genset_feed_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::genset_feed_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:114",
+    "reference": "dc_native_site::dc_site::genset_feed_efficiency::factor_01",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::genset_feed_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:117",
+    "reference": "dc_native_site::dc_site::genset_feed_efficiency::factor_02",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::genset_feed_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:122",
+    "reference": "dc_native_site::dc_site::bess_charge_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_charge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:126",
+    "reference": "dc_native_site::dc_site::bess_charge_efficiency::factor_01",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_charge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:131",
+    "reference": "dc_native_site::dc_site::bess_discharge_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_discharge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:135",
+    "reference": "dc_native_site::dc_site::bess_discharge_efficiency::factor_01",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_discharge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:138",
+    "reference": "dc_native_site::dc_site::bess_discharge_efficiency::factor_02",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_discharge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:143",
+    "reference": "dc_native_site::dc_site::bess_stored_charge_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_stored_charge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:147",
+    "reference": "dc_native_site::dc_site::bess_stored_charge_efficiency::factor_01",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_stored_charge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:150",
+    "reference": "dc_native_site::dc_site::bess_stored_charge_efficiency::factor_02",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_stored_charge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:155",
+    "reference": "dc_native_site::dc_site::bess_stored_discharge_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_stored_discharge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:159",
+    "reference": "dc_native_site::dc_site::bess_stored_discharge_efficiency::factor_01",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_stored_discharge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:162",
+    "reference": "dc_native_site::dc_site::bess_stored_discharge_efficiency::factor_02",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_stored_discharge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:165",
+    "reference": "dc_native_site::dc_site::bess_stored_discharge_efficiency::factor_03",
+    "detail": "owner CalculationUsage dc_native_site::dc_site::bess_stored_discharge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:210",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_1_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:214",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_1_efficiency::factor_01",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:217",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_1_efficiency::factor_02",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:220",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_1_efficiency::factor_03",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:223",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_1_efficiency::factor_04",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:226",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_1_efficiency::factor_05",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:229",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_1_efficiency::factor_06",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:234",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_2_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:238",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_2_efficiency::factor_01",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:241",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_2_efficiency::factor_02",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:244",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_2_efficiency::factor_03",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:247",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_2_efficiency::factor_04",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:250",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_2_efficiency::factor_05",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:253",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_2_efficiency::factor_06",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:258",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_1_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:262",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_1_efficiency::factor_01",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:265",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_1_efficiency::factor_02",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:268",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_1_efficiency::factor_03",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:271",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_1_efficiency::factor_04",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:274",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_1_efficiency::factor_05",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:277",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_1_efficiency::factor_06",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:282",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_2_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:286",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_2_efficiency::factor_01",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:289",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_2_efficiency::factor_02",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:292",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_2_efficiency::factor_03",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:295",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_2_efficiency::factor_04",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:298",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_2_efficiency::factor_05",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:301",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_2_efficiency::factor_06",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:306",
+    "reference": "dc_native_facility::dc_facility::auxiliary_feed_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::auxiliary_feed_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:310",
+    "reference": "dc_native_facility::dc_facility::auxiliary_feed_efficiency::factor_01",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::auxiliary_feed_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:313",
+    "reference": "dc_native_facility::dc_facility::auxiliary_feed_efficiency::factor_02",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::auxiliary_feed_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:316",
+    "reference": "dc_native_facility::dc_facility::auxiliary_feed_efficiency::factor_03",
+    "detail": "owner CalculationUsage dc_native_facility::dc_facility::auxiliary_feed_efficiency"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:17",
+    "reference": "dc3_baseline_costs::cost_reference::ac_pv::capital_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_pv"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:18",
+    "reference": "dc3_baseline_costs::cost_reference::ac_pv::om_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_pv"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:23",
+    "reference": "dc3_baseline_costs::cost_reference::ac_bess::capital_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_bess"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:24",
+    "reference": "dc3_baseline_costs::cost_reference::ac_bess::om_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_bess"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:29",
+    "reference": "dc3_baseline_costs::cost_reference::ac_genset::capital_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_genset"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:30",
+    "reference": "dc3_baseline_costs::cost_reference::ac_genset::om_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_genset"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:35",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::capital_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:36",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::capital_02",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:37",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::capital_03",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:38",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::capital_04",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:39",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::capital_05",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:40",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::capital_06",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:41",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::capital_07",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:42",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::om_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:43",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::om_02",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:44",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::om_03",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:45",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::om_04",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:46",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::om_05",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:47",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::om_06",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:48",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::om_07",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:70",
+    "reference": "dc3_baseline_costs::cost_reference::ac_total::fuel_quantity_in_gate",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_total"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:71",
+    "reference": "dc3_baseline_costs::cost_reference::ac_total::fuel_price_in_gate",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_total"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:72",
+    "reference": "dc3_baseline_costs::cost_reference::ac_total::replacement_allowance_in_gate",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_total"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:73",
+    "reference": "dc3_baseline_costs::cost_reference::ac_total::annualization_factor_in_gate",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_total"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:74",
+    "reference": "dc3_baseline_costs::cost_reference::ac_total::delivered_domain",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::ac_total"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:83",
+    "reference": "dc3_baseline_costs::cost_reference::dc_pv::capital_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_pv"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:84",
+    "reference": "dc3_baseline_costs::cost_reference::dc_pv::om_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_pv"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:89",
+    "reference": "dc3_baseline_costs::cost_reference::dc_bess::capital_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_bess"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:90",
+    "reference": "dc3_baseline_costs::cost_reference::dc_bess::om_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_bess"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:95",
+    "reference": "dc3_baseline_costs::cost_reference::dc_genset::capital_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_genset"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:96",
+    "reference": "dc3_baseline_costs::cost_reference::dc_genset::om_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_genset"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:101",
+    "reference": "dc3_baseline_costs::cost_reference::dc_source_conversion::capital_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:102",
+    "reference": "dc3_baseline_costs::cost_reference::dc_source_conversion::capital_02",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:103",
+    "reference": "dc3_baseline_costs::cost_reference::dc_source_conversion::capital_03",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:104",
+    "reference": "dc3_baseline_costs::cost_reference::dc_source_conversion::capital_04",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:105",
+    "reference": "dc3_baseline_costs::cost_reference::dc_source_conversion::om_01",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:106",
+    "reference": "dc3_baseline_costs::cost_reference::dc_source_conversion::om_02",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:107",
+    "reference": "dc3_baseline_costs::cost_reference::dc_source_conversion::om_03",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:108",
+    "reference": "dc3_baseline_costs::cost_reference::dc_source_conversion::om_04",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_source_conversion"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:130",
+    "reference": "dc3_baseline_costs::cost_reference::dc_total::fuel_quantity_in_gate",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_total"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:131",
+    "reference": "dc3_baseline_costs::cost_reference::dc_total::fuel_price_in_gate",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_total"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:132",
+    "reference": "dc3_baseline_costs::cost_reference::dc_total::replacement_allowance_in_gate",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_total"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:133",
+    "reference": "dc3_baseline_costs::cost_reference::dc_total::annualization_factor_in_gate",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_total"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:134",
+    "reference": "dc3_baseline_costs::cost_reference::dc_total::delivered_domain",
+    "detail": "owner CalculationUsage dc3_baseline_costs::cost_reference::dc_total"
+   },
+   {
+    "location": "designs/examples/baseline_annual.sysml:57",
+    "reference": "dc3_baseline_annual::annual_reference::ac_demand::input_domain",
+    "detail": "owner CalculationUsage dc3_baseline_annual::annual_reference::ac_demand"
+   },
+   {
+    "location": "designs/examples/baseline_annual.sysml:84",
+    "reference": "dc3_baseline_annual::annual_reference::ac_balance::input_domain",
+    "detail": "owner CalculationUsage dc3_baseline_annual::annual_reference::ac_balance"
+   },
+   {
+    "location": "designs/examples/baseline_annual.sysml:97",
+    "reference": "dc3_baseline_annual::annual_reference::dc_demand::input_domain",
+    "detail": "owner CalculationUsage dc3_baseline_annual::annual_reference::dc_demand"
+   },
+   {
+    "location": "designs/examples/baseline_annual.sysml:124",
+    "reference": "dc3_baseline_annual::annual_reference::dc_balance::input_domain",
+    "detail": "owner CalculationUsage dc3_baseline_annual::annual_reference::dc_balance"
+   },
+   {
+    "location": "designs/examples/source_load_example.sysml:60",
+    "reference": "dc3_source_load_example::illustrative_scenario::battery_efficiency::charge_domain",
+    "detail": "owner CalculationUsage dc3_source_load_example::illustrative_scenario::battery_efficiency"
+   },
+   {
+    "location": "designs/examples/source_load_example.sysml:63",
+    "reference": "dc3_source_load_example::illustrative_scenario::battery_efficiency::discharge_domain",
+    "detail": "owner CalculationUsage dc3_source_load_example::illustrative_scenario::battery_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:210",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_1_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:214",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_1_efficiency::factor_01",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:217",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_1_efficiency::factor_02",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:220",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_1_efficiency::factor_03",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:223",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_1_efficiency::factor_04",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:226",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_1_efficiency::factor_05",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:229",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_1_efficiency::factor_06",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:232",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_1_efficiency::factor_07",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:235",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_1_efficiency::factor_08",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:240",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_2_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:244",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_2_efficiency::factor_01",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:247",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_2_efficiency::factor_02",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:250",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_2_efficiency::factor_03",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:253",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_2_efficiency::factor_04",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:256",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_2_efficiency::factor_05",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:259",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_2_efficiency::factor_06",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:262",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_2_efficiency::factor_07",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:265",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_2_efficiency::factor_08",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_1_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:270",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_1_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:274",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_1_efficiency::factor_01",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:277",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_1_efficiency::factor_02",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:280",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_1_efficiency::factor_03",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:283",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_1_efficiency::factor_04",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:286",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_1_efficiency::factor_05",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:289",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_1_efficiency::factor_06",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:292",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_1_efficiency::factor_07",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:295",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_1_efficiency::factor_08",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_1_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:300",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_2_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:304",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_2_efficiency::factor_01",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:307",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_2_efficiency::factor_02",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:310",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_2_efficiency::factor_03",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:313",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_2_efficiency::factor_04",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:316",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_2_efficiency::factor_05",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:319",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_2_efficiency::factor_06",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:322",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_2_efficiency::factor_07",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:325",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_2_efficiency::factor_08",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::rack_2_server_2_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:330",
+    "reference": "ac_coupled_facility::ac_facility::auxiliary_feed_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::auxiliary_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:334",
+    "reference": "ac_coupled_facility::ac_facility::auxiliary_feed_efficiency::factor_01",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::auxiliary_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:337",
+    "reference": "ac_coupled_facility::ac_facility::auxiliary_feed_efficiency::factor_02",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::auxiliary_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:340",
+    "reference": "ac_coupled_facility::ac_facility::auxiliary_feed_efficiency::factor_03",
+    "detail": "owner CalculationUsage ac_coupled_facility::ac_facility::auxiliary_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:137",
+    "reference": "ac_coupled_site::ac_site::pv_feed_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::pv_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:141",
+    "reference": "ac_coupled_site::ac_site::pv_feed_efficiency::factor_01",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::pv_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:144",
+    "reference": "ac_coupled_site::ac_site::pv_feed_efficiency::factor_02",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::pv_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:147",
+    "reference": "ac_coupled_site::ac_site::pv_feed_efficiency::factor_03",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::pv_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:150",
+    "reference": "ac_coupled_site::ac_site::pv_feed_efficiency::factor_04",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::pv_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:155",
+    "reference": "ac_coupled_site::ac_site::genset_feed_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::genset_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:159",
+    "reference": "ac_coupled_site::ac_site::genset_feed_efficiency::factor_01",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::genset_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:162",
+    "reference": "ac_coupled_site::ac_site::genset_feed_efficiency::factor_02",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::genset_feed_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:167",
+    "reference": "ac_coupled_site::ac_site::bess_charge_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_charge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:171",
+    "reference": "ac_coupled_site::ac_site::bess_charge_efficiency::factor_01",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_charge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:174",
+    "reference": "ac_coupled_site::ac_site::bess_charge_efficiency::factor_02",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_charge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:179",
+    "reference": "ac_coupled_site::ac_site::bess_discharge_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_discharge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:183",
+    "reference": "ac_coupled_site::ac_site::bess_discharge_efficiency::factor_01",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_discharge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:186",
+    "reference": "ac_coupled_site::ac_site::bess_discharge_efficiency::factor_02",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_discharge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:189",
+    "reference": "ac_coupled_site::ac_site::bess_discharge_efficiency::factor_03",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_discharge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:194",
+    "reference": "ac_coupled_site::ac_site::bess_stored_charge_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_stored_charge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:198",
+    "reference": "ac_coupled_site::ac_site::bess_stored_charge_efficiency::factor_01",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_stored_charge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:201",
+    "reference": "ac_coupled_site::ac_site::bess_stored_charge_efficiency::factor_02",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_stored_charge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:204",
+    "reference": "ac_coupled_site::ac_site::bess_stored_charge_efficiency::factor_03",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_stored_charge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:209",
+    "reference": "ac_coupled_site::ac_site::bess_stored_discharge_efficiency::nonempty_path",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_stored_discharge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:213",
+    "reference": "ac_coupled_site::ac_site::bess_stored_discharge_efficiency::factor_01",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_stored_discharge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:216",
+    "reference": "ac_coupled_site::ac_site::bess_stored_discharge_efficiency::factor_02",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_stored_discharge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:219",
+    "reference": "ac_coupled_site::ac_site::bess_stored_discharge_efficiency::factor_03",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_stored_discharge_efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:222",
+    "reference": "ac_coupled_site::ac_site::bess_stored_discharge_efficiency::factor_04",
+    "detail": "owner CalculationUsage ac_coupled_site::ac_site::bess_stored_discharge_efficiency"
+   }
+  ],
+  "unverified": [],
+  "reuse": "NEW fact: assertion owner metatype (syside owner)"
+ },
+ "ES-003": {
+  "category": "B2",
+  "status": "checked",
+  "outcome": "refused",
+  "findings": [
+   {
+    "location": "designs/dc_native/dc_site.sysml:101",
+    "reference": "dc_native_site::dc_site::pv_feed_efficiency::efficiencies_in",
+    "detail": "sequence argument mppt.efficiency, source_bus.efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:113",
+    "reference": "dc_native_site::dc_site::genset_feed_efficiency::efficiencies_in",
+    "detail": "sequence argument genset_rectifier.efficiency, source_bus.efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:134",
+    "reference": "dc_native_site::dc_site::bess_discharge_efficiency::efficiencies_in",
+    "detail": "sequence argument bess_converter.discharge_efficiency, source_bus.efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:146",
+    "reference": "dc_native_site::dc_site::bess_stored_charge_efficiency::efficiencies_in",
+    "detail": "sequence argument bess_converter.charge_efficiency, bess.charge_efficiency"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:158",
+    "reference": "dc_native_site::dc_site::bess_stored_discharge_efficiency::efficiencies_in",
+    "detail": "sequence argument bess.discharge_efficiency, bess_converter.discharge_efficien"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:213",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_1_efficiency::efficiencies_in",
+    "detail": "sequence argument electrical.dc_switchgear.efficiency, electrical.bus_converte"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:237",
+    "reference": "dc_native_facility::dc_facility::rack_1_server_2_efficiency::efficiencies_in",
+    "detail": "sequence argument electrical.dc_switchgear.efficiency, electrical.bus_converte"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:261",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_1_efficiency::efficiencies_in",
+    "detail": "sequence argument electrical.dc_switchgear.efficiency, electrical.bus_converte"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:285",
+    "reference": "dc_native_facility::dc_facility::rack_2_server_2_efficiency::efficiencies_in",
+    "detail": "sequence argument electrical.dc_switchgear.efficiency, electrical.bus_converte"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:309",
+    "reference": "dc_native_facility::dc_facility::auxiliary_feed_efficiency::efficiencies_in",
+    "detail": "sequence argument electrical.dc_switchgear.efficiency, electrical.aux_inverter"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:33",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::capital_costs_in",
+    "detail": "sequence argument ac_site.mppt.capital_cost,ac_site.pv_inverter.capital_cost,a"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:34",
+    "reference": "dc3_baseline_costs::cost_reference::ac_source_conversion::fixed_om_costs_in",
+    "detail": "sequence argument ac_site.mppt.fixed_om_cost,ac_site.pv_inverter.fixed_om_cost"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:61",
+    "reference": "dc3_baseline_costs::cost_reference::ac_total::category_capital_costs_in",
+    "detail": "sequence argument ac_pv.capital_cost,ac_bess.capital_cost,ac_genset.capital_co"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:62",
+    "reference": "dc3_baseline_costs::cost_reference::ac_total::category_fixed_om_costs_in",
+    "detail": "sequence argument ac_pv.fixed_om_cost,ac_bess.fixed_om_cost,ac_genset.fixed_om"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:99",
+    "reference": "dc3_baseline_costs::cost_reference::dc_source_conversion::capital_costs_in",
+    "detail": "sequence argument dc_site.mppt.capital_cost,dc_site.genset_rectifier.capital_c"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:100",
+    "reference": "dc3_baseline_costs::cost_reference::dc_source_conversion::fixed_om_costs_in",
+    "detail": "sequence argument dc_site.mppt.fixed_om_cost,dc_site.genset_rectifier.fixed_om"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:121",
+    "reference": "dc3_baseline_costs::cost_reference::dc_total::category_capital_costs_in",
+    "detail": "sequence argument dc_pv.capital_cost,dc_bess.capital_cost,dc_genset.capital_co"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:122",
+    "reference": "dc3_baseline_costs::cost_reference::dc_total::category_fixed_om_costs_in",
+    "detail": "sequence argument dc_pv.fixed_om_cost,dc_bess.fixed_om_cost,dc_genset.fixed_om"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:213",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_1_efficiency::efficiencies_in",
+    "detail": "sequence argument electrical.main_switchgear.efficiency, electrical.mv_transfo"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:243",
+    "reference": "ac_coupled_facility::ac_facility::rack_1_server_2_efficiency::efficiencies_in",
+    "detail": "sequence argument electrical.main_switchgear.efficiency, electrical.mv_transfo"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:273",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_1_efficiency::efficiencies_in",
+    "detail": "sequence argument electrical.main_switchgear.efficiency, electrical.mv_transfo"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:303",
+    "reference": "ac_coupled_facility::ac_facility::rack_2_server_2_efficiency::efficiencies_in",
+    "detail": "sequence argument electrical.main_switchgear.efficiency, electrical.mv_transfo"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:333",
+    "reference": "ac_coupled_facility::ac_facility::auxiliary_feed_efficiency::efficiencies_in",
+    "detail": "sequence argument electrical.main_switchgear.efficiency, electrical.mv_transfo"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:140",
+    "reference": "ac_coupled_site::ac_site::pv_feed_efficiency::efficiencies_in",
+    "detail": "sequence argument mppt.efficiency, pv_inverter.efficiency, pv_transformer.effi"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:158",
+    "reference": "ac_coupled_site::ac_site::genset_feed_efficiency::efficiencies_in",
+    "detail": "sequence argument genset_transformer.efficiency, source_bus.efficiency"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:170",
+    "reference": "ac_coupled_site::ac_site::bess_charge_efficiency::efficiencies_in",
+    "detail": "sequence argument bess_transformer.reverse_efficiency, bess_converter.charge_e"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:182",
+    "reference": "ac_coupled_site::ac_site::bess_discharge_efficiency::efficiencies_in",
+    "detail": "sequence argument bess_converter.discharge_efficiency, bess_transformer.effici"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:197",
+    "reference": "ac_coupled_site::ac_site::bess_stored_charge_efficiency::efficiencies_in",
+    "detail": "sequence argument bess_transformer.reverse_efficiency, bess_converter.charge_e"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:212",
+    "reference": "ac_coupled_site::ac_site::bess_stored_discharge_efficiency::efficiencies_in",
+    "detail": "sequence argument bess.discharge_efficiency, bess_converter.discharge_efficien"
+   }
+  ],
+  "unverified": [],
+  "reuse": "NEW fact: sequence-valued argument bound to a calc input"
+ },
+ "ES-004": {
+  "category": "B3",
+  "status": "checked",
+  "outcome": "refused",
+  "findings": [
+   {
+    "location": "library/components/compute/it.sysml:103",
+    "reference": "dc3_it::'IT Rack'::servers",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/it.sysml:105",
+    "reference": "dc3_it::'IT Rack'::rack_power",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/it.sysml:106",
+    "reference": "dc3_it::'IT Rack'::rack_storage",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/it.sysml:117",
+    "reference": "dc3_it::'IT System'::racks",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/it.sysml:118",
+    "reference": "dc3_it::'IT System'::core_switches",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/it.sysml:119",
+    "reference": "dc3_it::'IT System'::storage",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/cooling.sysml:192",
+    "reference": "dc3_cooling::'Cooling System'::cold_plate_loops",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/cooling.sysml:193",
+    "reference": "dc3_cooling::'Cooling System'::rear_doors",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/cooling.sysml:194",
+    "reference": "dc3_cooling::'Cooling System'::cdus",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/cooling.sysml:195",
+    "reference": "dc3_cooling::'Cooling System'::crahs",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/cooling.sysml:196",
+    "reference": "dc3_cooling::'Cooling System'::fan_arrays",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/cooling.sysml:197",
+    "reference": "dc3_cooling::'Cooling System'::fws_pumps",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/cooling.sysml:198",
+    "reference": "dc3_cooling::'Cooling System'::heat_rejection",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/facility.sysml:142",
+    "reference": "dc3_facility::'Electrical Distribution System'::path_elements",
+    "detail": "bounds ('inf', 'inf')"
+   },
+   {
+    "location": "library/components/compute/facility.sysml:143",
+    "reference": "dc3_facility::'Electrical Distribution System'::energy_storage",
+    "detail": "bounds ('inf', 'inf')"
+   }
+  ],
+  "unverified": [],
+  "reuse": "NEW fact: part multiplicity bounds + approximate instantiation"
+ },
+ "ES-005": {
+  "category": "B4/B5",
+  "status": "checked",
+  "outcome": "refused",
+  "findings": [
+   {
+    "location": "library/analyses/energy/path_efficiency.sysml:52",
+    "reference": "product(efficiencies_in)",
+    "detail": "invocation of 'NumericalFunctions"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:99",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:111",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:123",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:132",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:144",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:156",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:211",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:235",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:259",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:283",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:307",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:211",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:241",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:271",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:301",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:331",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:138",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:156",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:168",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:180",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:195",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:210",
+    "reference": "size(efficiencies_in)",
+    "detail": "invocation of 'SequenceFunctions"
+   }
+  ],
+  "unverified": [],
+  "reuse": "REUSED: reference_use.inspect_reference_uses admission (sum only)"
+ },
+ "ES-006": {
+  "category": "B6",
+  "status": "checked",
+  "outcome": "refused",
+  "findings": [
+   {
+    "location": "library/analyses/energy/annual_energy_balance.sysml:46",
+    "reference": "if demand_bus_wh_in < pv_bus_wh * direct_solar_fraction_in? demand_bus_wh_in els",
+    "detail": "conditional expression"
+   },
+   {
+    "location": "library/analyses/energy/annual_energy_balance.sysml:55",
+    "reference": "if storage_energy_delivery_limit_wh < storage_charge_delivery_limit_wh? storage_",
+    "detail": "conditional expression"
+   },
+   {
+    "location": "library/analyses/energy/annual_energy_balance.sysml:56",
+    "reference": "if storage_discharge_delivery_limit_wh < storage_pv_delivery_limit_wh? storage_d",
+    "detail": "conditional expression"
+   },
+   {
+    "location": "library/analyses/energy/annual_energy_balance.sysml:57",
+    "reference": "if limit_a_wh < limit_b_wh? limit_a_wh else limit_b_wh",
+    "detail": "conditional expression"
+   },
+   {
+    "location": "library/analyses/energy/annual_energy_balance.sysml:58",
+    "reference": "if limit_c_wh < remaining_demand_wh? limit_c_wh else remaining_demand_wh",
+    "detail": "conditional expression"
+   }
+  ],
+  "unverified": [],
+  "reuse": "NEW fact: conditional operator ('if')"
+ },
+ "ES-007": {
+  "category": "B8",
+  "status": "checked",
+  "outcome": "refused/excluded",
+  "findings": [
+   {
+    "location": "designs/examples/baseline_annual.sysml:57",
+    "reference": "dc3_baseline_annual::annual_reference::ac_demand::input_domain",
+    "detail": "excluded: warn_non_numerical_predicate",
+    "outcome": "excluded"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:74",
+    "reference": "dc3_baseline_costs::cost_reference::ac_total::delivered_domain",
+    "detail": "refused: block_non_numerical_containment",
+    "outcome": "refused"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:74",
+    "reference": "dc3_baseline_costs::cost_reference::ac_total::delivered_domain",
+    "detail": "refused: block_non_numerical_containment",
+    "outcome": "refused"
+   },
+   {
+    "location": "designs/examples/baseline_annual.sysml:84",
+    "reference": "dc3_baseline_annual::annual_reference::ac_balance::input_domain",
+    "detail": "excluded: warn_non_numerical_predicate",
+    "outcome": "excluded"
+   },
+   {
+    "location": "designs/examples/baseline_annual.sysml:97",
+    "reference": "dc3_baseline_annual::annual_reference::dc_demand::input_domain",
+    "detail": "excluded: warn_non_numerical_predicate",
+    "outcome": "excluded"
+   },
+   {
+    "location": "designs/examples/baseline_annual.sysml:124",
+    "reference": "dc3_baseline_annual::annual_reference::dc_balance::input_domain",
+    "detail": "excluded: warn_non_numerical_predicate",
+    "outcome": "excluded"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:134",
+    "reference": "dc3_baseline_costs::cost_reference::dc_total::delivered_domain",
+    "detail": "refused: block_non_numerical_containment",
+    "outcome": "refused"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:134",
+    "reference": "dc3_baseline_costs::cost_reference::dc_total::delivered_domain",
+    "detail": "refused: block_non_numerical_containment",
+    "outcome": "refused"
+   }
+  ],
+  "unverified": [],
+  "reuse": "REUSED: executable_profile via L6 check_constraint_executability"
+ },
+ "ES-010": {
+  "category": "B7",
+  "status": "checked",
+  "outcome": "omitted/refused",
+  "findings": [
+   {
+    "location": "designs/examples/baseline_costs.sysml:10",
+    "reference": "dc3_baseline_costs::cost_reference::period",
+    "detail": "String value, attribute declaration spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/examples/baseline_costs.sysml:11",
+    "reference": "dc3_baseline_costs::cost_reference::terminal",
+    "detail": "String value, attribute declaration spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/examples/source_load_example.sysml:41",
+    "reference": "dc3_source_load_example::illustrative_scenario::genset::fuel_unit",
+    "detail": "String value, attribute :>> redefinition spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:27",
+    "reference": "dc_native_site::dc_site::genset::fuel_unit",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:49",
+    "reference": "dc_native_site::dc_site::mppt::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:52",
+    "reference": "dc_native_site::dc_site::mppt::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:60",
+    "reference": "dc_native_site::dc_site::genset_rectifier::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:63",
+    "reference": "dc_native_site::dc_site::genset_rectifier::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_site.sysml:82",
+    "reference": "dc_native_site::dc_site::source_bus::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:46",
+    "reference": "dc_native_facility::dc_facility::electrical::bus_converter::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:57",
+    "reference": "dc_native_facility::dc_facility::electrical::aux_inverter::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:72",
+    "reference": "dc_native_facility::dc_facility::it_system::rack_1::distribution_kind",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:88",
+    "reference": "dc_native_facility::dc_facility::it_system::rack_2::distribution_kind",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/dc_native/dc_facility.sysml:109",
+    "reference": "dc_native_facility::dc_facility::cooling::liquid_class",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:43",
+    "reference": "ac_coupled_facility::ac_facility::electrical::mv_transformer::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:49",
+    "reference": "ac_coupled_facility::ac_facility::electrical::ups::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:55",
+    "reference": "ac_coupled_facility::ac_facility::electrical::pdu::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:72",
+    "reference": "ac_coupled_facility::ac_facility::it_system::rack_1::distribution_kind",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:88",
+    "reference": "ac_coupled_facility::ac_facility::it_system::rack_2::distribution_kind",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_facility.sysml:109",
+    "reference": "ac_coupled_facility::ac_facility::cooling::liquid_class",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:27",
+    "reference": "ac_coupled_site::ac_site::genset::fuel_unit",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:49",
+    "reference": "ac_coupled_site::ac_site::mppt::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:52",
+    "reference": "ac_coupled_site::ac_site::mppt::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:60",
+    "reference": "ac_coupled_site::ac_site::pv_inverter::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:63",
+    "reference": "ac_coupled_site::ac_site::pv_inverter::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:71",
+    "reference": "ac_coupled_site::ac_site::pv_transformer::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:74",
+    "reference": "ac_coupled_site::ac_site::pv_transformer::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:82",
+    "reference": "ac_coupled_site::ac_site::genset_transformer::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:85",
+    "reference": "ac_coupled_site::ac_site::genset_transformer::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:95",
+    "reference": "ac_coupled_site::ac_site::bess_transformer::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:98",
+    "reference": "ac_coupled_site::ac_site::bess_transformer::conversion_level",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   },
+   {
+    "location": "designs/ac_coupled/ac_site.sysml:117",
+    "reference": "ac_coupled_site::ac_site::source_bus::redundancy",
+    "detail": "String value, shorthand :>> (ReferenceUsage) spelling",
+    "outcome": "omitted"
+   }
+  ],
+  "unverified": [],
+  "reuse": "NEW fact: String values (both spellings); refused when bound into a calc input",
+  "l6_today_unextractable": 3
+ }
+}

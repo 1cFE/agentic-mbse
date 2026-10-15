@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-10-13
+**Last Updated**: 2026-10-14
 
 ---
 
@@ -18,6 +18,7 @@ Prioritized list of epics and features.
 
 | Item | Status | Evidence / next step |
 |------|--------|----------------------|
+| `EXEC-SUBSET-CONTRACT` | [AGENT] Epic drafted 2026-10-14 at owner request ("a plan to fix this once and for all"); priority not assigned; 5 owner decisions open | One executable-subset profile in agentic-mbse that the generator screens with, L6 reports, and every shipped example is tested against; positional-binding L2 check and semantic-hazard register; workflow gates by declared execution target. Absorbs `GENERATOR-SUBSET-PATTERNS`. [Epic](epic_executable-subset-contract.md) |
 | `GENERATOR-SUBSET-PATTERNS` | [AGENT] Filed 2026-10-13 at owner request from consumer project dc3 (WI-008); priority not assigned | Capture, teach and enforce: (1) positional binding of calc-usage inputs (KerML: a Step's parameter redefines the type's parameter at the same position; a reordered `in x = …` silently swaps values) — validator check; (2) the generator's executable subset (part-owned asserts, numeric predicates, `sum` only, fixed arity, exact design counts, one-level named subsetting, compose by specialized defs, String metadata) — pattern doc and L6 parity with generator refusals; (3) SysIDE evaluator-author notes; (4) expert-agent dispatch guidance. [Item](item_generator-subset-patterns.md) |
 | `L6-LIBRARY-ALIAS-SOURCE` | [AGENT] Filed 2026-10-04 at `L6-EXPOSE-CONSISTENCY` close; recorded limitation, not a regression | An EXPOSE alias to an attribute of a part typed by a `library/` part definition passes Level 6 even when that source value is unset, because completeness path-filters the source declaration and skips the alias ([audit](../completed/20261004_l6-expose-consistency/audit.md) advisory; design R4/B4). How required values on referenced library parts get verified is undecided |
 | `NATIVE-DISTRIBUTION-RECONCILIATION` | [AGENT] Draft residual-work spec; product-lens CLEAR; adopted 2026-10-06 as Item 1 of `WRAP-SPLIT` (P1) | [Distribution spec](../active/native-skill-distribution/spec.md); [epic](epic_wrap-split.md) |
