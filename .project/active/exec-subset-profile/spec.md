@@ -256,4 +256,14 @@ The expression inventory stops at its first error (`elaboration/expression_evide
 
 ---
 
+## Change Log
+
+- **2026-10-15 — SA-1, proposed, not applied `[AGENT]`.** Origin: design revision 2, following design review S1.
+  - **Change.** The criterion "Every refused shape has an admitted-context probe" would gain one exception. A shape that the pinned generator refuses in every context the rule can compute may carry a `no_admitted_context` statement instead. The statement must give the generator citation and cite refused probes covering each computable context.
+  - **Likely users.** An asserted constraint owned by a calc def (`elaborate.py:1625`). Possibly `indexed-reference`, if its calc-result probe refuses.
+  - **Why.** Without the exception, the criterion cannot be met for shapes the generator refuses everywhere.
+  - **Decision.** Pending owner or orchestrator acceptance. Until it is accepted, the criterion stands as written.
+
+---
+
 **Next Steps:** `/_my_design`, then `/_my_design_review`. Then **owner gate R1**: the design records the capability-policy ownership decision and the fact/decision/consumer boundary, and the owner approves it with a date before `/_my_plan` starts. The spec review says a fresh spec review is not needed after these edits; it is enough to verify that the must-fix items landed.

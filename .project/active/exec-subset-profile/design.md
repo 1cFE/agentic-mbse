@@ -1,362 +1,559 @@
 # Design: Executable-subset capability contract (EXEC-SUBSET-CONTRACT Item 1)
 
-**Status:** Draft — awaiting design review, then **owner gate R1** (§ R1 below is a recommendation, not a decision)
+**Status:** Draft, revision 2 (design review M1–M5 and S1–S10 resolved, spike F1 folded in). Next: verification of the must-fixes, then **owner gate R1**. § R1 is a recommendation, not a decision.
 **Owner:** Reid Westwood
-**Created:** 2026-10-15
-**Branch / base:** `exec-subset-profile` at `a718efec`
+**Created:** 2026-10-15 · **Revised:** 2026-10-15
+**Branch / base:** `exec-subset-profile`; design base `a718efec`, revised at `8f9fd158`
 **Pins (read-only):** sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`; dc3 `808464df…` (baseline), `60b44d53…` (repaired); SysIDE 0.8.4
 
 ## Overview
 
-Item 1 builds one declared contract of which (shape, context) pairs the pinned generator refuses, admits, excludes or omits. It has four parts: neutral facts extracted once from SysIDE, a pure evaluator that turns facts into outcomes, packaged rule records that carry the outcome for each (shape, context) pair together with its evidence, and an inventory (site account plus matrix) that accounts for every refusal site. No consumer is wired.
+Item 1 builds one declared contract of which (shape, context) pairs the pinned generator refuses, admits, excludes or omits. It has four parts:
+
+- **Facts:** neutral facts extracted once from SysIDE.
+- **Evaluator:** a pure function that turns facts into outcomes.
+- **Rule records:** packaged data holding the outcome for each (shape, context) pair together with its evidence.
+- **Inventory:** a site account plus a matrix that accounts for every refusal site.
+
+No consumer is wired.
 
 ## Related Artifacts
 
-- Spec: [spec.md](spec.md) (revised after review); review and resolutions: [spec-review.md](spec-review.md); align record and owner gates R1–R3: [briefs/align.md](briefs/align.md); product lens: [product-lens.md](product-lens.md)
+- Spec: [spec.md](spec.md) (revised after review; change log records the proposed amendment from this design); review and resolutions: [spec-review.md](spec-review.md); align record and owner gates R1–R3: [briefs/align.md](briefs/align.md); product lens: [product-lens.md](product-lens.md)
+- Design review: [design-review.md](design-review.md) (verdict Revise; resolutions recorded there)
+- Spike F1, occurrence-port parity: [spikes/f1-findings.md](spikes/f1-findings.md), with harness and fixtures in `spikes/f1-occurrence-port/`
 - Epic: [epic_executable-subset-contract.md](../../backlog/epic_executable-subset-contract.md) (Item 1; boundaries with Items 2–5; D1–D3)
-- Prototype (feasibility only): `.project/concepts/convince-me-exec-subset/evidence/` (`01-codegen-oracle.py`, `01-screen.py`, `02-inventory.py`, `01-fixtures/`)
-- Decision records: agentic-mbse `.project/adr/` has no entries (README only). The cited ADR is sysml-codegen `.project/adr/0007-agentic-mbse-owns-neutral-facts-codegen-owns-rendering.md` (active, 2026-08-23).
-- Code extended: `src/agentic_mbse/sysml/{executable_profile,reference_use,expression,constraint_extraction,syside_adapter}.py`; `src/agentic_mbse/errors.py`
-- Spike F1 (occurrence-port parity): [spikes/f1-findings.md](spikes/f1-findings.md). Parity was confirmed with 72 of 72 cases matching and a 416-line summary port. It also found that the multiplicity-inheritance premise is false in SysIDE 0.8.4.
+- Prototype (feasibility only): `.project/concepts/convince-me-exec-subset/evidence/`
+- Decision records: agentic-mbse `.project/adr/` has no entries. The relevant codegen ADRs are in `~/src/sysml-codegen/.project/adr/`:
+  - 0004, derive occurrences from exact evidence or refuse ([OWNER]);
+  - 0007, agentic-mbse owns neutral facts;
+  - 0012, exclusive semantic-evidence ownership ([INHERITED]).
+- Code extended: `src/agentic_mbse/sysml/{reference_use,syside_adapter}.py`. Code reused unchanged: `executable_profile.py`, `constraint_extraction.py`, `expression.py`.
 
 ## The Point
 
 [INHERITED: epic Item 1 objective] Define and implement the structural contract **without duplicating model interpretation and without broadening current refusals accidentally**.
 
-[AGENT, ratified by owner 2026-10-15] The generator, L6 and shipped guidance today each hold their own picture of what the generator can execute. They drift, and a modeler finds the generator's limits one failed run at a time (dc3: L6 saw B7 and B8, missed B1–B6). Item 1 replaces the three pictures with one contract that later items consume: codegen in Item 2, L6 in Item 3, rendered guidance in Item 5. The contract is only worth having if it is honest in both directions. It must never call a model clean when a check could not run, and it must never refuse something the pinned generator actually accepts.
+[AGENT, ratified by owner 2026-10-15] The generator, L6 and shipped guidance today each hold their own picture of what the generator can execute. They drift, and a modeler finds the generator's limits one failed run at a time. On dc3, L6 saw B7 and B8 and missed B1–B6. Item 1 replaces the three pictures with one contract that later items consume: codegen in Item 2, L6 in Item 3, rendered guidance in Item 5.
+
+The contract is only worth having if it is honest in both directions:
+
+- it must never call a model clean when a check could not run;
+- it must never refuse something the pinned generator actually accepts.
 
 ## R1 — Capability-policy ownership (owner gate, recommendation only)
 
-**The question.** Which repository owns the decision "the generator refuses shape S in context C", and where is the line between facts, decisions and consumers? ADR 0007 settles that model facts live in agentic-mbse and output facts in codegen, with dependency codegen → agentic-mbse only. It does not settle who owns the admit/refuse decision.
+### The situation
 
-**Recommendation (Option A): agentic-mbse owns the declared contract in a pure decision layer. The generator stays the ground truth the contract is checked against.**
+The contract needs to know which part usages the generator instantiates. Three outcomes depend on that: whether a sequence binding is refused (ES-003/ES-012, dc3 B2), whether a ranged multiplicity is refused (ES-004, B3), and whether a blocked predicate is refused (ES-007, B8). The generator only examines those shapes inside parts it instantiates.
+
+The instantiation logic exists only in codegen today (`elaboration/occurrence.py`, `elaborate.py:759-952`). It covers roots, redefinition slots, multiplicity counts, and which redefined calc usage is the one that runs in each scope. agentic-mbse cannot import codegen. So Item 1 must either copy that logic or leave those cases undecided.
+
+There are two things to decide:
+
+1. **Who owns what.** The question is where the line runs between facts, decisions and consumers. ADR 0007 settles that model facts live in agentic-mbse and output facts in codegen. It does not settle who owns the admit/refuse decision.
+2. **What to do about the instantiation logic.** Copy it into agentic-mbse now (Option A), or leave it in codegen and accept honest gaps until Item 2 (Option A′).
+
+### What "owning the contract" means, in plain words
+
+agentic-mbse would own a **published, versioned description** of the generator's refusals, plus the evaluator that applies it. Codegen keeps owning the **behavior** the description describes.
+
+How a policy change flows depends on whether Item 2 has landed:
+
+- **Until Item 2.** A change starts in codegen's code, or in the invocation allowlist in agentic-mbse. Then a probe shows the new behavior, the record changes, and `SUBSET_PROFILE_VERSION` bumps, all in one coordinated merge.
+- **After Item 2,** codegen refuses *through* the contract, so the generator's live behavior partly is the contract. Probes of it become self-referential, so ground truth moves to **Item 2's independent corpus.** That corpus is codegen's underlying elaboration, run with the contract screen bypassed (epic design principle 3). A policy change is then a record change plus an elaboration change, verified against that corpus.
+
+Both options below share this layering:
 
 | Layer | Owner | Holds | Must not |
 |---|---|---|---|
-| Facts | agentic-mbse (reads SysIDE) | What the model declares: occurrence structure, expression sites, binding sources, assertion owners, String values, constraint facts | Decide admit/refuse (one grandfathered exception, below) |
-| Decisions | agentic-mbse, pure (no SysIDE) | `subset_profile.py`, packaged rule records, `SUBSET_PROFILE_VERSION`, neutral reason IDs, outcomes | Import SysIDE or codegen; use `SI_*` names outside evidence fields |
+| Facts | agentic-mbse (reads SysIDE) | What the model declares: expression sites, binding sources, assertion owners, String values, constraint facts; under A also occurrence structure | Decide admit/refuse (one grandfathered exception, below) |
+| Decisions | agentic-mbse, pure (no SysIDE) | `subset_profile.py`, packaged rule records, `SUBSET_PROFILE_VERSION`, neutral reason IDs, outcomes | Import SysIDE, codegen or a SysIDE-reading module; use `SI_*` names outside evidence fields |
 | Consumers | codegen (Item 2), L6 (Item 3), docs (Item 5) | Code mapping (one-to-many), output facts, severity, rendering | Re-derive a decision the contract holds |
 
-Three statements make the boundary operational:
+**The grandfathered exception.** `reference_use._require_supported_invocation` (`reference_use.py:395-428`) is a capability decision ("only `NumericalFunctions::sum`") living in the fact layer, and codegen's ES-005 refusal is that raise. Moving it would change codegen's refusal path, which is Item 2's call. Both options leave the raise in place. The allowlist itself moves to a pure module that `reference_use` and the profile both import (S8). Changing the allowlist must bump `SUBSET_PROFILE_VERSION`, and a test enforces it.
 
-- **Authority.** The pinned generator's behavior is ground truth. The contract is a declared, probe-evidenced reproduction of it. A divergence is a contract defect, or an R2 behavior change that needs the owner. It is never a silent policy change.
-- **Occurrence structure is a model fact.** Which part usages the generator instantiates (roots, redefinition slots, multiplicity counts, which redefined calc usage writes in each scope) is a fact about the model. Today it exists only in codegen (`elaboration/occurrence.py:902-1046`, `elaborate.py:901-931`). Under ADR 0007 it belongs in agentic-mbse. Item 1 ports it faithfully as a shared fact. Item 2 then migrates codegen onto it or records why not. Until then the two copies are held together by a recorded parity check.
-- **The invocation allowlist is a grandfathered exception.** `reference_use._require_supported_invocation` (`reference_use.py:395-428`) is a capability decision living in the fact layer, and codegen's ES-005 refusal is that raise. Moving it would change codegen's refusal path, which is Item 2's call. Item 1 leaves it in place, exposes the allowlist through one public predicate, and the profile consumes that predicate's answer as a fact. A change to the allowlist must bump `SUBSET_PROFILE_VERSION`, and a test enforces this.
+### Option A — copy the instantiation logic into agentic-mbse as a shared fact
 
-**How the epic's suggested direction fares.** The suggestion (pure `sysml/subset_profile.py`, `SUBSET_PROFILE_VERSION`, neutral reasons, separate fact extraction) holds on its merits, and Option A adopts it. It needs two amendments. First, "separate extraction of required facts" understates the work. The occurrence facts ES-003, ES-004 and ES-007 need are not in agentic-mbse at all, so Item 1 must port them, and that port is temporary duplication until Item 2 retires codegen's copy. Second, the existing allowlist exception has to be named, not ignored.
+- **What ships in Item 1.** The **summary port** spike F1 measured. It covers roots, every occurrence by full path with per-parent counts, which part definitions have occurrences, the winning calc usage per scope, and the multiplicity resolution class.
+  - Size: 416 physical lines (333 of code). The spike estimates ~600 lines in production with fact types, failure vocabulary and caller roots.
+  - Parity: 72 of 72 cases match codegen `b5663c07` on every criterion, including whole-model aborts. The cases are the prototype fixtures, all 37 corpus fixtures, both dc3 trees and 11 edge fixtures.
+  - Controls: deliberately wrong ports are caught. The prototype heuristic is flagged on 32 of 72 cases.
+- **What it is not.** It is not a near-verbatim move of codegen's `OccurrenceIndex`. That class also carries containment addresses, `resolve_address`, `consumer_domain` and slot lookups used throughout elaboration (`occurrence.py:448-632`). A module port is unmeasured; the spike estimates 600–1,000 lines.
+  - **I recommend the summary port** for Item 1. It is measured, it is everything the contract needs, and the spike's parity harness is independent of the port's shape. So the module question can be decided in Item 2 with the same safety net.
+  - The cost is that Item 2 cannot just swap codegen onto the summary. A swap needs the module port plus re-plumbing of codegen's elaboration.
+- **The end condition (the owner picks one now, so the copy is bounded):**
+  - **(i) One copy.** Item 2 grows the port into the module, swaps codegen onto it and deletes codegen's copy. Highest Item 2 cost; no lasting duplication.
+  - **(ii) Two copies, mechanically held together.** Codegen keeps its copy. Item 2 makes the parity check a permanent codegen CI test over the corpus and the edge fixtures. The spike's run takes ~70 s. The extra Item 2 cost is a CI test; the cost that lasts is two copies that cannot drift silently.
+  - *My lean is (ii)* unless Item 2 is re-plumbing elaboration anyway. "Records why not", the earlier escape hatch, is removed.
+- **What it amends: codegen ADR 0012.** Its third invariant reads: "Raw parser reads for declaration discrimination, slot construction, and multiplicity retain their narrow codegen ownership; reviewed manifests guard the acquisition operations rather than banning all raw reads."
+  - Option A puts slot construction and the multiplicity reads in agentic-mbse too. **Approving A amends that invariant.**
+  - The amendment is drafted in [Appendix B](#appendix-b--adr-drafts-r1). It is filed in sysml-codegen, the repository that upholds 0012, when Item 2 starts, or earlier if the owner prefers.
+  - ADR 0004 is honored. The port derives occurrences from exact evidence and turns every abort into a named fact failure, never an approximation.
+  - In agentic-mbse, the port's two raw reads (`referent` of a referenced bound, `chaining_features` of a redefined endpoint; spike Surprise 3) go through `reference_use` accessors, so the selector-ownership gate stays green.
 
-**Rejected alternatives and what each costs**
+### Option A′ — no port, no heuristic
 
-- **B. Codegen owns policy; agentic-mbse ships facts only.** L6 and guidance could only consume the policy by importing codegen, which is a [HARD] violation, or by re-implementing it, which is the drift this epic exists to stop.
-- **C. Put decisions in the fact layer (generalize the allowlist pattern).** Capability refusals would arrive as evidence errors, indistinguishable from real evidence failures. ES-006 already shows the harm: a conditional surfaces as `RESOLVED_TARGET_MISSING`. Per-node facts also cannot see instantiation context, the decisions cannot be versioned separately, and a pure snapshot-route evaluation becomes impossible.
-- **D. Shared records, each consumer implements the decisions.** Two implementations of every decision, kept in step by review alone. That is the status quo with better documentation.
-- **A′. Option A without the occurrence port (approximate instantiation).** The prototype's "typed anywhere" heuristic shows the cost. Either rules refuse in contexts the generator never instantiates (an R2 breach), or every uncertain case reports `unverified` and the repaired-tree criterion fails. Either way it is still a second interpretation, only a partial one.
+- **What it does.** The evaluator decides only contexts that need no instantiation facts: owner kind, package-owned usages, expression sites, root-level part usages (the root rule is one line), and attribute usages. Every instantiation-dependent context reports `unconfirmed` until Item 2 moves the logic once. This option has no second interpretation and no approximation.
+- **What it costs on dc3 baseline:**
+  - **Still `refused`:** B1 (calc-usage-owned assert; the owner-kind check is model-wide), B4 and B5 (`product`, `size`), and B6 (conditional). These are inventory sites, model-wide.
+  - **Still `omitted`:** B7 (String).
+  - **`unconfirmed` instead of `refused`:**
+    - B2 (sequence actual, ES-003), except in package-owned calc usages;
+    - B3 (the 20 facility-library `[*]` parts, ES-004), except root part usages;
+    - B8, the 4 BLOCK predicates (ES-007), except package-owned constraints. Its 4 NON_NUMERICAL predicates also become `unconfirmed` rather than `excluded`.
+  - The baseline criterion ("reports every confirmed category B1–B8") would need the owner to accept B2, B3 and B8 as `unconfirmed`. The repaired-tree criterion (zero `refused`) still passes.
+  - It also loses the ES-003 `writer_overridden` and multiplicity-beneath cases, because those can't be computed without the port.
+- **What it amends.** Nothing. ADR 0012 stands, and Item 2 does the single move.
 
-**What approving A commits the owner to.** Item 2 inherits two obligations: migrate codegen onto the shared occurrence facts, and decide the allowlist's home. Item 1's effort grows by the occurrence port (≈500 lines plus parity evidence; see de-risk flag F1). The ADR text to file after approval is drafted in [Appendix B](#appendix-b--adr-draft-r1).
+### Rejected outright
+
+- **B. Codegen owns policy; agentic-mbse ships facts only.** L6 and guidance could consume it only by importing codegen, which is a [HARD] violation, or by re-implementing it, which is the drift this epic exists to stop.
+- **C. Decisions inside the fact layer** (generalizing the allowlist pattern). Capability refusals would arrive as evidence errors, indistinguishable from real evidence failures; ES-006 already shows the harm. Per-node facts cannot see instantiation context, and decisions could not be versioned or evaluated without SysIDE.
+- **D. Shared records, each consumer implements them.** That means two implementations per decision, held together by review alone.
+
+### Recommendation
+
+**Approve Option A with the summary port, end condition (ii), and the ADR 0012 amendment.** The reason: A′ leaves three of the eight dc3 categories (B2, B3, B8) undecided in Item 1. Those are the categories L6 missed and modelers hit most. The cost of A is measured, not guessed: ~600 production lines that matched codegen on 72 of 72 cases, plus a permanent CI parity test. A′ is defensible if the owner would rather not amend ADR 0012 before Item 2, and the design supports switching to it. The only change would be that occurrence-dependent contexts report `unconfirmed`.
 
 ## Research Findings
 
-Verified at sysml-codegen `b5663c07` (`.git/refs/heads/main`; working tree read directly) and agentic-mbse `a718efec`. Codegen paths are relative to `src/sysml_codegen/`.
+Verified at sysml-codegen `b5663c07` and agentic-mbse `a718efec`. Codegen paths are relative to `src/sysml_codegen/`. Each finding names the decision it drives.
 
-- **Roots** (`elaboration/occurrence.py:902-923`): every `PartUsage` from `elements_of_type(model, "PartUsage")` whose `owning_type` (falling back to `owner`) is neither a `PartDefinition` nor a `PartUsage`.
-- **Reach** (`occurrence.py:927-963`, `965-1046`): an occurrence's children are the `usage.usages` that are composite user-model `PartUsage`s. For each redefinition slot only the effective declaration is kept (`FeatureSlotIndex.effective_declaration`, `:249`). Children are visited once per multiplicity index, so `[0]` instantiates nothing beneath it. The type closure comes from `owned_specializations[].superclassifier` (`:635-664`). `occurrences_for_type` matches any occurrence whose type closure contains the definition (`:505-508`), so subtypes count.
-- **Multiplicity** (`occurrence.py:812-899`): reads `usage.multiplicity` (KerML: own or inherited from supertypes), `usage.is_ordered`, `usage.is_nonunique`, `upper_bound` and `lower_bound`. Ordered or nonunique gives `SI_MULTIPLICITY_UNSUPPORTED`. A missing or non-integer upper bound gives `…_UNRESOLVED`. A negative bound gives `…_INVALID`, and lower ≠ upper gives `…_UNSUPPORTED`. A bound is evaluated with agentic's `evaluate_true_static_expression`, or through a referenced attribute's single writer (`:694-788`). The prototype read `declared_multiplicity`, a different attribute.
-- **Attachment** (`elaborate.py:759-787`): a part def owner gets every occurrence of its type, a part usage owner gets its own occurrences, a package always gets one scope, and anything else gets none. **Calc usages also go through writer selection** (`:1195-1233`, `_select_writer` `:901-931`). Usages in one redefinition slot share scopes, and each scope classifies only the winning writer.
-- **Binding classifier** (`elaborate.py:2130-2171`, `:2187-2196`): it strips a unit annotation (agentic `unit_annotation_value`), then tests `is_literal_node`. Next it requires exactly one inventoried reference use and a `FeatureChainExpression` or `FeatureReferenceExpression` metatype (`:1114-1118`); anything else is an expression source. Self-binding means `use.path.leaf.element_id == formal.element_id` (`extraction/binding_source.py:87-89`). Every primitive except the metatype test is already agentic code.
-- **Expression inventory** (`elaboration/expression_evidence.py:280-347`): sites are (a) every `Feature` with a `feature_value_expression`, with roles `CALC_DEFINITION_DEPENDENCY`, `BINDING`, `ALIAS` and `COMPUTED_ATTRIBUTE` by owner; and (b) the `result_expression` of every `ConstraintDefinition`/`ConstraintUsage`. It fails fast. A calc def's bare result expression is not a site; it goes to the compiler and becomes `MANUAL_REQUIRED` (`extraction/calc_compat_renderer.py:75`, `expression_compiler.py:285-303`).
-- **Code mapping** (`orchestration/elaborated_pipeline.py:389-396`, `:425`): `INDEXED_REFERENCE_UNSUPPORTED` and `EXPRESSION_KIND_UNSUPPORTED` map to named codes, and every other evidence code maps to `SI_EVIDENCE_INCOMPLETE`.
-- **CLI** (`cli/__init__.py:1026-1069`, `:857`): `generate --models P --output D`. Exit 1 on any failure; codes appear only in `ERROR:` log lines. Codegen resolves agentic-mbse through `[tool.uv.sources] agentic-mbse = { path = "../agentic-mbse", editable = true }`.
-- **Agentic precedent:** `constraint_facts.py` (pure types) with `constraint_extraction.py` (SysIDE) and `executable_profile.py` (pure decisions, closed `REASON_CODES` validated in `EligibilityDiagnostic.__post_init__` `:123-132`, `PROFILE_SEMANTIC_VERSION` `:62`). The static ownership gate (`tests/test_sysml/test_semantic_selector_ownership.py:24-32`) confines raw reads of `operands`/`referent`/`target_feature`/`chaining_features` to `reference_use.py` and `syside_adapter.py`. The purity check is `tests/test_sysml/test_executable_profile_hygiene.py`. Package data precedent: `src/agentic_mbse/extraction/check_corpus/*.pdf`.
-- **L2 self-binding** (`validation/level2_structure.py:322-336`): calc usages only, bare references only, `referent` UUID = member UUID, every context. It is a native-correctness check, which is a different question from the generator's refusal.
-- **Prototype limits:** `01-codegen-oracle.py` ran inside the sysml-codegen venv against the live editable agentic-mbse tree and recorded no package identity. Its results are useful as fixtures, not as probe records.
+- **Roots** (`elaboration/occurrence.py:902-923`) are every `PartUsage` whose `owning_type` (or `owner`) is neither a part def nor a part usage. → D7, root tests.
+- **Reach** (`occurrence.py:927-1046`). Children are the composite user-model `PartUsage`s in `usage.usages`, with one effective declaration per redefinition slot (`:249`). They are visited once per multiplicity index, so `[0]` instantiates nothing. `occurrences_for_type` includes subtypes (`:505-508`). → R1, the port.
+- **Multiplicity** (`occurrence.py:812-899`) reads `usage.multiplicity`, `is_ordered`, `is_nonunique`, `upper_bound` and `lower_bound`. In SysIDE 0.8.4, `multiplicity` and `declared_multiplicity` return the same element on every usage in all 72 spike cases. Neither is inherited through `:>>`, and neither is `is_ordered` (F1 Surprise 1). A bound is evaluated with agentic's `evaluate_true_static_expression` or through one referenced writer chosen by owner kind (`:694-788`). Counts are per parent occurrence. → `part-multiplicity`, matrix rows G1/G2.
+- **Attachment and writers** (`elaborate.py:759-787`, `:901-952`, `:1195-1233`). A part-def owner gets the occurrences of its type; a part-usage owner gets its own; a package always gets one scope; anything else gets none. Calc usages in one redefinition slot share scopes, and only the winning writer's bindings are classified (`:1885`). → contexts `writer_overridden`, `owner_instantiated`.
+- **Occurrence aborts.** The build refuses the whole model on any of these:
+  - a specialization cycle (`:651-658`);
+  - recursive containment (`:972-981`);
+  - incomparable typings (`:683-690`);
+  - repeated native declarations (`:944-951`);
+  - duplicate occurrence identity (`:1033-1039`);
+  - a writer-selection ambiguity.
+
+  The port reproduces each one (F1). → `OccurrenceAbort` vocabulary.
+- **Binding classifier** (`elaborate.py:2130-2196`). It strips a unit annotation, tests `is_literal_node`, then requires exactly one inventoried use and a chain or reference metatype. Self-binding is `leaf.element_id == formal.element_id` (`extraction/binding_source.py:87-89`). → D5; this fact is shared code, not a port.
+- **Expression inventory** (`elaboration/expression_evidence.py:249-347`) covers declared-feature values (four roles) and constraint predicates. It runs before any occurrence work and fails fast (`orchestration/elaborated_pipeline.py:272-278`). A calc def's bare result expression becomes a `MANUAL_REQUIRED` stub (`extraction/expression_compiler.py:285-303`). → expression-site contexts, B3 (single construct per probe).
+- **Code mapping** (`elaborated_pipeline.py:389-396`, `:425`). Two evidence codes have named codes; everything else is `SI_EVIDENCE_INCOMPLETE`. → M4 code matching; the ES-006 location check.
+- **CLI** (`cli/__init__.py:1026-1069`, `:857`). `generate --models P --output D`, exit 1 on failure, codes in `ERROR:` lines. agentic-mbse resolves through `[tool.uv.sources] path = "../agentic-mbse"`. → probe harness.
+- **agentic precedent.** `constraint_facts.py` (pure types) / `constraint_extraction.py` (SysIDE) / `executable_profile.py` (pure decisions, `REASON_CODES` validated at `:123-132`). There is a selector-ownership gate (`tests/test_sysml/test_semantic_selector_ownership.py:24-32`), a purity hygiene test, and a package-data precedent (`extraction/check_corpus/`). `reference_use` already exposes `resolved_referent` (`:190`) and `resolved_chaining_features` (`:200`). → D1, S8, the accessors.
+- **L2 self-binding** (`validation/level2_structure.py:322-336`) checks calc usages and bare references in every context. It answers a native-correctness question, not the generator-refusal question. → matrix row SELF-BINDING, `l2_relation`.
 
 ## Core Concept
 
-The contract is a **lookup table keyed by (shape, context), whose refused entries must carry evidence.**
+The contract is a **lookup table keyed by (shape, context), whose entries must carry evidence.**
 
-Three steps, each in its own layer:
+1. **Facts** say what the model contains and where. "This calc input is bound to `(a, b)`." "Its owner `Site` has 2 occurrences under generator roots, and this usage wins in both." Two kinds of fact must not be confused:
+   - **Shared-code facts** (binding sources, expression sites, the allowlist, constraint facts) call the same agentic helpers the generator calls, so they agree by construction.
+   - **The occurrence facts** are a port of codegen logic. They agree by imitation, and the recorded parity check is what holds them to it.
+2. **Rules** are small pure functions. Each recognizes a *shape* in the facts and computes its *context* from a closed vocabulary. A rule never decides the outcome.
+3. **Records** decide. Each rule record maps (shape, context) to an outcome. Every outcome except `unconfirmed` must cite evidence, either a probe or, for `admitted`, a corpus fixture. A probe is a retained run of the pinned generator on a single-construct fixture whose observed code matches the rule's expected code. Any pair the record does not list reports `unconfirmed`.
 
-1. **Facts** say what the model contains and where. "This calc input is bound to `(a, b)`." "Its owner `Site` has 2 occurrences reachable from generator roots, and this usage is the selected writer in both." Facts are extracted once, with the same SysIDE reads and agentic helpers the generator uses, so they agree with the generator by construction rather than by imitation.
-2. **Rules** are small pure functions that recognize a *shape* in the facts and compute its *context* from a closed vocabulary. A rule never decides the outcome.
-3. **Records** decide. Each rule record maps (shape, context) to an outcome. A `refused` entry must cite at least one probe, which is a retained run of the pinned generator on a fixture of exactly that pair. Any pair the record does not list reports `unconfirmed`.
+**Counterfactual semantics.** Each finding states what the generator does with *this construct as if the rest of the model were admitted*. The generator itself fails fast. On the dc3 baseline it stops at `product(…)` and never reports its 72 unresolved multiplicities (F1 Surprise 4). A finding is therefore not "the next error the generator will print". The one place the counterfactual is undefined is beneath a refused multiplicity: there is no count, so findings there are `unconfirmed`.
 
-The key insight is that **R2 safety comes from the data shape, not from rule authors being careful.** A rule author can get a context computation wrong. But the evaluator can only emit `refused` through a record entry that cites a probe, and a test re-runs the evaluator on that probe's own fixture and checks that the pair matches. A new or unforeseen context defaults to `unconfirmed`, never to `refused`.
+**What the mechanism guarantees, and what it does not.**
 
-The same structure gives the other honesty property. A rule whose required facts failed to extract cannot look up anything, so it emits a structured `unverified` entry, and the result cannot be marked complete.
+- **Guaranteed:** every `refused` names a (rule, shape, context) that a probe observed refused with the expected code, and the evaluator reproduces that pair on the probe's own fixture.
+- **Not guaranteed:** that every real situation the evaluator files under a context behaves the way the probed one did. That rests on bet B5 (outcome is constant within a context) and on the port's parity (B2). Both are tested, not assumed: variation probes for B5, the parity test for B2.
+
+Missing facts are handled separately. A rule whose required facts failed cannot look anything up. It emits `unverified`, and the result's verdict is `incomplete`.
 
 ## Key Bets
 
-- **B1. The generator's capability boundary is determined by model facts readable from SysIDE before elaboration.** This covers occurrence reach, writer selection, multiplicity readings, expression sites and binding shapes. *If false → some contexts can only be decided after codegen elaborates; those pairs stay `unverified`/`unconfirmed`, and ES-003/ES-004/ES-007 cannot reach the repaired-tree criterion.*
-- **B2. A faithful port of codegen's occurrence reach and writer selection fits in agentic-mbse at proportionate size (≈500 lines) and reproduces codegen exactly on the corpus, the fixtures and dc3.** *If false → Option A's cost changes materially, and R1 should be re-weighed before planning (see F1).*
-- **B3. One construct per fixture isolates one (shape, context) pair.** The generator fails fast at the first inventory error (`expression_evidence.py:249-276`), so a single-construct fixture's observed code belongs to that construct. *If false → probe records misattribute refusals, and the "refused requires probe" invariant certifies the wrong pair.*
-- **B4. Reading the same SysIDE attributes as codegen gives the same answers, without our needing to understand SysIDE's semantics for them.** Examples: `usage.multiplicity` rather than `declared_multiplicity`, and `is_ordered`/`is_nonunique` through redefinitions. *If false → facts diverge on inherited or redefined shapes; the parity run (F1) would show it.*
+- **B1. The generator's capability boundary is determined by model facts readable from SysIDE before elaboration.** *If false → some contexts are decidable only after elaboration and stay `unconfirmed`/`unverified`.* (F1 confirmed this for occurrence facts.)
+- **B2. The summary port stays at parity with codegen on models beyond the spike's 72 cases.** *If false → the evaluator files a construct under the wrong context. The parity test (edge fixtures plus corpora) and, under end condition (ii), codegen CI are the guard.* The real corpora barely exercise redefinition paths (F1 controls), so the edge fixtures carry the weight.
+- **B3. A single-construct fixture whose observed code equals the rule's expected code isolates one (shape, context) pair.** The inventory fails fast and codegen reports its first error class. *If false → a probe certifies the wrong pair.* Code matching (M4) checks this on every probe.
+- **B4. Reading the same SysIDE attributes as codegen gives the same answers, whatever SysIDE's semantics are.** F1 found the semantics differ from what this design first assumed: nothing is inherited through `:>>`. Parity held anyway, because the port reads `usage.multiplicity` as codegen does. *If false → facts diverge on inherited shapes; the parity test catches it.*
+- **B5. The generator's outcome is constant within each context label.** `owner_instantiated` covers a part-def owner, a part-usage owner, a subtype occurrence, an inherited usage and a usage reached through `[2]`. *If false → the evaluator refuses an admitted sub-case no probe covered.* Variation probes (Appendix C) test it for each instantiation-dependent refused pair. A failing variant splits the context; it is never absorbed.
+- **B6. The facts are computed over the same document set the generator loads.** F1 confirmed this on 54 elaborating cases: `SysideAdapter.load_model` gives codegen's population. *If false → the root set differs.*
 
 ## Key Decisions
 
-- **D1. Three new layers mirror the existing constraint split.** Pure fact types, SysIDE extraction, and a pure decision module. *Rejected: one combined module (it breaks the license-free, SysIDE-free purity that `executable_profile` already proves and Item 2's snapshot route needs).*
-- **D2. Outcomes come from records keyed by (rule, shape, context); unlisted pairs are `unconfirmed`.** *Rejected: outcomes hard-coded inside rule functions (the R2 guard would then depend on code review, not data plus test).*
-- **D3. Refused entries require `probe_ids`, checked when records load.** A record with a refused entry and no probes fails to load, the same way `EligibilityDiagnostic` rejects an unknown reason. *Rejected: a test-only convention (the evaluator could still emit an unbacked refusal in a consumer that skips tests).*
-- **D4. Reason vocabulary: a sibling closed set, `SUBSET_REASON_CODES`, disjoint from `REASON_CODES`.** ES-007 findings carry their executable-profile reasons as `detail_reasons`, validated against `REASON_CODES`. *Rejected: extending `REASON_CODES` (it would bump `PROFILE_SEMANTIC_VERSION` with no predicate change, and would let structural reasons be built as eligibility diagnostics).*
-- **D5. One `binding-source` rule over one binding-source fact.** Matrix rows ES-003, ES-012 and self-binding all name it, with one reason per refused classifier outcome. Indexed references get their own `indexed-reference` rule over expression sites, because the inventory refuses them model-wide before the classifier ever runs. *Rejected: separate ES-003/ES-012 rules (two detectors over one generator classifier can disagree).*
-- **D6. Identity and dedup are by declaration.** A finding is keyed by (rule, shape, context, subject declaration UUID). Occurrence-dependent findings carry `occurrence_count` and the root IDs they are reachable from. Counts are reported as declarations and occurrences separately. *Rejected: one finding per occurrence (it inflates counts, which is the prototype's 240-overlap problem, and the remedy is per declaration anyway).*
-- **D7. Roots are an extraction input, and their meaning is decided in the evaluator.** Extraction always computes the generator root set, plus the reach from any caller-supplied `PartUsage` roots. The evaluator labels findings reachable only from extra roots with context `beyond_generator_roots`, which records as `unconfirmed`. A narrowed selection marks the scope incomplete. *Rejected: roots as an evaluator-only input (the pure evaluator cannot compute reach without SysIDE).*
-- **D8. Location: rule records are package data; probes, matrix and site account are test data; run logs live in `.project`.** Details are in § Where things live. *Rejected: everything in `.project` (archival would break the cross-check tests); everything in package data (codegen file paths and 500 site rows are evidence, not product).*
-- **D9. Re-run every prototype fixture through the new probe harness instead of reusing prototype runs.** Each record notes the prototype fixture it supersedes. *Rejected: reuse (the prototype run was not isolated and captured no package identity, so it cannot meet the spec's evidence bar).*
-- **D10. Harden the prototype scanner rather than rewrite it.** Promote `02-inventory.py` to `scripts/subset_profile/scan_sites.py`. Hardening adds four things: it reads `git archive` exports at pinned revisions, writes its revision and recognized forms into its output header, maps the 5 computed `executable_profile` sites to `REASON_CODES`, and gains a `--reconcile site_account.csv` mode that exits non-zero on unaccounted sites or orphan rows. *Rejected: a rewrite (more risk, and the stdlib-AST scanner's 500-site result is already known).*
-- **D11. The ES-010 refusal side stays a candidate.** The projection boundary (`project.py:490`, `:571-608`) has three entry paths (a String design attribute, a literal String binding, an unbound formal with a String default), and which attributes become entry points is an output fact. *Rejected: promoting the spec's restatement (it covers one of the three paths, so it is either incomplete or an R2 risk).*
-- **D12. Probe scope beyond the minimum.** Probe every code-read pair a rule can report, so it stops being `unconfirmed`. Also probe ES-002, ES-008 and ES-009 once each, to *reproduce* the dc3 observations. Do not promote those three: their facts need occurrence-domain or value-writer analysis that Item 1 does not build. They go to the R3 proposal with their probe results. ES-011 is not probed (Item 2 owns reproduction). The probe list is in Appendix C.
+- **D1. Three layers mirror the constraint split.** Pure fact types, SysIDE extraction, and a pure decision module. *Rejected: one module (it breaks the SysIDE-free purity Item 2's snapshot route needs).*
+- **D2. Outcomes come from records keyed by (rule, shape, context); unlisted pairs are `unconfirmed`.** *Rejected: outcomes hard-coded in rule functions.*
+- **D3. Every non-`unconfirmed` outcome requires evidence, checked when records load.**
+  - `refused`, `excluded` and `omitted` need ≥1 probe.
+  - `admitted` needs ≥1 probe or a corpus citation (`corpus:v6_recapture_batch/<fixture>`, snapshot fixtures only).
+  - A record that violates this fails to load, the same way `EligibilityDiagnostic` rejects an unknown reason.
+  - *Rejected: gating only `refused` (a code-read `admitted` is a clean claim nobody observed; spec Evidence bar).*
+- **D4. Reasons are a sibling closed set, `SUBSET_REASON_CODES`, disjoint from `REASON_CODES`.** ES-007 findings carry their executable-profile reasons as `detail_reasons`. *Rejected: extending `REASON_CODES` (it would bump `PROFILE_SEMANTIC_VERSION` with no predicate change).*
+- **D5. One `binding-source` rule over one binding-source fact** (matrix rows ES-003, ES-012, SELF-BINDING). A separate `indexed-reference` rule covers indexed references, which the inventory refuses model-wide. *Rejected: separate ES-003/ES-012 rules over one classifier.*
+- **D6. Identity and dedup are by declaration.** A finding is keyed by (rule, shape, context, subject UUID), and carries `occurrence_count` and `via_roots`. Declaration and occurrence counts are reported separately. *Rejected: per-occurrence findings (they inflate counts).*
+- **D7. Roots are an extraction input; their meaning is decided in the evaluator.** Extraction always computes the generator root set plus the reach of any caller-supplied `PartUsage` roots.
+  - A finding reachable only from extra roots gets context `beyond_generator_roots`, which is `unconfirmed`.
+  - Narrowing the roots sets the verdict to `incomplete`.
+  - *Rejected: evaluator-only roots (computing reach needs SysIDE).*
+- **D8. Location.** Rule records are package data in TOML. Probes, matrix and site account are test data. Run logs live in `.project`.
+  - TOML over a typed Python literal: Item 5 renders guidance from the records, non-Python readers review them, and diffs stay readable. A ~60-line validated loader buys that.
+  - *Rejected: everything in `.project` (archival would break tests).*
+- **D9. Every prototype fixture is re-run through the new harness.** *Rejected: reusing prototype runs (not isolated, no identity).*
+- **D10. Harden the prototype scanner** (`02-inventory.py` → `scripts/subset_profile/scan_sites.py`). The hardened version:
+  - runs on pinned `git archive` exports;
+  - writes its revision and recognized forms into its output header;
+  - maps the 5 computed `executable_profile` sites to `REASON_CODES`;
+  - has a `--reconcile` mode that exits non-zero on unaccounted sites or orphan rows.
+  - *Rejected: a rewrite.*
+- **D11. The ES-010 refusal side stays a candidate.** Its projection boundary has three entry paths, and entry-point membership is an output fact. *Rejected: promoting the one-path restatement.*
+- **D12. Probe scope.** Probe every pair a rule can report as anything but `unconfirmed`. Add variation probes for B5. Reproduce ES-002, ES-008 and ES-009 once each without promoting them (they go to R3). ES-011 is not probed; Item 2 owns it.
+- **D13. The occurrence port is the measured summary port, not a module port** (R1). *Rejected for Item 1: the near-verbatim module port (unmeasured, 600–1,000 lines, only pays off if the owner picks end condition (i)).*
+- **D14. The port mirrors codegen's two multiplicity behaviors; it does not fix them** (F1 Surprise 2).
+  - (a) A part redefinition that omits bounds expands to one occurrence and loses `ordered`.
+  - (b) A usage-level override of a definition-owned referenced bound is ignored.
+  - Both go into the matrix as generator-correctness questions, class "separately tracked gap", owned by Item 2/owner.
+  - *Rejected: correcting them in the contract (the contract would then disagree with the generator, which is R2-adjacent and not Item 1's call).*
 
 ## Architecture
 
 ```
-SysIDE model ──► occurrence_extraction ──► OccurrenceStructure ─┐
-             ──► subset_extraction ──────► SubsetFacts ─────────┼─► subset_profile.evaluate ─► SubsetProfileResult
-             ──► constraint_extraction ──► IdentifiedConstraintFacts ┘        ▲            (findings, unverified, scope)
-                    (existing)                                  rules.toml (package data, loaded + validated)
+SysIDE model ─► occurrence_extraction ─► OccurrenceStructure ───┐
+             ─► subset_extraction ─────► SubsetFacts ───────────┼─► subset_profile.evaluate ─► SubsetProfileResult
+             ─► constraint_extraction ─► IdentifiedConstraintFacts ┘        ▲                (verdict, findings,
+                    (existing)                                    rules.toml (package data)    unverified, scope)
 ```
 
-- **Facts are total.** Extraction runs per fact kind and per element. An element failure becomes a `FactFailure` carrying the closed `SemanticEvidenceCode` where one applies, and the walk continues. A whole-kind enumeration failure marks that kind as not enumerated. Nothing is dropped silently.
-- **The evaluator is pure.** `evaluate_subset_profile(facts, rules=PACKAGED_RULES) -> SubsetProfileResult`. It imports only fact types, `executable_profile` and `reference_use`'s allowlist constant. It never imports SysIDE (hygiene test, as for `executable_profile`).
-- **ES-007 reuses the executable profile.** The evaluator calls `evaluate_identified_profile` on the existing constraint facts. A BLOCK in an attached scope maps to the `constraint-predicate` rule's `blocked_predicate` shape. NON_NUMERICAL maps to `excluded`. An UNASSESSED usage is outside the rule's shape and is counted in the coverage summary, never reported as `admitted`.
-- **ES-005 reuses the allowlist.** `reference_use` gains one public read, `invocation_uses(expression)`. It walks with the same dispatch order as `_walk` and returns each ordinary invocation with its callable identity and a `supported` bit, computed by the same predicate `_require_supported_invocation` now calls. The change is byte-faithful, and the probe re-run with Item 1's final agentic revision shows identical generator outcomes.
-- **Consumers are untouched.** No L6, CLI or codegen wiring. `agentic-mbse validate` output is diffed before and after.
+- **Facts are total.** Extraction runs per fact kind and per element.
+  - An element failure becomes a `FactFailure`, carrying the closed `SemanticEvidenceCode` where one applies.
+  - An occurrence-build abort becomes one `FactFailure(OCCURRENCE, OccurrenceAbort.<kind>)`, and every occurrence-dependent rule reports `unverified`.
+  - A kind that fails to enumerate is marked not enumerated.
+- **The evaluator is pure.** `evaluate_subset_profile(facts, rules=PACKAGED_RULES) -> SubsetProfileResult`. It imports fact types, `executable_profile` and the pure allowlist module, never `reference_use` or SysIDE. The hygiene test covers it.
+- **ES-007 reuses the executable profile.** The evaluator calls `evaluate_identified_profile`.
+  - BLOCK in an attached scope → shape `blocked_predicate`.
+  - NON_NUMERICAL → `excluded`.
+  - UNASSESSED → counted in coverage, never `admitted`.
+- **ES-005 reuses the allowlist.** `reference_use` gains a public `invocation_uses(expression)`: a total walk that resolves no references and uses the same dispatch order as `_walk`. Both it and `_require_supported_invocation` call the one allowlist predicate. The change is byte-faithful, and the same-generator check confirms it.
+- **Consumers are untouched.** `agentic-mbse validate` output is diffed before and after.
 
 ## Required Invariants
 
-1. `refused` is emitted only through a record entry whose `probe_ids` is non-empty. Record loading enforces this, and `test_subset_probe_evidence.py` checks that every cited probe exists, matches its (rule, shape, context), observed a refusal at the pinned identity, and that the evaluator reproduces the pair on the probe's own fixture.
-2. Every refused shape has at least one admitted-context probe, and the evaluator reports no `refused` on it. A shape the generator refuses in every context it reaches (for example an asserted constraint owned by a calc def) instead carries a `no_admitted_context` statement with its generator citation. The test accepts either, never neither, and the matrix shows which.
-3. Any (shape, context) not listed in a record yields `unconfirmed`.
-4. A missing required fact kind or a failed element yields `UnverifiedCheck`, never an empty clean result; `complete` is false. Rules whose facts are available still report.
-5. No `agentic_mbse` module imports `sysml_codegen`. No rule ID or reason ID matches `SI_[A-Z_]+` or names a consumer type. `SI_*` strings appear in packaged records only in fields marked as evidence.
-6. Every reason the evaluator can emit is in `SUBSET_REASON_CODES` (validated in `SubsetFinding.__post_init__`), and every `detail_reason` is in `REASON_CODES`.
-7. Output is a deterministic function of the facts: findings are sorted by (rule, file, line, qualified name, context, shape) with the UUID as last tiebreak. Permuted document order gives identical output.
-8. A change to the invocation allowlist or to any record changes `SUBSET_PROFILE_VERSION`. The test pins a digest of the allowlist and the records.
-9. Facts read the same SysIDE attributes and agentic helpers as the generator. No new interpretation exists where an agentic helper already does the job.
+1. The record loader rejects any non-`unconfirmed` admission without the evidence D3 requires.
+2. A probe certifies a pair only if all of the following hold:
+   - its fixture declares one probed construct;
+   - for `refused`, the observed code set equals the shape's expected `GeneratorEvidence` code, and the error line's location falls in the construct's declared line range. ES-006's generic `SI_EVIDENCE_INCOMPLETE` is the case this location check guards;
+   - for `admitted`, exit is 0 and a declared positive-control sibling appears in the generated output;
+   - its identity matches the pin.
+
+   `test_subset_probe_evidence.py` checks this for every cited probe, and checks that the evaluator reproduces each pair on the probe's own fixture.
+3. Every refused shape has an admitted-context probe, or a `no_admitted_context` statement whose cited refused probes span every context the rule can compute (proposed spec amendment SA-1, below).
+4. Any (shape, context) not listed in a record yields `unconfirmed`.
+5. A missing required fact kind, an occurrence abort or a failed element yields `UnverifiedCheck`, never an empty clean result. Rules whose facts are available still report.
+6. No `agentic_mbse` module imports `sysml_codegen`. No rule or reason ID matches `SI_[A-Z_]+` or names a consumer type. `SI_*` appears in packaged records only in evidence fields.
+7. Every emitted reason is in `SUBSET_REASON_CODES`, and every `detail_reason` is in `REASON_CODES` (`SubsetFinding.__post_init__`).
+8. Findings are sorted by (rule, file, line, qualified name, context, shape, UUID). Permuting the document order gives identical output.
+9. A change to the allowlist or the records changes `SUBSET_PROFILE_VERSION`; a test pins a digest of both. The result reports both `SUBSET_PROFILE_VERSION` and `PROFILE_SEMANTIC_VERSION`. The records carry `verified_against` (codegen and agentic-mbse revisions).
+10. The port's output equals the stored codegen-oracle expectations on the parity seed (§ Validation).
 
 ## Component Overview
 
 All under `src/agentic_mbse/sysml/` unless stated.
 
-- **`occurrence_facts.py`** (pure types): `OccurrenceStructure`, `OccurrenceNode`, `MultiplicityReading`, `Attachment`, `WriterSelection`. These are neutral facts Item 2 can adopt.
-- **`occurrence_extraction.py`** (SysIDE): a faithful port of codegen's root rule, redefinition slots, effective child declarations, multiplicity reading and count resolution, type closures, attachment, and calc-usage writer selection. It never raises a generator code. An unexpandable multiplicity becomes a status on that node, and its subtree is marked `beneath_unexpandable`.
-- **`subset_facts.py`** (pure types): `SubsetFacts` and per-kind facts (`BindingSourceFact`, `ExpressionSiteFact`, `AssertionOwnerFact`, `PartMultiplicityFact`, `StringValueFact`), plus `ElementRef`, `SafeLocation`, `FactFailure`. The constraint facts are referenced through `TYPE_CHECKING`, as `executable_profile` does.
-- **`subset_extraction.py`** (SysIDE): builds `SubsetFacts` from the model, the root request and the occurrence structure. It reuses `inspect_reference_uses`, `invocation_uses`, `unit_annotation_value`, `is_literal_node`, `extract_identified_constraint_facts`, `SysideAdapter`, and the inventory's site enumeration and roles.
-- **`subset_profile.py`** (pure): `SUBSET_PROFILE_VERSION = "subset-profile/v1"`, `SUBSET_REASON_CODES`, `ContextId`/`Outcome` enums, record loader and validator, the rule functions, and `evaluate_subset_profile`.
-- **`subset_profile_rules.toml`** (package data): one record per rule.
-- **`reference_use.py`** (edit): public `invocation_uses()` and `SUPPORTED_INVOCATION_IDS`; `_require_supported_invocation` calls the shared predicate.
-- **`scripts/subset_profile/`** (dev tooling, not shipped): `probe.py` (harness), `scan_sites.py` (D10), `run_trees.py` (evaluator over dc3/corpus exports, recorded runs), `occurrence_parity.py` (F1 parity, recorded run), `render_matrix.py`.
-- **Tests:** under `tests/test_sysml/test_subset_*.py`, with data under `tests/fixtures/subset_profile/`.
+- **`occurrence_facts.py`** (pure types): `OccurrenceStructure`, `OccurrenceNode` (per occurrence path, with parent), `MultiplicityReading`, `Attachment`, `WriterSelection`, `OccurrenceAbort`.
+- **`occurrence_extraction.py`** (SysIDE): the summary port from F1 (`spikes/f1-occurrence-port/occurrence_port.py`), productionized. Its raw `referent`/`chaining_features` reads go through `reference_use.resolved_referent`/`resolved_chaining_features`. If those differ from codegen's raw reads, the plan adds two named accessors in `reference_use`.
+- **`subset_facts.py`** (pure types): `SubsetFacts`, per-kind facts, `SiteInspection`, `ElementRef`, `SafeLocation`, `FactFailure`.
+- **`subset_extraction.py`** (SysIDE): builds `SubsetFacts` with `inspect_reference_uses`, `invocation_uses`, `unit_annotation_value`, `is_literal_node`, `extract_identified_constraint_facts` and `SysideAdapter`.
+- **`invocation_allowlist.py`** (pure): `SUPPORTED_INVOCATION_IDS` and the predicate. Imported by `reference_use` and `subset_profile`.
+- **`subset_profile.py`** (pure): versions, `SUBSET_REASON_CODES`, the `ContextId`/`Outcome`/`Verdict` enums, the record loader and validator, the rule functions, and `evaluate_subset_profile`.
+- **`subset_profile_rules.toml`** (package data).
+- **`reference_use.py`** (edit): `invocation_uses()`; the allowlist import; accessors if needed.
+- **`scripts/subset_profile/`** (dev tooling, not shipped): `probe.py`, `scan_sites.py`, `run_trees.py`, `occurrence_parity.py` (the F1 oracle and compare, promoted), `render_matrix.py`.
 
 ## Where things live
 
 | Artifact | Location | Why |
 |---|---|---|
-| Rule records | `src/agentic_mbse/sysml/subset_profile_rules.toml` | Runtime contract; Item 2 pins it, Item 5 renders from it. TOML via stdlib `tomllib`, so loading needs no SysIDE and has no implicit typing |
-| Probe declarations, fixtures and observations | `tests/fixtures/subset_profile/probes/<probe_id>/{probe.toml, model.sysml, observation.json}` | One fixture serves both the generator probe and the evaluator test, so "fixtures mirror probes" holds by construction |
-| Capability/refusal matrix | `tests/fixtures/subset_profile/inventory/matrix.toml` | Cross-check tests read it; contains codegen paths (evidence, not product) |
-| Site account and scanner manifest | `tests/fixtures/subset_profile/inventory/{site_account.csv, scanner.toml}` | Join test (sites ↔ rows) reads both; `scanner.toml` names the scanner revision, recognized forms and blind spots |
-| Evaluator fixtures beyond probes | `tests/fixtures/subset_profile/cases/` | Roots, determinism, failure-injection cases |
-| Run logs and reports | `.project/active/exec-subset-profile/evidence/` | Probe run logs, reconciliation run, dc3/corpus runs, parity run, rendered `matrix.md`, R3 proposal, re-estimate. Archived with the item |
+| Rule records | `src/agentic_mbse/sysml/subset_profile_rules.toml` | Runtime contract; Item 2 pins it, Item 5 renders it |
+| Probes | `tests/fixtures/subset_profile/probes/<id>/{probe.toml, model.sysml, observation.json, observation.base.json}` | One fixture serves the probe and the evaluator test. `observation.json` (Item 1's final agentic revision, what ships) is canonical; `observation.base.json` (at `a718efec`) is the same-generator comparison |
+| Matrix | `tests/fixtures/subset_profile/inventory/matrix.toml` (schema in Appendix A) | Cross-check tests read it; holds codegen paths (evidence, not product) |
+| Site account, scanner manifest | `tests/fixtures/subset_profile/inventory/{site_account.csv, scanner.toml}` | Join test; `scanner.toml` names the revision, recognized forms and blind spots |
+| Occurrence parity seed | `tests/fixtures/subset_profile/occurrence/` (the 11 F1 edge fixtures plus the prototype fixtures, each with `expected.json` captured from the codegen oracle at `b5663c07`) | Lets pytest check port parity without importing codegen; F1 showed these fixtures, not the corpora, catch the wrong-writer and wrong-slot ports |
+| Other evaluator cases | `tests/fixtures/subset_profile/cases/` | Roots, determinism, failure injection |
+| Run logs and reports | `.project/active/exec-subset-profile/evidence/` | Probe logs; reconciliation; dc3, corpus and parity runs; rendered `matrix.md`; R3 proposal; re-estimate |
 
-Every pytest test reads only package data and `tests/`, so the tests keep passing after the item folder is archived.
+Every pytest test reads only package data and `tests/`.
 
 ## Probe harness
 
-`scripts/subset_profile/probe.py run [--probe ID | --all] --agentic-rev REV`. All writes happen in a fresh temp directory and under `tests/fixtures/subset_profile/probes/`. Sibling checkouts are only read.
+`scripts/subset_profile/probe.py run [--probe ID | --all] --agentic-rev REV`. All writes go to a fresh temp directory and to `tests/fixtures/subset_profile/probes/`. F1 ran this exact setup successfully.
 
-1. **Isolated tree.** `T=$(mktemp -d)`. Export with `git -C ~/src/sysml-codegen archive b5663c07` into `$T/sysml-codegen` and `git archive <agentic-rev>` of this repo into `$T/agentic-mbse`. Both commit IDs are verified with `git get-tar-commit-id`. The sibling layout makes codegen's `path = "../agentic-mbse"` source resolve inside `$T`.
-2. **Environment.** Run `uv sync --frozen` in `$T/sysml-codegen` against codegen's own `uv.lock`. `SYSIDE_LICENSE_KEY` is passed through from the environment; the record notes that a key was present, never its value.
-3. **Identity capture.** Run `$T/sysml-codegen/.venv/bin/python -I` to emit `importlib.metadata` versions for sysml-codegen, agentic-mbse and syside, `syside.__version__`, the Python version, both packages' `__file__`, and the sha256 of `uv.lock`. **Isolation check:** the probe aborts if either package resolves outside `$T`.
-4. **Run.** For each probe, copy `model.sysml` into `$T/probes/<id>/model/` and run `python -m sysml_codegen generate --models … --output $T/probes/<id>/out` with cwd `$T` and a timeout. Capture the exit code, `ERROR:` lines, the codes (prototype regex), and the generated file list with hashes. Observed outcome: `refused` (exit ≠ 0 with codes), `admitted` (exit 0), otherwise `inconclusive`.
-5. **Record.** Write `observation.json`: identity, command, exit, codes, error lines (≤3), observed outcome, `matches_expectation`, fixture sha256, harness revision, timestamp. Append the raw log to `evidence/probes/<timestamp>.log`.
-6. **Same-generator check.** Run `--all` twice: once with the pre-Item-1 agentic revision (`a718efec`) and once with Item 1's final revision. Identical observations show that Item 1's edits to shared modules did not change codegen.
+1. **Isolated tree.** `git archive` exports codegen `b5663c07` into `$T/sysml-codegen` and agentic-mbse `<REV>` into `$T/agentic-mbse`. Each export is checked with `get-tar-commit-id`; tolerate SIGPIPE under `pipefail`, a gotcha F1 hit. The sibling layout makes `path = "../agentic-mbse"` resolve inside `$T`.
+2. **Environment.** `uv sync --frozen` against codegen's `uv.lock`. `SYSIDE_LICENSE_KEY` comes from agentic-mbse `.env`; the record notes that a key was present, never its value.
+3. **Identity.** `python -I` emits the package versions, `syside.__version__`, the Python version, both packages' `__file__`, and the sha256 of `uv.lock`. The probe aborts if either package resolves outside `$T`.
+4. **Run.** Each probe runs `python -m sysml_codegen generate --models … --output $T/probes/<id>/out` with a timeout. The harness captures the exit code, `ERROR:` lines, codes, error-line locations and the generated file list with hashes.
+5. **Judge.** The certification test is invariant 2. The observation records `certifies: bool` with the failing check named. Omission and exclusion probes check the element's exact display path against the generated catalog and contract modules, with a numeric sibling as positive control. Item 2's semantic oracle replaces this later (m3).
+6. **Same generator.** `--all` runs at `a718efec` and at Item 1's final revision. Codegen's v6 corpus and its pytest suite also run in each temp tree. Identical results show that Item 1's edits to shared modules did not change codegen (S6).
 
-`probe.toml` is authored by hand and states the claim: `probe_id`, `rule_id`, `shape_id`, `context_id`, `expect` (`refused`|`admitted`), and `supersedes_prototype` where it applies. The harness never edits it. A probe whose observation contradicts an `admitted` expectation is an R2 stop for that rule: it halts and goes to the owner. A contradicted `refused` expectation means the record's context is wrong and must be corrected.
+**Which agentic-mbse revision counts as "the pinned generator".** Codegen `b5663c07` with agentic-mbse at Item 1's final revision. `a718efec` is the comparison point. dc3 T-001 ran with `8b027bbc`; the evidence notes that difference and does not reconcile it.
+
+**Halt direction (spec R2):**
+
+- **Expected `refused`, generator admits.** The rule's intended refusal covers an admitted pair. **Stop that rule and take it to the owner (R2 track).** Nothing ships stricter.
+- **Expected `admitted`, generator refuses.** The record's contexts are wrong. Record the observation, correct the contexts, and re-probe.
+- **A variation probe that disagrees with its label** splits the context (B5). Its direction then follows the two cases above.
+
+## Proposed spec amendment
+
+**SA-1 [AGENT], proposed, not applied.** The spec criterion "Every refused shape has an admitted-context probe" gains one exception. A shape that the pinned generator refuses in every context the rule can compute may carry instead a `no_admitted_context` statement, with:
+
+- the generator citation;
+- refused probes covering each computable context.
+
+Likely users: `calc-owned-assertion/asserted_constraint` under a calc-def owner (`elaborate.py:1625` via `owner_kind_unattachable`), and possibly `indexed-reference` if the calc-result probe refuses. The matrix lists every shape that uses it. This is recorded in the spec's change log as proposed; the owner or orchestrator accepts or rejects it.
 
 ## Non-Goals
 
-- Codegen integration, code mapping, the `tests/conformance/subset_profile/` corpus, mutation tests, per-site stable codes, `check`, snapshot and version integration (Item 2). Migrating codegen onto the occurrence facts is Item 2 under R1.
-- A wire codec or schema version for `SubsetFacts`; Item 2 adds one if the snapshot route needs it.
-- L6 wiring, severity, execution-target settings (Item 3); positional binding (Item 4); rendering `generator-subset.md` (Item 5).
-- Reproducing ES-011, String metadata policy, promoting ES-002/ES-008/ES-009 or the ES-010 refusal side.
-- Fixing `L6-LIBRARY-ALIAS-SOURCE`; relaxing any generator refusal; new language support.
+- Codegen integration, code mapping, the screen-bypassing conformance corpus, mutation tests, per-site codes, `check`, snapshot and version integration; the module port; the end condition's implementation. All are Item 2.
+- A wire codec for `SubsetFacts`.
+- L6 wiring and severity (Item 3); positional binding (Item 4); rendered guidance (Item 5).
+- Reproducing ES-011; String metadata policy; promoting ES-002, ES-008, ES-009 or the ES-010 refusal side.
+- Correcting the two generator multiplicity behaviors (D14).
+- Fixing `L6-LIBRARY-ALIAS-SOURCE`; relaxing any refusal; new language support.
 
 ## Implementation Notes
 
-- **Spec premise refinements, surfaced rather than silently resolved:**
-  - (a) Spec Table 1 gives ES-003's refused context as "the owner is instantiated". The generator classifies only the **selected writer** per scope, so a calc usage overridden by a redefinition in every instantiated scope is never examined. The record lists `writer_overridden` as not-refused, and a probe covers it. Reading the spec literally would have refused an admitted shape.
-  - (b) A construct beneath a part usage whose multiplicity the generator refuses is never reached by the generator. Its context is `beneath_refused_multiplicity`, which records as `unconfirmed`, because no probe can observe a refusal there.
-  - (c) ES-004 must read `usage.multiplicity`, as codegen does, not the prototype's `declared_multiplicity`.
-- **ES-001 shapes** split asserted and non-asserted forms (`constraint_extraction._ASSERTED_FORMS`). The calc-usage owner context is probed for both.
-- **Expression-site contexts are per inventory role** (binding value, calc-definition feature value, attribute value, constraint predicate), plus `calc_result_expression` (admitted, qualification `manual_stub`) and `other_expression_site` (unconfirmed). One probe per refused role.
-- **The ownership gate stays green.** New SysIDE readers call `reference_use`/`syside_adapter` functions and never read `operands`/`referent`/`target_feature`/`chaining_features` directly.
-- **The conditional operator spelling** (`if`) is confirmed by a learning test on `es006_refused_conditional`, not assumed.
-- **The `executable_profile` computed reasons** (`:542`, `:597`, `:660`, `:711`, `:813` at `a718efec`) get one test that drives each emission and asserts membership in `REASON_CODES`.
+- **Spec premise refinements (surfaced, not silent):**
+  - (a) ES-003's refused context is the **selected writer** in an instantiated scope. A calc usage selected in some scopes and overridden in others is `owner_instantiated`, with its selected-scope count. One overridden in every scope is `writer_overridden`. F1's `f1_calc_redefined_everywhere` is the reference case.
+  - (b) A construct beneath a refused multiplicity is `beneath_refused_multiplicity`, and records as `unconfirmed`.
+  - (c) ES-004 reads `usage.multiplicity`, as codegen does. In SysIDE 0.8.4 this is the same element as `declared_multiplicity`, and neither is inherited through `:>>` (F1 Surprise 1). The first revision's claim that they differ was wrong.
+- **ES-001** splits asserted and non-asserted forms (`constraint_extraction._ASSERTED_FORMS`).
+- **Expression-site contexts are per inventory role,** plus `calc_result_expression` (admitted, `manual_stub`) and `other_expression_site` (`unconfirmed`).
+- **The ownership gate stays green** (see Component Overview).
+- **The conditional operator spelling** is confirmed by a learning test on `es006_refused_conditional`.
+- **Computed `executable_profile` reasons** (`:542`, `:597`, `:660`, `:711`, `:813`): one test drives each emission and asserts membership in `REASON_CODES`.
 
 ## Potential Risks
 
 | Risk | Mitigation |
 |---|---|
-| Occurrence port diverges from codegen on redefinition-heavy models | F1 spike before planning; recorded parity run on corpus, fixtures and dc3; Item 2 migration under R1 |
-| dc3 baseline shows a B-category only as `unconfirmed` (e.g. ES-003 bindings nested under B4 unbounded racks) | Evidence itemizes these with context; a category that appears only as `unconfirmed` goes to the owner, not hidden |
-| Probe environment cannot sync (private SysIDE index, license) | First plan step is a harness smoke on one probe; the failure is recorded, never worked around inside sibling checkouts |
-| `reference_use` refactor changes codegen behavior | Byte-faithful refactor; same-generator check (harness step 6); existing reference-use tests |
-| ≈40 probes plus ≈500 site rows inflate effort | Re-estimate at close per epic; probes are single-construct and scripted |
+| Port drifts from codegen beyond the spike's cases | Parity seed in pytest; recorded parity run; end condition (ii) puts it in codegen CI |
+| A context hides an admitted sub-case (B5) | Variation probes per instantiation-dependent refused pair; a failing variant splits the context |
+| A dc3 category appears only as `unconfirmed` | Itemized with context in evidence; goes to the owner |
+| `reference_use` refactor changes codegen | Byte-faithful; probes, v6 corpus and codegen pytest at both revisions |
+| ~70 probes plus ~500 site rows inflate effort | Scripted single-construct probes; re-estimate at close, including Item 2's end-condition cost |
 
 ## Integration Strategy
 
-Item 1 merges as new modules plus one additive public read in `reference_use`. Nothing consumes the contract yet. Item 2 pins `SUBSET_PROFILE_VERSION` and the records, maps reasons to `ElaborationCode`, and adopts the occurrence facts. Item 3 maps outcomes to L6 severity. Item 5 renders from the records. The R1 decision is filed as an agentic-mbse ADR after approval. Item 2 files the pointer entry in sysml-codegen (cross-seam placement rule).
+Item 1 merges as new modules, an additive public read and one pure allowlist module. Nothing consumes the contract yet.
+
+- **Item 2** pins `SUBSET_PROFILE_VERSION` and the records, maps reasons to `ElaborationCode`, implements the chosen end condition, and files the ADR 0012 amendment in sysml-codegen.
+- **Item 3** maps verdicts and outcomes to L6 severity.
+- **Item 5** renders from the records.
+
+The R1 decision is filed as an agentic-mbse ADR after approval (Appendix B).
 
 ## Validation Approach
 
-- **Pytest without SysIDE:** record completeness and closed vocabularies; matrix ↔ records; sites ↔ matrix join (every `in scope` site names a row, every row lists sites or `no_raise_site`, every `explicit follow-up` site has an owner and a limitation); probe evidence (invariants 1–2); coupling (invariant 5); version digest (invariant 8); purity hygiene; computed-reason closure.
-- **Pytest with SysIDE:** per-rule refused and admitted fixtures (the probe fixtures plus the carried-over prototype neighbors); roots (default equals the generator rule on nested, package-level and part-def-owned usages; widened gives `unconfirmed`; narrowed gives incomplete); failure injection (a) extraction, (b) enumeration, (c) missing occurrence evidence; determinism under permuted document order.
-- **Recorded runs** (evidence folder): probe runs at both agentic revisions; site reconciliation, with counts against 441/59 and every added or removed site itemized; occurrence parity; dc3 baseline and repaired; codegen corpus (manifest counts as read: 14/23); `validate` diff before and after; `pytest`/`mypy`/`ruff`, with licensed and skipped checks named.
+- **Pytest without SysIDE:**
+  - record evidence gating (invariant 1);
+  - closed vocabularies;
+  - matrix ↔ records;
+  - matrix schema and the fixed case list (S9);
+  - the sites ↔ matrix join;
+  - probe certification (invariants 2–3);
+  - coupling;
+  - version digest;
+  - purity hygiene for `subset_profile`;
+  - computed-reason closure.
+- **Pytest with SysIDE:**
+  - per-rule refused, admitted and variation fixtures;
+  - occurrence parity against the stored oracle expectations;
+  - roots (default equals the generator rule; widened gives `unconfirmed`; narrowed gives `incomplete`);
+  - failure injection: extraction failure, enumeration failure, missing occurrence evidence, plus each `OccurrenceAbort`;
+  - determinism.
+- **Recorded runs:**
+  - probes at both revisions, with the codegen v6 corpus and codegen pytest;
+  - site reconciliation against 441/59, every change itemized;
+  - occurrence parity on all corpora;
+  - dc3 baseline and repaired, with `unconfirmed` and `unverified` both itemized;
+  - the codegen corpus (manifest 14/23);
+  - the `validate` diff;
+  - `pytest`/`mypy`/`ruff`, with licensed and skipped checks named.
 
 ## Next-Stage Handoff
 
-- **Fixed (after R1 approval):** the layer boundary; records keyed by (rule, shape, context) with probe-gated refusal; locations; D1–D12.
-- **Open for the plan:** exact `ContextId` membership once the probes land; the probe list's final size; the TOML field names.
-- **De-risk first:** F1 (occurrence port parity), then the probe-harness smoke. See Appendix D.
+- **Fixed (after R1 approval):** layers; evidence-gated records; certification rule; halt direction; locations; D1–D14.
+- **Open for the plan:** exact `ContextId` membership after the probes land; final probe count; TOML field names; whether the two `reference_use` accessors are needed.
+- **De-risk first:** the probe-harness smoke (F5). F1 is done.
+- **If the owner picks A′:** drop `occurrence_*` and the parity seed, and record instantiation-dependent contexts as `unconfirmed`. Everything else stands.
 
 ---
-Next Step: `/_my_design_review` in a fresh session, then **owner gate R1**, then `/_my_plan`.
+Next Step: verify the must-fixes (no fresh review needed per the review), then **owner gate R1** with F1's findings, then `/_my_plan`.
 
 ## Appendix A — Data model
 
-Pure types (`subset_facts.py`, `occurrence_facts.py`, `subset_profile.py`). All are frozen dataclasses.
+Pure types. All are frozen dataclasses.
 
 ```python
 class Outcome(StrEnum): REFUSED; ADMITTED; EXCLUDED; OMITTED; UNCONFIRMED
+class Verdict(StrEnum): INCOMPLETE; REFUSED; UNCONFIRMED; CLEAR   # CLEAR: only admitted/excluded/omitted
 class ContextId(StrEnum):  # closed; each member documented with its generator citation
     OWNER_INSTANTIATED; OWNER_PACKAGE; OWNER_UNINSTANTIATED; WRITER_OVERRIDDEN; OWNER_OTHER
     BINDING_VALUE; CALC_DEFINITION_FEATURE_VALUE; ATTRIBUTE_VALUE; CONSTRAINT_PREDICATE
-    CALC_RESULT_EXPRESSION; OTHER_EXPRESSION_SITE
-    CALC_DEFINITION_OWNER; CALC_USAGE_OWNER
+    CALC_RESULT_EXPRESSION; OTHER_EXPRESSION_SITE; CALC_DEFINITION_OWNER; CALC_USAGE_OWNER
     EXPANDED_PART_USAGE; UNEXPANDED_PART_USAGE; ATTRIBUTE_USAGE
     BEYOND_GENERATOR_ROOTS; BENEATH_REFUSED_MULTIPLICITY; EVERYWHERE
 ```
 
 ```python
 class ElementRef:  element_id: UUID; qualified_name: str; kind: str
-class SafeLocation: file: str | None; line: int | None; qualified_name: str | None  # never raises
+class SafeLocation: file: str | None; line: int | None; qualified_name: str | None   # never raises
 class FactFailure:  fact_kind: FactKind; subject: SafeLocation | None
-                    cause: SemanticEvidenceCode | ScopeCause; detail: str
-class ScopeCause(StrEnum): ENUMERATION_FAILED; OCCURRENCE_UNAVAILABLE; ROOTS_UNAVAILABLE; ADAPTER_ERROR
-class FactKind(StrEnum): OCCURRENCE; BINDING_SOURCE; EXPRESSION_SITE; ASSERTION_OWNER;
-                         PART_MULTIPLICITY; STRING_VALUE; CONSTRAINT
+                    cause: SemanticEvidenceCode | ScopeCause | OccurrenceAbort; detail: str
+class ScopeCause(StrEnum): ENUMERATION_FAILED; ROOTS_UNAVAILABLE; ADAPTER_ERROR
+class OccurrenceAbort(StrEnum): SPECIALIZATION_CYCLE; RECURSIVE_CONTAINMENT; INCOMPARABLE_TYPINGS
+    REPEATED_NATIVE_DECLARATION; DUPLICATE_OCCURRENCE_IDENTITY; REDEFINITION_ROOT_FAMILY; WRITER_AMBIGUOUS
+class FactKind(StrEnum): OCCURRENCE; BINDING_SOURCE; EXPRESSION_SITE; ASSERTION_OWNER; PART_MULTIPLICITY; STRING_VALUE; CONSTRAINT
 ```
 
 ```python
-class MultiplicityReading: lower: int | None; upper: int | None; unbounded: bool
-    ordered: bool; nonunique: bool; resolution: Literal["exact","range","unresolved","negative","absent"]
-class OccurrenceNode: usage: ElementRef; type_closure: frozenset[UUID]; root_id: UUID
-    count: int | None; status: Literal["expanded","unexpandable","beneath_unexpandable"]
-class Attachment: owner: ElementRef | None; owner_kind: OwnerKind
-    scopes_by_root: Mapping[UUID, int]          # root id -> attached scope count
-class WriterSelection: usage_id: UUID; selected_scopes_by_root: Mapping[UUID, int]
+class MultiplicityReading: lower: int | None; upper: int | None; unbounded: bool; ordered: bool; nonunique: bool
+    resolution: Literal["exact","range","unresolved","negative","absent"]
+class OccurrenceNode: path: tuple[tuple[UUID, int | None], ...]; parent: tuple[...] | None; usage: ElementRef
+    type_closure: frozenset[UUID]; root_id: UUID; reading: MultiplicityReading; count: int | None
+    status: Literal["expanded","unexpandable","beneath_unexpandable"]
+class Attachment: owner: ElementRef | None; owner_kind: OwnerKind; scopes_by_root: Mapping[UUID, int]
+class WriterSelection: usage_id: UUID; selected_scopes_by_root: Mapping[UUID, int]; overridden_scopes: int
 class OccurrenceStructure: generator_root_ids: frozenset[UUID]; selected_root_ids: frozenset[UUID]
     nodes: tuple[OccurrenceNode, ...]; attachments: Mapping[UUID, Attachment]; writers: Mapping[UUID, WriterSelection]
 ```
 
 ```python
-class BindingSourceFact: consumer: ElementRef; formal: ElementRef; location: SafeLocation
-    kind: Literal["literal","single_reference","self_binding","indexed","other_expression"]; authored: str
-class ExpressionSiteFact: feature: ElementRef; role: SiteRole; location: SafeLocation
-    invocations: tuple[InvocationUse, ...]; has_indexed_reference: bool
-    conditional: bool; inspection_failure: SemanticEvidenceCode | None
-class AssertionOwnerFact: constraint: ElementRef; form: str; owner_kind: OwnerKind
-class PartMultiplicityFact: usage: ElementRef; reading: MultiplicityReading; composite: bool
-class StringValueFact: feature: ElementRef; spelling: Literal["attribute_declaration","redefinition_shorthand"]
-class SubsetFacts: occurrence: OccurrenceStructure | None; bindings: tuple[BindingSourceFact, ...]; sites: ...
-    assertions: ...; multiplicities: ...; strings: ...; constraints: IdentifiedConstraintFacts | None
-    enumerated: frozenset[FactKind]; failures: tuple[FactFailure, ...]
+ReferenceOutcome = Exact(use_count: int, indexed: bool) | ReferenceFailed(code: SemanticEvidenceCode)
+InvocationOutcome = Walked(uses: tuple[InvocationUse, ...]) | InvocationFailed(code: SemanticEvidenceCode)
+class SiteInspection: references: ReferenceOutcome; invocations: InvocationOutcome
+    conditionals: tuple[SafeLocation, ...]          # recognized `if` nodes, found by the metatype walk
+class ExpressionSiteFact: feature: ElementRef; role: SiteRole; location: SafeLocation; inspection: SiteInspection
+# ES-005 is unverified iff invocations failed. ES-006 is refused-eligible iff a conditional is present
+# and references failed with RESOLVED_TARGET_MISSING; any other failure leaves ES-006/indexed unverified.
 ```
 
 ```python
-class Admission: outcome: Outcome; probe_ids: tuple[str, ...]; qualification: Literal["none","manual_stub"]
-class ShapeRecord: shape_id: str; reason_id: str; admissions: Mapping[ContextId, Admission]
-    no_admitted_context: str | None   # required when no admission is ADMITTED (invariant 2)
-class RuleRecord: rule_id: str; title: str; matrix_rows: tuple[str, ...]; fact_requirements: frozenset[FactKind]
-    shapes: tuple[ShapeRecord, ...]; remedy: str; semantic_limits: str; example_probe: str
-    doc_anchor: str; evidence_status: EvidenceStatus; generator_evidence: tuple[GeneratorEvidence, ...]  # SI_* only here
-class GeneratorEvidence: code: str; site: str   # evidence field, e.g. ("SI_SELF_BINDING", "elaborate.py:2187-2196")
-class EvidenceStatus(StrEnum): PROBE_OBSERVED; PARTIAL; CODE_READ   # rule-level summary of its admissions
+class BindingSourceFact: consumer: ElementRef; formal: ElementRef; location: SafeLocation; authored: str
+    kind: Literal["literal","single_reference","self_binding","indexed","other_expression"]
+class AssertionOwnerFact: constraint: ElementRef; form: str; owner_kind: OwnerKind
+class PartMultiplicityFact: usage: ElementRef; reading: MultiplicityReading; composite: bool
+class StringValueFact: feature: ElementRef; spelling: Literal["attribute_declaration","redefinition_shorthand"]
+class SubsetFacts: occurrence: OccurrenceStructure | None; bindings; sites; assertions; multiplicities; strings
+    constraints: IdentifiedConstraintFacts | None; enumerated: frozenset[FactKind]; failures: tuple[FactFailure, ...]
+```
+
+```python
+EvidenceRef = ProbeRef(probe_id: str) | CorpusRef(fixture: str)       # CorpusRef only for ADMITTED
+class Admission: outcome: Outcome; evidence: tuple[EvidenceRef, ...]; qualification: Literal["none","manual_stub"]
+class ShapeRecord: shape_id; reason_id; expected_code: GeneratorEvidence | None   # evidence field
+    admissions: Mapping[ContextId, Admission]; no_admitted_context: str | None      # SA-1
+class RuleRecord: rule_id; title; matrix_rows; fact_requirements: frozenset[FactKind]; shapes: tuple[ShapeRecord, ...]
+    remedy; semantic_limits; example_probe; doc_anchor; evidence_status: EvidenceStatus
+    generator_evidence: tuple[GeneratorEvidence, ...]; verified_against: GeneratorIdentity
+class GeneratorEvidence: code: str; site: str          # e.g. ("SI_SELF_BINDING", "elaborate.py:2187-2196")
+class EvidenceStatus(StrEnum): PROBE_OBSERVED; PARTIAL; CODE_READ_PENDING_ITEM_2   # align record's wording
 ```
 
 ```python
 class SubsetFinding: rule_id; shape_id; context_id: ContextId; outcome: Outcome; reason: str
     detail_reasons: tuple[str, ...]; subject: ElementRef; location: SafeLocation
-    occurrence_count: int | None; via_roots: tuple[str, ...]; probe_ids: tuple[str, ...]
-    # __post_init__: reason in SUBSET_REASON_CODES; detail_reasons ⊆ REASON_CODES; REFUSED ⇒ probe_ids
-class UnverifiedCheck: rule_id: str; context_id: ContextId | None; subject: SafeLocation | None
-    cause: SemanticEvidenceCode | ScopeCause; detail: str
-class ScopeReport: generator_roots: tuple[ElementRef, ...]; selected_roots: tuple[ElementRef, ...]; narrowed: bool; widened: bool
-class SubsetProfileResult: profile_version: str; scope: ScopeReport; findings: tuple[SubsetFinding, ...]
-    unverified: tuple[UnverifiedCheck, ...]; counts: tuple[RuleCount, ...]   # declarations vs occurrences
-    complete: bool          # no unverified, not narrowed, every required FactKind enumerated
+    occurrence_count: int | None; via_roots: tuple[str, ...]; evidence: tuple[EvidenceRef, ...]
+class UnverifiedCheck: rule_id; context_id: ContextId | None; subject: SafeLocation | None
+    cause: SemanticEvidenceCode | ScopeCause | OccurrenceAbort; detail: str
+class SubsetProfileResult: subset_profile_version: str; executable_profile_version: str
+    scope: ScopeReport; verdict: Verdict; findings; unverified; counts   # counts: declarations vs occurrences
+# verdict: INCOMPLETE if any unverified, narrowed roots or unenumerated required kind; else REFUSED if any
+# refused; else UNCONFIRMED if any unconfirmed; else CLEAR. CLEAR is the only verdict a consumer may call clean.
 ```
 
-Rule IDs and shapes (rule ID ← matrix rows):
+**Matrix row schema** (`matrix.toml`, S9). A test checks the closed fields and the fixed case list: ES-001…ES-012, SELF-BINDING, INDEXED-REFERENCE, DEEP-QUALIFIED-WIRING, the ten `PUSH-DOWN-*-PROFILE-*` rows and `L6-LIBRARY-ALIAS-SOURCE`, plus G1/G2 (D14).
+
+```toml
+[[row]]
+id = "ES-003"                  # stable row ID
+class = "shared_rule"          # shared_rule | codegen_check | advisory_omission_policy | tracked_gap | internal_invariant
+rule = "binding-source"        # required iff class = shared_rule
+contexts = ["owner_instantiated", "owner_package"]; outcome = "refused"; evidence_status = "probe_observed"
+owner = "agentic-mbse Item 1"; coverage_limitation = ""   # required non-empty unless implemented in Item 1
+sites = ["sysml_codegen/elaboration/elaborate.py::_binding_evidence::…"]; no_raise_site = false
+dc3 = ["B2"]; upstream = []; l2_relation = ""   # SELF-BINDING row states the L2_SELF_NAMED_BINDING relation here
+```
+
+Rule IDs and shapes (rule ← matrix rows):
 
 | Rule ID | Matrix rows | Shapes (reason ID) |
 |---|---|---|
-| `calc-owned-assertion` | ES-001 | `asserted_constraint`, `non_asserted_constraint` (reasons `constraint_owned_by_calc_definition`, `constraint_owned_by_calc_usage`) |
+| `calc-owned-assertion` | ES-001 | `asserted_constraint`, `non_asserted_constraint` (`constraint_owned_by_calc_definition`, `constraint_owned_by_calc_usage`) |
 | `binding-source` | ES-003, ES-012, SELF-BINDING | `expression_source` (`binding_source_expression`), `self_reference_source` (`binding_source_self_reference`) |
 | `indexed-reference` | INDEXED-REFERENCE | `indexed_reference` (`indexed_reference_unsupported`) |
 | `part-multiplicity` | ES-004 | `ordered`, `nonunique`, `range`, `unresolved_bound`, `negative_bound` (`part_multiplicity_*`) |
 | `invocation-callable` | ES-005 | `unsupported_callable` (`invocation_callable_unsupported`) |
 | `conditional-expression` | ES-006 | `conditional_unresolved_branch` (`conditional_expression_unsupported`) |
-| `constraint-predicate` | ES-007 | `blocked_predicate` (`constraint_predicate_blocked`), `non_numerical_predicate` (`constraint_predicate_non_numerical`) |
+| `constraint-predicate` | ES-007 | `blocked_predicate`, `non_numerical_predicate` (`constraint_predicate_blocked`, `…_non_numerical`) |
 | `string-value-omission` | ES-010 (omission) | `string_value` (`string_value_not_generated`), both spellings |
 
-A record entry, in TOML:
+## Appendix B — ADR drafts (R1)
 
-```toml
-[[rule]]
-rule_id = "binding-source"
-matrix_rows = ["ES-003", "ES-012", "SELF-BINDING"]
-fact_requirements = ["binding_source", "occurrence"]
-[[rule.shape]]
-shape_id = "expression_source"
-reason_id = "binding_source_expression"
-admissions.owner_instantiated = { outcome = "refused", probe_ids = ["bs-expr-inst-seq", "bs-expr-inst-arith"] }
-admissions.owner_uninstantiated = { outcome = "admitted", probe_ids = ["bs-expr-uninst"] }
-admissions.writer_overridden = { outcome = "admitted", probe_ids = ["bs-expr-overridden"] }
-```
+### B.1 agentic-mbse ADR (filed after owner approval)
 
-## Appendix B — ADR draft (R1)
+Command: `.project/scripts/adr.sh new subset-profile-capability-ownership`. Provenance `[AGENT] (ratified by owner, <date>)`. Seams `[agentic-mbse, sysml-codegen, l6, guidance]`.
 
-To be filed in agentic-mbse with `.project/scripts/adr.sh new subset-profile-capability-ownership` after owner approval. Provenance `[AGENT] (ratified by owner, <date>)`. Seams `[agentic-mbse, sysml-codegen, l6, guidance]`.
+**Decision.** agentic-mbse owns the declared executable-subset contract: a published, versioned, evidence-backed description of the generator's refusals, and the pure evaluator that applies it (`sysml/subset_profile.py`, `SUBSET_PROFILE_VERSION`, neutral reason IDs, packaged rule records). It also owns the neutral facts the contract needs, including a summary of the occurrence structure the generator instantiates. sysml-codegen owns the behavior the contract describes, the diagnostic-code mapping, output facts and rendering. L6 and guidance consume the contract and own presentation.
 
-**Decision.** agentic-mbse owns the declared executable-subset contract: neutral model facts, including the occurrence structure the generator instantiates, plus a pure, versioned decision layer (`sysml/subset_profile.py`, `SUBSET_PROFILE_VERSION`, neutral reason IDs, packaged rule records). sysml-codegen owns diagnostic-code mapping, output facts and rendering, and remains the behavioral ground truth the contract is checked against. L6 and guidance consume the contract and own presentation.
+**Why.** L6 and guidance must consume the contract without importing codegen. Separate implementations of a decision drift (the dc3 B1–B6 miss). ADR 0007 places model facts in agentic-mbse, and occurrence reach is a model fact. A pure decision layer keeps capability refusals distinct from evidence failures and versions them separately.
 
-**Why.** L6 and guidance must use the contract without importing codegen, and two implementations of a decision drift (the dc3 B1–B6 miss). ADR 0007 already places model facts in agentic-mbse; occurrence reach is a model fact that had lived only in codegen. A pure decision layer keeps capability refusals distinct from evidence failures, versions them separately from fact schemas, and evaluates without SysIDE. The generator remains the authority because the contract describes it; a contract/generator disagreement is a defect or a reviewed behavior change.
+**Invariants established.**
 
-**Invariants established.** (1) The contract may report `refused` for a (shape, context) only with a retained probe of the pinned generator observing that refusal. (2) Pairs without evidence report `unconfirmed`; missing facts report `unverified`; neither is clean. (3) No agentic-mbse module imports sysml-codegen; `SI_*` codes appear only as evidence. (4) The invocation allowlist in `reference_use` is the one capability decision in the fact layer; changing it changes `SUBSET_PROFILE_VERSION`. (5) Codegen's occurrence reach migrates onto the shared facts (EXEC-SUBSET-CONTRACT Item 2), or Item 2 records why it cannot; until then a recorded parity check holds them together.
+1. The contract reports any outcome other than `unconfirmed` only with retained evidence: a probe of the pinned generator whose observed code matches, or a corpus citation for `admitted`.
+2. Pairs without evidence report `unconfirmed`; missing facts report `unverified`; only verdict `CLEAR` is clean.
+3. No agentic-mbse module imports sysml-codegen; `SI_*` codes appear only as evidence.
+4. The invocation allowlist is the one capability decision reached from the fact layer; changing it changes `SUBSET_PROFILE_VERSION`.
+5. Ground truth is the pinned generator until EXEC-SUBSET-CONTRACT Item 2. After Item 2 it is Item 2's independent corpus: elaboration with the contract screen bypassed.
+6. The occurrence summary and codegen's occurrence index are held together by the end condition the owner chose: <(i) codegen swaps onto a shared module and deletes its copy | (ii) a permanent parity test in codegen CI>.
 
-**Rejected alternatives.** Codegen-owned policy: L6 and guidance could not consume it without a reverse dependency. Decisions inside the fact layer: refusals would be indistinguishable from evidence failures and context-blind. Per-consumer implementations of shared records: duplicated decisions drift. Approximated occurrence facts: either overbroad refusals or pervasive `unverified`.
+**Rejected alternatives.** Codegen-owned policy: L6 and guidance could not consume it without a reverse dependency. Decisions in the fact layer: they would be indistinguishable from evidence failures and context-blind. Per-consumer implementations: decisions drift. No port with `unconfirmed` instantiation contexts (A′): leaves dc3 B2, B3 and B8 undecided until Item 2.
+
+### B.2 sysml-codegen ADR 0012 amendment (filed in sysml-codegen by Item 2, or earlier at owner direction)
+
+Command, run in sysml-codegen: `.project/scripts/adr.sh new occurrence-summary-shared-with-agentic` then `adr.sh amend 0012 <new-id>`. Provenance `[AGENT] (ratified by owner, <date>)`. Seams `[elaboration, agentic-mbse]`.
+
+**Decision.** ADR 0012's invariant "Raw parser reads for declaration discrimination, slot construction, and multiplicity retain their narrow codegen ownership" is amended. These reads now have two reviewed owners. Codegen keeps them for elaboration. agentic-mbse's `occurrence_extraction` performs the same reads for the shared executable-subset contract, through its own reviewed accessors. The two are held together by <end condition (i) or (ii)>. Every other 0012 invariant is unchanged.
+
+**Why.** L6 and the shared contract need instantiation facts, and agentic-mbse cannot import codegen. Spike F1 (agentic-mbse `exec-subset-profile`, 2026-10-15) showed a summary port matching codegen `b5663c07` on 72 of 72 cases. 0012's concern, that a weaker alternate read could drop evidence, is answered by parity on exact evidence (ADR 0004), not by exclusive location.
+
+**Rejected alternatives.** Keeping exclusive codegen ownership (option A′): it leaves the contract unable to decide instantiation-dependent refusals until a single move.
 
 ## Appendix C — Probe list (initial)
 
-Each line is one probe. `R` expects refused, `A` expects admitted. "⇐ proto" names the prototype fixture it supersedes.
+`R` = expected refused, `A` = expected admitted, `V` = variation probe (B5), `⇐` = the prototype fixture it supersedes. Every probe declares its construct's line range, and every `A` declares a positive-control sibling.
 
-- **calc-owned-assertion:** R calc-def asserted ⇐ `es001_refused_calc_def_assert`; R calc-usage asserted ⇐ `es001_refused_calc_usage_assert`; R calc-usage non-asserted (code read: the owner-kind raise at `elaborate.py:813-820` fires for every form; if the run admits it, the record lists it as admitted); A calc-def non-asserted; A part-owned asserted ⇐ `es001_admitted_part_assert`.
-- **binding-source:** R `(a, b)` instantiated owner ⇐ `es003_refused_ordered_nonunique`; R `rate * fuel_code` instantiated ⇐ `unmapped_expression_calc_arg`; R `(a, b)` package-owned calc usage; R self-binding instantiated; R constraint-usage input bound to an expression; A uninstantiated owner; A writer overridden by a redefinition; A ordered nonunique input bound to a scalar ⇐ `es003_neighbor_ordered_param_scalar_arg`; A exact `[1]` ordered input ⇐ `es003_neighbor_exact_ordered_param`; A plain reference actual (ES-012 neighbor); A unit-annotated literal.
-- **indexed-reference:** R binding value; R attribute value; R constraint predicate; A indexed reference in a calc def's bare result expression (not an inventory site; if the run refuses it, the record lists it as refused and the shape carries `no_admitted_context`).
-- **part-multiplicity:** R range ⇐ `es004_refused_range_parts`; R unbounded ⇐ `es004_refused_unbounded_parts`; R ordered part; R nonunique part; R referenced bound without a literal writer; A uninstantiated template ⇐ `es004_admitted_uninstantiated_template`; A exact redefinition ⇐ `es004_admitted_exact_redefinition`; A ordered/ranged attribute usage; A non-composite (reference) part usage.
-- **invocation-callable:** R `product` binding value ⇐ `es005_refused_product`; R `size` ⇐ `es005_refused_size`; R `max` attribute value; R invocation in `return r : Real = …` (calc-definition feature value); R invocation in a constraint predicate; A `max(a, b)` as a calc def's bare result expression (stub); A explicit multiply ⇐ `es005_admitted_explicit_multiply`.
-- **conditional-expression:** R binding or calc-definition feature value ⇐ `es006_refused_conditional`; R constraint predicate; A calc def bare result expression; A arithmetic min ⇐ `es006_admitted_arithmetic_min`.
-- **constraint-predicate:** R BLOCK, instantiated owner ⇐ `es007_refused_boolean_mixed`; R BLOCK, package owner; A BLOCK, uninstantiated owner; A numeric `and` ⇐ `es007_admitted_numeric_and`.
-- **string-value-omission** (omitted, recorded with a name oracle plus a numeric sibling as positive control): both spellings ⇐ `es010_omitted_string_value`; A numeric value ⇐ `es010_admitted_numeric_value`.
-- **Candidates, reproduction only:** ES-002 (constraint binding a calc usage's input), ES-008 (nested named subset), ES-009 (usage-subsetting composition), ES-010 refusal ⇐ `es010_refused_string_calc_input`.
+- **calc-owned-assertion:**
+  - R calc-def asserted ⇐ `es001_refused_calc_def_assert`; R calc-usage asserted ⇐ `es001_refused_calc_usage_assert`; R calc-usage non-asserted (owner-kind raise at `elaborate.py:813-820`).
+  - A calc-def non-asserted; A part-owned asserted ⇐ `es001_admitted_part_assert`.
+- **binding-source:**
+  - R `(a, b)` instantiated ⇐ `es003_refused_ordered_nonunique`; R `rate * fuel_code` ⇐ `unmapped_expression_calc_arg`; R `(a, b)` package-owned; R self-binding; R constraint input bound to an expression.
+  - A uninstantiated owner; A writer overridden ⇐ F1 `f1_calc_redefined_everywhere`; A ordered nonunique input bound to a scalar ⇐ `es003_neighbor_ordered_param_scalar_arg`; A exact `[1]` ordered input ⇐ `es003_neighbor_exact_ordered_param`; A plain reference actual; A unit-annotated literal.
+  - V, for `(a, b)` and for self-binding: part-usage owner; subtype occurrence; inherited calc usage; owner reached through `[2]`; two nesting levels; a usage selected in one scope and overridden in another.
+- **indexed-reference:**
+  - R binding value; R attribute value; R constraint predicate.
+  - A indexed reference in a calc def's bare result expression. If the run refuses it, the shape uses SA-1.
+- **part-multiplicity:**
+  - R range ⇐ `es004_refused_range_parts`; R unbounded ⇐ `es004_refused_unbounded_parts`; R ordered part; R nonunique part; R referenced bound without a literal writer.
+  - A uninstantiated template ⇐ `es004_admitted_uninstantiated_template`; A exact redefinition ⇐ `es004_admitted_exact_redefinition`; A ordered or ranged attribute usage; A non-composite part usage; A redefinition that drops bounds (records the G1 behavior).
+  - V, for range: nested under a root at depth two; under `[2]`; via a subtype's inherited part.
+- **invocation-callable:**
+  - R `product` binding ⇐ `es005_refused_product`; R `size` ⇐ `es005_refused_size`; R `max` attribute value; R invocation in `return r : Real = …`; R invocation in a constraint predicate.
+  - A `max(a, b)` as a calc def's bare result expression (stub); A explicit multiply ⇐ `es005_admitted_explicit_multiply`.
+- **conditional-expression:**
+  - R binding or calc-definition feature value ⇐ `es006_refused_conditional`; R constraint predicate.
+  - A calc def bare result expression; A arithmetic min ⇐ `es006_admitted_arithmetic_min`.
+- **constraint-predicate:**
+  - R BLOCK instantiated ⇐ `es007_refused_boolean_mixed`; R BLOCK package-owned.
+  - A BLOCK uninstantiated; A numeric `and` ⇐ `es007_admitted_numeric_and`; excluded NON_NUMERICAL (exit 0, predicate absent from the generated contract, numeric sibling present).
+  - V, for BLOCK: part-usage owner; subtype occurrence; owner under `[2]`.
+- **string-value-omission:**
+  - Omitted, both spellings ⇐ `es010_omitted_string_value` (catalog and contract identity check, numeric sibling as control).
+  - A numeric value ⇐ `es010_admitted_numeric_value`.
+- **Candidates, reproduction only:** ES-002, ES-008, ES-009, and the ES-010 refusal side ⇐ `es010_refused_string_calc_input`.
 
-## Appendix D — De-risk flags (owner decides whether to run)
+## Appendix D — De-risk flags
 
-- **F1. Occurrence port parity. Spike recommended before planning.** This is an assumption I could not verify by reading. Codegen's reach depends on SysIDE behavior: `usage.usages` exposing inherited features, `Type.multiplicity` falling back to supertypes, `is_ordered`/`is_nonunique` through redefinitions, and slot grouping. A port that reads the same attributes should match, but only a run proves it, and the port's size drives R1's cost. The spike must show the following, using a throwaway script that may import both packages in a temp tree, on the 22 prototype fixtures, the 14 corpus snapshot fixtures and both dc3 trees: (a) an identical root set; (b) an identical set of expanded declarations with occurrence counts; (c) identical "has occurrences" per part definition; (d) the identical selected calc-usage writer per scope; (e) for each unexpandable usage, the same resolution class as codegen's `SI_MULTIPLICITY_*` code. Add fixtures for inherited `ordered` through `:>>` and a multiplicity only on the redefinition. It must also report the port's line count. If (a)–(e) fail or the port exceeds about 800 lines, re-weigh R1 before planning.
-  - **Spike result (2026-10-15): passed.** [spikes/f1-findings.md](spikes/f1-findings.md). On 72 cases, all 72 match codegen on (a)–(e), on the first refusal and on the whole-model aborts: the 22 prototype fixtures, all 37 corpus fixtures (the 14 snapshot ones included), both dc3 trees and 11 new edge fixtures. The summary port is 416 lines (333 of code). Two caveats. That size is for this summary port only; the review M2 module port was not measured. And the port needs two selector accessors to pass the ownership gate. The spike also found that the design's multiplicity premise is wrong; see F2.
-- **F2. ES-004 occurrence and multiplicity facts before elaboration.** This collapses into F1. Because the port reads `usage.multiplicity` exactly as codegen does, no separate learning test is needed. If F1 is skipped, a learning test should at least show what `usage.multiplicity` returns for a redefinition without its own bounds, and for an inherited ordered declaration.
-  - **Spike result (2026-10-15): answered by F1, and it contradicts a design premise.** In SysIDE 0.8.4, `usage.multiplicity` and `declared_multiplicity` are the same element on every usage tested. Neither attribute, nor `is_ordered`, is inherited through `:>>`. A redefinition without its own bounds reads `None`, and codegen expands it to a single unordered occurrence. So the Research Findings "Multiplicity" line, B4's example and Implementation Note (c) rest on a false premise. Port parity is unaffected. See [spikes/f1-findings.md](spikes/f1-findings.md), Surprises 1–2.
-- **F3. Binding-shape fact equivalence. No spike.** Equivalence holds by construction: same `unit_annotation_value`, `is_literal_node`, `inspect_reference_uses` count, adapter metatype test and leaf-UUID comparison. The residual risk is which members codegen treats as inputs (`_collect_bound_members` `elaborate.py:1879-1950`, `bound_formal` `binding_source.py:183-207`). The plan reads those before writing the fact, and the probes (Appendix C) prove it.
-- **F4. Calc def bare result expression is not an inventory site. No spike.** It is code-read (`expression_evidence.py:280-347`), and the minimum probe set observes it.
-- **F5. Probe environment. Smoke test as the first plan step, not a spike.** `uv sync --frozen` must work in an archived temp tree: the private SysIDE index or cache, and the license. One probe end to end proves it.
+- **F1. Occurrence-port parity. Done.** 72 of 72 cases match; the summary port is 416 lines. Results are folded into R1, B2, B4, D13, D14 and the parity seed. Not measured: the module port (only relevant if the owner picks end condition (i)), and D7's caller roots (a plan item).
+- **F2. Multiplicity facts before elaboration. Closed by F1.** `multiplicity` and `declared_multiplicity` are the same element, neither inherits through `:>>`, and the port reads what codegen reads.
+- **F3. Binding-shape fact equivalence. No spike.** Equivalence holds by shared code. The residual check is which members codegen treats as inputs (`elaborate.py:1879-1950`, `binding_source.py:183-207`); the probes prove it.
+- **F4. A calc def bare result expression is not an inventory site. No spike.** It is code-read, and the minimum probe set observes it.
+- **F5. Probe environment. Smoke test as the first plan step.** F1 already ran the same `git archive`, `uv sync --frozen` and license setup successfully. What remains is the generate-CLI path and the code-match judging.

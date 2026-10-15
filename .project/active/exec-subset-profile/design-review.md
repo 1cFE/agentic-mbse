@@ -234,7 +234,66 @@ What blocks understanding:
 
 ## Resolutions
 
-None yet. This review was run non-interactively for the orchestrator. The owner or orchestrator records resolutions here; the design agent reads them to incorporate.
+Resolved 2026-10-15. Every call below is `[AGENT]`: an orchestrator decision, applied by the design agent in design revision 2. None is an owner decision. R1 itself stays open for the owner.
+
+- **M1 — `[AGENT]` accepted.**
+  - R1 now has a subsection, "What it amends: codegen ADR 0012", quoting the third invariant verbatim. It states that approving Option A amends that invariant.
+  - The ADR 0012 amendment is drafted in Appendix B.2, next to the agentic-mbse ADR in B.1. It is filed in sysml-codegen by Item 2, or earlier at owner direction.
+  - ADR 0004 is cited as honored.
+- **M2 — `[AGENT]` accepted.**
+  - **A′ restated honestly.** It now reads: no port, no heuristic; instantiation-dependent contexts report `unconfirmed` until Item 2. Its dc3 cost is given:
+    - B1, B4, B5 and B6 stay `refused`, and B7 stays `omitted`;
+    - B2, B3 and B8 become `unconfirmed`, apart from package-owned or root cases;
+    - B8's NON_NUMERICAL predicates also lose `excluded`.
+  - **Option A ships the measured summary port** (F1: 416 lines, 72/72, about 600 lines in production). The near-verbatim module port (unmeasured, 600–1,000 lines) is rejected for Item 1, as D13.
+  - **The copy is bounded.** The owner picks an end condition: (i) Item 2 grows the port into the module and swaps codegen onto it, or (ii) a permanent parity test runs in codegen CI. The agent leans to (ii), and "records why not" is removed.
+  - **Ground truth after Item 2** is Item 2's screen-bypassing independent corpus.
+  - **Order of policy change** is stated before and after Item 2.
+- **M3 — `[AGENT]` accepted.**
+  - D3 and invariant 1: every outcome except `unconfirmed` needs evidence.
+  - `refused`, `excluded` and `omitted` need a probe. `admitted` needs a probe or a corpus snapshot citation.
+  - The loader enforces this.
+- **M4 — `[AGENT]` accepted.**
+  - **(a) Certification.** A probe certifies a pair only if its observed code set equals the shape's expected code and the error location falls in the construct's declared line range. That location check matters most for ES-006's generic code. An admitted probe also needs a positive-control sibling in the output (invariant 2).
+  - **(b) Within-context homogeneity.** This is now stated as bet B5, and Appendix C adds variation probes for each instantiation-dependent refused pair. The "R2 safety comes from the data shape" claim is replaced by a guaranteed / not-guaranteed statement in the Core Concept.
+- **M5 — `[AGENT]` accepted.** The halt direction now follows the spec:
+  - generator admits where a refusal was expected → stop the rule for the owner (R2 track);
+  - generator refuses where admission was expected → record the observation and correct the contexts;
+  - a variation that disagrees splits the context.
+- **S1 — `[AGENT]` accepted.** `no_admitted_context` is recorded as proposed spec amendment SA-1, in the design and in the spec change log. It is not applied silently. Likely users are listed.
+- **S2 — `[AGENT]` accepted.** The counterfactual semantics are stated in the Core Concept, with F1 Surprise 4 (the dc3 baseline stops at `product`) as the example.
+- **S3 — `[AGENT]` accepted.** `SiteInspection` is now one total value: a reference outcome and an invocation outcome, each either complete or failed, plus the recognized conditionals. The rule consequences are spelled out.
+- **S4 — `[AGENT]` accepted.**
+  - Occurrence aborts get a closed `OccurrenceAbort` vocabulary. These are the cases F1 matched, plus writer ambiguity, and each makes the occurrence-dependent rules `unverified`.
+  - Counts are held per parent occurrence; F1 matched `Site::racks` at 4, 2 and 2.
+  - A writer selected in some scopes is `owner_instantiated`, with its count.
+- **S5 — `[AGENT]` accepted.** A derived `Verdict` (INCOMPLETE / REFUSED / UNCONFIRMED / CLEAR) is added; only CLEAR is clean. The repaired-tree evidence itemizes `unconfirmed` findings as well as `unverified` ones.
+- **S6 — `[AGENT]` accepted.** The same-generator check also runs codegen's v6 corpus and its pytest suite in the temp tree, at both agentic revisions.
+- **S7 — `[AGENT]` accepted.** Admitted probes declare a positive-control sibling that must appear in the generated output.
+- **S8 — `[AGENT]` accepted.**
+  - The allowlist moves to a pure `invocation_allowlist.py`, imported by both `reference_use` and `subset_profile`.
+  - The evaluator no longer imports `reference_use`, and the hygiene test covers `subset_profile`.
+- **S9 — `[AGENT]` accepted.**
+  - The matrix row schema is in Appendix A, including `l2_relation` for SELF-BINDING.
+  - A test checks the fixed case list.
+- **S10 — `[AGENT]` accepted.**
+  - The result reports both `SUBSET_PROFILE_VERSION` and `PROFILE_SEMANTIC_VERSION`.
+  - Records carry `verified_against`.
+  - The pinned generator is defined as codegen `b5663c07` with agentic-mbse at Item 1's final revision; dc3 T-001's `8b027bbc` is noted.
+- **Minor m1–m6 — `[AGENT]` accepted.**
+  - m1: `errors.py` is removed from the code-extended list.
+  - m2: `observation.json` (final revision) is canonical and `observation.base.json` holds the comparison.
+  - m3: the omission oracle checks catalog/contract identity with a numeric control; Item 2's semantic oracle replaces it.
+  - m4: TOML is justified in D8.
+  - m5: B2's size is now the measured F1 figure.
+  - m6: each Research Finding names the decision it drives.
+- **Spike F1 folded in — `[AGENT]`.**
+  - The false premise that `declared_multiplicity` differs from `multiplicity` is corrected in Research Findings, B4, Implementation Note (c) and F2.
+  - The two generator multiplicity behaviors the port copies are mirrored, not fixed (D14). They are matrix rows G1 and G2, class tracked gap, routed to Item 2/owner.
+  - The two `referent`/`chaining_features` accessors are on the plan surface. The existing `resolved_referent`/`resolved_chaining_features` are tried first.
+  - The 11 edge fixtures seed the shipped parity test, together with stored codegen-oracle expectations.
+
+**Status:** must-fixes M1–M5 have landed in design revision 2. Per this review's Next Steps, they need verifying, not a fresh review. R1 then goes to the owner with F1's findings.
 
 ---
 
