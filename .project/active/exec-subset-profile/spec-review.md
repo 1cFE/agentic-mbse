@@ -103,7 +103,27 @@ No material findings.
 
 ## Resolutions
 
-[None yet. This review ran non-interactively for the orchestrator; owner resolutions are to be recorded here keyed by finding ID.]
+Resolved 2026-10-15 by the orchestrator. Every call below is `[AGENT]`, an orchestrator decision, not an owner decision. The spec agent re-verified the cited code at `b5663c07` before applying them. Verification notes follow the calls.
+
+- **L3-1 — `[AGENT]` accepted (must-fix).** Rules are keyed on shape *and* context. Each rule record lists the contexts where the pinned generator refuses the shape and the contexts where it is admitted, never examined, or becomes `MANUAL_REQUIRED`. The spec's Table 1 states these per family. ES-004's "which usages reach expansion" is recorded as settled by the code: roots and the composite user-model part usages reachable from them.
+- **L3-2 / L1-2 — `[AGENT]` accepted (must-fix), reviewer's recommendation adopted.** Code reading may make a family a rule. `refused` is emitted for a (shape, context) only after an Item 1 read-only probe at `b5663c07` observes it; a prototype run counts where its context matches, and the record says which. Code-read alone yields `unconfirmed`. Probes run in isolated temp trees, never in sibling checkouts, and are retained with exact package identity. New criteria: a probe record for every refused pair, plus admitted-context probes per refused shape. The corpus run is stated as a regression floor, not an overbreadth proof. The "strongest criterion" wording is dropped. No R2 raise is needed, because code reading can no longer produce a refusal.
+- **L3-3 — `[AGENT]` accepted (must-fix).** Default roots reproduce the generator's rule: every user-model part usage whose owner is not a part def or part usage. Callers may pass roots; the result always reports them; narrowing reports incomplete scope; findings reachable only from roots beyond the generator's set are `unconfirmed` (or an equivalent honest label of design's choosing). The three acceptance runs use the default.
+- **L1-1 — `[AGENT]` accepted.** Citations corrected: calc-def owner → `elaborate.py:1625` via `owner_kind_unattachable`; calc-usage owner → `elaborate.py:802-820`. The calc-def refusal is narrowed to the three asserted forms.
+- **L2-1 — `[AGENT]` accepted; spec agent's call recorded.** ES-010 is split. The omission side stays a rule with outcome `omitted` (model facts only). The refusal side is a candidate by default. Design may promote it only by restating it in model terms and proving equivalence to the projection boundary with refused- and admitted-context probes.
+- **L3-4 — `[AGENT]` accepted.** A recorded refusal-fixture code list is a lower bound. An extra evaluator `refused` finding on a refusal fixture needs a probe record, not an R2 stop.
+- **L3-5 — `[AGENT]` accepted.** Site-account rows link to matrix rows (and rule records), matrix rows list their sites, and `explicit follow-up` sites state a coverage limitation.
+- **L3-6 — `[AGENT]` accepted.** `SI_*` names live only in evidence fields. The no-coupling test checks exactly that: no `sysml_codegen` import, no reason or rule ID matching `SI_[A-Z_]+` or naming a consumer type, and `SI_*` strings in packaged rule data only in evidence fields.
+- **L3-7 — `[AGENT]` accepted.** A self-binding row is added, and the matrix places every classifier outcome. The binding fact reuses the shared agentic-mbse helpers. Where the generator's logic lives only in codegen (the reference-metatype test), the shared fact must be equivalent, and the probes prove it.
+- **L5-1 — `[AGENT]` accepted.** The candidate table is split into Table 1 (boundaries by context) and Table 2 (generator sites and evidence), with citations out of the prose cells.
+- **L3-8 — `[AGENT]` accepted (optional).** The R1 criterion moved to Next Steps as a route gate.
+
+Verification notes from the spec agent (2026-10-15, codegen `b5663c07`):
+
+- Confirmed: `graph.py:247` and `:287-292` (asserted forms; `owner_has_no_occurrences` grades warning), `elaborate.py:759-787` and `:802-820`, calc nodes built only per (usage, scope) pair (`:1195-1235`, `:1322`), constraint BLOCK per scope (`:1337-1360`), `expression_evidence.py:233-324` (model-wide sites; fails fast), the calc-body stub path (`calc_compat_renderer.py:75`, `expression_compiler.py:285-300`), `elaborate.py:1115-1118`, and agentic-mbse `expression.py:441`.
+- Correction to L3-3: the root rule is at `occurrence.py:916-923`, not `:911-918`.
+- Correction to L3-7: 20 of the 23 corpus refusal records carry `SI_SELF_BINDING`, not four. None carries `SI_INDEXED_SOURCE_UNSUPPORTED`.
+- Addition to L3-1: the expression inventory runs over every declared feature value in the model, instantiated or not. So ES-005 and ES-006 refuse model-wide at those sites, unlike ES-003/ES-012 and ES-007, which depend on instantiation.
+- Addition to L3-7: self-binding compares the reference leaf with the bound formal over agentic-mbse's `ExactReferenceUse` (codegen `extraction/binding_source.py:88-89`), so the shared fact can use the same reading directly.
 
 ---
 
