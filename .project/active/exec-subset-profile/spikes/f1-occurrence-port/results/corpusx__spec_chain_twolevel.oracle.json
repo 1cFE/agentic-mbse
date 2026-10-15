@@ -1,0 +1,152 @@
+{
+ "calc_attachment": {
+  "0031b228-aa4e-5921-ad86-ce9027caf658": [
+   [
+    "occ:6e9d603d-85f5-584e-b2df-bdb001167228[]/5427455c-c584-5767-b493-42b0bc28edbb[]"
+   ],
+   null
+  ],
+  "8b12cb2f-41bb-517c-a6bf-502a6caf591f": [
+   [
+    "occ:6e9d603d-85f5-584e-b2df-bdb001167228[]"
+   ],
+   null
+  ],
+  "975c0054-8bd4-5e09-89c5-2313c4b75f8c": [
+   [
+    "occ:6e9d603d-85f5-584e-b2df-bdb001167228[]"
+   ],
+   null
+  ],
+  "db62d9ec-0641-51ef-a4c6-55e607c6a6cb": [
+   [
+    "occ:6e9d603d-85f5-584e-b2df-bdb001167228[]"
+   ],
+   null
+  ],
+  "dba48fb5-f96e-5b4d-9ca1-e508ba394bd3": [
+   [
+    "occ:6e9d603d-85f5-584e-b2df-bdb001167228[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "1b8ca198-890d-5aa3-b7fa-6d1b4ed76d07": 1,
+  "6e9d603d-85f5-584e-b2df-bdb001167228": 1
+ },
+ "def_occurrences": {
+  "49ce66a2-2599-5a3c-9618-5ff8dcb3a540": 1,
+  "916ae33c-789f-5803-90e0-f24efec62507": 1,
+  "a1720c8d-29f5-5191-ba4c-6dd8d92b45f2": 1
+ },
+ "full": {
+  "calcs_equal": true,
+  "n_calcs": 5,
+  "n_occ": 2,
+  "occurrences_equal": true,
+  "ran": true
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/spec_chain_twolevel"
+ ],
+ "load_errors": false,
+ "names": {
+  "0031b228-aa4e-5921-ad86-ce9027caf658": "TwoLevelLib::'IFE Driver'::meier_cost",
+  "1b8ca198-890d-5aa3-b7fa-6d1b4ed76d07": "TwoLevelDesign::hif_plant::driver",
+  "3b9f9009-87a8-59be-bd95-82c41edf21cb": "TwoLevelLib",
+  "49ce66a2-2599-5a3c-9618-5ff8dcb3a540": "TwoLevelLib::'IFE Driver'",
+  "5427455c-c584-5767-b493-42b0bc28edbb": "TwoLevelLib::'IFE Power Plant'::driver",
+  "6e9d603d-85f5-584e-b2df-bdb001167228": "TwoLevelDesign::hif_plant",
+  "8b12cb2f-41bb-517c-a6bf-502a6caf591f": "TwoLevelLib::'IFE Power Plant'::scale_a",
+  "916ae33c-789f-5803-90e0-f24efec62507": "TwoLevelLib::'IFE Power Plant'",
+  "975c0054-8bd4-5e09-89c5-2313c4b75f8c": "TwoLevelLib::'IFE Power Plant'::maint_calc",
+  "a1720c8d-29f5-5191-ba4c-6dd8d92b45f2": "TwoLevelLib::'HIF Driver'",
+  "a8d716dc-645a-53a1-9785-73040f465a60": "TwoLevelDesign",
+  "db62d9ec-0641-51ef-a4c6-55e607c6a6cb": "TwoLevelLib::'IFE Power Plant'::lcoe_calc",
+  "dba48fb5-f96e-5b4d-9ca1-e508ba394bd3": "TwoLevelLib::'IFE Power Plant'::scale_b"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "1b8ca198-890d-5aa3-b7fa-6d1b4ed76d07"
+   ],
+   "closure": [
+    "916ae33c-789f-5803-90e0-f24efec62507"
+   ],
+   "path": "6e9d603d-85f5-584e-b2df-bdb001167228[]",
+   "type": "916ae33c-789f-5803-90e0-f24efec62507",
+   "usage": "6e9d603d-85f5-584e-b2df-bdb001167228"
+  },
+  {
+   "children": [],
+   "closure": [
+    "49ce66a2-2599-5a3c-9618-5ff8dcb3a540",
+    "a1720c8d-29f5-5191-ba4c-6dd8d92b45f2"
+   ],
+   "path": "6e9d603d-85f5-584e-b2df-bdb001167228[]/5427455c-c584-5767-b493-42b0bc28edbb[]",
+   "type": "a1720c8d-29f5-5191-ba4c-6dd8d92b45f2",
+   "usage": "1b8ca198-890d-5aa3-b7fa-6d1b4ed76d07"
+  }
+ ],
+ "roots": [
+  "6e9d603d-85f5-584e-b2df-bdb001167228"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "1b8ca198-890d-5aa3-b7fa-6d1b4ed76d07",
+   "6e9d603d-85f5-584e-b2df-bdb001167228[]"
+  ],
+  [
+   "6e9d603d-85f5-584e-b2df-bdb001167228",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:6e9d603d-85f5-584e-b2df-bdb001167228[]",
+   "8b12cb2f-41bb-517c-a6bf-502a6caf591f",
+   "8b12cb2f-41bb-517c-a6bf-502a6caf591f",
+   [
+    "8b12cb2f-41bb-517c-a6bf-502a6caf591f"
+   ]
+  ],
+  [
+   "occ:6e9d603d-85f5-584e-b2df-bdb001167228[]",
+   "975c0054-8bd4-5e09-89c5-2313c4b75f8c",
+   "975c0054-8bd4-5e09-89c5-2313c4b75f8c",
+   [
+    "975c0054-8bd4-5e09-89c5-2313c4b75f8c"
+   ]
+  ],
+  [
+   "occ:6e9d603d-85f5-584e-b2df-bdb001167228[]",
+   "db62d9ec-0641-51ef-a4c6-55e607c6a6cb",
+   "db62d9ec-0641-51ef-a4c6-55e607c6a6cb",
+   [
+    "db62d9ec-0641-51ef-a4c6-55e607c6a6cb"
+   ]
+  ],
+  [
+   "occ:6e9d603d-85f5-584e-b2df-bdb001167228[]",
+   "dba48fb5-f96e-5b4d-9ca1-e508ba394bd3",
+   "dba48fb5-f96e-5b4d-9ca1-e508ba394bd3",
+   [
+    "dba48fb5-f96e-5b4d-9ca1-e508ba394bd3"
+   ]
+  ],
+  [
+   "occ:6e9d603d-85f5-584e-b2df-bdb001167228[]/5427455c-c584-5767-b493-42b0bc28edbb[]",
+   "0031b228-aa4e-5921-ad86-ce9027caf658",
+   "0031b228-aa4e-5921-ad86-ce9027caf658",
+   [
+    "0031b228-aa4e-5921-ad86-ce9027caf658"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

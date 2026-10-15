@@ -1,0 +1,83 @@
+MATCH    corpus__agg_literal_probe                                    {'roots': 1, 'occurrences': 5, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+MATCH    corpus__attr_expr_probe                                      {'roots': 1, 'occurrences': 1, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MATCH    corpus__constraint_inline                                    {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    corpus__constraint_multi_instance                            {'roots': 1, 'occurrences': 5, 'writers': 3, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+MATCH    corpus__constraint_non_numerical                             {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    corpus__d38_caret                                            {'roots': 1, 'occurrences': 6, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+MATCH    corpus__fusion_tea                                           {'roots': 1, 'occurrences': 7, 'writers': 6, 'unexpandable': 0, 'defs_with_occ': 13} strict=ok full occ=True calcs=True
+MATCH    corpus__modeled_default_fidelity                             {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    corpus__quoted_owner_formula                                 {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MISMATCH corpus__retype_model                                         {'roots': 1, 'occurrences': 4, 'writers': 6, 'unexpandable': 0, 'defs_with_occ': 4} strict=ok full occ=True calcs=True
+    d_writers: ["codegen_only", ["occ:41128642-2904-56e4-8c1c-f2053d0f2619[]/4b593ac4-f5f3-5bd3-9835-6edaf4591a0f[]/d9a01566-bf27-58cd-91fe-02ee7ec44836[]", "RetypeLibrary::'IFE Driver'::shared_calc", "RetypeLibrary::'HIF Driver'::shared_calc"]]
+    d_writers: ["codegen_only", ["occ:41128642-2904-56e4-8c1c-f2053d0f2619[]/70686e83-9aa6-5b62-a862-dc4b4f91c0a2[]", "RetypeLibrary::'IFE Driver'::shared_calc", "RetypeLibrary::'HIF Driver'::shared_calc"]]
+    d_writers: ["port_only", ["occ:41128642-2904-56e4-8c1c-f2053d0f2619[]/4b593ac4-f5f3-5bd3-9835-6edaf4591a0f[]/d9a01566-bf27-58cd-91fe-02ee7ec44836[]", "RetypeLibrary::'IFE Driver'::shared_calc", "RetypeLibrary::'IFE Driver'::shared_calc"]]
+    d_writers: ["port_only", ["occ:41128642-2904-56e4-8c1c-f2053d0f2619[]/70686e83-9aa6-5b62-a862-dc4b4f91c0a2[]", "RetypeLibrary::'IFE Driver'::shared_calc", "RetypeLibrary::'IFE Driver'::shared_calc"]]
+MATCH    corpus__sample_model                                         {'roots': 0, 'occurrences': 0, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MATCH    corpus__shadowed_reference                                   {'roots': 1, 'occurrences': 2, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+MATCH    corpus__unresolvable_attr_probe                              {'roots': 3, 'occurrences': 3, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 4} strict=ok full occ=True calcs=True
+MATCH    corpus__wi014_toy                                            {'roots': 1, 'occurrences': 1, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    corpusx__agg_localterm_probe                                 {'roots': 1, 'occurrences': 4, 'writers': 3, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+MATCH    corpusx__alias_agg_probe                                     {'roots': 1, 'occurrences': 5, 'writers': 5, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+MATCH    corpusx__catf_mfe_model                                      {'roots': 20, 'occurrences': 61, 'writers': 42, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MATCH    corpusx__chain_override_probe                                {'roots': 1, 'occurrences': 2, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+MATCH    corpusx__chain_spike_model                                   {'roots': 1, 'occurrences': 1, 'writers': 3, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MATCH    corpusx__crosspart_rollup_twolevel                           {'roots': 1, 'occurrences': 3, 'writers': 3, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+MATCH    corpusx__deep_cross_scope_probe                              {'roots': 1, 'occurrences': 5, 'writers': 5, 'unexpandable': 0, 'defs_with_occ': 4} strict=ok full occ=True calcs=True
+MATCH    corpusx__expression_binding_probe                            {'roots': 1, 'occurrences': 1, 'writers': 5, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MATCH    corpusx__gate_a                                              {'roots': 2, 'occurrences': 2, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+MATCH    corpusx__gate_a_package_owner                                {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    corpusx__ife_plant                                           {'roots': 4, 'occurrences': 13, 'writers': 11, 'unexpandable': 0, 'defs_with_occ': 8} strict=ok full occ=True calcs=True
+MATCH    corpusx__invocation_binding_probe                            {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full=n/a
+MATCH    corpusx__issue22_model                                       {'roots': 1, 'occurrences': 5, 'writers': 4, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+MATCH    corpusx__plant_value_shapes                                  {'roots': 1, 'occurrences': 4, 'writers': 6, 'unexpandable': 0, 'defs_with_occ': 7} strict=ok full=n/a
+MATCH    corpusx__plant_values                                        {'roots': 1, 'occurrences': 4, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 5} strict=ok full occ=True calcs=True
+MATCH    corpusx__return_styles                                       {'roots': 1, 'occurrences': 1, 'writers': 4, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MATCH    corpusx__self_named_binding_trap                             {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    corpusx__self_named_rescue                                   {'roots': 1, 'occurrences': 1, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    corpusx__shared_producer                                     {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    corpusx__sibling_channel_ambiguity                           {'roots': 1, 'occurrences': 3, 'writers': 3, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+MATCH    corpusx__solar_battery_model                                 {'roots': 1, 'occurrences': 42, 'writers': 44, 'unexpandable': 0, 'defs_with_occ': 14} strict=ok full occ=True calcs=True
+MATCH    corpusx__spec_chain_channel                                  {'roots': 1, 'occurrences': 2, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 4} strict=ok full occ=True calcs=True
+MATCH    corpusx__spec_chain_twolevel                                 {'roots': 1, 'occurrences': 2, 'writers': 5, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+MATCH    dc3__baseline_808464d                                        {'roots': 8, 'occurrences': 214, 'writers': 41, 'unexpandable': 72, 'defs_with_occ': 57} strict=SI_MULTIPLICITY_UNRESOLVED full=n/a
+MATCH    dc3__repaired_60b44d5                                        {'roots': 6, 'occurrences': 153, 'writers': 40, 'unexpandable': 0, 'defs_with_occ': 59} strict=ok full occ=True calcs=True
+MATCH    edge__f1_abort_incomparable_typings                          {'roots': 0, 'occurrences': 0, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=SI_REDEFINITION_INVALID full=n/a
+MATCH    edge__f1_abort_recursive_containment                         {'roots': 0, 'occurrences': 0, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=SI_CONTAINMENT_RECURSIVE full=n/a
+MATCH    edge__f1_abort_specialization_cycle                          {'roots': 0, 'occurrences': 0, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=SI_CONTAINMENT_RECURSIVE full=n/a
+MISMATCH edge__f1_calc_redefined_everywhere                           {'roots': 4, 'occurrences': 4, 'writers': 5, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+    d_writers: ["codegen_only", ["occ:2bb241de-00d7-59db-9b03-46115f9ef533[]", "f1f::Other::c2", "f1f::o::c2"]]
+    d_writers: ["codegen_only", ["occ:2cb4bea9-f67d-5914-adf5-582407547432[]", "f1f::Base::c", "f1f::Derived::c"]]
+    d_writers: ["codegen_only", ["occ:cd63590d-3f13-5d4c-ae9d-9365a0daabb3[]", "f1f::Base::c", "f1f::Derived::c"]]
+    d_writers: ["port_only", ["occ:2bb241de-00d7-59db-9b03-46115f9ef533[]", "f1f::Other::c2", "f1f::Other::c2"]]
+    d_writers: ["port_only", ["occ:2cb4bea9-f67d-5914-adf5-582407547432[]", "f1f::Base::c", "f1f::Base::c"]]
+    d_writers: ["port_only", ["occ:cd63590d-3f13-5d4c-ae9d-9365a0daabb3[]", "f1f::Base::c", "f1f::Base::c"]]
+MATCH    edge__f1_inherited_multiplicity_redef                        {'roots': 1, 'occurrences': 2, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full=n/a
+MATCH    edge__f1_inherited_ordered_redef                             {'roots': 1, 'occurrences': 2, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full=n/a
+MATCH    edge__f1_invalid_redefinition_family                         {'roots': 0, 'occurrences': 0, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=None full=n/a
+MATCH    edge__f1_multiplicity_only_on_redef                          {'roots': 2, 'occurrences': 6, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full=n/a
+MATCH    edge__f1_nested_subtypes                                     {'roots': 2, 'occurrences': 12, 'writers': 8, 'unexpandable': 0, 'defs_with_occ': 5} strict=ok full occ=True calcs=True
+MATCH    edge__f1_referenced_bounds                                   {'roots': 5, 'occurrences': 17, 'writers': 0, 'unexpandable': 1, 'defs_with_occ': 4} strict=SI_MULTIPLICITY_UNRESOLVED full=n/a
+MATCH    edge__f1_zero_and_bad_multiplicities                         {'roots': 2, 'occurrences': 2, 'writers': 0, 'unexpandable': 4, 'defs_with_occ': 2} strict=SI_MULTIPLICITY_UNSUPPORTED full=n/a
+MATCH    proto__es001_admitted_part_assert                            {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es001_refused_calc_def_assert                         {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es001_refused_calc_usage_assert                       {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full=n/a
+MATCH    proto__es003_admitted_fixed_arity                            {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es003_neighbor_exact_ordered_param                    {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es003_neighbor_ordered_param_scalar_arg               {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es003_refused_ordered_nonunique                       {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es004_admitted_exact_redefinition                     {'roots': 2, 'occurrences': 4, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+MATCH    proto__es004_admitted_uninstantiated_template                {'roots': 2, 'occurrences': 2, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+MATCH    proto__es004_refused_range_parts                             {'roots': 2, 'occurrences': 2, 'writers': 1, 'unexpandable': 1, 'defs_with_occ': 2} strict=SI_MULTIPLICITY_UNSUPPORTED full=n/a
+MATCH    proto__es004_refused_unbounded_parts                         {'roots': 2, 'occurrences': 4, 'writers': 1, 'unexpandable': 1, 'defs_with_occ': 3} strict=SI_MULTIPLICITY_UNRESOLVED full=n/a
+MATCH    proto__es005_admitted_explicit_multiply                      {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es005_refused_product                                 {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full=n/a
+MATCH    proto__es005_refused_size                                    {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full=n/a
+MATCH    proto__es006_admitted_arithmetic_min                         {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es006_refused_conditional                             {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full=n/a
+MATCH    proto__es007_admitted_numeric_and                            {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es007_refused_boolean_mixed                           {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es010_admitted_numeric_value                          {'roots': 1, 'occurrences': 1, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es010_omitted_string_value                            {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es010_refused_string_calc_input                       {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__unmapped_expression_calc_arg                          {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+TOTAL 70/72 match

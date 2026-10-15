@@ -1,0 +1,84 @@
+{
+ "calc_attachment": {
+  "166263b3-a4a0-5980-ba4d-6796171e5b44": [
+   [
+    "occ:4320211f-168b-5957-bfdb-bd23e032133d[]"
+   ],
+   null
+  ],
+  "c8326183-6d99-515e-873f-c4f7b0381975": [
+   [
+    "occ:4320211f-168b-5957-bfdb-bd23e032133d[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "4320211f-168b-5957-bfdb-bd23e032133d": 1
+ },
+ "def_occurrences": {
+  "1d4943f9-17e9-5f79-b45f-17a1c9cbcdf7": 1
+ },
+ "full": {
+  "calcs_equal": true,
+  "n_calcs": 2,
+  "n_occ": 1,
+  "occurrences_equal": true,
+  "ran": true
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/self_named_rescue"
+ ],
+ "load_errors": false,
+ "names": {
+  "166263b3-a4a0-5980-ba4d-6796171e5b44": "RescueLib::'Rescue Plant'::sink_calc",
+  "1d4943f9-17e9-5f79-b45f-17a1c9cbcdf7": "RescueLib::'Rescue Plant'",
+  "4320211f-168b-5957-bfdb-bd23e032133d": "RescueDesign::rescue_plant",
+  "a27e196f-afc4-54fd-b276-bf5ff8f18bc7": "RescueLib",
+  "c8326183-6d99-515e-873f-c4f7b0381975": "RescueLib::'Rescue Plant'::source_calc",
+  "f0158fb8-2751-57b9-a1a6-2dcbe9bf11c5": "RescueDesign"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "1d4943f9-17e9-5f79-b45f-17a1c9cbcdf7"
+   ],
+   "path": "4320211f-168b-5957-bfdb-bd23e032133d[]",
+   "type": "1d4943f9-17e9-5f79-b45f-17a1c9cbcdf7",
+   "usage": "4320211f-168b-5957-bfdb-bd23e032133d"
+  }
+ ],
+ "roots": [
+  "4320211f-168b-5957-bfdb-bd23e032133d"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "4320211f-168b-5957-bfdb-bd23e032133d",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:4320211f-168b-5957-bfdb-bd23e032133d[]",
+   "166263b3-a4a0-5980-ba4d-6796171e5b44",
+   "166263b3-a4a0-5980-ba4d-6796171e5b44",
+   [
+    "166263b3-a4a0-5980-ba4d-6796171e5b44"
+   ]
+  ],
+  [
+   "occ:4320211f-168b-5957-bfdb-bd23e032133d[]",
+   "c8326183-6d99-515e-873f-c4f7b0381975",
+   "c8326183-6d99-515e-873f-c4f7b0381975",
+   [
+    "c8326183-6d99-515e-873f-c4f7b0381975"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

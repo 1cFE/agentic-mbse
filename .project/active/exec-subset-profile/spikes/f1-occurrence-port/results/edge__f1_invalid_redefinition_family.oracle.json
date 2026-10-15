@@ -1,0 +1,25 @@
+{
+ "fatal": {
+  "code": "SI_REDEFINITION_INVALID",
+  "detail": "redefinition declaration f1h::o::c2::v has unrelated roots: f1h::Thrice::v, f1h::Twice::v",
+  "stage": "slots",
+  "type": "InvalidRedefinitionFamilyError"
+ },
+ "full": {
+  "code": "None",
+  "detail": "Failed to load SysML models: root-0/f1_invalid_redefinition_family.sysml:6:50: (feature-value-overriding) Cannot override a binding feature value",
+  "ran": false,
+  "type": "SysMLParsingError"
+ },
+ "inputs": [
+  "/home/reid/src/agentic-mbse/.project/active/exec-subset-profile/spikes/f1-occurrence-port/fixtures/f1_invalid_redefinition_family.sysml"
+ ],
+ "load_errors": true,
+ "names": {
+  "0c5df92a-61ea-5c54-9861-ccd4c8757bca": "f1h::Other",
+  "17dc8a7b-e84b-5e12-a6c5-821dd84a54ac": "f1h::Other::c2",
+  "339d1a45-d716-5b05-9958-ee8258c8b648": "f1h::o::c2",
+  "b218014a-355e-5553-a3fb-f810ff34e8ee": "f1h",
+  "c2a6963f-f8a0-5d70-97be-6135538b5681": "f1h::o"
+ }
+}

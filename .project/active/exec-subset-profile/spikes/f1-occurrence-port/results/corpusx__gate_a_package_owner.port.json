@@ -1,0 +1,62 @@
+{
+ "calc_attachment": {
+  "30cc35b3-ebf7-5922-a3a9-5c5f6384cf25": [
+   [
+    "occ:84d4befe-8e06-5a61-92cc-b552ffc8f903[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "84d4befe-8e06-5a61-92cc-b552ffc8f903": 1
+ },
+ "def_occurrences": {
+  "ca21a98b-1daa-5b51-8f78-15740949a6e7": 1
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/gate_a_package_owner"
+ ],
+ "load_errors": false,
+ "names": {
+  "30cc35b3-ebf7-5922-a3a9-5c5f6384cf25": "GateAPackageOwner::Unrelated::doubler",
+  "84d4befe-8e06-5a61-92cc-b552ffc8f903": "GateAPackageOwner::the_other",
+  "b3ed60ae-cfe1-59ee-bfb5-5971a805b978": "GateAPackageOwner",
+  "ca21a98b-1daa-5b51-8f78-15740949a6e7": "GateAPackageOwner::Unrelated"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "ca21a98b-1daa-5b51-8f78-15740949a6e7"
+   ],
+   "path": "84d4befe-8e06-5a61-92cc-b552ffc8f903[]",
+   "type": "ca21a98b-1daa-5b51-8f78-15740949a6e7",
+   "usage": "84d4befe-8e06-5a61-92cc-b552ffc8f903"
+  }
+ ],
+ "roots": [
+  "84d4befe-8e06-5a61-92cc-b552ffc8f903"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "84d4befe-8e06-5a61-92cc-b552ffc8f903",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:84d4befe-8e06-5a61-92cc-b552ffc8f903[]",
+   "30cc35b3-ebf7-5922-a3a9-5c5f6384cf25",
+   "30cc35b3-ebf7-5922-a3a9-5c5f6384cf25",
+   [
+    "30cc35b3-ebf7-5922-a3a9-5c5f6384cf25"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

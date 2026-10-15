@@ -1,0 +1,45 @@
+{
+ "calc_attachment": {},
+ "codegen_imported": false,
+ "counts": {
+  "d86344cb-9e03-5a73-89dc-647200a617b4": 1
+ },
+ "def_occurrences": {
+  "013c41e8-2a00-5ea2-b6a8-71b12d8224b1": 1
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/constraint_inline"
+ ],
+ "load_errors": false,
+ "names": {
+  "013c41e8-2a00-5ea2-b6a8-71b12d8224b1": "constraint_inline::InlineHost",
+  "c7cf923d-6963-5f9b-8080-9b4a84a81b22": "constraint_inline",
+  "d86344cb-9e03-5a73-89dc-647200a617b4": "constraint_inline::the_host"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "013c41e8-2a00-5ea2-b6a8-71b12d8224b1"
+   ],
+   "path": "d86344cb-9e03-5a73-89dc-647200a617b4[]",
+   "type": "013c41e8-2a00-5ea2-b6a8-71b12d8224b1",
+   "usage": "d86344cb-9e03-5a73-89dc-647200a617b4"
+  }
+ ],
+ "roots": [
+  "d86344cb-9e03-5a73-89dc-647200a617b4"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "d86344cb-9e03-5a73-89dc-647200a617b4",
+   null
+  ]
+ ],
+ "writers": [],
+ "writers_status": "no_calc_usages_selected"
+}

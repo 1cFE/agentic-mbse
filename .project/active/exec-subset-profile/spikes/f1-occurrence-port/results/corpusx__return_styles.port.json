@@ -1,0 +1,103 @@
+{
+ "calc_attachment": {
+  "022d7723-758a-5a08-8989-4837708b7b84": [
+   [
+    "occ:b0e4eecb-f126-5a7b-afdf-253e159a6209[]"
+   ],
+   null
+  ],
+  "220a7bae-6bc8-5502-a4e6-81d0155e7396": [
+   [
+    "occ:b0e4eecb-f126-5a7b-afdf-253e159a6209[]"
+   ],
+   null
+  ],
+  "254b01be-7d0b-55ab-a46d-bca8af96837d": [
+   [
+    "occ:b0e4eecb-f126-5a7b-afdf-253e159a6209[]"
+   ],
+   null
+  ],
+  "9c201f82-2851-530f-ae53-c459cff63592": [
+   [
+    "occ:b0e4eecb-f126-5a7b-afdf-253e159a6209[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "b0e4eecb-f126-5a7b-afdf-253e159a6209": 1
+ },
+ "def_occurrences": {},
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/return_styles"
+ ],
+ "load_errors": false,
+ "names": {
+  "022d7723-758a-5a08-8989-4837708b7b84": "ReturnStylesDesign::rs_design::cb",
+  "220a7bae-6bc8-5502-a4e6-81d0155e7396": "ReturnStylesDesign::rs_design::cd",
+  "254b01be-7d0b-55ab-a46d-bca8af96837d": "ReturnStylesDesign::rs_design::ca",
+  "95375c57-f56d-5b2c-975d-2f5a251b1763": "ReturnStylesLibrary",
+  "9c201f82-2851-530f-ae53-c459cff63592": "ReturnStylesDesign::rs_design::cc",
+  "b0e4eecb-f126-5a7b-afdf-253e159a6209": "ReturnStylesDesign::rs_design",
+  "c0aff209-0366-5054-b810-9da324a4bb6f": "ReturnStylesDesign"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [],
+   "path": "b0e4eecb-f126-5a7b-afdf-253e159a6209[]",
+   "type": null,
+   "usage": "b0e4eecb-f126-5a7b-afdf-253e159a6209"
+  }
+ ],
+ "roots": [
+  "b0e4eecb-f126-5a7b-afdf-253e159a6209"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "b0e4eecb-f126-5a7b-afdf-253e159a6209",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:b0e4eecb-f126-5a7b-afdf-253e159a6209[]",
+   "022d7723-758a-5a08-8989-4837708b7b84",
+   "022d7723-758a-5a08-8989-4837708b7b84",
+   [
+    "022d7723-758a-5a08-8989-4837708b7b84"
+   ]
+  ],
+  [
+   "occ:b0e4eecb-f126-5a7b-afdf-253e159a6209[]",
+   "220a7bae-6bc8-5502-a4e6-81d0155e7396",
+   "220a7bae-6bc8-5502-a4e6-81d0155e7396",
+   [
+    "220a7bae-6bc8-5502-a4e6-81d0155e7396"
+   ]
+  ],
+  [
+   "occ:b0e4eecb-f126-5a7b-afdf-253e159a6209[]",
+   "254b01be-7d0b-55ab-a46d-bca8af96837d",
+   "254b01be-7d0b-55ab-a46d-bca8af96837d",
+   [
+    "254b01be-7d0b-55ab-a46d-bca8af96837d"
+   ]
+  ],
+  [
+   "occ:b0e4eecb-f126-5a7b-afdf-253e159a6209[]",
+   "9c201f82-2851-530f-ae53-c459cff63592",
+   "9c201f82-2851-530f-ae53-c459cff63592",
+   [
+    "9c201f82-2851-530f-ae53-c459cff63592"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

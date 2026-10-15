@@ -1,0 +1,203 @@
+{
+ "calc_attachment": {
+  "0356d54c-5671-595d-9fde-2cbe36393b18": [
+   [
+    "occ:54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b[]/5cf56cd5-3ba0-5459-a5d4-cf63dc5c3496[]/85965004-f302-5558-ba57-cf4efe4d9f24[]"
+   ],
+   null
+  ],
+  "29f285c1-b6c9-5476-9752-1852a784ccdf": [
+   [
+    "occ:54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612[]"
+   ],
+   null
+  ],
+  "311b4347-89d5-57bc-bd38-4738cac52097": [
+   [
+    "occ:54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612[]"
+   ],
+   null
+  ],
+  "70506328-9c2e-5819-b455-cf4943c4b58c": [
+   [
+    "occ:54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612[]"
+   ],
+   null
+  ],
+  "9058ff83-2fad-51eb-aa4c-9760e37e0df8": [
+   [
+    "occ:54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b[]/5cf56cd5-3ba0-5459-a5d4-cf63dc5c3496[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "54d39214-f6f1-5598-a5a2-dd141ff65bf8": 1,
+  "6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612": 1,
+  "6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b": 1,
+  "8ada5ae5-4da2-5f52-aaf7-7a581a95cb9c": 1,
+  "ceb20d9b-8d1f-5dcf-9280-39bd6fdf9b61": 1
+ },
+ "def_occurrences": {
+  "7b7bdf56-6d6c-5df1-8fba-010d51a27618": 1,
+  "a3f0c596-b901-5a80-9245-76b080fc6090": 1,
+  "c8daa9c0-d351-5fa3-b880-813ebd84f3e5": 1,
+  "ec938394-8b1c-5ebe-929c-5211a3aba069": 1
+ },
+ "full": {
+  "calcs_equal": true,
+  "n_calcs": 5,
+  "n_occ": 5,
+  "occurrences_equal": true,
+  "ran": true
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/deep_cross_scope_probe"
+ ],
+ "load_errors": false,
+ "names": {
+  "0356d54c-5671-595d-9fde-2cbe36393b18": "DeepCrossScopeProducer::Sensor::core",
+  "05bccd4c-a7f5-5e05-897e-7ed571457444": "DeepCrossScopeProducer",
+  "29f285c1-b6c9-5476-9752-1852a784ccdf": "DeepCrossScopeDesign::measurement_system::analyzer::self_ref_analysis",
+  "311b4347-89d5-57bc-bd38-4738cac52097": "DeepCrossScopeDesign::measurement_system::analyzer::chain_analysis",
+  "54d39214-f6f1-5598-a5a2-dd141ff65bf8": "DeepCrossScopeDesign::measurement_system",
+  "5cf56cd5-3ba0-5459-a5d4-cf63dc5c3496": "DeepCrossScopeProducer::'Monitoring Station'::array",
+  "6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612": "DeepCrossScopeDesign::measurement_system::analyzer",
+  "6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b": "DeepCrossScopeDesign::measurement_system::station",
+  "70506328-9c2e-5819-b455-cf4943c4b58c": "DeepCrossScopeDesign::measurement_system::analyzer::ref_analysis",
+  "783cb063-f5b6-544d-abcd-ca4e610f0a7c": "DeepCrossScopeDesign",
+  "7b7bdf56-6d6c-5df1-8fba-010d51a27618": "DeepCrossScopeProducer::'Sensor Array'",
+  "85965004-f302-5558-ba57-cf4efe4d9f24": "DeepCrossScopeProducer::'Sensor Array'::sensor",
+  "8ada5ae5-4da2-5f52-aaf7-7a581a95cb9c": "DeepCrossScopeDesign::measurement_system::station::array",
+  "9058ff83-2fad-51eb-aa4c-9760e37e0df8": "DeepCrossScopeProducer::'Sensor Array'::derived_calc",
+  "a3f0c596-b901-5a80-9245-76b080fc6090": "DeepCrossScopeProducer::'Monitoring Station'",
+  "c8daa9c0-d351-5fa3-b880-813ebd84f3e5": "DeepCrossScopeProducer::Sensor",
+  "ceb20d9b-8d1f-5dcf-9280-39bd6fdf9b61": "DeepCrossScopeDesign::measurement_system::station::array::sensor",
+  "d1435dd1-4509-5a7b-99ba-9e0785eb9e17": "DeepCrossScopeConsumer",
+  "ec938394-8b1c-5ebe-929c-5211a3aba069": "DeepCrossScopeConsumer::Analyzer"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612",
+    "6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b"
+   ],
+   "closure": [],
+   "path": "54d39214-f6f1-5598-a5a2-dd141ff65bf8[]",
+   "type": null,
+   "usage": "54d39214-f6f1-5598-a5a2-dd141ff65bf8"
+  },
+  {
+   "children": [],
+   "closure": [
+    "ec938394-8b1c-5ebe-929c-5211a3aba069"
+   ],
+   "path": "54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612[]",
+   "type": "ec938394-8b1c-5ebe-929c-5211a3aba069",
+   "usage": "6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612"
+  },
+  {
+   "children": [
+    "8ada5ae5-4da2-5f52-aaf7-7a581a95cb9c"
+   ],
+   "closure": [
+    "a3f0c596-b901-5a80-9245-76b080fc6090"
+   ],
+   "path": "54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b[]",
+   "type": "a3f0c596-b901-5a80-9245-76b080fc6090",
+   "usage": "6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b"
+  },
+  {
+   "children": [
+    "ceb20d9b-8d1f-5dcf-9280-39bd6fdf9b61"
+   ],
+   "closure": [
+    "7b7bdf56-6d6c-5df1-8fba-010d51a27618"
+   ],
+   "path": "54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b[]/5cf56cd5-3ba0-5459-a5d4-cf63dc5c3496[]",
+   "type": "7b7bdf56-6d6c-5df1-8fba-010d51a27618",
+   "usage": "8ada5ae5-4da2-5f52-aaf7-7a581a95cb9c"
+  },
+  {
+   "children": [],
+   "closure": [
+    "c8daa9c0-d351-5fa3-b880-813ebd84f3e5"
+   ],
+   "path": "54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b[]/5cf56cd5-3ba0-5459-a5d4-cf63dc5c3496[]/85965004-f302-5558-ba57-cf4efe4d9f24[]",
+   "type": "c8daa9c0-d351-5fa3-b880-813ebd84f3e5",
+   "usage": "ceb20d9b-8d1f-5dcf-9280-39bd6fdf9b61"
+  }
+ ],
+ "roots": [
+  "54d39214-f6f1-5598-a5a2-dd141ff65bf8"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "54d39214-f6f1-5598-a5a2-dd141ff65bf8",
+   null
+  ],
+  [
+   "6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612",
+   "54d39214-f6f1-5598-a5a2-dd141ff65bf8[]"
+  ],
+  [
+   "6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b",
+   "54d39214-f6f1-5598-a5a2-dd141ff65bf8[]"
+  ],
+  [
+   "8ada5ae5-4da2-5f52-aaf7-7a581a95cb9c",
+   "54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b[]"
+  ],
+  [
+   "ceb20d9b-8d1f-5dcf-9280-39bd6fdf9b61",
+   "54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b[]/5cf56cd5-3ba0-5459-a5d4-cf63dc5c3496[]"
+  ]
+ ],
+ "writers": [
+  [
+   "occ:54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612[]",
+   "29f285c1-b6c9-5476-9752-1852a784ccdf",
+   "29f285c1-b6c9-5476-9752-1852a784ccdf",
+   [
+    "29f285c1-b6c9-5476-9752-1852a784ccdf"
+   ]
+  ],
+  [
+   "occ:54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612[]",
+   "311b4347-89d5-57bc-bd38-4738cac52097",
+   "311b4347-89d5-57bc-bd38-4738cac52097",
+   [
+    "311b4347-89d5-57bc-bd38-4738cac52097"
+   ]
+  ],
+  [
+   "occ:54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6b2b3ff6-67a6-5d5c-8460-15a4b4c6d612[]",
+   "70506328-9c2e-5819-b455-cf4943c4b58c",
+   "70506328-9c2e-5819-b455-cf4943c4b58c",
+   [
+    "70506328-9c2e-5819-b455-cf4943c4b58c"
+   ]
+  ],
+  [
+   "occ:54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b[]/5cf56cd5-3ba0-5459-a5d4-cf63dc5c3496[]",
+   "9058ff83-2fad-51eb-aa4c-9760e37e0df8",
+   "9058ff83-2fad-51eb-aa4c-9760e37e0df8",
+   [
+    "9058ff83-2fad-51eb-aa4c-9760e37e0df8"
+   ]
+  ],
+  [
+   "occ:54d39214-f6f1-5598-a5a2-dd141ff65bf8[]/6ea3eaf1-16d1-5117-8bb7-63aba7c8e02b[]/5cf56cd5-3ba0-5459-a5d4-cf63dc5c3496[]/85965004-f302-5558-ba57-cf4efe4d9f24[]",
+   "0356d54c-5671-595d-9fde-2cbe36393b18",
+   "0356d54c-5671-595d-9fde-2cbe36393b18",
+   [
+    "0356d54c-5671-595d-9fde-2cbe36393b18"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

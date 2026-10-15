@@ -1,0 +1,78 @@
+{
+ "calc_attachment": {
+  "00e16e9a-db09-5914-9a63-e7dff743127b": [
+   [
+    "occ:ba89ecd9-2c26-5388-a785-0d5601f53d6f[]"
+   ],
+   null
+  ],
+  "7a581e4f-7dd7-5576-b9ec-b3ad7edb9792": [
+   [
+    "occ:ba89ecd9-2c26-5388-a785-0d5601f53d6f[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "ba89ecd9-2c26-5388-a785-0d5601f53d6f": 1
+ },
+ "def_occurrences": {
+  "9f2e2cd8-d329-5889-9d89-bcd100d903bf": 1
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/wi014_toy"
+ ],
+ "load_errors": false,
+ "names": {
+  "00e16e9a-db09-5914-9a63-e7dff743127b": "toy_plant::'Toy Plant'::cost_calc",
+  "3334e598-7777-55a4-a564-31041896ff5e": "toy_plant",
+  "7a581e4f-7dd7-5576-b9ec-b3ad7edb9792": "toy_plant::'Toy Plant'::area_calc",
+  "9f2e2cd8-d329-5889-9d89-bcd100d903bf": "toy_plant::'Toy Plant'",
+  "ba89ecd9-2c26-5388-a785-0d5601f53d6f": "toy_plant::demo_plant",
+  "d189103d-e284-515a-8ae4-793f0002bd05": "toy_library"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "9f2e2cd8-d329-5889-9d89-bcd100d903bf"
+   ],
+   "path": "ba89ecd9-2c26-5388-a785-0d5601f53d6f[]",
+   "type": "9f2e2cd8-d329-5889-9d89-bcd100d903bf",
+   "usage": "ba89ecd9-2c26-5388-a785-0d5601f53d6f"
+  }
+ ],
+ "roots": [
+  "ba89ecd9-2c26-5388-a785-0d5601f53d6f"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "ba89ecd9-2c26-5388-a785-0d5601f53d6f",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:ba89ecd9-2c26-5388-a785-0d5601f53d6f[]",
+   "00e16e9a-db09-5914-9a63-e7dff743127b",
+   "00e16e9a-db09-5914-9a63-e7dff743127b",
+   [
+    "00e16e9a-db09-5914-9a63-e7dff743127b"
+   ]
+  ],
+  [
+   "occ:ba89ecd9-2c26-5388-a785-0d5601f53d6f[]",
+   "7a581e4f-7dd7-5576-b9ec-b3ad7edb9792",
+   "7a581e4f-7dd7-5576-b9ec-b3ad7edb9792",
+   [
+    "7a581e4f-7dd7-5576-b9ec-b3ad7edb9792"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

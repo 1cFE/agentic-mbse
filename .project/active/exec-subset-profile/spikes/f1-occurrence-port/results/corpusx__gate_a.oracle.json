@@ -1,0 +1,86 @@
+{
+ "calc_attachment": {
+  "f85bba7c-f03c-5611-b7bd-6a8c7c743561": [
+   [
+    "occ:cd8dd82c-3c83-5154-8d2b-2f0294aa5093[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "089092b2-9ba4-511a-9310-d3a408ecea7d": 1,
+  "cd8dd82c-3c83-5154-8d2b-2f0294aa5093": 1
+ },
+ "def_occurrences": {
+  "3752bdf5-4e22-5436-9b18-88018d7044c6": 1,
+  "fc5a39fb-d1c7-5924-8396-7d102c03f48c": 1
+ },
+ "full": {
+  "calcs_equal": true,
+  "n_calcs": 1,
+  "n_occ": 2,
+  "occurrences_equal": true,
+  "ran": true
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/gate_a"
+ ],
+ "load_errors": false,
+ "names": {
+  "089092b2-9ba4-511a-9310-d3a408ecea7d": "GateA::the_host",
+  "3752bdf5-4e22-5436-9b18-88018d7044c6": "GateA::Unrelated",
+  "84f90fcd-edfb-51ca-ac4a-5db1e0fd8328": "GateA",
+  "cd8dd82c-3c83-5154-8d2b-2f0294aa5093": "GateA::the_other",
+  "f85bba7c-f03c-5611-b7bd-6a8c7c743561": "GateA::Unrelated::doubler",
+  "fc5a39fb-d1c7-5924-8396-7d102c03f48c": "GateA::Host"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "fc5a39fb-d1c7-5924-8396-7d102c03f48c"
+   ],
+   "path": "089092b2-9ba4-511a-9310-d3a408ecea7d[]",
+   "type": "fc5a39fb-d1c7-5924-8396-7d102c03f48c",
+   "usage": "089092b2-9ba4-511a-9310-d3a408ecea7d"
+  },
+  {
+   "children": [],
+   "closure": [
+    "3752bdf5-4e22-5436-9b18-88018d7044c6"
+   ],
+   "path": "cd8dd82c-3c83-5154-8d2b-2f0294aa5093[]",
+   "type": "3752bdf5-4e22-5436-9b18-88018d7044c6",
+   "usage": "cd8dd82c-3c83-5154-8d2b-2f0294aa5093"
+  }
+ ],
+ "roots": [
+  "089092b2-9ba4-511a-9310-d3a408ecea7d",
+  "cd8dd82c-3c83-5154-8d2b-2f0294aa5093"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "089092b2-9ba4-511a-9310-d3a408ecea7d",
+   null
+  ],
+  [
+   "cd8dd82c-3c83-5154-8d2b-2f0294aa5093",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:cd8dd82c-3c83-5154-8d2b-2f0294aa5093[]",
+   "f85bba7c-f03c-5611-b7bd-6a8c7c743561",
+   "f85bba7c-f03c-5611-b7bd-6a8c7c743561",
+   [
+    "f85bba7c-f03c-5611-b7bd-6a8c7c743561"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

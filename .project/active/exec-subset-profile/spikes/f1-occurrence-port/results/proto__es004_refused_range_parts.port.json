@@ -1,0 +1,96 @@
+{
+ "calc_attachment": {
+  "03c9a1d8-f780-5dea-8a6a-db1640c2c1c6": [
+   [
+    "occ:a139988b-61fb-5aef-84c1-e275320bd204[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "2723aea5-3a1d-5727-b73b-e2a049e47f10": 1,
+  "a139988b-61fb-5aef-84c1-e275320bd204": 1
+ },
+ "def_occurrences": {
+  "9ee2b009-af6f-5c4c-b58c-1dffe1724eed": 0,
+  "cbc184be-47ac-5b92-8146-79e9270dbdad": 1,
+  "e8de3fd8-df03-5ec0-8457-1fb372f4f15f": 1
+ },
+ "inputs": [
+  "/home/reid/src/agentic-mbse/.project/concepts/convince-me-exec-subset/evidence/01-fixtures/es004_refused_range_parts.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "03c9a1d8-f780-5dea-8a6a-db1640c2c1c6": "fx::Meter::t",
+  "2723aea5-3a1d-5727-b73b-e2a049e47f10": "fx::rack",
+  "387ecbb6-134d-5b62-a4e9-209f3881ba56": "fx",
+  "4f7fc9d1-6782-5c61-b472-ef45313e827c": "fx::Rack::servers",
+  "9ee2b009-af6f-5c4c-b58c-1dffe1724eed": "fx::Server",
+  "a139988b-61fb-5aef-84c1-e275320bd204": "fx::meter",
+  "cbc184be-47ac-5b92-8146-79e9270dbdad": "fx::Meter",
+  "e8de3fd8-df03-5ec0-8457-1fb372f4f15f": "fx::Rack"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "4f7fc9d1-6782-5c61-b472-ef45313e827c"
+   ],
+   "closure": [
+    "e8de3fd8-df03-5ec0-8457-1fb372f4f15f"
+   ],
+   "path": "2723aea5-3a1d-5727-b73b-e2a049e47f10[]",
+   "type": "e8de3fd8-df03-5ec0-8457-1fb372f4f15f",
+   "usage": "2723aea5-3a1d-5727-b73b-e2a049e47f10"
+  },
+  {
+   "children": [],
+   "closure": [
+    "cbc184be-47ac-5b92-8146-79e9270dbdad"
+   ],
+   "path": "a139988b-61fb-5aef-84c1-e275320bd204[]",
+   "type": "cbc184be-47ac-5b92-8146-79e9270dbdad",
+   "usage": "a139988b-61fb-5aef-84c1-e275320bd204"
+  }
+ ],
+ "roots": [
+  "2723aea5-3a1d-5727-b73b-e2a049e47f10",
+  "a139988b-61fb-5aef-84c1-e275320bd204"
+ ],
+ "strict": {
+  "ok": false,
+  "resolution": "range"
+ },
+ "unexpandable": [
+  [
+   "4f7fc9d1-6782-5c61-b472-ef45313e827c",
+   "2723aea5-3a1d-5727-b73b-e2a049e47f10[]",
+   "range"
+  ]
+ ],
+ "visits": [
+  [
+   "2723aea5-3a1d-5727-b73b-e2a049e47f10",
+   null
+  ],
+  [
+   "4f7fc9d1-6782-5c61-b472-ef45313e827c",
+   "2723aea5-3a1d-5727-b73b-e2a049e47f10[]"
+  ],
+  [
+   "a139988b-61fb-5aef-84c1-e275320bd204",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:a139988b-61fb-5aef-84c1-e275320bd204[]",
+   "03c9a1d8-f780-5dea-8a6a-db1640c2c1c6",
+   "03c9a1d8-f780-5dea-8a6a-db1640c2c1c6",
+   [
+    "03c9a1d8-f780-5dea-8a6a-db1640c2c1c6"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

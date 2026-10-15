@@ -1,0 +1,123 @@
+{
+ "calc_attachment": {
+  "ab331ee3-5451-5510-8e7c-f892b4fd219a": [
+   [
+    "occ:e7f0e5ec-bc97-554e-b954-61ab61c8b8c8[]/439fdc1a-cfca-5b40-b708-1f72b8781894[0]",
+    "occ:e7f0e5ec-bc97-554e-b954-61ab61c8b8c8[]/439fdc1a-cfca-5b40-b708-1f72b8781894[1]",
+    "occ:e7f0e5ec-bc97-554e-b954-61ab61c8b8c8[]/439fdc1a-cfca-5b40-b708-1f72b8781894[2]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "439fdc1a-cfca-5b40-b708-1f72b8781894": 3,
+  "e7f0e5ec-bc97-554e-b954-61ab61c8b8c8": 1
+ },
+ "def_occurrences": {
+  "03f2fa13-b287-5bcf-b9e8-0582c4dd131e": 4,
+  "96b7ee0b-8ae1-5968-b9d2-12caa7f6c58c": 1,
+  "bbe95b70-ad6e-5aeb-a13c-bad8ef72973a": 3
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/agg_localterm_probe"
+ ],
+ "load_errors": false,
+ "names": {
+  "03f2fa13-b287-5bcf-b9e8-0582c4dd131e": "AggLocalTermProbe::'Costed Thing'",
+  "307deef2-2c57-5b69-95d6-5d6b3ee34666": "AggLocalTermProbe",
+  "439fdc1a-cfca-5b40-b708-1f72b8781894": "AggLocalTermProbe::Bank::cell",
+  "96b7ee0b-8ae1-5968-b9d2-12caa7f6c58c": "AggLocalTermProbe::Bank",
+  "ab331ee3-5451-5510-8e7c-f892b4fd219a": "AggLocalTermProbe::Cell::cost_model",
+  "bbe95b70-ad6e-5aeb-a13c-bad8ef72973a": "AggLocalTermProbe::Cell",
+  "e7f0e5ec-bc97-554e-b954-61ab61c8b8c8": "AggLocalTermProbe::the_bank"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "439fdc1a-cfca-5b40-b708-1f72b8781894"
+   ],
+   "closure": [
+    "03f2fa13-b287-5bcf-b9e8-0582c4dd131e",
+    "96b7ee0b-8ae1-5968-b9d2-12caa7f6c58c"
+   ],
+   "path": "e7f0e5ec-bc97-554e-b954-61ab61c8b8c8[]",
+   "type": "96b7ee0b-8ae1-5968-b9d2-12caa7f6c58c",
+   "usage": "e7f0e5ec-bc97-554e-b954-61ab61c8b8c8"
+  },
+  {
+   "children": [],
+   "closure": [
+    "03f2fa13-b287-5bcf-b9e8-0582c4dd131e",
+    "bbe95b70-ad6e-5aeb-a13c-bad8ef72973a"
+   ],
+   "path": "e7f0e5ec-bc97-554e-b954-61ab61c8b8c8[]/439fdc1a-cfca-5b40-b708-1f72b8781894[0]",
+   "type": "bbe95b70-ad6e-5aeb-a13c-bad8ef72973a",
+   "usage": "439fdc1a-cfca-5b40-b708-1f72b8781894"
+  },
+  {
+   "children": [],
+   "closure": [
+    "03f2fa13-b287-5bcf-b9e8-0582c4dd131e",
+    "bbe95b70-ad6e-5aeb-a13c-bad8ef72973a"
+   ],
+   "path": "e7f0e5ec-bc97-554e-b954-61ab61c8b8c8[]/439fdc1a-cfca-5b40-b708-1f72b8781894[1]",
+   "type": "bbe95b70-ad6e-5aeb-a13c-bad8ef72973a",
+   "usage": "439fdc1a-cfca-5b40-b708-1f72b8781894"
+  },
+  {
+   "children": [],
+   "closure": [
+    "03f2fa13-b287-5bcf-b9e8-0582c4dd131e",
+    "bbe95b70-ad6e-5aeb-a13c-bad8ef72973a"
+   ],
+   "path": "e7f0e5ec-bc97-554e-b954-61ab61c8b8c8[]/439fdc1a-cfca-5b40-b708-1f72b8781894[2]",
+   "type": "bbe95b70-ad6e-5aeb-a13c-bad8ef72973a",
+   "usage": "439fdc1a-cfca-5b40-b708-1f72b8781894"
+  }
+ ],
+ "roots": [
+  "e7f0e5ec-bc97-554e-b954-61ab61c8b8c8"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "439fdc1a-cfca-5b40-b708-1f72b8781894",
+   "e7f0e5ec-bc97-554e-b954-61ab61c8b8c8[]"
+  ],
+  [
+   "e7f0e5ec-bc97-554e-b954-61ab61c8b8c8",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:e7f0e5ec-bc97-554e-b954-61ab61c8b8c8[]/439fdc1a-cfca-5b40-b708-1f72b8781894[0]",
+   "ab331ee3-5451-5510-8e7c-f892b4fd219a",
+   "ab331ee3-5451-5510-8e7c-f892b4fd219a",
+   [
+    "ab331ee3-5451-5510-8e7c-f892b4fd219a"
+   ]
+  ],
+  [
+   "occ:e7f0e5ec-bc97-554e-b954-61ab61c8b8c8[]/439fdc1a-cfca-5b40-b708-1f72b8781894[1]",
+   "ab331ee3-5451-5510-8e7c-f892b4fd219a",
+   "ab331ee3-5451-5510-8e7c-f892b4fd219a",
+   [
+    "ab331ee3-5451-5510-8e7c-f892b4fd219a"
+   ]
+  ],
+  [
+   "occ:e7f0e5ec-bc97-554e-b954-61ab61c8b8c8[]/439fdc1a-cfca-5b40-b708-1f72b8781894[2]",
+   "ab331ee3-5451-5510-8e7c-f892b4fd219a",
+   "ab331ee3-5451-5510-8e7c-f892b4fd219a",
+   [
+    "ab331ee3-5451-5510-8e7c-f892b4fd219a"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

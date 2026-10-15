@@ -1,0 +1,1610 @@
+{
+ "corpus__agg_literal_probe": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 0,
+   "n_occ": 5,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 5,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__attr_expr_probe": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 2,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 2
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__constraint_inline": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 0,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__constraint_multi_instance": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 3,
+   "n_occ": 5,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 5,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 3
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__constraint_non_numerical": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 0,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__d38_caret": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 6,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 6,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__fusion_tea": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 6,
+   "n_occ": 7,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 13,
+   "occurrences": 7,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 6
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__modeled_default_fidelity": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__quoted_owner_formula": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 0,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__retype_model": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 6,
+   "n_occ": 4,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 4,
+   "occurrences": 4,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 6
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__sample_model": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 0,
+   "n_occ": 0,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 0,
+   "roots": 0,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__shadowed_reference": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 2,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 2,
+   "occurrences": 2,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__unresolvable_attr_probe": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 3,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 4,
+   "occurrences": 3,
+   "roots": 3,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpus__wi014_toy": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 2,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 2
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__agg_localterm_probe": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 3,
+   "n_occ": 4,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 4,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 3
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__alias_agg_probe": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 5,
+   "n_occ": 5,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 5,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 5
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__catf_mfe_model": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 42,
+   "n_occ": 61,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 61,
+   "roots": 20,
+   "unexpandable": 0,
+   "writers": 42
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__chain_override_probe": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 2,
+   "n_occ": 2,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 2,
+   "occurrences": 2,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 2
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__chain_spike_model": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 3,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 3
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__crosspart_rollup_twolevel": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 3,
+   "n_occ": 3,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 2,
+   "occurrences": 3,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 3
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__deep_cross_scope_probe": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 5,
+   "n_occ": 5,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 4,
+   "occurrences": 5,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 5
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__expression_binding_probe": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 5,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 5
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__gate_a": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 2,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 2,
+   "occurrences": 2,
+   "roots": 2,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__gate_a_package_owner": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__ife_plant": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 11,
+   "n_occ": 13,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 8,
+   "occurrences": 13,
+   "roots": 4,
+   "unexpandable": 0,
+   "writers": 11
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__invocation_binding_probe": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "SI_EXPRESSION_SOURCE_UNSUPPORTED: Doubler(v = a): reference='Doubler(v = a)': inspect_reference_uses: invocation of 'InvocationBindingLibrary::Doubler' is valid SysML but is not supported by this executable subset; only NumericalFunctions::sum is supported [root-0/design.sysml:19]",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__issue22_model": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 4,
+   "n_occ": 5,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 5,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 4
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__plant_value_shapes": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "SI_TYPE_INVALID: PlantValueShapesLib::ChamberSelectCalc::wall: reference='PlantValueShapesLib::ChamberSelectCalc::wall': extract_type: typing target \"PlantValueShapesLib::'Wall Kind'\" is unsupported; expected one of ScalarValues::Boolean, ScalarValues::Integer, ScalarValues::Real, or ScalarValues::S",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 7,
+   "occurrences": 4,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 6
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__plant_values": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 4,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 5,
+   "occurrences": 4,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__return_styles": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 4,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 4
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__self_named_binding_trap": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__self_named_rescue": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 2,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 2
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__shared_producer": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__sibling_channel_ambiguity": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 3,
+   "n_occ": 3,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 2,
+   "occurrences": 3,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 3
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__solar_battery_model": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 44,
+   "n_occ": 42,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 14,
+   "occurrences": 42,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 44
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__spec_chain_channel": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 2,
+   "n_occ": 2,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 4,
+   "occurrences": 2,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 2
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "corpusx__spec_chain_twolevel": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 5,
+   "n_occ": 2,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 2,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 5
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "dc3__baseline_808464d": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "SI_EXPRESSION_SOURCE_UNSUPPORTED: product(efficiencies_in): reference='product(efficiencies_in)': inspect_reference_uses: invocation of 'NumericalFunctions::product' is valid SysML but is not supported by this executable subset; only NumericalFunctions::sum is supported [root-0/library/analyses/ener",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 57,
+   "occurrences": 214,
+   "roots": 8,
+   "unexpandable": 72,
+   "writers": 41
+  },
+  "strict": {
+   "code": "SI_MULTIPLICITY_UNRESOLVED",
+   "detail": "upper multiplicity on 'rack_power' is not a known finite integer",
+   "ok": false,
+   "type": "MultiplicityExpansionError"
+  }
+ },
+ "dc3__repaired_60b44d5": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 40,
+   "n_occ": 153,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 59,
+   "occurrences": 153,
+   "roots": 6,
+   "unexpandable": 0,
+   "writers": 40
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "edge__f1_abort_incomparable_typings": {
+  "fatal": {
+   "code": "SI_REDEFINITION_INVALID",
+   "detail": "part usage f1j::x has incomparable exact user-definition typings",
+   "stage": "occurrences",
+   "type": "InvalidRedefinitionFamilyError"
+  },
+  "full": {
+   "code": "None",
+   "detail": "SI_REDEFINITION_INVALID: <model>: reference='f1j::x': part usage f1j::x has incomparable exact user-definition typings [root-0/f1_abort_incomparable_typings.sysml:5]",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 0,
+   "roots": 0,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "code": "SI_REDEFINITION_INVALID",
+   "detail": "part usage f1j::x has incomparable exact user-definition typings",
+   "ok": false,
+   "type": "InvalidRedefinitionFamilyError"
+  }
+ },
+ "edge__f1_abort_recursive_containment": {
+  "fatal": {
+   "code": "SI_CONTAINMENT_RECURSIVE",
+   "detail": "containment re-enters definition f1i::A at f1i::B::a",
+   "stage": "occurrences",
+   "type": "RecursiveContainmentError"
+  },
+  "full": {
+   "code": "None",
+   "detail": "SI_CONTAINMENT_RECURSIVE: <model>: reference='f1i::B::a': containment re-enters definition f1i::A at f1i::B::a [root-0/f1_abort_recursive_containment.sysml:4]",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 0,
+   "roots": 0,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "code": "SI_CONTAINMENT_RECURSIVE",
+   "detail": "containment re-enters definition f1i::A at f1i::B::a",
+   "ok": false,
+   "type": "RecursiveContainmentError"
+  }
+ },
+ "edge__f1_abort_specialization_cycle": {
+  "fatal": {
+   "code": "SI_CONTAINMENT_RECURSIVE",
+   "detail": "part-definition specialization cycle at f1k::A",
+   "stage": "occurrences",
+   "type": "RecursiveContainmentError"
+  },
+  "full": {
+   "code": "None",
+   "detail": "SI_CONTAINMENT_RECURSIVE: <model>: reference='f1k::A': part-definition specialization cycle at f1k::A [root-0/f1_abort_specialization_cycle.sysml:3]",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 0,
+   "roots": 0,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "code": "SI_CONTAINMENT_RECURSIVE",
+   "detail": "part-definition specialization cycle at f1k::A",
+   "ok": false,
+   "type": "RecursiveContainmentError"
+  }
+ },
+ "edge__f1_calc_redefined_everywhere": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 5,
+   "n_occ": 4,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 4,
+   "roots": 4,
+   "unexpandable": 0,
+   "writers": 5
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "edge__f1_inherited_multiplicity_redef": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.",
+   "ran": false,
+   "type": "CodeGenerationError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 2,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "edge__f1_inherited_ordered_redef": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.",
+   "ran": false,
+   "type": "CodeGenerationError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 2,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "edge__f1_invalid_redefinition_family": {
+  "fatal": {
+   "code": "SI_REDEFINITION_INVALID",
+   "detail": "redefinition declaration f1h::o::c2::v has unrelated roots: f1h::Thrice::v, f1h::Twice::v",
+   "stage": "slots",
+   "type": "InvalidRedefinitionFamilyError"
+  },
+  "full": {
+   "code": "None",
+   "detail": "Failed to load SysML models: root-0/f1_invalid_redefinition_family.sysml:6:50: (feature-value-overriding) Cannot override a binding feature value",
+   "ran": false,
+   "type": "SysMLParsingError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 0,
+   "occurrences": 0,
+   "roots": 0,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": null
+ },
+ "edge__f1_multiplicity_only_on_redef": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.",
+   "ran": false,
+   "type": "CodeGenerationError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 6,
+   "roots": 2,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "edge__f1_nested_subtypes": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 8,
+   "n_occ": 12,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 5,
+   "occurrences": 12,
+   "roots": 2,
+   "unexpandable": 0,
+   "writers": 8
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "edge__f1_referenced_bounds": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "SI_MULTIPLICITY_UNRESOLVED: <model>: reference='k': upper multiplicity on 'racks' is not a known finite integer [root-0/f1_referenced_bounds.sysml:11]",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 4,
+   "occurrences": 17,
+   "roots": 5,
+   "unexpandable": 1,
+   "writers": 0
+  },
+  "strict": {
+   "code": "SI_MULTIPLICITY_UNRESOLVED",
+   "detail": "upper multiplicity on 'racks' is not a known finite integer",
+   "ok": false,
+   "type": "MultiplicityExpansionError"
+  }
+ },
+ "edge__f1_zero_and_bad_multiplicities": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "SI_MULTIPLICITY_UNSUPPORTED: <model>: reference='f1e::Hall::a': range multiplicity on 'a' is outside the supported occurrence model [root-0/f1_zero_and_bad_multiplicities.sysml:7]",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 2,
+   "occurrences": 2,
+   "roots": 2,
+   "unexpandable": 4,
+   "writers": 0
+  },
+  "strict": {
+   "code": "SI_MULTIPLICITY_UNSUPPORTED",
+   "detail": "range multiplicity on 'a' is outside the supported occurrence model",
+   "ok": false,
+   "type": "MultiplicityExpansionError"
+  }
+ },
+ "proto__es001_admitted_part_assert": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es001_refused_calc_def_assert": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es001_refused_calc_usage_assert": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "SI_CONSTRAINT_UNATTACHED: <model>: reference='fx::Site::path': constraint owner does not match a supported mapped metatype: fx::Site::path [root-0/es001_refused_calc_usage_assert.sysml:8]",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es003_admitted_fixed_arity": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es003_neighbor_exact_ordered_param": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es003_neighbor_ordered_param_scalar_arg": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es003_refused_ordered_nonunique": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es004_admitted_exact_redefinition": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 4,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 4,
+   "roots": 2,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es004_admitted_uninstantiated_template": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 2,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 2,
+   "occurrences": 2,
+   "roots": 2,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es004_refused_range_parts": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "SI_MULTIPLICITY_UNSUPPORTED: <model>: reference='fx::Rack::servers': range multiplicity on 'servers' is outside the supported occurrence model [root-0/es004_refused_range_parts.sysml:5]",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 2,
+   "occurrences": 2,
+   "roots": 2,
+   "unexpandable": 1,
+   "writers": 1
+  },
+  "strict": {
+   "code": "SI_MULTIPLICITY_UNSUPPORTED",
+   "detail": "range multiplicity on 'servers' is outside the supported occurrence model",
+   "ok": false,
+   "type": "MultiplicityExpansionError"
+  }
+ },
+ "proto__es004_refused_unbounded_parts": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "SI_MULTIPLICITY_UNRESOLVED: <model>: reference='fx::Rack::servers': upper multiplicity on 'servers' is not a known finite integer [root-0/es004_refused_unbounded_parts.sysml:5]",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 3,
+   "occurrences": 4,
+   "roots": 2,
+   "unexpandable": 1,
+   "writers": 1
+  },
+  "strict": {
+   "code": "SI_MULTIPLICITY_UNRESOLVED",
+   "detail": "upper multiplicity on 'servers' is not a known finite integer",
+   "ok": false,
+   "type": "MultiplicityExpansionError"
+  }
+ },
+ "proto__es005_admitted_explicit_multiply": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 0,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es005_refused_product": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "SI_EXPRESSION_SOURCE_UNSUPPORTED: NumericalFunctions::product((a, b)): reference='NumericalFunctions::product((a, b))': inspect_reference_uses: invocation of 'NumericalFunctions::product' is valid SysML but is not supported by this executable subset; only NumericalFunctions::sum is supported [root-0",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es005_refused_size": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "SI_EXPRESSION_SOURCE_UNSUPPORTED: SequenceFunctions::size((a, b)): reference='SequenceFunctions::size((a, b))': inspect_reference_uses: invocation of 'SequenceFunctions::size' is valid SysML but is not supported by this executable subset; only NumericalFunctions::sum is supported [root-0/es005_refus",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es006_admitted_arithmetic_min": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es006_refused_conditional": {
+  "fatal": null,
+  "full": {
+   "code": "None",
+   "detail": "SI_EVIDENCE_INCOMPLETE: if a < b ? a else b: reference='if a < b ? a else b': inspect_reference_uses: resolved reference has no exact target [root-0/es006_refused_conditional.sysml:3]",
+   "ran": false,
+   "type": "ElaborationDiagnosticError"
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es007_admitted_numeric_and": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 0,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es007_refused_boolean_mixed": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 0,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 0
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es010_admitted_numeric_value": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 2,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 2
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es010_omitted_string_value": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__es010_refused_string_calc_input": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ },
+ "proto__unmapped_expression_calc_arg": {
+  "fatal": null,
+  "full": {
+   "calcs_equal": true,
+   "n_calcs": 1,
+   "n_occ": 1,
+   "occurrences_equal": true,
+   "ran": true
+  },
+  "match": true,
+  "mismatches": {},
+  "stats": {
+   "defs_with_occ": 1,
+   "occurrences": 1,
+   "roots": 1,
+   "unexpandable": 0,
+   "writers": 1
+  },
+  "strict": {
+   "ok": true
+  }
+ }
+}

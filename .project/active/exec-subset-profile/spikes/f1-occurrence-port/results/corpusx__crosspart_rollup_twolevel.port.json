@@ -1,0 +1,122 @@
+{
+ "calc_attachment": {
+  "02ff0488-e210-579d-860e-7a127dde43dd": [
+   [
+    "occ:bf9ebfcd-15cf-5249-bb11-14b457b0f806[]"
+   ],
+   null
+  ],
+  "f1348b4b-ee32-5891-98f7-13b0dee37364": [
+   [
+    "occ:bf9ebfcd-15cf-5249-bb11-14b457b0f806[]/0b9d3101-7427-5ebc-92c0-14cfd6e006cf[]",
+    "occ:bf9ebfcd-15cf-5249-bb11-14b457b0f806[]/da92383e-208a-5f09-aa9b-ecbf66f88f14[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "0b9d3101-7427-5ebc-92c0-14cfd6e006cf": 1,
+  "bf9ebfcd-15cf-5249-bb11-14b457b0f806": 1,
+  "da92383e-208a-5f09-aa9b-ecbf66f88f14": 1
+ },
+ "def_occurrences": {
+  "509c34e9-0f90-51c1-995a-cafb8ca81558": 1,
+  "5878ab01-d2b3-5c54-99de-7087078501ef": 2
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/crosspart_rollup_twolevel"
+ ],
+ "load_errors": false,
+ "names": {
+  "02ff0488-e210-579d-860e-7a127dde43dd": "CrossPartRollupLib::'Rollup Plant'::final",
+  "0b9d3101-7427-5ebc-92c0-14cfd6e006cf": "CrossPartRollupLib::'Rollup Plant'::b",
+  "2a957b4a-98b1-5456-acfc-104c8723f019": "CrossPartRollupDesign",
+  "509c34e9-0f90-51c1-995a-cafb8ca81558": "CrossPartRollupLib::'Rollup Plant'",
+  "5878ab01-d2b3-5c54-99de-7087078501ef": "CrossPartRollupLib::Subsystem",
+  "5d69b45d-0f75-57f8-9d7d-ca54f75663ee": "CrossPartRollupLib",
+  "bf9ebfcd-15cf-5249-bb11-14b457b0f806": "CrossPartRollupDesign::rollup_plant",
+  "da92383e-208a-5f09-aa9b-ecbf66f88f14": "CrossPartRollupLib::'Rollup Plant'::a",
+  "f1348b4b-ee32-5891-98f7-13b0dee37364": "CrossPartRollupLib::Subsystem::cost_calc"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "0b9d3101-7427-5ebc-92c0-14cfd6e006cf",
+    "da92383e-208a-5f09-aa9b-ecbf66f88f14"
+   ],
+   "closure": [
+    "509c34e9-0f90-51c1-995a-cafb8ca81558"
+   ],
+   "path": "bf9ebfcd-15cf-5249-bb11-14b457b0f806[]",
+   "type": "509c34e9-0f90-51c1-995a-cafb8ca81558",
+   "usage": "bf9ebfcd-15cf-5249-bb11-14b457b0f806"
+  },
+  {
+   "children": [],
+   "closure": [
+    "5878ab01-d2b3-5c54-99de-7087078501ef"
+   ],
+   "path": "bf9ebfcd-15cf-5249-bb11-14b457b0f806[]/0b9d3101-7427-5ebc-92c0-14cfd6e006cf[]",
+   "type": "5878ab01-d2b3-5c54-99de-7087078501ef",
+   "usage": "0b9d3101-7427-5ebc-92c0-14cfd6e006cf"
+  },
+  {
+   "children": [],
+   "closure": [
+    "5878ab01-d2b3-5c54-99de-7087078501ef"
+   ],
+   "path": "bf9ebfcd-15cf-5249-bb11-14b457b0f806[]/da92383e-208a-5f09-aa9b-ecbf66f88f14[]",
+   "type": "5878ab01-d2b3-5c54-99de-7087078501ef",
+   "usage": "da92383e-208a-5f09-aa9b-ecbf66f88f14"
+  }
+ ],
+ "roots": [
+  "bf9ebfcd-15cf-5249-bb11-14b457b0f806"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "0b9d3101-7427-5ebc-92c0-14cfd6e006cf",
+   "bf9ebfcd-15cf-5249-bb11-14b457b0f806[]"
+  ],
+  [
+   "bf9ebfcd-15cf-5249-bb11-14b457b0f806",
+   null
+  ],
+  [
+   "da92383e-208a-5f09-aa9b-ecbf66f88f14",
+   "bf9ebfcd-15cf-5249-bb11-14b457b0f806[]"
+  ]
+ ],
+ "writers": [
+  [
+   "occ:bf9ebfcd-15cf-5249-bb11-14b457b0f806[]",
+   "02ff0488-e210-579d-860e-7a127dde43dd",
+   "02ff0488-e210-579d-860e-7a127dde43dd",
+   [
+    "02ff0488-e210-579d-860e-7a127dde43dd"
+   ]
+  ],
+  [
+   "occ:bf9ebfcd-15cf-5249-bb11-14b457b0f806[]/0b9d3101-7427-5ebc-92c0-14cfd6e006cf[]",
+   "f1348b4b-ee32-5891-98f7-13b0dee37364",
+   "f1348b4b-ee32-5891-98f7-13b0dee37364",
+   [
+    "f1348b4b-ee32-5891-98f7-13b0dee37364"
+   ]
+  ],
+  [
+   "occ:bf9ebfcd-15cf-5249-bb11-14b457b0f806[]/da92383e-208a-5f09-aa9b-ecbf66f88f14[]",
+   "f1348b4b-ee32-5891-98f7-13b0dee37364",
+   "f1348b4b-ee32-5891-98f7-13b0dee37364",
+   [
+    "f1348b4b-ee32-5891-98f7-13b0dee37364"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

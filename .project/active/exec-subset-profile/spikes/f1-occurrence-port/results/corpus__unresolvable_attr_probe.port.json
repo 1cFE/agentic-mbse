@@ -1,0 +1,105 @@
+{
+ "calc_attachment": {
+  "c7e43079-6293-581e-8bf7-375b5c9ed2ff": [
+   [
+    "occ:0db253db-56e1-55aa-9f5d-8e347e9334cf[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "0db253db-56e1-55aa-9f5d-8e347e9334cf": 1,
+  "97809bd4-55b5-5736-9ffc-5f5cf310b3f0": 1,
+  "faa12da3-8c13-5e72-9808-6081d3bc7edd": 1
+ },
+ "def_occurrences": {
+  "05e1d390-b7b0-50f3-bc1e-5b77b30aa3ec": 1,
+  "0ead838e-2f06-5bde-bc06-16c488c411ae": 1,
+  "c2c06f92-8852-5c56-bc3f-2dadf41f87a3": 3,
+  "d46858b5-f0ed-5123-a807-7a101386153d": 2
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/unresolvable_attr_probe"
+ ],
+ "load_errors": false,
+ "names": {
+  "05e1d390-b7b0-50f3-bc1e-5b77b30aa3ec": "UnresolvableAttrProbeDesign::'Design Derived'",
+  "0db253db-56e1-55aa-9f5d-8e347e9334cf": "UnresolvableAttrProbeDesign::design_derived_instance",
+  "0ead838e-2f06-5bde-bc06-16c488c411ae": "UnresolvableAttrProbeLibrary::Grandchild",
+  "97809bd4-55b5-5736-9ffc-5f5cf310b3f0": "UnresolvableAttrProbeDesign::grandchild_instance",
+  "c2c06f92-8852-5c56-bc3f-2dadf41f87a3": "UnresolvableAttrProbeLibrary::'Base Component'",
+  "c7e43079-6293-581e-8bf7-375b5c9ed2ff": "UnresolvableAttrProbeDesign::'Design Derived'::my_calc",
+  "d46858b5-f0ed-5123-a807-7a101386153d": "UnresolvableAttrProbeLibrary::'Derived Component'",
+  "ee310b09-6c0f-5904-ae1d-89b416e7c6f1": "UnresolvableAttrProbeDesign",
+  "f5554bc9-cef2-5fe9-b8e6-f5a6636f8f00": "UnresolvableAttrProbeLibrary",
+  "faa12da3-8c13-5e72-9808-6081d3bc7edd": "UnresolvableAttrProbeDesign::derived_instance"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "05e1d390-b7b0-50f3-bc1e-5b77b30aa3ec",
+    "c2c06f92-8852-5c56-bc3f-2dadf41f87a3"
+   ],
+   "path": "0db253db-56e1-55aa-9f5d-8e347e9334cf[]",
+   "type": "05e1d390-b7b0-50f3-bc1e-5b77b30aa3ec",
+   "usage": "0db253db-56e1-55aa-9f5d-8e347e9334cf"
+  },
+  {
+   "children": [],
+   "closure": [
+    "0ead838e-2f06-5bde-bc06-16c488c411ae",
+    "c2c06f92-8852-5c56-bc3f-2dadf41f87a3",
+    "d46858b5-f0ed-5123-a807-7a101386153d"
+   ],
+   "path": "97809bd4-55b5-5736-9ffc-5f5cf310b3f0[]",
+   "type": "0ead838e-2f06-5bde-bc06-16c488c411ae",
+   "usage": "97809bd4-55b5-5736-9ffc-5f5cf310b3f0"
+  },
+  {
+   "children": [],
+   "closure": [
+    "c2c06f92-8852-5c56-bc3f-2dadf41f87a3",
+    "d46858b5-f0ed-5123-a807-7a101386153d"
+   ],
+   "path": "faa12da3-8c13-5e72-9808-6081d3bc7edd[]",
+   "type": "d46858b5-f0ed-5123-a807-7a101386153d",
+   "usage": "faa12da3-8c13-5e72-9808-6081d3bc7edd"
+  }
+ ],
+ "roots": [
+  "0db253db-56e1-55aa-9f5d-8e347e9334cf",
+  "97809bd4-55b5-5736-9ffc-5f5cf310b3f0",
+  "faa12da3-8c13-5e72-9808-6081d3bc7edd"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "0db253db-56e1-55aa-9f5d-8e347e9334cf",
+   null
+  ],
+  [
+   "97809bd4-55b5-5736-9ffc-5f5cf310b3f0",
+   null
+  ],
+  [
+   "faa12da3-8c13-5e72-9808-6081d3bc7edd",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:0db253db-56e1-55aa-9f5d-8e347e9334cf[]",
+   "c7e43079-6293-581e-8bf7-375b5c9ed2ff",
+   "c7e43079-6293-581e-8bf7-375b5c9ed2ff",
+   [
+    "c7e43079-6293-581e-8bf7-375b5c9ed2ff"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

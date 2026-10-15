@@ -1,0 +1,69 @@
+{
+ "calc_attachment": {
+  "c161ad1d-d4c7-59fe-ab13-d6e6e217ec21": [
+   [
+    "occ:c5e9f004-94cf-5164-971d-9f7c06daa8b0[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "c5e9f004-94cf-5164-971d-9f7c06daa8b0": 1
+ },
+ "def_occurrences": {
+  "f8ec43dd-0e48-5076-9f44-5eb0867acc9a": 1
+ },
+ "full": {
+  "calcs_equal": true,
+  "n_calcs": 1,
+  "n_occ": 1,
+  "occurrences_equal": true,
+  "ran": true
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/self_named_binding_trap"
+ ],
+ "load_errors": false,
+ "names": {
+  "7422075b-62e7-5299-8e74-7088dfdfe33c": "TrapLib",
+  "be8a35fd-294b-5916-9dce-f4f1fc46d281": "TrapDesign",
+  "c161ad1d-d4c7-59fe-ab13-d6e6e217ec21": "TrapLib::'Trap Plant'::avail_calc",
+  "c5e9f004-94cf-5164-971d-9f7c06daa8b0": "TrapDesign::trap_plant",
+  "f8ec43dd-0e48-5076-9f44-5eb0867acc9a": "TrapLib::'Trap Plant'"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "f8ec43dd-0e48-5076-9f44-5eb0867acc9a"
+   ],
+   "path": "c5e9f004-94cf-5164-971d-9f7c06daa8b0[]",
+   "type": "f8ec43dd-0e48-5076-9f44-5eb0867acc9a",
+   "usage": "c5e9f004-94cf-5164-971d-9f7c06daa8b0"
+  }
+ ],
+ "roots": [
+  "c5e9f004-94cf-5164-971d-9f7c06daa8b0"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "c5e9f004-94cf-5164-971d-9f7c06daa8b0",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:c5e9f004-94cf-5164-971d-9f7c06daa8b0[]",
+   "c161ad1d-d4c7-59fe-ab13-d6e6e217ec21",
+   "c161ad1d-d4c7-59fe-ab13-d6e6e217ec21",
+   [
+    "c161ad1d-d4c7-59fe-ab13-d6e6e217ec21"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

@@ -1,0 +1,73 @@
+{
+ "calc_attachment": {
+  "0bfa477e-d367-5a84-bf64-d1c37957c4b8": [
+   [
+    "occ:9a9fe71a-a3fb-5b94-9330-63bf8d8f9f61[]"
+   ],
+   null
+  ],
+  "c1814c10-a797-5e01-a7fd-b9a9d70d9285": [
+   [
+    "occ:9a9fe71a-a3fb-5b94-9330-63bf8d8f9f61[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "9a9fe71a-a3fb-5b94-9330-63bf8d8f9f61": 1
+ },
+ "def_occurrences": {},
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/attr_expr_probe"
+ ],
+ "load_errors": false,
+ "names": {
+  "0bfa477e-d367-5a84-bf64-d1c37957c4b8": "AttrExprProbeDesign::probe_design::scale_calc",
+  "9001ca8a-797c-5ab3-ba77-9e5ee9ab32a7": "AttrExprProbeDesign",
+  "9a9fe71a-a3fb-5b94-9330-63bf8d8f9f61": "AttrExprProbeDesign::probe_design",
+  "abea4b22-27ee-5192-8df8-1b33d0fe7337": "AttrExprProbeLibrary",
+  "c1814c10-a797-5e01-a7fd-b9a9d70d9285": "AttrExprProbeDesign::probe_design::split"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [],
+   "path": "9a9fe71a-a3fb-5b94-9330-63bf8d8f9f61[]",
+   "type": null,
+   "usage": "9a9fe71a-a3fb-5b94-9330-63bf8d8f9f61"
+  }
+ ],
+ "roots": [
+  "9a9fe71a-a3fb-5b94-9330-63bf8d8f9f61"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "9a9fe71a-a3fb-5b94-9330-63bf8d8f9f61",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:9a9fe71a-a3fb-5b94-9330-63bf8d8f9f61[]",
+   "0bfa477e-d367-5a84-bf64-d1c37957c4b8",
+   "0bfa477e-d367-5a84-bf64-d1c37957c4b8",
+   [
+    "0bfa477e-d367-5a84-bf64-d1c37957c4b8"
+   ]
+  ],
+  [
+   "occ:9a9fe71a-a3fb-5b94-9330-63bf8d8f9f61[]",
+   "c1814c10-a797-5e01-a7fd-b9a9d70d9285",
+   "c1814c10-a797-5e01-a7fd-b9a9d70d9285",
+   [
+    "c1814c10-a797-5e01-a7fd-b9a9d70d9285"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

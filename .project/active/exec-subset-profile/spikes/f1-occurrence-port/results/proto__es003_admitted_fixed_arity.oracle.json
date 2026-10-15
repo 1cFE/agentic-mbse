@@ -1,0 +1,68 @@
+{
+ "calc_attachment": {
+  "c2bed435-74dd-5925-8bb2-d0fa8549ec79": [
+   [
+    "occ:2e449708-8faa-5b2b-b34d-32a1b820e261[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "2e449708-8faa-5b2b-b34d-32a1b820e261": 1
+ },
+ "def_occurrences": {
+  "d7bff504-5497-51c5-af13-54f1fffe80a3": 1
+ },
+ "full": {
+  "calcs_equal": true,
+  "n_calcs": 1,
+  "n_occ": 1,
+  "occurrences_equal": true,
+  "ran": true
+ },
+ "inputs": [
+  "/home/reid/src/agentic-mbse/.project/concepts/convince-me-exec-subset/evidence/01-fixtures/es003_admitted_fixed_arity.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "2e449708-8faa-5b2b-b34d-32a1b820e261": "fx::site",
+  "387ecbb6-134d-5b62-a4e9-209f3881ba56": "fx",
+  "c2bed435-74dd-5925-8bb2-d0fa8549ec79": "fx::Site::t",
+  "d7bff504-5497-51c5-af13-54f1fffe80a3": "fx::Site"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "d7bff504-5497-51c5-af13-54f1fffe80a3"
+   ],
+   "path": "2e449708-8faa-5b2b-b34d-32a1b820e261[]",
+   "type": "d7bff504-5497-51c5-af13-54f1fffe80a3",
+   "usage": "2e449708-8faa-5b2b-b34d-32a1b820e261"
+  }
+ ],
+ "roots": [
+  "2e449708-8faa-5b2b-b34d-32a1b820e261"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "2e449708-8faa-5b2b-b34d-32a1b820e261",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:2e449708-8faa-5b2b-b34d-32a1b820e261[]",
+   "c2bed435-74dd-5925-8bb2-d0fa8549ec79",
+   "c2bed435-74dd-5925-8bb2-d0fa8549ec79",
+   [
+    "c2bed435-74dd-5925-8bb2-d0fa8549ec79"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}
