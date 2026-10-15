@@ -35,7 +35,7 @@ The dc3 T-001 investigation used agentic-mbse `8b027bbc`, codegen `b5663c07` and
 
 ## Prototype findings and their limits (2026-10-15)
 
-The explainer at `convince-me-exec-subset/index.html` is generated from `template.html`; its evidence folder contains throwaway scripts, fixtures and captured logs. These are feasibility observations, not completed product acceptance. Preserve raw logs and identify corrections in their accompanying notes.
+The explainer at `.project/concepts/convince-me-exec-subset/index.html` is generated from `template.html`; its evidence folder contains throwaway scripts, fixtures and captured logs. These are feasibility observations, not completed product acceptance. Preserve raw logs and identify corrections in their accompanying notes.
 
 - The independent generator fixtures admit an `ordered nonunique` calc input bound to a scalar and refuse a literal sequence actual `(a, b)`. ES-003 must describe actual binding shape, not ban the parameter declaration. Other plural forms still need boundary fixtures.
 - `in v = rate * fuel_code` is independently refused with `SI_EXPRESSION_SOURCE_UNSUPPORTED`; classify it explicitly as ES-012, separate from dc3 B1–B8.
