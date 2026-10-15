@@ -32,3 +32,23 @@ Findings:
 Smells: no smell fired. The matrix-versus-records sync risk (smell 1) is covered by the spec's cross-check test. The spec routes the ownership change (smell 7) explicitly to owner gate R1.
 
 Gate: DISPOSED (spec-F1, spec-F2, spec-F3)
+
+## design_review — 2026-10-15 — rev 9d8a3a3e, `.project/active/exec-subset-profile/design.md`
+Epic: EXEC-SUBSET-CONTRACT
+
+Method note: the lens instruction file (`~/.claude/scripts/product-lens.md`) was not readable in this non-interactive session, so the design reviewer ran the lens inline. It re-derived the point from the sources below without using the design's framing.
+
+Epic finding references: none (the epic's Product-Lens section still reads "Not yet run").
+
+Point (re-derived): unchanged from the spec entry above. One versioned, evidence-backed contract of which (shape, context) pairs the pinned generator refuses, admits, excludes, omits or has not confirmed. It lives as neutral agentic-mbse facts and decisions with no codegen import. It never broadens a generator refusal without owner review (R2), never turns a failure into a clean result, and does not duplicate model interpretation. [source: `briefs/align.md` and epic Item 1 objective, grade: agent/ratified. sysml-codegen ADR 0007, grade `[AGENT] (ratified by owner, 2026-07-10)`: model facts in agentic-mbse, and duplicated fact derivation is rejected. ADR 0004, grade `[OWNER]`: occurrences derive from exact evidence; no resolution path forks. ADR 0012, grade `[INHERITED]`: slot construction and multiplicity raw reads keep narrow codegen ownership.]
+
+Falsifier: as in the spec entry, plus: the occurrence structure has two live derivations with no bound on how long both exist or what holds them together.
+
+Findings:
+- design-F1 [DON'T] Option A ports codegen's slot construction (`FeatureSlotIndex`) and multiplicity reads into agentic-mbse. sysml-codegen ADR 0012 assigns exactly those to codegen. The design cites only ADR 0007 and does not say it amends 0012. ADR 0004 (owner) is not contradicted, because the port uses exact evidence. — ADR 0012 (INHERITED) — disposition: ESCALATED via smell 7 → design-review M1
+- design-F2 [DON'T] The port creates a second occurrence derivation whose end is unbounded ("Item 2 migrates codegen onto it or records why not"). Its summary shape is not what codegen's `OccurrenceIndex` users need, so a migration is not a swap. This works against the epic's "no duplicated model interpretation". — epic Item 1 objective (INHERITED); ADR 0007 rejected alternatives (agent/ratified) — disposition: design-review M2
+- design-F3 [DO] Say what the authority is after Item 2. "The generator is ground truth" becomes circular once the generator refuses through the contract. The epic's design principle 3 (screen-bypassed elaboration) is the answer and should be stated. — epic design principle 3 (INHERITED) — disposition: design-review M2(c)
+
+Smells: smell 7 (changes who owns an invariant without saying so) FIRED: design-F1. Escalated into the design review's Fundamental Assessment. The R1 recommendation is held back from the owner until revised. Smell 1 (consumer compensating for a producer guarantee) did not fire: the contract describes the generator's behavior with probe evidence, and Item 2 is scheduled to make the producer consume it.
+
+Gate: ESCALATED (design-F1 via smell 7). No owner/`[HARD]` contradiction, so not BLOCKED. R1 presentation waits on design-review M1 and M2.
