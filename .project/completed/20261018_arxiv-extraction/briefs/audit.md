@@ -1,0 +1,8 @@
+Audit ARXIV-EXTRACTION on branch fix/arxiv-extraction (worktree /home/reid/src/agentic-mbse-worktrees/arxiv-extraction) against its spec, design (incl. amendments D17, D17a, D14 note) and plan in .project/active/arxiv-extraction/. Base is 8b027bbc; the implementation is commits b1d61475..373a34df. Write audit.md beside the plan.
+
+Context:
+- [OWNER] Goal: consumers keep Pandoc on PATH safely and drop their workarounds (hiding Pandoc, stripping data-image refs). [OWNER] Open gate: shortcut default-on (ships on, one constant). Reserved: no removal/rename of public PipelineConfig fields or CLI flags; check this held.
+- [AGENT] Bar: clean, well-architected code that reads like its neighbors. Look for duplicated logic between routes, dead code/TODOs/placeholders, tests that stub what they should exercise (real HTML and PDF bytes required; only network and subprocess stubbed), over-broad excepts, warning plumbing consistency, docs accuracy vs code.
+- Verify independently: run focused and full tests (env: PATH="$HOME/.local/opt/pandoc-3.1.3/bin:$PATH", SYSIDE_LICENSE_KEY from /home/reid/src/agentic-mbse/.env). Baseline has 3 environmental failures (PIL, two test_index.py hard-coded paths).
+- Assess the two follow-ups the implementer recorded in plan Phase 8 (title logo not saved; PDF-URL provenance hash covers converted HTML while source names the PDF URL). For the second, decide whether it predates this work, as claimed, or whether spec R5 ("preserve raw-source saving and hashing of original fetched bytes") is violated by this branch. Check against 8b027bbc.
+Separate must-fix from suggestions. Do not modify code. End with ARTIFACT: <path>.

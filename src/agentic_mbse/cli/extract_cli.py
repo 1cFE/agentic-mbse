@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from agentic_mbse.extraction.profile import ProfileEntry
 
+from agentic_mbse.extraction import pandoc_convert
 from agentic_mbse.extraction.base import (
     ExtractionResult,
     check_processing_needed,
@@ -24,6 +25,8 @@ from agentic_mbse.extraction.types import CostRecord, PageDecision, PipelineResu
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
 
 SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
+
+EXIT_USAGE = 2  # argparse's exit status for contradictory or invalid arguments
 
 
 # ---------------------------------------------------------------------------
@@ -168,6 +171,15 @@ def _cost_to_dict(c: CostRecord) -> dict:
     }
 
 
+def _print_warnings(label: str, warnings: list[str]) -> None:
+    """Print extraction warnings for *label* to stderr."""
+    if not warnings:
+        return
+    print(f"        ⚠ {label}: {len(warnings)} warning(s):", file=sys.stderr)
+    for w in warnings:
+        print(f"          - {w}", file=sys.stderr)
+
+
 def _print_pipeline_summary(label: str, result: PipelineResult) -> None:
     stats = [f"{result.metrics.char_count:,} chars"]
     if result.metrics.heading_count:
@@ -176,6 +188,7 @@ def _print_pipeline_summary(label: str, result: PipelineResult) -> None:
         stats.append(f"{result.metrics.table_row_count} table rows")
     if result.total_cost_usd > 0:
         stats.append(f"${result.total_cost_usd:.3f}")
+    stats.append(f"{result.image_count} images")
     stats.append(f"{result.elapsed_seconds:.1f}s")
     print(f"   ok   {label} [{result.source}] ({', '.join(stats)})")
     if (
@@ -233,17 +246,16 @@ def _extract_url(url: str, args: argparse.Namespace) -> int:
         stats = []
         if result.char_count:
             stats.append(f"{result.char_count:,} chars")
+        stats.append(f"{result.image_count} images")
         stats.append(f"backend: {result.backend_used}")
         print(f"   ok   {url} ({', '.join(stats)})")
         if result.markdown_path:
             print(f"        → {result.markdown_path}")
-        if result.warnings:
-            print(f"        ⚠ {len(result.warnings)} warning(s):")
-            for w in result.warnings:
-                print(f"          - {w}")
+        _print_warnings(url, result.warnings)
         return EXIT_SUCCESS
     else:
         print(f"  FAIL  {url}: {result.error}")
+        _print_warnings(url, result.warnings)
         return EXIT_FAILURE
 
 
@@ -270,6 +282,7 @@ def _extract_pdf_url(url: str, args: argparse.Namespace) -> int:
         # Shallow-copy args to avoid corrupting shared state in batch mode
         pdf_args = copy.copy(args)
         pdf_args.path = str(tmp_pdf)
+        pdf_args.urls_from = None  # extract this one PDF, not the batch file again
         pdf_args.source_url_override = fetched.final_url
         rc = cmd_extract(pdf_args)
 
@@ -353,6 +366,14 @@ def cmd_extract(args: argparse.Namespace) -> int:
         )
         args.save_source = True
 
+    if args.arxiv_shortcut is False and args.html_path:
+        print(
+            "agentic-mbse extract: error: --no-arxiv-shortcut cannot be combined with "
+            "--html-path (the HTML path asks for the shortcut the flag disables)",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
+
     # --check-json implies --check
     if args.check_json:
         args.check = True
@@ -382,7 +403,14 @@ def cmd_extract(args: argparse.Namespace) -> int:
         for i, pdf in enumerate(corpus):
             # Only spend Claude budget on first PDF
             budget = args.budget if i == 0 else 0
-            results.append(run_check(pdf, claude_model=args.model, claude_budget=budget))
+            results.append(
+                run_check(
+                    pdf,
+                    claude_model=args.model,
+                    claude_budget=budget,
+                    arxiv_shortcut=args.arxiv_shortcut,
+                )
+            )
 
         check_result = merge_check_results(results)
 
@@ -446,6 +474,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
             pdf,
             claude_model=args.model,
             claude_budget=args.budget,
+            arxiv_shortcut=args.arxiv_shortcut,
         )
 
         if args.check_json:
@@ -496,8 +525,19 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 extracted_images_dir=images_dir,
                 profile=args.profile,
                 save_source=getattr(args, "save_source", False),
+                pdf_source_url=getattr(args, "source_url_override", None),
+                arxiv_shortcut=args.arxiv_shortcut,
             )
             result = extract_pdf(doc, config=config)
+
+            # Warnings are shown and saved before the error branch, so a
+            # failed extraction still reports why the arXiv shortcut fell back.
+            _print_warnings(label, result.warnings)
+            metrics_dict = result.metrics.to_dict()
+            metrics_dict["image_count"] = result.image_count
+            if result.warnings:
+                metrics_dict["warnings"] = result.warnings
+            (output_dir / "metrics.json").write_text(json.dumps(metrics_dict, indent=2))
 
             if result.error:
                 print(f"  FAIL  {label}: {result.error}")
@@ -528,7 +568,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
             # Write output artifacts (output_dir already created above)
             (output_dir / "output.md").write_text(markdown)
-            (output_dir / "metrics.json").write_text(json.dumps(result.metrics.to_dict(), indent=2))
             (output_dir / "decisions.json").write_text(
                 json.dumps([_decision_to_dict(d) for d in result.decisions], indent=2)
             )
@@ -795,6 +834,17 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         default=None,
         metavar="PATH",
         help="arXiv HTML file path for Pandoc shortcut (overrides auto-detect)",
+    )
+    p.add_argument(
+        "--arxiv-shortcut",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "Replace a PDF with its arXiv HTML version (converted by Pandoc) when the PDF's "
+            "arXiv margin stamp or arxiv.org source URL identifies the paper; citations never "
+            "count. --no-arxiv-shortcut forces normal PDF extraction and cannot be combined "
+            f"with --html-path (default: {'on' if pandoc_convert.ARXIV_SHORTCUT_DEFAULT else 'off'})"
+        ),
     )
     # Web extraction flags
     p.add_argument(

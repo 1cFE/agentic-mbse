@@ -241,6 +241,7 @@ class _MockArgs:
             docling=False,
             model="sonnet",
             html_path=None,
+            arxiv_shortcut=None,
             dry_run=False,
             profile=False,
             check=False,

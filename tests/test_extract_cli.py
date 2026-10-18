@@ -1,10 +1,13 @@
 """Tests for agentic_mbse.cli.extract_cli — Phase 2 (pipeline + CLI rewrite)."""
 
 import hashlib
+import json
 import subprocess
 import warnings
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from agentic_mbse.cli.extract_cli import (
     cmd_extract,
@@ -41,6 +44,7 @@ class MockArgs:
             docling=False,
             model="sonnet",
             html_path=None,
+            arxiv_shortcut=None,
             dry_run=False,
             profile=False,
             check=False,
@@ -962,3 +966,429 @@ class TestPdfUrlProvenance:
         assert len(out_dirs) == 1
         assert (out_dirs[0] / "raw.pdf").exists()
         assert (out_dirs[0] / "raw.pdf").read_bytes() == pdf_bytes
+
+
+# ---------------------------------------------------------------------------
+# Warnings channel: stderr and metrics.json, for both routes
+# ---------------------------------------------------------------------------
+
+
+class TestWarningsChannel:
+    def _pdf_args(self, tmp_path, **overrides):
+        pdf = tmp_path / "paper.pdf"
+        if not pdf.exists():
+            pdf.write_bytes(b"fake pdf content")
+        defaults = dict(path=str(pdf), output=str(tmp_path / "out"))
+        defaults.update(overrides)
+        return MockArgs(**defaults)
+
+    def test_pdf_warnings_in_stderr_and_metrics_even_on_error(self, tmp_path, capsys):
+        result = _make_pipeline_result(error="corrupt PDF")
+        result.warnings = ["arXiv HTML shortcut failed (boom); extracted the PDF instead"]
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=result):
+            rc = cmd_extract(self._pdf_args(tmp_path))
+
+        assert rc == EXIT_FAILURE
+        out_dir = tmp_path / "out" / "paper"
+        assert not (out_dir / "output.md").exists()
+        metrics = json.loads((out_dir / "metrics.json").read_text())
+        assert metrics["warnings"] == result.warnings
+        captured = capsys.readouterr()
+        assert "shortcut failed (boom)" in captured.err
+        assert "boom" not in captured.out
+        assert "FAIL  paper.pdf: corrupt PDF" in captured.out
+
+    def test_pdf_success_warnings_saved_with_metrics(self, tmp_path, capsys):
+        result = _make_pipeline_result()
+        result.warnings = ["first warning", "second warning"]
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=result):
+            rc = cmd_extract(self._pdf_args(tmp_path))
+
+        assert rc == EXIT_SUCCESS
+        metrics = json.loads((tmp_path / "out" / "paper" / "metrics.json").read_text())
+        assert metrics["warnings"] == ["first warning", "second warning"]
+        assert metrics["char_count"] == result.metrics.char_count
+        err = capsys.readouterr().err
+        assert "paper.pdf: 2 warning(s)" in err
+        assert "- first warning" in err and "- second warning" in err
+
+    def test_pdf_without_warnings_prints_and_saves_none(self, tmp_path, capsys):
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+        ):
+            cmd_extract(self._pdf_args(tmp_path))
+
+        metrics = json.loads((tmp_path / "out" / "paper" / "metrics.json").read_text())
+        assert "warnings" not in metrics
+        assert capsys.readouterr().err == ""
+
+    def test_real_pdf_with_unreadable_html_path(self, tmp_path, capsys):
+        """Real PDF through the real pipeline: the bad --html-path warns, the PDF is extracted."""
+        import pymupdf  # type: ignore[import-untyped]
+
+        pdf = tmp_path / "paper.pdf"
+        doc = pymupdf.open()
+        doc.new_page().insert_text((72, 90), "The document's own text about magnets.")
+        doc.save(pdf)
+        doc.close()
+        args = self._pdf_args(
+            tmp_path,
+            html_path=str(tmp_path / "missing.html"),
+            budget=0.0,
+            no_tables=True,
+            no_equations=True,
+        )
+
+        with patch("agentic_mbse.extraction.pandoc_convert._pandoc_available", return_value=True):
+            rc = cmd_extract(args)
+
+        assert rc == EXIT_SUCCESS
+        out_dir = tmp_path / "out" / "paper"
+        assert "own text about magnets" in (out_dir / "output.md").read_text()
+        [warning] = json.loads((out_dir / "metrics.json").read_text())["warnings"]
+        assert "missing.html" in warning
+        captured = capsys.readouterr()
+        assert warning in captured.err
+        assert "[pdf_pipeline]" in captured.out
+
+    def test_web_warnings_go_to_stderr_not_stdout(self, tmp_path, capsys):
+        from agentic_mbse.extraction.base import ExtractionResult
+
+        web_result = ExtractionResult(
+            success=True,
+            output_dir=tmp_path,
+            markdown_path=tmp_path / "output.md",
+            char_count=500,
+            backend_used="trafilatura",
+            warnings=["arXiv Pandoc conversion failed (boom); used trafilatura instead"],
+        )
+        args = MockArgs(path="https://arxiv.org/html/2610.14224v1", output=str(tmp_path))
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="html"),
+            patch(
+                "agentic_mbse.extraction.web_backend.extract_web_content",
+                return_value=web_result,
+            ),
+        ):
+            rc = cmd_extract(args)
+
+        assert rc == EXIT_SUCCESS
+        captured = capsys.readouterr()
+        assert "used trafilatura instead" in captured.err
+        assert "used trafilatura instead" not in captured.out
+        assert "backend: trafilatura" in captured.out
+
+
+class TestPdfSourceUrlForwarding:
+    def test_fetched_pdf_url_becomes_identity_evidence(self, tmp_path):
+        """A PDF fetched from a URL passes that URL to the pipeline as pdf_source_url."""
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"))
+        args.source_url_override = "https://arxiv.org/pdf/2610.14224v1"
+
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+        ) as mock_extract:
+            cmd_extract(args)
+
+        config = mock_extract.call_args.kwargs["config"]
+        assert config.pdf_source_url == "https://arxiv.org/pdf/2610.14224v1"
+
+    def test_local_pdf_has_no_source_url(self, tmp_path):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"))
+
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+        ) as mock_extract:
+            cmd_extract(args)
+
+        assert mock_extract.call_args.kwargs["config"].pdf_source_url is None
+
+
+# ---------------------------------------------------------------------------
+# --arxiv-shortcut / --no-arxiv-shortcut
+# ---------------------------------------------------------------------------
+
+
+class TestArxivShortcutFlag:
+    def _pdf(self, tmp_path):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        return pdf
+
+    def test_contradiction_with_html_path_is_a_usage_error(self, tmp_path, capsys):
+        args = MockArgs(
+            path=str(self._pdf(tmp_path)),
+            output=str(tmp_path / "out"),
+            arxiv_shortcut=False,
+            html_path=str(tmp_path / "paper.html"),
+        )
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf") as mock_extract:
+            rc = cmd_extract(args)
+
+        assert rc == 2
+        mock_extract.assert_not_called()
+        err = capsys.readouterr().err
+        assert "--no-arxiv-shortcut" in err and "--html-path" in err
+
+    @pytest.mark.parametrize("value", [None, True, False])
+    def test_flag_reaches_pipeline_config(self, tmp_path, value):
+        args = MockArgs(
+            path=str(self._pdf(tmp_path)), output=str(tmp_path / "out"), arxiv_shortcut=value
+        )
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+        ) as mock_extract:
+            cmd_extract(args)
+
+        assert mock_extract.call_args.kwargs["config"].arxiv_shortcut is value
+
+    def _fetched_pdf(self):
+        from agentic_mbse.extraction.http import FetchResult
+
+        return FetchResult(
+            content=b"%PDF-1.4 fake",
+            final_url="https://arxiv.org/pdf/2610.14224v1",
+            content_type="application/pdf",
+        )
+
+    def test_flag_reaches_pdf_url_extraction(self, tmp_path):
+        args = MockArgs(
+            path="https://arxiv.org/pdf/2610.14224v1",
+            output=str(tmp_path / "out"),
+            arxiv_shortcut=False,
+        )
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="pdf"),
+            patch("agentic_mbse.extraction.http.fetch_url", return_value=self._fetched_pdf()),
+            patch(
+                "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+            ) as mock_extract,
+        ):
+            cmd_extract(args)
+
+        config = mock_extract.call_args.kwargs["config"]
+        assert config.arxiv_shortcut is False
+        assert config.pdf_source_url == "https://arxiv.org/pdf/2610.14224v1"
+
+    def test_flag_reaches_batch_pdf_urls(self, tmp_path):
+        urls = tmp_path / "urls.txt"
+        urls.write_text("https://arxiv.org/pdf/2610.14224v1\n")
+        args = MockArgs(urls_from=str(urls), output=str(tmp_path / "out"), arxiv_shortcut=False)
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="pdf"),
+            patch("agentic_mbse.extraction.http.fetch_url", return_value=self._fetched_pdf()),
+            patch(
+                "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+            ) as mock_extract,
+        ):
+            cmd_extract(args)
+
+        assert mock_extract.call_args.kwargs["config"].arxiv_shortcut is False
+
+    @pytest.mark.parametrize(("default", "word"), [(True, "on"), (False, "off")])
+    def test_help_names_the_constant_default(self, monkeypatch, default, word):
+        import argparse
+
+        from agentic_mbse.cli.extract_cli import register_extract_subcommand
+        from agentic_mbse.extraction import pandoc_convert
+
+        monkeypatch.setattr(pandoc_convert, "ARXIV_SHORTCUT_DEFAULT", default)
+        subparsers = argparse.ArgumentParser(prog="agentic-mbse").add_subparsers()
+        register_extract_subcommand(subparsers)
+        text = " ".join(subparsers.choices["extract"].format_help().split())
+
+        assert "--arxiv-shortcut, --no-arxiv-shortcut" in text
+        assert f"(default: {word})" in text
+
+    def test_parser_defaults_to_none_and_accepts_both_forms(self):
+        import argparse
+
+        from agentic_mbse.cli.extract_cli import register_extract_subcommand
+
+        parser = argparse.ArgumentParser(prog="agentic-mbse")
+        register_extract_subcommand(parser.add_subparsers(dest="command"))
+
+        def parsed(*flags: str) -> bool | None:
+            return parser.parse_args(["extract", "x.pdf", *flags]).arxiv_shortcut
+
+        assert parsed() is None
+        assert parsed("--arxiv-shortcut") is True
+        assert parsed("--no-arxiv-shortcut") is False
+
+
+# ---------------------------------------------------------------------------
+# Figure persistence through the CLI: a failed figure is visible on both routes
+# ---------------------------------------------------------------------------
+
+_PAPER_WITH_FIGURES = (
+    "# Paper\n\n![a](2610.14224v1/ok.png)\n\n![b](2610.14224v1/gone.png)\n\n" + "text " * 40
+)
+
+
+def _fetch_all_but_gone(url: str) -> bytes:
+    if url.endswith("gone.png"):
+        raise OSError("HTTP Error 404")
+    return b"PNG"
+
+
+class TestFigureWarningsThroughCli:
+    def _assert_one_failed_figure(self, out_dir, capsys):
+        output = (out_dir / "output.md").read_text()
+        assert "](images/ok.png)" in output
+        assert (out_dir / "images" / "ok.png").read_bytes() == b"PNG"
+        assert "](2610.14224v1/gone.png)" in output
+        [warning] = json.loads((out_dir / "metrics.json").read_text())["warnings"]
+        assert "gone.png" in warning and "404" in warning
+        assert warning in capsys.readouterr().err
+
+    def test_pdf_route(self, tmp_path, capsys):
+        from agentic_mbse.extraction.http import FetchResult
+        from tests.helpers.arxiv_page import ARXIV_PAGE
+        from tests.helpers.arxiv_pdfs import STAMP, make_pdf
+
+        pdf = make_pdf(tmp_path / "paper.pdf", stamps=(STAMP,))
+        served = FetchResult(
+            content=ARXIV_PAGE.read_bytes(),
+            final_url="https://arxiv.org/html/2610.14224",
+            content_type="text/html",
+        )
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"), budget=0.0)
+        with (
+            patch("agentic_mbse.extraction.pandoc_convert._pandoc_available", return_value=True),
+            patch(
+                "agentic_mbse.extraction.pandoc_convert.check_arxiv_html",
+                return_value="https://arxiv.org/html/2610.14224",
+            ),
+            patch("agentic_mbse.extraction.arxiv_html.fetch_url", return_value=served),
+            patch(
+                "subprocess.run",
+                return_value=MagicMock(returncode=0, stdout=_PAPER_WITH_FIGURES, stderr=""),
+            ),
+            patch(
+                "agentic_mbse.extraction.arxiv_html.fetch_image", side_effect=_fetch_all_but_gone
+            ),
+        ):
+            rc = cmd_extract(args)
+
+        assert rc == EXIT_SUCCESS
+        self._assert_one_failed_figure(tmp_path / "out" / "paper", capsys)
+
+    def test_web_route(self, tmp_path, capsys):
+        from agentic_mbse.extraction.http import FetchResult
+        from tests.helpers.arxiv_page import ARXIV_PAGE
+
+        served = FetchResult(
+            content=ARXIV_PAGE.read_bytes(),
+            final_url="https://arxiv.org/html/2610.14224v1",
+            content_type="text/html",
+            encoding="utf-8",
+        )
+        args = MockArgs(path="https://arxiv.org/html/2610.14224v1", output=str(tmp_path / "out"))
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="html"),
+            patch("agentic_mbse.extraction.web_backend.fetch_url", return_value=served),
+            patch(
+                "subprocess.run",
+                return_value=MagicMock(returncode=0, stdout=_PAPER_WITH_FIGURES, stderr=""),
+            ),
+            patch(
+                "agentic_mbse.extraction.web_backend.fetch_image", side_effect=_fetch_all_but_gone
+            ),
+        ):
+            rc = cmd_extract(args)
+
+        assert rc == EXIT_SUCCESS
+        self._assert_one_failed_figure(tmp_path / "out", capsys)
+
+
+# ---------------------------------------------------------------------------
+# Saved-image count: metrics.json and the per-item summary line, both routes
+# ---------------------------------------------------------------------------
+
+
+class TestImageCountReporting:
+    def test_pdf_route(self, tmp_path, capsys):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        result = _make_pipeline_result()
+        result.image_count = 9
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"))
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=result):
+            cmd_extract(args)
+
+        metrics = json.loads((tmp_path / "out" / "paper" / "metrics.json").read_text())
+        assert metrics["image_count"] == 9
+        ok_line = next(line for line in capsys.readouterr().out.splitlines() if " ok " in line)
+        assert ", 9 images, " in ok_line
+
+    def test_pdf_route_zero_images_still_reported(self, tmp_path, capsys):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"))
+
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+        ):
+            cmd_extract(args)
+
+        metrics = json.loads((tmp_path / "out" / "paper" / "metrics.json").read_text())
+        assert metrics["image_count"] == 0
+        assert ", 0 images, " in capsys.readouterr().out
+
+    def test_web_route_summary(self, tmp_path, capsys):
+        from agentic_mbse.extraction.base import ExtractionResult
+
+        web_result = ExtractionResult(
+            success=True,
+            output_dir=tmp_path,
+            markdown_path=tmp_path / "output.md",
+            char_count=500,
+            image_count=9,
+            backend_used="pandoc-arxiv",
+        )
+        args = MockArgs(path="https://arxiv.org/html/2610.14224v1", output=str(tmp_path))
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="html"),
+            patch(
+                "agentic_mbse.extraction.web_backend.extract_web_content", return_value=web_result
+            ),
+        ):
+            cmd_extract(args)
+
+        assert "(500 chars, 9 images, backend: pandoc-arxiv)" in capsys.readouterr().out
+
+
+def test_web_failure_still_prints_its_warnings(tmp_path, capsys):
+    """A failed web extraction shows why the arXiv conversion fell back (audit suggestion 2)."""
+    from agentic_mbse.extraction.base import ExtractionResult
+
+    failed = ExtractionResult(
+        success=False,
+        output_dir=tmp_path,
+        error="No content extracted from https://arxiv.org/html/2610.14224v1",
+        warnings=["arXiv paper conversion failed (boom); used trafilatura instead"],
+    )
+    args = MockArgs(path="https://arxiv.org/html/2610.14224v1", output=str(tmp_path))
+    with (
+        patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+        patch("agentic_mbse.extraction.web_backend.classify_url", return_value="html"),
+        patch("agentic_mbse.extraction.web_backend.extract_web_content", return_value=failed),
+    ):
+        rc = cmd_extract(args)
+
+    assert rc == EXIT_FAILURE
+    captured = capsys.readouterr()
+    assert "FAIL" in captured.out
+    assert "arXiv paper conversion failed (boom)" in captured.err

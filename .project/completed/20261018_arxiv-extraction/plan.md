@@ -1,0 +1,810 @@
+# Implementation Plan: Reliable arXiv extraction
+
+**Work item:** ARXIV-EXTRACTION
+**Status:** Implementation complete (Phases 0–8, 2026-10-18); awaiting audit
+**Created:** 2026-10-18
+**Last Updated:** 2026-10-18
+**Branch:** `fix/arxiv-extraction` (worktree `/home/reid/src/agentic-mbse-worktrees/arxiv-extraction`), base local `main` at `8b027bbc`. `src/`, `tests/`, `docs/` and `pyproject.toml` have no diff from the base at planning time.
+
+## Source Documents
+
+- **Spec:** `.project/active/arxiv-extraction/spec.md` (requirements R1–R5, acceptance table)
+- **Design:** `.project/active/arxiv-extraction/design.md` ← component details, signatures, decisions D1–D16, invariants 1–11
+- **Reviews:** `spec_review.md`, `design_review.md` (Resolutions are incorporated in the design)
+- **Spike:** `spike-margin-stamp.md` (margin stamp shape; paper-container addendum)
+- **Fixture source:** `ref/2610.14224.html` (untracked, fetched 2026-10-18). If missing, re-fetch `https://arxiv.org/html/2610.14224v1`.
+
+## The Point
+
+**[NEED]** Downstream consumers can keep Pandoc on PATH safely and drop their workarounds. Today they hide Pandoc from PATH when extracting PDFs and strip data-image references from output. After this work, those workarounds are unnecessary.
+
+Today Pandoc on PATH is a hazard in four ways:
+
+- **Wrong paper.** A PDF that merely cites an arXiv paper gets replaced by that paper, because any first-page `arXiv:` match counts as identity.
+- **Lost figures.** A correct substitution returns before any image is saved, so figure refs point nowhere.
+- **Chrome in output.** The direct arXiv HTML route converts the whole page: issue dialog, navigation, footer, funder logos, UI icons.
+- **Silent fallback.** When the shortcut gives up, nothing in the result or on disk says why. There is no way to turn the shortcut off.
+
+The test every phase serves: a consumer runs `extract` with Pandoc on PATH and no workarounds, and gets the right paper, its figures on disk, and nothing but the paper. When something falls back, they see a warning.
+
+**[OWNER] Reserved gates the plan must keep:**
+
+- Default-on is open. The shortcut ships on provisionally, written in exactly one constant (`ARXIV_SHORTCUT_DEFAULT`, design D10, invariant 8). Flipping it is one line plus one docs sentence.
+- No existing public `PipelineConfig` field or CLI flag is removed or renamed (invariant 9). Only additions.
+
+## Implementation Strategy
+
+**Phasing rationale.** The paper boundary is locked first, on a real page, before anything depends on it. Then the work moves from shared plumbing to user-facing behavior, so each phase lands green and can be committed alone:
+
+1. Lock the paper boundary and move the shared HTML code into one module, with no behavior change.
+2. Build the warnings channel, so every later fallback has somewhere to report.
+3. Fix identity (the wrong-paper bug).
+4. Add the opt-out control and CLI flag.
+5. Turn on paper-only conversion in both routes.
+6. Save images in both routes.
+7. Align `--check`, write docs, run the full verification.
+8. Run the live Harness² check (recorded, non-blocking).
+
+**Deviation from the orchestrator's suggested order** `[AGENT]`: the warnings channel moves from fifth to second. Identity conflicts (phase 3), paper-only fallbacks (phase 5) and image failures (phase 6) all produce warnings (D13). Building the channel first lets each of those phases assert its warning end to end, instead of retrofitting assertions later. Paper-only conversion (R4) had no slot in the suggested order; it goes before images because image persistence needs the loader's serving URL (D15), which phase 5 introduces.
+
+**Critical path.** Fixture → `arxiv_html` core → warnings channel → loader and paper-only wiring → image persistence. Identity (3) and opt-out (4) are off the critical path and could swap.
+
+**First proof point.** Phase 1's two fixture tests: `select_article` on the trimmed real page keeps every paper part and drops every chrome string (no Pandoc needed), and `convert_article` on the same page through real Pandoc yields markdown whose figure refs match the image-ref pattern. If either fails, bets B1 or B4 are wrong and the design needs revisiting before more code is written.
+
+**Green, for every phase** `[AGENT]`:
+
+- [ ] Focused tests pass: `uv run pytest tests/test_arxiv_html.py tests/test_pandoc_convert.py tests/test_pipeline.py tests/test_web_backend.py tests/test_extract_cli.py tests/test_check.py` plus any new test file the phase adds.
+- [ ] `uv run ruff check src/ tests/` and `uv run ruff format --check src/ tests/` are clean on touched files.
+- [ ] `uv run mypy src/` is clean on touched files.
+- [ ] `uv run pytest tests/` shows no failure outside the phase 0 baseline set.
+- [ ] Commit the phase on `fix/arxiv-extraction`, then tick its boxes and fill its Implementation Notes entry here.
+
+Run extract commands that call the Claude CLI per CLAUDE.md (redirect to a temp file and read it back). None of this plan's tests need the Claude CLI.
+
+---
+
+## Phase 0: Record the baseline
+
+### Goal
+
+Know which tests already fail at the base, so "no new failures" is checkable.
+
+### Steps
+
+- [x] Confirm the code still matches the base: `git diff --stat 8b027bbc HEAD -- src tests docs pyproject.toml` prints nothing.
+- [x] Run `uv run pytest tests/ -q > /tmp/arxiv-baseline.txt 2>&1`.
+- [x] Record below: pass/fail/skip counts, the node IDs of every failure and error, and whether failures come from environment (for example a missing `SYSIDE_LICENSE_KEY`) or code.
+- [x] Record `pandoc --version` (expect 3.1.3) and the pymupdf version, since phase 1 and 3 tests depend on both.
+
+**Baseline failure set:** 3 failures, all environmental (see Phase 0 Completion).
+
+---
+
+## Phase 1: Paper boundary and the shared HTML module
+
+### Goal
+
+Create `extraction/arxiv_html.py` with the paper selector and the one Pandoc runner, prove both on a trimmed real arXiv page, and route today's three Pandoc calls through the runner. User-visible behavior does not change in this phase: `select_article` and `convert_article` exist and are tested but nothing calls them yet.
+
+### Assumption under test
+
+- B1: the trimmed real page has exactly one `<article class="ltx_document">`, every paper part is inside it, and every chrome element is outside it.
+- B4: real Pandoc turns the article's figures into `![alt](src){attrs}` refs that the image-ref pattern (today `web_backend.py:53`) matches, with relative `2610.14224v1/<file>` sources.
+- Moving the helpers and collapsing three Pandoc calls into one keeps all existing tests green.
+
+### Test stencil (write first)
+
+```python
+# tests/test_arxiv_html.py
+FIXTURE = Path(__file__).parent / "fixtures" / "arxiv_2610.14224v1_page.html"
+CHROME = ["<dialog", "Report Issue", "ltx_page_footer", "<nav", DATA_URI_ICON_PREFIX]  # take exact strings from the fixture
+PAPER = [TITLE, "Abstract", SECTION_HEADING, APPENDIX_HEADING, BIB_ENTRY_TEXT, "ltx_equation", "ltx_tabular", IN_ARTICLE_DATA_URI]
+
+def test_select_article_keeps_paper_drops_chrome():          # runs without Pandoc
+    page = FIXTURE.read_text(encoding="utf-8")
+    article = select_article(page)
+    assert article is not None and article.lstrip().lower().startswith("<article")
+    for s in CHROME: assert s in page and s not in article
+    for s in PAPER:  assert s in article
+
+@pytest.mark.parametrize("html", [NO_ARTICLE, TWO_ARTICLES, ARTICLE_WITHOUT_LTX_CLASS, "<articles>x</articles>"])
+def test_select_article_fails_closed(html):
+    assert select_article(html) is None
+
+@pytest.mark.skipif(shutil.which("pandoc") is None, reason="needs Pandoc")
+def test_convert_article_real_pandoc_on_fixture():
+    md = convert_article(FIXTURE.read_text(encoding="utf-8"))
+    assert len(_MD_IMAGE_RE.findall(md)) >= 2               # B4
+    assert "2610.14224v1/" in md and IN_ARTICLE_DATA_URI_MD in md
+    for s in CHROME_TEXT: assert s not in md
+```
+
+Also: `convert_article` raises `ArxivConversionError` for no article, for `subprocess.run` raising `FileNotFoundError` (Pandoc missing), for a non-zero return, for `TimeoutExpired`, and for output under `MIN_CONTENT_CHARS`; the Pandoc command `_run_pandoc` builds carries today's four flags.
+
+### Changes required
+
+**See design:** module split and import direction (`design.md#core-concept`, D3, D6, invariant 10); selection rule (D4, Implementation Notes "Selection scan", "Wrapping the fragment"); error type (D5); fixture trim (Implementation Notes "Fixture trim").
+
+- [x] **Fixture** `tests/fixtures/arxiv_2610.14224v1_page.html` (NEW). Trim from `ref/2610.14224.html` per the design's trim note. Keep `<head>` and all chrome outside the article verbatim, including the page's one `data:` icon. Inside the article keep title, authors, abstract, two sections holding at least two figures with captions, one table and one math element, two bibliography entries and one appendix. Insert one tiny `data:image/png` `<img>` inside the article, marked by an HTML comment as the only synthetic edit. Open with a comment naming the source URL, fetch date (2026-10-18) and edits. Keep it under 80 KB. Do the trim with a throwaway script outside the repo; commit only the fixture.
+- [x] **Tests** `tests/test_arxiv_html.py` (NEW): the stencil above. Pick the `CHROME` and `PAPER` strings by reading the fixture; each chrome string must appear in the page, so a bad trim fails loudly.
+- [x] **Module** `src/agentic_mbse/extraction/arxiv_html.py` (NEW): `ArxivConversionError`, `MIN_CONTENT_CHARS = 100`, `select_article`, `_run_pandoc(html, pandoc_path)`, `convert_article`, and `_preprocess_html` / `_postprocess_markdown` moved verbatim from `pandoc_convert.py:33-63`. Stdlib only (the PDF route runs on a core install). No import of `pandoc_convert`.
+  - `_run_pandoc` writes the temp file and calls `subprocess.run` (module-level `import subprocess`, so existing `patch("subprocess.run")` tests keep working). It does not call `shutil.which`. A missing Pandoc shows up as `FileNotFoundError` from `subprocess.run` and becomes `ArxivConversionError("Pandoc not found ...")`. This keeps tests that stub `subprocess.run` working on machines without Pandoc. Callers that need a silent availability check keep their own (`pandoc_convert._pandoc_available`).
+  - `convert_article` = `select_article` → wrap as `<html><body>{article}</body></html>` → `_preprocess_html` → `_run_pandoc` → `_postprocess_markdown` → length check.
+- [x] **`pandoc_convert.py`**: delete the moved helpers and import them from `arxiv_html` (keep the names importable from `pandoc_convert` until phase 5, so nothing else changes this phase). `convert_arxiv_html` (`:187-263`) keeps its fetch, its `_pandoc_available` → `FileNotFoundError` check and its whole-page conversion for now, but runs Pandoc through `_run_pandoc`.
+- [x] **`web_backend.py`**: `_extract_with_arxiv_pandoc` (`:246-295`) and `_fallback_pandoc` (`:298-333`) call `_run_pandoc` and keep returning `None` on any failure. Remove the "keep flags in sync" comments.
+- [x] **Test imports**: tests importing `_preprocess_html` / `_postprocess_markdown` from `pandoc_convert` switch to `arxiv_html` (Implementation Notes "Test migration").
+
+### Validation
+
+- [x] Green (see strategy). The Pandoc-free selection test runs and passes in every environment; the real-Pandoc test runs locally (Pandoc present).
+- [x] `grep -n "pandoc_convert" src/agentic_mbse/extraction/arxiv_html.py` returns nothing (invariant 10).
+- [x] `grep -n '"--markdown-headings=atx"' src/` hits only `arxiv_html.py` (one runner, D6).
+- [x] Manual: `wc -c tests/fixtures/arxiv_2610.14224v1_page.html` is under ~80 KB; open the head comment and confirm source URL, date and the one synthetic edit are recorded. (87.8 KB; see Phase 1 Deviations)
+
+**What we know works after this phase:** the paper boundary on a real page is pinned by a test that needs no Pandoc; real Pandoc produces matchable figure refs from the article alone; one Pandoc runner serves every call site; behavior is unchanged.
+
+---
+
+## Phase 2: The warnings channel
+
+### Goal
+
+Give the PDF route a warnings field and give both routes one way to surface warnings: in the returned result, in `metrics.json["warnings"]`, and on stderr. Convert today's silent shortcut and web fallbacks into warnings.
+
+### Assumption under test
+
+The PDF CLI can print and persist warnings before its `if result.error` branch without disturbing the existing output layout, and moving web warnings from stdout to stderr breaks no existing test that matters.
+
+### Test stencil (write first)
+
+```python
+# tests/test_pipeline.py
+def test_shortcut_exception_becomes_warning(tmp_path):        # was debug-only (pipeline.py:224-226)
+    with patch(f"{_PANDOC}._pandoc_available", return_value=True), \
+         patch(f"{_PANDOC}.detect_arxiv_id", side_effect=RuntimeError("boom")):
+        result = extract_pdf(sample_pdf, PipelineConfig(enable_claude=False))
+    assert result.source != "pandoc_arxiv" and any("boom" in w for w in result.warnings)
+
+def test_ignored_html_path_warns(): ...                       # Pandoc absent + arxiv_html_path set
+def test_warnings_on_base_extraction_error_result(): ...      # extract_pages raises → error result still carries shortcut warnings
+
+# tests/test_extract_cli.py
+def test_pdf_warnings_in_stderr_and_metrics_even_on_error(tmp_path, capsys): ...
+def test_web_warnings_go_to_stderr_not_stdout(tmp_path, capsys): ...
+
+# tests/test_web_backend.py
+def test_arxiv_pandoc_failure_warns_and_keeps_trafilatura_backend(): ...
+```
+
+### Changes required
+
+**See design:** D12 (where warnings travel), D13 (which outcomes warn), invariant 7, Architecture diagram.
+
+- [x] **`types.py:107-124`**: `PipelineResult.warnings: list[str] = field(default_factory=list)`.
+- [x] **`pipeline.py`**: `_try_arxiv_shortcut` (`:172-226`) returns `(PipelineResult | None, list[str])`. Warn on: ignored `--html-path` (Pandoc absent, `:188-189`), identified ID with no HTML available, and any exception (fetch error, conversion error). Keep the log line. Stay silent on no ID and on Pandoc absent without `--html-path`. `extract_pdf` (`:380-386` and the base-extraction error return at `:398`, and the normal return) attaches the warnings to whichever result it returns.
+- [x] **`web_backend.py`**: when the arXiv Pandoc attempt fails or is short (`:414-417`), add an actionable warning to the result's warnings. Initialize `extraction_warnings` before Step 3 so fallback and image warnings share one list; it already flows into `metrics.json` (`:509-511`) and `ExtractionResult.warnings`. The `D16` skip of `_fallback_pandoc` waits for phase 5.
+- [x] **`extract_cli.py`**: one helper (for example `_print_warnings(label, warnings)`) that writes to `sys.stderr`. Use it in the web route (replace the stdout block at `:240-243`) and in the PDF branch. In the PDF branch (`:500-531`), print warnings and write `metrics.json` (with `"warnings"` when non-empty) before the `if result.error` check at `:502`; on success the later `metrics.json` write includes the same warnings. The output dir already exists at that point (`:483`).
+
+### Validation
+
+- [x] Green.
+- [x] Manual: run `uv run agentic-mbse extract <small local pdf> --budget 0 --html-path /tmp/does-not-exist.html -o /tmp/arxiv-p2`. The load fails, the run falls through to PDF extraction, stderr shows one warning, and `/tmp/arxiv-p2/<doc>/metrics.json` contains it.
+
+**What we know works after this phase:** every route has one reporting channel that reaches the result, disk and stderr, including on PDF error results. Today's silent fallbacks now warn.
+
+---
+
+## Phase 3: Trusted identity
+
+### Goal
+
+The shortcut fires only on trusted own-ID evidence: the rotated margin stamp, or the arxiv.org URL the PDF came from. This closes the wrong-paper bug.
+
+### Assumption under test
+
+- B2: a generated PDF with `insert_text(..., rotate=90)` at x ≈ 30 produces a line that pymupdf reports as vertical and left-margin, and the full stamp regex matches it; horizontal prose citations never match.
+- The stamp and URL rules in D1 produce the right answer for every spec case (citation-only, arXiv-origin citing another ID, conflicting stamps, stamp vs URL disagreement, genuine stamp).
+
+### Test stencil (write first)
+
+```python
+# tests/test_arxiv_identity.py (NEW) — real pymupdf, generated PDFs
+def make_pdf(path, *, stamp=None, stamps=(), prose=None):
+    doc = pymupdf.open(); page = doc.new_page()
+    for i, s in enumerate(([stamp] if stamp else []) + list(stamps)):
+        page.insert_text((30 + 8 * i, 500), s, rotate=90)
+    if prose: page.insert_text((72, 90), prose)
+    doc.save(path)
+
+def test_stamp_line_is_vertical(tmp_path):                    # pins the pymupdf behavior B2 relies on
+    ...; assert line["dir"] == pytest.approx((0, -1), abs=0.05)
+
+def test_citation_only_is_not_identity(tmp_path):
+    p = make_pdf(tmp_path / "c.pdf", prose="Prior work: arXiv:2610.14224")
+    assert identify_arxiv_paper(p) == ArxivIdentity(None, ())
+
+def test_stamp_wins_over_cited_prose_id(tmp_path):            # arXiv-origin PDF citing another ID
+    p = make_pdf(..., stamp="arXiv:2610.14224v1  [cs.AI]  9 Oct 2026", prose="see arXiv:1706.03762")
+    assert identify_arxiv_paper(p).arxiv_id == "2610.14224v1"
+
+def test_two_stamps_conflict(tmp_path): ...                   # arxiv_id None, conflict set
+def test_stamp_vs_source_url_conflict(tmp_path): ...          # pdf_source_url names another bare ID
+def test_source_url_alone_identifies(tmp_path): ...           # "https://arxiv.org/pdf/2610.14224v1"
+def test_same_id_different_version_is_not_conflict(tmp_path): ...
+
+# tests/test_pipeline.py
+def test_negative_and_conflict_never_probe_or_convert(tmp_path):   # invariant 4
+    with patch(f"{_PANDOC}.check_arxiv_html") as head, patch("subprocess.run") as run: ...
+    head.assert_not_called(); run.assert_not_called()
+```
+
+### Changes required
+
+**See design:** D1 (evidence rules, regexes, conflict), D2 (`detect_arxiv_id` becomes a wrapper), D11 (`pdf_source_url`), invariants 4–5, Implementation Notes "Stamp fixtures", `ArxivIdentity` signature.
+
+- [x] **`tests/test_arxiv_identity.py`** (NEW): the stencil, all four design fixtures (citation-only, stamp plus cited prose ID, two stamps, stamp vs URL) plus the positive URL-only case. Generate PDFs in `tmp_path`; commit none.
+- [x] **`pandoc_convert.py`**: add `ArxivIdentity` and `identify_arxiv_paper(pdf_path, pdf_source_url=None)` using `get_text("dict")` on page 1 only. `detect_arxiv_id` (`:71-105`) returns `identify_arxiv_paper(pdf_path).arxiv_id`. Drop the Creator-metadata fallback.
+- [x] **`pipeline.py`**: `PipelineConfig.pdf_source_url: str | None = None` (append; touch no existing field). `_try_arxiv_shortcut` calls `identify_arxiv_paper(pdf_path, config.pdf_source_url)`; a conflict warns (D13); no evidence is silent.
+- [x] **`extract_cli.py:487-499`**: pass `pdf_source_url=getattr(args, "source_url_override", None)`.
+- [x] **Test migration**: `test_pipeline.py` tests that stub `detect_arxiv_id` (`:152-230`, `:730-750`, `:1463-1480`) stub `identify_arxiv_paper` returning an `ArxivIdentity`, or use generated PDFs. `test_check.py` stubs of `detect_arxiv_id` keep working through the wrapper until phase 7.
+
+### Validation
+
+- [x] Green.
+- [x] Manual: generate the citation-only PDF and run `uv run agentic-mbse extract <pdf> --budget 0 -o /tmp/arxiv-p3` with Pandoc on PATH. `output.md` is the PDF's own text, not Harness², and no network call is made (run with networking unavailable, or watch for no `fetch` line).
+
+**What we know works after this phase:** a citation can no longer substitute content; arXiv PDFs with a stamp, or fetched from an arxiv.org URL, still take the shortcut.
+
+---
+
+## Phase 4: Shortcut control and the CLI flag
+
+### Goal
+
+Let users force normal PDF extraction with Pandoc on PATH, through `--no-arxiv-shortcut` and `PipelineConfig.arxiv_shortcut=False`, with the default in one constant.
+
+### Assumption under test
+
+The tri-state field plus one constant (D10) keeps `--html-path` working under either default, and the flag reaches PDF URL and batch paths through the existing shallow copy of `args` (`extract_cli.py:271-274`) with no extra plumbing.
+
+### Test stencil (write first)
+
+```python
+def test_opt_out_skips_identity_probe_and_pandoc(tmp_path):      # invariant 4, second sentence
+    with patch(f"{_PANDOC}.identify_arxiv_paper") as ident, patch(f"{_PANDOC}.check_arxiv_html") as head, \
+         patch("subprocess.run") as run, patch(f"{_PANDOC}._pandoc_available", return_value=True):
+        r = extract_pdf(stamp_pdf, PipelineConfig(arxiv_shortcut=False, enable_claude=False))
+    ident.assert_not_called(); head.assert_not_called(); run.assert_not_called()
+    assert r.source != "pandoc_arxiv" and r.warnings == []          # opt-out is not a failure
+
+def test_opt_out_with_html_path_raises():
+    with pytest.raises(ValueError): PipelineConfig(arxiv_shortcut=False, arxiv_html_path=Path("x.html"))
+
+def test_resolve_arxiv_shortcut_uses_constant(monkeypatch):
+    monkeypatch.setattr(pandoc_convert, "ARXIV_SHORTCUT_DEFAULT", False)
+    assert resolve_arxiv_shortcut(None) is False and resolve_arxiv_shortcut(True) is True
+
+def test_html_path_runs_even_if_default_off(monkeypatch): ...    # explicit override wins
+
+# tests/test_extract_cli.py
+def test_cli_contradiction_exits_2(): ...                        # --no-arxiv-shortcut --html-path x
+def test_flag_reaches_pdf_url_and_batch(): ...                   # _extract_pdf_url / --urls-from forward args
+def test_help_names_default(): ...                               # help text contains the constant's value
+```
+
+### Changes required
+
+**See design:** D10 (tri-state, constant, `resolve_arxiv_shortcut`, `BooleanOptionalAction`), invariants 4, 8, 9.
+
+- [x] **`pandoc_convert.py`**: `ARXIV_SHORTCUT_DEFAULT = True` and `resolve_arxiv_shortcut`.
+- [x] **`pipeline.py`**: `PipelineConfig.arxiv_shortcut: bool | None = None` (append) and `__post_init__` raising `ValueError` for `arxiv_shortcut=False` with `arxiv_html_path` set. `_try_arxiv_shortcut` returns `(None, [])` before any work when `arxiv_shortcut is False`; it runs automatic detection only when `resolve_arxiv_shortcut(config.arxiv_shortcut)` is true; `arxiv_html_path` runs unless explicitly disabled.
+- [x] **`extract_cli.py`**: add `--arxiv-shortcut/--no-arxiv-shortcut` (`argparse.BooleanOptionalAction`, `default=None`) near `--html-path` (`:793`); help text names the default by reading the constant. Reject the contradiction with `parser.error`-style exit 2 at the top of `cmd_extract` (exit code 2 is already used for `--check` FAIL; the test asserts the usage message, not only the code). Pass `arxiv_shortcut=args.arxiv_shortcut` into `PipelineConfig`. The `--check` probe takes the flag in phase 7.
+- [x] Review the diff: the default's value is written only in `ARXIV_SHORTCUT_DEFAULT`; the field, the CLI default and the help text all read it or default to `None` (invariant 8).
+
+### Validation
+
+- [x] Green.
+- [x] Manual: `uv run agentic-mbse extract --help` shows both flag forms and the default; `uv run agentic-mbse extract x.pdf --no-arxiv-shortcut --html-path y.html` exits 2 with a clear message.
+
+**What we know works after this phase:** users can force PDF extraction with Pandoc on PATH; contradictory settings fail clearly; the default lives in one line.
+
+---
+
+## Phase 5: Paper-only conversion in both routes
+
+### Goal
+
+Both routes load HTML through one loader, convert only the article, and fall back with a warning when the article isn't recognized. For arXiv URLs, the whole-page Pandoc fallback no longer runs.
+
+### Assumption under test
+
+- The web route's sanitizer (`strip_hidden_content`, bs4) preserves the single `<article class="ltx_document">` so selection still succeeds on sanitized HTML.
+- B5: `ArxivSource.from_fetch` with a trailing-slash `/html/<id>/` URL normalizes it, so later `urljoin` against `2610.14224v1/<file>` gives `https://arxiv.org/html/2610.14224v1/<file>`.
+- Raw bytes saved and hashed stay the fetched bytes (invariant 1).
+
+### Test stencil (write first)
+
+```python
+# tests/test_arxiv_html.py
+def test_from_fetch_strips_trailing_slash():
+    src = ArxivSource.from_fetch(FetchResult(content=b"...", final_url="https://arxiv.org/html/2610.14224v1/", content_type="text/html"))
+    assert src.serving_url == "https://arxiv.org/html/2610.14224v1"
+def test_load_local_file_serving_url_is_file_uri(tmp_path): ...
+def test_image_base_applies_base_href(): ...
+
+@pytest.mark.skipif(not _has_bs4(), reason="needs [web] extra")
+def test_selection_survives_sanitizer():
+    assert select_article(strip_hidden_content(FIXTURE.read_text())) is not None
+
+# tests/test_web_backend.py — real fixture, stubbed fetch_url, real Pandoc (skip if absent)
+def test_arxiv_web_route_outputs_paper_only(tmp_path): ...       # chrome absent, paper parts present, backend pandoc-arxiv
+def test_unrecognized_container_falls_back_to_trafilatura_with_warning(tmp_path): ...
+def test_arxiv_url_short_trafilatura_never_calls_fallback_pandoc(tmp_path):   # D16, invariant 11
+    with patch("agentic_mbse.extraction.web_backend._fallback_pandoc") as fb: ...
+    fb.assert_not_called()
+def test_raw_bytes_and_hash_unchanged(tmp_path): ...            # save_source raw.html == fetched bytes
+
+# tests/test_pipeline.py
+def test_pdf_shortcut_converts_article_only(tmp_path): ...      # stamp PDF, stubbed check_arxiv_html + fetch_url, real Pandoc
+def test_pdf_shortcut_no_article_falls_back_with_warning(tmp_path): ...
+```
+
+### Changes required
+
+**See design:** D15 (loader, `ArxivSource`, `from_fetch` normalization), D5, D13, D16, invariants 1 and 11, Architecture diagram, Data flow paragraph.
+
+- [x] **`arxiv_html.py`**: `ArxivSource` (with `from_fetch` and `image_base`), `load_arxiv_html(source, *, timeout)` calling `http.fetch_url` for URLs and reading the file for paths.
+- [x] **`pandoc_convert.convert_arxiv_html`**: becomes the wrapper over `load_arxiv_html` and `convert_article`. Keep its signature, return type and the `_pandoc_available` → `FileNotFoundError` check (an existing test pins it at `tests/test_pandoc_convert.py:305-313`). Other failures now raise `ArxivConversionError` where they used to raise `CalledProcessError`; update the docstring. In-repo callers catch `Exception`, so no caller changes. `[AGENT]` plan decision: the design fixes signature and return type but not exception types; this is the narrowest change that keeps the pinned contract.
+- [x] **`pipeline._try_arxiv_shortcut`**: load through `load_arxiv_html`, convert with `convert_article`, catch `ArxivConversionError` and fetch errors into warnings. Hash `source.raw_bytes`; compute fetched version as today (`:207-214`). Keep `raw_source_bytes` as the raw bytes.
+- [x] **`web_backend.py`**: the arXiv branch (`:410-417`) builds `ArxivSource.from_fetch(fetched)`, runs `convert_article` on the sanitized HTML, and turns `ArxivConversionError` into a warning. For arXiv URLs skip Step 3b (`:423-432`). Delete `_extract_with_arxiv_pandoc`; replace `_MIN_CONTENT_LENGTH` with `arxiv_html.MIN_CONTENT_CHARS`. Saved `raw.html` (`:514-515`) stays `fetched.text()`.
+- [x] **Remove the phase 1 re-exports** (none were created; see Phase 1 Deviations) of `_preprocess_html` / `_postprocess_markdown` from `pandoc_convert` once nothing imports them there.
+- [x] **Test migration**: `tests/test_pandoc_convert.py:239-303` inputs wrap content in `<article class="ltx_document">…</article>` and stub Pandoc output of at least `MIN_CONTENT_CHARS`; that change is the intended R4 behavior, so record it in Implementation Notes. `test_pipeline.py` tests that stub `convert_arxiv_html` stub `arxiv_html.load_arxiv_html` / `convert_article` or `fetch_url` + `subprocess.run` instead.
+
+### Validation
+
+- [x] Green, including existing provenance tests (raw-byte hash, save-source, fetched version) unchanged.
+- [x] Manual: `uv run agentic-mbse extract --html-path .project/active/arxiv-extraction/ref/2610.14224.html <stamp pdf> -o /tmp/arxiv-p5` (stamp PDF from the phase 3 helper). `grep -c "iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO" /tmp/arxiv-p5/output.md` is 0 (the footer logo, the page's only chrome data URI), and `grep -E "Report Issue|Instructions for reporting errors|major funders" /tmp/arxiv-p5/output.md` finds nothing. `data:image/svg+xml` refs from LaTeXML pictures inside the article are paper content and may remain (invariant 6).
+
+**What we know works after this phase:** both routes emit the paper alone; unrecognized pages fall back visibly; no path puts whole-page arXiv HTML through Pandoc.
+
+---
+
+## Phase 6: Image persistence in both routes
+
+### Goal
+
+Every figure in the converted article is saved once under `images/` and referenced by a relative path, in both routes; every image not saved keeps its original ref and warns once.
+
+### Added by design amendment D17 (2026-10-18)
+
+- [x] Test first: on the real fixture, every `<object type="image/svg+xml" class="ltx_graphics …">` inside the article (figures 5, 6, 7, 9 of 2610.14224) yields a markdown image ref after conversion, and is persisted like any other figure. Then implement the `<object>` → `<img>` rewrite in `arxiv_html` pre-processing (design D17).
+
+### Assumption under test
+
+One resolution rule (`urljoin(image_base, ref)`, D7) covers fetched arXiv pages, trailing-slash URLs, local files with and without `<base href>`, and unresolvable refs, without per-source code paths.
+
+### Test stencil (write first)
+
+```python
+# tests/test_arxiv_html.py — persist_images with an injected fetch (D9)
+def fake_fetch(table):
+    def f(url, *, max_bytes, timeout):
+        v = table[url]
+        if isinstance(v, Exception): raise v
+        return v
+    return f
+
+def test_saves_and_rewrites(tmp_path):
+    md = "![a](2610.14224v1/x1.png){width=50%} ![b](2610.14224v1/x2.png)"
+    r = persist_images(md, "https://arxiv.org/html/2610.14224v1", tmp_path / "images", fetch=fake_fetch({...: b"P1", ...: b"P2"}))
+    assert r.saved_count == 2 and "](images/x1.png){width=50%}" in r.markdown
+    assert all((tmp_path / "images" / n).exists() for n in ("x1.png", "x2.png"))
+
+def test_same_url_twice_one_file(tmp_path): ...              # D8: one fetch, both refs → images/x1.png
+def test_same_url_twice_failure_one_warning(tmp_path): ...   # both refs unchanged, len(warnings) == 1
+def test_basename_collision_gets_suffix(tmp_path): ...       # different URLs, same name → x1_2.png
+def test_oversize_leaves_ref_and_warns(tmp_path): ...
+def test_data_uri_untouched(tmp_path): ...                    # invariant 6
+def test_local_html_refs(tmp_path): ...   # absolute http → fetched; <base href>-relative; file-relative → copied; missing → unchanged + warning
+
+# route tests: real fixture → files exist under images/, refs relative, image_count == saved files,
+# warnings in result + metrics.json + stderr (CLI); trailing-slash serving URL still resolves
+```
+
+### Changes required
+
+**See design:** D7 (resolution), D8 (dedupe, naming, counts), D9 (`fetch_image` boundary), invariants 2, 3, 6, `ImagePersistResult` fields, Implementation Notes "Test migration".
+
+- [x] **`arxiv_html.py`**: `fetch_image` (User-Agent from `http.USER_AGENT`, reads `max_bytes + 1`, raises on oversize and HTTP error), `ImagePersistResult`, and `persist_images`. Move `_MD_IMAGE_RE` from `web_backend.py:53` here. Keep `//` collapsing in the path; drop the hard-coded `https://arxiv.org` prefix (D7).
+- [x] **`pipeline._try_arxiv_shortcut`**: when `config.extracted_images_dir` is set, run `persist_images(markdown, source.image_base, config.extracted_images_dir)`; set `image_count` from `saved_count`; append its warnings. Without an images dir, refs stay remote (documented limitation, phase 7). Check `PipelineResult`'s image-count field name in `types.py` before wiring.
+- [x] **`web_backend.py`**: replace `_download_arxiv_images` (`:58-150`) with `persist_images(full_markdown, source.image_base, output_dir / "images")` at `:487-492`; delete the old function.
+- [x] **Tests**: migrate `tests/test_web_images.py` cases into `tests/test_arxiv_html.py` against `persist_images` with an injected fetch; rewrite the duplicate-URL expectation to one file; delete `tests/test_web_images.py` once every case has a home. Add the CLI test that a failed image on each route shows in `metrics.json["warnings"]` and stderr.
+
+### Validation
+
+- [x] Green.
+- [x] Manual: repeat the phase 5 `--html-path` run with a temp copy of the fixture next to a `2610.14224v1/` folder holding two small PNGs; `/tmp/arxiv-p6/images/` holds them, `output.md` refs `images/<name>`, and `metrics.json` reports the matching count.
+
+**What we know works after this phase:** both routes produce portable output: figures on disk, relative refs, honest counts, one warning per unsaved image.
+
+---
+
+## Phase 7: `--check` alignment, docs, full verification
+
+### Goal
+
+`extract --check` predicts what `extract` will do and reports real character counts; the docs explain automatic substitution, its evidence, the escape hatch and the default; the whole spec acceptance table is ticked against tests.
+
+### Assumption under test
+
+Reusing `identify_arxiv_paper`, `resolve_arxiv_shortcut` and `convert_arxiv_html` in the probe gives the same decision as the pipeline for every phase 3 fixture.
+
+### Test stencil (write first)
+
+```python
+# tests/test_check.py
+def test_probe_citation_only_identifies_nothing_and_fetches_nothing(tmp_path):
+    with patch("agentic_mbse.extraction.check.check_arxiv_html") as head: r = probe_pandoc(citation_pdf, arxiv_shortcut=None)
+    head.assert_not_called(); assert r.arxiv_identified is False
+def test_probe_opt_out_skips_and_capability_false(): ...     # run_check(..., arxiv_shortcut=False) → capabilities["arxiv_shortcut"] False
+def test_probe_reports_len_of_markdown(): ...                # stub convert_arxiv_html → ("x" * 1234, b"") → "1234 chars"
+def test_capability_reads_field_not_substring(): ...         # detail "arXiv shortcut disabled" + arxiv_identified False → False
+```
+
+### Changes required
+
+**See design:** D14, `check.py` component note, Docs component note, Non-Goals.
+
+- [x] **`check.py`**: `ProbeResult.arxiv_identified: bool = False` (`:63-69`); `probe_pandoc(pdf, *, arxiv_shortcut=None)` (`:328-346`) returns early when disabled, otherwise uses `identify_arxiv_paper` and reports `len(markdown)`; `run_check(..., arxiv_shortcut=None)` (`:555`, `:611`) forwards it; `compute_capabilities` (`:416-431`) reads the field. No image download in the probe.
+- [x] **`extract_cli.py`**: pass `arxiv_shortcut=args.arxiv_shortcut` to both `run_check` calls (`:385`, `:445`).
+- [x] **`docs/extraction.md`**: automatic substitution and the evidence it requires (stamp or arxiv.org source URL; prose citations never count); author and publisher PDFs don't substitute; `--no-arxiv-shortcut` / `PipelineConfig(arxiv_shortcut=False)` and the contradiction with `--html-path`; the current default (one sentence, so a flip edits one sentence); image persistence and the programmatic no-images-dir limitation; warnings on stderr and in `metrics.json`; web warnings moved from stdout to stderr.
+- [x] **`docs/extraction-internals.md`**: the `arxiv_html` / `pandoc_convert` split and import direction, the supported container (`<article class="ltx_document">`, exactly one), and the fallback per route.
+- [x] **Spec acceptance sweep**: walk `spec.md#acceptance-and-verification` and the design's Validation Approach table; next to each row, record in Implementation Notes the test node ID that proves it. Any row without a test is a gap to close in this phase.
+
+### Validation
+
+- [x] Green, plus `uv run pytest tests/ -m ""` compared with the phase 0 baseline if the slow corpus runs in this environment (record if it doesn't).
+- [x] Manual: `uv run agentic-mbse extract --check <citation-only.pdf> > /tmp/check-out.txt 2>&1` (CLAUDE.md workaround), then read it: the Pandoc probe names no arXiv ID and the shortcut capability is off. With `--no-arxiv-shortcut` the probe says it is disabled.
+
+**What we know works after this phase:** `--check` and `extract` agree; users can read how substitution works and how to turn it off; every spec criterion has a named test.
+
+---
+
+## Phase 8: Live Harness² check (recorded, non-blocking)
+
+### Goal
+
+Corroborate the fixtures against today's real arXiv pages: a consumer's run with Pandoc on PATH and no workarounds.
+
+### Steps
+
+- [x] Record date, `pandoc --version`, and the branch commit.
+- [x] Web route: `uv run agentic-mbse extract https://arxiv.org/html/2610.14224 -o /tmp/harness2-web > /tmp/harness2-web.txt 2>&1`.
+- [x] PDF route: `uv run agentic-mbse extract https://arxiv.org/pdf/2610.14224 -o /tmp/harness2-pdf --budget 0 > /tmp/harness2-pdf.txt 2>&1`. This exercises both the stamp and the arxiv.org source URL.
+- [x] For each route record: fetched source URL and version (frontmatter), backend, saved image count versus files in `images/`, any dangling refs (`grep -o "](images/[^)]*)"` each checked for existence), data-URI refs by type (`grep -o "data:image/[a-z+]*" output.md | sort | uniq -c`): in-article `data:image/svg+xml` refs are expected and legitimate (LaTeXML pictures such as the title logo and inline diagrams; paper content under invariant 6), while the footer `[LOGO]` PNG (`iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO`) and any other chrome data URI must be absent, chrome strings absent (`Report Issue`, footer and nav text chosen in phase 1), and every warning printed.
+- [x] If network is unavailable, record that and stop. Either way this step does not block close. Any surprise against a bet (B1, B2, B5) gets surfaced in the record, not silently patched.
+
+**Record:** see "Phase 8 Record" under Implementation Notes.
+
+---
+
+## Risk Management
+
+**See `design.md#potential-risks`** for the design-level risks.
+
+Phase-specific mitigations:
+
+- **Phase 1, fixture trim drops a needed structure.** Every chrome and paper string the tests check must be asserted present in the page first, so a bad trim fails at the assertion that names the missing string.
+- **Phase 1, Pandoc absent in CI.** The selection test needs no Pandoc; real-Pandoc tests skip cleanly. `_run_pandoc` detects absence from `subprocess.run`, so stubbed tests don't depend on `shutil.which`.
+- **Phase 2, output-stream change.** Web warnings move to stderr. Search `tests/` for assertions on web warnings in stdout and update them; note the change in docs (phase 7).
+- **Phase 3, pymupdf `dir` values change across versions.** One test pins the generated stamp's `dir`, so a library change fails there with a clear message rather than in every identity test.
+- **Phase 5, sanitizer re-serialization breaks the article scan.** The bs4-gated test runs selection on sanitized fixture HTML. If it fails, select the article from raw `fetched.text()` and sanitize only the slice (design-compatible: sanitization stays the web pre-pass). Record either outcome.
+- **Phase 5, exception contract of `convert_arxiv_html`.** Pandoc-missing keeps `FileNotFoundError`; other failures become `ArxivConversionError`. Documented in the docstring and Implementation Notes.
+- **Phase 6, image-count field and existing PDF images.** The shortcut returns before PDF image extraction, so `images/` holds only HTML images on that path. Confirm the field name on `PipelineResult` and that nothing else counts `images/` (for example `ImageCollector.total_image_count`, `pipeline.py:93-98`) on the shortcut path.
+
+## Implementation Notes
+
+[TO BE FILLED DURING IMPLEMENTATION]
+
+### Phase 0 Completion
+**Completed:** 2026-10-18
+**Baseline:** at `423ceffa` (no diff from `8b027bbc` in `src tests docs pyproject.toml`): 3 failed, 2779 passed, 1 skipped, 14 deselected, 1 xfailed.
+
+- `tests/test_equations.py::TestDetectEquations::test_returns_detected_equations`: environment, `PIL` is not installed in the venv.
+- `tests/test_index.py::TestScriptBackwardCompat::test_generate_index_script_runs` and `::test_read_section_script_runs`: environment, the tests hard-code `cwd="/home/reid/1cfe/agentic-mbse"`, which does not exist on this machine.
+
+Environment setup the numbers depend on, for later sessions:
+
+- The worktree venv was created fresh. `uv sync --extra web --extra dev` is needed: without `[web]` the bs4/trafilatura tests fail, without `[dev]` there is no mypy.
+- `SYSIDE_LICENSE_KEY` is not in this worktree. Without it 7 `tests/test_sysml/` modules error at collection and the run aborts. Source it per command from the main checkout: `set -a; . /home/reid/src/agentic-mbse/.env; set +a`.
+- Pandoc is not on the default PATH. Pandoc 3.1.3 lives at `~/.local/opt/pandoc-3.1.3/bin`; prepend it to PATH so the real-Pandoc tests run instead of skipping.
+- pymupdf 1.26.7.
+- Lint and type baselines: `uv run mypy src/` reports 97 errors in 19 files at base (none in `arxiv_html.py`, `pandoc_convert.py`, `web_backend.py`, `pipeline.py`, `types.py`; pre-existing ones in `check.py` and `extract_cli.py`). `ruff format --check` already fails at base on `pandoc_convert.py`, `web_backend.py`, `pipeline.py`, `test_pipeline.py`, `test_extract_cli.py`, `test_web_backend.py` and `test_pandoc_convert.py`. "Clean on touched files" is read as: new files are formatted, and edits add no new lint or format findings; untouched pre-existing drift is not mass-reformatted.
+
+### Phase 1 Completion
+**Completed:** 2026-10-18
+**Actual Changes:**
+- New `src/agentic_mbse/extraction/arxiv_html.py`: `ArxivConversionError`, `MIN_CONTENT_CHARS`, `select_article` (fail-closed scan per D4), `_run_pandoc` (the one Pandoc command; `FileNotFoundError`, timeout and non-zero exit become `ArxivConversionError`), `convert_article`, and `_preprocess_html` / `_postprocess_markdown` moved verbatim. Stdlib only, no import of `pandoc_convert`.
+- `pandoc_convert.py`: helpers deleted and imported from `arxiv_html`; `convert_arxiv_html` keeps its fetch, its `_pandoc_available` → `FileNotFoundError` check and whole-page conversion, and runs Pandoc through `_run_pandoc`.
+- `web_backend.py`: `_extract_with_arxiv_pandoc` and `_fallback_pandoc` call `_run_pandoc` and still return `None` on failure. The "keep flags in sync" comments, the `shutil`/`tempfile` imports and the separate `_pandoc_available` pre-check are gone; a missing Pandoc now surfaces as `ArxivConversionError` from the runner.
+- New fixture `tests/fixtures/arxiv_2610.14224v1_page.html` (87,828 bytes), trimmed by a throwaway script kept outside the repo (`/tmp/arxiv-trim/trim.py`).
+- New `tests/test_arxiv_html.py` (24 tests): selection on the real fixture (8 chrome markers asserted present in the page and absent from the slice, 10 paper markers present), 7 fail-closed shapes, case/quote tolerance, the runner's command and three failure modes, `convert_article`'s article-only input and failure modes, and the real-Pandoc fixture conversion. The `_preprocess_html` / `_postprocess_markdown` test classes moved here from `tests/test_pandoc_convert.py`.
+- Full suite: 2797 passed, same 3 baseline failures. mypy unchanged at 97 (none in touched files). New files formatted; ruff clean on touched files.
+
+**Issues:**
+- **Premise issue for Phase 6 (B4), surfaced and parked.** Real Pandoc on the fixture drops figures that LaTeXML emits as `<object type="image/svg+xml" data="2610.14224v1/<file>.svg">`. On 2610.14224 that is 4 of 9 figures (Figures 5, 6, 7, 9): their captions survive, but no image ref of any kind is produced, so Phase 6's `persist_images` will never see them. B4 says such a figure "keeps a remote ref"; in fact it disappears. Today's routes lose the same figures, so Phases 1–2 do not change this. It works against the spec's "no missing figures" goal. A likely fix is a targeted rewrite of SVG `<object>` to `<img src=...>` in `_preprocess_html`, which is a design change to decide before Phase 6. Phase 6's image-count expectations depend on this decision.
+- **Phase 8 expectation is wrong for this paper.** LaTeXML inline `<svg>` pictures inside the article (the title logo, a Section 1 picture) come out of Pandoc as `data:image/svg+xml` refs. Under invariant 6 they are paper content and stay. Phase 8's "`grep -c data:image` … 0 for this paper" should expect these in-article SVG data URIs and check only that chrome data URIs (the footer `[LOGO]` PNG) are absent.
+
+**Deviations:**
+- Fixture size is 87.8 KB, over the ~80 KB aim. Chrome is verbatim except nested TOC entries. The only small table (Table 3) is in Section 4, so the kept sections are Section 1 (Figure 2) and Section 4 (Table 3, math, Figure 8 as `<img>`), plus the front-matter teaser figure, the first two bibliography entries and Appendix B. The page's "contents of the appendix" banner between the bibliography and Appendix A was deleted with the other content.
+- The stencil's `ltx_page_footer` chrome string does not occur on the real page; the footers are `arxiv-html-footer` and `ds-site-footer`, and those are asserted instead.
+- No re-export of `_preprocess_html` / `_postprocess_markdown` from `pandoc_convert`. Nothing outside it needed them there once `web_backend` imports them from `arxiv_html` and their tests moved, so Phase 5's "remove the phase 1 re-exports" step has nothing left to do.
+- **Exception contract (accepted deviation, for the changelog):** `convert_arxiv_html` now raises `ArxivConversionError` where it raised `subprocess.CalledProcessError` (non-zero Pandoc exit) or let `subprocess.TimeoutExpired` escape. This lands in Phase 1 rather than Phase 5 because the shared runner owns those failures. Pandoc missing still raises `FileNotFoundError` from the pre-check. In-repo callers catch `Exception`.
+- The real-Pandoc test imports `_MD_IMAGE_RE` from `web_backend` until Phase 6 moves it into `arxiv_html`.
+
+### Phase 2 Completion
+**Completed:** 2026-10-18
+**Actual Changes:**
+- `types.py`: `PipelineResult.warnings: list[str]` (appended after the provenance fields).
+- `pipeline.py`: `_try_arxiv_shortcut` returns `(PipelineResult | None, list[str])`. It warns on an ignored `arxiv_html_path` (Pandoc absent), an identified ID with no HTML version, and any exception (message carries the exception text). It stays silent on no ID and on Pandoc absent without `arxiv_html_path`. The debug log line with traceback is kept. `extract_pdf` attaches the shortcut warnings to the shortcut result, the base-extraction error result and the normal result.
+- `arxiv_html.py`: new `_convert_document(document, pandoc_path)` = pre-process → `_run_pandoc` → post-process → `MIN_CONTENT_CHARS` check. `convert_article` now selects, wraps and calls it.
+- `pandoc_convert.convert_arxiv_html` and the web route's arXiv branch both call `_convert_document`, so the pre/run/post sequence exists once.
+- `web_backend.py`: `_extract_with_arxiv_pandoc` deleted (the web arXiv branch calls `_convert_document` directly); `_MIN_CONTENT_LENGTH` replaced by `arxiv_html.MIN_CONTENT_CHARS`. An `ArxivConversionError` in the arXiv branch adds `arXiv Pandoc conversion failed (<reason>); used trafilatura instead` to `extraction_warnings`, which is now created before Step 3 and later extended with image warnings. It already flows into `metrics.json` and `ExtractionResult.warnings`.
+- `extract_cli.py`: `_print_warnings(label, warnings)` writes to stderr and serves both routes; the web route's stdout warning block is gone. The PDF branch prints warnings and writes `metrics.json` (with `"warnings"` when non-empty) before `if result.error`; the later duplicate `metrics.json` write was removed, so there is one write.
+- Tests: `test_pipeline.py` (existing shortcut tests now assert their warnings or their absence; new: ignored `--html-path`, warnings on a base-extraction error result, and a real generated PDF with an unreadable `arxiv_html_path` through the real pipeline). `test_web_backend.py` (real fixture page at an arXiv URL with Pandoc missing, short output and a Pandoc error: backend stays `trafilatura`, one warning in the result and in `metrics.json`; a non-arXiv page has no warning). `test_extract_cli.py` new `TestWarningsChannel` (PDF error result keeps warnings in stderr and `metrics.json` with no `output.md`; success with warnings; no warnings means no key and empty stderr; a real PDF through `cmd_extract` with a missing `--html-path`; web warnings on stderr only). `test_pandoc_convert.py` stubs now return at least `MIN_CONTENT_CHARS`, plus a short-output test.
+- Full suite: 2810 passed, same 3 baseline failures. mypy unchanged at 97. ruff clean on touched files; format hunk counts on touched files are at or below base.
+- Manual check run: `extract /tmp/arxiv-trim/small.pdf --budget 0 --html-path /tmp/does-not-exist.html -o /tmp/arxiv-p2` exits 0, stdout shows `[pdf_pipeline]`, stderr shows exactly one warning naming the missing file, and `metrics.json` contains it.
+
+**Issues:**
+- The first manual run showed a full traceback on stderr because I had raised the shortcut's log line to `warning`. The warning channel already tells the user; the log line went back to `debug` with `exc_info`, as before.
+- Until Phase 3, `detect_arxiv_id` is still the weak first-page regex. So a citation-only PDF whose cited paper has no HTML version now gets the "identified but arXiv serves no HTML version" warning. Phase 3 removes the false identification and with it this warning.
+
+**Deviations:**
+- The minimum-length check now applies to `convert_arxiv_html`, so the PDF shortcut falls back with a warning on Pandoc output under 100 characters. The plan scheduled this with Phase 5's test migration. It came earlier because routing both arXiv conversions through `_convert_document` removed the last copy of the pre/run/post sequence. Changelog note: `convert_arxiv_html` raises `ArxivConversionError` for output under `MIN_CONTENT_CHARS`.
+- `_extract_with_arxiv_pandoc` and `_MIN_CONTENT_LENGTH` were removed in this phase rather than Phase 5. Phase 5 swaps the web branch's `_convert_document(html)` for `convert_article` on the `ArxivSource`.
+- `_try_arxiv_shortcut` still catches `Exception` (now with a warning instead of silence). Phase 5 narrows it to `ArxivConversionError` and the loader's fetch/read errors when the loader lands.
+- PDF `metrics.json` is now written for error results too (zero metrics, plus warnings when present). The skip check keys on `output.md`, so a failed document is still retried on the next run.
+
+### Phase 3 Completion
+**Completed:** 2026-10-18. Code and tests written by the implement session; tests run and verified by the orchestrator because the resumed session lost test permission (harness issue).
+**Actual Changes:** `identify_arxiv_paper` and `ArxivIdentity` in `pandoc_convert.py` (stamp + arxiv.org source URL per D1; `detect_arxiv_id` is a thin wrapper; Creator-metadata fallback removed). `PipelineConfig.pdf_source_url` added (no field renamed/removed). Shortcut uses the identity rule and warns on conflict; CLI fills `pdf_source_url` from fetched PDF URLs. New `tests/helpers/arxiv_pdfs.py` (generated stamp PDFs), `tests/test_arxiv_identity.py`; real-PDF pipeline tests show citation-only and conflict PDFs never reach the HTML check or Pandoc, and a stamp substitutes its own ID. Old mock-based `TestDetectArxivId` removed.
+**Issues:** None in code. Verification: focused extraction suites 318 passed; full suite 2833 passed, 3 failed (the same 3 environmental baseline failures), 1 skipped. Ruff: only the pre-existing `index.py` N806. mypy: 97 errors, equal to baseline.
+**Deviations:** None. Manual check (orchestrator): citation-only PDF with Pandoc 3.1.3 on PATH extracted via `pdf_pipeline`, 49 chars of its own text, no Harness² content.
+
+### Phase 4 Completion
+**Completed:** 2026-10-18
+**Actual Changes:**
+- `pandoc_convert.py`: `ARXIV_SHORTCUT_DEFAULT = True` (the only place the default is written; invariant 8) and `resolve_arxiv_shortcut(explicit)`, which reads the constant at call time.
+- `pipeline.py`: `PipelineConfig.arxiv_shortcut: bool | None = None`, appended after `pdf_source_url`; no existing field touched (invariant 9). `__post_init__` raises `ValueError` for `arxiv_shortcut=False` with `arxiv_html_path`. `_try_arxiv_shortcut` returns `(None, [])` before any other work (Pandoc probe, identity, HEAD probe) when there is no `arxiv_html_path` and `resolve_arxiv_shortcut(config.arxiv_shortcut)` is false. One check covers both explicit opt-out and a default-off build, because opt-out with an HTML path cannot exist. An explicit `arxiv_html_path` runs under either default.
+- `extract_cli.py`: `--arxiv-shortcut/--no-arxiv-shortcut` (`argparse.BooleanOptionalAction`, `default=None`) after `--html-path`. Its help explains the evidence rule and the contradiction, and names the default by reading `pandoc_convert.ARXIV_SHORTCUT_DEFAULT` at registration (module attribute, not a value import, so a flip changes the help). `cmd_extract` rejects `--no-arxiv-shortcut` with `--html-path` first thing, printing an argparse-style `agentic-mbse extract: error: …` line to stderr and returning the new `EXIT_USAGE = 2`. `PipelineConfig` gets `arxiv_shortcut=args.arxiv_shortcut`.
+- Tests:
+  - `test_pipeline.py::TestShortcutControl` runs real stamp PDFs through `_run_shortcut`. That helper was lifted out of `TestArxivIdentityInPipeline._run` so both classes share it. The class covers opt-out skipping identity, the HTML probe and Pandoc with no warning; the `ValueError`; `resolve_arxiv_shortcut` under both constant values; the shipped default being on; a default-off build skipping detection; explicit on overriding default off; and `arxiv_html_path` running under default off.
+  - `test_extract_cli.py::TestArxivShortcutFlag` covers the contradiction (exit 2, message names both flags, `extract_pdf` not called), forwarding of `None/True/False` into `PipelineConfig`, forwarding through a PDF URL and through a `--urls-from` batch, help naming `on`/`off` from the constant, and parser defaults for both forms.
+  - The `MockArgs` stubs in `test_extract_cli.py`, `test_check.py` and `test_profile.py` gained `arxiv_shortcut=None`.
+- Full suite: 2849 passed, same 3 baseline failures. mypy unchanged at 97. ruff clean on touched files; format hunk counts at or below base.
+- Manual: `extract --help` shows `[--arxiv-shortcut | --no-arxiv-shortcut]` and "(default: on)". `extract small.pdf --no-arxiv-shortcut --html-path y.html` exits 2 with the error line and creates no output directory.
+
+**Issues:**
+- **Pre-existing bug fixed: batch PDF URLs recursed forever.** `_extract_pdf_url` shallow-copies `args` and calls `cmd_extract`, but the copy kept `urls_from`, so `cmd_extract` re-entered batch mode on the same file (`RecursionError`). The new batch forwarding test found it. A PDF URL inside `--urls-from` never worked before this. The fix sets `pdf_args.urls_from = None` on the copy. The plan's premise that the flag reaches batch inputs "with no extra plumbing" holds once the recursion is gone.
+
+**Deviations:**
+- Exit 2 comes from a named `EXIT_USAGE` constant in `extract_cli.py` rather than a bare `2`. The `--check` FAIL path still returns a literal `2` as before; it was left untouched.
+- `--check` does not take the flag yet; that is Phase 7 as planned.
+
+### Phase 5 Completion
+**Completed:** 2026-10-18
+**Actual Changes:**
+- `arxiv_html.py`:
+  - New `ArxivSource` (frozen: `raw_bytes`, `html`, `serving_url`). `from_fetch` normalizes the serving URL: a trailing slash after `arxiv.org/html/<id>[vN]` is dropped (B5); other URLs are untouched. `image_base` joins any `<base href>` onto the serving URL.
+  - New `load_arxiv_html(source, *, timeout)`. http(s) strings go through `http.fetch_url`; anything else is read as a local file whose serving URL is its `file://` URI.
+  - The module now imports `http` (stdlib-only) and still never imports `pandoc_convert`.
+- `pandoc_convert.convert_arxiv_html`: now the thin wrapper, `_pandoc_available` → `FileNotFoundError`, then `load_arxiv_html`, then `convert_article`. Signature and return type are unchanged, and it returns the raw fetched bytes. Its bare-`urllib` fetch is gone. Docstring updated.
+- `pipeline._try_arxiv_shortcut`:
+  - Loads through `load_arxiv_html` (the `arxiv_html_path` Path or the probed URL) and converts with `convert_article`.
+  - The `try` now covers only identification, loading and conversion, and catches `ArxivConversionError`, `OSError` (fetch, HTTP and file errors), `UnicodeDecodeError` and `pymupdf.FileDataError` (an unreadable PDF during identification). Each becomes the existing warning. The Phase 2 `except Exception` is gone.
+  - Provenance is built outside the `try` from `source.raw_bytes` and `source.html`, so a bug there raises instead of turning into a warning.
+- `web_backend.py`:
+  - The arXiv branch runs `convert_article` on the (sanitized) page. Its warning now reads `arXiv paper conversion failed (<reason>); used trafilatura instead`.
+  - The whole-page Pandoc fallback (Step 3b) is skipped for arXiv URLs (D16, invariant 11).
+  - Image download resolves against `ArxivSource.from_fetch(fetched).serving_url` instead of the raw `final_url`. The `_convert_document` import is gone, so `_convert_document` is now private to `arxiv_html`. Saved `raw.html` and the hash still use the fetched page.
+- Tests:
+  - `test_arxiv_html.py`: `TestArxivSource` (raw bytes kept, trailing slash dropped on arXiv only, `<base href>` absolute and relative), `TestLoadArxivHtml` (URL through `fetch_url` with timeout and post-redirect URL, local file URI, str path, missing file), and a bs4-gated check that selection survives `strip_hidden_content` on the real fixture.
+  - `test_pandoc_convert.py::TestConvertArxivHtml` rewritten around article-shaped pages. It checks that only the article reaches Pandoc, that the raw bytes include the chrome, that URLs go through `fetch_url`, pre/post-processing, the short-output error, a no-article page raising before Pandoc, and missing Pandoc.
+  - `test_pipeline.py`: the `convert_arxiv_html` stubs are replaced by the fetch boundary (`arxiv_html.fetch_url` serving the real fixture) plus the Pandoc subprocess. The two `RuntimeError("boom")` identity stubs became a realistic `URLError` from the fetch. New `TestShortcutPaperOnly` covers real-Pandoc article-only output from a stamp PDF, no-article fallback with a warning and no Pandoc call, provenance (raw bytes, sha256 and fetched `v1` source URL), and an unreadable PDF warning while base extraction reports the error.
+  - `test_web_backend.py`: real-Pandoc paper-only web output, unrecognized container falling back to trafilatura with the warning in `metrics.json`, arXiv short output never calling `_fallback_pandoc`, a non-arXiv short page still using it, raw bytes and hash equal to the fetched page, and figure refs resolving against the normalized trailing-slash URL.
+- Full suite: 2873 passed, same 3 baseline failures. mypy at 97. ruff clean on touched files. Format hunks are at or below base except that `test_pandoc_convert.py` is now fully formatted; its one pre-existing hunk sat in the class this phase rewrote.
+- Manual: `extract --html-path ref/2610.14224.html <stamp pdf> --budget 0 -o /tmp/arxiv-p5` gives `[pandoc_arxiv]` with 242,611 characters and 15 `##` sections. The footer logo PNG and the chrome strings (`Report Issue`, `Instructions for reporting errors`, `major funders`) occur 0 times. 12 `data:image/svg+xml` refs remain, all LaTeXML pictures inside the article (title logo, diagrams). The investigation's whole-page run had 16 chrome data-image refs.
+
+**Issues:**
+- **Premise issue for D17 on the web route, surfaced for Phase 6.** `html_sanitize.strip_hidden_content` (the web route's default pre-pass) deletes every `<object>` tag as a "dangerous tag" (`html_sanitize.py:36`). It runs before article selection, so on the web route the SVG figure objects D17 rewrites are already gone when `arxiv_html` pre-processing runs. D17 as written would fix the PDF route only. Options for Phase 6: rewrite SVG objects to `<img>` before sanitizing (in `arxiv_html`, applied by the web route ahead of `strip_hidden_content`); or select the article from the raw page and sanitize only the slice with the rewrite first; or exempt `ltx_graphics` SVG objects from the sanitizer. This is a design decision, so it is left to Phase 6 and not resolved here.
+- When an arXiv page's article conversion fails and trafilatura returns nothing, the extraction fails as before (D16). That error result carries no warnings, because `ExtractionResult` error returns never did. The failure itself is reported.
+
+**Deviations:**
+- The web route sanitizes before selecting the article, as the plan expected; the bs4 selection test confirms the article survives sanitizing.
+- `arxiv_html_path` is passed to the loader as a `Path`. A URL given as `--html-path` was never supported, because `Path("https://…")` collapses `//`. This phase doesn't change that.
+- The plan's `test_pipeline.py` migration option "stub `load_arxiv_html` / `convert_article`" was not used. Tests stub the network (`fetch_url`) and Pandoc (`subprocess.run`) boundaries instead, so the loader, selection and pre/post-processing run for real.
+- **For the changelog:** `convert_arxiv_html` now converts only the page's `<article class="ltx_document">` and raises `ArxivConversionError` for a page without one. URLs are fetched through `http.fetch_url`, which honors the response charset and sends the same User-Agent. Web warnings for a failed arXiv conversion now say "arXiv paper conversion failed".
+
+### Phase 6 Completion
+**Completed:** 2026-10-18
+**Acceptance (orchestrator brief):** on the real fixture, all 9 figures of 2610.14224, including the SVG Figures 5, 6, 7 and 9, end up as relative `images/<name>` refs to files that exist. The saved count equals the files written, in both routes. One shared assertion (`tests/helpers/arxiv_page.py::assert_all_figures_saved`) checks this in three places, each through real Pandoc:
+- `test_arxiv_html.py::test_all_nine_fixture_figures_persist` (module level)
+- `test_web_backend.py::test_arxiv_web_route_outputs_paper_only_with_all_figures_saved` (web route, real sanitizer)
+- `test_pipeline.py::TestShortcutFigures::test_all_nine_figures_saved_with_real_pandoc` (PDF route)
+
+**Actual Changes:**
+- `arxiv_html.py`:
+  - New `extract_article(html)` = `select_article` plus the D17 rewrite. Each `<object>` with `type="image/svg+xml"`, class `ltx_graphics` and a `data` URL becomes `<img src=… alt=… id class width height>`. The alt is the object's fallback text, or "Refer to caption". Other objects are untouched. It raises `ArxivConversionError("no recognized arXiv article container")`.
+  - `convert_article` now takes the extracted article fragment, not the page. `_convert_document` was folded into it, since it had no other caller.
+  - Image persistence added: `_MD_IMAGE_RE` (moved from `web_backend`), `MAX_IMAGE_BYTES`, `ImageFetcher`, `ImageFetchError`, `fetch_image(url, *, max_bytes, timeout)` (User-Agent from `http.USER_AGENT`, reads `max_bytes + 1`), `ImagePersistResult`, and `persist_images(markdown, base, images_dir, fetch)`.
+  - `persist_images` resolves each ref with `urljoin(base, ref)` and collapses `//` in the path. Distinct URLs are read once: http(s) through `fetch`, `file:` copied from disk, any other scheme a warning. A colliding basename gets `stem_N.ext`. Saved refs become `images/<name>` with their attribute block kept. A URL that can't be saved leaves every one of its refs byte-identical and adds one warning. `data:` refs are never touched.
+- D17a step order in both routes:
+  - `convert_arxiv_html` and the PDF shortcut call `convert_article(extract_article(source.html))`.
+  - The web arXiv branch calls `extract_article(fetched.text())` on the raw page, sanitizes only that slice (when `sanitize`), then `convert_article`. The whole-page sanitize still feeds trafilatura and metadata. Raw-byte save and hash are unchanged.
+- `pipeline._try_arxiv_shortcut`: when `extracted_images_dir` is set, runs `persist_images(markdown, source.image_base, extracted_images_dir, fetch_image)`. It sets `PipelineResult.image_count` from `saved_count` and returns the image warnings, which `extract_pdf` attaches to the result. Without an images dir, refs stay as the page wrote them.
+- `web_backend.py`: Step 4a calls `persist_images(full_markdown, ArxivSource.from_fetch(fetched).image_base, output_dir / "images", fetch_image)`. `_download_arxiv_images`, its `_MD_IMAGE_RE` and the now-unused `urllib.request`/`urljoin` imports were deleted. The file is fully ruff-formatted, as it was at base.
+- `persist_images` takes the fetcher as a required argument rather than a default. Each route passes `fetch_image`, and the tests stub the name in that route's namespace (`web_backend.fetch_image`; `arxiv_html.fetch_image` for the PDF route, which imports it at call time). A bound default argument could not have been stubbed that way.
+- Fixture `tests/fixtures/arxiv_2610.14224v1_page.html` regenerated (115,118 bytes). It adds Section 2's heading and intro plus subsection 2.2 (Figures 3 and 4), so all nine figures are present. The trim script is `/tmp/arxiv-trim/trim_v2.py`, and the head comment records the change.
+- Tests:
+  - New `tests/helpers/arxiv_page.py`: fixture path, the nine `FIGURES`, a `serve_figure` stub and `assert_all_figures_saved`.
+  - `test_arxiv_html.py`: `TestExtractArticle` (real fixture: four objects rewritten, all nine figure `src`s present, exact `<img>` for Figure 5; fallback text as alt; non-`ltx_graphics` and non-SVG objects untouched; no article raises). `TestConvertArticle` on fragments; its real-Pandoc test now requires the nine figure refs in page order. `TestPersistImages` (14 cases: attributes kept, root-relative and absolute, same URL twice gives one fetch and one file, same URL failing gives one warning and both refs kept, partial failure, `_2`/`_3` collisions, `//` collapse, `data:` untouched, no-op, local HTML with `<base href>` covering absolute/relative/based/root-relative/missing, local HTML without base, unsupported scheme). `TestFetchImage` (User-Agent, oversize raises, oversize through persist). Every `tests/test_web_images.py` case has a home here, so that file is deleted.
+  - `test_web_backend.py`: the nine-figure web acceptance; one failed SVG figure (count 8, ref kept, warning in result and `metrics.json`); the trailing-slash serving URL test now asserts the fetched figure URL; the version-provenance test stubs `extract_article` (its 1 KB fixture has no article).
+  - `test_pipeline.py::TestShortcutFigures`: nine-figure PDF acceptance, a failed figure, no images dir (nothing fetched, refs kept), and `--html-path` copying local figures without fetching.
+  - `test_extract_cli.py::TestFigureWarningsThroughCli`: one failed figure on each route reaches `metrics.json["warnings"]` and stderr, and the saved one is on disk and referenced.
+- Full suite: 2892 passed, same 3 baseline failures. mypy at 97. ruff clean on touched files. Format hunk counts are at or below base on touched files; new files are fully formatted.
+- Manual: copied the fixture to `/tmp/arxiv-p6-page/paper.html` with `2610.14224v1/{intro_teaser,components}.png` beside it, then ran `extract --html-path … stamp.pdf --budget 0 -o /tmp/arxiv-p6`. Exit 0. `images/` holds exactly those two files, `output.md` refs `images/intro_teaser.png` and `images/components.png`, and stderr and `metrics.json` carry 7 warnings, one per missing figure, each naming its `file://` URL.
+
+**Issues:**
+- **Saved-image count is not in `metrics.json` or CLI output.** The plan's manual step expected "`metrics.json` reports the matching count". It doesn't, on either route: `metrics.json` comes from `compute_metrics` (its `figure_ref_count` counts refs, including in-article data URIs), and neither CLI summary prints `image_count`. The count is reported on `PipelineResult.image_count` and `ExtractionResult.image_count`, which the acceptance tests check against the files. This was not changed here; Phase 7's acceptance sweep flags it against the spec row "report matching saved-image counts".
+
+**Deviations:**
+- `convert_article` changed contract from page to article fragment, and `extract_article` is new (design D3 listed `convert_article(html)` on the page). D17a needs a step between selection and conversion where the web route sanitizes, so selection-plus-rewrite and conversion became two calls. Neither function branches on the route.
+- `persist_images` signature: `fetch` is a required positional argument, and the fetcher is called as `fetch(url)`, using `fetch_image`'s own size and timeout defaults (design sketch: `fetch=fetch_image` keyword default).
+- The fixture grew past the ~80 KB aim to 115 KB so the nine-figure acceptance could run on it.
+
+### Phase 7 Completion
+**Completed:** 2026-10-18
+**Actual Changes:**
+- `check.py`:
+  - `ProbeResult.arxiv_identified: bool = False` (appended).
+  - `probe_pandoc(pdf_path, *, arxiv_shortcut=None)`: with the shortcut resolved off, it reports `binary found, arXiv shortcut disabled` without identifying anything. Otherwise it calls `identify_arxiv_paper`, reporting `no arXiv paper identified` (with the conflict reason when there is one) or `arXiv paper identified (<id> from <evidence>)`. Only then does it probe and convert, and it reports `len(markdown)` from the `(markdown, bytes)` tuple. No image download.
+  - `compute_capabilities` reads `arxiv_identified` (and probe ok) instead of the `"arXiv"` substring.
+  - `run_check(..., arxiv_shortcut=None)` forwards to the probe. The capability label now reads "Pandoc + PDF identified as an arXiv paper".
+- `extract_cli.py`: both `run_check` calls (single PDF and built-in corpus) pass `arxiv_shortcut=args.arxiv_shortcut`.
+- `docs/extraction.md`:
+  - New "The arXiv shortcut" section: the evidence (stamp or arxiv.org source URL; citations never count; publisher and author builds don't substitute) and what it produces (article only, in-article images kept, figures in `images/`, per-figure warning).
+  - How to turn it off: `--no-arxiv-shortcut` / `PipelineConfig(arxiv_shortcut=False)`, `--arxiv-shortcut`, `--html-path` and the contradiction (exit 2 / `ValueError`), and the forms the flag reaches.
+  - `--check` behavior, the programmatic no-images-dir limitation, and the direct HTML-URL route.
+  - A "Warnings" subsection: result, `metrics.json`, stderr; web warnings moved off stdout.
+  - Flag table, output-file table (`images/`, `metrics.json` warnings, written on failure too), pipeline step 1 and the Pandoc dependency row updated.
+  - The default appears in exactly one sentence ("The shortcut is on by default."); the flag table's default cell links to it.
+- `docs/extraction-internals.md`:
+  - Architecture line and module map updated (`arxiv_html.py` added; `pandoc_convert.py` re-described). The pipeline step 1 call chain is updated.
+  - The "pandoc_convert.py — arXiv Shortcut" section was rewritten as "pandoc_convert.py and arxiv_html.py — arXiv Shortcut". It covers the module split and import direction, identity, control, the supported container (exactly one `<article>` with class `ltx_document`), SVG figures and the D17a order, the Pandoc configuration, images, and a per-route fallback table.
+  - Known limitation 5 now covers stampless builds and old-style IDs. The Stage 1 claim that a page-1 regex is "100% reliable" is marked superseded with a pointer.
+- Tests: `test_check.py::TestProbePandoc` was rewritten on generated PDFs (citation-only fetches nothing; conflict; opt-out skips identification; stamp without HTML; character count equals `len(markdown)` through the real loader with fetch and Pandoc stubbed; fetch error gives FAIL). New tests:
+  - `TestComputeCapabilities::test_arxiv_shortcut_reads_the_field_not_the_detail`
+  - `TestRunCheck::test_forwards_arxiv_shortcut_to_the_pandoc_probe` and `::test_opt_out_turns_the_capability_off`
+  - `TestCliCheckIntegration::test_flag_reaches_run_check` and `::test_flag_reaches_run_check_for_the_builtin_corpus`
+
+  The `_probe` helper gained `arxiv_identified`, and one corpus stub gained the new keyword. Two gaps the sweep found were closed: `test_pipeline.py::TestShortcutPaperOnly::test_pandoc_failure_falls_back_with_warning` (PDF route, Pandoc error and short output), and route-level paper-only tests that now also require the caption, table, math and the in-article data URI on both routes.
+- Full suite: 2903 passed, same 3 baseline failures. mypy at 97. ruff clean on touched files. Format hunks at or below base (`check.py` 4 → 4).
+- `uv run pytest tests/ -m slow`: 10 passed, 2 skipped, 2 failed. Both failures are environmental: `test_corpus_integration.py::test_ground_truth_scoring` and `test_equations.py::TestCorpusEquations::test_hawker_recall` need the corpus PDFs under `tests/corpus/pdfs/`, which are not in this worktree ("PDF not found"). They don't touch arXiv code.
+- Manual (CLAUDE.md redirect workaround): `extract --check /tmp/arxiv-trim/citation.pdf --budget 0` shows the Pandoc probe `pass binary found, no arXiv paper identified`, with `arxiv_shortcut` false in `--check-json`. With `--no-arxiv-shortcut` the probe reads `binary found, arXiv shortcut disabled`.
+
+**Acceptance sweep (criterion → test).** Spec rows (`spec.md#acceptance-and-verification`). Test files are under `tests/`; class::test names abbreviated.
+| Spec criterion | Proving tests |
+|---|---|
+| Figures are portable | `test_arxiv_html.py::test_all_nine_fixture_figures_persist`; `test_web_backend.py::test_arxiv_web_route_outputs_paper_only_with_all_figures_saved`; `test_pipeline.py::TestShortcutFigures::test_all_nine_figures_saved_with_real_pandoc` (all via `tests/helpers/arxiv_page.py::assert_all_figures_saved`: 9 relative refs, files exist with the fetched bytes, `image_count` == files). Reporting: `metrics.json["image_count"]` and the summary line on both routes, `test_extract_cli.py::TestImageCountReporting::*` and `test_web_backend.py::test_metrics_json_records_zero_images_for_non_arxiv_pages` (resolved after Phase 7; see "Post-Phase-7 calls") |
+| Failures are honest | `test_arxiv_html.py::TestPersistImages::test_same_url_twice_one_fetch_one_file`, `::test_same_url_twice_failure_one_warning_both_refs_kept`, `::test_failure_leaves_ref_and_others_still_save`; `::TestFetchImage::test_oversize_raises`, `::test_oversize_through_persist_leaves_ref_and_warns`; `test_extract_cli.py::TestFigureWarningsThroughCli::test_pdf_route`, `::test_web_route` (result, `metrics.json`, stderr); `test_web_backend.py::test_arxiv_web_route_failed_figure_warns_and_keeps_ref`; `test_pipeline.py::TestShortcutFigures::test_failed_figure_warns_and_keeps_its_ref` |
+| Local HTML images resolve | `test_arxiv_html.py::TestPersistImages::test_local_html_refs` (absolute, `<base href>`-relative, file-relative, root-relative and missing → unresolvable with warnings), `::test_local_html_without_base_resolves_against_its_directory`; `test_pipeline.py::TestShortcutFigures::test_local_html_path_copies_figures_beside_it` (`--html-path` end to end, no fetch) |
+| Citations cannot substitute content | `test_arxiv_identity.py` (all: citation-only, full stamp text as prose, stamp beats cited ID, two stamps, stamp vs URL, same ID other version, URL alone, non-arXiv URLs, pinned vertical/left-margin geometry); `test_pipeline.py::TestArxivIdentityInPipeline::test_citation_only_never_probes_or_converts`, `::test_two_stamps_conflict_warns_and_never_probes`, `::test_stamp_vs_source_url_conflict_warns_and_never_probes` (negative/conflict never call the HTML check or Pandoc), `::test_stamp_substitutes_its_own_id_not_the_cited_one`, `::test_source_url_alone_substitutes` |
+| `--check` predicts `extract` | `test_check.py::TestProbePandoc::test_citation_only_identifies_nothing_and_fetches_nothing`, `::test_conflict_identifies_nothing`, `::test_opt_out_skips_identification`, `::test_reports_length_of_converted_markdown`; `::TestRunCheck::test_opt_out_turns_the_capability_off`, `::test_capability_predicts_whether_extract_substitutes`; `::TestComputeCapabilities::test_arxiv_shortcut_reads_the_field_not_the_detail` |
+| Users can force PDF extraction | `test_pipeline.py::TestShortcutControl::test_opt_out_skips_identity_probe_and_pandoc`, `::test_opt_out_with_html_path_raises`, `::test_default_off_skips_automatic_detection`, `::test_html_path_runs_even_if_default_off`; `test_extract_cli.py::TestArxivShortcutFlag::test_contradiction_with_html_path_is_a_usage_error`, `::test_flag_reaches_pipeline_config`, `::test_flag_reaches_pdf_url_extraction`, `::test_flag_reaches_batch_pdf_urls`; `test_check.py::TestCliCheckIntegration::test_flag_reaches_run_check`, `::test_flag_reaches_run_check_for_the_builtin_corpus` |
+| Output contains the paper alone | `test_arxiv_html.py::TestSelectArticle::test_keeps_paper_drops_chrome` (no Pandoc needed), `::TestConvertArticle::test_real_pandoc_on_fixture`; `test_web_backend.py::test_arxiv_web_route_outputs_paper_only_with_all_figures_saved`; `test_pipeline.py::TestShortcutPaperOnly::test_converts_article_only_with_real_pandoc`. Each requires chrome and UI data URIs absent, and sections, references, appendix, caption, table, math and the in-article data URI present |
+| Fallback is visible | Web: `test_web_backend.py::test_arxiv_pandoc_failure_warns_and_keeps_trafilatura_backend` (missing, short, error), `::test_unrecognized_container_falls_back_to_trafilatura_with_warning`, `::test_arxiv_url_short_trafilatura_never_calls_whole_page_pandoc`. PDF: `test_pipeline.py::TestShortcutPaperOnly::test_pandoc_failure_falls_back_with_warning` (error, short), `::test_page_without_article_falls_back_with_warning`, `::TestExtractPdfArxivShortcut::test_arxiv_shortcut_error_falls_through`, `::test_ignored_html_path_warns`, `::test_warnings_on_base_extraction_error_result`. Persisted: `test_extract_cli.py::TestWarningsChannel::*` |
+| Provenance is unchanged | `test_web_backend.py::test_content_hash_uses_raw_bytes`, `::test_save_source_saves_raw_html`, `::test_arxiv_raw_bytes_and_hash_are_the_fetched_page`, `::test_arxiv_source_records_fetched_version`, `::test_versioned_arxiv_url_normalized_before_fetch`; `test_pipeline.py::TestShortcutPaperOnly::test_provenance_is_the_fetched_page`; `test_extract_cli.py::TestArxivShortcutProvenance::*` |
+| Live result corroborates fixtures | Not a test: Phase 8, recorded at audit; not run in this session |
+
+The design's extra Validation Approach rows are also covered:
+- Trailing-slash serving URL: `test_arxiv_html.py::TestArxivSource::test_from_fetch_strips_trailing_slash_on_arxiv_html_only` and `test_web_backend.py::test_arxiv_images_resolve_against_normalized_serving_url`.
+- Selection survives the sanitizer: `test_arxiv_html.py::test_selection_survives_web_sanitizer`.
+- SVG figures (D17): `test_arxiv_html.py::TestExtractArticle::*`.
+
+Every spec row has at least one named test except the live check, which is Phase 8 by design.
+
+**Deviations:**
+- In `check.py`, `probe_pandoc` still catches `Exception` and reports FAIL with the message, as before. This is the probe's reporting policy, not a fallback that hides anything: the failure is shown as FAIL.
+- The probe identifies from the PDF alone. `--check` takes a local PDF, so there is no source URL to pass.
+- `detect_arxiv_id` has no in-repo caller left. It stays as the public wrapper D2 keeps for external callers, with its own test.
+
+### Post-Phase-7 calls
+**Completed:** 2026-10-18. Two orchestrator calls `[AGENT]`, landed as one commit.
+- **Saved-image count is reported.** `metrics.json` gains `image_count` on both routes (PDF branch of `extract_cli.py`; `web_backend.extract_web_content`). The per-item summary line shows it on both routes: PDF `(N chars, …, M images, Xs)`, web `(N chars, M images, backend: …)`. Zero is printed too. Tests: `test_extract_cli.py::TestImageCountReporting` (PDF with 9 and with 0, web summary) and `test_web_backend.py::test_metrics_json_records_zero_images_for_non_arxiv_pages`; the nine-figure web acceptance test also asserts `metrics.json["image_count"] == 9`. This resolves the Phase 6 Issue.
+- **`--check` capability predicts `extract`.** `ProbeResult.arxiv_identified` is renamed `arxiv_shortcut_applies`; it was added in Phase 7 and is unreleased. It is set only after the probe converts the HTML version, so it is true only when the shortcut is enabled, the paper is identified, and HTML is available and converts. An identified paper with no HTML version now reports the capability false, and a conversion failure is FAIL with the flag false. Design D14 carries a one-line amendment, and `docs/extraction.md`'s `--check` paragraph and the capability label were updated. Tests: `test_check.py::TestProbePandoc::test_stamp_without_html` (now false), `::test_conversion_error` (false), and `::TestRunCheck::test_capability_predicts_whether_extract_substitutes` (no HTML → false, HTML → true).
+- Full suite 2909 passed, same 3 baseline failures. mypy at 97. ruff clean. Format hunks at base on touched files.
+
+### Phase 8 Record
+**Completed:** 2026-10-18 16:45–16:46 UTC. Network was available. Pandoc 3.1.3 (`~/.local/opt/pandoc-3.1.3/bin` on PATH), branch commit `ca7dc35e`. Output went to scratch directories outside the repo: `/tmp/harness2-web`, `/tmp/harness2-pdf` (logs `/tmp/harness2-web.txt`, `/tmp/harness2-pdf.txt`).
+
+**Result: both routes pass.** In both, every figure of the paper is saved locally and referenced relatively, no chrome reaches the output, and no download fails.
+
+**Figure count.** The full paper has 19 figures, not 9. The 9 in the orchestrator brief and the Phase 6 acceptance are the figures in the trimmed fixture (main body, Figures 1–9). The live page also has Figures 10–19 in Appendix E (`A5.F10`–`A5.F19`): 12 SVG `<object>` figures and 7 `<img>` figures in all. "Figure 1:" through "Figure 19:" captions all appear in the output on both routes.
+
+| Check | Web route `extract https://arxiv.org/html/2610.14224` | PDF route `extract https://arxiv.org/pdf/2610.14224 --budget 0` |
+|---|---|---|
+| Exit, summary line | 0; `(244,277 chars, 19 images, backend: pandoc-arxiv)` | 0; `[pandoc_arxiv] (244,110 chars, 35 headings, 13 table rows, 19 images, 3.9s)` |
+| Fetched source and version | frontmatter `source: "https://arxiv.org/html/2610.14224v1"` (bare URL fetched, v1 recorded) | frontmatter `source: "https://arxiv.org/pdf/2610.14224"` (the PDF URL; see observation 2) |
+| Identity evidence | n/a | Re-fetched PDF: `identify_arxiv_paper` gives `2610.14224v1` from the stamp alone, and `("stamp", "url")` with the final URL. B2 holds on the real arXiv PDF |
+| Saved images vs figures | 19 files in `images/`, 19 distinct `images/<name>` refs, `metrics.json` `image_count: 19`, 19 figures | same: 19 files, 19 refs, `image_count: 19`, 19 figures |
+| Every image ref has a file | yes: 0 refs outside `images/`, 0 missing files | yes: 0 outside, 0 missing |
+| SVG figures (D17/D17a) | all 12 `.svg` figures saved, including through the web sanitizer | all 12 saved |
+| Chrome absent | 0 hits each for `Report Issue`, `Instructions for reporting errors`, `modal-form` (issue dialog), `html-header-nav`, `ltx_TOC` (navigation), `major funders`, `Simons Foundation`, `Operational Status` (footers, funder logos), `09 Oct 2026` (watermark), and the footer logo PNG prefix | same, all 0 |
+| Data URIs | 12, all `data:image/svg+xml`: LaTeXML pictures inside the article (title logo, inline diagrams), kept under invariant 6. No PNG/chrome data URI | same 12 |
+| Download failures / warnings | none (no `warnings` in `metrics.json`, none on stderr) | none |
+| Content hash | `e0c817d9…069bb` (raw fetched HTML) | same hash; the Phase 5 manual run on the saved `ref/` page gave the same value |
+
+**Observations.** None of these is against a design bet; recorded, not patched.
+1. **One non-figure graphic stays unresolved.** The page has 20 `ltx_graphics`; the 20th is the title logo `2610.14224v1/figures/harnessmind_logo.png`. It sits inside the title's inline LaTeXML `<svg>` picture (`<foreignObject>`), which Pandoc turns into one `data:image/svg+xml` URI. The logo's relative `<img>` therefore lives inside the data URI, where persistence never sees it (B4 covers markdown refs only), so the title logo won't render offline. It is decoration, not a figure. If wanted, it is follow-up work, outside this item's spec.
+2. **PDF-URL provenance names the PDF, while the hash covers the HTML.** For a PDF URL, the CLI's frontmatter prefers `source_url_override` (the PDF URL) over `PipelineResult.source_url` (`https://arxiv.org/html/2610.14224v1`). The `content_hash_sha256` is of the fetched HTML, so the source and the hash name different artifacts, and the fetched HTML version isn't in the frontmatter. This precedence predates this item (`extract_cli.py`, frontmatter block). R5 required existing provenance to be preserved, so it was not changed; it is a candidate for the filed extraction-provenance work.
+3. Both outputs start with LaTeXML error residue from the paper's own source (`\\tl_set:Ne\\comptag`, `comptag \\reportnumber\\uselogo`). It is inside the article, so it is paper content by the selection rule, not chrome.
+
+
+### Post-audit fixes
+Audit round 1 (`audit.md`, verdict Needs Work). The orchestrator's calls `[AGENT]`: implement design D18; take audit suggestions 1, 2, 3, 5 and 6; leave 4 (the web route sanitizes, by D17a) and 7 (`detect_arxiv_id` kept for outside callers). One commit per change.
+
+**1. D18: in-article `data:` images become files.** `persist_images` (`arxiv_html.py`) treats a `data:` ref as one more image source. It decodes the URI (`_decode_data_uri`: base64 or percent-encoded payload, with the extension from the media type: svg, png, jpeg, gif, webp). It writes the file once under `images/<sha256[:16]><ext>` and rewrites every occurrence, keeping the attribute block. A malformed URI, an unknown media type or bad base64 leaves every occurrence inline with one warning; the warning cuts the payload to 40 characters. `saved_count` counts distinct files. Callers without an images directory never call `persist_images`, so their `data:` refs stay inline, as D18 states. Tests:
+- `tests/helpers/arxiv_page.py::assert_all_images_saved` (renamed from `assert_all_figures_saved`) now requires no `data:image` text in the output and every ref under `images/` and on disk. It requires the nine figures by name and in order, the fixture's synthetic PNG saved under its hash name, more files than figures, and the count equal to the files. It drives the module-level, web-route and PDF-route acceptance tests.
+- `test_arxiv_html.py::TestPersistImages`: `test_data_uri_saved_by_content_hash_and_not_fetched` replaces the old "data URI untouched" test. New: `test_svg_data_uri_base64_and_percent_encoded`, and `test_undecodable_data_uri_stays_inline_with_one_warning` (bad base64, unknown type, no comma).
+- `test_web_backend.py::test_arxiv_web_route_failed_figure_warns_and_keeps_ref` now expects 8 figures plus 3 inline files. The PDF paper-only test without an images dir still requires the inline data URI (refs stay when nothing is saved).
+- Fixture acceptance, all three routes: 0 `data:` links, every ref is a file, count == files. Direct run on the fixture: 12 files, the 9 figures and 3 inline images (title picture, a Section 1 picture, the synthetic PNG), no warnings.
+- **Title logo: not covered.** The title picture is now a file (`images/<hash>.svg`), but the logo is an HTML `<img src="2610.14224v1/figures/harnessmind_logo.png">` inside that SVG's `<foreignObject>`. That relative path is not a markdown ref, so persistence never sees it, and it doesn't resolve from `images/`. Rewriting refs inside saved SVG files would be a separate change; the logo stays a recorded follow-up.
+- Full suite 2913 passed, same 3 baseline failures. mypy 97, ruff clean, format at base.
+
+**2. Audit suggestion 1: every realistic image failure warns, none crashes.** `persist_images` now catches a named tuple, `_IMAGE_FAILURES = (OSError, ValueError, http.client.HTTPException, ImageFetchError)`, with no bare except. Resolving the ref moved inside the same `try`, because the audit's reproducer `http://[::1/x.png` raises `ValueError` while being resolved, before any fetch. The loop now walks refs, maps each to its source, and loads each source once through the new `_load_image` (one function for `data:` and remote sources). A failed source still gives one warning and leaves every ref byte-identical. A file-write failure (an `OSError`) now warns too. Tests:
+- `test_arxiv_html.py::TestPersistImages::test_any_fetch_failure_warns_instead_of_crashing` covers `ValueError`, `IncompleteRead`, `RemoteDisconnected` and a timeout.
+- `::test_unparseable_ref_warns_instead_of_crashing` is the audit's reproducer.
+- `test_pipeline.py::TestShortcutFigures::test_broken_figure_response_warns_instead_of_aborting` checks the PDF route: an `IncompleteRead` figure leaves the shortcut result standing, with one warning.
+
+Full suite 2919 passed, same 3 baseline failures. mypy 97, ruff clean, format at base.
+
+**3. Audit suggestion 2: a web double failure keeps its reason.** When the arXiv article conversion fails and trafilatura then returns nothing, `extract_web_content`'s error result now carries `extraction_warnings` (the "arXiv paper conversion failed (…)" warning). `_extract_url`'s FAIL branch prints them to stderr through `_print_warnings`. No `metrics.json` is written for this failure, as before, because it fails before the output directory is created. This closes the Phase 5 Issue about the double failure. Tests: `test_web_backend.py::test_double_failure_keeps_the_conversion_warning` and `test_extract_cli.py::test_web_failure_still_prints_its_warnings`. Full suite 2921 passed, same 3 baseline failures.
+
+**4. Audit suggestions 3 and 5: a route-neutral Pandoc runner, and the docs name its owner.** The smaller of the two allowed changes was taken. The runner stays in `arxiv_html.py` as the public `run_pandoc`, raising a new route-neutral `PandocError`. Moving it to `pandoc_backend.py` would mix it into the DOCX backend, and a new module would hold one function. `convert_article` catches `PandocError` and re-raises it as `ArxivConversionError` (`from exc`), so the arXiv callers (`pipeline._try_arxiv_shortcut`, the web arXiv branch, `convert_arxiv_html`) are unchanged. The web route's plain-HTML `_fallback_pandoc` imports the public name and catches `PandocError`; no private name crosses modules any more. `docs/extraction-internals.md` now says the flags live in `run_pandoc`, called by `convert_article` and `_fallback_pandoc`, and that the pre/post-processing and length check belong to `convert_article` only. Tests: `test_arxiv_html.py::TestRunPandoc` targets `run_pandoc`/`PandocError` and adds `test_pandoc_error_is_not_an_arxiv_error`; `TestConvertArticle::test_missing_pandoc_raises` checks the cause chain; `test_web_backend.py::test_whole_page_fallback_returns_none_on_pandoc_failure` covers missing and failing Pandoc. Deviation from D6's sketch: the runner is public (`run_pandoc`, not `_run_pandoc`) with its own error type. Full suite 2924 passed, same 3 baseline failures.
+
+**5. Audit suggestion 6: the web route builds its `ArxivSource` once.** The arXiv branch of `extract_web_content` builds `source = ArxivSource.from_fetch(fetched)` at its top, selects the article from `source.html`, and on success records `image_base = source.image_base`. Step 4a saves figures when `image_base` is set, instead of rebuilding the source from `fetched`. The two routes now read the same way: one source feeds both the article and the image base. It is a behavior-preserving refactor, covered by the existing route tests (nine-figure acceptance, trailing-slash image base, failed figure). Full suite 2924 passed, same 3 baseline failures.
+
+Not taken, by the orchestrator's call: suggestion 4 (the web route sanitizes the article slice and the PDF route doesn't; D17a chose this) and suggestion 7 (`detect_arxiv_id` stays as the public wrapper D2 keeps for outside callers).
+
+**6. D18 live acceptance, and a falsified bet (B3) it exposed.** The first live rerun after D18 (17:08 UTC, commit `a0e7eada`) left **6 `data:` links** in `output.md` on both routes. They were not images but `[⬇](data:text/plain;base64,…)`, about 36 KB. Each comes from LaTeXML's per-listing download button, `<div class="ltx_listing_data"><a href="data:text/plain;…" download="">⬇</a></div>`, which sits inside the article in Appendix H. The same 6 were in the base investigation output and the Phase 8 live output; neither Phase 8 nor the audit counted them, because both looked for `data:image`. This falsifies design bet B3 ("arXiv's UI elements are absent from inside the article"). B3's own contingency prescribes "one targeted removal in the selection step", and the check showed nothing is lost: every line of each download (144, 27, 23, 12, 34, 37 lines) also appears in the listing shown inline. So `extract_article` now drops exactly that button shape (`_LISTING_DOWNLOAD_RE`); any other `ltx_listing_data` markup is left alone. D18's image rule is unchanged: this is a removal of duplicated UI, not of a data image. B3 in `design.md` carries the falsification note. **Surfaced for the orchestrator:** this removes something inside the article. If the download links should instead be kept as files, that is a one-line revert plus a new D18-style rule. Tests: `test_arxiv_html.py::TestExtractArticle::test_drops_listing_download_buttons_keeps_the_listing` (real markup shape from Appendix H) and `::test_other_listing_data_shapes_untouched`. Full suite 2926 passed, same 3 baseline failures. mypy 97, ruff clean.
+
+**Live acceptance (rerun 2026-10-18 17:11 UTC, Pandoc 3.1.3, network available; output in `/tmp/harness2-d18-web`, `/tmp/harness2-d18-pdf`).**
+| Check | Web route | PDF route (`--budget 0`) |
+|---|---|---|
+| Summary line | `(207,779 chars, 31 images, backend: pandoc-arxiv)` | `[pandoc_arxiv] (175,824 chars, 35 headings, 13 table rows, 31 images, 3.6s)` |
+| `data:` occurrences in `output.md` | 0 | 0 |
+| Image refs / outside `images/` / missing files | 31 / 0 / 0 | 31 / 0 / 0 |
+| Files written / `image_count` / refs name exactly the files | 31 / 31 / yes | 31 / 31 / yes |
+| Breakdown | 19 figures by name + 12 in-article pictures under content-hash names | same |
+| Warnings, chrome hits | none, 0 | none, 0 |
+
+Acceptance met on both routes and on the fixture (item 1).
+
+**Title logo: still not covered, recorded.** The live title picture is saved (`images/15bb2a01d6e06a6e.svg`), but inside it the logo is an HTML `<img src="2610.14224v1/figures/harnessmind_logo.png">` within `<foreignObject>`. That relative path doesn't resolve from `images/`, and persistence never sees it because it isn't a markdown ref. Covering it would mean rewriting refs inside saved SVG files, a separate change outside D18. It stays a follow-up.
+
+**Observation, not changed: the web summary's character count is taken before images are saved.** The web route computes metrics on the converted markdown before `persist_images` (207,779 chars, with the 12 pictures still inline). The PDF route computes after (175,824). The file on disk is about 176K on both. The ordering is the web route's existing Step 4 order; moving the metrics after Step 4a would make the two agree. It is left for the orchestrator to decide.
+
+**7. Orchestrator calls after the post-audit fixes `[AGENT]`.** Accepted: dropping the LaTeXML listing download buttons (item 6), with the B3 note. Fixed: **the web route's metrics now describe the markdown actually written.** In `extract_web_content`, Step 4 now runs in this order: choose the output directory, save images on the body (`persist_images(markdown, …)`), then add frontmatter. `compute_metrics(markdown, …)` therefore counts the body after image saving, as the PDF route does: body only, no frontmatter, after persistence. Before, the web count included the inline `data:` payloads that D18 then moved into files (live 2610.14224: 207,779 counted vs about 176K written). Frontmatter carries no image refs, so moving persistence ahead of it changes nothing else. This closes the observation in item 6. Test: `test_web_backend.py::test_metrics_describe_the_markdown_written_after_image_saving`, with and without frontmatter, checks `metrics.json["char_count"] == result.char_count ==` the length of the body written to `output.md` after an inline image was saved. Full suite 2928 passed, same 3 baseline failures. mypy 97, ruff clean, format at base.
+
+**8. Audit round 2 final fixes (orchestrator calls `[AGENT]`).** Round 2 cleared the code; it found three stale doc sentences and made two advisories.
+- **Docs match the code.**
+  - `docs/extraction-internals.md` "Supported container": selection removes LaTeXML's listing download buttons and nothing else.
+  - `docs/extraction-internals.md` "Images": in-article `data:` images are saved under content-hash names when an images directory is set (the web route always has one; the PDF route uses `extracted_images_dir`), and stay inline otherwise.
+  - `docs/extraction.md` "What it produces": images, including inline `data:` diagrams, are saved as files, so `output.md` has no `data:` links; the listing download button is the one removal; without an images directory, refs and inline images stay as written. Its "Python use without an images directory" paragraph now also names inline `data:` images.
+- **Spec R4** gains one `[INFERRED]` line (orchestrator call, 2026-10-18; owner has not ruled) naming the listing-button removal and stating that in-article `data:` images are saved, not removed.
+- **Audit suggestion 2 (drift guard).** The fixture was regenerated (`/tmp/arxiv-trim/trim_v3.py`, 142,741 bytes) to add Appendix H's heading and one real code listing with its download button (paragraph `A8.p6`), recorded in the head comment. New test `test_arxiv_html.py::test_no_data_link_of_any_media_type_survives_on_the_fixture` asserts the fixture really carries a `data:text/plain` button, then that the converted and persisted real page holds no `data:` link of any media type. Checked that it bites: with the button removal disabled, the same conversion leaves 1 `data:text` link.
+- Left as is, per the orchestrator: round-2 suggestion 3 (`ValueError` caught across the per-ref block).
+- Full suite 2929 passed, same 3 baseline failures. mypy 97, ruff clean on touched files.
+---
+
+**Status:** Draft → In Progress → Complete

@@ -29,6 +29,49 @@ agentic-mbse now holds one versioned statement of which model shapes, in which c
 
 ---
 
+## [2026-10-18] - Reliable arXiv Extraction
+
+**Type**: Item (standalone; branch `fix/arxiv-extraction` in worktree `/home/reid/src/agentic-mbse-worktrees/arxiv-extraction`, base local `main` `8b027bbc`, not yet merged)
+**Duration**: 1 day (spec created 2026-10-18; closed 2026-10-18)
+
+### Summary
+
+A downstream consumer can now keep Pandoc on PATH: `extract` gives the right paper, saves its figures locally and leaves out arXiv's page chrome. Before this item the PDF pipeline swapped in arXiv HTML whenever any arXiv ID appeared on page 1, so a PDF that cited a paper came out as that paper. The swap skipped image download, and the direct arXiv HTML route converted the whole page (issue dialog, navigation, footer, funder logos, UI icons). Now the PDF shortcut fires only on the paper's own evidence: the rotated left-margin arXiv stamp (see the [spike](20261018_arxiv-extraction/spike-margin-stamp.md)) or an arxiv.org source URL. Both routes convert only `<article class="ltx_document">` through one module, `src/agentic_mbse/extraction/arxiv_html.py`, and save every figure under `images/`. That includes LaTeXML SVG `<object>` figures, which Pandoc used to drop (4 of 9 on 2610.14224), and in-article `data:` images, which are written out as files. `--arxiv-shortcut` / `--no-arxiv-shortcut` control the shortcut, and every fallback warns. A live rerun of 2610.14224 on both routes gave 0 `data:` links and 31 of 31 image refs pointing at saved files. Independently audited in two rounds (Needs Work, then docs-only Needs Work); the orchestrator verified the final doc fixes at `28663d17` and certified. Full suite 2929 passed, 3 failed (the known environmental baseline). Not checked: arXiv layouts beyond the three saved reference pages, and the slow corpus tests.
+
+**Behaviour changes callers can see.**
+- `pandoc_convert.convert_arxiv_html` raises `ArxivConversionError` where it raised `subprocess.CalledProcessError` (or let `TimeoutExpired` escape). Pandoc missing still raises `FileNotFoundError`. Its signature and return type are unchanged.
+- Web-route warnings print to stderr only; they no longer go to stdout too.
+- Fewer PDFs take the shortcut: it needs the arXiv margin stamp or an arxiv.org source URL. A PDF with neither gets normal PDF extraction.
+- A PDF URL inside `--urls-from` used to recurse forever (`RecursionError`); it now extracts (`extract_cli.py:285`).
+- `metrics.json` carries `image_count` on the PDF route, and `warnings` on both routes.
+
+**Open owner decision.** [OWNER] Should the arXiv shortcut stay on by default? The owner reserved this call (spec R3). It ships on as a provisional default (`ARXIV_SHORTCUT_DEFAULT = True`, `pandoc_convert.py:22`). Flipping it is that line plus one docs sentence, and `--html-path` keeps working either way (design D10). Not settled.
+
+**Decision: identity needs the paper's own evidence.** [AGENT] (design D1–D2) The stamp is a vertical page-1 line in the left 15% of the page matching `arXiv:<id>v<N> [<category>] <date>`; a stamp and URL naming different papers is a conflict and warns. `detect_arxiv_id` stays as a wrapper over `identify_arxiv_paper`. Rejected: PDF Creator metadata (two of three genuine arXiv PDFs say `LaTeX with hyperref`); a post-fetch title check. Accepted false negative: non-arXiv copies of a paper have no stamp and get normal PDF extraction.
+
+**Decision: the paper is the one `ltx_document` article, selected fail-closed.** [AGENT] (design D4, D16) Any other page shape raises `ArxivConversionError`, and for arXiv URLs the whole-page Pandoc fallback no longer runs, so chrome cannot come back through it. Rejected: a deny-list of chrome selectors.
+
+**Decision: select, rewrite, then sanitize, on both routes.** [AGENT] (design D17, D17a) SVG figure `<object>`s are rewritten to `<img>` before Pandoc. The web route's sanitizer deletes every `<object>`, so the web route now selects the article from the raw page and sanitizes only the slice.
+
+**Decision: in-article `data:` images are saved as files.** [AGENT] (design D18, from audit round 1) The owner's done-condition was that consumers "stop stripping data: images". With an images directory configured, each one is written once under `images/` with a content-hash name; without one they stay inline. LaTeXML listing download buttons (`data:text/plain`) are removed as duplicate UI; the listing text stays.
+
+**Behaviour found.**
+- Pandoc drops a LaTeXML figure embedded as `<object type="image/svg+xml">`: its caption survives, but no image ref of any kind is produced.
+- Pandoc turns each inline `<svg class="ltx_picture">` into a `data:image/svg+xml` link. On 2610.14224, 12 of the 16 `data:` links in the old web output were paper content (title graphic, component icons), not chrome.
+- `html_sanitize.strip_hidden_content` deletes every `<object>` as a dangerous tag (`html_sanitize.py:36`).
+- On arXiv PDFs, pymupdf reports the margin stamp as one line with `dir == (0, -1)` and x1 ≤ 44 pt; a body citation is horizontal.
+
+**Follow-ups.** `ARXIV-SVG-NESTED-IMAGE` (P3): the title logo inside a saved SVG does not resolve offline. The PDF-URL provenance mismatch (frontmatter names the PDF URL, the hash covers the converted HTML) predates this item and is noted on `EXTRACT-PROVENANCE-HOOK`.
+
+### Deliverables
+
+- Code: `src/agentic_mbse/extraction/arxiv_html.py` (new: loader, article selection, SVG rewrite, the one Pandoc runner, image persistence), `pandoc_convert.py` (`identify_arxiv_paper`, `ARXIV_SHORTCUT_DEFAULT`, `resolve_arxiv_shortcut`), `pipeline.py` (`arxiv_shortcut`, `pdf_source_url`, `warnings`), `web_backend.py`, `check.py` (`arxiv_shortcut_applies`; reports the markdown length, not the tuple's), `types.py`, `cli/extract_cli.py`.
+- Docs: `docs/extraction.md`, `docs/extraction-internals.md`.
+- Tests: `tests/test_arxiv_html.py`, `tests/test_arxiv_identity.py` (new), `tests/fixtures/arxiv_2610.14224v1_page.html` (trimmed real page), `tests/helpers/arxiv_page.py`, `tests/helpers/arxiv_pdfs.py`; `test_check.py`, `test_extract_cli.py`, `test_pandoc_convert.py`, `test_pipeline.py`, `test_web_backend.py` extended; `test_web_images.py` folded in.
+- Artifacts: `spec.md`, `spec_review.md`, `design.md`, `design_review.md`, `plan.md`, `audit.md`, `product-lens.md`, `spike-margin-stamp.md`, `briefs/`. The saved reference pages in `ref/` are local and untracked.
+
+---
+
 ## [2026-10-12] - Study Layer to sysml-codegen
 
 **Type**: Item (`WRAP-SPLIT` Item 3; code in sysml-codegen [PR #20](https://github.com/1cFE/sysml-codegen/pull/20), merged as `b5663c0`; installer API in agentic-mbse [PR #24](https://github.com/1cFE/agentic-mbse/pull/24), merged as `d42c8b9`; fusion-tea adoption in fusion-tea [PR #127](https://github.com/1cFE/fusion-tea/pull/127) (the agentic-mbse pin) and [PR #128](https://github.com/1cFE/fusion-tea/pull/128) (the switch), stacked; #128 reached `main` through [PR #129](https://github.com/1cFE/fusion-tea/pull/129), merged as `47b4c612d`)
