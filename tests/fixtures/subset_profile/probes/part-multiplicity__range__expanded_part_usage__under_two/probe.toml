@@ -1,0 +1,14 @@
+kind = "record"
+rule = "part-multiplicity"
+shape = "range"
+context = "expanded_part_usage"
+variant = "under_two"
+expected_outcome = "refused"
+
+[construct]
+description = "servers[1..4] under hall.racks[2] (B5)"
+file = "model.sysml"
+lines = [5, 5]
+
+[expect]
+code = "SI_MULTIPLICITY_UNSUPPORTED"

@@ -1,0 +1,14 @@
+kind = "record"
+rule = "binding-source"
+shape = "expression_source"
+context = "owner_instantiated"
+variant = "selected_and_overridden"
+expected_outcome = "refused"
+
+[construct]
+description = "calc c binds v to x * 2.0; selected in s1, overridden in s2 (B5, design note (a))"
+file = "model.sysml"
+lines = [6, 6]
+
+[expect]
+code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"

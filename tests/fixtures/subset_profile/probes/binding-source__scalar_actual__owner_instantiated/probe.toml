@@ -1,0 +1,14 @@
+kind = "control"
+rule = "binding-source"
+shape = "scalar_actual"
+context = "owner_instantiated"
+expected_outcome = "admitted"
+supersedes = "es003_neighbor_ordered_param_scalar_arg"
+
+[construct]
+description = "ordered nonunique input xs bound to the scalar a"
+file = "model.sysml"
+lines = [6, 6]
+
+[expect]
+positive_control = "fx__site__t__r"

@@ -428,15 +428,20 @@ EXCLUDED_PROBE = GOOD_PROBE.replace('"refused"', '"excluded"').replace(
 )
 
 
-def test_excluded_certifies_like_omitted(tmp_path: Path):
+def test_excluded_certifies_only_when_nothing_of_the_element_is_executed(tmp_path: Path):
     probe = load_probe(write_probe(tmp_path / "r__s__c", EXCLUDED_PROBE))
     assert probe.expected_outcome == "excluded"
     base = dataclasses.replace(
-        omitted_observation(["fx__site__x"], []),
+        omitted_observation(["constraint_report", "fx__site__x"], []),
         probe_id=probe.id,
         model_sha256=probe.model_sha256,
-        mentions={"fx__site__c": (), "fx__site__x": ("catalog.py",)},
+        mentions={"fx__site__x": ("schemas/fx_params.py",)},
     )
     assert judge(probe, base).certifies
-    present = dataclasses.replace(base, mentions={**base.mentions, "fx__site__c": ("contract.py",)})
-    assert judge(probe, present).failed_check is FailedCheck.OMITTED_ELEMENT_PRESENT
+    executed = dataclasses.replace(
+        base,
+        catalog_names=(*(base.catalog_names or ()), "fx__site__c__b2787982fe8aab93__evaluation"),
+    )
+    assert judge(probe, executed).failed_check is FailedCheck.EXCLUDED_ELEMENT_EXECUTED
+    no_sibling = dataclasses.replace(base, catalog_names=("constraint_report",))
+    assert judge(probe, no_sibling).failed_check is FailedCheck.POSITIVE_CONTROL_MISSING

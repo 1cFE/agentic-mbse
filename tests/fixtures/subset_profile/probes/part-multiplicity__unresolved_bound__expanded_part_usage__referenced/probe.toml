@@ -1,0 +1,14 @@
+kind = "record"
+rule = "part-multiplicity"
+shape = "unresolved_bound"
+context = "expanded_part_usage"
+variant = "referenced"
+expected_outcome = "refused"
+
+[construct]
+description = "servers[n] with attribute n declared and never valued"
+file = "model.sysml"
+lines = [5, 5]
+
+[expect]
+code = "SI_MULTIPLICITY_UNRESOLVED"

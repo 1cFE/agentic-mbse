@@ -1,0 +1,14 @@
+kind = "record"
+rule = "constraint-predicate"
+shape = "blocked_predicate"
+context = "owner_instantiated"
+expected_outcome = "refused"
+supersedes = "es007_refused_boolean_mixed"
+
+[construct]
+description = "asserted predicate x > 0.0 and enabled (BLOCK) in Site, instantiated by site"
+file = "model.sysml"
+lines = [6, 6]
+
+[expect]
+code = "SI_CONSTRAINT_BLOCKED"

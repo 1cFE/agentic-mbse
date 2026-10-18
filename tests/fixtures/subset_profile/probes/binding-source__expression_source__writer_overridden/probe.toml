@@ -1,0 +1,13 @@
+kind = "record"
+rule = "binding-source"
+shape = "expression_source"
+context = "writer_overridden"
+expected_outcome = "admitted"
+
+[construct]
+description = "Base::c binds v to x * 2.0 and Derived redefines c in its only occurrence d1; control is the winning writer's output"
+file = "model.sysml"
+lines = [6, 6]
+
+[expect]
+positive_control = "fx__d1__c__r"

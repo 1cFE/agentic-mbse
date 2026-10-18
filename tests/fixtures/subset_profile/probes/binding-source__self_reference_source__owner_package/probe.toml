@@ -1,0 +1,13 @@
+kind = "record"
+rule = "binding-source"
+shape = "self_reference_source"
+context = "owner_package"
+expected_outcome = "refused"
+
+[construct]
+description = "package-owned calc usage t binds v to itself"
+file = "model.sysml"
+lines = [5, 5]
+
+[expect]
+code = "SI_SELF_BINDING"

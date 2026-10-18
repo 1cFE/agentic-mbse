@@ -1,0 +1,14 @@
+kind = "record"
+rule = "part-multiplicity"
+shape = "range"
+context = "unexpanded_part_usage"
+variant = "non_composite"
+expected_outcome = "admitted"
+
+[construct]
+description = "ref part servers[1..4] in instantiated Rack: never expanded"
+file = "model.sysml"
+lines = [5, 5]
+
+[expect]
+positive_control = "fx__rack__m__r"

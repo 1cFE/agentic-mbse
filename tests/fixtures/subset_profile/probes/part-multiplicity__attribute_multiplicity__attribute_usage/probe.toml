@@ -1,0 +1,13 @@
+kind = "control"
+rule = "part-multiplicity"
+shape = "attribute_multiplicity"
+context = "attribute_usage"
+expected_outcome = "admitted"
+
+[construct]
+description = "attribute loads : Real[1..4] ordered: attribute usages are never expanded"
+file = "model.sysml"
+lines = [5, 5]
+
+[expect]
+positive_control = "fx__rack__m__r"

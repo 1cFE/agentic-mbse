@@ -1,0 +1,13 @@
+kind = "control"
+rule = "part-multiplicity"
+shape = "redefinition_drops_bounds"
+context = "expanded_part_usage"
+expected_outcome = "admitted"
+
+[construct]
+description = "rack redefines servers[2] with no multiplicity; the generator expands one occurrence (matrix row G1, design D14 a)"
+file = "model.sysml"
+lines = [6, 6]
+
+[expect]
+positive_control = "fx__rack__servers__t__r"

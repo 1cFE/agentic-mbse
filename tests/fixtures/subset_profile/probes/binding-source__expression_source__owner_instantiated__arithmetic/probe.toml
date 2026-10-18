@@ -1,0 +1,15 @@
+kind = "record"
+rule = "binding-source"
+shape = "expression_source"
+context = "owner_instantiated"
+variant = "arithmetic"
+expected_outcome = "refused"
+supersedes = "unmapped_expression_calc_arg"
+
+[construct]
+description = "calc input v bound to rate * fuel_code; owner Gen instantiated by gen"
+file = "model.sysml"
+lines = [4, 4]
+
+[expect]
+code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"

@@ -100,6 +100,7 @@ class FailedCheck(StrEnum):
     CATALOG_MISSING = "catalog_missing"
     POSITIVE_CONTROL_MISSING = "positive_control_missing"
     OMITTED_ELEMENT_PRESENT = "omitted_element_present"
+    EXCLUDED_ELEMENT_EXECUTED = "excluded_element_executed"
 
 
 class ProbeKind(StrEnum):
@@ -142,7 +143,13 @@ class Omitted:
 
 @dataclass(frozen=True)
 class Excluded:
-    """Like `Omitted`, for a construct left out by policy (a NON_NUMERICAL predicate)."""
+    """The run must succeed, generate `positive_control`, and execute nothing of `element`.
+
+    For a construct left out by policy (a NON_NUMERICAL predicate). Generated constraint names
+    carry a hash suffix (`fx__site__c__b2787982fe8aab93__evaluation`), so a whole-identifier
+    mention check would pass vacuously: instead no catalog name (parameter or output channel)
+    may equal `element` or extend it with `__`. The contract may still record the exclusion.
+    """
 
     element: str
     positive_control: str
@@ -171,11 +178,10 @@ class Probe:
                 return ()
             case Admitted(positive_control=control):
                 return (control,)
-            case (
-                Omitted(element=element, positive_control=control)
-                | Excluded(element=element, positive_control=control)
-            ):
+            case Omitted(element=element, positive_control=control):
                 return (element, control)
+            case Excluded(positive_control=control):
+                return (control,)
 
     @property
     def expected_outcome(self) -> str:
@@ -450,10 +456,7 @@ def judge(probe: Probe, obs: Observation) -> Certification:
             if failure is None and control not in (obs.catalog_names or ()):
                 failure = FailedCheck.POSITIVE_CONTROL_MISSING
             return Certification(failure)
-        case (
-            Omitted(element=element, positive_control=control)
-            | Excluded(element=element, positive_control=control)
-        ):
+        case Omitted(element=element, positive_control=control):
             failure = _success_failure(obs)
             if failure is None and control not in (obs.catalog_names or ()):
                 failure = FailedCheck.POSITIVE_CONTROL_MISSING
@@ -461,6 +464,16 @@ def judge(probe: Probe, obs: Observation) -> Certification:
                 element in (obs.catalog_names or ()) or _mentions(obs, element)
             ):
                 failure = FailedCheck.OMITTED_ELEMENT_PRESENT
+            return Certification(failure)
+        case Excluded(element=element, positive_control=control):
+            failure = _success_failure(obs)
+            if failure is None and control not in (obs.catalog_names or ()):
+                failure = FailedCheck.POSITIVE_CONTROL_MISSING
+            if failure is None and any(
+                name == element or name.startswith(f"{element}__")
+                for name in obs.catalog_names or ()
+            ):
+                failure = FailedCheck.EXCLUDED_ELEMENT_EXECUTED
             return Certification(failure)
 
 
