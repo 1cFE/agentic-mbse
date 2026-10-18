@@ -2,9 +2,11 @@
 
 This is the approved summary port (R1, Option A, owner 2026-10-18), productionized from spike
 F1 (`.project/completed/20261018_exec-subset-profile/spikes/f1-occurrence-port/occurrence_port.py`). It
-agrees with the generator by imitation, not by shared code, so it is held to the generator by
-the parity seed in `tests/fixtures/subset_profile/occurrence/` (codegen-oracle captures) and,
-from Item 2, by a permanent parity test in codegen CI (end condition (ii)).
+agrees with the generator by imitation, not by shared code, so it is held to the generator by a
+permanent parity test in sysml-codegen's licensed suite (end condition (ii)):
+`tests/conformance/subset_profile/test_occurrence_parity.py` compares this port with codegen's
+occurrence index, live, over the parity seed (moved there by EXEC-SUBSET-CONTRACT Item 2a) and
+codegen's corpus fixtures.
 
 It mirrors codegen function by function. Paths are under `src/sysml_codegen/elaboration/`. The
 last column is the :class:`OccurrenceAbort` member each mirrored raise becomes (P-5); the spike
