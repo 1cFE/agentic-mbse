@@ -26,7 +26,7 @@ Independently reproduced on 2026-10-18 at `517f3e11`. The extraction source and 
 
 - A generated unrelated PDF with first-page text `Prior work: arXiv:2610.14224` was identified as that paper. A controlled shortcut run with fetching and conversion stubbed returned Harness² content for that PDF.
 - Real conversion through `_try_arxiv_shortcut`, using saved HTML and a configured image directory, kept 35 image references but wrote zero image files. These references include UI assets, so 35 is not a figure count.
-- Sanitization followed by real web Pandoc conversion produced 255,877 characters and 16 inline data-image references, including the issue dialog, navigation, footer and funder logos. All 16 sat in chrome outside the paper.
+- Sanitization followed by real web Pandoc conversion produced 255,877 characters and 16 inline data-image references, including the issue dialog, navigation, footer and funder logos. Corrected at audit (2026-10-18): only 5 were chrome (4 UI icons, 1 footer PNG); 11–12 come from inline SVG drawings inside the paper (title graphic, component icons), which Pandoc turns into `data:image/svg+xml` links.
 - Source inspection confirmed there is no shortcut-disable argument. The web fallback already logs a warning, so the original report's claim of completely silent fallback is too broad. That warning is absent from the returned extraction warnings.
 - `extract --check` (`check.py`, `probe_pandoc`) calls `detect_arxiv_id`, `check_arxiv_html` and `convert_arxiv_html` directly, outside the pipeline. It reports "2 chars" because it takes `len()` of the returned `(markdown, bytes)` tuple.
 
