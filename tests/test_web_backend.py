@@ -11,6 +11,7 @@ import pytest
 from agentic_mbse.extraction.base import ExtractionResult
 from agentic_mbse.extraction.http import FetchResult
 from agentic_mbse.extraction.web_backend import (
+    _fallback_pandoc,
     check_web_deps,
     classify_url,
     extract_web_content,
@@ -583,3 +584,18 @@ def test_double_failure_keeps_the_conversion_warning(tmp_path):
     assert result.error == f"No content extracted from {_ARXIV_URL}"
     [warning] = result.warnings
     assert "no recognized arXiv article container" in warning
+
+
+@pytest.mark.parametrize(
+    "pandoc",
+    [
+        pytest.param({"side_effect": FileNotFoundError("pandoc")}, id="missing"),
+        pytest.param(
+            {"return_value": MagicMock(returncode=1, stdout="", stderr="bad")}, id="error"
+        ),
+    ],
+)
+def test_whole_page_fallback_returns_none_on_pandoc_failure(pandoc):
+    """The plain-HTML fallback uses the public runner and its neutral PandocError."""
+    with patch("subprocess.run", **pandoc):
+        assert _fallback_pandoc("<html><body><p>x</p></body></html>") is None

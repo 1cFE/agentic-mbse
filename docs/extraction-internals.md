@@ -307,11 +307,11 @@ Body-text IDs (citations) are never evidence, and Creator metadata is not used. 
 
 **SVG figures.** LaTeXML embeds some figures as `<object type="image/svg+xml" class="ltx_graphics" data="…svg">`, which Pandoc drops. `extract_article` rewrites those objects to `<img>` before anything else touches the slice. The web route's sanitizer deletes every `<object>`, so the web route selects and rewrites from the raw page first and sanitizes only the slice.
 
-**Pandoc configuration** (from Stage 1B's 16-configuration evaluation), in `convert_article`, the only place Pandoc runs for arXiv or the web fallback (`_run_pandoc`):
-- Pre-process: strip `<figure>` tags and CSS transform wrappers (fixes table/figure output)
-- Flags: `-f html-native_divs-native_spans -t markdown-header_attributes --wrap=none --markdown-headings=atx`
-- Post-process: strip `\hspace{0pt}` and HTML comment artifacts
-- Output under 100 characters (`MIN_CONTENT_CHARS`) counts as a failed conversion.
+**Pandoc configuration** (from Stage 1B's 16-configuration evaluation). The command and flags live in `arxiv_html.run_pandoc`, the one Pandoc runner. Both `convert_article` (arXiv, both routes) and the web route's plain-HTML fallback `_fallback_pandoc` call it. It raises the route-neutral `PandocError`, which `convert_article` reports as `ArxivConversionError`.
+- Flags (`run_pandoc`, every call): `-f html-native_divs-native_spans -t markdown-header_attributes --wrap=none --markdown-headings=atx`
+- Pre-process (`convert_article` only): strip `<figure>` tags and CSS transform wrappers (fixes table/figure output)
+- Post-process (`convert_article` only): strip `\hspace{0pt}` and HTML comment artifacts
+- Length check (`convert_article` only): output under 100 characters (`MIN_CONTENT_CHARS`) counts as a failed conversion.
 
 **Images.** `persist_images` resolves each markdown image ref against `ArxivSource.image_base`: the post-redirect page URL (trailing slash dropped on `arxiv.org/html/<id>[vN]/`) or the local file's `file://` URI, with any `<base href>` applied. Each distinct URL is read once (http(s) through `fetch_image`, `file:` copied) and saved under `images/`. A different URL with a taken name becomes `name_2.ext`. Unsaved refs stay byte-identical with one warning each. `data:` URIs are never touched. The PDF route saves only when `extracted_images_dir` is set.
 

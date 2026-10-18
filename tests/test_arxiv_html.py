@@ -22,14 +22,15 @@ from agentic_mbse.extraction.arxiv_html import (
     ArxivSource,
     ImageFetchError,
     ImagePersistResult,
+    PandocError,
     _postprocess_markdown,
     _preprocess_html,
-    _run_pandoc,
     convert_article,
     extract_article,
     fetch_image,
     load_arxiv_html,
     persist_images,
+    run_pandoc,
     select_article,
 )
 from agentic_mbse.extraction.http import USER_AGENT, FetchResult
@@ -114,11 +115,13 @@ class TestSelectArticle:
 
 
 class TestRunPandoc:
+    """The one route-neutral Pandoc runner (design D6), also used for plain web pages."""
+
     @patch("subprocess.run")
     def test_command_carries_conversion_flags(self, mock_run):
         mock_run.return_value = _completed("# out\n")
 
-        assert _run_pandoc("<p>x</p>") == "# out\n"
+        assert run_pandoc("<p>x</p>") == "# out\n"
 
         cmd = mock_run.call_args[0][0]
         assert cmd[0] == "pandoc"
@@ -134,19 +137,22 @@ class TestRunPandoc:
 
     @patch("subprocess.run", side_effect=FileNotFoundError("pandoc"))
     def test_missing_pandoc(self, _run):
-        with pytest.raises(ArxivConversionError, match="Pandoc not found"):
-            _run_pandoc("<p>x</p>")
+        with pytest.raises(PandocError, match="Pandoc not found"):
+            run_pandoc("<p>x</p>")
 
     @patch("subprocess.run", side_effect=subprocess.TimeoutExpired("pandoc", 60))
     def test_timeout(self, _run):
-        with pytest.raises(ArxivConversionError, match="timed out"):
-            _run_pandoc("<p>x</p>")
+        with pytest.raises(PandocError, match="timed out"):
+            run_pandoc("<p>x</p>")
 
     @patch("subprocess.run")
     def test_nonzero_exit(self, mock_run):
         mock_run.return_value = _completed("", returncode=2)
-        with pytest.raises(ArxivConversionError, match="status 2: boom"):
-            _run_pandoc("<p>x</p>")
+        with pytest.raises(PandocError, match="status 2: boom"):
+            run_pandoc("<p>x</p>")
+
+    def test_pandoc_error_is_not_an_arxiv_error(self):
+        assert not issubclass(PandocError, ArxivConversionError)
 
 
 class TestExtractArticle:
@@ -224,8 +230,10 @@ class TestConvertArticle:
 
     @patch("subprocess.run", side_effect=FileNotFoundError("pandoc"))
     def test_missing_pandoc_raises(self, _run):
-        with pytest.raises(ArxivConversionError, match="Pandoc not found"):
+        """The runner's PandocError reaches arXiv callers as ArxivConversionError."""
+        with pytest.raises(ArxivConversionError, match="Pandoc not found") as raised:
             convert_article(_SHORT_ARTICLE)
+        assert isinstance(raised.value.__cause__, PandocError)
 
     @pytest.mark.skipif(shutil.which("pandoc") is None, reason="needs Pandoc")
     def test_real_pandoc_on_fixture(self):

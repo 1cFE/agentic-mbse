@@ -24,11 +24,12 @@ from agentic_mbse.extraction.arxiv_html import (
     MIN_CONTENT_CHARS,
     ArxivConversionError,
     ArxivSource,
-    _run_pandoc,
+    PandocError,
     convert_article,
     extract_article,
     fetch_image,
     persist_images,
+    run_pandoc,
 )
 from agentic_mbse.extraction.base import ExtractionResult, sanitize_filename
 from agentic_mbse.extraction.frontmatter import build_frontmatter, compute_source_hash
@@ -153,8 +154,8 @@ def _is_arxiv_html_url(url: str) -> bool:
 def _fallback_pandoc(html: str) -> str | None:
     """Fallback: convert HTML to markdown via Pandoc if available."""
     try:
-        markdown = _run_pandoc(html)
-    except ArxivConversionError:
+        markdown = run_pandoc(html)
+    except PandocError:
         return None
     return markdown if markdown.strip() else None
 

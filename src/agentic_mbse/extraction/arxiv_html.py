@@ -1,4 +1,4 @@
-"""arXiv HTML to markdown: loading, paper selection and the shared Pandoc runner.
+"""arXiv HTML to markdown: loading, paper selection, Pandoc and image saving.
 
 arXiv serves each paper as one LaTeXML ``<article class="ltx_document">``
 wrapped in site chrome (header, navigation, issue dialog, footers). Selecting
@@ -43,6 +43,10 @@ _ARTICLE_CLOSE_RE = re.compile(r"</article\s*>", re.IGNORECASE)
 _CLASS_ATTR_RE = re.compile(r"""\bclass\s*=\s*(?:"([^"]*)"|'([^']*)')""", re.IGNORECASE)
 _OBJECT_RE = re.compile(r"<object\b([^>]*)>(.*?)</object\s*>", re.IGNORECASE | re.DOTALL)
 _ATTR_RE = re.compile(r'([\w-]+)\s*=\s*"([^"]*)"')
+
+
+class PandocError(Exception):
+    """Pandoc is missing, failed or timed out; ``str(exc)`` is the reason."""
 
 
 class ArxivConversionError(Exception):
@@ -196,10 +200,13 @@ def extract_article(html: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _run_pandoc(html: str, pandoc_path: str = "pandoc") -> str:
+def run_pandoc(html: str, pandoc_path: str = "pandoc") -> str:
     """Convert an HTML document to markdown with Pandoc; return stdout.
 
-    Raises ``ArxivConversionError`` when Pandoc is missing, fails or times out.
+    The one place the Pandoc command and its flags live (design D6). It is
+    route-neutral: arXiv conversion and the web route's plain-HTML fallback
+    both call it. Raises ``PandocError`` when Pandoc is missing, fails or
+    times out.
     """
     with tempfile.NamedTemporaryFile(mode="w", suffix=".html", delete=False, encoding="utf-8") as f:
         f.write(html)
@@ -223,19 +230,17 @@ def _run_pandoc(html: str, pandoc_path: str = "pandoc") -> str:
             timeout=_PANDOC_TIMEOUT_SECONDS,
         )
     except FileNotFoundError as exc:
-        raise ArxivConversionError(
+        raise PandocError(
             f"Pandoc not found at '{pandoc_path}'. Install with: "
             "apt install pandoc (or brew install pandoc)"
         ) from exc
     except subprocess.TimeoutExpired as exc:
-        raise ArxivConversionError(f"Pandoc timed out after {_PANDOC_TIMEOUT_SECONDS}s") from exc
+        raise PandocError(f"Pandoc timed out after {_PANDOC_TIMEOUT_SECONDS}s") from exc
     finally:
         tmp_path.unlink(missing_ok=True)
 
     if result.returncode != 0:
-        raise ArxivConversionError(
-            f"Pandoc exited with status {result.returncode}: {result.stderr.strip()}"
-        )
+        raise PandocError(f"Pandoc exited with status {result.returncode}: {result.stderr.strip()}")
     return result.stdout
 
 
@@ -247,7 +252,11 @@ def convert_article(article: str, pandoc_path: str = "pandoc") -> str:
     when Pandoc fails or the output is shorter than ``MIN_CONTENT_CHARS``.
     """
     document = f"<html><body>{article}</body></html>"
-    markdown = _postprocess_markdown(_run_pandoc(_preprocess_html(document), pandoc_path))
+    try:
+        output = run_pandoc(_preprocess_html(document), pandoc_path)
+    except PandocError as exc:
+        raise ArxivConversionError(str(exc)) from exc
+    markdown = _postprocess_markdown(output)
     if len(markdown) < MIN_CONTENT_CHARS:
         raise ArxivConversionError(
             f"Pandoc output too short ({len(markdown)} chars, minimum {MIN_CONTENT_CHARS})"
