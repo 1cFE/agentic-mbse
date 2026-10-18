@@ -4,6 +4,33 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-18] - Positional-Binding Check
+
+**Type**: Item (`EXEC-SUBSET-CONTRACT` Item 4; branch `positional-binding-check`; orchestrated run, briefs in `20261018_positional-binding-check/briefs/`)
+**Duration**: 0 days (spec created 2026-10-18; closed 2026-10-18)
+
+### Summary
+
+`agentic-mbse validate` L2 now catches an unprefixed calc or constraint input that binds to the definition's parameter by position rather than by name. That is valid SysML, but it gives wrong values, and the routes disagree: for `in b = 3; in a = 10;` against `calc def Sub { in a; in b; return a - b; }`, native SysIDE gives -7 and sysml-codegen `b5663c07` with TEAx gives 7. The check reads SysIDE's resolved redefinitions once in a shared fact layer and applies a pure rule: an input is flagged only when its implied redefinition targets a differently named formal and its own declaration carries no explicit redefinition. Per D1, new mismatches are errors; mismatches pinned in a project-root `positional-pins.toml` are warnings, and only those are exempt from L2's pass rule. Owners whose type, supertype, redefinition or subsetting target does not resolve are reported as unverifiable, never as clean; the audit found the `:>` subsetting case passing silently, and it was fixed with a learning test. On consumer trees, fusion-tea `f96ad312` reproduces exactly the prototype's 125 identities and both dc3 trees give zero; a mutation run and a stale-pin run behave as designed. The semantic-hazard register ships as `docs/patterns/semantic-hazards.md`, and the guidance teaches by-name or definition-order inputs. sysml-codegen's guidance contract passes 9 of 9 against the branch. Independently audited: Certify.
+
+**Promises the product now makes.** [P-0002](../product/0002-positional-binding-check.md): L2 flags positional bindings; new mismatches block, pinned legacy ones warn, an uninspectable owner never reads clean.
+
+**Decision: the pin-list contract.** [AGENT] (ratified: D1 2026-10-15; R4-1 "A is fine" 2026-10-18) [ADR 0002](../adr/0002-positional-pin-list-contract.md). Root-only discovery, exact-identity pins, integrity by review rather than a digest, and one L2 exemption.
+
+**Behaviour found.** SysIDE 0.8.4 points unresolved references at an ownerless placeholder rather than raising; L1 reads only `diagnostics.parser`, so `sema` and `validation` errors pass every level (backlog `VALIDATE-SEMA-DIAGNOSTICS`); anonymous elements get a new random id per load. Recorded in the execution register.
+
+**Open for the owner.** R4-3: fusion-tea adopts the 125-entry pin list in the change that moves its agentic-mbse pin (its L2 already fails on 340 unrelated warnings). The draft finding on codegen's by-name wiring goes to the Item 2 owner.
+
+### Deliverables
+
+- Code: `src/agentic_mbse/sysml/parameter_redefinition_extraction.py` and its fact types; `src/agentic_mbse/validation/{positional_binding.py, positional_pins.py, positional_check.py}`; L2, runner and CLI integration (`--positional-pins`, `--positional-pins-root`); `scripts/positional_binding/`.
+- Tests: `tests/learning/test_syside_input_redefinition.py`, extractor, rule, pin, L2 and CLI tests, `tests/fixtures/positional_binding/` (incl. the fusion-tea pin list built from the prototype log); suite 3947 passed with the 6 failures already on `main`.
+- Docs: `docs/patterns/semantic-hazards.md`; guidance edits in `plant-idiom.md`, the conventions skill, `MODELING_GUIDE.md.template`, `sysml-expert`, and a one-character fix to `MODELING_PROCESS.md.template` restoring codegen's self-named-binding rule.
+- Records: ADR 0002, P-0002, three execution facts.
+- Artifacts: spec, spec-review, design (rev 1), design-review, learning findings, plan, audit, product-lens, evidence, briefs.
+
+---
+
 ## [2026-10-18] - Executable-Subset Profile
 
 **Type**: Item (`EXEC-SUBSET-CONTRACT` Item 1; branch `exec-subset-profile`, not yet merged; orchestrated run, briefs in `20261018_exec-subset-profile/briefs/`)

@@ -162,6 +162,12 @@ class SysideAdapter:
         instantiate), so an exact-type query matches nothing.
       * AttributeUsage / Part* / Calc* sweeps stay exact-type (opt-OUT): no
         supported model needs their subtypes surfaced.
+      * Positional-binding owners (EXEC-SUBSET-CONTRACT Item 4, design D5):
+        ``CalculationUsage``, ``ConstraintUsage``, ``CalculationDefinition`` and
+        ``ConstraintDefinition`` are each swept with ``include_subtypes=True``
+        and de-duplicated by element id, so requirement, case, analysis,
+        verification and ``assert``/``require`` constraint owners are seen
+        (``parameter_redefinition_extraction.py``).
 
     Every ``elements_of_type`` and ``is_instance`` type name is resolved through
     TYPE_MAP; an unmapped name raises ``ValueError`` rather than silently
@@ -199,13 +205,18 @@ class SysideAdapter:
             "Package",
             "PartDefinition",
             "PartUsage",
+            "ActorMembership",
+            "Redefinition",
             "ReferenceUsage",
             "RequirementConstraintMembership",
             "RequirementDefinition",
             "RequirementUsage",
             "ReturnParameterMembership",
             "SatisfyRequirementUsage",
+            "StakeholderMembership",
             "Subclassification",
+            "SubjectMembership",
+            "Subsetting",
         }
     )
 
@@ -254,6 +265,17 @@ class SysideAdapter:
                 # the check becomes hierarchy-aware).
                 "OwningMembership": syside.OwningMembership,
                 "Subclassification": syside.Subclassification,
+                # Positional-binding facts (EXEC-SUBSET-CONTRACT Item 4, D3/D4/D5):
+                # an input's resolved redefinitions, and its role read from the
+                # type of its owning membership.
+                "Redefinition": syside.Redefinition,
+                "SubjectMembership": syside.SubjectMembership,
+                "ActorMembership": syside.ActorMembership,
+                "StakeholderMembership": syside.StakeholderMembership,
+                # An owner's explicit `:>`, `subsets` or `::>` target, checked for an
+                # unresolved placeholder (Item 4 audit Advisory 1). Redefinition and
+                # ReferenceSubsetting are subtypes.
+                "Subsetting": syside.Subsetting,
                 # Expressions
                 "FeatureChainExpression": syside.FeatureChainExpression,
                 "FeatureReferenceExpression": syside.FeatureReferenceExpression,
@@ -299,9 +321,7 @@ class SysideAdapter:
         try:
             return UUID(str(raw))
         except (TypeError, ValueError, AttributeError) as error:
-            raise ValueError(
-                f"{type(element).__name__} has no valid element_id UUID"
-            ) from error
+            raise ValueError(f"{type(element).__name__} has no valid element_id UUID") from error
 
     @staticmethod
     def load_model(paths: list[Path]) -> tuple[Any, Any]:

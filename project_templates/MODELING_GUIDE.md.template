@@ -148,10 +148,13 @@ calc my_calc { in value = other_part.exposed_attr; }
 
 **Calculation input binding** (pick by where the value lives):
 - own part's attribute → make the names differ: `in radius_in = radius;` — never the
-  self-named `in radius = radius`, which binds the input to itself and is refused;
+  self-named `in radius = radius`, which binds the input to itself and is refused. Rename the parameter in the `calc def`, or rename the attribute; renaming only the usage's input leaves it bound by position;
 - another part → name the occurrence path: `in driver_cost = driver.cost;`;
 - owner-qualified → anchors to the exact feature owned by the named usage.
 > [patterns/plant-idiom.md] - "Binding a modelled value into a calculation" is the authoritative rule
+
+**Calculation input order:** an input without `:>>` or `redefines` binds to the definition's parameter at the same position, not by name, so correctly named inputs written out of order swap silently. Bind by name (`in :>> radius_in = radius;`) or keep the definition's order; rename on purpose with `redefines`. Validate level 2 reports it as `L2_POSITIONAL_BINDING`.
+> [patterns/semantic-hazards.md#positional-input-binding]
 
 **Semantic operators** (`=` vs `default :=` vs `:>>`):
 > [patterns/semantic-operators.md] - Critical for correct AST generation

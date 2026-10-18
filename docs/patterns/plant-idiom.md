@@ -73,10 +73,12 @@ conformance test compares them (`test_self_binding_guidance_contract.py`); the
 
 ### The value is an attribute on the part that owns the calculation → make the names differ (D-5)
 
-Rename the calculation input and bind it bare. The bare reference then lands on
+Rename the calculation input in the calculation definition (the `calc def`'s parameter) and bind it bare in the usage. The bare reference then lands on
 the outer attribute, and a public mutation of that attribute reaches the calc.
 This is the ratified form for the local situation and what the migrated
 fusion-tea customer model uses throughout.
+
+Renaming only the usage's input does not rename the parameter. An unprefixed input binds by position, so the new name lands on whatever parameter sits at that position (see [Positional input binding](semantic-hazards.md#positional-input-binding)).
 
 <!-- @pinned fixture=tests/fixtures/fusion_tea/designs/generic_ife/ife_plant.sysml owner-class=n/a outcome=generates -->
 ```sysml
@@ -207,6 +209,21 @@ same-named feature), `self_named_trap` (a covering attribute) and
 not flagged. In the codegen corpus the exact route still refuses `ife_plant`
 (21 self-named bindings) — read it for structure, not for the binding form.
 
+### Input order on a calculation usage
+
+An input written without `:>>` or `redefines` binds to the definition's parameter at the same position, not to the parameter with the same name (KerML `checkFeatureParameterRedefinition`). Written out of order, correctly named inputs swap silently: the model stays valid and evaluates to a different number. Bind by name with `:>>`, or write the inputs in the definition's order; to give an input its own name on purpose, use `redefines`. Validate level 2 reports an out-of-order input as `L2_POSITIONAL_BINDING`. The full entry, including where the native and generated routes disagree, is [Positional input binding](semantic-hazards.md#positional-input-binding).
+
+<!-- @positional-example expect="none" -->
+```sysml
+calc def Sub { in a : Real; in b : Real; return r : Real = a - b; }
+part p {
+    attribute big : Real = 10.0;
+    attribute small : Real = 3.0;
+    calc by_name : Sub { in :>> b = small; in :>> a = big; }
+    calc in_order : Sub { in a = big; in b = small; }
+}
+```
+
 ## Retyping to pull in a subtype's calcs (D2)
 
 A design may retype a nested part usage to a subtype to pull in the subtype's template
@@ -295,7 +312,7 @@ part hif_plant : 'IFE Power Plant' {
 
 **(d) In-part inherited-attr redefine.** A calc binds an inherited attribute
 (`in flow_rate = throughput`), and the same def redefines that attribute below the binding.
-Order does not matter — the redefine is seen even when it sits after the binding.
+Here order does not matter: the redefine is seen even when it sits after the binding. This is about where the `:>>` sits relative to the binding. The order of a calculation usage's inputs does matter (see [Input order on a calculation usage](#input-order-on-a-calculation-usage)).
 
 ```sysml
 part def 'Flow Sub' :> 'Flow Base' {       // 'Flow Base' declares `throughput`
@@ -431,6 +448,7 @@ two-hop shape).
 ## Related
 
 - `expose-pattern.md` — EXPOSE surfacing details.
+- `semantic-hazards.md` — positional input binding and other valid SysML that reads one way and means another.
 - `semantic-operators.md` — `:>` vs `:>>` vs `=`, redefinition precedence, the bare-`:>>`
   value idiom.
 - `adr002-calculations.md` — inline FORMULA vs calc def, and which derived expressions

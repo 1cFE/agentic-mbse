@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
+from agentic_mbse.validation.positional_check import is_pinned_positional_warning
 
 if TYPE_CHECKING:
     from agentic_mbse.sysml.types import ValidationIssue
@@ -64,6 +65,12 @@ class AggregatedResult:
     def overall_success(self) -> bool:
         return self.failed == 0
 
+    @property
+    def pinned_note(self) -> str:
+        """The note for the pinned positional warnings across every level run, or "" if none."""
+        pinned = sum(pinned_positional_warnings(result) for result in self.results)
+        return pinned_note(pinned) if pinned else ""
+
 
 # ===== File Discovery =====
 
@@ -115,7 +122,7 @@ def load_sysml_model(files: list[Path]) -> tuple[Any, Any]:
 
 def print_header(title: str, level: int) -> None:
     """Print formatted section header"""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Level {level}: {title}")
     print("=" * 60)
 
@@ -127,7 +134,7 @@ def print_result(result: QualityCheckResult) -> None:
     Reuses output formatting conventions from existing scripts
     """
     symbol = "✅" if result.success else "❌"
-    print(f"\n{symbol} Level {result.level}: {result.level_name}")
+    print(f"\n{symbol} Level {result.level}: {result.level_name}{_pinned_note(result)}")
 
     # Print metrics if present
     if result.metrics:
@@ -151,17 +158,31 @@ def print_result(result: QualityCheckResult) -> None:
             print(f"   ... and {len(result.warnings) - 3} more")
 
 
+def pinned_positional_warnings(result: QualityCheckResult) -> int:
+    """How many of the level's issues are pinned positional warnings (design D1)."""
+    return sum(1 for issue in result.structured_issues if is_pinned_positional_warning(issue))
+
+
+def pinned_note(pinned: int) -> str:
+    """What a pass that rests on pinned positional warnings must say about them."""
+    return f"{pinned} pinned positional warnings; not a value or route-parity check"
+
+
+def _pinned_note(result: QualityCheckResult) -> str:
+    """The header's note when a level passes with pinned positional warnings."""
+    pinned = pinned_positional_warnings(result)
+    if not (result.success and pinned):
+        return ""
+    return f" ({pinned_note(pinned)})"
+
+
 # ===== Element Analysis Helpers =====
 
 
 def get_qualified_name(element: Any) -> str:
     """Get qualified name of element for error reporting"""
     try:
-        return (
-            str(element.qualified_name)
-            if hasattr(element, "qualified_name")
-            else str(element)
-        )
+        return str(element.qualified_name) if hasattr(element, "qualified_name") else str(element)
     except Exception:
         return f"<unnamed {type(element).__name__}>"
 

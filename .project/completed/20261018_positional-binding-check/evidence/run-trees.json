@@ -1,0 +1,427 @@
+{
+  "agentic_mbse": {
+    "base_revision": "ccd57d831aa8c63d29768793627e640d2f54dc1f",
+    "revision": "b2bb99bbe92f209859c7fc3c8b102aee47cc9895"
+  },
+  "baseline": "tests/fixtures/positional_binding/baselines/fusion-tea-f96ad312.toml",
+  "checks": [
+    {
+      "detail": "/tmp/positional-trees-m810mpfm/agentic-mbse-base/src/agentic_mbse/__init__.py",
+      "name": "Run 0 imports agentic_mbse from the archived base",
+      "ok": true
+    },
+    {
+      "detail": "none (looked at /tmp/positional-trees-m810mpfm/fusion-tea/positional-pins.toml)",
+      "name": "Run 1 finds no pin list",
+      "ok": true
+    },
+    {
+      "detail": "340 vs 340",
+      "name": "Run 1's non-positional issues equal Run 0's issues",
+      "ok": true
+    },
+    {
+      "detail": "added 0, missing 0, changed target 0",
+      "name": "Run 2 identities equal the prototype's 125",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "Run 2: 125 WARNINGs",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "Run 2: 0 positional ERRORs",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "Run 2: 0 unverifiable",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "Run 2: 0 stale",
+      "ok": true
+    },
+    {
+      "detail": "7654",
+      "name": "Run 2 inspects inputs (Insp-3)",
+      "ok": true
+    },
+    {
+      "detail": "/tmp/positional-trees-m810mpfm/fusion-tea-discovery/positional-pins.toml (pin root /tmp/positional-trees-m810mpfm/fusion-tea-discovery; recorded against f96ad312c63e8c66695971b12feab971f3ba6eb3 on 2026-10-15; 125 pins)",
+      "name": "Run 3 discovers the root pin list",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "Run 3 equals Run 2",
+      "ok": true
+    },
+    {
+      "detail": "[('aries_integrated_plant::source::evaluate', 'calculated_power_in', \"integrated_heat_electricity::'Fusion Source Selector'::reference_power_in\"), ('aries_integrated_plant::source::evaluate', 'reference_power_in', \"integrated_heat_electricity::'Fusion Source Selector'::calculated_power_in\")]",
+      "name": "mutation: one or more new ERROR identities",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "mutation: L2 fails",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "mutation: pin list unchanged",
+      "ok": true
+    },
+    {
+      "detail": "Positional pin aries_constituent_inventory::behind_divertor::recipe | fraction_1_in | sector_constituent_inventory::'Three Constituent Recipe Summary'::fraction_2_in (models/designs/aries_cs_transfer/constituent_inventory.sysml:138) matches no finding: no such finding in the validated files. If the binding was repaired, remove the pin; a pin records only a mismatch that existed at the list's recorded_against revision",
+      "name": "stale: exactly that pin is stale",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "stale: every other pin matched",
+      "ok": true
+    },
+    {
+      "detail": "{}",
+      "name": "stale: no new ERROR of any other L2 code",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "stale: L2 fails",
+      "ok": true
+    },
+    {
+      "detail": "0",
+      "name": "dc3 808464d: 0 findings",
+      "ok": true
+    },
+    {
+      "detail": "0",
+      "name": "dc3 808464d: 0 unverifiable",
+      "ok": true
+    },
+    {
+      "detail": "357",
+      "name": "dc3 808464d: inspects inputs (Insp-3)",
+      "ok": true
+    },
+    {
+      "detail": "0",
+      "name": "dc3 60b44d5: 0 findings",
+      "ok": true
+    },
+    {
+      "detail": "0",
+      "name": "dc3 60b44d5: 0 unverifiable",
+      "ok": true
+    },
+    {
+      "detail": "528",
+      "name": "dc3 60b44d5: inspects inputs (Insp-3)",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "fusion-tea HEAD and status unchanged (I7)",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "dc3 HEAD and status unchanged (I7)",
+      "ok": true
+    },
+    {
+      "detail": "",
+      "name": "sysml-codegen HEAD and status unchanged (I7)",
+      "ok": true
+    }
+  ],
+  "dc3": {
+    "60b44d5": {
+      "issues_by_code": {},
+      "metrics": {
+        "Positional bindings (blocking)": 0,
+        "Positional bindings pinned (legacy warning)": 0,
+        "Positional input outcomes": "explicit 0, anonymous 0, implicit_matching 391, implicit_mismatch 0, new_parameter 137, special_parameter 0, anonymous_target 0",
+        "Positional inputs inspected": 528,
+        "Positional pin list": "none (looked at /tmp/positional-trees-m810mpfm/dc3-60b44d5/positional-pins.toml)",
+        "Positional pins not judged (inspection failed)": 0,
+        "Positional pins out of scope": 0,
+        "Positional pins stale": 0,
+        "Positional unverifiable": 0
+      },
+      "outcomes": {
+        "anonymous": 0,
+        "anonymous_target": 0,
+        "explicit": 0,
+        "implicit_matching": 391,
+        "implicit_mismatch": 0,
+        "new_parameter": 137,
+        "special_parameter": 0
+      },
+      "positional_issues": [],
+      "prototype_implicit_matching": 391,
+      "revision": "60b44d53460fccd2f44811d8abfd42bc270e90b2",
+      "success": true
+    },
+    "808464d": {
+      "issues_by_code": {},
+      "metrics": {
+        "Positional bindings (blocking)": 0,
+        "Positional bindings pinned (legacy warning)": 0,
+        "Positional input outcomes": "explicit 0, anonymous 0, implicit_matching 302, implicit_mismatch 0, new_parameter 55, special_parameter 0, anonymous_target 0",
+        "Positional inputs inspected": 357,
+        "Positional pin list": "none (looked at /tmp/positional-trees-m810mpfm/dc3-808464d/positional-pins.toml)",
+        "Positional pins not judged (inspection failed)": 0,
+        "Positional pins out of scope": 0,
+        "Positional pins stale": 0,
+        "Positional unverifiable": 0
+      },
+      "outcomes": {
+        "anonymous": 0,
+        "anonymous_target": 0,
+        "explicit": 0,
+        "implicit_matching": 302,
+        "implicit_mismatch": 0,
+        "new_parameter": 55,
+        "special_parameter": 0
+      },
+      "positional_issues": [],
+      "prototype_implicit_matching": 302,
+      "revision": "808464df85d50521e4fbb9ba7cceb63d382aa832",
+      "success": true
+    }
+  },
+  "fusion_tea": {
+    "found_identities": 125,
+    "identity_difference": {
+      "added": [],
+      "changed_target": [],
+      "missing": []
+    },
+    "mutation": {
+      "after": {
+        "issues_by_code": {
+          "L2_POSITIONAL_BINDING error": 2,
+          "L2_POSITIONAL_BINDING warning": 125,
+          "LITERAL_BINDING warning": 331,
+          "UNUSED_DEFINITION warning": 9
+        },
+        "success": false
+      },
+      "before": {
+        "issues_by_code": {
+          "L2_POSITIONAL_BINDING warning": 125,
+          "LITERAL_BINDING warning": 331,
+          "UNUSED_DEFINITION warning": 9
+        },
+        "success": false
+      },
+      "new_error_identities": [
+        [
+          "aries_integrated_plant::source::evaluate",
+          "calculated_power_in",
+          "integrated_heat_electricity::'Fusion Source Selector'::reference_power_in"
+        ],
+        [
+          "aries_integrated_plant::source::evaluate",
+          "reference_power_in",
+          "integrated_heat_electricity::'Fusion Source Selector'::calculated_power_in"
+        ]
+      ],
+      "site": {
+        "definition": "'Fusion Source Selector'",
+        "file": "models/designs/aries_cs_integrated/plant.sysml",
+        "first_input_line": 20,
+        "names": [
+          "calculated_power_in",
+          "reference_power_in"
+        ],
+        "usage_line": 19
+      }
+    },
+    "outcome_difference_from_prototype": {},
+    "outcomes": {
+      "anonymous": 0,
+      "anonymous_target": 0,
+      "explicit": 0,
+      "implicit_matching": 5573,
+      "implicit_mismatch": 125,
+      "new_parameter": 1956,
+      "special_parameter": 0
+    },
+    "reference_identities": 125,
+    "revision": "f96ad312c63e8c66695971b12feab971f3ba6eb3",
+    "run0_without_check": {
+      "agentic_mbse_file": "/tmp/positional-trees-m810mpfm/agentic-mbse-base/src/agentic_mbse/__init__.py",
+      "issues_by_code": {
+        "LITERAL_BINDING warning": 331,
+        "UNUSED_DEFINITION warning": 9
+      },
+      "success": false
+    },
+    "run1_check_no_pins": {
+      "issues_by_code": {
+        "L2_POSITIONAL_BINDING error": 125,
+        "LITERAL_BINDING warning": 331,
+        "UNUSED_DEFINITION warning": 9
+      },
+      "metrics": {
+        "Positional bindings (blocking)": 125,
+        "Positional bindings pinned (legacy warning)": 0,
+        "Positional input outcomes": "explicit 0, anonymous 0, implicit_matching 5573, implicit_mismatch 125, new_parameter 1956, special_parameter 0, anonymous_target 0",
+        "Positional inputs inspected": 7654,
+        "Positional pin list": "none (looked at /tmp/positional-trees-m810mpfm/fusion-tea/positional-pins.toml)",
+        "Positional pins not judged (inspection failed)": 0,
+        "Positional pins out of scope": 0,
+        "Positional pins stale": 0,
+        "Positional unverifiable": 0
+      },
+      "notes": [
+        "find_project_root from the export's models/: /tmp/positional-trees-m810mpfm/fusion-tea"
+      ],
+      "pin_list": "none (looked at /tmp/positional-trees-m810mpfm/fusion-tea/positional-pins.toml)",
+      "success": false
+    },
+    "run2_check_with_pins": {
+      "issues_by_code": {
+        "L2_POSITIONAL_BINDING warning": 125,
+        "LITERAL_BINDING warning": 331,
+        "UNUSED_DEFINITION warning": 9
+      },
+      "metrics": {
+        "Positional bindings (blocking)": 0,
+        "Positional bindings pinned (legacy warning)": 125,
+        "Positional input outcomes": "explicit 0, anonymous 0, implicit_matching 5573, implicit_mismatch 125, new_parameter 1956, special_parameter 0, anonymous_target 0",
+        "Positional inputs inspected": 7654,
+        "Positional pin list": "/home/reid/src/agentic-mbse/tests/fixtures/positional_binding/baselines/fusion-tea-f96ad312.toml (pin root /tmp/positional-trees-m810mpfm/fusion-tea; recorded against f96ad312c63e8c66695971b12feab971f3ba6eb3 on 2026-10-15; 125 pins)",
+        "Positional pins not judged (inspection failed)": 0,
+        "Positional pins out of scope": 0,
+        "Positional pins stale": 0,
+        "Positional unverifiable": 0
+      },
+      "success": false
+    },
+    "run3_discovery": {
+      "issues_by_code": {
+        "L2_POSITIONAL_BINDING warning": 125,
+        "LITERAL_BINDING warning": 331,
+        "UNUSED_DEFINITION warning": 9
+      },
+      "notes": [
+        "project-root markers in the export: ['work/BACKLOG.md', '.agentic-mbse/install.json', '.claude']",
+        "created work/BACKLOG.md: False"
+      ],
+      "pin_list": "/tmp/positional-trees-m810mpfm/fusion-tea-discovery/positional-pins.toml (pin root /tmp/positional-trees-m810mpfm/fusion-tea-discovery; recorded against f96ad312c63e8c66695971b12feab971f3ba6eb3 on 2026-10-15; 125 pins)",
+      "success": false
+    },
+    "stale": {
+      "after": {
+        "issues_by_code": {
+          "L2_POSITIONAL_BINDING warning": 124,
+          "L2_POSITIONAL_PIN_STALE error": 1,
+          "LITERAL_BINDING warning": 331,
+          "UNUSED_DEFINITION warning": 9
+        },
+        "success": false
+      },
+      "site": {
+        "after": "            in :>> fraction_1_in = lipb.volume_fraction;",
+        "before": "            in fraction_1_in = lipb.volume_fraction;",
+        "file": "models/designs/aries_cs_transfer/constituent_inventory.sysml",
+        "identity": [
+          "aries_constituent_inventory::behind_divertor::recipe",
+          "fraction_1_in",
+          "sector_constituent_inventory::'Three Constituent Recipe Summary'::fraction_2_in"
+        ],
+        "line": 138
+      },
+      "stale_messages": [
+        "Positional pin aries_constituent_inventory::behind_divertor::recipe | fraction_1_in | sector_constituent_inventory::'Three Constituent Recipe Summary'::fraction_2_in (models/designs/aries_cs_transfer/constituent_inventory.sysml:138) matches no finding: no such finding in the validated files. If the binding was repaired, remove the pin; a pin records only a mismatch that existed at the list's recorded_against revision"
+      ]
+    },
+    "unpinnable_findings": 0
+  },
+  "siblings": {
+    "dc3": "60b44d53460fccd2f44811d8abfd42bc270e90b2",
+    "fusion-tea": "f96ad312c63e8c66695971b12feab971f3ba6eb3",
+    "sysml-codegen": "8396cb230448ea151b08e2d5bb55d65817261cef"
+  },
+  "skipped_absolute_links": {
+    "agentic-mbse@ccd57d83": [],
+    "dc3@60b44d53": [],
+    "dc3@808464df": [],
+    "fusion-tea@f96ad312": [
+      ".project/active/aries-comparison-preparation/current-readiness/revealed-results/c0/selected-forward/native/pkg_link/stellarator_tea -> /tmp/aries-r3-execution-20260920/exploration/stellarator_e2e/generated",
+      ".project/active/aries-comparison-preparation/current-readiness/revealed-results/c0/table5-conditioned/native/pkg_link/stellarator_tea -> /tmp/aries-r3-execution-20260920/exploration/stellarator_e2e/generated",
+      ".project/active/aries-comparison-preparation/package/selected-mode/native/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      ".project/active/aries-comparison-preparation/package/table5-conditioned/native/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/audit-evidence/controls/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/audit-evidence/metadata/execution/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/audit-evidence/native/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/audit-evidence/native/schema-link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/implementation/controls-complete/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/implementation/controls-final/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/implementation/controls/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/implementation/native/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/implementation/native/schema-link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "archive/models/tests/solar_battery/costing.sysml -> /home/reid/1cfe/fusion-tea/models/library/foundation/costing.sysml",
+      "exploration/aries_integrated/studies/20260922-aries-integrated-cost-uncertainty/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260922-aries-integrated-cost-uncertainty/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260922-aries-integrated-equipment-costs/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260922-aries-integrated-lcoe/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260922-aries-integrated-lcoe/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-flow-scaling-check/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-flow-scaling-check/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-reconciled-alternative-economics/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-reconciled-alternative-economics/results-attempt1/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-reconciled-alternative-economics/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-reference-heat-electricity-reconciliation/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-revised-reference-network/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-revised-reference-network/results-attempt1/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-revised-reference-network/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260926-aries-design-choice-interactions/preparation-r1/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260926-aries-design-choice-interactions/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260926-aries-design-choice-interactions/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/costed_loop_brayton/links/costed_loop_brayton_tea -> /home/reid/1cfe/fusion-tea/exploration/costed_loop_brayton/costed_loop_brayton_tea",
+      "exploration/costed_loop_brayton/studies/20260926-design-study-parameters-b/preparation/_work/pkg_link/costed_loop_brayton_tea -> /home/reid/1cfe/fusion-tea/exploration/costed_loop_brayton/costed_loop_brayton_tea",
+      "exploration/costed_loop_brayton/studies/20260926-design-study-parameters-b/results/native/pkg_link/costed_loop_brayton_tea -> /home/reid/1cfe/fusion-tea/exploration/costed_loop_brayton/costed_loop_brayton_tea",
+      "exploration/costed_loop_brayton/studies/20260926-design-study-parameters/preparation/_work/pkg_link/costed_loop_brayton_tea -> /home/reid/1cfe/fusion-tea/exploration/costed_loop_brayton/costed_loop_brayton_tea",
+      "exploration/costed_loop_brayton/studies/20260926-design-study-parameters/results/native/pkg_link/costed_loop_brayton_tea -> /home/reid/1cfe/fusion-tea/exploration/costed_loop_brayton/costed_loop_brayton_tea",
+      "exploration/exp_spike/pkg/exp_toy_tea -> /home/reid/1cfe/fusion-tea/exploration/exp_spike/generated",
+      "exploration/pipeline_spike/pkg/solar_battery_tea -> /home/reid/1cfe/fusion-tea/exploration/pipeline_spike/generated",
+      "exploration/stellarator_e2e/studies/20260916-bounded-feasibility-transfer/results/entry-model-inspection/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "exploration/stellarator_e2e/studies/20260916-stellaris-reference-reconciliation/results/entry-model-inspection/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "exploration/stellarator_e2e/studies/20260918-computed-tritium-breeding/results/entry-model-inspection/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/active/WI-052_mfe-financial-rate-limits/prototype/link/wi052_probe -> /tmp/fusion-mfe-financial-rate-limits/work/active/WI-052_mfe-financial-rate-limits/prototype/generated",
+      "work/active/WI-054_faithful-model-equations-and-citations/evidence/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/active/WI-055_winding-pack-input-domain/evidence/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/active/WI-056_primary-loop-heat-capacity-domain/evidence/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/active/WI-059_coil-thermal-and-total-support-inventory/evidence/native-baseline/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/active/WI-059_coil-thermal-and-total-support-inventory/evidence/offdesign-work-r2/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/active/WI-059_coil-thermal-and-total-support-inventory/evidence/offdesign-work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/analysis/20260913-winding-completion-audit/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/absolute-conductor-current-margin/evidence/T-004_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-025_pin/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-033_integration/_work/pkg_link/stellarator_tea -> /tmp/fusion-mfe-financial-rate-limits/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-037_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-041_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-044_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-050_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/magnet-coil-realism/evidence/T-002_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/magnet-coil-realism/evidence/T-007_integration-r2/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/magnet-coil-realism/evidence/T-007_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/magnet-design-transfer/evidence/T005-integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/stellaris-reference-reconciliation/evidence/T-004_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/stellaris-reference-reconciliation/evidence/T-007_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/tape-procurement-consistency/evidence/T-006_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/winding-pack-casing-fit/evidence/T-004_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated"
+    ]
+  },
+  "syside": "0.8.4"
+}
