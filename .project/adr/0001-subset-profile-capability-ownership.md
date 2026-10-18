@@ -27,7 +27,7 @@ agentic-mbse owns the declared executable-subset contract (the versioned, eviden
 ## Invariants established
 
 1. The contract reports any outcome other than `unconfirmed` only with retained evidence: a probe of the pinned generator whose observed code matches, or a corpus citation for `admitted`.
-2. Pairs without evidence report `unconfirmed`; missing facts report `unverified`; only verdict `CLEAR` is clean.
+2. Pairs without evidence report `unconfirmed`; missing facts report `unverified`; only verdict `CLEAR` is clean, and `CLEAR` is relative to the implemented rules: it does not mean the model will generate (refusal families without a rule, such as deep-qualified wiring, are listed in the matrix).
 3. No agentic-mbse module imports sysml-codegen; `SI_*` codes appear only as evidence.
 4. The invocation allowlist (`sysml/invocation_allowlist.py`) is the one capability decision reached from the fact layer; changing it changes `SUBSET_PROFILE_VERSION`.
 5. Ground truth is the pinned generator until EXEC-SUBSET-CONTRACT Item 2. After Item 2 it is Item 2's independent corpus: elaboration with the contract screen bypassed.
