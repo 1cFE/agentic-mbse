@@ -1,6 +1,6 @@
 # Implementation Plan: Executable-subset capability contract (EXEC-SUBSET-CONTRACT Item 1)
 
-**Status:** In Progress (Phases 1–5 complete)
+**Status:** In Progress (Phases 1–6 complete)
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `exec-subset-profile` (plan written at `1ff91e07`; `src/`, `tests/`, `scripts/` and `pyproject.toml` are unchanged since the design base `a718efec`)
@@ -449,21 +449,21 @@ def test_evaluator_reproduces_probe(probe):
 
 **See design for:** [Appendix C](design.md#appendix-c--probe-list-initial) entries for these five rules and "Candidates, reproduction only"; [D12](design.md#key-decisions); spec [admitted neighbors list](spec.md#rule-records-and-evaluator).
 
-- [ ] Author each Appendix C probe for the five rules under `tests/fixtures/subset_profile/probes/`. Each declares its construct's line range; each admitted probe declares a positive control. Re-run every superseded prototype fixture through the harness (D9).
-- [ ] Commit, run `probe.py run` for the new probes, and judge.
-- [ ] For each certified probe, add its admission to `subset_profile_rules.toml`. For each rule, the refused pairs and their admitted-context pairs land together. Use SA-1's `no_admitted_context` for `calc-owned-assertion/asserted_constraint` under a calc-def owner, and for `indexed-reference` only if its calc-result probe refuses.
-- [ ] Candidate reproductions (ES-002, ES-008, ES-009, ES-010 refusal side): one probe each with `kind = "reproduction"`. They add no record admission. Record "reproduced" or "not reproduced" for R3.
-- [ ] `tests/test_sysml/test_subset_profile_rules_modelwide.py` (NEW): the stencil, plus the prototype admitted neighbors that belong to these rules (part-owned assert, explicit multiply, arithmetic `min`, numeric value).
-- [ ] Update `evidence_status` per rule.
+- [x] Author each Appendix C probe for the five rules under `tests/fixtures/subset_profile/probes/`. Each declares its construct's line range; each admitted probe declares a positive control. Re-run every superseded prototype fixture through the harness (D9).
+- [x] Commit, run `probe.py run` for the new probes, and judge.
+- [x] For each certified probe, add its admission to `subset_profile_rules.toml`. For each rule, the refused pairs and their admitted-context pairs land together. Use SA-1's `no_admitted_context` for `calc-owned-assertion/asserted_constraint` under a calc-def owner, and for `indexed-reference` only if its calc-result probe refuses.
+- [x] Candidate reproductions (ES-002, ES-008, ES-009, ES-010 refusal side): one probe each with `kind = "reproduction"`. They add no record admission. Record "reproduced" or "not reproduced" for R3.
+- [x] `tests/test_sysml/test_subset_profile_rules_modelwide.py` (NEW): the stencil, plus the prototype admitted neighbors that belong to these rules (part-owned assert, explicit multiply, arithmetic `min`, numeric value).
+- [x] Update `evidence_status` per rule.
 
 ### Validation
 
 **Automated:**
-- [ ] New tests and `test_subset_probe_evidence.py` pass. Standing checks green.
+- [x] New tests and `test_subset_probe_evidence.py` pass. Standing checks green.
 
 **Manual:**
-- [ ] Each refused probe's observed code and location match; each admitted probe's control appears.
-- [ ] R2 check: any refused probe that exits 0 follows the [R2 surfacing map](#r2-surfacing-map).
+- [x] Each refused probe's observed code and location match; each admitted probe's control appears.
+- [x] R2 check: any refused probe that exits 0 follows the [R2 surfacing map](#r2-surfacing-map).
 
 **Done when:** every refused pair of these five rules has a certified probe and an admitted-context probe (or SA-1 statement), and the evaluator reproduces each on its own fixture. Traces to spec "Every refusal has a probe record", "Every refused shape has an admitted-context probe" (the ES-005 `max(a, b)` and ES-006 conditional calc-result cases), "Each implemented rule has refused and admitted fixtures".
 
@@ -972,6 +972,50 @@ No content is asserted yet; that is Phase 10. The recorded parity run was repeat
 - **"Pure" tests import SysIDE indirectly** through `IdentifiedConstraintFacts` (defined in `constraint_extraction`). They load no model and need no license. The decision module itself stays SysIDE-free (hygiene test).
 
 ### Phase 6 Completion
+**Completed:** 2026-10-18. Probes authored at `47614c26`, run there (`run --all`, 33 of 34 certified first time); records at `2a37a9c4`.
+
+**Outcome:** every refused pair of the five model-wide rules has a certified probe and an admitted-context probe, or (asserted calc-owned constraints) an SA-1 statement, and the evaluator reproduces each on its own model. **No R2:** no refused probe was admitted. 23 certified probes are cited by the records; 5 controls and 6 candidate reproductions certify and are not cited.
+
+| Rule / shape | Refused (probe-observed) | Admitted (probe-observed) | Unconfirmed |
+|---|---|---|---|
+| `calc-owned-assertion/asserted_constraint` | `calc_definition_owner`, `calc_usage_owner` | none; SA-1 statement (`elaborate.py:1625`, `:794-820`) | — |
+| `calc-owned-assertion/non_asserted_constraint` | `calc_usage_owner` | `calc_definition_owner` | — |
+| `indexed-reference/indexed_reference` | `attribute_value`, `binding_value`, `calc_definition_feature_value`, `constraint_predicate` | `other_expression_site` | `calc_result_expression` |
+| `invocation-callable/unsupported_callable` | same four (`attribute_value` by `product`, `size` and `max`) | `other_expression_site` | `calc_result_expression` |
+| `conditional-expression/conditional_unresolved_branch` | same four | `other_expression_site` | `calc_result_expression` |
+| `conditional-expression/conditional_resolved_branches` | — | — | every context |
+| `string-value-omission/string_value` | — | omitted at `attribute_value`, both spellings | — |
+
+Candidate reproductions (for R3, `kind = "reproduction"`, no record cites them):
+
+| Candidate | Result | Observed |
+|---|---|---|
+| ES-002, constraint binding a calc usage's input (dc3 U5) | reproduced | `SI_OCCURRENCE_MISSING` at the binding, "semantic owner kind 'CalculationUsage' cannot anchor containment" |
+| ES-008, named subsets nested in named subsets (dc3 U2) | reproduced, in one of five spellings | `SI_REDEFINITION_INVALID` "incomparable value writers", only when the nested subsets each redefine a value (`psu.efficiency`); plain nested subsets with exact multiplicities generate |
+| ES-009, composition by subsetting a top-level usage (dc3 U6) | reproduced | `SI_OCCURRENCE_MISSING` "exact owner address has no target" on `facility.area` |
+| ES-010 refusal side, a String bound to a calc input | reproduced | `SI_RENDERING_COLLISION` at projection ("the public EntryPoint seam cannot carry non-numeric default") |
+| A calc def whose result is a bare expression (new) | reproduced, arithmetic and `max` | `SI_EVIDENCE_INCOMPLETE` "extracted with zero output attributes", whatever the expression holds |
+
+**Actual Changes:**
+- 30 probe directories under `tests/fixtures/subset_profile/probes/` (23 record, 1 new control per model-wide neighbor plus the existing explicit-multiply control, 6 reproductions). Prototype fixtures re-run through the harness (D9): `es001_refused_calc_def_assert`, `es001_refused_calc_usage_assert`, `es001_admitted_part_assert`, `es005_refused_product`, `es005_refused_size`, `es006_admitted_arithmetic_min`, `es010_admitted_numeric_value`, `es010_refused_string_calc_input`. The others are Phase 7's or were Phase 1's.
+- `subset_profile_rules.toml`: the admissions above; `verified_against.agentic_rev = 47614c26`; the observed limits written into each site rule's `semantic_limits` and the String rule's.
+- Judge: a refusal gate may have several colon-free segments (the projection gate is "Code generation failed: exact graph projection failed:"). Only the ES-010 reproduction's verdict changed under the fix; it was re-run at `2a37a9c4` and certifies.
+- `tests/test_sysml/test_subset_profile_rules_modelwide.py` (35): each record probe of the five rules reproduced at its construct; each control draws no finding of its rule and no refusal; no rule refuses a candidate reproduction; the calc-usage-owned constraint is reported on the constraint; both String spellings omitted.
+- `AWAITING_ADMITTED_PARTNER` now holds only the binding-source smoke probe.
+- Occurrence parity re-recorded at `b2d5768d` (the port gained constraint attachments in Phase 5): 73 of 73 match (`evidence/occurrence-parity.log`).
+
+**Validation:** `pytest tests/` 3194 pass, the same 3 environment failures; `ruff check src/ tests/` 118; `mypy src/` 97 in 19 files; touched files clean (`ruff check`, `ruff format --check`; `mypy --strict` on the profile and judge). Sibling `git status` unchanged (the harness checks codegen before and after each run).
+
+**Issues and corrections (M5 direction, not R2):**
+- **`calc_result_expression` is not an admitted stub context.** The design (F4, code-read) and the spec's minimum admitted set expected `max(a, b)` and a conditional as a calc def's bare result expression to become a handwritten stub. At `b5663c07` every calc def whose result is a bare expression is refused, with or without a declared `return` feature, because the extractor finds no output (the two `candidate-calc-result-expression` probes). That refusal is not ES-005's or ES-006's, so it cannot be recorded as their refusal either (the code differs). The context stays `unconfirmed` for all three site rules. The admitted context the probes did find is a calc **usage**'s bare result expression (`other_expression_site`), which the generator never examines and silently drops. Spec criterion "Every refused shape has an admitted-context probe" is met through that context; the spec's two named calc-def examples are the corrected ones, recorded here for the owner.
+- **A silent drop worth R3's attention:** a calc usage's bare result expression produces nothing in the generated output and no diagnostic.
+- **The ES-010 refusal side:** on its reproduction model the evaluator reports the String `omitted` while the generator refuses the model. The refusal side is a candidate (D11), so this is the known gap, not a rule error; it is in the String record's `semantic_limits` and goes to R3.
+- **A refused conditional or invocation leaves `indexed-reference` unverified on the same site** (the shared reference walk failed). Honest, and every model with such a site is `INCOMPLETE`.
+- ES-001 calc-usage owner: the generator locates the refusal at the owner's line, so those probes' construct ranges include the owner.
+
+**Deviations from Plan:**
+- Probe IDs for candidates use rule names `candidate-es-002`, `candidate-es-008`, `candidate-es-009`, `candidate-es-010-refusal`, `candidate-calc-result-expression`, since the `rule__shape__context` scheme needs a rule slot and these are not rules.
+- Controls rather than admissions for the prototype neighbors (decided in Phase 5).
 
 ### Phase 7 Completion
 
