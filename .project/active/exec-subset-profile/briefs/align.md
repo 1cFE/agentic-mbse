@@ -28,3 +28,5 @@
 ## Gate outcomes
 
 - **R1 (2026-10-18):** owner chose Option A, end condition (ii), with the ADR 0012 amendment (reply "A (ii)"). Recorded in `design.md` § R1.
+- **R3 (2026-10-18):** owner approved the disposition table as a whole ("agreed on all"), with nonunique/negative_bound retired and an Item 2 split to consider. `evidence/r3-proposal.md`.
+- **Owner calls at close (2026-10-18):** B8 `unconfirmed` accepted; ADR 0012 amendment filed when Item 1 merges; G1/G2 to Item 2 with a `kerml-expert` semantics check (and a G2 probe) before any codegen fix, which would be a deliberate capability change.
