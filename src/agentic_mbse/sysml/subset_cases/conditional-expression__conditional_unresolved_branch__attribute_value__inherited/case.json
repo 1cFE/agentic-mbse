@@ -1,0 +1,29 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      6,
+      6
+    ],
+    "description": "Base::low valued by if x < y ? x else y, inherited by Site and instantiated through it"
+  },
+  "screen": {
+    "verdict": "refused_incomplete",
+    "findings": [
+      {
+        "rule": "conditional-expression",
+        "shape": "conditional_unresolved_branch",
+        "context": "attribute_value",
+        "outcome": "refused",
+        "subject": "fx::Base::low",
+        "line": 6
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P2.2: a case family for the rule (spec B4)."
+  }
+}

@@ -17,6 +17,7 @@ from agentic_mbse.sysml.subset_profile import (
     SNAPSHOT_FIXTURES,
     SUBSET_REASON_CODES,
     CaseRef,
+    ContextId,
     CorpusRef,
     EvidenceStatus,
     Outcome,
@@ -188,6 +189,59 @@ def test_sa1_statement_cannot_stand_beside_an_admitted_case() -> None:
     data = data_with(REFUSED_WITH_PARTNER)
     shape(data, *BINDING)["no_admitted_context"] = {"citation": "c", "statement": "s"}
     with pytest.raises(RecordError, match="contradicts"):
+        load(data)
+
+
+UNOBSERVABLE = {
+    "context": "owner_other",
+    "reason": "refused first by another rule",
+    "evidence": ["case:binding-source__expression_source__owner_other"],
+}
+
+
+def test_an_unobservable_pair_loads_with_its_reason_and_cases() -> None:
+    data = data_with(REFUSED_WITH_PARTNER)
+    shape(data, *BINDING)["unobservable"] = [UNOBSERVABLE]
+    record = load(data).rule("binding-source").shape("expression_source")
+    (entry,) = record.unobservable.values()
+    assert list(record.unobservable) == [ContextId.OWNER_OTHER]
+    assert entry.reason == "refused first by another rule"
+    assert entry.evidence == (CaseRef("binding-source__expression_source__owner_other"),)
+    assert ContextId.OWNER_OTHER not in record.admissions
+
+
+@pytest.mark.parametrize(
+    ("changes", "message"),
+    [
+        (
+            {
+                "context": "owner_instantiated",
+                "evidence": ["case:binding-source__expression_source__owner_instantiated"],
+            },
+            "decided and unobservable",
+        ),
+        ({"context": "beyond_generator_roots"}, "unconfirmed by design"),
+        ({"context": "calc_usage_owner"}, "cannot compute context"),
+        ({"evidence": []}, "requires case evidence"),
+        ({"evidence": ["corpus:constraint_inline"]}, "requires case evidence only"),
+        ({"evidence": ["case:binding-source__expression_source__owner_package"]}, "not a case of"),
+        ({"reason": " "}, "non-empty text"),
+        ({"extra": 1}, "unknown keys \\['extra'\\]"),
+    ],
+)
+def test_an_unobservable_entry_is_refused_when_malformed(
+    changes: dict[str, Any], message: str
+) -> None:
+    data = data_with(REFUSED_WITH_PARTNER)
+    shape(data, *BINDING)["unobservable"] = [UNOBSERVABLE | changes]
+    with pytest.raises(RecordError, match=message):
+        load(data)
+
+
+def test_an_unobservable_context_is_listed_once() -> None:
+    data = data_with(REFUSED_WITH_PARTNER)
+    shape(data, *BINDING)["unobservable"] = [UNOBSERVABLE, UNOBSERVABLE]
+    with pytest.raises(RecordError, match="unobservable twice"):
         load(data)
 
 

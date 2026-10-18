@@ -103,7 +103,7 @@ evidence = [
     "case:invocation-callable__unsupported_callable__other_expression_site",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
-coverage_limitation = "A calc def's bare result expression (`calc_result_expression`) stays unconfirmed: the generator refuses every such calc def for having no output, whatever the expression holds (row CALC-DEF-BARE-RESULT), so the design's expected handwritten stub was not observed. A calc usage's bare result expression (`other_expression_site`) is omitted: never examined and dropped from the output (row CALC-USAGE-BARE-RESULT-DROP)."
+coverage_limitation = "A calc def's bare result expression (`calc_result_expression`) stays unconfirmed and is recorded unobservable: the generator refuses every such calc def for having no output, whatever the expression holds (row CALC-DEF-BARE-RESULT; case invocation-callable__unsupported_callable__calc_result_expression), so the design's expected handwritten stub was not observed. A calc usage's bare result expression (`other_expression_site`) is omitted: never examined and dropped from the output (row CALC-USAGE-BARE-RESULT-DROP)."
 statement = "Model-wide at expression-inventory sites, instantiated or not. The callable boundary is agentic-mbse's shared allowlist (`invocation_allowlist.py`), which reference_use enforces for the generator. Widening the vocabulary is sysml-codegen [SCALAR-FUNCTION-VOCABULARY]."
 sites = [
     "agentic_mbse/sysml/reference_use.py::_require_supported_invocation::shared-evidence::EXPRESSION_KIND_UNSUPPORTED::1",
@@ -128,7 +128,7 @@ evidence = [
     "case:conditional-expression__conditional_unresolved_branch__other_expression_site",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
-coverage_limitation = "A conditional whose branch references all resolve (`conditional_resolved_branches`) is unconfirmed in every context; no case has observed one. `calc_result_expression` stays unconfirmed (row CALC-DEF-BARE-RESULT). A refused conditional leaves `indexed-reference` unverified on the same site, because the shared reference walk is what fails; such a model reports verdict INCOMPLETE. A calc usage's bare result expression (`other_expression_site`) is omitted: never examined and dropped from the output (row CALC-USAGE-BARE-RESULT-DROP)."
+coverage_limitation = "A conditional whose branch references all resolve (`conditional_resolved_branches`) is unconfirmed in every context and recorded unobservable: the reference walk ends in RESOLVED_TARGET_MISSING for every `if` conditional, literal-only branches included, so no model reaches the shape (one case per context). `calc_result_expression` stays unconfirmed and is recorded unobservable (row CALC-DEF-BARE-RESULT). A refused conditional leaves `indexed-reference` unverified on the same site, because the shared reference walk is what fails; such a model reports verdict INCOMPLETE. A calc usage's bare result expression (`other_expression_site`) is omitted: never examined and dropped from the output (row CALC-USAGE-BARE-RESULT-DROP)."
 statement = "The generator reports this with its generic evidence-gap code, so the rule refuses only a positively recognized conditional whose reference walk failed with RESOLVED_TARGET_MISSING. Any other evidence failure stays unverified."
 sites = [
     "agentic_mbse/sysml/reference_use.py::_reference_use::shared-evidence::RESOLVED_TARGET_MISSING::1",
@@ -189,7 +189,7 @@ count = 4
 outcome = "unconfirmed"
 shape = "non_numerical_predicate"
 context = "owner_other"
-reason = "On the dc3 baseline all four constraints are owned by calc usages, an owner kind the generator attaches nothing to (owner_other). The generator refuses them first for that owner (ES-001, B1), so it never reaches the predicate check, and no probe of this shape under a calc-usage owner could certify ES-007. Where the owner is instantiated the shape is excluded (probe)."
+reason = "On the dc3 baseline all four constraints are owned by calc usages, an owner kind the generator attaches nothing to (owner_other). The generator refuses them first for that owner (ES-001, B1), so it never reaches the predicate check: the pair is recorded unobservable (case constraint-predicate__non_numerical_predicate__owner_other). Where the owner is instantiated or a package the shape is excluded, and where it has no occurrence it is admitted (cases)."
 
 [[row.split]]
 label = "MALFORMED_NUMERICAL (block_non_numerical_containment)"
@@ -197,7 +197,7 @@ count = 2
 outcome = "unconfirmed"
 shape = "blocked_predicate"
 context = "owner_other"
-reason = "Two constraints on the dc3 baseline (L6 reports four diagnostics on them), both owned by calc usages (owner_other). The generator refuses them first for that owner (ES-001, B1), so it never reaches the predicate check; a probe would show ES-001's code and could not certify ES-007. Where the owner is instantiated or a package the shape is refused (probes)."
+reason = "Two constraints on the dc3 baseline (L6 reports four diagnostics on them), both owned by calc usages (owner_other). The generator refuses them first for that owner (ES-001, B1), so it never reaches the predicate check: the pair is recorded unobservable (case constraint-predicate__blocked_predicate__owner_other, which shows ES-001's code). Where the owner is instantiated or a package the shape is refused (cases)."
 
 [[row]]
 id = "ES-010"
@@ -257,7 +257,7 @@ evidence = [
     "case:binding-source__self_reference_source__owner_uninstantiated",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
-coverage_limitation = "`writer_overridden` and `owner_other` stay unconfirmed: no case has observed a self-binding there."
+coverage_limitation = ""
 statement = "20 of the 23 refusal records of codegen's accepted corpus carry this code."
 l2_relation = "Overlaps L2_SELF_NAMED_BINDING (validation/level2_structure.py:322-343) and is wider in one way, narrower in another. Both compare the reference's resolved referent with the bound parameter, as codegen does. L2 checks calc usages only, and in every context, so it reports a self-binding inside a part def nobody instantiates, which the generator admits. The rule also covers constraint-usage inputs and refuses only where the generator classifies the binding. Item 1 leaves L2 unchanged; reconciling the two is Item 3's (L6 adopts the contract)."
 sites = []
@@ -280,7 +280,7 @@ evidence = [
     "case:indexed-reference__indexed_reference__other_expression_site",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
-coverage_limitation = "`calc_result_expression` stays unconfirmed (row CALC-DEF-BARE-RESULT). Where a site's reference walk fails (a refused conditional or invocation on it), whether it also holds an index is unknown, so this rule reports unverified there. A calc usage's bare result expression (`other_expression_site`) is omitted: never examined and dropped from the output (row CALC-USAGE-BARE-RESULT-DROP)."
+coverage_limitation = "`calc_result_expression` stays unconfirmed and is recorded unobservable (row CALC-DEF-BARE-RESULT). Where a site's reference walk fails (a refused conditional or invocation on it), whether it also holds an index is unknown, so this rule reports unverified there. A calc usage's bare result expression (`other_expression_site`) is omitted: never examined and dropped from the output (row CALC-USAGE-BARE-RESULT-DROP)."
 statement = "Refused model-wide by the expression inventory, before any instantiation; the binding classifier's own indexed branch is never reached on an inventoried input."
 sites = [
     "agentic_mbse/sysml/reference_use.py::require_exact_reference_use::shared-evidence::INDEXED_REFERENCE_UNSUPPORTED::1",

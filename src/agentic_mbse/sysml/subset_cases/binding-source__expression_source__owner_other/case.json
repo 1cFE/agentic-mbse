@@ -1,0 +1,29 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      7,
+      7
+    ],
+    "description": "calc usage t owned by item def Box binds xs to (a, b); an item def attaches no occurrences"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": [
+      {
+        "rule": "binding-source",
+        "shape": "expression_source",
+        "context": "owner_other",
+        "outcome": "admitted",
+        "subject": "fx::Box::t::xs",
+        "line": 7
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P2.2: an R3 section 3 unconfirmed pair."
+  }
+}

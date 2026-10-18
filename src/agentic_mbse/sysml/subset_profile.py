@@ -109,6 +109,7 @@ __all__ = [
     "SubsetCounts",
     "SubsetFinding",
     "SubsetProfileResult",
+    "Unobservable",
     "UnverifiedCheck",
     "Verdict",
     "evaluate_subset_profile",
@@ -304,6 +305,18 @@ class NoAdmittedContext:
 
 
 @dataclass(frozen=True)
+class Unobservable:
+    """An `unconfirmed` pair no case can observe, and why (Item 2a design § B).
+
+    Its cases show what happens instead: another refusal that comes first, or a model the
+    shape cannot be authored in. The pair still reports `unconfirmed`.
+    """
+
+    reason: str
+    evidence: tuple[CaseRef, ...]
+
+
+@dataclass(frozen=True)
 class GeneratorEvidence:
     """A generator raise site and the code it carries. Evidence, not vocabulary."""
 
@@ -327,6 +340,7 @@ class ShapeRecord:
     expected_code: str | None
     admissions: Mapping[ContextId, Admission]
     no_admitted_context: NoAdmittedContext | None
+    unobservable: Mapping[ContextId, Unobservable]
 
     def contexts_with(self, outcome: Outcome) -> tuple[ContextId, ...]:
         return tuple(c for c, a in self.admissions.items() if a.outcome is outcome)
@@ -442,10 +456,39 @@ def _admission(
     return context, Admission(outcome, evidence, qualification)
 
 
+def _unobservable(
+    table: Mapping[str, Any],
+    rule_id: str,
+    shape_id: str,
+    contexts: frozenset[ContextId],
+    where: str,
+) -> tuple[ContextId, Unobservable]:
+    _keys(table, {"context", "reason", "evidence"}, set(), where)
+    context = _member(ContextId, table["context"], f"{where}.context")
+    if context not in contexts:
+        raise RecordError(f"{where}: rule {rule_id} cannot compute context {context.value}")
+    if context in ALWAYS_UNCONFIRMED_CONTEXTS:
+        raise RecordError(f"{where}: context {context.value} is unconfirmed by design")
+    if not isinstance(table["evidence"], list) or not table["evidence"]:
+        raise RecordError(f"{where}: an unobservable pair requires case evidence")
+    evidence = tuple(
+        _evidence(e, rule_id, shape_id, context, f"{where}.evidence") for e in table["evidence"]
+    )
+    cases = tuple(e for e in evidence if isinstance(e, CaseRef))
+    if len(cases) != len(evidence):
+        raise RecordError(f"{where}: an unobservable pair requires case evidence only")
+    return context, Unobservable(_text(table["reason"], f"{where}.reason"), cases)
+
+
 def _shape(
     table: Mapping[str, Any], rule_id: str, contexts: frozenset[ContextId], where: str
 ) -> ShapeRecord:
-    _keys(table, {"id", "reason"}, {"expected_code", "admission", "no_admitted_context"}, where)
+    _keys(
+        table,
+        {"id", "reason"},
+        {"expected_code", "admission", "no_admitted_context", "unobservable"},
+        where,
+    )
     shape_id = _text(table["id"], f"{where}.id")
     reason = table["reason"]
     if reason not in SUBSET_REASON_CODES:
@@ -458,6 +501,16 @@ def _shape(
         if context in admissions:
             raise RecordError(f"{where}: context {context.value} is listed twice")
         admissions[context] = admission
+    unobservable: dict[ContextId, Unobservable] = {}
+    for i, entry in enumerate(table.get("unobservable", [])):
+        context, entry_record = _unobservable(
+            entry, rule_id, shape_id, contexts, f"{where}.unobservable[{i}]"
+        )
+        if context in admissions:
+            raise RecordError(f"{where}: context {context.value} is decided and unobservable")
+        if context in unobservable:
+            raise RecordError(f"{where}: context {context.value} is unobservable twice")
+        unobservable[context] = entry_record
     refused = [c for c, a in admissions.items() if a.outcome is Outcome.REFUSED]
     expected = table.get("expected_code")
     expected_code = None if expected is None else _code(expected, f"{where}.expected_code")
@@ -494,7 +547,10 @@ def _shape(
             "(design invariant 3 as generalized by audit S1, SA-1)"
         )
     ordered = dict(sorted(admissions.items(), key=lambda item: item[0].value))
-    return ShapeRecord(shape_id, reason, expected_code, ordered, no_admitted)
+    unobservable_ordered = dict(sorted(unobservable.items(), key=lambda item: item[0].value))
+    return ShapeRecord(
+        shape_id, reason, expected_code, ordered, no_admitted, unobservable_ordered
+    )
 
 
 def _status(shapes: tuple[ShapeRecord, ...]) -> EvidenceStatus:

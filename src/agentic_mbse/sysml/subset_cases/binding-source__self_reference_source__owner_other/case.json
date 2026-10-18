@@ -1,0 +1,29 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      6,
+      6
+    ],
+    "description": "calc usage t owned by item def Box binds v to itself"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": [
+      {
+        "rule": "binding-source",
+        "shape": "self_reference_source",
+        "context": "owner_other",
+        "outcome": "admitted",
+        "subject": "fx::Box::t::v",
+        "line": 6
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P2.2: an R3 section 3 unconfirmed pair."
+  }
+}

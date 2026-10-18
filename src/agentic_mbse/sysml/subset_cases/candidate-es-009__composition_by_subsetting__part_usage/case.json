@@ -16,6 +16,6 @@
   "agentic_site_witnesses": [],
   "provenance": {
     "from_probe": "candidate-es-009__composition_by_subsetting__part_usage",
-    "note": "Item 1 probe, moved in Item 2a P2.1."
+    "note": "Item 1 probe, moved in Item 2a P2.1. It is the minimal model of the dc3 prototype conv (finding U6). The prototype was dc3 session scratch and is in no dc3 revision; this shape is rebuilt from its description in dc3 60b44d53460fccd2f44811d8abfd42bc270e90b2 .project/active/toolkit-upstream-findings.md."
   }
 }

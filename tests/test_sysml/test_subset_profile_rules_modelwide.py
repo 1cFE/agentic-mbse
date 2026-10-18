@@ -42,13 +42,14 @@ def test_a_calc_usage_owned_constraint_is_reported_on_the_constraint_not_its_own
     assert finding.location.line == 11  # the generator locates the refusal at the owner, line 8
 
 
-def test_both_string_spellings_are_omitted() -> None:
+def test_both_string_spellings_and_a_template_are_omitted() -> None:
     prefix = "string-value-omission__string_value__attribute_value__"
-    spellings = [c for c in cases_of({"string-value-omission"}) if c.case_id.startswith(prefix)]
-    assert {c.case_id.removeprefix(prefix) for c in spellings} == {
+    variants = [c for c in cases_of({"string-value-omission"}) if c.case_id.startswith(prefix)]
+    assert {c.case_id.removeprefix(prefix) for c in variants} == {
         "attribute_declaration",
         "redefinition_shorthand",
+        "template",
     }
-    for case in spellings:
+    for case in variants:
         (finding,) = at_construct(evaluate(case), case, "string-value-omission")
         assert finding.outcome is Outcome.OMITTED

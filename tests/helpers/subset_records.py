@@ -75,6 +75,7 @@ def data_with(pairs: Pairs) -> dict[str, Any]:
         for shape in rule["shape"]:
             shape.pop("admission", None)
             shape.pop("no_admitted_context", None)
+            shape.pop("unobservable", None)
             chosen = pairs.get((rule["id"], shape["id"]), {})
             if chosen:
                 observed += 1

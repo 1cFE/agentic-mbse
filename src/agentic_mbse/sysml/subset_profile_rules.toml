@@ -65,6 +65,14 @@ evidence = [
 ]
 
 [[rule.shape.admission]]
+context = "owner_other"
+outcome = "admitted"
+evidence = [
+    "case:binding-source__expression_source__owner_other",
+    "case:binding-source__expression_source__owner_other__calc_definition_owner",
+]
+
+[[rule.shape.admission]]
 context = "owner_uninstantiated"
 outcome = "admitted"
 evidence = [
@@ -102,10 +110,24 @@ evidence = [
 ]
 
 [[rule.shape.admission]]
+context = "owner_other"
+outcome = "admitted"
+evidence = [
+    "case:binding-source__self_reference_source__owner_other",
+]
+
+[[rule.shape.admission]]
 context = "owner_uninstantiated"
 outcome = "admitted"
 evidence = [
     "case:binding-source__self_reference_source__owner_uninstantiated",
+]
+
+[[rule.shape.admission]]
+context = "writer_overridden"
+outcome = "admitted"
+evidence = [
+    "case:binding-source__self_reference_source__writer_overridden",
 ]
 
 # ---- ES-001 -------------------------------------------------------------------------------------
@@ -167,7 +189,7 @@ title = "Conditional expression at an expression-inventory site"
 matrix_rows = ["ES-006"]
 fact_requirements = ["expression_site"]
 remedy = "Compute each branch as its own attribute and select with arithmetic the subset supports, or move the choice into a calculation definition's bare result expression (a handwritten stub)."
-semantic_limits = "Refusal-eligible only for a recognized `if` conditional whose reference walk fails with RESOLVED_TARGET_MISSING; the generator reports it with its generic evidence-gap code, so every case also checks the location of the refusal. Any other walk failure is unverified. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
+semantic_limits = "Refusal-eligible only for a recognized `if` conditional whose reference walk fails with RESOLVED_TARGET_MISSING; the generator reports it with its generic evidence-gap code, so every case also checks the location of the refusal. Any other walk failure is unverified. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed and is recorded unobservable; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
 doc_anchor = "generator-subset#conditional-expression"
 evidence_status = "partial"
 example_case = "conditional-expression__conditional_unresolved_branch__other_expression_site"
@@ -180,6 +202,48 @@ site = "agentic_mbse reference_use.py (RESOLVED_TARGET_MISSING) via elaboration/
 id = "conditional_resolved_branches"
 reason = "conditional_expression_resolved_branches"
 
+[[rule.shape.unobservable]]
+context = "attribute_value"
+reason = "No authored conditional reaches this shape: the reference walk ends in RESOLVED_TARGET_MISSING for every `if` conditional SysIDE 0.8.4 parses, literal-only branches included, so the case is recognized as conditional_unresolved_branch instead."
+evidence = [
+    "case:conditional-expression__conditional_resolved_branches__attribute_value",
+]
+
+[[rule.shape.unobservable]]
+context = "binding_value"
+reason = "No authored conditional reaches this shape: the reference walk ends in RESOLVED_TARGET_MISSING for every `if` conditional SysIDE 0.8.4 parses, literal-only branches included, so the case is recognized as conditional_unresolved_branch instead."
+evidence = [
+    "case:conditional-expression__conditional_resolved_branches__binding_value",
+]
+
+[[rule.shape.unobservable]]
+context = "calc_definition_feature_value"
+reason = "No authored conditional reaches this shape: the reference walk ends in RESOLVED_TARGET_MISSING for every `if` conditional SysIDE 0.8.4 parses, literal-only branches included, so the case is recognized as conditional_unresolved_branch instead."
+evidence = [
+    "case:conditional-expression__conditional_resolved_branches__calc_definition_feature_value",
+]
+
+[[rule.shape.unobservable]]
+context = "calc_result_expression"
+reason = "No authored conditional reaches this shape: the reference walk ends in RESOLVED_TARGET_MISSING for every `if` conditional SysIDE 0.8.4 parses, literal-only branches included, so the case is recognized as conditional_unresolved_branch instead."
+evidence = [
+    "case:conditional-expression__conditional_resolved_branches__calc_result_expression",
+]
+
+[[rule.shape.unobservable]]
+context = "constraint_predicate"
+reason = "No authored conditional reaches this shape: the reference walk ends in RESOLVED_TARGET_MISSING for every `if` conditional SysIDE 0.8.4 parses, literal-only branches included, so the case is recognized as conditional_unresolved_branch instead."
+evidence = [
+    "case:conditional-expression__conditional_resolved_branches__constraint_predicate",
+]
+
+[[rule.shape.unobservable]]
+context = "other_expression_site"
+reason = "No authored conditional reaches this shape: the reference walk ends in RESOLVED_TARGET_MISSING for every `if` conditional SysIDE 0.8.4 parses, literal-only branches included, so the case is recognized as conditional_unresolved_branch instead."
+evidence = [
+    "case:conditional-expression__conditional_resolved_branches__other_expression_site",
+]
+
 [[rule.shape]]
 id = "conditional_unresolved_branch"
 reason = "conditional_expression_unsupported"
@@ -188,7 +252,12 @@ expected_code = "SI_EVIDENCE_INCOMPLETE"
 [[rule.shape.admission]]
 context = "attribute_value"
 outcome = "refused"
-evidence = ["case:conditional-expression__conditional_unresolved_branch__attribute_value"]
+evidence = [
+    "case:conditional-expression__conditional_unresolved_branch__attribute_value",
+    "case:conditional-expression__conditional_unresolved_branch__attribute_value__inherited",
+    "case:conditional-expression__conditional_unresolved_branch__attribute_value__redefined",
+    "case:conditional-expression__conditional_unresolved_branch__attribute_value__template",
+]
 
 [[rule.shape.admission]]
 context = "binding_value"
@@ -209,6 +278,13 @@ evidence = ["case:conditional-expression__conditional_unresolved_branch__constra
 context = "other_expression_site"
 outcome = "omitted"
 evidence = ["case:conditional-expression__conditional_unresolved_branch__other_expression_site"]
+
+[[rule.shape.unobservable]]
+context = "calc_result_expression"
+reason = "A calculation definition whose result is a bare expression is refused for having no output attributes (CALC-DEF-BARE-RESULT, the generator's generic evidence-gap code) whatever the expression holds, so this shape's own outcome cannot be seen."
+evidence = [
+    "case:conditional-expression__conditional_unresolved_branch__calc_result_expression",
+]
 
 # ---- ES-007 -------------------------------------------------------------------------------------
 
@@ -256,6 +332,13 @@ evidence = [
     "case:constraint-predicate__blocked_predicate__owner_uninstantiated",
 ]
 
+[[rule.shape.unobservable]]
+context = "owner_other"
+reason = "An owner the occurrence facts cannot attach leaves the constraint unattached, and the generator refuses it as unattached (calc-owned-assertion's expected code) whatever the predicate's eligibility: a calc usage or calc def owner through calc-owned-assertion (ES-001); an item def owner with no rule yet (case candidate-unattachable-constraint-owner__asserted_constraint__item_definition_owner, a recorded disagreement)."
+evidence = [
+    "case:constraint-predicate__blocked_predicate__owner_other",
+]
+
 [[rule.shape]]
 id = "non_numerical_predicate"
 reason = "constraint_predicate_non_numerical"
@@ -267,6 +350,27 @@ evidence = [
     "case:constraint-predicate__non_numerical_predicate__owner_instantiated",
 ]
 
+[[rule.shape.admission]]
+context = "owner_package"
+outcome = "excluded"
+evidence = [
+    "case:constraint-predicate__non_numerical_predicate__owner_package",
+]
+
+[[rule.shape.admission]]
+context = "owner_uninstantiated"
+outcome = "admitted"
+evidence = [
+    "case:constraint-predicate__non_numerical_predicate__owner_uninstantiated",
+]
+
+[[rule.shape.unobservable]]
+context = "owner_other"
+reason = "An owner the occurrence facts cannot attach leaves the constraint unattached, and the generator refuses it as unattached (calc-owned-assertion's expected code) whatever the predicate's eligibility: a calc usage or calc def owner through calc-owned-assertion (ES-001); an item def owner with no rule yet (case candidate-unattachable-constraint-owner__asserted_constraint__item_definition_owner, a recorded disagreement)."
+evidence = [
+    "case:constraint-predicate__non_numerical_predicate__owner_other",
+]
+
 # ---- Indexed references -------------------------------------------------------------------------
 
 [[rule]]
@@ -275,7 +379,7 @@ title = "Indexed element reference at an expression-inventory site"
 matrix_rows = ["INDEXED-REFERENCE"]
 fact_requirements = ["expression_site"]
 remedy = "Name the element with its own feature and reference that feature instead of indexing a collection."
-semantic_limits = "The expression inventory refuses an authored index model-wide, before any instantiation, wherever it walks a declared feature value or a constraint predicate. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
+semantic_limits = "The expression inventory refuses an authored index model-wide, before any instantiation, wherever it walks a declared feature value or a constraint predicate. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed and is recorded unobservable; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
 doc_anchor = "generator-subset#indexed-reference"
 evidence_status = "case_observed"
 example_case = "indexed-reference__indexed_reference__other_expression_site"
@@ -292,7 +396,10 @@ expected_code = "SI_INDEXED_SOURCE_UNSUPPORTED"
 [[rule.shape.admission]]
 context = "attribute_value"
 outcome = "refused"
-evidence = ["case:indexed-reference__indexed_reference__attribute_value"]
+evidence = [
+    "case:indexed-reference__indexed_reference__attribute_value",
+    "case:indexed-reference__indexed_reference__attribute_value__template",
+]
 
 [[rule.shape.admission]]
 context = "binding_value"
@@ -314,6 +421,13 @@ context = "other_expression_site"
 outcome = "omitted"
 evidence = ["case:indexed-reference__indexed_reference__other_expression_site"]
 
+[[rule.shape.unobservable]]
+context = "calc_result_expression"
+reason = "A calculation definition whose result is a bare expression is refused for having no output attributes (CALC-DEF-BARE-RESULT, the generator's generic evidence-gap code) whatever the expression holds, so this shape's own outcome cannot be seen."
+evidence = [
+    "case:indexed-reference__indexed_reference__calc_result_expression",
+]
+
 # ---- ES-005 -------------------------------------------------------------------------------------
 
 [[rule]]
@@ -322,7 +436,7 @@ title = "Invocation of a callable outside the executable subset"
 matrix_rows = ["ES-005"]
 fact_requirements = ["expression_site"]
 remedy = "Write the computation with operators the subset supports (explicit multiplication, arithmetic min/max identities) or with NumericalFunctions::sum; or move it into a calculation definition's bare result expression (a handwritten stub)."
-semantic_limits = "Callable identity is decided by the shared allowlist (invocation_allowlist.py, today only NumericalFunctions::sum), the same predicate the generator's inventory refuses through. Operators are not invocations. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
+semantic_limits = "Callable identity is decided by the shared allowlist (invocation_allowlist.py, today only NumericalFunctions::sum), the same predicate the generator's inventory refuses through. Operators are not invocations. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed and is recorded unobservable; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
 doc_anchor = "generator-subset#invocation-callable"
 evidence_status = "case_observed"
 example_case = "invocation-callable__unsupported_callable__other_expression_site"
@@ -339,7 +453,13 @@ expected_code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
 [[rule.shape.admission]]
 context = "attribute_value"
 outcome = "refused"
-evidence = ["case:invocation-callable__unsupported_callable__attribute_value", "case:invocation-callable__unsupported_callable__attribute_value__max", "case:invocation-callable__unsupported_callable__attribute_value__size"]
+evidence = [
+    "case:invocation-callable__unsupported_callable__attribute_value",
+    "case:invocation-callable__unsupported_callable__attribute_value__max",
+    "case:invocation-callable__unsupported_callable__attribute_value__redefined",
+    "case:invocation-callable__unsupported_callable__attribute_value__size",
+    "case:invocation-callable__unsupported_callable__attribute_value__template",
+]
 
 [[rule.shape.admission]]
 context = "binding_value"
@@ -360,6 +480,13 @@ evidence = ["case:invocation-callable__unsupported_callable__constraint_predicat
 context = "other_expression_site"
 outcome = "omitted"
 evidence = ["case:invocation-callable__unsupported_callable__other_expression_site"]
+
+[[rule.shape.unobservable]]
+context = "calc_result_expression"
+reason = "A calculation definition whose result is a bare expression is refused for having no output attributes (CALC-DEF-BARE-RESULT, the generator's generic evidence-gap code) whatever the expression holds, so this shape's own outcome cannot be seen."
+evidence = [
+    "case:invocation-callable__unsupported_callable__calc_result_expression",
+]
 
 # ---- ES-004 -------------------------------------------------------------------------------------
 
@@ -471,4 +598,5 @@ outcome = "omitted"
 evidence = [
     "case:string-value-omission__string_value__attribute_value__attribute_declaration",
     "case:string-value-omission__string_value__attribute_value__redefinition_shorthand",
+    "case:string-value-omission__string_value__attribute_value__template",
 ]

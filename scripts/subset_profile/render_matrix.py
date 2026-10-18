@@ -44,7 +44,9 @@ def _record_lines(rule: RuleRecord, shapes: tuple[str, ...]) -> list[str]:
             "; ".join(f"{o}: {c}" for o, c in by_outcome.items()) or "every context unconfirmed"
         )
         sa1 = " SA-1 statement." if shape.no_admitted_context else ""
-        lines.append(f"  - `{shape_id}`: {recorded}.{sa1}")
+        unobservable = ", ".join(c.value for c in shape.unobservable)
+        hidden = f" Unobservable: {unobservable}." if unobservable else ""
+        lines.append(f"  - `{shape_id}`: {recorded}.{sa1}{hidden}")
     return lines
 
 

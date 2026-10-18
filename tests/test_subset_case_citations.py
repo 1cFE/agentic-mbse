@@ -3,9 +3,10 @@
 Item 2a design D4 splits ADR 0001 invariant 1 by what each repository can see. The loader
 checks a citation's form only. This module checks the rest that agentic-mbse can see: the
 cited case is packaged, it is a `record` case, and its stored screen answer has the cited
-(rule, shape, context, outcome) on the case's construct. Every `record` case is cited, a
-`control` case draws no finding of its rule, and a case cited for a run the generator
-completes draws no refusal. What the generator does on each case is sysml-codegen's check.
+(rule, shape, context, outcome) on the case's construct. A case cited for an `unobservable`
+pair shows no decided outcome for it. Every `record` case is cited, a `control` case draws no
+finding of its rule, and a case cited for a run the generator completes draws no refusal.
+What the generator does on each case is sysml-codegen's check.
 
 The first part is pure: it reads the records and the stored answers. The SysIDE part runs the
 screen with one shape's evidence stripped.
@@ -62,6 +63,29 @@ def citations() -> Iterator[Citation]:
 CITATIONS = sorted(citations(), key=lambda c: (c.case_id, c.rule, c.shape, c.context.value))
 
 
+@dataclass(frozen=True)
+class UnobservableCitation:
+    rule: str
+    shape: str
+    context: ContextId
+    case_id: str
+
+    def __str__(self) -> str:
+        return self.case_id
+
+
+UNOBSERVABLE = sorted(
+    (
+        UnobservableCitation(rule.rule_id, shape.shape_id, context, ref.case_id)
+        for rule in PACKAGED_RULES.rules
+        for shape in rule.shapes
+        for context, entry in shape.unobservable.items()
+        for ref in entry.evidence
+    ),
+    key=lambda c: c.case_id,
+)
+
+
 def on_construct(case: PackagedCase, rule: str) -> list[ScreenFinding]:
     return [
         f
@@ -105,8 +129,24 @@ def test_a_case_cited_for_a_run_the_generator_completes_draws_no_refusal(
     assert refused(CASES[citation.case_id]) == []
 
 
+@pytest.mark.parametrize("citation", UNOBSERVABLE, ids=str)
+def test_an_unobservable_pairs_case_is_packaged_and_shows_no_outcome_for_it(
+    citation: UnobservableCitation,
+) -> None:
+    """The case shows what happens instead; the pair itself stays unconfirmed or unrecognized."""
+    case = CASES.get(citation.case_id)
+    assert case is not None, f"records cite {citation.case_id}, which is not packaged"
+    assert case.kind is CaseKind.RECORD
+    shown = [
+        (f.context, f.outcome)
+        for f in on_construct(case, citation.rule)
+        if f.shape == citation.shape
+    ]
+    assert shown in ([], [(citation.context, Outcome.UNCONFIRMED)])
+
+
 def test_every_record_case_is_cited() -> None:
-    cited = {c.case_id for c in CITATIONS}
+    cited = {c.case_id for c in CITATIONS} | {c.case_id for c in UNOBSERVABLE}
     uncited = [c.case_id for c in ALL_CASES if c.kind is CaseKind.RECORD and c.case_id not in cited]
     assert uncited == []
 
@@ -125,7 +165,8 @@ def test_a_control_draws_no_finding_of_its_rule_and_no_refusal(case: PackagedCas
     "case", [c for c in ALL_CASES if c.kind is CaseKind.REPRODUCTION], ids=lambda c: c.case_id
 )
 def test_a_reproduction_is_refused_by_no_rule(case: PackagedCase) -> None:
-    """ES-002, ES-008, ES-009, the ES-010 refusal side and a bare calc-def result have no rule."""
+    """ES-002, ES-008, ES-009, the ES-010 refusal side, a bare calc-def result and a constraint
+    under an item def owner have no rule."""
     assert refused(case) == []
 
 
