@@ -113,7 +113,22 @@ def export_tree(repo: Path, commit: str, dest: Path) -> None:
         )
     dest.mkdir(parents=True)
     with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
-        tar.extractall(dest, filter="data")
+        tar.extractall(dest, filter=_assistant_links_skipped)
+
+
+# A link to an absolute path would reach outside the tree. The only ones the pinned exports carry
+# are assistant configuration (sysml-codegen's `.claude/agents/*`, `.claude/skills/*`), which the
+# generator never reads; those are skipped and named on the console. Any other aborts the export.
+_ASSISTANT_CONFIG = ".claude/"
+
+
+def _assistant_links_skipped(member: tarfile.TarInfo, dest: str) -> tarfile.TarInfo | None:
+    if member.issym() and os.path.isabs(member.linkname):
+        if not member.name.startswith(_ASSISTANT_CONFIG):
+            raise IsolationBreachError(f"{member.name} links outside the tree to {member.linkname}")
+        print(f"skipped absolute link {member.name} -> {member.linkname}")
+        return None
+    return tarfile.data_filter(member, dest)
 
 
 def read_license_key() -> str:
