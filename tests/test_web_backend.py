@@ -1,5 +1,6 @@
 """Tests for agentic_mbse.extraction.web_backend — web content extraction pipeline."""
 
+import base64
 import hashlib
 import json
 import shutil
@@ -599,3 +600,26 @@ def test_whole_page_fallback_returns_none_on_pandoc_failure(pandoc):
     """The plain-HTML fallback uses the public runner and its neutral PandocError."""
     with patch("subprocess.run", **pandoc):
         assert _fallback_pandoc("<html><body><p>x</p></body></html>") is None
+
+
+@pytest.mark.parametrize("no_frontmatter", [True, False])
+def test_metrics_describe_the_markdown_written_after_image_saving(tmp_path, no_frontmatter):
+    """The web route's metrics count the body actually written, as the PDF route's do.
+
+    Saving an inline data: image shortens the markdown; char_count must reflect that.
+    """
+    inline = "data:image/png;base64," + base64.b64encode(b"\x89PNG " * 400).decode()
+    body = f"# Paper\n\n![pic]({inline})\n\n" + "text " * 40
+    with (
+        _serve(),
+        patch("agentic_mbse.extraction.web_backend.convert_article", return_value=body),
+        patch("agentic_mbse.extraction.web_backend.fetch_image", side_effect=serve_figure),
+    ):
+        result = extract_web_content(_ARXIV_URL, output_dir=tmp_path, no_frontmatter=no_frontmatter)
+
+    written = (tmp_path / "output.md").read_text()
+    written_body = written if no_frontmatter else written.split("---\n\n", 1)[1]
+    metrics = json.loads((tmp_path / "metrics.json").read_text())
+    assert "data:" not in written
+    assert result.image_count == 1
+    assert metrics["char_count"] == result.char_count == len(written_body)

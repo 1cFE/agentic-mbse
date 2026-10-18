@@ -307,6 +307,27 @@ def extract_web_content(
                         version,
                     )
 
+    # Determine output directory name from title or URL
+    dir_name = sanitize_filename(title) if title else sanitize_filename(final_url)
+    if not dir_name or dir_name.startswith("https___") or dir_name.startswith("http___"):
+        # Fallback: use domain + path fragment
+        parsed = urlparse(final_url)
+        dir_name = sanitize_filename(f"{parsed.netloc}{parsed.path}")
+
+    caller_provided_dir = output_dir is not None
+    if output_dir is None:
+        output_dir = Path.cwd() / dir_name
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Step 4a: Save the paper's figures (pandoc-arxiv only). This runs on the
+    # body before frontmatter is added, so the metrics below describe the
+    # markdown actually written, as on the PDF route.
+    image_count = 0
+    if image_base is not None:
+        images = persist_images(markdown, image_base, output_dir / "images", fetch_image)
+        markdown, image_count = images.markdown, images.saved_count
+        extraction_warnings.extend(images.warnings)
+
     if no_frontmatter:
         full_markdown = markdown
     else:
@@ -320,25 +341,6 @@ def extract_web_content(
             author=metadata.get("author"),
         )
         full_markdown = f"{frontmatter}\n\n{markdown}"
-
-    # Determine output directory name from title or URL
-    dir_name = sanitize_filename(title) if title else sanitize_filename(final_url)
-    if not dir_name or dir_name.startswith("https___") or dir_name.startswith("http___"):
-        # Fallback: use domain + path fragment
-        parsed = urlparse(final_url)
-        dir_name = sanitize_filename(f"{parsed.netloc}{parsed.path}")
-
-    caller_provided_dir = output_dir is not None
-    if output_dir is None:
-        output_dir = Path.cwd() / dir_name
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Step 4a: Save the paper's figures (pandoc-arxiv only)
-    image_count = 0
-    if image_base is not None:
-        images = persist_images(full_markdown, image_base, output_dir / "images", fetch_image)
-        full_markdown, image_count = images.markdown, images.saved_count
-        extraction_warnings.extend(images.warnings)
 
     # Write markdown — when the caller provides output_dir (e.g., batch mode
     # with --output), use "output.md" to avoid filename collisions between
