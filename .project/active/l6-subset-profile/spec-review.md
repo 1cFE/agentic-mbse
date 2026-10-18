@@ -158,7 +158,35 @@ Should-fix only, no decision needed: L1-3, L1-4, L1-5, L2-2, L2-5, L3-6, L3-7, L
 
 ## Resolutions
 
-[None yet. R3-1 and R3-2 are with the owner and are not decided in this review. Record resolutions here by finding ID.]
+Recorded 2026-10-18 by the spec author. Since this review, R3-1 and R3-2 have been decided: the owner delegated them to the orchestrator (`briefs/align.md` § Gate outcomes). The spec carries the outcomes graded `[AGENT] (delegated by owner, 2026-10-18)` under "Owner gate outcomes". Must-fix items were accepted as directed ([AGENT]). Should-fix items were all accepted.
+
+**Must-fix**
+
+- **L1-1: resolved by the gate outcome.** `L6_CONSTRAINT_MALFORMED_NUMERICAL` keeps its error severity and scope under every target, and the contract's constraint outcomes are reported alongside it. So none of the three relaxation effects happens (unset refused→WARNING, `generated` unconfirmed→WARNING, uninstantiated owner→no finding). The audit table row reads ERROR in all three targets.
+- **L1-2: accepted.** The audit table no longer claims `UNASSESSED` becomes unverified. New "Terms" entry and requirement: unassessed constraints are a count shown in the verdict line. When the count is above zero they get one WARNING under `generated` and unset, and go into the INFO summary under `native`. They never become unverified checks or ERROR, so L6 re-derives nothing. New presentation criterion: a `clear` fixture with unassessed constraints.
+- **L3-1: accepted.** Each of the five over-reporting sites (`level6_architecture.py` 520, 723; `adr002.py` 277, 335, 423) now has a disposition: `L6_CHECK_ERROR` and no dependent model-defect finding. Each has a test asserting both, under every target. `:960` is kept; `adr002.py:268` is deleted. The general criterion asserts that no check failure is counted in the native INFO summary.
+- **L3-2: accepted.** There is one closed key set (`execution-target`, `research`), defined once. Misspelled keys and the underscore table are L6 errors. Each reader checks only its own key's value. New criteria: a bad guard path does not fail `validate`, a bad target does not refuse `register`, and a misspelled key fails both readers. Unknown-key rejection is covered by the R3-2 check-failure outcome and its before/after safeguard. `docs/research-seam.md:350` and `:414-415` are added to Docs.
+- **L3-3: accepted.** New requirement and criterion: an on-request JSON report holds every issue of every level with no truncation, plus L6's full profile result. The dc3 evidence criterion reads from it, and so does the native "details available" test. Text truncation is unchanged.
+- **L3-4: accepted.** New tests for `unconfirmed` (never ERROR, "no generator probe", by-design context named), unverified by target, `incomplete`, `excluded` under `generated`, unassessed constraints and "shadowed by". "Next to" and "implies" are replaced by assertions on named lines: a verdict line with required and banned contents, refused count before "incomplete", and the `clear` line followed by a coverage line. The banned list is scanned case-insensitively over the whole stdout and now includes "readiness". The title is decided: "Level 6: Architecture & Generator Subset", recorded as `[INFERRED]` with its reason, with the files to change named.
+
+**Should-fix**
+
+- **L1-3: accepted.** `V4_STATIC_FUNCTION_INVOCATION` is kept. It counts as a duplicate only if a boundary fixture (an allowlisted call in a design attribute) shows the same result.
+- **L1-4: accepted.** `common.py:82`. Every codegen citation (`level6_architecture.py:847`, `adr002.py:478`, the "codegen's V8" reference near `:584`) is checked at `b5663c07`.
+- **L1-5: accepted.** The obligation stays `[INHERITED]`. The per-site classification is `[INFERRED]`. "Native lowering is not R3-1" is `[INFERRED]`.
+- **L2-1: accepted.** Each audit row states its evidence for the category (native-route result, or a generator-only cause). A row without evidence keeps today's severity under `native`. The audit has a separate table of every severity lowered under `native`, and the spec lists the 7 ERROR→INFO and 4 WARNING→INFO it proposes.
+- **L2-2: accepted.** The general condition for "shadowed by" is stated: the finding's subject's owner is the subject of a `refused` finding from another rule. It is presentation only. L6 computes it from finding subjects. If that needs facts the result lacks, design adds them additively or drops the label with a reason.
+- **L2-3: accepted.** The advisories are detected in an agentic-mbse `sysml/` advisory module outside the rule records and their digest; L6 renders them. Each has a firing and a non-firing fixture. UNSUPPORTED-RHS and MULTIPLICITY-SHAPE have a criterion, and the MULTIPLICITY-SHAPE row closes citing it.
+- **L2-4: accepted.** The coverage list is a separate packaged list with its own version string, pinned by its own test and printed in the verdict line.
+- **L2-5: accepted.** Complexity is HIGH. Several sessions are expected and a persistent plan is required.
+- **L3-5: accepted.** The before/after evidence compares full `validate --complete` runs, per level. Every consumer run records the resolved project root and the `pyproject.toml` path read. Pass→fail triggers stop-and-show.
+- **L3-6: accepted.** `init` writes only a plain line in an existing `[tool.agentic-mbse]` table, or a new table at the end. It refuses and prints the line for any other layout (inline table, dotted keys, symlink, unparseable), and never rewrites. Each layout has a test. An invalid existing value is reported and kept. Interactive re-init asks again while unset, with "leave unset" as the default. `init` exits non-zero only when an explicit `--execution-target` could not be written.
+- **L3-7: accepted.** The criterion and the requirement now agree: the final-line qualifier appears on every passing unset run, and on passing `generated` runs whose verdict is not `refused`.
+- **L3-8: accepted.** A test reads the native details from the JSON report.
+- **L4-1: accepted.** "17 L6 issue codes plus manifest and setup failures."
+- **L5-1: accepted.** A "Terms used below" section explains verdicts, outcomes, unverified checks, unassessed constraints, coverage limit, impl-F1/F2 and the B1–B8 categories, with a pointer to Item 1's table. r3-proposal line numbers were dropped from the spec.
+
+**Verdict after resolutions:** all must-fix and should-fix findings are addressed in the spec. No owner question remains open for this item.
 
 ---
 

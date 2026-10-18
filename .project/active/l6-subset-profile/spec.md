@@ -1,9 +1,9 @@
 # Spec: L6 integration and execution-target settings
 
-**Status:** Draft
+**Status:** Draft, revised after spec review (2026-10-18)
 **Owner:** Reid Westwood
 **Created:** 2026-10-18
-**Complexity:** MEDIUM (one evaluator wired into one level, one setting, one `init` option, an audit of 19 existing L6 codes, docs)
+**Complexity:** HIGH. The parts: a settings reader shared with research, a byte-preserving `pyproject.toml` writer and `init` prompt, evaluator wiring and presentation for 5 verdicts × 3 targets, two small additive library pieces, an audit of 17 L6 issue codes plus manifest and setup failures, per-site work on 28 exception sites (26 broad, 2 `AttributeError`) and the runner, a structured report, docs, and four evidence files. Expect several implementation sessions. The plan must be persistent (`plan.md`).
 **Branch:** `l6-subset-profile` (off `main` at `ebb3d467`)
 
 ---
@@ -14,209 +14,248 @@
 
 [AGENT] (ratified by owner, 2026-10-18; `briefs/align.md`) `validate` should report that contract up front. Projects that only run natively must not be buried in generator noise, so each project declares its execution target.
 
-Today's L6 makes this harder in four ways (all verified by reading the code; nothing was run):
+Today's L6 makes this harder in four ways. All were checked by reading code; nothing was run.
 
-- **Hand-written generator checks overlap the contract and disagree with it.** For example, L6 flags `attribute x : String = "abc"` as an error, but only under `designs/`, and never sees the `:>> x = "abc"` spelling, which SysIDE parses as a reference usage (`level6_architecture.py:476-575`, `:853`). On dc3 baseline that is 3 flagged against 32 String declarations (`completed/20261018_exec-subset-profile/evidence/acceptance.md:27`).
-- **Failed inspections read as clean.** There are 26 broad `except Exception` sites in `level6_architecture.py` (17) and `adr002.py` (9). 19 of them turn a failure into "no issue" or a zero count (listed under Known Requirements, check failures).
-- **A crashed level counts as a pass.** When a level raises, `runner.py:128-137` prints the error but never records the level, so `overall_success` (`common.py:66`) stays true and exit is 0. The comment at `runner.py:135` says "Treat exceptions as failures". `check_constraint_executability` lets its errors reach this path on purpose (`level6_architecture.py:647-650`). No test covers it.
-- **There is no setting.** Nothing in `src/` reads or writes an execution target, and nothing writes `pyproject.toml`.
+- **Hand-written generator checks overlap the contract and disagree with it.** L6 flags `attribute x : String = "abc"` as an error, but only under `designs/`. It never sees the `:>> x = "abc"` spelling, which SysIDE parses as a reference usage (`level6_architecture.py:476-575`, `:853`). On dc3 baseline that is 3 flagged against 32 String declarations (`completed/20261018_exec-subset-profile/evidence/acceptance.md:27`).
+- **Failed inspections read as clean, or as model defects.** There are 26 broad `except Exception` sites in `level6_architecture.py` (17) and `adr002.py` (9), plus two `AttributeError` catches. Most turn a failure into "no issue" or a zero count. Others turn it into a false model-defect finding.
+- **A crashed level counts as a pass.** When a level raises, `runner.py:128-137` prints the error but never records the level, so `overall_success` (`common.py:66`) stays true and the exit code is 0. With `--level=6` alone the run prints "Checks run: 0" and "All quality checks passed!". The comment at `runner.py:135` says "Treat exceptions as failures".
+- **There is no setting,** and nothing writes `pyproject.toml`.
+
+## Terms used below
+
+- **Verdict:** the evaluator's one-word summary of a run: `clear`, `unconfirmed`, `refused`, `incomplete` or `refused_incomplete` (`subset_profile.py:160-172`).
+- **Outcome:** what the evaluator says about one finding: `refused` (a retained generator probe saw this refusal), `admitted`, `excluded` (a non-numerical constraint), `omitted` (a String value the generator drops), `unconfirmed` (the rule matches but no probe covers this context).
+- **Unverified check:** the evaluator could not decide a rule at a site (`UnverifiedCheck`, `subset_profile.py:678`). This is "could not decide", not a crash.
+- **Unassessed constraints:** a count (`counts.unassessed_constraints`) of constraints the executable profile could not assess. They do not produce unverified checks and do not change the verdict (`subset_profile.py:1276-1282`, `:1360`).
+- **Coverage limit:** the families of generator refusals the contract has no rule for, so a `clear` verdict cannot speak to them.
+- **impl-F1 / impl-F2:** Item 1's product-lens findings. impl-F1: `clear` must carry its coverage limit. impl-F2: incompleteness must not hide refusals (`completed/20261018_exec-subset-profile/product-lens.md:80-81`).
+- **dc3 categories:** B1 calc-owned assertions, B2 expression binding sources, B3 unresolved part multiplicity, B4 and B5 unsupported callables, B6 conditional expressions, B7 String omissions, B8 constraint predicates (unconfirmed). Item 1's table with rule, shape, context and count for each: `completed/20261018_exec-subset-profile/evidence/acceptance.md:21-31`.
 
 ## Success Criteria
 
-Each criterion names the test or evidence file that shows it. "Test" means a pytest test under `tests/`. "Evidence" means a file under `.project/active/l6-subset-profile/evidence/`. Where a criterion asserts ERROR for a check or configuration failure with the target unset, it holds only if the owner accepts that R3-2 proposal (Open Questions). Otherwise the test asserts the behavior the owner chose instead.
+"Test" means a pytest test under `tests/`. "Evidence" means a file under `.project/active/l6-subset-profile/evidence/`.
 
-**Settings states** (CLI tests that run `agentic-mbse validate --level=6` on a fixture project)
+**Settings states** (CLI tests that run `validate --level=6` on a fixture project with one refused finding)
 
-- [ ] `execution-target = "generated"`: a fixture with a refused finding exits 1, with that finding at ERROR.
-- [ ] `execution-target = "native"`: the same fixture exits 0. Generator-only findings appear as one INFO summary, and the detailed results are still available (design picks how).
-- [ ] Unset (no `pyproject.toml`, no table, or no key): the same fixture shows the refusal as a WARNING, plus a note naming the setting and how to set it. A fixture with no generator findings at all also shows the note. No output line says or implies the model is generated-ready.
-- [ ] When L6 passes with generator findings at WARNING (unset), or with a `clear`, `unconfirmed`-only or omissions-only result (`generated`), the run's final summary line includes a qualifier that generated compatibility is not established. Today that line reads "All quality checks passed!" with no qualifier. Item 4's pinned-positional note is the precedent (`common.py:161-176`, `runner.py:156-157`).
-- [ ] Malformed `pyproject.toml`: exits 1 with an error naming the file and the parse error. It does not fall back to unset.
-- [ ] Unknown value (e.g. `"generate"`, `1`, `""`): exits 1 with an error naming the value and the two allowed values.
-- [ ] `--execution-target=native` on a project whose file says `generated` behaves as native for that run, and the output says the override was used. The same holds the other way round.
-- [ ] A project that also has `[tool.agentic-mbse.research] holdout-guard = …` keeps working. Both the research holdout guard and L6 accept the combined table (test in the research tests plus a CLI test).
+- [ ] `generated`: exit 1. The refusal is ERROR.
+- [ ] `native`: exit 0. Generator-only findings appear as one INFO summary line. A test reads every one of them, with rule, reason and location, from the structured report (below).
+- [ ] Unset (no `pyproject.toml`, no table, or no key): exit 0. The refusal is WARNING. The unset note, naming the setting and both ways to set it, is printed. A second fixture with no generator findings also prints the note.
+- [ ] Malformed `pyproject.toml`: exit 1, with an error naming the file and the parse error, under every target and with an override. It does not fall back to unset.
+- [ ] Unknown value (`"generate"`, `1`, `""`): exit 1, with an error naming the value and the two allowed values.
+- [ ] Unknown key (`execution_target`, `executiontarget`, `[tool.agentic-mbse.reseach]`) or a `[tool.agentic_mbse]` table: exit 1, with an error naming the key and the allowed keys.
+- [ ] `--execution-target=native` on a file that says `generated` runs as native, and the output says an override was used. The reverse also holds.
+
+**One key set, two readers** (tests in the research and validation suites)
+
+- [ ] One definition lists the keys allowed in `[tool.agentic-mbse]` (`execution-target`, `research`). A test fails if a reader accepts a key outside it.
+- [ ] A project with both `execution-target = "generated"` and `[tool.agentic-mbse.research] holdout-guard = …` passes both readers.
+- [ ] A bad `holdout-guard` value (a path that does not exist) does not fail `validate`.
+- [ ] A bad `execution-target` value does not refuse research `register`.
+- [ ] A misspelled key fails both readers.
 
 **Where the setting is read from** (tests)
 
-- [ ] The setting is read from `<project root>/pyproject.toml`, where the root comes from `find_project_root(start=<validated path>)` (`src/agentic_mbse/project_root.py:19`). A test validates a subdirectory and shows that the root's file is used. A `pyproject.toml` closer to the models, below the root, is ignored.
-- [ ] With no project root above the validated path, L6 runs as unset. A metric says no root was found and that `--execution-target` sets the target for one run. This mirrors the L2 pin-list metric (`positional_check.py:187-189`).
-- [ ] The L6 metrics always state the target in effect and where it came from: file path, override, or unset with the path that was looked at.
+- [ ] The file read is `<project root>/pyproject.toml`, with the root from `find_project_root(start=<validated path>)` (`project_root.py:19`). A test validates a subdirectory and shows the root's file is used, and that a `pyproject.toml` below the root is ignored.
+- [ ] With no project root above the validated path, L6 runs as unset. A metric says no root was found and names `--execution-target`.
+- [ ] Every L6 run has a metric stating the target in effect and its source: file path, override, or unset with the path looked at.
 
 **`init`** (tests)
 
-- [ ] `init --execution-target=generated` (or `native`) writes `execution-target` under `[tool.agentic-mbse]` in the target's `pyproject.toml`.
-- [ ] Interactive `init` (stdin is a terminal, no option, no existing value) asks for generated, native or leave unset, and writes what was chosen.
-- [ ] Noninteractive `init` with no option leaves the target unset. Its output says the target is unset and gives both ways to set it: the TOML line, and `init --execution-target`.
-- [ ] An existing value is never changed, not by a re-init, not under `--force`, and not by an option that disagrees with it. A disagreement is reported in the output.
-- [ ] A golden-file test: unrelated tables, keys, comments, blank lines and key order in `pyproject.toml`, including an existing `[tool.agentic-mbse.research]` table, are byte-for-byte unchanged after `init` adds the key, with and without `--force`.
-- [ ] `init` does not replace a symlinked `pyproject.toml` with a regular file.
+- [ ] `init --execution-target=generated` (or `native`) writes the key under `[tool.agentic-mbse]`. With no `pyproject.toml`, it creates one holding only that table.
+- [ ] Interactive `init` (stdin is a terminal, no option, no existing value) offers generated, native or leave unset, and writes the choice. "Leave unset" is the default.
+- [ ] Noninteractive `init` with no option writes nothing. Its output says the target is unset and gives the TOML line and the `init --execution-target` form.
+- [ ] An existing value, valid or not, is never changed: not by re-init, not under `--force`, not by a disagreeing option. A disagreement or an invalid existing value is reported with the allowed values.
+- [ ] Golden-file test: every byte outside the added key, including comments, blank lines, key order and an existing `[tool.agentic-mbse.research]` table, is unchanged, with and without `--force`. The written file parses with `tomllib`.
+- [ ] `init` refuses to write, never rewrites, and prints the line to add with the reason, in each of these cases: `pyproject.toml` is a symlink; it does not parse; `agentic-mbse` is an inline table; `agentic-mbse` is defined through dotted keys under `[tool]`; or any other layout where the key cannot be added as a plain line in an existing `[tool.agentic-mbse]` table or as a new table at the end. Each case has a test.
+- [ ] `install-commands` leaves `pyproject.toml` untouched (test).
 
-**Consumer evidence** (git archive copies, never the consumer checkouts)
+**Presentation** (tests on rendered stdout, one fixture per verdict, run under each target)
 
-- [ ] `evidence/dc3-baseline-l6.md`: one `validate --level=6 --execution-target=generated` run on dc3 `808464d` shows every confirmed category in one output. B1–B6 appear as refused errors, B7 as omitted warnings and B8 as unconfirmed, labelled as shadowed by B1. Each finding has a location, a stable reason and a remedy. The counts match Item 1's record (`evidence/dc3-baseline.md`): 236 refused, 32 omitted, 6 unconfirmed and 50 unverified, under verdict `refused_incomplete`. Any difference is explained.
-- [ ] The same file records a second run on dc3 `808464d` with the target unset, at WARNING.
-- [ ] `evidence/dc3-repaired-l6.md`: dc3 `60b44d5` under `generated` reports verdict `clear` with 30 omitted-String warnings. The output words it as "no refusals found by the implemented rules", followed by the coverage limit, and not as ready to generate.
-- [ ] `evidence/r3-2-before-after.md`: with the target unset, L6 pass/fail and exit codes before and after this change, for dc3 `808464d`, dc3 `60b44d5` and fusion-tea `f96ad312`. Every result that changes from pass to fail is listed as an R3-2 case. It is not fixed silently.
+- [ ] **Banned wording.** A case-insensitive scan of the whole `validate` stdout finds none of: "generated-ready", "generation-ready", "ready to generate", "will generate", "generator accepts", "readiness". This covers L6's lines, the level title and the final line.
+- [ ] **Verdict line.** L6 prints one verdict line. It contains the profile version (`subset-profile/v1`), the coverage-list version, the verdict word, the refused count, the unverified count, the unassessed-constraint count, and the words "not a generation check". It never contains "clean", "ready" or "passed".
+- [ ] **`refused_incomplete`.** In the verdict line, the refused count comes before the word "incomplete".
+- [ ] **`clear`.** The verdict line reads "no refusals found by the implemented rules". The next line names the coverage limit. Both lines are asserted.
+- [ ] **`incomplete`** (no refusals, some unverified checks): the verdict line says "incomplete". Under `generated` the level fails. Under unset the unverified checks are WARNING and the unset note is printed.
+- [ ] **`unconfirmed`.** Under `generated` and unset, an unconfirmed finding is WARNING, never ERROR. Its message says no generator probe has observed it. For the two contexts that are unconfirmed by design (`beyond_generator_roots`, `beneath_refused_multiplicity`), the message names the context.
+- [ ] **Shadowed.** The dc3 B8 fixture shape (a constraint predicate owned by a calc usage that has a refused calc-owned-assertion finding) prints "shadowed by" and names the refused finding. Its outcome stays `unconfirmed`.
+- [ ] **Unverified by target.** ERROR under `generated`. WARNING under unset. Under `native`, a separate WARNING line with its own count, outside the INFO summary.
+- [ ] **Excluded.** Under `generated`, an excluded non-numerical predicate is WARNING with reason `constraint_predicate_non_numerical`.
+- [ ] **Unassessed constraints.** A fixture with unassessed constraints and verdict `clear` shows the count in the verdict line. Under `generated` and unset it gets one WARNING naming the count. Under `native` it is part of the INFO summary.
+- [ ] **Final line.** When the run passes and the target is unset, or the target is `generated` and the verdict is anything but `refused`, the final line includes "generated compatibility not established". Item 4's pinned-positional note is the precedent (`common.py:161-176`, `runner.py:156-157`).
+- [ ] **Level title.** The level is titled "Level 6: Architecture & Generator Subset" in `runner.py:54`, `level6_architecture.py:3`, `:935` and its `level_name` uses, and the `sysml/types.py:82` comment.
+
+**Structured report** (test and evidence)
+
+- [ ] `validate` can write a JSON report holding every issue of every level that ran, with no truncation, plus L6's full profile result: verdict, scope, coverage version and list, every finding with rule, shape, context, outcome, reason, location, remedy and severity, every unverified check, and counts. A test checks that the dc3-sized fixture's report holds as many findings as the evaluator returned. The text output keeps its current truncation.
+
+**Check failures fail under every target** (tests)
+
+- [ ] Each site listed under "Check failures" has a test that forces its exception and asserts `L6_CHECK_ERROR` naming the check, under each of the three targets. Under `native`, none is counted in the INFO summary. A count the failure affected prints "not computed", not 0.
+- [ ] For the five sites that over-report today (`level6_architecture.py:520`, `:723`; `adr002.py:277`, `:335`, `:423`), the test also asserts that no dependent model-defect finding is emitted. For example, a failure at `:723` produces no `L6_CALC_DEF_NO_INSTANTIATION`.
+- [ ] A level that raises is recorded as failed. The run exits 1 and names the level. Tested for L6 and for one other level.
+- [ ] An evaluator or fact-extraction crash gives `L6_CHECK_ERROR` and exit 1 under every target.
+- [ ] Under `native`, a native-correctness error stays ERROR (test on one retained native-correctness code).
 
 **Both String spellings** (test plus evidence)
 
-- [ ] A fixture with `attribute x : String = "abc"` and one with `:>> x = "abc"`, both inside and outside `designs/`, give the same subset outcome (`omitted`), the same reason (`string_value_not_generated`) and the same severity for each target. Whatever the legacy String error (`L6_DESIGN_ATTR_UNEXTRACTABLE`) still does is listed by spelling in `evidence/legacy-l6-audit.md` and stays an open R3-1 case until the owner decides it.
+- [ ] `attribute x : String = "abc"` and `:>> x = "abc"`, each inside and outside `designs/`, give the same outcome (`omitted`), the same reason (`string_value_not_generated`) and the same severity: WARNING under `generated` and unset, INFO summary under `native`. Neither raises `L6_DESIGN_ATTR_UNEXTRACTABLE`.
 
-**Presentation** (tests on rendered output)
+**Library additions** (tests)
 
-- [ ] For each verdict and each target, the whole rendered `validate` output contains none of the wording below. That includes L6's lines, the level title (today "Architecture & Pipeline Readiness") and the run's final line. The banned wording is "generated-ready", "ready to generate", "will generate", "generator accepts", or an unqualified "clean"/"pass" next to the profile verdict. A test checks the rendered output for all five verdicts.
-- [ ] A `refused_incomplete` result leads with the refusal count and states the incompleteness next to it (impl-F2).
-- [ ] A `clear` result prints the profile version, the assessed scope and the coverage limit (impl-F1).
-- [ ] A test checks the contract's coverage list against the no-rule rows of Item 1's matrix. Another test shows that `SUBSET_PROFILE_VERSION` and its pinned digest are unchanged from `main` at `ebb3d467`.
+- [ ] The coverage list has its own version string, printed in the verdict line. A test pins its content to that version. Another test checks the list against the no-rule rows of Item 1's matrix fixture under `tests/fixtures/subset_profile/`, the way `tests/test_subset_matrix.py` does.
+- [ ] `SUBSET_PROFILE_VERSION` and its pinned digest are unchanged from `ebb3d467` (test).
+- [ ] Each routed advisory (UNSUPPORTED-SHAPE-MESSAGE, WRAPPER-SHAPE) has a fixture where it fires and a nearby fixture where it does not. It is at most WARNING under any target, and INFO under `native`.
+- [ ] UNSUPPORTED-RHS and MULTIPLICITY-SHAPE: a fixture shows L6 reporting the `invocation-callable` finding at an attribute value and the `part-multiplicity/unresolved_bound` finding. The MULTIPLICITY-SHAPE row is marked closed in the matrix, citing that test.
 
-**Native never hides check failures** (tests)
+**Consumer evidence** (`git archive` copies, never the consumer checkouts; every run records the resolved project root and the `pyproject.toml` path read)
 
-- [ ] Under `native`, an injected L6 inspection failure (monkeypatched) is reported as `L6_CHECK_ERROR` at ERROR and fails the level. It is not counted in the INFO summary.
-- [ ] Under `native`, a native-correctness error (for example `L6_CALC_DEF_NO_OUTPUT`, if the audit keeps it as native correctness) stays ERROR.
-- [ ] Each fake-clean exception site, and the two `AttributeError` catches at `level6_architecture.py:230` and `:289`, has a test that forces the exception and asserts `L6_CHECK_ERROR` with the check's name, under every target. Under `native`, none of them is counted in the INFO summary. The affected count says "not computed" rather than 0.
+- [ ] `evidence/dc3-baseline-l6.md`: from the JSON report of one `validate --level=6 --execution-target=generated` run on dc3 `808464d`, every confirmed category appears with location, reason and remedy. B1–B6 are refused ERROR, B7 omitted WARNING, B8 unconfirmed WARNING and shadowed by B1. Counts match Item 1's record (`evidence/dc3-baseline.md`): 236 refused, 32 omitted, 6 unconfirmed, 50 unverified, verdict `refused_incomplete`. Any difference is explained. A second run with the target unset is recorded too.
+- [ ] `evidence/dc3-repaired-l6.md`: dc3 `60b44d5` under `generated` gives verdict `clear` with 30 omitted-String warnings, and the `clear` wording and coverage limit asserted above.
+- [ ] `evidence/before-after.md`: full `validate --complete` runs before and after this change, with the target unset, on dc3 `808464d`, dc3 `60b44d5` and fusion-tea `f96ad312`. It records per-level pass/fail and the exit code. **Stop-and-show:** if any run goes from pass to fail, implementation stops, and the orchestrator shows the owner before merge.
 
-**Legacy audit and docs**
+**Audit and docs**
 
-- [ ] `evidence/legacy-l6-audit.md` lists every L6 check and issue code, including manifests and setup, as a table. Each row gives what the check does today, its severity today, its category (shared-decision duplicate, retained generator-specific, native correctness, ADR-002, manifest), and its severity under generated, unset and native. A final column flags any R3-1 or R3-2 case.
-- [ ] README, `skills/model-validation/SKILL.md` and the L6 CLI output each state the profile version (`subset-profile/v1`), what was assessed, that the assessment is incomplete relative to the generator, and that L6 is not `sysml-codegen check`. A shipped-text test checks for each of these statements.
+- [ ] `evidence/legacy-l6-audit.md` has one row per L6 issue code (17), plus manifest failures and setup failures. Each row gives what the check does, today's severity, its category, its severity under each target, and the evidence for its category. A separate table lists every severity lowered under `native` (ERROR→INFO and WARNING→INFO).
+- [ ] Every codegen citation in `level6_architecture.py` and `adr002.py` (`:847`, `adr002.py:478`, the "codegen's V8" reference near `level6_architecture.py:584`) is checked read-only at codegen `b5663c07` and corrected or removed. The dead citation at `common.py:82` is fixed.
+- [ ] README, `skills/model-validation/SKILL.md` and the L6 output each state the profile version, what was assessed, that the assessment is incomplete relative to the generator, and that L6 is not `sysml-codegen check`. A shipped-text test checks each statement. `docs/research-seam.md:350` and `:414-415` describe the shared key set.
 - [ ] `uv run pytest tests/`, `uv run mypy src/` and `uv run ruff check src/ tests/` pass. The evidence says which tests needed the SysIDE licence and which were skipped.
 
 ## Known Requirements
 
+### Owner gate outcomes (`briefs/align.md` § Gate outcomes)
+
+- **[INFERRED]** [AGENT] (delegated by owner, 2026-10-18) **String values (R3-1):** the legacy `L6_DESIGN_ATTR_UNEXTRACTABLE` error for String values (`attribute` form, `designs/` only) is replaced by the contract's `omitted` outcome. That outcome is a warning in both forms and in every folder.
+- **[INFERRED]** [AGENT] (delegated by owner, 2026-10-18) **Malformed constraints (R3-1):** `L6_CONSTRAINT_MALFORMED_NUMERICAL` keeps its current error severity and scope under every target. The contract's constraint outcomes are reported alongside it, never instead of it, so no constraint error is relaxed.
+- **[INFERRED]** [AGENT] (delegated by owner, 2026-10-18) **Check failures (R3-2):** a check that crashes or cannot inspect what it was asked to inspect fails the run under every target, including unset. A crashed level is recorded as failed. Safeguard: the before/after runs in Success Criteria, with stop-and-show on any pass→fail.
+- **[INFERRED]** [AGENT] (delegated by owner, 2026-10-18) **Unverified contract checks under unset** are warnings: they are the contract's "could not decide", not a crash. Under `generated` they follow the contract's verdict presentation.
+
 ### The setting
 
-- **[INFERRED]** [AGENT] (ratified by owner, 2026-10-18, owner reply "yes, good"; `briefs/align.md`) The setting is `[tool.agentic-mbse] execution-target = "generated" | "native"` in the target project's `pyproject.toml`. It is committed, so the owner, teammates and CI get the same result. An environment variable was considered and is out because it differs per machine.
-- **[INFERRED]** [AGENT] (ratified by owner, 2026-10-18, owner reply "yes, good") A one-run command-line override (`validate --execution-target=…`) takes precedence over the file for that run.
+- **[INFERRED]** [AGENT] (ratified by owner, 2026-10-18, owner reply "yes, good") The setting is `[tool.agentic-mbse] execution-target = "generated" | "native"` in the target project's `pyproject.toml`. It is committed, so owner, teammates and CI get the same result. An environment variable is out because it differs per machine.
+- **[INFERRED]** [AGENT] (ratified by owner, 2026-10-18, owner reply "yes, good") A one-run override (`validate --execution-target=…`) takes precedence over the file.
 - **[INHERITED]** (epic Item 3 scope 1) A malformed TOML file and an unknown value are errors, not unset.
-- **[HARD]** `research/holdout.py:241-260` already owns `[tool.agentic-mbse]` and rejects every key there except `research`. It also rejects a `[tool.agentic_mbse]` table. Adding `execution-target` without changing that guard breaks the research seam for any project that sets the target. Both readers must agree on one closed set of keys.
-- **[INFERRED]** The setting is read only from the project root's `pyproject.toml`, using `find_project_root` unchanged. *Reason:* the brief says to reuse Item 4's discovery, and Item 4 reads only at the root (ADR 0002, D11). A tree under `$HOME` with no marker of its own resolves to `$HOME` because `~/.claude/` counts as a marker (Item 4 audit finding 7). The metric shows the path that was looked at, so this stays visible. Changing the marker rule is out of scope.
-- **[INFERRED]** The override accepts only `generated` and `native`. *Reason:* "unset" is the absence of a decision, and the owner described the override as choosing a target.
-- **[INFERRED]** A malformed file or an unknown file value is still an error when an override is given. *Reason:* the file is shared with the holdout guard and with uv. An override chooses this run's target; it does not make a broken file valid.
-- **[INFERRED]** The setting is read only when L6 runs. A setting error is an L6 issue. `--execution-target` with `--level` 1–5 is accepted and has no effect. *Reason:* "errors for checks actually requested" (epic Item 3 scope 3).
-- **[INFERRED]** The `[tool.agentic_mbse]` underscore spelling is rejected, as the holdout guard already does.
+- **[HARD]** `research/holdout.py:241-260` rejects every `[tool.agentic-mbse]` key except `research`, and rejects a `[tool.agentic_mbse]` table. The research seam documents this closed set as the defense against a misspelled key silently switching a check off (`docs/research-seam.md:350`).
+- **[INFERRED]** One closed key set for `[tool.agentic-mbse]`, defined once and used by both readers. Each reader rejects keys outside the set, but checks the value of its own key only. *Reason:* the guard fails closed (`docs/research-seam.md:412-419`). If it validated the target, a target typo would refuse every research `register`. If L6 validated the guard path, a research fault would fail `validate`.
+- **[INFERRED]** An unknown key, or the underscore table, is an L6 configuration error. *Reason:* otherwise `execution_target = "generated"` silently gives unset, the exact failure the closed set exists to stop. It fails projects that pass today, so it falls under the R3-2 check-failure outcome and its safeguard.
+- **[INFERRED]** The file is read only at the project root, using `find_project_root` unchanged. *Reason:* the brief asks for Item 4's discovery, which reads only at the root (ADR 0002, D11). A tree under `$HOME` with no marker of its own resolves to `$HOME`, because `~/.claude/` counts as a marker (Item 4 audit finding 7). The metric shows the path read.
+- **[INFERRED]** The override accepts only `generated` and `native`. A malformed file or bad key or value is still an error with an override. *Reason:* the override picks a target. It does not repair a file that the holdout guard and uv also read.
+- **[INFERRED]** The setting is read only when L6 runs. `--execution-target` with `--level` 1–5 is accepted and has no effect.
 
 ### Severity by target
 
-- **[INFERRED]** [AGENT] (ratified by owner, 2026-10-18, owner reply "yes, good") Unset is the default. It shows generator findings as warnings, with a note naming the setting. Unset never labels a model generated-ready.
+- **[INFERRED]** [AGENT] (ratified by owner, 2026-10-18, owner reply "yes, good") Unset is the default. It shows generator findings as warnings, with a note naming the setting, and never labels a model generated-ready.
 - **[INFERRED]** [AGENT] (ratified by owner, 2026-10-18, owner reply "yes, good") `native` turns generator-only findings into an INFO summary. `generated` makes confirmed refusals errors.
-- **[INFERRED]** [AGENT] (ratified by owner, 2026-10-18, owner reply "yes, good") Under `generated`, exclusions (non-numerical predicates) and omissions (dropped String values) are warnings, each with its own reason, not errors. String policy itself stays with Item 2.
-- **[INHERITED]** (epic Item 3 scope 3) Check and configuration failures are errors for checks actually requested, whatever the target. An inspection failure is never folded into a native summary. Native correctness errors stay errors.
-- **[INHERITED]** (epic principle 1; Item 1 `design.md:70-74`, `:341`) L6 owns severity. It maps the evaluator's verdict and outcomes to severity and does not re-derive a decision the contract holds. No agentic-mbse module imports sysml-codegen (ADR 0001 invariant 3).
-- **[INFERRED]** `unconfirmed` findings are WARNING under `generated` and unset, and part of the INFO summary under `native`. They are never ERROR. *Reason:* P-0001 allows `refused` only with a retained generator probe, so an unconfirmed finding has no evidence that would justify blocking. The two contexts that are unconfirmed by design (`beyond_generator_roots`, `beneath_refused_multiplicity`; r3-proposal §3 row :60) say which context made them unconfirmed. B8 is labelled as shadowed by B1 (`acceptance.md:31`).
-- **[INFERRED]** The evaluator's unverified checks (rule-level "could not assess") are ERROR under `generated`. Under `native` they get their own WARNING line, never part of the INFO summary. *Reason:* under `generated` the capability checks are the checks requested, so not finishing them is a check failure. Under `native`, epic scope 3 forbids folding them into the summary.
-- **Pending owner (R3-2): unverified checks under unset.** The epic's rule says check failures are errors whatever the target. Applied to unset, that fails any project with an unverified check that passes today, which is an R3-2 case. The proposal is WARNING under unset, matching the owner's unset-is-warnings decision. The alternative is ERROR, following the epic's rule. Either way they are never counted as clean. This spec does not choose (see Open Questions, R3-2).
-- **[INHERITED]** (epic Item 3 scope 5) A crash of the evaluator itself, or of fact extraction as a whole, is `L6_CHECK_ERROR` at ERROR under `generated` and `native`. Under unset it is the same proposal, pending R3-2.
+- **[INFERRED]** [AGENT] (ratified by owner, 2026-10-18, owner reply "yes, good") Under `generated`, exclusions and omissions are warnings, each with its own reason. String policy stays with Item 2.
+- **[INHERITED]** (epic Item 3 scope 3) Check and configuration failures are errors for requested checks under every target. An inspection failure is never folded into a native summary. Native correctness errors stay errors.
+- **[INHERITED]** (epic principle 1; Item 1 `design.md:70-74`, `:341`; ADR 0001 invariant 3) L6 owns severity and rendering. It does not re-derive a decision the contract holds. No agentic-mbse module imports sysml-codegen.
+- **[INFERRED]** `unconfirmed` is WARNING under `generated` and unset, and INFO summary under `native`, never ERROR. *Reason:* P-0001 allows blocking only with a retained probe.
+- **[INFERRED]** Unverified checks are ERROR under `generated`. *Reason:* the gate outcome says they follow the verdict presentation there. `incomplete` and `refused_incomplete` are never clean, and under `generated` the capability checks are the checks requested. Under `native` they get their own WARNING line, outside the INFO summary (epic scope 3).
+- **[INFERRED]** Unassessed constraints are shown as a count in the verdict line, and as one WARNING under `generated` and unset when the count is above zero. Under `native` the count is part of the INFO summary. They are never turned into unverified checks or ERROR. *Reason:* the contract reports them as a count, outside the verdict. Making them a check failure would mean L6 re-deriving a decision. A warning keeps a `clear` with unassessed constraints from reading as complete. The legacy `L6_CONSTRAINT_MALFORMED_NUMERICAL` error is unaffected.
+- **[INFERRED]** "Shadowed by": a finding is labelled shadowed when its subject's owner is the subject of a `refused` finding from another rule. dc3 B8 is the known case. The label is presentation only and the outcome does not change. L6 computes it from the findings' subjects. If that needs owner facts the result lacks, design adds them in the additive way (below) or drops the label and records why.
 
-### How results are presented (impl-F1, impl-F2, r3-proposal §2 row :44)
+### How results are presented
 
-- **[INHERITED]** (ADR 0001 invariant 2; r3-proposal :44, owner-ratified) `clear` means no refusals over the implemented rules, not "will generate". No verdict, target or summary line is worded as generated-ready.
-- **[INHERITED]** (Item 1 product-lens impl-F2; audit S3) L6 shows the worst outcome and completeness as two separate facts. `refused_incomplete` leads with the refusals, so an author with `generated` sees "the generator will refuse this", not "we couldn't finish".
-- **[INHERITED]** (Item 1 product-lens impl-F1; audit S2: "consumer wording is Item 3") Next to the verdict, L6 shows the coverage limit: the families the contract has no rule for, such as DEEP-QUALIFIED-WIRING, ES-002, ES-008, ES-009, the ES-010 refusal side, CALC-DEF-BARE-RESULT and the explicit follow-up sites. `SubsetProfileResult` does not carry this today (`ScopeReport`, `subset_profile.py:716`).
-- **[INFERRED]** The coverage limit comes from the contract (Item 1's library or its packaged records), not from a list maintained by hand in L6. *Reason:* impl-F1 names a list kept in the consumer as the defect ("a consumer compensating for a missing producer guarantee").
-- **[INFERRED]** That library change only adds. It does not change `SUBSET_PROFILE_VERSION`, the digest pinned to it, existing result fields or any decision. *Reason:* the Item 2 agent consumes this result shape and pins this version, and Item 2 is off limits. If design finds the coverage limit cannot be added without changing the version or digest, it stops and asks the owner. It does not bump the version.
-- **[INFERRED]** When the run passes, its final line carries the generated-compatibility qualifier whenever the target is unset, or whenever the target is `generated` and the verdict is not `refused`. Under unset, the note naming the setting appears even when there are no generator findings. *Reason:* L6 passes on WARNING, so without this an unset run with refusals ends in "All quality checks passed!" under a level titled "Pipeline Readiness". Item 4 qualifies the final line for pinned warnings the same way.
-- **[INFERRED]** Every L6 run that assesses the profile prints the profile version, the executable-profile version, the roots used, whether the selection was narrowed, and the fact kinds not enumerated (`ScopeReport`). Each finding prints its rule, reason, location (`SafeLocation`) and the record's `remedy` and `semantic_limits`. A finding is not linked to `docs/patterns/generator-subset.md` while that file does not exist; Item 5 creates it.
-- **[INFERRED]** "Generated-ready" never appears in this item's output for any state. *Reason:* only the future `sysml-codegen check` (Item 2) can support that claim, and L6 states that boundary.
+- **[INHERITED]** (ADR 0001 invariant 2; r3-proposal §2, owner-ratified) `clear` means no refusals over the implemented rules, not "will generate". No line is worded as generated-ready. Only the future `sysml-codegen check` (Item 2) could support that claim.
+- **[INHERITED]** (impl-F2; Item 1 audit S3) Worst outcome and completeness are shown as two facts. Refusals lead.
+- **[INHERITED]** (impl-F1; Item 1 audit S2) The coverage limit is shown with the verdict. Known no-rule families: DEEP-QUALIFIED-WIRING, ES-002, ES-008, ES-009, the ES-010 refusal side, CALC-DEF-BARE-RESULT, plus the explicit follow-up sites. `SubsetProfileResult` does not carry this today (`ScopeReport`, `subset_profile.py:716`).
+- **[INFERRED]** The coverage list lives in agentic-mbse's `sysml/` layer as a packaged list with its own version string, separate from `subset_profile_rules.toml`. L6 does not keep its own copy. *Reason:* putting it in the rule records changes the digest and so `SUBSET_PROFILE_VERSION`, which Item 2 pins. A separate version means "same profile version" is never read as "same coverage".
+- **[INFERRED]** Library additions only add. `SUBSET_PROFILE_VERSION`, its digest, existing result fields and every decision stay unchanged. If a need cannot be met that way, design stops and asks the owner. *Reason:* the Item 2 agent consumes this surface.
+- **[INFERRED]** The L6 level is renamed "Architecture & Generator Subset". *Reason:* "Pipeline Readiness" claims readiness that L6 cannot establish. The new name says what it checks without a readiness claim. The `skills/model-validation/SKILL.md` table row and the descriptive L6 line in CLAUDE.md § Architecture change to match. That CLAUDE.md edit is a one-line description fix, not the Change Coordination proposal Item 6 reserves.
+- **[INFERRED]** Every profile run prints the profile and executable-profile versions, the roots used, whether the selection was narrowed, and the fact kinds not enumerated. Each finding prints rule, reason, location, and the record's `remedy` and `semantic_limits`. No link to `docs/patterns/generator-subset.md` is printed until Item 5 creates it.
+- **[INFERRED]** The full set of findings is available as a JSON report written on request. The text output keeps its truncation (`common.py:141-156`). *Reason:* 236+ findings cannot be shown in a terminal. Changing truncation for every level is not this item's job, while a report gives evidence and native users one complete source.
 
 ### Legacy L6 checks
 
-- **[INHERITED]** (epic Item 3 scope 4) Every existing L6 check is audited. Duplicates of shared decisions are replaced by the contract's findings. Retained generator-specific checks go through the target policy. ADR-002 placement (`V1`, `V2`, `V4_UNSUPPORTED_OPERATOR`) and manifest checks keep their own documented applicability under every target. `native` must not leave contradictory generator-only errors in place.
-- **[INHERITED]** (align record, R3-1) The audit may replace duplicates with shared decisions. A net relaxation under unset or `generated` goes to the owner. Lowering a legacy generator-only error to INFO under `native` is not an R3-1 case, because R3-1 covers only unset and `generated`.
-- **[INFERRED]** Where a legacy check and a contract rule report the same site, the combined severity under unset and `generated` is never lower than today's, unless the owner decides otherwise under R3-1.
+- **[INHERITED]** (epic Item 3 scope 4) Every existing L6 check is audited. Duplicates are replaced by the contract's findings. Retained generator-specific checks go through target policy. ADR-002 placement and manifests keep their own applicability. `native` must not leave contradictory generator-only errors.
+- **[INFERRED]** R3-1 covers unset and `generated` only, so lowering a generator-only check under `native` is not an R3-1 case. Instead, each row's category needs evidence: what the native route does with the construct (a SysIDE evaluation or fixture result), or a cause that exists only in the generator (codegen naming, extraction or emission). A row without that evidence keeps today's severity under `native`. *Reason:* without this, a wrong classification relaxes a native project's errors with no check.
+- **[INFERRED]** Where a legacy check and a contract rule cover the same site, the combined severity under unset and `generated` is not lower than today's, except for the String case the gate decided.
 
-What the inventory shows (read from code, not run; `evidence/legacy-l6-audit.md` will be the full record):
+Provisional dispositions. The audit evidence confirms or corrects each one.
 
-| Legacy code | Today | Proposed disposition | Gate |
-|---|---|---|---|
-| `V1_CALC_DEF_LOCATION`, `V2_DYNAMIC_EXPRESSION`, `V4_UNSUPPORTED_OPERATOR` (ERROR) | ADR-002 placement and static design attributes | Unchanged under every target | — |
-| `V4_STATIC_FUNCTION_INVOCATION` (WARNING) | Function call in a design attribute | Duplicate of `invocation-callable`. Replaced: WARNING unset, ERROR generated, INFO native | — |
-| `L6_CONSTRAINT_MALFORMED_NUMERICAL` (ERROR) | `executable_profile` BLOCK. `UNASSESSED` produces no issue (`level6_architecture.py:674`) | Duplicate of `constraint-predicate`. Replacing it would make unset a WARNING, which is a relaxation. `UNASSESSED` becomes visible as unverified | **R3-1** |
-| `L6_CONSTRAINT_NON_NUMERICAL` (WARNING) | Non-numerical predicate | Duplicate of `constraint-predicate` excluded: WARNING generated and unset, INFO native | — |
-| `L6_DESIGN_ATTR_UNEXTRACTABLE` (ERROR), String values, `attribute` spelling, `designs/` only | Indirect String error | Duplicate of `string-value-omission`. Owner policy says omissions are warnings under `generated`, so replacing it relaxes an error | **R3-1** |
-| `L6_DESIGN_ATTR_UNEXTRACTABLE` (other values), `L6_DESIGN_ATTR_INCOMPLETE` (ERROR) | Design attribute with no value, or one the evaluator cannot read | Retained generator-specific: ERROR unset and generated, INFO native | — |
-| `L6_MISSING_QUALIFIED_NAME`, `L6_INVALID_QUALIFIED_NAME`, `L6_ANONYMOUS_RETURN`, `L6_CALC_DEF_NO_INSTANTIATION`, `L6_INVALID_BINDING_FORMAT` (ERROR) | Generator naming, return and wiring rules | Retained generator-specific: ERROR unset and generated, INFO native | — |
-| `L6_BODY_ASSIGNMENT_IMPL_LOSS`, `L6_ATTR_REDEF_EXPR_DROPPED` (WARNING) | Generator silent-loss warnings | Retained: WARNING unset and generated, INFO native | — |
-| `L6_CALC_DEF_NO_OUTPUT` (ERROR), `L6_CALC_DEF_NO_DIRECTION` (WARNING) | Calc def structure | Native correctness: unchanged under every target (design confirms the category) | — |
-| Manifest strings; model-load and missing-path failures | Fail the level | Unchanged under every target | — |
-| `part-multiplicity`, `calc-owned-assertion` (new) | No L6 counterpart today | New findings: WARNING unset, by outcome under `generated` | — |
+| Legacy code (today) | Disposition | unset | generated | native |
+|---|---|---|---|---|
+| `V1_CALC_DEF_LOCATION`, `V2_DYNAMIC_EXPRESSION`, `V4_UNSUPPORTED_OPERATOR` (ERROR) | ADR-002, own applicability | ERROR | ERROR | ERROR |
+| `V4_STATIC_FUNCTION_INVOCATION` (WARNING) | Kept. It is a duplicate of `invocation-callable` only if a boundary fixture (an allowlisted call in a design attribute) shows the same result. V4 fires on any call; the contract fires only off the allowlist (`subset_profile.py:921-934`) | WARNING | WARNING | INFO |
+| `L6_CONSTRAINT_MALFORMED_NUMERICAL` (ERROR) | Kept unchanged by the gate outcome; contract outcomes alongside | ERROR | ERROR | ERROR |
+| `L6_CONSTRAINT_NON_NUMERICAL` (WARNING) | Kept, contract `excluded` alongside, the same treatment as its sibling | WARNING | WARNING | INFO |
+| `L6_DESIGN_ATTR_UNEXTRACTABLE` on String values (ERROR, `attribute` form, `designs/`) | Replaced by contract `omitted` (gate outcome) | WARNING | WARNING | INFO |
+| `L6_DESIGN_ATTR_UNEXTRACTABLE` other values, `L6_DESIGN_ATTR_INCOMPLETE` (ERROR) | Generator-specific if evidence shows it | ERROR | ERROR | INFO |
+| `L6_MISSING_QUALIFIED_NAME`, `L6_INVALID_QUALIFIED_NAME`, `L6_ANONYMOUS_RETURN`, `L6_CALC_DEF_NO_INSTANTIATION`, `L6_INVALID_BINDING_FORMAT` (ERROR) | Generator-specific if evidence shows it | ERROR | ERROR | INFO |
+| `L6_BODY_ASSIGNMENT_IMPL_LOSS`, `L6_ATTR_REDEF_EXPR_DROPPED` (WARNING) | Generator-specific if evidence shows it | WARNING | WARNING | INFO |
+| `L6_CALC_DEF_NO_OUTPUT` (ERROR), `L6_CALC_DEF_NO_DIRECTION` (WARNING) | Native correctness unless evidence shows otherwise | unchanged | unchanged | unchanged |
+| Manifest failures; model-load and missing-path failures | Own applicability | fail | fail | fail |
+| New: `calc-owned-assertion`, `part-multiplicity`, `binding-source`, `indexed-reference`, `conditional-expression` | Contract findings | WARNING | by outcome | INFO |
 
-### Check failures (epic Item 3 scope 5)
+The `native` lowerings this proposes: 7 ERROR→INFO (`L6_DESIGN_ATTR_UNEXTRACTABLE` for non-String values, `L6_DESIGN_ATTR_INCOMPLETE`, and the five naming, return and wiring codes) and 4 WARNING→INFO (`V4_STATIC_FUNCTION_INVOCATION`, `L6_CONSTRAINT_NON_NUMERICAL`, `L6_BODY_ASSIGNMENT_IMPL_LOSS`, `L6_ATTR_REDEF_EXPR_DROPPED`). Each needs its row's evidence.
+
+### Check failures
 
 - **[INHERITED]** (epic Item 3 scope 5) A failed check reports `L6_CHECK_ERROR`, keeps safe display-only fallbacks, and keeps failed metrics distinct from clean counts. All independent failures are reported. No dependent conclusions are made up.
-- **[INHERITED]** (epic, "27 broad exception sites") The epic's count is 27. The inventory finds 26 `except Exception` sites. The 19 that make a failure read as clean are `level6_architecture.py` 191, 246, 320, 374, 418, 470, 502, 572, 623, 759, 832, 907, 973 and 978 (the last two affect counts only), and `adr002.py` 87, 177, 207, 254 and 624. The other 7 over-report rather than hide (`level6_architecture.py` 520, 723; `adr002.py` 277, 335, 423), report the failure already (`level6_architecture.py` 960), or are dead code (`adr002.py` 268). The audit reconciles 26 against 27 by site. The two narrower `AttributeError` catches at `level6_architecture.py:230` and `:289` turn an inspection failure into a model-defect finding (`L6_MISSING_QUALIFIED_NAME`); they are in scope too.
-- **Pending owner (R3-2): an exception that escapes a level** (`runner.py:128-137`). The proposal is that it fails the level and the run. It is a check failure for a check that was requested (epic scope 3), and the code's own comment says it should be. By construction it fails some project that passes today, so it waits for the owner.
-- **[INHERITED]** (epic Item 3 scope 5) The stale resolver citation is fixed. The one candidate is `level6_architecture.py:847`, which cites codegen's `hierarchy_resolver._extract_single_redefinition`. It could not be confirmed, because sysml-codegen was not readable in this session. Design confirms it read-only at the pinned codegen revision `b5663c07`. The dead citation at `common.py:84` (`test_sysml_parsing.py:82-100`, which does not exist) is fixed in the same pass.
+- **[INHERITED]** (epic Item 3 scope 5) The stale resolver citation is fixed.
+- **[INFERRED]** Site-by-site classification, from code reading. Design may challenge any entry. The epic says 27 sites; the reading finds 26 `except Exception` sites plus 2 `AttributeError` catches. The audit reconciles the counts by site.
+  - **Hide a failure as clean, so they become `L6_CHECK_ERROR`:** `level6_architecture.py` 191, 246, 320, 374, 418, 470, 502, 572, 623, 759, 832, 907; `adr002.py` 87, 177, 207, 254, 624.
+  - **Hide a failed count as 0, so the count shows "not computed" and `L6_CHECK_ERROR` is raised:** `level6_architecture.py` 973, 978.
+  - **Turn a failure into a false model defect, so they become `L6_CHECK_ERROR` with no dependent finding:** `level6_architecture.py` 520 (skipping calc usages is bypassed), 723 (the instantiated set comes out partial or empty), 230 and 289 (`AttributeError` read as a missing name); `adr002.py` 277, 335, 423 (type and EXPOSE tests return False).
+  - **Already reports the failure:** `level6_architecture.py` 960. Kept.
+  - **Dead code:** `adr002.py` 268. Deleted.
+- **[INFERRED]** A level that raises is recorded as failed for every level (`runner.py:128-137`). An evaluator or fact-extraction crash is `L6_CHECK_ERROR`. Both follow the R3-2 gate outcome.
 
 ### Routed obligations from Item 1 (r3-proposal, owner-ratified "agreed on all")
 
-- **[INHERITED]** (r3-proposal §1 :16-20, :23, :24) L6 reports ES-001, ES-003, ES-004, ES-005, ES-006, ES-007 and ES-010 in one run. String omission is flagged the same way for both spellings.
-- **[INHERITED]** (r3-proposal §4 :70, :71) L6 consumes ES-005 for UNSUPPORTED-RHS and the part-multiplicity rule for MULTIPLICITY-SHAPE. The MULTIPLICITY-SHAPE row closes here.
-- **[INHERITED]** (r3-proposal §4 :67, :74) UNSUPPORTED-SHAPE-MESSAGE and WRAPPER-SHAPE become L6 advisories, separate from generation behavior. Design decides their wording and severity, which is at most WARNING under any target, because they are not refusals.
-- **[INHERITED]** (P-0001 scope, `.project/product/0001-*.md:32`) P-0001 says no consumer is wired yet. It is updated at close to describe L6 as a consumer.
+- **[INHERITED]** (r3-proposal §1) L6 reports ES-001, ES-003, ES-004, ES-005, ES-006, ES-007 and ES-010 in one run. String omission is flagged the same way for both spellings.
+- **[INHERITED]** (r3-proposal §4) L6 consumes ES-005 for UNSUPPORTED-RHS and the part-multiplicity rule for MULTIPLICITY-SHAPE. The MULTIPLICITY-SHAPE row closes here.
+- **[INHERITED]** (r3-proposal §4) UNSUPPORTED-SHAPE-MESSAGE and WRAPPER-SHAPE become advisories, separate from generation behavior.
+- **[INFERRED]** Their detection lives in an advisory module in agentic-mbse's `sysml/` layer, next to the contract. It sits outside `subset_profile_rules.toml` and its digest. L6 only renders the advisories. *Reason:* hand-written generator checks in L6 are the defect this item removes, and the rule records are frozen by the version rule. Design defines each advisory's exact shape from Item 1's matrix rows.
+- **[INHERITED]** (P-0001 scope) P-0001 says no consumer is wired yet. At close it is updated to describe L6 as a consumer.
 
 ### `init`
 
-- **[INHERITED]** (epic Item 3 scope 2) `init` offers an explicit target option, and an interactive choice where it fits. Noninteractive `init` keeps existing values and, when no target is given, leaves it unset with actionable output. It keeps unrelated TOML, comments, existing settings and symlink ownership, even under `--force`, following the native-settings rule in CLAUDE.md § Init File Ownership.
-- **[INFERRED]** If the target has no `pyproject.toml` and a target was chosen, `init` creates one containing only the `[tool.agentic-mbse]` table. With no target chosen it creates nothing. *Reason:* the setting must live in that file, and an unset target needs no file.
-- **[INFERRED]** If `pyproject.toml` is a symlink or will not parse, `init` does not write it. It prints the line to add and finishes the rest of the install. *Reason:* the link's target may be owned elsewhere, and rewriting a file that will not parse risks corrupting the owner's content.
-- **[INFERRED]** `install-commands` does not read or write the setting. *Reason:* it installs only the assistant integrations (CLAUDE.md § Change Coordination).
+- **[INHERITED]** (epic Item 3 scope 2) `init` offers an explicit target option, and an interactive choice where it fits. Noninteractive `init` keeps existing values and leaves the target unset with actionable output when none is given. It keeps unrelated TOML, comments, existing settings and symlink ownership even under `--force` (CLAUDE.md § Init File Ownership: native settings are preserved, "when the TOML layout permits").
+- **[INFERRED]** `init` adds the key only as a plain line inside an existing `[tool.agentic-mbse]` table, or as a new table at the end of the file. Any other layout is refused, and the line to add is printed. The written file must parse, and every existing value must be unchanged. *Reason:* adding a header next to an inline or dotted-key definition produces a duplicate-table error.
+- **[INFERRED]** The rest of the install completes when the setting step refuses. `init` exits non-zero only when `--execution-target` was given and could not be written. *Reason:* a missing setting is recoverable by hand. A failed explicit request should not look like success.
+- **[INFERRED]** Interactive re-init asks again while the target is unset, with "leave unset" as the default. *Reason:* nothing records an earlier "leave unset" choice, and adding such a record is more state than the prompt is worth.
+- **[INFERRED]** `install-commands` does not read or write the setting (CLAUDE.md § Change Coordination).
 
 ### Docs
 
-- **[INHERITED]** (epic Item 3 scope 6) README, model-validation guidance and CLI output state the profile version, the assessed scope, that the assessment is incomplete, and the boundary between L6 and the full `sysml-codegen check`. That check does not exist yet (Item 2), so the docs describe it as the future boundary and do not show a command to run (align record, owner boundary).
+- **[INHERITED]** (epic Item 3 scope 6) README, model-validation guidance and CLI output state the profile version, assessed scope, incompleteness and the L6 vs `sysml-codegen check` boundary. That check does not exist yet, so it is described as the future boundary, with no command shown (align record, owner boundary).
+- **[INFERRED]** `docs/research-seam.md:350` and `:414-415` are updated to the shared key set.
 
 ## Non-Goals
 
-- Changing generator behavior, or writing anything in sysml-codegen or in Item 2 artifacts (align record, owner boundary 2026-10-18).
-- Deciding String metadata policy. It belongs to Item 2; this item only flags String omissions the same way for both spellings.
-- The PUSH-DOWN rows that wait on Item 2 (r3-proposal :66, :68, :69, :72, :73, :75: CHAIN-SEGMENTS, UNSUPPORTED-OPERATOR, REDEF-PRECEDENCE, AMBIG-INHERITED-ATTR, SUM-SHAPE, LITERAL-SHAPE).
-- Rendering `docs/patterns/generator-subset.md` and the guidance fence harness (Item 5). Workflow gates and MODELING_PROCESS changes (Item 6).
-- Changing the project-root marker rule. The `~/.claude` effect is pre-existing and shared with L2.
-- Fixing the simple-name collision in `L6_CALC_DEF_NO_INSTANTIATION` (`level6_architecture.py:700-762`). The audit records it; a fix is a separate item.
-- L4's executable coverage and other levels. Only the runner's crash handling outside L6 is touched.
-- Editing dc3 or fusion-tea. Evidence uses `git archive` copies.
+- Changing generator behavior, or writing anything in sysml-codegen or Item 2 artifacts (owner boundary, 2026-10-18). Reading codegen at `b5663c07` to check citations is allowed.
+- Deciding String metadata policy (Item 2).
+- The PUSH-DOWN rows waiting on Item 2: CHAIN-SEGMENTS, UNSUPPORTED-OPERATOR, REDEF-PRECEDENCE, AMBIG-INHERITED-ATTR, SUM-SHAPE, LITERAL-SHAPE.
+- `docs/patterns/generator-subset.md` and the guidance fence harness (Item 5). Workflow gates and MODELING_PROCESS (Item 6).
+- Changing the project-root marker rule.
+- Fixing the simple-name collision in `L6_CALC_DEF_NO_INSTANTIATION` (`level6_architecture.py:700-762`). The audit records it.
+- Changing text-output truncation for levels other than L6, and changing other levels' checks. Only the runner's crash handling reaches them.
+- Editing dc3 or fusion-tea.
 
 ## Open Questions / Deferred to design
 
-**Owner gates. These are recorded and not decided here.**
-
-- **R3-1: relaxing an existing L6 error under unset or `generated`.** Known cases so far, from the audit table:
-  - `L6_DESIGN_ATTR_UNEXTRACTABLE` on `attribute`-spelling Strings under `designs/`: today ERROR. The owner's omission policy plus the shared decision would make it WARNING.
-  - `L6_CONSTRAINT_MALFORMED_NUMERICAL`: today ERROR. Replacing it with `constraint-predicate` refused would make it WARNING under unset.
-
-  Until the owner decides, both legacy errors stay. The full audit may find more cases. **Conflict to surface:** while R3-1 is open, the "both String spellings agree" criterion holds for the contract's findings, but the legacy layer still errors on one spelling only.
-- **R3-2: a project that passes today fails with the target unset.** Each source below fails some project by construction, so each needs the owner's decision before it is implemented under unset. The proposal for each follows the epic's inherited rule except where noted. The owner may accept it, or reject it so that unset keeps today's behavior.
-  - an exception escaping a level now fails the run (`runner.py:128-137`); proposed ERROR;
-  - `L6_CHECK_ERROR` at the 19 fake-clean sites and the two `AttributeError` sites; proposed ERROR;
-  - an evaluator or fact-extraction crash; proposed ERROR;
-  - the evaluator's unverified checks; proposed WARNING under unset, which departs from the epic's rule to avoid R3-2;
-  - a malformed `pyproject.toml` or unknown value; proposed ERROR.
-
-  **Conflict to surface:** the epic's inherited rule ("check failures are errors regardless of target") and the owner's R3-2 gate point in opposite directions for the same projects. Under `generated` and `native` the epic's rule applies without a gate. `evidence/r3-2-before-after.md` measures the effect on the three pinned consumer trees, but a clean result there does not take the place of the owner's decision.
-
-**Mechanism and wording, for design**
-
-- How the coverage limit is carried: a new field on `ScopeReport`, a versioned packaged list, or a pointer into the records.
-- Exact wording of the verdict line, the unset note and the native INFO summary. Where the native details live: `--verbose`, the metrics, or a structured output.
-- One issue per finding or per declaration (dc3 B8 shows 4 legacy diagnostics for 2 constraints). Deduplication between legacy checks and contract findings on the same site.
-- How `pyproject.toml` is edited while keeping every other byte. `tomlkit` is not a dependency; a careful text insert is the alternative.
-- `init`'s exit status when `pyproject.toml` will not parse or an option disagrees with an existing value.
-- Whether `L6_CALC_DEF_NO_OUTPUT` is native correctness or generator-specific, and whether `V2` and `V4_UNSUPPORTED_OPERATOR` are pure ADR-002 rules or also generator rules.
-- How the CLI names the override option and the interactive prompt text.
+- Exact wording of the verdict line, unset note, native summary and final-line qualifier, within the asserted phrases above.
+- The JSON report's option name, schema and whether it nests per level.
+- One issue per finding or per declaration (dc3 B8 shows 4 legacy diagnostics for 2 constraints), and how legacy and contract findings on the same site are grouped in the text output.
+- How `pyproject.toml` is edited byte-preservingly (`tomlkit` is not a dependency; a careful text insert is the alternative).
+- Where the shared key set is defined, and how the holdout guard imports it without a dependency cycle (compare `project_root.py`'s reason for living outside `cli/`).
+- The exact shapes of the two advisories, and whether "shadowed by" needs owner facts the result lacks.
+- Override option name and prompt text.
 
 ---
 
 ## Related Artifacts
 
-- **Epic:** `.project/backlog/epic_executable-subset-contract.md` (Item 3; Design principles; Success Criteria, execution-target bullet; Items 1, 2, 5, 6 for boundaries)
-- **Align record:** `.project/active/l6-subset-profile/briefs/align.md`
-- **Required Reading:** none listed for Item 3 in the epic. Inputs used: Item 1 archive `.project/completed/20261018_exec-subset-profile/` (`design.md`, `audit.md` S2/S3, `product-lens.md` impl-F1/F2, `evidence/r3-proposal.md`, `evidence/acceptance.md`, `evidence/dc3-baseline.md`, `evidence/dc3-repaired.md`); Item 4 archive `.project/completed/20261018_positional-binding-check/` (`audit.md` finding 7); `.project/adr/0001-subset-profile-capability-ownership.md`; `.project/product/0001-executable-subset-contract.md`
-- **Code read:** `src/agentic_mbse/validation/level6_architecture.py`, `adr002.py`, `runner.py`, `common.py`, `positional_check.py`, `positional_pins.py`; `src/agentic_mbse/project_root.py`; `src/agentic_mbse/research/holdout.py:205-270`; `src/agentic_mbse/cli/__init__.py` (`cmd_validate`, `cmd_init`, argparse); `src/agentic_mbse/sysml/subset_profile.py` (public API)
+- **Epic:** `.project/backlog/epic_executable-subset-contract.md` (Item 3; principles; Success Criteria; Items 1, 2, 5, 6 for boundaries)
+- **Align record:** `.project/active/l6-subset-profile/briefs/align.md` (owner decisions; § Gate outcomes)
+- **Spec review:** `.project/active/l6-subset-profile/spec-review.md` (Resolutions section)
+- **Required Reading:** none listed for Item 3. Inputs used: Item 1 archive `.project/completed/20261018_exec-subset-profile/` (`design.md`, `audit.md` S2/S3, `product-lens.md` impl-F1/F2, `evidence/r3-proposal.md`, `evidence/acceptance.md`, `evidence/dc3-baseline.md`, `evidence/dc3-repaired.md`); Item 4 archive `.project/completed/20261018_positional-binding-check/` (`audit.md` finding 7); ADR 0001; P-0001; `docs/research-seam.md`
+- **Code read:** `validation/level6_architecture.py`, `adr002.py`, `runner.py`, `common.py`, `positional_check.py`, `positional_pins.py`; `project_root.py`; `research/holdout.py:205-270`; `cli/__init__.py` (`cmd_validate`, `cmd_init`, argparse); `sysml/subset_profile.py`
 - **Product-lens:** `.project/active/l6-subset-profile/product-lens.md`
 - **Design:** `.project/active/l6-subset-profile/design.md` (to be created)
 
-Not checked: sysml-codegen (access denied, so the resolver citation is unconfirmed); whether dc3 and fusion-tea pass L6 today (that is what `evidence/r3-2-before-after.md` will measure); whether a conditional `if` reaches `V4_UNSUPPORTED_OPERATOR`; whether calc-owned asserts reach the constraint extractor. Nothing was executed; every count is from code reading or Item 1's recorded evidence.
+Not checked: sysml-codegen (so the codegen citations are unconfirmed); whether the consumer trees pass `validate --complete` today (`evidence/before-after.md` measures it); whether a conditional `if` reaches `V4_UNSUPPORTED_OPERATOR`; whether calc-owned asserts reach the constraint extractor; whether finding subjects carry enough to compute "shadowed by". Nothing was executed.
 
 ---
 
-**Next Steps:** `/_my_spec_review`, then `/_my_design`.
+**Next Steps:** `/_my_design`.
