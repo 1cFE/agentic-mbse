@@ -775,6 +775,24 @@ Full suite 2919 passed, same 3 baseline failures. mypy 97, ruff clean, format at
 **5. Audit suggestion 6: the web route builds its `ArxivSource` once.** The arXiv branch of `extract_web_content` builds `source = ArxivSource.from_fetch(fetched)` at its top, selects the article from `source.html`, and on success records `image_base = source.image_base`. Step 4a saves figures when `image_base` is set, instead of rebuilding the source from `fetched`. The two routes now read the same way: one source feeds both the article and the image base. It is a behavior-preserving refactor, covered by the existing route tests (nine-figure acceptance, trailing-slash image base, failed figure). Full suite 2924 passed, same 3 baseline failures.
 
 Not taken, by the orchestrator's call: suggestion 4 (the web route sanitizes the article slice and the PDF route doesn't; D17a chose this) and suggestion 7 (`detect_arxiv_id` stays as the public wrapper D2 keeps for outside callers).
+
+**6. D18 live acceptance, and a falsified bet (B3) it exposed.** The first live rerun after D18 (17:08 UTC, commit `a0e7eada`) left **6 `data:` links** in `output.md` on both routes. They were not images but `[⬇](data:text/plain;base64,…)`, about 36 KB. Each comes from LaTeXML's per-listing download button, `<div class="ltx_listing_data"><a href="data:text/plain;…" download="">⬇</a></div>`, which sits inside the article in Appendix H. The same 6 were in the base investigation output and the Phase 8 live output; neither Phase 8 nor the audit counted them, because both looked for `data:image`. This falsifies design bet B3 ("arXiv's UI elements are absent from inside the article"). B3's own contingency prescribes "one targeted removal in the selection step", and the check showed nothing is lost: every line of each download (144, 27, 23, 12, 34, 37 lines) also appears in the listing shown inline. So `extract_article` now drops exactly that button shape (`_LISTING_DOWNLOAD_RE`); any other `ltx_listing_data` markup is left alone. D18's image rule is unchanged: this is a removal of duplicated UI, not of a data image. B3 in `design.md` carries the falsification note. **Surfaced for the orchestrator:** this removes something inside the article. If the download links should instead be kept as files, that is a one-line revert plus a new D18-style rule. Tests: `test_arxiv_html.py::TestExtractArticle::test_drops_listing_download_buttons_keeps_the_listing` (real markup shape from Appendix H) and `::test_other_listing_data_shapes_untouched`. Full suite 2926 passed, same 3 baseline failures. mypy 97, ruff clean.
+
+**Live acceptance (rerun 2026-10-18 17:11 UTC, Pandoc 3.1.3, network available; output in `/tmp/harness2-d18-web`, `/tmp/harness2-d18-pdf`).**
+| Check | Web route | PDF route (`--budget 0`) |
+|---|---|---|
+| Summary line | `(207,779 chars, 31 images, backend: pandoc-arxiv)` | `[pandoc_arxiv] (175,824 chars, 35 headings, 13 table rows, 31 images, 3.6s)` |
+| `data:` occurrences in `output.md` | 0 | 0 |
+| Image refs / outside `images/` / missing files | 31 / 0 / 0 | 31 / 0 / 0 |
+| Files written / `image_count` / refs name exactly the files | 31 / 31 / yes | 31 / 31 / yes |
+| Breakdown | 19 figures by name + 12 in-article pictures under content-hash names | same |
+| Warnings, chrome hits | none, 0 | none, 0 |
+
+Acceptance met on both routes and on the fixture (item 1).
+
+**Title logo: still not covered, recorded.** The live title picture is saved (`images/15bb2a01d6e06a6e.svg`), but inside it the logo is an HTML `<img src="2610.14224v1/figures/harnessmind_logo.png">` within `<foreignObject>`. That relative path doesn't resolve from `images/`, and persistence never sees it because it isn't a markdown ref. Covering it would mean rewriting refs inside saved SVG files, a separate change outside D18. It stays a follow-up.
+
+**Observation, not changed: the web summary's character count is taken before images are saved.** The web route computes metrics on the converted markdown before `persist_images` (207,779 chars, with the 12 pictures still inline). The PDF route computes after (175,824). The file on disk is about 176K on both. The ordering is the web route's existing Step 4 order; moving the metrics after Step 4a would make the two agree. It is left for the orchestrator to decide.
 ---
 
 **Status:** Draft → In Progress → Complete

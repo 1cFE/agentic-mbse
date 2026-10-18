@@ -185,6 +185,30 @@ class TestExtractArticle:
             'class="ltx_graphics"></article>'
         )
 
+    def test_drops_listing_download_buttons_keeps_the_listing(self):
+        """LaTeXML puts a download button (a data:text/plain link) inside each code listing.
+
+        Its text is the listing shown right below it, so the button is UI, not content
+        (design bet B3's contingency: one targeted removal in the selection step).
+        Shape copied from 2610.14224's Appendix H, payload shortened.
+        """
+        listing = (
+            '<div id="A8.p2.1" class="ltx_listing ltx_lstlisting ltx_listing">'
+            '<div class="ltx_listing_data"><a href="data:text/plain;base64,WW91IGFyZQ==" '
+            'download="">⬇</a></div>'
+            '<div id="lstnumberx1" class="ltx_listingline">You are</div></div>'
+        )
+        article = extract_article(f'<article class="ltx_document">{listing}</article>')
+
+        assert "data:" not in article and "ltx_listing_data" not in article
+        assert '<div id="lstnumberx1" class="ltx_listingline">You are</div>' in article
+
+    def test_other_listing_data_shapes_untouched(self):
+        page = (
+            '<article class="ltx_document"><div class="ltx_listing_data"><p>x</p></div></article>'
+        )
+        assert extract_article(page) == page
+
     @pytest.mark.parametrize(
         "obj",
         [

@@ -43,6 +43,9 @@ _ARTICLE_CLOSE_RE = re.compile(r"</article\s*>", re.IGNORECASE)
 _CLASS_ATTR_RE = re.compile(r"""\bclass\s*=\s*(?:"([^"]*)"|'([^']*)')""", re.IGNORECASE)
 _OBJECT_RE = re.compile(r"<object\b([^>]*)>(.*?)</object\s*>", re.IGNORECASE | re.DOTALL)
 _ATTR_RE = re.compile(r'([\w-]+)\s*=\s*"([^"]*)"')
+# LaTeXML's per-listing download button: a data:text/plain copy of the listing
+# shown right below it. UI inside the article, so it is dropped (design bet B3).
+_LISTING_DOWNLOAD_RE = re.compile(r'<div class="ltx_listing_data"><a [^>]*>[^<]*</a></div>')
 
 
 class PandocError(Exception):
@@ -181,17 +184,20 @@ def _svg_object_as_img(m: re.Match[str]) -> str:
 
 
 def extract_article(html: str) -> str:
-    """Return the paper's article element, with SVG figure objects rewritten as images.
+    """Return the paper's article element, ready for conversion.
 
     Pandoc drops ``<object>`` elements, so LaTeXML figures embedded as
     ``<object type="image/svg+xml" class="ltx_graphics">`` become ``<img>``
     here (design D17). Both routes call this on the raw page, before the web
     route sanitizes, because the sanitizer deletes every ``<object>`` (D17a).
-    Raises ``ArxivConversionError`` when the page has no recognized article.
+    Code-listing download buttons are dropped; their text is the listing
+    itself. Raises ``ArxivConversionError`` when the page has no recognized
+    article.
     """
     article = select_article(html)
     if article is None:
         raise ArxivConversionError("no recognized arXiv article container")
+    article = _LISTING_DOWNLOAD_RE.sub("", article)
     return _OBJECT_RE.sub(_svg_object_as_img, article)
 
 
