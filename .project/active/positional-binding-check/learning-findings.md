@@ -261,3 +261,14 @@ uv run mypy --follow-imports=silent tests/learning/
 - Design decision on M1: the placeholder test (`owning_relationship is None`) and whether to read SysIDE's semantic diagnostics. The placeholder test was checked only on the shapes above.
 - Not checked: quoted owner names in finding identities (B4), and implied redefinitions on `inout` parameters. The prototype counted `inout` as input. These tests use `in` only.
 - Not checked: ordering among subject, actor and stakeholder themselves, which the spec puts out of scope.
+
+## Plan phase 1
+
+Added 2026-10-18 by plan Phase 1. Tests are in the same file, section "Plan phase 1" (6 tests; the file now has 49). Evidence: `evidence/phase1-fixture-truth.md`.
+
+- **B3 for library formals: confirms.** `Requirements::RequirementCheck::subj` and `Cases::Case::subj` are owned through a `SubjectMembership`, so D20 reads a library target's role the same way it reads a user subject's. Library formals carry UUIDv5 identities, so Item 1's `ElementRef` accepts them. Pinned by `test_p1_library_subject_formal_reads_subject_membership`, `test_p1_the_library_subject_a_subject_less_case_def_lands_on_reads_subject_membership`, `test_p1_library_formals_carry_reload_stable_uuid5_identities`.
+- **`inout`: confirms.** `inout` inputs are redefined by position exactly like `in` inputs. Pinned by `test_p1_inout_inputs_are_redefined_by_position`.
+- **B4 quoted names: confirms.** `str(qualified_name)` quotes only the segments that need it (`'Quoted Pkg'::'Net Closure'::a`, `P::'Net Closure'::a`), the same form as the fusion-tea prototype log, and two loads give equal strings. Pinned by `test_p1_quoted_qualified_names_match_the_prototype_log_spelling`.
+- **D9 anonymous owner: confirms.** `subset_extraction._element_ref` gives an anonymous `assert constraint : Le { ... }` qualified name `None`. Its inputs have no qualified name either, but keep their declared names. Pinned by `test_p1_an_anonymous_assert_owner_has_no_qualified_name_through_element_ref`.
+- **R4 correction: `out_before_in` passes L1.** SysIDE's `redefinition-direction-conformance` error is in `diagnostics.validation`, not `diagnostics.parser` and not `diagnostics.sema`. L1 reads only `parser`, so `validate --level=1` passes the model (exit 0). The R4 verdict above ("fails at level 1") is wrong for `validate` as it stands; SysIDE rejects the model, agentic-mbse does not. Surfaced as an owner item in `plan.md`.
+- **Mixed spelling, one more detail.** Native evaluation of the mixed spelling also returns a failing evaluation report with "Invalid operator '-' for types 'integer' and 'element'". R1's test asserted only the `None` value. Pinned by `tests/test_validation/test_positional_binding_native_values.py::test_mixed_spelling_has_no_native_value`.

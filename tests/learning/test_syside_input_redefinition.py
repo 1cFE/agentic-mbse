@@ -784,3 +784,115 @@ def test_s4_restating_the_type_too_gives_targets_owned_by_both_usage_and_definit
             ],
         ),
     ]
+
+
+# --- Plan phase 1: library subject formals, inout, quoted names, anonymous owners --------
+
+
+def test_p1_library_subject_formal_reads_subject_membership() -> None:
+    """B3 for library formals: `RequirementCheck::subj` is owned through a SubjectMembership.
+
+    D20's special-slot reason reads the target's role from its owning membership, so a
+    library target must read the same way a user definition's subject does.
+    """
+    r = _owner(
+        _load("part def V; requirement def R { subject v : V; in lo : Real; }"),
+        syside.RequirementDefinition,
+        "R",
+    )
+    v = _inputs(r)[0]
+    (redefinition,) = [r for r in v.heritage.relationships if isinstance(r, syside.Redefinition)]
+    target = redefinition.redefined_feature
+    assert str(target.qualified_name) == "Requirements::RequirementCheck::subj"
+    assert isinstance(target.owning_membership, syside.SubjectMembership)
+    assert str(target.owning_type.qualified_name) == "Requirements::RequirementCheck"
+
+
+def test_p1_the_library_subject_a_subject_less_case_def_lands_on_reads_subject_membership() -> None:
+    model, codes = _load_rejected("case def X { in lo : Real; in hi : Real; }")
+    assert codes == ["case-definition-subject-parameter-position"]
+    lo = _inputs(_owner(model, syside.CaseDefinition, "X"))[0]
+    (redefinition,) = [r for r in lo.heritage.relationships if isinstance(r, syside.Redefinition)]
+    assert str(redefinition.redefined_feature.qualified_name) == "Cases::Case::subj"
+    assert isinstance(redefinition.redefined_feature.owning_membership, syside.SubjectMembership)
+
+
+def test_p1_library_formals_carry_reload_stable_uuid5_identities() -> None:
+    """Item 1's `ElementRef` requires UUIDv5 for a named element; library formals have it."""
+    r = _owner(
+        _load("part def V; requirement def R { subject v : V; }"), syside.RequirementDefinition, "R"
+    )
+    (redefinition,) = [
+        r for r in _inputs(r)[0].heritage.relationships if isinstance(r, syside.Redefinition)
+    ]
+    assert redefinition.redefined_feature.element_id.version == 5
+
+
+def test_p1_inout_inputs_are_redefined_by_position() -> None:
+    model = _load(
+        "calc def S { inout a : Real; inout b : Real; } "
+        "part q { calc c : S { inout b = 3; inout a = 10; } }"
+    )
+    c = _owner(model, syside.CalculationUsage, "c")
+    inouts = [
+        f for f in c.owned_features.collect() if f.direction == syside.FeatureDirectionKind.Inout
+    ]
+    assert [(f.declared_name, _redefinitions(f)) for f in inouts] == [
+        ("b", [("P::S::a", True)]),
+        ("a", [("P::S::b", True)]),
+    ]
+
+
+QUOTED = (
+    "package 'Quoted Pkg' { private import ScalarValues::*; "
+    "calc def 'Net Closure' { in a : Real; in b : Real; } "
+    "part q { calc c : 'Net Closure' { in b = 3; in a = 10; } } }"
+)
+
+
+def _quoted_identities() -> list[tuple[str, str | None, list[str]]]:
+    model, _ = syside.load_model(sysml_source=QUOTED)
+    c = _owner(model, syside.CalculationUsage, "c")
+    return [
+        (str(c.qualified_name), f.declared_name, [t for t, _ in _redefinitions(f)])
+        for f in _inputs(c)
+    ]
+
+
+def test_p1_quoted_qualified_names_match_the_prototype_log_spelling() -> None:
+    """B4: `str(qualified_name)` quotes only the names that need it, as the fusion-tea log does.
+
+    The prototype log spells a target as
+    `integrated_heat_electricity::'Network Heat Driven Closure'::divertor_available_in`:
+    the plain package unquoted, the spaced name in single quotes. Two loads give equal text.
+    """
+    first = _quoted_identities()
+    assert first == [
+        ("'Quoted Pkg'::q::c", "b", ["'Quoted Pkg'::'Net Closure'::a"]),
+        ("'Quoted Pkg'::q::c", "a", ["'Quoted Pkg'::'Net Closure'::b"]),
+    ]
+    assert _quoted_identities() == first
+    plain = _owner(
+        _load(
+            "calc def 'Net Closure' { in a : Real; in b : Real; } "
+            "part q { calc c : 'Net Closure' { in b = 3; in a = 10; } }"
+        ),
+        syside.CalculationUsage,
+        "c",
+    )
+    assert _redefinitions(_inputs(plain)[0]) == [("P::'Net Closure'::a", True)]
+
+
+def test_p1_an_anonymous_assert_owner_has_no_qualified_name_through_element_ref() -> None:
+    """D9: Item 1's `_element_ref` gives an anonymous `assert constraint` no qualified name."""
+    from agentic_mbse.sysml.subset_extraction import _element_ref
+
+    model = _load("part q { assert constraint : Le { in lim = 5; in x = 3; } }")
+    (owner,) = list(model.elements(syside.AssertConstraintUsage))
+    ref = _element_ref(owner)
+    assert ref.qualified_name is None
+    assert ref.kind == "AssertConstraintUsage"
+    assert [(f.declared_name, _redefinitions(f)) for f in _inputs(owner)] == [
+        ("lim", [("P::Le::x", True)]),
+        ("x", [("P::Le::lim", True)]),
+    ]

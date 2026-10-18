@@ -145,44 +145,44 @@ def test_mixed_spelling_has_no_native_value():
 
 #### 1. Baseline
 **File:** `.project/active/positional-binding-check/evidence/baseline-ccd57d83.md` (NEW)
-- [ ] Confirm the branch has no product change yet: `git diff --stat ccd57d83 HEAD -- src scripts docs skills agents project_templates` is empty, and under `tests/` only `tests/learning/` differs. Run from the repo root (pathspecs are relative to the current directory).
-- [ ] Run `uv run pytest tests/ --ignore=tests/learning` on HEAD. Because nothing else differs, this is the `ccd57d83` result. Record pass/fail/skip counts and every failing node ID.
-- [ ] Run `uv run mypy src/` and record the error count. Run `uv run ruff check src/ tests/` and record the result.
-- [ ] Record the SysIDE version, `uv run python -c "import agentic_mbse; print(agentic_mbse.__file__)"`, and whether `SYSIDE_LICENSE_KEY` is set (yes/no only, never the value).
+- [x] Confirm the branch has no product change yet: `git diff --stat ccd57d83 HEAD -- src scripts docs skills agents project_templates` is empty, and under `tests/` only `tests/learning/` differs. Run from the repo root (pathspecs are relative to the current directory).
+- [x] Run `uv run pytest tests/ --ignore=tests/learning` on HEAD. Because nothing else differs, this is the `ccd57d83` result. Record pass/fail/skip counts and every failing node ID.
+- [x] Run `uv run mypy src/` and record the error count. Run `uv run ruff check src/ tests/` and record the result.
+- [x] Record the SysIDE version, `uv run python -c "import agentic_mbse; print(agentic_mbse.__file__)"`, and whether `SYSIDE_LICENSE_KEY` is set (yes/no only, never the value).
 
 #### 2. The L1 question
 **File:** `tests/fixtures/positional_binding/l1/out_before_in.sysml` (NEW), with a header citing learning-findings R4
-- [ ] Write the fixture from design Appendix A.
-- [ ] Run `uv run agentic-mbse validate --level=1 tests/fixtures/positional_binding/l1/` and record exit code and output in `evidence/phase1-fixture-truth.md`.
-- [ ] **If L1 fails it:** add a test in `tests/test_validation/test_positional_binding.py` asserting L1 fails (Det-6). Done.
-- [ ] **If L1 passes it (expected):** do not write the L1-rejection test and do not turn the fixture into an L2 pass/flag fixture. Record what L1, and a full `validate`, report for it (including any positional finding once Phase 5 exists). Surface it as an owner item in Implementation Notes: the design's expected result for this row does not hold, and the honest fix is the proposed `VALIDATE-SEMA-DIAGNOSTICS` follow-up, not this item. Continue with Phase 2; nothing else depends on this row. Det-6 for `out_before_in` stays open until the owner decides.
+- [x] Write the fixture from design Appendix A.
+- [x] Run `uv run agentic-mbse validate --level=1 tests/fixtures/positional_binding/l1/` and record exit code and output in `evidence/phase1-fixture-truth.md`.
+- [x] ~~**If L1 fails it:** add a test in `tests/test_validation/test_positional_binding.py` asserting L1 fails (Det-6). Done.~~ Not applicable: L1 passes it.
+- [x] **If L1 passes it (expected):** do not write the L1-rejection test and do not turn the fixture into an L2 pass/flag fixture. Record what L1, and a full `validate`, report for it (including any positional finding once Phase 5 exists). Surface it as an owner item in Implementation Notes: the design's expected result for this row does not hold, and the honest fix is the proposed `VALIDATE-SEMA-DIAGNOSTICS` follow-up, not this item. Continue with Phase 2; nothing else depends on this row. Det-6 for `out_before_in` stays open until the owner decides.
 
 #### 3. Learning-test lines
 **File:** `tests/learning/test_syside_input_redefinition.py` (MODIFY: new section "Plan phase 1")
-- [ ] B3 library formal membership (stencil above). If the library formal does not read `SubjectMembership`, record it: D20 then needs a different role read for library targets. Surface it; the finding itself is unaffected (design B3).
-- [ ] `inout` positional redefinition.
-- [ ] B4 quoted names: one model with a quoted package or def name, loaded twice. Assert equal `str(qualified_name)` and the spelling form the log uses, for example `integrated_heat_electricity::'Network Heat Driven Closure'::divertor_available_in`.
-- [ ] Anonymous `assert constraint` owner: `subset_extraction._element_ref` gives `qualified_name is None`.
-- [ ] Update `learning-findings.md` with a "Plan phase 1" section recording each result.
+- [x] B3 library formal membership (stencil above). If the library formal does not read `SubjectMembership`, record it: D20 then needs a different role read for library targets. Surface it; the finding itself is unaffected (design B3).
+- [x] `inout` positional redefinition.
+- [x] B4 quoted names: one model with a quoted package or def name, loaded twice. Assert equal `str(qualified_name)` and the spelling form the log uses, for example `integrated_heat_electricity::'Network Heat Driven Closure'::divertor_available_in`.
+- [x] Anonymous `assert constraint` owner: `subset_extraction._element_ref` gives `qualified_name is None`.
+- [x] Update `learning-findings.md` with a "Plan phase 1" section recording each result.
 
 #### 4. Retained prototype models and native values
 **Files:** `tests/fixtures/positional_binding/native_values/` (NEW): `sub_in_order.sysml`, `sub_reversed.sysml`, `sub_reversed_byname.sysml`, `sub_rename.sysml`, `sub_mixed.sysml`, plus copies of `04-fixtures/gen_reversed/` and `04-fixtures/gen_byname/`, each with a header citing its prototype source path
-- [ ] Write `tests/test_validation/test_positional_binding_native_values.py` (stencil above). Evaluate with `Compiler.evaluate_feature`, as `04-eval.py:46-54` does. Add `gen_byname` → 7 and `gen_reversed` → -7.
-- [ ] Load each of the 17 files in `04-fixtures/detector/` and record in `evidence/phase1-fixture-truth.md` whether each has parser or semantic diagnostics. Any with errors are surfaced before Phase 3 copies them.
+- [x] Write `tests/test_validation/test_positional_binding_native_values.py` (stencil above). Evaluate with `Compiler.evaluate_feature`, as `04-eval.py:46-54` does. Add `gen_byname` → 7 and `gen_reversed` → -7.
+- [x] Load each of the 17 files in `04-fixtures/detector/` and record in `evidence/phase1-fixture-truth.md` whether each has parser or semantic diagnostics. Any with errors are surfaced before Phase 3 copies them.
 
 #### 5. Consumer-tree facts for later phases (read-only)
-- [ ] `git -C /home/reid/src/fusion-tea ls-tree --name-only f96ad312` and `git -C ... ls-tree f96ad312 work/BACKLOG.md .claude .agentic-mbse/install.json`. Record which project-root markers the export will carry. Run 3 in Phase 6 depends on it.
-- [ ] `git -C /home/reid/src/dc3 cat-file -e 60b44d5:designs/ac_coupled/ac_facility.sysml` (adjust for `models/` prefix) and the WI-008 files at `808464d`, so Phase 2's dc3 fixtures cite paths that exist.
-- [ ] Confirm `scripts/subset_profile/probe.py` still has `export_tree`, `git`, `resolve_rev` and `sibling_state` (lines 83–102 at plan time).
+- [x] `git -C /home/reid/src/fusion-tea ls-tree --name-only f96ad312` and `git -C ... ls-tree f96ad312 work/BACKLOG.md .claude .agentic-mbse/install.json`. Record which project-root markers the export will carry. Run 3 in Phase 6 depends on it.
+- [x] `git -C /home/reid/src/dc3 cat-file -e 60b44d5:designs/ac_coupled/ac_facility.sysml` (adjust for `models/` prefix) and the WI-008 files at `808464d`, so Phase 2's dc3 fixtures cite paths that exist.
+- [x] Confirm `scripts/subset_profile/probe.py` still has `export_tree`, `git`, `resolve_rev` and `sibling_state` (lines 83–102 at plan time).
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/learning/ tests/test_validation/test_positional_binding_native_values.py` → pass
-- [ ] G1, G2, G3 (for the learning test file and the new test module)
+- [x] `uv run pytest tests/learning/ tests/test_validation/test_positional_binding_native_values.py` → pass
+- [x] G1, G2, G3 (for the learning test file and the new test module)
 
 **Manual:**
-- [ ] `evidence/baseline-ccd57d83.md` and `evidence/phase1-fixture-truth.md` exist and state each answer above.
+- [x] `evidence/baseline-ccd57d83.md` and `evidence/phase1-fixture-truth.md` exist and state each answer above.
 
 **Done when (traces to XR-1, Det-6 for `out_before_in`):** the baseline is recorded; the native-values test passes with 7, -7, 7, 7, `None` for mixed, and the two gen fixtures; each phase-1 assumption has a recorded answer; any answer that contradicts the design is in Implementation Notes as a surfaced item.
 
@@ -734,10 +734,24 @@ See `design.md#potential-risks` for the full list. Phase-specific mitigations:
 [TO BE FILLED DURING IMPLEMENTATION]
 
 ### Phase 1 Completion
-**Completed:**
+**Completed:** 2026-10-18
+
 **Actual Changes:**
+- `evidence/baseline-ccd57d83.md`: pytest 6 failed / 3647 passed / 8 skipped / 14 deselected / 1 xfailed (all 6 environment failures: pandoc probe, missing `PIL`, a stale `/home/reid/1cfe` path); mypy `src/` 97 errors in 19 files; ruff `src/ tests/` 118 pre-existing errors (117 in `tests/`), so G2 is per touched file; SysIDE 0.8.4; key in `.env` yes, in shell no.
+- `evidence/phase1-fixture-truth.md`: every Phase 1 answer.
+- `tests/fixtures/positional_binding/l1/out_before_in.sysml`.
+- `tests/learning/test_syside_input_redefinition.py`: section "Plan phase 1", 6 tests (B3 for `RequirementCheck::subj` and `Cases::Case::subj`, library-formal UUIDv5, `inout`, B4 quoted names, D9 anonymous assert). All confirm the design's bets.
+- `tests/fixtures/positional_binding/native_values/` (5 `sub_*.sysml`, `gen_byname/`, `gen_reversed/`) and `tests/test_validation/test_positional_binding_native_values.py`: 7, -7, 7, 7, `None` for mixed, 7 and -7. XR-1 met.
+- `learning-findings.md`: "Plan phase 1" section.
+- G1: full suite 6 failed (the same 6) / 3703 passed. G2, G3 clean on the two touched test files.
+
 **Issues:**
+- **Surfaced owner item: L1 passes `out_before_in`.** `validate --level=1` exits 0. SysIDE's `redefinition-direction-conformance` error is in `diagnostics.validation`, a third bucket; L1 reads only `diagnostics.parser`. Design Appendix A's row for this fixture does not hold. No L1-rejection test was written and the fixture stays out of the L2 suite, as the plan says. Det-6 for `out_before_in` stays open until the owner decides; the honest fix is the `VALIDATE-SEMA-DIAGNOSTICS` follow-up, which must read `validation` as well as `sema` (the design and learning findings named only `sema`). Phase 5 adds what full `validate` reports for it.
+- The mixed spelling's native evaluation also fails its evaluation report ("Invalid operator '-' for types 'integer' and 'element'"); the test asserts that too.
+
 **Deviations:**
+- The prototype's 17 fixtures use quoted package names (`package 'calc_reversed'`), so their production identities read `'calc_reversed'::q::c`. Phase 3 headers carry that spelling; the files are not edited.
+- dc3: `RAW_LEARNINGS.md:29` and `WI-008_generator-idiom/design.md:63` exist at `60b44d5`, not `808464d`; `ac_facility.sysml` needs the `models/` prefix. Phase 2's dc3 fixtures cite `60b44d5`.
 
 ### Phase 2 Completion
 
