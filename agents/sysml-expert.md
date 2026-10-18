@@ -134,6 +134,8 @@ constraint, and that is all it does: the usage is cataloged and visible, and it 
 assert family is the sole enforcement opt-in — if you want the flow rate checked, write
 `assert constraint` against a `constraint def` with its formals bound to real values in scope.
 
+Bind a calculation's or constraint's formals by name with `:>>`, or write them in the definition's order, and rename one on purpose only with `redefines`: an input without `:>>` or `redefines` binds to the parameter at the same position, not to the one with the same name. In a requirement or case usage, declare `subject` (and any `actor` or `stakeholder`) before ordinary inputs. See agentic-mbse `docs/patterns/semantic-hazards.md#positional-input-binding`.
+
 ---
 
 ## Response Format

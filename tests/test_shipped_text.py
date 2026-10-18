@@ -163,3 +163,39 @@ def test_register_has_no_line_codegen_counts_as_a_binding_site():
     for line in register_text().splitlines():
         assert not QUALIFIED_BINDING.search(line), line
         assert not SELF_NAMED.search(line), line
+
+
+# Guidance that teaches calc-usage inputs links the register (Reg-2).
+
+REGISTER_LINK = "semantic-hazards.md#positional-input-binding"
+GUIDANCE = (
+    "docs/patterns/plant-idiom.md",
+    "skills/sysml-conventions/SKILL.md",
+    "project_templates/MODELING_GUIDE.md.template",
+    "agents/sysml-expert.md",
+)
+
+
+@pytest.mark.parametrize("relative", GUIDANCE)
+def test_guidance_links_the_register_and_teaches_by_name_or_definition_order(relative):
+    text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    assert REGISTER_LINK in text
+    assert "`:>>`" in text or "in :>> " in text
+    assert "position" in text
+
+
+@pytest.mark.parametrize("relative", GUIDANCE[:3])
+def test_rename_advice_says_rename_the_definition_parameter(relative):
+    text = " ".join((REPO_ROOT / relative).read_text(encoding="utf-8").split())
+    assert "Renaming only the usage's input" in text or "renaming only the usage's input" in text
+
+
+def test_plant_idiom_order_does_not_matter_is_qualified_by_its_context():
+    lines = [
+        line
+        for line in (REPO_ROOT / "docs/patterns/plant-idiom.md").read_text().splitlines()
+        if "order does not matter" in line.lower()
+    ]
+    assert lines
+    for line in lines:
+        assert "The order of a calculation usage's inputs does matter" in line, line
