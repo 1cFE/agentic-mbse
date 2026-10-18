@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import importlib.util
+import re
 import shutil
 import subprocess
+import urllib.parse
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -28,7 +32,7 @@ from agentic_mbse.extraction.arxiv_html import (
     select_article,
 )
 from agentic_mbse.extraction.http import USER_AGENT, FetchResult
-from tests.helpers.arxiv_page import FIGURES, assert_all_figures_saved, serve_figure
+from tests.helpers.arxiv_page import FIGURES, assert_all_images_saved, serve_figure
 
 FIXTURE = Path(__file__).parent / "fixtures" / "arxiv_2610.14224v1_page.html"
 
@@ -493,17 +497,54 @@ class TestPersistImages:
         assert fetch.calls == ["https://arxiv.org/html/2503.18960v1/fig_canis.png"]
         assert result.markdown == "![Fig](images/fig_canis.png)"
 
-    def test_data_uri_untouched_and_not_fetched(self, tmp_path):
-        md = "![inline](data:image/png;base64,iVBORw0KGgo=) ![Real](x/real.png)"
+    def test_data_uri_saved_by_content_hash_and_not_fetched(self, tmp_path):
+        """D18: an inline data: image becomes a file, written once however often it appears."""
+        png = b"\x89PNG fake"
+        uri = "data:image/png;base64," + base64.b64encode(png).decode()
+        md = f"![a]({uri}){{.ltx_picture}} ![Real](x/real.png) ![b]({uri})"
         fetch = fake_fetch({"https://arxiv.org/html/x/real.png": b"R"})
 
-        result = persist_images(md, _BASE, tmp_path, fetch)
+        result = persist_images(md, _BASE, tmp_path / "images", fetch)
 
-        assert (
-            result.markdown
-            == "![inline](data:image/png;base64,iVBORw0KGgo=) ![Real](images/real.png)"
+        name = f"{hashlib.sha256(png).hexdigest()[:16]}.png"
+        assert result.markdown == (
+            f"![a](images/{name}){{.ltx_picture}} ![Real](images/real.png) ![b](images/{name})"
         )
-        assert fetch.calls == ["https://arxiv.org/html/x/real.png"]
+        assert (tmp_path / "images" / name).read_bytes() == png
+        assert result.saved_count == 2
+        assert result.warnings == []
+        assert fetch.calls == ["https://arxiv.org/html/x/real.png"]  # data: is never fetched
+
+    def test_svg_data_uri_base64_and_percent_encoded(self, tmp_path):
+        svg = b'<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>'
+        b64 = "data:image/svg+xml;base64," + base64.b64encode(svg).decode()
+        pct = "data:image/svg+xml," + urllib.parse.quote(svg.decode() + " ")
+
+        result = persist_images(f"![a]({b64}) ![b]({pct})", _BASE, tmp_path, fake_fetch({}))
+
+        refs = re.findall(r"\]\((images/[^)]+)\)", result.markdown)
+        assert [Path(r).suffix for r in refs] == [".svg", ".svg"]
+        assert (tmp_path / Path(refs[0]).name).read_bytes() == svg
+        assert (tmp_path / Path(refs[1]).name).read_bytes() == svg + b" "
+        assert result.saved_count == 2
+
+    @pytest.mark.parametrize(
+        ("uri", "reason"),
+        [
+            pytest.param("data:image/png;base64,@@not-base64@@", "base64", id="bad-base64"),
+            pytest.param("data:application/x-unknown;base64,AAAA", "media type", id="unknown-type"),
+            pytest.param("data:image/png;base64", "malformed", id="no-comma"),
+        ],
+    )
+    def test_undecodable_data_uri_stays_inline_with_one_warning(self, tmp_path, uri, reason):
+        md = f"![x]({uri}) ![y]({uri})"
+        result = persist_images(md, _BASE, tmp_path / "images", fake_fetch({}))
+
+        assert result.markdown == md
+        assert result.saved_count == 0
+        [warning] = result.warnings
+        assert reason in warning
+        assert len(warning) < 200  # names the image without dumping the payload
 
     def test_no_images_is_noop(self, tmp_path):
         result = persist_images("# Title\n\nText.", _BASE, tmp_path / "images", fake_fetch({}))
@@ -565,14 +606,14 @@ class TestPersistImages:
 
 
 @pytest.mark.skipif(shutil.which("pandoc") is None, reason="needs Pandoc")
-def test_all_nine_fixture_figures_persist(tmp_path):
-    """Phase 6 acceptance at the module level: convert the real page, save every figure."""
+def test_all_fixture_images_persist(tmp_path):
+    """Phase 6 and D18 acceptance at module level: every figure and inline image is a file."""
     markdown = convert_article(extract_article(FIXTURE.read_text(encoding="utf-8")))
 
     result = persist_images(markdown, _BASE, tmp_path / "images", serve_figure)
 
     assert result.warnings == []
-    assert_all_figures_saved(result.markdown, tmp_path / "images", result.saved_count)
+    assert_all_images_saved(result.markdown, tmp_path / "images", result.saved_count)
 
 
 class TestFetchImage:

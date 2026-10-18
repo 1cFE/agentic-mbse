@@ -15,7 +15,7 @@ from agentic_mbse.extraction.web_backend import (
     classify_url,
     extract_web_content,
 )
-from tests.helpers.arxiv_page import assert_all_figures_saved, serve_figure
+from tests.helpers.arxiv_page import assert_all_images_saved, serve_figure
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -433,7 +433,6 @@ _PAPER_TEXT = [
     "Figure 1:",  # caption
     "w/o library",  # Table 3
     "$k = 5$",  # math
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB",  # in-article data URI
 ]
 
 
@@ -463,8 +462,8 @@ def test_arxiv_web_route_outputs_paper_only_with_all_figures_saved(tmp_path):
         assert s not in output, f"chrome {s!r} in output"
     for s in _PAPER_TEXT:
         assert s in output, f"paper part {s!r} missing"
-    assert_all_figures_saved(output, tmp_path / "images", result.image_count)
-    assert json.loads((tmp_path / "metrics.json").read_text())["image_count"] == 9
+    assert_all_images_saved(output, tmp_path / "images", result.image_count)
+    assert json.loads((tmp_path / "metrics.json").read_text())["image_count"] == result.image_count
 
 
 @pytest.mark.skipif(shutil.which("pandoc") is None, reason="needs Pandoc")
@@ -481,7 +480,9 @@ def test_arxiv_web_route_failed_figure_warns_and_keeps_ref(tmp_path):
         result = extract_web_content(_ARXIV_URL, output_dir=tmp_path)
 
     output = (tmp_path / "output.md").read_text()
-    assert result.image_count == 8 == len(list((tmp_path / "images").iterdir()))
+    files = {p.name for p in (tmp_path / "images").iterdir()}
+    assert result.image_count == len(files)
+    assert "total_cost.svg" not in files and len(files) == 8 + 3  # 8 figures, 3 inline images
     assert "](2610.14224v1/total_cost.svg)" in output
     [warning] = result.warnings
     assert "total_cost.svg" in warning and "503" in warning

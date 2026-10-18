@@ -38,7 +38,7 @@ from agentic_mbse.extraction.types import (
     PageResult,
     PipelineResult,
 )
-from tests.helpers.arxiv_page import assert_all_figures_saved, serve_figure
+from tests.helpers.arxiv_page import assert_all_images_saved, serve_figure
 from tests.helpers.arxiv_pdfs import CITATION, OTHER_STAMP, STAMP, make_pdf
 
 # ---------------------------------------------------------------------------
@@ -512,7 +512,7 @@ class TestShortcutFigures:
 
         assert result.source == "pandoc_arxiv"
         assert result.warnings == []
-        assert_all_figures_saved(result.markdown, images, result.image_count)
+        assert_all_images_saved(result.markdown, images, result.image_count)
 
     def test_failed_figure_warns_and_keeps_its_ref(self, tmp_path):
         markdown = (

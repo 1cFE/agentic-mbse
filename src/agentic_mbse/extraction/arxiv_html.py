@@ -10,6 +10,9 @@ module is imported by the PDF-side arXiv helpers and never imports them back.
 
 from __future__ import annotations
 
+import base64
+import binascii
+import hashlib
 import re
 import subprocess
 import tempfile
@@ -17,7 +20,7 @@ import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import unquote, urljoin, urlparse
+from urllib.parse import unquote, unquote_to_bytes, urljoin, urlparse
 from urllib.request import url2pathname
 
 from agentic_mbse.extraction.http import DEFAULT_TIMEOUT, USER_AGENT, FetchResult, fetch_url
@@ -289,7 +292,49 @@ def fetch_image(
 class ImagePersistResult:
     markdown: str  # refs rewritten for saved images only
     saved_count: int  # files written
-    warnings: list[str]  # one per URL not saved
+    warnings: list[str]  # one per image source not saved
+
+
+# Media types LaTeXML and arXiv put in data: images; others fall back to mimetypes.
+_DATA_URI_EXTENSIONS = {
+    "image/svg+xml": ".svg",
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+}
+
+
+def _decode_data_uri(uri: str) -> tuple[bytes, str]:
+    """Return the bytes and file extension of a ``data:`` image URI.
+
+    Raises ``ImageFetchError`` when the URI is malformed, its media type has
+    no known image extension, or its base64 payload does not decode.
+    """
+    header, comma, payload = uri.removeprefix("data:").partition(",")
+    if not comma:
+        raise ImageFetchError("malformed data: URI (no comma)")
+    media_type, *params = header.split(";")
+    media_type = media_type.strip().lower()
+    extension = _DATA_URI_EXTENSIONS.get(media_type)
+    if extension is None:
+        raise ImageFetchError(f"unsupported data: media type {media_type!r}")
+    if "base64" not in params:
+        return unquote_to_bytes(payload), extension
+    try:
+        return base64.b64decode(payload, validate=True), extension
+    except binascii.Error as exc:
+        raise ImageFetchError(f"invalid base64 payload ({exc})") from exc
+
+
+def _image_source(base: str, ref: str) -> str:
+    """What to read for *ref*: the ``data:`` URI itself, or *ref* resolved against *base*."""
+    return ref if ref.startswith("data:") else _resolve_image_url(base, ref)
+
+
+def _describe_source(source: str) -> str:
+    """*source* for a warning, with a ``data:`` payload cut short."""
+    return f"{source[:40]}…" if source.startswith("data:") else source
 
 
 def _resolve_image_url(base: str, ref: str) -> str:
@@ -325,32 +370,38 @@ def persist_images(
     """Save every image *markdown* references into *images_dir* and point the refs at it.
 
     Each ref resolves against *base* (``ArxivSource.image_base``). Each distinct
-    URL is read once: http(s) through *fetch*, ``file:`` from disk. Saved refs
-    become ``images/<name>`` with their attributes kept; a URL that can't be
-    saved leaves every one of its refs exactly as written and adds one warning.
-    ``data:`` URIs are left alone.
+    source is read once: http(s) through *fetch*, ``file:`` from disk, and an
+    inline ``data:`` image decoded and named by its content hash (design D18).
+    Saved refs become ``images/<name>`` with their attributes kept; a source
+    that can't be saved leaves every one of its refs exactly as written and
+    adds one warning.
     """
-    urls = dict.fromkeys(
-        _resolve_image_url(base, m.group(2))
-        for m in _MD_IMAGE_RE.finditer(markdown)
-        if not m.group(2).startswith("data:")
+    sources = dict.fromkeys(
+        _image_source(base, m.group(2)) for m in _MD_IMAGE_RE.finditer(markdown)
     )
-    saved: dict[str, str] = {}  # resolved URL -> file name under images_dir
+    saved: dict[str, str] = {}  # image source -> file name under images_dir
     warnings: list[str] = []
-    for url in urls:
+    for source in sources:
         try:
-            data = _read_image(url, fetch)
+            if source.startswith("data:"):
+                data, extension = _decode_data_uri(source)
+                name = f"{hashlib.sha256(data).hexdigest()[:16]}{extension}"
+            else:
+                data = _read_image(source, fetch)
+                name = _unique_name(source, set(saved.values()))
         except (OSError, ImageFetchError) as exc:
-            warnings.append(f"Image not saved; kept its original reference: {url} ({exc})")
+            warnings.append(
+                f"Image not saved; kept its original reference: {_describe_source(source)} ({exc})"
+            )
             continue
-        name = _unique_name(url, set(saved.values()))
         images_dir.mkdir(parents=True, exist_ok=True)
         (images_dir / name).write_bytes(data)
-        saved[url] = name
+        saved[source] = name
 
     def rewrite(m: re.Match[str]) -> str:
         alt, ref, attrs = m.group(1), m.group(2), m.group(3) or ""
-        name = None if ref.startswith("data:") else saved.get(_resolve_image_url(base, ref))
+        name = saved.get(_image_source(base, ref))
         return m.group(0) if name is None else f"![{alt}](images/{name}){attrs}"
 
-    return ImagePersistResult(_MD_IMAGE_RE.sub(rewrite, markdown), len(saved), warnings)
+    rewritten = _MD_IMAGE_RE.sub(rewrite, markdown)
+    return ImagePersistResult(rewritten, len(set(saved.values())), warnings)
