@@ -160,7 +160,7 @@ None.
 
 Recorded by the orchestrator, 2026-10-18. All `[AGENT]`; neither reserved gate is touched.
 
-- **M1** — Accept. Imports go one way: `pandoc_convert` → `arxiv_html` is not allowed; `arxiv_html` owns HTML-to-markdown helpers and the single Pandoc runner, `pandoc_convert` keeps PDF identity, the default constant, the availability check and version helpers.
+- **M1** — Accept. Imports go one way: `pandoc_convert` may import `arxiv_html`, never the reverse (corrected 2026-10-18; first wording had the direction backwards); `arxiv_html` owns HTML-to-markdown helpers and the single Pandoc runner, `pandoc_convert` keeps PDF identity, the default constant, the availability check and version helpers.
 - **M2** — Accept. One loader returns the fetched bytes plus the serving URL; both routes use that URL as the image base. State the no-trailing-slash assumption and normalize it in the loader rather than trusting it.
 - **M3** — Accept. Re-grade B1/B3 as verified (spike addendum + `ref/`), point the fixture source at `ref/2610.14224.html`, and record dropping the stdout copy of web warnings as a design choice.
 - **m1** — Accept. Define every named type and function.
