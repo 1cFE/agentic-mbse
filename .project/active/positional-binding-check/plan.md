@@ -1,6 +1,6 @@
 # Implementation Plan: Positional-binding hazard and check (EXEC-SUBSET-CONTRACT Item 4)
 
-**Status:** Draft
+**Status:** Implementation in progress (Phases 1-3 done)
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `positional-binding-check` (base `main` at `ccd57d83`)
@@ -315,28 +315,28 @@ def test_fixture_gives_exactly_its_header_identities(fixture):
 
 #### 1. Decision module (rule part)
 **File:** `src/agentic_mbse/validation/positional_binding.py` (NEW)
-- [ ] `FindingReason`, `PositionalFinding`, `PositionalResult`, `InputOutcome`, and `decide(facts, pins=None, validated_files=())`. In this phase `pins` is always absent, so `pinned` is always false and `stale`/`out_of_scope` are empty.
-- [ ] Step order exactly as Implementation Notes. One outcome per inspected input, with the prototype's outcome names.
-- [ ] Imports neither SysIDE nor the filesystem (I6). `FindingIdentity` is defined in `positional_pins.py` per the design; if Phase 4 is not started yet, create that module with only `FindingIdentity` now.
+- [x] `FindingReason`, `PositionalFinding`, `PositionalResult`, `InputOutcome`, and `decide(facts, pins=None, validated_files=())`. In this phase `pins` is always absent, so `pinned` is always false and `stale`/`out_of_scope` are empty.
+- [x] Step order exactly as Implementation Notes. One outcome per inspected input, with the prototype's outcome names.
+- [x] Imports neither SysIDE nor the filesystem (I6). `FindingIdentity` is defined in `positional_pins.py` per the design; if Phase 4 is not started yet, create that module with only `FindingIdentity` now.
 
 #### 2. Pure rule tests
 **File:** `tests/test_validation/test_positional_binding_rule.py` (NEW)
-- [ ] Each step of the rule; D6 (one finding per target, multiple-typed and S4 row 3 give two per input); both D7 branches; D8 (`anonymous_target`); D9 (no qualified name → identity `None`); D20 (`SPECIAL_SLOT` for subject, actor and stakeholder targets, user and library); role exclusion; sorted output.
+- [x] Each step of the rule; D6 (one finding per target, multiple-typed and S4 row 3 give two per input); both D7 branches; D8 (`anonymous_target`); D9 (no qualified name → identity `None`); D20 (`SPECIAL_SLOT` for subject, actor and stakeholder targets, user and library); role exclusion; sorted output.
 
 #### 3. Fixture suite
 **File:** `tests/test_validation/test_positional_binding.py` (NEW, or extend the Phase 1 file if it already holds the L1 test)
-- [ ] Parametrized over every fixture under `tests/fixtures/positional_binding/` except `native_values/`, `l1/` and `baselines/`. Multi-file fixtures load their whole directory.
-- [ ] A naive-control test: for each fixture marked `naive-control: wrong`, a name-set comparison (input names versus definition formal names) gives a different result from the header. This shows the suite would fail such a detector (Det-2). Assert the count is 9.
-- [ ] `inherit_def_extends` gives no finding and no unverifiable result (Insp-2).
+- [x] Parametrized over every fixture under `tests/fixtures/positional_binding/` except `native_values/`, `l1/` and `baselines/`. Multi-file fixtures load their whole directory.
+- [x] A naive-control test: for each fixture marked `naive-control: wrong`, a name-set comparison (input names versus definition formal names) gives a different result from the header. This shows the suite would fail such a detector (Det-2). Assert the count is 9.
+- [x] `inherit_def_extends` gives no finding and no unverifiable result (Insp-2).
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_validation/test_positional_binding.py tests/test_validation/test_positional_binding_rule.py` → pass
-- [ ] G1, G2, G3
+- [x] `uv run pytest tests/test_validation/test_positional_binding.py tests/test_validation/test_positional_binding_rule.py` → pass
+- [x] G1, G2, G3
 
 **Manual:**
-- [ ] Compare the 17 prototype results with `04-detector-fixtures.log` line by line; any difference is surfaced, not fixed in the header.
+- [x] Compare the 17 prototype results with `04-detector-fixtures.log` line by line; any difference is surfaced, not fixed in the header.
 
 **Done when (traces to Det-1, Det-2, Det-3, Det-4, Det-5, Det-6 except `out_before_in`, Det-7, Insp-2):** the fixture suite passes with exact identity sets, including the mixed-spelling, multiple-types, subject-slot, anonymous-assert and dc3 rows.
 
@@ -774,6 +774,28 @@ See `design.md#potential-risks` for the full list. Phase-specific mitigations:
 - The redefined formal's `name` is SysIDE's effective `name` (the slot's name); only the input uses `declared_name` (R5).
 
 ### Phase 3 Completion
+**Completed:** 2026-10-18. First proof point met.
+
+**Changes Made:**
+- `src/agentic_mbse/validation/positional_pins.py`: `FindingIdentity` only (frozen, ordered, all three parts required). Phase 4 adds the rest.
+- `src/agentic_mbse/validation/positional_binding.py`: `FindingReason`, `InputOutcome`, `PositionalFinding`, `PositionalResult` and `decide(facts)`. The rule runs in the design's step order; D6, D7 (both branches), D8, D9 and D20 as stated.
+- `tests/test_validation/test_positional_binding_rule.py`: 24 pure tests. Each rule step, D6 (multiple types, S4 row 3, one mismatched target of two), both D7 branches, D8, D9 (anonymous owner, unnamed target formal), D20 (all three roles; library and user targets on one input; same-named special target), failures passed through, every outcome counted, sorted output, and I6 checked on the three pure modules' imports.
+- `tests/test_validation/test_positional_binding.py`: the fixture suite, parametrized over all 41 L2 fixtures (17 prototype, 2 spelling, 5 types, 9 requirements, 2 dc3, 3 unresolved, `partial_run/` whole and `designs/` alone, `partial_scope/`). Each must give exactly its header's findings (owner, input, target, reason) and unverifiable results (cause, file:line). Also the prototype's outcome totals, the naive control, Insp-2 on `inherit_def_extends`, and "unresolved owners count no new parameters".
+- `evidence/phase3-prototype-comparison.md`: the 17-row comparison with `04-detector-fixtures.log`.
+- G1: 6 failed (the baseline 6) / 3805 passed. G2 clean on all four files. G3: `mypy src/` 97 errors, none in touched files; both test files clean.
+
+**Results:**
+- The 17 prototype fixtures give exactly the prototype's flagged inputs, expanded per target; `multiple_types` gives four findings. 17 of 17 agree; nothing to surface.
+- Outcome totals over the 17 equal the prototype's log: explicit 9, new_parameter 75, implicit_mismatch 15, anonymous 2, implicit_matching 9.
+- The name-set control is wrong on exactly the 9 marked fixtures (Det-2).
+- Mixed spelling, reversed deliberate rename, multiple types with rename, S4 row 3 (four findings), subject-slot (`SPECIAL_SLOT` on `RequirementCheck::subj` and `Case::subj`), anonymous assert (two findings without identity), both dc3 shapes (including the quoted `'Serial Path 8'` target), `def_adds_first_input`, `usage_extra_inputs`, and the unresolved and partial-run rows all match their headers.
+- Discrimination check, run once: removing the role exclusion fails 6 requirement fixtures; removing D7 fails 3 pure tests and no fixture (no SysIDE 0.8.4 case, R1b).
+
+**Deviations:**
+- `decide` takes only the facts in this phase, and `PositionalResult` has no `stale`, `out_of_scope` or `pin_list`, and `PositionalFinding` no `pinned`. The plan's `decide(facts, pins=None, validated_files=())` would have been a parameter nothing could use yet; Phase 4 adds the parameters and fields together with the behavior.
+- `PositionalFinding` carries `owner: ElementRef` beside the identity, so a finding without identity (D9) can still name its owner's kind and location when rendered. `PositionalResult.inputs_inspected` is the sum of the outcome counts (Insp-3's metric).
+- Findings sort by location, owner name, input name, target name, with no element id, for the reason recorded in Phase 2.
+- Header format: `// finding: owner | input | target [| SPECIAL_SLOT]`, `<none>` for an owner without qualified name; `// unverifiable: CAUSE @ file:line`; multi-file fixtures hold it in `expect.txt`.
 
 ### Phase 4 Completion
 

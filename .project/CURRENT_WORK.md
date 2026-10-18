@@ -11,7 +11,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
-- Positional-binding check (`EXEC-SUBSET-CONTRACT` Item 4), branch `positional-binding-check`: spec drafted 2026-10-18 at [active/positional-binding-check/spec.md](active/positional-binding-check/spec.md), next spec review.
+- Positional-binding check (`EXEC-SUBSET-CONTRACT` Item 4), branch `positional-binding-check`: [plan](active/positional-binding-check/plan.md) Phases 1-3 implemented 2026-10-18 (fact layer, rule, fixture suite; the 17 prototype cases reproduce). Next: Phase 4 (pin list). Open owner item: `validate` passes the `out_before_in` model at L1, because SysIDE puts that error in `diagnostics.validation` (plan Phase 1 notes).
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 
 ## Concrete remaining work
