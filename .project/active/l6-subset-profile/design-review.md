@@ -193,7 +193,31 @@ Not checked in this review: sysml-codegen (no access; the spike's Q5 covers cita
 
 ## Resolutions
 
-None recorded yet. This review ran non-interactively for an orchestrator; the owner has not engaged with it.
+Recorded 2026-10-18 in the design revision. The calls are the orchestrator's, made with the spike in hand (`spikes/findings.md`, `spikes/f4-codegen-citations.md`): [AGENT] (orchestrator call, 2026-10-18). The owner has not engaged with this review.
+
+**Major**
+
+- **M1 — accepted.** D12a: a pure predicate `falls_to_text_fallback(node)` is extracted from `reconstruct_expression`'s dispatch in `expression.py`. Both `reconstruct_expression` and the advisory's `text_fallback_nodes` call it. A test over every value expression in the existing fixtures shows `reconstruct_expression`'s output is unchanged (Implementation Notes, "The reconstruction predicate"). I4 lists it as additive.
+- **M2 — accepted.** `init` runs `read_toolkit_table` first and refuses on any existing defect: it writes nothing, and exits 1 when the option was given (`init` table, new row). Two or more `[tool.agentic-mbse]` header matches is a refused layout. I7 now says `init` never writes when the table has a defect.
+- **M3 — accepted.** The report schema has per-level `warnings` and top-level `pass_notes`. I9's banned-wording scan covers the JSON report as well as stdout.
+
+**Should-fix**
+
+- **S1 — accepted.** D16: `expression.py` gains `Unextractable` with `UnextractableValueError` and `UnextractableTypeError`, subclasses of today's types so existing callers are unaffected. The legacy check catches only `Unextractable`; anything else is `L6_CHECK_ERROR` (Appendix B, `:540`).
+- **S2 — accepted.** D10: the contract runs before the legacy checks and passes its `string-value-omission` subject ids into `check_design_attr_completeness`. Coverage assumption B6 is stated with the spike's evidence: no tree has a String the legacy check flags and the contract misses. If the contract misses one, that String keeps its legacy ERROR. If the contract fails, every legacy error stays.
+- **S3 — accepted.** Every generator-only candidate starts as `LEGACY_KEPT`. A row moves only in the change that adds it to `evidence/legacy-l6-audit.md` and `tests/fixtures/l6/native_lowered.toml`, and a test requires the mapping to equal that fixture.
+- **S4 — accepted, with a premise difference surfaced.** The orchestrator asked for "the existing licence-gated marker pattern". None exists: `pyproject.toml` registers only `corpus` and `slow`, and model-loading tests read `SYSIDE_LICENSE_KEY` from `.env` (`tests/conftest.py`) and fail without it rather than skip. The design follows that real practice. Most exception-site tests use fakes or monkeypatching and need no licence. Tests that need a parsed model carry a new label-only `syside` marker that never skips, and the evidence lists them with `pytest -m syside --collect-only`. If a skip-when-no-licence marker is wanted instead, that is a separate call.
+
+**Minor** (all accepted)
+
+- m1: D3 cites `spec.md:139`. m2: `Display.BASE` replaces the `base` argument, and `TargetFault.INVALID_VALUE` is an enum member. m3: the `unstructured` multiset rule and its length test are in the schema note. m4: CRLF handling on append, BOM refusal and the hard-link refusal are in the insert algorithm and refused layouts. m5: the `init` section states that the install manifest makes the `init` target a root, so `init` and L6 read the same file. m6: D13 orders within each tier and defines impl-F2. m7: D9's `shadowed_by` covers every finding not refused by that rule and is null otherwise. m8: the spec's evidence rule is kept (Validation Approach). m9: the plan's `init` phase checks that a `[project]`-less `pyproject.toml` does not disturb `uv`.
+
+**Spike questions**
+
+- **Q1 — walker exceptions.** D15: a walker's own `SemanticEvidenceError` is `L6_SUBSET_ADVISORY_UNVERIFIED`, a WARNING under every target that names the shape. Any other exception stays `L6_CHECK_ERROR`. I1 names this as its one exception. The spike's `sum(cells.?{...}.mass)` and `Cell.metadata` shapes are fixtures. The wrapper advisory is filtered to `KNOWN_WRAPPER_FUNCTIONS`.
+- **Q2 — rows the spike did not confirm.** `L6_INVALID_QUALIFIED_NAME`, `L6_INVALID_BINDING_FORMAT` and `L6_ATTR_REDEF_EXPR_DROPPED` keep today's severity under every target, `native` included. Appendix A is rewritten from the citation results. Only four rows lower under `native` (three ERROR→INFO, one WARNING→INFO). Follow-up: backlog `L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES`.
+- **Q3 — extraction cost.** D14: one model load and one constraint extraction per `validate` run, shared by L4, L6's legacy checks and the contract through a run-scoped session. No new extraction pass. B5 and I10 require each level's results to stay identical, tested with and without the session. Appendix C step 10 fails the criterion if fusion-tea's `validate --complete` is more than 10% slower. Step 11 lists the new String warnings (131 on fusion-tea, 30 on dc3 `60b44d5`) as expected. The slow loop itself is backlog `CONSTRAINT-EXTRACTION-INHERITED-SCAN`.
+- **Q4 — roots and settings.** Each tree resolves its own root and none has a `[tool.agentic-mbse]` table at its pin, so all three run as unset. No design change.
 
 ---
 
