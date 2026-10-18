@@ -157,7 +157,7 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 ### Item 2a (sysml-codegen): Independent conformance corpus and per-site codes
 
 **Type**: Integration
-**Effort**: [AGENT] ~17–27 engineer-days (the re-estimate minus the preparation path and snapshot lines).
+**Effort**: [AGENT] ~25–35 engineer-days, revised at spec review 2026-10-18 (sysml-codegen `.project/active/subset-profile-conformance/spec-review.md` L2-2); the first figure, 17–27, omitted silent-loss, String-fixture and fixture-classification work.
 **Dependencies**: Item 1 (merged, PR #30). Item 4 supplies hazard references; until it does, scope 6's link is recorded as pending.
 
 **Scope**:
