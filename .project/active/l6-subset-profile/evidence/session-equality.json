@@ -1,0 +1,145 @@
+{
+  "code": {
+    "head": "0d69c88392fece9355d7fe80025c0e61e9ee161e",
+    "uncommitted_src_sha256": "be1dcff3b86e28b9d12dccce498cac6ebead0309de536559dd6a706486cc1101",
+    "untracked_src": "src/agentic_mbse/validation/session.py"
+  },
+  "trees": {
+    "fusion-tea": {
+      "commit": "f96ad312c63e8c66695971b12feab971f3ba6eb3",
+      "standalone_s": 407.8,
+      "session_s": 205.7,
+      "model_loads": 1,
+      "constraint_extractions": 1,
+      "levels": {
+        "1": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "2": {
+          "identical": true,
+          "success": false,
+          "issues": 465,
+          "raised": null
+        },
+        "3": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "4": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "5": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "6": {
+          "identical": true,
+          "success": false,
+          "issues": 408,
+          "raised": null
+        }
+      }
+    },
+    "dc3-baseline": {
+      "commit": "808464df85d50521e4fbb9ba7cceb63d382aa832",
+      "standalone_s": 34.6,
+      "session_s": 17.3,
+      "model_loads": 1,
+      "constraint_extractions": 1,
+      "levels": {
+        "1": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "2": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "3": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "4": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "5": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "6": {
+          "identical": true,
+          "success": false,
+          "issues": 11,
+          "raised": null
+        }
+      }
+    },
+    "dc3-repaired": {
+      "commit": "60b44d53460fccd2f44811d8abfd42bc270e90b2",
+      "standalone_s": 25.2,
+      "session_s": 12.7,
+      "model_loads": 1,
+      "constraint_extractions": 1,
+      "levels": {
+        "1": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "2": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "3": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "4": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "5": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        },
+        "6": {
+          "identical": true,
+          "success": true,
+          "issues": 0,
+          "raised": null
+        }
+      }
+    }
+  },
+  "siblings_unchanged": true
+}

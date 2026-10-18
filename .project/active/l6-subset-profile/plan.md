@@ -1,6 +1,6 @@
 # Implementation Plan: L6 integration and execution-target settings (EXEC-SUBSET-CONTRACT Item 3)
 
-**Status:** Draft
+**Status:** Phase 1 stopped at its stop condition; waiting on the owner
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 
@@ -60,10 +60,10 @@ Bet B5: levels 2–6 only read the loaded model, so one shared load and one shar
 
 ### Step 1a: Baseline (no code change)
 
-- [ ] Confirm `git diff --stat ebb3d467 HEAD -- src tests pyproject.toml uv.lock` is empty. If it is not, take the repository baseline from a `git archive ebb3d467` export instead of the checkout, and say so in the evidence.
-- [ ] Run `uv run pytest tests/`, `uv run mypy src/`, `uv run ruff check src/ tests/`. Record pass/fail counts and the exact list of failing test ids, mypy errors and ruff findings in `evidence/baseline.md`. This list is the green rule's reference for every later phase. Record whether `SYSIDE_LICENSE_KEY` was present.
-- [ ] Write the export-and-run core of `scripts/l6_subset/run_consumers.py` (NEW) now, because Phase 11 extends it: Appendix C steps 2–8 (export a code revision and each consumer tree with Item 4's rules from `scripts/positional_binding/run_trees.py`, check the extraction parent is not a project root, record each tree's root and `pyproject.toml` table, run `-m agentic_mbse validate --complete models` with `PYTHONPATH=<code export>/src` and `cwd=<tree>`, check `agentic_mbse.__file__` is inside the export, capture stdout, stderr, exit code and wall time, parse per-level status from text). Subcommand `baseline --base ebb3d467` runs only the base revision on all three trees.
-- [ ] Run `baseline` once, alone on an idle machine. Write `evidence/baseline-consumers.{json,md}`: per tree and level, pass/fail or "crashed, recorded as pass"; exit code; wall time; the L1–L6 issue lines. Expected from the spike: fusion-tea and dc3 `808464d` fail L6, dc3 `60b44d5` passes. Record SysIDE version.
+- [x] Confirm `git diff --stat ebb3d467 HEAD -- src tests pyproject.toml uv.lock` is empty. If it is not, take the repository baseline from a `git archive ebb3d467` export instead of the checkout, and say so in the evidence. *Done: empty; checkout used (`evidence/baseline.md`).*
+- [x] Run `uv run pytest tests/`, `uv run mypy src/`, `uv run ruff check src/ tests/`. Record pass/fail counts and the exact list of failing test ids, mypy errors and ruff findings in `evidence/baseline.md`. This list is the green rule's reference for every later phase. Record whether `SYSIDE_LICENSE_KEY` was present. *Done: 6 failed / 3947 passed, 97 mypy errors, 118 ruff findings; licence present (`evidence/baseline.md`).*
+- [x] Write the export-and-run core of `scripts/l6_subset/run_consumers.py` (NEW) now, because Phase 11 extends it: Appendix C steps 2–8 (export a code revision and each consumer tree with Item 4's rules from `scripts/positional_binding/run_trees.py`, check the extraction parent is not a project root, record each tree's root and `pyproject.toml` table, run `-m agentic_mbse validate --complete models` with `PYTHONPATH=<code export>/src` and `cwd=<tree>`, check `agentic_mbse.__file__` is inside the export, capture stdout, stderr, exit code and wall time, parse per-level status from text). Subcommand `baseline --base ebb3d467` runs only the base revision on all three trees. *Done: `baseline` subcommand. Also added `session-equality` (see notes).*
+- [x] Run `baseline` once, alone on an idle machine. Write `evidence/baseline-consumers.{json,md}`: per tree and level, pass/fail or "crashed, recorded as pass"; exit code; wall time; the L1–L6 issue lines. Expected from the spike: fusion-tea and dc3 `808464d` fail L6, dc3 `60b44d5` passes. Record SysIDE version. *Done: matches the spike (fusion-tea and dc3 `808464d` fail L6, `60b44d5` passes); SysIDE 0.8.4; fusion-tea 410.9 s (`evidence/baseline-consumers.md`).*
 
 ### Step 1b: Test stencil (write before the session code)
 
@@ -96,24 +96,24 @@ def test_no_session_means_todays_behaviour(): ...
 
 **See `design.md` for:** D14, Implementation Notes "Session details", I10, B5.
 
-- [ ] `pyproject.toml:103-106`: register the label-only `syside` marker (no skip logic).
-- [ ] `tests/test_validation/test_session.py` (NEW): the stencil above.
-- [ ] `src/agentic_mbse/validation/session.py` (NEW): `ValidationSession` as a context variable; load cache keyed by resolved path, size and `mtime_ns`; constraint-fact memo keyed by `id(model)` holding a strong model reference; stores facts or the raised exception; counts real extractions.
-- [ ] `src/agentic_mbse/validation/common.py:102` `load_sysml_model`: consult the active session.
-- [ ] `src/agentic_mbse/validation/level4_constraints.py:65` and `level6_architecture.py:650`: get facts through the session (direct call when no session is active).
-- [ ] `src/agentic_mbse/sysml/subset_extraction.py:466`: add the `constraint_facts` keyword, default `extract_identified_constraint_facts`, used at `:454`. Not called by L6 yet.
-- [ ] `src/agentic_mbse/validation/runner.py:58` `run_all_checks`: wrap the level loop in `ValidationSession()`.
+- [x] `pyproject.toml:103-106`: register the label-only `syside` marker (no skip logic). *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
+- [x] `tests/test_validation/test_session.py` (NEW): the stencil above. *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
+- [x] `src/agentic_mbse/validation/session.py` (NEW): `ValidationSession` as a context variable; load cache keyed by resolved path, size and `mtime_ns`; constraint-fact memo keyed by `id(model)` holding a strong model reference; stores facts or the raised exception; counts real extractions. *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
+- [x] `src/agentic_mbse/validation/common.py:102` `load_sysml_model`: consult the active session. *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
+- [x] `src/agentic_mbse/validation/level4_constraints.py:65` and `level6_architecture.py:650`: get facts through the session (direct call when no session is active). *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
+- [x] `src/agentic_mbse/sysml/subset_extraction.py:466`: add the `constraint_facts` keyword, default `extract_identified_constraint_facts`, used at `:454`. Not called by L6 yet. *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
+- [x] `src/agentic_mbse/validation/runner.py:58` `run_all_checks`: wrap the level loop in `ValidationSession()`. *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_validation/test_session.py` passes.
+- [ ] `uv run pytest tests/test_validation/test_session.py` passes. *Not met: 21 of 22 pass; the `sump_pump` case fails (`evidence/session-check.md`).*
 - [ ] Full suite: green rule against `evidence/baseline.md`.
-- [ ] ruff check, ruff format --check on touched files; `uv run mypy src/`.
+- [x] ruff check, ruff format --check on touched files; `uv run mypy src/`. *Done: no new mypy errors or ruff findings.*
 
 **Manual (the stop condition):**
 - [ ] Commit the session change. Run `run_consumers.py before-after --base ebb3d467 --branch HEAD --trees fusion-tea` (a first cut of Phase 11's subcommand: steps 1–9 of Appendix C for one tree, plus the timing in step 10). Record both wall times and the L1–L6 issue-line comparison in `evidence/session-check.md`.
-- [ ] **Stop and report to the orchestrator** if any level's result differs in the with/without test, if any fusion-tea L1–L6 issue line differs from base, or if branch wall time is more than 1.10 × base. Do not start Phase 2.
+- [x] **Stop and report to the orchestrator** if any level's result differs in the with/without test, if any fusion-tea L1–L6 issue line differs from base, or if branch wall time is more than 1.10 × base. Do not start Phase 2. *Fired: the with/without test differs on `sump_pump`. Stopped before the commit and before Phase 2.*
 
 **What we know works after this phase:** one load and one extraction per run, with every level's result unchanged and fusion-tea not slower. Every later phase builds on that.
 
@@ -712,14 +712,25 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 
 ## Implementation Notes
 
-[To be filled during implementation.]
-
 ### Phase 1 Completion
-**Completed:**
+**Completed:** Not complete. Stopped 2026-10-18 at the stop condition; waiting on the owner.
 **Actual Changes:**
+- Step 1a, committed: `evidence/baseline.md` (repo checks at `ebb3d467`), `scripts/l6_subset/run_consumers.py` (`baseline`, and `session-equality`), `evidence/baseline-consumers.{json,md}`.
+- Session, written but not committed (saved as `evidence/session-uncommitted.patch`, still in the working tree): `validation/session.py` (`ValidationSession`, `active_session()`, `constraint_facts(model)`), `load_sysml_model` consults the session (`common.py`), L4 and L6 call `constraint_facts` (`level4_constraints.py:65`, `level6_architecture.py:650`), `extract_subset_facts(..., constraint_facts=...)` keyword (`subset_extraction.py`), `run_all_checks` wraps the level loop (`runner.py`), `syside` marker (`pyproject.toml`), `tests/test_validation/test_session.py`. Two existing tests now patch `constraint_facts` instead of the removed module name (`test_item12_checks.py:211`, `test_level4_reconciliation.py:71`).
+- Stop evidence: `evidence/session-check.md`, `evidence/session-equality.json`, `evidence/session-check-scripts/`.
+
 **Issues:**
+- The with/without test fails on `tests/fixtures/sump_pump`. That folder holds three copies of the same packages, and today's code, with no session, gives different L2, L4 and L6 results from one fresh load to the next on it (L6's `pump_fit` ERROR on 5 to 10 of 10 loads). Its three subfolders, and every other fixture, are stable. So the session is not the cause, but the plan's rule is "any difference stops", so this is the owner's call.
+- On all three consumer trees, every level's full result is identical with and without the session, with one load and one extraction, in about half the time (fusion-tea 407.8 s → 205.7 s, in process).
+
 **Deviations:**
+- The with/without test runs L2–L6 in order inside one session per fixture, rather than one level per session as in the stencil. This also tests that a level is not changed by an earlier level's use of the shared model, which is what B5 claims.
+- The session raises `ValueError` if handed a directory instead of files, because a directory's mtime does not track its files. The levels always pass discovered files.
+- Added a `model_loads` counter next to `constraint_extractions`, so the test can check one load per run.
+- `run_all_checks` imports `ValidationSession` absolutely, outside the relative/direct-execution `try`, so mypy gets no new errors (`common.py` already uses absolute imports, so direct execution already needed the installed package).
+- `run_consumers.py session-equality` was added: the full-result comparison on the consumer trees, which the text-based `before-after` cannot do (text shows only the first five issues per level).
+- The repository baseline was taken in the checkout with the Phase 1 edits set aside. A `git archive` export run added 8 environment-only failures from console-script paths, so it was not used.
 
 ---
 
-**Status:** Draft
+**Status:** Phase 1 stopped at its stop condition; waiting on the owner
