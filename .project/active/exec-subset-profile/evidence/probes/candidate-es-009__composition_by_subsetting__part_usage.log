@@ -1,0 +1,9 @@
+$ /tmp/subset-profile/run-snszrb88/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-snszrb88/probes/candidate-es-009__composition_by_subsetting__part_usage/in/model.sysml --output /tmp/subset-profile/run-snszrb88/probes/candidate-es-009__composition_by_subsetting__part_usage/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/subset-profile/run-snszrb88/probes/candidate-es-009__composition_by_subsetting__part_usage/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-snszrb88/probes/candidate-es-009__composition_by_subsetting__part_usage/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_OCCURRENCE_MISSING: fx__site__double: reference='facility.area': exact owner address has no target for leaf a339ea2b-63fb-5013-979b-8747b7d893c6 [root-0/model.sysml:4]

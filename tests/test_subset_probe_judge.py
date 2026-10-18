@@ -287,6 +287,18 @@ def test_parse_error_lines_reads_real_codegen_lines():
     )
 
 
+def test_parse_error_lines_reads_a_nested_gate():
+    """A projection refusal names two gate segments before its code."""
+    line = (
+        "ERROR: Code generation failed: exact graph projection failed: SI_RENDERING_COLLISION: "
+        "the public EntryPoint seam cannot carry non-numeric default 'liter': "
+        "reference='fx__gen__fuel_unit' [root-0/model.sysml:5]"
+    )
+    assert parse_error_lines((line,)) == (
+        ReportedError("SI_RENDERING_COLLISION", "root-0/model.sysml", 5),
+    )
+
+
 def test_parse_error_lines_rejects_a_non_error_line():
     with pytest.raises(ObservationFormatError):
         parse_error_lines(("INFO: Generating code",))

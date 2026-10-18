@@ -13,7 +13,7 @@ schema = 1
 
 [verified_against]
 codegen_rev = "b5663c07e987a892e27d21e68cec40d0656574ee"
-agentic_rev = "0ac48bc0d9333164969cebf204e79958ff2e6d2f"
+agentic_rev = "47614c266c96e2a2b1519116f931f059f6ca7554"
 syside_version = "0.8.4"
 
 # ---- ES-003, ES-012, self-binding ---------------------------------------------------------------
@@ -56,7 +56,8 @@ fact_requirements = ["assertion_owner", "constraint"]
 remedy = "Move the constraint to the part definition or part usage that owns the calculation, binding it to the calculation's inputs or result there."
 semantic_limits = "Asserted forms are those the constraint extractor names asserted (definition_typed, inline, named_usage_reference). A calc-usage owner is outside the generator's owner-kind map for every form."
 doc_anchor = "generator-subset#calc-owned-assertion"
-evidence_status = "code_read_pending_item_2"
+evidence_status = "probe_observed"
+example_probe = "calc-owned-assertion__non_asserted_constraint__calc_definition_owner"
 
 [[rule.generator_evidence]]
 code = "SI_CONSTRAINT_UNATTACHED"
@@ -67,10 +68,34 @@ id = "asserted_constraint"
 reason = "calc_owned_asserted_constraint"
 expected_code = "SI_CONSTRAINT_UNATTACHED"
 
+[rule.shape.no_admitted_context]
+citation = "elaboration/elaborate.py:1625 with graph.py:287-292 (a calc-def owner attaches nothing, and an asserted form then grades error); elaborate.py:794-820 (a calc-usage owner is outside the owner-kind map and raises)"
+statement = "An asserted constraint is refused under both owners this rule recognizes; the same constraint owned by a part is a different shape (a control probe)."
+
+[[rule.shape.admission]]
+context = "calc_definition_owner"
+outcome = "refused"
+evidence = ["probe:calc-owned-assertion__asserted_constraint__calc_definition_owner"]
+
+[[rule.shape.admission]]
+context = "calc_usage_owner"
+outcome = "refused"
+evidence = ["probe:calc-owned-assertion__asserted_constraint__calc_usage_owner"]
+
 [[rule.shape]]
 id = "non_asserted_constraint"
 reason = "calc_owned_non_asserted_constraint"
 expected_code = "SI_CONSTRAINT_UNATTACHED"
+
+[[rule.shape.admission]]
+context = "calc_definition_owner"
+outcome = "admitted"
+evidence = ["probe:calc-owned-assertion__non_asserted_constraint__calc_definition_owner"]
+
+[[rule.shape.admission]]
+context = "calc_usage_owner"
+outcome = "refused"
+evidence = ["probe:calc-owned-assertion__non_asserted_constraint__calc_usage_owner"]
 
 # ---- ES-006 -------------------------------------------------------------------------------------
 
@@ -80,9 +105,10 @@ title = "Conditional expression at an expression-inventory site"
 matrix_rows = ["ES-006"]
 fact_requirements = ["expression_site"]
 remedy = "Compute each branch as its own attribute and select with arithmetic the subset supports, or move the choice into a calculation definition's bare result expression (a handwritten stub)."
-semantic_limits = "Refusal-eligible only for a recognized `if` conditional whose reference walk fails with RESOLVED_TARGET_MISSING; the generator reports it with its generic evidence-gap code, so every probe also checks the error's location. Any other walk failure is unverified."
+semantic_limits = "Refusal-eligible only for a recognized `if` conditional whose reference walk fails with RESOLVED_TARGET_MISSING; the generator reports it with its generic evidence-gap code, so every probe also checks the error's location. Any other walk failure is unverified. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined (admitted, and dropped from the output)."
 doc_anchor = "generator-subset#conditional-expression"
-evidence_status = "code_read_pending_item_2"
+evidence_status = "partial"
+example_probe = "conditional-expression__conditional_unresolved_branch__other_expression_site"
 
 [[rule.generator_evidence]]
 code = "SI_EVIDENCE_INCOMPLETE"
@@ -96,6 +122,31 @@ reason = "conditional_expression_resolved_branches"
 id = "conditional_unresolved_branch"
 reason = "conditional_expression_unsupported"
 expected_code = "SI_EVIDENCE_INCOMPLETE"
+
+[[rule.shape.admission]]
+context = "attribute_value"
+outcome = "refused"
+evidence = ["probe:conditional-expression__conditional_unresolved_branch__attribute_value"]
+
+[[rule.shape.admission]]
+context = "binding_value"
+outcome = "refused"
+evidence = ["probe:conditional-expression__conditional_unresolved_branch__binding_value"]
+
+[[rule.shape.admission]]
+context = "calc_definition_feature_value"
+outcome = "refused"
+evidence = ["probe:conditional-expression__conditional_unresolved_branch__calc_definition_feature_value"]
+
+[[rule.shape.admission]]
+context = "constraint_predicate"
+outcome = "refused"
+evidence = ["probe:conditional-expression__conditional_unresolved_branch__constraint_predicate"]
+
+[[rule.shape.admission]]
+context = "other_expression_site"
+outcome = "admitted"
+evidence = ["probe:conditional-expression__conditional_unresolved_branch__other_expression_site"]
 
 # ---- ES-007 -------------------------------------------------------------------------------------
 
@@ -130,9 +181,10 @@ title = "Indexed element reference at an expression-inventory site"
 matrix_rows = ["INDEXED-REFERENCE"]
 fact_requirements = ["expression_site"]
 remedy = "Name the element with its own feature and reference that feature instead of indexing a collection."
-semantic_limits = "The expression inventory refuses an authored index model-wide, before any instantiation, wherever it walks a declared feature value or a constraint predicate."
+semantic_limits = "The expression inventory refuses an authored index model-wide, before any instantiation, wherever it walks a declared feature value or a constraint predicate. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined (admitted, and dropped from the output)."
 doc_anchor = "generator-subset#indexed-reference"
-evidence_status = "code_read_pending_item_2"
+evidence_status = "probe_observed"
+example_probe = "indexed-reference__indexed_reference__other_expression_site"
 
 [[rule.generator_evidence]]
 code = "SI_INDEXED_SOURCE_UNSUPPORTED"
@@ -143,6 +195,31 @@ id = "indexed_reference"
 reason = "indexed_reference_unsupported"
 expected_code = "SI_INDEXED_SOURCE_UNSUPPORTED"
 
+[[rule.shape.admission]]
+context = "attribute_value"
+outcome = "refused"
+evidence = ["probe:indexed-reference__indexed_reference__attribute_value"]
+
+[[rule.shape.admission]]
+context = "binding_value"
+outcome = "refused"
+evidence = ["probe:indexed-reference__indexed_reference__binding_value"]
+
+[[rule.shape.admission]]
+context = "calc_definition_feature_value"
+outcome = "refused"
+evidence = ["probe:indexed-reference__indexed_reference__calc_definition_feature_value"]
+
+[[rule.shape.admission]]
+context = "constraint_predicate"
+outcome = "refused"
+evidence = ["probe:indexed-reference__indexed_reference__constraint_predicate"]
+
+[[rule.shape.admission]]
+context = "other_expression_site"
+outcome = "admitted"
+evidence = ["probe:indexed-reference__indexed_reference__other_expression_site"]
+
 # ---- ES-005 -------------------------------------------------------------------------------------
 
 [[rule]]
@@ -151,9 +228,10 @@ title = "Invocation of a callable outside the executable subset"
 matrix_rows = ["ES-005"]
 fact_requirements = ["expression_site"]
 remedy = "Write the computation with operators the subset supports (explicit multiplication, arithmetic min/max identities) or with NumericalFunctions::sum; or move it into a calculation definition's bare result expression (a handwritten stub)."
-semantic_limits = "Callable identity is decided by the shared allowlist (invocation_allowlist.py, today only NumericalFunctions::sum), the same predicate the generator's inventory refuses through. Operators are not invocations."
+semantic_limits = "Callable identity is decided by the shared allowlist (invocation_allowlist.py, today only NumericalFunctions::sum), the same predicate the generator's inventory refuses through. Operators are not invocations. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined (admitted, and dropped from the output)."
 doc_anchor = "generator-subset#invocation-callable"
-evidence_status = "code_read_pending_item_2"
+evidence_status = "probe_observed"
+example_probe = "invocation-callable__unsupported_callable__other_expression_site"
 
 [[rule.generator_evidence]]
 code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
@@ -163,6 +241,31 @@ site = "agentic_mbse reference_use._require_supported_invocation, via elaboratio
 id = "unsupported_callable"
 reason = "invocation_callable_unsupported"
 expected_code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
+
+[[rule.shape.admission]]
+context = "attribute_value"
+outcome = "refused"
+evidence = ["probe:invocation-callable__unsupported_callable__attribute_value", "probe:invocation-callable__unsupported_callable__attribute_value__max", "probe:invocation-callable__unsupported_callable__attribute_value__size"]
+
+[[rule.shape.admission]]
+context = "binding_value"
+outcome = "refused"
+evidence = ["probe:invocation-callable__unsupported_callable__binding_value"]
+
+[[rule.shape.admission]]
+context = "calc_definition_feature_value"
+outcome = "refused"
+evidence = ["probe:invocation-callable__unsupported_callable__calc_definition_feature_value"]
+
+[[rule.shape.admission]]
+context = "constraint_predicate"
+outcome = "refused"
+evidence = ["probe:invocation-callable__unsupported_callable__constraint_predicate"]
+
+[[rule.shape.admission]]
+context = "other_expression_site"
+outcome = "admitted"
+evidence = ["probe:invocation-callable__unsupported_callable__other_expression_site"]
 
 # ---- ES-004 -------------------------------------------------------------------------------------
 
@@ -221,7 +324,7 @@ title = "String value dropped from generated output"
 matrix_rows = ["ES-010"]
 fact_requirements = ["string_value"]
 remedy = "Keep String values as documentation; the generated catalog and contract carry numeric and Boolean values only. Do not bind a String to a calculation input (the ES-010 refusal side)."
-semantic_limits = "Both spellings (an attribute declaration and the :>> redefinition shorthand) are dropped; no generator site raises, so the evidence is the generated output itself."
+semantic_limits = "Both spellings (an attribute declaration and the :>> redefinition shorthand) are dropped; no generator site raises, so the evidence is the generated output itself. The refusal side, a String value bound to a calculation input the generator projects, is a candidate (refused at projection) and this rule still reports it omitted."
 doc_anchor = "generator-subset#string-value-omission"
 evidence_status = "probe_observed"
 example_probe = "string-value-omission__string_value__attribute_value__redefinition_shorthand"
@@ -234,4 +337,7 @@ reason = "string_value_not_generated"
 [[rule.shape.admission]]
 context = "attribute_value"
 outcome = "omitted"
-evidence = ["probe:string-value-omission__string_value__attribute_value__redefinition_shorthand"]
+evidence = [
+    "probe:string-value-omission__string_value__attribute_value__attribute_declaration",
+    "probe:string-value-omission__string_value__attribute_value__redefinition_shorthand",
+]

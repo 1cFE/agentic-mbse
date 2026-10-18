@@ -1,0 +1,9 @@
+$ /tmp/subset-profile/run-snszrb88/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-snszrb88/probes/candidate-calc-result-expression__bare_result__calc_result_expression__max/in/model.sysml --output /tmp/subset-profile/run-snszrb88/probes/candidate-calc-result-expression__bare_result__calc_result_expression__max/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/subset-profile/run-snszrb88/probes/candidate-calc-result-expression__bare_result__calc_result_expression__max/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-snszrb88/probes/candidate-calc-result-expression__bare_result__calc_result_expression__max/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: <model>: reference='fx::Big': Calc def 'Big' extracted with zero output attributes. A pipeline module needs at least one output channel. Likely cause: the calc def declares no result — add one, e.g. 'out attribute y : Real = <expr>' or 'return y : Real = <expr>'. (An anonymous 'return' is reported separately.) [root-0/model.sysml:3]

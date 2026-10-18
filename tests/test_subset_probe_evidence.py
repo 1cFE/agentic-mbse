@@ -96,7 +96,6 @@ def test_cited_probe_certifies_its_own_pair_at_the_pinned_identity(entry: Cited)
 #: take them (invariant 3). Named one by one; Phases 6-7 land each with its partner and empty it.
 AWAITING_ADMITTED_PARTNER = {
     "binding-source__expression_source__owner_instantiated",
-    "conditional-expression__conditional_unresolved_branch__calc_definition_feature_value",
 }
 
 

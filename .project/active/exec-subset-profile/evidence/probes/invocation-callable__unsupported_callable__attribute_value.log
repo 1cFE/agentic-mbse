@@ -1,0 +1,9 @@
+$ /tmp/subset-profile/run-snszrb88/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-snszrb88/probes/invocation-callable__unsupported_callable__attribute_value/in/model.sysml --output /tmp/subset-profile/run-snszrb88/probes/invocation-callable__unsupported_callable__attribute_value/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/subset-profile/run-snszrb88/probes/invocation-callable__unsupported_callable__attribute_value/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-snszrb88/probes/invocation-callable__unsupported_callable__attribute_value/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_EXPRESSION_SOURCE_UNSUPPORTED: NumericalFunctions::product((a, b)): reference='NumericalFunctions::product((a, b))': inspect_reference_uses: invocation of 'NumericalFunctions::product' is valid SysML but is not supported by this executable subset; only NumericalFunctions::sum is supported [root-0/model.sysml:6]

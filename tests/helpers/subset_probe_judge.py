@@ -56,8 +56,10 @@ PINNED_UV_LOCK_SHA256 = "a17e9fa120983389d45d2e2a47edbe4da38d67ffe78c07c5f048aac
 _PROBE_ROOT_SLOT = 0
 
 _ERROR_PREFIX = "ERROR: "
-# A finding starts after the gate ("<gate>: ", the gate has no colon) or after a "; " join.
-_FINDING_START = re.compile(r"(?:^[^:]+: |; )(SI_[A-Z0-9_]+): ")
+# A finding starts after the gate or after a "; " join. A gate is one or more colon-free
+# segments: "Model is not ready for the exact route: " or, for a projection refusal,
+# "Code generation failed: exact graph projection failed: " (`cli/__init__.py:1189-1230`).
+_FINDING_START = re.compile(r"(?:^(?:[^:]+: )+?|; )(SI_[A-Z0-9_]+): ")
 _LOCATION_SUFFIX = re.compile(r" \[(root-\d+/[^\]]+):(\d+)\]$")
 # `_render_block_reason` (`elaborate.py:448-457`): the profile's location, a bare basename.
 _BLOCK_REASON_SUFFIX = re.compile(r" \[([^\]/]+):(\d+)\]$")

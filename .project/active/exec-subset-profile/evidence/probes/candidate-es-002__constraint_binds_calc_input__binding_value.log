@@ -1,0 +1,9 @@
+$ /tmp/subset-profile/run-snszrb88/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-snszrb88/probes/candidate-es-002__constraint_binds_calc_input__binding_value/in/model.sysml --output /tmp/subset-profile/run-snszrb88/probes/candidate-es-002__constraint_binds_calc_input__binding_value/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/subset-profile/run-snszrb88/probes/candidate-es-002__constraint_binds_calc_input__binding_value/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-snszrb88/probes/candidate-es-002__constraint_binds_calc_input__binding_value/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_OCCURRENCE_MISSING: fx__site__g: reference='t.v': semantic owner kind 'CalculationUsage' cannot anchor containment [root-0/model.sysml:8]
