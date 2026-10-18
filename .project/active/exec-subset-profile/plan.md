@@ -1,6 +1,6 @@
 # Implementation Plan: Executable-subset capability contract (EXEC-SUBSET-CONTRACT Item 1)
 
-**Status:** Implementation complete (Phases 1–11, 2026-10-18); awaiting `/_my_audit` and the owner's R3 decision
+**Status:** Implementation complete (Phases 1–11, 2026-10-18); audited 2026-10-18 (certify with recorded limits); audit fixes applied 2026-10-18; awaiting the owner's R3 decision and B8 acceptance (audit M2)
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `exec-subset-profile` (plan written at `1ff91e07`; `src/`, `tests/`, `scripts/` and `pyproject.toml` are unchanged since the design base `a718efec`)
@@ -168,7 +168,7 @@ Also cover: identity mismatch (wrong codegen revision, a package resolving outsi
 
 **Automated:**
 - [x] `uv run pytest tests/test_subset_probe_judge.py` passes.
-- [ ] Standing checks green. **Not met, and not by Phase 1:** they were red at `1002997d`, before this phase; Phase 1 adds no failure. See [Phase 1 Completion](#phase-1-completion) → Issues.
+- [x] Standing checks green. **Not met, and not by Phase 1:** they were red at `1002997d`, before this phase; Phase 1 adds no failure. See [Phase 1 Completion](#phase-1-completion) → Issues. *Closed 2026-10-18 under the orchestrator's definition of green (§ Standing Rules), verified at `ce0ad1ff` after the audit fixes ([Audit fixes](#audit-fixes-2026-10-18)).*
 
 **Manual:**
 - [x] All four `observation.json` files show `certifies: true`, the codegen revision `b5663c07…`, the agentic-mbse revision, SysIDE 0.8.4, the `uv.lock` sha256, and both package `__file__` paths inside the temp tree.
@@ -1176,6 +1176,35 @@ Roles: 155 internal invariant (each with its cited guard), 95 snapshot integrity
 
 **Deviations from Plan:**
 - The re-estimate is in engineer-days with the basis stated; Item 1's own effort is an equivalent-work judgment, because it was agent-implemented.
+
+### Audit fixes (2026-10-18)
+**Completed:** 2026-10-18, from `briefs/implement-audit-fixes.md` and `briefs/implement-audit-fixes-2.md` against [audit.md](audit.md). Commits: `b1e95ec9` (code, fixtures, records), `ce0ad1ff` (canonical observations, re-pins; **the new final implementation revision**, P-8), then evidence and docs.
+
+**Orchestrator answers to the previous session's questions** (each `[AGENT]`, 2026-10-18):
+1. Execution is available in this session (the previous session could not run commands).
+2. **S1 approved: generalize the load-time gate.** A refused shape needs at least one certified probe in a context whose outcome is not refused (`admitted`, `omitted` or `excluded`), or an SA-1 statement. Reason: the gate proves a rule is not a universal ban; a certified omission proves that equally. Recorded as a deviation from design invariant 3. Re-author the three `other_expression_site` probes as `omitted`, with a unique literal in each dropped expression and the result as positive control. No unqualified `admitted` for a silently dropped construct.
+3. **S3 approved:** a closed `Verdict.REFUSED_INCOMPLETE` (probe-backed refusals plus checks that could not run); `INCOMPLETE` then means no refusals. **S4 approved:** correct both B8 splits in the matrix to the contexts and outcomes the dc3 run reports, with the reason, cross-checked against the records.
+
+**Changes, by audit item:**
+- **A2 (and M1's mutation part):** the previous session's uncommitted test `test_a_consumer_attached_as_neither_calculation_nor_constraint_is_owner_other` (`tests/test_sysml/test_subset_profile_evaluate.py`) was reviewed, run and kept unchanged apart from `ruff format`. 14 R2 mutations run in a scratch copy at `ce0ad1ff`, all caught, including (a′) and the `consumer_placement` fallback: `evidence/r2-mutations.md`.
+- **S1:** `_shape` in `src/agentic_mbse/sysml/subset_profile.py` accepts any probe-backed non-refused partner (and SA-1's contradiction check uses the same test). The three `other_expression_site` probes carry literals `4271.5`, `4272.5`, `4273.5` and expect `omitted`; the records, the three site rules' `semantic_limits`, `Outcome.OMITTED`'s and `ContextId.OTHER_EXPRESSION_SITE`'s docstrings, the matrix rows ES-005, ES-006, INDEXED-REFERENCE and CALC-USAGE-BARE-RESULT-DROP, and the R3 proposal say `omitted`. A throwaway probe in a scratch clone showed the literal check can fail (`evidence/omission-literal-discrimination.log`). New loader tests: the gate is met by `admitted`, `omitted` or `excluded`, and not by two refused contexts.
+- **S2:** the module docstring and `Verdict.CLEAR` say CLEAR is relative to the implemented rules and name the unruled families (DEEP-QUALIFIED-WIRING with its `deep_cross_scope_probe` counterexample, ES-002, ES-008, ES-009, ES-010's refusal side, CALC-DEF-BARE-RESULT, the unconfirmed rows, the follow-up sites, and the calc-usage drop for shapes no rule recognizes). The R3 proposal's "CLEAR is not 'generates'" row points at it.
+- **S3:** `Verdict.REFUSED_INCOMPLETE`; `_verdict` reports it when refusals and unverified checks (or narrowed roots) coexist. Three failure-injection tests now expect it; a new test shows both verdicts. dc3 baseline and the corpus fixture `invocation_binding_probe` now read `refused_incomplete` (`evidence/acceptance.md`).
+- **S4:** matrix ES-007's two `[[row.split]]` entries now carry `context` and `reason`: NON_NUMERICAL 4 and MALFORMED_NUMERICAL 2, both `unconfirmed` at `owner_other`, each with the calc-usage-owner reason. `tests/test_subset_matrix.py` cross-checks each split's outcome against the records at that context. Checked against `evidence/dc3-baseline.md` (the six constraints at `baseline_annual.sysml:57, 84, 97, 124`, `baseline_costs.sysml:74, 134`).
+- **S5:** spec Change Log: SA-1 accepted by the orchestrator, 2026-10-18; plus a Change Log entry for the S1 generalization, and the criterion's wording notes it.
+- **A9:** `site_account.csv` line 77 (`elaborate.py:1939`) joins INDEXED-REFERENCE and the account's `rule` column may now list several rules (`binding-source;indexed-reference`); lines 256 and 258 (`calc_compat_renderer.py:115`, `:120`) are explicit follow-ups, and PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR is `no_raise_site`; line 41 (`elaborate.py:595`) is an explicit follow-up with role unknown and the corrected citation `constraint_extraction.py:311-312`. The five "unassigned until R3" owners are unchanged: R3 is owner-only. Counts now 42 / 375 / 85 (`evidence/site-reconciliation.md`).
+- **A10:** all five computed reason sites assert the exact reason set read from `scanner.toml`; the three helper-backed sites read the helper's returns, so other sites' reasons on the same walk are not counted.
+
+**Reruns at `ce0ad1ff`:** probes 80/80 at base `a718efec`, canonical `b1e95ec9` and final `ce0ad1ff`, differing only in `identity.agentic_rev`; codegen suite 2754 tests, 0 differ; occurrence parity 73/73; dc3 baseline REFUSED_INCOMPLETE with every count unchanged, dc3 repaired CLEAR with 0 refused, corpus 37/37 pass; validate diff 16/16 identical (`sump_pump` happened to match this run; it is nondeterministic at both revisions); rescan 0 unaccounted, 0 orphan.
+
+**Issues:**
+- The records' `verified_against.agentic_rev` must name the revision the cited observations ran at, and a commit cannot name itself, so the canonical observations are at `b1e95ec9` and the final revision is `ce0ad1ff` (the same shape as before, audit A5).
+- `SUBSET_PROFILE_VERSION` stays `subset-profile/v1` with its digest re-pinned twice, as the version test's docstring allows before Item 1 ships.
+
+**Deviations from Plan:**
+- Design invariant 3 generalized (S1, above), recorded in the design and the spec Change Log.
+
+**Validation:** `pytest tests/` 3507 passed, the same 3 environment failures; `ruff check src/ tests/` 118; `mypy src/` 97 in 19 files; changed files pass `ruff check`, `ruff format --check`, and `mypy --strict` for `subset_profile.py` and the two changed test helpers. Sibling `git status` is empty and HEADs are unchanged (codegen `b5663c07`, dc3 `60b44d53`).
 
 ---
 

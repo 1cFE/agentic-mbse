@@ -9,23 +9,23 @@
     "syside_version": "0.8.4",
     "python_version": "3.12.3",
     "uv_lock_sha256": "a17e9fa120983389d45d2e2a47edbe4da38d67ffe78c07c5f048aacacabee4d4",
-    "tree_root": "/tmp/p10/probe-base/run-f21fij5g",
-    "sysml_codegen_file": "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/src/sysml_codegen/__init__.py",
-    "agentic_mbse_file": "/tmp/p10/probe-base/run-f21fij5g/agentic-mbse/src/agentic_mbse/__init__.py",
-    "syside_file": "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/lib/python3.12/site-packages/syside/__init__.py",
+    "tree_root": "/tmp/subset-profile/run-f2c2bcz1",
+    "sysml_codegen_file": "/tmp/subset-profile/run-f2c2bcz1/sysml-codegen/src/sysml_codegen/__init__.py",
+    "agentic_mbse_file": "/tmp/subset-profile/run-f2c2bcz1/agentic-mbse/src/agentic_mbse/__init__.py",
+    "syside_file": "/tmp/subset-profile/run-f2c2bcz1/sysml-codegen/.venv/lib/python3.12/site-packages/syside/__init__.py",
     "license_key_present": true
   },
   "run": {
     "argv": [
-      "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/bin/python",
+      "/tmp/subset-profile/run-f2c2bcz1/sysml-codegen/.venv/bin/python",
       "-I",
       "-m",
       "sysml_codegen",
       "generate",
       "--models",
-      "/tmp/p10/probe-base/run-f21fij5g/probes/candidate-calc-result-expression__bare_result__calc_result_expression__arithmetic/in/model.sysml",
+      "/tmp/subset-profile/run-f2c2bcz1/probes/candidate-calc-result-expression__bare_result__calc_result_expression__arithmetic/in/model.sysml",
       "--output",
-      "/tmp/p10/probe-base/run-f21fij5g/probes/candidate-calc-result-expression__bare_result__calc_result_expression__arithmetic/out"
+      "/tmp/subset-profile/run-f2c2bcz1/probes/candidate-calc-result-expression__bare_result__calc_result_expression__arithmetic/out"
     ],
     "exit_code": 1,
     "timed_out": false,

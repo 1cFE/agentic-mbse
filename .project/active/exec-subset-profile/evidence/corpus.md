@@ -48,7 +48,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### agg_literal_probe
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/agg_literal_probe/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/agg_literal_probe/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `AggLiteralProbeDesign::plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -56,7 +56,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### agg_localterm_probe
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/agg_localterm_probe/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/agg_localterm_probe/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `AggLocalTermProbe::the_bank`. Narrowed: False. Not enumerated: none.
 - **Counts:** 1 declarations, 3 occurrences; by outcome {'refused': 1, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -74,7 +74,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### alias_agg_probe
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/alias_agg_probe/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/alias_agg_probe/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `AliasAggProbeDesign::plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 1 declarations, 3 occurrences; by outcome {'refused': 1, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -92,7 +92,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### attr_expr_probe
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/attr_expr_probe/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/attr_expr_probe/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `AttrExprProbeDesign::probe_design`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -100,7 +100,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### catf_mfe_model
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/catf_mfe_model/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/catf_mfe_model/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (20):** `CATFMFEHeating::catf_heating`, `CATFMFEMagnets::catf_pf7`, `CATFMFEMagnets::catf_pf8`, `CATF_MFE::catf_mfe_plant`, `CATFMFEBlanket::catf_blanket`, `CATFMFEMagnets::catf_pf1`, `CATFMFEPhysics::catf_physics`, `CATFMFETritium::catf_tritium`, `CATFMFEMagnets::catf_pf3`, `CATFMFEMagnets::catf_cs_coil`, `CATFMFEShield::catf_shield`, `CATFMFEVacuum::catf_vacuum_vessel`, `CATFMFEMagnets::catf_pf6`, `CATFMFEVacuum::catf_vacuum_access`, `CATFMFEMagnets::catf_pf2`, `CATFMFERadialBuild::catf_radial_build`, `CATFMFEMagnets::catf_pf4`, `CATFMFEMagnets::catf_pf5`, `CATFMFEVacuum::catf_vacuum_pumping`, `CATFMFEMagnets::catf_tf_system`. Narrowed: False. Not enumerated: none.
 - **Counts:** 120 declarations, 1 occurrences; by outcome {'refused': 1, 'admitted': 51, 'excluded': 0, 'omitted': 68, 'unconfirmed': 0}; 0 unverified; 65 unassessed constraints.
@@ -120,7 +120,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### chain_override_probe
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/chain_override_probe/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/chain_override_probe/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `ChainOverrideDesign::instrument_design`. Narrowed: False. Not enumerated: none.
 - **Counts:** 2 declarations, 2 occurrences; by outcome {'refused': 2, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -139,7 +139,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### chain_spike_model
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/chain_spike_model/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/chain_spike_model/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `ChainSpikeDesign::spike_design`. Narrowed: False. Not enumerated: none.
 - **Counts:** 3 declarations, 3 occurrences; by outcome {'refused': 3, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -159,7 +159,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### constraint_inline
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/constraint_inline/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/constraint_inline/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `constraint_inline::the_host`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -167,7 +167,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### constraint_multi_instance
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/constraint_multi_instance/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/constraint_multi_instance/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `constraint_multi_instance::the_design`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -175,7 +175,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### constraint_non_numerical
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/constraint_non_numerical/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/constraint_non_numerical/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `constraint_non_numerical::the_host`. Narrowed: False. Not enumerated: none.
 - **Counts:** 2 declarations, 1 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 1, 'omitted': 1, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -188,7 +188,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### crosspart_rollup_twolevel
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/crosspart_rollup_twolevel/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/crosspart_rollup_twolevel/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `CrossPartRollupDesign::rollup_plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 1 declarations, 2 occurrences; by outcome {'refused': 1, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -206,7 +206,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### d38_caret
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/d38_caret/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/d38_caret/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `D38Design::plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -214,7 +214,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### deep_cross_scope_probe
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/deep_cross_scope_probe/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/deep_cross_scope_probe/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `DeepCrossScopeDesign::measurement_system`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -222,7 +222,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### expression_binding_probe
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/expression_binding_probe/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/expression_binding_probe/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `ExpressionBindingDesign::expr_probe`. Narrowed: False. Not enumerated: none.
 - **Counts:** 9 declarations, 9 occurrences; by outcome {'refused': 9, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -249,7 +249,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### fusion_tea
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/fusion_tea/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/fusion_tea/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `hif_plant_pkg::hif_plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -257,7 +257,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### gate_a
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/gate_a/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/gate_a/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (2):** `GateA::the_host`, `GateA::the_other`. Narrowed: False. Not enumerated: none.
 - **Counts:** 2 declarations, 2 occurrences; by outcome {'refused': 2, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -276,7 +276,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### gate_a_package_owner
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/gate_a_package_owner/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/gate_a_package_owner/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `GateAPackageOwner::the_other`. Narrowed: False. Not enumerated: none.
 - **Counts:** 2 declarations, 2 occurrences; by outcome {'refused': 2, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -296,7 +296,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### ife_plant
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/ife_plant/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/ife_plant/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (4):** `IfePlantDesign::magnet_system`, `IfePlantSubsystems::radial_build`, `IfePlantDesign::baseline_plant`, `IfePlantDesign::hif_plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 21 declarations, 43 occurrences; by outcome {'refused': 21, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -334,8 +334,8 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### invocation_binding_probe
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/invocation_binding_probe/`.
-- **Verdict:** `incomplete`. Load error diagnostics: 0.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/invocation_binding_probe/`.
+- **Verdict:** `refused_incomplete`. Load error diagnostics: 0.
 - **Roots used (1):** `InvocationBindingDesign::probe`. Narrowed: False. Not enumerated: none.
 - **Counts:** 1 declarations, 0 occurrences; by outcome {'refused': 1, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 2 unverified; 0 unassessed constraints.
 - **Dedup:** findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count.
@@ -359,7 +359,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### issue22_model
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/issue22_model/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/issue22_model/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `Issue22Design::plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 1 declarations, 3 occurrences; by outcome {'refused': 1, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -377,7 +377,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### modeled_default_fidelity
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/modeled_default_fidelity/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/modeled_default_fidelity/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `ModeledDefaultFidelity::the_rig`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -385,7 +385,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### plant_value_shapes
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/plant_value_shapes/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/plant_value_shapes/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `PlantValueShapesDesign::shapes_design`. Narrowed: False. Not enumerated: none.
 - **Counts:** 2 declarations, 2 occurrences; by outcome {'refused': 2, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -404,7 +404,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### plant_values
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/plant_values/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/plant_values/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `PlantValuesDesign::plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 1 declarations, 1 occurrences; by outcome {'refused': 1, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -422,7 +422,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### quoted_owner_formula
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/quoted_owner_formula/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/quoted_owner_formula/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `QuotedOwnerFormulaDesign::'Margin Part'`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -430,7 +430,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### return_styles
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/return_styles/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/return_styles/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `ReturnStylesDesign::rs_design`. Narrowed: False. Not enumerated: none.
 - **Counts:** 3 declarations, 3 occurrences; by outcome {'refused': 3, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -450,7 +450,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### retype_model
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/retype_model/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/retype_model/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `RetypeDesign::retype_design`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -458,7 +458,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### sample_model
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/sample_model/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/sample_model/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (0):** none. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -466,7 +466,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### self_named_binding_trap
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/self_named_binding_trap/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/self_named_binding_trap/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `TrapDesign::trap_plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 1 declarations, 1 occurrences; by outcome {'refused': 1, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -484,7 +484,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### self_named_rescue
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/self_named_rescue/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/self_named_rescue/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `RescueDesign::rescue_plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 1 declarations, 1 occurrences; by outcome {'refused': 1, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -502,7 +502,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### shadowed_reference
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/shadowed_reference/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/shadowed_reference/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `ShadowedReference::the_outer`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -510,7 +510,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### shared_producer
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/shared_producer/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/shared_producer/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `SharedProducer::the_rig`. Narrowed: False. Not enumerated: none.
 - **Counts:** 2 declarations, 2 occurrences; by outcome {'refused': 2, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -529,7 +529,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### sibling_channel_ambiguity
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/sibling_channel_ambiguity/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/sibling_channel_ambiguity/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `SiblingDesign::twin_plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 1 declarations, 2 occurrences; by outcome {'refused': 1, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -547,7 +547,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### solar_battery_model
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/solar_battery_model/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/solar_battery_model/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `SolarBatteryDesign::solar_battery_plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 24 declarations, 79 occurrences; by outcome {'refused': 24, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -588,7 +588,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### spec_chain_channel
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/spec_chain_channel/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/spec_chain_channel/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `SpecChainDesign::spec_chain_plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 1 declarations, 1 occurrences; by outcome {'refused': 1, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -606,7 +606,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### spec_chain_twolevel
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/spec_chain_twolevel/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/spec_chain_twolevel/`.
 - **Verdict:** `refused`. Load error diagnostics: 0.
 - **Roots used (1):** `TwoLevelDesign::hif_plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 1 declarations, 1 occurrences; by outcome {'refused': 1, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -624,7 +624,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### unresolvable_attr_probe
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/unresolvable_attr_probe/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/unresolvable_attr_probe/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (3):** `UnresolvableAttrProbeDesign::design_derived_instance`, `UnresolvableAttrProbeDesign::grandchild_instance`, `UnresolvableAttrProbeDesign::derived_instance`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.
@@ -632,7 +632,7 @@ The snapshot fixtures prove admission through elaboration and projection, not fu
 
 ### wi014_toy
 
-- **Identity:** agentic-mbse `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/wi014_toy/`.
+- **Identity:** agentic-mbse `ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508`, judged against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee`, SysIDE 0.8.4; tree sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` `tests/fixtures/wi014_toy/`.
 - **Verdict:** `clear`. Load error diagnostics: 0.
 - **Roots used (1):** `toy_plant::demo_plant`. Narrowed: False. Not enumerated: none.
 - **Counts:** 0 declarations, 0 occurrences; by outcome {'refused': 0, 'admitted': 0, 'excluded': 0, 'omitted': 0, 'unconfirmed': 0}; 0 unverified; 0 unassessed constraints.

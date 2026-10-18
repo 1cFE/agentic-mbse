@@ -172,3 +172,66 @@ Recorded deviations, all documented in the plan: `OccurrenceAbort` gained member
 **Marked:** 22 of 24 spec success criteria ticked in `spec.md`, verified by reading code and recorded evidence. Two left unticked: "Baseline run accounts for B1–B8" (met as written, but waits on owner acceptance of B8 as `unconfirmed`, M2) and "Repository checks pass" (not run, M1). Plan: no change; phases 2–11 were already ticked and their artifacts exist and say what the notes claim; Phase 1's "Standing checks green" box stays open until M1. Epic: heading not marked ✅, because two criteria are open. `CURRENT_WORK.md` updated.
 
 **Not checked:** I executed no Python. No pytest, mypy or ruff run, no mutation test, no probe, scanner, parity or acceptance re-run; all such numbers are the implementer's recorded evidence (M1). I did not read `occurrence_extraction.py` beyond the parts cited, `subset_extraction.py` beyond its first 160 lines, or the matrix and records tests in full. I did not re-grep the dc3 baseline for B3's count (A7). I did not check the B5 variation probes' models individually, nor the codegen-suite per-test JSON. The sysml-codegen working tree I compared against was read from disk, not from `git show b5663c07`.
+
+---
+
+## Audit fixes (2026-10-18)
+
+Applied from `briefs/implement-audit-fixes.md` and `briefs/implement-audit-fixes-2.md`. Commits `b1e95ec9` (code, fixtures, records) and `ce0ad1ff` (canonical probe observations and re-pins). **`ce0ad1ff` is the new final implementation revision;** every recorded run below was repeated there. Implementation notes: plan § Audit fixes.
+
+**Orchestrator answers to the previous session's questions**, each `[AGENT]`, 2026-10-18:
+
+1. Execution is available in this session.
+2. **S1 approved: generalize the load-time gate.** A refused shape needs at least one certified probe in a context whose outcome is not refused (`admitted`, `omitted` or `excluded`), or an SA-1 statement. Reason: the gate proves a rule is not a universal ban; a certified omission proves that equally. A deviation from design invariant 3. The three `other_expression_site` probes are re-authored as `omitted`.
+3. **S3 approved:** a closed `Verdict.REFUSED_INCOMPLETE`; `INCOMPLETE` then means no refusals. **S4 approved:** correct both B8 splits to what the dc3 run reports, with the reason, cross-checked against the records.
+
+### What changed, by item
+
+| Item | Change | Status |
+|---|---|---|
+| **M1** repository checks | At `ce0ad1ff`: `pytest tests/` 3507 passed, the same 3 environment failures (stale `/home/reid/1cfe` paths, missing PIL), 1 skipped, 1 xfailed; `ruff check` 118; `mypy src/` 97 in 19 files. All equal the baseline; changed files are clean (`evidence/repository-checks.md`) | Closed |
+| **M1** R2 mutations | 14 mutations in a scratch copy at `ce0ad1ff`, **all caught**, including (a′) and the `consumer_placement` fallback (`evidence/r2-mutations.md`) | Closed |
+| **M2** owner acceptance of B8 | Not an implementer's call. The B8 evidence is now consistent everywhere (S4) | **Open for the owner** |
+| **S1** silently dropped expression called `admitted` | The loader gate accepts any probe-backed non-refused partner (`subset_profile.py`, `_shape`). The three `other_expression_site` probes each hold a unique literal (`4271.5`, `4272.5`, `4273.5`) in the dropped expression, use the calc usage's result as positive control, and certify `omitted`: the literal appears in no generated file. A throwaway probe confirmed the check can fail: with the literal in a compiled expression, it appears in `modules/fx/twice.py` and the judge reports `omitted_element_present`. Records, `semantic_limits`, the matrix rows ES-005, ES-006, INDEXED-REFERENCE and CALC-USAGE-BARE-RESULT-DROP, and the R3 proposal say `omitted`. A bare result holding none of the three shapes (plain arithmetic) still draws no finding; the matrix row says so | Fixed |
+| **S2** CLEAR's coverage limit | The module docstring and `Verdict.CLEAR` state that CLEAR is relative to the implemented rules and name the unruled families: DEEP-QUALIFIED-WIRING (`deep_cross_scope_probe` is refused and evaluates CLEAR), ES-002, ES-008, ES-009, ES-010's refusal side, CALC-DEF-BARE-RESULT, the unconfirmed rows, the follow-up sites. The R3 row "CLEAR is not 'generates'" points at it. L6 wording stays Item 3's | Fixed (docstring and records; consumer wording is Item 3) |
+| **S3** INCOMPLETE hides refusals | `Verdict.REFUSED_INCOMPLETE` when refusals and an unrun check (or narrowed roots) coexist. dc3 baseline now reads `refused_incomplete` (236 refused, 50 unverified, every count unchanged); so does the corpus refusal fixture `invocation_binding_probe` | Fixed |
+| **S4** matrix misstates B8 | ES-007's splits: NON_NUMERICAL 4 and MALFORMED_NUMERICAL 2, both `unconfirmed` at `owner_other`, each with the reason (calc-usage owners; the generator refuses them first through ES-001, B1). The matrix test cross-checks each split's outcome against the records at that context. Matches `evidence/dc3-baseline.md` | Fixed |
+| **S5** SA-1 still "pending" in the spec | Change Log: accepted by the orchestrator, 2026-10-18; plus an entry for the S1 generalization | Fixed |
+| **S6** ADR 0012 amendment timing | Owner call; unchanged | Open for the owner |
+| **A2** `consumer_placement` fallback untested | The previous session's test was run and kept; mutation m9 shows it catches the `OWNER_INSTANTIATED` mutation | Fixed |
+| **A9** four site-account rows | `elaborate.py:1939` joins INDEXED-REFERENCE (the account's `rule` column may now list several rules). `calc_compat_renderer.py:115`, `:120` are explicit follow-ups, since they never refuse; PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR is `no_raise_site`. `elaborate.py:595` is an explicit follow-up with role unknown, its guard citation corrected to `constraint_extraction.py:311-312`. The five "unassigned until R3" owners stay, because R3 is owner-only. Counts: 42 in scope / 375 handled elsewhere / 85 follow-up (was 44 / 376 / 82) | Fixed, except the R3-dependent owners |
+| **A10** exact reason sets | All five computed sites assert the exact set from `scanner.toml`. The three helper-backed sites read the helper's own returns, so another site's reason on the same walk is not counted | Fixed |
+| A1, A3–A8 | Not in the fix brief; unchanged. A5's shape recurs: the cited observations are at `b1e95ec9`, one commit before the final revision, because a record cannot name the commit that contains it. The final run differs from them only in `identity.agentic_rev` | Unchanged |
+
+### Mutation results (`evidence/r2-mutations.md`)
+
+| Mutation | Caught by |
+|---|---|
+| Refused admission cites an unrelated probe | Loader at import ("does not probe") |
+| New refused admission with no evidence | Loader ("requires evidence") |
+| Refused admission cites a nonexistent probe with the right prefix | `test_cited_probe_certifies_its_own_pair_at_the_pinned_identity`, evaluator reproduction, version digest |
+| (a′) admitted pair flipped to refused, keeping its probe | `test_cited_probe_certifies_…`, `test_evaluator_reproduces_probe`, the matrix contexts test, version digest |
+| S1: the omitted partner flipped to refused | Loader ("needs a probe of a context it is not refused in") |
+| Observation code changed / observation deleted / `certifies` flipped / error line moved | `test_stored_observation_re_judges_as_recorded`, `test_cited_probe_certifies_…`, the matrix certify test |
+| `_unreached` places an unreached owner as instantiated | 11 tests (placement, roots, evaluator reproduction of the `owner_uninstantiated` probes) |
+| `consumer_placement` fallback → `OWNER_INSTANTIATED` | `test_a_consumer_attached_as_neither_calculation_nor_constraint_is_owner_other`, `test_an_unverified_check_does_not_hide_a_refusal` |
+| The dropped literal reported as present in the output | Re-judge (`omitted_element_present`) and the certify tests |
+| The non-refused-partner gate removed | `test_a_refused_shape_needs_a_probe_of_a_context_it_is_not_refused_in` |
+| INCOMPLETE outranks REFUSED again | the S3 test and three failure-injection tests |
+
+### Reruns at `ce0ad1ff`
+
+| Run | Result |
+|---|---|
+| Probes | 80/80 certify at base `a718efec`, canonical `b1e95ec9` and final `ce0ad1ff`; observations differ only in `identity.agentic_rev` (`evidence/same-generator.md`) |
+| Codegen suite | 2754 tests compared against the Phase 10 base, 0 differ |
+| Occurrence parity | 73/73 match |
+| dc3 baseline | REFUSED_INCOMPLETE; 274 declarations / 101 occurrences, 236 refused, 32 omitted, 6 unconfirmed, 50 unverified; identical to the `9b123cf3` run apart from the verdict name |
+| dc3 repaired | CLEAR, 0 refused, 0 unverified, 0 unconfirmed |
+| Corpus | 37/37 pass; 14/14 snapshot fixtures CLEAR |
+| `validate` diff | 16/16 inputs identical (`sump_pump` matched this time; it is nondeterministic at both revisions) |
+| Site rescan | 502 sites, 0 unaccounted, 0 orphan, identical to Phase 9's scan |
+
+Siblings: `~/src/sysml-codegen` (HEAD `b5663c07`) and `~/src/dc3` (HEAD `60b44d53`) have empty `git status` and unchanged HEADs.
+
+**Still open before `/_my_close`:** the owner's answer on M2 (B8 reported only as `unconfirmed`), R3 and S6. The spec criterion "Repository checks pass" is now ticked; "Baseline run accounts for B1–B8" stays open on M2.

@@ -1,0 +1,129 @@
+baseline: exit 0; ======================= 1422 passed, 1 skipped in 7.67s ========================
+
+## m1: Refused admission citing an unrelated probe
+exit 2; ============================== 9 errors in 1.15s ===============================
+caught by 9:
+  tests/test_subset_matrix.py
+  tests/test_subset_probe_evidence.py
+  tests/test_sysml/test_subset_profile_coupling.py
+  tests/test_sysml/test_subset_profile_evaluate.py
+  tests/test_sysml/test_subset_profile_records.py
+  tests/test_sysml/test_subset_profile_rules_instantiation.py
+  tests/test_sysml/test_subset_profile_rules_modelwide.py
+  tests/test_sysml/test_subset_profile_version.py
+  tests/test_sysml/test_subset_profile_vocabulary.py
+
+## m2: New refused admission with no evidence
+exit 2; ============================== 9 errors in 0.98s ===============================
+caught by 9:
+  tests/test_subset_matrix.py
+  tests/test_subset_probe_evidence.py
+  tests/test_sysml/test_subset_profile_coupling.py
+  tests/test_sysml/test_subset_profile_evaluate.py
+  tests/test_sysml/test_subset_profile_records.py
+  tests/test_sysml/test_subset_profile_rules_instantiation.py
+  tests/test_sysml/test_subset_profile_rules_modelwide.py
+  tests/test_sysml/test_subset_profile_version.py
+  tests/test_sysml/test_subset_profile_vocabulary.py
+
+## m3: Refused admission citing a nonexistent probe whose id has the right prefix
+exit 1; ================== 4 failed, 1421 passed, 1 skipped in 6.67s ===================
+caught by 4:
+  tests/test_subset_probe_evidence.py::test_cited_probe_certifies_its_own_pair_at_the_pinned_identity[binding-source__expression_source__owner_instantiated__nonexistent]
+  tests/test_subset_probe_evidence.py::test_evaluator_reproduces_each_cited_probe[binding-source__expression_source__owner_instantiated__nonexistent]
+  tests/test_subset_probe_evidence.py::test_stripping_the_shapes_evidence_makes_it_unconfirmed[binding-source__expression_source__owner_instantiated__nonexistent]
+  tests/test_sysml/test_subset_profile_version.py::test_version_pins_the_records_and_the_allowlist
+
+## m4: (a') An admitted pair flipped to refused, keeping its own probe
+exit 1; ================== 5 failed, 1417 passed, 1 skipped in 6.85s ===================
+caught by 5:
+  tests/test_subset_matrix.py::test_shared_rule_row_contexts_are_the_record_contexts_with_its_outcome
+  tests/test_subset_probe_evidence.py::test_cited_probe_certifies_its_own_pair_at_the_pinned_identity[binding-source__expression_source__owner_uninstantiated]
+  tests/test_sysml/test_subset_profile_rules_instantiation.py::test_evaluator_reproduces_probe[binding-source__expression_source__owner_uninstantiated]
+  tests/test_sysml/test_subset_profile_rules_instantiation.py::test_narrowed_roots_report_incomplete_scope
+  tests/test_sysml/test_subset_profile_version.py::test_version_pins_the_records_and_the_allowlist
+
+## m4b: S1: the omitted partner flipped to refused (shape left with no non-refused probe)
+exit 2; ============================== 9 errors in 0.98s ===============================
+caught by 9:
+  tests/test_subset_matrix.py
+  tests/test_subset_probe_evidence.py
+  tests/test_sysml/test_subset_profile_coupling.py
+  tests/test_sysml/test_subset_profile_evaluate.py
+  tests/test_sysml/test_subset_profile_records.py
+  tests/test_sysml/test_subset_profile_rules_instantiation.py
+  tests/test_sysml/test_subset_profile_rules_modelwide.py
+  tests/test_sysml/test_subset_profile_version.py
+  tests/test_sysml/test_subset_profile_vocabulary.py
+
+## m5: Observed code changed in a refused probe's observation
+exit 1; ================== 3 failed, 1419 passed, 1 skipped in 6.95s ===================
+caught by 3:
+  tests/test_subset_matrix.py::test_every_cited_probe_exists_and_certifies[INDEXED-REFERENCE]
+  tests/test_subset_probe_evidence.py::test_cited_probe_certifies_its_own_pair_at_the_pinned_identity[indexed-reference__indexed_reference__attribute_value]
+  tests/test_subset_probe_evidence.py::test_stored_observation_re_judges_as_recorded[indexed-reference__indexed_reference__attribute_value]
+
+## m6a: A cited observation deleted
+exit 1; ================== 4 failed, 1418 passed, 1 skipped in 7.01s ===================
+caught by 4:
+  tests/test_subset_matrix.py::test_every_cited_probe_exists_and_certifies[INDEXED-REFERENCE]
+  tests/test_subset_probe_evidence.py::test_cited_probe_certifies_its_own_pair_at_the_pinned_identity[indexed-reference__indexed_reference__attribute_value]
+  tests/test_subset_probe_evidence.py::test_every_certified_record_probe_is_cited
+  tests/test_subset_probe_evidence.py::test_stored_observation_re_judges_as_recorded[indexed-reference__indexed_reference__attribute_value]
+
+## m6b: A cited observation's certifies flipped to false
+exit 1; ================== 4 failed, 1418 passed, 1 skipped in 6.79s ===================
+caught by 4:
+  tests/test_subset_matrix.py::test_every_cited_probe_exists_and_certifies[INDEXED-REFERENCE]
+  tests/test_subset_probe_evidence.py::test_cited_probe_certifies_its_own_pair_at_the_pinned_identity[indexed-reference__indexed_reference__attribute_value]
+  tests/test_subset_probe_evidence.py::test_every_certified_record_probe_is_cited
+  tests/test_subset_probe_evidence.py::test_stored_observation_re_judges_as_recorded[indexed-reference__indexed_reference__attribute_value]
+
+## m7: Error line moved outside the construct
+exit 1; ================== 3 failed, 1419 passed, 1 skipped in 6.85s ===================
+caught by 3:
+  tests/test_subset_matrix.py::test_every_cited_probe_exists_and_certifies[INDEXED-REFERENCE]
+  tests/test_subset_probe_evidence.py::test_cited_probe_certifies_its_own_pair_at_the_pinned_identity[indexed-reference__indexed_reference__attribute_value]
+  tests/test_subset_probe_evidence.py::test_stored_observation_re_judges_as_recorded[indexed-reference__indexed_reference__attribute_value]
+
+## m8: Unreached owner placed as instantiated (_unreached)
+exit 1; ================== 11 failed, 1411 passed, 1 skipped in 6.72s ==================
+caught by 11:
+  tests/test_subset_probe_evidence.py::test_evaluator_reproduces_each_cited_probe[binding-source__expression_source__owner_uninstantiated]
+  tests/test_subset_probe_evidence.py::test_evaluator_reproduces_each_cited_probe[binding-source__self_reference_source__owner_uninstantiated]
+  tests/test_subset_probe_evidence.py::test_evaluator_reproduces_each_cited_probe[constraint-predicate__blocked_predicate__owner_uninstantiated]
+  tests/test_sysml/test_subset_profile_evaluate.py::test_binding_placement_follows_attachment_and_writer_selection
+  tests/test_sysml/test_subset_profile_evaluate.py::test_default_roots_ignore_caller_roots_and_report_the_roots_used
+  tests/test_sysml/test_subset_profile_evaluate.py::test_narrowed_roots_are_incomplete
+  tests/test_sysml/test_subset_profile_rules_instantiation.py::test_default_roots_leave_a_template_uninstantiated_and_report_the_roots_used
+  tests/test_sysml/test_subset_profile_rules_instantiation.py::test_evaluator_reproduces_probe[binding-source__expression_source__owner_uninstantiated]
+  tests/test_sysml/test_subset_profile_rules_instantiation.py::test_evaluator_reproduces_probe[binding-source__self_reference_source__owner_uninstantiated]
+  tests/test_sysml/test_subset_profile_rules_instantiation.py::test_evaluator_reproduces_probe[constraint-predicate__blocked_predicate__owner_uninstantiated]
+  tests/test_sysml/test_subset_profile_rules_instantiation.py::test_narrowed_roots_report_incomplete_scope
+
+## m9: consumer_placement fallback changed to OWNER_INSTANTIATED (audit A2)
+exit 1; ================== 2 failed, 1420 passed, 1 skipped in 6.80s ===================
+caught by 2:
+  tests/test_sysml/test_subset_profile_evaluate.py::test_a_consumer_attached_as_neither_calculation_nor_constraint_is_owner_other
+  tests/test_sysml/test_subset_profile_evaluate.py::test_an_unverified_check_does_not_hide_a_refusal
+
+## m10: S1 omission: the dropped literal is mentioned in a generated file
+exit 1; ================== 4 failed, 1418 passed, 1 skipped in 6.41s ===================
+caught by 4:
+  tests/test_subset_matrix.py::test_every_cited_probe_exists_and_certifies[CALC-USAGE-BARE-RESULT-DROP]
+  tests/test_subset_matrix.py::test_every_cited_probe_exists_and_certifies[ES-005]
+  tests/test_subset_probe_evidence.py::test_cited_probe_certifies_its_own_pair_at_the_pinned_identity[invocation-callable__unsupported_callable__other_expression_site]
+  tests/test_subset_probe_evidence.py::test_stored_observation_re_judges_as_recorded[invocation-callable__unsupported_callable__other_expression_site]
+
+## m11: Loader gate for a non-refused partner removed
+exit 1; ================== 1 failed, 1421 passed, 1 skipped in 6.46s ===================
+caught by 1:
+  tests/test_sysml/test_subset_profile_records.py::test_a_refused_shape_needs_a_probe_of_a_context_it_is_not_refused_in
+
+## m12: S3: INCOMPLETE outranks REFUSED again
+exit 1; ================== 4 failed, 1418 passed, 1 skipped in 6.30s ===================
+caught by 4:
+  tests/test_sysml/test_subset_profile_evaluate.py::test_an_unverified_check_does_not_hide_a_refusal
+  tests/test_sysml/test_subset_profile_evaluate.py::test_element_failure_carries_rule_safe_location_and_cause
+  tests/test_sysml/test_subset_profile_evaluate.py::test_enumeration_failure_is_unverified_for_its_rules_only
+  tests/test_sysml/test_subset_profile_evaluate.py::test_failed_fact_is_unverified_and_others_still_report

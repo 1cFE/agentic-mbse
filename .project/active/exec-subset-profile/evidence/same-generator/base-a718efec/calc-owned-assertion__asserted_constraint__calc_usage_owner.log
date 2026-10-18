@@ -1,9 +1,9 @@
-$ /tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/p10/probe-base/run-f21fij5g/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/in/model.sysml --output /tmp/p10/probe-base/run-f21fij5g/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/out
+$ /tmp/subset-profile/run-f2c2bcz1/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-f2c2bcz1/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/in/model.sysml --output /tmp/subset-profile/run-f2c2bcz1/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/out
 exit=1 timed_out=False
 --- stdout
 --- stderr
-INFO: Generating code from /tmp/p10/probe-base/run-f21fij5g/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/in/model.sysml
-INFO: Output to /tmp/p10/probe-base/run-f21fij5g/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/out
+INFO: Generating code from /tmp/subset-profile/run-f2c2bcz1/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-f2c2bcz1/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/out
 INFO: Package name: generated_code
 INFO: Building pipeline context...
 ERROR: Model failed exact-route validation: SI_CONSTRAINT_UNATTACHED: <model>: reference='fx::Site::path': constraint owner does not match a supported mapped metatype: fx::Site::path [root-0/model.sysml:8]

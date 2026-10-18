@@ -1,9 +1,9 @@
-$ /tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/p10/probe-base/run-f21fij5g/probes/conditional-expression__arithmetic_min__calc_definition_feature_value/in/model.sysml --output /tmp/p10/probe-base/run-f21fij5g/probes/conditional-expression__arithmetic_min__calc_definition_feature_value/out
+$ /tmp/subset-profile/run-f2c2bcz1/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-f2c2bcz1/probes/conditional-expression__arithmetic_min__calc_definition_feature_value/in/model.sysml --output /tmp/subset-profile/run-f2c2bcz1/probes/conditional-expression__arithmetic_min__calc_definition_feature_value/out
 exit=0 timed_out=False
 --- stdout
 --- stderr
-INFO: Generating code from /tmp/p10/probe-base/run-f21fij5g/probes/conditional-expression__arithmetic_min__calc_definition_feature_value/in/model.sysml
-INFO: Output to /tmp/p10/probe-base/run-f21fij5g/probes/conditional-expression__arithmetic_min__calc_definition_feature_value/out
+INFO: Generating code from /tmp/subset-profile/run-f2c2bcz1/probes/conditional-expression__arithmetic_min__calc_definition_feature_value/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-f2c2bcz1/probes/conditional-expression__arithmetic_min__calc_definition_feature_value/out
 INFO: Package name: generated_code
 INFO: Building pipeline context...
 INFO: Built computation graph with 1 modules

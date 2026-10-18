@@ -237,6 +237,7 @@ SysIDE model ─► occurrence_extraction ─► OccurrenceStructure ───�
 
    `test_subset_probe_evidence.py` checks this for every cited probe, and checks that the evaluator reproduces each pair on the probe's own fixture.
 3. Every refused shape has an admitted-context probe, or a `no_admitted_context` statement whose cited refused probes span every context the rule can compute (proposed spec amendment SA-1, below).
+   - **Deviation, `[AGENT] (orchestrator, 2026-10-18, audit S1)`:** the partner may be a certified probe of any context whose outcome is not refused: `admitted`, `omitted` or `excluded`. The partner proves the rule is not a universal ban, and a certified omission proves that as well as an admission. It lets the three site rules record a calc usage's bare result expression, which the generator never examines and drops, as `omitted` instead of an unqualified `admitted`.
 4. Any (shape, context) not listed in a record yields `unconfirmed`.
 5. A missing required fact kind, an occurrence abort or a failed element yields `UnverifiedCheck`, never an empty clean result. Rules whose facts are available still report.
 6. No `agentic_mbse` module imports `sysml_codegen`. No rule or reason ID matches `SI_[A-Z_]+` or names a consumer type. `SI_*` appears in packaged records only in evidence fields.

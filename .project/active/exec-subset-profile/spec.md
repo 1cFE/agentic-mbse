@@ -78,7 +78,7 @@ Each criterion names the artifact or test that proves it. "Pinned" means sysml-c
 
 - [x] **R3 proposal is recorded.** A disposition table proposes, for each section of GENERATOR-SUBSET-PATTERNS and each remaining capability gap, its destination item or follow-up. It is marked proposed until the owner approves.
 - [x] **Re-estimate is recorded.** Item 1's close-out records re-estimated effort for Items 1 and 2, as the epic requires after the inventory.
-- [ ] **Repository checks pass.** `uv run pytest tests/`, `uv run mypy src/` and `uv run ruff check src/ tests/` pass. Evidence states which checks needed the SysIDE license and which were skipped.
+- [x] **Repository checks pass.** `uv run pytest tests/`, `uv run mypy src/` and `uv run ruff check src/ tests/` pass. Evidence states which checks needed the SysIDE license and which were skipped. *(Met under the orchestrator's definition of green, plan § Standing Rules: no new failures against the pre-existing baseline, Item 1's files clean. Run at `ce0ad1ff` after the audit fixes: 3507 passed, the same 3 environment failures, ruff 118, mypy 97 in 19 files; `evidence/repository-checks.md`.)*
 
 ## Known Requirements
 

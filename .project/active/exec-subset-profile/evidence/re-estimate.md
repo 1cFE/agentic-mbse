@@ -6,7 +6,7 @@
 
 What Item 1 measured, which the estimate leans on:
 
-- **Size of the surface.** 502 candidate sites (441 codegen, 61 agentic-mbse). 44 are in scope, 376 handled elsewhere, 82 explicit follow-ups (37 public capability, 45 unknown role). 155 are internal invariants with a cited guard.
+- **Size of the surface.** 502 candidate sites (441 codegen, 61 agentic-mbse). 42 are in scope, 375 handled elsewhere, 85 explicit follow-ups (39 public capability, 46 unknown role). 154 are internal invariants with a cited guard. (After audit A9 re-classified three rows; before: 44 / 376 / 82, 155 invariants. The estimate is unchanged by three rows.)
 - **Evidence cost.** 80 probes (62 record, 12 control, 6 reproduction). A full probe run takes under ten minutes in an isolated tree; codegen's suite about two minutes plus sync. Probing is cheap; deciding contexts is not.
 - **Occurrence port.** 725 lines in production (`occurrence_extraction.py`), above the spike's ~600 estimate. Parity held at 73/73 from its first run to the final revision.
 - **Item 1 actuals.** Spec, design and spike on 2026-10-15; plan and all eleven phases on 2026-10-18, agent-implemented. 38 commits on the branch since the design base, about 22,700 lines across `src/`, `tests/` and `scripts/` (most of it probe fixtures, observations and the account). Agent wall-clock is not a reliable guide to human effort, so the figure below is an engineer-day judgment of the same work.

@@ -5392,7 +5392,7 @@
     }
   ],
   "identity": {
-    "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+    "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
     "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
     "syside_version": "0.8.4",
     "tree_path": "models/",
@@ -5828,7 +5828,7 @@
       "subject": "dc3_path_efficiency::'Path Efficiency'::path_efficiency"
     }
   ],
-  "verdict": "incomplete",
+  "verdict": "refused_incomplete",
   "versions": {
     "executable_profile": "executable-profile/v4",
     "subset_profile": "subset-profile/v1"

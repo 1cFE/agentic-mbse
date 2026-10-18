@@ -1,9 +1,0 @@
-$ /tmp/p10/probe-final2/run-lr242rwo/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/p10/probe-final2/run-lr242rwo/probes/indexed-reference__indexed_reference__constraint_predicate/in/model.sysml --output /tmp/p10/probe-final2/run-lr242rwo/probes/indexed-reference__indexed_reference__constraint_predicate/out
-exit=1 timed_out=False
---- stdout
---- stderr
-INFO: Generating code from /tmp/p10/probe-final2/run-lr242rwo/probes/indexed-reference__indexed_reference__constraint_predicate/in/model.sysml
-INFO: Output to /tmp/p10/probe-final2/run-lr242rwo/probes/indexed-reference__indexed_reference__constraint_predicate/out
-INFO: Package name: generated_code
-INFO: Building pipeline context...
-ERROR: Model failed exact-route validation: SI_INDEXED_SOURCE_UNSUPPORTED: qs#(1).v: reference='qs#(1).v': expression_evidence: indexed element reference is valid SysML but not implemented by this executable subset; the index is never flattened into a supported source [root-0/model.sysml:8]

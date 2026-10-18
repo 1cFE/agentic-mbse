@@ -1,9 +1,9 @@
-$ /tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/p10/probe-base/run-f21fij5g/probes/binding-source__expression_source__writer_overridden__tuple/in/model.sysml --output /tmp/p10/probe-base/run-f21fij5g/probes/binding-source__expression_source__writer_overridden__tuple/out
+$ /tmp/subset-profile/run-f2c2bcz1/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-f2c2bcz1/probes/binding-source__expression_source__writer_overridden__tuple/in/model.sysml --output /tmp/subset-profile/run-f2c2bcz1/probes/binding-source__expression_source__writer_overridden__tuple/out
 exit=0 timed_out=False
 --- stdout
 --- stderr
-INFO: Generating code from /tmp/p10/probe-base/run-f21fij5g/probes/binding-source__expression_source__writer_overridden__tuple/in/model.sysml
-INFO: Output to /tmp/p10/probe-base/run-f21fij5g/probes/binding-source__expression_source__writer_overridden__tuple/out
+INFO: Generating code from /tmp/subset-profile/run-f2c2bcz1/probes/binding-source__expression_source__writer_overridden__tuple/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-f2c2bcz1/probes/binding-source__expression_source__writer_overridden__tuple/out
 INFO: Package name: generated_code
 INFO: Building pipeline context...
 INFO: Built computation graph with 1 modules

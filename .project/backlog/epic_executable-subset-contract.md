@@ -111,7 +111,7 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 **Type**: Design and implementation
 **Effort**: Re-estimate after inventory. [AGENT] Re-estimated 2026-10-18 at Item 1's close-out: [re-estimate](../active/exec-subset-profile/evidence/re-estimate.md) (Item 2 ~23-37 engineer-days).
-**Status**: [AGENT] Implemented 2026-10-18 (`.project/active/exec-subset-profile/`, final revision `9b123cf3`); awaiting audit and the owner's R3 decision.
+**Status**: [AGENT] Implemented 2026-10-18 (`.project/active/exec-subset-profile/`); audited 2026-10-18 (certify with recorded limits) and audit fixes applied, final revision `ce0ad1ff`; awaiting the owner's R3 decision and B8 acceptance.
 **Dependencies**: Co-developed with Item 2; Item 4 can proceed independently.
 
 **Objective**: Define and implement the structural contract without duplicating model interpretation or broadening current refusals accidentally.

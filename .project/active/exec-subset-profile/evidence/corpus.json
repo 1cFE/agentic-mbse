@@ -249,7 +249,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/agg_literal_probe/",
@@ -321,7 +321,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/agg_localterm_probe/",
@@ -393,7 +393,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/alias_agg_probe/",
@@ -439,7 +439,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/attr_expr_probe/",
@@ -2721,7 +2721,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/catf_mfe_model/",
@@ -2855,7 +2855,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/chain_override_probe/",
@@ -2975,7 +2975,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/chain_spike_model/",
@@ -3021,7 +3021,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/constraint_inline/",
@@ -3067,7 +3067,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/constraint_multi_instance/",
@@ -3155,7 +3155,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/constraint_non_numerical/",
@@ -3227,7 +3227,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/crosspart_rollup_twolevel/",
@@ -3273,7 +3273,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/d38_caret/",
@@ -3321,7 +3321,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/deep_cross_scope_probe/",
@@ -3609,7 +3609,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/expression_binding_probe/",
@@ -3655,7 +3655,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/fusion_tea/",
@@ -3751,7 +3751,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/gate_a/",
@@ -3844,7 +3844,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/gate_a_package_owner/",
@@ -4414,7 +4414,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/ife_plant/",
@@ -4489,7 +4489,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/invocation_binding_probe/",
@@ -4527,7 +4527,7 @@
           "subject": "InvocationBindingDesign::probe::c::x"
         }
       ],
-      "verdict": "incomplete",
+      "verdict": "refused_incomplete",
       "versions": {
         "executable_profile": "executable-profile/v4",
         "subset_profile": "subset-profile/v1"
@@ -4578,7 +4578,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/issue22_model/",
@@ -4624,7 +4624,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/modeled_default_fidelity/",
@@ -4719,7 +4719,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/plant_value_shapes/",
@@ -4791,7 +4791,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/plant_values/",
@@ -4837,7 +4837,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/quoted_owner_formula/",
@@ -4957,7 +4957,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/return_styles/",
@@ -5003,7 +5003,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/retype_model/",
@@ -5049,7 +5049,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/sample_model/",
@@ -5117,7 +5117,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/self_named_binding_trap/",
@@ -5189,7 +5189,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/self_named_rescue/",
@@ -5235,7 +5235,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/shadowed_reference/",
@@ -5331,7 +5331,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/shared_producer/",
@@ -5403,7 +5403,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/sibling_channel_ambiguity/",
@@ -6027,7 +6027,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/solar_battery_model/",
@@ -6099,7 +6099,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/spec_chain_channel/",
@@ -6171,7 +6171,7 @@
         }
       ],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/spec_chain_twolevel/",
@@ -6217,7 +6217,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/unresolvable_attr_probe/",
@@ -6267,7 +6267,7 @@
       "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
       "findings": [],
       "identity": {
-        "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+        "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
         "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
         "syside_version": "0.8.4",
         "tree_path": "tests/fixtures/wi014_toy/",
