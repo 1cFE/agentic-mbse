@@ -1,3 +1,4 @@
+kind = "record"
 rule = "string-value-omission"
 shape = "string_value"
 context = "attribute_value"

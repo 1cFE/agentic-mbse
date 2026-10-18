@@ -230,12 +230,15 @@ class AssertionOwnerFact:
     """One constraint usage, its source form and its semantic owner.
 
     `form` is the constraint extractor's own classification (`constraint_extraction._classify`),
-    carried over unchanged; whether it is an asserted form is the rule's question.
+    carried over unchanged, and `asserted` is whether that form is in the extractor's own
+    asserted set (`constraint_extraction._ASSERTED_FORMS`, the generator's
+    `ASSERTED_SOURCE_FORMS`), so no decision re-lists the forms.
     """
 
     constraint: ElementRef
     location: SafeLocation
     form: str
+    asserted: bool
     owner: ElementRef | None
     owner_kind: OwnerKind
 

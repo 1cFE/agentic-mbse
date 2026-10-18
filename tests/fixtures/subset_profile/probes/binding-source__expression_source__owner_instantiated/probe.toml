@@ -1,3 +1,4 @@
+kind = "record"
 rule = "binding-source"
 shape = "expression_source"
 context = "owner_instantiated"

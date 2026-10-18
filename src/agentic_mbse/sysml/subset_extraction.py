@@ -40,6 +40,7 @@ from typing import Any, Protocol, TypeVar
 
 from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 from agentic_mbse.sysml.constraint_extraction import (
+    _ASSERTED_FORMS,
     IdentifiedConstraintFacts,
     extract_identified_constraint_facts,
 )
@@ -329,6 +330,7 @@ def _assertion_fact(usage_id_form: tuple[Any, str], live: dict[Any, Any]) -> Ass
         constraint=_element_ref(constraint),
         location=safe_location(constraint),
         form=form,
+        asserted=form in _ASSERTED_FORMS,
         owner=None if owner is None else _element_ref(owner),
         owner_kind=_owner_kind(owner),
     )

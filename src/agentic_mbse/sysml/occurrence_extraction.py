@@ -52,9 +52,9 @@ from uuid import UUID
 from agentic_mbse.sysml.expression import evaluate_true_static_expression
 from agentic_mbse.sysml.fact_refs import SafeLocation
 from agentic_mbse.sysml.occurrence_facts import (
+    Attachment,
     AttachmentCause,
     BuildStage,
-    CalcAttachment,
     MultiplicityReading,
     OccurrenceAbort,
     OccurrenceFailure,
@@ -599,18 +599,27 @@ class _Builder:
             )
         return _one_writer(candidates)
 
+    def attachment_of(self, usage: Any) -> Attachment:
+        """Where the usage's semantic owner attaches it (`elaborate.py:759-787`)."""
+        owner = semantic_owner(usage)
+        scopes, cause = self._attachment(owner)
+        return Attachment(
+            declaration_id(usage), None if owner is None else declaration_id(owner), scopes, cause
+        )
+
+    def constraint_attachments(self) -> tuple[Attachment, ...]:
+        """Every constraint usage, subtypes included, as `_build_constraint_nodes` reads them."""
+        usages = SysideAdapter.elements_of_type(
+            self.model, "ConstraintUsage", include_subtypes=True
+        )
+        attachments = {a.usage_id: a for a in (self.attachment_of(u) for u in usages)}
+        return tuple(attachments[k] for k in sorted(attachments, key=str))
+
     def calc_attachments_and_writers(
         self,
-    ) -> tuple[tuple[CalcAttachment, ...], tuple[WriterSelection, ...]]:
+    ) -> tuple[tuple[Attachment, ...], tuple[WriterSelection, ...]]:
         usages = list(SysideAdapter.elements_of_type(self.model, "CalculationUsage"))
-        attachments: dict[UUID, CalcAttachment] = {}
-        for usage in usages:
-            owner = semantic_owner(usage)
-            scopes, cause = self._attachment(owner)
-            usage_id = declaration_id(usage)
-            attachments[usage_id] = CalcAttachment(
-                usage_id, None if owner is None else declaration_id(owner), scopes, cause
-            )
+        attachments = {a.usage_id: a for a in (self.attachment_of(u) for u in usages)}
         by_slot: dict[UUID, list[Any]] = defaultdict(list)
         for usage in usages:
             by_slot[self.slots.slot_of(declaration_id(usage))].append(usage)
@@ -700,6 +709,7 @@ def extract_occurrence_structure(
         return _failure(error, BuildStage.OCCURRENCES)
     try:
         attachments, writers = builder.calc_attachments_and_writers()
+        constraint_attachments = builder.constraint_attachments()
     except _AbortError as error:
         return _failure(error, BuildStage.WRITERS)
     return OccurrenceStructure(
@@ -710,5 +720,6 @@ def extract_occurrence_structure(
         part_definition_ids=tuple(_str_sorted(builder.definitions)),
         part_usages=part_usages,
         calc_attachments=attachments,
+        constraint_attachments=constraint_attachments,
         writers=writers,
     )

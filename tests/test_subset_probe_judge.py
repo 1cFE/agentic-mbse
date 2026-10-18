@@ -323,6 +323,7 @@ def write_probe(directory: Path, text: str) -> Path:
 
 
 GOOD_PROBE = """\
+kind = "record"
 rule = "r"
 shape = "s"
 context = "c"
@@ -348,7 +349,13 @@ def test_a_well_formed_probe_loads(tmp_path: Path):
         (
             "r__s__c",
             GOOD_PROBE.replace('"refused"', '"maybe"'),
-            "is not refused, admitted or omitted",
+            "is not refused, admitted, omitted or excluded",
+        ),
+        ("r__s__c", GOOD_PROBE.replace('"record"', '"guess"'), "is not a probe kind"),
+        (
+            "r__s__c",
+            GOOD_PROBE.replace('"record"', '"control"'),
+            "a control probe expects the generator to admit",
         ),
         ("r__s__c", GOOD_PROBE.replace("[1, 1]", "[3, 2]"), "construct.lines"),
         ("r__s__c", GOOD_PROBE.replace('"model.sysml"', '"absent.sysml"'), "does not exist"),
@@ -363,3 +370,61 @@ def test_a_well_formed_probe_loads(tmp_path: Path):
 def test_probe_definition_errors_are_loud(tmp_path: Path, directory: str, text: str, message: str):
     with pytest.raises(ProbeDefinitionError, match=message):
         load_probe(write_probe(tmp_path / directory, text))
+
+
+# --- the block-reason location and the excluded outcome ----------------------------------------
+
+BLOCKED_LINE = (
+    "ERROR: Model failed exact-route validation: SI_CONSTRAINT_BLOCKED: fx__site__c: constraint "
+    "profile blocked execution: block_non_numerical_containment: the numerical assertion contains "
+    "a non-numerical feature_ref and generation stops; separate it into its own assertion or "
+    "rewrite it as a numerical comparison [model.sysml:6]"
+)
+
+
+def test_parse_error_lines_reads_the_block_reason_location_for_blocked_constraints_only():
+    """`elaborate.py:448-457`: SI_CONSTRAINT_BLOCKED is located by the profile, as a basename."""
+    assert parse_error_lines((BLOCKED_LINE,)) == (
+        ReportedError("SI_CONSTRAINT_BLOCKED", "model.sysml", 6),
+    )
+    other = BLOCKED_LINE.replace("SI_CONSTRAINT_BLOCKED", "SI_EVIDENCE_INCOMPLETE")
+    assert parse_error_lines((other,)) == (ReportedError("SI_EVIDENCE_INCOMPLETE", None, None),)
+
+
+BLOCKED_PROBE = GOOD_PROBE.replace("SI_X", "SI_CONSTRAINT_BLOCKED").replace("[1, 1]", "[6, 6]")
+
+
+def test_a_blocked_constraint_certifies_inside_the_construct_and_not_outside(tmp_path: Path):
+    probe = load_probe(write_probe(tmp_path / "r__s__c", BLOCKED_PROBE))
+    obs = dataclasses.replace(
+        observation(exit=1, errors=[]), probe_id=probe.id, model_sha256=probe.model_sha256
+    )
+    inside = dataclasses.replace(obs, error_lines=(BLOCKED_LINE,))
+    assert judge(probe, inside).certifies
+    outside = dataclasses.replace(
+        obs, error_lines=(BLOCKED_LINE.replace("model.sysml:6", "model.sysml:9"),)
+    )
+    assert judge(probe, outside).failed_check is FailedCheck.LOCATION_OUTSIDE_CONSTRUCT
+    elsewhere = dataclasses.replace(
+        obs, error_lines=(BLOCKED_LINE.replace("model.sysml:6", "other.sysml:6"),)
+    )
+    assert judge(probe, elsewhere).failed_check is FailedCheck.LOCATION_OUTSIDE_CONSTRUCT
+
+
+EXCLUDED_PROBE = GOOD_PROBE.replace('"refused"', '"excluded"').replace(
+    'code = "SI_X"', 'excluded_element = "fx__site__c"\npositive_control = "fx__site__x"'
+)
+
+
+def test_excluded_certifies_like_omitted(tmp_path: Path):
+    probe = load_probe(write_probe(tmp_path / "r__s__c", EXCLUDED_PROBE))
+    assert probe.expected_outcome == "excluded"
+    base = dataclasses.replace(
+        omitted_observation(["fx__site__x"], []),
+        probe_id=probe.id,
+        model_sha256=probe.model_sha256,
+        mentions={"fx__site__c": (), "fx__site__x": ("catalog.py",)},
+    )
+    assert judge(probe, base).certifies
+    present = dataclasses.replace(base, mentions={**base.mentions, "fx__site__c": ("contract.py",)})
+    assert judge(probe, present).failed_check is FailedCheck.OMITTED_ELEMENT_PRESENT

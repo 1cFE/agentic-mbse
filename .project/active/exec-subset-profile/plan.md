@@ -1,6 +1,6 @@
 # Implementation Plan: Executable-subset capability contract (EXEC-SUBSET-CONTRACT Item 1)
 
-**Status:** In Progress (Phases 1–4 complete)
+**Status:** In Progress (Phases 1–5 complete)
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `exec-subset-profile` (plan written at `1ff91e07`; `src/`, `tests/`, `scripts/` and `pyproject.toml` are unchanged since the design base `a718efec`)
@@ -391,15 +391,15 @@ def test_failed_fact_is_unverified_and_others_still_report():
 
 **See design for:** [D2–D8](design.md#key-decisions), [Required Invariants 1, 4–9](design.md#required-invariants), [Appendix A decision types, rule IDs and shapes](design.md#appendix-a--data-model), [§ Architecture ES-007](design.md#architecture).
 
-- [ ] `src/agentic_mbse/sysml/subset_profile.py` (NEW, pure): `SUBSET_PROFILE_VERSION`, `SUBSET_REASON_CODES` (disjoint from `REASON_CODES`, D4), `Outcome`, `Verdict`, `ContextId`, `EvidenceStatus`, record types and `load_rule_records` (validates every field, rejects unknown keys, enforces D3 and SA-1), the eight rule functions (recognize shape, compute context; never decide outcome), `evaluate_subset_profile(facts, rules=PACKAGED_RULES)`.
+- [x] `src/agentic_mbse/sysml/subset_profile.py` (NEW, pure): `SUBSET_PROFILE_VERSION`, `SUBSET_REASON_CODES` (disjoint from `REASON_CODES`, D4), `Outcome`, `Verdict`, `ContextId`, `EvidenceStatus`, record types and `load_rule_records` (validates every field, rejects unknown keys, enforces D3 and SA-1), the eight rule functions (recognize shape, compute context; never decide outcome), `evaluate_subset_profile(facts, rules=PACKAGED_RULES)`.
   - ES-007 calls `evaluate_identified_profile` (`executable_profile.py:1048`): BLOCK → `blocked_predicate`, NON_NUMERICAL → `excluded`, UNASSESSED counted, never `admitted`. Profile reasons travel as `detail_reasons`.
   - ES-006 is refusal-eligible only with a recognized conditional and a reference failure of `RESOLVED_TARGET_MISSING`; any other failure is `unverified`.
   - ES-005 is `unverified` whenever the site's invocations failed.
   - Roots: `BEYOND_GENERATOR_ROOTS` → `unconfirmed`; narrowed roots → `INCOMPLETE`; roots unavailable → root-dependent rules `unverified`.
   - Dedup by declaration (D6), sorting per invariant 8.
-- [ ] `src/agentic_mbse/sysml/subset_profile_rules.toml` (NEW, package data): all eight rules and their shapes, `verified_against`, remedy, semantic limits, doc anchor, evidence status. Admissions only for the four smoke-probe pairs (P-7). Load with `importlib.resources`.
-- [ ] `pyproject.toml`: no change expected, because hatch packages non-Python files under `src/agentic_mbse`. Verify with `uv build` and list the wheel; edit only if the TOML is missing.
-- [ ] Tests (NEW, all pure, all under `tests/test_sysml/`):
+- [x] `src/agentic_mbse/sysml/subset_profile_rules.toml` (NEW, package data): all eight rules and their shapes, `verified_against`, remedy, semantic limits, doc anchor, evidence status. Admissions only for the four smoke-probe pairs (P-7). Load with `importlib.resources`.
+- [x] `pyproject.toml`: no change expected, because hatch packages non-Python files under `src/agentic_mbse`. Verify with `uv build` and list the wheel; edit only if the TOML is missing.
+- [x] Tests (NEW, all pure, all under `tests/test_sysml/`):
   - `test_subset_profile_records.py`: completeness of every field (spec "Records are complete"); evidence gate; `CorpusRef` only for `admitted` and only for the 14 snapshot fixture names; SA-1 statement needs a citation and refused probes for each computable context.
   - `test_subset_profile_vocabulary.py`: every enum closed; `SUBSET_REASON_CODES` disjoint from `REASON_CODES`; `SubsetFinding.__post_init__` rejects unknown reasons and detail reasons.
   - `test_executable_profile_computed_reasons.py`: drives every emission of the five computed sites (`executable_profile.py:542`, `:597`, `:660`, `:711`, `:813`) and asserts each is in `REASON_CODES`. Re-locate the line numbers first; cite them in the test docstring.
@@ -407,15 +407,15 @@ def test_failed_fact_is_unverified_and_others_still_report():
   - `test_subset_profile_hygiene.py`: subprocess import of `subset_profile` leaves `syside`, `agentic_mbse.sysml.syside_adapter` and `agentic_mbse.sysml.reference_use` out of `sys.modules` (same shape as `test_executable_profile_hygiene.py`).
   - `test_subset_profile_version.py`: pins a digest of the records file and `SUPPORTED_INVOCATION_IDS` to `SUBSET_PROFILE_VERSION`; the result reports both versions.
   - `test_subset_profile_evaluate.py`: unlisted pair → `unconfirmed`; failure injection (a) extraction failure, (b) enumeration failure, (c) occurrence abort, each with a structured `UnverifiedCheck` and other rules still reporting; verdict derivation; root semantics (widened, narrowed, unavailable); dedup and counts; synthetic determinism (permuted fact order gives identical output).
-- [ ] `tests/test_subset_probe_evidence.py` (NEW): for every probe cited by a record, the observation re-judges as certified (P-2) and its identity matches the pin; every refused shape has an admitted-context probe or an SA-1 statement; stripping a pair's evidence makes the evaluator report `unconfirmed`. The SysIDE half (the evaluator reproduces each pair on the probe's own model) is added here too and grows as Phases 6–7 add probes.
+- [x] `tests/test_subset_probe_evidence.py` (NEW): for every probe cited by a record, the observation re-judges as certified (P-2) and its identity matches the pin; every refused shape has an admitted-context probe or an SA-1 statement; stripping a pair's evidence makes the evaluator report `unconfirmed`. The SysIDE half (the evaluator reproduces each pair on the probe's own model) is added here too and grows as Phases 6–7 add probes.
 
 ### Validation
 
 **Automated:**
-- [ ] All new tests pass. Standing checks green.
+- [x] All new tests pass. Standing checks green.
 
 **Manual:**
-- [ ] Run the evaluator on the four smoke-probe models: each reports its probed pair with the recorded outcome, and every other finding is `unconfirmed`.
+- [x] Run the evaluator on the four smoke-probe models: each reports its probed pair with the recorded outcome, and every other finding is `unconfirmed`.
 
 **Done when:** the evaluator and loader pass every pure test, and the only non-`unconfirmed` outcomes it can produce are the four smoke pairs. Traces to spec "Records are complete", "Every refusal has a probe record" (the gate), "Five computed reason sites are closed", "Failure cannot look clean", "Output is deterministic" (synthetic), "No consumer coupling", and "Roots" (second and third tests, synthetic).
 
@@ -931,6 +931,45 @@ No content is asserted yet; that is Phase 10. The recorded parity run was repeat
 - **Test-first order:** fixtures were explored against SysIDE first, then tests and code written together; the tests passed on their first run, so the anti-vacuity case in the AST gate and the injected failures are the evidence that they bite.
 
 ### Phase 5 Completion
+**Completed:** 2026-10-18.
+
+**Outcome:** the pure evaluator, the record loader with its evidence gate, the closed vocabularies and the version pin exist and pass every pure test. With the packaged records as committed, the only outcome other than `unconfirmed` the evaluator can produce is the String omission: the two refused smoke pairs cannot land until their admitted-context partners do (see Deviations). On the four smoke models (`/tmp` run, at this commit's code):
+
+| Smoke model | Verdict | Findings |
+|---|---|---|
+| `binding-source__expression_source__owner_instantiated` | unconfirmed | `binding-source/expression_source @owner_instantiated` → unconfirmed, 1 occurrence |
+| `conditional-expression__…__calc_definition_feature_value` | incomplete | `conditional-expression/conditional_unresolved_branch @calc_definition_feature_value` → unconfirmed; `indexed-reference` unverified on the same site (its reference walk failed, so whether it holds an index is unknown) |
+| `invocation-callable__explicit_operator__attribute_value` (control) | clear | none |
+| `string-value-omission__…__redefinition_shorthand` | clear | `string-value-omission/string_value @attribute_value` → omitted |
+
+**Actual Changes:**
+- `src/agentic_mbse/sysml/subset_profile.py` (new, pure): `SUBSET_PROFILE_VERSION`, `SUBSET_REASON_CODES` (16, disjoint from `REASON_CODES`), `Outcome`, `Verdict`, `ContextId` (17 members, each with its generator citation), `EvidenceStatus`, `Qualification`, the record types and `load_rule_records` / `load_packaged_rule_records`, eight rule functions that return a shape and a context and never an outcome, and `evaluate_subset_profile(facts, rules=PACKAGED_RULES, roots=GENERATOR_ROOTS)`.
+  - Roots are a closed union, `GeneratorRoots | ExplicitRoots`, not a `None` sentinel. An explicit root that is neither a generator root nor an extracted caller root is a caller error (`ValueError`).
+  - Placement: a calc usage's binding is `owner_instantiated` / `owner_package` where it is the selected writer under the roots in use, `writer_overridden` where it attaches but never wins, `beyond_generator_roots` where only a caller root reaches it, `owner_other` when the owner attaches nothing, and otherwise `owner_uninstantiated`. A constraint usage is placed the same way without writer selection.
+  - Loader rules, all `RecordError`: unknown or missing keys; anything outside the closed vocabularies; exactly the implemented rules and shapes, in order; `fact_requirements` equal to what the rule function reads; any listed outcome without evidence; non-probe evidence for anything but `admitted`; a corpus citation outside the 14 snapshot fixtures; a probe id that names another pair; `unconfirmed` listed explicitly; an always-unconfirmed context listed; a refused shape without an `expected_code`; a refused shape without an admitted-context probe or an SA-1 statement; an SA-1 statement beside an admitted probe or not covering every computable context with a refusal; `evidence_status` disagreeing with the admissions; `example_probe` present without evidence or missing with it; `generator_evidence` empty exactly when no shape has an expected code.
+- `src/agentic_mbse/sysml/subset_profile_rules.toml` (new): all eight rules and their shapes, remedy, semantic limits, doc anchor, generator citations. One admission: the String omission, citing its smoke probe. `uv build` ships it (`agentic_mbse/sysml/subset_profile_rules.toml` in the wheel); `pyproject.toml` unchanged.
+- Facts: `OccurrenceStructure.constraint_attachments` (the port now runs its one `_attachment` for every constraint usage, subtypes included, as `_build_constraint_nodes` does at `elaborate.py:1325-1332`); `CalcAttachment` renamed `Attachment` (Appendix A's name) since it now serves both; `AssertionOwnerFact.asserted`, read in extraction from the constraint extractor's own `_ASSERTED_FORMS`, so no decision re-lists the asserted forms.
+- Judge (`tests/helpers/subset_probe_judge.py`): a required probe `kind` (`record`, `control`, `reproduction`); an `excluded` expectation (checked like `omitted`); and the location form `SI_CONSTRAINT_BLOCKED` uses (below). The four smoke `probe.toml` files gain `kind`; their models and observations are unchanged.
+- Tests: `test_subset_profile_records.py` (40), `test_subset_profile_evaluate.py` (23), `test_subset_profile_vocabulary.py` (13), `test_subset_profile_coupling.py` (5), `test_subset_profile_hygiene.py` (1), `test_subset_profile_version.py` (2), `test_executable_profile_computed_reasons.py` (5), `tests/test_subset_probe_evidence.py` (11 at this phase), five new judge tests. Helpers `tests/helpers/subset_records.py` (a small TOML writer, so every test record goes through the real loader) and `tests/helpers/subset_synthetic.py`.
+
+**Validation:** `pytest tests/` 3059 pass, the same 3 environment failures; `ruff check src/ tests/` 118 (baseline); `mypy src/` 97 in 19 files (baseline), none in new or edited files. New and edited files pass `ruff check` and `ruff format --check`; the five fact and profile modules and the judge pass `mypy --strict`. Teeth: three evaluator mutants (ignore unverified in the verdict; default an unlisted pair to `refused`; drop the beneath-refused-multiplicity guard) are each caught. The coupling scan caught a real slip on its first run (a generator code named in a record's prose field) and the prose was reworded.
+
+**Computed reasons:** the five sites are still at `executable_profile.py:542`, `:597`, `:660`, `:711`, `:813`. Each test drives its site through the walk over every operand fact the closed category vocabulary allows and asserts every emitted reason is in `REASON_CODES`, and that the site was reached.
+
+**Issues:**
+- **`SI_CONSTRAINT_BLOCKED` carries no finding location.** It is diagnosed without one (`elaborate.py:1353-1360`); the only location on its line is the executable profile's own measured location of the blocked construct, appended to the detail as `[model.sysml:6]` (`_render_block_reason`, `elaborate.py:448-457`), observed on the prototype fixture in a scratch tree. Under the judge as written every ES-007 refused probe would fail `location_missing`. The judge now reads that suffix for this one code, and only when the finding has no `root-N/` location, and it must name the probe's model file and fall inside the construct. This applies invariant 2's location check to the location the generator does print; it is not a weaker check, but it is a change to the certification rule, so it is recorded here for the owner.
+- **The ES-006 refusal leaves `indexed-reference` unverified on the same site.** The reference walk is what fails, so whether that expression also holds an index is unknown. This is honest and makes any model with a refused conditional `INCOMPLETE`; it matters for Phase 10's dc3 baseline.
+
+**Deviations from Plan:**
+- **P-7: the two refused smoke pairs are not in the records yet.** The loader enforces invariant 3 (a refused shape needs an admitted-context probe or SA-1), and neither pair has its partner until Phases 6–7. They are named in `AWAITING_ADMITTED_PARTNER` in `tests/test_subset_probe_evidence.py`, which must be empty when Phase 7 ends. The plan's stencil citing the binding pair from the packaged records became a test on synthetic records.
+- **The `invocation-callable` smoke probe is a `control`, not an admission.** Its shape `explicit_operator` is not a rule shape: the rule never recognizes an explicit multiply. A control probe certifies that the generator runs the model, and the evidence test asserts the evaluator reports no finding of its rule at the construct and no `refused` anywhere in that model. This answers Phase 1's open question; the other prototype neighbors (part-owned assert, literal and plain-reference bindings, exact multiplicity, numeric `and`) are controls for the same reason.
+- **`ContextId` drops `ATTRIBUTE_USAGE` and `EVERYWHERE` (P-10).** `part-multiplicity` reads only part usages, so an attribute usage with an ordered or ranged multiplicity is a control probe, not a context. The String omission uses `attribute_value`, the context its smoke probe already names.
+- **Shapes added:** `conditional-expression/conditional_resolved_branches`, for a conditional whose reference walk succeeds. No probe has observed it, so it reports `unconfirmed` rather than nothing. Reason IDs for ES-001 are `calc_owned_asserted_constraint` and `calc_owned_non_asserted_constraint`, because Appendix A's names (`constraint_owned_by_calc_definition`, `…_calc_usage`) name a context, not a shape.
+- **Beneath a refused multiplicity:** "not instantiated" becomes `beneath_refused_multiplicity` (always `unconfirmed`) whenever the generator roots in use visit any multiplicity they cannot expand. This is conservative: the facts do not say which definitions sit beneath the refused usage, so no "never examined" claim is made in a model that has one. The dc3 repaired tree has none.
+- **Evidence status** is computed, not authored: `probe_observed` when every shape has a probe-observed admission, `partial` when some do, `code_read_pending_item_2` when none do. The loader rejects a disagreeing value. `example_probe` is absent exactly while the status is pending.
+- **"Fails at load" is split by where the evidence lives.** The packaged loader cannot see `tests/`, so it enforces that every listed outcome cites well-formed evidence of its own pair. Whether each cited probe exists, is a `record` probe expecting the recorded outcome, certifies, and ran at `verified_against` is enforced by `tests/test_subset_probe_evidence.py`, along with the evaluator reproducing it on the probe's own model.
+- **Version pin:** `test_subset_profile_version.py` maps each version to one digest of the records bytes plus the allowlist ids. `subset-profile/v1` is re-pinned as Phases 6–7 add evidence (nothing has shipped).
+- **"Pure" tests import SysIDE indirectly** through `IdentifiedConstraintFacts` (defined in `constraint_extraction`). They load no model and need no license. The decision module itself stays SysIDE-free (hygiene test).
 
 ### Phase 6 Completion
 

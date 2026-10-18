@@ -1,0 +1,237 @@
+# The executable-subset rule records (EXEC-SUBSET-CONTRACT Item 1).
+#
+# Each rule maps (shape, context) to an outcome. A pair with no admission is `unconfirmed`.
+# Every admission cites evidence: `probe:<id>` is a retained run of the pinned generator under
+# tests/fixtures/subset_profile/probes/<id>/; `corpus:<fixture>` is a snapshot fixture of the
+# generator's accepted corpus, for `admitted` only. `SI_*` codes appear only in the evidence
+# fields `expected_code` and `generator_evidence`.
+#
+# Loaded and validated by agentic_mbse.sysml.subset_profile.load_rule_records. Changing this
+# file changes SUBSET_PROFILE_VERSION (tests/test_sysml/test_subset_profile_version.py).
+
+schema = 1
+
+[verified_against]
+codegen_rev = "b5663c07e987a892e27d21e68cec40d0656574ee"
+agentic_rev = "0ac48bc0d9333164969cebf204e79958ff2e6d2f"
+syside_version = "0.8.4"
+
+# ---- ES-003, ES-012, self-binding ---------------------------------------------------------------
+
+[[rule]]
+id = "binding-source"
+title = "Calculation or constraint input bound to a source the generator cannot wire"
+matrix_rows = ["ES-003", "ES-012", "SELF-BINDING"]
+fact_requirements = ["binding_source", "occurrence"]
+remedy = "Bind the input to a literal or to one plain reference to a feature that holds the value; compute tuples and arithmetic in a named attribute and bind that."
+semantic_limits = "Applies only where the generator classifies the binding: the consuming usage's owner is instantiated under a generator root or is a package, and a calculation usage is the selected writer in that scope. The input declaration itself is never refused."
+doc_anchor = "generator-subset#binding-source"
+evidence_status = "code_read_pending_item_2"
+
+[[rule.generator_evidence]]
+code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
+site = "elaboration/elaborate.py:2130-2171 (_binding_evidence), :2188-2196"
+
+[[rule.generator_evidence]]
+code = "SI_SELF_BINDING"
+site = "elaboration/elaborate.py:2188-2191; extraction/binding_source.py:87-89"
+
+[[rule.shape]]
+id = "expression_source"
+reason = "binding_source_expression"
+expected_code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
+
+[[rule.shape]]
+id = "self_reference_source"
+reason = "binding_source_self_reference"
+expected_code = "SI_SELF_BINDING"
+
+# ---- ES-001 -------------------------------------------------------------------------------------
+
+[[rule]]
+id = "calc-owned-assertion"
+title = "Constraint owned by a calculation"
+matrix_rows = ["ES-001"]
+fact_requirements = ["assertion_owner", "constraint"]
+remedy = "Move the constraint to the part definition or part usage that owns the calculation, binding it to the calculation's inputs or result there."
+semantic_limits = "Asserted forms are those the constraint extractor names asserted (definition_typed, inline, named_usage_reference). A calc-usage owner is outside the generator's owner-kind map for every form."
+doc_anchor = "generator-subset#calc-owned-assertion"
+evidence_status = "code_read_pending_item_2"
+
+[[rule.generator_evidence]]
+code = "SI_CONSTRAINT_UNATTACHED"
+site = "elaboration/elaborate.py:1625 (asserted, calc-def owner); :794-820 (calc-usage owner)"
+
+[[rule.shape]]
+id = "asserted_constraint"
+reason = "calc_owned_asserted_constraint"
+expected_code = "SI_CONSTRAINT_UNATTACHED"
+
+[[rule.shape]]
+id = "non_asserted_constraint"
+reason = "calc_owned_non_asserted_constraint"
+expected_code = "SI_CONSTRAINT_UNATTACHED"
+
+# ---- ES-006 -------------------------------------------------------------------------------------
+
+[[rule]]
+id = "conditional-expression"
+title = "Conditional expression at an expression-inventory site"
+matrix_rows = ["ES-006"]
+fact_requirements = ["expression_site"]
+remedy = "Compute each branch as its own attribute and select with arithmetic the subset supports, or move the choice into a calculation definition's bare result expression (a handwritten stub)."
+semantic_limits = "Refusal-eligible only for a recognized `if` conditional whose reference walk fails with RESOLVED_TARGET_MISSING; the generator reports it with its generic evidence-gap code, so every probe also checks the error's location. Any other walk failure is unverified."
+doc_anchor = "generator-subset#conditional-expression"
+evidence_status = "code_read_pending_item_2"
+
+[[rule.generator_evidence]]
+code = "SI_EVIDENCE_INCOMPLETE"
+site = "agentic_mbse reference_use.py (RESOLVED_TARGET_MISSING) via elaboration/expression_evidence.py:253-275; mapped at orchestration/elaborated_pipeline.py:425"
+
+[[rule.shape]]
+id = "conditional_resolved_branches"
+reason = "conditional_expression_resolved_branches"
+
+[[rule.shape]]
+id = "conditional_unresolved_branch"
+reason = "conditional_expression_unsupported"
+expected_code = "SI_EVIDENCE_INCOMPLETE"
+
+# ---- ES-007 -------------------------------------------------------------------------------------
+
+[[rule]]
+id = "constraint-predicate"
+title = "Constraint predicate the executable profile blocks or excludes"
+matrix_rows = ["ES-007"]
+fact_requirements = ["assertion_owner", "constraint", "occurrence"]
+remedy = "Split Boolean data out of numerical assertions, or rewrite the predicate as a numerical comparison the profile admits; the finding's detail reasons name the profile's diagnosis."
+semantic_limits = "The executable profile (executable_profile.py) decides eligibility; this rule only places its BLOCK and NON_NUMERICAL decisions by where the constraint's owner attaches. UNASSESSED is counted, never admitted."
+doc_anchor = "generator-subset#constraint-predicate"
+evidence_status = "code_read_pending_item_2"
+
+[[rule.generator_evidence]]
+code = "SI_CONSTRAINT_BLOCKED"
+site = "elaboration/elaborate.py:1325-1360 (_build_constraint_nodes)"
+
+[[rule.shape]]
+id = "blocked_predicate"
+reason = "constraint_predicate_blocked"
+expected_code = "SI_CONSTRAINT_BLOCKED"
+
+[[rule.shape]]
+id = "non_numerical_predicate"
+reason = "constraint_predicate_non_numerical"
+
+# ---- Indexed references -------------------------------------------------------------------------
+
+[[rule]]
+id = "indexed-reference"
+title = "Indexed element reference at an expression-inventory site"
+matrix_rows = ["INDEXED-REFERENCE"]
+fact_requirements = ["expression_site"]
+remedy = "Name the element with its own feature and reference that feature instead of indexing a collection."
+semantic_limits = "The expression inventory refuses an authored index model-wide, before any instantiation, wherever it walks a declared feature value or a constraint predicate."
+doc_anchor = "generator-subset#indexed-reference"
+evidence_status = "code_read_pending_item_2"
+
+[[rule.generator_evidence]]
+code = "SI_INDEXED_SOURCE_UNSUPPORTED"
+site = "elaboration/expression_evidence.py:208-219, :271-273; mapped at orchestration/elaborated_pipeline.py:389-396"
+
+[[rule.shape]]
+id = "indexed_reference"
+reason = "indexed_reference_unsupported"
+expected_code = "SI_INDEXED_SOURCE_UNSUPPORTED"
+
+# ---- ES-005 -------------------------------------------------------------------------------------
+
+[[rule]]
+id = "invocation-callable"
+title = "Invocation of a callable outside the executable subset"
+matrix_rows = ["ES-005"]
+fact_requirements = ["expression_site"]
+remedy = "Write the computation with operators the subset supports (explicit multiplication, arithmetic min/max identities) or with NumericalFunctions::sum; or move it into a calculation definition's bare result expression (a handwritten stub)."
+semantic_limits = "Callable identity is decided by the shared allowlist (invocation_allowlist.py, today only NumericalFunctions::sum), the same predicate the generator's inventory refuses through. Operators are not invocations."
+doc_anchor = "generator-subset#invocation-callable"
+evidence_status = "code_read_pending_item_2"
+
+[[rule.generator_evidence]]
+code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
+site = "agentic_mbse reference_use._require_supported_invocation, via elaboration/expression_evidence.py:253-275; mapped at orchestration/elaborated_pipeline.py:389-396"
+
+[[rule.shape]]
+id = "unsupported_callable"
+reason = "invocation_callable_unsupported"
+expected_code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
+
+# ---- ES-004 -------------------------------------------------------------------------------------
+
+[[rule]]
+id = "part-multiplicity"
+title = "Part multiplicity the occurrence model cannot expand"
+matrix_rows = ["ES-004"]
+fact_requirements = ["occurrence", "part_multiplicity"]
+remedy = "Give the part usage an exact literal multiplicity, unordered and unique, or remove the multiplicity; model a variable count as an attribute."
+semantic_limits = "Only part usages the generator visits (generator roots and the composite part usages reachable from them) are expanded; the multiplicity is resolved per parent occurrence. Attribute usages and unvisited part usages are never expanded."
+doc_anchor = "generator-subset#part-multiplicity"
+evidence_status = "code_read_pending_item_2"
+
+[[rule.generator_evidence]]
+code = "SI_MULTIPLICITY_UNSUPPORTED"
+site = "elaboration/occurrence.py:827 (ordered), :835 (nonunique), :894 (range), in _multiplicity_indices :812-899"
+
+[[rule.generator_evidence]]
+code = "SI_MULTIPLICITY_UNRESOLVED"
+site = "elaboration/occurrence.py:859 (upper), :886 (lower)"
+
+[[rule.generator_evidence]]
+code = "SI_MULTIPLICITY_INVALID"
+site = "elaboration/occurrence.py:869"
+
+[[rule.shape]]
+id = "negative_bound"
+reason = "part_multiplicity_negative_bound"
+expected_code = "SI_MULTIPLICITY_INVALID"
+
+[[rule.shape]]
+id = "nonunique"
+reason = "part_multiplicity_nonunique"
+expected_code = "SI_MULTIPLICITY_UNSUPPORTED"
+
+[[rule.shape]]
+id = "ordered"
+reason = "part_multiplicity_ordered"
+expected_code = "SI_MULTIPLICITY_UNSUPPORTED"
+
+[[rule.shape]]
+id = "range"
+reason = "part_multiplicity_range"
+expected_code = "SI_MULTIPLICITY_UNSUPPORTED"
+
+[[rule.shape]]
+id = "unresolved_bound"
+reason = "part_multiplicity_unresolved_bound"
+expected_code = "SI_MULTIPLICITY_UNRESOLVED"
+
+# ---- ES-010 omission ----------------------------------------------------------------------------
+
+[[rule]]
+id = "string-value-omission"
+title = "String value dropped from generated output"
+matrix_rows = ["ES-010"]
+fact_requirements = ["string_value"]
+remedy = "Keep String values as documentation; the generated catalog and contract carry numeric and Boolean values only. Do not bind a String to a calculation input (the ES-010 refusal side)."
+semantic_limits = "Both spellings (an attribute declaration and the :>> redefinition shorthand) are dropped; no generator site raises, so the evidence is the generated output itself."
+doc_anchor = "generator-subset#string-value-omission"
+evidence_status = "probe_observed"
+example_probe = "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+generator_evidence = []  # an omission has no raise site
+
+[[rule.shape]]
+id = "string_value"
+reason = "string_value_not_generated"
+
+[[rule.shape.admission]]
+context = "attribute_value"
+outcome = "omitted"
+evidence = ["probe:string-value-omission__string_value__attribute_value__redefinition_shorthand"]

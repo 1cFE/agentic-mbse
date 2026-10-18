@@ -1,3 +1,4 @@
+kind = "control"
 rule = "invocation-callable"
 shape = "explicit_operator"
 context = "attribute_value"

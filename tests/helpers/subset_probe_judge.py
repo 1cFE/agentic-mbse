@@ -22,6 +22,16 @@ line per refusal class (`cli/__init__.py:1189-1230`), then exits 1 (`cli/__init_
 - `<referent>` is `root-<slot>/<path relative to that --models root>`
   (`analysis/source_referent.py:43-70`). The harness passes one model file, so the slot is 0
   and the path is the file name: `[root-0/model.sysml:7]`.
+- One code is located differently. `SI_CONSTRAINT_BLOCKED` is diagnosed with no finding
+  location (`elaborate.py:1353-1360`); its detail ends with the executable profile's own
+  measured location of the blocked construct, `[<basename>:<line>]`
+  (`_render_block_reason`, `elaborate.py:448-457`). For that code alone the judge reads that
+  suffix, and it must name the probe's model file.
+
+A probe has a `kind`. A `record` probe is evidence a rule record may cite for its
+(rule, shape, context). A `control` probe shows the generator admitting a neighbor shape no
+rule recognizes, so the evaluator must report nothing there. A `reproduction` probe records
+whether a candidate family reproduces; no record cites it.
 """
 
 from __future__ import annotations
@@ -49,6 +59,9 @@ _ERROR_PREFIX = "ERROR: "
 # A finding starts after the gate ("<gate>: ", the gate has no colon) or after a "; " join.
 _FINDING_START = re.compile(r"(?:^[^:]+: |; )(SI_[A-Z0-9_]+): ")
 _LOCATION_SUFFIX = re.compile(r" \[(root-\d+/[^\]]+):(\d+)\]$")
+# `_render_block_reason` (`elaborate.py:448-457`): the profile's location, a bare basename.
+_BLOCK_REASON_SUFFIX = re.compile(r" \[([^\]/]+):(\d+)\]$")
+_BASENAME_LOCATED_CODES = frozenset({"SI_CONSTRAINT_BLOCKED"})
 _REV = re.compile(r"[0-9a-f]{40}")
 
 
@@ -87,6 +100,12 @@ class FailedCheck(StrEnum):
     OMITTED_ELEMENT_PRESENT = "omitted_element_present"
 
 
+class ProbeKind(StrEnum):
+    RECORD = "record"
+    CONTROL = "control"
+    REPRODUCTION = "reproduction"
+
+
 @dataclass(frozen=True)
 class Construct:
     """The one probed construct and the source lines it is declared on (inclusive)."""
@@ -119,12 +138,21 @@ class Omitted:
     positive_control: str
 
 
-Expectation = Refused | Admitted | Omitted
+@dataclass(frozen=True)
+class Excluded:
+    """Like `Omitted`, for a construct left out by policy (a NON_NUMERICAL predicate)."""
+
+    element: str
+    positive_control: str
+
+
+Expectation = Refused | Admitted | Omitted | Excluded
 
 
 @dataclass(frozen=True)
 class Probe:
     id: str
+    kind: ProbeKind
     rule: str
     shape: str
     context: str
@@ -141,8 +169,23 @@ class Probe:
                 return ()
             case Admitted(positive_control=control):
                 return (control,)
-            case Omitted(element=element, positive_control=control):
+            case (
+                Omitted(element=element, positive_control=control)
+                | Excluded(element=element, positive_control=control)
+            ):
                 return (element, control)
+
+    @property
+    def expected_outcome(self) -> str:
+        match self.expect:
+            case Refused():
+                return "refused"
+            case Admitted():
+                return "admitted"
+            case Omitted():
+                return "omitted"
+            case Excluded():
+                return "excluded"
 
 
 @dataclass(frozen=True)
@@ -222,8 +265,14 @@ def _expectation(outcome: str, expect: Mapping[str, Any], where: str) -> Expecta
             return Omitted(
                 element=expect["omitted_element"], positive_control=expect["positive_control"]
             )
+        case "excluded":
+            keys = {"excluded_element", "positive_control"}
+            _take(expect, keys, keys, where)
+            return Excluded(
+                element=expect["excluded_element"], positive_control=expect["positive_control"]
+            )
     raise ProbeDefinitionError(
-        f"{where}: expected_outcome {outcome!r} is not refused, admitted or omitted"
+        f"{where}: expected_outcome {outcome!r} is not refused, admitted, omitted or excluded"
     )
 
 
@@ -232,6 +281,7 @@ def load_probe(directory: Path) -> Probe:
     where = str(directory / "probe.toml")
     data = tomllib.loads((directory / "probe.toml").read_text(encoding="utf-8"))
     top = {
+        "kind",
         "rule",
         "shape",
         "context",
@@ -258,6 +308,12 @@ def load_probe(directory: Path) -> Probe:
         raise ProbeDefinitionError(
             f"{where}: construct.file {data['construct']['file']!r} does not exist"
         )
+    try:
+        kind = ProbeKind(data["kind"])
+    except ValueError as error:
+        raise ProbeDefinitionError(f"{where}: kind {data['kind']!r} is not a probe kind") from error
+    if kind is ProbeKind.CONTROL and data["expected_outcome"] != "admitted":
+        raise ProbeDefinitionError(f"{where}: a control probe expects the generator to admit")
     variant = data.get("variant")
     probe_id = "__".join(
         part for part in (data["rule"], data["shape"], data["context"], variant) if part is not None
@@ -268,6 +324,7 @@ def load_probe(directory: Path) -> Probe:
         )
     return Probe(
         id=probe_id,
+        kind=kind,
         rule=data["rule"],
         shape=data["shape"],
         context=data["context"],
@@ -300,6 +357,8 @@ def parse_error_lines(error_lines: tuple[str, ...]) -> tuple[ReportedError, ...]
         for match, following in zip(starts, [*starts[1:], None], strict=True):
             segment = body[match.end() : following.start() if following else len(body)]
             location = _LOCATION_SUFFIX.search(segment)
+            if location is None and match.group(1) in _BASENAME_LOCATED_CODES:
+                location = _BLOCK_REASON_SUFFIX.search(segment)
             findings.append(
                 ReportedError(
                     code=match.group(1),
@@ -346,7 +405,8 @@ def _refusal_failure(construct: Construct, expect: Refused, obs: Observation) ->
     referent = f"root-{_PROBE_ROOT_SLOT}/{construct.file}"
     for e in errors:
         assert e.line is not None
-        if e.referent != referent or not construct.first_line <= e.line <= construct.last_line:
+        expected = construct.file if e.code in _BASENAME_LOCATED_CODES else referent
+        if e.referent != expected or not construct.first_line <= e.line <= construct.last_line:
             return FailedCheck.LOCATION_OUTSIDE_CONSTRUCT
     return None
 
@@ -388,7 +448,10 @@ def judge(probe: Probe, obs: Observation) -> Certification:
             if failure is None and control not in (obs.catalog_names or ()):
                 failure = FailedCheck.POSITIVE_CONTROL_MISSING
             return Certification(failure)
-        case Omitted(element=element, positive_control=control):
+        case (
+            Omitted(element=element, positive_control=control)
+            | Excluded(element=element, positive_control=control)
+        ):
             failure = _success_failure(obs)
             if failure is None and control not in (obs.catalog_names or ()):
                 failure = FailedCheck.POSITIVE_CONTROL_MISSING

@@ -32,7 +32,7 @@ from agentic_mbse.sysml.fact_refs import SafeLocation
 __all__ = [
     "AttachmentCause",
     "BuildStage",
-    "CalcAttachment",
+    "Attachment",
     "MultiplicityReading",
     "MultiplicityResolution",
     "OccurrenceAbort",
@@ -290,8 +290,12 @@ class AttachmentCause(StrEnum):
 
 
 @dataclass(frozen=True)
-class CalcAttachment:
-    """The scopes one calculation usage's semantic owner attaches to, or why there are none."""
+class Attachment:
+    """The scopes one usage's semantic owner attaches to, or why there are none.
+
+    The generator attaches calculation usages and constraint usages the same way, through one
+    `_attachment` (`elaborate.py:759-787`); `usage_id` is the calculation or constraint usage.
+    """
 
     usage_id: UUID
     owner_id: UUID | None
@@ -341,6 +345,8 @@ class OccurrenceStructure:
     - `part_definition_ids`: every user-model part definition, sorted.
     - `part_usages`: every user-model part usage with its unparented reading, sorted by usage.
     - `calc_attachments`: one per calculation usage, sorted by usage.
+    - `constraint_attachments`: one per constraint usage, subtypes included, as
+      `_build_constraint_nodes` reads them (`elaborate.py:1325-1332`), sorted by usage.
     - `writers`: sorted by (scope, slot).
     """
 
@@ -350,7 +356,8 @@ class OccurrenceStructure:
     nodes: tuple[OccurrenceNode, ...]
     part_definition_ids: tuple[UUID, ...]
     part_usages: tuple[PartUsageReading, ...]
-    calc_attachments: tuple[CalcAttachment, ...]
+    calc_attachments: tuple[Attachment, ...]
+    constraint_attachments: tuple[Attachment, ...]
     writers: tuple[WriterSelection, ...]
 
     def __post_init__(self) -> None:
@@ -374,9 +381,13 @@ class OccurrenceStructure:
         part_usage_ids = [u.usage_id for u in self.part_usages]
         if part_usage_ids != sorted(set(part_usage_ids), key=str):
             raise ValueError("part usages are unique and in usage order")
-        usages = [a.usage_id for a in self.calc_attachments]
-        if usages != sorted(set(usages), key=str):
-            raise ValueError("calc attachments are unique and in usage order")
+        for name, attachments in (
+            ("calc", self.calc_attachments),
+            ("constraint", self.constraint_attachments),
+        ):
+            usages = [a.usage_id for a in attachments]
+            if usages != sorted(set(usages), key=str):
+                raise ValueError(f"{name} attachments are unique and in usage order")
         writer_keys = [(_scope_key(w.scope), str(w.slot)) for w in self.writers]
         if writer_keys != sorted(set(writer_keys)):
             raise ValueError("writer selections are unique and in (scope, slot) order")

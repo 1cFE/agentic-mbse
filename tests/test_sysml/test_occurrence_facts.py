@@ -11,9 +11,9 @@ import pytest
 
 from agentic_mbse.sysml.fact_refs import ElementRef, SafeLocation
 from agentic_mbse.sysml.occurrence_facts import (
+    Attachment,
     AttachmentCause,
     BuildStage,
-    CalcAttachment,
     MultiplicityReading,
     MultiplicityResolution,
     OccurrenceAbort,
@@ -167,14 +167,14 @@ def test_node_shape_is_validated() -> None:
 
 def test_attachment_has_scopes_or_a_cause() -> None:
     scope = OccurrenceScope(ROOT, (PathStep(ROOT, None),))
-    CalcAttachment(CALC_A, DEF, (scope,), None)
-    CalcAttachment(CALC_A, None, (), AttachmentCause.OWNER_ABSENT)
+    Attachment(CALC_A, DEF, (scope,), None)
+    Attachment(CALC_A, None, (), AttachmentCause.OWNER_ABSENT)
     with pytest.raises(ValueError):
-        CalcAttachment(CALC_A, DEF, (), None)
+        Attachment(CALC_A, DEF, (), None)
     with pytest.raises(ValueError):
-        CalcAttachment(CALC_A, DEF, (scope,), AttachmentCause.OWNER_HAS_NO_OCCURRENCES)
+        Attachment(CALC_A, DEF, (scope,), AttachmentCause.OWNER_HAS_NO_OCCURRENCES)
     with pytest.raises(ValueError):
-        CalcAttachment(CALC_A, DEF, (), AttachmentCause.OWNER_ABSENT)
+        Attachment(CALC_A, DEF, (), AttachmentCause.OWNER_ABSENT)
 
 
 def _structure(writers: tuple[WriterSelection, ...]) -> OccurrenceStructure:
@@ -187,6 +187,7 @@ def _structure(writers: tuple[WriterSelection, ...]) -> OccurrenceStructure:
         part_definition_ids=(DEF,),
         part_usages=(PartUsageReading(ROOT, True, MultiplicityReading.absent()),),
         calc_attachments=(),
+        constraint_attachments=(),
         writers=writers,
     )
 
