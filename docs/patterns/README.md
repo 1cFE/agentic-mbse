@@ -20,6 +20,7 @@ Patterns provide definitive syntax references and usage guidance for common SysM
 | [design-choices.md](design-choices.md) | Design choices: evaluate the supplied design; sizing and selection policies stay separate |
 | [cross-file-binding.md](cross-file-binding.md) | Cross-file imports and attribute binding |
 | [semantic-operators.md](semantic-operators.md) | `=` vs `default :=` vs `:>>` vs `:>` - critical for correct AST generation |
+| [semantic-hazards.md](semantic-hazards.md) | Valid SysML that means something other than it reads: positional input binding, legacy pins |
 | [syntax-reference.md](syntax-reference.md) | Quick reference for common SysML v2 syntax patterns |
 | [mbse-concepts.md](mbse-concepts.md) | Higher-level MBSE patterns: allocation, constraints, cost, interfaces |
 | [package-naming.md](package-naming.md) | Package naming rules and multi-file organization |

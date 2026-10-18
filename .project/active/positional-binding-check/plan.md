@@ -604,30 +604,30 @@ def test_register_says_a_pin_certifies_nothing_and_is_legacy_only():
 
 #### 1. Register
 **File:** `docs/patterns/semantic-hazards.md` (NEW)
-- [ ] Positional entry with anchor `positional-input-binding`, covering every Appendix C bullet. "Actual semantics" separates KerML text from SysIDE 0.8.4 observations on named fixtures. Cross-route divergence claimed for calc usages only. Limits include B6 and the D13 note that a pin's `file` matters for scope.
-- [ ] Pin-list section (the shipped docs D15 asks for): the format, root-only discovery and the two CLI options, "pins only for mismatches that existed at `recorded_against`", repairs instead of pins for new mismatches, and that pinning a new mismatch is the owner-reserved disposition (R4-1). Pin-list integrity rests on review of the file (R4-1 outcome).
-- [ ] "Candidates, not yet reproduced": output override and `[*]`/`[0]`, marked "not yet reproduced". If Phase 1–6 retained a reproduction for either, write it in full instead.
-- [ ] Citations per D18; Phase 6's evidence paths as `.project/active/positional-binding-check/...`; Phase 1's answer for `out_before_in` stated as observed.
-- [ ] No line matches `\bin\s+[\w']+\s*=\s*[^;=\n]*::` and no line matches `in x = x`. Write qualified targets as "`b` lands on `Sub::a`" (I8).
-- [ ] Add the file to `docs/patterns/README.md`'s index if that index lists every pattern doc.
+- [x] Positional entry with anchor `positional-input-binding`, covering every Appendix C bullet. "Actual semantics" separates KerML text from SysIDE 0.8.4 observations on named fixtures. Cross-route divergence claimed for calc usages only. Limits include B6 and the D13 note that a pin's `file` matters for scope.
+- [x] Pin-list section (the shipped docs D15 asks for): the format, root-only discovery and the two CLI options, "pins only for mismatches that existed at `recorded_against`", repairs instead of pins for new mismatches, and that pinning a new mismatch is the owner-reserved disposition (R4-1). Pin-list integrity rests on review of the file (R4-1 outcome).
+- [x] "Candidates, not yet reproduced": output override and `[*]`/`[0]`, marked "not yet reproduced". If Phase 1–6 retained a reproduction for either, write it in full instead.
+- [x] Citations per D18; Phase 6's evidence paths as `.project/active/positional-binding-check/...`; Phase 1's answer for `out_before_in` stated as observed.
+- [x] No line matches `\bin\s+[\w']+\s*=\s*[^;=\n]*::` and no line matches `in x = x`. Write qualified targets as "`b` lands on `Sub::a`" (I8).
+- [x] Add the file to `docs/patterns/README.md`'s index if that index lists every pattern doc.
 
 #### 2. Draft upstream finding
 **File:** `.project/active/positional-binding-check/evidence/upstream-codegen-finding.md` (NEW)
-- [ ] Records the name-based wiring at `b5663c07`, the native positional result, the fixtures, the Phase 6 generated-side log, the relation to POSITIONAL-FORMAL-REDEFINITION and the surfaced conflict with its "follows parser redefinition identity" text (spec, "Surfaced conflict"). Proposes no binding change. Marked unfiled. Nothing is written in sysml-codegen.
-- [ ] Includes D21's observation (Item 1's `formal_targets` carries the positional reading without the implied/explicit mark), for the owner and Item 2's agent.
+- [x] Records the name-based wiring at `b5663c07`, the native positional result, the fixtures, the Phase 6 generated-side log, the relation to POSITIONAL-FORMAL-REDEFINITION and the surfaced conflict with its "follows parser redefinition identity" text (spec, "Surfaced conflict"). Proposes no binding change. Marked unfiled. Nothing is written in sysml-codegen.
+- [x] Includes D21's observation (Item 1's `formal_targets` carries the positional reading without the implied/explicit mark), for the owner and Item 2's agent.
 
 #### 3. Tests
 **File:** `tests/test_shipped_text.py` (MODIFY); check `tests/test_packaged_guidance_contract.py` for the wheel contract and extend it if it lists files individually
-- [ ] The register ships in the wheel (`pyproject.toml:58` maps `docs/` into `agentic_mbse_data/docs`).
-- [ ] Cites `checkFeatureParameterRedefinition`; states the legacy-only rule and the placeholder limit; the pinned-warning wording matches the message `render` emits (Pol-4).
-- [ ] Every agentic-mbse path it cites exists. Sibling citations checked with `git -C <sibling> cat-file -e <rev>:<path>` when the checkout is present, else skipped with a named reason.
-- [ ] The register has no line matching I8's two patterns.
+- [x] The register ships in the wheel (`pyproject.toml:58` maps `docs/` into `agentic_mbse_data/docs`).
+- [x] Cites `checkFeatureParameterRedefinition`; states the legacy-only rule and the placeholder limit; the pinned-warning wording matches the message `render` emits (Pol-4).
+- [x] Every agentic-mbse path it cites exists. Sibling citations checked with `git -C <sibling> cat-file -e <rev>:<path>` when the checkout is present, else skipped with a named reason.
+- [x] The register has no line matching I8's two patterns.
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_shipped_text.py tests/test_packaged_guidance_contract.py` → pass
-- [ ] G1, G2, G3
+- [x] `uv run pytest tests/test_shipped_text.py tests/test_packaged_guidance_contract.py` → pass
+- [x] G1, G2, G3
 
 **Done when (traces to Reg-1, Reg-4, Pol-4 register half):** the register exists with its anchor and every Appendix C topic; its citation tests pass; the draft upstream finding is in evidence and linked from the register as unfiled.
 
@@ -876,6 +876,23 @@ See `design.md#potential-risks` for the full list. Phase-specific mitigations:
 - The slow test lives beside the script and imports its helpers, so the comparison is written once.
 
 ### Phase 7 Completion
+**Completed:** 2026-10-18
+
+**Changes Made:**
+- `docs/patterns/semantic-hazards.md` (NEW): the register. A header states the citation rule (D18: own paths without a revision, sibling paths as `repository@revision:path`). The positional entry has anchor `positional-input-binding` and covers each Appendix C topic: the expected reading with a marked reversed example; KerML text (8.3.3.3.4, `checkFeatureParameterRedefinition`, quoted on position counting and on the invocation-expression-only exemption) apart from SysIDE 0.8.4 observations, each on a named fixture (reversed swap -7, explicit input keeps its position, mixed spelling gives no value, parameterless subdefinition, `out_before_in` passing L1 and caught at L2, subject/actor/stakeholder positions, multiple types, constraints); the cross-route table for calc usages only (7/7 by name, -7/7 reversed) and why constraints are not claimed; the three repairs with a marked `expect="none"` example; the check's codes, what is not flagged and the limits (SysIDE 0.8.4 only, B6's five placeholder shapes, unpinnable anonymous owners, non-self-contained subfolders, no evaluation); the pin list (legacy-only rule, owner-reserved disposition for new mismatches, review as the integrity basis, the exact pinned-warning text and summary text, format, discovery and the two CLI options, D13's note that `file` matters for scope, and "not judged" pins); evidence and upstream links; "Candidates, not yet reproduced" (output override; `[*]`/`[0]`).
+- `docs/patterns/README.md`: index row (the index lists every pattern doc).
+- `evidence/upstream-codegen-finding.md` (NEW): the draft, marked DRAFT, UNFILED. Records the by-name wiring at `b5663c07` (from `eval_generated.log`), the native positional result, the fixtures, the relation to POSITIONAL-FORMAL-REDEFINITION and the conflict with its "follows parser redefinition identity" text, the constraint-usage caveat, and D21's observation. Proposes no binding change. Nothing written in sysml-codegen.
+- `tests/test_shipped_text.py`: 5 register tests (6 with the sibling parametrization): KerML name and anchor; every backticked agentic-mbse path exists (31 citations, 28 distinct paths); each sibling citation exists at its revision via `git -C <sibling> cat-file -e`, skipped with a named reason when the checkout beside this one is absent; `PINNED_DISCLAIMER` imported from `positional_check.py` appears verbatim (Pol-4), plus the summary text, `recorded_against`, the legacy-only and owner-reserved sentences; the placeholder limit and the unfiled draft link; no line matches I8's qualified-binding or self-named patterns. Also annotated the existing `installed` fixture's `tmp_path_factory` (a pre-existing mypy error in a touched file, G3).
+- `tests/test_packaged_guidance_contract.py`: the register is in the built wheel byte for byte, as its own test because the whole-`docs` comparison is a known xfail.
+- G1: 6 failed (the baseline 6) / 3924 passed. G2: ruff check and format clean on both test files. G3: both test files clean under mypy.
+
+**Issues:**
+- The register header's own examples of citation forms first matched the path tests (`tests/fixtures/...`, `sysml-codegen@b5663c07:path`); reworded so only real citations match.
+- Which sysml-codegen code site wires by name was not traced; the draft says so and rests on the printed wiring.
+
+**Deviations:**
+- The register carries `@positional-example` markers on its two SysML fences, so Phase 8's example test covers them too.
+- Short fixture names in the register were expanded to full paths so the path test covers every citation.
 
 ### Phase 8 Completion
 

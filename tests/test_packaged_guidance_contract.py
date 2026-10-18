@@ -124,6 +124,14 @@ def test_built_wheel_carries_the_resolver_reached_goal_layer_documents(
         assert archive.read(f"agentic_mbse_data/{source}") == (REPO_ROOT / source).read_bytes()
 
 
+def test_built_wheel_carries_the_semantic_hazard_register(wheel: Path) -> None:
+    """L2's positional findings point authors at this register. The whole-`docs` comparison
+    above is a known xfail, so it is checked on its own."""
+    source = "docs/patterns/semantic-hazards.md"
+    with zipfile.ZipFile(wheel) as archive:
+        assert archive.read(f"agentic_mbse_data/{source}") == (REPO_ROOT / source).read_bytes()
+
+
 def test_extracted_wheel_installs_every_asset(wheel: Path, tmp_path: Path) -> None:
     """`init` from the wheel's own data installs every bundle, role and hook, and the
     docs resolver points into the packaged data (I6). `--dev` is refused there."""
