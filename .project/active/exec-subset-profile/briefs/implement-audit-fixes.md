@@ -1,0 +1,14 @@
+Apply fixes from the fresh audit `.project/active/exec-subset-profile/audit.md` (verdict: Certify with recorded limits). Read it in full first.
+
+M1 status: the orchestrator ran the repository checks on 044e32c1 — 3502 passed, 3 known environment failures; ruff 118 and mypy 97 baseline unchanged; changed files clean. You still need to do the mutation part of M1.
+
+Do:
+1. **Untested R2 branch (`subset_profile.py:848`).** Add a test that fails if that branch is changed to emit a context that yields probe-less refusals (the audit's `owner_instantiated` mutation). Then run every R2 mutation the audit lists, in a scratch copy of the repo (not the working tree), and record per mutation which test catches it in `evidence/r2-mutations.md`. If any mutation survives, add the missing test.
+2. **S1.** The calc-usage bare-result expression is silently dropped by the generator. Do not leave it as an unqualified `admitted`. Make it `omitted` if the existing probe evidence certifies an omission under the judge's omission check (a positive-control sibling present, the construct absent). If it does not, add a probe that does. Update the matrix and R3 table accordingly. Known silent losses must be visible, per the epic.
+3. **S3.** The derived verdict must not hide probe-backed refusals behind `INCOMPLETE`. Report both: e.g. a verdict that distinguishes REFUSED+INCOMPLETE from INCOMPLETE alone, or separate `has_refusals`/`complete` fields — your call, recorded. Update the dc3 baseline acceptance record.
+4. **S4.** Correct the matrix's B8 malformed-predicate row to match the run (2 constraints, `unconfirmed`, with the reason).
+5. **S5.** Mark SA-1 accepted in the spec Change Log (accepted by orchestrator 2026-10-18).
+6. **S2.** Record in the packaged records or result docs that `CLEAR` is relative to the implemented rules and name the known unruled refusal families (e.g. `deep_cross_scope_probe`), so consumers can't read CLEAR as "will generate". The L6 wording itself is Item 3; just add the matrix/R3 entry and the module docstring statement.
+7. **A9/A10.** Revisit the four site-account rows; extend the computed-reason test to pin the exact reason set at all five sites.
+
+Rules: never modify ~/src/sysml-codegen or ~/src/dc3; probes run in isolated temp trees through the harness. Untracked `.codex/`, `AGENTS.md`, `.project/TRIAGE_MEMORIES.md` and modified `.gitignore` are not yours. If any change touches `src/`, rerun the same-generator check (probes and codegen suite) and the acceptance runs at the new final revision, and update the evidence. Keep green as defined in the plan. Commit with outcome-led subjects ending `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Add a short "Audit fixes" section to the audit's resolutions. Finish with what changed per item and the ARTIFACT line (audit.md).
