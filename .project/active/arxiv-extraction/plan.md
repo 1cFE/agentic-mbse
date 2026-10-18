@@ -242,16 +242,16 @@ def test_negative_and_conflict_never_probe_or_convert(tmp_path):   # invariant 4
 
 **See design:** D1 (evidence rules, regexes, conflict), D2 (`detect_arxiv_id` becomes a wrapper), D11 (`pdf_source_url`), invariants 4–5, Implementation Notes "Stamp fixtures", `ArxivIdentity` signature.
 
-- [ ] **`tests/test_arxiv_identity.py`** (NEW): the stencil, all four design fixtures (citation-only, stamp plus cited prose ID, two stamps, stamp vs URL) plus the positive URL-only case. Generate PDFs in `tmp_path`; commit none.
-- [ ] **`pandoc_convert.py`**: add `ArxivIdentity` and `identify_arxiv_paper(pdf_path, pdf_source_url=None)` using `get_text("dict")` on page 1 only. `detect_arxiv_id` (`:71-105`) returns `identify_arxiv_paper(pdf_path).arxiv_id`. Drop the Creator-metadata fallback.
-- [ ] **`pipeline.py`**: `PipelineConfig.pdf_source_url: str | None = None` (append; touch no existing field). `_try_arxiv_shortcut` calls `identify_arxiv_paper(pdf_path, config.pdf_source_url)`; a conflict warns (D13); no evidence is silent.
-- [ ] **`extract_cli.py:487-499`**: pass `pdf_source_url=getattr(args, "source_url_override", None)`.
-- [ ] **Test migration**: `test_pipeline.py` tests that stub `detect_arxiv_id` (`:152-230`, `:730-750`, `:1463-1480`) stub `identify_arxiv_paper` returning an `ArxivIdentity`, or use generated PDFs. `test_check.py` stubs of `detect_arxiv_id` keep working through the wrapper until phase 7.
+- [x] **`tests/test_arxiv_identity.py`** (NEW): the stencil, all four design fixtures (citation-only, stamp plus cited prose ID, two stamps, stamp vs URL) plus the positive URL-only case. Generate PDFs in `tmp_path`; commit none.
+- [x] **`pandoc_convert.py`**: add `ArxivIdentity` and `identify_arxiv_paper(pdf_path, pdf_source_url=None)` using `get_text("dict")` on page 1 only. `detect_arxiv_id` (`:71-105`) returns `identify_arxiv_paper(pdf_path).arxiv_id`. Drop the Creator-metadata fallback.
+- [x] **`pipeline.py`**: `PipelineConfig.pdf_source_url: str | None = None` (append; touch no existing field). `_try_arxiv_shortcut` calls `identify_arxiv_paper(pdf_path, config.pdf_source_url)`; a conflict warns (D13); no evidence is silent.
+- [x] **`extract_cli.py:487-499`**: pass `pdf_source_url=getattr(args, "source_url_override", None)`.
+- [x] **Test migration**: `test_pipeline.py` tests that stub `detect_arxiv_id` (`:152-230`, `:730-750`, `:1463-1480`) stub `identify_arxiv_paper` returning an `ArxivIdentity`, or use generated PDFs. `test_check.py` stubs of `detect_arxiv_id` keep working through the wrapper until phase 7.
 
 ### Validation
 
-- [ ] Green.
-- [ ] Manual: generate the citation-only PDF and run `uv run agentic-mbse extract <pdf> --budget 0 -o /tmp/arxiv-p3` with Pandoc on PATH. `output.md` is the PDF's own text, not Harness², and no network call is made (run with networking unavailable, or watch for no `fetch` line).
+- [x] Green.
+- [x] Manual: generate the citation-only PDF and run `uv run agentic-mbse extract <pdf> --budget 0 -o /tmp/arxiv-p3` with Pandoc on PATH. `output.md` is the PDF's own text, not Harness², and no network call is made (run with networking unavailable, or watch for no `fetch` line).
 
 **What we know works after this phase:** a citation can no longer substitute content; arXiv PDFs with a stamp, or fetched from an arxiv.org URL, still take the shortcut.
 
@@ -363,7 +363,7 @@ def test_pdf_shortcut_no_article_falls_back_with_warning(tmp_path): ...
 ### Validation
 
 - [ ] Green, including existing provenance tests (raw-byte hash, save-source, fetched version) unchanged.
-- [ ] Manual: `uv run agentic-mbse extract --html-path .project/active/arxiv-extraction/ref/2610.14224.html <stamp pdf> -o /tmp/arxiv-p5` (stamp PDF from the phase 3 helper). `grep -c "data:image" /tmp/arxiv-p5/output.md` is 0, and `grep -E "Report Issue|ltx_page_footer" /tmp/arxiv-p5/output.md` finds nothing.
+- [ ] Manual: `uv run agentic-mbse extract --html-path .project/active/arxiv-extraction/ref/2610.14224.html <stamp pdf> -o /tmp/arxiv-p5` (stamp PDF from the phase 3 helper). `grep -c "iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO" /tmp/arxiv-p5/output.md` is 0 (the footer logo, the page's only chrome data URI), and `grep -E "Report Issue|Instructions for reporting errors|major funders" /tmp/arxiv-p5/output.md` finds nothing. `data:image/svg+xml` refs from LaTeXML pictures inside the article are paper content and may remain (invariant 6).
 
 **What we know works after this phase:** both routes emit the paper alone; unrecognized pages fall back visibly; no path puts whole-page arXiv HTML through Pandoc.
 
@@ -481,7 +481,7 @@ Corroborate the fixtures against today's real arXiv pages: a consumer's run with
 - [ ] Record date, `pandoc --version`, and the branch commit.
 - [ ] Web route: `uv run agentic-mbse extract https://arxiv.org/html/2610.14224 -o /tmp/harness2-web > /tmp/harness2-web.txt 2>&1`.
 - [ ] PDF route: `uv run agentic-mbse extract https://arxiv.org/pdf/2610.14224 -o /tmp/harness2-pdf --budget 0 > /tmp/harness2-pdf.txt 2>&1`. This exercises both the stamp and the arxiv.org source URL.
-- [ ] For each route record: fetched source URL and version (frontmatter), backend, saved image count versus files in `images/`, any dangling refs (`grep -o "](images/[^)]*)"` each checked for existence), `grep -c "data:image"` (expect only in-article ones, 0 for this paper), chrome strings absent (`Report Issue`, footer and nav text chosen in phase 1), and every warning printed.
+- [ ] For each route record: fetched source URL and version (frontmatter), backend, saved image count versus files in `images/`, any dangling refs (`grep -o "](images/[^)]*)"` each checked for existence), data-URI refs by type (`grep -o "data:image/[a-z+]*" output.md | sort | uniq -c`): in-article `data:image/svg+xml` refs are expected and legitimate (LaTeXML pictures such as the title logo and inline diagrams; paper content under invariant 6), while the footer `[LOGO]` PNG (`iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO`) and any other chrome data URI must be absent, chrome strings absent (`Report Issue`, footer and nav text chosen in phase 1), and every warning printed.
 - [ ] If network is unavailable, record that and stop. Either way this step does not block close. Any surprise against a bet (B1, B2, B5) gets surfaced in the record, not silently patched.
 
 **Record:** _(fill in)_
@@ -566,10 +566,10 @@ Environment setup the numbers depend on, for later sessions:
 - PDF `metrics.json` is now written for error results too (zero metrics, plus warnings when present). The skip check keys on `output.md`, so a failed document is still retried on the next run.
 
 ### Phase 3 Completion
-**Completed:**
-**Actual Changes:**
-**Issues:**
-**Deviations:**
+**Completed:** 2026-10-18. Code and tests written by the implement session; tests run and verified by the orchestrator because the resumed session lost test permission (harness issue).
+**Actual Changes:** `identify_arxiv_paper` and `ArxivIdentity` in `pandoc_convert.py` (stamp + arxiv.org source URL per D1; `detect_arxiv_id` is a thin wrapper; Creator-metadata fallback removed). `PipelineConfig.pdf_source_url` added (no field renamed/removed). Shortcut uses the identity rule and warns on conflict; CLI fills `pdf_source_url` from fetched PDF URLs. New `tests/helpers/arxiv_pdfs.py` (generated stamp PDFs), `tests/test_arxiv_identity.py`; real-PDF pipeline tests show citation-only and conflict PDFs never reach the HTML check or Pandoc, and a stamp substitutes its own ID. Old mock-based `TestDetectArxivId` removed.
+**Issues:** None in code. Verification: focused extraction suites 318 passed; full suite 2833 passed, 3 failed (the same 3 environmental baseline failures), 1 skipped. Ruff: only the pre-existing `index.py` N806. mypy: 97 errors, equal to baseline.
+**Deviations:** None. Manual check (orchestrator): citation-only PDF with Pandoc 3.1.3 on PATH extracted via `pdf_pipeline`, 49 chars of its own text, no Harness² content.
 
 ### Phase 4 Completion
 **Completed:**

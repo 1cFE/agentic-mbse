@@ -1,7 +1,8 @@
 """arXiv detection and Pandoc conversion for PDF extraction pipeline.
 
-Detects arXiv papers from PDF metadata, checks HTML availability, and
-converts arXiv HTML to markdown via Pandoc with pre/post-processing.
+Identifies a PDF's own arXiv paper from trusted evidence, checks HTML
+availability, and converts arXiv HTML to markdown via Pandoc with
+pre/post-processing.
 """
 
 from __future__ import annotations
@@ -9,7 +10,9 @@ from __future__ import annotations
 import re
 import shutil
 import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlparse
 
 from agentic_mbse.extraction.arxiv_html import _convert_document
 from agentic_mbse.extraction.http import USER_AGENT
@@ -29,41 +32,90 @@ def _pandoc_available(pandoc_path: str = "pandoc") -> bool:
 # ---------------------------------------------------------------------------
 
 
-def detect_arxiv_id(pdf_path: Path) -> str | None:
-    """Extract arXiv ID from PDF page 1 text.
+# arXiv stamps every PDF it serves with one line in the left margin of page 1,
+# rotated 90°: ``arXiv:<id>v<N>  [<category>]  <date>``. Prose citations are
+# horizontal body text, so only a vertical left-margin line in the full stamp
+# shape counts as the paper's own ID.
+_STAMP_RE = re.compile(r"arXiv:(\d{4}\.\d{4,5}v\d+)\s+\[[^\]]+\]\s+\d{1,2}\s+\w{3}\s+\d{4}")
+_STAMP_MAX_DIR_X = 0.05  # |dir.x| below this means the line runs vertically
+_STAMP_MARGIN_FRACTION = 0.15  # the line must end within this share of page width
 
-    Sequence:
-    1. pymupdf page 1 text extraction
-    2. Regex: ``arXiv:\\d{4}\\.\\d{4,5}(v\\d+)?``
-    3. Fallback: check PDF Creator metadata for 'arXiv'
-    """
+# A PDF fetched from arxiv.org/abs/<id> or arxiv.org/pdf/<id>[.pdf] is that paper.
+_SOURCE_URL_PATH_RE = re.compile(r"/(?:abs|pdf)/(\d{4}\.\d{4,5}(?:v\d+)?)(?:\.pdf)?/?")
+
+
+@dataclass(frozen=True)
+class ArxivIdentity:
+    """Which arXiv paper a PDF is, by trusted evidence only."""
+
+    arxiv_id: str | None  # e.g. "2610.14224v1"; None = don't substitute
+    evidence: tuple[str, ...]  # sources found: ("stamp",), ("url",), ("stamp", "url")
+    conflict: str | None = None  # reason when sources disagree; if set, arxiv_id is None
+
+
+def _margin_stamp_ids(pdf_path: Path) -> list[str]:
+    """Return the arXiv IDs of page-1 lines shaped like arXiv's margin stamp."""
     import pymupdf  # type: ignore[import-untyped]
 
     doc = pymupdf.open(str(pdf_path))
     try:
         if len(doc) == 0:
-            return None
-
-        page_text = doc[0].get_text()
-
-        # Primary: regex on page 1 text
-        m = re.search(r"arXiv:(\d{4}\.\d{4,5}(?:v\d+)?)", page_text)
-        if m:
-            return m.group(1)
-
-        # Fallback: PDF Creator metadata
-        metadata = doc.metadata or {}
-        creator = metadata.get("creator", "")
-        if "arxiv" in creator.lower():
-            for i in range(min(2, len(doc))):
-                text = doc[i].get_text()
-                m = re.search(r"arXiv:(\d{4}\.\d{4,5}(?:v\d+)?)", text)
-                if m:
-                    return m.group(1)
-
-        return None
+            return []
+        page = doc[0]
+        margin = page.rect.width * _STAMP_MARGIN_FRACTION
+        ids: list[str] = []
+        for block in page.get_text("dict")["blocks"]:
+            for line in block.get("lines", []):
+                if abs(line["dir"][0]) >= _STAMP_MAX_DIR_X or line["bbox"][2] > margin:
+                    continue
+                text = "".join(span["text"] for span in line["spans"]).strip()
+                m = _STAMP_RE.fullmatch(text)
+                if m and m.group(1) not in ids:
+                    ids.append(m.group(1))
+        return ids
     finally:
         doc.close()
+
+
+def _source_url_id(url: str) -> str | None:
+    """Return the arXiv ID named by an arxiv.org abs/pdf URL, or None."""
+    parsed = urlparse(url)
+    host = parsed.hostname or ""
+    if host != "arxiv.org" and not host.endswith(".arxiv.org"):
+        return None
+    m = _SOURCE_URL_PATH_RE.fullmatch(parsed.path)
+    return m.group(1) if m else None
+
+
+def identify_arxiv_paper(pdf_path: Path, pdf_source_url: str | None = None) -> ArxivIdentity:
+    """Decide which arXiv paper *pdf_path* is, from trusted evidence only.
+
+    Evidence is the margin stamp on page 1 and the arxiv.org URL the PDF was
+    fetched from. IDs in body text never count. More than one stamp, or a
+    stamp and URL naming different papers (ignoring version), is a conflict.
+    """
+    stamp_ids = _margin_stamp_ids(pdf_path)
+    url_id = _source_url_id(pdf_source_url) if pdf_source_url else None
+    evidence = tuple(name for name, found in (("stamp", stamp_ids), ("url", url_id)) if found)
+
+    if len(stamp_ids) > 1:
+        return ArxivIdentity(
+            None, evidence, f"page 1 carries more than one arXiv stamp: {', '.join(stamp_ids)}"
+        )
+    stamp_id = stamp_ids[0] if stamp_ids else None
+    if stamp_id and url_id and strip_arxiv_version(stamp_id)[0] != strip_arxiv_version(url_id)[0]:
+        return ArxivIdentity(
+            None, evidence, f"margin stamp names {stamp_id} but the PDF came from {pdf_source_url}"
+        )
+    return ArxivIdentity(stamp_id or url_id, evidence)
+
+
+def detect_arxiv_id(pdf_path: Path) -> str | None:
+    """Return the PDF's own arXiv ID from its margin stamp, or None.
+
+    Kept for callers of the old API; see ``identify_arxiv_paper``.
+    """
+    return identify_arxiv_paper(pdf_path).arxiv_id
 
 
 # ---------------------------------------------------------------------------

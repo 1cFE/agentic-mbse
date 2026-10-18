@@ -10,7 +10,6 @@ from agentic_mbse.extraction.pandoc_convert import (
     _pandoc_available,
     check_arxiv_html,
     convert_arxiv_html,
-    detect_arxiv_id,
     resolve_fetched_version,
     strip_arxiv_version,
 )
@@ -61,66 +60,6 @@ class TestResolveFetchedVersion:
     def test_recovers_from_real_fixture(self):
         html = (FIXTURES / "arxiv_1706.03762_latest.html").read_text()
         assert resolve_fetched_version(html, "1706.03762") == 7
-
-
-class TestDetectArxivId:
-    @patch("pymupdf.open")
-    def test_finds_arxiv_id_on_page_1(self, mock_open):
-        mock_doc = MagicMock()
-        mock_doc.__len__ = MagicMock(return_value=10)
-        mock_page = MagicMock()
-        mock_page.get_text.return_value = (
-            "Some paper title\narXiv:2510.07314v1 [cs.AI] 10 Oct 2025\n"
-            "Abstract: This paper..."
-        )
-        mock_doc.__getitem__ = MagicMock(return_value=mock_page)
-        mock_doc.metadata = {"creator": "LaTeX"}
-        mock_open.return_value = mock_doc
-
-        result = detect_arxiv_id(Path("fake.pdf"))
-        assert result == "2510.07314v1"
-
-    @patch("pymupdf.open")
-    def test_no_arxiv_id(self, mock_open):
-        mock_doc = MagicMock()
-        mock_doc.__len__ = MagicMock(return_value=5)
-        mock_page = MagicMock()
-        mock_page.get_text.return_value = "Some normal paper text without arXiv"
-        mock_doc.__getitem__ = MagicMock(return_value=mock_page)
-        mock_doc.metadata = {"creator": "Microsoft Word"}
-        mock_open.return_value = mock_doc
-
-        result = detect_arxiv_id(Path("fake.pdf"))
-        assert result is None
-
-    @patch("pymupdf.open")
-    def test_creator_metadata_fallback(self, mock_open):
-        mock_doc = MagicMock()
-        mock_doc.__len__ = MagicMock(return_value=2)
-
-        pages = {
-            0: MagicMock(),
-            1: MagicMock(),
-        }
-        # Page 0 has no arXiv in text, but creator says arXiv
-        pages[0].get_text.return_value = "Title of Paper\nNo ID here"
-        # Page 1 has the arXiv ID
-        pages[1].get_text.return_value = "arXiv:2301.12345 in footer"
-        mock_doc.__getitem__ = MagicMock(side_effect=lambda i: pages[i])
-        mock_doc.metadata = {"creator": "arXiv.org e-Print archive"}
-        mock_open.return_value = mock_doc
-
-        result = detect_arxiv_id(Path("fake.pdf"))
-        assert result == "2301.12345"
-
-    @patch("pymupdf.open")
-    def test_empty_document(self, mock_open):
-        mock_doc = MagicMock()
-        mock_doc.__len__ = MagicMock(return_value=0)
-        mock_open.return_value = mock_doc
-
-        result = detect_arxiv_id(Path("fake.pdf"))
-        assert result is None
 
 
 def _mock_head(status):

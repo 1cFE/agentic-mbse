@@ -1077,3 +1077,32 @@ class TestWarningsChannel:
         assert "used trafilatura instead" in captured.err
         assert "used trafilatura instead" not in captured.out
         assert "backend: trafilatura" in captured.out
+
+
+class TestPdfSourceUrlForwarding:
+    def test_fetched_pdf_url_becomes_identity_evidence(self, tmp_path):
+        """A PDF fetched from a URL passes that URL to the pipeline as pdf_source_url."""
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"))
+        args.source_url_override = "https://arxiv.org/pdf/2610.14224v1"
+
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+        ) as mock_extract:
+            cmd_extract(args)
+
+        config = mock_extract.call_args.kwargs["config"]
+        assert config.pdf_source_url == "https://arxiv.org/pdf/2610.14224v1"
+
+    def test_local_pdf_has_no_source_url(self, tmp_path):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"))
+
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+        ) as mock_extract:
+            cmd_extract(args)
+
+        assert mock_extract.call_args.kwargs["config"].pdf_source_url is None

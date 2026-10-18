@@ -502,6 +502,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 extracted_images_dir=images_dir,
                 profile=args.profile,
                 save_source=getattr(args, "save_source", False),
+                pdf_source_url=getattr(args, "source_url_override", None),
             )
             result = extract_pdf(doc, config=config)
 

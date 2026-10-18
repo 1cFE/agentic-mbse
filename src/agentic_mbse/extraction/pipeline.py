@@ -162,6 +162,7 @@ class PipelineConfig:
     quality_gate: QualityGateConfig = field(default_factory=QualityGateConfig)
     profile: bool = False
     save_source: bool = False  # carry raw bytes on PipelineResult for --save-source
+    pdf_source_url: str | None = None  # URL the PDF was fetched from (arXiv identity evidence)
 
 
 # ---------------------------------------------------------------------------
@@ -184,7 +185,7 @@ def _try_arxiv_shortcut(
         _pandoc_available,
         check_arxiv_html,
         convert_arxiv_html,
-        detect_arxiv_id,
+        identify_arxiv_paper,
         resolve_fetched_version,
         strip_arxiv_version,
     )
@@ -202,7 +203,12 @@ def _try_arxiv_shortcut(
         if config.arxiv_html_path is not None:
             html_source = str(config.arxiv_html_path)
         else:
-            arxiv_id = detect_arxiv_id(pdf_path)
+            identity = identify_arxiv_paper(pdf_path, config.pdf_source_url)
+            if identity.conflict is not None:
+                return None, [
+                    f"arXiv identity conflict ({identity.conflict}); extracted the PDF instead"
+                ]
+            arxiv_id = identity.arxiv_id
             if arxiv_id is None:
                 return None, []
             html_url = check_arxiv_html(arxiv_id)
