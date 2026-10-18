@@ -190,11 +190,17 @@ def _try_arxiv_shortcut(
     failure, and an ignored ``arxiv_html_path``, adds a warning; the shortcut
     simply not applying (turned off, no Pandoc, no arXiv ID) does not.
     """
+    import pymupdf  # type: ignore[import-untyped]
+
+    from agentic_mbse.extraction.arxiv_html import (
+        ArxivConversionError,
+        convert_article,
+        load_arxiv_html,
+    )
     from agentic_mbse.extraction.frontmatter import compute_source_hash
     from agentic_mbse.extraction.pandoc_convert import (
         _pandoc_available,
         check_arxiv_html,
-        convert_arxiv_html,
         identify_arxiv_paper,
         resolve_arxiv_shortcut,
         resolve_fetched_version,
@@ -214,10 +220,14 @@ def _try_arxiv_shortcut(
             "extracted the PDF instead"
         ]
 
+    # The failures the shortcut falls back from: an unreadable PDF during
+    # identification, an HTML page that can't be fetched, read or decoded, and
+    # a page with no recognized article or a failed Pandoc run.
     try:
-        arxiv_id = None
+        arxiv_id: str | None = None
+        source_url: str | None = None
         if config.arxiv_html_path is not None:
-            html_source = str(config.arxiv_html_path)
+            source = load_arxiv_html(config.arxiv_html_path)
         else:
             identity = identify_arxiv_paper(pdf_path, config.pdf_source_url)
             if identity.conflict is not None:
@@ -227,38 +237,34 @@ def _try_arxiv_shortcut(
             arxiv_id = identity.arxiv_id
             if arxiv_id is None:
                 return None, []
-            html_url = check_arxiv_html(arxiv_id)
-            if html_url is None:
+            source_url = check_arxiv_html(arxiv_id)
+            if source_url is None:
                 return None, [
                     f"arXiv paper {arxiv_id} identified but arXiv serves no HTML "
                     "version; extracted the PDF instead"
                 ]
-            html_source = html_url
-
-        markdown, raw_bytes = convert_arxiv_html(html_source)
-        metrics = compute_metrics(markdown)
-        content_hash = compute_source_hash(raw_bytes)
-
-        # Record the version arXiv actually served (bare URL = latest), so
-        # provenance names the fetched version rather than the pinned one.
-        source_url = html_source if html_source.startswith("http") else None
-        if arxiv_id is not None:
-            bare_id, _ = strip_arxiv_version(arxiv_id)
-            version = resolve_fetched_version(raw_bytes.decode("utf-8", "replace"), bare_id)
-            if version is not None:
-                source_url = f"https://arxiv.org/html/{bare_id}v{version}"
-
-        return PipelineResult(
-            markdown=markdown,
-            metrics=metrics,
-            source="pandoc_arxiv",
-            source_url=source_url,
-            content_hash=content_hash,
-            raw_source_bytes=raw_bytes if config.save_source else None,
-        ), []
-    except Exception as exc:
+            source = load_arxiv_html(source_url)
+        markdown = convert_article(source.html)
+    except (ArxivConversionError, OSError, UnicodeDecodeError, pymupdf.FileDataError) as exc:
         logger.debug("arXiv shortcut failed, falling through to PDF extraction", exc_info=True)
         return None, [f"arXiv HTML shortcut failed ({exc}); extracted the PDF instead"]
+
+    # Record the version arXiv actually served (bare URL = latest), so
+    # provenance names the fetched version rather than the pinned one.
+    if arxiv_id is not None:
+        bare_id, _ = strip_arxiv_version(arxiv_id)
+        version = resolve_fetched_version(source.html, bare_id)
+        if version is not None:
+            source_url = f"https://arxiv.org/html/{bare_id}v{version}"
+
+    return PipelineResult(
+        markdown=markdown,
+        metrics=compute_metrics(markdown),
+        source="pandoc_arxiv",
+        source_url=source_url,
+        content_hash=compute_source_hash(source.raw_bytes),
+        raw_source_bytes=source.raw_bytes if config.save_source else None,
+    ), []
 
 
 def _try_detect_tables(pdf_path: Path, config: PipelineConfig) -> dict[int, list[DetectedTable]]:

@@ -353,17 +353,17 @@ def test_pdf_shortcut_no_article_falls_back_with_warning(tmp_path): ...
 
 **See design:** D15 (loader, `ArxivSource`, `from_fetch` normalization), D5, D13, D16, invariants 1 and 11, Architecture diagram, Data flow paragraph.
 
-- [ ] **`arxiv_html.py`**: `ArxivSource` (with `from_fetch` and `image_base`), `load_arxiv_html(source, *, timeout)` calling `http.fetch_url` for URLs and reading the file for paths.
-- [ ] **`pandoc_convert.convert_arxiv_html`**: becomes the wrapper over `load_arxiv_html` and `convert_article`. Keep its signature, return type and the `_pandoc_available` → `FileNotFoundError` check (an existing test pins it at `tests/test_pandoc_convert.py:305-313`). Other failures now raise `ArxivConversionError` where they used to raise `CalledProcessError`; update the docstring. In-repo callers catch `Exception`, so no caller changes. `[AGENT]` plan decision: the design fixes signature and return type but not exception types; this is the narrowest change that keeps the pinned contract.
-- [ ] **`pipeline._try_arxiv_shortcut`**: load through `load_arxiv_html`, convert with `convert_article`, catch `ArxivConversionError` and fetch errors into warnings. Hash `source.raw_bytes`; compute fetched version as today (`:207-214`). Keep `raw_source_bytes` as the raw bytes.
-- [ ] **`web_backend.py`**: the arXiv branch (`:410-417`) builds `ArxivSource.from_fetch(fetched)`, runs `convert_article` on the sanitized HTML, and turns `ArxivConversionError` into a warning. For arXiv URLs skip Step 3b (`:423-432`). Delete `_extract_with_arxiv_pandoc`; replace `_MIN_CONTENT_LENGTH` with `arxiv_html.MIN_CONTENT_CHARS`. Saved `raw.html` (`:514-515`) stays `fetched.text()`.
-- [ ] **Remove the phase 1 re-exports** of `_preprocess_html` / `_postprocess_markdown` from `pandoc_convert` once nothing imports them there.
-- [ ] **Test migration**: `tests/test_pandoc_convert.py:239-303` inputs wrap content in `<article class="ltx_document">…</article>` and stub Pandoc output of at least `MIN_CONTENT_CHARS`; that change is the intended R4 behavior, so record it in Implementation Notes. `test_pipeline.py` tests that stub `convert_arxiv_html` stub `arxiv_html.load_arxiv_html` / `convert_article` or `fetch_url` + `subprocess.run` instead.
+- [x] **`arxiv_html.py`**: `ArxivSource` (with `from_fetch` and `image_base`), `load_arxiv_html(source, *, timeout)` calling `http.fetch_url` for URLs and reading the file for paths.
+- [x] **`pandoc_convert.convert_arxiv_html`**: becomes the wrapper over `load_arxiv_html` and `convert_article`. Keep its signature, return type and the `_pandoc_available` → `FileNotFoundError` check (an existing test pins it at `tests/test_pandoc_convert.py:305-313`). Other failures now raise `ArxivConversionError` where they used to raise `CalledProcessError`; update the docstring. In-repo callers catch `Exception`, so no caller changes. `[AGENT]` plan decision: the design fixes signature and return type but not exception types; this is the narrowest change that keeps the pinned contract.
+- [x] **`pipeline._try_arxiv_shortcut`**: load through `load_arxiv_html`, convert with `convert_article`, catch `ArxivConversionError` and fetch errors into warnings. Hash `source.raw_bytes`; compute fetched version as today (`:207-214`). Keep `raw_source_bytes` as the raw bytes.
+- [x] **`web_backend.py`**: the arXiv branch (`:410-417`) builds `ArxivSource.from_fetch(fetched)`, runs `convert_article` on the sanitized HTML, and turns `ArxivConversionError` into a warning. For arXiv URLs skip Step 3b (`:423-432`). Delete `_extract_with_arxiv_pandoc`; replace `_MIN_CONTENT_LENGTH` with `arxiv_html.MIN_CONTENT_CHARS`. Saved `raw.html` (`:514-515`) stays `fetched.text()`.
+- [x] **Remove the phase 1 re-exports** (none were created; see Phase 1 Deviations) of `_preprocess_html` / `_postprocess_markdown` from `pandoc_convert` once nothing imports them there.
+- [x] **Test migration**: `tests/test_pandoc_convert.py:239-303` inputs wrap content in `<article class="ltx_document">…</article>` and stub Pandoc output of at least `MIN_CONTENT_CHARS`; that change is the intended R4 behavior, so record it in Implementation Notes. `test_pipeline.py` tests that stub `convert_arxiv_html` stub `arxiv_html.load_arxiv_html` / `convert_article` or `fetch_url` + `subprocess.run` instead.
 
 ### Validation
 
-- [ ] Green, including existing provenance tests (raw-byte hash, save-source, fetched version) unchanged.
-- [ ] Manual: `uv run agentic-mbse extract --html-path .project/active/arxiv-extraction/ref/2610.14224.html <stamp pdf> -o /tmp/arxiv-p5` (stamp PDF from the phase 3 helper). `grep -c "iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO" /tmp/arxiv-p5/output.md` is 0 (the footer logo, the page's only chrome data URI), and `grep -E "Report Issue|Instructions for reporting errors|major funders" /tmp/arxiv-p5/output.md` finds nothing. `data:image/svg+xml` refs from LaTeXML pictures inside the article are paper content and may remain (invariant 6).
+- [x] Green, including existing provenance tests (raw-byte hash, save-source, fetched version) unchanged.
+- [x] Manual: `uv run agentic-mbse extract --html-path .project/active/arxiv-extraction/ref/2610.14224.html <stamp pdf> -o /tmp/arxiv-p5` (stamp PDF from the phase 3 helper). `grep -c "iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO" /tmp/arxiv-p5/output.md` is 0 (the footer logo, the page's only chrome data URI), and `grep -E "Report Issue|Instructions for reporting errors|major funders" /tmp/arxiv-p5/output.md` finds nothing. `data:image/svg+xml` refs from LaTeXML pictures inside the article are paper content and may remain (invariant 6).
 
 **What we know works after this phase:** both routes emit the paper alone; unrecognized pages fall back visibly; no path puts whole-page arXiv HTML through Pandoc.
 
@@ -592,10 +592,38 @@ Environment setup the numbers depend on, for later sessions:
 - `--check` does not take the flag yet; that is Phase 7 as planned.
 
 ### Phase 5 Completion
-**Completed:**
+**Completed:** 2026-10-18
 **Actual Changes:**
+- `arxiv_html.py`:
+  - New `ArxivSource` (frozen: `raw_bytes`, `html`, `serving_url`). `from_fetch` normalizes the serving URL: a trailing slash after `arxiv.org/html/<id>[vN]` is dropped (B5); other URLs are untouched. `image_base` joins any `<base href>` onto the serving URL.
+  - New `load_arxiv_html(source, *, timeout)`. http(s) strings go through `http.fetch_url`; anything else is read as a local file whose serving URL is its `file://` URI.
+  - The module now imports `http` (stdlib-only) and still never imports `pandoc_convert`.
+- `pandoc_convert.convert_arxiv_html`: now the thin wrapper, `_pandoc_available` → `FileNotFoundError`, then `load_arxiv_html`, then `convert_article`. Signature and return type are unchanged, and it returns the raw fetched bytes. Its bare-`urllib` fetch is gone. Docstring updated.
+- `pipeline._try_arxiv_shortcut`:
+  - Loads through `load_arxiv_html` (the `arxiv_html_path` Path or the probed URL) and converts with `convert_article`.
+  - The `try` now covers only identification, loading and conversion, and catches `ArxivConversionError`, `OSError` (fetch, HTTP and file errors), `UnicodeDecodeError` and `pymupdf.FileDataError` (an unreadable PDF during identification). Each becomes the existing warning. The Phase 2 `except Exception` is gone.
+  - Provenance is built outside the `try` from `source.raw_bytes` and `source.html`, so a bug there raises instead of turning into a warning.
+- `web_backend.py`:
+  - The arXiv branch runs `convert_article` on the (sanitized) page. Its warning now reads `arXiv paper conversion failed (<reason>); used trafilatura instead`.
+  - The whole-page Pandoc fallback (Step 3b) is skipped for arXiv URLs (D16, invariant 11).
+  - Image download resolves against `ArxivSource.from_fetch(fetched).serving_url` instead of the raw `final_url`. The `_convert_document` import is gone, so `_convert_document` is now private to `arxiv_html`. Saved `raw.html` and the hash still use the fetched page.
+- Tests:
+  - `test_arxiv_html.py`: `TestArxivSource` (raw bytes kept, trailing slash dropped on arXiv only, `<base href>` absolute and relative), `TestLoadArxivHtml` (URL through `fetch_url` with timeout and post-redirect URL, local file URI, str path, missing file), and a bs4-gated check that selection survives `strip_hidden_content` on the real fixture.
+  - `test_pandoc_convert.py::TestConvertArxivHtml` rewritten around article-shaped pages. It checks that only the article reaches Pandoc, that the raw bytes include the chrome, that URLs go through `fetch_url`, pre/post-processing, the short-output error, a no-article page raising before Pandoc, and missing Pandoc.
+  - `test_pipeline.py`: the `convert_arxiv_html` stubs are replaced by the fetch boundary (`arxiv_html.fetch_url` serving the real fixture) plus the Pandoc subprocess. The two `RuntimeError("boom")` identity stubs became a realistic `URLError` from the fetch. New `TestShortcutPaperOnly` covers real-Pandoc article-only output from a stamp PDF, no-article fallback with a warning and no Pandoc call, provenance (raw bytes, sha256 and fetched `v1` source URL), and an unreadable PDF warning while base extraction reports the error.
+  - `test_web_backend.py`: real-Pandoc paper-only web output, unrecognized container falling back to trafilatura with the warning in `metrics.json`, arXiv short output never calling `_fallback_pandoc`, a non-arXiv short page still using it, raw bytes and hash equal to the fetched page, and figure refs resolving against the normalized trailing-slash URL.
+- Full suite: 2873 passed, same 3 baseline failures. mypy at 97. ruff clean on touched files. Format hunks are at or below base except that `test_pandoc_convert.py` is now fully formatted; its one pre-existing hunk sat in the class this phase rewrote.
+- Manual: `extract --html-path ref/2610.14224.html <stamp pdf> --budget 0 -o /tmp/arxiv-p5` gives `[pandoc_arxiv]` with 242,611 characters and 15 `##` sections. The footer logo PNG and the chrome strings (`Report Issue`, `Instructions for reporting errors`, `major funders`) occur 0 times. 12 `data:image/svg+xml` refs remain, all LaTeXML pictures inside the article (title logo, diagrams). The investigation's whole-page run had 16 chrome data-image refs.
+
 **Issues:**
+- **Premise issue for D17 on the web route, surfaced for Phase 6.** `html_sanitize.strip_hidden_content` (the web route's default pre-pass) deletes every `<object>` tag as a "dangerous tag" (`html_sanitize.py:36`). It runs before article selection, so on the web route the SVG figure objects D17 rewrites are already gone when `arxiv_html` pre-processing runs. D17 as written would fix the PDF route only. Options for Phase 6: rewrite SVG objects to `<img>` before sanitizing (in `arxiv_html`, applied by the web route ahead of `strip_hidden_content`); or select the article from the raw page and sanitize only the slice with the rewrite first; or exempt `ltx_graphics` SVG objects from the sanitizer. This is a design decision, so it is left to Phase 6 and not resolved here.
+- When an arXiv page's article conversion fails and trafilatura returns nothing, the extraction fails as before (D16). That error result carries no warnings, because `ExtractionResult` error returns never did. The failure itself is reported.
+
 **Deviations:**
+- The web route sanitizes before selecting the article, as the plan expected; the bs4 selection test confirms the article survives sanitizing.
+- `arxiv_html_path` is passed to the loader as a `Path`. A URL given as `--html-path` was never supported, because `Path("https://…")` collapses `//`. This phase doesn't change that.
+- The plan's `test_pipeline.py` migration option "stub `load_arxiv_html` / `convert_article`" was not used. Tests stub the network (`fetch_url`) and Pandoc (`subprocess.run`) boundaries instead, so the loader, selection and pre/post-processing run for real.
+- **For the changelog:** `convert_arxiv_html` now converts only the page's `<article class="ltx_document">` and raises `ArxivConversionError` for a page without one. URLs are fetched through `http.fetch_url`, which honors the response charset and sends the same User-Agent. Web warnings for a failed arXiv conversion now say "arXiv paper conversion failed".
 
 ### Phase 6 Completion
 **Completed:**

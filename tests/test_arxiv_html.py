@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import shutil
 import subprocess
 from pathlib import Path
@@ -12,12 +13,15 @@ import pytest
 from agentic_mbse.extraction.arxiv_html import (
     MIN_CONTENT_CHARS,
     ArxivConversionError,
+    ArxivSource,
     _postprocess_markdown,
     _preprocess_html,
     _run_pandoc,
     convert_article,
+    load_arxiv_html,
     select_article,
 )
+from agentic_mbse.extraction.http import FetchResult
 from agentic_mbse.extraction.web_backend import _MD_IMAGE_RE
 
 FIXTURE = Path(__file__).parent / "fixtures" / "arxiv_2610.14224v1_page.html"
@@ -238,3 +242,92 @@ class TestPostprocessMarkdown:
         md = "# Heading\n\nParagraph with **bold** text."
         result = _postprocess_markdown(md)
         assert result == md
+
+
+def _fetched(content: bytes, final_url: str, encoding: str | None = "utf-8") -> FetchResult:
+    return FetchResult(
+        content=content, final_url=final_url, content_type="text/html", encoding=encoding
+    )
+
+
+class TestArxivSource:
+    def test_from_fetch_keeps_raw_bytes_and_serving_url(self):
+        raw = FIXTURE.read_bytes()
+        source = ArxivSource.from_fetch(_fetched(raw, "https://arxiv.org/html/2610.14224v1"))
+
+        assert source.raw_bytes == raw
+        assert source.html == raw.decode("utf-8")
+        assert source.serving_url == "https://arxiv.org/html/2610.14224v1"
+
+    @pytest.mark.parametrize(
+        ("final_url", "serving_url"),
+        [
+            ("https://arxiv.org/html/2610.14224v1/", "https://arxiv.org/html/2610.14224v1"),
+            ("https://arxiv.org/html/2610.14224/", "https://arxiv.org/html/2610.14224"),
+            ("https://example.com/paper/", "https://example.com/paper/"),
+        ],
+    )
+    def test_from_fetch_strips_trailing_slash_on_arxiv_html_only(self, final_url, serving_url):
+        source = ArxivSource.from_fetch(_fetched(b"<p>x</p>", final_url))
+        assert source.serving_url == serving_url
+
+    def test_image_base_without_base_href_is_serving_url(self):
+        source = ArxivSource.from_fetch(
+            _fetched(b"<p>x</p>", "https://arxiv.org/html/2610.14224v1")
+        )
+        assert source.image_base == "https://arxiv.org/html/2610.14224v1"
+
+    @pytest.mark.parametrize(
+        ("href", "base"),
+        [
+            ("https://cdn.example.org/assets/", "https://cdn.example.org/assets/"),
+            ("figs/", "https://arxiv.org/html/figs/"),
+        ],
+    )
+    def test_image_base_applies_base_href(self, href, base):
+        html = f'<html><head><base href="{href}"></head><body></body></html>'.encode()
+        source = ArxivSource.from_fetch(_fetched(html, "https://arxiv.org/html/2610.14224v1"))
+        assert source.image_base == base
+
+
+class TestLoadArxivHtml:
+    def test_url_goes_through_fetch_url(self):
+        raw = FIXTURE.read_bytes()
+        with patch(
+            "agentic_mbse.extraction.arxiv_html.fetch_url",
+            return_value=_fetched(raw, "https://arxiv.org/html/2610.14224v1/"),
+        ) as fetch:
+            source = load_arxiv_html("https://arxiv.org/html/2610.14224", timeout=7)
+
+        fetch.assert_called_once_with("https://arxiv.org/html/2610.14224", timeout=7)
+        assert source.raw_bytes == raw
+        assert source.serving_url == "https://arxiv.org/html/2610.14224v1"
+
+    def test_local_file_serving_url_is_file_uri(self, tmp_path):
+        page = tmp_path / "paper.html"
+        page.write_bytes(FIXTURE.read_bytes())
+
+        source = load_arxiv_html(page)
+
+        assert source.raw_bytes == FIXTURE.read_bytes()
+        assert source.serving_url == page.resolve().as_uri()
+        assert source.image_base == page.resolve().as_uri()
+
+    def test_local_file_path_as_string(self, tmp_path):
+        page = tmp_path / "paper.html"
+        page.write_text("<p>x</p>", encoding="utf-8")
+        assert load_arxiv_html(str(page)).serving_url == page.resolve().as_uri()
+
+    def test_missing_local_file_raises(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            load_arxiv_html(tmp_path / "missing.html")
+
+
+@pytest.mark.skipif(importlib.util.find_spec("bs4") is None, reason="needs [web] extra")
+def test_selection_survives_web_sanitizer():
+    from agentic_mbse.extraction.html_sanitize import strip_hidden_content
+
+    article = select_article(strip_hidden_content(FIXTURE.read_text(encoding="utf-8")))
+    assert article is not None
+    for s in ["Recursive Agent Harnessing", "</span>Benchmarks</h2>", "ltx_tabular"]:
+        assert s in article

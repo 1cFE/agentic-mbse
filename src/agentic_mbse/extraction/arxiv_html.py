@@ -1,4 +1,4 @@
-"""arXiv HTML to markdown: paper selection and the shared Pandoc runner.
+"""arXiv HTML to markdown: loading, paper selection and the shared Pandoc runner.
 
 arXiv serves each paper as one LaTeXML ``<article class="ltx_document">``
 wrapped in site chrome (header, navigation, issue dialog, footers). Selecting
@@ -13,10 +13,21 @@ from __future__ import annotations
 import re
 import subprocess
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urljoin
+
+from agentic_mbse.extraction.http import DEFAULT_TIMEOUT, FetchResult, fetch_url
 
 # Converted markdown shorter than this is treated as a failed conversion.
 MIN_CONTENT_CHARS = 100
+
+# arXiv's relative figure refs (``<id>vN/<file>``) resolve against the page URL
+# without a trailing slash, so a slash after ``/html/<id>[vN]`` is dropped.
+_ARXIV_HTML_SLASH_RE = re.compile(
+    r"^(https?://(?:www\.)?arxiv\.org/html/\d{4}\.\d{4,5}(?:v\d+)?)/$", re.IGNORECASE
+)
+_BASE_HREF_RE = re.compile(r"""<base\b[^>]*?\bhref\s*=\s*(?:"([^"]*)"|'([^']*)')""", re.IGNORECASE)
 
 _PANDOC_TIMEOUT_SECONDS = 60
 
@@ -27,6 +38,50 @@ _CLASS_ATTR_RE = re.compile(r"""\bclass\s*=\s*(?:"([^"]*)"|'([^']*)')""", re.IGN
 
 class ArxivConversionError(Exception):
     """arXiv HTML could not be converted; ``str(exc)`` is the reason."""
+
+
+# ---------------------------------------------------------------------------
+# Loading
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ArxivSource:
+    """An arXiv HTML page as loaded, before any cleanup."""
+
+    raw_bytes: bytes  # exactly as fetched or read; what provenance hashes and saves
+    html: str  # decoded raw_bytes
+    serving_url: str  # post-redirect http(s) URL (arXiv trailing slash dropped), or file:// URI
+
+    @classmethod
+    def from_fetch(cls, fetched: FetchResult) -> ArxivSource:
+        """Build a source from a fetch, normalizing the arXiv serving URL."""
+        serving_url = _ARXIV_HTML_SLASH_RE.sub(r"\1", fetched.final_url)
+        return cls(raw_bytes=fetched.content, html=fetched.text(), serving_url=serving_url)
+
+    @property
+    def image_base(self) -> str:
+        """The URL image refs resolve against: the serving URL with any ``<base href>``."""
+        m = _BASE_HREF_RE.search(self.html)
+        if m is None:
+            return self.serving_url
+        href: str = m.group(1) or m.group(2)
+        return urljoin(self.serving_url, href)
+
+
+def load_arxiv_html(source: str | Path, *, timeout: int = DEFAULT_TIMEOUT) -> ArxivSource:
+    """Load arXiv HTML from an http(s) URL (via ``fetch_url``) or a local file.
+
+    Network and file errors propagate (``OSError`` subclasses; undecodable
+    bytes raise ``UnicodeDecodeError``).
+    """
+    if isinstance(source, str) and source.startswith(("http://", "https://")):
+        return ArxivSource.from_fetch(fetch_url(source, timeout=timeout))
+    path = Path(source).resolve()
+    raw_bytes = path.read_bytes()
+    return ArxivSource(
+        raw_bytes=raw_bytes, html=raw_bytes.decode("utf-8"), serving_url=path.as_uri()
+    )
 
 
 # ---------------------------------------------------------------------------

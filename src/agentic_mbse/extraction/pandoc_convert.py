@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
-from agentic_mbse.extraction.arxiv_html import _convert_document
+from agentic_mbse.extraction.arxiv_html import convert_article, load_arxiv_html
 from agentic_mbse.extraction.http import USER_AGENT
 
 # Whether the PDF pipeline substitutes a PDF's identified arXiv paper with its
@@ -211,38 +211,29 @@ def convert_arxiv_html(
     html_source: str | Path,
     pandoc_path: str = "pandoc",
 ) -> tuple[str, bytes]:
-    """Convert arXiv HTML to markdown via Pandoc.
+    """Convert the paper in an arXiv HTML page to markdown via Pandoc.
+
+    Only the page's ``<article class="ltx_document">`` is converted; the arXiv
+    chrome around it is dropped.
 
     Args:
         html_source: URL (``https://...``) or local file path.
         pandoc_path: Path to pandoc binary.
 
     Returns:
-        ``(markdown, raw_html_bytes)`` — raw bytes before preprocessing.
+        ``(markdown, raw_html_bytes)`` — raw bytes exactly as fetched or read.
 
     Raises:
         ``FileNotFoundError`` if Pandoc is not installed.
-        ``ArxivConversionError`` if Pandoc fails or times out, or its output is
-        shorter than ``arxiv_html.MIN_CONTENT_CHARS``.
+        ``ArxivConversionError`` if the page has no recognized article, Pandoc
+        fails or times out, or its output is shorter than
+        ``arxiv_html.MIN_CONTENT_CHARS``.
+        ``OSError`` / ``UnicodeDecodeError`` if the page cannot be loaded.
     """
     if not _pandoc_available(pandoc_path):
         raise FileNotFoundError(
             f"Pandoc not found at '{pandoc_path}'. Install with: "
             "apt install pandoc (or brew install pandoc)"
         )
-
-    html_source_str = str(html_source)
-
-    # Download URL to temp file if needed
-    if html_source_str.startswith(("http://", "https://")):
-        req = urllib.request.Request(html_source_str)
-        req.add_header("User-Agent", USER_AGENT)
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            raw_bytes = resp.read()
-            raw_html = raw_bytes.decode("utf-8")
-    else:
-        p = Path(html_source_str)
-        raw_bytes = p.read_bytes()
-        raw_html = raw_bytes.decode("utf-8")
-
-    return _convert_document(raw_html, pandoc_path), raw_bytes
+    source = load_arxiv_html(html_source)
+    return convert_article(source.html, pandoc_path), source.raw_bytes

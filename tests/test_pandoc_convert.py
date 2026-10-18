@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from agentic_mbse.extraction.arxiv_html import MIN_CONTENT_CHARS, ArxivConversionError
+from agentic_mbse.extraction.http import FetchResult
 from agentic_mbse.extraction.pandoc_convert import (
     _pandoc_available,
     check_arxiv_html,
@@ -131,90 +132,114 @@ class TestCheckArxivHtml:
         assert result is None
 
 
+def _article_page(body: str) -> str:
+    """An arXiv-shaped page: chrome around one LaTeXML article."""
+    return (
+        "<html><body><nav>Site navigation</nav>"
+        f'<article class="ltx_document">{body}</article>'
+        "<footer>Site footer</footer></body></html>"
+    )
+
+
+def _pandoc_seeing(stdout: str, seen: list[str]):
+    """A subprocess.run stand-in that records the HTML handed to Pandoc."""
+
+    def run(cmd, **kwargs):
+        seen.append(Path(cmd[1]).read_text(encoding="utf-8"))
+        return MagicMock(returncode=0, stdout=stdout, stderr="")
+
+    return run
+
+
+@patch("agentic_mbse.extraction.pandoc_convert._pandoc_available", return_value=True)
 class TestConvertArxivHtml:
-    @patch("agentic_mbse.extraction.pandoc_convert._pandoc_available")
-    @patch("subprocess.run")
-    def test_local_file_conversion(self, mock_run, mock_available, tmp_path):
-        mock_available.return_value = True
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="# Heading\n\nConverted content\n" + _PADDING,
-            stderr="",
-        )
-
+    def test_local_file_converts_only_the_article(self, _available, tmp_path):
+        page = _article_page("<h1>Heading</h1><p>Content</p>")
         html_file = tmp_path / "test.html"
-        html_file.write_text("<h1>Heading</h1><p>Content</p>")
+        html_file.write_text(page, encoding="utf-8")
+        seen: list[str] = []
 
-        markdown, raw_bytes = convert_arxiv_html(html_file)
+        with patch(
+            "subprocess.run",
+            side_effect=_pandoc_seeing("# Heading\n\nConverted\n" + _PADDING, seen),
+        ):
+            markdown, raw_bytes = convert_arxiv_html(html_file)
 
-        assert "Converted content" in markdown
-        assert raw_bytes == b"<h1>Heading</h1><p>Content</p>"
-        mock_run.assert_called_once()
-        # Verify Pandoc flags
-        cmd = mock_run.call_args[0][0]
-        assert "-f" in cmd
-        assert "html-native_divs-native_spans" in cmd
-        assert "--wrap=none" in cmd
-        assert "--markdown-headings=atx" in cmd
+        assert markdown.startswith("# Heading\n\nConverted")
+        assert raw_bytes == page.encode("utf-8")  # raw bytes, chrome included
+        [sent] = seen
+        assert "<h1>Heading</h1>" in sent
+        assert "Site navigation" not in sent and "Site footer" not in sent
 
-    @patch("agentic_mbse.extraction.pandoc_convert._pandoc_available")
-    @patch("subprocess.run")
-    def test_preprocessing_applied(self, mock_run, mock_available, tmp_path):
-        mock_available.return_value = True
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="Clean output\n" + _PADDING,
-            stderr="",
+    def test_url_is_fetched_through_fetch_url(self, _available):
+        page = _article_page("<p>Content</p>").encode("utf-8")
+        fetched = FetchResult(
+            content=page, final_url="https://arxiv.org/html/2610.14224v1", content_type="text/html"
         )
+        with (
+            patch("agentic_mbse.extraction.arxiv_html.fetch_url", return_value=fetched) as fetch,
+            patch(
+                "subprocess.run", return_value=MagicMock(returncode=0, stdout=_PADDING, stderr="")
+            ),
+        ):
+            markdown, raw_bytes = convert_arxiv_html("https://arxiv.org/html/2610.14224")
 
+        fetch.assert_called_once()
+        assert fetch.call_args.args == ("https://arxiv.org/html/2610.14224",)
+        assert markdown == _PADDING
+        assert raw_bytes == page
+
+    def test_preprocessing_applied(self, _available, tmp_path):
         html_file = tmp_path / "test.html"
-        html_file.write_text(
-            '<figure class="ltx"><img src="x"></figure><p>Text</p>'
-        )
+        html_file.write_text(_article_page('<figure class="ltx"><img src="x"></figure><p>Text</p>'))
+        seen: list[str] = []
 
-        convert_arxiv_html(html_file)
+        with patch("subprocess.run", side_effect=_pandoc_seeing("Clean output\n" + _PADDING, seen)):
+            convert_arxiv_html(html_file)
 
-        # The temp file passed to Pandoc should have figure tags stripped
-        # (we can't easily inspect the temp file, but we can verify the
-        # function completes without error)
-        mock_run.assert_called_once()
+        assert "<figure" not in seen[0] and '<img src="x">' in seen[0]
 
-    @patch("agentic_mbse.extraction.pandoc_convert._pandoc_available")
-    @patch("subprocess.run")
-    def test_postprocessing_applied(self, mock_run, mock_available, tmp_path):
-        mock_available.return_value = True
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="Text\\hspace{0pt}more `<!-- -->`{=html}end\n" + _PADDING,
-            stderr="",
-        )
-
+    def test_postprocessing_applied(self, _available, tmp_path):
         html_file = tmp_path / "test.html"
-        html_file.write_text("<p>content</p>")
+        html_file.write_text(_article_page("<p>content</p>"))
+        stdout = "Text\\hspace{0pt}more `<!-- -->`{=html}end\n" + _PADDING
 
-        markdown, _raw_bytes = convert_arxiv_html(html_file)
+        with patch(
+            "subprocess.run", return_value=MagicMock(returncode=0, stdout=stdout, stderr="")
+        ):
+            markdown, _raw_bytes = convert_arxiv_html(html_file)
 
         assert "\\hspace{0pt}" not in markdown
         assert "`<!-- -->`{=html}" not in markdown
 
-    @patch("agentic_mbse.extraction.pandoc_convert._pandoc_available")
-    @patch("subprocess.run")
-    def test_short_output_raises(self, mock_run, mock_available, tmp_path):
-        mock_available.return_value = True
-        mock_run.return_value = MagicMock(returncode=0, stdout="Tiny\n", stderr="")
-
+    def test_short_output_raises(self, _available, tmp_path):
         html_file = tmp_path / "test.html"
-        html_file.write_text("<p>content</p>")
+        html_file.write_text(_article_page("<p>content</p>"))
 
-        with pytest.raises(ArxivConversionError, match="too short"):
+        with (
+            patch(
+                "subprocess.run", return_value=MagicMock(returncode=0, stdout="Tiny\n", stderr="")
+            ),
+            pytest.raises(ArxivConversionError, match="too short"),
+        ):
             convert_arxiv_html(html_file)
 
-    @patch("agentic_mbse.extraction.pandoc_convert._pandoc_available")
+    def test_page_without_article_raises_before_pandoc(self, _available, tmp_path):
+        html_file = tmp_path / "test.html"
+        html_file.write_text("<html><body><p>whole page, no article</p></body></html>")
+
+        with (
+            patch("subprocess.run") as run,
+            pytest.raises(ArxivConversionError, match="no recognized arXiv article"),
+        ):
+            convert_arxiv_html(html_file)
+        run.assert_not_called()
+
     def test_pandoc_not_available(self, mock_available, tmp_path):
         mock_available.return_value = False
 
         html_file = tmp_path / "test.html"
-        html_file.write_text("<p>content</p>")
+        html_file.write_text(_article_page("<p>content</p>"))
 
         with pytest.raises(FileNotFoundError, match="Pandoc not found"):
             convert_arxiv_html(html_file)

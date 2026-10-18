@@ -12,12 +12,15 @@ Mocking strategy:
 
 from __future__ import annotations
 
+import shutil
+import urllib.error
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from agentic_mbse.extraction import pandoc_convert
+from agentic_mbse.extraction.http import FetchResult
 from agentic_mbse.extraction.pandoc_convert import ArxivIdentity, resolve_arxiv_shortcut
 from agentic_mbse.extraction.pipeline import (
     EnhancerBudget,
@@ -43,6 +46,14 @@ from tests.helpers.arxiv_pdfs import CITATION, OTHER_STAMP, STAMP, make_pdf
 
 # A stubbed identity: the PDF's own margin stamp names this paper.
 _STAMPED = ArxivIdentity("2301.12345", ("stamp",))
+
+# Stubbed Pandoc output, long enough to pass the minimum-content check.
+_PAPER_MD = "# arXiv Paper\n\n" + "Content. " * 20
+
+
+def _pandoc_returns(markdown: str):
+    """Stub the Pandoc subprocess boundary to return *markdown*."""
+    return patch("subprocess.run", return_value=MagicMock(returncode=0, stdout=markdown, stderr=""))
 
 
 def _page(num: int, md: str = "# Page\n\nSome text content here.") -> PageResult:
@@ -163,12 +174,13 @@ class TestExtractPdfArxivShortcut:
             _patch_pandoc_available(),
             patch(f"{_PANDOC}.identify_arxiv_paper", return_value=_STAMPED),
             patch(f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2301.12345"),
-            patch(f"{_PANDOC}.convert_arxiv_html", return_value=("# arXiv Paper\n\nContent.", b"<html>raw</html>")),
+            _served_page(),
+            _pandoc_returns(_PAPER_MD),
             _patch_base() as mock_base,
         ):
             result = extract_pdf(Path("/fake.pdf"))
         assert result.source == "pandoc_arxiv"
-        assert result.markdown == "# arXiv Paper\n\nContent."
+        assert result.markdown == _PAPER_MD
         assert result.error is None
         assert result.decisions == []
         mock_base.assert_not_called()
@@ -234,12 +246,12 @@ class TestExtractPdfArxivShortcut:
 
     def test_explicit_html_path_overrides_autodetect(self):
         """config.arxiv_html_path skips identify_arxiv_paper + check_arxiv_html."""
-        cfg = PipelineConfig(arxiv_html_path=Path("/tmp/paper.html"))
+        cfg = PipelineConfig(arxiv_html_path=_ARXIV_PAGE)
         with (
             _patch_pandoc_available(),
             patch(f"{_PANDOC}.identify_arxiv_paper") as mock_detect,
             patch(f"{_PANDOC}.check_arxiv_html") as mock_check,
-            patch(f"{_PANDOC}.convert_arxiv_html", return_value=("# From HTML\n\nText.", b"<html>raw</html>")),
+            _pandoc_returns(_PAPER_MD),
             _patch_base(),
         ):
             result = extract_pdf(Path("/fake.pdf"), cfg)
@@ -248,10 +260,12 @@ class TestExtractPdfArxivShortcut:
         mock_check.assert_not_called()
 
     def test_arxiv_shortcut_error_falls_through(self):
-        """Exception in arXiv path → PDF extraction continues."""
+        """HTML fetch fails → PDF extraction continues, with the reason as a warning."""
         with (
             _patch_pandoc_available(),
-            patch(f"{_PANDOC}.identify_arxiv_paper", side_effect=RuntimeError("boom")),
+            patch(f"{_PANDOC}.identify_arxiv_paper", return_value=_STAMPED),
+            patch(f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2301.12345"),
+            _served_page(side_effect=urllib.error.URLError("boom")),
             _patch_base() as mock_base,
             _patch_tables(),
             _patch_claude_page(),
@@ -267,7 +281,9 @@ class TestExtractPdfArxivShortcut:
         """Base extraction fails after the shortcut fell back → error result keeps the warning."""
         with (
             _patch_pandoc_available(),
-            patch(f"{_PANDOC}.identify_arxiv_paper", side_effect=RuntimeError("boom")),
+            patch(f"{_PANDOC}.identify_arxiv_paper", return_value=_STAMPED),
+            patch(f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2301.12345"),
+            _served_page(side_effect=urllib.error.URLError("boom")),
             patch(f"{_P}.extract_pages", side_effect=RuntimeError("corrupt PDF")),
         ):
             result = extract_pdf(Path("/fake.pdf"))
@@ -296,14 +312,19 @@ def _real_pdf_config(**overrides) -> PipelineConfig:
     return PipelineConfig(enable_claude=False, enable_tables=False, enable_equations=False, **overrides)
 
 
-def _served_page():
-    """Stub the arXiv HTML fetch (network boundary) with the real fixture page."""
-    page = (Path(__file__).parent / "fixtures" / "arxiv_2610.14224v1_page.html").read_bytes()
-    resp = MagicMock()
-    resp.read.return_value = page
-    resp.__enter__ = MagicMock(return_value=resp)
-    resp.__exit__ = MagicMock(return_value=False)
-    return patch(f"{_PANDOC}.urllib.request.urlopen", return_value=resp)
+_ARXIV_PAGE = Path(__file__).parent / "fixtures" / "arxiv_2610.14224v1_page.html"
+
+
+def _served_page(**patch_kwargs):
+    """Stub the arXiv HTML fetch (network boundary); by default it serves the real fixture page."""
+    if not patch_kwargs:
+        patch_kwargs["return_value"] = FetchResult(
+            content=_ARXIV_PAGE.read_bytes(),
+            final_url="https://arxiv.org/html/2610.14224",
+            content_type="text/html",
+            encoding="utf-8",
+        )
+    return patch("agentic_mbse.extraction.arxiv_html.fetch_url", **patch_kwargs)
 
 
 def _run_shortcut(pdf: Path, **config):
@@ -369,6 +390,71 @@ class TestArxivIdentityInPipeline:
         result, head, _run = self._run(pdf, pdf_source_url="https://arxiv.org/pdf/2610.14224v1")
         head.assert_called_once_with("2610.14224v1")
         assert result.source == "pandoc_arxiv"
+
+
+class TestShortcutPaperOnly:
+    """The PDF shortcut converts only the article and keeps fetched-byte provenance."""
+
+    @pytest.mark.skipif(shutil.which("pandoc") is None, reason="needs Pandoc")
+    def test_converts_article_only_with_real_pandoc(self, tmp_path):
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        with (
+            _patch_pandoc_available(),
+            patch(f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2610.14224"),
+            _served_page(),
+        ):
+            result = extract_pdf(pdf, _real_pdf_config())
+
+        assert result.source == "pandoc_arxiv"
+        assert result.warnings == []
+        for s in ["## 1 Introduction", "## References", "## Appendix B Benchmarks"]:
+            assert s in result.markdown
+        for s in ["Report Issue", "major funders", "09 Oct 2026", "iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO"]:
+            assert s not in result.markdown, f"chrome {s!r} in output"
+
+    def test_page_without_article_falls_back_with_warning(self, tmp_path):
+        page = _ARXIV_PAGE.read_text().replace("<article ", "<div ").replace("</article>", "</div>")
+        served = FetchResult(
+            content=page.encode("utf-8"),
+            final_url="https://arxiv.org/html/2610.14224",
+            content_type="text/html",
+        )
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        with (
+            _patch_pandoc_available(),
+            patch(f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2610.14224"),
+            _served_page(return_value=served),
+            patch("subprocess.run") as pandoc,
+        ):
+            result = extract_pdf(pdf, _real_pdf_config())
+
+        pandoc.assert_not_called()
+        assert result.source == "pdf_pipeline"
+        assert "own text about magnets" in result.markdown
+        [warning] = result.warnings
+        assert "no recognized arXiv article container" in warning
+
+    def test_provenance_is_the_fetched_page(self, tmp_path):
+        """Invariant 1: hash and saved bytes are the fetched page, not the article slice."""
+        import hashlib
+
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        result, _head, _run = _run_shortcut(pdf, save_source=True)
+
+        raw = _ARXIV_PAGE.read_bytes()
+        assert result.raw_source_bytes == raw
+        assert result.content_hash == hashlib.sha256(raw).hexdigest()
+        assert result.source_url == "https://arxiv.org/html/2610.14224v1"  # fetched version
+
+    def test_unreadable_pdf_falls_back_and_base_extraction_reports_it(self, tmp_path):
+        bad = tmp_path / "bad.pdf"
+        bad.write_bytes(b"not a pdf")
+        with _patch_pandoc_available():
+            result = extract_pdf(bad, _real_pdf_config())
+
+        assert result.error is not None
+        [warning] = result.warnings
+        assert warning.startswith("arXiv HTML shortcut failed")
 
 
 class TestShortcutControl:
@@ -934,7 +1020,8 @@ class TestExtractPdfStepOrdering:
             _patch_pandoc_available(),
             patch(f"{_PANDOC}.identify_arxiv_paper", side_effect=track_arxiv),
             patch(f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2301.12345"),
-            patch(f"{_PANDOC}.convert_arxiv_html", return_value=("# Paper", b"<html>raw</html>")),
+            _served_page(),
+            _pandoc_returns(_PAPER_MD),
             patch(f"{_P}.extract_pages", side_effect=track_base),
             _patch_tables(),
         ):
@@ -1663,10 +1750,8 @@ class TestPipelineProfiling:
                 f"{_PANDOC}.check_arxiv_html",
                 return_value="https://arxiv.org/html/2301.12345",
             ),
-            patch(
-                f"{_PANDOC}.convert_arxiv_html",
-                return_value=("# arXiv Paper\n\nContent.", b"<html>raw</html>"),
-            ),
+            _served_page(),
+            _pandoc_returns(_PAPER_MD),
         ):
             result = extract_pdf(Path("/fake.pdf"), config=config)
 

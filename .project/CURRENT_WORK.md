@@ -11,7 +11,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
-- ARXIV-EXTRACTION — [spec](active/arxiv-extraction/spec.md), [design](active/arxiv-extraction/design.md), [plan](active/arxiv-extraction/plan.md). Implementation in progress: Phases 0–2 done 2026-10-18 (baseline, paper boundary and shared Pandoc runner, warnings channel). Branch `fix/arxiv-extraction`, worktree `/home/reid/src/agentic-mbse-worktrees/arxiv-extraction`, base local `main` (`8b027bbc`). Next: Phase 3 (trusted identity). Open before Phase 6: Pandoc drops LaTeXML SVG `<object>` figures (4 of 9 on 2610.14224), against design bet B4; see the plan's Phase 1 Issues. Priority not assigned.
+- ARXIV-EXTRACTION — [spec](active/arxiv-extraction/spec.md), [design](active/arxiv-extraction/design.md), [plan](active/arxiv-extraction/plan.md). Implementation in progress: Phases 0–5 done 2026-10-18 (baseline, paper boundary and shared Pandoc runner, warnings channel, trusted identity, `--no-arxiv-shortcut` with the default in one constant, paper-only conversion in both routes). Branch `fix/arxiv-extraction`, worktree `/home/reid/src/agentic-mbse-worktrees/arxiv-extraction`, base local `main` (`8b027bbc`). Next: Phase 6 (image persistence, including design amendment D17 for SVG `<object>` figures). Open before Phase 6: the web sanitizer deletes every `<object>` before D17's rewrite can run, so D17 as written fixes only the PDF route; see the plan's Phase 5 Issues. Priority not assigned.
 
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 

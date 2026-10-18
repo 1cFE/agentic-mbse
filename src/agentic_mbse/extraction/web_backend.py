@@ -24,8 +24,9 @@ from urllib.parse import urljoin, urlparse
 from agentic_mbse.extraction.arxiv_html import (
     MIN_CONTENT_CHARS,
     ArxivConversionError,
-    _convert_document,
+    ArxivSource,
     _run_pandoc,
+    convert_article,
 )
 from agentic_mbse.extraction.base import ExtractionResult, sanitize_filename
 from agentic_mbse.extraction.frontmatter import build_frontmatter, compute_source_hash
@@ -319,24 +320,26 @@ def extract_web_content(
 
         html = strip_hidden_content(html)
 
-    # Step 3: Extract — route arXiv HTML through Pandoc (proven pipeline),
-    # everything else through trafilatura with Pandoc fallback.
+    # Step 3: Extract — arXiv HTML converts only the paper's article element
+    # through Pandoc; everything else goes through trafilatura with a
+    # whole-page Pandoc fallback.
     markdown: str | None = None
     metadata: dict = {}
     backend = "trafilatura"
     extraction_warnings: list[str] = []
+    is_arxiv = _is_arxiv_html_url(final_url)
 
-    if _is_arxiv_html_url(final_url):
-        log.info("arXiv HTML detected, using Pandoc extraction pipeline")
+    if is_arxiv:
+        log.info("arXiv HTML detected, converting the paper with Pandoc")
         try:
-            markdown = _convert_document(html)
+            markdown = convert_article(html)
             backend = "pandoc-arxiv"
             # Still grab metadata from trafilatura (title, author, date)
             _, metadata = _extract_with_trafilatura(html, final_url)
         except ArxivConversionError as exc:
-            log.warning("Pandoc arXiv extraction failed (%s), falling back to trafilatura", exc)
+            log.warning("arXiv paper conversion failed (%s), falling back to trafilatura", exc)
             extraction_warnings.append(
-                f"arXiv Pandoc conversion failed ({exc}); used trafilatura instead"
+                f"arXiv paper conversion failed ({exc}); used trafilatura instead"
             )
             markdown = None  # fall through to trafilatura below
 
@@ -344,8 +347,10 @@ def extract_web_content(
         markdown, metadata = _extract_with_trafilatura(html, final_url)
         backend = "trafilatura"
 
-    # Step 3b: Fallback to pandoc if trafilatura returned too little
-    if not markdown or len(markdown) < MIN_CONTENT_CHARS:
+    # Step 3b: Fallback to whole-page Pandoc if trafilatura returned too little.
+    # Never for arXiv: the whole page is exactly the chrome the article
+    # selection exists to drop, so a short trafilatura result stands.
+    if not is_arxiv and (not markdown or len(markdown) < MIN_CONTENT_CHARS):
         log.info(
             "trafilatura returned %d chars, trying pandoc fallback",
             len(markdown or ""),
@@ -414,7 +419,7 @@ def extract_web_content(
     image_count = 0
     if backend == "pandoc-arxiv":
         full_markdown, image_count, image_warnings = _download_arxiv_images(
-            full_markdown, final_url, output_dir
+            full_markdown, ArxivSource.from_fetch(fetched).serving_url, output_dir
         )
         extraction_warnings.extend(image_warnings)
 
