@@ -1,6 +1,6 @@
 # Implementation Plan: Positional-binding hazard and check (EXEC-SUBSET-CONTRACT Item 4)
 
-**Status:** Implementation in progress (Phases 1-3 done)
+**Status:** Implementation in progress (Phases 1-6 done)
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `positional-binding-check` (base `main` at `ccd57d83`)
@@ -531,39 +531,39 @@ def test_fusion_tea_matches_the_prototype_identities():
 
 #### 1. Reference builder
 **Files:** `scripts/positional_binding/build_reference.py` (NEW), `tests/fixtures/positional_binding/baselines/fusion-tea-f96ad312.toml` (NEW, generated, committed)
-- [ ] Parse `04-detector-tree-fusion-tea.log` only, per Appendix B "Reference file". Target names carry inner quotes (`'integrated_heat_electricity::'Network Heat Driven Closure'::divertor_available_in'`): take the text between the first `'` after "redefines " and the `' by position` suffix.
-- [ ] Assert 125 entries, 125 distinct identities, 9 distinct files, and that each input's last segment equals its declared name. Write the TOML with `revision = "f96ad312c63e8c66695971b12feab971f3ba6eb3"` and `date = 2026-10-15`.
-- [ ] Reference test (stencil above).
+- [x] Parse `04-detector-tree-fusion-tea.log` only, per Appendix B "Reference file". Target names carry inner quotes (`'integrated_heat_electricity::'Network Heat Driven Closure'::divertor_available_in'`): take the text between the first `'` after "redefines " and the `' by position` suffix.
+- [x] Assert 125 entries, 125 distinct identities, 9 distinct files, and that each input's last segment equals its declared name. Write the TOML with `revision = "f96ad312c63e8c66695971b12feab971f3ba6eb3"` and `date = 2026-10-15`.
+- [x] Reference test (stencil above).
 
 #### 2. Reproduction script
 **File:** `scripts/positional_binding/run_trees.py` (NEW), following `scripts/subset_profile/run_trees.py` and importing `export_tree`, `git`, `resolve_rev`, `sibling_state` from `scripts/subset_profile/probe.py`
-- [ ] Record each sibling's HEAD and status before and after; fail if either changed (I7).
-- [ ] fusion-tea Runs 0, 1, 2, 3 exactly as Appendix B. Run 0 asserts `agentic_mbse.__file__` resolves inside the archived `ccd57d83` `src/` (D17). Run 3's marker step uses the Phase 1 finding.
-- [ ] Assert Run 1's non-positional issues equal Run 0's issues.
-- [ ] Compare Run 2's identities with the reference: itemize added, missing, changed target. Compare outcome counts with the prototype (`implicit_matching` 5,573, `implicit_mismatch` 125, `new_parameter` 1,956). Zero inspected inputs fails the run (Insp-3).
-- [ ] Record fusion-tea's L2 success and issue counts by code for Run 0 (without the check), Run 1 (with the check, no pins) and Run 2 (with pins). This is the R4-3 evidence: what moving fusion-tea's agentic-mbse pin would do, and whether the pin list alone would let its L2 pass.
-- [ ] Mutation and stale runs, each on a fresh copy with Run 2's override options; site selection by the stated source-text rules, written to evidence before the check runs.
-- [ ] dc3 `808464d` and `60b44d5`: no pin options; 0 findings, 0 unverifiable; compare `implicit_matching` with 302 and 391.
-- [ ] Write `evidence/run-trees.md` and `evidence/run-trees.json` with every revision (this checkout, fusion-tea, both dc3) and the SysIDE version.
+- [x] Record each sibling's HEAD and status before and after; fail if either changed (I7).
+- [x] fusion-tea Runs 0, 1, 2, 3 exactly as Appendix B. Run 0 asserts `agentic_mbse.__file__` resolves inside the archived `ccd57d83` `src/` (D17). Run 3's marker step uses the Phase 1 finding.
+- [x] Assert Run 1's non-positional issues equal Run 0's issues.
+- [x] Compare Run 2's identities with the reference: itemize added, missing, changed target. Compare outcome counts with the prototype (`implicit_matching` 5,573, `implicit_mismatch` 125, `new_parameter` 1,956). Zero inspected inputs fails the run (Insp-3).
+- [x] Record fusion-tea's L2 success and issue counts by code for Run 0 (without the check), Run 1 (with the check, no pins) and Run 2 (with pins). This is the R4-3 evidence: what moving fusion-tea's agentic-mbse pin would do, and whether the pin list alone would let its L2 pass.
+- [x] Mutation and stale runs, each on a fresh copy with Run 2's override options; site selection by the stated source-text rules, written to evidence before the check runs.
+- [x] dc3 `808464d` and `60b44d5`: no pin options; 0 findings, 0 unverifiable; compare `implicit_matching` with 302 and 391.
+- [x] Write `evidence/run-trees.md` and `evidence/run-trees.json` with every revision (this checkout, fusion-tea, both dc3) and the SysIDE version.
 
 #### 3. Slow test
 **File:** `tests/test_validation/test_positional_binding_trees.py` (NEW)
-- [ ] Per Appendix B "Slow test". Skip reason names the missing variable. The evidence states whether it ran or skipped; a skip is never reported as a pass (Base-3).
+- [x] Per Appendix B "Slow test". Skip reason names the missing variable. The evidence states whether it ran or skipped; a skip is never reported as a pass (Base-3).
 
 #### 4. Generated side of the counterexample
 **Files:** `.project/active/positional-binding-check/evidence/cross-route/eval_generated.py` (NEW), `evidence/cross-route/eval_generated.log` (NEW)
-- [ ] Run with the dc3 venv (codegen `b5663c07`, TEAx `8d877460`) on the retained `gen_reversed/` and `gen_byname/` copies. Record both versions and both results (expected 7 and 7). No agentic-mbse code or test imports sysml-codegen (I7). If the environment cannot be found, record that and surface it; XR-2 stays open.
+- [x] Run with the dc3 venv (codegen `b5663c07`, TEAx `8d877460`) on the retained `gen_reversed/` and `gen_byname/` copies. Record both versions and both results (expected 7 and 7). No agentic-mbse code or test imports sysml-codegen (I7). If the environment cannot be found, record that and surface it; XR-2 stays open.
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_validation/test_positional_binding_reference.py` → pass
-- [ ] `POSITIONAL_BINDING_FUSION_TEA_REPO=/home/reid/src/fusion-tea POSITIONAL_BINDING_DC3_REPO=/home/reid/src/dc3 uv run pytest tests/test_validation/test_positional_binding_trees.py -m slow` → pass
-- [ ] G1, G2, G3 (scripts included)
+- [x] `uv run pytest tests/test_validation/test_positional_binding_reference.py` → pass
+- [x] `POSITIONAL_BINDING_FUSION_TEA_REPO=/home/reid/src/fusion-tea POSITIONAL_BINDING_DC3_REPO=/home/reid/src/dc3 uv run pytest tests/test_validation/test_positional_binding_trees.py -m slow` → pass
+- [x] G1, G2, G3 (scripts included)
 
 **Manual:**
-- [ ] `uv run python scripts/positional_binding/run_trees.py --final-rev <HEAD>` → `evidence/run-trees.md` shows: 125 WARNINGs, 0 positional ERRORs, 0 unverifiable, 0 stale for Run 2; Run 3 equal to Run 2; dc3 zeros; mutation gives one or more new ERRORs and L2 fails; stale gives exactly one stale pin, no new ERROR of any code, and L2 fails.
-- [ ] `git -C /home/reid/src/fusion-tea status --short` and the same for dc3 and sysml-codegen → unchanged from before the run.
+- [x] `uv run python scripts/positional_binding/run_trees.py --final-rev <HEAD>` → `evidence/run-trees.md` shows: 125 WARNINGs, 0 positional ERRORs, 0 unverifiable, 0 stale for Run 2; Run 3 equal to Run 2; dc3 zeros; mutation gives one or more new ERRORs and L2 fails; stale gives exactly one stale pin, no new ERROR of any code, and L2 fails.
+- [x] `git -C /home/reid/src/fusion-tea status --short` and the same for dc3 and sysml-codegen → unchanged from before the run.
 
 **STOP condition.** If Run 2's identities differ from the reference in any way, or either dc3 tree has a finding or unverifiable result, stop here. Apply the premise-surprise rule. Do not start Phase 7. Differences in inspected-input counts alone are explained in the evidence, and do not stop the run unless they come with an identity difference.
 
@@ -845,6 +845,35 @@ See `design.md#potential-risks` for the full list. Phase-specific mitigations:
 - The CLI tests sit in `test_positional_binding_policy.py` beside the other L2 tests, calling `agentic_mbse.cli.main`; `test_cli.py` changed only as above. `test_positional_binding.py` needed no Phase 5 change.
 
 ### Phase 6 Completion
+**Completed:** 2026-10-18. Premise check holds; no stop.
+
+**Changes Made:**
+- `scripts/positional_binding/build_reference.py` and `tests/fixtures/positional_binding/baselines/fusion-tea-f96ad312.toml` (generated from `04-detector-tree-fusion-tea.log` only): 125 entries, 125 distinct identities, 9 files, `revision = f96ad312c63e8c66695971b12feab971f3ba6eb3`, `date = 2026-10-15`. `tests/test_validation/test_positional_binding_reference.py` (4 tests) rebuilds it and compares bytes.
+- `scripts/positional_binding/run_trees.py`: Runs 0-3, mutation, stale, both dc3 trees, sibling state before and after. Wrote `evidence/run-trees.md`, `run-trees.json` and `run-trees-sites.md` (sites written before each check ran). Ran at `--final-rev b2bb99bb` (Phase 5 commit; `src/` clean, and Phase 6 changes nothing in `src/`). 27 of 27 checks pass.
+- `tests/test_validation/test_positional_binding_trees.py` (`-m slow`): without the variables, 3 skipped with "POSITIONAL_BINDING_FUSION_TEA_REPO not set" / "POSITIONAL_BINDING_DC3_REPO not set"; with both set, 3 passed (39 s).
+- `evidence/cross-route/eval_generated.py` and `eval_generated.log` (XR-2): sysml-codegen `b5663c07` and TEAx `8d877460`, each exported with `git archive` and imported from the export (asserted), with dc3's venv interpreter. Generated `gen_byname` = 7.0, `gen_reversed` = 7.0; natively they are 7 and -7 (Phase 1). Both checkouts unchanged.
+- G1: 6 failed (the baseline 6) / 3917 passed. G2 clean on all touched files. G3: `mypy src/` 97; the scripts and tests clean (`run_trees.py` with `MYPYPATH=scripts/subset_profile`, as its `probe` import needs).
+
+**Results (premise check):**
+- fusion-tea Run 2 identities equal the reference: 0 added, 0 missing, 0 changed target. 125 WARNINGs, 0 positional ERRORs, 0 unverifiable, 0 stale, 0 unpinnable. Outcome counts equal the prototype exactly: implicit_matching 5,573, implicit_mismatch 125, new_parameter 1,956; 7,654 inputs inspected.
+- dc3 `808464d`: 0 findings, 0 unverifiable, 357 inspected, implicit_matching 302 (prototype 302). dc3 `60b44d5`: 0, 0, 528, 391 (prototype 391). Both pass L2.
+- Run 0's `agentic_mbse` resolved inside the archived `ccd57d83` `src/`. Run 1's non-positional issues equal Run 0's (340). Run 1 found the export's root (all three markers present, per Phase 1) and no pin file. Run 3 discovered `<root>/positional-pins.toml` and equals Run 2 (issues compared with each export's path replaced). No marker was created.
+- Mutation: `models/designs/aries_cs_integrated/plant.sysml` lines 20-21 (`calculated_power_in`, `reference_power_in` under `'Fusion Source Selector'`) swapped: 2 new ERROR identities, pin list unchanged, L2 fails.
+- Stale: the first pinned input with a right-hand side other than its own name, `aries_constituent_inventory::behind_divertor::recipe | fraction_1_in | ...::fraction_2_in` at `constituent_inventory.sysml:138`, rewritten to `in :>> fraction_1_in = lipb.volume_fraction;`: exactly that pin stale, the other 124 matched, no new ERROR of any other code, L2 fails.
+- Siblings (fusion-tea, dc3, sysml-codegen) unchanged before and after.
+
+**fusion-tea L2, the evidence for the owner's R4-3 call:**
+- Run 0, without the check (`ccd57d83`): L2 **fails**, 331 `LITERAL_BINDING` and 9 `UNUSED_DEFINITION` warnings (any warning fails L2).
+- Run 1, with the check and no pins: L2 fails; the same 340 plus 125 `L2_POSITIONAL_BINDING` ERRORs.
+- Run 2, with the check and the pin list: L2 fails; the same 340 plus 125 pinned WARNINGs. The pin list alone would not let fusion-tea's L2 pass; its L2 already fails on the 340 other warnings. Moving the agentic-mbse pin without a pin list adds 125 blocking ERRORs.
+
+**Issues:**
+- fusion-tea's archive holds 64 absolute symlinks into `/tmp` (under `.project`, `archive`, `exploration`, `work`), and Item 1's `probe.export_tree` aborts on any absolute link outside `.claude/`. `run_trees.py` therefore has its own whole-tree export, the same as `probe.export_tree` except that it skips absolute links outside `models/` and lists them (count in `run-trees.md`, each in the JSON). One under `models/` aborts. `git`, `resolve_rev` and `sibling_state` still come from `probe.py`.
+- dc3's venv imports sysml-codegen from its checkout, now at `8396cb23`, not the pinned `b5663c07`, and would write bytecode there. The cross-route script exports both pinned revisions and imports from the exports instead of running from the checkout as `04-eval.py` did.
+
+**Deviations:**
+- Mutation site rule: a definition's input line is `in <name>` or `in attribute <name>`; fusion-tea writes the latter, so the literal `in <name>` matched no site on the first run. Only site selection changed, before any check ran on the mutated copy; the rule now reads "two adjacent `in <name>` lines immediately after the usage line".
+- The slow test lives beside the script and imports its helpers, so the comparison is written once.
 
 ### Phase 7 Completion
 

@@ -1,0 +1,13 @@
+sysml-codegen b5663c07e987a892e27d21e68cec40d0656574ee (exported; checkout HEAD 8396cb230448ea151b08e2d5bb55d65817261cef)
+TEAx 8d877460ac4f6f264561d916e40c1708adb13397 (exported packages/teax-simkit; checkout HEAD 8d877460ac4f6f264561d916e40c1708adb13397)
+interpreter /home/reid/src/dc3/.venv/bin/python
+checkouts unchanged after the run: True
+sysml_codegen from sysml-codegen/src/sysml_codegen/__init__.py
+simkit from teax/packages/teax-simkit/simkit/__init__.py
+syside 0.8.4; python 3.12.3
+calc def Sub { in a : Real; in b : Real; return r : Real = a - b; }; big = 10, small = 3
+
+gen_byname    wiring {"a": "float positional_by_name_params.PositionalByName__plant__big", "b": "float positional_by_name_params.PositionalByName__plant__small"}
+gen_byname    generated plant.result = 7.0  matches intent True
+gen_reversed  wiring {"a": "float positional_reversed_params.PositionalReversed__plant__big", "b": "float positional_reversed_params.PositionalReversed__plant__small"}
+gen_reversed  generated plant.result = 7.0  matches intent True
