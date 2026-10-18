@@ -1,6 +1,6 @@
 # Spec: Executable-subset capability inventory and shared profile (EXEC-SUBSET-CONTRACT Item 1)
 
-**Status:** Implementation In Progress (plan Phase 1 of 11 done, 2026-10-18); revised after spec review, 2026-10-15
+**Status:** Implementation In Progress (plan Phases 1–4 of 11 done, 2026-10-18); revised after spec review, 2026-10-15
 **Owner:** Reid Westwood
 **Created:** 2026-10-15
 **Complexity:** HIGH

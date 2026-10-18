@@ -1,4 +1,4 @@
-agentic-mbse 427239aeac029e55746af35e24599d9a388ffb95
+agentic-mbse a171a85e61b33a29c06b5acdd0c3945109ebc2e9
 declared_multiplicity  flagged 0/34 (not catchable (F1 Surprise 1)): OK []
 no_effective_decl      flagged 1/34 (must be caught): OK ['f1_effective_declaration_slot']
 writer_is_base         flagged 1/34 (must be caught): OK ['f1_calc_redefined_everywhere']

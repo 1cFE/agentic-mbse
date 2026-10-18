@@ -1,0 +1,21 @@
+agentic-mbse a171a85e61b33a29c06b5acdd0c3945109ebc2e9 (working tree with Phase 4 uncommitted: False)
+
+== dc3 baseline (808464df), exported with git archive to /tmp/p6/dc3b/models; returned in 18.5s
+enumerated: ['assertion_owner', 'binding_source', 'constraint', 'expression_site', 'occurrence', 'part_multiplicity', 'string_value'] | missing: []
+occurrence: roots=8 visits=286 nodes=214 unexpandable_visits=72
+bindings=280 by kind {'literal': 8, 'other_expression': 29, 'single_reference': 243}
+sites=632 by role {'binding': 302, 'calc_definition_dependency': 55, 'computed_attribute': 270, 'constraint_predicate': 5}
+  reference walks failed: {'EXPRESSION_KIND_UNSUPPORTED': 23, 'RESOLVED_TARGET_MISSING': 5}; sites with conditionals: 5; unsupported invocations: 23
+assertions=164 by owner {'calculation_usage': 164}
+multiplicities=139 strings=32 by spelling {'redefinition_shorthand': 29, 'attribute_declaration': 3}
+failures=22: {('binding_source', 'EXPRESSION_KIND_UNSUPPORTED'): 22}
+
+== dc3 repaired (60b44d53), exported with git archive to /tmp/p6/dc3r/models; returned in 13.2s
+enumerated: ['assertion_owner', 'binding_source', 'constraint', 'expression_site', 'occurrence', 'part_multiplicity', 'string_value'] | missing: []
+occurrence: roots=6 visits=173 nodes=153 unexpandable_visits=0
+bindings=391 by kind {'single_reference': 391}
+sites=755 by role {'alias': 26, 'binding': 391, 'calc_definition_dependency': 64, 'computed_attribute': 268, 'constraint_predicate': 6}
+  reference walks failed: {}; sites with conditionals: 0; unsupported invocations: 0
+assertions=99 by owner {'part_definition': 31, 'part_usage': 68}
+multiplicities=167 strings=30 by spelling {'redefinition_shorthand': 30}
+failures=0: {}

@@ -1,6 +1,6 @@
 # Implementation Plan: Executable-subset capability contract (EXEC-SUBSET-CONTRACT Item 1)
 
-**Status:** In Progress (Phases 1–3 complete)
+**Status:** In Progress (Phases 1–4 complete)
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `exec-subset-profile` (plan written at `1ff91e07`; `src/`, `tests/`, `scripts/` and `pyproject.toml` are unchanged since the design base `a718efec`)
@@ -329,9 +329,9 @@ def test_reference_walk_failure_becomes_fact_failure(monkeypatch):
 
 **See design for:** [Appendix A fact types](design.md#appendix-a--data-model), [§ Architecture "Facts are total"](design.md#architecture), spec [Requirements on specific families](spec.md#requirements-on-specific-families).
 
-- [ ] **Read first (codegen, read-only, through `git show b5663c07:…`):** `elaboration/expression_evidence.py:249-347` for the exact declared-feature value roles; `extraction/binding_source.py:183-207` and `elaboration/elaborate.py:1879-1950` for which members count as calc inputs (F3); `elaborate.py:1114-1118` for the reference metatype test. Record what you found as a docstring citation table in `subset_extraction.py`.
-- [ ] `src/agentic_mbse/sysml/subset_facts.py` (NEW, pure): `SubsetFacts`, `BindingSourceFact`, `ExpressionSiteFact`, `SiteInspection` (one total value, review S3), `AssertionOwnerFact`, `PartMultiplicityFact`, `StringValueFact`, `ElementRef`, `SafeLocation` (never raises), `FactFailure`, `FactKind`, `ScopeCause`.
-- [ ] `src/agentic_mbse/sysml/subset_extraction.py` (NEW): `extract_subset_facts(model, extra_roots=()) -> SubsetFacts`.
+- [x] **Read first (codegen, read-only, through `git show b5663c07:…`):** `elaboration/expression_evidence.py:249-347` for the exact declared-feature value roles; `extraction/binding_source.py:183-207` and `elaboration/elaborate.py:1879-1950` for which members count as calc inputs (F3); `elaborate.py:1114-1118` for the reference metatype test. Record what you found as a docstring citation table in `subset_extraction.py`.
+- [x] `src/agentic_mbse/sysml/subset_facts.py` (NEW, pure): `SubsetFacts`, `BindingSourceFact`, `ExpressionSiteFact`, `SiteInspection` (one total value, review S3), `AssertionOwnerFact`, `PartMultiplicityFact`, `StringValueFact`, `ElementRef`, `SafeLocation` (never raises), `FactFailure`, `FactKind`, `ScopeCause`.
+- [x] `src/agentic_mbse/sysml/subset_extraction.py` (NEW): `extract_subset_facts(model, extra_roots=()) -> SubsetFacts`.
   - Binding source: `unit_annotation_value` (`reference_use.py:342`), `is_literal_node` (`expression.py:441`), the `inspect_reference_uses` count, the metatype test, self-binding as leaf identity equal to the formal.
   - Expression sites: `inspect_reference_uses` and `invocation_uses` per site; conditionals by metatype walk; `calc_result_expression` and `other_expression_site` roles.
   - Assertion owners: forms from `constraint_extraction._ASSERTED_FORMS`.
@@ -339,19 +339,19 @@ def test_reference_walk_failure_becomes_fact_failure(monkeypatch):
   - Strings: both spellings.
   - Constraints: `extract_identified_constraint_facts`, unchanged.
   - The occurrence abort becomes one `FactFailure(OCCURRENCE, OccurrenceAbort.<kind>)`.
-- [ ] `tests/fixtures/subset_profile/cases/` (NEW): `binding_kinds.sysml`, `expression_sites.sysml`, `assertion_owners.sysml`, `string_spellings.sysml`, `conditional.sysml`.
-- [ ] `tests/test_sysml/test_subset_extraction.py` (NEW): per-kind tests; failure injection at extraction (reference failure, invocation failure, enumeration failure leaves the kind out of `enumerated`, occurrence abort).
-- [ ] `tests/test_sysml/test_conditional_operator_spelling.py` (NEW learning test) on `es006_refused_conditional` (design Implementation Notes).
-- [ ] `tests/test_sysml/test_subset_extraction_no_reinterpretation.py` (NEW, AST): `subset_extraction.py` imports `is_literal_node`, `unit_annotation_value`, `inspect_reference_uses` and `invocation_uses`, and defines no function that compares against the names `"FeatureReferenceExpression"` or `"InvocationExpression"` except the one metatype test codegen also has.
+- [x] `tests/fixtures/subset_profile/cases/` (NEW): `binding_kinds.sysml`, `expression_sites.sysml`, `assertion_owners.sysml`, `string_spellings.sysml`, `conditional.sysml`.
+- [x] `tests/test_sysml/test_subset_extraction.py` (NEW): per-kind tests; failure injection at extraction (reference failure, invocation failure, enumeration failure leaves the kind out of `enumerated`, occurrence abort).
+- [x] `tests/test_sysml/test_conditional_operator_spelling.py` (NEW learning test) on `es006_refused_conditional` (design Implementation Notes).
+- [x] `tests/test_sysml/test_subset_extraction_no_reinterpretation.py` (NEW, AST): `subset_extraction.py` imports `is_literal_node`, `unit_annotation_value`, `inspect_reference_uses` and `invocation_uses`, and defines no function that compares against the names `"FeatureReferenceExpression"` or `"InvocationExpression"` except the one metatype test codegen also has.
 
 ### Validation
 
 **Automated:**
-- [ ] New tests pass; selector-ownership gate green.
-- [ ] Standing checks green.
+- [x] New tests pass; selector-ownership gate green.
+- [x] Standing checks green.
 
 **Manual:**
-- [ ] Run `extract_subset_facts` on both dc3 trees (exported to a temp dir) and confirm it returns, with failures listed rather than raised. No assertions on content yet; that is Phase 10.
+- [x] Run `extract_subset_facts` on both dc3 trees (exported to a temp dir) and confirm it returns, with failures listed rather than raised. No assertions on content yet; that is Phase 10.
 
 **Done when:** every fact kind is extracted totally and the injected failures surface as structured `FactFailure`s. Traces to spec "Failure cannot look clean" (extraction half), "No duplicated interpretation", and the binding-source and ES-006 requirements.
 
@@ -892,6 +892,43 @@ Smoke probes at `83f48525`: 4/4 certify, and every observation field except the 
 - **Test-first order:** the module and tests were written in one pass; the stash check above stands in for watching them fail first.
 
 ### Phase 4 Completion
+**Completed:** 2026-10-18. Code at `a171a85e`.
+
+**Outcome:** every fact kind is extracted once, totally. Injected failures surface as structured `FactFailure`s and the other kinds keep reporting. Both dc3 trees return with failures listed, none raised (`evidence/subset-facts-dc3.log`, at `a171a85e`):
+
+| Tree | Enumerated | Facts | Failures |
+|---|---|---|---|
+| dc3 baseline `808464df` | all 7 kinds | 280 bindings, 632 sites (23 with an unsupported call, 5 with a conditional and `RESOLVED_TARGET_MISSING`), 164 assertions, 139 part usages (72 unexpandable visits, as F1), 32 Strings | 22, all `BINDING_SOURCE` / `EXPRESSION_KIND_UNSUPPORTED` (bindings whose walk meets an unsupported call) |
+| dc3 repaired `60b44d53` | all 7 kinds | 391 bindings (all single reference), 755 sites, 99 assertions, 167 part usages (0 unexpandable), 30 Strings (the prototype's 30) | 0 |
+
+No content is asserted yet; that is Phase 10. The recorded parity run was repeated at `a171a85e`, because this phase touched the port (73/73 match, controls unchanged; logs overwritten at that revision).
+
+**Read first, recorded in `subset_extraction.py`'s docstring table:**
+- Inventory roles (`expression_evidence.py:281-347`): every QN-bearing feature with a value. Owner is a calc def → `calc_definition_dependency`; owner is a calc or constraint usage → `binding`; otherwise a plain reference after the unit is stripped → `alias`, anything else → `computed_attribute`. Plus each constraint definition's and usage's `result_expression` (subtypes included) → `constraint_predicate`. That answers Things This Plan Cannot Settle item 5.
+- Calc inputs (F3, `elaborate.py:1878-1955`): owned members whose direction reads `in` (`:1684-1685`) and that carry a value. The unit annotation is stripped once (`:1918-1921`).
+- Binding class (`elaborate.py:2130-2171`): literal first, then expression unless there is exactly one inventoried use and the expression is a reference metatype (`:1114-1118`), then indexed or exact. Self-binding is the exact leaf equal to the formal (`binding_source.py:87-89`).
+
+**Actual Changes:**
+- `src/agentic_mbse/sysml/subset_facts.py` (new, pure): `FactKind`, `ScopeCause`, `FactFailure` (cause validated as a closed code), `OwnerKind`, `BindingKind`, `BindingSourceFact`, `SiteRole` (5 inventory roles plus `calc_result_expression`, `other_expression_site`), `ReferencesWalked`/`ReferencesFailed`, `InvocationsWalked`/`InvocationsFailed`, `SiteInspection`, `ExpressionSiteFact`, `AssertionOwnerFact`, `PartMultiplicityFact`, `StringSpelling`, `StringValueFact`, `SubsetFacts` (order and enumerated-versus-present consistency validated at construction). `IdentifiedConstraintFacts` is imported for typing only, so the module stays parser-free.
+- `src/agentic_mbse/sysml/subset_extraction.py` (new): `extract_subset_facts(model, extra_roots=())`. One `_Collector.collect` turns each kind's population into facts, per-element failures and enumeration failures. `_is_reference_expression` is the one metatype test. Conditionals are found by a structural walk over `reference_use`'s operand primitives (`operand_bearing_operands`, `unit_annotation_value`, `MAX_EXPRESSION_DEPTH`).
+- `occurrence_facts.py` / `occurrence_extraction.py`: `PartUsageReading` and `OccurrenceStructure.part_usages`, one per user part usage, read by the port with no parent. This is where `PartMultiplicityFact.shape` comes from, so multiplicity is never re-read.
+- `fact_refs.py`: `ElementRef.qualified_name` may be `None` for an anonymous element (its UUID is then session-local). `SafeLocation.sort_key`.
+- Fixtures `tests/fixtures/subset_profile/cases/{binding_kinds, expression_sites, assertion_owners, string_spellings, conditional}.sysml`, all loading without diagnostics.
+- Tests: `test_subset_extraction.py` (12: per-kind, the two stencil tests, invocation-walk failure, enumeration failure, occurrence abort, determinism, a mixed failing model), `test_conditional_operator_spelling.py` (learning test), `test_subset_extraction_no_reinterpretation.py` (AST gate with an anti-vacuity case).
+
+**Validation:** `pytest tests/` 2954 pass, the same 3 environment failures; `ruff check src/ tests/` 118 (baseline); `mypy src/` 97 in 19 files (baseline), none in new files. New and edited files pass `ruff format --check`; the five fact modules pass `mypy --strict`. The selector-ownership gate is green: the new extraction reads no reviewed selector.
+
+**Issues:**
+- `ref` and `alias` are SysML keywords, so fixture names avoid them (`src`, `mirror`).
+- `[SI::one]` on a `Real` value is a SysIDE type error, and `ScalarFunctions` plus `SI` makes `min` ambiguous with `SI::min` (minute). The fixtures use plain arithmetic and qualified calls.
+
+**Deviations from Plan:**
+- **`xs#(1)` bound to an input is `other_expression`, not `indexed`.** The stencil listed `idx: indexed`. The generator classifies a binding as indexed only when its one use is indexed and the expression is a reference metatype; a bare `IndexExpression` is neither a chain nor a reference, so it is an expression source (`elaborate.py:2155-2160`). A chain with an indexed head (`qs#(1).v`) is `indexed`, and the fixture now has both. In practice the inventory refuses any indexed use first, so this only matters for the fact's faithfulness. The stencil's `ref` became `src` (keyword).
+- **The binding reference walk runs before classification,** including for literals, as the generator's inventory does. So a walk failure on a literal binding is a failure, not a `literal` fact (the stencil expects `bindings == ()` under an injected walk failure).
+- **Assertion owners come from the constraint extractor's identified usages.** Each is a form from `_classify`, carried over without re-classification, plus `semantic_owner` of the live element. `ASSERTION_OWNER` is enumerated only when `CONSTRAINT` is.
+- **Strings:** a `String`-typed (standard-library `ScalarValues::String`, through `types`) `AttributeUsage` or undirected `ReferenceUsage` that carries a value. A `ReferenceUsage` is the `:>>` shorthand spelling, as the prototype found.
+- **Added roles and owner kinds** beyond Appendix A's sketch: `SiteRole` names the generator's five inventory roles rather than a shorter list, and `OwnerKind` is a closed enum, where Appendix A left `owner_kind` untyped.
+- **Test-first order:** fixtures were explored against SysIDE first, then tests and code written together; the tests passed on their first run, so the anti-vacuity case in the AST gate and the injected failures are the evidence that they bite.
 
 ### Phase 5 Completion
 
