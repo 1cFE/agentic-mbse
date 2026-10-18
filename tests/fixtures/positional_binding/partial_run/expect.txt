@@ -1,0 +1,8 @@
+// Fixture: partial_run (load this whole directory)
+// Source: design Appendix A; tests/learning/test_syside_input_redefinition.py::test_m1_a_partial_run_without_the_definitions_behaves_like_a_typo
+// With defs/ loaded, both owners resolve and both swaps are found.
+// finding: Use::q::c | b | Defs::Sub::a
+// finding: Use::q::c | a | Defs::Sub::b
+// finding: Use::q::k | lim | Defs::Le::x
+// finding: Use::q::k | x | Defs::Le::lim
+// unverifiable: none

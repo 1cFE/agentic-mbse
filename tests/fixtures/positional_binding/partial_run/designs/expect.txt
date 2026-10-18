@@ -1,0 +1,7 @@
+// Fixture: partial_run/designs (load this directory alone, without its sibling defs/)
+// Source: design Appendix A; tests/learning/test_syside_input_redefinition.py::test_m1_a_partial_run_without_the_definitions_behaves_like_a_typo
+// Not self-contained: Sub and Le are not loaded, so both owners are typed by a SysIDE placeholder.
+// SysIDE reports reference-error diagnostics for this load by design.
+// finding: none
+// unverifiable: UNRESOLVED_OWNER_TYPE @ use.sysml:5
+// unverifiable: UNRESOLVED_OWNER_TYPE @ use.sysml:6

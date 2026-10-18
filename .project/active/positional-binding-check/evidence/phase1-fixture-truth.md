@@ -65,7 +65,7 @@ Each of `.project/concepts/convince-me-exec-subset/evidence/04-fixtures/detector
 
 Nothing to surface before Phase 3 copies them.
 
-Note for Phase 3: the 17 prototype files use quoted package names (`package 'calc_reversed'`), so their identities read `'calc_reversed'::q::c` in production. Their headers will carry that spelling. New fixtures use unquoted names, as the design asks.
+Note for Phase 3: the 17 prototype files use quoted package names (`package 'calc_reversed'`). SysIDE drops quotes a name does not need, so the identities read `calc_reversed::q::c`, the same as an unquoted declaration (checked on `calc_reversed`). New fixtures use unquoted names, as the design asks.
 
 ## 5. Consumer-tree facts (read-only)
 

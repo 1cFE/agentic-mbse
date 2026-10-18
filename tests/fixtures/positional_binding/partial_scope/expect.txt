@@ -1,0 +1,8 @@
+// Fixture: partial_scope (load this whole directory)
+// Source: design Appendix A ("partial_scope/", spec Pol-3). Two self-contained subfolders, one swap each.
+// Phase 5 validates models/a/ alone with pins for both; this whole-directory load finds both swaps.
+// finding: ScopeA::q::c | b | ScopeA::Sub::a
+// finding: ScopeA::q::c | a | ScopeA::Sub::b
+// finding: ScopeB::q::c | b | ScopeB::Sub::a
+// finding: ScopeB::q::c | a | ScopeB::Sub::b
+// unverifiable: none

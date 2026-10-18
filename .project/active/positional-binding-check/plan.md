@@ -231,46 +231,46 @@ def test_raising_heritage_read_fails_one_input_and_keeps_the_rest():
 
 #### 1. Fixtures
 **Directory:** `tests/fixtures/positional_binding/` (NEW). One file per Appendix A row. Each file opens with a comment header listing its expected identities (owner|input|target), reasons and unverifiable results, and its source (prototype path, learning-test name, or dc3 revision and path).
-- [ ] `prototype/`: copy the 17 files from `04-fixtures/detector/`, adding the header from `04-detector-fixtures.log` expanded per target (Appendix A row 1). Mark the 9 cases `04-detector-naive-control.log` got wrong with `naive-control: wrong` in the header.
-- [ ] `spelling/`: `mixed_spelling`, `reversed_deliberate_rename`.
-- [ ] `types/`: `multiple_types_with_rename`, `subpart_restated_type_swap`, `subpart_deliberate_rename`, `usage_extra_inputs`, `def_adds_first_input`. (`multiple_types` is one of the 17.)
-- [ ] `requirements/`: `requirement_subject_renamed`, `requirement_actor`, `case_actor`, `requirement_stakeholder`, `requirement_in_param_swapped`, `requirement_nested_constraint_reversed`, `requirement_def_without_subject`, `case_def_without_subject`, `anonymous_assert_reversed`. Usage fixtures restate the subject, and any actor or stakeholder, before ordinary inputs (design Implementation Notes).
-- [ ] `dc3/`: `dc3_wi008_out_of_order`, `dc3_serial_path_swap`, each a minimal model citing its dc3 revision and path (D22).
-- [ ] `unresolved/`: `unresolved_type` (calc and constraint), `unresolved_supertype`, `unresolved_input_redefinition`.
-- [ ] `partial_run/defs/` and `partial_run/designs/` (non-self-contained), and `partial_scope/` (a self-contained subfolder layout for Phase 5's scope test, inputs bound to valued attributes so `LITERAL_BINDING` does not mask results).
-- [ ] Use unquoted package names in new fixtures. `requirement_def_without_subject` and `case_def_without_subject` carry SysIDE semantic errors by design (learning-findings M4); their headers say so.
+- [x] `prototype/`: copy the 17 files from `04-fixtures/detector/`, adding the header from `04-detector-fixtures.log` expanded per target (Appendix A row 1). Mark the 9 cases `04-detector-naive-control.log` got wrong with `naive-control: wrong` in the header.
+- [x] `spelling/`: `mixed_spelling`, `reversed_deliberate_rename`.
+- [x] `types/`: `multiple_types_with_rename`, `subpart_restated_type_swap`, `subpart_deliberate_rename`, `usage_extra_inputs`, `def_adds_first_input`. (`multiple_types` is one of the 17.)
+- [x] `requirements/`: `requirement_subject_renamed`, `requirement_actor`, `case_actor`, `requirement_stakeholder`, `requirement_in_param_swapped`, `requirement_nested_constraint_reversed`, `requirement_def_without_subject`, `case_def_without_subject`, `anonymous_assert_reversed`. Usage fixtures restate the subject, and any actor or stakeholder, before ordinary inputs (design Implementation Notes).
+- [x] `dc3/`: `dc3_wi008_out_of_order`, `dc3_serial_path_swap`, each a minimal model citing its dc3 revision and path (D22).
+- [x] `unresolved/`: `unresolved_type` (calc and constraint), `unresolved_supertype`, `unresolved_input_redefinition`.
+- [x] `partial_run/defs/` and `partial_run/designs/` (non-self-contained), and `partial_scope/` (a self-contained subfolder layout for Phase 5's scope test, inputs bound to valued attributes so `LITERAL_BINDING` does not mask results).
+- [x] Use unquoted package names in new fixtures. `requirement_def_without_subject` and `case_def_without_subject` carry SysIDE semantic errors by design (learning-findings M4); their headers say so.
 
 #### 2. Fact types
 **File:** `src/agentic_mbse/sysml/parameter_redefinition_facts.py` (NEW)
-- [ ] Types exactly as `design.md#data-model`, with the sort orders stated there. Module docstring states the L2-internal status (D1). Imports nothing from SysIDE (I6).
+- [x] Types exactly as `design.md#data-model`, with the sort orders stated there. Module docstring states the L2-internal status (D1). Imports nothing from SysIDE (I6).
 
 #### 3. Adapter map
 **File:** `src/agentic_mbse/sysml/syside_adapter.py` (MODIFY: closed type map at `:172-283`, enumeration table at `:150-169`)
-- [ ] Add `Redefinition`, `SubjectMembership`, `ActorMembership`, `StakeholderMembership` to the closed map and its licence-free name set (D5).
-- [ ] Record the four `include_subtypes=True` sweeps in the enumeration table.
+- [x] Add `Redefinition`, `SubjectMembership`, `ActorMembership`, `StakeholderMembership` to the closed map and its licence-free name set (D5).
+- [x] Record the four `include_subtypes=True` sweeps in the enumeration table.
 
 #### 4. Extractor
 **File:** `src/agentic_mbse/sysml/parameter_redefinition_extraction.py` (NEW)
-- [ ] `extract_parameter_redefinitions(model, *, list_owners=..., read_owned_features=..., read_heritage=...)` per Component Overview. Order: enumerate and de-duplicate owners (D5); tier guard (D4); owner placeholder test (D19); list `in`/`inout` owned features; role from owning membership; redefinitions from `heritage` filtered to `Redefinition` (D3); per-input placeholder test (D19); target owning type, name and role.
-- [ ] Every owner and input yields exactly one fact or one failure (I4). A failure on one owner does not stop the others.
+- [x] `extract_parameter_redefinitions(model, *, list_owners=..., read_owned_features=..., read_heritage=...)` per Component Overview. Order: enumerate and de-duplicate owners (D5); tier guard (D4); owner placeholder test (D19); list `in`/`inout` owned features; role from owning membership; redefinitions from `heritage` filtered to `Redefinition` (D3); per-input placeholder test (D19); target owning type, name and role.
+- [x] Every owner and input yields exactly one fact or one failure (I4). A failure on one owner does not stop the others.
 
 #### 5. Extractor tests
 **File:** `tests/test_sysml/test_parameter_redefinition_extraction.py` (NEW)
-- [ ] Stencil cases above, plus: every failure cause reachable through a seam or fixture (`OWNERS_UNLISTED`, `INPUTS_UNLISTED`, `REDEFINITIONS_UNREADABLE`, `UNRESOLVED_OWNER_TYPE` for typo type and unresolved supertype, `UNRESOLVED_INPUT_REDEFINITION`, `partial_run/designs/` alone giving unverifiable owners).
-- [ ] Tier guard with a stub owner reading `StandardLibrary` (R6: the sweeps never return one, so the guard is tested by stub, never by expecting library owners).
-- [ ] Roles on the requirement fixtures; `owning_type` is a usage in `subpart_restated_type_swap` (S4).
-- [ ] D2: `subset_extraction._element_ref` and `subset_extraction._IdentityError` exist.
-- [ ] D21: for each constraint-usage input in the constraint fixtures, Item 1's `ActualFact.formal_targets` equals this fact's full target set (both origins). Read Item 1's facts; do not edit Item 1's modules. If they differ, record and surface; do not change either module to make them agree.
-- [ ] Facts and failures come out in the stated sort order; two extractions of one model are equal (I5).
+- [x] Stencil cases above, plus: every failure cause reachable through a seam or fixture (`OWNERS_UNLISTED`, `INPUTS_UNLISTED`, `REDEFINITIONS_UNREADABLE`, `UNRESOLVED_OWNER_TYPE` for typo type and unresolved supertype, `UNRESOLVED_INPUT_REDEFINITION`, `partial_run/designs/` alone giving unverifiable owners).
+- [x] Tier guard with a stub owner reading `StandardLibrary` (R6: the sweeps never return one, so the guard is tested by stub, never by expecting library owners).
+- [x] Roles on the requirement fixtures; `owning_type` is a usage in `subpart_restated_type_swap` (S4).
+- [x] D2: `subset_extraction._element_ref` and `subset_extraction._IdentityError` exist.
+- [x] D21: for each constraint-usage input in the constraint fixtures, Item 1's `ActualFact.formal_targets` equals this fact's full target set (both origins). Read Item 1's facts; do not edit Item 1's modules. If they differ, record and surface; do not change either module to make them agree.
+- [x] Facts and failures come out in the stated sort order; two extractions of one model are equal (I5).
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_sysml/test_parameter_redefinition_extraction.py tests/learning/` → pass
-- [ ] G1, G2, G3
+- [x] `uv run pytest tests/test_sysml/test_parameter_redefinition_extraction.py tests/learning/` → pass
+- [x] G1, G2, G3
 
 **Manual:**
-- [ ] `git diff ccd57d83 -- src/agentic_mbse/sysml/subset_*.py src/agentic_mbse/sysml/fact_refs.py src/agentic_mbse/sysml/*_extraction.py` shows no change to Item 1's modules (only the two new files).
+- [x] `git diff ccd57d83 -- src/agentic_mbse/sysml/subset_*.py src/agentic_mbse/sysml/fact_refs.py src/agentic_mbse/sysml/*_extraction.py` shows no change to Item 1's modules (only the two new files).
 
 **Done when (traces to Det-1 fixture set, Insp-1 and Insp-2 at the fact level):** every Appendix A fixture exists with its header; the extractor yields the redefinitions the learning test observed; every M1 shape is a failure; the D21 consistency test passes or its difference is surfaced.
 
@@ -750,10 +750,28 @@ See `design.md#potential-risks` for the full list. Phase-specific mitigations:
 - The mixed spelling's native evaluation also fails its evaluation report ("Invalid operator '-' for types 'integer' and 'element'"); the test asserts that too.
 
 **Deviations:**
-- The prototype's 17 fixtures use quoted package names (`package 'calc_reversed'`), so their production identities read `'calc_reversed'::q::c`. Phase 3 headers carry that spelling; the files are not edited.
+- The prototype's 17 fixtures use quoted package names (`package 'calc_reversed'`). SysIDE drops quotes a name does not need, so their identities read `calc_reversed::q::c` (checked on `calc_reversed`). The files are not edited.
 - dc3: `RAW_LEARNINGS.md:29` and `WI-008_generator-idiom/design.md:63` exist at `60b44d5`, not `808464d`; `ac_facility.sysml` needs the `models/` prefix. Phase 2's dc3 fixtures cite `60b44d5`.
 
 ### Phase 2 Completion
+**Completed:** 2026-10-18
+
+**Changes Made:**
+- Fixtures under `tests/fixtures/positional_binding/`, one per Appendix A row, each with a comment header of `// finding: owner | input | target [| SPECIAL_SLOT]` and `// unverifiable: CAUSE @ file:line` lines (or `none`), its source, and `naive-control: wrong` on the 9 prototype cases the control got wrong. `prototype/` (17 copies, original prototype header kept below), `spelling/` (2), `types/` (5), `requirements/` (9), `dc3/` (2), `unresolved/` (3). Multi-file fixtures `partial_run/`, `partial_run/designs/` and `partial_scope/` carry their header in an `expect.txt` and load as a directory.
+- `src/agentic_mbse/sysml/parameter_redefinition_facts.py`: the fact, failure and aggregate types; the aggregate rejects unsorted input.
+- `src/agentic_mbse/sysml/syside_adapter.py`: `Redefinition`, `SubjectMembership`, `ActorMembership`, `StakeholderMembership` in the closed map and name set; the D5 sweep row in the enumeration table. The file's one pre-existing format difference (a 3-line wrap at `element_id`) was formatted with it, per G2.
+- `src/agentic_mbse/sysml/parameter_redefinition_extraction.py`: `extract_parameter_redefinitions` with the three seams; `sweep_owners`, `owned_features`, `heritage_relationships` are the defaults.
+- `tests/test_sysml/test_parameter_redefinition_extraction.py`: 32 tests. All 9 failure causes are reached (owner sweep, owned features, heritage, tier, placeholder type and supertype, input `:>> zz`, partial run, stub identity, stub membership, a target-less redefinition). Also roles, S4 owning types, `inout`, `out` not an input, D2, D21 on 6 constraint fixtures, order and repeated-load determinism.
+- G1: 6 failed (the baseline 6) / 3735 passed. G2 clean on all four files. G3: `mypy src/` 97 errors, none in touched files; the test file is clean.
+
+**Issues:**
+- **Determinism bug in the design's fact sort key, fixed.** `(location, input.element_id)` ordered an anonymous owner's two inputs on one line at random: SysIDE gives anonymous elements a fresh UUIDv4 per load, so the id tie-break changed between runs (the anonymous-assert test failed 1 run in 3). The key is now location, owner name, declared name, then the target list, with no element id. Facts it cannot separate say the same thing. A repeated-load test on the anonymous-assert fixture pins it. Phase 3's finding order follows the same rule.
+- D21 holds: on all 6 constraint fixtures, Item 1's `formal_targets` equals each input's full target set (both origins), compared per usage as a multiset because Item 1 keys actuals by SysIDE `name`. Nothing to surface beyond D21's planned observation.
+
+**Deviations:**
+- An owner's own relationships unreadable through `read_heritage` is recorded as `REDEFINITIONS_UNREADABLE` (the cause list has no owner-specific one). A feature whose direction cannot be read fails its owner with `INPUTS_UNLISTED`, because the owner's input list is then incomplete.
+- A placeholder target on any input redefinition, implied or explicit, is `UNRESOLVED_INPUT_REDEFINITION`; D19 names only explicit ones, and no implied placeholder has been observed.
+- The redefined formal's `name` is SysIDE's effective `name` (the slot's name); only the input uses `declared_name` (R5).
 
 ### Phase 3 Completion
 
