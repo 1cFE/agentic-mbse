@@ -550,19 +550,19 @@ def test_fixed_case_list_and_cross_references():
 
 **See design for:** [Appendix A matrix row schema](design.md#appendix-a--data-model), spec [matrix criteria and B/U mapping](spec.md#capabilityrefusal-matrix).
 
-- [ ] **Read first:** the ten `PUSH-DOWN-*-PROFILE-*` rows and `L6-LIBRARY-ALIAS-SOURCE` in `.project/backlog/BACKLOG.md`; dc3 `T-001-blocker-inventory.md` and `.project/active/toolkit-upstream-findings.md` (read-only).
-- [ ] `tests/fixtures/subset_profile/inventory/matrix.toml` (NEW): one row per fixed case, each with class, contexts, outcome, evidence status, owner, coverage limitation, sites (filled in Phase 9), dc3/upstream cross-references, `l2_relation` on SELF-BINDING (relation to `L2_SELF_NAMED_BINDING`, `validation/level2_structure.py:322-343`). B8 keeps its 4 NON_NUMERICAL and 4 MALFORMED_NUMERICAL apart. U8 points to Item 4 and is not classified. The binding-source classifier's five outcomes are all placed.
-- [ ] `scripts/subset_profile/render_matrix.py` (NEW): renders `matrix.toml` plus records to `.project/active/exec-subset-profile/evidence/matrix.md`.
-- [ ] `tests/test_subset_matrix.py` (NEW): schema and closed fields; fixed list; every B1–B9 and U1–U7 mapped exactly per the spec; matrix ↔ records both directions; `coverage_limitation` non-empty unless implemented in Item 1; SELF-BINDING `l2_relation` non-empty.
+- [x] **Read first:** the ten `PUSH-DOWN-*-PROFILE-*` rows and `L6-LIBRARY-ALIAS-SOURCE` in `.project/backlog/BACKLOG.md`; dc3 `T-001-blocker-inventory.md` and `.project/active/toolkit-upstream-findings.md` (read-only).
+- [x] `tests/fixtures/subset_profile/inventory/matrix.toml` (NEW): one row per fixed case, each with class, contexts, outcome, evidence status, owner, coverage limitation, sites (filled in Phase 9), dc3/upstream cross-references, `l2_relation` on SELF-BINDING (relation to `L2_SELF_NAMED_BINDING`, `validation/level2_structure.py:322-343`). B8 keeps its 4 NON_NUMERICAL and 4 MALFORMED_NUMERICAL apart. U8 points to Item 4 and is not classified. The binding-source classifier's five outcomes are all placed.
+- [x] `scripts/subset_profile/render_matrix.py` (NEW): renders `matrix.toml` plus records to `.project/active/exec-subset-profile/evidence/matrix.md`.
+- [x] `tests/test_subset_matrix.py` (NEW): schema and closed fields; fixed list; every B1–B9 and U1–U7 mapped exactly per the spec; matrix ↔ records both directions; `coverage_limitation` non-empty unless implemented in Item 1; SELF-BINDING `l2_relation` non-empty.
 
 ### Validation
 
 **Automated:**
-- [ ] `tests/test_subset_matrix.py` passes. Standing checks green.
+- [x] `tests/test_subset_matrix.py` passes. Standing checks green.
 
 **Manual:**
-- [ ] Render `matrix.md` and read it once as a reviewer would, against the spec's fixed list.
-- [ ] Archive check: copy `tests/` and `src/` to a temp dir without `.project/` and run `pytest tests/test_subset_matrix.py` there.
+- [x] Render `matrix.md` and read it once as a reviewer would, against the spec's fixed list.
+- [x] Archive check: copy `tests/` and `src/` to a temp dir without `.project/` and run `pytest tests/test_subset_matrix.py` there.
 
 **Done when:** the matrix test passes and survives the archive check. Traces to spec "Every named case has a matrix row", "The binding-source classifier is fully placed", "Every row is classified and owned", "Matrix and records agree".
 
@@ -1063,6 +1063,34 @@ Controls certified (the prototype's admitted neighbors and the observations): or
 - The B5 variation probes are `record` probes with a variant suffix and are cited as additional evidence for their pair, rather than a separate probe kind.
 
 ### Phase 8 Completion
+**Completed:** 2026-10-18.
+
+**Outcome:** the matrix places every named case with exactly one class and an owner, and joins the packaged records both ways. `tests/test_subset_matrix.py` passes (67 tests) in the repo and in an archive copy of `src/` and `tests/` with no `.project/`. Rendered to `evidence/matrix.md`.
+
+| Class | Rows |
+|---|---|
+| `shared_rule` | ES-001, ES-003, ES-004, ES-005, ES-006, ES-007, ES-010, ES-012, SELF-BINDING, INDEXED-REFERENCE (10, all eight rules) |
+| `tracked_gap` | ES-002, ES-008, ES-009, ES-010-REFUSAL, ES-011, CALC-DEF-BARE-RESULT, CALC-USAGE-BARE-RESULT-DROP, G1, G2, DEEP-QUALIFIED-WIRING, L6-LIBRARY-ALIAS-SOURCE, and six PUSH-DOWN rows (17) |
+| `advisory_omission_policy` | four PUSH-DOWN rows: UNSUPPORTED-SHAPE-MESSAGE, REDEF-PRECEDENCE, AMBIG-INHERITED-ATTR, WRAPPER-SHAPE |
+| `codegen_check`, `internal_invariant` | none at matrix level; these classes appear in the site account (Phase 9) |
+
+dc3 mapping, asserted per item: B1, U1 → ES-001; B2 → ES-003 (not ES-004); B3 → ES-004; B4, B5 → ES-005; B6 → ES-006; U4 → ES-005 and ES-006; B7, U3 → ES-010; B8 → ES-007 with its 4 NON_NUMERICAL (`excluded`) and 4 MALFORMED_NUMERICAL (`refused`) kept apart; B9, U7 → ES-011 (`unconfirmed`); U2 → ES-008; U5 → ES-002; U6 → ES-009. U8 is a pointer to Item 4, not a row. The binding-source classifier's five kinds are placed: literal and single reference admitted, self-binding → SELF-BINDING, indexed → INDEXED-REFERENCE, other expression → ES-003.
+
+**Actual Changes:**
+- `tests/helpers/subset_matrix.py` (new, pure): `load_matrix`, `Matrix` (a mapping with `by_dc3` / `by_upstream`), `MatrixRow`, `OutcomeSplit`, `ClassifierPlacement`, `Pointer`, closed `RowClass` / `RowOutcome` / `RowEvidence`. Rejects at load: unknown keys or members, `rule`/`shapes` on a non-shared row, a rule status on a non-shared row, an evidence string that is not a recognized reference, dc3/upstream ids outside B1-B9/U1-U7, a classifier that does not place exactly the five kinds.
+- `tests/fixtures/subset_profile/inventory/matrix.toml` (new): 31 rows, the classifier placement, the U8 pointer. `sites` are empty until Phase 9.
+- `tests/test_subset_matrix.py` (new): the stencil; every B and U item mapped exactly; B8 split; classifier placement against the records' expected codes; shared rows ↔ records both directions (row ids, shapes, evidence status); a shared row's contexts equal the record contexts with its outcome; every probe a row cites exists, certifies, and has the kind its status names; coverage limitation present unless implemented; SELF-BINDING `l2_relation`; eight loader rejections.
+- `scripts/subset_profile/render_matrix.py` (new): renders `evidence/matrix.md`.
+
+**Validation:** `pytest tests/` 3487 pass, the same 3 environment failures; `ruff check src/ tests/` 118 (baseline); `mypy src/` 97 in 19 files (baseline). New files pass `ruff check` and `ruff format --check`; the helper and the script pass `mypy --strict`. Teeth: three matrix mutations (narrowing ES-003's contexts, dropping the L2 code from SELF-BINDING's relation, citing a control probe on a reproduction row) each fail a test.
+
+**Deviations from Plan:**
+- **Rows beyond the fixed list:** ES-010-REFUSAL (the refusal side, kept apart from the omission rule), CALC-DEF-BARE-RESULT and CALC-USAGE-BARE-RESULT-DROP (Phase 6's findings). The orchestrator ruling sends them to R3; a row gives each an owner and a place to hang sites.
+- **The matrix loader lives in `tests/helpers/`,** as the judge and the oracle schema do (P-2, P-3), so the renderer and the test read one copy.
+- **`contexts` are record `ContextId`s for shared rows and words for the rest.** Non-rule rows have no closed context vocabulary to draw from.
+- **`evidence_status` widens the records' three values** with `reproduction_probe`, `control_probe`, `observed_in_record_probes`, `corpus_record`, `code_read`, `reported_not_reproduced`, so a non-rule row says what its evidence actually is.
+- **PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS:** the backlog row names a shared helper `extract_feature_chain_segments`; no function of that name exists in agentic-mbse `src/` at this revision. Recorded in the row's coverage limitation.
+- **DEEP-QUALIFIED-WIRING** cites codegen's corpus refusal record `deep_cross_scope_probe` (`SI_OCCURRENCE_MISSING`), not an Item 1 probe.
 
 ### Phase 9 Completion
 
