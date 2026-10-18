@@ -251,3 +251,5 @@ Run `uv run pytest tests/test_arxiv_html.py tests/test_pandoc_convert.py tests/t
 
 ---
 Next Step: After approval → `/_my_plan`
+
+**D17a (2026-10-18, orchestrator `[AGENT]`). One step order for both routes: select, rewrite, then sanitize.** Phase 5 found that the web route's sanitizer (`html_sanitize.py:36`) deletes every `<object>` before article selection, so D17 alone would fix only the PDF route. The web route now selects the article from the raw fetched page, applies the D17 `<object>` → `<img>` rewrite, and then runs the existing sanitizer on that slice only. The PDF route runs the same select and rewrite steps. Raw-byte saving and hashing are unchanged, because they use the fetched bytes, not the slice. Rejected: teaching the sanitizer to keep `ltx_graphics` objects, which would widen what the sanitizer lets through for every web page.
