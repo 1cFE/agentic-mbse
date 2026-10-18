@@ -41,6 +41,7 @@ __all__ = [
     "OccurrenceScope",
     "OccurrenceStructure",
     "PackageScope",
+    "PartUsageReading",
     "PathStep",
     "Scope",
     "UsageVisit",
@@ -238,6 +239,20 @@ class OccurrenceNode:
         return self.path[:-1] or None
 
 
+@dataclass(frozen=True)
+class PartUsageReading:
+    """One user-model part usage, read once with no parent occurrence.
+
+    For a generator root this is the generator's own reading. For any other usage it is the
+    shape of its multiplicity (ordered, nonunique, a range, a literal bound) without a parent
+    to resolve a referenced bound against; the count under each parent is on its visits.
+    """
+
+    usage_id: UUID
+    composite: bool
+    reading: MultiplicityReading
+
+
 @dataclass(frozen=True, order=True)
 class OccurrenceScope:
     """An attachment scope that is one occurrence, reached from `root_id`."""
@@ -324,6 +339,7 @@ class OccurrenceStructure:
     - `visits`: generator traversal order (generator roots, then caller roots).
     - `nodes`: sorted by (root, path).
     - `part_definition_ids`: every user-model part definition, sorted.
+    - `part_usages`: every user-model part usage with its unparented reading, sorted by usage.
     - `calc_attachments`: one per calculation usage, sorted by usage.
     - `writers`: sorted by (scope, slot).
     """
@@ -333,6 +349,7 @@ class OccurrenceStructure:
     visits: tuple[UsageVisit, ...]
     nodes: tuple[OccurrenceNode, ...]
     part_definition_ids: tuple[UUID, ...]
+    part_usages: tuple[PartUsageReading, ...]
     calc_attachments: tuple[CalcAttachment, ...]
     writers: tuple[WriterSelection, ...]
 
@@ -354,6 +371,9 @@ class OccurrenceStructure:
         keys = [(str(n.root_id), _path_key(n.path)) for n in self.nodes]
         if keys != sorted(set(keys)):
             raise ValueError("nodes are unique and in (root, path) order")
+        part_usage_ids = [u.usage_id for u in self.part_usages]
+        if part_usage_ids != sorted(set(part_usage_ids), key=str):
+            raise ValueError("part usages are unique and in usage order")
         usages = [a.usage_id for a in self.calc_attachments]
         if usages != sorted(set(usages), key=str):
             raise ValueError("calc attachments are unique and in usage order")

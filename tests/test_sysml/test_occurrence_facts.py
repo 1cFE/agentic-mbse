@@ -22,6 +22,7 @@ from agentic_mbse.sysml.occurrence_facts import (
     OccurrenceScope,
     OccurrenceStructure,
     PackageScope,
+    PartUsageReading,
     PathStep,
     UsageVisit,
     WriterSelection,
@@ -184,6 +185,7 @@ def _structure(writers: tuple[WriterSelection, ...]) -> OccurrenceStructure:
         visits=(UsageVisit(ROOT, None, ROOT, MultiplicityReading.absent()),),
         nodes=(OccurrenceNode(path, ROOT, DEF, frozenset({DEF}), (), ROOT),),
         part_definition_ids=(DEF,),
+        part_usages=(PartUsageReading(ROOT, True, MultiplicityReading.absent()),),
         calc_attachments=(),
         writers=writers,
     )
@@ -232,14 +234,16 @@ def test_types_are_frozen() -> None:
         _structure(()).nodes = ()  # type: ignore[misc]
 
 
-def test_element_refs_need_stable_identity() -> None:
+def test_element_refs_name_stable_identity_or_are_anonymous() -> None:
     ElementRef(ROOT, "P::root", "PartUsage")
+    ElementRef(UUID("12345678-1234-4234-8234-123456789abc"), None, "AssertConstraintUsage")
     with pytest.raises(ValueError):
         ElementRef(UUID("12345678-1234-4234-8234-123456789abc"), "P::x", "PartUsage")  # UUIDv4
     with pytest.raises(ValueError):
         ElementRef(ROOT, "", "PartUsage")
     with pytest.raises(ValueError):
         SafeLocation("f.sysml", -1, None)
+    assert SafeLocation(None, None, None).sort_key() < SafeLocation("a.sysml", 1, "x").sort_key()
 
 
 def test_the_fact_types_import_no_parser() -> None:

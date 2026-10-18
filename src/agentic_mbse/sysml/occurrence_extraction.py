@@ -62,6 +62,7 @@ from agentic_mbse.sysml.occurrence_facts import (
     OccurrenceScope,
     OccurrenceStructure,
     PackageScope,
+    PartUsageReading,
     PathStep,
     Scope,
     UsageVisit,
@@ -322,6 +323,7 @@ class _Builder:
         }
         self.closures = self._definition_closures()
         usages = list(SysideAdapter.elements_of_type(model, "PartUsage"))
+        self.usages = usages
         self.usage_ids = {declaration_id(usage) for usage in usages}
         self.attributes_by_slot: dict[UUID, list[Any]] = defaultdict(list)
         for attribute in SysideAdapter.elements_of_type(model, "AttributeUsage"):
@@ -478,6 +480,18 @@ class _Builder:
             return MultiplicityReading(True, False, False, upper, None, False)
         lower = self._bound(lower_expr, usage, parent) if lower_expr is not None else None
         return MultiplicityReading(True, False, False, upper, lower, lower_expr is not None)
+
+    def part_usage_readings(self) -> tuple[PartUsageReading, ...]:
+        """Every user-model part usage read once with no parent, sorted by usage."""
+        readings = [
+            PartUsageReading(
+                declaration_id(usage),
+                bool(getattr(usage, "is_composite", False)),
+                self.reading(usage, None),
+            )
+            for usage in self.usages
+        ]
+        return tuple(sorted(readings, key=lambda r: str(r.usage_id)))
 
     def traverse(self, root: Any, namespace_key: UUID) -> None:
         """Visit one root and everything it reaches, into the given occurrence namespace."""
@@ -681,6 +695,7 @@ def extract_occurrence_structure(
             builder.traverse(root, _GENERATOR)
         for caller_id, root in callers:
             builder.traverse(root, caller_id)
+        part_usages = builder.part_usage_readings()
     except _AbortError as error:
         return _failure(error, BuildStage.OCCURRENCES)
     try:
@@ -693,6 +708,7 @@ def extract_occurrence_structure(
         visits=tuple(builder.visits),
         nodes=tuple(sorted(builder.all_nodes(), key=_node_order)),
         part_definition_ids=tuple(_str_sorted(builder.definitions)),
+        part_usages=part_usages,
         calc_attachments=attachments,
         writers=writers,
     )
