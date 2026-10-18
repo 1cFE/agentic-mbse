@@ -446,51 +446,51 @@ def test_pins_root_without_pins_is_a_usage_error(cli):
 
 #### 1. Issue codes
 **File:** `src/agentic_mbse/sysml/types.py` (MODIFY)
-- [ ] Add `L2_POSITIONAL_BINDING`, `L2_POSITIONAL_PIN_STALE`, `L2_POSITIONAL_PIN_LIST_INVALID`.
+- [x] Add `L2_POSITIONAL_BINDING`, `L2_POSITIONAL_PIN_STALE`, `L2_POSITIONAL_PIN_LIST_INVALID`.
 
 #### 2. Render and check
 **File:** `src/agentic_mbse/validation/positional_binding.py` (MODIFY)
-- [ ] `render(result) -> (issues, metrics)` with the messages and metric names in `design.md#issues-and-metrics`. Swap messages say "a likely authoring hazard in valid SysML", name both repairs and print owner, input, target, file and line. No message calls the construct invalid.
-- [ ] `check(model, path, files, pins_file, pin_root)` wires extraction, discovery or load, decide and render. Failures render as `L2_CHECK_UNVERIFIABLE` with `reason_code` `POSITIONAL_<cause>`. An invalid pin list renders `L2_POSITIONAL_PIN_LIST_INVALID` and the check runs as if no list existed.
-- [ ] `is_pinned_positional_warning(issue)`.
+- [x] `render(result) -> (issues, metrics)` with the messages and metric names in `design.md#issues-and-metrics`. Swap messages say "a likely authoring hazard in valid SysML", name both repairs and print owner, input, target, file and line. No message calls the construct invalid.
+- [x] `check(model, path, files, pins_file, pin_root)` wires extraction, discovery or load, decide and render. Failures render as `L2_CHECK_UNVERIFIABLE` with `reason_code` `POSITIONAL_<cause>`. An invalid pin list renders `L2_POSITIONAL_PIN_LIST_INVALID` and the check runs as if no list existed.
+- [x] `is_pinned_positional_warning(issue)`.
 
 #### 3. L2, runner, output
 **Files:** `src/agentic_mbse/validation/level2_structure.py:402-450`, `src/agentic_mbse/validation/runner.py:44-100`, `src/agentic_mbse/validation/common.py:123-151` (MODIFY)
-- [ ] `validate_structure(models_path, positional_pins=None, pin_root=None)` calls `check` once after the existing four checks.
-- [ ] `success` = no issue other than pinned positional warnings (I1). This is the only change to the success line.
-- [ ] `run_all_checks` passes the two options to L2 with `functools.partial`; `QUALITY_CHECKS` keeps its shape.
-- [ ] `print_result` header gains "(N pinned positional warnings; not a value or route-parity check)" when L2 passes with pinned warnings.
+- [x] `validate_structure(models_path, positional_pins=None, pin_root=None)` calls `check` once after the existing four checks.
+- [x] `success` = no issue other than pinned positional warnings (I1). This is the only change to the success line.
+- [x] `run_all_checks` passes the two options to L2 with `functools.partial`; `QUALITY_CHECKS` keeps its shape.
+- [x] `print_result` header gains "(N pinned positional warnings; not a value or route-parity check)" when L2 passes with pinned warnings.
 
 #### 4. CLI
 **File:** `src/agentic_mbse/cli/__init__.py` (`cmd_validate` at `:353-365`, parser near `:762`) (MODIFY)
-- [ ] `--positional-pins FILE` and `--positional-pins-root DIR`. Usage errors: root without pins; root not a directory (D12).
+- [x] `--positional-pins FILE` and `--positional-pins-root DIR`. Usage errors: root without pins; root not a directory (D12).
 
 #### 5. Existing-fixture scan
 **File:** `scripts/positional_binding/scan_existing_fixtures.py` (NEW)
-- [ ] Runs the check over every fixture directory under `tests/fixtures/` (whole directories, so multi-file fixtures resolve) except `positional_binding/`. Writes `evidence/existing-fixture-scan.md` listing every positional finding and unverifiable result, with its file and line.
-- [ ] Run it **before** running the full suite. For each entry, write the justification in the evidence file. Only then update any affected test expectation, citing the evidence entry (Det-8). Do not suppress a finding to keep an old expectation.
+- [x] Runs the check over every fixture directory under `tests/fixtures/` (whole directories, so multi-file fixtures resolve) except `positional_binding/`. Writes `evidence/existing-fixture-scan.md` listing every positional finding and unverifiable result, with its file and line.
+- [x] Run it **before** running the full suite. For each entry, write the justification in the evidence file. Only then update any affected test expectation, citing the evidence entry (Det-8). Do not suppress a finding to keep an old expectation.
 
 #### 6. Tests
 **Files:** `tests/test_validation/test_positional_binding_policy.py` (NEW), `tests/test_validation/test_positional_binding.py` (MODIFY), `tests/test_cli.py` (MODIFY)
-- [ ] Policy (Pol-1, Pol-2, Pol-4): with a pin list, an unpinned mismatch fails L2, a pinned one passes with nothing else present, a changed target gives a new ERROR plus a stale pin, an unmatched pin fails; no list gives all ERRORs; malformed, unreadable and headerless lists each give `L2_POSITIONAL_PIN_LIST_INVALID`. Inputs bound to valued attributes so `LITERAL_BINDING` does not mask results.
-- [ ] Scope (Pol-3): validate the self-contained `partial_scope/` subfolder; pins outside are counted out of scope with no issue; an in-scope unmatched pin is stale. A second case validates `partial_run/designs/` alone and shows unverifiable owners.
-- [ ] Unverifiable through L2 (Insp-1): inject a raising owner sweep, a raising `owned_features` read for one owner, a raising `heritage` read for one input. Each gives `L2_CHECK_UNVERIFIABLE` naming the element, L2 fails, findings on other owners still appear, and a pin for the affected input changes nothing. Also the M1 fixtures through L2.
-- [ ] Metrics (Insp-3): `Positional inputs inspected` and the other metrics in `design.md#issues-and-metrics` are present; the summary line text.
-- [ ] Pass rule (Pol-5): a model with a pinned positional warning plus one other L2 warning still fails L2.
-- [ ] Determinism (I5): two runs on one fixture tree give identical issue lists.
-- [ ] CLI: both options reach L2; both usage errors.
+- [x] Policy (Pol-1, Pol-2, Pol-4): with a pin list, an unpinned mismatch fails L2, a pinned one passes with nothing else present, a changed target gives a new ERROR plus a stale pin, an unmatched pin fails; no list gives all ERRORs; malformed, unreadable and headerless lists each give `L2_POSITIONAL_PIN_LIST_INVALID`. Inputs bound to valued attributes so `LITERAL_BINDING` does not mask results.
+- [x] Scope (Pol-3): validate the self-contained `partial_scope/` subfolder; pins outside are counted out of scope with no issue; an in-scope unmatched pin is stale. A second case validates `partial_run/designs/` alone and shows unverifiable owners.
+- [x] Unverifiable through L2 (Insp-1): inject a raising owner sweep, a raising `owned_features` read for one owner, a raising `heritage` read for one input. Each gives `L2_CHECK_UNVERIFIABLE` naming the element, L2 fails, findings on other owners still appear, and a pin for the affected input changes nothing. Also the M1 fixtures through L2.
+- [x] Metrics (Insp-3): `Positional inputs inspected` and the other metrics in `design.md#issues-and-metrics` are present; the summary line text.
+- [x] Pass rule (Pol-5): a model with a pinned positional warning plus one other L2 warning still fails L2.
+- [x] Determinism (I5): two runs on one fixture tree give identical issue lists.
+- [x] CLI: both options reach L2; both usage errors.
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_validation/` → no new failures beyond those justified in `evidence/existing-fixture-scan.md`
-- [ ] `uv run pytest tests/test_validation/test_integration_regression.py tests/test_validation/test_level2_integration.py` → pass (Pol-5)
-- [ ] G1, G2, G3
+- [x] `uv run pytest tests/test_validation/` → no new failures beyond those justified in `evidence/existing-fixture-scan.md`
+- [x] `uv run pytest tests/test_validation/test_integration_regression.py tests/test_validation/test_level2_integration.py` → pass (Pol-5)
+- [x] G1, G2, G3
 
 **Manual:**
-- [ ] `uv run agentic-mbse validate --level=2 tests/fixtures/positional_binding/prototype/` (or one fixture dir) → see `L2_POSITIONAL_BINDING` ERRORs with the five fields and both repairs.
-- [ ] Error case: `uv run agentic-mbse validate --level=2 --positional-pins-root /tmp models/` → usage error.
-- [ ] If Phase 1 found that L1 passes `out_before_in`, run full `validate` on it now and add what L2 reports to the surfaced item.
+- [x] `uv run agentic-mbse validate --level=2 tests/fixtures/positional_binding/prototype/` (or one fixture dir) → see `L2_POSITIONAL_BINDING` ERRORs with the five fields and both repairs.
+- [x] Error case: `uv run agentic-mbse validate --level=2 --positional-pins-root /tmp models/` → usage error.
+- [x] If Phase 1 found that L1 passes `out_before_in`, run full `validate` on it now and add what L2 reports to the surfaced item.
 
 **Done when (traces to Pol-1 to Pol-5, Insp-1, Insp-3 metric, Det-8):** the policy, scope, unverifiable, metrics and CLI tests pass; the existing-fixture scan is in evidence with every entry justified; the regression tests pass.
 
@@ -817,6 +817,32 @@ See `design.md#potential-risks` for the full list. Phase-specific mitigations:
 - `check()` will live in a separate module in Phase 5, not in `positional_binding.py`: it calls the extractor (SysIDE) and reads the filesystem, which would break I6 for the decision module.
 
 ### Phase 5 Completion
+**Completed:** 2026-10-18
+
+**Changes Made:**
+- `src/agentic_mbse/sysml/types.py`: `L2_POSITIONAL_BINDING`, `L2_POSITIONAL_PIN_STALE`, `L2_POSITIONAL_PIN_LIST_INVALID`.
+- `src/agentic_mbse/validation/positional_check.py` (NEW): `check(model, models_path, files, pins_file, pin_root)` (extract, discover or load, decide, render), `render(result, report_root)`, `describe_pin_list`, `invalid_pin_list_issue` and `is_pinned_positional_warning`. Messages: swaps say "a likely authoring hazard in valid SysML", name both repairs and end with the five pin fields in TOML form (`[owner = "...", input = "...", target = "...", file = "...", line = N]`), the file relative to the pin root, or to the project root when there is no list. Special-slot messages carry D20's text. Pinned ones add the disclaimer. Unpinnable ones (D9) say why. Unverifiable ones carry `POSITIONAL_<cause>`.
+- `level2_structure.py`: `validate_structure(models_path, positional_pins=None, pin_root=None)` runs the check after the existing four; `success = all(is_pinned_positional_warning(i) for i in issues)`, the only change to the success line; the positional metrics join L2's.
+- `runner.py`: `run_all_checks(..., positional_pins=None, positional_pins_root=None)` binds L2's options with `functools.partial`; `QUALITY_CHECKS` keeps its shape and gained a type annotation.
+- `common.py`: `print_result`'s header adds "(N pinned positional warnings; not a value or route-parity check)" when a level passes with pinned warnings.
+- `cli/__init__.py`: `--positional-pins FILE`, `--positional-pins-root DIR`; both usage errors exit 2.
+- `scripts/positional_binding/scan_existing_fixtures.py` and `evidence/existing-fixture-scan.md` (Det-8), run before the full suite.
+- `tests/test_validation/test_positional_binding_policy.py` (NEW, 31 tests): Pol-1, Pol-2 (malformed, undecodable, directory, headerless), Pol-3 (out of scope, in-scope stale, non-self-contained subfolder), Pol-4, Pol-5 (pinned warning plus a `LITERAL_BINDING` warning fails; a clean model passes), Insp-1 (raising owner sweep, raising `owned_features` on one owner, raising `heritage` on one input with identical issues with and without its pin, the three M1 fixtures), Insp-3 metrics and the summary line, I5, and the CLI (both options reach L2; both usage errors).
+- `tests/test_cli.py`: the three `cmd_validate` tests build their argument object by hand; they now set the two new attributes, which the parser always sets.
+- G1: full suite 9 failed / 3910 passed before the `test_cli.py` change; the 3 new were exactly those hand-built argument objects (`AttributeError`), fixed as above; the other 6 are the baseline 6. After the fix the validation, CLI and design-choice modules pass (364). G2 clean on every touched file; `common.py`, `runner.py` and `level2_structure.py` had pre-existing format drift, formatted one file at a time. G3: `mypy src/` 97 errors (baseline). The touched `level2_structure.py`, `runner.py` and `common.py` keep their pre-existing errors (the direct-execution `from common import` fallback, one `var-annotated`, one unused ignore); the one error this phase added (`runner.py` list type) is fixed. New test and script files clean.
+
+**Existing-fixture scan (Det-8):** no existing fixture has a positional finding. 11 `L2_CHECK_UNVERIFIABLE` results appear only on partial loads (a `designs/` folder without its sibling `library/`, or `sump_pump/` merging three trees with clashing package names); every test that uses those fixtures loads the fixture's own root, where nothing is reported. No expectation changed. Justified in `evidence/existing-fixture-scan.md`.
+
+**Manual checks:**
+- `validate --level=2 tests/fixtures/positional_binding/prototype/`: 17 blocking ERRORs (15 inputs; `multiple_types` gives 4), outcomes explicit 9, anonymous 2, implicit_matching 9, implicit_mismatch 15, new_parameter 75, as the prototype log. Messages print the five fields and both repairs.
+- `validate --level=2 --positional-pins-root /tmp models/`: usage error, exit 2.
+- **`out_before_in` (surfaced owner item, addition):** full `validate --complete tests/fixtures/positional_binding/l1/` passes L1 and fails L2 with two positional ERRORs, `a` lands on `O::o` and `b` on `O::a`, plus two `LITERAL_BINDING` warnings. So `validate` now rejects this model, but for the positional reason, not for SysIDE's direction-conformance error. Det-6 for this row stays open for the owner.
+
+**Deviations:**
+- `check`, `render` and the predicate live in `positional_check.py`, not `positional_binding.py`: `ValidationIssue` (`sysml/types.py`) imports SysIDE through `reference_use.py`, and `check` calls the extractor and reads the filesystem. `positional_binding.py` stays the pure decision (I6).
+- `render(result, report_root)` takes the root files are printed relative to, so a finding's `file` can be copied into a pin. The pin-list metric and the invalid-list issue are separate functions that `check` calls.
+- One metric beyond the design's list, `Positional input outcomes` (every outcome count), so Phase 6 can compare outcome counts through the production path. And `Positional pins not judged (inspection failed)` for the Phase 4 deviation.
+- The CLI tests sit in `test_positional_binding_policy.py` beside the other L2 tests, calling `agentic_mbse.cli.main`; `test_cli.py` changed only as above. `test_positional_binding.py` needed no Phase 5 change.
 
 ### Phase 6 Completion
 

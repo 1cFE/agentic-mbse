@@ -7,6 +7,8 @@ Runs all 6 quality levels in sequence with configurable behavior.
 
 import argparse
 import sys
+from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 
 # Import all level checkers
@@ -15,6 +17,7 @@ try:
         EXIT_FAILURE,
         EXIT_SUCCESS,
         AggregatedResult,
+        QualityCheckResult,
         print_result,
     )
     from .level1_syntax import validate_syntax
@@ -29,6 +32,7 @@ except ImportError:
         EXIT_FAILURE,
         EXIT_SUCCESS,
         AggregatedResult,
+        QualityCheckResult,
         print_result,
     )
     from level1_syntax import validate_syntax
@@ -41,7 +45,7 @@ except ImportError:
 
 # Registry of all quality checks
 # Levels 1-6 implemented (complete quality pyramid)
-QUALITY_CHECKS = [
+QUALITY_CHECKS: list[tuple[str, Callable[[str], QualityCheckResult]]] = [
     ("Level 1: Syntax Validation", validate_syntax),
     ("Level 2: Structural Completeness", validate_structure),
     ("Level 3: Dependency Integrity", validate_dataflow),
@@ -56,6 +60,8 @@ def run_all_checks(
     fail_fast: bool = True,
     specific_level: int | None = None,
     verbose: bool = False,
+    positional_pins: Path | None = None,
+    positional_pins_root: Path | None = None,
 ) -> AggregatedResult:
     """
     Run all quality checks
@@ -65,6 +71,8 @@ def run_all_checks(
         fail_fast: Stop at first failure (default True)
         specific_level: Run only this level (1-6), or None for all
         verbose: Show detailed output
+        positional_pins: L2's `--positional-pins` pin list, or None to look at the project root
+        positional_pins_root: L2's `--positional-pins-root`; needs `positional_pins`
 
     Returns:
         AggregatedResult with all check results
@@ -82,17 +90,25 @@ def run_all_checks(
         checks_to_run = [QUALITY_CHECKS[specific_level - 1]]
     else:
         checks_to_run = QUALITY_CHECKS
+    # L2 takes the positional pin options; every level is still called as check(models_path).
+    level2: Callable[[str], QualityCheckResult] = partial(
+        validate_structure, positional_pins=positional_pins, pin_root=positional_pins_root
+    )
+    calls: list[tuple[str, Callable[[str], QualityCheckResult]]] = [
+        (name, level2 if check_func is validate_structure else check_func)
+        for name, check_func in checks_to_run
+    ]
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("SysML Quality Validation")
     print(f"Models path: {models_path}")
     print(f"Mode: {'Fail-fast' if fail_fast else 'Complete'}")
     if specific_level:
         print(f"Running: Level {specific_level} only")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     # Run checks
-    for name, check_func in checks_to_run:
+    for name, check_func in calls:
         if verbose:
             print(f"\nRunning: {name}...")
 
@@ -129,9 +145,9 @@ def run_all_checks(
     )
 
     # Print summary
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("Summary")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"Checks run: {aggregated.total_checks}")
     print(f"✅ Passed: {aggregated.passed}")
     print(f"❌ Failed: {aggregated.failed}")

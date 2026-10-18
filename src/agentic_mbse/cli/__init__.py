@@ -332,8 +332,25 @@ load_dotenv()
 __all__ = ["main"]
 
 
+EXIT_USAGE = 2  # argparse's own code for a usage error
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     """Run validation on models."""
+    if args.positional_pins_root is not None:
+        if args.positional_pins is None:
+            print(
+                "Error: --positional-pins-root needs --positional-pins (it says which tree "
+                "that file's paths describe)",
+                file=sys.stderr,
+            )
+            return EXIT_USAGE
+        if not args.positional_pins_root.is_dir():
+            print(
+                f"Error: --positional-pins-root is not a directory: {args.positional_pins_root}",
+                file=sys.stderr,
+            )
+            return EXIT_USAGE
     if not Path(args.path).exists():
         print(f"Error: Path does not exist: {args.path}")
         return EXIT_FAILURE
@@ -343,6 +360,8 @@ def cmd_validate(args: argparse.Namespace) -> int:
         fail_fast=not args.complete,
         specific_level=args.level,
         verbose=args.verbose,
+        positional_pins=args.positional_pins,
+        positional_pins_root=args.positional_pins_root,
     )
     return EXIT_SUCCESS if result.overall_success else EXIT_FAILURE
 
@@ -751,6 +770,23 @@ def main(argv: list[str] | None = None) -> int:
         "--verbose",
         action="store_true",
         help="Verbose output",
+    )
+    validate_parser.add_argument(
+        "--positional-pins",
+        type=Path,
+        metavar="FILE",
+        help=(
+            "L2 positional-binding pin list to use instead of <project root>/positional-pins.toml"
+        ),
+    )
+    validate_parser.add_argument(
+        "--positional-pins-root",
+        type=Path,
+        metavar="DIR",
+        help=(
+            "Directory the pin list's file paths are relative to (default: the pin list's "
+            "directory); needs --positional-pins"
+        ),
     )
     validate_parser.set_defaults(func=cmd_validate)
 

@@ -69,6 +69,12 @@ class ValidationCode(str, Enum):
     # element is UNVERIFIED. Surfaced as an ERROR: an inspection failure must never
     # read as a clean result (self-binding-replacement audit F4).
     L2_CHECK_UNVERIFIABLE = "L2_CHECK_UNVERIFIABLE"
+    # EXEC-SUBSET-CONTRACT Item 4: an authored input that lands by position on a differently
+    # named formal. ERROR, or WARNING when the project pinned it as legacy; a pin certifies
+    # nothing about values or routes. A stale pin and an invalid pin list are ERRORs.
+    L2_POSITIONAL_BINDING = "L2_POSITIONAL_BINDING"
+    L2_POSITIONAL_PIN_STALE = "L2_POSITIONAL_PIN_STALE"
+    L2_POSITIONAL_PIN_LIST_INVALID = "L2_POSITIONAL_PIN_LIST_INVALID"
 
     # Dataflow Issues
     CIRCULAR_IMPORT = "CIRCULAR_IMPORT"

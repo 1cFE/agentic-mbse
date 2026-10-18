@@ -11,6 +11,7 @@ Checks:
 """
 
 import sys
+from pathlib import Path
 from typing import Any
 
 from agentic_mbse.sysml.binding import classify_binding, extract_bindings
@@ -22,6 +23,8 @@ from agentic_mbse.sysml.types import (
     ValidationCode,
     ValidationIssue,
 )
+from agentic_mbse.validation.positional_check import check as check_positional_bindings
+from agentic_mbse.validation.positional_check import is_pinned_positional_warning
 
 try:
     from .common import (
@@ -235,7 +238,8 @@ def _extract_input_features(calc_def: Any) -> list[Any]:
         # Check if this is a feature (attribute or reference)
         # Note: calc def parameters can be ReferenceUsage or AttributeUsage
         if not (
-            SysideAdapter.is_instance(member, "AttributeUsage") or SysideAdapter.is_instance(member, "ReferenceUsage")
+            SysideAdapter.is_instance(member, "AttributeUsage")
+            or SysideAdapter.is_instance(member, "ReferenceUsage")
         ):
             continue
 
@@ -399,15 +403,24 @@ def check_orphaned_elements(model: Any) -> list[ValidationIssue]:
     return []
 
 
-def validate_structure(models_path: str) -> QualityCheckResult:
+def validate_structure(
+    models_path: str,
+    positional_pins: Path | None = None,
+    pin_root: Path | None = None,
+) -> QualityCheckResult:
     """
     Validate structural completeness
 
     Args:
         models_path: Path to models directory
+        positional_pins: `--positional-pins`, a pin list to use instead of the one found at
+            the project root
+        pin_root: `--positional-pins-root`, the tree the pin list's paths describe; needs
+            `positional_pins`
 
     Returns:
-        QualityCheckResult with structural issues
+        QualityCheckResult with structural issues. A pinned positional-binding WARNING is the
+        only issue that does not fail it.
     """
     print_header("Structural Completeness", 2)
 
@@ -442,12 +455,18 @@ def validate_structure(models_path: str) -> QualityCheckResult:
     # resolved identity.
     all_issues.extend(check_self_named_bindings(model))
     all_issues.extend(check_orphaned_elements(model))
+    # EXEC-SUBSET-CONTRACT Item 4: inputs that land by position on a differently named formal.
+    positional_issues, positional_metrics = check_positional_bindings(
+        model, Path(models_path), files, positional_pins, pin_root
+    )
+    all_issues.extend(positional_issues)
 
-    # Create result and use add_issue() to populate both lists
+    # Create result and use add_issue() to populate both lists. Every issue fails L2 except a
+    # pinned positional warning (design I1).
     result = QualityCheckResult(
         level=2,
         level_name="Structural Completeness",
-        success=len(all_issues) == 0,
+        success=all(is_pinned_positional_warning(issue) for issue in all_issues),
     )
 
     # Add each issue using add_issue() to populate structured_issues and issues
@@ -472,6 +491,7 @@ def validate_structure(models_path: str) -> QualityCheckResult:
             [i for i in result.structured_issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
         ),
         "Orphaned elements": 0,  # No orphan check implemented yet
+        **positional_metrics,
     }
 
     return result
