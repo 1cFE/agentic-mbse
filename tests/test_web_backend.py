@@ -420,7 +420,15 @@ def test_non_arxiv_url_has_no_arxiv_warning(tmp_path):
 # Chrome on the real page that must not reach the output, and paper parts that must.
 _CHROME_TEXT = ["Report Issue", "Instructions for reporting errors", "major funders", "09 Oct 2026"]
 _FOOTER_LOGO = "iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO"
-_PAPER_TEXT = ["## 1 Introduction", "## References", "## Appendix B Benchmarks", "w/o library"]
+_PAPER_TEXT = [
+    "## 1 Introduction",
+    "## References",
+    "## Appendix B Benchmarks",
+    "Figure 1:",  # caption
+    "w/o library",  # Table 3
+    "$k = 5$",  # math
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB",  # in-article data URI
+]
 
 
 def _serve(html: str | None = None, url: str = _ARXIV_URL):

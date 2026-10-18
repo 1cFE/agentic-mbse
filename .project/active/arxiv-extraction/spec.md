@@ -1,7 +1,7 @@
 # Spec: Reliable arXiv extraction
 
 **Work item:** ARXIV-EXTRACTION
-**Status:** Draft (revised after spec review), with one open owner gate (shortcut default, R3). Implementation in progress: plan Phases 0–6 of 0–8 done (2026-10-18).
+**Status:** Draft (revised after spec review), with one open owner gate (shortcut default, R3). Implementation in progress: plan Phases 0–7 of 0–8 done (2026-10-18); Phase 8 (live Harness² check) remains.
 **Owner:** Reid Westwood
 **Created:** 2026-10-18
 **Revised:** 2026-10-18 (incorporates `spec_review.md` Resolutions)

@@ -35,7 +35,7 @@ Each extraction tool was evaluated independently against a 14-document test corp
 
 **Stage 1B — Pandoc** (16 configurations tested):
 - Confirmed Pandoc does NOT support PDF as input — eliminating an entire approach early.
-- Discovered arXiv ID detection from PDF page 1 (`pdftotext` + regex) is 100% reliable and takes <1 second.
+- Discovered arXiv ID detection from PDF page 1 (`pdftotext` + regex) is 100% reliable and takes <1 second. (Superseded 2026-10: a page-1 regex also matches citations, so identity now requires the margin stamp or the arxiv.org source URL; see [the arXiv shortcut](#pandoc_convertpy-and-arxiv_htmlpy--arxiv-shortcut).)
 - Found that stripping `<figure>` HTML tags before conversion fixes table/figure mangling.
 - Best configuration produces clean markdown with perfect headings, tables, and LaTeX math.
 - Only ~50% of papers have arXiv HTML source, making this a shortcut rather than universal.
@@ -109,7 +109,7 @@ Evidence: `.project/concepts/doc-extraction/requirements.md`, `.project/concepts
 The pipeline is a data pipeline, not an object graph. Functions transform typed data in sequence. No abstract base classes, no registry patterns, no plugin systems.
 
 ```
-PDF ──→ arXiv check? ──yes──→ Pandoc HTML → markdown (done)
+PDF ──→ arXiv paper identified? ──yes──→ article → Pandoc → markdown + images (done)
                       │
                       no
                       ↓
@@ -148,7 +148,8 @@ All production code lives in `src/agentic_mbse/extraction/` (~3,900 lines across
 | `quality_gate.py` | Per-page quality assessment, routing decisions, heading anomaly detection |
 | `tables.py` | Ensemble table detection, filtering, Claude table enhancement, markdown table manipulation |
 | `claude_enhance.py` | Claude vision page extraction via CLI, output validation |
-| `pandoc_convert.py` | arXiv ID detection, HTML fetch, Pandoc HTML-to-markdown conversion |
+| `pandoc_convert.py` | PDF side of the arXiv shortcut: identity (`identify_arxiv_paper`), the shortcut default (`ARXIV_SHORTCUT_DEFAULT`, `resolve_arxiv_shortcut`), the HTML-availability probe, version helpers, and the `convert_arxiv_html` wrapper |
+| `arxiv_html.py` | arXiv HTML to markdown for both routes: loading (`load_arxiv_html`, `ArxivSource`), article selection and the SVG-figure rewrite (`extract_article`), the one Pandoc runner (`convert_article`), and image saving (`persist_images`, `fetch_image`). Stdlib only |
 | `pymupdf_backend.py` | pymupdf4llm wrapper with `CompositeHeaderDetector`, per-page extraction |
 | `postprocess.py` | Legacy deterministic text transforms (not used by the pipeline — see [Design Decisions](#postprocesspy-is-deliberately-not-called)) |
 | `base.py` | Shared utilities: output directory management, subprocess timeout handling, `ExtractionResult` |
@@ -165,7 +166,7 @@ All production code lives in `src/agentic_mbse/extraction/` (~3,900 lines across
 
 The `extract_pdf()` function coordinates all 8 steps:
 
-1. **arXiv shortcut** — Calls `detect_arxiv_id()` + `convert_arxiv_html()`. On success, returns immediately with a `PipelineResult` sourced from `"pandoc_arxiv"`.
+1. **arXiv shortcut** — `_try_arxiv_shortcut()`: `identify_arxiv_paper()` → `check_arxiv_html()` → `load_arxiv_html()` → `extract_article()` → `convert_article()` → `persist_images()`. On success, returns immediately with a `PipelineResult` sourced from `"pandoc_arxiv"`. Every fallback adds a string to `PipelineResult.warnings`.
 2. **Base extraction** — Calls `extract_pages()` from `pymupdf_backend.py`. This is the only step that can cause a hard failure.
 3. **Ensemble table detection** — Calls `detect_tables_ensemble()`. Error-isolated: a crash here means no table data, but the pipeline continues.
 4. **Table filtering and enhancement** — Calls `filter_tables()` then `enhance_table_with_claude()` for tables that need it. Budget is deducted from the shared pool.
@@ -288,20 +289,43 @@ The `CompositeHeaderDetector` combines two detection approaches:
 
 The union of both approaches gives zero regressions vs either alone and improves heading detection on 10/13 corpus documents.
 
-### pandoc_convert.py — arXiv Shortcut
+### pandoc_convert.py and arxiv_html.py — arXiv Shortcut
 
-When a PDF is detected as an arXiv paper with available HTML, Pandoc conversion produces perfect headings and equations at zero cost. This is the "free lunch" path that skips the entire PDF pipeline.
+When a PDF is an arXiv paper with an HTML version, Pandoc conversion of that HTML produces exact headings and equations at zero cost, and skips the PDF pipeline. The direct web route for `arxiv.org/html/...` URLs (`web_backend.py`) uses the same conversion.
 
-**Detection sequence** (<1s):
-1. Extract page 1 text via pymupdf
-2. Regex match for `arXiv:\d{4}\.\d{4,5}(v\d+)?`
-3. HTTP HEAD to `https://arxiv.org/html/{id}` to verify HTML availability
-4. Fallback: check PDF Creator metadata for `arXiv` string
+**Module split.** `pandoc_convert.py` owns the PDF-side decisions: identity, the default, the HTML-availability probe and version helpers. `arxiv_html.py` owns everything from HTML to markdown and images, shared by both routes. Imports run one way: `pandoc_convert` imports `arxiv_html`; `arxiv_html` never imports `pandoc_convert`. `arxiv_html` is stdlib-only, because the PDF route runs on a core install without the `[web]` extra.
 
-**Pandoc configuration** (from Stage 1B's 16-configuration evaluation):
+**Identity** (`identify_arxiv_paper`, <1s). Only trusted evidence counts:
+1. The page-1 margin stamp: a text line pymupdf reports as vertical (`|dir.x| < 0.05`), ending within the left 15% of the page, that fully matches `arXiv:<id>v<N> [<category>] <d> <Mon> <yyyy>`.
+2. The arxiv.org `abs`/`pdf` URL the PDF was fetched from (`PipelineConfig.pdf_source_url`, filled by the CLI for PDF URLs).
+
+Body-text IDs (citations) are never evidence, and Creator metadata is not used. Two stamps, or a stamp and URL naming different papers (ignoring version), is a conflict: no substitution, one warning. `detect_arxiv_id` is kept as a thin wrapper returning the stamp's ID.
+
+**Control.** `PipelineConfig.arxiv_shortcut` is `None` (follow `ARXIV_SHORTCUT_DEFAULT`), `True` or `False`. The default is written only in that constant. `arxiv_html_path` is an explicit source and runs under either default; `arxiv_shortcut=False` with `arxiv_html_path` raises `ValueError`.
+
+**Supported container.** The page must contain exactly one `<article` opening tag and one `</article>`, and the opening tag's class must include `ltx_document` (what LaTeXML emits on arxiv.org). The slice from that tag to its close is the paper; everything around it is chrome. Nothing inside it is removed. Any other shape raises `ArxivConversionError("no recognized arXiv article container")`.
+
+**SVG figures.** LaTeXML embeds some figures as `<object type="image/svg+xml" class="ltx_graphics" data="…svg">`, which Pandoc drops. `extract_article` rewrites those objects to `<img>` before anything else touches the slice. The web route's sanitizer deletes every `<object>`, so the web route selects and rewrites from the raw page first and sanitizes only the slice.
+
+**Pandoc configuration** (from Stage 1B's 16-configuration evaluation), in `convert_article`, the only place Pandoc runs for arXiv or the web fallback (`_run_pandoc`):
 - Pre-process: strip `<figure>` tags and CSS transform wrappers (fixes table/figure output)
 - Flags: `-f html-native_divs-native_spans -t markdown-header_attributes --wrap=none --markdown-headings=atx`
 - Post-process: strip `\hspace{0pt}` and HTML comment artifacts
+- Output under 100 characters (`MIN_CONTENT_CHARS`) counts as a failed conversion.
+
+**Images.** `persist_images` resolves each markdown image ref against `ArxivSource.image_base`: the post-redirect page URL (trailing slash dropped on `arxiv.org/html/<id>[vN]/`) or the local file's `file://` URI, with any `<base href>` applied. Each distinct URL is read once (http(s) through `fetch_image`, `file:` copied) and saved under `images/`. A different URL with a taken name becomes `name_2.ext`. Unsaved refs stay byte-identical with one warning each. `data:` URIs are never touched. The PDF route saves only when `extracted_images_dir` is set.
+
+**Fallback per route.**
+
+| Failure | PDF route | Web route (`arxiv.org/html/...`) |
+|---|---|---|
+| Shortcut off, Pandoc missing, no evidence | Normal PDF extraction, no warning (an ignored `--html-path` warns) | Pandoc missing: trafilatura, with a warning |
+| Identity conflict | Normal PDF extraction, warning | n/a |
+| No HTML version, fetch or read error | Normal PDF extraction, warning | Fetch error fails the extraction, as before |
+| No recognized article, Pandoc failure, short output | Normal PDF extraction, warning | trafilatura (backend `trafilatura`), warning; the whole page is never sent to Pandoc |
+| Image not saved | Ref kept, warning | Ref kept, warning |
+
+Warnings reach the returned result, `metrics.json["warnings"]` and stderr (`extract_cli._print_warnings`). Raw bytes saved with `--save-source` and the content hash are always the fetched page, never the article slice.
 
 ### types.py — Data Types
 
@@ -391,7 +415,7 @@ These are documented gaps from the experimentation stages. They are accepted tra
 
 4. **Math symbol metric is misleading.** `math_symbol_count` in `ExtractionMetrics` counts Unicode math symbols (U+2200–U+22FF). pymupdf4llm scores 8–21 (garbled Unicode fragments) while Claude scores 0–1 (clean ASCII LaTeX). The metric penalizes the better output. Use it for detecting garbling, not for measuring quality.
 
-5. **~50% arXiv HTML availability.** The Pandoc shortcut only works for arXiv papers with HTML source. Non-arXiv papers and older arXiv papers without HTML fall through to the full PDF pipeline.
+5. **~50% arXiv HTML availability.** The Pandoc shortcut only works for arXiv papers with HTML source. Non-arXiv papers and older arXiv papers without HTML fall through to the full PDF pipeline. PDFs of arXiv papers obtained elsewhere (publisher or author builds) carry no margin stamp and also fall through, by design. Old-style IDs (`hep-th/9901001`) are not recognized.
 
 ---
 

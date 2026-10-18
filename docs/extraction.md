@@ -41,7 +41,8 @@ agentic-mbse extract <path> [options]
 | `--no-img2table` | off | Disable Img2Table second-pass table detection |
 | `--docling` | off | Enable Docling third-pass table detection |
 | `--dry-run` | off | Show quality gate decisions without calling Claude |
-| `--html-path PATH` | auto-detect | arXiv HTML file for Pandoc shortcut (overrides auto-detect) |
+| `--html-path PATH` | auto-detect | arXiv HTML file for the Pandoc shortcut. Uses this file instead of identifying the paper; cannot be combined with `--no-arxiv-shortcut` |
+| `--arxiv-shortcut` / `--no-arxiv-shortcut` | [see below](#the-arxiv-shortcut) | Replace a PDF with its arXiv HTML version when the PDF identifies itself as an arXiv paper. `--no-arxiv-shortcut` forces normal PDF extraction with Pandoc still on PATH. See [The arXiv shortcut](#the-arxiv-shortcut) |
 
 ### DOCX Options
 
@@ -57,7 +58,8 @@ For each PDF, the pipeline writes to `<output_dir>/`:
 | File | Contents |
 |------|----------|
 | `output.md` | The extracted markdown |
-| `metrics.json` | Quality metrics: character count, heading count/distribution, table row count, math symbol count, figure references, extraction time |
+| `images/` | Saved images, referenced from `output.md` as `images/<name>` |
+| `metrics.json` | Quality metrics: character count, heading count/distribution, table row count, math symbol count, figure references, extraction time. A `warnings` list is added when anything fell back or was not saved (see below). Written for failed extractions too, so their warnings are kept |
 | `decisions.json` | Per-page quality gate decisions: what action was taken and why |
 | `cost.json` | Per-call Claude API costs (only written when Claude was used) |
 
@@ -67,7 +69,7 @@ If `--index` is passed, an additional `INDEX.md` is generated with section headi
 
 PDFs go through an 8-step pipeline:
 
-1. **arXiv shortcut** — If the PDF has an arXiv ID and Pandoc is available, tries to convert the HTML version directly. This produces clean markdown without needing Claude. Skips remaining steps on success.
+1. **arXiv shortcut** — If the PDF identifies itself as an arXiv paper and Pandoc is available, converts the paper's arXiv HTML version instead, with its figures saved to `images/`. This produces clean markdown without needing Claude. Skips remaining steps on success. See [The arXiv shortcut](#the-arxiv-shortcut).
 
 2. **Base extraction** — Uses pymupdf4llm to convert each page to markdown. This is the only step that can cause a hard failure.
 
@@ -90,6 +92,37 @@ PDFs go through an 8-step pipeline:
    - **STRIP_BROKEN** — remove broken tables (`<br>` artifacts)
 
 The final markdown is assembled from all merged pages with output metrics computed.
+
+## The arXiv shortcut
+
+When a PDF is an arXiv paper, the pipeline can replace PDF extraction with a Pandoc conversion of the paper's arXiv HTML version. The HTML version has exact headings, equations and tables, at no Claude cost.
+
+**When it fires.** The PDF must name its own arXiv ID through trusted evidence:
+
+- the stamp arXiv prints rotated in the left margin of page 1 (`arXiv:2610.14224v1 [cs.AI] 9 Oct 2026`), or
+- the arxiv.org URL the PDF was downloaded from (`arxiv.org/abs/<id>` or `arxiv.org/pdf/<id>`), when you extract a PDF URL.
+
+An arXiv ID anywhere in the text, such as a citation, never counts. If the stamp and the URL name different papers, or page 1 carries two stamps, the PDF is extracted normally and a warning says why. PDFs that didn't come from arXiv (publisher versions, author builds) carry no stamp, so they go through normal PDF extraction. That is intended.
+
+**What it produces.** Only the paper is converted: the single `<article class="ltx_document">` arXiv wraps it in. The site header, navigation, issue-report dialog, footers, funder logos and UI icons are left out. Images that belong to the paper, including small inline diagrams embedded as `data:` URIs, are kept. Figures are downloaded once each into `images/` and referenced as `images/<name>`. A figure that can't be saved keeps its original reference and adds one warning. When the page has no recognized article element, the shortcut is skipped with a warning and the PDF is extracted normally.
+
+**Turning it off.** The shortcut is on by default. Pass `--no-arxiv-shortcut`, or `PipelineConfig(arxiv_shortcut=False)` in Python, to extract the PDF itself with Pandoc still on PATH. `--arxiv-shortcut` turns it on explicitly. `--html-path` gives the HTML file to convert, and runs whatever the default is. Combining it with `--no-arxiv-shortcut` is an error: the CLI exits with status 2, and `PipelineConfig` raises `ValueError`. The flag applies to local PDFs, PDF URLs, `--urls-from` batches and `--check`.
+
+**`--check`.** The Pandoc probe applies the same rule: it reports whether the PDF is identified as an arXiv paper and fetches nothing when it isn't. With `--no-arxiv-shortcut` it reports the shortcut as disabled. When it converts, it reports the converted character count. It does not download images.
+
+**Python use without an images directory.** `extract_pdf` saves figures only when `PipelineConfig.extracted_images_dir` is set (the CLI always sets it to `<output>/images`). Without it, the converted markdown keeps arXiv's relative figure references, which do not resolve locally.
+
+**Direct arXiv HTML URLs.** `agentic-mbse extract https://arxiv.org/html/<id>` uses the same paper-only conversion and figure saving. If the conversion fails, the page is extracted with trafilatura (backend `trafilatura`) and a warning names the reason. The whole page is never converted with Pandoc.
+
+### Warnings
+
+Fallbacks and unsaved images are reported three ways:
+
+- in the returned result (`PipelineResult.warnings`, `ExtractionResult.warnings`),
+- in `metrics.json` under `warnings`,
+- on stderr.
+
+Web-extraction warnings go to stderr only; they used to be printed to stdout. A shortcut that simply doesn't apply (no Pandoc, no arXiv evidence, turned off) is not a warning.
 
 ## Cost Control
 
@@ -121,7 +154,7 @@ The following optional dependencies enhance the pipeline but are not required. T
 |------------|-------------|--------------|
 | **GMFT** | Primary table detection from page images | Tables only detected by Img2Table; install via `agentic-mbse[extract-tables]` |
 | **Docling** | Third-pass table detection | Off by default; enable with `--docling` after installing `agentic-mbse[extract-full]` |
-| **Pandoc** | arXiv HTML shortcut for clean conversion | arXiv shortcut skipped; falls through to normal pipeline |
+| **Pandoc** | arXiv HTML shortcut for clean conversion | arXiv shortcut skipped; falls through to normal pipeline (with a warning if `--html-path` was given) |
 | **Claude API** (`ANTHROPIC_API_KEY`) | Page re-extraction and table enhancement | Same as `--budget 0` — quality gate still runs, but no Claude calls |
 
 ### Install extras

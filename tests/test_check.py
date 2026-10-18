@@ -13,8 +13,11 @@ Mocking strategy:
 from __future__ import annotations
 
 import json
+import urllib.error
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from agentic_mbse.cli.extract_cli import cmd_extract
 from agentic_mbse.extraction.check import (
@@ -38,8 +41,11 @@ from agentic_mbse.extraction.check import (
     run_check,
     select_pages,
 )
+from agentic_mbse.extraction.http import FetchResult
 from agentic_mbse.extraction.types import PageResult
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
+from tests.helpers.arxiv_page import ARXIV_PAGE
+from tests.helpers.arxiv_pdfs import CITATION, OTHER_STAMP, STAMP, make_pdf
 
 # ---------------------------------------------------------------------------
 # Common patch targets
@@ -215,59 +221,100 @@ class TestProbeDocling:
 
 
 class TestProbePandoc:
+    """The probe applies the pipeline's identity rule and shortcut control (design D14)."""
+
     def test_not_installed(self):
         """Pandoc not on PATH -> NOT_INSTALLED."""
         with patch(f"{_CHECK}._pandoc_available", return_value=False):
             result = probe_pandoc(Path("/fake.pdf"))
         assert result.status == ProbeStatus.NOT_INSTALLED
+        assert result.arxiv_identified is False
 
-    def test_no_arxiv_pass(self):
-        """No arXiv ID -> PASS with 'binary found' only."""
+    def test_citation_only_identifies_nothing_and_fetches_nothing(self, tmp_path):
+        pdf = make_pdf(tmp_path / "c.pdf", prose=CITATION)
         with (
             patch(f"{_CHECK}._pandoc_available", return_value=True),
-            patch(f"{_CHECK}.detect_arxiv_id", return_value=None),
+            patch(f"{_CHECK}.check_arxiv_html") as head,
         ):
-            result = probe_pandoc(Path("/fake.pdf"))
+            result = probe_pandoc(pdf)
+        head.assert_not_called()
         assert result.status == ProbeStatus.PASS
-        assert "binary found" in result.detail
-        assert "arXiv" not in result.detail
+        assert result.detail == "binary found, no arXiv paper identified"
+        assert result.arxiv_identified is False
 
-    def test_arxiv_no_html(self):
-        """arXiv ID found but no HTML available -> PASS."""
+    def test_conflict_identifies_nothing(self, tmp_path):
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP, OTHER_STAMP))
         with (
             patch(f"{_CHECK}._pandoc_available", return_value=True),
-            patch(f"{_CHECK}.detect_arxiv_id", return_value="2401.12345"),
-            patch(f"{_CHECK}.check_arxiv_html", return_value=None),
+            patch(f"{_CHECK}.check_arxiv_html") as head,
         ):
-            result = probe_pandoc(Path("/fake.pdf"))
+            result = probe_pandoc(pdf)
+        head.assert_not_called()
+        assert result.arxiv_identified is False
+        assert "conflict" in result.detail
+
+    def test_opt_out_skips_identification(self, tmp_path):
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        with (
+            patch(f"{_CHECK}._pandoc_available", return_value=True),
+            patch(f"{_CHECK}.identify_arxiv_paper") as ident,
+            patch(f"{_CHECK}.check_arxiv_html") as head,
+        ):
+            result = probe_pandoc(pdf, arxiv_shortcut=False)
+        ident.assert_not_called()
+        head.assert_not_called()
         assert result.status == ProbeStatus.PASS
-        assert "arXiv ID detected" in result.detail
+        assert result.detail == "binary found, arXiv shortcut disabled"
+        assert result.arxiv_identified is False
+
+    def test_stamp_without_html(self, tmp_path):
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        with (
+            patch(f"{_CHECK}._pandoc_available", return_value=True),
+            patch(f"{_CHECK}.check_arxiv_html", return_value=None) as head,
+        ):
+            result = probe_pandoc(pdf)
+        head.assert_called_once_with("2610.14224v1")
+        assert result.status == ProbeStatus.PASS
+        assert "arXiv paper identified (2610.14224v1 from stamp)" in result.detail
         assert "no HTML available" in result.detail
+        assert result.arxiv_identified is True
 
-    def test_arxiv_converted(self):
-        """Full arXiv HTML conversion -> PASS with char count."""
+    def test_reports_length_of_converted_markdown(self, tmp_path):
+        """The count is len(markdown), not len() of the (markdown, bytes) tuple."""
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        served = FetchResult(
+            content=ARXIV_PAGE.read_bytes(),
+            final_url="https://arxiv.org/html/2610.14224",
+            content_type="text/html",
+        )
         with (
             patch(f"{_CHECK}._pandoc_available", return_value=True),
-            patch(f"{_CHECK}.detect_arxiv_id", return_value="2401.12345"),
-            patch(f"{_CHECK}.check_arxiv_html", return_value="https://arxiv.org/html/2401.12345"),
-            patch(f"{_CHECK}.convert_arxiv_html", return_value="# Title\n\nConverted content " * 100),
+            patch(f"{_CHECK}.check_arxiv_html", return_value="https://arxiv.org/html/2610.14224"),
+            patch("agentic_mbse.extraction.arxiv_html.fetch_url", return_value=served),
+            patch(
+                "subprocess.run", return_value=MagicMock(returncode=0, stdout="x" * 1234, stderr="")
+            ),
         ):
-            result = probe_pandoc(Path("/fake.pdf"))
+            result = probe_pandoc(pdf)
         assert result.status == ProbeStatus.PASS
-        assert "HTML converted" in result.detail
-        assert "chars" in result.detail
+        assert "HTML converted (1234 chars)" in result.detail
+        assert result.arxiv_identified is True
 
-    def test_conversion_error(self):
-        """convert_arxiv_html raises -> FAIL."""
+    def test_conversion_error(self, tmp_path):
+        """The HTML fetch fails -> FAIL with the reason."""
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
         with (
             patch(f"{_CHECK}._pandoc_available", return_value=True),
-            patch(f"{_CHECK}.detect_arxiv_id", return_value="2401.12345"),
-            patch(f"{_CHECK}.check_arxiv_html", return_value="https://arxiv.org/html/2401.12345"),
-            patch(f"{_CHECK}.convert_arxiv_html", side_effect=RuntimeError("pandoc died")),
+            patch(f"{_CHECK}.check_arxiv_html", return_value="https://arxiv.org/html/2610.14224"),
+            patch(
+                "agentic_mbse.extraction.arxiv_html.fetch_url",
+                side_effect=urllib.error.URLError("network down"),
+            ),
         ):
-            result = probe_pandoc(Path("/fake.pdf"))
+            result = probe_pandoc(pdf)
         assert result.status == ProbeStatus.FAIL
-        assert "pandoc died" in result.error
+        assert "network down" in result.error
 
 
 # ---------------------------------------------------------------------------
@@ -333,9 +380,17 @@ class TestProbeClaude:
 # ---------------------------------------------------------------------------
 
 
-def _probe(component: str, status: ProbeStatus, detail: str | None = None) -> ProbeResult:
+def _probe(
+    component: str,
+    status: ProbeStatus,
+    detail: str | None = None,
+    *,
+    arxiv_identified: bool = False,
+) -> ProbeResult:
     """Create a synthetic ProbeResult."""
-    return ProbeResult(component=component, status=status, detail=detail)
+    return ProbeResult(
+        component=component, status=status, detail=detail, arxiv_identified=arxiv_identified
+    )
 
 
 def _make_check_result(
@@ -350,7 +405,12 @@ def _make_check_result(
             _probe("gmft", ProbeStatus.PASS, "2 tables on page 8, 5 total"),
             _probe("img2table", ProbeStatus.PASS, "0 additional tables"),
             _probe("docling", ProbeStatus.NOT_INSTALLED),
-            _probe("pandoc", ProbeStatus.PASS, "binary found, arXiv ID detected (2401.12345)"),
+            _probe(
+                "pandoc",
+                ProbeStatus.PASS,
+                "binary found, arXiv paper identified (2401.12345 from stamp)",
+                arxiv_identified=True,
+            ),
             ProbeResult(
                 "claude", ProbeStatus.PASS,
                 detail="haiku responded, 43 tokens, $0.002",
@@ -381,6 +441,19 @@ def _make_check_result(
 
 
 class TestComputeCapabilities:
+    def test_arxiv_shortcut_reads_the_field_not_the_detail(self):
+        """A detail that mentions arXiv (e.g. "arXiv shortcut disabled") is not identification."""
+        selected = SelectedPages(total_pages=1)
+        disabled = [_probe("pandoc", ProbeStatus.PASS, "binary found, arXiv shortcut disabled")]
+        identified = [
+            _probe("pandoc", ProbeStatus.PASS, "binary found", arxiv_identified=True)
+        ]
+        failed = [_probe("pandoc", ProbeStatus.FAIL, arxiv_identified=True)]
+
+        assert compute_capabilities(disabled, selected)["arxiv_shortcut"] is False
+        assert compute_capabilities(identified, selected)["arxiv_shortcut"] is True
+        assert compute_capabilities(failed, selected)["arxiv_shortcut"] is False
+
     def test_all_pass(self):
         """All probes pass -> all relevant capabilities true."""
         probes = [
@@ -388,7 +461,12 @@ class TestComputeCapabilities:
             _probe("gmft", ProbeStatus.PASS),
             _probe("img2table", ProbeStatus.PASS),
             _probe("docling", ProbeStatus.PASS),
-            _probe("pandoc", ProbeStatus.PASS, "binary found, arXiv ID detected (2401.12345)"),
+            _probe(
+                "pandoc",
+                ProbeStatus.PASS,
+                "binary found, arXiv paper identified (2401.12345 from stamp)",
+                arxiv_identified=True,
+            ),
             _probe("claude", ProbeStatus.PASS),
         ]
         selected = SelectedPages(headings=0, math=1, tables=2, total_pages=5)
@@ -602,6 +680,35 @@ class TestRunCheckStdoutSuppression:
 
 
 class TestRunCheck:
+    @pytest.mark.parametrize("value", [None, True, False])
+    def test_forwards_arxiv_shortcut_to_the_pandoc_probe(self, value):
+        pages = [PageResult(0, "# Title\n\nSome content here.")]
+        with (
+            patch(_EXTRACT_PAGES, return_value=pages),
+            patch(f"{_CHECK}._try_import_gmft", side_effect=ImportError),
+            patch(f"{_CHECK}._try_import_img2table", side_effect=ImportError),
+            patch(f"{_CHECK}._try_import_docling", side_effect=ImportError),
+            patch(
+                f"{_CHECK}.probe_pandoc", return_value=ProbeResult("pandoc", ProbeStatus.PASS)
+            ) as probe,
+            patch("shutil.which", return_value=None),
+        ):
+            run_check(Path("/fake.pdf"), claude_budget=0, arxiv_shortcut=value)
+        probe.assert_called_once_with(Path("/fake.pdf"), arxiv_shortcut=value)
+
+    def test_opt_out_turns_the_capability_off(self, tmp_path):
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        with (
+            patch(f"{_CHECK}._try_import_gmft", side_effect=ImportError),
+            patch(f"{_CHECK}._try_import_img2table", side_effect=ImportError),
+            patch(f"{_CHECK}._try_import_docling", side_effect=ImportError),
+            patch(f"{_CHECK}._pandoc_available", return_value=True),
+            patch(f"{_CHECK}.check_arxiv_html") as head,
+        ):
+            result = run_check(pdf, claude_budget=0, arxiv_shortcut=False)
+        head.assert_not_called()
+        assert result.capabilities["arxiv_shortcut"] is False
+
     def test_pymupdf_failure_returns_fail(self):
         """extract_pages raises -> overall FAIL with only pymupdf probe."""
         with patch(_EXTRACT_PAGES, side_effect=RuntimeError("corrupt PDF")):
@@ -659,6 +766,25 @@ _CHECK_MOD = "agentic_mbse.extraction.check"
 
 
 class TestCliCheckIntegration:
+    def test_flag_reaches_run_check(self, tmp_path):
+        pdf = tmp_path / "test.pdf"
+        pdf.touch()
+        args = _MockArgs(path=str(pdf), check=True, arxiv_shortcut=False)
+        with patch(f"{_CHECK_MOD}.run_check", return_value=_make_check_result()) as run:
+            cmd_extract(args)
+        assert run.call_args.kwargs["arxiv_shortcut"] is False
+
+    def test_flag_reaches_run_check_for_the_builtin_corpus(self, tmp_path):
+        pdf = tmp_path / "corpus.pdf"
+        pdf.touch()
+        args = _MockArgs(path=None, check=True, budget=0, arxiv_shortcut=False)
+        with (
+            patch(f"{_CHECK_MOD}.get_check_corpus", return_value=[pdf]),
+            patch(f"{_CHECK_MOD}.run_check", return_value=_make_check_result()) as run,
+        ):
+            cmd_extract(args)
+        assert run.call_args.kwargs["arxiv_shortcut"] is False
+
     def test_exit_code_pass(self, tmp_path):
         """Overall PASS -> exit 0."""
         pdf = tmp_path / "test.pdf"
@@ -783,7 +909,7 @@ class TestCliBuiltinCorpus:
         args = _MockArgs(path=None, check=True, budget=2.0)
         call_budgets = []
 
-        def _capture_run(pdf, claude_model="haiku", claude_budget=2.0):
+        def _capture_run(pdf, claude_model="haiku", claude_budget=2.0, arxiv_shortcut=None):
             call_budgets.append(claude_budget)
             return check_result
 
@@ -1015,7 +1141,12 @@ class TestMergeCheckResults:
             _probe("gmft", ProbeStatus.PASS, "2 tables"),
             _probe("img2table", ProbeStatus.PASS, "1 table"),
             _probe("docling", ProbeStatus.NOT_INSTALLED),
-            _probe("pandoc", ProbeStatus.PASS, "binary found, arXiv ID detected (2510.07314v1)"),
+            _probe(
+                "pandoc",
+                ProbeStatus.PASS,
+                "binary found, arXiv paper identified (2510.07314v1 from stamp)",
+                arxiv_identified=True,
+            ),
             _probe("claude", ProbeStatus.SKIPPED),
         ])
         merged = merge_check_results([r1, r2])

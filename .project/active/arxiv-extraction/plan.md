@@ -455,16 +455,16 @@ def test_capability_reads_field_not_substring(): ...         # detail "arXiv sho
 
 **See design:** D14, `check.py` component note, Docs component note, Non-Goals.
 
-- [ ] **`check.py`**: `ProbeResult.arxiv_identified: bool = False` (`:63-69`); `probe_pandoc(pdf, *, arxiv_shortcut=None)` (`:328-346`) returns early when disabled, otherwise uses `identify_arxiv_paper` and reports `len(markdown)`; `run_check(..., arxiv_shortcut=None)` (`:555`, `:611`) forwards it; `compute_capabilities` (`:416-431`) reads the field. No image download in the probe.
-- [ ] **`extract_cli.py`**: pass `arxiv_shortcut=args.arxiv_shortcut` to both `run_check` calls (`:385`, `:445`).
-- [ ] **`docs/extraction.md`**: automatic substitution and the evidence it requires (stamp or arxiv.org source URL; prose citations never count); author and publisher PDFs don't substitute; `--no-arxiv-shortcut` / `PipelineConfig(arxiv_shortcut=False)` and the contradiction with `--html-path`; the current default (one sentence, so a flip edits one sentence); image persistence and the programmatic no-images-dir limitation; warnings on stderr and in `metrics.json`; web warnings moved from stdout to stderr.
-- [ ] **`docs/extraction-internals.md`**: the `arxiv_html` / `pandoc_convert` split and import direction, the supported container (`<article class="ltx_document">`, exactly one), and the fallback per route.
-- [ ] **Spec acceptance sweep**: walk `spec.md#acceptance-and-verification` and the design's Validation Approach table; next to each row, record in Implementation Notes the test node ID that proves it. Any row without a test is a gap to close in this phase.
+- [x] **`check.py`**: `ProbeResult.arxiv_identified: bool = False` (`:63-69`); `probe_pandoc(pdf, *, arxiv_shortcut=None)` (`:328-346`) returns early when disabled, otherwise uses `identify_arxiv_paper` and reports `len(markdown)`; `run_check(..., arxiv_shortcut=None)` (`:555`, `:611`) forwards it; `compute_capabilities` (`:416-431`) reads the field. No image download in the probe.
+- [x] **`extract_cli.py`**: pass `arxiv_shortcut=args.arxiv_shortcut` to both `run_check` calls (`:385`, `:445`).
+- [x] **`docs/extraction.md`**: automatic substitution and the evidence it requires (stamp or arxiv.org source URL; prose citations never count); author and publisher PDFs don't substitute; `--no-arxiv-shortcut` / `PipelineConfig(arxiv_shortcut=False)` and the contradiction with `--html-path`; the current default (one sentence, so a flip edits one sentence); image persistence and the programmatic no-images-dir limitation; warnings on stderr and in `metrics.json`; web warnings moved from stdout to stderr.
+- [x] **`docs/extraction-internals.md`**: the `arxiv_html` / `pandoc_convert` split and import direction, the supported container (`<article class="ltx_document">`, exactly one), and the fallback per route.
+- [x] **Spec acceptance sweep**: walk `spec.md#acceptance-and-verification` and the design's Validation Approach table; next to each row, record in Implementation Notes the test node ID that proves it. Any row without a test is a gap to close in this phase.
 
 ### Validation
 
-- [ ] Green, plus `uv run pytest tests/ -m ""` compared with the phase 0 baseline if the slow corpus runs in this environment (record if it doesn't).
-- [ ] Manual: `uv run agentic-mbse extract --check <citation-only.pdf> > /tmp/check-out.txt 2>&1` (CLAUDE.md workaround), then read it: the Pandoc probe names no arXiv ID and the shortcut capability is off. With `--no-arxiv-shortcut` the probe says it is disabled.
+- [x] Green, plus `uv run pytest tests/ -m ""` compared with the phase 0 baseline if the slow corpus runs in this environment (record if it doesn't).
+- [x] Manual: `uv run agentic-mbse extract --check <citation-only.pdf> > /tmp/check-out.txt 2>&1` (CLAUDE.md workaround), then read it: the Pandoc probe names no arXiv ID and the shortcut capability is off. With `--no-arxiv-shortcut` the probe says it is disabled.
 
 **What we know works after this phase:** `--check` and `extract` agree; users can read how substitution works and how to turn it off; every spec criterion has a named test.
 
@@ -663,9 +663,61 @@ Environment setup the numbers depend on, for later sessions:
 - The fixture grew past the ~80 KB aim to 115 KB so the nine-figure acceptance could run on it.
 
 ### Phase 7 Completion
-**Completed:**
-**Acceptance sweep (criterion → test):**
+**Completed:** 2026-10-18
+**Actual Changes:**
+- `check.py`:
+  - `ProbeResult.arxiv_identified: bool = False` (appended).
+  - `probe_pandoc(pdf_path, *, arxiv_shortcut=None)`: with the shortcut resolved off, it reports `binary found, arXiv shortcut disabled` without identifying anything. Otherwise it calls `identify_arxiv_paper`, reporting `no arXiv paper identified` (with the conflict reason when there is one) or `arXiv paper identified (<id> from <evidence>)`. Only then does it probe and convert, and it reports `len(markdown)` from the `(markdown, bytes)` tuple. No image download.
+  - `compute_capabilities` reads `arxiv_identified` (and probe ok) instead of the `"arXiv"` substring.
+  - `run_check(..., arxiv_shortcut=None)` forwards to the probe. The capability label now reads "Pandoc + PDF identified as an arXiv paper".
+- `extract_cli.py`: both `run_check` calls (single PDF and built-in corpus) pass `arxiv_shortcut=args.arxiv_shortcut`.
+- `docs/extraction.md`:
+  - New "The arXiv shortcut" section: the evidence (stamp or arxiv.org source URL; citations never count; publisher and author builds don't substitute) and what it produces (article only, in-article images kept, figures in `images/`, per-figure warning).
+  - How to turn it off: `--no-arxiv-shortcut` / `PipelineConfig(arxiv_shortcut=False)`, `--arxiv-shortcut`, `--html-path` and the contradiction (exit 2 / `ValueError`), and the forms the flag reaches.
+  - `--check` behavior, the programmatic no-images-dir limitation, and the direct HTML-URL route.
+  - A "Warnings" subsection: result, `metrics.json`, stderr; web warnings moved off stdout.
+  - Flag table, output-file table (`images/`, `metrics.json` warnings, written on failure too), pipeline step 1 and the Pandoc dependency row updated.
+  - The default appears in exactly one sentence ("The shortcut is on by default."); the flag table's default cell links to it.
+- `docs/extraction-internals.md`:
+  - Architecture line and module map updated (`arxiv_html.py` added; `pandoc_convert.py` re-described). The pipeline step 1 call chain is updated.
+  - The "pandoc_convert.py — arXiv Shortcut" section was rewritten as "pandoc_convert.py and arxiv_html.py — arXiv Shortcut". It covers the module split and import direction, identity, control, the supported container (exactly one `<article>` with class `ltx_document`), SVG figures and the D17a order, the Pandoc configuration, images, and a per-route fallback table.
+  - Known limitation 5 now covers stampless builds and old-style IDs. The Stage 1 claim that a page-1 regex is "100% reliable" is marked superseded with a pointer.
+- Tests: `test_check.py::TestProbePandoc` was rewritten on generated PDFs (citation-only fetches nothing; conflict; opt-out skips identification; stamp without HTML; character count equals `len(markdown)` through the real loader with fetch and Pandoc stubbed; fetch error gives FAIL). New tests:
+  - `TestComputeCapabilities::test_arxiv_shortcut_reads_the_field_not_the_detail`
+  - `TestRunCheck::test_forwards_arxiv_shortcut_to_the_pandoc_probe` and `::test_opt_out_turns_the_capability_off`
+  - `TestCliCheckIntegration::test_flag_reaches_run_check` and `::test_flag_reaches_run_check_for_the_builtin_corpus`
+
+  The `_probe` helper gained `arxiv_identified`, and one corpus stub gained the new keyword. Two gaps the sweep found were closed: `test_pipeline.py::TestShortcutPaperOnly::test_pandoc_failure_falls_back_with_warning` (PDF route, Pandoc error and short output), and route-level paper-only tests that now also require the caption, table, math and the in-article data URI on both routes.
+- Full suite: 2903 passed, same 3 baseline failures. mypy at 97. ruff clean on touched files. Format hunks at or below base (`check.py` 4 → 4).
+- `uv run pytest tests/ -m slow`: 10 passed, 2 skipped, 2 failed. Both failures are environmental: `test_corpus_integration.py::test_ground_truth_scoring` and `test_equations.py::TestCorpusEquations::test_hawker_recall` need the corpus PDFs under `tests/corpus/pdfs/`, which are not in this worktree ("PDF not found"). They don't touch arXiv code.
+- Manual (CLAUDE.md redirect workaround): `extract --check /tmp/arxiv-trim/citation.pdf --budget 0` shows the Pandoc probe `pass binary found, no arXiv paper identified`, with `arxiv_shortcut` false in `--check-json`. With `--no-arxiv-shortcut` the probe reads `binary found, arXiv shortcut disabled`.
+
+**Acceptance sweep (criterion → test).** Spec rows (`spec.md#acceptance-and-verification`). Test files are under `tests/`; class::test names abbreviated.
+| Spec criterion | Proving tests |
+|---|---|
+| Figures are portable | `test_arxiv_html.py::test_all_nine_fixture_figures_persist`; `test_web_backend.py::test_arxiv_web_route_outputs_paper_only_with_all_figures_saved`; `test_pipeline.py::TestShortcutFigures::test_all_nine_figures_saved_with_real_pandoc` (all via `tests/helpers/arxiv_page.py::assert_all_figures_saved`: 9 relative refs, files exist with the fetched bytes, `image_count` == files). **Flag:** "report matching saved-image counts" holds on the returned results (`PipelineResult.image_count`, `ExtractionResult.image_count`). The count is not in `metrics.json` or the CLI's printed summary; see Phase 6 Issues. Owner call whether the CLI must report it |
+| Failures are honest | `test_arxiv_html.py::TestPersistImages::test_same_url_twice_one_fetch_one_file`, `::test_same_url_twice_failure_one_warning_both_refs_kept`, `::test_failure_leaves_ref_and_others_still_save`; `::TestFetchImage::test_oversize_raises`, `::test_oversize_through_persist_leaves_ref_and_warns`; `test_extract_cli.py::TestFigureWarningsThroughCli::test_pdf_route`, `::test_web_route` (result, `metrics.json`, stderr); `test_web_backend.py::test_arxiv_web_route_failed_figure_warns_and_keeps_ref`; `test_pipeline.py::TestShortcutFigures::test_failed_figure_warns_and_keeps_its_ref` |
+| Local HTML images resolve | `test_arxiv_html.py::TestPersistImages::test_local_html_refs` (absolute, `<base href>`-relative, file-relative, root-relative and missing → unresolvable with warnings), `::test_local_html_without_base_resolves_against_its_directory`; `test_pipeline.py::TestShortcutFigures::test_local_html_path_copies_figures_beside_it` (`--html-path` end to end, no fetch) |
+| Citations cannot substitute content | `test_arxiv_identity.py` (all: citation-only, full stamp text as prose, stamp beats cited ID, two stamps, stamp vs URL, same ID other version, URL alone, non-arXiv URLs, pinned vertical/left-margin geometry); `test_pipeline.py::TestArxivIdentityInPipeline::test_citation_only_never_probes_or_converts`, `::test_two_stamps_conflict_warns_and_never_probes`, `::test_stamp_vs_source_url_conflict_warns_and_never_probes` (negative/conflict never call the HTML check or Pandoc), `::test_stamp_substitutes_its_own_id_not_the_cited_one`, `::test_source_url_alone_substitutes` |
+| `--check` predicts `extract` | `test_check.py::TestProbePandoc::test_citation_only_identifies_nothing_and_fetches_nothing`, `::test_conflict_identifies_nothing`, `::test_opt_out_skips_identification`, `::test_reports_length_of_converted_markdown`; `::TestRunCheck::test_opt_out_turns_the_capability_off`; `::TestComputeCapabilities::test_arxiv_shortcut_reads_the_field_not_the_detail` |
+| Users can force PDF extraction | `test_pipeline.py::TestShortcutControl::test_opt_out_skips_identity_probe_and_pandoc`, `::test_opt_out_with_html_path_raises`, `::test_default_off_skips_automatic_detection`, `::test_html_path_runs_even_if_default_off`; `test_extract_cli.py::TestArxivShortcutFlag::test_contradiction_with_html_path_is_a_usage_error`, `::test_flag_reaches_pipeline_config`, `::test_flag_reaches_pdf_url_extraction`, `::test_flag_reaches_batch_pdf_urls`; `test_check.py::TestCliCheckIntegration::test_flag_reaches_run_check`, `::test_flag_reaches_run_check_for_the_builtin_corpus` |
+| Output contains the paper alone | `test_arxiv_html.py::TestSelectArticle::test_keeps_paper_drops_chrome` (no Pandoc needed), `::TestConvertArticle::test_real_pandoc_on_fixture`; `test_web_backend.py::test_arxiv_web_route_outputs_paper_only_with_all_figures_saved`; `test_pipeline.py::TestShortcutPaperOnly::test_converts_article_only_with_real_pandoc`. Each requires chrome and UI data URIs absent, and sections, references, appendix, caption, table, math and the in-article data URI present |
+| Fallback is visible | Web: `test_web_backend.py::test_arxiv_pandoc_failure_warns_and_keeps_trafilatura_backend` (missing, short, error), `::test_unrecognized_container_falls_back_to_trafilatura_with_warning`, `::test_arxiv_url_short_trafilatura_never_calls_whole_page_pandoc`. PDF: `test_pipeline.py::TestShortcutPaperOnly::test_pandoc_failure_falls_back_with_warning` (error, short), `::test_page_without_article_falls_back_with_warning`, `::TestExtractPdfArxivShortcut::test_arxiv_shortcut_error_falls_through`, `::test_ignored_html_path_warns`, `::test_warnings_on_base_extraction_error_result`. Persisted: `test_extract_cli.py::TestWarningsChannel::*` |
+| Provenance is unchanged | `test_web_backend.py::test_content_hash_uses_raw_bytes`, `::test_save_source_saves_raw_html`, `::test_arxiv_raw_bytes_and_hash_are_the_fetched_page`, `::test_arxiv_source_records_fetched_version`, `::test_versioned_arxiv_url_normalized_before_fetch`; `test_pipeline.py::TestShortcutPaperOnly::test_provenance_is_the_fetched_page`; `test_extract_cli.py::TestArxivShortcutProvenance::*` |
+| Live result corroborates fixtures | Not a test: Phase 8, recorded at audit; not run in this session |
+
+The design's extra Validation Approach rows are also covered:
+- Trailing-slash serving URL: `test_arxiv_html.py::TestArxivSource::test_from_fetch_strips_trailing_slash_on_arxiv_html_only` and `test_web_backend.py::test_arxiv_images_resolve_against_normalized_serving_url`.
+- Selection survives the sanitizer: `test_arxiv_html.py::test_selection_survives_web_sanitizer`.
+- SVG figures (D17): `test_arxiv_html.py::TestExtractArticle::*`.
+
+Every spec row has at least one named test except the live check, which is Phase 8 by design. One row carries the flag above.
+
 **Deviations:**
+- In `check.py`, `probe_pandoc` still catches `Exception` and reports FAIL with the message, as before. This is the probe's reporting policy, not a fallback that hides anything: the failure is shown as FAIL.
+- The `arxiv_shortcut` capability is true when the PDF is identified and the probe passes, even if arXiv serves no HTML version (the detail then says "no HTML available"). This follows D14 as written. In that case `extract` falls back with a warning, so the capability reads "would attempt the shortcut", not "would substitute".
+- The probe identifies from the PDF alone. `--check` takes a local PDF, so there is no source URL to pass.
+- `detect_arxiv_id` has no in-repo caller left. It stays as the public wrapper D2 keeps for external callers, with its own test.
 
 ### Phase 8 Record
 **Completed:**

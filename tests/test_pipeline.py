@@ -408,10 +408,44 @@ class TestShortcutPaperOnly:
 
         assert result.source == "pandoc_arxiv"
         assert result.warnings == []
-        for s in ["## 1 Introduction", "## References", "## Appendix B Benchmarks"]:
+        for s in [
+            "## 1 Introduction",
+            "## References",
+            "## Appendix B Benchmarks",
+            "Figure 1:",  # caption
+            "w/o library",  # Table 3
+            "$k = 5$",  # math
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB",  # in-article data URI
+        ]:
             assert s in result.markdown
         for s in ["Report Issue", "major funders", "09 Oct 2026", "iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO"]:
             assert s not in result.markdown, f"chrome {s!r} in output"
+
+    @pytest.mark.parametrize(
+        ("pandoc", "reason"),
+        [
+            pytest.param(
+                MagicMock(returncode=1, stdout="", stderr="parse error"), "parse error", id="fails"
+            ),
+            pytest.param(
+                MagicMock(returncode=0, stdout="tiny", stderr=""), "too short", id="short-output"
+            ),
+        ],
+    )
+    def test_pandoc_failure_falls_back_with_warning(self, tmp_path, pandoc, reason):
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        with (
+            _patch_pandoc_available(),
+            patch(f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2610.14224"),
+            _served_page(),
+            patch("subprocess.run", return_value=pandoc),
+        ):
+            result = extract_pdf(pdf, _real_pdf_config())
+
+        assert result.source == "pdf_pipeline"
+        assert "own text about magnets" in result.markdown
+        [warning] = result.warnings
+        assert reason in warning and warning.endswith("extracted the PDF instead")
 
     def test_page_without_article_falls_back_with_warning(self, tmp_path):
         page = _ARXIV_PAGE.read_text().replace("<article ", "<div ").replace("</article>", "</div>")

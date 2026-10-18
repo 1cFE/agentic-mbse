@@ -400,7 +400,14 @@ def cmd_extract(args: argparse.Namespace) -> int:
         for i, pdf in enumerate(corpus):
             # Only spend Claude budget on first PDF
             budget = args.budget if i == 0 else 0
-            results.append(run_check(pdf, claude_model=args.model, claude_budget=budget))
+            results.append(
+                run_check(
+                    pdf,
+                    claude_model=args.model,
+                    claude_budget=budget,
+                    arxiv_shortcut=args.arxiv_shortcut,
+                )
+            )
 
         check_result = merge_check_results(results)
 
@@ -464,6 +471,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
             pdf,
             claude_model=args.model,
             claude_budget=args.budget,
+            arxiv_shortcut=args.arxiv_shortcut,
         )
 
         if args.check_json:
