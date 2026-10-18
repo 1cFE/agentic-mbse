@@ -390,7 +390,10 @@ def _probe(
 ) -> ProbeResult:
     """Create a synthetic ProbeResult."""
     return ProbeResult(
-        component=component, status=status, detail=detail, arxiv_shortcut_applies=arxiv_shortcut_applies
+        component=component,
+        status=status,
+        detail=detail,
+        arxiv_shortcut_applies=arxiv_shortcut_applies,
     )
 
 

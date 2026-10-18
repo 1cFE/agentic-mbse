@@ -310,7 +310,9 @@ class TestExtractPdfArxivShortcut:
 
 def _real_pdf_config(**overrides) -> PipelineConfig:
     """Config for running the real pipeline on a generated PDF, with no optional detectors."""
-    return PipelineConfig(enable_claude=False, enable_tables=False, enable_equations=False, **overrides)
+    return PipelineConfig(
+        enable_claude=False, enable_tables=False, enable_equations=False, **overrides
+    )
 
 
 _ARXIV_PAGE = Path(__file__).parent / "fixtures" / "arxiv_2610.14224v1_page.html"
@@ -418,7 +420,12 @@ class TestShortcutPaperOnly:
             "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB",  # in-article data URI
         ]:
             assert s in result.markdown
-        for s in ["Report Issue", "major funders", "09 Oct 2026", "iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO"]:
+        for s in [
+            "Report Issue",
+            "major funders",
+            "09 Oct 2026",
+            "iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO",
+        ]:
             assert s not in result.markdown, f"chrome {s!r} in output"
 
     @pytest.mark.parametrize(
