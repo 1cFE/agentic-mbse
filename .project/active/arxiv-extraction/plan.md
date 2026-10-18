@@ -1,7 +1,7 @@
 # Implementation Plan: Reliable arXiv extraction
 
 **Work item:** ARXIV-EXTRACTION
-**Status:** Draft
+**Status:** In Progress
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `fix/arxiv-extraction` (worktree `/home/reid/src/agentic-mbse-worktrees/arxiv-extraction`), base local `main` at `8b027bbc`. `src/`, `tests/`, `docs/` and `pyproject.toml` have no diff from the base at planning time.
@@ -71,12 +71,12 @@ Know which tests already fail at the base, so "no new failures" is checkable.
 
 ### Steps
 
-- [ ] Confirm the code still matches the base: `git diff --stat 8b027bbc HEAD -- src tests docs pyproject.toml` prints nothing.
-- [ ] Run `uv run pytest tests/ -q > /tmp/arxiv-baseline.txt 2>&1`.
-- [ ] Record below: pass/fail/skip counts, the node IDs of every failure and error, and whether failures come from environment (for example a missing `SYSIDE_LICENSE_KEY`) or code.
-- [ ] Record `pandoc --version` (expect 3.1.3) and the pymupdf version, since phase 1 and 3 tests depend on both.
+- [x] Confirm the code still matches the base: `git diff --stat 8b027bbc HEAD -- src tests docs pyproject.toml` prints nothing.
+- [x] Run `uv run pytest tests/ -q > /tmp/arxiv-baseline.txt 2>&1`.
+- [x] Record below: pass/fail/skip counts, the node IDs of every failure and error, and whether failures come from environment (for example a missing `SYSIDE_LICENSE_KEY`) or code.
+- [x] Record `pandoc --version` (expect 3.1.3) and the pymupdf version, since phase 1 and 3 tests depend on both.
 
-**Baseline failure set:** _(fill in)_
+**Baseline failure set:** 3 failures, all environmental (see Phase 0 Completion).
 
 ---
 
@@ -503,8 +503,19 @@ Phase-specific mitigations:
 [TO BE FILLED DURING IMPLEMENTATION]
 
 ### Phase 0 Completion
-**Completed:**
-**Baseline:**
+**Completed:** 2026-10-18
+**Baseline:** at `423ceffa` (no diff from `8b027bbc` in `src tests docs pyproject.toml`): 3 failed, 2779 passed, 1 skipped, 14 deselected, 1 xfailed.
+
+- `tests/test_equations.py::TestDetectEquations::test_returns_detected_equations`: environment, `PIL` is not installed in the venv.
+- `tests/test_index.py::TestScriptBackwardCompat::test_generate_index_script_runs` and `::test_read_section_script_runs`: environment, the tests hard-code `cwd="/home/reid/1cfe/agentic-mbse"`, which does not exist on this machine.
+
+Environment setup the numbers depend on, for later sessions:
+
+- The worktree venv was created fresh. `uv sync --extra web --extra dev` is needed: without `[web]` the bs4/trafilatura tests fail, without `[dev]` there is no mypy.
+- `SYSIDE_LICENSE_KEY` is not in this worktree. Without it 7 `tests/test_sysml/` modules error at collection and the run aborts. Source it per command from the main checkout: `set -a; . /home/reid/src/agentic-mbse/.env; set +a`.
+- Pandoc is not on the default PATH. Pandoc 3.1.3 lives at `~/.local/opt/pandoc-3.1.3/bin`; prepend it to PATH so the real-Pandoc tests run instead of skipping.
+- pymupdf 1.26.7.
+- Lint and type baselines: `uv run mypy src/` reports 97 errors in 19 files at base (none in `arxiv_html.py`, `pandoc_convert.py`, `web_backend.py`, `pipeline.py`, `types.py`; pre-existing ones in `check.py` and `extract_cli.py`). `ruff format --check` already fails at base on `pandoc_convert.py`, `web_backend.py`, `pipeline.py`, `test_pipeline.py`, `test_extract_cli.py`, `test_web_backend.py` and `test_pandoc_convert.py`. "Clean on touched files" is read as: new files are formatted, and edits add no new lint or format findings; untouched pre-existing drift is not mass-reformatted.
 
 ### Phase 1 Completion
 **Completed:**
