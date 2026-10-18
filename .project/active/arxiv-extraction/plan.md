@@ -375,6 +375,10 @@ def test_pdf_shortcut_no_article_falls_back_with_warning(tmp_path): ...
 
 Every figure in the converted article is saved once under `images/` and referenced by a relative path, in both routes; every image not saved keeps its original ref and warns once.
 
+### Added by design amendment D17 (2026-10-18)
+
+- [ ] Test first: on the real fixture, every `<object type="image/svg+xml" class="ltx_graphics …">` inside the article (figures 5, 6, 7, 9 of 2610.14224) yields a markdown image ref after conversion, and is persisted like any other figure. Then implement the `<object>` → `<img>` rewrite in `arxiv_html` pre-processing (design D17).
+
 ### Assumption under test
 
 One resolution rule (`urljoin(image_base, ref)`, D7) covers fetched arXiv pages, trailing-slash URLs, local files with and without `<base href>`, and unresolvable refs, without per-source code paths.
