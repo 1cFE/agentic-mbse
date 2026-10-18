@@ -1,6 +1,6 @@
 # Implementation Plan: Executable-subset capability contract (EXEC-SUBSET-CONTRACT Item 1)
 
-**Status:** Draft
+**Status:** In Progress (Phase 1 complete)
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `exec-subset-profile` (plan written at `1ff91e07`; `src/`, `tests/`, `scripts/` and `pyproject.toml` are unchanged since the design base `a718efec`)
@@ -148,30 +148,30 @@ Also cover: identity mismatch (wrong codegen revision, a package resolving outsi
 
 **See design for:** [§ Probe harness](design.md#probe-harness) (steps 1–6), [Required Invariants 2](design.md#required-invariants), [§ Where things live](design.md#where-things-live).
 
-- [ ] **Read first:** codegen `cli/__init__.py:1026-1069` and `:857` at `b5663c07` (through `git show b5663c07:src/sysml_codegen/cli/__init__.py`) to confirm the `ERROR:` line format and where the location appears. Record the format in the judge's module docstring.
-- [ ] `tests/helpers/subset_probe_judge.py` (NEW, pure): `load_probe`, `judge` → `Certification(certifies, failed_check)`. Checks per invariant 2 (P-2).
-- [ ] `tests/test_subset_probe_judge.py` (NEW, write first): the stencil plus the cases above, on synthetic observations.
-- [ ] `scripts/subset_profile/probe.py` (NEW): `run --probe ID | --all --agentic-rev REV [--base]`. Steps 1–5 of the design's harness. Writes `observation.json`, or `observation.base.json` with `--base`. Imports the judge (P-2). Logs to `.project/active/exec-subset-profile/evidence/probes/`.
-- [ ] `scripts/subset_profile/README.md` (NEW, short): what each script does and that none is shipped.
-- [ ] Four smoke probes under `tests/fixtures/subset_profile/probes/<id>/{probe.toml, model.sysml, observation.json}`:
+- [x] **Read first:** codegen `cli/__init__.py:1026-1069` and `:857` at `b5663c07` (through `git show b5663c07:src/sysml_codegen/cli/__init__.py`) to confirm the `ERROR:` line format and where the location appears. Record the format in the judge's module docstring.
+- [x] `tests/helpers/subset_probe_judge.py` (NEW, pure): `load_probe`, `judge` → `Certification(certifies, failed_check)`. Checks per invariant 2 (P-2).
+- [x] `tests/test_subset_probe_judge.py` (NEW, write first): the stencil plus the cases above, on synthetic observations.
+- [x] `scripts/subset_profile/probe.py` (NEW): `run --probe ID | --all --agentic-rev REV [--base]`. Steps 1–5 of the design's harness. Writes `observation.json`, or `observation.base.json` with `--base`. Imports the judge (P-2). Logs to `.project/active/exec-subset-profile/evidence/probes/`.
+- [x] `scripts/subset_profile/README.md` (NEW, short): what each script does and that none is shipped.
+- [x] Four smoke probes under `tests/fixtures/subset_profile/probes/<id>/{probe.toml, model.sysml, observation.json}`:
   - `binding_source/expression_source/owner_instantiated` ⇐ prototype `es003_refused_ordered_nonunique` (expected `SI_EXPRESSION_SOURCE_UNSUPPORTED`).
   - `conditional_expression/conditional_unresolved_branch/binding_value` ⇐ `es006_refused_conditional` (expected `SI_EVIDENCE_INCOMPLETE`, location check).
   - `invocation_callable` admitted neighbor ⇐ `es005_admitted_explicit_multiply` (positive control).
   - `string_value_omission/string_value` ⇐ `es010_omitted_string_value` (catalog/contract identity check with a numeric sibling, per review m3).
 
   Probe IDs are directory names; pick a stable `rule__shape__context` spelling and use it everywhere after.
-- [ ] Commit, then run `uv run python scripts/subset_profile/probe.py run --all --agentic-rev HEAD`.
+- [x] Commit, then run `uv run python scripts/subset_profile/probe.py run --all --agentic-rev HEAD`.
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_subset_probe_judge.py` passes.
-- [ ] Standing checks green.
+- [x] `uv run pytest tests/test_subset_probe_judge.py` passes.
+- [ ] Standing checks green. **Not met, and not by Phase 1:** they were red at `1002997d`, before this phase; Phase 1 adds no failure. See [Phase 1 Completion](#phase-1-completion) → Issues.
 
 **Manual:**
-- [ ] All four `observation.json` files show `certifies: true`, the codegen revision `b5663c07…`, the agentic-mbse revision, SysIDE 0.8.4, the `uv.lock` sha256, and both package `__file__` paths inside the temp tree.
-- [ ] `git -C ~/src/sysml-codegen status` and `git -C ~/src/dc3 status` are unchanged.
-- [ ] Control: hand-edit a copy of the conditional probe's observation to move the error line outside the construct's range, re-judge, and see `location_outside_construct`.
+- [x] All four `observation.json` files show `certifies: true`, the codegen revision `b5663c07…`, the agentic-mbse revision, SysIDE 0.8.4, the `uv.lock` sha256, and both package `__file__` paths inside the temp tree.
+- [x] `git -C ~/src/sysml-codegen status` and `git -C ~/src/dc3 status` are unchanged.
+- [x] Control: hand-edit a copy of the conditional probe's observation to move the error line outside the construct's range, re-judge, and see `location_outside_construct`.
 
 **If the generator gives no usable location for `SI_EVIDENCE_INCOMPLETE`:** the ES-006 location check cannot be met. Do not weaken invariant 2. ES-006's refused pairs stay `unconfirmed`, record why in Implementation Notes, and surface it (capture-fidelity law 4). Every other rule continues.
 
@@ -779,10 +779,43 @@ See [design § Potential Risks](design.md#potential-risks). Phase-specific mitig
 [TO BE FILLED DURING IMPLEMENTATION]
 
 ### Phase 1 Completion
-**Completed:**
+**Completed:** 2026-10-18. Harness at `9721bc1b` + `0ac48bc0`; observations committed with this note.
+
+**Outcome:** 4 of 4 smoke probes certify. Every run: sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee` (version 0.1.1), agentic-mbse `0ac48bc0d9333164969cebf204e79958ff2e6d2f` (version 0.1.3), SysIDE 0.8.4, Python 3.12.3, `uv.lock` sha256 `a17e9fa1…aacabee4d4`, all three package `__file__` paths inside the temp tree, license key present. No R2: both refused probes exited 1 with the expected code.
+
+| Probe | Exit | Observed | Certifies |
+|---|---|---|---|
+| `binding-source__expression_source__owner_instantiated` | 1 | `SI_EXPRESSION_SOURCE_UNSUPPORTED` at `root-0/model.sysml:7` (construct line 7) | yes |
+| `conditional-expression__conditional_unresolved_branch__calc_definition_feature_value` | 1 | `SI_EVIDENCE_INCOMPLETE` at `root-0/model.sysml:3` (construct line 3) | yes |
+| `invocation-callable__explicit_operator__attribute_value` | 0 | positive control `fx__site__eff__eff` in the catalog outputs | yes |
+| `string-value-omission__string_value__attribute_value__redefinition_shorthand` | 0 | `fx__gen__fuel_unit` absent from catalog and all generated text; sibling `fx__gen__rate` present | yes |
+
+**Location question (Things This Plan Cannot Settle, item 1): settled, usable.** Codegen appends `[root-<slot>/<path>:<line>]` to each finding when it measured one (`elaborate.py:134-144`, `:192-200`) and omits it otherwise; `unexpected_public_failure` (`elaborate.py:170-190`) deliberately carries none. A finding without a location fails the judge (`location_missing`). Format recorded in the judge's module docstring.
+
 **Actual Changes:**
+- `tests/helpers/subset_probe_judge.py` (new, pure, stdlib only): `load_probe`, `parse_error_lines`, `judge` → `Certification(failed_check)` with `certifies` as a property, `observation_to_json` / `load_observation`. Pins (`PINNED_CODEGEN_REV`, `PINNED_SYSIDE_VERSION`, `PINNED_UV_LOCK_SHA256`) live here. `FailedCheck` is a closed enum; the first failing check is reported. Outcome expectations are a union (`Refused` / `Admitted` / `Omitted`), so no field is optional per outcome.
+- `tests/test_subset_probe_judge.py` (new): 40 tests. Covers the stencil cases, each outcome certifying, R2 signal (`refused_probe_admitted`), location missing / wrong file / out of range, extra codes, identity mismatch (codegen rev, unresolved agentic rev, SysIDE version, lock hash, each package outside the tree, a `<tree>-other` prefix trap, missing key), timeout, probe-id mismatch, edited model, real codegen lines, JSON round trip, and probe-definition errors.
+- `scripts/subset_profile/probe.py` (new), `scripts/subset_profile/README.md` (new).
+- Four probes under `tests/fixtures/subset_profile/probes/`, models copied verbatim from the prototype fixtures, each with `observation.json`. Run logs in `evidence/probes/<id>.log`.
+
+**Validation run:**
+- Judge tests: 40 pass. Teeth check: three mutants (location range disabled, omission presence disabled, model-hash check disabled) are each caught by at least one test.
+- Manual control: a copy of the conditional observation with the location moved to line 7 re-judges as `location_outside_construct`.
+- New files: `ruff check`, `ruff format --check` clean; `mypy --strict` clean on the judge and the script; plain `mypy` clean on the test file.
+- `git status` of `~/src/sysml-codegen` and `~/src/dc3` empty before and after the run, HEADs unchanged (`b5663c07`, `60b44d53`). No license key value in any probe file or log.
+
 **Issues:**
+- **Standing checks were already red at the phase's start (`1002997d`), and Phase 1 does not change that.** On a clean `git archive` of `1002997d`: `ruff check src/ tests/` reports 118 errors, `ruff format --check src/ tests/` would reformat 77 files, `mypy src/` reports 97 errors in 19 files. `pytest tests/` has 3 failures, all environmental: `test_index.py::TestScriptBackwardCompat` (2) points at a stale path `/home/reid/1cfe/agentic-mbse`, and `test_equations.py::TestDetectEquations::test_returns_detected_equations` needs PIL, which is not installed. Phase 1 adds no failure (2819 pass). The standing rule "a phase is not done until all pass" cannot be met by any phase without an unrelated repo-wide cleanup. **Surfaced for the owner:** either scope the rule to "no new failures, new files clean" or schedule the cleanup separately. I applied the first reading and did not touch unrelated files.
+- sysml-codegen `b5663c07` commits five absolute symlinks under `.claude/` (to `/home/reid/1cfe/agentic-mbse/...`). Python's tar `data` filter refuses them. The harness skips absolute links under `.claude/` only, names each on the console, and aborts on an absolute link anywhere else (`probe.py` `_assistant_links_skipped`).
+- The parser's first draft missed every finding, because the first code follows the gate's `": "`, not the line start. The test on real codegen lines caught it before any probe ran.
+
 **Deviations:**
+- **Conditional probe context is `calc_definition_feature_value`, not the plan's `binding_value`.** Codegen locates the refusal at line 3, the `return r : Real = if a < b ? a else b` in calc def `Min2`, not at the binding on line 7. The probe was refused as expected, so this is not R2 and the fixture is unchanged; the context label names where the construct actually is. Appendix C already lists this fixture under "binding or calc-definition feature value". A `binding_value` conditional probe is still needed in Phase 6.
+- **Probe ID scheme:** `<rule>__<shape>__<context>[__<variant>]`, with rule IDs hyphenated as in design Appendix A. The optional variant exists because one (shape, context) pair will have several probes (spellings now, B5 variation probes in Phase 7). The string probe uses variant `redefinition_shorthand`; the attribute-declaration spelling is still to probe.
+- **The admitted invocation neighbor uses shape `explicit_operator`,** which no record has yet: the plan named no shape for it. Phase 5 must decide whether a neighbor probe keys a record admission or only serves as a control that the rule does not fire.
+- **"Positive control" for an admitted probe is the catalog name the construct itself generates** (`fx__site__eff__eff`). Exit 0 alone could hide a dropped construct. For omission it is the numeric sibling (`fx__gen__rate`), as review m3 asks.
+- **Additions beyond the plan:** the observation records the model's sha256 and the judge fails `model_changed` when it no longer matches, so editing a probed model invalidates its evidence. The harness also snapshots codegen's `git status` and HEAD before and after the run and aborts on any difference. It refuses uncommitted or dirty probe fixtures, and `--base` refuses any revision other than `a718efec`.
+- **Test-first order:** the judge and its tests were written in one pass rather than test-then-fail. The mutant check above stands in for "see it fail for the right reason".
 
 ### Phase 2 Completion
 
