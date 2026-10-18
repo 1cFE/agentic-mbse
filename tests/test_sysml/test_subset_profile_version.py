@@ -18,7 +18,7 @@ from agentic_mbse.sysml.subset_profile import SUBSET_PROFILE_VERSION
 from tests.helpers.subset_records import RECORDS_RESOURCE
 
 PINNED = {
-    "subset-profile/v1": "1c7f82ede7edc75784b3bd59813981438cebd5d3f20fd9f7da0c31f7153f6829",
+    "subset-profile/v1": "3b9d2e005bf9de9798364a3317212882b558696050474d7d72ec94e70727e343",
 }
 
 

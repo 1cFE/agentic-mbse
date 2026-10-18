@@ -94,9 +94,7 @@ def test_cited_probe_certifies_its_own_pair_at_the_pinned_identity(entry: Cited)
 
 #: Certified refused probes whose shape has no admitted-context probe yet, so the loader cannot
 #: take them (invariant 3). Named one by one; Phases 6-7 land each with its partner and empty it.
-AWAITING_ADMITTED_PARTNER = {
-    "binding-source__expression_source__owner_instantiated",
-}
+AWAITING_ADMITTED_PARTNER: set[str] = set()
 
 
 def test_every_certified_record_probe_is_cited() -> None:

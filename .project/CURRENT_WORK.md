@@ -11,7 +11,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
-- EXEC-SUBSET-PROFILE ([EXEC-SUBSET-CONTRACT epic](backlog/epic_executable-subset-contract.md) Item 1) — implementing [plan](active/exec-subset-profile/plan.md): Phases 1–4 done 2026-10-18 (probe harness; occurrence port at parity with codegen on 73 of 73 recorded cases; shared invocation allowlist, codegen suite identical before and after; subset facts extracted totally, both dc3 trees return). Next Phase 5 (pure evaluator and packaged records). Branch `exec-subset-profile`.
+- EXEC-SUBSET-PROFILE ([EXEC-SUBSET-CONTRACT epic](backlog/epic_executable-subset-contract.md) Item 1) — implementing [plan](active/exec-subset-profile/plan.md): Phases 1–7 done 2026-10-18 (probe harness; occurrence port at parity with codegen on 73 of 73 recorded cases; shared invocation allowlist, codegen suite identical before and after; subset facts extracted totally; pure evaluator with evidence-gated records; 80 probes certify, 62 cited, no R2). Next Phase 8 (capability/refusal matrix). Branch `exec-subset-profile`.
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 
 ## Concrete remaining work

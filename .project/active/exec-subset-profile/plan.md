@@ -1,6 +1,6 @@
 # Implementation Plan: Executable-subset capability contract (EXEC-SUBSET-CONTRACT Item 1)
 
-**Status:** In Progress (Phases 1–6 complete)
+**Status:** In Progress (Phases 1–7 complete)
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `exec-subset-profile` (plan written at `1ff91e07`; `src/`, `tests/`, `scripts/` and `pyproject.toml` are unchanged since the design base `a718efec`)
@@ -501,21 +501,21 @@ def test_permuted_document_order_is_identical():
 
 **See design for:** [Appendix C](design.md#appendix-c--probe-list-initial) entries and V probes for these three rules; [B5](design.md#key-bets); [design Implementation Notes (a)–(b)](design.md#implementation-notes); [D14](design.md#key-decisions).
 
-- [ ] Author, commit, run and judge the Appendix C probes for the three rules, including every V probe. The `writer_overridden` admitted probe uses F1's `f1_calc_redefined_everywhere`.
-- [ ] Add certified admissions to the records. A V probe that disagrees with its label goes through the R2 map (step 4 decides port bug versus genuine split).
-- [ ] Record D14's two generator behaviors as observations (the "redefinition that drops bounds" admitted probe records G1). They are matrix rows G1/G2 in Phase 8, not rule changes.
-- [ ] `tests/fixtures/subset_profile/cases/multi_doc/` (NEW): a model split across several files with refused and admitted findings, for the permuted-order test.
-- [ ] `tests/test_sysml/test_subset_profile_rules_instantiation.py` (NEW): per-probe reproduction (same stencil as Phase 6); the prototype admitted neighbors for these rules (ordered nonunique input bound to a scalar, exact `[1]` ordered input, plain reference actual, uninstantiated template, exact redefinition, numeric `and`); the NON_NUMERICAL `excluded` case; widened and narrowed roots end to end; permuted document order.
-- [ ] Update `evidence_status` per rule.
+- [x] Author, commit, run and judge the Appendix C probes for the three rules, including every V probe. The `writer_overridden` admitted probe uses F1's `f1_calc_redefined_everywhere`.
+- [x] Add certified admissions to the records. A V probe that disagrees with its label goes through the R2 map (step 4 decides port bug versus genuine split).
+- [x] Record D14's two generator behaviors as observations (the "redefinition that drops bounds" admitted probe records G1). They are matrix rows G1/G2 in Phase 8, not rule changes.
+- [x] `tests/fixtures/subset_profile/cases/multi_doc/` (NEW): a model split across several files with refused and admitted findings, for the permuted-order test.
+- [x] `tests/test_sysml/test_subset_profile_rules_instantiation.py` (NEW): per-probe reproduction (same stencil as Phase 6); the prototype admitted neighbors for these rules (ordered nonunique input bound to a scalar, exact `[1]` ordered input, plain reference actual, uninstantiated template, exact redefinition, numeric `and`); the NON_NUMERICAL `excluded` case; widened and narrowed roots end to end; permuted document order.
+- [x] Update `evidence_status` per rule.
 
 ### Validation
 
 **Automated:**
-- [ ] New tests and `test_subset_probe_evidence.py` pass. Standing checks green.
+- [x] New tests and `test_subset_probe_evidence.py` pass. Standing checks green.
 
 **Manual:**
-- [ ] For each V probe, the port's context on the fixture equals what the oracle's occurrence facts imply (run `occurrence_parity.py capture` on any V fixture that surprises you).
-- [ ] R2 check per the map.
+- [x] For each V probe, the port's context on the fixture equals what the oracle's occurrence facts imply (run `occurrence_parity.py capture` on any V fixture that surprises you).
+- [x] R2 check per the map.
 
 **Done when:** every refused pair of these three rules has a certified probe, the B5 variations agree with their labels (or are recorded as R2/splits), the admitted-context minimum set (spec: ES-003/ES-012 binding and ES-007 BLOCK inside an uninstantiated part def, ES-004 attribute-usage multiplicity) is certified, and the root and determinism tests pass end to end. Traces to spec "Every refusal has a probe record", "Every refused shape has an admitted-context probe", "Each implemented rule has refused and admitted fixtures", "Roots" (all three), "Output is deterministic".
 
@@ -1018,6 +1018,49 @@ Candidate reproductions (for R3, `kind = "reproduction"`, no record cites them):
 - Controls rather than admissions for the prototype neighbors (decided in Phase 5).
 
 ### Phase 7 Completion
+**Completed:** 2026-10-18. Probes authored at `691f96c8` and `ecc18940`; the whole probe set re-run at `ecc18940` (80 of 80 certify), which is `verified_against.agentic_rev`.
+
+**Outcome:** every refused pair of `binding-source`, `part-multiplicity` and `constraint-predicate` has a certified probe and an admitted-context probe, every B5 variation agrees with its context label, the spec's admitted-context minimum set is certified, and the root and determinism tests pass end to end. **No R2:** no refused probe, base or variation, was admitted (`evidence/r2-open.md`).
+
+| Rule / shape | Refused (probes, with B5 variations) | Admitted / excluded | Unconfirmed |
+|---|---|---|---|
+| `binding-source/expression_source` | `owner_instantiated` (8: base, `rate * fuel_code`, constraint input, part-usage owner, subtype, nested, owner under `[2]`, selected in one scope and overridden in another); `owner_package` | `owner_uninstantiated`; `writer_overridden` (2) | `owner_other` |
+| `binding-source/self_reference_source` | `owner_instantiated` (4: base, part-usage owner, subtype, under `[2]`); `owner_package` | `owner_uninstantiated` | `writer_overridden`, `owner_other` |
+| `part-multiplicity/range` | `expanded_part_usage` (5: base, depth two, under `[2]`, subtype, root) | `unexpanded_part_usage` (template; non-composite `ref part`) | — |
+| `part-multiplicity/unresolved_bound` | `expanded_part_usage` (3: `[*]`, an unvalued referenced bound, under `[2]`) | `unexpanded_part_usage` | — |
+| `part-multiplicity/ordered` | `expanded_part_usage` (2: base, under `[2]`) | `unexpanded_part_usage` | — |
+| `part-multiplicity/nonunique`, `negative_bound` | — | — | everything: not authorable (below) |
+| `constraint-predicate/blocked_predicate` | `owner_instantiated` (4: base, part-usage owner, subtype, under `[2]`); `owner_package` | `owner_uninstantiated` | `owner_other` |
+| `constraint-predicate/non_numerical_predicate` | — | `owner_instantiated` → **excluded** | other contexts |
+
+Controls certified (the prototype's admitted neighbors and the observations): ordered nonunique input bound to a scalar, exact `[1]` ordered input, plain reference actuals; exact redefinition (own model and the prototype's); an ordered ranged **attribute** usage; numeric `and`; and **G1**, a part redefinition that drops `[2]` and generates one unindexed occurrence (`fx__rack__servers__t__r`), which the port mirrors (D14 a). G2 (a usage-level override of a definition-owned referenced bound) was not probed in Item 1; it stays a matrix question for Phase 8.
+
+**Final record state (Things This Plan Cannot Settle, item 2):**
+- `ContextId`: 17 members (Appendix A's 19, less `ATTRIBUTE_USAGE` and `EVERYWHERE`, Phase 5). No member was added by a probe.
+- Probes: 80 (62 `record`, all cited; 12 `control`; 6 `reproduction`), all at `ecc18940`.
+- Record pairs: 24 refused, 11 admitted, 1 excluded, 1 omitted. One SA-1 statement (`calc-owned-assertion/asserted_constraint`). Shapes with no admission: `conditional_resolved_branches`, `nonunique`, `negative_bound`.
+- Evidence status: `probe_observed` for six rules; `partial` for `conditional-expression` and `part-multiplicity` (the three shapes above).
+
+**V probes against the port (manual check):** every V fixture's generator outcome matched the context the port computed before the run (a pre-run evaluator check placed all 46 Phase 7 record and control probes as expected), so none surprised and `occurrence_parity.py capture` was not needed. The overridden-writer probes are the sharpest check of the port's writer selection: overridden in every scope is admitted, selected in one scope is refused, exactly as computed.
+
+**Actual Changes:**
+- 46 probe directories: 38 record (including 2 reach variations added after the first run) and 8 controls (including G1). Prototype fixtures re-run (D9): `unmapped_expression_calc_arg`, the three `es003_*` neighbors, `es004_refused_range_parts`, `es004_refused_unbounded_parts`, `es004_admitted_uninstantiated_template`, `es004_admitted_exact_redefinition`, `es007_refused_boolean_mixed`, `es007_admitted_numeric_and`. With Phases 1 and 6, every prototype fixture has now been re-run through the harness.
+- `subset_profile_rules.toml`: the admissions above, `verified_against.agentic_rev = ecc18940`, and the part-multiplicity limits (nonunique and negative bounds not authorable; G1) in its `semantic_limits`. Version digest re-pinned.
+- Judge: the `excluded` check now requires that nothing of the element is executed (no catalog name equals it or extends it with `__`). A whole-identifier mention check would pass vacuously, because generated constraint names carry a hash suffix. New failed check `excluded_element_executed`, with a test.
+- `tests/test_sysml/test_subset_profile_rules_instantiation.py` (55): per-probe reproduction; controls; the B5 reach variations Appendix C names, checked by name; the NON_NUMERICAL `excluded` case with its profile reason; the overridden writer's scope count; default, widened and narrowed roots end to end; all six orders of a three-document model give identical results; evaluating twice is identical.
+- Fixtures `tests/fixtures/subset_profile/cases/widened_roots.sysml` and `cases/multi_doc/{lib,plant,templates}.sysml`.
+- `tests/test_subset_probe_evidence.py`: `AWAITING_ADMITTED_PARTNER` is empty, so every certified record probe is cited.
+
+**Validation:** `pytest tests/` 3420 pass, the same 3 environment failures; `ruff check src/ tests/` 118; `mypy src/` 97 in 19 files; touched files clean (`ruff check`, `ruff format --check`; `mypy --strict` on the five fact and profile modules and the judge). Teeth: flipping one recorded outcome fails the evidence test. `git status` of `~/src/sysml-codegen` and `~/src/dc3` empty, HEADs `b5663c07` and `60b44d53`.
+
+**Issues:**
+- **`nonunique` and negative part multiplicities cannot be probed.** SysIDE 0.8.4 rejects both before the generator runs ("Subsetting feature cannot be nonunique if subsetted feature is unique"; "Multiplicity range [-1] must be non-negative", also for a referenced bound valued `-1`). The shapes stay `unconfirmed`. The evaluator can only meet them in a model SysIDE already rejects.
+- **A unit-annotated literal binding control was not authored.** The generator rejects an `ISQ` length-typed calc input outright (`SI_TYPE_INVALID`), and SysIDE rejects `[SI::one]` on a `Real` (Phase 4). The literal binding class is still placed by the other controls; recorded here because Appendix C listed it.
+
+**Deviations from Plan:**
+- Two reach variations (`ordered` and `[*]` under `[2]`) beyond Appendix C, added because the B5 test asks every instantiation-dependent refused pair for a reach variation.
+- The plan's widened-roots stencil used a probe model; the test uses a dedicated case (`widened_roots.sysml`) whose template usage `wr::Templates::site` is owned by a part def, since a package-owned part usage is already a generator root.
+- The B5 variation probes are `record` probes with a variant suffix and are cited as additional evidence for their pair, rather than a separate probe kind.
 
 ### Phase 8 Completion
 
