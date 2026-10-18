@@ -1,0 +1,27 @@
+ctl_sum_chain: load_errors=0
+ctl_arith: load_errors=0
+wrap_sum_collect: load_errors=0; wrapper_firings=[('P::Pack::total', [('collect', 'sum_operand', 0)])]
+wrap_sum_select: load_errors=0; walker_failures={'wrapper: SemanticEvidenceError': 1} {'wrapper: SemanticEvidenceError': 'P::Pack::total: inspect_reference_uses: feature chain rooted in an unsupported expression kind: cells->select { in c : Cell; c.ok }.mass'}
+wrap_sum_select_arrow: load_errors=0; walker_failures={'wrapper: SemanticEvidenceError': 1} {'wrapper: SemanticEvidenceError': 'P::Pack::total: inspect_reference_uses: feature chain rooted in an unsupported expression kind: (cells->select { in c : Cell; c.ok }).mass'}
+wrap_sum_collect_call: load_errors=0; wrapper_firings=[('P::Pack::total', [('collect', 'sum_operand', 0)])]
+wrap_sum_evaluation: load_errors=2; first_error='/tmp/l6-spike-s2-2s2zmi72/wrap_sum_evaluation.sysml:9:38: error (invocation-expression-instantiated-type): Invocation ex'; opaque_firings=[('P::Pack::total', ['InvocationExpression'])]
+wrap_sum_seq: load_errors=0; wrapper_firings=[('P::Pack::total', [('[', 'sum_operand', 0)])]
+wrap_sum_abs: load_errors=0; wrapper_firings=[('P::Pack::total', [('abs', 'sum_operand', 0)])]
+wrap_sum_filter: load_errors=0; wrapper_firings=[('P::Pack::total', [('select', 'sum_operand', 0)])]
+wrap_sum_dotcollect: load_errors=0; wrapper_firings=[('P::Pack::total', [('collect', 'sum_operand', 0)])]
+wrap_sum_dotselect: load_errors=0; walker_failures={'wrapper: SemanticEvidenceError': 1} {'wrapper: SemanticEvidenceError': 'P::Pack::total: inspect_reference_uses: feature chain rooted in an unsupported expression kind: cells.?{ in c : Cell; c.ok }.mass'}
+opq_metadata: load_errors=0; walker_failures={'opaque: SemanticEvidenceError': 1} {'opaque: SemanticEvidenceError': 'P::Pack::m: iterate_operands: SysIDE could not materialize the expression operands'}
+opq_meta_op: load_errors=1; first_error='/tmp/l6-spike-s2-2s2zmi72/opq_meta_op.sysml:9:23: error (type-error): P::Pack::m::(anonymous OperatorExpression)::result'; walker_failures={'opaque: SemanticEvidenceError': 1} {'opaque: SemanticEvidenceError': 'P::Pack::m: iterate_operands: SysIDE could not materialize the expression operands'}
+opq_unresolved_call: load_errors=2; first_error='/tmp/l6-spike-s2-2s2zmi72/opq_unresolved_call.sysml:9:30: error (invocation-expression-instantiated-type): Invocation ex'; opaque_firings=[('P::Pack::y', ['InvocationExpression'])]
+opq_calc_usage_call: load_errors=0
+opq_body_expr: load_errors=1; first_error='/tmp/l6-spike-s2-2s2zmi72/opq_body_expr.sysml:9:23: error (type-error): P::Pack::f::(anonymous FeatureReferenceExpressio'
+opq_new: load_errors=0; opaque_firings=[('P::Pack::c', ['ConstructorExpression'])]
+opq_if: load_errors=0
+opq_cast: load_errors=0
+opq_index: load_errors=0
+opq_string_concat: load_errors=0
+opq_null_coalesce: load_errors=0
+opq_istype: load_errors=0
+opq_at: load_errors=0
+opq_all: load_errors=0
+opq_literal_inf: load_errors=0

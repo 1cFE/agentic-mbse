@@ -1,0 +1,12 @@
+== fusion-tea: 108 flagged
+  declared types: {'Base::Anything, Base::DataValue, ScalarValues::Real': 108}
+  value expression kinds: {'FeatureChainExpression': 61, 'FeatureReferenceExpression': 28, 'OperatorExpression': 19}
+  evaluator messages: {"Feature reference 'ua' found in static expression. This violates ADR-002 Rule 3. Run 'agen": 6, "Feature reference 'capital_cost' found in static expression. This violates ADR-002 Rule 3.": 4, "Feature reference 'electric' found in static expression. This violates ADR-002 Rule 3. Run": 3, "Feature reference 'heat_into_fluid' found in static expression. This violates ADR-002 Rule": 3, "Feature reference '<unknown>' found in static expression. This violates ADR-002 Rule 3. Ru": 3, "Feature reference 'amplitude' found in static expression. This violates ADR-002 Rule 3. Ru": 2, "Feature reference 'effectiveness' found in static expression. This violates ADR-002 Rule 3": 2, "Feature reference 'powercore_capital' found in static expression. This violates ADR-002 Ru": 2}
+== dc3-baseline: 3 flagged
+  declared types: {'Base::Anything, Base::DataValue, ScalarValues::String': 3}
+  value expression kinds: {'LiteralString': 3}
+  evaluator messages: {"could not convert string to float: 'one modeled year'": 1, "could not convert string to float: 'four-server compute electronics'": 1, "could not convert string to float: 'liter'": 1}
+== dc3-repaired: 0 flagged
+  declared types: {}
+  value expression kinds: {}
+  evaluator messages: {}

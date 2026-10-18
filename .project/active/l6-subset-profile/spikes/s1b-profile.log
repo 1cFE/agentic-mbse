@@ -1,0 +1,44 @@
+         67580387 function calls (67557828 primitive calls) in 214.254 seconds
+
+   Ordered by: cumulative time
+   List reduced from 259 to 214 due to restriction <'agentic_mbse'>
+   List reduced from 214 to 35 due to restriction <35>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.004    0.004  214.446  214.446 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/subset_extraction.py:466(extract_subset_facts)
+        1    0.000    0.000  209.763  209.763 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/subset_extraction.py:452(_constraints)
+        1    0.001    0.001  209.763  209.763 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/constraint_extraction.py:287(extract_identified_constraint_facts)
+        1    0.003    0.003  209.504  209.504 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/constraint_extraction.py:213(_extract_constraint_facts)
+      345    0.004    0.000  204.079    0.592 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/constraint_extraction.py:885(_usage_fact)
+      345    0.130    0.000  203.639    0.590 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/constraint_extraction.py:873(_inherited_into)
+ 34099251  200.970    0.000  200.970    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/constraint_extraction.py:879(<genexpr>)
+      877    0.002    0.000    5.389    0.006 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/constraint_extraction.py:951(_context_fact)
+      877    1.586    0.002    4.649    0.005 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/constraint_extraction.py:923(_redefinitions)
+        5    0.017    0.003    3.328    0.666 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/subset_extraction.py:385(collect)
+    14794    0.051    0.000    2.042    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/subset_extraction.py:307(_site_fact)
+    20629    0.010    0.000    1.706    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/reference_use.py:292(inspect_reference_uses)
+21854/20629    0.029    0.000    1.696    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/reference_use.py:303(_walk)
+        1    0.005    0.005    1.246    1.246 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/subset_extraction.py:430(_occurrence)
+        1    0.003    0.003    1.241    1.241 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/occurrence_extraction.py:675(extract_occurrence_structure)
+    14794    0.018    0.000    1.228    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/subset_extraction.py:291(_reference_outcome)
+     8639    0.048    0.000    1.052    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/reference_use.py:533(_chain_use)
+    14752    0.025    0.000    0.929    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/subset_extraction.py:204(_binding_fact)
+    25118    0.181    0.000    0.882    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/reference_use.py:206(resolved_target_fact)
+   678229    0.486    0.000    0.870    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/syside_adapter.py:435(is_instance)
+      904    0.606    0.001    0.720    0.001 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/constraint_extraction.py:962(<genexpr>)
+        1    0.109    0.109    0.628    0.628 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/occurrence_extraction.py:158(build)
+   163486    0.045    0.000    0.612    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/syside_adapter.py:309(element_id)
+       82    0.152    0.002    0.473    0.006 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/constraint_extraction.py:752(_definition_formals)
+     7799    0.029    0.000    0.470    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/reference_use.py:510(_reference_use)
+    83411    0.046    0.000    0.468    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/occurrence_extraction.py:108(declaration_id)
+     8639    0.019    0.000    0.455    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/reference_use.py:583(_chain_head_segments)
+    23366    0.383    0.000    0.392    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/syside_adapter.py:539(authored_text)
+    17668    0.014    0.000    0.325    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/reference_use.py:634(authored_reference_text)
+   695897    0.183    0.000    0.318    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/syside_adapter.py:427(is_live_element)
+    84340    0.161    0.000    0.273    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/syside_adapter.py:575(get_source_location)
+    20492    0.018    0.000    0.273    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/subset_extraction.py:130(_located)
+    42094    0.044    0.000    0.248    0.000 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/occurrence_extraction.py:126(safe_location)
+       41    0.000    0.000    0.246    0.006 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/constraint_extraction.py:299(exact_formals)
+      345    0.001    0.000    0.230    0.001 /home/reid/src/agentic-mbse/src/agentic_mbse/sysml/constraint_extraction.py:791(_omitted_default_formals)
+
+
