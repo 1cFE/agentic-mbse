@@ -1,0 +1,3 @@
+$ grep -nE '^\s*(import|from) sysml_codegen' 01-screen.py 01-differential.py ; uv run python -c 'import sysml_codegen'  (cwd=/home/reid/src/agentic-mbse, 2026-10-15T13:59:12+00:00)
+no import statement for sysml_codegen in 01-screen.py / 01-differential.py
+ModuleNotFoundError: No module named 'sysml_codegen'

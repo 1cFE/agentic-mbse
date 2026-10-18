@@ -1,0 +1,105 @@
+# The site scanner's identity, recognized forms and known blind spots (plan Phase 9, design D10).
+#
+# scripts/subset_profile/scan_sites.py refuses to run if [forms] differ from the forms it codes,
+# so this file is the scanner's declared surface. The site account (site_account.csv) is total
+# over these forms only: anything a blind spot names is outside it by construction.
+
+scanner_revision = "scan_sites/1: the prototype 02-inventory.py forms, unchanged; run on git archive exports"
+
+[forms]
+channels = [
+    "coded", "coded-fixed", "coded-relay", "coded-returned", "coded-mapped", "plumbing",
+    "coded-DYNAMIC", "free-text", "builtin", "shared-evidence", "shared-profile",
+]
+# Enum classes whose member, written literally, is a site's code.
+code_enums = ["ElaborationCode", "ReadinessCode", "SemanticEvidenceCode"]
+# Constructors that take a code (first positional or `code=`); factories forwarding a code
+# parameter to one of these are found by fixpoint, not listed.
+code_taking = [
+    "Diagnostic", "ElaborationInvariantError", "MultiplicityExpansionError",
+    "OccurrenceResolutionError", "ReadinessFinding", "SemanticEvidenceError",
+    "_ReferenceResolutionError",
+]
+# Codegen public exception classes raised with free text only.
+free_text = [
+    "CodeGenerationError", "CompilationError", "ExpressionInventoryError",
+    "GraphValidationError", "InstanceGraphSnapshotError", "PackageSealError",
+    "PredicateCompileError", "ProvenanceError", "ScopePolicyMismatchError",
+    "SnapshotCertifiabilityError", "SnapshotCompatibilityError", "SnapshotIntegrityError",
+    "SnapshotShapeError", "SnapshotStaleSourceError", "SourceAdmissionError",
+    "SysMLParsingError",
+]
+# Builtin exceptions recognized when raised in sysml-codegen (not in agentic-mbse).
+builtin = [
+    "AssertionError", "IndexError", "KeyError", "LookupError", "NotImplementedError",
+    "RuntimeError", "TypeError", "ValueError",
+]
+# sysml_codegen/ paths not on the generation path.
+exclude = ["cli/install.py", "contracts/verify.py", "study/"]
+# The one agentic-mbse exception class recognized directly (plus its factories).
+shared_evidence_class = ["SemanticEvidenceError"]
+
+# ---- blind spots: what the account cannot see -------------------------------------------------
+
+[[blind_spot]]
+id = "silent-omission"
+statement = "A construct the generator drops without raising has no site. ES-010's String values and a calc usage's bare result expression are two known ones; they are matrix rows with site_status `no_raise_site`, found by probes, not by this scan."
+
+[[blind_spot]]
+id = "computed-code-beyond-resolver"
+statement = "A code computed in a way the resolver does not follow (anything but a literal, a literal conditional, `.code` relay, a parameter, a literal-returning helper or a literal table) is reported as coded-DYNAMIC with its expression text, not its codes. The five executable_profile sites are mapped by hand below; codegen's snapshot replay (`_diagnostic_from_data`) is validated by enum construction, so it cannot introduce a new code, but which codes it replays is not resolved."
+
+[[blind_spot]]
+id = "unrecognized-exception-class-or-helper"
+statement = "A raise of a class outside [forms] (a new codegen exception class, a third-party exception, a re-raise of a caught exception) is not a site. A helper that builds a refusal without calling a recognized constructor is not a site either. agentic-mbse builtin raises (`ValueError`, `TypeError`, `RecordError`, ...) are not recognized at all: only SemanticEvidenceError and executable_profile reasons are."
+
+[[blind_spot]]
+id = "unproven-public-reachability"
+statement = "The scan finds where a refusal can originate, not whether well-formed user input reaches it or which public outcome the CLI turns it into (a builtin raise becomes SI_INTERNAL_DEFECT at the catch-all). Each row's role and disposition are an inspection of the cited code, not a reachability proof; Item 2's per-site codes and mutation tests own that proof."
+
+[[blind_spot]]
+id = "dynamic-dispatch-and-indirection"
+statement = "A site reached through a callback, a dispatch table of callables, or a code stored in a variable assigned from something other than a call is resolved only as far as the forms above allow."
+
+[[blind_spot]]
+id = "non-python-surface"
+statement = "Refusals in generated code templates, in the SysIDE parser itself, or in the teax execution layer are outside both scanned `src/` trees."
+
+# ---- the five computed executable_profile reason sites ------------------------------------------
+# Reasons each site can emit, pinned exactly by tests/test_sysml/test_executable_profile_computed_reasons.py
+# (each test drives its site over every operand fact the closed category vocabulary allows; the
+# reasons below are the ones observed at that call line). The scanner checks each is in
+# REASON_CODES as read from the exported executable_profile.py.
+
+[[computed_site]]
+site_id = "agentic_mbse/sysml/executable_profile.py::_walk_arithmetic::coded-DYNAMIC::derived::1"
+reasons = [
+    "block_derived_unit_unsupported", "block_incompatible_dimensions", "block_malformed_operand_fact",
+    "block_unit_conversion_required", "block_unitless_dimensioned", "block_unknown_exact_unit",
+    "block_unresolved_operand", "block_unsupported_operand_category",
+]
+
+[[computed_site]]
+site_id = "agentic_mbse/sysml/executable_profile.py::_walk_value::coded-DYNAMIC::f'block_{operator}'::1"
+reasons = ["block_implies", "block_xor"]
+
+[[computed_site]]
+site_id = "agentic_mbse/sysml/executable_profile.py::_walk_comparison::coded-DYNAMIC::reason::1"
+reasons = [
+    "block_incompatible_dimensions", "block_integer_equality_unpreservable",
+    "block_malformed_operand_fact", "block_real_equality_requires_tolerance",
+    "block_unit_conversion_required", "block_unitless_dimensioned", "block_unknown_exact_unit",
+    "block_unresolved_operand", "block_unsupported_operand_category", "warn_non_numerical_equality",
+]
+
+[[computed_site]]
+site_id = "agentic_mbse/sysml/executable_profile.py::_walk_comparison::coded-DYNAMIC::reason::2"
+reasons = [
+    "block_incompatible_dimensions", "block_malformed_operand_fact", "block_ordering_category_pair",
+    "block_unit_conversion_required", "block_unknown_exact_unit", "block_unresolved_operand",
+    "block_unsupported_operand_category",
+]
+
+[[computed_site]]
+site_id = "agentic_mbse/sysml/executable_profile.py::_walk_proposition::coded-DYNAMIC::f'warn_non_numerical_{operator}'::1"
+reasons = ["warn_non_numerical_implies", "warn_non_numerical_xor"]

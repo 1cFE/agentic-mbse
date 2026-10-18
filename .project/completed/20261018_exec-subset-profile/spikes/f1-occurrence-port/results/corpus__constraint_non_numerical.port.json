@@ -1,0 +1,45 @@
+{
+ "calc_attachment": {},
+ "codegen_imported": false,
+ "counts": {
+  "f379e03a-b140-53d3-bc80-7360ef5eaed4": 1
+ },
+ "def_occurrences": {
+  "856ff12a-680d-5aca-93de-ebc41b46856c": 1
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/constraint_non_numerical"
+ ],
+ "load_errors": false,
+ "names": {
+  "856ff12a-680d-5aca-93de-ebc41b46856c": "constraint_non_numerical::MixedPurposeHost",
+  "8c4587b3-d77d-5250-b90d-c7fa6d154d66": "constraint_non_numerical",
+  "f379e03a-b140-53d3-bc80-7360ef5eaed4": "constraint_non_numerical::the_host"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "856ff12a-680d-5aca-93de-ebc41b46856c"
+   ],
+   "path": "f379e03a-b140-53d3-bc80-7360ef5eaed4[]",
+   "type": "856ff12a-680d-5aca-93de-ebc41b46856c",
+   "usage": "f379e03a-b140-53d3-bc80-7360ef5eaed4"
+  }
+ ],
+ "roots": [
+  "f379e03a-b140-53d3-bc80-7360ef5eaed4"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "f379e03a-b140-53d3-bc80-7360ef5eaed4",
+   null
+  ]
+ ],
+ "writers": [],
+ "writers_status": "no_calc_usages_selected"
+}

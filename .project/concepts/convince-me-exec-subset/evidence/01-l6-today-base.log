@@ -1,0 +1,55 @@
+$ uv run agentic-mbse validate --level=6 /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-base/models  (cwd=/home/reid/src/agentic-mbse, 2026-10-15T13:48:17+00:00)
+
+======================================================================
+SysML Quality Validation
+Models path: /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-base/models
+Mode: Fail-fast
+Running: Level 6 only
+======================================================================
+
+============================================================
+Level 6: Architecture & Pipeline Readiness
+============================================================
+
+❌ Level 6: Architecture & Pipeline Readiness
+   Calc defs checked: 6
+   Calc usages checked: 41
+   Bindings validated: 134
+   Design attrs checked: 49
+   Manifests checked: 0
+   L6_MISSING_QUALIFIED_NAME: 0
+   L6_INVALID_QUALIFIED_NAME: 0
+   L6_CALC_DEF_NO_OUTPUT: 0
+   L6_CALC_DEF_NO_DIRECTION: 0
+   L6_INVALID_BINDING_FORMAT: 0
+   L6_DESIGN_ATTR_INCOMPLETE: 0
+   L6_DESIGN_ATTR_UNEXTRACTABLE: 3
+   L6_ANONYMOUS_RETURN: 0
+   L6_BODY_ASSIGNMENT_IMPL_LOSS: 0
+   V4_STATIC_FUNCTION_INVOCATION: 0
+   L6_CONSTRAINT_MALFORMED_NUMERICAL: 4
+   L6_CONSTRAINT_NON_NUMERICAL: 4
+   L6_CALC_DEF_NO_INSTANTIATION: 0
+   L6_ATTR_REDEF_EXPR_DROPPED: 0
+
+   Issues found: 11
+   - WARN: Constraint 'dc3_baseline_annual::annual_reference::ac_demand::input_domain' is not a numerical statement and will not execute: warn_non_numerical_predicate at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-base/models/designs/examples/baseline_annual.sysml:57
+   - ERROR: Constraint 'dc3_baseline_costs::cost_reference::ac_total::delivered_domain' is a malformed numerical statement: feature_ref (block_non_numerical_containment) at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-base/models/designs/examples/baseline_costs.sysml:74
+   - ERROR: Constraint 'dc3_baseline_costs::cost_reference::ac_total::delivered_domain' is a malformed numerical statement: feature_ref (block_non_numerical_containment) at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-base/models/designs/examples/baseline_costs.sysml:74
+   - WARN: Constraint 'dc3_baseline_annual::annual_reference::ac_balance::input_domain' is not a numerical statement and will not execute: warn_non_numerical_predicate at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-base/models/designs/examples/baseline_annual.sysml:84
+   - WARN: Constraint 'dc3_baseline_annual::annual_reference::dc_demand::input_domain' is not a numerical statement and will not execute: warn_non_numerical_predicate at ///tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-base/models/designs/examples/baseline_annual.sysml:97
+   ... and 6 more
+
+❌ Stopping at first failure (Level 6)
+   Use --complete to run all levels regardless of failures
+
+======================================================================
+Summary
+======================================================================
+Checks run: 1
+✅ Passed: 0
+❌ Failed: 1
+
+❌ Quality checks failed
+   Review issues above and fix before proceeding
+exit=1

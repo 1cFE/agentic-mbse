@@ -1,0 +1,9 @@
+$ /tmp/subset-profile/run-f2c2bcz1/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-f2c2bcz1/probes/binding-source__expression_source__owner_instantiated__constraint_input/in/model.sysml --output /tmp/subset-profile/run-f2c2bcz1/probes/binding-source__expression_source__owner_instantiated__constraint_input/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/subset-profile/run-f2c2bcz1/probes/binding-source__expression_source__owner_instantiated__constraint_input/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-f2c2bcz1/probes/binding-source__expression_source__owner_instantiated__constraint_input/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model is not ready for the exact route: SI_EXPRESSION_SOURCE_UNSUPPORTED: fx__Site__g.q: reference='a * b': unsupported exact source form expression_source ('a * b') [root-0/model.sysml:8]

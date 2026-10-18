@@ -1,0 +1,18 @@
+syside 0.8.4
+shipped fences: 212 (sysml 212, kerml 0; nested inside another fence 4)
+vendored reference fences (excluded, not a support promise): 12
+files with shipped fences: 22
+
+status totals:
+  complete-standalone    13
+  complete-wrapped       28
+  parses-unresolved      116
+  syntax-fragment        55
+  complete (loads with zero errors, alone or wrapped): 41/212 = 19%
+  negative-marked by prose heuristic: 51
+
+by directory:
+  agents                             complete-standalone=1, parses-unresolved=3, syntax-fragment=4
+  docs/patterns                      complete-standalone=10, complete-wrapped=23, parses-unresolved=104, syntax-fragment=46
+  project_templates                  complete-standalone=1, complete-wrapped=2, parses-unresolved=2, syntax-fragment=2
+  skills                             complete-standalone=1, complete-wrapped=3, parses-unresolved=7, syntax-fragment=3

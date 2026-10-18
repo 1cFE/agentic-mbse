@@ -1,0 +1,14 @@
+kind = "record"
+rule = "constraint-predicate"
+shape = "blocked_predicate"
+context = "owner_instantiated"
+variant = "part_usage_owner"
+expected_outcome = "refused"
+
+[construct]
+description = "the BLOCK predicate in root part usage site (B5)"
+file = "model.sysml"
+lines = [6, 6]
+
+[expect]
+code = "SI_CONSTRAINT_BLOCKED"

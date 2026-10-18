@@ -1,0 +1,13 @@
+kind = "record"
+rule = "part-multiplicity"
+shape = "range"
+context = "unexpanded_part_usage"
+expected_outcome = "admitted"
+
+[construct]
+description = "servers[1..4] in Rack, which nothing instantiates"
+file = "model.sysml"
+lines = [5, 5]
+
+[expect]
+positive_control = "fx__meter__m__r"

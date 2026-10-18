@@ -1,0 +1,114 @@
+total sites: 500
+
+== per channel ==
+  137  free-text
+  130  builtin
+  126  coded
+   29  shared-profile
+   24  coded-fixed
+   24  shared-evidence
+   15  coded-relay
+    7  plumbing
+    6  coded-DYNAMIC
+    1  coded-returned
+    1  coded-mapped
+
+== per code (coded, coded-fixed, shared-evidence) ==
+   43  SI_EDGE_DANGLING
+   21  SI_REDEFINITION_INVALID
+   20  SI_SNAPSHOT_INVALID
+   12  SI_OCCURRENCE_MISSING
+   12  SI_RENDERING_COLLISION
+   12  RESOLVED_TARGET_MISSING
+    9  block_unsupported_node
+    6  block_non_predicate_root
+    5  SI_OCCURRENCE_AMBIGUOUS
+    4  SI_ID_MISSING
+    4  INDEXED_REFERENCE_UNSUPPORTED
+    4  SI_EVIDENCE_INCOMPLETE
+    4  EXPRESSION_KIND_UNSUPPORTED
+    4  EXPRESSION_DEPTH_EXHAUSTED
+    3  SI_CONSTRAINT_INCOMPLETE
+    3  SI_CONTAINMENT_RECURSIVE
+    3  SI_MULTIPLICITY_UNSUPPORTED
+    3  block_unsupported_operator
+    2  SI_CONSTRAINT_UNATTACHED
+    2  OVERRIDE_TARGET_MISSING
+    2  SI_INDEXED_SOURCE_UNSUPPORTED
+    2  SI_EXPRESSION_SOURCE_UNSUPPORTED
+    2  SI_ID_UNSTABLE
+    2  SI_MULTIPLICITY_UNRESOLVED
+    2  SI_TYPE_INVALID
+    2  block_feature_chain
+    2  block_invocation
+    2  warn_non_numerical_predicate
+    2  DOCUMENT_TIER_MISSING
+    2  DOCUMENT_TIER_UNKNOWN
+    1  SI_INTERNAL_DEFECT
+    1  SYSML_NAMESPACE_NOT_DISTINGUISHABLE
+    1  SI_CONSTRAINT_BLOCKED
+    1  SI_SELF_BINDING
+    1  SI_ALIAS_CYCLE
+    1  EXTRACTION_DIAGNOSTIC_BLOCKING
+    1  SI_MULTIPLICITY_INVALID
+    1  block_malformed_operand_fact
+    1  block_invalid_assertion_polarity
+    1  block_assert_by_reference
+    1  block_unresolved_definition
+    1  block_missing_predicate
+    1  OPERAND_ITERATION_FAILED
+    1  RESOLVED_LEAF_MISSING
+    1  METATYPE_CHECK_FAILED
+
+== free-text sites per class ==
+   35  CodeGenerationError
+   21  SourceAdmissionError
+   20  PredicateCompileError
+   13  CompilationError
+    9  SysMLParsingError
+    8  ExpressionInventoryError
+    6  SnapshotShapeError
+    5  ProvenanceError
+    5  ScopePolicyMismatchError
+    5  SnapshotIntegrityError
+    4  GraphValidationError
+    2  SnapshotCompatibilityError
+    2  SnapshotStaleSourceError
+    1  PackageSealError
+    1  SnapshotCertifiabilityError
+
+== enum members with NO literal origin site: 0 of 34 ==
+
+factories detected (code param position): {'_diagnose': 0, '_diagnostic': 0, '_fail': 0, '_record_readiness': 2, '_segment_error': 0, 'evidence_error': 0}
+
+== non-literal code sites (everything that is not a literal at the site) ==
+  coded-returned sysml_codegen/elaboration/elaborate.py:1939  _ExactElaborator._collect_bound_members  code=SI_SELF_BINDING|SI_INDEXED_SOURCE_UNSUPPORTED|SI_EXPRESSION_SOURCE_UNSUPPORTED
+  plumbing       sysml_codegen/elaboration/elaborate.py:2213  _ExactElaborator._record_readiness  code=code
+  plumbing       sysml_codegen/elaboration/elaborate.py:2244  _ExactElaborator._record_readiness  code=code
+  coded-relay    sysml_codegen/elaboration/elaborate.py:2321  _ExactElaborator._resolve_semantic_reference  code=error.code
+  coded-relay    sysml_codegen/elaboration/elaborate.py:2335  _ExactElaborator._resolve_semantic_reference  code=error.code
+  coded-relay    sysml_codegen/elaboration/elaborate.py:2432  _ExactElaborator._resolve_calculation_output  code=error.code
+  coded-relay    sysml_codegen/elaboration/elaborate.py:2522  _ExactElaborator._resolve_aliases  code=error.code
+  coded-relay    sysml_codegen/elaboration/elaborate.py:2544  _ExactElaborator._resolve_aliases  code=error.code
+  coded-relay    sysml_codegen/elaboration/elaborate.py:2595  _ExactElaborator._resolve_computed_expressions  code=error.code
+  coded-relay    sysml_codegen/elaboration/elaborate.py:2645  _ExactElaborator._resolve_computed_expressions  code=error.code
+  coded-relay    sysml_codegen/elaboration/elaborate.py:2696  _ExactElaborator._resolve_bindings  code=error.code
+  plumbing       sysml_codegen/elaboration/elaborate.py:2730  _ExactElaborator._diagnose  code=code
+  coded-relay    sysml_codegen/elaboration/expression_evidence.py:265  _acquire  code=error.code
+  coded-relay    sysml_codegen/elaboration/expression_evidence.py:365  _contextualize  code=error.code
+  coded-relay    sysml_codegen/elaboration/occurrence.py:187  build_containment_address  code=error.code
+  plumbing       sysml_codegen/elaboration/project.py:137  _diagnostic  code=code
+  plumbing       sysml_codegen/elaboration/project.py:161  _fail  code=code
+  plumbing       sysml_codegen/extraction/binding_source.py:285  _segment_error  code=code
+  coded-relay    sysml_codegen/orchestration/elaborated_pipeline.py:319  elaborate_loaded_extractor  code=error.code
+  coded-relay    sysml_codegen/orchestration/elaborated_pipeline.py:337  elaborate_loaded_extractor  code=error.code
+  coded-relay    sysml_codegen/orchestration/elaborated_pipeline.py:408  _readiness_with_referent  code=finding.code
+  coded-mapped   sysml_codegen/orchestration/elaborated_pipeline.py:424  _semantic_evidence_diagnostic  code=SI_EVIDENCE_INCOMPLETE|SI_EXPRESSION_SOURCE_UNSUPPORTED|SI_INDEXED_SOURCE_UNSUPPORTED
+  coded-relay    sysml_codegen/orchestration/elaborated_pipeline.py:446  _diagnostic_with_referent  code=diagnostic.code
+  coded-DYNAMIC  sysml_codegen/snapshot/instance_graph.py:981  _diagnostic_from_data  code=code
+  coded-DYNAMIC  agentic_mbse/sysml/executable_profile.py:542  _walk_arithmetic  code=derived
+  coded-DYNAMIC  agentic_mbse/sysml/executable_profile.py:597  _walk_value  code=f'block_{operator}'
+  coded-DYNAMIC  agentic_mbse/sysml/executable_profile.py:660  _walk_comparison  code=reason
+  coded-DYNAMIC  agentic_mbse/sysml/executable_profile.py:711  _walk_comparison  code=reason
+  coded-DYNAMIC  agentic_mbse/sysml/executable_profile.py:813  _walk_proposition  code=f'warn_non_numerical_{operator}'
+  plumbing       agentic_mbse/sysml/reference_use.py:152  evidence_error  code=code

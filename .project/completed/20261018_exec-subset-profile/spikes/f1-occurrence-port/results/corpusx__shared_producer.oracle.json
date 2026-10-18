@@ -1,0 +1,68 @@
+{
+ "calc_attachment": {
+  "0b19af6b-8937-5b7a-90ac-262df26cacd8": [
+   [
+    "occ:8efde269-6ac0-5bbf-ae08-677963dd80ed[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "8efde269-6ac0-5bbf-ae08-677963dd80ed": 1
+ },
+ "def_occurrences": {
+  "9295a7ce-3b33-55cb-b429-6f79fc928dc4": 1
+ },
+ "full": {
+  "calcs_equal": true,
+  "n_calcs": 1,
+  "n_occ": 1,
+  "occurrences_equal": true,
+  "ran": true
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/shared_producer"
+ ],
+ "load_errors": false,
+ "names": {
+  "0b19af6b-8937-5b7a-90ac-262df26cacd8": "SharedProducer::the_rig::scaler",
+  "39ab30a8-6161-5422-97fd-deaf0a946a69": "SharedProducer",
+  "8efde269-6ac0-5bbf-ae08-677963dd80ed": "SharedProducer::the_rig",
+  "9295a7ce-3b33-55cb-b429-6f79fc928dc4": "SharedProducer::Rig"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "9295a7ce-3b33-55cb-b429-6f79fc928dc4"
+   ],
+   "path": "8efde269-6ac0-5bbf-ae08-677963dd80ed[]",
+   "type": "9295a7ce-3b33-55cb-b429-6f79fc928dc4",
+   "usage": "8efde269-6ac0-5bbf-ae08-677963dd80ed"
+  }
+ ],
+ "roots": [
+  "8efde269-6ac0-5bbf-ae08-677963dd80ed"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "8efde269-6ac0-5bbf-ae08-677963dd80ed",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:8efde269-6ac0-5bbf-ae08-677963dd80ed[]",
+   "0b19af6b-8937-5b7a-90ac-262df26cacd8",
+   "0b19af6b-8937-5b7a-90ac-262df26cacd8",
+   [
+    "0b19af6b-8937-5b7a-90ac-262df26cacd8"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

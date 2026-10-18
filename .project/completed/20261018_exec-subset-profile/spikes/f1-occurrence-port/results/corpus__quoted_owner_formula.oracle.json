@@ -1,0 +1,47 @@
+{
+ "calc_attachment": {},
+ "counts": {
+  "b69f894f-05ab-5121-a97e-1947e28fb5bf": 1
+ },
+ "def_occurrences": {},
+ "full": {
+  "calcs_equal": true,
+  "n_calcs": 0,
+  "n_occ": 1,
+  "occurrences_equal": true,
+  "ran": true
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/quoted_owner_formula"
+ ],
+ "load_errors": false,
+ "names": {
+  "ace19192-5754-5fed-896e-887b9d48c507": "QuotedOwnerFormulaDesign",
+  "b69f894f-05ab-5121-a97e-1947e28fb5bf": "QuotedOwnerFormulaDesign::'Margin Part'",
+  "d7d021c8-7224-59b8-8391-a22593abfb96": "QuotedOwnerFormulaLibrary"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [],
+   "path": "b69f894f-05ab-5121-a97e-1947e28fb5bf[]",
+   "type": null,
+   "usage": "b69f894f-05ab-5121-a97e-1947e28fb5bf"
+  }
+ ],
+ "roots": [
+  "b69f894f-05ab-5121-a97e-1947e28fb5bf"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "b69f894f-05ab-5121-a97e-1947e28fb5bf",
+   null
+  ]
+ ],
+ "writers": [],
+ "writers_status": "no_calc_usages_selected"
+}

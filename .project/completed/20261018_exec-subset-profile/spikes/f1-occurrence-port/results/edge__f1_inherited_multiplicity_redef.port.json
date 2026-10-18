@@ -1,0 +1,68 @@
+{
+ "calc_attachment": {},
+ "codegen_imported": false,
+ "counts": {
+  "7c41e282-3b4e-5184-a596-4cc0f6029d93": 1,
+  "9ad82d6d-dc22-59c0-8b0d-84008cf7020b": 1
+ },
+ "def_occurrences": {
+  "1eb8d537-778c-59db-8a4c-63964d449c7e": 1,
+  "392b88d7-7b2e-51f1-b285-0f3a84ad3f77": 1,
+  "f094c8b2-958d-582c-a4fd-feb660f5b6ea": 1
+ },
+ "inputs": [
+  "/home/reid/src/agentic-mbse/.project/active/exec-subset-profile/spikes/f1-occurrence-port/fixtures/f1_inherited_multiplicity_redef.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "1eb8d537-778c-59db-8a4c-63964d449c7e": "f1c::Rack",
+  "392b88d7-7b2e-51f1-b285-0f3a84ad3f77": "f1c::Site",
+  "4f5c10d5-592d-582b-a76b-7e707e498ede": "f1c",
+  "7c41e282-3b4e-5184-a596-4cc0f6029d93": "f1c::BigSite::racks",
+  "9ad82d6d-dc22-59c0-8b0d-84008cf7020b": "f1c::site",
+  "a6aab7ec-1632-533a-be48-3b4ba3e95b35": "f1c::Site::racks",
+  "f094c8b2-958d-582c-a4fd-feb660f5b6ea": "f1c::BigSite"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "7c41e282-3b4e-5184-a596-4cc0f6029d93"
+   ],
+   "closure": [
+    "392b88d7-7b2e-51f1-b285-0f3a84ad3f77",
+    "f094c8b2-958d-582c-a4fd-feb660f5b6ea"
+   ],
+   "path": "9ad82d6d-dc22-59c0-8b0d-84008cf7020b[]",
+   "type": "f094c8b2-958d-582c-a4fd-feb660f5b6ea",
+   "usage": "9ad82d6d-dc22-59c0-8b0d-84008cf7020b"
+  },
+  {
+   "children": [],
+   "closure": [
+    "1eb8d537-778c-59db-8a4c-63964d449c7e"
+   ],
+   "path": "9ad82d6d-dc22-59c0-8b0d-84008cf7020b[]/a6aab7ec-1632-533a-be48-3b4ba3e95b35[]",
+   "type": "1eb8d537-778c-59db-8a4c-63964d449c7e",
+   "usage": "7c41e282-3b4e-5184-a596-4cc0f6029d93"
+  }
+ ],
+ "roots": [
+  "9ad82d6d-dc22-59c0-8b0d-84008cf7020b"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "7c41e282-3b4e-5184-a596-4cc0f6029d93",
+   "9ad82d6d-dc22-59c0-8b0d-84008cf7020b[]"
+  ],
+  [
+   "9ad82d6d-dc22-59c0-8b0d-84008cf7020b",
+   null
+  ]
+ ],
+ "writers": [],
+ "writers_status": "no_calc_usages_selected"
+}

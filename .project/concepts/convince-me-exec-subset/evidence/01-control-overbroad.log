@@ -1,0 +1,29 @@
+$ SCREEN_OVERBROAD=ES-001 uv run python -I convince-me-exec-subset/evidence/01-differential.py   (cwd=/home/reid/src/agentic-mbse, 2026-10-15T13:58:55+00:00)
+controls: SCREEN_DISABLE=- SCREEN_OVERBROAD=ES-001 SCREEN_ES003_V1=-
+fixture                                        codegen (screen bypassed)                screen                       verdict
+es001_admitted_part_assert                     generated                                refused ES-001               OVERBROAD
+es001_refused_calc_def_assert                  refused SI_CONSTRAINT_UNATTACHED         refused ES-001               AGREE
+es001_refused_calc_usage_assert                refused SI_CONSTRAINT_UNATTACHED         refused ES-001               AGREE
+es003_admitted_fixed_arity                     generated                                admitted                     AGREE
+es003_neighbor_exact_ordered_param             generated                                admitted                     AGREE
+es003_neighbor_ordered_param_scalar_arg        generated                                admitted                     AGREE
+es003_refused_ordered_nonunique                refused SI_EXPRESSION_SOURCE_UNSUPPORTED refused ES-003               AGREE
+es004_admitted_exact_redefinition              generated                                admitted                     AGREE
+es004_admitted_uninstantiated_template         generated                                admitted                     AGREE
+es004_refused_range_parts                      refused SI_MULTIPLICITY_UNSUPPORTED      refused ES-004               AGREE
+es004_refused_unbounded_parts                  refused SI_MULTIPLICITY_UNRESOLVED       refused ES-004               AGREE
+es005_admitted_explicit_multiply               generated                                admitted                     AGREE
+es005_refused_product                          refused SI_EXPRESSION_SOURCE_UNSUPPORTED refused ES-005               AGREE
+es005_refused_size                             refused SI_EXPRESSION_SOURCE_UNSUPPORTED refused ES-005               AGREE
+es006_admitted_arithmetic_min                  generated                                admitted                     AGREE
+es006_refused_conditional                      refused SI_EVIDENCE_INCOMPLETE           refused ES-006               AGREE
+es007_admitted_numeric_and                     generated                                refused ES-001               OVERBROAD
+es007_refused_boolean_mixed                    refused SI_CONSTRAINT_BLOCKED            refused ES-001,ES-007        AGREE
+es010_admitted_numeric_value                   generated                                admitted                     AGREE
+es010_omitted_string_value                     generated +omits fuel_unit               admitted +omits ES-010       AGREE
+es010_refused_string_calc_input                refused SI_RENDERING_COLLISION           refused ES-010 +omits ES-010 AGREE
+unmapped_expression_calc_arg                   refused SI_EXPRESSION_SOURCE_UNSUPPORTED admitted                     MISSED
+
+tally: AGREE=19, MISSED=1, OVERBROAD=2
+FAILED: es001_admitted_part_assert.sysml OVERBROAD; es007_admitted_numeric_and.sysml OVERBROAD; unmapped_expression_calc_arg.sysml MISSED
+exit=1

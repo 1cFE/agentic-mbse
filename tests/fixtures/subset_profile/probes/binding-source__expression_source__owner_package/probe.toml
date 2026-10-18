@@ -1,0 +1,13 @@
+kind = "record"
+rule = "binding-source"
+shape = "expression_source"
+context = "owner_package"
+expected_outcome = "refused"
+
+[construct]
+description = "package-owned calc usage t binds xs to (a, b)"
+file = "model.sysml"
+lines = [6, 6]
+
+[expect]
+code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"

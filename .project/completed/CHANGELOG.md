@@ -4,6 +4,31 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-18] - Executable-Subset Profile
+
+**Type**: Item (`EXEC-SUBSET-CONTRACT` Item 1; branch `exec-subset-profile`, not yet merged; orchestrated run, briefs in `20261018_exec-subset-profile/briefs/`)
+**Duration**: 4 days (spec created 2026-10-15; closed 2026-10-18)
+
+### Summary
+
+agentic-mbse now holds one versioned statement of which model shapes, in which contexts, the pinned generator (sysml-codegen `b5663c07`) refuses, excludes, silently omits or admits, so the generator, L6 and guidance can later consume one contract instead of drifting. Before this item each kept its own picture: on dc3's baseline L6 reported B7 and B8 and missed B1–B6. The contract is packaged records plus a pure evaluator (`sysml/subset_profile.py`) over shared facts, including a 714-line summary of codegen's occurrence logic that matches codegen on 73 of 73 recorded cases. A record may say `refused` only for a (shape, context) a retained, isolated probe of the generator observed; everything else is `unconfirmed`, and missing facts are `unverified`. 80 of 80 probes certify; 14 deliberate attempts to break that gate each fail a test. dc3 repaired reads CLEAR with 0 refused; dc3 baseline reads `refused_incomplete` (B1–B7 refused or omitted, B8 `unconfirmed` because its constraints are calc-usage-owned and the generator refuses them first under B1). All 37 codegen corpus fixtures pass, codegen's 2754 tests are identical before and after, and `validate` output is unchanged. A 31-row capability matrix and an account of all 502 scanned candidate sites (D2) map every remaining case to an owner. Independently audited: Certify with recorded limits; fixes applied and every run repeated at `ce0ad1ff`. No consumer is wired yet.
+
+**Promises the product now makes.** [P-0001](../product/0001-executable-subset-contract.md): refused only with a recorded generator probe; CLEAR only over the implemented rules.
+
+**Decision: agentic-mbse owns the contract and a summary occurrence port, held to codegen by permanent parity CI.** [AGENT] (ratified by owner 2026-10-18, "A (ii)") [ADR 0001](../adr/0001-subset-profile-capability-ownership.md). This amends sysml-codegen ADR 0012; the amendment is a ready draft, to file at merge (owner, 2026-10-18). Rejected: codegen-owned policy, decisions in the fact layer, per-consumer implementations, and leaving instantiation contexts `unconfirmed` (A′).
+
+**Decision: code reading never yields `refused`.** [AGENT] (spec review L3-2) Generator refusals turned out to depend on context (instantiated scopes, calc result expressions), so only a context-matched probe certifies a refusal, and each refused shape needs a certified non-refused partner context.
+
+**Owner calls at close (2026-10-18).** R3 disposition approved as a whole (`evidence/r3-proposal.md`), retiring the unprobeable `nonunique`/`negative_bound` shapes and suggesting Item 2 be split; B8 `unconfirmed` accepted; G1/G2 generator multiplicity questions to Item 2 via `kerml-expert` before any codegen fix.
+
+### Deliverables
+
+- Code: `src/agentic_mbse/sysml/{subset_profile.py, subset_profile_rules.toml, occurrence_facts.py, occurrence_extraction.py, subset_facts.py, subset_extraction.py, fact_refs.py, invocation_allowlist.py}`, `reference_use.py` (`invocation_uses`); `scripts/subset_profile/` (probe harness, parity, site scan, acceptance runs); `tests/helpers/subset_probe_judge.py`; probe, occurrence and inventory fixtures under `tests/fixtures/subset_profile/`; tests (suite 3507 passed, baseline 3 environment failures).
+- Records: ADR 0001, P-0001, four execution facts.
+- Artifacts: spec, spec-review, design (rev 2), design-review, spike F1, plan, audit, product-lens, evidence (matrix, site account, probes, acceptance, R3, re-estimate, ADR 0012 amendment draft), stage briefs.
+
+---
+
 ## [2026-10-18] - Reliable arXiv Extraction
 
 **Type**: Item (standalone; branch `fix/arxiv-extraction` in worktree `/home/reid/src/agentic-mbse-worktrees/arxiv-extraction`, base local `main` `8b027bbc`, not yet merged)

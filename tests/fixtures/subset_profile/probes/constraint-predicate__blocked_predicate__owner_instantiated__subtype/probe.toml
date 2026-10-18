@@ -1,0 +1,14 @@
+kind = "record"
+rule = "constraint-predicate"
+shape = "blocked_predicate"
+context = "owner_instantiated"
+variant = "subtype"
+expected_outcome = "refused"
+
+[construct]
+description = "the BLOCK predicate in Site, instantiated through subtype BigSite (B5)"
+file = "model.sysml"
+lines = [6, 6]
+
+[expect]
+code = "SI_CONSTRAINT_BLOCKED"

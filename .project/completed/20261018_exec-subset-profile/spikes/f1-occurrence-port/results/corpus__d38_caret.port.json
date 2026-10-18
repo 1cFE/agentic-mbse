@@ -1,0 +1,132 @@
+{
+ "calc_attachment": {
+  "46c14f4f-6d9c-5d14-852b-7f0042b18cec": [
+   [
+    "occ:6622e95c-3b83-533c-813f-134cd10d4db4[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "2a820161-9930-5b5e-9670-f6776b9686f5": 1,
+  "5d5512fa-fb83-50bd-bd69-93ec689d59c2": 4,
+  "6622e95c-3b83-533c-813f-134cd10d4db4": 1
+ },
+ "def_occurrences": {
+  "30a98e6e-c11d-5c98-8037-c44536e5d20e": 5,
+  "86742d78-a4cd-52b5-be59-a26fe51c9d35": 4,
+  "c3dddc04-d9cb-595a-bfc3-6763ef1cba04": 1
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/d38_caret"
+ ],
+ "load_errors": false,
+ "names": {
+  "2a820161-9930-5b5e-9670-f6776b9686f5": "D38Design::plant::pack",
+  "30a98e6e-c11d-5c98-8037-c44536e5d20e": "D38Lib::'Costed Item'",
+  "46c14f4f-6d9c-5d14-852b-7f0042b18cec": "D38Design::plant::noop",
+  "481e168a-bb49-5526-92d5-f8bf7e7a6656": "D38Lib",
+  "5d5512fa-fb83-50bd-bd69-93ec689d59c2": "D38Lib::Pack::cell",
+  "5e36629d-4d5e-55a6-bac4-c23c100e9936": "D38Probe",
+  "6622e95c-3b83-533c-813f-134cd10d4db4": "D38Design::plant",
+  "86742d78-a4cd-52b5-be59-a26fe51c9d35": "D38Lib::Cell",
+  "c3dddc04-d9cb-595a-bfc3-6763ef1cba04": "D38Lib::Pack",
+  "faeaa01e-67b2-5750-bf45-09b6d7f8b386": "D38Design"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "2a820161-9930-5b5e-9670-f6776b9686f5"
+   ],
+   "closure": [],
+   "path": "6622e95c-3b83-533c-813f-134cd10d4db4[]",
+   "type": null,
+   "usage": "6622e95c-3b83-533c-813f-134cd10d4db4"
+  },
+  {
+   "children": [
+    "5d5512fa-fb83-50bd-bd69-93ec689d59c2"
+   ],
+   "closure": [
+    "30a98e6e-c11d-5c98-8037-c44536e5d20e",
+    "c3dddc04-d9cb-595a-bfc3-6763ef1cba04"
+   ],
+   "path": "6622e95c-3b83-533c-813f-134cd10d4db4[]/2a820161-9930-5b5e-9670-f6776b9686f5[]",
+   "type": "c3dddc04-d9cb-595a-bfc3-6763ef1cba04",
+   "usage": "2a820161-9930-5b5e-9670-f6776b9686f5"
+  },
+  {
+   "children": [],
+   "closure": [
+    "30a98e6e-c11d-5c98-8037-c44536e5d20e",
+    "86742d78-a4cd-52b5-be59-a26fe51c9d35"
+   ],
+   "path": "6622e95c-3b83-533c-813f-134cd10d4db4[]/2a820161-9930-5b5e-9670-f6776b9686f5[]/5d5512fa-fb83-50bd-bd69-93ec689d59c2[0]",
+   "type": "86742d78-a4cd-52b5-be59-a26fe51c9d35",
+   "usage": "5d5512fa-fb83-50bd-bd69-93ec689d59c2"
+  },
+  {
+   "children": [],
+   "closure": [
+    "30a98e6e-c11d-5c98-8037-c44536e5d20e",
+    "86742d78-a4cd-52b5-be59-a26fe51c9d35"
+   ],
+   "path": "6622e95c-3b83-533c-813f-134cd10d4db4[]/2a820161-9930-5b5e-9670-f6776b9686f5[]/5d5512fa-fb83-50bd-bd69-93ec689d59c2[1]",
+   "type": "86742d78-a4cd-52b5-be59-a26fe51c9d35",
+   "usage": "5d5512fa-fb83-50bd-bd69-93ec689d59c2"
+  },
+  {
+   "children": [],
+   "closure": [
+    "30a98e6e-c11d-5c98-8037-c44536e5d20e",
+    "86742d78-a4cd-52b5-be59-a26fe51c9d35"
+   ],
+   "path": "6622e95c-3b83-533c-813f-134cd10d4db4[]/2a820161-9930-5b5e-9670-f6776b9686f5[]/5d5512fa-fb83-50bd-bd69-93ec689d59c2[2]",
+   "type": "86742d78-a4cd-52b5-be59-a26fe51c9d35",
+   "usage": "5d5512fa-fb83-50bd-bd69-93ec689d59c2"
+  },
+  {
+   "children": [],
+   "closure": [
+    "30a98e6e-c11d-5c98-8037-c44536e5d20e",
+    "86742d78-a4cd-52b5-be59-a26fe51c9d35"
+   ],
+   "path": "6622e95c-3b83-533c-813f-134cd10d4db4[]/2a820161-9930-5b5e-9670-f6776b9686f5[]/5d5512fa-fb83-50bd-bd69-93ec689d59c2[3]",
+   "type": "86742d78-a4cd-52b5-be59-a26fe51c9d35",
+   "usage": "5d5512fa-fb83-50bd-bd69-93ec689d59c2"
+  }
+ ],
+ "roots": [
+  "6622e95c-3b83-533c-813f-134cd10d4db4"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "2a820161-9930-5b5e-9670-f6776b9686f5",
+   "6622e95c-3b83-533c-813f-134cd10d4db4[]"
+  ],
+  [
+   "5d5512fa-fb83-50bd-bd69-93ec689d59c2",
+   "6622e95c-3b83-533c-813f-134cd10d4db4[]/2a820161-9930-5b5e-9670-f6776b9686f5[]"
+  ],
+  [
+   "6622e95c-3b83-533c-813f-134cd10d4db4",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:6622e95c-3b83-533c-813f-134cd10d4db4[]",
+   "46c14f4f-6d9c-5d14-852b-7f0042b18cec",
+   "46c14f4f-6d9c-5d14-852b-7f0042b18cec",
+   [
+    "46c14f4f-6d9c-5d14-852b-7f0042b18cec"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

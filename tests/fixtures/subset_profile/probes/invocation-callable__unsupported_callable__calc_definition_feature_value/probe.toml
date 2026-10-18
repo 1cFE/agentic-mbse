@@ -1,0 +1,13 @@
+kind = "record"
+rule = "invocation-callable"
+shape = "unsupported_callable"
+context = "calc_definition_feature_value"
+expected_outcome = "refused"
+
+[construct]
+description = "calc def Big's result feature r valued by ScalarFunctions::max(a, b)"
+file = "model.sysml"
+lines = [3, 3]
+
+[expect]
+code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"

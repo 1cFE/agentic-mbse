@@ -1,0 +1,14 @@
+kind = "record"
+rule = "indexed-reference"
+shape = "indexed_reference"
+context = "other_expression_site"
+expected_outcome = "omitted"
+
+[construct]
+description = "calc usage m's bare result expression qs#(1).v + 4272.5, never examined and dropped: the unique literal 4272.5 must appear nowhere in the output; control is m's output"
+file = "model.sysml"
+lines = [8, 8]
+
+[expect]
+omitted_element = "4272.5"
+positive_control = "fx__site__m__r"

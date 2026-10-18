@@ -1,0 +1,13 @@
+kind = "record"
+rule = "calc-owned-assertion"
+shape = "non_asserted_constraint"
+context = "calc_usage_owner"
+expected_outcome = "refused"
+
+[construct]
+description = "plain (non-asserted) constraint f1 owned by calc usage path, located at the owner"
+file = "model.sysml"
+lines = [7, 7]
+
+[expect]
+code = "SI_CONSTRAINT_UNATTACHED"

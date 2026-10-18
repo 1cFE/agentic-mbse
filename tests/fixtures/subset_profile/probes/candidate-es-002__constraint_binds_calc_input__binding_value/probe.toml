@@ -1,0 +1,13 @@
+kind = "reproduction"
+rule = "candidate-es-002"
+shape = "constraint_binds_calc_input"
+context = "binding_value"
+expected_outcome = "refused"
+
+[construct]
+description = "constraint g binds calc usage t's input t.v (dc3 U5)"
+file = "model.sysml"
+lines = [8, 8]
+
+[expect]
+code = "SI_OCCURRENCE_MISSING"

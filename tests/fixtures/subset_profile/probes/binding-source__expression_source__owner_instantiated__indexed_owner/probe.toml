@@ -1,0 +1,14 @@
+kind = "record"
+rule = "binding-source"
+shape = "expression_source"
+context = "owner_instantiated"
+variant = "indexed_owner"
+expected_outcome = "refused"
+
+[construct]
+description = "calc input xs bound to (a, b) in Site, instantiated through hall.sites[2] (B5)"
+file = "model.sysml"
+lines = [7, 7]
+
+[expect]
+code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"

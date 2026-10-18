@@ -1,0 +1,28 @@
+{
+ "calc_attachment": {},
+ "counts": {},
+ "def_occurrences": {},
+ "full": {
+  "calcs_equal": true,
+  "n_calcs": 0,
+  "n_occ": 0,
+  "occurrences_equal": true,
+  "ran": true
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/sample_model"
+ ],
+ "load_errors": false,
+ "names": {
+  "b06ce9ca-96f1-514e-a9ed-178d3def5fe6": "TestModels"
+ },
+ "occurrences": [],
+ "roots": [],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [],
+ "writers": [],
+ "writers_status": "no_calc_usages_selected"
+}

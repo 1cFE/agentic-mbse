@@ -1,0 +1,81 @@
+{
+ "calc_attachment": {
+  "4e038e68-bc49-5d8e-b8be-820640f070fe": [
+   [
+    "occ:78f3584c-716f-5e2a-af99-728d11e81c01[]/277edfb5-3999-56e6-8828-2301e42ad5a6[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "277edfb5-3999-56e6-8828-2301e42ad5a6": 1,
+  "78f3584c-716f-5e2a-af99-728d11e81c01": 1
+ },
+ "def_occurrences": {
+  "1a2cfc88-5f89-5956-9d91-9a281f6033a1": 1,
+  "b83e3016-ab84-55a5-a220-f8509dfe81a0": 1
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/shadowed_reference"
+ ],
+ "load_errors": false,
+ "names": {
+  "1a2cfc88-5f89-5956-9d91-9a281f6033a1": "ShadowedReference::Outer",
+  "277edfb5-3999-56e6-8828-2301e42ad5a6": "ShadowedReference::the_outer::inner",
+  "4e038e68-bc49-5d8e-b8be-820640f070fe": "ShadowedReference::the_outer::inner::shadowed_calc",
+  "78f3584c-716f-5e2a-af99-728d11e81c01": "ShadowedReference::the_outer",
+  "b83e3016-ab84-55a5-a220-f8509dfe81a0": "ShadowedReference::Inner",
+  "d37cd702-c768-51f4-aeeb-6a1903ea55d1": "ShadowedReference"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "277edfb5-3999-56e6-8828-2301e42ad5a6"
+   ],
+   "closure": [
+    "1a2cfc88-5f89-5956-9d91-9a281f6033a1"
+   ],
+   "path": "78f3584c-716f-5e2a-af99-728d11e81c01[]",
+   "type": "1a2cfc88-5f89-5956-9d91-9a281f6033a1",
+   "usage": "78f3584c-716f-5e2a-af99-728d11e81c01"
+  },
+  {
+   "children": [],
+   "closure": [
+    "b83e3016-ab84-55a5-a220-f8509dfe81a0"
+   ],
+   "path": "78f3584c-716f-5e2a-af99-728d11e81c01[]/277edfb5-3999-56e6-8828-2301e42ad5a6[]",
+   "type": "b83e3016-ab84-55a5-a220-f8509dfe81a0",
+   "usage": "277edfb5-3999-56e6-8828-2301e42ad5a6"
+  }
+ ],
+ "roots": [
+  "78f3584c-716f-5e2a-af99-728d11e81c01"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "277edfb5-3999-56e6-8828-2301e42ad5a6",
+   "78f3584c-716f-5e2a-af99-728d11e81c01[]"
+  ],
+  [
+   "78f3584c-716f-5e2a-af99-728d11e81c01",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:78f3584c-716f-5e2a-af99-728d11e81c01[]/277edfb5-3999-56e6-8828-2301e42ad5a6[]",
+   "4e038e68-bc49-5d8e-b8be-820640f070fe",
+   "4e038e68-bc49-5d8e-b8be-820640f070fe",
+   [
+    "4e038e68-bc49-5d8e-b8be-820640f070fe"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

@@ -1,0 +1,308 @@
+{
+ "calc_attachment": {
+  "3f6c8061-2235-54b9-b62f-f8243ca3e9ab": [
+   [
+    "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]/dacaea15-580f-56f1-897f-281d04fa4a07[]"
+   ],
+   null
+  ],
+  "a0b3fe31-1784-54eb-bd58-c8f7d5a0ea25": [
+   [
+    "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]"
+   ],
+   null
+  ],
+  "b7cefffc-11e6-500b-aecd-1dc320403843": [
+   [
+    "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]"
+   ],
+   null
+  ],
+  "c693a900-a124-5a37-a35c-33dcf1e8b2f1": [
+   [
+    "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]"
+   ],
+   null
+  ],
+  "e3236b41-28e1-5fbd-ad35-9b01afa14b2b": [
+   [
+    "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]"
+   ],
+   null
+  ],
+  "e6edbeaf-5dde-5d69-b26f-c543754d24c6": [
+   [
+    "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "58a33a2a-ca24-50fe-a544-e2422b7e30bd": 1,
+  "9cc669d9-bad6-5b30-8013-54c14dd8606d": 1,
+  "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a": 1,
+  "b78a7806-1eb3-5b2e-9f26-156fd5f09c2c": 1,
+  "d026461b-ef55-5a1b-808d-af07ae5fc104": 1,
+  "fa4cff72-00ca-56a9-bb18-3de3d31946f3": 1,
+  "fcd7a3ed-d7f0-5665-92eb-8588daa6bed4": 1
+ },
+ "def_occurrences": {
+  "00170893-0b9b-513e-b0b7-79454f86118b": 5,
+  "19d55e6a-ce4f-5048-8635-497e60b79f2e": 0,
+  "1d679e8a-8ad1-5b29-90a8-0e23618fb597": 0,
+  "304d1e64-5160-5fbb-9899-9ce37ba1c825": 5,
+  "3bc5efba-1e6f-5508-a926-4fa8c387f506": 0,
+  "441986ac-8179-5ef0-9973-71e2c1fc577e": 1,
+  "45f90b04-96f8-5447-8294-c4c9221e045a": 0,
+  "463eed1f-ceef-5e02-a00d-425045a30c46": 1,
+  "4cf11053-1603-5ae4-8d93-f67f8fb3d934": 0,
+  "4fddc007-ec22-5667-bf22-22590cd5188f": 0,
+  "620a15ee-e333-5d47-bdcc-98417b853c40": 0,
+  "6e67ee57-3a5a-5c2a-ad55-990f322bd5ce": 1,
+  "743e441e-be59-5b8a-ad21-d81981222011": 1,
+  "8f819bc7-1b43-5126-897c-ebcc53085e2f": 1,
+  "b3d6ceb8-cc72-5ecc-8de6-f7ae14e729cd": 1,
+  "b7c3895d-b2bd-59c7-948a-5aadc53ffa3c": 1,
+  "bd5b8992-d313-507f-8a25-9c3ace68fb87": 1,
+  "c7a8bede-e675-5d9e-b026-7340f4b884c2": 0,
+  "d4c970be-fb69-5e12-8319-56b4adb8c484": 5,
+  "e25e1c06-9b39-5899-9612-bf6c008a3db5": 1,
+  "ec9e5926-7bcc-56d4-8cfc-e6d18251ab02": 0,
+  "f4de75f3-470e-567f-87af-e129ce131867": 1
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/fusion_tea"
+ ],
+ "load_errors": false,
+ "names": {
+  "00170893-0b9b-513e-b0b7-79454f86118b": "cas_hierarchy::'CAS22 Power Core'",
+  "10cd2b02-1cdc-5d07-8958-bdf1c3d4d6ce": "fusion_cycle",
+  "19d55e6a-ce4f-5048-8635-497e60b79f2e": "cas_hierarchy::'CAS90 Indirect Costs'",
+  "1d679e8a-8ad1-5b29-90a8-0e23618fb597": "cas_hierarchy::'CAS27 Special Materials'",
+  "21d9395d-c658-51ef-9a08-e0402861d2f5": "costed_component",
+  "2c87638b-9bda-5194-8946-277a4a440f28": "ife_subsystems",
+  "304d1e64-5160-5fbb-9899-9ce37ba1c825": "cas_hierarchy::'CAS Account'",
+  "367659ae-acb2-586e-9d8d-aaa7b32f03db": "ife_plant::'IFE Power Plant'::chamber",
+  "36c6d9da-19a9-5785-90ab-bc0f7f4d6f34": "hif_driver",
+  "399ae734-d1e8-5743-89dc-44cca9798a1f": "ife_cost_parameters",
+  "3bc5efba-1e6f-5508-a926-4fa8c387f506": "cas_hierarchy::'CAS25 Heat Rejection'",
+  "3f6c8061-2235-54b9-b62f-f8243ca3e9ab": "hif_driver::'HIF Driver'::meier_cost",
+  "441986ac-8179-5ef0-9973-71e2c1fc577e": "ife_subsystems::'Reaction Chamber'",
+  "45f90b04-96f8-5447-8294-c4c9221e045a": "ife_cost_parameters::'IFE Cost Parameters'",
+  "463eed1f-ceef-5e02-a00d-425045a30c46": "ife_subsystems::'CAS22.1.3 Driver'",
+  "4cf11053-1603-5ae4-8d93-f67f8fb3d934": "cas_hierarchy::'CAS26 Miscellaneous'",
+  "4fddc007-ec22-5667-bf22-22590cd5188f": "cas_hierarchy::'CAS24 Electric Plant'",
+  "58a33a2a-ca24-50fe-a544-e2422b7e30bd": "ife_subsystems::'Reaction Chamber'::shield",
+  "620a15ee-e333-5d47-bdcc-98417b853c40": "cas_hierarchy::'CAS23 Turbine Plant'",
+  "6e67ee57-3a5a-5c2a-ad55-990f322bd5ce": "ife_subsystems::'CAS22.1.1 First Wall Blanket'",
+  "743e441e-be59-5b8a-ad21-d81981222011": "ife_subsystems::'CAS22.1.2 Shield'",
+  "86d3a07c-9d8e-5c8a-b1a7-9a1be782cf9a": "cas_hierarchy",
+  "8f819bc7-1b43-5126-897c-ebcc53085e2f": "ife_subsystems::'Target Factory'",
+  "9c3560ef-3f44-5634-be81-a4f6ab921669": "hif_economics",
+  "9cc669d9-bad6-5b30-8013-54c14dd8606d": "hif_plant_pkg::hif_plant::driver",
+  "a0b3fe31-1784-54eb-bd58-c8f7d5a0ea25": "hif_plant_pkg::hif_plant::meier_reactor_cost_calc",
+  "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a": "hif_plant_pkg::hif_plant",
+  "b3d6ceb8-cc72-5ecc-8de6-f7ae14e729cd": "ife_subsystems::'CAS22.1.8 Target Factory'",
+  "b549d4bb-3132-561c-98a1-1ad76b94f54e": "hif_plant_pkg",
+  "b78a7806-1eb3-5b2e-9f26-156fd5f09c2c": "hif_plant_pkg::hif_plant::chamber",
+  "b7c3895d-b2bd-59c7-948a-5aadc53ffa3c": "hif_driver::'HIF Driver'",
+  "b7cefffc-11e6-500b-aecd-1dc320403843": "ife_plant::'IFE Power Plant'::recirc_calc",
+  "b91a9c6d-3765-5533-ade8-64e3ae5b6b5e": "ife_plant::'IFE Power Plant'::target_factory",
+  "bd5b8992-d313-507f-8a25-9c3ace68fb87": "ife_plant::'IFE Power Plant'",
+  "c693a900-a124-5a37-a35c-33dcf1e8b2f1": "hif_plant_pkg::hif_plant::meier_coe_calc",
+  "c7a8bede-e675-5d9e-b026-7340f4b884c2": "cas_hierarchy::'CAS20 Land'",
+  "cc42e2f2-55f8-5d18-bcd4-01067f828960": "economic_parameter",
+  "d026461b-ef55-5a1b-808d-af07ae5fc104": "ife_subsystems::'Reaction Chamber'::structure",
+  "d4c970be-fb69-5e12-8319-56b4adb8c484": "costed_component::'Costed Component'",
+  "dacaea15-580f-56f1-897f-281d04fa4a07": "ife_plant::'IFE Power Plant'::driver",
+  "dcf905cc-aa18-523c-acda-ac59896f9c5a": "ife_lcoe",
+  "e25e1c06-9b39-5899-9612-bf6c008a3db5": "ife_subsystems::'IFE Driver'",
+  "e3236b41-28e1-5fbd-ad35-9b01afa14b2b": "hif_plant_pkg::hif_plant::meier_capital_calc",
+  "e6edbeaf-5dde-5d69-b26f-c543754d24c6": "ife_plant::'IFE Power Plant'::lcoe_calc",
+  "e892d90f-5050-5c39-8683-157be68747cd": "ife_plant",
+  "ec9e5926-7bcc-56d4-8cfc-e6d18251ab02": "cas_hierarchy::'CAS21 Structures'",
+  "f4de75f3-470e-567f-87af-e129ce131867": "ife_subsystems::'CAS22.1.5 Primary Structure'",
+  "fa4cff72-00ca-56a9-bb18-3de3d31946f3": "ife_subsystems::'Reaction Chamber'::blanket",
+  "fcd7a3ed-d7f0-5665-92eb-8588daa6bed4": "hif_plant_pkg::hif_plant::target_factory"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "9cc669d9-bad6-5b30-8013-54c14dd8606d",
+    "b78a7806-1eb3-5b2e-9f26-156fd5f09c2c",
+    "fcd7a3ed-d7f0-5665-92eb-8588daa6bed4"
+   ],
+   "closure": [
+    "bd5b8992-d313-507f-8a25-9c3ace68fb87"
+   ],
+   "path": "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]",
+   "type": "bd5b8992-d313-507f-8a25-9c3ace68fb87",
+   "usage": "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a"
+  },
+  {
+   "children": [
+    "58a33a2a-ca24-50fe-a544-e2422b7e30bd",
+    "d026461b-ef55-5a1b-808d-af07ae5fc104",
+    "fa4cff72-00ca-56a9-bb18-3de3d31946f3"
+   ],
+   "closure": [
+    "441986ac-8179-5ef0-9973-71e2c1fc577e"
+   ],
+   "path": "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]/367659ae-acb2-586e-9d8d-aaa7b32f03db[]",
+   "type": "441986ac-8179-5ef0-9973-71e2c1fc577e",
+   "usage": "b78a7806-1eb3-5b2e-9f26-156fd5f09c2c"
+  },
+  {
+   "children": [],
+   "closure": [
+    "00170893-0b9b-513e-b0b7-79454f86118b",
+    "304d1e64-5160-5fbb-9899-9ce37ba1c825",
+    "743e441e-be59-5b8a-ad21-d81981222011",
+    "d4c970be-fb69-5e12-8319-56b4adb8c484"
+   ],
+   "path": "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]/367659ae-acb2-586e-9d8d-aaa7b32f03db[]/58a33a2a-ca24-50fe-a544-e2422b7e30bd[]",
+   "type": "743e441e-be59-5b8a-ad21-d81981222011",
+   "usage": "58a33a2a-ca24-50fe-a544-e2422b7e30bd"
+  },
+  {
+   "children": [],
+   "closure": [
+    "00170893-0b9b-513e-b0b7-79454f86118b",
+    "304d1e64-5160-5fbb-9899-9ce37ba1c825",
+    "d4c970be-fb69-5e12-8319-56b4adb8c484",
+    "f4de75f3-470e-567f-87af-e129ce131867"
+   ],
+   "path": "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]/367659ae-acb2-586e-9d8d-aaa7b32f03db[]/d026461b-ef55-5a1b-808d-af07ae5fc104[]",
+   "type": "f4de75f3-470e-567f-87af-e129ce131867",
+   "usage": "d026461b-ef55-5a1b-808d-af07ae5fc104"
+  },
+  {
+   "children": [],
+   "closure": [
+    "00170893-0b9b-513e-b0b7-79454f86118b",
+    "304d1e64-5160-5fbb-9899-9ce37ba1c825",
+    "6e67ee57-3a5a-5c2a-ad55-990f322bd5ce",
+    "d4c970be-fb69-5e12-8319-56b4adb8c484"
+   ],
+   "path": "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]/367659ae-acb2-586e-9d8d-aaa7b32f03db[]/fa4cff72-00ca-56a9-bb18-3de3d31946f3[]",
+   "type": "6e67ee57-3a5a-5c2a-ad55-990f322bd5ce",
+   "usage": "fa4cff72-00ca-56a9-bb18-3de3d31946f3"
+  },
+  {
+   "children": [],
+   "closure": [
+    "00170893-0b9b-513e-b0b7-79454f86118b",
+    "304d1e64-5160-5fbb-9899-9ce37ba1c825",
+    "8f819bc7-1b43-5126-897c-ebcc53085e2f",
+    "b3d6ceb8-cc72-5ecc-8de6-f7ae14e729cd",
+    "d4c970be-fb69-5e12-8319-56b4adb8c484"
+   ],
+   "path": "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]/b91a9c6d-3765-5533-ade8-64e3ae5b6b5e[]",
+   "type": "8f819bc7-1b43-5126-897c-ebcc53085e2f",
+   "usage": "fcd7a3ed-d7f0-5665-92eb-8588daa6bed4"
+  },
+  {
+   "children": [],
+   "closure": [
+    "00170893-0b9b-513e-b0b7-79454f86118b",
+    "304d1e64-5160-5fbb-9899-9ce37ba1c825",
+    "463eed1f-ceef-5e02-a00d-425045a30c46",
+    "b7c3895d-b2bd-59c7-948a-5aadc53ffa3c",
+    "d4c970be-fb69-5e12-8319-56b4adb8c484",
+    "e25e1c06-9b39-5899-9612-bf6c008a3db5"
+   ],
+   "path": "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]/dacaea15-580f-56f1-897f-281d04fa4a07[]",
+   "type": "b7c3895d-b2bd-59c7-948a-5aadc53ffa3c",
+   "usage": "9cc669d9-bad6-5b30-8013-54c14dd8606d"
+  }
+ ],
+ "roots": [
+  "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "58a33a2a-ca24-50fe-a544-e2422b7e30bd",
+   "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]/367659ae-acb2-586e-9d8d-aaa7b32f03db[]"
+  ],
+  [
+   "9cc669d9-bad6-5b30-8013-54c14dd8606d",
+   "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]"
+  ],
+  [
+   "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a",
+   null
+  ],
+  [
+   "b78a7806-1eb3-5b2e-9f26-156fd5f09c2c",
+   "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]"
+  ],
+  [
+   "d026461b-ef55-5a1b-808d-af07ae5fc104",
+   "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]/367659ae-acb2-586e-9d8d-aaa7b32f03db[]"
+  ],
+  [
+   "fa4cff72-00ca-56a9-bb18-3de3d31946f3",
+   "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]/367659ae-acb2-586e-9d8d-aaa7b32f03db[]"
+  ],
+  [
+   "fcd7a3ed-d7f0-5665-92eb-8588daa6bed4",
+   "a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]"
+  ]
+ ],
+ "writers": [
+  [
+   "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]",
+   "a0b3fe31-1784-54eb-bd58-c8f7d5a0ea25",
+   "a0b3fe31-1784-54eb-bd58-c8f7d5a0ea25",
+   [
+    "a0b3fe31-1784-54eb-bd58-c8f7d5a0ea25"
+   ]
+  ],
+  [
+   "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]",
+   "b7cefffc-11e6-500b-aecd-1dc320403843",
+   "b7cefffc-11e6-500b-aecd-1dc320403843",
+   [
+    "b7cefffc-11e6-500b-aecd-1dc320403843"
+   ]
+  ],
+  [
+   "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]",
+   "c693a900-a124-5a37-a35c-33dcf1e8b2f1",
+   "c693a900-a124-5a37-a35c-33dcf1e8b2f1",
+   [
+    "c693a900-a124-5a37-a35c-33dcf1e8b2f1"
+   ]
+  ],
+  [
+   "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]",
+   "e3236b41-28e1-5fbd-ad35-9b01afa14b2b",
+   "e3236b41-28e1-5fbd-ad35-9b01afa14b2b",
+   [
+    "e3236b41-28e1-5fbd-ad35-9b01afa14b2b"
+   ]
+  ],
+  [
+   "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]",
+   "e6edbeaf-5dde-5d69-b26f-c543754d24c6",
+   "e6edbeaf-5dde-5d69-b26f-c543754d24c6",
+   [
+    "e6edbeaf-5dde-5d69-b26f-c543754d24c6"
+   ]
+  ],
+  [
+   "occ:a9ff1597-08a0-5575-bbc7-b5ea3cd20e4a[]/dacaea15-580f-56f1-897f-281d04fa4a07[]",
+   "3f6c8061-2235-54b9-b62f-f8243ca3e9ab",
+   "3f6c8061-2235-54b9-b62f-f8243ca3e9ab",
+   [
+    "3f6c8061-2235-54b9-b62f-f8243ca3e9ab"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

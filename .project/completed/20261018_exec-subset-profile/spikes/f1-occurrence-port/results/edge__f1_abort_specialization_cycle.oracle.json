@@ -1,0 +1,30 @@
+{
+ "fatal": {
+  "code": "SI_CONTAINMENT_RECURSIVE",
+  "detail": "part-definition specialization cycle at f1k::A",
+  "stage": "occurrences",
+  "type": "RecursiveContainmentError"
+ },
+ "full": {
+  "code": "None",
+  "detail": "SI_CONTAINMENT_RECURSIVE: <model>: reference='f1k::A': part-definition specialization cycle at f1k::A [root-0/f1_abort_specialization_cycle.sysml:3]",
+  "ran": false,
+  "type": "ElaborationDiagnosticError"
+ },
+ "inputs": [
+  "/home/reid/src/agentic-mbse/.project/active/exec-subset-profile/spikes/f1-occurrence-port/fixtures/f1_abort_specialization_cycle.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "8fb4887e-65b6-54a7-9cf0-1fa6f6b08a92": "f1k::x",
+  "a3338bb6-b5c1-5fbb-8687-95a1c5c9c378": "f1k",
+  "e04deea8-6287-5989-a67d-3fcde5eb882e": "f1k::A",
+  "f593fcec-01e5-5825-afc3-7da3c009fbcd": "f1k::B"
+ },
+ "strict": {
+  "code": "SI_CONTAINMENT_RECURSIVE",
+  "detail": "part-definition specialization cycle at f1k::A",
+  "ok": false,
+  "type": "RecursiveContainmentError"
+ }
+}

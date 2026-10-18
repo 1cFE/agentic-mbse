@@ -1,0 +1,22 @@
+syside 0.8.4
+fixture                                  expect  got     flagged inputs (got)                   ok
+assert_constraint_byname                 PASS    PASS    -                                      yes
+assert_constraint_reversed               FLAG    FLAG    q::k::lim q::k::x                      yes
+calc_anonymous_inputs                    PASS    PASS    -                                      yes
+calc_defaulted_trailing                  PASS    PASS    -                                      yes
+calc_explicit_rename                     PASS    PASS    -                                      yes
+calc_in_order                            PASS    PASS    -                                      yes
+calc_omitted_first                       FLAG    FLAG    q::c::b                                yes
+calc_reversed                            FLAG    FLAG    q::c::a q::c::b                        yes
+calc_reversed_byname                     PASS    PASS    -                                      yes
+calc_reversed_redefines_keyword          PASS    PASS    -                                      yes
+calc_untyped_new_params                  PASS    PASS    -                                      yes
+constraint_reversed                      FLAG    FLAG    q::k::lim q::k::x                      yes
+inherit_def_extends                      PASS    PASS    -                                      yes
+inherit_def_no_params_usage_reversed     FLAG    FLAG    q::c::a q::c::b                        yes
+inherit_def_reordered                    FLAG    FLAG    Sub2::a Sub2::b                        yes
+inherited_usage_redefined_in_subpart     FLAG    FLAG    Q2::c::a Q2::c::b                      yes
+multiple_types                           FLAG    FLAG    q::c::a q::c::b                        yes
+
+input outcome totals: {'explicit': 9, 'new_parameter': 75, 'implicit_mismatch': 15, 'anonymous': 2, 'implicit_matching': 9}
+fixtures failing expectation: 0

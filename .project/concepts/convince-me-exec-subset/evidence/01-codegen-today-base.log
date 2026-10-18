@@ -1,0 +1,7 @@
+$ uv run sysml-codegen generate --models /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-base/models --output /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/gen-out-base  (cwd=/home/reid/src/sysml-codegen, 2026-10-15T13:48:48+00:00)
+INFO: Generating code from /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-base/models
+INFO: Output to /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/gen-out-base
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_EXPRESSION_SOURCE_UNSUPPORTED: product(efficiencies_in): reference='product(efficiencies_in)': inspect_reference_uses: invocation of 'NumericalFunctions::product' is valid SysML but is not supported by this executable subset; only NumericalFunctions::sum is supported [root-0/library/analyses/energy/path_efficiency.sysml:52]
+exit=1

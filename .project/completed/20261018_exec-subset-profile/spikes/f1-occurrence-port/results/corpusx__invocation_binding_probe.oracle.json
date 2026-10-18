@@ -1,0 +1,63 @@
+{
+ "calc_attachment": {
+  "f1ffd58e-9003-535e-9868-6ceb1d076575": [
+   [
+    "occ:c42b03b6-9b88-5850-a83f-cfac848d6669[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "c42b03b6-9b88-5850-a83f-cfac848d6669": 1
+ },
+ "def_occurrences": {},
+ "full": {
+  "code": "None",
+  "detail": "SI_EXPRESSION_SOURCE_UNSUPPORTED: Doubler(v = a): reference='Doubler(v = a)': inspect_reference_uses: invocation of 'InvocationBindingLibrary::Doubler' is valid SysML but is not supported by this executable subset; only NumericalFunctions::sum is supported [root-0/design.sysml:19]",
+  "ran": false,
+  "type": "ElaborationDiagnosticError"
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/invocation_binding_probe"
+ ],
+ "load_errors": false,
+ "names": {
+  "3420b651-859d-52d0-b484-346d5f6e02d9": "InvocationBindingLibrary",
+  "379b73e7-6e47-55db-9628-f4c0da33c733": "InvocationBindingDesign",
+  "c42b03b6-9b88-5850-a83f-cfac848d6669": "InvocationBindingDesign::probe",
+  "f1ffd58e-9003-535e-9868-6ceb1d076575": "InvocationBindingDesign::probe::c"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [],
+   "path": "c42b03b6-9b88-5850-a83f-cfac848d6669[]",
+   "type": null,
+   "usage": "c42b03b6-9b88-5850-a83f-cfac848d6669"
+  }
+ ],
+ "roots": [
+  "c42b03b6-9b88-5850-a83f-cfac848d6669"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "c42b03b6-9b88-5850-a83f-cfac848d6669",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:c42b03b6-9b88-5850-a83f-cfac848d6669[]",
+   "f1ffd58e-9003-535e-9868-6ceb1d076575",
+   "f1ffd58e-9003-535e-9868-6ceb1d076575",
+   [
+    "f1ffd58e-9003-535e-9868-6ceb1d076575"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

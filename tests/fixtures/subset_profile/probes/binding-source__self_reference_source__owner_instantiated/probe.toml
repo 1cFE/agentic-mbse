@@ -1,0 +1,13 @@
+kind = "record"
+rule = "binding-source"
+shape = "self_reference_source"
+context = "owner_instantiated"
+expected_outcome = "refused"
+
+[construct]
+description = "calc input v bound to itself; owner Site instantiated by site"
+file = "model.sysml"
+lines = [7, 7]
+
+[expect]
+code = "SI_SELF_BINDING"

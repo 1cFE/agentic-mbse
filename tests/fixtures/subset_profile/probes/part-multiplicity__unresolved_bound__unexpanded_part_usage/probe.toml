@@ -1,0 +1,14 @@
+kind = "record"
+rule = "part-multiplicity"
+shape = "unresolved_bound"
+context = "unexpanded_part_usage"
+expected_outcome = "admitted"
+supersedes = "es004_admitted_uninstantiated_template"
+
+[construct]
+description = "servers : Server[*] in Rack, which nothing instantiates"
+file = "model.sysml"
+lines = [5, 5]
+
+[expect]
+positive_control = "fx__meter__t__r"

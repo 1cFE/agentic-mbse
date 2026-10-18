@@ -48,9 +48,7 @@ tests/corpus/page_images/
 # orchestrate-stage.sh raw logs
 .orchestrate-logs/
 
-# This checkout's own install from `agentic-mbse install-commands --assistant claude`
+# Local assistant installs: `agentic-mbse install-commands --assistant claude` and agentic-project-init --include-claude
 .agents/skills/
 .agentic-mbse/
-.claude/skills/
-.claude/agents/
-.claude/hooks/
+.claude/

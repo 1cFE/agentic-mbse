@@ -1,0 +1,7 @@
+syside 0.8.4
+calc_in_order.sysml normal scan: findings=0 stats={'implicit_matching': 2, 'new_parameter': 4}
+calc_in_order.sysml with injected failure on 'b': findings=2 stats={'implicit_matching': 1, 'unverified': 2, 'new_parameter': 3}
+  UNVERIFIED             calc_in_order::q::c::b  inspection raised RuntimeError('simulated SysIDE heritage failure')
+  UNVERIFIED             calc_in_order::Sub::b  inspection raised RuntimeError('simulated SysIDE heritage failure')
+
+reported clean despite failed inspection: False

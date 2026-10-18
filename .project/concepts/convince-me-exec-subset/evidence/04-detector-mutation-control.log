@@ -1,0 +1,15 @@
+syside 0.8.4
+mutation target: ac_coupled_facility::'AC Coupled Facility'::rack_1_server_1_efficiency at designs/ac_coupled/ac_facility.sysml:226
+  swapping input lines 226 ('eta_01_in') and 227 ('eta_02_in')
+  mutated lines now:
+                in eta_02_in = electrical.mv_transformer.efficiency;
+                in eta_01_in = electrical.main_switchgear.efficiency;
+
+findings before mutation: 0
+findings after mutation:  2
+  L2_POSITIONAL_BINDING  //designs/ac_coupled/ac_facility.sysml:226  ac_coupled_facility::'AC Coupled Facility'::rack_1_server_1_efficiency::eta_02_in
+      input 'eta_02_in' implicitly redefines 'dc3_path_efficiency::'Serial Path 8'::eta_01_in' by position; write `in :>> eta_01_in` (by name) or `in eta_02_in redefines eta_01_in` (deliberate rename)
+  L2_POSITIONAL_BINDING  //designs/ac_coupled/ac_facility.sysml:227  ac_coupled_facility::'AC Coupled Facility'::rack_1_server_1_efficiency::eta_01_in
+      input 'eta_01_in' implicitly redefines 'dc3_path_efficiency::'Serial Path 8'::eta_02_in' by position; write `in :>> eta_02_in` (by name) or `in eta_01_in redefines eta_02_in` (deliberate rename)
+
+new findings caused by the swap: 2

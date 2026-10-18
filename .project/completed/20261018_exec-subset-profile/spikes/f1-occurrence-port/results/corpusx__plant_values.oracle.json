@@ -1,0 +1,129 @@
+{
+ "calc_attachment": {
+  "50fb0968-3fe1-52a9-8e94-4399c4448ed3": [
+   [
+    "occ:09de4c20-c3c7-5ee6-9059-471f36b29f3d[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "02feb1f7-a4ad-515a-a039-c3c17decadad": 1,
+  "09de4c20-c3c7-5ee6-9059-471f36b29f3d": 1,
+  "686c4be3-7d70-580c-a5a1-04f1b3970a68": 1,
+  "e27c6805-3f22-5fb7-b04e-476897f57156": 1
+ },
+ "def_occurrences": {
+  "2bc93fa2-85cf-5995-b6fe-9056ecf4abee": 1,
+  "3bc739e1-4422-5ec5-87d0-787e20fde84b": 1,
+  "4ef83b9e-2131-5d92-b7fd-d737ce63148e": 1,
+  "68d1b98d-45d6-5c4f-aa7c-1940cc30c3ea": 1,
+  "c160e2c0-d056-5a85-8bd3-1ba5ab0ac592": 1
+ },
+ "full": {
+  "calcs_equal": true,
+  "n_calcs": 1,
+  "n_occ": 4,
+  "occurrences_equal": true,
+  "ran": true
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/plant_values"
+ ],
+ "load_errors": false,
+ "names": {
+  "02feb1f7-a4ad-515a-a039-c3c17decadad": "PlantValuesDesign::plant::driver",
+  "09de4c20-c3c7-5ee6-9059-471f36b29f3d": "PlantValuesDesign::plant",
+  "16b651b8-fd48-57b4-87dc-7c0a485f9752": "PlantValuesLib",
+  "26c5dc0d-ace8-51a7-b7ff-c3bd7ef0b85a": "PlantValuesLib::'Power Plant'::driver",
+  "2bc93fa2-85cf-5995-b6fe-9056ecf4abee": "PlantValuesLib::'Hif Driver'",
+  "3bc739e1-4422-5ec5-87d0-787e20fde84b": "PlantValuesLib::'Reaction Chamber'",
+  "4ef83b9e-2131-5d92-b7fd-d737ce63148e": "PlantValuesLib::'Target Factory'",
+  "50fb0968-3fe1-52a9-8e94-4399c4448ed3": "PlantValuesLib::'Power Plant'::cost_calc",
+  "686c4be3-7d70-580c-a5a1-04f1b3970a68": "PlantValuesLib::'Power Plant'::chamber",
+  "68d1b98d-45d6-5c4f-aa7c-1940cc30c3ea": "PlantValuesLib::'Base Driver'",
+  "6cd4b3c7-4018-5c35-937a-21ae9c87bbf6": "PlantValuesLib::'Power Plant'::target_factory",
+  "c003fb0d-ef33-5ea3-9b59-30c62f9d98b4": "PlantValuesDesign",
+  "c160e2c0-d056-5a85-8bd3-1ba5ab0ac592": "PlantValuesLib::'Power Plant'",
+  "e27c6805-3f22-5fb7-b04e-476897f57156": "PlantValuesDesign::plant::target_factory"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "02feb1f7-a4ad-515a-a039-c3c17decadad",
+    "686c4be3-7d70-580c-a5a1-04f1b3970a68",
+    "e27c6805-3f22-5fb7-b04e-476897f57156"
+   ],
+   "closure": [
+    "c160e2c0-d056-5a85-8bd3-1ba5ab0ac592"
+   ],
+   "path": "09de4c20-c3c7-5ee6-9059-471f36b29f3d[]",
+   "type": "c160e2c0-d056-5a85-8bd3-1ba5ab0ac592",
+   "usage": "09de4c20-c3c7-5ee6-9059-471f36b29f3d"
+  },
+  {
+   "children": [],
+   "closure": [
+    "2bc93fa2-85cf-5995-b6fe-9056ecf4abee",
+    "68d1b98d-45d6-5c4f-aa7c-1940cc30c3ea"
+   ],
+   "path": "09de4c20-c3c7-5ee6-9059-471f36b29f3d[]/26c5dc0d-ace8-51a7-b7ff-c3bd7ef0b85a[]",
+   "type": "2bc93fa2-85cf-5995-b6fe-9056ecf4abee",
+   "usage": "02feb1f7-a4ad-515a-a039-c3c17decadad"
+  },
+  {
+   "children": [],
+   "closure": [
+    "3bc739e1-4422-5ec5-87d0-787e20fde84b"
+   ],
+   "path": "09de4c20-c3c7-5ee6-9059-471f36b29f3d[]/686c4be3-7d70-580c-a5a1-04f1b3970a68[]",
+   "type": "3bc739e1-4422-5ec5-87d0-787e20fde84b",
+   "usage": "686c4be3-7d70-580c-a5a1-04f1b3970a68"
+  },
+  {
+   "children": [],
+   "closure": [
+    "4ef83b9e-2131-5d92-b7fd-d737ce63148e"
+   ],
+   "path": "09de4c20-c3c7-5ee6-9059-471f36b29f3d[]/6cd4b3c7-4018-5c35-937a-21ae9c87bbf6[]",
+   "type": "4ef83b9e-2131-5d92-b7fd-d737ce63148e",
+   "usage": "e27c6805-3f22-5fb7-b04e-476897f57156"
+  }
+ ],
+ "roots": [
+  "09de4c20-c3c7-5ee6-9059-471f36b29f3d"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "02feb1f7-a4ad-515a-a039-c3c17decadad",
+   "09de4c20-c3c7-5ee6-9059-471f36b29f3d[]"
+  ],
+  [
+   "09de4c20-c3c7-5ee6-9059-471f36b29f3d",
+   null
+  ],
+  [
+   "686c4be3-7d70-580c-a5a1-04f1b3970a68",
+   "09de4c20-c3c7-5ee6-9059-471f36b29f3d[]"
+  ],
+  [
+   "e27c6805-3f22-5fb7-b04e-476897f57156",
+   "09de4c20-c3c7-5ee6-9059-471f36b29f3d[]"
+  ]
+ ],
+ "writers": [
+  [
+   "occ:09de4c20-c3c7-5ee6-9059-471f36b29f3d[]",
+   "50fb0968-3fe1-52a9-8e94-4399c4448ed3",
+   "50fb0968-3fe1-52a9-8e94-4399c4448ed3",
+   [
+    "50fb0968-3fe1-52a9-8e94-4399c4448ed3"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

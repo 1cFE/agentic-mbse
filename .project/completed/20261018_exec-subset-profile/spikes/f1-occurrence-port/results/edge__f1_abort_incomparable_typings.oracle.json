@@ -1,0 +1,30 @@
+{
+ "fatal": {
+  "code": "SI_REDEFINITION_INVALID",
+  "detail": "part usage f1j::x has incomparable exact user-definition typings",
+  "stage": "occurrences",
+  "type": "InvalidRedefinitionFamilyError"
+ },
+ "full": {
+  "code": "None",
+  "detail": "SI_REDEFINITION_INVALID: <model>: reference='f1j::x': part usage f1j::x has incomparable exact user-definition typings [root-0/f1_abort_incomparable_typings.sysml:5]",
+  "ran": false,
+  "type": "ElaborationDiagnosticError"
+ },
+ "inputs": [
+  "/home/reid/src/agentic-mbse/.project/active/exec-subset-profile/spikes/f1-occurrence-port/fixtures/f1_abort_incomparable_typings.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "c12445dc-0452-5594-b221-e3a120726a27": "f1j::B",
+  "e834f8f0-e565-5502-bd92-a3fd595f7726": "f1j::A",
+  "f1085337-5090-5868-a304-11af000631c7": "f1j",
+  "f84eea0d-551a-5e02-9534-2ddce46ab5ae": "f1j::x"
+ },
+ "strict": {
+  "code": "SI_REDEFINITION_INVALID",
+  "detail": "part usage f1j::x has incomparable exact user-definition typings",
+  "ok": false,
+  "type": "InvalidRedefinitionFamilyError"
+ }
+}

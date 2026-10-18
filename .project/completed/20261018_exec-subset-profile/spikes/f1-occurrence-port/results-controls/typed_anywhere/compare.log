@@ -1,0 +1,278 @@
+MISMATCH corpus__agg_literal_probe                                    {'roots': 1, 'occurrences': 5, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["AggLiteralProbeLibrary::'Costed Assembly'", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["AggLiteralProbeLibrary::Module", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["AggLiteralProbeLibrary::'Costed Assembly'", {"codegen": 1, "port": 0}]
+MATCH    corpus__attr_expr_probe                                      {'roots': 1, 'occurrences': 1, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MATCH    corpus__constraint_inline                                    {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MISMATCH corpus__constraint_multi_instance                            {'roots': 1, 'occurrences': 5, 'writers': 3, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+    c_def_occurrence_counts: ["constraint_multi_instance::Cell", {"codegen": 3, "port": 1}]
+MATCH    corpus__constraint_non_numerical                             {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MISMATCH corpus__d38_caret                                            {'roots': 1, 'occurrences': 6, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["D38Lib::'Costed Item'", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["D38Lib::'Costed Item'", {"codegen": 5, "port": 0}]
+    c_def_occurrence_counts: ["D38Lib::Cell", {"codegen": 4, "port": 1}]
+MISMATCH corpus__fusion_tea                                           {'roots': 1, 'occurrences': 7, 'writers': 6, 'unexpandable': 0, 'defs_with_occ': 13} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["cas_hierarchy::'CAS22 Power Core'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["cas_hierarchy::'CAS Account'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["ife_subsystems::'CAS22.1.3 Driver'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["ife_subsystems::'CAS22.1.8 Target Factory'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["costed_component::'Costed Component'", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["cas_hierarchy::'CAS22 Power Core'", {"codegen": 5, "port": 0}]
+    c_def_occurrence_counts: ["cas_hierarchy::'CAS Account'", {"codegen": 5, "port": 0}]
+    c_def_occurrence_counts: ["ife_subsystems::'CAS22.1.3 Driver'", {"codegen": 1, "port": 0}]
+    c_def_occurrence_counts: ["ife_subsystems::'CAS22.1.8 Target Factory'", {"codegen": 1, "port": 0}]
+    c_def_occurrence_counts: ["costed_component::'Costed Component'", {"codegen": 5, "port": 0}]
+MATCH    corpus__modeled_default_fidelity                             {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    corpus__quoted_owner_formula                                 {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MISMATCH corpus__retype_model                                         {'roots': 1, 'occurrences': 4, 'writers': 6, 'unexpandable': 0, 'defs_with_occ': 4} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["RetypeLibrary::Facility", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["RetypeLibrary::'Other Driver'", {"codegen": false, "port": true}]
+    c_def_occurrence_counts: ["RetypeLibrary::Facility", {"codegen": 1, "port": 0}]
+    c_def_occurrence_counts: ["RetypeLibrary::'HIF Driver'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["RetypeLibrary::'Other Driver'", {"codegen": 0, "port": 1}]
+    c_def_occurrence_counts: ["RetypeLibrary::'IFE Driver'", {"codegen": 2, "port": 1}]
+MATCH    corpus__sample_model                                         {'roots': 0, 'occurrences': 0, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MATCH    corpus__shadowed_reference                                   {'roots': 1, 'occurrences': 2, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+MISMATCH corpus__unresolvable_attr_probe                              {'roots': 3, 'occurrences': 3, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 4} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["UnresolvableAttrProbeLibrary::'Base Component'", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["UnresolvableAttrProbeLibrary::'Base Component'", {"codegen": 3, "port": 0}]
+    c_def_occurrence_counts: ["UnresolvableAttrProbeLibrary::'Derived Component'", {"codegen": 2, "port": 1}]
+MATCH    corpus__wi014_toy                                            {'roots': 1, 'occurrences': 1, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MISMATCH corpusx__agg_localterm_probe                                 {'roots': 1, 'occurrences': 4, 'writers': 3, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["AggLocalTermProbe::'Costed Thing'", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["AggLocalTermProbe::'Costed Thing'", {"codegen": 4, "port": 0}]
+    c_def_occurrence_counts: ["AggLocalTermProbe::Cell", {"codegen": 3, "port": 1}]
+MISMATCH corpusx__alias_agg_probe                                     {'roots': 1, 'occurrences': 5, 'writers': 5, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["AliasAggProbeLibrary::'Costed Item'", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["AliasAggProbeLibrary::Widget", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["AliasAggProbeLibrary::'Costed Item'", {"codegen": 4, "port": 0}]
+MATCH    corpusx__catf_mfe_model                                      {'roots': 20, 'occurrences': 61, 'writers': 42, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MATCH    corpusx__chain_override_probe                                {'roots': 1, 'occurrences': 2, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+MATCH    corpusx__chain_spike_model                                   {'roots': 1, 'occurrences': 1, 'writers': 3, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MISMATCH corpusx__crosspart_rollup_twolevel                           {'roots': 1, 'occurrences': 3, 'writers': 3, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+    c_def_occurrence_counts: ["CrossPartRollupLib::Subsystem", {"codegen": 2, "port": 1}]
+MATCH    corpusx__deep_cross_scope_probe                              {'roots': 1, 'occurrences': 5, 'writers': 5, 'unexpandable': 0, 'defs_with_occ': 4} strict=ok full occ=True calcs=True
+MATCH    corpusx__expression_binding_probe                            {'roots': 1, 'occurrences': 1, 'writers': 5, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MATCH    corpusx__gate_a                                              {'roots': 2, 'occurrences': 2, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+MATCH    corpusx__gate_a_package_owner                                {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MISMATCH corpusx__ife_plant                                           {'roots': 4, 'occurrences': 13, 'writers': 11, 'unexpandable': 0, 'defs_with_occ': 8} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["IfePlantLib::'Power Core'", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["IfePlantLib::'Ife Power Plant'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["IfePlantLib::'Power Core'", {"codegen": 2, "port": 0}]
+    c_def_occurrence_counts: ["IfePlantLib::'Shielded Core'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["IfePlantLib::'Base Driver'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["IfePlantLib::'Reaction Chamber'", {"codegen": 4, "port": 1}]
+MATCH    corpusx__invocation_binding_probe                            {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full=n/a
+MISMATCH corpusx__issue22_model                                       {'roots': 1, 'occurrences': 5, 'writers': 4, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["Issue22Library::CostBearer", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["Issue22Library::CostBearer", {"codegen": 4, "port": 0}]
+    c_def_occurrence_counts: ["Issue22Library::Widget", {"codegen": 3, "port": 1}]
+MISMATCH corpusx__plant_value_shapes                                  {'roots': 1, 'occurrences': 4, 'writers': 6, 'unexpandable': 0, 'defs_with_occ': 7} strict=ok full=n/a
+    c_def_has_occurrences: ["PlantValueShapesLib::'Chain L1'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["PlantValueShapesLib::'Chain L3'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["PlantValueShapesLib::'Flow Base'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["PlantValueShapesLib::'Chain L2'", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["PlantValueShapesLib::'Chain L1'", {"codegen": 1, "port": 0}]
+    c_def_occurrence_counts: ["PlantValueShapesLib::'Chain L3'", {"codegen": 1, "port": 0}]
+    c_def_occurrence_counts: ["PlantValueShapesLib::'Flow Base'", {"codegen": 1, "port": 0}]
+    c_def_occurrence_counts: ["PlantValueShapesLib::'Chain L2'", {"codegen": 1, "port": 0}]
+MATCH    corpusx__plant_values                                        {'roots': 1, 'occurrences': 4, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 5} strict=ok full occ=True calcs=True
+MATCH    corpusx__return_styles                                       {'roots': 1, 'occurrences': 1, 'writers': 4, 'unexpandable': 0, 'defs_with_occ': 0} strict=ok full occ=True calcs=True
+MATCH    corpusx__self_named_binding_trap                             {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    corpusx__self_named_rescue                                   {'roots': 1, 'occurrences': 1, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    corpusx__shared_producer                                     {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MISMATCH corpusx__sibling_channel_ambiguity                           {'roots': 1, 'occurrences': 3, 'writers': 3, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+    c_def_occurrence_counts: ["SiblingLib::Chamber", {"codegen": 2, "port": 1}]
+MISMATCH corpusx__solar_battery_model                                 {'roots': 1, 'occurrences': 42, 'writers': 44, 'unexpandable': 0, 'defs_with_occ': 14} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["Costing::'Costed Component'", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["SolarBatteryLibrary::'Battery Pack'", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["SolarBatteryLibrary::'PV Module'", {"codegen": 20, "port": 1}]
+    c_def_occurrence_counts: ["Costing::'Costed Component'", {"codegen": 42, "port": 0}]
+    c_def_occurrence_counts: ["SolarBatteryLibrary::'String Inverter'", {"codegen": 4, "port": 1}]
+MISMATCH corpusx__spec_chain_channel                                  {'roots': 1, 'occurrences': 2, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 4} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["SpecChainLib::Facility", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["SpecChainLib::Facility", {"codegen": 1, "port": 0}]
+MATCH    corpusx__spec_chain_twolevel                                 {'roots': 1, 'occurrences': 2, 'writers': 5, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+MISMATCH dc3__baseline_808464d                                        {'roots': 8, 'occurrences': 214, 'writers': 41, 'unexpandable': 72, 'defs_with_occ': 57} strict=SI_MULTIPLICITY_UNRESOLVED full=n/a
+    c_def_has_occurrences: ["dc3_facility::'Auxiliary Load'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["dc3_cooling::'Rear Door Heat Exchanger'", {"codegen": false, "port": true}]
+    c_def_has_occurrences: ["dc3_foundation::'Costed Component'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["dc3_it::'Storage Array'", {"codegen": false, "port": true}]
+    c_def_has_occurrences: ["dc3_cooling::'Cooling Equipment'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["dc3_source_assembly::'Bidirectional Battery Converter'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["dc3_cooling::'Fan Array'", {"codegen": false, "port": true}]
+    c_def_has_occurrences: ["dc3_power_path::'Power Conversion Stage'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["dc3_power_path::'Distribution Element'", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["dc3_it::Server", {"codegen": 16, "port": 1}]
+    c_def_occurrence_counts: ["dc3_demand::'Operating Demand'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Computer Room Air Handler'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Heat Rejection Unit'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Auxiliary Load'", {"codegen": 24, "port": 0}]
+    c_def_occurrence_counts: ["dc3_generation::'PV Array'", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Physical Security System'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Datacenter Facility'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Rear Door Heat Exchanger'", {"codegen": 0, "port": 1}]
+    c_def_occurrence_counts: ["dc3_foundation::'Costed Component'", {"codegen": 186, "port": 0}]
+    c_def_occurrence_counts: ["dc3_stages::'Rack Busbar'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Cold Plate Loop'", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'UPS Battery'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_it::'Storage Array'", {"codegen": 0, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'DCIM System'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Monitoring and Controls System'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Cooling Equipment'", {"codegen": 16, "port": 0}]
+    c_def_occurrence_counts: ["dc3_it::'Network Switch'", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'DC-DC Converter'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'DC Server Power Supply'", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'DC Switchgear'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::Transformer", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_source_assembly::'Bidirectional Battery Converter'", {"codegen": 2, "port": 0}]
+    c_def_occurrence_counts: ["dc3_site_storage::'Site BESS'", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["dc3_it::'Compute Electronics'", {"codegen": 16, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::Inverter", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Electrical Distribution System'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_generation::'Engine Genset'", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Building Management System'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Fire Protection System'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::Lighting", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'AC Distribution Panel'", {"codegen": 6, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Dry Cooler'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'DC Busway'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'Double Conversion UPS'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'Power Distribution Unit'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_it::'IT Rack'", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Fan Array'", {"codegen": 0, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'Voltage Regulator Module'", {"codegen": 16, "port": 1}]
+    c_def_occurrence_counts: ["dc3_it::'IT System'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'AC Server Power Supply'", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Facility Water Pump'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'DC Bus Battery'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'AC Switchgear'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_power_path::'Power Conversion Stage'", {"codegen": 49, "port": 0}]
+    c_def_occurrence_counts: ["dc3_facility::'Electrical Power Monitoring System'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_power_path::'Power Path Element'", {"codegen": 71, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Cooling System'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_power_path::'Distribution Element'", {"codegen": 22, "port": 0}]
+    c_def_occurrence_counts: ["dc3_stages::'Rack PDU'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Coolant Distribution Unit'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::Enclosure", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_power_path::'Facility Energy Storage'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'Server Power Supply'", {"codegen": 16, "port": 1}]
+MISMATCH dc3__repaired_60b44d5                                        {'roots': 6, 'occurrences': 153, 'writers': 40, 'unexpandable': 0, 'defs_with_occ': 59} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["dc3_facility::'Auxiliary Load'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["dc3_facility::'Datacenter Facility'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["dc3_cooling::'Rear Door Heat Exchanger'", {"codegen": false, "port": true}]
+    c_def_has_occurrences: ["dc3_foundation::'Costed Component'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["dc3_it::'Storage Array'", {"codegen": false, "port": true}]
+    c_def_has_occurrences: ["dc3_cooling::'Cooling Equipment'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["dc3_source_assembly::'Bidirectional Battery Converter'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["dc3_cooling::'Fan Array'", {"codegen": false, "port": true}]
+    c_def_has_occurrences: ["dc3_power_path::'Power Conversion Stage'", {"codegen": true, "port": false}]
+    c_def_has_occurrences: ["dc3_power_path::'Distribution Element'", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["dc3_it::Server", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["dc3_demand::'Operating Demand'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Computer Room Air Handler'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Heat Rejection Unit'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Auxiliary Load'", {"codegen": 12, "port": 0}]
+    c_def_occurrence_counts: ["dc3_generation::'PV Array'", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Physical Security System'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Datacenter Facility'", {"codegen": 2, "port": 0}]
+    c_def_occurrence_counts: ["dc3_cooling::'Rear Door Heat Exchanger'", {"codegen": 0, "port": 1}]
+    c_def_occurrence_counts: ["dc3_foundation::'Costed Component'", {"codegen": 135, "port": 0}]
+    c_def_occurrence_counts: ["dc3_stages::'Rack Busbar'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Cold Plate Loop'", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["dc3_it::'Storage Array'", {"codegen": 0, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'DCIM System'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Monitoring and Controls System'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Cooling Equipment'", {"codegen": 16, "port": 0}]
+    c_def_occurrence_counts: ["dc3_it::'Network Switch'", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'DC-DC Converter'", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'DC Server Power Supply'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::Transformer", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["dc3_source_assembly::'Bidirectional Battery Converter'", {"codegen": 2, "port": 0}]
+    c_def_occurrence_counts: ["dc3_site_storage::'Site BESS'", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["dc3_it::'Compute Electronics'", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::Inverter", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Electrical Distribution System'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_generation::'Engine Genset'", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Building Management System'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::'Fire Protection System'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::Lighting", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'AC Distribution Panel'", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Dry Cooler'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_it::'IT Rack'", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Fan Array'", {"codegen": 0, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'Voltage Regulator Module'", {"codegen": 8, "port": 1}]
+    c_def_occurrence_counts: ["dc3_it::'IT System'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'AC Server Power Supply'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Facility Water Pump'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_power_path::'Power Conversion Stage'", {"codegen": 28, "port": 0}]
+    c_def_occurrence_counts: ["dc3_facility::'Electrical Power Monitoring System'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_power_path::'Power Path Element'", {"codegen": 51, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Cooling System'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_power_path::'Distribution Element'", {"codegen": 12, "port": 0}]
+    c_def_occurrence_counts: ["dc3_stages::'Rack PDU'", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_cooling::'Coolant Distribution Unit'", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["dc3_facility::Enclosure", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["dc3_power_path::'Facility Energy Storage'", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["dc3_stages::'Server Power Supply'", {"codegen": 8, "port": 1}]
+MISMATCH edge__f1_abort_incomparable_typings                          {'roots': 0, 'occurrences': 0, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=SI_REDEFINITION_INVALID full=n/a
+    c_def_occurrence_counts: {"codegen": null, "port": {}}
+MISMATCH edge__f1_abort_recursive_containment                         {'roots': 0, 'occurrences': 0, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=SI_CONTAINMENT_RECURSIVE full=n/a
+    c_def_occurrence_counts: {"codegen": null, "port": {}}
+MISMATCH edge__f1_abort_specialization_cycle                          {'roots': 0, 'occurrences': 0, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=SI_CONTAINMENT_RECURSIVE full=n/a
+    c_def_occurrence_counts: {"codegen": null, "port": {}}
+MISMATCH edge__f1_calc_redefined_everywhere                           {'roots': 4, 'occurrences': 4, 'writers': 5, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["f1f::Base", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["f1f::Other", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["f1f::Derived", {"codegen": 2, "port": 1}]
+    c_def_occurrence_counts: ["f1f::Base", {"codegen": 2, "port": 0}]
+MISMATCH edge__f1_inherited_multiplicity_redef                        {'roots': 1, 'occurrences': 2, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full=n/a
+    c_def_has_occurrences: ["f1c::Site", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["f1c::Site", {"codegen": 1, "port": 0}]
+MISMATCH edge__f1_inherited_ordered_redef                             {'roots': 1, 'occurrences': 2, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full=n/a
+    c_def_has_occurrences: ["f1a::Site", {"codegen": true, "port": false}]
+    c_def_occurrence_counts: ["f1a::Site", {"codegen": 1, "port": 0}]
+MISMATCH edge__f1_invalid_redefinition_family                         {'roots': 0, 'occurrences': 0, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 0} strict=None full=n/a
+    c_def_occurrence_counts: {"codegen": null, "port": {}}
+MISMATCH edge__f1_multiplicity_only_on_redef                          {'roots': 2, 'occurrences': 6, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full=n/a
+    c_def_occurrence_counts: ["f1b::Rack", {"codegen": 4, "port": 1}]
+    c_def_occurrence_counts: ["f1b::Site", {"codegen": 2, "port": 1}]
+MISMATCH edge__f1_nested_subtypes                                     {'roots': 2, 'occurrences': 12, 'writers': 8, 'unexpandable': 0, 'defs_with_occ': 5} strict=ok full occ=True calcs=True
+    c_def_occurrence_counts: ["f1g::Rack", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["f1g::GpuServer", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["f1g::Server", {"codegen": 8, "port": 1}]
+MISMATCH edge__f1_referenced_bounds                                   {'roots': 5, 'occurrences': 17, 'writers': 0, 'unexpandable': 1, 'defs_with_occ': 4} strict=SI_MULTIPLICITY_UNRESOLVED full=n/a
+    c_def_occurrence_counts: ["f1d::Site", {"codegen": 3, "port": 1}]
+    c_def_occurrence_counts: ["f1d::Rack", {"codegen": 13, "port": 1}]
+MISMATCH edge__f1_zero_and_bad_multiplicities                         {'roots': 2, 'occurrences': 2, 'writers': 0, 'unexpandable': 4, 'defs_with_occ': 2} strict=SI_MULTIPLICITY_UNSUPPORTED full=n/a
+    c_def_has_occurrences: ["f1e::Rack", {"codegen": false, "port": true}]
+    c_def_occurrence_counts: ["f1e::Rack", {"codegen": 0, "port": 1}]
+MATCH    proto__es001_admitted_part_assert                            {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es001_refused_calc_def_assert                         {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es001_refused_calc_usage_assert                       {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full=n/a
+MATCH    proto__es003_admitted_fixed_arity                            {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es003_neighbor_exact_ordered_param                    {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es003_neighbor_ordered_param_scalar_arg               {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es003_refused_ordered_nonunique                       {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MISMATCH proto__es004_admitted_exact_redefinition                     {'roots': 2, 'occurrences': 4, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 3} strict=ok full occ=True calcs=True
+    c_def_occurrence_counts: ["fx::Server", {"codegen": 2, "port": 1}]
+MISMATCH proto__es004_admitted_uninstantiated_template                {'roots': 2, 'occurrences': 2, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 2} strict=ok full occ=True calcs=True
+    c_def_has_occurrences: ["fx::Server", {"codegen": false, "port": true}]
+    c_def_occurrence_counts: ["fx::Server", {"codegen": 0, "port": 1}]
+MISMATCH proto__es004_refused_range_parts                             {'roots': 2, 'occurrences': 2, 'writers': 1, 'unexpandable': 1, 'defs_with_occ': 2} strict=SI_MULTIPLICITY_UNSUPPORTED full=n/a
+    c_def_has_occurrences: ["fx::Server", {"codegen": false, "port": true}]
+    c_def_occurrence_counts: ["fx::Server", {"codegen": 0, "port": 1}]
+MISMATCH proto__es004_refused_unbounded_parts                         {'roots': 2, 'occurrences': 4, 'writers': 1, 'unexpandable': 1, 'defs_with_occ': 3} strict=SI_MULTIPLICITY_UNRESOLVED full=n/a
+    c_def_occurrence_counts: ["fx::Server", {"codegen": 2, "port": 1}]
+MATCH    proto__es005_admitted_explicit_multiply                      {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es005_refused_product                                 {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full=n/a
+MATCH    proto__es005_refused_size                                    {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full=n/a
+MATCH    proto__es006_admitted_arithmetic_min                         {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es006_refused_conditional                             {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full=n/a
+MATCH    proto__es007_admitted_numeric_and                            {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es007_refused_boolean_mixed                           {'roots': 1, 'occurrences': 1, 'writers': 0, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es010_admitted_numeric_value                          {'roots': 1, 'occurrences': 1, 'writers': 2, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es010_omitted_string_value                            {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__es010_refused_string_calc_input                       {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+MATCH    proto__unmapped_expression_calc_arg                          {'roots': 1, 'occurrences': 1, 'writers': 1, 'unexpandable': 0, 'defs_with_occ': 1} strict=ok full occ=True calcs=True
+TOTAL 40/72 match

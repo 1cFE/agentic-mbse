@@ -1,0 +1,23 @@
+$ uv run python -I convince-me-exec-subset/evidence/01-screen.py /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-fixed/models --json convince-me-exec-subset/evidence/01-screen-repaired.json   (cwd=/home/reid/src/agentic-mbse, 2026-10-15T13:58:41+00:00)
+PROTOTYPE subset screen — one run over /tmp/claude-1000/-home-reid-src-agentic-mbse/8cecfa0f-3dca-4be9-bcbc-86b4acc4ae95/scratchpad/dc3-fixed/models
+controls: disable=- overbroad=-
+rule    dc3    status     outcome          findings  reuse
+ES-001  B1     checked    refused                 0  NEW fact: assertion owner metatype (syside owner)
+ES-003  B2     checked    refused                 0  NEW fact: sequence-valued argument bound to a calc input
+ES-004  B3     checked    refused                 0  NEW fact: part multiplicity bounds + approximate instantiation
+ES-005  B4/B5  checked    refused                 0  REUSED: reference_use.inspect_reference_uses admission (sum only)
+ES-006  B6     checked    refused                 0  NEW fact: conditional operator ('if')
+ES-007  B8     checked    refused/excluded        0  REUSED: executable_profile via L6 check_constraint_executability
+ES-010  B7     checked    omitted/refused        30  NEW fact: String values (both spellings); refused when bound into a calc input
+
+--- ES-010 (B7): 30 findings in 5 files
+    designs/dc_native/dc_site.sysml:26  dc_native_site::dc_site::genset::fuel_unit  [String value, shorthand :>> (ReferenceUsage) spelling]
+    designs/dc_native/dc_site.sysml:48  dc_native_site::dc_site::mppt::redundancy  [String value, shorthand :>> (ReferenceUsage) spelling]
+    designs/dc_native/dc_site.sysml:51  dc_native_site::dc_site::mppt::conversion_level  [String value, shorthand :>> (ReferenceUsage) spelling]
+    designs/dc_native/dc_site.sysml:59  dc_native_site::dc_site::genset_rectifier::redundancy  [String value, shorthand :>> (ReferenceUsage) spelling]
+    ... 26 more
+
+ES-010 comparison: today's L6 L6_DESIGN_ATTR_UNEXTRACTABLE = 0 vs screen String-valued attributes = 30
+
+blocking (refused or unverified) total: 0
+exit=0

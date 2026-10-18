@@ -1,0 +1,124 @@
+{
+ "calc_attachment": {
+  "035f8e16-48d4-5284-ab36-098fc31645c0": [
+   [
+    "occ:72bc4970-36ab-5b52-938e-9b35f52d78c5[]"
+   ],
+   null
+  ],
+  "06918902-a247-5590-9377-a0d9b8508728": [
+   [
+    "occ:72bc4970-36ab-5b52-938e-9b35f52d78c5[]"
+   ],
+   null
+  ],
+  "85684663-a9e4-5f3c-8562-334224d42339": [
+   [
+    "occ:72bc4970-36ab-5b52-938e-9b35f52d78c5[]"
+   ],
+   null
+  ],
+  "accab252-9a39-54b6-97b2-129d07eec5be": [
+   [
+    "occ:72bc4970-36ab-5b52-938e-9b35f52d78c5[]"
+   ],
+   null
+  ],
+  "d1b943e7-3429-5883-b770-8071e4570d55": [
+   [
+    "occ:72bc4970-36ab-5b52-938e-9b35f52d78c5[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "72bc4970-36ab-5b52-938e-9b35f52d78c5": 1
+ },
+ "def_occurrences": {},
+ "full": {
+  "calcs_equal": true,
+  "n_calcs": 5,
+  "n_occ": 1,
+  "occurrences_equal": true,
+  "ran": true
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/expression_binding_probe"
+ ],
+ "load_errors": false,
+ "names": {
+  "035f8e16-48d4-5284-ab36-098fc31645c0": "ExpressionBindingDesign::expr_probe::net_calc",
+  "06918902-a247-5590-9377-a0d9b8508728": "ExpressionBindingDesign::expr_probe::full_cost_calc",
+  "72bc4970-36ab-5b52-938e-9b35f52d78c5": "ExpressionBindingDesign::expr_probe",
+  "85684663-a9e4-5f3c-8562-334224d42339": "ExpressionBindingDesign::expr_probe::delta_calc",
+  "accab252-9a39-54b6-97b2-129d07eec5be": "ExpressionBindingDesign::expr_probe::adjusted_calc",
+  "d1b943e7-3429-5883-b770-8071e4570d55": "ExpressionBindingDesign::expr_probe::cost_calc",
+  "e91ae9ed-84a3-54e0-a2dc-e0f9f6cdadb9": "ExpressionBindingDesign",
+  "fe954e64-ed07-59f9-9ff1-e0c10cd8490f": "ExpressionBindingLibrary"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [],
+   "path": "72bc4970-36ab-5b52-938e-9b35f52d78c5[]",
+   "type": null,
+   "usage": "72bc4970-36ab-5b52-938e-9b35f52d78c5"
+  }
+ ],
+ "roots": [
+  "72bc4970-36ab-5b52-938e-9b35f52d78c5"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "72bc4970-36ab-5b52-938e-9b35f52d78c5",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:72bc4970-36ab-5b52-938e-9b35f52d78c5[]",
+   "035f8e16-48d4-5284-ab36-098fc31645c0",
+   "035f8e16-48d4-5284-ab36-098fc31645c0",
+   [
+    "035f8e16-48d4-5284-ab36-098fc31645c0"
+   ]
+  ],
+  [
+   "occ:72bc4970-36ab-5b52-938e-9b35f52d78c5[]",
+   "06918902-a247-5590-9377-a0d9b8508728",
+   "06918902-a247-5590-9377-a0d9b8508728",
+   [
+    "06918902-a247-5590-9377-a0d9b8508728"
+   ]
+  ],
+  [
+   "occ:72bc4970-36ab-5b52-938e-9b35f52d78c5[]",
+   "85684663-a9e4-5f3c-8562-334224d42339",
+   "85684663-a9e4-5f3c-8562-334224d42339",
+   [
+    "85684663-a9e4-5f3c-8562-334224d42339"
+   ]
+  ],
+  [
+   "occ:72bc4970-36ab-5b52-938e-9b35f52d78c5[]",
+   "accab252-9a39-54b6-97b2-129d07eec5be",
+   "accab252-9a39-54b6-97b2-129d07eec5be",
+   [
+    "accab252-9a39-54b6-97b2-129d07eec5be"
+   ]
+  ],
+  [
+   "occ:72bc4970-36ab-5b52-938e-9b35f52d78c5[]",
+   "d1b943e7-3429-5883-b770-8071e4570d55",
+   "d1b943e7-3429-5883-b770-8071e4570d55",
+   [
+    "d1b943e7-3429-5883-b770-8071e4570d55"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

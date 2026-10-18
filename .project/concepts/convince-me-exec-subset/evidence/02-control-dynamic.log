@@ -1,0 +1,16 @@
+## control C: code computed at run time
+@@ -2739,3 +2739,9 @@
+         )
+         if diagnostic not in self._graph.diagnostics:
+             self._graph.diagnostics.append(diagnostic)
++
++
++def _refuse_by_lookup(element, table):
++    """Control: a refusal whose code is computed, so no reader can enumerate it."""
++    chosen = table[type(element).__name__]
++    raise ElaborationInvariantError(chosen, "computed refusal")
+sites enumerated: 501; baseline: 500; classified keys: 65; dynamic exemptions: 6
+FAIL: 2 problem(s)
+  R3 non-literal code `chosen` at sysml_codegen/elaboration/elaborate.py:2747 in _refuse_by_lookup: add a literal code or a reviewed exemption
+  R2 new unreviewed refusal site sysml_codegen/elaboration/elaborate.py::_refuse_by_lookup::coded-DYNAMIC::chosen::1 at sysml_codegen/elaboration/elaborate.py:2747 in _refuse_by_lookup
+exit=1

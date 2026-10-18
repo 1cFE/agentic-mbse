@@ -1,0 +1,24 @@
+skipped absolute link .claude/agents/kerml-expert.md -> /home/reid/1cfe/agentic-mbse/agents/kerml-expert.md
+skipped absolute link .claude/agents/syside-expert.md -> /home/reid/1cfe/agentic-mbse/agents/syside-expert.md
+skipped absolute link .claude/agents/sysml-expert.md -> /home/reid/1cfe/agentic-mbse/agents/sysml-expert.md
+skipped absolute link .claude/agents/sysmlv2-validator.md -> /home/reid/1cfe/agentic-mbse/agents/sysmlv2-validator.md
+skipped absolute link .claude/skills/sysml-conventions -> /home/reid/1cfe/agentic-mbse/skills/sysml-conventions
+scanner: scan_sites/1: the prototype 02-inventory.py forms, unchanged; run on git archive exports; scripts/subset_profile/scan_sites.py at agentic-mbse ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508
+sysml-codegen: b5663c07e987a892e27d21e68cec40d0656574ee (git archive, src/)
+agentic-mbse: ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508 (git archive, src/)
+recognized forms: builtin=AssertionError,IndexError,KeyError,LookupError,NotImplementedError,RuntimeError,TypeError,ValueError; channels=coded,coded-fixed,coded-relay,coded-returned,coded-mapped,plumbing,coded-DYNAMIC,free-text,builtin,shared-evidence,shared-profile; code_enums=ElaborationCode,ReadinessCode,SemanticEvidenceCode; code_taking=Diagnostic,ElaborationInvariantError,MultiplicityExpansionError,OccurrenceResolutionError,ReadinessFinding,SemanticEvidenceError,_ReferenceResolutionError; exclude=cli/install.py,contracts/verify.py,study/; free_text=CodeGenerationError,CompilationError,ExpressionInventoryError,GraphValidationError,InstanceGraphSnapshotError,PackageSealError,PredicateCompileError,ProvenanceError,ScopePolicyMismatchError,SnapshotCertifiabilityError,SnapshotCompatibilityError,SnapshotIntegrityError,SnapshotShapeError,SnapshotStaleSourceError,SourceAdmissionError,SysMLParsingError; shared_evidence_class=SemanticEvidenceError
+blind spots: silent-omission, computed-code-beyond-resolver, unrecognized-exception-class-or-helper, unproven-public-reachability, dynamic-dispatch-and-indirection, non-python-surface (scanner.toml)
+sites: 502 (441 sysml-codegen, 61 agentic-mbse)
+    137  free-text
+    130  builtin
+    126  coded
+     29  shared-profile
+     26  shared-evidence
+     24  coded-fixed
+     15  coded-relay
+      7  plumbing
+      6  coded-DYNAMIC
+      1  coded-returned
+      1  coded-mapped
+wrote /tmp/af/site-scan-final.csv
+reconcile against tests/fixtures/subset_profile/inventory/site_account.csv: 0 unaccounted, 0 orphan

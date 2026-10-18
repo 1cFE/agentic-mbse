@@ -1,0 +1,14 @@
+kind = "record"
+rule = "binding-source"
+shape = "self_reference_source"
+context = "owner_instantiated"
+variant = "part_usage_owner"
+expected_outcome = "refused"
+
+[construct]
+description = "self-bound input in root part usage site (B5)"
+file = "model.sysml"
+lines = [5, 5]
+
+[expect]
+code = "SI_SELF_BINDING"

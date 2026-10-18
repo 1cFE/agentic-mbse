@@ -1,0 +1,13 @@
+kind = "record"
+rule = "indexed-reference"
+shape = "indexed_reference"
+context = "calc_definition_feature_value"
+expected_outcome = "refused"
+
+[construct]
+description = "calc def First's result feature r valued by xs#(1)"
+file = "model.sysml"
+lines = [3, 3]
+
+[expect]
+code = "SI_INDEXED_SOURCE_UNSUPPORTED"

@@ -1,0 +1,62 @@
+{
+ "calc_attachment": {
+  "fb89d2bf-ef33-5a83-90a3-07b66d2d85dc": [
+   [
+    "occ:16881bdc-e6bb-5535-aae4-3f9f496e7d1c[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "16881bdc-e6bb-5535-aae4-3f9f496e7d1c": 1
+ },
+ "def_occurrences": {
+  "46bada30-9e0c-52c5-b7e2-d1e3636375a4": 1
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/modeled_default_fidelity"
+ ],
+ "load_errors": false,
+ "names": {
+  "16881bdc-e6bb-5535-aae4-3f9f496e7d1c": "ModeledDefaultFidelity::the_rig",
+  "28acd621-6828-5046-bb2c-dc2d9ca08ff4": "ModeledDefaultFidelity",
+  "46bada30-9e0c-52c5-b7e2-d1e3636375a4": "ModeledDefaultFidelity::Rig",
+  "fb89d2bf-ef33-5a83-90a3-07b66d2d85dc": "ModeledDefaultFidelity::the_rig::scale"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "46bada30-9e0c-52c5-b7e2-d1e3636375a4"
+   ],
+   "path": "16881bdc-e6bb-5535-aae4-3f9f496e7d1c[]",
+   "type": "46bada30-9e0c-52c5-b7e2-d1e3636375a4",
+   "usage": "16881bdc-e6bb-5535-aae4-3f9f496e7d1c"
+  }
+ ],
+ "roots": [
+  "16881bdc-e6bb-5535-aae4-3f9f496e7d1c"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "16881bdc-e6bb-5535-aae4-3f9f496e7d1c",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:16881bdc-e6bb-5535-aae4-3f9f496e7d1c[]",
+   "fb89d2bf-ef33-5a83-90a3-07b66d2d85dc",
+   "fb89d2bf-ef33-5a83-90a3-07b66d2d85dc",
+   [
+    "fb89d2bf-ef33-5a83-90a3-07b66d2d85dc"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

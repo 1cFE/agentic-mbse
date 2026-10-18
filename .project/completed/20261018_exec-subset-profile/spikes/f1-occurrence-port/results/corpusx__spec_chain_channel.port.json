@@ -1,0 +1,104 @@
+{
+ "calc_attachment": {
+  "76ba7a05-f236-5448-8862-713bc83716da": [
+   [
+    "occ:5ff5bdfd-36d2-57ad-9806-167196c320c3[]"
+   ],
+   null
+  ],
+  "d5026b42-68d0-5443-bcb1-2804c51b2e91": [
+   [
+    "occ:5ff5bdfd-36d2-57ad-9806-167196c320c3[]/130d308d-4d3a-5ff0-957e-10a0f9d580ed[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "0308726f-c976-51de-bf3f-b00bea9cc70d": 1,
+  "5ff5bdfd-36d2-57ad-9806-167196c320c3": 1
+ },
+ "def_occurrences": {
+  "237bc372-54ca-5969-a5ac-eb5ff8361016": 1,
+  "a8d19df9-a310-55d7-bc1a-54a1a03004ac": 1,
+  "c112a4e6-c3ef-5fcc-a104-400498991e4b": 1,
+  "e2125f4e-4406-561f-af19-ce688fbcb206": 1
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/spec_chain_channel"
+ ],
+ "load_errors": false,
+ "names": {
+  "0308726f-c976-51de-bf3f-b00bea9cc70d": "SpecChainLib::Variant::driver",
+  "130d308d-4d3a-5ff0-957e-10a0f9d580ed": "SpecChainLib::Facility::driver",
+  "237bc372-54ca-5969-a5ac-eb5ff8361016": "SpecChainLib::'IFE Driver'",
+  "3bca1b6e-afbb-5e5b-bb08-329164738e25": "SpecChainDesign",
+  "5f36b215-5a9c-52bc-86ae-c41875eedb7a": "SpecChainLib",
+  "5ff5bdfd-36d2-57ad-9806-167196c320c3": "SpecChainDesign::spec_chain_plant",
+  "76ba7a05-f236-5448-8862-713bc83716da": "SpecChainLib::Variant::lcoe_calc",
+  "a8d19df9-a310-55d7-bc1a-54a1a03004ac": "SpecChainLib::Facility",
+  "c112a4e6-c3ef-5fcc-a104-400498991e4b": "SpecChainLib::Variant",
+  "d5026b42-68d0-5443-bcb1-2804c51b2e91": "SpecChainLib::'IFE Driver'::meier_cost",
+  "e2125f4e-4406-561f-af19-ce688fbcb206": "SpecChainLib::'HIF Driver'"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "0308726f-c976-51de-bf3f-b00bea9cc70d"
+   ],
+   "closure": [
+    "a8d19df9-a310-55d7-bc1a-54a1a03004ac",
+    "c112a4e6-c3ef-5fcc-a104-400498991e4b"
+   ],
+   "path": "5ff5bdfd-36d2-57ad-9806-167196c320c3[]",
+   "type": "c112a4e6-c3ef-5fcc-a104-400498991e4b",
+   "usage": "5ff5bdfd-36d2-57ad-9806-167196c320c3"
+  },
+  {
+   "children": [],
+   "closure": [
+    "237bc372-54ca-5969-a5ac-eb5ff8361016",
+    "e2125f4e-4406-561f-af19-ce688fbcb206"
+   ],
+   "path": "5ff5bdfd-36d2-57ad-9806-167196c320c3[]/130d308d-4d3a-5ff0-957e-10a0f9d580ed[]",
+   "type": "e2125f4e-4406-561f-af19-ce688fbcb206",
+   "usage": "0308726f-c976-51de-bf3f-b00bea9cc70d"
+  }
+ ],
+ "roots": [
+  "5ff5bdfd-36d2-57ad-9806-167196c320c3"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "0308726f-c976-51de-bf3f-b00bea9cc70d",
+   "5ff5bdfd-36d2-57ad-9806-167196c320c3[]"
+  ],
+  [
+   "5ff5bdfd-36d2-57ad-9806-167196c320c3",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:5ff5bdfd-36d2-57ad-9806-167196c320c3[]",
+   "76ba7a05-f236-5448-8862-713bc83716da",
+   "76ba7a05-f236-5448-8862-713bc83716da",
+   [
+    "76ba7a05-f236-5448-8862-713bc83716da"
+   ]
+  ],
+  [
+   "occ:5ff5bdfd-36d2-57ad-9806-167196c320c3[]/130d308d-4d3a-5ff0-957e-10a0f9d580ed[]",
+   "d5026b42-68d0-5443-bcb1-2804c51b2e91",
+   "d5026b42-68d0-5443-bcb1-2804c51b2e91",
+   [
+    "d5026b42-68d0-5443-bcb1-2804c51b2e91"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

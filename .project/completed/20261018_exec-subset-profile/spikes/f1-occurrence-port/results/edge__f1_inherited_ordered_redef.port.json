@@ -1,0 +1,68 @@
+{
+ "calc_attachment": {},
+ "codegen_imported": false,
+ "counts": {
+  "2d7f2229-806a-5cbb-8688-f6acf551509c": 1,
+  "411a46f1-d203-590b-adca-d52cd1817ab3": 1
+ },
+ "def_occurrences": {
+  "18ec6660-64bb-5601-a1ba-50fcfbcb1e20": 1,
+  "79ec4b5c-e456-5ce8-a4df-668a3b45d5a7": 1,
+  "9c5da87d-bfc3-54ad-9399-b64943446724": 1
+ },
+ "inputs": [
+  "/home/reid/src/agentic-mbse/.project/active/exec-subset-profile/spikes/f1-occurrence-port/fixtures/f1_inherited_ordered_redef.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "18ec6660-64bb-5601-a1ba-50fcfbcb1e20": "f1a::Site",
+  "2d7f2229-806a-5cbb-8688-f6acf551509c": "f1a::BigSite::racks",
+  "411a46f1-d203-590b-adca-d52cd1817ab3": "f1a::site",
+  "79ec4b5c-e456-5ce8-a4df-668a3b45d5a7": "f1a::BigSite",
+  "9c5da87d-bfc3-54ad-9399-b64943446724": "f1a::Rack",
+  "a84fb687-17f3-5295-9611-eff65355e19c": "f1a",
+  "ae8a08a9-3010-5559-9f69-17782c6c8412": "f1a::Site::racks"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "2d7f2229-806a-5cbb-8688-f6acf551509c"
+   ],
+   "closure": [
+    "18ec6660-64bb-5601-a1ba-50fcfbcb1e20",
+    "79ec4b5c-e456-5ce8-a4df-668a3b45d5a7"
+   ],
+   "path": "411a46f1-d203-590b-adca-d52cd1817ab3[]",
+   "type": "79ec4b5c-e456-5ce8-a4df-668a3b45d5a7",
+   "usage": "411a46f1-d203-590b-adca-d52cd1817ab3"
+  },
+  {
+   "children": [],
+   "closure": [
+    "9c5da87d-bfc3-54ad-9399-b64943446724"
+   ],
+   "path": "411a46f1-d203-590b-adca-d52cd1817ab3[]/ae8a08a9-3010-5559-9f69-17782c6c8412[]",
+   "type": "9c5da87d-bfc3-54ad-9399-b64943446724",
+   "usage": "2d7f2229-806a-5cbb-8688-f6acf551509c"
+  }
+ ],
+ "roots": [
+  "411a46f1-d203-590b-adca-d52cd1817ab3"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "2d7f2229-806a-5cbb-8688-f6acf551509c",
+   "411a46f1-d203-590b-adca-d52cd1817ab3[]"
+  ],
+  [
+   "411a46f1-d203-590b-adca-d52cd1817ab3",
+   null
+  ]
+ ],
+ "writers": [],
+ "writers_status": "no_calc_usages_selected"
+}

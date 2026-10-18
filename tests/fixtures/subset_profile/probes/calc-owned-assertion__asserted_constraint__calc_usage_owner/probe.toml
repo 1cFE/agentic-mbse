@@ -1,0 +1,14 @@
+kind = "record"
+rule = "calc-owned-assertion"
+shape = "asserted_constraint"
+context = "calc_usage_owner"
+expected_outcome = "refused"
+supersedes = "es001_refused_calc_usage_assert"
+
+[construct]
+description = "asserted constraint f1 owned by calc usage path; the generator locates the refusal at the owner (line 8)"
+file = "model.sysml"
+lines = [8, 12]
+
+[expect]
+code = "SI_CONSTRAINT_UNATTACHED"

@@ -1,0 +1,13 @@
+kind = "record"
+rule = "indexed-reference"
+shape = "indexed_reference"
+context = "constraint_predicate"
+expected_outcome = "refused"
+
+[construct]
+description = "asserted predicate qs#(1).v > 0.0"
+file = "model.sysml"
+lines = [8, 8]
+
+[expect]
+code = "SI_INDEXED_SOURCE_UNSUPPORTED"

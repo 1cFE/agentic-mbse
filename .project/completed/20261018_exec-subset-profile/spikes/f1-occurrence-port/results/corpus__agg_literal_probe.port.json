@@ -1,0 +1,101 @@
+{
+ "calc_attachment": {},
+ "codegen_imported": false,
+ "counts": {
+  "16986de6-fbd3-53e4-aa79-c76d3d939a0e": 1,
+  "599da0d6-10ce-51fa-a4db-9600b9a93977": 1,
+  "d52e4179-0e15-5100-a4e1-db2458aa4cb6": 3
+ },
+ "def_occurrences": {
+  "38caa23b-174c-5593-836a-8488f92d0e4c": 3,
+  "56905417-743c-5ac0-b06b-1e56b91f1881": 1,
+  "c608250f-8639-5535-b0a1-0e0521f388e2": 1
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/agg_literal_probe"
+ ],
+ "load_errors": false,
+ "names": {
+  "16986de6-fbd3-53e4-aa79-c76d3d939a0e": "AggLiteralProbeDesign::plant",
+  "20a1e0c1-6e4c-5da5-9080-7d9926537392": "AggLiteralProbeLibrary",
+  "38caa23b-174c-5593-836a-8488f92d0e4c": "AggLiteralProbeLibrary::Module",
+  "56905417-743c-5ac0-b06b-1e56b91f1881": "AggLiteralProbeLibrary::'Costed Assembly'",
+  "599da0d6-10ce-51fa-a4db-9600b9a93977": "AggLiteralProbeDesign::plant::assembly",
+  "bff33063-9d33-5a67-9920-2f46217e1c42": "AggLiteralProbeDesign",
+  "c608250f-8639-5535-b0a1-0e0521f388e2": "AggLiteralProbeLibrary::Assembly",
+  "d52e4179-0e15-5100-a4e1-db2458aa4cb6": "AggLiteralProbeLibrary::Assembly::module"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "599da0d6-10ce-51fa-a4db-9600b9a93977"
+   ],
+   "closure": [],
+   "path": "16986de6-fbd3-53e4-aa79-c76d3d939a0e[]",
+   "type": null,
+   "usage": "16986de6-fbd3-53e4-aa79-c76d3d939a0e"
+  },
+  {
+   "children": [
+    "d52e4179-0e15-5100-a4e1-db2458aa4cb6"
+   ],
+   "closure": [
+    "56905417-743c-5ac0-b06b-1e56b91f1881",
+    "c608250f-8639-5535-b0a1-0e0521f388e2"
+   ],
+   "path": "16986de6-fbd3-53e4-aa79-c76d3d939a0e[]/599da0d6-10ce-51fa-a4db-9600b9a93977[]",
+   "type": "c608250f-8639-5535-b0a1-0e0521f388e2",
+   "usage": "599da0d6-10ce-51fa-a4db-9600b9a93977"
+  },
+  {
+   "children": [],
+   "closure": [
+    "38caa23b-174c-5593-836a-8488f92d0e4c"
+   ],
+   "path": "16986de6-fbd3-53e4-aa79-c76d3d939a0e[]/599da0d6-10ce-51fa-a4db-9600b9a93977[]/d52e4179-0e15-5100-a4e1-db2458aa4cb6[0]",
+   "type": "38caa23b-174c-5593-836a-8488f92d0e4c",
+   "usage": "d52e4179-0e15-5100-a4e1-db2458aa4cb6"
+  },
+  {
+   "children": [],
+   "closure": [
+    "38caa23b-174c-5593-836a-8488f92d0e4c"
+   ],
+   "path": "16986de6-fbd3-53e4-aa79-c76d3d939a0e[]/599da0d6-10ce-51fa-a4db-9600b9a93977[]/d52e4179-0e15-5100-a4e1-db2458aa4cb6[1]",
+   "type": "38caa23b-174c-5593-836a-8488f92d0e4c",
+   "usage": "d52e4179-0e15-5100-a4e1-db2458aa4cb6"
+  },
+  {
+   "children": [],
+   "closure": [
+    "38caa23b-174c-5593-836a-8488f92d0e4c"
+   ],
+   "path": "16986de6-fbd3-53e4-aa79-c76d3d939a0e[]/599da0d6-10ce-51fa-a4db-9600b9a93977[]/d52e4179-0e15-5100-a4e1-db2458aa4cb6[2]",
+   "type": "38caa23b-174c-5593-836a-8488f92d0e4c",
+   "usage": "d52e4179-0e15-5100-a4e1-db2458aa4cb6"
+  }
+ ],
+ "roots": [
+  "16986de6-fbd3-53e4-aa79-c76d3d939a0e"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "16986de6-fbd3-53e4-aa79-c76d3d939a0e",
+   null
+  ],
+  [
+   "599da0d6-10ce-51fa-a4db-9600b9a93977",
+   "16986de6-fbd3-53e4-aa79-c76d3d939a0e[]"
+  ],
+  [
+   "d52e4179-0e15-5100-a4e1-db2458aa4cb6",
+   "16986de6-fbd3-53e4-aa79-c76d3d939a0e[]/599da0d6-10ce-51fa-a4db-9600b9a93977[]"
+  ]
+ ],
+ "writers": [],
+ "writers_status": "no_calc_usages_selected"
+}

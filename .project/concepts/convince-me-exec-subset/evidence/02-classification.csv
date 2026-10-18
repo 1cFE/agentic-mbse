@@ -1,0 +1,66 @@
+key,kind,category,uncertain,note
+SI_EVIDENCE_INCOMPLETE,ElaborationCode,shared-rule-candidate,yes,ES-006; also carries plain evidence gaps that should become 'unverified' rather than a refusal
+SI_TYPE_INVALID,ElaborationCode,shared-rule-candidate,yes,primitive typing admissibility
+SYSML_NAMESPACE_NOT_DISTINGUISHABLE,ElaborationCode,codegen-specific,no,Python rendering namespace
+SI_OCCURRENCE_MISSING,ElaborationCode,shared-rule-candidate,no,ES-002 / ES-009
+SI_OCCURRENCE_AMBIGUOUS,ElaborationCode,shared-rule-candidate,no,B2 plural/sequence arguments
+OVERRIDE_TARGET_MISSING,ElaborationCode,codegen-specific,yes,
+SI_ID_MISSING,ElaborationCode,codegen-specific,yes,null-QN (anonymous) declarations are user-reachable so this is not an internal invariant
+SI_ID_UNSTABLE,ElaborationCode,environmental,yes,depends on SysIDE element-id version
+SI_REDEFINITION_INVALID,ElaborationCode,shared-rule-candidate,no,ES-008
+SI_MULTIPLICITY_UNRESOLVED,ElaborationCode,shared-rule-candidate,no,ES-004
+SI_MULTIPLICITY_UNSUPPORTED,ElaborationCode,shared-rule-candidate,no,ES-003
+SI_MULTIPLICITY_INVALID,ElaborationCode,shared-rule-candidate,yes,
+SI_INDEXED_SOURCE_UNSUPPORTED,ElaborationCode,shared-rule-candidate,no,already decided in agentic-mbse reference_use
+SI_EXPRESSION_SOURCE_UNSUPPORTED,ElaborationCode,shared-rule-candidate,no,ES-005; already decided in agentic-mbse reference_use
+SI_CONTAINMENT_RECURSIVE,ElaborationCode,shared-rule-candidate,no,
+SI_ALIAS_CYCLE,ElaborationCode,shared-rule-candidate,yes,
+SI_EDGE_DANGLING,ElaborationCode,internal-invariant,yes,43 graph-validation sites; ES-011 claims a user-reachable case so the invariant claim needs evidence
+SI_CONSTRAINT_BLOCKED,ElaborationCode,shared-rule-candidate,no,already shared: executable_profile Eligibility.BLOCK
+SI_CONSTRAINT_UNATTACHED,ElaborationCode,shared-rule-candidate,no,ES-001
+SI_CONSTRAINT_INCOMPLETE,ElaborationCode,shared-rule-candidate,yes,ES-007
+SI_RENDERING_COLLISION,ElaborationCode,codegen-specific,no,generated-name collisions
+SI_SNAPSHOT_INVALID,ElaborationCode,codegen-specific,no,snapshot route
+EXTRACTION_DIAGNOSTIC_BLOCKING,ElaborationCode,environmental,yes,SysIDE validation diagnostics (language validity)
+SI_INTERNAL_DEFECT,ElaborationCode,internal-invariant,no,the catch-all; by definition the generator's bug
+SI_SELF_BINDING,ReadinessCode,shared-rule-candidate,no,existing self-binding guidance contract
+METATYPE_CHECK_FAILED,SemanticEvidenceCode,environmental,no,SysIDE API failure
+EXPRESSION_KIND_UNSUPPORTED,SemanticEvidenceCode,shared-rule-candidate,no,
+OPERAND_ITERATION_FAILED,SemanticEvidenceCode,environmental,no,SysIDE API failure
+EXPRESSION_DEPTH_EXHAUSTED,SemanticEvidenceCode,internal-invariant,yes,a traversal limit; a deep valid model can reach it
+RESOLVED_TARGET_MISSING,SemanticEvidenceCode,shared-rule-candidate,yes,
+DOCUMENT_TIER_MISSING,SemanticEvidenceCode,environmental,no,
+DOCUMENT_TIER_UNKNOWN,SemanticEvidenceCode,environmental,no,
+RESOLVED_LEAF_MISSING,SemanticEvidenceCode,shared-rule-candidate,yes,
+INDEXED_REFERENCE_UNSUPPORTED,SemanticEvidenceCode,shared-rule-candidate,no,
+block_malformed_operand_fact,executable_profile,shared-rule,no,already shared
+block_unsupported_node,executable_profile,shared-rule,no,already shared
+block_feature_chain,executable_profile,shared-rule,no,already shared
+block_invocation,executable_profile,shared-rule,no,already shared
+block_non_predicate_root,executable_profile,shared-rule,no,already shared
+block_unsupported_operator,executable_profile,shared-rule,no,already shared
+warn_non_numerical_predicate,executable_profile,shared-rule,no,already shared (NON_NUMERICAL)
+block_invalid_assertion_polarity,executable_profile,shared-rule,no,already shared
+block_assert_by_reference,executable_profile,shared-rule,no,already shared
+block_unresolved_definition,executable_profile,shared-rule,no,already shared
+block_missing_predicate,executable_profile,shared-rule,no,already shared
+CodeGenerationError,free-text class,codegen-specific,yes,generation preflight; 35 sites with no stable code - each needs its own mapping
+PredicateCompileError,free-text class,codegen-specific,yes,may overlap executable_profile decisions
+CompilationError,free-text class,codegen-specific,yes,
+SourceAdmissionError,free-text class,environmental,no,source manifest / file admission
+SysMLParsingError,free-text class,environmental,no,
+GraphValidationError,free-text class,internal-invariant,yes,
+ExpressionInventoryError,free-text class,internal-invariant,yes,
+ScopePolicyMismatchError,free-text class,internal-invariant,yes,
+PackageSealError,free-text class,environmental,no,destination package state
+ProvenanceError,free-text class,environmental,no,destination package state
+SnapshotShapeError,free-text class,codegen-specific,no,snapshot route
+SnapshotIntegrityError,free-text class,codegen-specific,no,snapshot route
+SnapshotCompatibilityError,free-text class,codegen-specific,no,snapshot route / version skew
+SnapshotStaleSourceError,free-text class,environmental,no,
+SnapshotCertifiabilityError,free-text class,codegen-specific,no,
+ValueError,builtin,internal-invariant,yes,reaches users as SI_INTERNAL_DEFECT via catch-all (cli/__init__.py:928); 'unreachable from a valid model' is unproven per site
+TypeError,builtin,internal-invariant,yes,as ValueError
+KeyError,builtin,internal-invariant,yes,as ValueError
+RuntimeError,builtin,internal-invariant,yes,as ValueError
+AssertionError,builtin,internal-invariant,yes,as ValueError

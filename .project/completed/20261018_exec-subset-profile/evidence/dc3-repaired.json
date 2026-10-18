@@ -1,0 +1,895 @@
+{
+  "counts": {
+    "by_outcome": {
+      "admitted": 15,
+      "excluded": 0,
+      "omitted": 30,
+      "refused": 0,
+      "unconfirmed": 0
+    },
+    "declarations": 45,
+    "occurrences": 0,
+    "unassessed_constraints": 0,
+    "unverified": 0
+  },
+  "dedup": "findings keyed by (rule, shape, context, declaration UUID); occurrences per declaration in occurrence_count",
+  "findings": [
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/cooling.sysml:192",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_cooling::'Cooling System'::cold_plate_loops",
+      "subject_id": "7c96547e-dc5b-5b48-9132-efc16976d8ac",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/cooling.sysml:193",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_cooling::'Cooling System'::rear_doors",
+      "subject_id": "c4e407a2-0a7d-52e6-b67e-924caf62cd4d",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/cooling.sysml:194",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_cooling::'Cooling System'::cdus",
+      "subject_id": "643a4566-11a6-5d99-9707-b07d67ef7310",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/cooling.sysml:195",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_cooling::'Cooling System'::crahs",
+      "subject_id": "0a18eeff-e3ff-576e-974e-88f3d2eed28c",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/cooling.sysml:196",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_cooling::'Cooling System'::fan_arrays",
+      "subject_id": "5228af91-4765-5cdf-b730-0a289c24d260",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/cooling.sysml:197",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_cooling::'Cooling System'::fws_pumps",
+      "subject_id": "1dab8589-5338-5421-9247-bc0e38b5f264",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/cooling.sysml:198",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_cooling::'Cooling System'::heat_rejection",
+      "subject_id": "3601ba90-b10f-57c0-967e-bace440f87fe",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/facility.sysml:142",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_facility::'Electrical Distribution System'::path_elements",
+      "subject_id": "e535cdc7-0a1c-5758-89ba-dfc1a03a6a86",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/facility.sysml:143",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_facility::'Electrical Distribution System'::energy_storage",
+      "subject_id": "27426c80-b208-5983-b64b-257776d798a0",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/it.sysml:103",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_it::'IT Rack'::servers",
+      "subject_id": "763c7dba-4e25-5e2a-be51-2f5ee5ea9bb7",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/it.sysml:105",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_it::'IT Rack'::rack_power",
+      "subject_id": "6da26ab7-6592-5cc5-af07-170f86015614",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/it.sysml:106",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_it::'IT Rack'::rack_storage",
+      "subject_id": "7edd8266-3b9e-5bfd-8282-3efe58649ee4",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/it.sysml:117",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_it::'IT System'::racks",
+      "subject_id": "c8312da0-59d8-5ce8-9e85-9bf058b36088",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/it.sysml:118",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_it::'IT System'::core_switches",
+      "subject_id": "e70e63d9-fcbb-50e6-af4c-913c4139cb7d",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "unexpanded_part_usage",
+      "detail_reasons": [],
+      "evidence": [
+        "part-multiplicity__unresolved_bound__unexpanded_part_usage"
+      ],
+      "expected_code": "SI_MULTIPLICITY_UNRESOLVED",
+      "location": "models/library/components/compute/it.sysml:119",
+      "occurrence_count": null,
+      "outcome": "admitted",
+      "reason": "part_multiplicity_unresolved_bound",
+      "rule": "part-multiplicity",
+      "shape": "unresolved_bound",
+      "subject": "dc3_it::'IT System'::storage",
+      "subject_id": "544a45a8-c054-5886-9e3d-2743f3632cc9",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_facility.sysml:45",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_facility::'AC Coupled Facility'::electrical::mv_transformer::conversion_level",
+      "subject_id": "3156d865-db42-5c53-87d7-074de70128a7",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_facility.sysml:51",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_facility::'AC Coupled Facility'::electrical::ups::conversion_level",
+      "subject_id": "bd85a5cc-767d-5b75-90a6-eceb4f1fdf76",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_facility.sysml:57",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_facility::'AC Coupled Facility'::electrical::pdu::conversion_level",
+      "subject_id": "dbee572b-59a8-5be2-bde0-97ca598c4eeb",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_facility.sysml:81",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_facility::'AC Coupled Facility'::it_system::rack_1::distribution_kind",
+      "subject_id": "abc04f8a-9e02-54a0-93a2-8ef32f079fae",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_facility.sysml:97",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_facility::'AC Coupled Facility'::it_system::rack_2::distribution_kind",
+      "subject_id": "d47226b7-894b-523e-a5c9-f8a6b0eef94a",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_facility.sysml:125",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_facility::'AC Coupled Facility'::cooling::liquid_class",
+      "subject_id": "29e0529a-0d53-59af-b30d-1fdf85208bbe",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:26",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::genset::fuel_unit",
+      "subject_id": "d9b2b787-7646-53c4-a9f4-6840e3ce080e",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:48",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::mppt::redundancy",
+      "subject_id": "940cd2c5-ed14-553c-bc80-3afeee72ee4f",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:51",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::mppt::conversion_level",
+      "subject_id": "83655659-fb94-5496-9f8a-4a418fab47c8",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:59",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::pv_inverter::redundancy",
+      "subject_id": "f1c42cb2-dfe3-5085-839d-13dfe7215c91",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:62",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::pv_inverter::conversion_level",
+      "subject_id": "6209fce7-d3c0-52fe-8362-a6c5842ca2d8",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:70",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::pv_transformer::redundancy",
+      "subject_id": "bc3290bc-be24-55a0-872a-99e26c0d6cf0",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:73",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::pv_transformer::conversion_level",
+      "subject_id": "c19a8961-cef2-5f7a-8654-23a3a3a52e14",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:81",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::genset_transformer::redundancy",
+      "subject_id": "d965e162-3882-5209-802e-cf0060393bad",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:84",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::genset_transformer::conversion_level",
+      "subject_id": "ea2e2bfb-dfd5-5220-a290-2a5c5ebfef3f",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:94",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::bess_transformer::redundancy",
+      "subject_id": "5a786d22-cec5-560a-b64a-debd79a35606",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:97",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::bess_transformer::conversion_level",
+      "subject_id": "e8e4191d-9620-5560-a1a1-2461a91a9cf4",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/ac_coupled/ac_site.sysml:116",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "ac_coupled_site::ac_site::source_bus::redundancy",
+      "subject_id": "d632b9b6-21e4-55ec-85ac-f56cece8b18e",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/dc_native/dc_facility.sysml:48",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc_native_facility::'DC Native Facility'::electrical::bus_converter::conversion_level",
+      "subject_id": "def52cae-e0e7-5346-bdd4-62529e17009d",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/dc_native/dc_facility.sysml:59",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc_native_facility::'DC Native Facility'::electrical::aux_inverter::conversion_level",
+      "subject_id": "8574d66a-9161-53aa-9e97-8b6b9b867ad6",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/dc_native/dc_facility.sysml:81",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc_native_facility::'DC Native Facility'::it_system::rack_1::distribution_kind",
+      "subject_id": "18102dc4-e69e-5340-93c1-13d5f4f0daa9",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/dc_native/dc_facility.sysml:97",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc_native_facility::'DC Native Facility'::it_system::rack_2::distribution_kind",
+      "subject_id": "fae7a0ab-e95b-50de-b0db-382c4fb86dd6",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/dc_native/dc_facility.sysml:125",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc_native_facility::'DC Native Facility'::cooling::liquid_class",
+      "subject_id": "3f39e4a6-4da1-53ea-9e11-b0451708c27a",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/dc_native/dc_site.sysml:26",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc_native_site::dc_site::genset::fuel_unit",
+      "subject_id": "42b69202-be82-54d3-9c9e-fb31c046e614",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/dc_native/dc_site.sysml:48",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc_native_site::dc_site::mppt::redundancy",
+      "subject_id": "b7ec24f0-a582-5e56-912b-1c0a1fb2685f",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/dc_native/dc_site.sysml:51",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc_native_site::dc_site::mppt::conversion_level",
+      "subject_id": "6347177b-ab18-57d4-a6ec-24896685c8be",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/dc_native/dc_site.sysml:59",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc_native_site::dc_site::genset_rectifier::redundancy",
+      "subject_id": "0ee58d6b-157f-53d4-998b-6b0fbc323373",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/dc_native/dc_site.sysml:62",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc_native_site::dc_site::genset_rectifier::conversion_level",
+      "subject_id": "1ebd56a0-67c0-5e1d-b608-5e9f1a9ce2c9",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/dc_native/dc_site.sysml:81",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc_native_site::dc_site::source_bus::redundancy",
+      "subject_id": "b2456875-8c34-5555-b193-e95a5c1b9ca6",
+      "unsupported_callables": [],
+      "via_roots": []
+    },
+    {
+      "context": "attribute_value",
+      "detail_reasons": [],
+      "evidence": [
+        "string-value-omission__string_value__attribute_value__attribute_declaration",
+        "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+      ],
+      "expected_code": null,
+      "location": "models/designs/examples/source_load_example.sysml:41",
+      "occurrence_count": null,
+      "outcome": "omitted",
+      "reason": "string_value_not_generated",
+      "rule": "string-value-omission",
+      "shape": "string_value",
+      "subject": "dc3_source_load_example::illustrative_scenario::genset::fuel_unit",
+      "subject_id": "fdd6f079-5e44-534f-bf41-97f7dfefc878",
+      "unsupported_callables": [],
+      "via_roots": []
+    }
+  ],
+  "identity": {
+    "agentic_rev": "ce0ad1ffbc4070004d8a7a5a1b3e834f4e483508",
+    "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
+    "syside_version": "0.8.4",
+    "tree_path": "models/",
+    "tree_repo": "dc3",
+    "tree_rev": "60b44d53460fccd2f44811d8abfd42bc270e90b2"
+  },
+  "label": "dc3-repaired",
+  "load_error_diagnostics": 0,
+  "scope": {
+    "generator_roots": [
+      "dc_native_site::dc_site",
+      "dc3_source_load_example::illustrative_scenario",
+      "dc3_baseline_annual::reference_operation",
+      "dc3_baseline_annual::annual_reference",
+      "ac_coupled_site::ac_site",
+      "dc3_baseline_costs::cost_reference"
+    ],
+    "narrowed": false,
+    "not_enumerated": [],
+    "roots_available": true,
+    "roots_used": [
+      "dc_native_site::dc_site",
+      "dc3_source_load_example::illustrative_scenario",
+      "dc3_baseline_annual::reference_operation",
+      "dc3_baseline_annual::annual_reference",
+      "ac_coupled_site::ac_site",
+      "dc3_baseline_costs::cost_reference"
+    ]
+  },
+  "unverified": [],
+  "verdict": "clear",
+  "versions": {
+    "executable_profile": "executable-profile/v4",
+    "subset_profile": "subset-profile/v1"
+  }
+}

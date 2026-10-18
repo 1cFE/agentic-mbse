@@ -1,0 +1,135 @@
+{
+ "calc_attachment": {
+  "03c9a1d8-f780-5dea-8a6a-db1640c2c1c6": [
+   [
+    "occ:a139988b-61fb-5aef-84c1-e275320bd204[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "2723aea5-3a1d-5727-b73b-e2a049e47f10": 1,
+  "85f27df5-a2d6-5871-9ff5-3ed1d3baa101": 1,
+  "a139988b-61fb-5aef-84c1-e275320bd204": 1,
+  "e68a82d6-62e5-59b5-8718-6bcdd9ac8a06": 1
+ },
+ "def_occurrences": {
+  "9ee2b009-af6f-5c4c-b58c-1dffe1724eed": 2,
+  "cbc184be-47ac-5b92-8146-79e9270dbdad": 1,
+  "e8de3fd8-df03-5ec0-8457-1fb372f4f15f": 1
+ },
+ "full": {
+  "code": "None",
+  "detail": "SI_MULTIPLICITY_UNRESOLVED: <model>: reference='fx::Rack::servers': upper multiplicity on 'servers' is not a known finite integer [root-0/es004_refused_unbounded_parts.sysml:5]",
+  "ran": false,
+  "type": "ElaborationDiagnosticError"
+ },
+ "inputs": [
+  "/home/reid/src/agentic-mbse/.project/concepts/convince-me-exec-subset/evidence/01-fixtures/es004_refused_unbounded_parts.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "03c9a1d8-f780-5dea-8a6a-db1640c2c1c6": "fx::Meter::t",
+  "2723aea5-3a1d-5727-b73b-e2a049e47f10": "fx::rack",
+  "387ecbb6-134d-5b62-a4e9-209f3881ba56": "fx",
+  "4f7fc9d1-6782-5c61-b472-ef45313e827c": "fx::Rack::servers",
+  "85f27df5-a2d6-5871-9ff5-3ed1d3baa101": "fx::rack::s2",
+  "9ee2b009-af6f-5c4c-b58c-1dffe1724eed": "fx::Server",
+  "a139988b-61fb-5aef-84c1-e275320bd204": "fx::meter",
+  "cbc184be-47ac-5b92-8146-79e9270dbdad": "fx::Meter",
+  "e68a82d6-62e5-59b5-8718-6bcdd9ac8a06": "fx::rack::s1",
+  "e8de3fd8-df03-5ec0-8457-1fb372f4f15f": "fx::Rack"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "4f7fc9d1-6782-5c61-b472-ef45313e827c",
+    "85f27df5-a2d6-5871-9ff5-3ed1d3baa101",
+    "e68a82d6-62e5-59b5-8718-6bcdd9ac8a06"
+   ],
+   "closure": [
+    "e8de3fd8-df03-5ec0-8457-1fb372f4f15f"
+   ],
+   "path": "2723aea5-3a1d-5727-b73b-e2a049e47f10[]",
+   "type": "e8de3fd8-df03-5ec0-8457-1fb372f4f15f",
+   "usage": "2723aea5-3a1d-5727-b73b-e2a049e47f10"
+  },
+  {
+   "children": [],
+   "closure": [
+    "9ee2b009-af6f-5c4c-b58c-1dffe1724eed"
+   ],
+   "path": "2723aea5-3a1d-5727-b73b-e2a049e47f10[]/85f27df5-a2d6-5871-9ff5-3ed1d3baa101[]",
+   "type": "9ee2b009-af6f-5c4c-b58c-1dffe1724eed",
+   "usage": "85f27df5-a2d6-5871-9ff5-3ed1d3baa101"
+  },
+  {
+   "children": [],
+   "closure": [
+    "9ee2b009-af6f-5c4c-b58c-1dffe1724eed"
+   ],
+   "path": "2723aea5-3a1d-5727-b73b-e2a049e47f10[]/e68a82d6-62e5-59b5-8718-6bcdd9ac8a06[]",
+   "type": "9ee2b009-af6f-5c4c-b58c-1dffe1724eed",
+   "usage": "e68a82d6-62e5-59b5-8718-6bcdd9ac8a06"
+  },
+  {
+   "children": [],
+   "closure": [
+    "cbc184be-47ac-5b92-8146-79e9270dbdad"
+   ],
+   "path": "a139988b-61fb-5aef-84c1-e275320bd204[]",
+   "type": "cbc184be-47ac-5b92-8146-79e9270dbdad",
+   "usage": "a139988b-61fb-5aef-84c1-e275320bd204"
+  }
+ ],
+ "roots": [
+  "2723aea5-3a1d-5727-b73b-e2a049e47f10",
+  "a139988b-61fb-5aef-84c1-e275320bd204"
+ ],
+ "strict": {
+  "code": "SI_MULTIPLICITY_UNRESOLVED",
+  "detail": "upper multiplicity on 'servers' is not a known finite integer",
+  "ok": false,
+  "type": "MultiplicityExpansionError"
+ },
+ "unexpandable": [
+  [
+   "4f7fc9d1-6782-5c61-b472-ef45313e827c",
+   "2723aea5-3a1d-5727-b73b-e2a049e47f10[]",
+   "SI_MULTIPLICITY_UNRESOLVED"
+  ]
+ ],
+ "visits": [
+  [
+   "2723aea5-3a1d-5727-b73b-e2a049e47f10",
+   null
+  ],
+  [
+   "4f7fc9d1-6782-5c61-b472-ef45313e827c",
+   "2723aea5-3a1d-5727-b73b-e2a049e47f10[]"
+  ],
+  [
+   "85f27df5-a2d6-5871-9ff5-3ed1d3baa101",
+   "2723aea5-3a1d-5727-b73b-e2a049e47f10[]"
+  ],
+  [
+   "a139988b-61fb-5aef-84c1-e275320bd204",
+   null
+  ],
+  [
+   "e68a82d6-62e5-59b5-8718-6bcdd9ac8a06",
+   "2723aea5-3a1d-5727-b73b-e2a049e47f10[]"
+  ]
+ ],
+ "writers": [
+  [
+   "occ:a139988b-61fb-5aef-84c1-e275320bd204[]",
+   "03c9a1d8-f780-5dea-8a6a-db1640c2c1c6",
+   "03c9a1d8-f780-5dea-8a6a-db1640c2c1c6",
+   [
+    "03c9a1d8-f780-5dea-8a6a-db1640c2c1c6"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

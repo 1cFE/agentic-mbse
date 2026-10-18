@@ -1,0 +1,62 @@
+{
+ "calc_attachment": {
+  "66912f99-fb52-582c-8306-fdbae1c84fd6": [
+   [
+    "occ:ad68fd55-6af0-576f-a10b-12eed4abac4d[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "ad68fd55-6af0-576f-a10b-12eed4abac4d": 1
+ },
+ "def_occurrences": {
+  "53d56ecf-0f32-56b2-ab2e-d73fa9c0940a": 1
+ },
+ "inputs": [
+  "/home/reid/src/agentic-mbse/.project/concepts/convince-me-exec-subset/evidence/01-fixtures/unmapped_expression_calc_arg.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "387ecbb6-134d-5b62-a4e9-209f3881ba56": "fx",
+  "53d56ecf-0f32-56b2-ab2e-d73fa9c0940a": "fx::Gen",
+  "66912f99-fb52-582c-8306-fdbae1c84fd6": "fx::Gen::t",
+  "ad68fd55-6af0-576f-a10b-12eed4abac4d": "fx::gen"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "53d56ecf-0f32-56b2-ab2e-d73fa9c0940a"
+   ],
+   "path": "ad68fd55-6af0-576f-a10b-12eed4abac4d[]",
+   "type": "53d56ecf-0f32-56b2-ab2e-d73fa9c0940a",
+   "usage": "ad68fd55-6af0-576f-a10b-12eed4abac4d"
+  }
+ ],
+ "roots": [
+  "ad68fd55-6af0-576f-a10b-12eed4abac4d"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "ad68fd55-6af0-576f-a10b-12eed4abac4d",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:ad68fd55-6af0-576f-a10b-12eed4abac4d[]",
+   "66912f99-fb52-582c-8306-fdbae1c84fd6",
+   "66912f99-fb52-582c-8306-fdbae1c84fd6",
+   [
+    "66912f99-fb52-582c-8306-fdbae1c84fd6"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

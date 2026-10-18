@@ -1,0 +1,67 @@
+{
+ "calc_attachment": {
+  "fc95355f-2304-5d32-bd31-f8106c3e0aa2": [
+   [
+    "occ:2e449708-8faa-5b2b-b34d-32a1b820e261[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "2e449708-8faa-5b2b-b34d-32a1b820e261": 1
+ },
+ "def_occurrences": {
+  "d7bff504-5497-51c5-af13-54f1fffe80a3": 1
+ },
+ "full": {
+  "code": "None",
+  "detail": "SI_CONSTRAINT_UNATTACHED: <model>: reference='fx::Site::path': constraint owner does not match a supported mapped metatype: fx::Site::path [root-0/es001_refused_calc_usage_assert.sysml:8]",
+  "ran": false,
+  "type": "ElaborationDiagnosticError"
+ },
+ "inputs": [
+  "/home/reid/src/agentic-mbse/.project/concepts/convince-me-exec-subset/evidence/01-fixtures/es001_refused_calc_usage_assert.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "2e449708-8faa-5b2b-b34d-32a1b820e261": "fx::site",
+  "387ecbb6-134d-5b62-a4e9-209f3881ba56": "fx",
+  "d7bff504-5497-51c5-af13-54f1fffe80a3": "fx::Site",
+  "fc95355f-2304-5d32-bd31-f8106c3e0aa2": "fx::Site::path"
+ },
+ "occurrences": [
+  {
+   "children": [],
+   "closure": [
+    "d7bff504-5497-51c5-af13-54f1fffe80a3"
+   ],
+   "path": "2e449708-8faa-5b2b-b34d-32a1b820e261[]",
+   "type": "d7bff504-5497-51c5-af13-54f1fffe80a3",
+   "usage": "2e449708-8faa-5b2b-b34d-32a1b820e261"
+  }
+ ],
+ "roots": [
+  "2e449708-8faa-5b2b-b34d-32a1b820e261"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "2e449708-8faa-5b2b-b34d-32a1b820e261",
+   null
+  ]
+ ],
+ "writers": [
+  [
+   "occ:2e449708-8faa-5b2b-b34d-32a1b820e261[]",
+   "fc95355f-2304-5d32-bd31-f8106c3e0aa2",
+   "fc95355f-2304-5d32-bd31-f8106c3e0aa2",
+   [
+    "fc95355f-2304-5d32-bd31-f8106c3e0aa2"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

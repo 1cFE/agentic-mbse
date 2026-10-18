@@ -1,0 +1,208 @@
+{
+ "calc_attachment": {
+  "428767a1-2620-538e-93d6-022b08f3dae9": [
+   [
+    "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]/2a42b86b-05a9-5b1c-a1ca-5fd6e633b86d[]"
+   ],
+   null
+  ],
+  "60be9090-e866-5a50-af39-91f9563c7fd5": [
+   [
+    "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]"
+   ],
+   null
+  ],
+  "8155d536-38cf-53e0-86dd-89eb2100bf70": [
+   [
+    "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]"
+   ],
+   null
+  ],
+  "93dddad2-cc0f-58a2-bc1e-e0ac0dee8a58": [
+   [
+    "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]"
+   ],
+   null
+  ],
+  "a0dbba26-9342-5e42-a008-6311155474eb": [
+   [
+    "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]/a593ea48-a04c-5096-9106-1f8f5ef9733a[]"
+   ],
+   null
+  ],
+  "cd716e4b-e4bc-5210-b741-35c678519d73": [
+   [
+    "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]"
+   ],
+   null
+  ]
+ },
+ "counts": {
+  "2a42b86b-05a9-5b1c-a1ca-5fd6e633b86d": 1,
+  "5a1c91ae-9fdc-5ade-a30c-f43e6f223c20": 1,
+  "96cfc4e8-3fea-5a5f-9806-c0434215e0e8": 1,
+  "a593ea48-a04c-5096-9106-1f8f5ef9733a": 1
+ },
+ "def_occurrences": {
+  "3e04b804-1172-5db1-8752-e7104181c4f8": 1,
+  "4b91ac5e-b0f0-50ce-9bbb-e2b7214df1e4": 1,
+  "5828f3ae-38d0-5cca-a5a2-b165355c8320": 1,
+  "5fe4f001-0e77-541c-88c3-7e964916ac98": 1,
+  "7c9661cb-db73-5da9-b02a-e321711d4abf": 0,
+  "e4cb1798-eb55-5bdf-adc3-a0b0764dac30": 1,
+  "efced03b-f690-587b-9cc9-427a27a492f1": 1,
+  "fe60d84a-a625-577f-ab88-423de6498736": 1
+ },
+ "full": {
+  "code": "None",
+  "detail": "SI_TYPE_INVALID: PlantValueShapesLib::ChamberSelectCalc::wall: reference='PlantValueShapesLib::ChamberSelectCalc::wall': extract_type: typing target \"PlantValueShapesLib::'Wall Kind'\" is unsupported; expected one of ScalarValues::Boolean, ScalarValues::Integer, ScalarValues::Real, or ScalarValues::S",
+  "ran": false,
+  "type": "ElaborationDiagnosticError"
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/plant_value_shapes"
+ ],
+ "load_errors": false,
+ "names": {
+  "2a42b86b-05a9-5b1c-a1ca-5fd6e633b86d": "PlantValueShapesDesign::shapes_design::chamber_unit",
+  "3e04b804-1172-5db1-8752-e7104181c4f8": "PlantValueShapesLib::'Chain L1'",
+  "428767a1-2620-538e-93d6-022b08f3dae9": "PlantValueShapesLib::'Chamber Unit'::select",
+  "4b91ac5e-b0f0-50ce-9bbb-e2b7214df1e4": "PlantValueShapesLib::'Chain L4'",
+  "5828f3ae-38d0-5cca-a5a2-b165355c8320": "PlantValueShapesLib::'Chamber Unit'",
+  "5a1c91ae-9fdc-5ade-a30c-f43e6f223c20": "PlantValueShapesDesign::shapes_design::chain_unit",
+  "5fe4f001-0e77-541c-88c3-7e964916ac98": "PlantValueShapesLib::'Chain L3'",
+  "60be9090-e866-5a50-af39-91f9563c7fd5": "PlantValueShapesDesign::shapes_design::mixed_style",
+  "7c9661cb-db73-5da9-b02a-e321711d4abf": "PlantValueShapesLib::'Chain L5'",
+  "8155d536-38cf-53e0-86dd-89eb2100bf70": "PlantValueShapesDesign::shapes_design::net_cost_calc",
+  "93dddad2-cc0f-58a2-bc1e-e0ac0dee8a58": "PlantValueShapesDesign::shapes_design::quoted_return",
+  "95976e84-e466-5dd8-a168-c9932912dfb4": "PlantValueShapesDesign",
+  "96cfc4e8-3fea-5a5f-9806-c0434215e0e8": "PlantValueShapesDesign::shapes_design",
+  "a0dbba26-9342-5e42-a008-6311155474eb": "PlantValueShapesLib::'Flow Sub'::flow_calc",
+  "a593ea48-a04c-5096-9106-1f8f5ef9733a": "PlantValueShapesDesign::shapes_design::flow_unit",
+  "cbfa25bf-b3a8-52e4-9e3a-162c9ec6d506": "PlantValueShapesLib",
+  "cd716e4b-e4bc-5210-b741-35c678519d73": "PlantValueShapesDesign::shapes_design::rated_cost",
+  "e4cb1798-eb55-5bdf-adc3-a0b0764dac30": "PlantValueShapesLib::'Flow Base'",
+  "efced03b-f690-587b-9cc9-427a27a492f1": "PlantValueShapesLib::'Chain L2'",
+  "fe60d84a-a625-577f-ab88-423de6498736": "PlantValueShapesLib::'Flow Sub'"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "2a42b86b-05a9-5b1c-a1ca-5fd6e633b86d",
+    "5a1c91ae-9fdc-5ade-a30c-f43e6f223c20",
+    "a593ea48-a04c-5096-9106-1f8f5ef9733a"
+   ],
+   "closure": [],
+   "path": "96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]",
+   "type": null,
+   "usage": "96cfc4e8-3fea-5a5f-9806-c0434215e0e8"
+  },
+  {
+   "children": [],
+   "closure": [
+    "5828f3ae-38d0-5cca-a5a2-b165355c8320"
+   ],
+   "path": "96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]/2a42b86b-05a9-5b1c-a1ca-5fd6e633b86d[]",
+   "type": "5828f3ae-38d0-5cca-a5a2-b165355c8320",
+   "usage": "2a42b86b-05a9-5b1c-a1ca-5fd6e633b86d"
+  },
+  {
+   "children": [],
+   "closure": [
+    "3e04b804-1172-5db1-8752-e7104181c4f8",
+    "4b91ac5e-b0f0-50ce-9bbb-e2b7214df1e4",
+    "5fe4f001-0e77-541c-88c3-7e964916ac98",
+    "efced03b-f690-587b-9cc9-427a27a492f1"
+   ],
+   "path": "96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]/5a1c91ae-9fdc-5ade-a30c-f43e6f223c20[]",
+   "type": "4b91ac5e-b0f0-50ce-9bbb-e2b7214df1e4",
+   "usage": "5a1c91ae-9fdc-5ade-a30c-f43e6f223c20"
+  },
+  {
+   "children": [],
+   "closure": [
+    "e4cb1798-eb55-5bdf-adc3-a0b0764dac30",
+    "fe60d84a-a625-577f-ab88-423de6498736"
+   ],
+   "path": "96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]/a593ea48-a04c-5096-9106-1f8f5ef9733a[]",
+   "type": "fe60d84a-a625-577f-ab88-423de6498736",
+   "usage": "a593ea48-a04c-5096-9106-1f8f5ef9733a"
+  }
+ ],
+ "roots": [
+  "96cfc4e8-3fea-5a5f-9806-c0434215e0e8"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "2a42b86b-05a9-5b1c-a1ca-5fd6e633b86d",
+   "96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]"
+  ],
+  [
+   "5a1c91ae-9fdc-5ade-a30c-f43e6f223c20",
+   "96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]"
+  ],
+  [
+   "96cfc4e8-3fea-5a5f-9806-c0434215e0e8",
+   null
+  ],
+  [
+   "a593ea48-a04c-5096-9106-1f8f5ef9733a",
+   "96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]"
+  ]
+ ],
+ "writers": [
+  [
+   "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]",
+   "60be9090-e866-5a50-af39-91f9563c7fd5",
+   "60be9090-e866-5a50-af39-91f9563c7fd5",
+   [
+    "60be9090-e866-5a50-af39-91f9563c7fd5"
+   ]
+  ],
+  [
+   "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]",
+   "8155d536-38cf-53e0-86dd-89eb2100bf70",
+   "8155d536-38cf-53e0-86dd-89eb2100bf70",
+   [
+    "8155d536-38cf-53e0-86dd-89eb2100bf70"
+   ]
+  ],
+  [
+   "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]",
+   "93dddad2-cc0f-58a2-bc1e-e0ac0dee8a58",
+   "93dddad2-cc0f-58a2-bc1e-e0ac0dee8a58",
+   [
+    "93dddad2-cc0f-58a2-bc1e-e0ac0dee8a58"
+   ]
+  ],
+  [
+   "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]",
+   "cd716e4b-e4bc-5210-b741-35c678519d73",
+   "cd716e4b-e4bc-5210-b741-35c678519d73",
+   [
+    "cd716e4b-e4bc-5210-b741-35c678519d73"
+   ]
+  ],
+  [
+   "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]/2a42b86b-05a9-5b1c-a1ca-5fd6e633b86d[]",
+   "428767a1-2620-538e-93d6-022b08f3dae9",
+   "428767a1-2620-538e-93d6-022b08f3dae9",
+   [
+    "428767a1-2620-538e-93d6-022b08f3dae9"
+   ]
+  ],
+  [
+   "occ:96cfc4e8-3fea-5a5f-9806-c0434215e0e8[]/a593ea48-a04c-5096-9106-1f8f5ef9733a[]",
+   "a0dbba26-9342-5e42-a008-6311155474eb",
+   "a0dbba26-9342-5e42-a008-6311155474eb",
+   [
+    "a0dbba26-9342-5e42-a008-6311155474eb"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

@@ -1,0 +1,98 @@
+{
+ "calc_attachment": {
+  "8c9bc35b-e547-5db4-b772-41871dc3a9d6": [
+   [
+    "occ:ccf97e0c-5470-5bad-9805-b1f81bb0e1b5[]"
+   ],
+   null
+  ],
+  "e7c1c785-29c9-5bcc-af7a-adc70b0803ec": [
+   [
+    "occ:ccf97e0c-5470-5bad-9805-b1f81bb0e1b5[]/029871b5-c818-5ead-bb1b-85e369fcf57c[]"
+   ],
+   null
+  ]
+ },
+ "codegen_imported": false,
+ "counts": {
+  "ccf97e0c-5470-5bad-9805-b1f81bb0e1b5": 1,
+  "f22b3574-323d-5799-bd7d-e5b605d5987d": 1
+ },
+ "def_occurrences": {
+  "665c33e7-3e1c-5322-883c-b33c572861df": 1,
+  "70ae798b-7864-5e6e-87be-de9bb611836c": 1
+ },
+ "inputs": [
+  "/tmp/f1spike/sysml-codegen/tests/fixtures/chain_override_probe"
+ ],
+ "load_errors": false,
+ "names": {
+  "029871b5-c818-5ead-bb1b-85e369fcf57c": "ChainOverrideLibrary::'Instrument Package'::sensor",
+  "665c33e7-3e1c-5322-883c-b33c572861df": "ChainOverrideLibrary::'Instrument Package'",
+  "70ae798b-7864-5e6e-87be-de9bb611836c": "ChainOverrideLibrary::Sensor",
+  "8c9bc35b-e547-5db4-b772-41871dc3a9d6": "ChainOverrideLibrary::'Instrument Package'::calibration",
+  "980a3215-46fb-549e-9d2c-a71cc69eefb2": "ChainOverrideDesign",
+  "ccf97e0c-5470-5bad-9805-b1f81bb0e1b5": "ChainOverrideDesign::instrument_design",
+  "e7c1c785-29c9-5bcc-af7a-adc70b0803ec": "ChainOverrideLibrary::Sensor::cost_model",
+  "ed1d865a-efa4-5c56-98b5-5e3b08bc71f7": "ChainOverrideLibrary",
+  "f22b3574-323d-5799-bd7d-e5b605d5987d": "ChainOverrideDesign::instrument_design::sensor"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "f22b3574-323d-5799-bd7d-e5b605d5987d"
+   ],
+   "closure": [
+    "665c33e7-3e1c-5322-883c-b33c572861df"
+   ],
+   "path": "ccf97e0c-5470-5bad-9805-b1f81bb0e1b5[]",
+   "type": "665c33e7-3e1c-5322-883c-b33c572861df",
+   "usage": "ccf97e0c-5470-5bad-9805-b1f81bb0e1b5"
+  },
+  {
+   "children": [],
+   "closure": [
+    "70ae798b-7864-5e6e-87be-de9bb611836c"
+   ],
+   "path": "ccf97e0c-5470-5bad-9805-b1f81bb0e1b5[]/029871b5-c818-5ead-bb1b-85e369fcf57c[]",
+   "type": "70ae798b-7864-5e6e-87be-de9bb611836c",
+   "usage": "f22b3574-323d-5799-bd7d-e5b605d5987d"
+  }
+ ],
+ "roots": [
+  "ccf97e0c-5470-5bad-9805-b1f81bb0e1b5"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "ccf97e0c-5470-5bad-9805-b1f81bb0e1b5",
+   null
+  ],
+  [
+   "f22b3574-323d-5799-bd7d-e5b605d5987d",
+   "ccf97e0c-5470-5bad-9805-b1f81bb0e1b5[]"
+  ]
+ ],
+ "writers": [
+  [
+   "occ:ccf97e0c-5470-5bad-9805-b1f81bb0e1b5[]",
+   "8c9bc35b-e547-5db4-b772-41871dc3a9d6",
+   "8c9bc35b-e547-5db4-b772-41871dc3a9d6",
+   [
+    "8c9bc35b-e547-5db4-b772-41871dc3a9d6"
+   ]
+  ],
+  [
+   "occ:ccf97e0c-5470-5bad-9805-b1f81bb0e1b5[]/029871b5-c818-5ead-bb1b-85e369fcf57c[]",
+   "e7c1c785-29c9-5bcc-af7a-adc70b0803ec",
+   "e7c1c785-29c9-5bcc-af7a-adc70b0803ec",
+   [
+    "e7c1c785-29c9-5bcc-af7a-adc70b0803ec"
+   ]
+  ]
+ ],
+ "writers_status": "ok"
+}

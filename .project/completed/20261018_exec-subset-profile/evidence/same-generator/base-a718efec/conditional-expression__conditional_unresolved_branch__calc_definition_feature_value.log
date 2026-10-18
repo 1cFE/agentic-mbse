@@ -1,0 +1,9 @@
+$ /tmp/subset-profile/run-f2c2bcz1/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-f2c2bcz1/probes/conditional-expression__conditional_unresolved_branch__calc_definition_feature_value/in/model.sysml --output /tmp/subset-profile/run-f2c2bcz1/probes/conditional-expression__conditional_unresolved_branch__calc_definition_feature_value/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/subset-profile/run-f2c2bcz1/probes/conditional-expression__conditional_unresolved_branch__calc_definition_feature_value/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-f2c2bcz1/probes/conditional-expression__conditional_unresolved_branch__calc_definition_feature_value/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: if a < b ? a else b: reference='if a < b ? a else b': inspect_reference_uses: resolved reference has no exact target [root-0/model.sysml:3]

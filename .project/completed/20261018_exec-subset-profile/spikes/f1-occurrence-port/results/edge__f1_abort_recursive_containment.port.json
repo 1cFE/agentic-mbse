@@ -1,0 +1,24 @@
+{
+ "codegen_imported": false,
+ "fatal": {
+  "cause": "containment_recursive",
+  "detail": "re-enters f7e257cd-22d6-5921-bc56-fde1433228f6 at f1i::B::a",
+  "stage": "occurrences"
+ },
+ "inputs": [
+  "/home/reid/src/agentic-mbse/.project/active/exec-subset-profile/spikes/f1-occurrence-port/fixtures/f1_abort_recursive_containment.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "0c64211d-2ed1-56ef-b32a-3260dd495100": "f1i::B::a",
+  "160d6ece-a9ec-512f-b0c1-6a6c7f88a0b2": "f1i::B",
+  "1f88ae0b-221a-56c9-ad6c-774cabd1a7b6": "f1i",
+  "dc971c6d-625d-57bd-87d8-3ca98433491e": "f1i::x",
+  "f7e257cd-22d6-5921-bc56-fde1433228f6": "f1i::A",
+  "fefb4a02-4afa-53d8-9739-87ef09187651": "f1i::A::b"
+ },
+ "strict": {
+  "cause": "containment_recursive",
+  "ok": false
+ }
+}
