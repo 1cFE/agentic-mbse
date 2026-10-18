@@ -36,3 +36,9 @@
 **Smells:** Smell 3 (a special category exempts a case whose user-visible meaning is unchanged) fired on F1: to the consumer, "inside the article" `data:` links look the same as the icons it reported. No other smell fired. Both routes are tested independently.
 
 **Gate:** BLOCKED (audit-F1). F2 is accepted, F3 is folded into F1, F4 is deferred.
+
+## audit round 2 — 2026-10-18 — rev 2e4ff5a4
+
+**Re-check of audit-F1 (not a new lens run).** Design D18 `[AGENT]` saves in-article `data:` images as files under `images/`. B3's fix drops the listing download buttons. The live output on both routes now has 0 `data:` occurrences, and the 31 refs are all local files. The owner's done-condition ("stop stripping data: images") is met in code, and no paper content was dropped: the listing text survives inline. The consumer-facing docs still describe the old behavior (audit round 2, Blocker 1).
+
+**Gate:** CLEAR in code. audit-F1 is resolved by D18, and the docs follow-up is tracked in the audit. F3 (title logo) and F4 (provenance) are unchanged: follow-ups.

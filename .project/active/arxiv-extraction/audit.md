@@ -134,3 +134,85 @@ The new module is cohesive. The routes share loading, selection, conversion and 
 - I did not check behavior on arXiv layouts other than the three saved reference pages.
 - I did not exercise Windows `file://` path handling.
 - I did not review the personal-os consumer code.
+
+---
+
+## Round 2
+
+**Verdict:** Needs Work (docs only: three stale sentences; the code is certifiable)
+**Audited:** 2026-10-18
+**Commit:** `2e4ff5a4` (round-2 changes `ec75552a..2e4ff5a4`)
+
+### Summary
+
+The round-1 must-fix is resolved in code, and so are the five suggestions taken. The new code meets the bar:
+
+- It reads like its neighbors.
+- The two routes share one image path.
+- Every new except names its exceptions.
+- The tests run real HTML, real Pandoc and real `data:` payloads.
+
+One thing is left. Three sentences in the docs still describe the old behavior. They tell readers that `data:` images are never touched and nothing inside the article is removed. That is the opposite of what the code now does, on exactly the point the consumer relies on. The fix is docs only, and a targeted re-check of those lines is enough to certify.
+
+### Round-1 must-fix: in-article `data:` links (resolved in code)
+
+The orchestrator chose to externalize them, as design D18 `[AGENT]`, which was the round-1 recommendation. The owner never ruled. D18 meets the owner's verbatim done-condition ("stop stripping data: images") and drops no paper content, so the conflict is gone. It no longer needs an owner decision.
+
+- **How it works.** `persist_images` treats a `data:` ref as one more image source (`arxiv_html.py:322-354`, `:384-393`, `:403-441`). It decodes the payload, writes it once under a content-hash name, and rewrites every occurrence. An undecodable payload stays inline with one warning, and the warning cuts the payload to 40 characters. `saved_count` counts distinct files.
+- **Live evidence (`/tmp/harness2-d18-*`, which I re-inspected).** Both routes have 0 `data:` occurrences in `output.md`. Each has 31 files, made of 19 figures plus 12 in-article pictures, with `image_count` 31 and no warnings.
+- **Spec correction.** The wrong evidence line at `spec.md:29` is corrected with a dated note.
+- **A falsified bet (B3), handled properly.** D18's live rerun found 6 more `data:` links. They were `data:text/plain` copies attached to LaTeXML's code-listing download buttons, about 36 KB. `extract_article` now drops exactly that button shape (`arxiv_html.py:48`, `:200`). The design records the falsification. I checked that nothing is lost: I decoded all 6 payloads from `ref/2610.14224.html` and searched for their lines in the live output. Every line I spot-checked is present, and the only differences are Markdown escaping (backticks become quotes, `<` becomes `\<`). The listing text renders inline, so the button was pure duplication.
+
+### Taken suggestions
+
+| # | Round-1 suggestion | Status |
+|---|---|---|
+| 1 | Image failures crash the run | Resolved. `_IMAGE_FAILURES = (OSError, ValueError, http.client.HTTPException, ImageFetchError)` (`arxiv_html.py:386`), named, not bare. Ref resolution moved inside the `try`, which catches my round-1 reproducer `http://[::1/x.png`. Tests cover `ValueError`, `IncompleteRead`, `RemoteDisconnected`, a timeout, and an `IncompleteRead` through the PDF route |
+| 2 | A web double failure loses the reason | Resolved. The error result carries `extraction_warnings` (`web_backend.py:286`), and the CLI FAIL branch prints them (`extract_cli.py:258`). Tested at both layers |
+| 3 | A generic runner wears an arXiv name | Resolved. The public `run_pandoc` raises a neutral `PandocError` (`arxiv_html.py:51`, `:209`). `convert_article` re-raises it as `ArxivConversionError` with the cause chained, so arXiv callers are unchanged. No private name crosses modules |
+| 5 | Docs name the wrong owner of the Pandoc flags | Resolved (`docs/extraction-internals.md:310-314`) |
+| 6 | The web route builds its `ArxivSource` late | Resolved. One `source` feeds both the article and `image_base` (`web_backend.py:244-253`), the same shape as the PDF route |
+| 4, 7 | Route sanitize asymmetry; `detect_arxiv_id` shim | Left deliberately, as recorded. Both are notes, not defects |
+
+The web char-count fix is also correct. Images are now saved on the body before frontmatter (`web_backend.py:325-343`), and `compute_metrics(markdown)` runs after that (`:355`). The web and PDF routes now count the same thing: the body as written. A test pins `metrics.json` against `output.md`.
+
+### Blockers
+
+1. **Docs contradict the code on `data:` images and article cleanup.** The spec's Completion section requires the behavior to be documented, and these sentences describe the old behavior:
+   - `docs/extraction-internals.md:316` says "`data:` URIs are never touched." In fact, with an images directory they are decoded and saved under `images/<hash>.<ext>`.
+   - `docs/extraction-internals.md:306` says "Nothing inside it is removed." In fact, LaTeXML listing download buttons are removed (B3).
+   - `docs/extraction.md:107` says in-article "`data:` URIs are kept" and that figures are "downloaded". The consumer-facing statement should say that in-article `data:` images are saved to `images/` as files, so `output.md` has no `data:` links when an images directory is configured. It should also say that, without an images directory, they stay inline.
+
+   Impact if unaddressed: a consumer reading the docs would conclude it still needs its `data:` stripping workaround. Undoing that workaround is the point of this item. Fix: amend those three sentences. A targeted re-check is enough.
+
+### Advisory (new code)
+
+1. **The spec's R4 wording is now out of date.** It says "Cleanup removes nothing inside the recognized paper container for being a data URI" (`spec.md:77`). That still holds for images, which are saved rather than removed. But the listing-button removal deletes a `data:` link inside the container. It is removed because it is a duplicate UI button, not because it is a data URI, so the spec's letter holds. A one-line amendment to R4 naming the B3 exception would keep the spec honest. This is an `[AGENT]` decision, surfaced in the plan and accepted by the orchestrator. The owner hasn't seen it, but it serves the owner's goal of no `data:` links.
+2. **The listing-button regex depends on exact markup** (`arxiv_html.py:48`). It matches only the literal `<div class="ltx_listing_data"><a …>…</a></div>`. If LaTeXML changes its attribute order or whitespace, the buttons would come back, about 36 KB of `data:text/plain` per paper. Nothing would warn, because `persist_images` only sees image refs. The fixture test pins today's shape. This is low risk and a reasonable trade for a narrow removal. A test asserting that no `data:` text remains on the full fixture would catch drift. The image helper checks only `data:image`.
+3. **`ValueError` is now caught across the whole per-ref block** (`arxiv_html.py:420-431`). That covers resolve, decode, read and write. It is named and documented, but a real programming error that raises `ValueError` inside this block would become a warning instead of a crash. The trade is acceptable given the R1 rule that every failure warns, but note it.
+
+### Verification
+
+- **Full suite** (Pandoc 3.1.3 on PATH, `SYSIDE_LICENSE_KEY` set): 2928 passed, 3 failed, 1 skipped, 14 deselected, 1 xfailed. The 3 failures are the known baseline: PIL and two `test_index.py` hard-coded paths.
+- **Focused extraction suites:** 421 passed, none skipped.
+- **Lint and types:** `ruff check` is clean on every touched file, the touched new files are formatted, and mypy is at its 97-error baseline.
+- **Tests stub only at the network and subprocess boundaries,** and the new `data:` tests use real base64 and percent-encoded payloads.
+
+### Certification (round 2)
+
+**Checked:**
+
+- The source and docs diff `373a34df..2e4ff5a4`.
+- The plan's "Post-audit fixes" notes and the D18 and B3 entries in the design.
+- The spec correction.
+- The live D18 outputs: `data:` counts, file counts, and listing text survival against the decoded payloads.
+- Both test suites, lint and types.
+
+**Marked:** nothing new. The plan phases were already ticked and the spec has no checkboxes. `CURRENT_WORK.md` is updated, and the product-lens ledger has a round-2 note.
+
+**Not checked:**
+
+- I did not re-run the live network check; I used the recorded `/tmp/harness2-d18-*` outputs.
+- I did not run the slow corpus tests.
+- I did not check arXiv layouts beyond the saved reference pages.
+- The title-logo follow-up and the owner's default-on gate stay open, and neither blocks.
