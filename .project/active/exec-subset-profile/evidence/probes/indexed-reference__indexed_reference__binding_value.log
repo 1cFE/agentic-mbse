@@ -1,9 +1,9 @@
-$ /tmp/subset-profile/run-md3eae1z/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-md3eae1z/probes/indexed-reference__indexed_reference__binding_value/in/model.sysml --output /tmp/subset-profile/run-md3eae1z/probes/indexed-reference__indexed_reference__binding_value/out
+$ /tmp/subset-profile/run-hz1co5y6/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-hz1co5y6/probes/indexed-reference__indexed_reference__binding_value/in/model.sysml --output /tmp/subset-profile/run-hz1co5y6/probes/indexed-reference__indexed_reference__binding_value/out
 exit=1 timed_out=False
 --- stdout
 --- stderr
-INFO: Generating code from /tmp/subset-profile/run-md3eae1z/probes/indexed-reference__indexed_reference__binding_value/in/model.sysml
-INFO: Output to /tmp/subset-profile/run-md3eae1z/probes/indexed-reference__indexed_reference__binding_value/out
+INFO: Generating code from /tmp/subset-profile/run-hz1co5y6/probes/indexed-reference__indexed_reference__binding_value/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-hz1co5y6/probes/indexed-reference__indexed_reference__binding_value/out
 INFO: Package name: generated_code
 INFO: Building pipeline context...
 ERROR: Model failed exact-route validation: SI_INDEXED_SOURCE_UNSUPPORTED: qs#(1).v: reference='qs#(1).v': expression_evidence: indexed element reference is valid SysML but not implemented by this executable subset; the index is never flattened into a supported source [root-0/model.sysml:8]

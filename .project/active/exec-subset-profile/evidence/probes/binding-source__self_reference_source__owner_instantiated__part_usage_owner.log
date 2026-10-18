@@ -1,9 +1,9 @@
-$ /tmp/subset-profile/run-md3eae1z/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-md3eae1z/probes/binding-source__self_reference_source__owner_instantiated__part_usage_owner/in/model.sysml --output /tmp/subset-profile/run-md3eae1z/probes/binding-source__self_reference_source__owner_instantiated__part_usage_owner/out
+$ /tmp/subset-profile/run-hz1co5y6/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-hz1co5y6/probes/binding-source__self_reference_source__owner_instantiated__part_usage_owner/in/model.sysml --output /tmp/subset-profile/run-hz1co5y6/probes/binding-source__self_reference_source__owner_instantiated__part_usage_owner/out
 exit=1 timed_out=False
 --- stdout
 --- stderr
-INFO: Generating code from /tmp/subset-profile/run-md3eae1z/probes/binding-source__self_reference_source__owner_instantiated__part_usage_owner/in/model.sysml
-INFO: Output to /tmp/subset-profile/run-md3eae1z/probes/binding-source__self_reference_source__owner_instantiated__part_usage_owner/out
+INFO: Generating code from /tmp/subset-profile/run-hz1co5y6/probes/binding-source__self_reference_source__owner_instantiated__part_usage_owner/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-hz1co5y6/probes/binding-source__self_reference_source__owner_instantiated__part_usage_owner/out
 INFO: Package name: generated_code
 INFO: Building pipeline context...
 ERROR: Model is not ready for the exact route: SI_SELF_BINDING: fx__site__t.v: reference='v': unsupported exact source form reference ('v') [root-0/model.sysml:5]

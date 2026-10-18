@@ -1,9 +1,9 @@
-$ /tmp/subset-profile/run-md3eae1z/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-md3eae1z/probes/part-multiplicity__range__expanded_part_usage__subtype/in/model.sysml --output /tmp/subset-profile/run-md3eae1z/probes/part-multiplicity__range__expanded_part_usage__subtype/out
+$ /tmp/subset-profile/run-hz1co5y6/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-hz1co5y6/probes/part-multiplicity__range__expanded_part_usage__subtype/in/model.sysml --output /tmp/subset-profile/run-hz1co5y6/probes/part-multiplicity__range__expanded_part_usage__subtype/out
 exit=1 timed_out=False
 --- stdout
 --- stderr
-INFO: Generating code from /tmp/subset-profile/run-md3eae1z/probes/part-multiplicity__range__expanded_part_usage__subtype/in/model.sysml
-INFO: Output to /tmp/subset-profile/run-md3eae1z/probes/part-multiplicity__range__expanded_part_usage__subtype/out
+INFO: Generating code from /tmp/subset-profile/run-hz1co5y6/probes/part-multiplicity__range__expanded_part_usage__subtype/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-hz1co5y6/probes/part-multiplicity__range__expanded_part_usage__subtype/out
 INFO: Package name: generated_code
 INFO: Building pipeline context...
 ERROR: Model failed exact-route validation: SI_MULTIPLICITY_UNSUPPORTED: <model>: reference='fx::Rack::servers': range multiplicity on 'servers' is outside the supported occurrence model [root-0/model.sysml:5]

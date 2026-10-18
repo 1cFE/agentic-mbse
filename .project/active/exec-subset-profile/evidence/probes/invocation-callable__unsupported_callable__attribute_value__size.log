@@ -1,9 +1,9 @@
-$ /tmp/subset-profile/run-md3eae1z/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-md3eae1z/probes/invocation-callable__unsupported_callable__attribute_value__size/in/model.sysml --output /tmp/subset-profile/run-md3eae1z/probes/invocation-callable__unsupported_callable__attribute_value__size/out
+$ /tmp/subset-profile/run-hz1co5y6/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-hz1co5y6/probes/invocation-callable__unsupported_callable__attribute_value__size/in/model.sysml --output /tmp/subset-profile/run-hz1co5y6/probes/invocation-callable__unsupported_callable__attribute_value__size/out
 exit=1 timed_out=False
 --- stdout
 --- stderr
-INFO: Generating code from /tmp/subset-profile/run-md3eae1z/probes/invocation-callable__unsupported_callable__attribute_value__size/in/model.sysml
-INFO: Output to /tmp/subset-profile/run-md3eae1z/probes/invocation-callable__unsupported_callable__attribute_value__size/out
+INFO: Generating code from /tmp/subset-profile/run-hz1co5y6/probes/invocation-callable__unsupported_callable__attribute_value__size/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-hz1co5y6/probes/invocation-callable__unsupported_callable__attribute_value__size/out
 INFO: Package name: generated_code
 INFO: Building pipeline context...
 ERROR: Model failed exact-route validation: SI_EXPRESSION_SOURCE_UNSUPPORTED: SequenceFunctions::size((a, b)): reference='SequenceFunctions::size((a, b))': inspect_reference_uses: invocation of 'SequenceFunctions::size' is valid SysML but is not supported by this executable subset; only NumericalFunctions::sum is supported [root-0/model.sysml:6]

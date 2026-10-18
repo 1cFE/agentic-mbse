@@ -1,10 +1,10 @@
-$ /tmp/subset-profile/run-md3eae1z/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-md3eae1z/probes/constraint-predicate__blocked_predicate__owner_instantiated__subtype/in/model.sysml --output /tmp/subset-profile/run-md3eae1z/probes/constraint-predicate__blocked_predicate__owner_instantiated__subtype/out
+$ /tmp/subset-profile/run-hz1co5y6/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/subset-profile/run-hz1co5y6/probes/constraint-predicate__blocked_predicate__owner_instantiated__subtype/in/model.sysml --output /tmp/subset-profile/run-hz1co5y6/probes/constraint-predicate__blocked_predicate__owner_instantiated__subtype/out
 exit=1 timed_out=False
 --- stdout
 --- stderr
-INFO: Generating code from /tmp/subset-profile/run-md3eae1z/probes/constraint-predicate__blocked_predicate__owner_instantiated__subtype/in/model.sysml
-INFO: Output to /tmp/subset-profile/run-md3eae1z/probes/constraint-predicate__blocked_predicate__owner_instantiated__subtype/out
+INFO: Generating code from /tmp/subset-profile/run-hz1co5y6/probes/constraint-predicate__blocked_predicate__owner_instantiated__subtype/in/model.sysml
+INFO: Output to /tmp/subset-profile/run-hz1co5y6/probes/constraint-predicate__blocked_predicate__owner_instantiated__subtype/out
 INFO: Package name: generated_code
 INFO: Building pipeline context...
-WARNING: Extraction diagnostic: [advisory/vacuous_asserted_gate] ///tmp/subset-profile/run-md3eae1z/probes/constraint-predicate__blocked_predicate__owner_instantiated__subtype/in/model.sysml:6:9: asserted constraint fx::Site::c can never be checked: its owner fx::Site is not typed by any part usage in the model, so nothing instantiates it
+WARNING: Extraction diagnostic: [advisory/vacuous_asserted_gate] ///tmp/subset-profile/run-hz1co5y6/probes/constraint-predicate__blocked_predicate__owner_instantiated__subtype/in/model.sysml:6:9: asserted constraint fx::Site::c can never be checked: its owner fx::Site is not typed by any part usage in the model, so nothing instantiates it
 ERROR: Model failed exact-route validation: SI_CONSTRAINT_BLOCKED: fx__big__c: constraint profile blocked execution: block_non_numerical_containment: the numerical assertion contains a non-numerical feature_ref and generation stops; separate it into its own assertion or rewrite it as a numerical comparison [model.sysml:6]

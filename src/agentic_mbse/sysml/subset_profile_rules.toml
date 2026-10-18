@@ -13,7 +13,7 @@ schema = 1
 
 [verified_against]
 codegen_rev = "b5663c07e987a892e27d21e68cec40d0656574ee"
-agentic_rev = "ecc18940e06c845c4cb1650135ee959d4aba8614"
+agentic_rev = "b1e95ec93598a60aa95fd14cf16256dab6e3d047"
 syside_version = "0.8.4"
 
 # ---- ES-003, ES-012, self-binding ---------------------------------------------------------------
