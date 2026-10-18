@@ -18,11 +18,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -42,26 +42,23 @@ from tests.helpers.subset_probe_judge import PINNED_CODEGEN_REV  # noqa: E402
 
 OUT_DIR = REPO_ROOT / ".project" / "active" / "exec-subset-profile" / "evidence" / "codegen-suite"
 SUITE_TIMEOUT_S = 3600
-#: One `-rA` short-summary line: outcome, then the node id, then an optional reason.
-_SUMMARY = re.compile(r"^(PASSED|FAILED|ERROR|SKIPPED|XFAIL|XPASS) (\S+)")
 
 
-def outcomes(report: str) -> dict[str, str]:
-    """Node id → outcome, read from pytest's `-rA` short test summary."""
+def outcomes(junit: Path) -> dict[str, str]:
+    """Test id → outcome (`passed`, `failed`, `error`, `skipped`), read from pytest's JUnit XML.
+
+    A repeated id is an error: it would let one outcome hide another in the comparison.
+    """
     found: dict[str, str] = {}
-    in_summary = False
-    for line in report.splitlines():
-        if "short test summary info" in line:
-            in_summary = True
-            continue
-        if not in_summary:
-            continue
-        match = _SUMMARY.match(line)
-        if match:
-            outcome, node = match.groups()
-            if outcome == "SKIPPED":  # `SKIPPED [n] path:line: reason` carries no node id
-                continue
-            found[node] = outcome
+    for case in ElementTree.parse(junit).getroot().iter("testcase"):
+        test_id = f"{case.get('classname')}::{case.get('name')}"
+        tags = {child.tag for child in case}
+        outcome = next(
+            (tag for tag in ("error", "failure", "skipped") if tag in tags), "passed"
+        ).replace("failure", "failed")
+        if test_id in found:
+            raise SystemExit(f"JUnit report repeats test id {test_id}")
+        found[test_id] = outcome
     return found
 
 
@@ -88,7 +85,17 @@ def run(args: argparse.Namespace) -> int:
     if dev.returncode != 0:
         raise SystemExit(f"uv sync --frozen --extra dev failed in {tree}:\n{dev.stderr}")
     identity = {k: v for k, v in vars(read_identity(tree, python, env, codegen, agentic)).items()}
-    argv = [str(python), "-I", "-m", "pytest", "-rA", "-p", "no:cacheprovider", "--color=no"]
+    junit = tree / "junit.xml"
+    argv = [
+        str(python),
+        "-I",
+        "-m",
+        "pytest",
+        "-p",
+        "no:cacheprovider",
+        "--color=no",
+        f"--junitxml={junit}",
+    ]
     done = subprocess.run(
         argv,
         cwd=tree / "sysml-codegen",
@@ -104,10 +111,10 @@ def run(args: argparse.Namespace) -> int:
     result = {
         "label": args.label,
         "identity": {k: v for k, v in identity.items() if k != "tree_root"},
-        "argv": argv[1:],
+        "argv": argv[1:-1],
         "exit_code": done.returncode,
         "final_line": tail,
-        "outcomes": dict(sorted(outcomes(report).items())),
+        "outcomes": dict(sorted(outcomes(junit).items())),
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / f"{args.label}.json").write_text(json.dumps(result, indent=1) + "\n")
