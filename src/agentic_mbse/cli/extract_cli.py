@@ -188,6 +188,7 @@ def _print_pipeline_summary(label: str, result: PipelineResult) -> None:
         stats.append(f"{result.metrics.table_row_count} table rows")
     if result.total_cost_usd > 0:
         stats.append(f"${result.total_cost_usd:.3f}")
+    stats.append(f"{result.image_count} images")
     stats.append(f"{result.elapsed_seconds:.1f}s")
     print(f"   ok   {label} [{result.source}] ({', '.join(stats)})")
     if (
@@ -245,6 +246,7 @@ def _extract_url(url: str, args: argparse.Namespace) -> int:
         stats = []
         if result.char_count:
             stats.append(f"{result.char_count:,} chars")
+        stats.append(f"{result.image_count} images")
         stats.append(f"backend: {result.backend_used}")
         print(f"   ok   {url} ({', '.join(stats)})")
         if result.markdown_path:
@@ -531,6 +533,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
             # failed extraction still reports why the arXiv shortcut fell back.
             _print_warnings(label, result.warnings)
             metrics_dict = result.metrics.to_dict()
+            metrics_dict["image_count"] = result.image_count
             if result.warnings:
                 metrics_dict["warnings"] = result.warnings
             (output_dir / "metrics.json").write_text(json.dumps(metrics_dict, indent=2))

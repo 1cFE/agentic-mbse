@@ -1309,3 +1309,62 @@ class TestFigureWarningsThroughCli:
 
         assert rc == EXIT_SUCCESS
         self._assert_one_failed_figure(tmp_path / "out", capsys)
+
+
+# ---------------------------------------------------------------------------
+# Saved-image count: metrics.json and the per-item summary line, both routes
+# ---------------------------------------------------------------------------
+
+
+class TestImageCountReporting:
+    def test_pdf_route(self, tmp_path, capsys):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        result = _make_pipeline_result()
+        result.image_count = 9
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"))
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=result):
+            cmd_extract(args)
+
+        metrics = json.loads((tmp_path / "out" / "paper" / "metrics.json").read_text())
+        assert metrics["image_count"] == 9
+        ok_line = next(line for line in capsys.readouterr().out.splitlines() if " ok " in line)
+        assert ", 9 images, " in ok_line
+
+    def test_pdf_route_zero_images_still_reported(self, tmp_path, capsys):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"))
+
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+        ):
+            cmd_extract(args)
+
+        metrics = json.loads((tmp_path / "out" / "paper" / "metrics.json").read_text())
+        assert metrics["image_count"] == 0
+        assert ", 0 images, " in capsys.readouterr().out
+
+    def test_web_route_summary(self, tmp_path, capsys):
+        from agentic_mbse.extraction.base import ExtractionResult
+
+        web_result = ExtractionResult(
+            success=True,
+            output_dir=tmp_path,
+            markdown_path=tmp_path / "output.md",
+            char_count=500,
+            image_count=9,
+            backend_used="pandoc-arxiv",
+        )
+        args = MockArgs(path="https://arxiv.org/html/2610.14224v1", output=str(tmp_path))
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="html"),
+            patch(
+                "agentic_mbse.extraction.web_backend.extract_web_content", return_value=web_result
+            ),
+        ):
+            cmd_extract(args)
+
+        assert "(500 chars, 9 images, backend: pandoc-arxiv)" in capsys.readouterr().out

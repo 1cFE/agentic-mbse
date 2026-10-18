@@ -128,6 +128,12 @@ def test_backend_used_field(tmp_path):
     assert result.backend_used in ("trafilatura", "pandoc-fallback")
 
 
+def test_metrics_json_records_zero_images_for_non_arxiv_pages(tmp_path):
+    with patch("agentic_mbse.extraction.web_backend.fetch_url", return_value=_make_fetch_result()):
+        extract_web_content("https://example.com/article", output_dir=tmp_path)
+    assert json.loads((tmp_path / "metrics.json").read_text())["image_count"] == 0
+
+
 def test_metrics_json_written(tmp_path):
     mock_fetch = _make_fetch_result()
     with patch("agentic_mbse.extraction.web_backend.fetch_url", return_value=mock_fetch):
@@ -458,6 +464,7 @@ def test_arxiv_web_route_outputs_paper_only_with_all_figures_saved(tmp_path):
     for s in _PAPER_TEXT:
         assert s in output, f"paper part {s!r} missing"
     assert_all_figures_saved(output, tmp_path / "images", result.image_count)
+    assert json.loads((tmp_path / "metrics.json").read_text())["image_count"] == 9
 
 
 @pytest.mark.skipif(shutil.which("pandoc") is None, reason="needs Pandoc")

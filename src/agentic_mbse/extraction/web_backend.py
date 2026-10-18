@@ -351,6 +351,7 @@ def extract_web_content(
     elapsed = time.monotonic() - t0
     metrics: ExtractionMetrics = compute_metrics(markdown, elapsed)
     metrics_dict = metrics.to_dict()
+    metrics_dict["image_count"] = image_count
     if extraction_warnings:
         metrics_dict["warnings"] = extraction_warnings
     (output_dir / "metrics.json").write_text(json.dumps(metrics_dict, indent=2))

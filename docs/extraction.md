@@ -59,7 +59,7 @@ For each PDF, the pipeline writes to `<output_dir>/`:
 |------|----------|
 | `output.md` | The extracted markdown |
 | `images/` | Saved images, referenced from `output.md` as `images/<name>` |
-| `metrics.json` | Quality metrics: character count, heading count/distribution, table row count, math symbol count, figure references, extraction time. A `warnings` list is added when anything fell back or was not saved (see below). Written for failed extractions too, so their warnings are kept |
+| `metrics.json` | Quality metrics: character count, heading count/distribution, table row count, math symbol count, figure references, extraction time, and `image_count` (image files saved under `images/`; the per-item summary line shows the same count). A `warnings` list is added when anything fell back or was not saved (see below). Written for failed extractions too, so their warnings are kept |
 | `decisions.json` | Per-page quality gate decisions: what action was taken and why |
 | `cost.json` | Per-call Claude API costs (only written when Claude was used) |
 
@@ -108,7 +108,7 @@ An arXiv ID anywhere in the text, such as a citation, never counts. If the stamp
 
 **Turning it off.** The shortcut is on by default. Pass `--no-arxiv-shortcut`, or `PipelineConfig(arxiv_shortcut=False)` in Python, to extract the PDF itself with Pandoc still on PATH. `--arxiv-shortcut` turns it on explicitly. `--html-path` gives the HTML file to convert, and runs whatever the default is. Combining it with `--no-arxiv-shortcut` is an error: the CLI exits with status 2, and `PipelineConfig` raises `ValueError`. The flag applies to local PDFs, PDF URLs, `--urls-from` batches and `--check`.
 
-**`--check`.** The Pandoc probe applies the same rule: it reports whether the PDF is identified as an arXiv paper and fetches nothing when it isn't. With `--no-arxiv-shortcut` it reports the shortcut as disabled. When it converts, it reports the converted character count. It does not download images.
+**`--check`.** The Pandoc probe applies the same rule: it reports whether the PDF is identified as an arXiv paper and fetches nothing when it isn't. With `--no-arxiv-shortcut` it reports the shortcut as disabled. When it converts, it reports the converted character count. The `arxiv_shortcut` capability is on only when `extract` would take the shortcut: enabled, the paper identified, and its HTML version available and converted. It does not download images.
 
 **Python use without an images directory.** `extract_pdf` saves figures only when `PipelineConfig.extracted_images_dir` is set (the CLI always sets it to `<output>/images`). Without it, the converted markdown keeps arXiv's relative figure references, which do not resolve locally.
 

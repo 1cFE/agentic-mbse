@@ -228,7 +228,7 @@ class TestProbePandoc:
         with patch(f"{_CHECK}._pandoc_available", return_value=False):
             result = probe_pandoc(Path("/fake.pdf"))
         assert result.status == ProbeStatus.NOT_INSTALLED
-        assert result.arxiv_identified is False
+        assert result.arxiv_shortcut_applies is False
 
     def test_citation_only_identifies_nothing_and_fetches_nothing(self, tmp_path):
         pdf = make_pdf(tmp_path / "c.pdf", prose=CITATION)
@@ -240,7 +240,7 @@ class TestProbePandoc:
         head.assert_not_called()
         assert result.status == ProbeStatus.PASS
         assert result.detail == "binary found, no arXiv paper identified"
-        assert result.arxiv_identified is False
+        assert result.arxiv_shortcut_applies is False
 
     def test_conflict_identifies_nothing(self, tmp_path):
         pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP, OTHER_STAMP))
@@ -250,7 +250,7 @@ class TestProbePandoc:
         ):
             result = probe_pandoc(pdf)
         head.assert_not_called()
-        assert result.arxiv_identified is False
+        assert result.arxiv_shortcut_applies is False
         assert "conflict" in result.detail
 
     def test_opt_out_skips_identification(self, tmp_path):
@@ -265,7 +265,7 @@ class TestProbePandoc:
         head.assert_not_called()
         assert result.status == ProbeStatus.PASS
         assert result.detail == "binary found, arXiv shortcut disabled"
-        assert result.arxiv_identified is False
+        assert result.arxiv_shortcut_applies is False
 
     def test_stamp_without_html(self, tmp_path):
         pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
@@ -278,7 +278,7 @@ class TestProbePandoc:
         assert result.status == ProbeStatus.PASS
         assert "arXiv paper identified (2610.14224v1 from stamp)" in result.detail
         assert "no HTML available" in result.detail
-        assert result.arxiv_identified is True
+        assert result.arxiv_shortcut_applies is False  # extract would fall back: no HTML
 
     def test_reports_length_of_converted_markdown(self, tmp_path):
         """The count is len(markdown), not len() of the (markdown, bytes) tuple."""
@@ -299,7 +299,7 @@ class TestProbePandoc:
             result = probe_pandoc(pdf)
         assert result.status == ProbeStatus.PASS
         assert "HTML converted (1234 chars)" in result.detail
-        assert result.arxiv_identified is True
+        assert result.arxiv_shortcut_applies is True
 
     def test_conversion_error(self, tmp_path):
         """The HTML fetch fails -> FAIL with the reason."""
@@ -315,6 +315,7 @@ class TestProbePandoc:
             result = probe_pandoc(pdf)
         assert result.status == ProbeStatus.FAIL
         assert "network down" in result.error
+        assert result.arxiv_shortcut_applies is False
 
 
 # ---------------------------------------------------------------------------
@@ -385,11 +386,11 @@ def _probe(
     status: ProbeStatus,
     detail: str | None = None,
     *,
-    arxiv_identified: bool = False,
+    arxiv_shortcut_applies: bool = False,
 ) -> ProbeResult:
     """Create a synthetic ProbeResult."""
     return ProbeResult(
-        component=component, status=status, detail=detail, arxiv_identified=arxiv_identified
+        component=component, status=status, detail=detail, arxiv_shortcut_applies=arxiv_shortcut_applies
     )
 
 
@@ -409,7 +410,7 @@ def _make_check_result(
                 "pandoc",
                 ProbeStatus.PASS,
                 "binary found, arXiv paper identified (2401.12345 from stamp)",
-                arxiv_identified=True,
+                arxiv_shortcut_applies=True,
             ),
             ProbeResult(
                 "claude", ProbeStatus.PASS,
@@ -446,9 +447,9 @@ class TestComputeCapabilities:
         selected = SelectedPages(total_pages=1)
         disabled = [_probe("pandoc", ProbeStatus.PASS, "binary found, arXiv shortcut disabled")]
         identified = [
-            _probe("pandoc", ProbeStatus.PASS, "binary found", arxiv_identified=True)
+            _probe("pandoc", ProbeStatus.PASS, "binary found", arxiv_shortcut_applies=True)
         ]
-        failed = [_probe("pandoc", ProbeStatus.FAIL, arxiv_identified=True)]
+        failed = [_probe("pandoc", ProbeStatus.FAIL, arxiv_shortcut_applies=True)]
 
         assert compute_capabilities(disabled, selected)["arxiv_shortcut"] is False
         assert compute_capabilities(identified, selected)["arxiv_shortcut"] is True
@@ -465,7 +466,7 @@ class TestComputeCapabilities:
                 "pandoc",
                 ProbeStatus.PASS,
                 "binary found, arXiv paper identified (2401.12345 from stamp)",
-                arxiv_identified=True,
+                arxiv_shortcut_applies=True,
             ),
             _probe("claude", ProbeStatus.PASS),
         ]
@@ -695,6 +696,35 @@ class TestRunCheck:
         ):
             run_check(Path("/fake.pdf"), claude_budget=0, arxiv_shortcut=value)
         probe.assert_called_once_with(Path("/fake.pdf"), arxiv_shortcut=value)
+
+    @pytest.mark.parametrize(
+        ("html_url", "expected"),
+        [
+            pytest.param(None, False, id="identified-no-html"),
+            pytest.param("https://arxiv.org/html/2610.14224", True, id="identified-with-html"),
+        ],
+    )
+    def test_capability_predicts_whether_extract_substitutes(self, tmp_path, html_url, expected):
+        """The capability is on only when extract would take the shortcut (spec_review L2-3)."""
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        served = FetchResult(
+            content=ARXIV_PAGE.read_bytes(),
+            final_url="https://arxiv.org/html/2610.14224",
+            content_type="text/html",
+        )
+        with (
+            patch(f"{_CHECK}._try_import_gmft", side_effect=ImportError),
+            patch(f"{_CHECK}._try_import_img2table", side_effect=ImportError),
+            patch(f"{_CHECK}._try_import_docling", side_effect=ImportError),
+            patch(f"{_CHECK}._pandoc_available", return_value=True),
+            patch(f"{_CHECK}.check_arxiv_html", return_value=html_url),
+            patch("agentic_mbse.extraction.arxiv_html.fetch_url", return_value=served),
+            patch(
+                "subprocess.run", return_value=MagicMock(returncode=0, stdout="x" * 500, stderr="")
+            ),
+        ):
+            result = run_check(pdf, claude_budget=0)
+        assert result.capabilities["arxiv_shortcut"] is expected
 
     def test_opt_out_turns_the_capability_off(self, tmp_path):
         pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
@@ -1145,7 +1175,7 @@ class TestMergeCheckResults:
                 "pandoc",
                 ProbeStatus.PASS,
                 "binary found, arXiv paper identified (2510.07314v1 from stamp)",
-                arxiv_identified=True,
+                arxiv_shortcut_applies=True,
             ),
             _probe("claude", ProbeStatus.SKIPPED),
         ])
