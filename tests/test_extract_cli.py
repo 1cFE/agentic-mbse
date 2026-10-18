@@ -1368,3 +1368,27 @@ class TestImageCountReporting:
             cmd_extract(args)
 
         assert "(500 chars, 9 images, backend: pandoc-arxiv)" in capsys.readouterr().out
+
+
+def test_web_failure_still_prints_its_warnings(tmp_path, capsys):
+    """A failed web extraction shows why the arXiv conversion fell back (audit suggestion 2)."""
+    from agentic_mbse.extraction.base import ExtractionResult
+
+    failed = ExtractionResult(
+        success=False,
+        output_dir=tmp_path,
+        error="No content extracted from https://arxiv.org/html/2610.14224v1",
+        warnings=["arXiv paper conversion failed (boom); used trafilatura instead"],
+    )
+    args = MockArgs(path="https://arxiv.org/html/2610.14224v1", output=str(tmp_path))
+    with (
+        patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+        patch("agentic_mbse.extraction.web_backend.classify_url", return_value="html"),
+        patch("agentic_mbse.extraction.web_backend.extract_web_content", return_value=failed),
+    ):
+        rc = cmd_extract(args)
+
+    assert rc == EXIT_FAILURE
+    captured = capsys.readouterr()
+    assert "FAIL" in captured.out
+    assert "arXiv paper conversion failed (boom)" in captured.err

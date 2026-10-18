@@ -566,3 +566,20 @@ def test_arxiv_images_resolve_against_normalized_serving_url(tmp_path):
     fetch.assert_called_once_with("https://arxiv.org/html/2610.14224v1/components.png")
     assert result.image_count == 1
     assert "![f](images/components.png)" in (tmp_path / "output.md").read_text()
+
+
+def test_double_failure_keeps_the_conversion_warning(tmp_path):
+    """Audit suggestion 2: article conversion fails and trafilatura finds nothing."""
+    page = _ARXIV_PAGE.read_text().replace("<article ", "<div ").replace("</article>", "</div>")
+    with (
+        _serve(page),
+        patch(
+            "agentic_mbse.extraction.web_backend._extract_with_trafilatura", return_value=("", {})
+        ),
+    ):
+        result = extract_web_content(_ARXIV_URL, output_dir=tmp_path)
+
+    assert not result.success
+    assert result.error == f"No content extracted from {_ARXIV_URL}"
+    [warning] = result.warnings
+    assert "no recognized arXiv article container" in warning

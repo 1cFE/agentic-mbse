@@ -767,6 +767,8 @@ Audit round 1 (`audit.md`, verdict Needs Work). The orchestrator's calls `[AGENT
 - `test_pipeline.py::TestShortcutFigures::test_broken_figure_response_warns_instead_of_aborting` checks the PDF route: an `IncompleteRead` figure leaves the shortcut result standing, with one warning.
 
 Full suite 2919 passed, same 3 baseline failures. mypy 97, ruff clean, format at base.
+
+**3. Audit suggestion 2: a web double failure keeps its reason.** When the arXiv article conversion fails and trafilatura then returns nothing, `extract_web_content`'s error result now carries `extraction_warnings` (the "arXiv paper conversion failed (…)" warning). `_extract_url`'s FAIL branch prints them to stderr through `_print_warnings`. No `metrics.json` is written for this failure, as before, because it fails before the output directory is created. This closes the Phase 5 Issue about the double failure. Tests: `test_web_backend.py::test_double_failure_keeps_the_conversion_warning` and `test_extract_cli.py::test_web_failure_still_prints_its_warnings`. Full suite 2921 passed, same 3 baseline failures.
 ---
 
 **Status:** Draft → In Progress → Complete

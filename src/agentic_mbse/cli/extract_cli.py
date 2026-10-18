@@ -255,6 +255,7 @@ def _extract_url(url: str, args: argparse.Namespace) -> int:
         return EXIT_SUCCESS
     else:
         print(f"  FAIL  {url}: {result.error}")
+        _print_warnings(url, result.warnings)
         return EXIT_FAILURE
 
 

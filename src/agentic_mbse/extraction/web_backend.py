@@ -278,6 +278,7 @@ def extract_web_content(
             success=False,
             output_dir=out,
             error=f"No content extracted from {url}",
+            warnings=extraction_warnings,  # why the arXiv conversion fell back, if it did
         )
 
     # Step 4: Build output
