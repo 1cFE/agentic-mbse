@@ -89,7 +89,23 @@ No material findings. Code citations I checked are accurate: `level2_structure.p
 
 ## Resolutions
 
-[Filled in during Stage 5. One entry per resolved finding, keyed by ID.]
+Resolved 2026-10-18. Decisions for the owner questions (L2-2, L2-3) were made by the orchestrator as execution of D1.
+
+- **L1-1** `[AGENT]` — accepted. The finding rule now exempts an input only when its own declaration carries an explicit redefinition accounting for its positional target; another input's explicit redefinition never exempts it (the prototype's rule). Added the mixed-spelling fixture `in b = 3; in :>> a = 10;` (flagged at `b`) and the reversed deliberate-rename fixture `in y redefines b = 3; in x redefines a = 10;` (not flagged), with expected outcomes stated.
+- **L1-2** `[AGENT]` — accepted. D1 regraded `[AGENT] (ratified by owner, 2026-10-15)`, matching Item 1's D2, in Problem and Known Requirements.
+- **L1-3** `[AGENT]` — accepted. The scope reason now says neither consumer declares `subject`, `actor` or `stakeholder` parameters, so the baseline is silent on requirements and cases, which the new fixtures cover.
+- **L1-4** `[AGENT]` — accepted. The register criterion requires "actual semantics" to separate KerML text from SysIDE 0.8.4 behavior observed on a named fixture, citing the parameterless-subdefinition case.
+- **L2-1** `[AGENT]` — accepted. `subject`, `actor` and `stakeholder` parameters are excluded as a scoped exclusion with its reason (intended positional redefinition of library parameters). Ordinary `in` parameters of requirement and case definitions, and inputs of requirement-nested constraints, stay in scope. Added one not-flagged fixture per kind, a flagged swapped ordinary `in` parameter, and a flagged requirement-nested reversed constraint. Subject/actor/stakeholder ordering is listed as a non-goal.
+- **L2-2** `[AGENT]` — decided as execution of D1: a pinned positional warning does not by itself make L2 fail; every other L2 code keeps its current pass/fail behavior (`level2_structure.py:450`). The R4-3 consequence no longer claims the pin move by itself changes fusion-tea's L2 outcome; it states that fusion-tea's current L2 status is unverified, and the reproduction criterion now records fusion-tea's L2 result without the check and with it, with and without the pin list.
+- **L2-3** `[AGENT]` — decided: on partial validation a pin is stale only if its owner lies within the validated scope; pins outside are counted and reported as out-of-scope, never stale. Added a requirement and a partial-scope pytest criterion; how scope membership is decided is deferred to design.
+- **L3-1** `[AGENT]` — accepted. The fusion-tea reference is the prototype's recorded log (`04-detector-tree-fusion-tea.log`). The pin list is built from that log, not from the check's output; every difference is itemized and surfaced as a premise surprise, never tuned away.
+- **L3-2** `[AGENT]` — accepted. Register evidence citations use `.project/active/positional-binding-check/...` paths, which close rewrites; the existence test therefore passes during implement and audit.
+- **L3-3** `[AGENT]` — accepted. The guidance-example criterion now requires parse success and the exact positional findings (none, or the stated identities for deliberate hazard examples), plus no self-named binding for by-name examples; other L2 warnings are excluded from it.
+- **L3-4** `[AGENT]` — accepted. `L2_CHECK_UNVERIFIABLE` comes only from a real evidence failure (a raising read or an unresolvable fact); the prototype heuristic is dropped. Added `inherit_def_extends` (the prototype's first-run misfire) as a must-pass fixture, plus the reviewer's nearby valid shapes with stated or design-recorded expectations.
+- **L3-5** `[AGENT]` — accepted. The identity key uses Item 1's qualified-name spelling (`ElementRef.qualified_name`) unless design shows it is unstable for quoted names; the separate deferral was removed.
+- **L3-6** `[AGENT]` — accepted. Existing fixtures are run through the check, and any new positional finding is listed and justified in the evidence rather than suppressed.
+- **L5-1** `[AGENT]` — accepted. The finding rule is now a numbered three-part condition with flagged and passing examples inline.
+- **R4-1 (pin-list integrity, product-lens spec-F1)** `[AGENT] (ratified by owner 2026-10-18, "A is fine")` — pin-list integrity rests on review of the pin file; no digest. Recorded in Known Requirements; the open question was removed.
 
 ---
 

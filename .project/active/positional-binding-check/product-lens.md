@@ -43,3 +43,8 @@ Findings:
 Smells: smell 1 (a consumer compensating for a producer guarantee) did not fire; the in-repo fusion-tea baseline exists because R4-3 forbids fusion-tea edits, and the spec records the adoption consequence. Smell 7 (ownership change without saying so) did not fire; the spec changes L2's "any issue fails" rule only for pinned `L2_POSITIONAL_BINDING` warnings and says so, citing `level2_structure.py:450` against `types.py:30-38`.
 
 Gate: DISPOSED (spec-F1 routed to owner under R4-1; spec-F2–F6 accepted). No owner/`[HARD]` contradiction, so not BLOCKED. spec-F1 becomes a BLOCK if design adopts a pin mechanism that lets new mismatches warn without an owner R4-1 decision.
+
+## spec revision note — 2026-10-18 — after spec review (`spec-review.md`, verdict Revise)
+Epic: EXEC-SUBSET-CONTRACT
+
+spec-F1 owner decision recorded: `[AGENT] (ratified by owner 2026-10-18, "A is fine")` — pin-list integrity rests on review of the pin file; no digest. The conditional BLOCK on spec-F1 no longer applies. spec-F3 is superseded by spec review L1-2: D1 is now graded `[AGENT] (ratified by owner, 2026-10-15)`. The lens was not re-run on the revision; the revision narrows the finding rule's exemption, excludes subject/actor/stakeholder parameters, and changes the fusion-tea reference to the prototype log, none of which narrows the point recorded above.
