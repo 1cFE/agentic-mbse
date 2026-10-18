@@ -380,7 +380,7 @@ def before_after(base: str, branch: str, labels: list[str], out_name: str) -> in
             base_run, branch_run = pair
             runs[label] = (base_run, branch_run)
             comparison = compare_runs(base_run, branch_run)
-            expected_root = str(parent / tree["settings"]["root"])
+            expected_root = str(tree_dir.parent / tree["settings"]["root"])
             for run in pair:
                 if resolved_root(run) != expected_root:
                     comparison["flags"].append(
