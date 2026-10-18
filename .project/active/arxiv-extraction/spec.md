@@ -76,6 +76,8 @@ Out of scope: general website boilerplate extraction, OCR, PDF figure segmentati
 
 **[INFERRED]** Both arXiv Pandoc routes MUST select the paper content before conversion. Surrounding arXiv header and navigation, issue dialogs, site footer, funder logos and UI icons MUST NOT appear in output. Cleanup MUST preserve paper title, authors, abstract, sections, references, appendices, figures, captions, tables and math. Cleanup removes nothing inside the recognized paper container for being a data URI.
 
+**[INFERRED]** (orchestrator call, 2026-10-18; owner has not ruled) Selection removes LaTeXML's code-listing download buttons (`<div class="ltx_listing_data">` holding a `data:text/plain` copy of the listing), because their text duplicates the listing shown inline. Nothing else inside the container is removed. In-article `data:` images are saved as files, not removed (design D18).
+
 **[INFERRED]** Fixtures MUST represent real arXiv/LaTeXML structure, including surrounding chrome and an article body. If a paper container cannot be recognized, the route MUST NOT claim a paper-only conversion of the full page. Instead it takes its existing fallback with an observable diagnostic: trafilatura for the direct HTML route, and normal PDF extraction for the PDF shortcut. The design must define the supported structures.
 
 ### R5: Report fallbacks and shortcut failures

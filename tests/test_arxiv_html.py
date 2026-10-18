@@ -686,6 +686,24 @@ def test_all_fixture_images_persist(tmp_path):
     assert_all_images_saved(result.markdown, tmp_path / "images", result.saved_count)
 
 
+@pytest.mark.skipif(shutil.which("pandoc") is None, reason="needs Pandoc")
+def test_no_data_link_of_any_media_type_survives_on_the_fixture(tmp_path):
+    """With an images dir, the converted real page keeps no data: link of any kind.
+
+    The fixture carries a real LaTeXML listing download button (data:text/plain),
+    so a markup change that slips past the button removal fails here (audit round 2).
+    """
+    page = FIXTURE.read_text(encoding="utf-8")
+    assert 'class="ltx_listing_data"><a href="data:text/plain;base64,' in page
+
+    markdown = convert_article(extract_article(page))
+    result = persist_images(markdown, _BASE, tmp_path / "images", serve_figure)
+
+    assert result.warnings == []
+    assert re.findall(r"\]\(data:[^,;)]*", result.markdown) == []
+    assert "data:" not in result.markdown
+
+
 class TestFetchImage:
     def _response(self, data: bytes) -> MagicMock:
         resp = MagicMock()

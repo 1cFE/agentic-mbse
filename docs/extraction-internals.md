@@ -303,7 +303,7 @@ Body-text IDs (citations) are never evidence, and Creator metadata is not used. 
 
 **Control.** `PipelineConfig.arxiv_shortcut` is `None` (follow `ARXIV_SHORTCUT_DEFAULT`), `True` or `False`. The default is written only in that constant. `arxiv_html_path` is an explicit source and runs under either default; `arxiv_shortcut=False` with `arxiv_html_path` raises `ValueError`.
 
-**Supported container.** The page must contain exactly one `<article` opening tag and one `</article>`, and the opening tag's class must include `ltx_document` (what LaTeXML emits on arxiv.org). The slice from that tag to its close is the paper; everything around it is chrome. Nothing inside it is removed. Any other shape raises `ArxivConversionError("no recognized arXiv article container")`.
+**Supported container.** The page must contain exactly one `<article` opening tag and one `</article>`, and the opening tag's class must include `ltx_document` (what LaTeXML emits on arxiv.org). The slice from that tag to its close is the paper; everything around it is chrome. Inside it, `extract_article` removes one thing: LaTeXML's code-listing download buttons (`<div class="ltx_listing_data"><a href="data:text/plain;…">⬇</a></div>`), whose text is the listing shown right below them. Nothing else is removed. Any other shape raises `ArxivConversionError("no recognized arXiv article container")`.
 
 **SVG figures.** LaTeXML embeds some figures as `<object type="image/svg+xml" class="ltx_graphics" data="…svg">`, which Pandoc drops. `extract_article` rewrites those objects to `<img>` before anything else touches the slice. The web route's sanitizer deletes every `<object>`, so the web route selects and rewrites from the raw page first and sanitizes only the slice.
 
@@ -313,7 +313,7 @@ Body-text IDs (citations) are never evidence, and Creator metadata is not used. 
 - Post-process (`convert_article` only): strip `\hspace{0pt}` and HTML comment artifacts
 - Length check (`convert_article` only): output under 100 characters (`MIN_CONTENT_CHARS`) counts as a failed conversion.
 
-**Images.** `persist_images` resolves each markdown image ref against `ArxivSource.image_base`: the post-redirect page URL (trailing slash dropped on `arxiv.org/html/<id>[vN]/`) or the local file's `file://` URI, with any `<base href>` applied. Each distinct URL is read once (http(s) through `fetch_image`, `file:` copied) and saved under `images/`. A different URL with a taken name becomes `name_2.ext`. Unsaved refs stay byte-identical with one warning each. `data:` URIs are never touched. The PDF route saves only when `extracted_images_dir` is set.
+**Images.** `persist_images` resolves each markdown image ref against `ArxivSource.image_base`: the post-redirect page URL (trailing slash dropped on `arxiv.org/html/<id>[vN]/`) or the local file's `file://` URI, with any `<base href>` applied. Each distinct URL is read once (http(s) through `fetch_image`, `file:` copied) and saved under `images/`. A different URL with a taken name becomes `name_2.ext`. Unsaved refs stay byte-identical with one warning each. In-article `data:` images (LaTeXML pictures) are decoded and saved too, under content-hash names (`images/<sha256[:16]>.<ext>`), so `output.md` keeps no `data:` links. One that can't be decoded stays inline with a warning. Saving happens only when an images directory is set: the web route always sets one, and the PDF route uses `extracted_images_dir` (the CLI sets it). Without one, figure refs and `data:` images stay as Pandoc wrote them.
 
 **Fallback per route.**
 
