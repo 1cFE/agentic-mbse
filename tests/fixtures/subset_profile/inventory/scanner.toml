@@ -4,40 +4,23 @@
 # so this file is the scanner's declared surface. The site account (site_account.csv) is total
 # over these forms only: anything a blind spot names is outside it by construction.
 
-scanner_revision = "scan_sites/1: the prototype 02-inventory.py forms, unchanged; run on git archive exports"
+scanner_revision = "scan_sites/2: scan_sites/1's agentic-mbse forms, with executable_profile's _diagnostic declared; the sysml-codegen half moved to sysml-codegen (EXEC-SUBSET-CONTRACT Item 2a D7); run on git archive exports"
 
 [forms]
 channels = [
-    "coded", "coded-fixed", "coded-relay", "coded-returned", "coded-mapped", "plumbing",
-    "coded-DYNAMIC", "free-text", "builtin", "shared-evidence", "shared-profile",
+    "coded-relay", "coded-returned", "coded-mapped", "plumbing", "coded-DYNAMIC",
+    "shared-evidence", "shared-profile",
 ]
 # Enum classes whose member, written literally, is a site's code.
-code_enums = ["ElaborationCode", "ReadinessCode", "SemanticEvidenceCode"]
+code_enums = ["SemanticEvidenceCode"]
 # Constructors that take a code (first positional or `code=`); factories forwarding a code
 # parameter to one of these are found by fixpoint, not listed.
-code_taking = [
-    "Diagnostic", "ElaborationInvariantError", "MultiplicityExpansionError",
-    "OccurrenceResolutionError", "ReadinessFinding", "SemanticEvidenceError",
-    "_ReferenceResolutionError",
-]
-# Codegen public exception classes raised with free text only.
-free_text = [
-    "CodeGenerationError", "CompilationError", "ExpressionInventoryError",
-    "GraphValidationError", "InstanceGraphSnapshotError", "PackageSealError",
-    "PredicateCompileError", "ProvenanceError", "ScopePolicyMismatchError",
-    "SnapshotCertifiabilityError", "SnapshotCompatibilityError", "SnapshotIntegrityError",
-    "SnapshotShapeError", "SnapshotStaleSourceError", "SourceAdmissionError",
-    "SysMLParsingError",
-]
-# Builtin exceptions recognized when raised in sysml-codegen (not in agentic-mbse).
-builtin = [
-    "AssertionError", "IndexError", "KeyError", "LookupError", "NotImplementedError",
-    "RuntimeError", "TypeError", "ValueError",
-]
-# sysml_codegen/ paths not on the generation path.
-exclude = ["cli/install.py", "contracts/verify.py", "study/"]
+code_taking = ["SemanticEvidenceError"]
 # The one agentic-mbse exception class recognized directly (plus its factories).
 shared_evidence_class = ["SemanticEvidenceError"]
+# executable_profile's reason factory, `_diagnostic(reason, ...)`. scan_sites/1 matched it only
+# through a sysml-codegen function of the same name.
+shared_profile_factory = ["_diagnostic"]
 
 # ---- blind spots: what the account cannot see -------------------------------------------------
 
@@ -47,11 +30,11 @@ statement = "A construct the generator drops without raising has no site. ES-010
 
 [[blind_spot]]
 id = "computed-code-beyond-resolver"
-statement = "A code computed in a way the resolver does not follow (anything but a literal, a literal conditional, `.code` relay, a parameter, a literal-returning helper or a literal table) is reported as coded-DYNAMIC with its expression text, not its codes. The five executable_profile sites are mapped by hand below; codegen's snapshot replay (`_diagnostic_from_data`) is validated by enum construction, so it cannot introduce a new code, but which codes it replays is not resolved."
+statement = "A code computed in a way the resolver does not follow (anything but a literal, a literal conditional, `.code` relay, a parameter, a literal-returning helper or a literal table) is reported as coded-DYNAMIC with its expression text, not its codes. The five executable_profile sites are mapped by hand below."
 
 [[blind_spot]]
 id = "unrecognized-exception-class-or-helper"
-statement = "A raise of a class outside [forms] (a new codegen exception class, a third-party exception, a re-raise of a caught exception) is not a site. A helper that builds a refusal without calling a recognized constructor is not a site either. agentic-mbse builtin raises (`ValueError`, `TypeError`, `RecordError`, ...) are not recognized at all: only SemanticEvidenceError and executable_profile reasons are."
+statement = "A raise of a class outside [forms] (a third-party exception, a re-raise of a caught exception) is not a site. A helper that builds a refusal without calling a recognized constructor is not a site either. agentic-mbse builtin raises (`ValueError`, `TypeError`, `RecordError`, ...) are not recognized at all: only SemanticEvidenceError and executable_profile reasons are. sysml-codegen's scanner reports every raise in its own tree, recognized or not."
 
 [[blind_spot]]
 id = "unproven-public-reachability"
@@ -63,7 +46,7 @@ statement = "A site reached through a callback, a dispatch table of callables, o
 
 [[blind_spot]]
 id = "non-python-surface"
-statement = "Refusals in generated code templates, in the SysIDE parser itself, or in the teax execution layer are outside both scanned `src/` trees."
+statement = "Refusals in the SysIDE parser itself, or anywhere outside agentic-mbse's `src/` tree, are outside this scan."
 
 # ---- the five computed executable_profile reason sites ------------------------------------------
 # Reasons each site can emit, pinned exactly by tests/test_sysml/test_executable_profile_computed_reasons.py

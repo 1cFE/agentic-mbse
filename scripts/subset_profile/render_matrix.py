@@ -70,7 +70,9 @@ def _row_section(row: MatrixRow) -> list[str]:
         lines.append(f"- **Notes:** {row.statement}")
     if row.l2_relation:
         lines.append(f"- **Relation to L2:** {row.l2_relation}")
-    if row.site_status is not SiteStatus.LISTED:
+    if row.site_status is SiteStatus.CODEGEN_ACCOUNT:
+        lines.append("- **Sites:** in sysml-codegen's site account (`codegen_account`)")
+    elif row.site_status is not SiteStatus.LISTED:
         lines.append(f"- **Sites:** none (`{row.site_status.value}`)")
     else:
         lines.append(

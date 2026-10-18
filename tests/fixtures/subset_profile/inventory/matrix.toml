@@ -4,8 +4,10 @@
 # outcome holds, the evidence for that outcome, and the coverage it leaves. Shared-rule rows
 # join the packaged rule records (agentic_mbse/sysml/subset_profile_rules.toml): their contexts
 # are the record contexts with the row's outcome, and their evidence status is the rule's.
-# `sites` holds site-account IDs (site_account.csv); `site_status` says whether they are listed,
-# the case has no raise site, or a reported site was not located. `dc3` cross-references dc3 T-001 B1-B9
+# `sites` holds agentic-mbse site-account IDs (site_account.csv); `site_status` says whether they
+# are listed, the row's sites are sysml-codegen sites (`codegen_account`: sysml-codegen's site
+# account names the row in its `matrix_row` column), the case has no raise site, or a reported
+# site was not located. A `listed` row can also have sysml-codegen sites in that account. `dc3` cross-references dc3 T-001 B1-B9
 # (models at 808464d); `upstream` cross-references dc3 toolkit-upstream-findings U1-U7.
 #
 # Loaded by tests/helpers/subset_matrix.py; rendered to the item's evidence/matrix.md by
@@ -34,11 +36,8 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = ""
 statement = "A non-asserted constraint owned by a calc def is admitted (graded, not refused). An asserted constraint is refused under every owner the rule computes, so it carries an SA-1 statement instead of an admitted-context probe. The part-owned assert stays admitted (control probe). Lifting the refusal is sysml-codegen [CALCDEF-GATE-IMPLEMENTATION]."
-sites = [
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._owner_kind::coded::SI_CONSTRAINT_UNATTACHED::1",
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._halt_on_error_dispositions::coded::SI_CONSTRAINT_UNATTACHED::1",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = ["B1"]
 upstream = ["U1"]
 
@@ -60,10 +59,8 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = ""
 statement = "The refused element is the sequence actual, not the parameter declaration: an `ordered nonunique` input bound to a scalar generates (control probe binding-source__scalar_actual__owner_instantiated). dc3's T-001 attributes B2 to multiplicity expansion; that expansion runs only on part usages (ES-004), so B2 is cross-referenced here and not from ES-004. Admitted where the owner is not instantiated or another writer wins in every scope. `owner_other` stays unconfirmed."
-sites = [
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._collect_bound_members::coded-returned::SI_SELF_BINDING|SI_INDEXED_SOURCE_UNSUPPORTED|SI_EXPRESSION_SOURCE_UNSUPPORTED::1",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = ["B2"]
 upstream = []
 
@@ -85,15 +82,8 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "`nonunique` and negative part multiplicities stay unconfirmed: SysIDE 0.8.4 rejects both before the generator runs, so no probe can be authored. G1 and G2 are generator-correctness questions the rule mirrors rather than corrects (rows G1, G2)."
 statement = "Applies only to part usages the generator expands (a root, or a composite part usage reachable from one). Attribute-usage multiplicity is never expanded (control probe part-multiplicity__attribute_multiplicity__attribute_usage), and neither are templates or non-composite `ref part` usages."
-sites = [
-    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNSUPPORTED::1",
-    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNSUPPORTED::2",
-    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::1",
-    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_INVALID::1",
-    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::2",
-    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNSUPPORTED::3",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = ["B3"]
 upstream = []
 
@@ -166,7 +156,6 @@ owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1 (eligibility stays with execu
 coverage_limitation = ""
 statement = "BLOCK is refused where the owner is instantiated or is a package and admitted where it is not. NON_NUMERICAL is excluded, never refused. UNASSESSED never maps to admitted. The predicate decision is executable_profile's; findings carry its reasons as detail reasons. On the dc3 baseline (B8) every such constraint is owned by a calc usage, so the run reports them unconfirmed at owner_other and the generator refuses them through ES-001 (the splits below)."
 sites = [
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._build_constraint_nodes::coded::SI_CONSTRAINT_BLOCKED::1",
     "agentic_mbse/sysml/executable_profile.py::_walk_arithmetic::coded-DYNAMIC::derived::1",
     "agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_feature_chain::1",
     "agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_invocation::1",
@@ -248,10 +237,8 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = ""
 statement = "Same classifier and shape as ES-003; the epic keeps the row separate from dc3 B1-B8. A plain reference actual stays admitted (control probe)."
-sites = [
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._collect_bound_members::coded-returned::SI_SELF_BINDING|SI_INDEXED_SOURCE_UNSUPPORTED|SI_EXPRESSION_SOURCE_UNSUPPORTED::1",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = []
 upstream = []
 
@@ -273,10 +260,8 @@ owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "`writer_overridden` and `owner_other` stay unconfirmed: no probe observed a self-binding there."
 statement = "20 of the 23 refusal records of codegen's accepted corpus carry this code."
 l2_relation = "Overlaps L2_SELF_NAMED_BINDING (validation/level2_structure.py:322-343) and is wider in one way, narrower in another. Both compare the reference's resolved referent with the bound parameter, as codegen does. L2 checks calc usages only, and in every context, so it reports a self-binding inside a part def nobody instantiates, which the generator admits. The rule also covers constraint-usage inputs and refuses only where the generator classifies the binding. Item 1 leaves L2 unchanged; reconciling the two is Item 3's (L6 adopts the contract)."
-sites = [
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._collect_bound_members::coded-returned::SI_SELF_BINDING|SI_INDEXED_SOURCE_UNSUPPORTED|SI_EXPRESSION_SOURCE_UNSUPPORTED::1",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = []
 upstream = []
 
@@ -298,9 +283,7 @@ owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "`calc_result_expression` stays unconfirmed (row CALC-DEF-BARE-RESULT). Where a site's reference walk fails (a refused conditional or invocation on it), whether it also holds an index is unknown, so this rule reports unverified there. A calc usage's bare result expression (`other_expression_site`) is omitted: never examined and dropped from the output (row CALC-USAGE-BARE-RESULT-DROP)."
 statement = "Refused model-wide by the expression inventory, before any instantiation; the binding classifier's own indexed branch is never reached on an inventoried input."
 sites = [
-    "sysml_codegen/elaboration/expression_evidence.py::_indexed_refusal::coded::INDEXED_REFERENCE_UNSUPPORTED::1",
     "agentic_mbse/sysml/reference_use.py::require_exact_reference_use::shared-evidence::INDEXED_REFERENCE_UNSUPPORTED::1",
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._collect_bound_members::coded-returned::SI_SELF_BINDING|SI_INDEXED_SOURCE_UNSUPPORTED|SI_EXPRESSION_SOURCE_UNSUPPORTED::1",
 ]
 site_status = "listed"
 dc3 = []
@@ -319,10 +302,8 @@ evidence = ["probe:candidate-es-002__constraint_binds_calc_input__binding_value"
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule: the contract reports nothing for this shape. Which other shapes reach the shared SI_OCCURRENCE_MISSING raise sites is not established."
 statement = "Reproduced once: SI_OCCURRENCE_MISSING, \"semantic owner kind 'CalculationUsage' cannot anchor containment\". Binding a calc output works (dc3 U5)."
-sites = [
-    "sysml_codegen/elaboration/occurrence.py::build_containment_address::coded::SI_OCCURRENCE_MISSING::1",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = []
 upstream = ["U5"]
 
@@ -337,10 +318,8 @@ evidence = ["probe:candidate-es-008__nested_named_subset__part_usage"]
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule. Reproduced in one of five spellings only; plain nested subsets with exact multiplicities generate, so the refusing boundary is narrower than dc3 U2 states."
 statement = "SI_REDEFINITION_INVALID, \"incomparable value writers\". One level of named subsetting works."
-sites = [
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._require_one_writer::coded::SI_REDEFINITION_INVALID::1",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = []
 upstream = ["U2"]
 
@@ -355,10 +334,8 @@ evidence = ["probe:candidate-es-009__composition_by_subsetting__part_usage"]
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule: the contract reports nothing for this shape."
 statement = "SI_OCCURRENCE_MISSING, \"exact owner address has no target\" on `facility.area`."
-sites = [
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_semantic_reference::coded::SI_OCCURRENCE_MISSING::4",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = []
 upstream = ["U6"]
 
@@ -373,10 +350,8 @@ evidence = ["probe:candidate-es-010-refusal__string_to_calc_input__binding_value
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule (design D11): the projection boundary has three entry paths and entry-point membership is an output fact owned by codegen (ADR 0007). The omission rule reports such a String omitted while the generator refuses the model."
 statement = "SI_RENDERING_COLLISION at projection: \"the public EntryPoint seam cannot carry non-numeric default\". Booleans are coerced, not refused."
-sites = [
-    "sysml_codegen/elaboration/project.py::_float_default::coded::SI_RENDERING_COLLISION::1",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = []
 upstream = []
 
@@ -410,10 +385,8 @@ evidence = [
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule. The site rules report `calc_result_expression` unconfirmed, so a model with this shape is never called clean, but the refusal itself is not reported."
 statement = "Found by Item 1's probes. SI_EVIDENCE_INCOMPLETE, \"extracted with zero output attributes\", whatever the expression holds (arithmetic or `max`). The design expected a handwritten stub here; none was observed."
-sites = [
-    "sysml_codegen/extraction/extractor.py::SysMLDataExtractor._extract_calculation_definition::coded-fixed::SI_EVIDENCE_INCOMPLETE::2",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = []
 upstream = []
 
@@ -480,10 +453,8 @@ evidence = ["corpus:deep_cross_scope_probe"]
 owner = "sysml-codegen [DEEP-QUALIFIED-OUTPUT-WIRING]"
 coverage_limitation = "No rule: deciding whether a producer exists in the consumer domain needs codegen's output wiring, which the contract does not model."
 statement = "SI_OCCURRENCE_MISSING, \"exact output ... has no producer in the consumer domain\", a typed refusal record of codegen's accepted corpus. Codegen's backlog owns implementing the wiring."
-sites = [
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_calculation_output::coded::SI_OCCURRENCE_MISSING::1",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = []
 upstream = []
 
@@ -515,9 +486,14 @@ evidence_status = "code_read"
 evidence = ["backlog:PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS"]
 owner = "agentic-mbse backlog [PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS]"
 coverage_limitation = "No rule and no probe in Item 1. The backlog row names a shared helper `extract_feature_chain_segments`; no function of that name exists in agentic-mbse `src/` at this revision, so the fact the check needs is not confirmed either."
-statement = "Filed by sysml-codegen PUSH-DOWN Item 1 as an ERROR-severity profile check. Site status not_located: candidate chain-segment refusals exist (agentic_mbse/sysml/reference_use.py:545, :557, :594, :618; sysml_codegen/extraction/binding_source.py:236, :243, :251), but their reachability from valid input is unknown, so they are explicit follow-ups in the site account, not joined here."
-sites = []
-site_status = "not_located"
+statement = "Filed by sysml-codegen PUSH-DOWN Item 1 as an ERROR-severity profile check. The candidate chain-segment refusals (agentic_mbse/sysml/reference_use.py:545, :557, :594, :618, listed here; sysml_codegen/extraction/binding_source.py:236, :243, :251, in sysml-codegen's site account) are joined to this row by the spec's R3 table (sysml-codegen Item 2a plan PD4). Their reachability from valid input is still unknown, so they stay explicit follow-ups."
+sites = [
+    "agentic_mbse/sysml/reference_use.py::_chain_use::shared-evidence::RESOLVED_TARGET_MISSING::1",
+    "agentic_mbse/sysml/reference_use.py::_chain_use::shared-evidence::RESOLVED_LEAF_MISSING::1",
+    "agentic_mbse/sysml/reference_use.py::_chain_head_segments::shared-evidence::RESOLVED_TARGET_MISSING::1",
+    "agentic_mbse/sysml/reference_use.py::_chain_head_segments::shared-evidence::RESOLVED_TARGET_MISSING::2",
+]
+site_status = "listed"
 dc3 = []
 upstream = []
 
@@ -596,11 +572,8 @@ evidence = ["backlog:PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE", "agentic_mbse/s
 owner = "agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE]; closed by EXEC-SUBSET-CONTRACT Item 3 (L6 reports it)"
 coverage_limitation = "Closed by EXEC-SUBSET-CONTRACT Item 3: L6 reports the generator decision, part-multiplicity/unresolved_bound (ES-004, refused on expanded part usages with probes), through the execution target; test_l6_contract.py::test_invocation_callable_at_attribute_and_part_multiplicity_unresolved_reported."
 statement = "Closed: L6 reports ES-004's unresolved_bound finding, which this row overlaps."
-sites = [
-    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::1",
-    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::2",
-]
-site_status = "listed"
+sites = []
+site_status = "codegen_account"
 dc3 = []
 upstream = []
 
@@ -630,9 +603,9 @@ evidence_status = "code_read"
 evidence = ["backlog:PUSH-DOWN-AGG-PROFILE-SUM-SHAPE", "agentic_mbse/sysml/aggregation.py:233"]
 owner = "agentic-mbse backlog [PUSH-DOWN-AGG-PROFILE-SUM-SHAPE]"
 coverage_limitation = "No rule: `sum` is the one admitted callable (ES-005) and its operand boundary is not modeled."
-statement = "Filed as a WARNING over the shared aggregation facts. Site status not_located: the one candidate, a `sum` call with other than one argument (sysml_codegen/elaboration/project.py:812), has an unknown role and is an explicit follow-up in the site account."
+statement = "Filed as a WARNING over the shared aggregation facts. The one candidate, a `sum` call with other than one argument (sysml_codegen/elaboration/project.py:812), is joined to this row in sysml-codegen's site account by the spec's R3 table (Item 2a plan PD4). Its role is unknown and it stays an explicit follow-up."
 sites = []
-site_status = "not_located"
+site_status = "codegen_account"
 dc3 = []
 upstream = []
 

@@ -76,8 +76,11 @@ class RowEvidence(StrEnum):
 
 
 class SiteStatus(StrEnum):
-    #: The row's sites are listed in `sites` (from the site account).
+    #: The row's agentic-mbse sites are listed in `sites` (from the site account).
     LISTED = "listed"
+    #: The row's sites are all sysml-codegen sites. sysml-codegen's site account
+    #: (`tests/expectations/subset_profile/site_account.csv`) names the row in `matrix_row`.
+    CODEGEN_ACCOUNT = "codegen_account"
     #: The case has no raise site at all: a silent omission or an admission.
     NO_RAISE_SITE = "no_raise_site"
     #: A raise site is reported but not located among the scanned sites.
@@ -151,7 +154,7 @@ class MatrixRow:
     owner: str
     #: What stays uncovered; empty only for a shared rule implemented in Item 1.
     coverage_limitation: str
-    #: Site-account IDs (filled from `site_account.csv`).
+    #: agentic-mbse site-account IDs (filled from `site_account.csv`).
     sites: tuple[str, ...]
     site_status: SiteStatus
     dc3: tuple[str, ...]
