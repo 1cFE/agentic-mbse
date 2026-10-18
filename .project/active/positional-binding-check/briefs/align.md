@@ -19,3 +19,7 @@
 - **R4-2 (reserved to owner):** any change to generator binding behavior. Out of scope; the discrepancy is recorded upstream only.
 - **R4-3 (reserved to owner):** any fusion-tea edit or migration. Not authorized by this epic.
 - Premise surprise rule applies: if the 125 fusion-tea findings or the dc3 zero-finding result do not reproduce, surface it rather than tune the detector.
+
+## Owner boundary (2026-10-18)
+
+- [OWNER] "I am working with another agent on item 2, so do not touch that." Item 4 must not modify sysml-codegen or any Item 2 artifact. It records the generator semantic discrepancy as a finding for upstream only. sysml-codegen PR #21 (ADR 0018, `.project/adr/` only) was opened before this instruction.
