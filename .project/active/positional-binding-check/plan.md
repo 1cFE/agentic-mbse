@@ -1,6 +1,6 @@
 # Implementation Plan: Positional-binding hazard and check (EXEC-SUBSET-CONTRACT Item 4)
 
-**Status:** Implementation in progress (Phases 1-6 done)
+**Status:** Implementation complete (Phases 1-8 done); next `/_my_audit`
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `positional-binding-check` (base `main` at `ccd57d83`)
@@ -664,39 +664,39 @@ def test_marked_fences_exist():
 **See `design.md` for:** Appendix C (each file's edit), I8 (every codegen rule), Validation Approach "Changed examples" (the marker form), "Guidance and a cross-repo constraint" research notes.
 
 #### 1. Guidance edits
-- [ ] `docs/patterns/plant-idiom.md` (`:298`, `:74-79`, new short paragraph): qualify "Order does not matter"; say D-5 renames the definition's parameter; by-name and definition-order forms; link `semantic-hazards.md#positional-input-binding`. No `@pinned` block changes; the `@authoritative` marker stays the only one.
-- [ ] `skills/sysml-conventions/SKILL.md` (`:129`, `:218-226`) and `project_templates/MODELING_GUIDE.md.template` (`:145-152`): the "rename" clarification, one line on order versus `:>>`, the register link. Keep the text `plant-idiom.md` and the phrase "Binding a modelled value into a calculation"; add no `@authoritative` marker.
-- [ ] `agents/sysml-expert.md` (`:117-139`): one sentence on binding by name or in definition order, and declaring `subject` first, with the link.
-- [ ] Every new or changed SysML fence carries `<!-- @positional-example expect="none" -->` or `expect="<owner>|<input>|<target>; ..."` directly above it, and binds a distinct unqualified path (`in :>> a = big;`).
-- [ ] Before saving each file, check it against I8's line patterns. A self-check script is fine; do not copy codegen's test into this repo.
+- [x] `docs/patterns/plant-idiom.md` (`:298`, `:74-79`, new short paragraph): qualify "Order does not matter"; say D-5 renames the definition's parameter; by-name and definition-order forms; link `semantic-hazards.md#positional-input-binding`. No `@pinned` block changes; the `@authoritative` marker stays the only one.
+- [x] `skills/sysml-conventions/SKILL.md` (`:129`, `:218-226`) and `project_templates/MODELING_GUIDE.md.template` (`:145-152`): the "rename" clarification, one line on order versus `:>>`, the register link. Keep the text `plant-idiom.md` and the phrase "Binding a modelled value into a calculation"; add no `@authoritative` marker.
+- [x] `agents/sysml-expert.md` (`:117-139`): one sentence on binding by name or in definition order, and declaring `subject` first, with the link.
+- [x] Every new or changed SysML fence carries `<!-- @positional-example expect="none" -->` or `expect="<owner>|<input>|<target>; ..."` directly above it, and binds a distinct unqualified path (`in :>> a = big;`).
+- [x] Before saving each file, check it against I8's line patterns. A self-check script is fine; do not copy codegen's test into this repo.
 
 #### 2. Example test
 **File:** `tests/test_validation/test_positional_examples.py` (NEW)
-- [ ] Collect marked fences from `docs/`, `skills/`, `agents/`, `project_templates/`; load each (wrap in a package if the fence is a fragment, stated in the test); assert parse success and exactly the stated positional identities; by-name examples have no `L2_SELF_NAMED_BINDING` (Reg-3).
-- [ ] Shipped-text assertions for Reg-2 in `tests/test_shipped_text.py`: each edited file links the register; `plant-idiom.md`'s "Order does not matter" line is qualified.
+- [x] Collect marked fences from `docs/`, `skills/`, `agents/`, `project_templates/`; load each (wrap in a package if the fence is a fragment, stated in the test); assert parse success and exactly the stated positional identities; by-name examples have no `L2_SELF_NAMED_BINDING` (Reg-3).
+- [x] Shipped-text assertions for Reg-2 in `tests/test_shipped_text.py`: each edited file links the register; `plant-idiom.md`'s "Order does not matter" line is qualified.
 
 #### 3. Re-install and codegen conformance evidence
 **File:** `.project/active/positional-binding-check/evidence/codegen-conformance.md` (NEW)
-- [ ] Re-run `uv run agentic-mbse install-commands --assistant claude --link-mode symlink` (the install mode this checkout uses, per `.project/CURRENT_WORK.md`). Record the mode, because I8's `.claude/` scan skips symlinks.
-- [ ] From `/home/reid/src/sysml-codegen`, run its `tests/conformance/test_self_binding_guidance_contract.py` read-only with its own environment. Record codegen's resolved `agentic_mbse.__file__` (it must be under `/home/reid/src/agentic-mbse/src`), this checkout's branch and HEAD, and the full test output. Write nothing in sysml-codegen. If it fails, fix the guidance here and re-run; never edit codegen's test.
+- [x] ~~Re-run `uv run agentic-mbse install-commands --assistant claude --link-mode symlink` (the install mode this checkout uses, per `.project/CURRENT_WORK.md`). Record the mode, because I8's `.claude/` scan skips symlinks.~~ Not run in this checkout: it has no agentic-mbse install to refresh (see Phase 8 notes). Both modes were tested on scratch exports instead.
+- [x] From `/home/reid/src/sysml-codegen`, run its `tests/conformance/test_self_binding_guidance_contract.py` read-only with its own environment. Record codegen's resolved `agentic_mbse.__file__` (it must be under `/home/reid/src/agentic-mbse/src`), this checkout's branch and HEAD, and the full test output. Write nothing in sysml-codegen. If it fails, fix the guidance here and re-run; never edit codegen's test.
 
 #### 4. Final repository checks
 **File:** `.project/active/positional-binding-check/evidence/repository-checks.md` (NEW)
-- [ ] `uv run pytest tests/` → no new failures versus the Phase 1 baseline. List which test modules needed `SYSIDE_LICENSE_KEY`.
-- [ ] `uv run pytest tests/ -m slow` with the two tree variables set → record which slow tests ran and which skipped, with reasons.
-- [ ] `uv run mypy src/` → error count not above baseline, none in touched files. `uv run ruff check src/ tests/` → pass, or exactly the baseline's findings.
-- [ ] `uv run ruff format --check` on every touched file.
-- [ ] Update `.project/CURRENT_WORK.md`'s Item 4 row: next step `/_my_audit`; open owner items listed (see below).
+- [x] `uv run pytest tests/` → no new failures versus the Phase 1 baseline. List which test modules needed `SYSIDE_LICENSE_KEY`.
+- [x] `uv run pytest tests/ -m slow` with the two tree variables set → record which slow tests ran and which skipped, with reasons.
+- [x] `uv run mypy src/` → error count not above baseline, none in touched files. `uv run ruff check src/ tests/` → pass, or exactly the baseline's findings.
+- [x] `uv run ruff format --check` on every touched file.
+- [x] Update `.project/CURRENT_WORK.md`'s Item 4 row: next step `/_my_audit`; open owner items listed (see below).
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_validation/test_positional_examples.py tests/test_shipped_text.py` → pass
-- [ ] codegen conformance test → pass, captured in evidence
-- [ ] G1, G2, G3
+- [x] `uv run pytest tests/test_validation/test_positional_examples.py tests/test_shipped_text.py` → pass
+- [x] codegen conformance test → pass, captured in evidence
+- [x] G1, G2, G3
 
 **Manual:**
-- [ ] Read each edited guidance passage once as an author would: does it say input order on a calc usage matters, and show both repairs?
+- [x] Read each edited guidance passage once as an author would: does it say input order on a calc usage matters, and show both repairs?
 
 **Done when (traces to Reg-2, Reg-3, Repo-1):** the guidance edits are in, every marked example has its stated findings, codegen's conformance test passes against this checkout with its import path recorded, and the repository checks evidence is written.
 
@@ -709,7 +709,9 @@ def test_marked_fences_exist():
 - **R4-2.** Any change to generator binding. Not touched; the draft upstream finding records the discrepancy.
 - **Filing the upstream finding** in sysml-codegen: the owner's call (or Item 2's). Listed at close.
 - **D21 observation** for the owner and Item 2's agent: Item 1's `formal_targets` carries the native positional reading.
-- **`out_before_in`**, if Phase 1 finds L1 passes it.
+- **`out_before_in`**: Phase 1 found L1 passes it; Phase 5 found L2 rejects it for the positional reason. Det-6 for this row is open.
+- **Copy-mode installs and codegen's `.claude` rule.** A `--link-mode copy` install of the shipped skills into this checkout fails sysml-codegen's guidance contract on `.claude/skills/sysml-conventions/SKILL.md`, at `ccd57d83` as well as now (`evidence/codegen-conformance.md`). Not this item's change; whether to accept, reword the skill, or narrow codegen's rule is the owner's call.
+- **No guard in this repo for codegen's self-named rule.** `312d16a5` re-broke MODELING_PROCESS's self-named prose on `main` and nothing here caught it; Phase 8 re-fixed the line. Whether agentic-mbse should carry its own check is the owner's call.
 - **Follow-up for the orchestrator to file:** `VALIDATE-SEMA-DIAGNOSTICS` (design Next-Stage Handoff).
 - **ADR candidate** at acceptance: the pin-list file contract (D10–D13).
 
@@ -895,8 +897,38 @@ See `design.md#potential-risks` for the full list. Phase-specific mitigations:
 - Short fixture names in the register were expanded to full paths so the path test covers every citation.
 
 ### Phase 8 Completion
+**Completed:** 2026-10-18
+
+**Changes Made:**
+- `docs/patterns/plant-idiom.md`: D-5 now says the input is renamed in the calculation definition and bound bare in the usage, plus one paragraph that renaming only the usage's input leaves it bound by position (register link). Mechanism (d)'s "Order does not matter" now reads "Here order does not matter ... This is about where the `:>>` sits relative to the binding. The order of a calculation usage's inputs does matter", linking a new subsection "Input order on a calculation usage" (inside the authoritative section, after the refused form): KerML rule, the three repairs, the L2 code, the register link, and a marked `expect="none"` example with `by_name` and `in_order` usages. A Related link. No `@pinned` block or `@authoritative` marker changed (8 `@pinned`, 1 `@authoritative`, 4 qualified sites, as before).
+- `skills/sysml-conventions/SKILL.md`: the self-binding row says rename the `calc def` parameter and that renaming only the usage's input still binds by position; a new mistakes row for out-of-order calc inputs (by name, definition order, `redefines`, register link); the binding bullet and a short paragraph after the authoritative pointer say the same. `plant-idiom.md` and "Binding a modelled value into a calculation" are still there.
+- `project_templates/MODELING_GUIDE.md.template`: the same rename clarification and a "Calculation input order" entry with the register link.
+- `agents/sysml-expert.md`: one paragraph after the `assert constraint` guidance: bind by name with `:>>` or in definition order, rename only with `redefines`, declare `subject` (and any `actor` or `stakeholder`) first, register link. It has no `in <name> =` text, because roles render into `.claude/agents/` as regular files and codegen's `.claude` rule scans them.
+- `project_templates/MODELING_PROCESS.md.template`: the self-named warning loses its `;` again. See Issues.
+- `tests/test_validation/test_positional_examples.py` (NEW): collects every `@positional-example` fence in `docs/`, `skills/`, `agents/`, `project_templates/`; wraps each in `package example { private import ScalarValues::*; ... }` (stated in the docstring, so `expect` names are relative to `example`); asserts L1 passes, the exact positional identities with no unverifiable result, and, for `expect="none"`, no `L2_SELF_NAMED_BINDING` or `L2_POSITIONAL_BINDING`. Also asserts every marker heads a fence. 3 fences (register 2, plant-idiom 1). Discrimination: changing the reversed register example to `expect="none"` fails it.
+- `tests/test_shipped_text.py`: Reg-2 tests: the four guidance files link `semantic-hazards.md#positional-input-binding`, mention `:>>` and position; the three rename surfaces say renaming only the usage's input does not rename the parameter; every "order does not matter" line in `plant-idiom.md` carries the qualification.
+- `evidence/codegen-conformance.md` (NEW) and `evidence/repository-checks.md` (NEW).
+- `.project/CURRENT_WORK.md`: Item 4 line, next `/_my_audit`, open owner items.
+- Committed as `60c75af3` (guidance and tests) before the conformance run, so the evidence names a clean HEAD.
+
+**Results:**
+- Codegen conformance (I8): 9 of 9 pass at sysml-codegen `origin/main` and at `b5663c07`, which are the same commit (local ref and `ls-remote` agree; nothing fetched). Each was exported with `git archive` and run from the export with this checkout's interpreter; `agentic_mbse.__file__` is `/home/reid/src/agentic-mbse/src/agentic_mbse/__init__.py` and the test's own `agentic_source_root()` returns `/home/reid/src/agentic-mbse`. The codegen checkout (another agent's, at `8396cb23`) stayed clean and unchanged.
+- The `.claude/` scan saw 56 regular files, no symlinks, no matching line, and no agentic-mbse install.
+- Final checks against the baseline: pytest 6 failed (the baseline 6) / 3936 passed; mypy `src/` 97 (baseline); ruff `src/ tests/` 118 (baseline); all 30 touched Python files pass ruff check and format. Slow lane: the 3 tree tests pass; 2 corpus tests fail and 2 skip for missing corpus PDFs, unrelated and not baselined.
+
+**Issues:**
+- **sysml-codegen's guidance contract already failed on `main` before this item.** Run against the base `ccd57d83` (scratch export), `test_zero_unmarked_self_named_examples_across_all_trees` fails on `project_templates/MODELING_PROCESS.md.template`: `06ac41de` (#17) had made the self-named warning prose by dropping its `;`, and `312d16a5` (goal-layer-port) put the `;` back. The plan says to fix the guidance here if the test fails, so Phase 8 drops it again; the line is otherwise unchanged. Recorded as an owner item, since nothing in this repo guards it.
+- **Copy-mode installs fail codegen's `.claude` rule, before and after this item.** On scratch exports, a `--link-mode copy` install puts `sysml-conventions/SKILL.md` under `.claude/` as a regular file, and its binding lines (11 at `ccd57d83`) fail the rule. Symlink mode passes 9 of 9. Owner item.
+- The two slow corpus failures need `tests/corpus/pdfs/`, which this checkout lacks.
+
+**Deviations:**
+- **No re-install in this checkout.** The plan assumed this checkout had a symlink install to refresh. It has none: no `.agentic-mbse/install.json`, no shipped skill or role under `.claude/`, and `.claude/.agentic-pack-vendored` was written today by another tool. Installing would have changed local state that tool manages. Instead the evidence records what the scan saw here, and both install modes were run on scratch exports of HEAD.
+- **Interpreter.** The conformance test ran with this checkout's `.venv`, not sysml-codegen's, because the brief forbids running anything in the codegen checkout. Both import agentic-mbse from this checkout, which the run proves.
+- Guidance edits also touched `MODELING_PROCESS.md.template` (one character), which Appendix C did not list, for the reason above.
+- Example markers: `expect` names are relative to the wrapper package, not fully qualified, so the docs read naturally.
+- Manual read as an author: the skill paragraph and role sentence first showed only one repair; both now name by-name, definition order and `redefines`.
 
 ---
 
-**Status:** Draft
-**Next Step:** `/_my_implement` starting at Phase 1. After all phases, `/_my_audit`.
+**Status:** Implementation complete
+**Next Step:** `/_my_audit`.

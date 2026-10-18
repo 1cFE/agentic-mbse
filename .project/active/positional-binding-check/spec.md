@@ -1,6 +1,6 @@
 # Spec: Positional-binding hazard and check (EXEC-SUBSET-CONTRACT Item 4)
 
-**Status:** Implementation in progress (plan Phases 1-6 done 2026-10-18); revised after spec review (2026-10-18)
+**Status:** Implementation complete (plan Phases 1-8 done 2026-10-18; next `/_my_audit`); revised after spec review (2026-10-18)
 **Owner:** Reid Westwood
 **Created:** 2026-10-18
 **Complexity:** MEDIUM
