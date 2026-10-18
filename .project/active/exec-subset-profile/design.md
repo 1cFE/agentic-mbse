@@ -43,6 +43,8 @@ The contract is only worth having if it is honest in both directions:
 
 ## R1 — Capability-policy ownership (owner gate, recommendation only)
 
+**Decision (2026-10-18):** [AGENT] (ratified by owner, 2026-10-18; owner reply "A (ii)") Option A with the summary port, end condition (ii) — codegen keeps its copy and Item 2 adds a permanent parity CI test — and the ADR 0012 amendment. SA-1 accepted by orchestrator as an execution detail (it does not make any rule stricter).
+
 ### The situation
 
 The contract needs to know which part usages the generator instantiates. Three outcomes depend on that: whether a sequence binding is refused (ES-003/ES-012, dc3 B2), whether a ranged multiplicity is refused (ES-004, B3), and whether a blocked predicate is refused (ES-007, B8). The generator only examines those shapes inside parts it instantiates.

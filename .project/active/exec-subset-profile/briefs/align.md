@@ -24,3 +24,7 @@
 - Item 1 cannot claim generator-verified rules: independent screen-bypassing fixtures live in codegen (Item 2). Each rule records its generator evidence status as prototype or pending Item 2.
 - "ADR 0007" is cited but `.project/adr/` holds only a README; design locates it or records the absence.
 - "Inventory complete relative to the pinned generator surface" is read as complete relative to the scanner's recognized forms plus an explicit list of known blind spots.
+
+## Gate outcomes
+
+- **R1 (2026-10-18):** owner chose Option A, end condition (ii), with the ADR 0012 amendment (reply "A (ii)"). Recorded in `design.md` § R1.
