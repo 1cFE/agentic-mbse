@@ -22,7 +22,9 @@
       }
     ]
   },
-  "agentic_site_witnesses": [],
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/reference_use.py::_reference_use::shared-evidence::RESOLVED_TARGET_MISSING::1"
+  ],
   "provenance": {
     "note": "New in Item 2a P2.2: a case family for the rule (spec B4)."
   }

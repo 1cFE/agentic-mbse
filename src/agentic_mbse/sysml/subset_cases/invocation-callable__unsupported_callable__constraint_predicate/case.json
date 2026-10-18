@@ -30,7 +30,10 @@
       }
     ]
   },
-  "agentic_site_witnesses": [],
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_invocation::1",
+    "agentic_mbse/sysml/reference_use.py::_require_supported_invocation::shared-evidence::EXPRESSION_KIND_UNSUPPORTED::1"
+  ],
   "provenance": {
     "from_probe": "invocation-callable__unsupported_callable__constraint_predicate",
     "note": "Item 1 probe, moved in Item 2a P2.1."

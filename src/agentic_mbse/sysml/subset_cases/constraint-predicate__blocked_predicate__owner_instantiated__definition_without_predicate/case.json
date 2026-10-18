@@ -1,0 +1,31 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      3,
+      10
+    ],
+    "description": "Holder::c is typed by constraint def Empty, which has no predicate"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "constraint-predicate",
+        "shape": "blocked_predicate",
+        "context": "owner_instantiated",
+        "outcome": "refused",
+        "subject": "Witness::Holder::c",
+        "line": 8
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/executable_profile.py::_evaluate_usage_against_definition::shared-profile::block_missing_predicate::1"
+  ],
+  "provenance": {
+    "note": "New in Item 2a P2.4: a witness for a shared executable-profile site."
+  }
+}

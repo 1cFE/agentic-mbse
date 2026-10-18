@@ -272,7 +272,10 @@ evidence = ["case:conditional-expression__conditional_unresolved_branch__calc_de
 [[rule.shape.admission]]
 context = "constraint_predicate"
 outcome = "refused"
-evidence = ["case:conditional-expression__conditional_unresolved_branch__constraint_predicate"]
+evidence = [
+    "case:conditional-expression__conditional_unresolved_branch__constraint_predicate",
+    "case:conditional-expression__conditional_unresolved_branch__constraint_predicate__predicate_root",
+]
 
 [[rule.shape.admission]]
 context = "other_expression_site"
@@ -316,6 +319,20 @@ evidence = [
     "case:constraint-predicate__blocked_predicate__owner_instantiated__part_usage_owner",
     "case:constraint-predicate__blocked_predicate__owner_instantiated__subtype",
     "case:constraint-predicate__blocked_predicate__owner_instantiated__under_two",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__arithmetic_operand_mismatch",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__arithmetic_root",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__assert_by_reference",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__boolean_ordering",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__comparison_in_value_position",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__conjunction_in_value_position",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__connective_in_value_position",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__definition_without_predicate",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__feature_chain_root",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__implies_with_comparisons",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__real_equality",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__real_literal_root",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__real_reference_root",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__unit_annotation_root",
 ]
 
 [[rule.shape.admission]]
@@ -348,6 +365,7 @@ context = "owner_instantiated"
 outcome = "excluded"
 evidence = [
     "case:constraint-predicate__non_numerical_predicate__owner_instantiated",
+    "case:constraint-predicate__non_numerical_predicate__owner_instantiated__boolean_literal_root",
 ]
 
 [[rule.shape.admission]]
@@ -474,7 +492,10 @@ evidence = ["case:invocation-callable__unsupported_callable__calc_definition_fea
 [[rule.shape.admission]]
 context = "constraint_predicate"
 outcome = "refused"
-evidence = ["case:invocation-callable__unsupported_callable__constraint_predicate"]
+evidence = [
+    "case:invocation-callable__unsupported_callable__constraint_predicate",
+    "case:invocation-callable__unsupported_callable__constraint_predicate__predicate_root",
+]
 
 [[rule.shape.admission]]
 context = "other_expression_site"
@@ -565,6 +586,7 @@ evidence = [
     "case:part-multiplicity__unresolved_bound__expanded_part_usage",
     "case:part-multiplicity__unresolved_bound__expanded_part_usage__under_two",
     "case:part-multiplicity__unresolved_bound__expanded_part_usage__referenced",
+    "case:part-multiplicity__unresolved_bound__expanded_part_usage__lower",
 ]
 
 [[rule.shape.admission]]

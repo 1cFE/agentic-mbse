@@ -1,0 +1,31 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      4,
+      4
+    ],
+    "description": "Holder::c asserts 'true': the literal true as the whole predicate"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": [
+      {
+        "rule": "constraint-predicate",
+        "shape": "non_numerical_predicate",
+        "context": "owner_instantiated",
+        "outcome": "excluded",
+        "subject": "Witness::Holder::c",
+        "line": 4
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::warn_non_numerical_predicate::2"
+  ],
+  "provenance": {
+    "note": "New in Item 2a P2.4: a witness for a shared executable-profile site."
+  }
+}

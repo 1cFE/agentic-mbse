@@ -86,3 +86,15 @@ reasons = [
 [[computed_site]]
 site_id = "agentic_mbse/sysml/executable_profile.py::_walk_proposition::coded-DYNAMIC::f'warn_non_numerical_{operator}'::1"
 reasons = ["warn_non_numerical_implies", "warn_non_numerical_xor"]
+
+# ---- linked sites no packaged case can fire ------------------------------------------------------
+# Every in-scope public row linked to a shared rule has a packaged case that fires it in the screen
+# (tests/test_subset_site_account.py), except these. Each statement says why no model reaches it.
+
+[[unwitnessed_site]]
+site_id = "agentic_mbse/sysml/executable_profile.py::_evaluate_usage_against_definition::shared-profile::block_unresolved_definition::1"
+statement = "A definition-typed assertion always resolves to a ConstraintDefinition: an untyped `assert constraint c;` is typed by the library default, and a typing by an attribute or part def still resolves to one. Every spelling tried in Item 2a P2.4 reaches block_missing_predicate instead. The branch is reached only by synthetic facts (tests/test_sysml/test_executable_profile.py::test_unresolved_definition_lookup_blocks)."
+
+[[unwitnessed_site]]
+site_id = "agentic_mbse/sysml/reference_use.py::require_exact_reference_use::shared-evidence::INDEXED_REFERENCE_UNSUPPORTED::1"
+statement = "Reached only through decompose_aggregation_expression (aggregation.py:259, :294, :447), a public function nothing under src/ calls, so neither the screen nor sysml-codegen's generator reaches it. The generator refuses an authored index at its own site (expression_evidence.py `_indexed_refusal`), and the screen recognizes one through the indexed-reference rule."

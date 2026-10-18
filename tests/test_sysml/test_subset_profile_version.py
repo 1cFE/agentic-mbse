@@ -20,7 +20,7 @@ from tests.helpers.subset_records import RECORDS_RESOURCE
 
 PINNED = {
     "subset-profile/v1": "30491315a96efaf8b75a6349787f0dd3498519d565b907a14211ab41bd68456b",
-    "subset-profile/v2": "e2983ebaa377d4d1c23a7fb41c3c5f6ae7259a12b3c6e7bb75330a234860514d",
+    "subset-profile/v2": "eddf64fa009463fc90fa994a1ab31cdf3816155cc8c8c016ebe2b7552125a701",
 }
 
 

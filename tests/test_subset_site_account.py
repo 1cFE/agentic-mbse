@@ -1,6 +1,6 @@
-"""The site account is total over the scanner's forms, joined to the matrix, and owned.
+"""The site account is total over the scanner's forms, joined to the matrix, owned and witnessed.
 
-Pure: reads `tests/fixtures/subset_profile/inventory/` only. Totality against the tree itself is
+Pure: reads `tests/fixtures/subset_profile/inventory/` and the packaged cases' witness lists. Totality against the tree itself is
 the recorded `scan_sites.py --reconcile` run; this file checks everything the account and the
 matrix can show on their own. The account holds agentic-mbse sites only: the sysml-codegen sites
 have their own account and drift test in sysml-codegen (EXEC-SUBSET-CONTRACT Item 2a D7).
@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 import tomllib
 
+from agentic_mbse.sysml.conformance_case import load_packaged_case, packaged_case_ids
 from tests.helpers.subset_matrix import RowClass, SiteStatus, load_matrix
 from tests.helpers.subset_site_account import (
     ACCOUNT_PATH,
@@ -33,6 +34,9 @@ COMPUTED_PROFILE_SITES = 5
 
 ACCOUNT = load_site_account()
 MATRIX = load_matrix()
+WITNESSES = {
+    case_id: load_packaged_case(case_id).agentic_site_witnesses for case_id in packaged_case_ids()
+}
 
 
 def test_sites_join_matrix() -> None:
@@ -112,6 +116,28 @@ def test_an_explicit_follow_up_may_name_the_row_it_is_routed_to() -> None:
     ]
     assert {s.matrix_rows for s in routed} == {("PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS",)}
     assert len(routed) == 4
+
+
+def _linked_public_sites() -> set[str]:
+    """The rows a shared rule links to that refuse a public capability (plan PD5, from P2)."""
+    return {s.site_id for s in ACCOUNT.rows if s.rules and s.role is Role.PUBLIC_CAPABILITY}
+
+
+def test_every_witness_names_an_accounted_site() -> None:
+    accounted = {s.site_id for s in ACCOUNT.rows}
+    named = {(case_id, w) for case_id, ws in WITNESSES.items() for w in ws}
+    assert {(c, w) for c, w in named if w not in accounted} == set()
+
+
+def test_every_linked_public_site_has_a_packaged_witness_or_says_why_none_can() -> None:
+    """Whether each witness really fires its site is sysml-codegen's live check."""
+    data = tomllib.loads((INVENTORY / "scanner.toml").read_text(encoding="utf-8"))
+    unwitnessed = {u["site_id"]: u["statement"] for u in data["unwitnessed_site"]}
+    witnessed = {w for ws in WITNESSES.values() for w in ws}
+    linked = _linked_public_sites()
+    assert all(statement.strip() for statement in unwitnessed.values())
+    assert unwitnessed.keys() <= linked
+    assert linked - witnessed == unwitnessed.keys()
 
 
 @pytest.mark.parametrize(

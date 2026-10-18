@@ -22,7 +22,9 @@
       }
     ]
   },
-  "agentic_site_witnesses": [],
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::warn_non_numerical_predicate::1"
+  ],
   "provenance": {
     "from_probe": "constraint-predicate__blocked_predicate__owner_instantiated__under_two",
     "note": "Item 1 probe, moved in Item 2a P2.1."

@@ -22,7 +22,9 @@
       }
     ]
   },
-  "agentic_site_witnesses": [],
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/reference_use.py::_require_supported_invocation::shared-evidence::EXPRESSION_KIND_UNSUPPORTED::1"
+  ],
   "provenance": {
     "note": "New in Item 2a P2.2: an R3 section 3 unconfirmed pair."
   }

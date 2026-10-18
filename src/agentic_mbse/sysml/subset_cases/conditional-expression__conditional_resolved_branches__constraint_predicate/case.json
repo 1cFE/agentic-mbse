@@ -30,7 +30,10 @@
       }
     ]
   },
-  "agentic_site_witnesses": [],
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_unsupported_node::1",
+    "agentic_mbse/sysml/reference_use.py::_reference_use::shared-evidence::RESOLVED_TARGET_MISSING::1"
+  ],
   "provenance": {
     "note": "New in Item 2a P2.2: an R3 section 3 unconfirmed pair."
   }

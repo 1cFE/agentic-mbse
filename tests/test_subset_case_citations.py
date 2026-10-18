@@ -165,8 +165,8 @@ def test_a_control_draws_no_finding_of_its_rule_and_no_refusal(case: PackagedCas
     "case", [c for c in ALL_CASES if c.kind is CaseKind.REPRODUCTION], ids=lambda c: c.case_id
 )
 def test_a_reproduction_is_refused_by_no_rule(case: PackagedCase) -> None:
-    """ES-002, ES-008, ES-009, the ES-010 refusal side, a bare calc-def result and a constraint
-    under an item def owner have no rule."""
+    """ES-002, ES-008, ES-009, the ES-010 refusal side, a bare calc-def result, a constraint
+    under an item def owner and an anonymous assertion by reference have no rule."""
     assert refused(case) == []
 
 
