@@ -18,6 +18,7 @@ Prioritized list of epics and features.
 
 | Item | Status | Evidence / next step |
 |------|--------|----------------------|
+| `ARXIV-EXTRACTION` | [AGENT] Spec drafted 2026-10-18 at owner request; priority not assigned; implementation not started | Repair PDF shortcut figure downloads and identity checks, add opt-out, remove arXiv page chrome, expose fallback diagnostics. [Spec](../active/arxiv-extraction/spec.md). Branch `fix/arxiv-extraction` |
 | `L6-LIBRARY-ALIAS-SOURCE` | [AGENT] Filed 2026-10-04 at `L6-EXPOSE-CONSISTENCY` close; recorded limitation, not a regression | An EXPOSE alias to an attribute of a part typed by a `library/` part definition passes Level 6 even when that source value is unset, because completeness path-filters the source declaration and skips the alias ([audit](../completed/20261004_l6-expose-consistency/audit.md) advisory; design R4/B4). How required values on referenced library parts get verified is undecided |
 | `NATIVE-DISTRIBUTION-RECONCILIATION` | [AGENT] Draft residual-work spec; product-lens CLEAR; adopted 2026-10-06 as Item 1 of `WRAP-SPLIT` (P1) | [Distribution spec](../active/native-skill-distribution/spec.md); [epic](epic_wrap-split.md) |
 | `CMDREF-001` | [INHERITED: epic_command-refresh.md] P2 draft; scope reconciliation needed | September simplification overlaps this July proposal; inspect remaining objectives before decomposition |

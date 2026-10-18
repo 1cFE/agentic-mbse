@@ -11,6 +11,8 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
+- ARXIV-EXTRACTION — [spec](active/arxiv-extraction/spec.md) drafted 2026-10-18 at owner request; implementation not started. Branch `fix/arxiv-extraction`, worktree `/home/reid/src/agentic-mbse-worktrees/arxiv-extraction`, base local `main` (`8b027bbc`). Next: design identity detection, article selection and shared image persistence. Priority not assigned.
+
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 
 ## Concrete remaining work

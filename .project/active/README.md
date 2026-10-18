@@ -6,6 +6,7 @@
 
 | Folder | Reconciled disposition |
 |--------|------------------------|
+| [arxiv-extraction](arxiv-extraction/spec.md) | Spec drafted 2026-10-18; implementation not started; branch `fix/arxiv-extraction`; priority not assigned |
 | `harness-right-size` | Implementation and bounded review complete; installed in Fusion TEA |
 | `modeling-workflow-outcomes` | Repairs and focused trials complete; native-source drift and L6 EXPOSE defect tracked separately |
 | `spike-native-skill-install` | Research/probes complete; native implementation and remediation live in sibling `agentic-mbse-native-skills` |
