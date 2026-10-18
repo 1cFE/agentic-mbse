@@ -29,3 +29,11 @@ The owner approved these after a plain-language walkthrough ("yes, good"). They 
 - **R3-2 (reserved to owner):** any change that makes a project which passes `validate` today fail it with the target unset.
 - Check and configuration failures (malformed TOML, unknown target value, inspection failures) are errors regardless of target (epic Item 3 scope 3). That is inherited, not a gate.
 - Premise surprise rule applies.
+
+## Gate outcomes (2026-10-18)
+
+The owner delegated both gates ("do whatever") after a walkthrough. Decided by the orchestrator, [AGENT] (delegated by owner, 2026-10-18):
+
+- **R3-1, String values:** the legacy `L6_DESIGN_ATTR_UNEXTRACTABLE` error for String values (`attribute` form, `designs/` only) is replaced by the contract's `omitted` outcome, a warning in both forms and every folder, consistent with the owner's omissions-are-warnings decision. **Malformed constraints:** `L6_CONSTRAINT_MALFORMED_NUMERICAL` keeps its current error severity and scope under every target; the contract's constraint outcomes are reported alongside it, not instead of it, so no constraint error is relaxed (spec review L1-1).
+- **R3-2, check failures:** a check that crashes or cannot inspect what it was asked to inspect fails the run under every target, including unset; a crashed level is recorded as failed. Safeguard: before merge, full `validate --complete` before/after runs on dc3 (`808464d`, `60b44d5`) and fusion-tea (`f96ad312`) are measured; if any of them would go from pass to fail, the orchestrator shows the owner before merging.
+- **Unverified contract checks under unset** are warnings (they are the contract's "could not decide", not a crash); under `generated` they follow the contract's verdict presentation.
