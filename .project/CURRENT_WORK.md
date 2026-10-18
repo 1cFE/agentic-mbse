@@ -11,6 +11,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
+- Positional-binding check (`EXEC-SUBSET-CONTRACT` Item 4), branch `positional-binding-check`: spec drafted 2026-10-18 at [active/positional-binding-check/spec.md](active/positional-binding-check/spec.md), next spec review.
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 
 ## Concrete remaining work
