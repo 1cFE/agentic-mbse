@@ -169,7 +169,7 @@ FAULTS = [
     pytest.param(
         '[tool.agentic-mbse.reseach]\nholdout-guard = "guard.py"\n',
         {"guard.py": GUARD_FILE_SOURCE},
-        "unknown key 'reseach' in [tool.agentic-mbse]; its only key is 'research'",
+        "unknown key 'reseach' in [tool.agentic-mbse]; allowed keys are 'execution-target', 'research'",
         id="misspelled research table",
     ),
     pytest.param(

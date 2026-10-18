@@ -25,15 +25,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-import tomllib
+from agentic_mbse.project_settings import (
+    TOOLKIT_TABLE,
+    SettingsDefect,
+    dotted,
+    read_toolkit_table,
+)
 
 GUARD_KEY = "holdout-guard"
-_TOOL_TABLE = ("tool",)
-_TOOLKIT_TABLE = ("tool", "agentic-mbse")
-_RESEARCH_TABLE = ("tool", "agentic-mbse", "research")
-# The toolkit's table name with an underscore. The toolkit never reads it, so a
-# table there is a misspelling.
-_UNDERSCORE_SPELLING = "agentic_mbse"
+_RESEARCH_TABLE = (*TOOLKIT_TABLE, "research")
 _CHECKS = ("check_input_path", "scan_terms", "scan_file")
 
 # A loaded guard is registered under a private name derived from its file, so two
@@ -202,9 +202,10 @@ def load_holdout_guard(project_root: Path) -> HoldoutGuard:
 
     No `[tool.agentic-mbse.research]` table, or an empty one, gives a guard that
     holds nothing out. Any fault gives a guard whose every check raises
-    `HoldoutGuardError` naming it: unreadable TOML, a key other than `research`
-    in `[tool.agentic-mbse]` or other than `holdout-guard` in its research
-    table, a `[tool.agentic_mbse]` table, a value that is not a non-empty
+    `HoldoutGuardError` naming it: unreadable TOML, a key in `[tool.agentic-mbse]`
+    outside the toolkit's key set (`project_settings.TOOLKIT_KEYS`), a key other
+    than `holdout-guard` in its research table, a `[tool.agentic_mbse]` table,
+    a value that is not a non-empty
     string, a file that is missing or will not load, or a missing function.
     Loading itself never raises, so the fault surfaces at the first check,
     where the caller refuses.
@@ -218,15 +219,11 @@ def load_holdout_guard(project_root: Path) -> HoldoutGuard:
 
 def _configured_guard_file(project_root: Path) -> Path | None:
     """The guard file the project's configuration names, or None when it names none."""
-    pyproject = project_root / "pyproject.toml"
-    try:
-        config = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        return None
-    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as error:
-        raise HoldoutGuardError(f"cannot read {pyproject}: {error}") from error
-
-    table = _research_table(config, pyproject)
+    toolkit = read_toolkit_table(project_root)
+    if isinstance(toolkit, SettingsDefect):
+        raise HoldoutGuardError(toolkit.detail)
+    pyproject = toolkit.path
+    table = _subtable(toolkit.table, _RESEARCH_TABLE, pyproject)
     if table is None:
         return None
     _refuse_unknown_keys(table, _RESEARCH_TABLE, GUARD_KEY, pyproject)
@@ -238,28 +235,6 @@ def _configured_guard_file(project_root: Path) -> Path | None:
     return project_root / value
 
 
-def _research_table(config: dict[str, Any], pyproject: Path) -> dict[str, Any] | None:
-    """`[tool.agentic-mbse.research]`, or None when absent.
-
-    The toolkit owns `[tool.agentic-mbse]` and reads only `research` there, so
-    any other key in it is a fault, and so is a `[tool.agentic_mbse]` table.
-    Anything but a table on the way is a fault too.
-    """
-    tool = _subtable(config, _TOOL_TABLE, pyproject)
-    if tool is None:
-        return None
-    if _UNDERSCORE_SPELLING in tool:
-        raise HoldoutGuardError(
-            f"{pyproject}: [tool.{_UNDERSCORE_SPELLING}] is not read; "
-            f"the toolkit's table is {_dotted(_TOOLKIT_TABLE)}"
-        )
-    toolkit = _subtable(tool, _TOOLKIT_TABLE, pyproject)
-    if toolkit is None:
-        return None
-    _refuse_unknown_keys(toolkit, _TOOLKIT_TABLE, _RESEARCH_TABLE[-1], pyproject)
-    return _subtable(toolkit, _RESEARCH_TABLE, pyproject)
-
-
 def _subtable(
     parent: dict[str, Any], table_path: tuple[str, ...], pyproject: Path
 ) -> dict[str, Any] | None:
@@ -268,7 +243,7 @@ def _subtable(
         return None
     table = parent[table_path[-1]]
     if not isinstance(table, dict):
-        raise HoldoutGuardError(f"{pyproject}: {_dotted(table_path)} is not a table")
+        raise HoldoutGuardError(f"{pyproject}: {dotted(table_path)} is not a table")
     return table
 
 
@@ -280,12 +255,8 @@ def _refuse_unknown_keys(
     if unknown:
         raise HoldoutGuardError(
             f"{pyproject}: unknown key {', '.join(map(repr, unknown))} in "
-            f"{_dotted(table_path)}; its only key is {only_key!r}"
+            f"{dotted(table_path)}; its only key is {only_key!r}"
         )
-
-
-def _dotted(table_path: tuple[str, ...]) -> str:
-    return f"[{'.'.join(table_path)}]"
 
 
 def _load_guard_file(guard_file: Path) -> HoldoutGuard:

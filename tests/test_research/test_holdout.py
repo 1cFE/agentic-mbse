@@ -354,3 +354,47 @@ def test_a_guard_fault_after_capture_counts_the_capture(local_site, knowledge_tr
     assert first["source_id"] == faulted.source_id
     assert second["outcome"] == "limit_reached"
     assert_nothing_written(knowledge_tree)
+
+
+# --- the shared toolkit key set (EXEC-SUBSET-CONTRACT Item 3, design D1) ----------------
+
+
+@pytest.mark.parametrize("target", ["generated", "native"])
+def test_both_keys_pass_the_guard(target, local_site, knowledge_tree, sealed_pdf, no_capture):
+    """`execution-target` beside a valid guard: the guard loads and still bars the sealed path."""
+    root = knowledge_tree.paths.project_root
+    (root / "pyproject.toml").write_text(
+        f'[tool.agentic-mbse]\nexecution-target = "{target}"\n\n'
+        '[tool.agentic-mbse.research]\nholdout-guard = "guard.py"\n'
+    )
+    (root / "guard.py").write_text(GUARD_FILE_SOURCE)
+    result = register(LocalPdfSource(path=sealed_pdf), METADATA, paths=knowledge_tree.paths)
+    assert result.outcome == "holdout_hit"
+
+
+@pytest.mark.parametrize("value", ['"generate"', "1", '""'])
+def test_bad_execution_target_value_does_not_refuse_register(value, local_site, knowledge_tree):
+    """Research validates only `holdout-guard`; validation owns the `execution-target` value."""
+    root = knowledge_tree.paths.project_root
+    (root / "pyproject.toml").write_text(f"[tool.agentic-mbse]\nexecution-target = {value}\n")
+    result = register(
+        UrlSource(url=local_site.url("utf8.html")), METADATA, paths=knowledge_tree.paths
+    )
+    assert result.outcome == "registered", result.reason
+
+
+@pytest.mark.parametrize("key", ["execution_target", "executiontarget"])
+def test_misspelled_key_fails_the_guard(key, local_site, knowledge_tree, run_dir):
+    root = knowledge_tree.paths.project_root
+    (root / "pyproject.toml").write_text(f'[tool.agentic-mbse]\n{key} = "generated"\n')
+    result = register(
+        UrlSource(url=local_site.url("utf8.html")),
+        METADATA,
+        paths=knowledge_tree.paths,
+        run_dir=run_dir,
+    )
+    assert result.outcome == "precondition_failed"
+    assert result.reason.startswith(FAULT_PREFIX)
+    assert f"unknown key '{key}' in [tool.agentic-mbse]" in result.reason
+    assert "allowed keys are 'execution-target', 'research'" in result.reason
+    assert_nothing_written(knowledge_tree)
