@@ -134,18 +134,18 @@ evidence = [
 
 [[rule]]
 id = "calc-owned-assertion"
-title = "Constraint owned by a calculation"
+title = "Constraint owned by a calculation or an owner the generator does not map"
 matrix_rows = ["ES-001"]
 fact_requirements = ["assertion_owner", "constraint"]
 remedy = "Move the constraint to the part definition or part usage that owns the calculation, binding it to the calculation's inputs or result there."
-semantic_limits = "Asserted forms are those the constraint extractor names asserted (definition_typed, inline, named_usage_reference). A calc-usage owner is outside the generator's owner-kind map for every form."
+semantic_limits = "Asserted forms are those the constraint extractor names asserted (definition_typed, inline, named_usage_reference). A calc-usage owner is outside the generator's owner-kind map for every form, and so is every other owner kind the map leaves out (anything but a part def, part usage, calc def, package or requirement def): item defs, attribute defs, constraint defs and item usages are observed. Those are refused whether or not the model instantiates them."
 doc_anchor = "generator-subset#calc-owned-assertion"
 evidence_status = "case_observed"
 example_case = "calc-owned-assertion__non_asserted_constraint__calc_definition_owner"
 
 [[rule.generator_evidence]]
 code = "SI_CONSTRAINT_UNATTACHED"
-site = "elaboration/elaborate.py:1625 (asserted, calc-def owner); :794-820 (calc-usage owner)"
+site = "elaboration/elaborate.py:1625 (asserted, calc-def owner); :800-827 (calc-usage owner and every other unmapped owner kind)"
 
 [[rule.shape]]
 id = "asserted_constraint"
@@ -154,7 +154,7 @@ expected_code = "SI_CONSTRAINT_UNATTACHED"
 
 [rule.shape.no_admitted_context]
 citation = "elaboration/elaborate.py:1625 with graph.py:287-292 (a calc-def owner attaches nothing, and an asserted form then grades error); elaborate.py:794-820 (a calc-usage owner is outside the owner-kind map and raises)"
-statement = "An asserted constraint is refused under both owners this rule recognizes; the same constraint owned by a part is a different shape (a control case)."
+statement = "An asserted constraint is refused under every owner this rule recognizes; the same constraint owned by a part is a different shape (a control case)."
 
 [[rule.shape.admission]]
 context = "calc_definition_owner"
@@ -165,6 +165,14 @@ evidence = ["case:calc-owned-assertion__asserted_constraint__calc_definition_own
 context = "calc_usage_owner"
 outcome = "refused"
 evidence = ["case:calc-owned-assertion__asserted_constraint__calc_usage_owner"]
+
+[[rule.shape.admission]]
+context = "unmapped_owner_kind"
+outcome = "refused"
+evidence = [
+    "case:calc-owned-assertion__asserted_constraint__unmapped_owner_kind",
+    "case:calc-owned-assertion__asserted_constraint__unmapped_owner_kind__item_usage",
+]
 
 [[rule.shape]]
 id = "non_asserted_constraint"
@@ -180,6 +188,15 @@ evidence = ["case:calc-owned-assertion__non_asserted_constraint__calc_definition
 context = "calc_usage_owner"
 outcome = "refused"
 evidence = ["case:calc-owned-assertion__non_asserted_constraint__calc_usage_owner"]
+
+[[rule.shape.admission]]
+context = "unmapped_owner_kind"
+outcome = "refused"
+evidence = [
+    "case:calc-owned-assertion__non_asserted_constraint__unmapped_owner_kind",
+    "case:calc-owned-assertion__non_asserted_constraint__unmapped_owner_kind__attribute_definition",
+    "case:calc-owned-assertion__non_asserted_constraint__unmapped_owner_kind__constraint_definition",
+]
 
 # ---- ES-006 -------------------------------------------------------------------------------------
 
@@ -351,7 +368,7 @@ evidence = [
 
 [[rule.shape.unobservable]]
 context = "owner_other"
-reason = "An owner the occurrence facts cannot attach leaves the constraint unattached, and the generator refuses it as unattached (calc-owned-assertion's expected code) whatever the predicate's eligibility: a calc usage or calc def owner through calc-owned-assertion (ES-001); an item def owner with no rule yet (case candidate-unattachable-constraint-owner__asserted_constraint__item_definition_owner, a recorded disagreement)."
+reason = "An owner the occurrence facts cannot attach leaves the constraint unattached, and the generator refuses it as unattached (calc-owned-assertion's expected code) whatever the predicate's eligibility: a calc usage, a calc def or any other owner outside the generator's owner map (an item def, say) through calc-owned-assertion (ES-001; case calc-owned-assertion__asserted_constraint__unmapped_owner_kind)."
 evidence = [
     "case:constraint-predicate__blocked_predicate__owner_other",
 ]
@@ -384,7 +401,7 @@ evidence = [
 
 [[rule.shape.unobservable]]
 context = "owner_other"
-reason = "An owner the occurrence facts cannot attach leaves the constraint unattached, and the generator refuses it as unattached (calc-owned-assertion's expected code) whatever the predicate's eligibility: a calc usage or calc def owner through calc-owned-assertion (ES-001); an item def owner with no rule yet (case candidate-unattachable-constraint-owner__asserted_constraint__item_definition_owner, a recorded disagreement)."
+reason = "An owner the occurrence facts cannot attach leaves the constraint unattached, and the generator refuses it as unattached (calc-owned-assertion's expected code) whatever the predicate's eligibility: a calc usage, a calc def or any other owner outside the generator's owner map (an item def, say) through calc-owned-assertion (ES-001; case calc-owned-assertion__asserted_constraint__unmapped_owner_kind)."
 evidence = [
     "case:constraint-predicate__non_numerical_predicate__owner_other",
 ]

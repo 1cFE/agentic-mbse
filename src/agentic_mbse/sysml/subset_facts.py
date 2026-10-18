@@ -104,6 +104,9 @@ class OwnerKind(StrEnum):
     CALCULATION_DEFINITION = "calculation_definition"
     CALCULATION_USAGE = "calculation_usage"
     PACKAGE = "package"
+    REQUIREMENT_DEFINITION = "requirement_definition"
+    #: Any other metatype: outside the generator's constraint owner map
+    #: (`elaborate.py:800-827`), which maps the five kinds above other than a calc usage.
     OTHER = "other"
     ABSENT = "absent"
 

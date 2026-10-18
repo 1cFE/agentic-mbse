@@ -176,12 +176,13 @@ def test_a_certified_omission_or_exclusion_meets_the_gate_like_an_admission(
 def test_sa1_statement_needs_refused_cases_in_every_computable_context() -> None:
     pair = ("calc-owned-assertion", "asserted_constraint")
     statement = {"citation": "elaboration/elaborate.py:1625", "statement": "refused everywhere"}
-    data = data_with({pair: {"calc_definition_owner": "refused", "calc_usage_owner": "refused"}})
+    calc_owners = {"calc_definition_owner": "refused", "calc_usage_owner": "refused"}
+    data = data_with({pair: calc_owners | {"unmapped_owner_kind": "refused"}})
     shape(data, *pair)["no_admitted_context"] = statement
     assert load(data).rule(pair[0]).shape(pair[1]).no_admitted_context is not None
-    data = data_with({pair: {"calc_definition_owner": "refused"}})
+    data = data_with({pair: calc_owners})
     shape(data, *pair)["no_admitted_context"] = statement
-    with pytest.raises(RecordError, match="missing \\['calc_usage_owner'\\]"):
+    with pytest.raises(RecordError, match="missing \\['unmapped_owner_kind'\\]"):
         load(data)
 
 

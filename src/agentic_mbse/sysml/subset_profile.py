@@ -209,6 +209,9 @@ class ContextId(StrEnum):
     #: The constraint's semantic owner is a calc usage, an unmapped owner kind
     #: (`elaborate.py:794-820`).
     CALC_USAGE_OWNER = "calc_usage_owner"
+    #: The constraint's semantic owner is any other kind outside the generator's owner map
+    #: (`elaborate.py:800-827`): an item def, an attribute def, a constraint def and so on.
+    UNMAPPED_OWNER_KIND = "unmapped_owner_kind"
     #: The part usage is visited under a generator root (`occurrence.py:812-899`, `:927-1046`).
     EXPANDED_PART_USAGE = "expanded_part_usage"
     #: The part usage is never visited: a template, or a non-composite usage.
@@ -947,10 +950,12 @@ def _at_site(site: ExpressionSiteFact, shape_id: str) -> _Recognized:
 
 
 def _calc_owned_assertion(facts: SubsetFacts) -> list[_RuleOutput]:
-    """ES-001: a constraint owned by a calc def or a calc usage."""
+    """ES-001: a constraint owned by a calc def, a calc usage or any owner kind the generator
+    does not map (Item 2a P3 widened it to the last)."""
     context_of = {
         OwnerKind.CALCULATION_DEFINITION: ContextId.CALC_DEFINITION_OWNER,
         OwnerKind.CALCULATION_USAGE: ContextId.CALC_USAGE_OWNER,
+        OwnerKind.OTHER: ContextId.UNMAPPED_OWNER_KIND,
     }
     out: list[_RuleOutput] = []
     for fact in facts.assertions:
@@ -1213,7 +1218,11 @@ _RULES: Mapping[str, _RuleSpec] = {
     ),
     "calc-owned-assertion": _model_wide(
         ("asserted_constraint", "non_asserted_constraint"),
-        (ContextId.CALC_DEFINITION_OWNER, ContextId.CALC_USAGE_OWNER),
+        (
+            ContextId.CALC_DEFINITION_OWNER,
+            ContextId.CALC_USAGE_OWNER,
+            ContextId.UNMAPPED_OWNER_KIND,
+        ),
         (FactKind.CONSTRAINT, FactKind.ASSERTION_OWNER),
         _calc_owned_assertion,
     ),

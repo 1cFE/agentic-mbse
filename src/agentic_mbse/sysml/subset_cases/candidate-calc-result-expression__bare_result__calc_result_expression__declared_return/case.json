@@ -1,0 +1,20 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      4,
+      4
+    ],
+    "description": "calc def Bare declares return r : Real and ends in the bare expression 2.0 * v"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P3: CALC-DEF-BARE-RESULT with a named return declared: still zero output attributes."
+  }
+}

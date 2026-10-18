@@ -1,0 +1,20 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      7,
+      7
+    ],
+    "description": "attribute y reads calc usage t's input t.v"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P3: another shape reaching elaboration/occurrence.py:180 (ES-002's site)."
+  }
+}

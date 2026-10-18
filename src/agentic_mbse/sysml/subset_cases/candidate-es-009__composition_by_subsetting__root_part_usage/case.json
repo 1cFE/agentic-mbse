@@ -1,0 +1,20 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      4,
+      4
+    ],
+    "description": "root part site subsets the untyped top-level usage ac_facility as facility and reads facility.area"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P3: ES-009 under a root part usage instead of a part def; same site, elaboration/elaborate.py:2345."
+  }
+}

@@ -25,7 +25,7 @@ used three coarse causes for all of them.
 | `_Builder.reading` | `_multiplicity_indices`, `occurrence.py:812-899` | none: a neutral resolution |
 | `_Builder._children` | `native_child_declarations`, `occurrence.py:927-963` | `REPEATED_NATIVE_DECLARATION` |
 | `_Builder._add` | `add_usage`, `occurrence.py:965-1046` | `RECURSIVE_CONTAINMENT`, `DUPLICATE_OCCURRENCE_IDENTITY` |
-| `_Builder._attachment` | `_ExactElaborator._attachment`, `elaborate.py:759-787`; `occurrences_for_type` / `_for_declaration`, `occurrence.py:495-508` | `IDENTITY_UNSTABLE` |
+| `_Builder._attachment` | `_ExactElaborator._attachment`, `elaborate.py:759-787`; `occurrences_for_type` / `_for_declaration`, `occurrence.py:495-508` | `IDENTITY_UNSTABLE` (owner only; a constraint usage is keyed by element ID, see `constraint_attachments`) |
 | `_Builder.select_writer`, `_one_writer` | `_select_writer`, `_require_one_writer`, `elaborate.py:901-953` | `WRITER_AMBIGUOUS` |
 | `_Builder._writers` | `_build_calculation_nodes` selection half, `elaborate.py:1195-1233` | `REDEFINITION_ROOT_FAMILY` |
 
@@ -601,27 +601,39 @@ class _Builder:
             )
         return _one_writer(candidates)
 
-    def attachment_of(self, usage: Any) -> Attachment:
+    def _attachment_of(self, usage: Any, usage_id: UUID) -> Attachment:
         """Where the usage's semantic owner attaches it (`elaborate.py:759-787`)."""
         owner = semantic_owner(usage)
         scopes, cause = self._attachment(owner)
-        return Attachment(
-            declaration_id(usage), None if owner is None else declaration_id(owner), scopes, cause
-        )
+        return Attachment(usage_id, None if owner is None else declaration_id(owner), scopes, cause)
 
     def constraint_attachments(self) -> tuple[Attachment, ...]:
-        """Every constraint usage, subtypes included, as `_build_constraint_nodes` reads them."""
+        """Every constraint usage, subtypes included, as `_build_constraint_nodes` reads them.
+
+        Keyed by SysIDE element ID, as the constraint facts key their usages
+        (`subset_extraction.py`), not by `declaration_id`. Codegen takes a constraint usage's
+        stable identity in `_index_constraint_associations` (`elaborate.py:592-604`), an
+        identity check that refuses the whole model, not an occurrence answer. So an
+        anonymous usage (`assert positive;`, no qualified name) still gets its attachment
+        here, and the generator's `SI_ID_UNSTABLE` refusal of it stays the generator's. For a
+        usage with a qualified name the two IDs are the same value.
+        """
         usages = SysideAdapter.elements_of_type(
             self.model, "ConstraintUsage", include_subtypes=True
         )
-        attachments = {a.usage_id: a for a in (self.attachment_of(u) for u in usages)}
+        attachments = {
+            a.usage_id: a
+            for a in (self._attachment_of(u, SysideAdapter.element_id(u)) for u in usages)
+        }
         return tuple(attachments[k] for k in sorted(attachments, key=str))
 
     def calc_attachments_and_writers(
         self,
     ) -> tuple[tuple[Attachment, ...], tuple[WriterSelection, ...]]:
         usages = list(SysideAdapter.elements_of_type(self.model, "CalculationUsage"))
-        attachments = {a.usage_id: a for a in (self.attachment_of(u) for u in usages)}
+        attachments = {
+            a.usage_id: a for a in (self._attachment_of(u, declaration_id(u)) for u in usages)
+        }
         by_slot: dict[UUID, list[Any]] = defaultdict(list)
         for usage in usages:
             by_slot[self.slots.slot_of(declaration_id(usage))].append(usage)

@@ -63,7 +63,7 @@ def test_enums_are_the_documented_closed_sets() -> None:
         "partial",
         "code_read_pending_item_2",
     }
-    assert len(ContextId) == 17
+    assert len(ContextId) == 18
     with pytest.raises(ValueError):
         ContextId("everywhere")
 

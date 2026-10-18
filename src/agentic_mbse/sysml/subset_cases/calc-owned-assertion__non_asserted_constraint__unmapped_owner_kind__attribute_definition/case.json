@@ -1,0 +1,29 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      4,
+      4
+    ],
+    "description": "attribute def A, which owns the constraint dpos; the generator locates the refusal at the owner, line 4"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "calc-owned-assertion",
+        "shape": "non_asserted_constraint",
+        "context": "unmapped_owner_kind",
+        "outcome": "refused",
+        "subject": "fx::A::dpos",
+        "line": 4
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P3: an attribute def owner, never instantiated: the refusal is model-wide."
+  }
+}

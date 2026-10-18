@@ -346,7 +346,8 @@ class OccurrenceStructure:
     - `part_usages`: every user-model part usage with its unparented reading, sorted by usage.
     - `calc_attachments`: one per calculation usage, sorted by usage.
     - `constraint_attachments`: one per constraint usage, subtypes included, as
-      `_build_constraint_nodes` reads them (`elaborate.py:1325-1332`), sorted by usage.
+      `_build_constraint_nodes` reads them (`elaborate.py:1325-1332`), keyed by SysIDE
+      element ID so an anonymous usage has one too, sorted by usage.
     - `writers`: sorted by (scope, slot).
     """
 

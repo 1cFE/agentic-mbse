@@ -1,0 +1,20 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      7,
+      7
+    ],
+    "description": "part usage unit typed by A and B, two unrelated specializations of Base that each redefine rate"
+  },
+  "screen": {
+    "verdict": "incomplete",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P3: PUSH-DOWN-HIER-PROFILE-AMBIG-INHERITED-ATTR. The generator refuses the usage (SI_REDEFINITION_INVALID); it does not pick a typing. The screen's occurrence port aborts on it, so the screen reports the model incomplete."
+  }
+}

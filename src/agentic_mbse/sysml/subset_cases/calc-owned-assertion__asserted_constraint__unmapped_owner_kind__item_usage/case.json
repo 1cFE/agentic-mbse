@@ -1,0 +1,29 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      8,
+      8
+    ],
+    "description": "item usage fuel, which owns the asserted constraint dpos; the generator locates the refusal at the owner, line 8"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "calc-owned-assertion",
+        "shape": "asserted_constraint",
+        "context": "unmapped_owner_kind",
+        "outcome": "refused",
+        "subject": "fx::Site::fuel::dpos",
+        "line": 8
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P3: an item usage owner, outside the generator's owner map."
+  }
+}

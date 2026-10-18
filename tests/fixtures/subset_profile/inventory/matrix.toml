@@ -20,11 +20,11 @@ schema = 1
 
 [[row]]
 id = "ES-001"
-title = "Constraint owned by a calc definition or a calc usage"
+title = "Constraint owned by a calc definition, a calc usage or another owner the generator does not map"
 class = "shared_rule"
 rule = "calc-owned-assertion"
 shapes = ["asserted_constraint", "non_asserted_constraint"]
-contexts = ["calc_definition_owner", "calc_usage_owner"]
+contexts = ["calc_definition_owner", "calc_usage_owner", "unmapped_owner_kind"]
 outcome = "refused"
 evidence_status = "case_observed"
 evidence = [
@@ -32,10 +32,12 @@ evidence = [
     "case:calc-owned-assertion__asserted_constraint__calc_usage_owner",
     "case:calc-owned-assertion__non_asserted_constraint__calc_usage_owner",
     "case:calc-owned-assertion__non_asserted_constraint__calc_definition_owner",
+    "case:calc-owned-assertion__asserted_constraint__unmapped_owner_kind",
+    "case:calc-owned-assertion__non_asserted_constraint__unmapped_owner_kind",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = ""
-statement = "A non-asserted constraint owned by a calc def is admitted (graded, not refused). An asserted constraint is refused under every owner the rule computes, so it carries an SA-1 statement instead of an admitted-context case. The part-owned assert stays admitted (control case). Lifting the refusal is sysml-codegen [CALCDEF-GATE-IMPLEMENTATION]."
+statement = "A non-asserted constraint owned by a calc def is admitted (graded, not refused). Item 2a P3 widened the rule to every owner kind outside the generator's owner map (an item def, an attribute def, a constraint def, an item usage), where both forms are refused model-wide; a requirement def owner is mapped (a control case). An asserted constraint is refused under every owner the rule computes, so it carries an SA-1 statement instead of an admitted-context case. The part-owned assert stays admitted (control case). Lifting the refusal is sysml-codegen [CALCDEF-GATE-IMPLEMENTATION]."
 sites = []
 site_status = "codegen_account"
 dc3 = ["B1"]
