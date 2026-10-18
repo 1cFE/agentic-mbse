@@ -148,6 +148,20 @@ def test_unresolved_supertype_is_an_owner_failure() -> None:
     assert "<placeholder Classifier>" in facts.failures[0].detail
 
 
+def test_unresolved_subsetting_is_an_owner_failure() -> None:
+    """Audit Advisory 1: a `:>` or `subsets` typo would otherwise leave the inputs reading new."""
+    facts = extract(FIX / "unresolved" / "unresolved_subsetting.sysml")
+    assert failures(facts) == [
+        (Cause.UNRESOLVED_OWNER_TYPE, 14),
+        (Cause.UNRESOLVED_OWNER_TYPE, 15),
+    ]
+    assert not owned_by(facts, "unresolved_subsetting::q::c")
+    assert not owned_by(facts, "unresolved_subsetting::q::k")
+    for failure in facts.failures:
+        assert "explicit Subsetting targets an unresolved reference" in failure.detail
+        assert "<placeholder Feature>" in failure.detail
+
+
 def test_unresolved_input_redefinition_fails_that_input_and_judges_the_next() -> None:
     facts = extract(FIX / "unresolved" / "unresolved_input_redefinition.sysml")
     assert failures(facts) == [(Cause.UNRESOLVED_INPUT_REDEFINITION, 12)]

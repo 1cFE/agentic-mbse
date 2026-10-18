@@ -23,6 +23,9 @@ import pytest
 
 from agentic_mbse.sysml.parameter_redefinition_extraction import extract_parameter_redefinitions
 from agentic_mbse.sysml.syside_adapter import SysideAdapter, get_syside
+from agentic_mbse.sysml.types import Severity, ValidationCode
+from agentic_mbse.validation.level1_syntax import validate_syntax
+from agentic_mbse.validation.level2_structure import validate_structure
 from agentic_mbse.validation.positional_binding import (
     FindingReason,
     InputOutcome,
@@ -151,7 +154,7 @@ def test_the_suite_covers_every_appendix_a_group() -> None:
         "types": 5,
         "requirements": 9,
         "dc3": 2,
-        "unresolved": 3,
+        "unresolved": 4,
         "partial_run": 2,
         "partial_scope": 1,
     }
@@ -234,3 +237,36 @@ def test_a_name_set_detector_fails_exactly_the_nine_marked_fixtures() -> None:
     marked = {str(f) for f in FIXTURES if parse_header(f).naive_control_wrong}
     assert wrong == marked
     assert len(wrong) == 9
+
+
+def test_out_before_in_passes_l1_and_fails_l2_on_two_positional_errors(tmp_path: Path) -> None:
+    """Current behavior the register states (`semantic-hazards.md`, "An `out` parameter counts").
+
+    The design expected `validate` to reject this model at L1 (Det-6 row, open for the owner).
+    SysIDE's direction error is in `diagnostics.validation`, which no level reads
+    (backlog VALIDATE-SEMA-DIAGNOSTICS), so L2's positional check is what catches it.
+    """
+    source = FIX / "l1" / "out_before_in.sysml"
+    _, diagnostics = SysideAdapter.load_model([source])
+    assert list(diagnostics.parser) == []
+    assert list(diagnostics.sema) == []
+    assert "redefinition-direction-conformance" in {
+        str(d.code) for d in diagnostics.validation if d.severity == syside.DiagnosticSeverity.Error
+    }
+
+    models = tmp_path / "models"
+    models.mkdir()
+    (models / source.name).write_text(source.read_text())
+    assert validate_syntax(str(models)).success
+    level2 = validate_structure(str(models))
+    assert not level2.success
+    positional = [
+        (i.severity, i.reason_code, re.search(r'input = "(\w+)", target = "([^"]+)"', i.message))
+        for i in level2.structured_issues
+        if i.code is ValidationCode.L2_POSITIONAL_BINDING
+    ]
+    assert sorted((severity, reason, m.groups()) for severity, reason, m in positional if m) == [
+        (Severity.ERROR, "POSITIONAL_SWAP", ("a", "out_before_in::O::o")),
+        (Severity.ERROR, "POSITIONAL_SWAP", ("b", "out_before_in::O::a")),
+    ]
+    assert len(positional) == 2

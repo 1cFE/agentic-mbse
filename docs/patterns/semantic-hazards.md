@@ -94,21 +94,22 @@ Renaming to avoid a self-binding (see `docs/patterns/plant-idiom.md`, "Binding a
 | `L2_POSITIONAL_PIN_LIST_INVALID` | ERROR | The pin list cannot be read or breaks its format. The check runs as if there were no list. Fails L2. |
 | `L2_CHECK_UNVERIFIABLE` | ERROR, `reason_code` `POSITIONAL_<cause>` | An owner or input could not be inspected, for example because its type did not resolve. Fails L2. Never reads as clean. |
 
-Not flagged: an input bound by name (`:>>`) or renamed with `redefines`; an input with no name; new inputs that do not land on a definition parameter; subject, actor and stakeholder inputs themselves (their own position is SysIDE's subject-position check). Level 2's metrics print the number of inputs inspected and the count of each outcome.
+Not flagged: an input bound by name (`:>>`) or renamed with `redefines`; an input with no name; new inputs that do not land on a definition parameter; subject, actor and stakeholder inputs themselves (SysIDE checks their position, but `validate` does not currently report that SysIDE diagnostic; backlog `VALIDATE-SEMA-DIAGNOSTICS`). Level 2's metrics print the number of inputs inspected and the count of each outcome.
 
 **Limits.**
 
 - The check reads the redefinitions SysIDE resolves. It was verified on SysIDE 0.8.4 only.
-- An unresolved type, supertype or redefinition target is detected by its placeholder target (a target with no owning relationship). That test was verified only on these shapes: a misspelled type, an unresolved supertype, an unresolved `:>>` on an input, an unresolved usage `:>>`, and a partial run whose definitions were not loaded (`tests/fixtures/positional_binding/unresolved/`, `tests/fixtures/positional_binding/partial_run/`, `tests/learning/test_syside_input_redefinition.py`). An unresolved reference of another shape could still read as clean.
+- An unresolved type, supertype, redefinition or subsetting target is detected by its placeholder target (a target with no owning relationship). That test was verified only on these shapes: a misspelled type, an unresolved supertype, an unresolved `:>>` on an input, an unresolved usage `:>>`, an unresolved `:>`, `subsets` or `::>` on a calc or constraint usage, and a partial run whose definitions were not loaded (`tests/fixtures/positional_binding/unresolved/`, `tests/fixtures/positional_binding/partial_run/`, `tests/learning/test_syside_input_redefinition.py`). An unresolved reference of another shape could still read as clean.
 - A finding whose owner or target has no qualified name (for example an anonymous `assert constraint`) cannot be pinned; name the owner or repair the binding.
 - Validating a subfolder that does not contain the definitions it uses reports its owners as unverifiable, not clean.
+- If SysIDE's owner sweeps returned nothing (for example after a SysIDE upgrade), level 2 would inspect no inputs and pass. Only the `Positional inputs inspected` metric shows it; the tree reproduction script treats zero as a failure, `validate` does not.
 - The check does not evaluate anything. It says where an input lands, not whether the value is wrong.
 
 ### Legacy pins (the pin list)
 
 A project that already has positional mismatches can record them as legacy so they warn instead of block until they are migrated. A pin records a mismatch that existed at the revision the list was recorded against. **A new mismatch is repaired, not pinned**: bind it by name (`in :>> <formal> = ...`) or rename it deliberately (`in <name> redefines <formal> = ...`). Pinning a new mismatch is a disposition reserved to the project owner. Nothing generates or updates the list; it is written and reviewed by hand, and its integrity rests on that review.
 
-A pinned finding's message carries this text, and it means what it says: "Pinned as legacy; this does not show that native values are correct or that the native and generated routes agree." The level 2 summary reports pinned warnings as their own count: "(N pinned positional warnings; not a value or route-parity check)".
+A pinned finding's message carries this text, and it means what it says: "Pinned as legacy; this does not show that native values are correct or that the native and generated routes agree." The level 2 summary reports pinned warnings as their own count: "(N pinned positional warnings; not a value or route-parity check)". When a run passes with pinned warnings, its last line says so too: "Quality checks passed with N pinned positional warnings; not a value or route-parity check". The exit code is still 0.
 
 **Format.** TOML, schema `positional-pins/v1`. Every key below is required; unknown keys, wrong types, duplicate identities, an absolute `file`, or `..` in `file` make the list invalid.
 
@@ -131,7 +132,7 @@ Copy `owner`, `input`, `target`, `file` and `line` from the finding's message, w
 
 **Where the list is found.**
 
-- By default, `validate` finds the project root above the validated path (a folder holding `work/BACKLOG.md`, `.agentic-mbse/install.json` or `.claude/`) and reads only `<project root>/positional-pins.toml`. A file anywhere else is ignored; the `Positional pin list` metric prints the path it looked at.
+- By default, `validate` finds the project root above the validated path (a folder holding `work/BACKLOG.md`, `.agentic-mbse/install.json` or `.claude/`) and reads only `<project root>/positional-pins.toml`. A file anywhere else is ignored; the `Positional pin list` metric prints the path it looked at. Claude Code users have `~/.claude/`, so a tree under the home directory with no marker of its own usually finds the home directory as its root and looks at `~/positional-pins.toml`.
 - `--positional-pins FILE` names a list anywhere. `--positional-pins-root DIR` says which tree its `file` paths describe; without it they resolve against the list's own folder. `--positional-pins-root` without `--positional-pins` is a usage error.
 
 **A pin's `file` matters for scope.** Matching ignores the file, so an owner moved to another file still matches. But on a run that validates only part of the tree, an unmatched pin whose file exists and was not validated is counted as out of scope, while one whose file was validated is stale. So an owner moved into an unvalidated file reads as a stale pin on a partial run. A pin whose owner or input failed inspection is not judged at all; the inspection failure is already the blocking error.

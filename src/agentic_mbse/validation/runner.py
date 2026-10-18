@@ -152,7 +152,10 @@ def run_all_checks(
     print(f"✅ Passed: {aggregated.passed}")
     print(f"❌ Failed: {aggregated.failed}")
 
-    if aggregated.overall_success:
+    # A pass that rests on pinned positional warnings says so on its last line (audit Advisory 2).
+    if aggregated.overall_success and aggregated.pinned_note:
+        print(f"\n✅ Quality checks passed with {aggregated.pinned_note}")
+    elif aggregated.overall_success:
         print("\n✅ All quality checks passed!")
     else:
         print("\n❌ Quality checks failed")

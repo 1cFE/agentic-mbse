@@ -607,6 +607,68 @@ def test_m1_a_partial_run_without_the_definitions_behaves_like_a_typo(tmp_path: 
     ]
 
 
+# --- A1 (audit): an owner that subsets (`:>`) an unresolved feature ---------------------
+
+
+def _explicit_subsettings(owner: Any) -> list[tuple[str, Any]]:
+    """(relationship kind, subsetted feature) for each explicit subsetting of the owner."""
+    return [
+        (type(r).__name__, r.subsetted_feature)
+        for r in owner.heritage.relationships
+        if isinstance(r, syside.Subsetting) and not r.is_implied
+    ]
+
+
+@pytest.mark.parametrize(
+    ("spelling", "kind"),
+    [(":>", "Subsetting"), ("subsets", "Subsetting"), ("::>", "ReferenceSubsetting")],
+)
+def test_a1_an_unresolved_subsetting_target_is_a_placeholder_and_inputs_look_new(
+    spelling: str, kind: str
+) -> None:
+    """Same silence as M1's typo: the inputs get no implied redefinition and look new.
+
+    The only trace on the owner is an explicit subsetting whose target is an unowned
+    `<placeholder Feature>`; `ReferenceSubsetting` is a `Subsetting` and reads the same way.
+    """
+    model, diagnostics = _load_diagnostics(
+        f"part q {{ calc c {spelling} missing {{ in b = 3; in a = 10; }} "
+        f"constraint k {spelling} missing2 {{ in lim = 5; in x = 3; }} }}"
+    )
+    assert list(diagnostics.parser) == []
+    assert sorted((str(d.code), str(d.message)) for d in diagnostics.sema) == [
+        ("reference-error", "No Feature named 'missing' found."),
+        ("reference-error", "No Feature named 'missing2' found."),
+    ]
+    c = _owner(model, syside.CalculationUsage, "c")
+    k = _owner(model, syside.ConstraintUsage, "k")
+    assert _shape(c) == [("b", []), ("a", [])]
+    assert _shape(k) == [("lim", []), ("x", [])]
+    for owner in (c, k):
+        for feature in _inputs(owner):
+            assert _relationship_kinds(feature) == [("FeatureTyping", True), ("Subsetting", True)]
+        ((found_kind, target),) = _explicit_subsettings(owner)
+        assert found_kind == kind
+        assert type(target) is syside.Feature
+        assert target.name == "<placeholder Feature>"
+        assert target.owning_relationship is None
+
+
+def test_a1_a_resolved_subsetting_target_binds_the_inputs_by_position() -> None:
+    """The parameters really are inherited through `:>`, so the unresolved case hides a swap."""
+    model = _load(
+        "part q { calc s : Sub; constraint t : Le; "
+        "calc c :> s { in b = 3; in a = 10; } constraint k :> t { in lim = 5; in x = 3; } }"
+    )
+    c = _owner(model, syside.CalculationUsage, "c")
+    k = _owner(model, syside.ConstraintUsage, "k")
+    assert _shape(c) == [("b", [("P::Sub::a", True)]), ("a", [("P::Sub::b", True)])]
+    assert _shape(k) == [("lim", [("P::Le::x", True)]), ("x", [("P::Le::lim", True)])]
+    for owner in (c, k):
+        ((_, target),) = _explicit_subsettings(owner)
+        assert target.owning_relationship is not None
+
+
 # --- M4 (design review): requirement and case definitions with no subject ---------------
 
 

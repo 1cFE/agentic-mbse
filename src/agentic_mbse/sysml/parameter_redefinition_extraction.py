@@ -11,7 +11,7 @@ The reads, each observed on SysIDE 0.8.4 and pinned by
 |---|---|---|
 | Owners | ``CalculationUsage``, ``ConstraintUsage``, ``CalculationDefinition``, ``ConstraintDefinition``, each with ``include_subtypes=True``, de-duplicated by element id (D5) | R6 |
 | Library owners skipped | ``SysideAdapter.document_tier`` is ``StandardLibrary`` (a guard: the sweeps return none) | R6 |
-| Unresolved references | an explicit ``FeatureTyping``, ``Subclassification`` or ``Redefinition`` whose target has ``owning_relationship is None`` is a SysIDE placeholder (D19) | M1 |
+| Unresolved references | an explicit ``FeatureTyping``, ``Subclassification``, ``Redefinition`` or ``Subsetting`` whose target has ``owning_relationship is None`` is a SysIDE placeholder (D19) | M1, A1 |
 | Inputs | ``owned_features`` whose direction is ``in`` or ``inout`` (D4) | R2, R5 |
 | Name | ``declared_name``, never ``name`` (which falls back to the redefined formal's) | R5 |
 | Role | the type of ``owning_membership``: ``SubjectMembership``, ``ActorMembership``, ``StakeholderMembership``, else ordinary | R2, plan phase 1 |
@@ -166,12 +166,18 @@ def _role(feature: Any) -> ParameterRole:
 
 
 def _explicit_targets(relationships: Iterable[Any]) -> Iterator[tuple[str, Any]]:
-    """(relationship kind, target) for each explicit typing, supertype and redefinition."""
+    """(relationship kind, target) for each explicit typing, supertype, redefinition and subset.
+
+    `Redefinition` is tested before `Subsetting`, its supertype; `ReferenceSubsetting` (`::>`)
+    is a `Subsetting` and reads as one.
+    """
     for relationship in relationships:
         if relationship.is_implied:
             continue
         if SysideAdapter.is_instance(relationship, "Redefinition"):
             yield "Redefinition", relationship.redefined_feature
+        elif SysideAdapter.is_instance(relationship, "Subsetting"):
+            yield "Subsetting", relationship.subsetted_feature
         elif SysideAdapter.is_instance(relationship, "FeatureTyping"):
             yield "FeatureTyping", relationship.type
         elif SysideAdapter.is_instance(relationship, "Subclassification"):
@@ -195,7 +201,7 @@ def _is_library(owner: Any) -> bool:
 
 
 def _require_resolved_owner(owner: Any, read_heritage: Callable[[Any], Iterable[Any]]) -> None:
-    """D19: an owner whose explicit type, supertype or `:>>` target is a placeholder fails."""
+    """D19: an owner whose explicit type, supertype, `:>>` or `:>` target is a placeholder fails."""
     relationships = _read(
         Cause.REDEFINITIONS_UNREADABLE,
         "the owner's typing and redefinitions",

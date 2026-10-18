@@ -115,7 +115,7 @@ class RedefinitionFailureCause(StrEnum):
     OWNERS_UNLISTED = "OWNERS_UNLISTED"
     #: The owner's document tier could not be read, so it is unknown whether it is authored.
     DOCUMENT_TIER_UNREADABLE = "DOCUMENT_TIER_UNREADABLE"
-    #: The owner's explicit type, supertype or redefinition target is a SysIDE placeholder.
+    #: The owner's explicit type, supertype, redefinition or subsetting target is a SysIDE placeholder.
     UNRESOLVED_OWNER_TYPE = "UNRESOLVED_OWNER_TYPE"
     #: The owner's owned features, or their relationships, could not be listed.
     INPUTS_UNLISTED = "INPUTS_UNLISTED"

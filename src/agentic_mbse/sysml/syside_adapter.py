@@ -216,6 +216,7 @@ class SysideAdapter:
             "StakeholderMembership",
             "Subclassification",
             "SubjectMembership",
+            "Subsetting",
         }
     )
 
@@ -271,6 +272,10 @@ class SysideAdapter:
                 "SubjectMembership": syside.SubjectMembership,
                 "ActorMembership": syside.ActorMembership,
                 "StakeholderMembership": syside.StakeholderMembership,
+                # An owner's explicit `:>`, `subsets` or `::>` target, checked for an
+                # unresolved placeholder (Item 4 audit Advisory 1). Redefinition and
+                # ReferenceSubsetting are subtypes.
+                "Subsetting": syside.Subsetting,
                 # Expressions
                 "FeatureChainExpression": syside.FeatureChainExpression,
                 "FeatureReferenceExpression": syside.FeatureReferenceExpression,

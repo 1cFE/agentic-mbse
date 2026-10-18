@@ -376,6 +376,7 @@ def test_a_raising_heritage_read_fails_one_input_and_a_pin_on_it_changes_nothing
     [
         ("unresolved_type.sysml", "POSITIONAL_UNRESOLVED_OWNER_TYPE"),
         ("unresolved_supertype.sysml", "POSITIONAL_UNRESOLVED_OWNER_TYPE"),
+        ("unresolved_subsetting.sysml", "POSITIONAL_UNRESOLVED_OWNER_TYPE"),
         ("unresolved_input_redefinition.sysml", "POSITIONAL_UNRESOLVED_INPUT_REDEFINITION"),
     ],
 )
@@ -434,6 +435,42 @@ def test_the_summary_line_has_no_note_when_l2_fails(
     capsys.readouterr()
     print_result(result)
     assert capsys.readouterr().out.strip().splitlines()[0] == "❌ Level 2: Structural Completeness"
+
+
+def last_line(out: str) -> str:
+    return out.strip().splitlines()[-1]
+
+
+def test_the_run_summary_names_pinned_warnings_and_still_exits_zero(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Audit Advisory 2: the last line of a pass that rests on pins is not a bare pass."""
+    project = make_project(tmp_path, pins=pins_for(B_ON_A, A_ON_B))
+    assert cli_main(["validate", "--level=2", str(project / "models")]) == 0
+    assert last_line(capsys.readouterr().out) == (
+        "✅ Quality checks passed with 2 pinned positional warnings; "
+        "not a value or route-parity check"
+    )
+
+
+def test_the_run_summary_is_unqualified_without_pinned_warnings(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    clean = PLANT.replace(
+        "in b = small;\n            in a = big;", "in a = big;\n            in b = small;"
+    )
+    project = make_project(tmp_path, clean)
+    assert cli_main(["validate", "--level=2", str(project / "models")]) == 0
+    assert last_line(capsys.readouterr().out) == "✅ All quality checks passed!"
+
+
+def test_only_an_unpinned_error_says_pins_are_for_legacy_mismatches(tmp_path: Path) -> None:
+    """Audit Advisory 4: the copyable fields come with who may use them."""
+    result = l2(make_project(tmp_path, pins=pins_for(B_ON_A)) / "models")
+    by_input = {i.message.split("'")[1]: i.message for i in positional(result)}
+    assert positional_check.PIN_ELIGIBILITY in by_input["a"]
+    assert positional_check.PIN_ELIGIBILITY not in by_input["b"]
+    assert by_input["a"].index(positional_check.PIN_ELIGIBILITY) < by_input["a"].index("[owner = ")
 
 
 # ---- Pol-5: the pass rule ---------------------------------------------------------------------

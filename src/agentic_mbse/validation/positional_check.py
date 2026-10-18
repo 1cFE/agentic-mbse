@@ -56,6 +56,12 @@ PINNED_DISCLAIMER = (
     "native and generated routes agree."
 )
 
+#: Ends every unpinned, pinnable ERROR, ahead of the copyable fields (audit Advisory 4).
+PIN_ELIGIBILITY = (
+    "Pin these fields only for a mismatch that existed at the pin list's recorded_against "
+    "revision; repair a new one"
+)
+
 _ROLE_SLOT = {
     ParameterRole.SUBJECT: "subject",
     ParameterRole.ACTOR: "actor",
@@ -246,6 +252,8 @@ def _finding_issue(finding: PositionalFinding, root: Path | None) -> ValidationI
         )
     if finding.pinned:
         text += f". {PINNED_DISCLAIMER}"
+    elif finding.identity is not None:
+        text += f". {PIN_ELIGIBILITY}"
     return ValidationIssue(
         level=2,
         severity=Severity.WARNING if finding.pinned else Severity.ERROR,

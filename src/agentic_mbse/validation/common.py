@@ -65,6 +65,12 @@ class AggregatedResult:
     def overall_success(self) -> bool:
         return self.failed == 0
 
+    @property
+    def pinned_note(self) -> str:
+        """The note for the pinned positional warnings across every level run, or "" if none."""
+        pinned = sum(pinned_positional_warnings(result) for result in self.results)
+        return pinned_note(pinned) if pinned else ""
+
 
 # ===== File Discovery =====
 
@@ -152,12 +158,22 @@ def print_result(result: QualityCheckResult) -> None:
             print(f"   ... and {len(result.warnings) - 3} more")
 
 
+def pinned_positional_warnings(result: QualityCheckResult) -> int:
+    """How many of the level's issues are pinned positional warnings (design D1)."""
+    return sum(1 for issue in result.structured_issues if is_pinned_positional_warning(issue))
+
+
+def pinned_note(pinned: int) -> str:
+    """What a pass that rests on pinned positional warnings must say about them."""
+    return f"{pinned} pinned positional warnings; not a value or route-parity check"
+
+
 def _pinned_note(result: QualityCheckResult) -> str:
-    """The header's note when a level passes with pinned positional warnings (design D1)."""
-    pinned = sum(1 for issue in result.structured_issues if is_pinned_positional_warning(issue))
+    """The header's note when a level passes with pinned positional warnings."""
+    pinned = pinned_positional_warnings(result)
     if not (result.success and pinned):
         return ""
-    return f" ({pinned} pinned positional warnings; not a value or route-parity check)"
+    return f" ({pinned_note(pinned)})"
 
 
 # ===== Element Analysis Helpers =====
