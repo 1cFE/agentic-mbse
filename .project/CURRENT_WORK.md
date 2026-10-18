@@ -11,7 +11,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
-- Positional-binding check (`EXEC-SUBSET-CONTRACT` Item 4), branch `positional-binding-check`: [plan](active/positional-binding-check/plan.md) Phases 1-3 implemented 2026-10-18 (fact layer, rule, fixture suite; the 17 prototype cases reproduce). Next: Phase 4 (pin list). Open owner item: `validate` passes the `out_before_in` model at L1, because SysIDE puts that error in `diagnostics.validation` (plan Phase 1 notes).
+- Positional-binding check (`EXEC-SUBSET-CONTRACT` Item 4), branch `positional-binding-check`: [plan](active/positional-binding-check/plan.md) Phases 1-6 implemented 2026-10-18. L2 now blocks unpinned positional bindings and passes pinned ones as warnings; the production check finds exactly the prototype's 125 fusion-tea identities and nothing on either dc3 tree ([run-trees](active/positional-binding-check/evidence/run-trees.md)). Next: Phase 7 (hazard register). Open owner items: `validate` passes the `out_before_in` model at L1 (SysIDE puts that error in `diagnostics.validation`), and now fails it at L2 for the positional reason instead; R4-3, where fusion-tea's L2 already fails without the check (340 other warnings), so the pin list alone would not make it pass.
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 
 ## Concrete remaining work
