@@ -61,6 +61,8 @@ Phase 1's four smoke probes each produce an `observation.json` with `certifies =
 
 ### Standing Rules (every phase)
 
+> **Green, defined (orchestrator, 2026-10-18, [AGENT]):** the repo baseline at `main` merge `8b027bbc` already has 118 ruff errors, 98 mypy errors in 20 files, and 3 environment-dependent pytest failures (stale `/home/reid/1cfe/agentic-mbse` paths, missing PIL). "Green" means no new failures relative to that baseline, and every new or modified file passes ruff check, ruff format --check and mypy cleanly. Never run repo-wide `ruff format`. The baseline cleanup is out of scope for Item 1.
+
 - **Green at the end of every phase:** `uv run pytest tests/`, `uv run mypy src/`, `uv run ruff check src/ tests/`. Also run `uv run ruff format --check src/ tests/`. A phase is not done until all pass.
 - **Commit at the end of every phase.** The probe harness exports agentic-mbse with `git archive`, so a probe can only cite a committed revision. Commit before running probes.
 - **Test-first.** Write the phase's test file from its stencil, see it fail for the right reason, then implement.
