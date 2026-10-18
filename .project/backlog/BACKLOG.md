@@ -2,7 +2,7 @@
 
 Prioritized list of epics and features.
 
-**Last Updated**: 2026-10-06
+**Last Updated**: 2026-10-18
 
 ---
 
@@ -18,7 +18,7 @@ Prioritized list of epics and features.
 
 | Item | Status | Evidence / next step |
 |------|--------|----------------------|
-| `ARXIV-EXTRACTION` | [AGENT] Spec drafted 2026-10-18 at owner request; priority not assigned; implementation not started | Repair PDF shortcut figure downloads and identity checks, add opt-out, remove arXiv page chrome, expose fallback diagnostics. [Spec](../active/arxiv-extraction/spec.md). Branch `fix/arxiv-extraction` |
+| `ARXIV-EXTRACTION` | Closed 2026-10-18; certified; branch `fix/arxiv-extraction` not yet merged | [Archive](../completed/20261018_arxiv-extraction/). [OWNER] open gate: should the shortcut stay on by default? It ships on (`ARXIV_SHORTCUT_DEFAULT`, `pandoc_convert.py:22`). Follow-up `ARXIV-SVG-NESTED-IMAGE` (P3); the PDF-URL provenance mismatch is noted on `EXTRACT-PROVENANCE-HOOK` |
 | `L6-LIBRARY-ALIAS-SOURCE` | [AGENT] Filed 2026-10-04 at `L6-EXPOSE-CONSISTENCY` close; recorded limitation, not a regression | An EXPOSE alias to an attribute of a part typed by a `library/` part definition passes Level 6 even when that source value is unset, because completeness path-filters the source declaration and skips the alias ([audit](../completed/20261004_l6-expose-consistency/audit.md) advisory; design R4/B4). How required values on referenced library parts get verified is undecided |
 | `NATIVE-DISTRIBUTION-RECONCILIATION` | [AGENT] Draft residual-work spec; product-lens CLEAR; adopted 2026-10-06 as Item 1 of `WRAP-SPLIT` (P1) | [Distribution spec](../active/native-skill-distribution/spec.md); [epic](epic_wrap-split.md) |
 | `CMDREF-001` | [INHERITED: epic_command-refresh.md] P2 draft; scope reconciliation needed | September simplification overlaps this July proposal; inspect remaining objectives before decomposition |
@@ -112,6 +112,8 @@ Prioritized list of epics and features.
 4. **`raw.html` is written re-encoded, not as fetched.** The frontmatter `content_hash_sha256` digests the bytes as fetched (`web_backend.py:444` hashes `fetched.content`), but `raw.html` is written from `fetched.text()` — decoded with the declared charset and re-encoded UTF-8 (`web_backend.py:515`). The two agree only for a page that was already UTF-8. Measured on a loopback page served as `charset=iso-8859-1`: fetched and frontmatter both `3b6596c0…`, `raw.html` on disk `afb0c4a6…`. A downstream caller that assumes the frontmatter hash verifies the stored artifact is wrong. Related: a page whose declared charset is wrong makes `fetched.text()` raise `UnicodeDecodeError` after extraction has otherwise succeeded, so capture can die having written nothing.
 
 **Goal**: Either (a) `extract --provenance-json PATH` writes one object carrying source URL or origin path, the hash of the source as fetched, the path and hash of the stored raw artifact, the output path and its hash, and the backend used; or (b) a `--register` hook the caller supplies. Option (a) is the smaller change and serves any downstream registry. Separately, write `raw.html` as the fetched bytes so the frontmatter hash verifies it, or document the two as different numbers with different jobs.
+
+**Related (2026-10-18, [AGENT] from `ARXIV-EXTRACTION` audit F4)**: on the PDF-URL route, when the arXiv shortcut fires, the frontmatter source names the PDF URL while `content_hash_sha256` covers the fetched arXiv HTML. This predates that item (verified at `8b027bbc`). A provenance contract should say which source the hash belongs to. Evidence: [product-lens](../completed/20261018_arxiv-extraction/product-lens.md) audit-F4.
 
 **Downstream**: fusion-tea `scripts/source_registry.py` carries all four workarounds today — a flatten step, a staged copy of the local PDF, a loopback HTTP fixture, and two separately recorded hashes (`raw_sha256` for identity, `raw_artifact_sha256` for integrity).
 
@@ -678,6 +680,18 @@ Three small items left out of `L6-EXPOSE-CONSISTENCY`: V4 still reports `.` on n
 **Problem**: `open_run` (`src/agentic_mbse/research/seam.py:148`) catches only an unreadable file or invalid JSON. A request that is valid JSON but not an object, or is not UTF-8, ends in a traceback instead of the `invalid_request` refusal. `request_id` becomes a directory name under `knowledge/research/requests/runs/` unchecked, so a value with `/` or `..` writes the run outside it. The `research-acquire` skill tells agents to keep it to letters, digits and dashes, but nothing enforces that. fusion-tea's old script behaved the same.
 
 **Goal**: `open` refuses each case as `invalid_request` (exit 2, no run directory), with a test per case. Check first that no request fusion-tea has recorded breaks the new `request_id` rule.
+
+---
+
+### [ARXIV-SVG-NESTED-IMAGE] A saved arXiv SVG drawing can point at an image that is not saved
+
+**Priority**: P3
+**Status**: Filed 2026-10-18 [AGENT] at the close of `ARXIV-EXTRACTION`
+**Source**: [audit](../completed/20261018_arxiv-extraction/audit.md) round 1, follow-up 1; [product-lens](../completed/20261018_arxiv-extraction/product-lens.md) audit-F3
+
+**Problem**: LaTeXML can put a relative `<img>` inside an inline `<svg>` picture. Pandoc turns the whole picture into one `data:image/svg+xml` link, and `persist_images` (`src/agentic_mbse/extraction/arxiv_html.py`) saves that link as an `.svg` file under `images/`. The nested image is never fetched, so the saved SVG still points at a file that does not exist offline. On 2610.14224 this is the title logo (`harnessmind_logo.png`). It is decoration, not a figure.
+
+**Goal**: Either fetch nested image refs inside saved SVGs and rewrite them to local files, or record that decoration inside SVG drawings is out of scope. Pin the choice with a test on the fixture.
 
 ---
 
