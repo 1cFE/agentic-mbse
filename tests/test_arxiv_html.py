@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import http.client
 import importlib.util
 import re
 import shutil
@@ -597,6 +598,43 @@ class TestPersistImages:
 
         assert result.markdown == "![f](images/fig.png)"
         assert (tmp_path / "images" / "fig.png").read_bytes() == b"F"
+
+    @pytest.mark.parametrize(
+        "failure",
+        [
+            pytest.param(ValueError("unknown url type"), id="ValueError"),
+            pytest.param(http.client.IncompleteRead(b"partial"), id="IncompleteRead"),
+            pytest.param(http.client.RemoteDisconnected("closed"), id="RemoteDisconnected"),
+            pytest.param(TimeoutError("timed out"), id="timeout"),
+        ],
+    )
+    def test_any_fetch_failure_warns_instead_of_crashing(self, tmp_path, failure):
+        """Audit suggestion 1: R1's rule holds for every realistic fetch failure."""
+        fetch = fake_fetch(
+            {
+                "https://arxiv.org/html/x/bad.png": failure,
+                "https://arxiv.org/html/x/good.png": b"G",
+            }
+        )
+        md = "![bad](x/bad.png) ![good](x/good.png)"
+
+        result = persist_images(md, _BASE, tmp_path, fetch)
+
+        assert result.markdown == "![bad](x/bad.png) ![good](images/good.png)"
+        assert result.saved_count == 1
+        [warning] = result.warnings
+        assert "https://arxiv.org/html/x/bad.png" in warning
+
+    def test_unparseable_ref_warns_instead_of_crashing(self, tmp_path):
+        """The audit's reproducer: an invalid URL raises ValueError while resolving."""
+        md = "![bad](http://[::1/x.png) ![good](x/good.png)"
+        fetch = fake_fetch({"https://arxiv.org/html/x/good.png": b"G"})
+
+        result = persist_images(md, _BASE, tmp_path, fetch)
+
+        assert result.markdown == "![bad](http://[::1/x.png) ![good](images/good.png)"
+        [warning] = result.warnings
+        assert "http://[::1/x.png" in warning
 
     def test_unsupported_scheme_warns(self, tmp_path):
         result = persist_images("![x](ftp://host/x.png)", _BASE, tmp_path, fake_fetch({}))

@@ -13,6 +13,7 @@ from __future__ import annotations
 import base64
 import binascii
 import hashlib
+import http.client
 import re
 import subprocess
 import tempfile
@@ -364,6 +365,25 @@ def _unique_name(url: str, taken: set[str]) -> str:
     return name
 
 
+# Every way reading one image fails in practice: network, HTTP and file errors
+# (OSError), an unparseable URL (ValueError), a broken HTTP response
+# (http.client.HTTPException, e.g. IncompleteRead), oversize or undecodable data.
+_IMAGE_FAILURES = (OSError, ValueError, http.client.HTTPException, ImageFetchError)
+
+
+def _load_image(source: str, fetch: ImageFetcher, taken: set[str]) -> tuple[bytes, str]:
+    """Return an image source's bytes and the file name to save them under.
+
+    A ``data:`` image is decoded and named by its content hash (design D18);
+    anything else is read through ``_read_image`` and keeps its URL's file name,
+    suffixed if *taken*.
+    """
+    if source.startswith("data:"):
+        data, extension = _decode_data_uri(source)
+        return data, f"{hashlib.sha256(data).hexdigest()[:16]}{extension}"
+    return _read_image(source, fetch), _unique_name(source, taken)
+
+
 def persist_images(
     markdown: str, base: str, images_dir: Path, fetch: ImageFetcher
 ) -> ImagePersistResult:
@@ -372,36 +392,35 @@ def persist_images(
     Each ref resolves against *base* (``ArxivSource.image_base``). Each distinct
     source is read once: http(s) through *fetch*, ``file:`` from disk, and an
     inline ``data:`` image decoded and named by its content hash (design D18).
-    Saved refs become ``images/<name>`` with their attributes kept; a source
-    that can't be saved leaves every one of its refs exactly as written and
-    adds one warning.
+    Saved refs become ``images/<name>`` with their attributes kept. A source
+    that can't be resolved, read or written leaves every one of its refs
+    exactly as written and adds one warning.
     """
-    sources = dict.fromkeys(
-        _image_source(base, m.group(2)) for m in _MD_IMAGE_RE.finditer(markdown)
-    )
-    saved: dict[str, str] = {}  # image source -> file name under images_dir
+    saved: dict[str, str | None] = {}  # image source -> file name, or None if it failed
+    names: dict[str, str] = {}  # ref as written -> file name under images_dir
     warnings: list[str] = []
-    for source in sources:
+    for ref in dict.fromkeys(m.group(2) for m in _MD_IMAGE_RE.finditer(markdown)):
+        source = ref
         try:
-            if source.startswith("data:"):
-                data, extension = _decode_data_uri(source)
-                name = f"{hashlib.sha256(data).hexdigest()[:16]}{extension}"
-            else:
-                data = _read_image(source, fetch)
-                name = _unique_name(source, set(saved.values()))
-        except (OSError, ImageFetchError) as exc:
+            source = _image_source(base, ref)
+            if source not in saved:
+                saved[source] = None
+                data, name = _load_image(source, fetch, {n for n in saved.values() if n})
+                images_dir.mkdir(parents=True, exist_ok=True)
+                (images_dir / name).write_bytes(data)
+                saved[source] = name
+        except _IMAGE_FAILURES as exc:
             warnings.append(
                 f"Image not saved; kept its original reference: {_describe_source(source)} ({exc})"
             )
             continue
-        images_dir.mkdir(parents=True, exist_ok=True)
-        (images_dir / name).write_bytes(data)
-        saved[source] = name
+        if (saved_name := saved[source]) is not None:
+            names[ref] = saved_name
 
     def rewrite(m: re.Match[str]) -> str:
         alt, ref, attrs = m.group(1), m.group(2), m.group(3) or ""
-        name = saved.get(_image_source(base, ref))
+        name = names.get(ref)
         return m.group(0) if name is None else f"![{alt}](images/{name}){attrs}"
 
-    rewritten = _MD_IMAGE_RE.sub(rewrite, markdown)
-    return ImagePersistResult(rewritten, len(set(saved.values())), warnings)
+    file_count = len({n for n in saved.values() if n})
+    return ImagePersistResult(_MD_IMAGE_RE.sub(rewrite, markdown), file_count, warnings)

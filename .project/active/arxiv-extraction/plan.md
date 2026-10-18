@@ -760,6 +760,13 @@ Audit round 1 (`audit.md`, verdict Needs Work). The orchestrator's calls `[AGENT
 - Fixture acceptance, all three routes: 0 `data:` links, every ref is a file, count == files. Direct run on the fixture: 12 files, the 9 figures and 3 inline images (title picture, a Section 1 picture, the synthetic PNG), no warnings.
 - **Title logo: not covered.** The title picture is now a file (`images/<hash>.svg`), but the logo is an HTML `<img src="2610.14224v1/figures/harnessmind_logo.png">` inside that SVG's `<foreignObject>`. That relative path is not a markdown ref, so persistence never sees it, and it doesn't resolve from `images/`. Rewriting refs inside saved SVG files would be a separate change; the logo stays a recorded follow-up.
 - Full suite 2913 passed, same 3 baseline failures. mypy 97, ruff clean, format at base.
+
+**2. Audit suggestion 1: every realistic image failure warns, none crashes.** `persist_images` now catches a named tuple, `_IMAGE_FAILURES = (OSError, ValueError, http.client.HTTPException, ImageFetchError)`, with no bare except. Resolving the ref moved inside the same `try`, because the audit's reproducer `http://[::1/x.png` raises `ValueError` while being resolved, before any fetch. The loop now walks refs, maps each to its source, and loads each source once through the new `_load_image` (one function for `data:` and remote sources). A failed source still gives one warning and leaves every ref byte-identical. A file-write failure (an `OSError`) now warns too. Tests:
+- `test_arxiv_html.py::TestPersistImages::test_any_fetch_failure_warns_instead_of_crashing` covers `ValueError`, `IncompleteRead`, `RemoteDisconnected` and a timeout.
+- `::test_unparseable_ref_warns_instead_of_crashing` is the audit's reproducer.
+- `test_pipeline.py::TestShortcutFigures::test_broken_figure_response_warns_instead_of_aborting` checks the PDF route: an `IncompleteRead` figure leaves the shortcut result standing, with one warning.
+
+Full suite 2919 passed, same 3 baseline failures. mypy 97, ruff clean, format at base.
 ---
 
 **Status:** Draft → In Progress → Complete

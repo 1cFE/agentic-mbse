@@ -534,6 +534,29 @@ class TestShortcutFigures:
         [warning] = result.warnings
         assert "gone.png" in warning and "404" in warning
 
+    def test_broken_figure_response_warns_instead_of_aborting(self, tmp_path):
+        """Audit suggestion 1: a chunked-response failure no longer escapes extract_pdf."""
+        import http.client
+
+        markdown = (
+            "# Paper\n\n![a](2610.14224v1/ok.png)\n\n![b](2610.14224v1/cut.png)\n\n" + "x " * 60
+        )
+
+        def fetch(url: str) -> bytes:
+            if url.endswith("cut.png"):
+                raise http.client.IncompleteRead(b"partial")
+            return b"PNG"
+
+        images = tmp_path / "out" / "images"
+        with _pandoc_returns(markdown):
+            result = self._extract(tmp_path, fetch, extracted_images_dir=images)
+
+        assert result.source == "pandoc_arxiv"
+        assert result.image_count == 1
+        assert "![b](2610.14224v1/cut.png)" in result.markdown
+        [warning] = result.warnings
+        assert "cut.png" in warning and "IncompleteRead" in warning
+
     def test_without_images_dir_refs_stay_and_nothing_is_fetched(self, tmp_path):
         markdown = "# Paper\n\n![a](2610.14224v1/ok.png)\n\n" + "x " * 60
         fetch = MagicMock(side_effect=AssertionError("no fetch without an images dir"))
