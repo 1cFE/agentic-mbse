@@ -10,10 +10,10 @@ from agentic_mbse.sysml.executable_profile import REASON_CODES
 from agentic_mbse.sysml.fact_refs import ElementRef, SafeLocation
 from agentic_mbse.sysml.subset_profile import (
     SUBSET_REASON_CODES,
+    CaseRef,
     ContextId,
     EvidenceStatus,
     Outcome,
-    ProbeRef,
     Qualification,
     SubsetFinding,
     UnverifiedCheck,
@@ -36,7 +36,7 @@ def finding(**changes: object) -> SubsetFinding:
         location=WHERE,
         occurrence_count=None,
         via_roots=(),
-        evidence=(ProbeRef("invocation-callable__unsupported_callable__attribute_value"),),
+        evidence=(CaseRef("invocation-callable__unsupported_callable__attribute_value"),),
         qualification=Qualification.NONE,
     )
     fields.update(changes)
@@ -59,7 +59,7 @@ def test_enums_are_the_documented_closed_sets() -> None:
         "clear",
     }
     assert {s.value for s in EvidenceStatus} == {
-        "probe_observed",
+        "case_observed",
         "partial",
         "code_read_pending_item_2",
     }

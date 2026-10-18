@@ -1,0 +1,30 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      7,
+      7
+    ],
+    "description": "the BLOCK predicate in part def Site, which nothing instantiates"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": [
+      {
+        "rule": "constraint-predicate",
+        "shape": "blocked_predicate",
+        "context": "owner_uninstantiated",
+        "outcome": "admitted",
+        "subject": "fx::Site::c",
+        "line": 7
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "constraint-predicate__blocked_predicate__owner_uninstantiated",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

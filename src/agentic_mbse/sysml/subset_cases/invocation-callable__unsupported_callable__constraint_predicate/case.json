@@ -1,0 +1,38 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      6,
+      6
+    ],
+    "description": "asserted predicate ScalarFunctions::max(a, b) < 1.0"
+  },
+  "screen": {
+    "verdict": "refused_incomplete",
+    "findings": [
+      {
+        "rule": "constraint-predicate",
+        "shape": "blocked_predicate",
+        "context": "owner_instantiated",
+        "outcome": "refused",
+        "subject": "fx::Site::c",
+        "line": 6
+      },
+      {
+        "rule": "invocation-callable",
+        "shape": "unsupported_callable",
+        "context": "constraint_predicate",
+        "outcome": "refused",
+        "subject": "fx::Site::c",
+        "line": 6
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "invocation-callable__unsupported_callable__constraint_predicate",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

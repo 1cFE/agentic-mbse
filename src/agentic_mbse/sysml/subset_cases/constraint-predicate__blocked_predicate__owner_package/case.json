@@ -1,0 +1,30 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      5,
+      5
+    ],
+    "description": "the BLOCK predicate as a package-owned assertion"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "constraint-predicate",
+        "shape": "blocked_predicate",
+        "context": "owner_package",
+        "outcome": "refused",
+        "subject": "fx::c",
+        "line": 5
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "constraint-predicate__blocked_predicate__owner_package",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      4,
+      4
+    ],
+    "description": "part facility subsets top-level usage ac_facility and reads its owned area (dc3 U6)"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "candidate-es-009__composition_by_subsetting__part_usage",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

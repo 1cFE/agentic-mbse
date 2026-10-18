@@ -16,10 +16,10 @@ from agentic_mbse.sysml.subset_profile import (
     PACKAGED_RULES,
     SNAPSHOT_FIXTURES,
     SUBSET_REASON_CODES,
+    CaseRef,
     CorpusRef,
     EvidenceStatus,
     Outcome,
-    ProbeRef,
     RecordError,
     load_rule_records,
     rule_contexts,
@@ -63,7 +63,7 @@ def test_records_are_complete() -> None:
         assert record.remedy and record.semantic_limits and record.doc_anchor
         assert isinstance(record.evidence_status, EvidenceStatus)
         if record.evidence_status is not EvidenceStatus.CODE_READ_PENDING_ITEM_2:
-            assert record.example_probe and record.example_probe.startswith(record.rule_id)
+            assert record.example_case and record.example_case.startswith(record.rule_id)
         for s in record.shapes:
             assert s.reason in SUBSET_REASON_CODES
             # refused and admitted contexts are the two explicit lists (spec L3-1)
@@ -100,16 +100,16 @@ def test_loader_rejects_an_outcome_without_evidence(outcome: str) -> None:
 def test_loader_rejects_a_corpus_citation_for_anything_but_admitted(outcome: str) -> None:
     data = data_with({BINDING: {"owner_instantiated": outcome, "owner_uninstantiated": "admitted"}})
     shape(data, *BINDING)["admission"][0]["evidence"] = ["corpus:sample_model"]
-    with pytest.raises(RecordError, match="requires probe evidence only"):
+    with pytest.raises(RecordError, match="requires case evidence only"):
         load(data)
 
 
 def test_an_admission_may_cite_a_snapshot_fixture_and_nothing_else_from_the_corpus() -> None:
     data = data_with({BINDING: {"owner_uninstantiated": "admitted"}})
     shape(data, *BINDING)["admission"][0]["evidence"] = ["corpus:sample_model"]
-    # a corpus citation is not a probe observation, so the rule stays pending
+    # a corpus citation is not a case observation, so the rule stays pending
     rule(data, "binding-source")["evidence_status"] = "code_read_pending_item_2"
-    del rule(data, "binding-source")["example_probe"]
+    del rule(data, "binding-source")["example_case"]
     admission = load(data).rule("binding-source").shape("expression_source").admissions
     assert [a.evidence for a in admission.values()] == [(CorpusRef("sample_model"),)]
     assert "sample_model" in SNAPSHOT_FIXTURES
@@ -118,32 +118,42 @@ def test_an_admission_may_cite_a_snapshot_fixture_and_nothing_else_from_the_corp
         load(data)
 
 
-def test_loader_rejects_a_probe_of_another_pair() -> None:
+def test_loader_rejects_a_case_of_another_pair() -> None:
     data = data_with(REFUSED_WITH_PARTNER)
     shape(data, *BINDING)["admission"][0]["evidence"] = [
-        "probe:binding-source__expression_source__owner_package"
+        "case:binding-source__expression_source__owner_package"
     ]
-    with pytest.raises(RecordError, match="does not probe"):
+    with pytest.raises(RecordError, match="is not a case of"):
         load(data)
     shape(data, *BINDING)["admission"][0]["evidence"] = [
-        "probe:binding-source__expression_source__owner_uninstantiated__variant"
+        "case:binding-source__expression_source__owner_uninstantiated__variant"
     ]
-    with pytest.raises(RecordError, match="does not probe"):
+    with pytest.raises(RecordError, match="is not a case of"):
         load(data)
 
 
-def test_a_probe_variant_of_the_same_pair_is_evidence() -> None:
+def test_loader_rejects_a_probe_citation() -> None:
+    """Item 2a retired the probes: a case replaces each one as evidence (design D4)."""
+    data = data_with(REFUSED_WITH_PARTNER)
+    shape(data, *BINDING)["admission"][0]["evidence"] = [
+        "probe:binding-source__expression_source__owner_instantiated"
+    ]
+    with pytest.raises(RecordError, match="neither case:<id> nor corpus:<fixture>"):
+        load(data)
+
+
+def test_a_case_variant_of_the_same_pair_is_evidence() -> None:
     data = data_with(REFUSED_WITH_PARTNER)
     entry = shape(data, *BINDING)["admission"][0]
     assert entry["context"] == "owner_instantiated"
-    entry["evidence"] = ["probe:binding-source__expression_source__owner_instantiated__part_usage"]
+    entry["evidence"] = ["case:binding-source__expression_source__owner_instantiated__part_usage"]
     admissions = load(data).rule("binding-source").shape("expression_source").admissions
-    assert ProbeRef("binding-source__expression_source__owner_instantiated__part_usage") in [
+    assert CaseRef("binding-source__expression_source__owner_instantiated__part_usage") in [
         e for a in admissions.values() for e in a.evidence
     ]
 
 
-def test_a_refused_shape_needs_a_probe_of_a_context_it_is_not_refused_in() -> None:
+def test_a_refused_shape_needs_a_case_of_a_context_it_is_not_refused_in() -> None:
     data = data_with({BINDING: {"owner_instantiated": "refused"}})
     with pytest.raises(RecordError, match="context it is not refused in"):
         load(data)
@@ -156,13 +166,13 @@ def test_a_refused_shape_needs_a_probe_of_a_context_it_is_not_refused_in() -> No
 def test_a_certified_omission_or_exclusion_meets_the_gate_like_an_admission(
     partner: str,
 ) -> None:
-    """Audit S1: the gate proves a refusal is not a universal ban; any non-refused probe does."""
+    """Audit S1: the gate proves a refusal is not a universal ban; any non-refused case does."""
     data = data_with({BINDING: {"owner_instantiated": "refused", "owner_uninstantiated": partner}})
     admissions = load(data).rule("binding-source").shape("expression_source").admissions
     assert {a.outcome for a in admissions.values()} == {Outcome.REFUSED, Outcome(partner)}
 
 
-def test_sa1_statement_needs_refused_probes_in_every_computable_context() -> None:
+def test_sa1_statement_needs_refused_cases_in_every_computable_context() -> None:
     pair = ("calc-owned-assertion", "asserted_constraint")
     statement = {"citation": "elaboration/elaborate.py:1625", "statement": "refused everywhere"}
     data = data_with({pair: {"calc_definition_owner": "refused", "calc_usage_owner": "refused"}})
@@ -174,7 +184,7 @@ def test_sa1_statement_needs_refused_probes_in_every_computable_context() -> Non
         load(data)
 
 
-def test_sa1_statement_cannot_stand_beside_an_admitted_probe() -> None:
+def test_sa1_statement_cannot_stand_beside_an_admitted_case() -> None:
     data = data_with(REFUSED_WITH_PARTNER)
     shape(data, *BINDING)["no_admitted_context"] = {"citation": "c", "statement": "s"}
     with pytest.raises(RecordError, match="contradicts"):
@@ -220,18 +230,18 @@ def test_only_an_admission_carries_a_qualification() -> None:
 
 def test_evidence_status_must_match_the_admissions() -> None:
     data = data_with(REFUSED_WITH_PARTNER)
-    rule(data, "binding-source")["evidence_status"] = "probe_observed"
+    rule(data, "binding-source")["evidence_status"] = "case_observed"
     with pytest.raises(RecordError, match="disagrees with its admissions"):
         load(data)
 
 
-def test_example_probe_exists_exactly_when_evidence_does() -> None:
+def test_example_case_exists_exactly_when_evidence_does() -> None:
     data = data_with(REFUSED_WITH_PARTNER)
-    del rule(data, "binding-source")["example_probe"]
-    with pytest.raises(RecordError, match="example_probe"):
+    del rule(data, "binding-source")["example_case"]
+    with pytest.raises(RecordError, match="example_case"):
         load(data)
     data = data_with({})
-    rule(data, "binding-source")["example_probe"] = "binding-source__x__y"
+    rule(data, "binding-source")["example_case"] = "binding-source__x__y"
     with pytest.raises(RecordError, match="no working example"):
         load(data)
 

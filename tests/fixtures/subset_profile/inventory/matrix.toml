@@ -26,16 +26,16 @@ rule = "calc-owned-assertion"
 shapes = ["asserted_constraint", "non_asserted_constraint"]
 contexts = ["calc_definition_owner", "calc_usage_owner"]
 outcome = "refused"
-evidence_status = "probe_observed"
+evidence_status = "case_observed"
 evidence = [
-    "probe:calc-owned-assertion__asserted_constraint__calc_definition_owner",
-    "probe:calc-owned-assertion__asserted_constraint__calc_usage_owner",
-    "probe:calc-owned-assertion__non_asserted_constraint__calc_usage_owner",
-    "probe:calc-owned-assertion__non_asserted_constraint__calc_definition_owner",
+    "case:calc-owned-assertion__asserted_constraint__calc_definition_owner",
+    "case:calc-owned-assertion__asserted_constraint__calc_usage_owner",
+    "case:calc-owned-assertion__non_asserted_constraint__calc_usage_owner",
+    "case:calc-owned-assertion__non_asserted_constraint__calc_definition_owner",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = ""
-statement = "A non-asserted constraint owned by a calc def is admitted (graded, not refused). An asserted constraint is refused under every owner the rule computes, so it carries an SA-1 statement instead of an admitted-context probe. The part-owned assert stays admitted (control probe). Lifting the refusal is sysml-codegen [CALCDEF-GATE-IMPLEMENTATION]."
+statement = "A non-asserted constraint owned by a calc def is admitted (graded, not refused). An asserted constraint is refused under every owner the rule computes, so it carries an SA-1 statement instead of an admitted-context case. The part-owned assert stays admitted (control case). Lifting the refusal is sysml-codegen [CALCDEF-GATE-IMPLEMENTATION]."
 sites = []
 site_status = "codegen_account"
 dc3 = ["B1"]
@@ -49,16 +49,16 @@ rule = "binding-source"
 shapes = ["expression_source"]
 contexts = ["owner_instantiated", "owner_package"]
 outcome = "refused"
-evidence_status = "probe_observed"
+evidence_status = "case_observed"
 evidence = [
-    "probe:binding-source__expression_source__owner_instantiated",
-    "probe:binding-source__expression_source__owner_package",
-    "probe:binding-source__expression_source__owner_uninstantiated",
-    "probe:binding-source__expression_source__writer_overridden__tuple",
+    "case:binding-source__expression_source__owner_instantiated",
+    "case:binding-source__expression_source__owner_package",
+    "case:binding-source__expression_source__owner_uninstantiated",
+    "case:binding-source__expression_source__writer_overridden__tuple",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = ""
-statement = "The refused element is the sequence actual, not the parameter declaration: an `ordered nonunique` input bound to a scalar generates (control probe binding-source__scalar_actual__owner_instantiated). dc3's T-001 attributes B2 to multiplicity expansion; that expansion runs only on part usages (ES-004), so B2 is cross-referenced here and not from ES-004. Admitted where the owner is not instantiated or another writer wins in every scope. `owner_other` stays unconfirmed."
+statement = "The refused element is the sequence actual, not the parameter declaration: an `ordered nonunique` input bound to a scalar generates (control case binding-source__scalar_actual__owner_instantiated). dc3's T-001 attributes B2 to multiplicity expansion; that expansion runs only on part usages (ES-004), so B2 is cross-referenced here and not from ES-004. Admitted where the owner is not instantiated or another writer wins in every scope. `owner_other` stays unconfirmed."
 sites = []
 site_status = "codegen_account"
 dc3 = ["B2"]
@@ -66,22 +66,22 @@ upstream = []
 
 [[row]]
 id = "ES-004"
-title = "Ordered, nonunique, ranged, unresolved or negative multiplicity on an expanded part usage"
+title = "Ordered, ranged or unresolved multiplicity on an expanded part usage"
 class = "shared_rule"
 rule = "part-multiplicity"
-shapes = ["ordered", "nonunique", "range", "unresolved_bound", "negative_bound"]
+shapes = ["ordered", "range", "unresolved_bound"]
 contexts = ["expanded_part_usage"]
 outcome = "refused"
-evidence_status = "partial"
+evidence_status = "case_observed"
 evidence = [
-    "probe:part-multiplicity__range__expanded_part_usage",
-    "probe:part-multiplicity__unresolved_bound__expanded_part_usage",
-    "probe:part-multiplicity__ordered__expanded_part_usage",
-    "probe:part-multiplicity__range__unexpanded_part_usage",
+    "case:part-multiplicity__range__expanded_part_usage",
+    "case:part-multiplicity__unresolved_bound__expanded_part_usage",
+    "case:part-multiplicity__ordered__expanded_part_usage",
+    "case:part-multiplicity__range__unexpanded_part_usage",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
-coverage_limitation = "`nonunique` and negative part multiplicities stay unconfirmed: SysIDE 0.8.4 rejects both before the generator runs, so no probe can be authored. G1 and G2 are generator-correctness questions the rule mirrors rather than corrects (rows G1, G2)."
-statement = "Applies only to part usages the generator expands (a root, or a composite part usage reachable from one). Attribute-usage multiplicity is never expanded (control probe part-multiplicity__attribute_multiplicity__attribute_usage), and neither are templates or non-composite `ref part` usages."
+coverage_limitation = "The `nonunique` and `negative_bound` shapes are retired (owner, 2026-10-18): SysIDE 0.8.4 rejects both before the generator runs. G1 and G2 are generator-correctness questions the rule mirrors rather than corrects (rows G1, G2)."
+statement = "Applies only to part usages the generator expands (a root, or a composite part usage reachable from one). Attribute-usage multiplicity is never expanded (control case part-multiplicity__attribute_multiplicity__attribute_usage), and neither are templates or non-composite `ref part` usages."
 sites = []
 site_status = "codegen_account"
 dc3 = ["B3"]
@@ -95,12 +95,12 @@ rule = "invocation-callable"
 shapes = ["unsupported_callable"]
 contexts = ["attribute_value", "binding_value", "calc_definition_feature_value", "constraint_predicate"]
 outcome = "refused"
-evidence_status = "probe_observed"
+evidence_status = "case_observed"
 evidence = [
-    "probe:invocation-callable__unsupported_callable__attribute_value",
-    "probe:invocation-callable__unsupported_callable__attribute_value__size",
-    "probe:invocation-callable__unsupported_callable__attribute_value__max",
-    "probe:invocation-callable__unsupported_callable__other_expression_site",
+    "case:invocation-callable__unsupported_callable__attribute_value",
+    "case:invocation-callable__unsupported_callable__attribute_value__size",
+    "case:invocation-callable__unsupported_callable__attribute_value__max",
+    "case:invocation-callable__unsupported_callable__other_expression_site",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "A calc def's bare result expression (`calc_result_expression`) stays unconfirmed: the generator refuses every such calc def for having no output, whatever the expression holds (row CALC-DEF-BARE-RESULT), so the design's expected handwritten stub was not observed. A calc usage's bare result expression (`other_expression_site`) is omitted: never examined and dropped from the output (row CALC-USAGE-BARE-RESULT-DROP)."
@@ -122,13 +122,13 @@ contexts = ["attribute_value", "binding_value", "calc_definition_feature_value",
 outcome = "refused"
 evidence_status = "partial"
 evidence = [
-    "probe:conditional-expression__conditional_unresolved_branch__attribute_value",
-    "probe:conditional-expression__conditional_unresolved_branch__binding_value",
-    "probe:conditional-expression__conditional_unresolved_branch__calc_definition_feature_value",
-    "probe:conditional-expression__conditional_unresolved_branch__other_expression_site",
+    "case:conditional-expression__conditional_unresolved_branch__attribute_value",
+    "case:conditional-expression__conditional_unresolved_branch__binding_value",
+    "case:conditional-expression__conditional_unresolved_branch__calc_definition_feature_value",
+    "case:conditional-expression__conditional_unresolved_branch__other_expression_site",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
-coverage_limitation = "A conditional whose branch references all resolve (`conditional_resolved_branches`) is unconfirmed in every context; no probe has observed one. `calc_result_expression` stays unconfirmed (row CALC-DEF-BARE-RESULT). A refused conditional leaves `indexed-reference` unverified on the same site, because the shared reference walk is what fails; such a model reports verdict INCOMPLETE. A calc usage's bare result expression (`other_expression_site`) is omitted: never examined and dropped from the output (row CALC-USAGE-BARE-RESULT-DROP)."
+coverage_limitation = "A conditional whose branch references all resolve (`conditional_resolved_branches`) is unconfirmed in every context; no case has observed one. `calc_result_expression` stays unconfirmed (row CALC-DEF-BARE-RESULT). A refused conditional leaves `indexed-reference` unverified on the same site, because the shared reference walk is what fails; such a model reports verdict INCOMPLETE. A calc usage's bare result expression (`other_expression_site`) is omitted: never examined and dropped from the output (row CALC-USAGE-BARE-RESULT-DROP)."
 statement = "The generator reports this with its generic evidence-gap code, so the rule refuses only a positively recognized conditional whose reference walk failed with RESOLVED_TARGET_MISSING. Any other evidence failure stays unverified."
 sites = [
     "agentic_mbse/sysml/reference_use.py::_reference_use::shared-evidence::RESOLVED_TARGET_MISSING::1",
@@ -145,12 +145,12 @@ rule = "constraint-predicate"
 shapes = ["blocked_predicate", "non_numerical_predicate"]
 contexts = ["owner_instantiated", "owner_package"]
 outcome = "refused"
-evidence_status = "probe_observed"
+evidence_status = "case_observed"
 evidence = [
-    "probe:constraint-predicate__blocked_predicate__owner_instantiated",
-    "probe:constraint-predicate__blocked_predicate__owner_package",
-    "probe:constraint-predicate__blocked_predicate__owner_uninstantiated",
-    "probe:constraint-predicate__non_numerical_predicate__owner_instantiated",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated",
+    "case:constraint-predicate__blocked_predicate__owner_package",
+    "case:constraint-predicate__blocked_predicate__owner_uninstantiated",
+    "case:constraint-predicate__non_numerical_predicate__owner_instantiated",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1 (eligibility stays with executable_profile.py)"
 coverage_limitation = ""
@@ -207,14 +207,14 @@ rule = "string-value-omission"
 shapes = ["string_value"]
 contexts = ["attribute_value"]
 outcome = "omitted"
-evidence_status = "probe_observed"
+evidence_status = "case_observed"
 evidence = [
-    "probe:string-value-omission__string_value__attribute_value__attribute_declaration",
-    "probe:string-value-omission__string_value__attribute_value__redefinition_shorthand",
+    "case:string-value-omission__string_value__attribute_value__attribute_declaration",
+    "case:string-value-omission__string_value__attribute_value__redefinition_shorthand",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "The refusal side (a String reaching a generated entry-point input) is a separate candidate, row ES-010-REFUSAL. On that reproduction model this rule reports the String omitted while the generator refuses the model."
-statement = "Dropped from generated output with no diagnostic, in both spellings (`attribute x = \"...\"` and `:>> x = \"...\"`). L6 today flags only the first spelling (dc3 U3). A numeric value stays generated (control probe)."
+statement = "Dropped from generated output with no diagnostic, in both spellings (`attribute x = \"...\"` and `:>> x = \"...\"`). L6 today flags only the first spelling (dc3 U3). A numeric value stays generated (control case)."
 sites = []
 site_status = "no_raise_site"
 dc3 = ["B7"]
@@ -228,15 +228,15 @@ rule = "binding-source"
 shapes = ["expression_source"]
 contexts = ["owner_instantiated", "owner_package"]
 outcome = "refused"
-evidence_status = "probe_observed"
+evidence_status = "case_observed"
 evidence = [
-    "probe:binding-source__expression_source__owner_instantiated__arithmetic",
-    "probe:binding-source__expression_source__writer_overridden",
-    "probe:binding-source__plain_reference__owner_instantiated",
+    "case:binding-source__expression_source__owner_instantiated__arithmetic",
+    "case:binding-source__expression_source__writer_overridden",
+    "case:binding-source__plain_reference__owner_instantiated",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = ""
-statement = "Same classifier and shape as ES-003; the epic keeps the row separate from dc3 B1-B8. A plain reference actual stays admitted (control probe)."
+statement = "Same classifier and shape as ES-003; the epic keeps the row separate from dc3 B1-B8. A plain reference actual stays admitted (control case)."
 sites = []
 site_status = "codegen_account"
 dc3 = []
@@ -250,14 +250,14 @@ rule = "binding-source"
 shapes = ["self_reference_source"]
 contexts = ["owner_instantiated", "owner_package"]
 outcome = "refused"
-evidence_status = "probe_observed"
+evidence_status = "case_observed"
 evidence = [
-    "probe:binding-source__self_reference_source__owner_instantiated",
-    "probe:binding-source__self_reference_source__owner_package",
-    "probe:binding-source__self_reference_source__owner_uninstantiated",
+    "case:binding-source__self_reference_source__owner_instantiated",
+    "case:binding-source__self_reference_source__owner_package",
+    "case:binding-source__self_reference_source__owner_uninstantiated",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
-coverage_limitation = "`writer_overridden` and `owner_other` stay unconfirmed: no probe observed a self-binding there."
+coverage_limitation = "`writer_overridden` and `owner_other` stay unconfirmed: no case has observed a self-binding there."
 statement = "20 of the 23 refusal records of codegen's accepted corpus carry this code."
 l2_relation = "Overlaps L2_SELF_NAMED_BINDING (validation/level2_structure.py:322-343) and is wider in one way, narrower in another. Both compare the reference's resolved referent with the bound parameter, as codegen does. L2 checks calc usages only, and in every context, so it reports a self-binding inside a part def nobody instantiates, which the generator admits. The rule also covers constraint-usage inputs and refuses only where the generator classifies the binding. Item 1 leaves L2 unchanged; reconciling the two is Item 3's (L6 adopts the contract)."
 sites = []
@@ -273,11 +273,11 @@ rule = "indexed-reference"
 shapes = ["indexed_reference"]
 contexts = ["attribute_value", "binding_value", "calc_definition_feature_value", "constraint_predicate"]
 outcome = "refused"
-evidence_status = "probe_observed"
+evidence_status = "case_observed"
 evidence = [
-    "probe:indexed-reference__indexed_reference__attribute_value",
-    "probe:indexed-reference__indexed_reference__binding_value",
-    "probe:indexed-reference__indexed_reference__other_expression_site",
+    "case:indexed-reference__indexed_reference__attribute_value",
+    "case:indexed-reference__indexed_reference__binding_value",
+    "case:indexed-reference__indexed_reference__other_expression_site",
 ]
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "`calc_result_expression` stays unconfirmed (row CALC-DEF-BARE-RESULT). Where a site's reference walk fails (a refused conditional or invocation on it), whether it also holds an index is unknown, so this rule reports unverified there. A calc usage's bare result expression (`other_expression_site`) is omitted: never examined and dropped from the output (row CALC-USAGE-BARE-RESULT-DROP)."
@@ -297,8 +297,8 @@ title = "Constraint binding a calc usage's input parameter"
 class = "tracked_gap"
 contexts = ["a constraint usage whose actual targets `c.a_in` of a calc usage in an instantiated part"]
 outcome = "refused"
-evidence_status = "reproduction_probe"
-evidence = ["probe:candidate-es-002__constraint_binds_calc_input__binding_value"]
+evidence_status = "reproduction_case"
+evidence = ["case:candidate-es-002__constraint_binds_calc_input__binding_value"]
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule: the contract reports nothing for this shape. Which other shapes reach the shared SI_OCCURRENCE_MISSING raise sites is not established."
 statement = "Reproduced once: SI_OCCURRENCE_MISSING, \"semantic owner kind 'CalculationUsage' cannot anchor containment\". Binding a calc output works (dc3 U5)."
@@ -313,8 +313,8 @@ title = "Named subset nested inside a named subset, each redefining a value"
 class = "tracked_gap"
 contexts = ["nested named subsets where the inner subsets redefine a value (`psu.efficiency`)"]
 outcome = "refused"
-evidence_status = "reproduction_probe"
-evidence = ["probe:candidate-es-008__nested_named_subset__part_usage"]
+evidence_status = "reproduction_case"
+evidence = ["case:candidate-es-008__nested_named_subset__part_usage"]
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule. Reproduced in one of five spellings only; plain nested subsets with exact multiplicities generate, so the refusing boundary is narrower than dc3 U2 states."
 statement = "SI_REDEFINITION_INVALID, \"incomparable value writers\". One level of named subsetting works."
@@ -329,8 +329,8 @@ title = "Composition by subsetting a top-level usage"
 class = "tracked_gap"
 contexts = ["`part facility :> ac_facility` where `ac_facility` is a package-level usage, read through `facility.<attr>`"]
 outcome = "refused"
-evidence_status = "reproduction_probe"
-evidence = ["probe:candidate-es-009__composition_by_subsetting__part_usage"]
+evidence_status = "reproduction_case"
+evidence = ["case:candidate-es-009__composition_by_subsetting__part_usage"]
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule: the contract reports nothing for this shape."
 statement = "SI_OCCURRENCE_MISSING, \"exact owner address has no target\" on `facility.area`."
@@ -345,8 +345,8 @@ title = "Non-numeric default reaching a generated entry-point input (ES-010 refu
 class = "tracked_gap"
 contexts = ["a String-valued feature bound to an input of a calc usage whose owner is instantiated (the one path reproduced); decided at projection"]
 outcome = "refused"
-evidence_status = "reproduction_probe"
-evidence = ["probe:candidate-es-010-refusal__string_to_calc_input__binding_value", "sysml_codegen/elaboration/project.py:201-218"]
+evidence_status = "reproduction_case"
+evidence = ["case:candidate-es-010-refusal__string_to_calc_input__binding_value", "sysml_codegen/elaboration/project.py:201-218"]
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule (design D11): the projection boundary has three entry paths and entry-point membership is an output fact owned by codegen (ADR 0007). The omission rule reports such a String omitted while the generator refuses the model."
 statement = "SI_RENDERING_COLLISION at projection: \"the public EntryPoint seam cannot carry non-numeric default\". Booleans are coerced, not refused."
@@ -377,10 +377,10 @@ title = "Calc def whose result is a bare expression"
 class = "tracked_gap"
 contexts = ["a calc def whose body ends in a bare result expression, with or without a declared `return` feature"]
 outcome = "refused"
-evidence_status = "reproduction_probe"
+evidence_status = "reproduction_case"
 evidence = [
-    "probe:candidate-calc-result-expression__bare_result__calc_result_expression__arithmetic",
-    "probe:candidate-calc-result-expression__bare_result__calc_result_expression__max",
+    "case:candidate-calc-result-expression__bare_result__calc_result_expression__arithmetic",
+    "case:candidate-calc-result-expression__bare_result__calc_result_expression__max",
 ]
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule. The site rules report `calc_result_expression` unconfirmed, so a model with this shape is never called clean, but the refusal itself is not reported."
@@ -396,15 +396,15 @@ title = "Calc usage whose body ends in a bare result expression"
 class = "tracked_gap"
 contexts = ["a calc usage body ending in a bare expression, e.g. `calc m : Twice { in v = x; ScalarFunctions::max(v, 4271.5) }`"]
 outcome = "omitted"
-evidence_status = "observed_in_record_probes"
+evidence_status = "observed_in_record_cases"
 evidence = [
-    "probe:invocation-callable__unsupported_callable__other_expression_site",
-    "probe:conditional-expression__conditional_unresolved_branch__other_expression_site",
-    "probe:indexed-reference__indexed_reference__other_expression_site",
+    "case:invocation-callable__unsupported_callable__other_expression_site",
+    "case:conditional-expression__conditional_unresolved_branch__other_expression_site",
+    "case:indexed-reference__indexed_reference__other_expression_site",
 ]
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2, generator correctness)"
 coverage_limitation = "No rule of its own. The three site rules record this context (`other_expression_site`) as omitted for their shapes (an indexed reference, an unsupported invocation, a conditional with an unresolved branch), so those drops are reported; a bare result expression holding none of those shapes, plain arithmetic say, draws no finding and is dropped unreported."
-statement = "Found by Item 1's probes: the expression is never examined and produces nothing in the generated output; the usage's result comes from its definition. No diagnostic. Each probe puts a unique literal in the dropped expression and certifies that it appears in no generated file while the usage's own result is generated (the judge's omission check)."
+statement = "Found by Item 1's probes: the expression is never examined and produces nothing in the generated output; the usage's result comes from its definition. No diagnostic. Item 1's probes put a unique literal in the dropped expression and showed that it appeared in no generated file while the usage's own result was generated."
 sites = []
 site_status = "no_raise_site"
 dc3 = []
@@ -416,8 +416,8 @@ title = "Part redefinition that omits bounds expands to one occurrence and loses
 class = "tracked_gap"
 contexts = ["a part usage redefining `servers[2]` with no multiplicity, under a generator root"]
 outcome = "admitted"
-evidence_status = "control_probe"
-evidence = ["probe:part-multiplicity__redefinition_drops_bounds__expanded_part_usage"]
+evidence_status = "control_case"
+evidence = ["case:part-multiplicity__redefinition_drops_bounds__expanded_part_usage"]
 owner = "EXEC-SUBSET-CONTRACT Item 2 / owner (design D14 a)"
 coverage_limitation = "The contract mirrors the generator (the occurrence port expands one unindexed occurrence) and does not flag that the redefined multiplicity was dropped."
 statement = "Generator-correctness question, not a refusal: the generator generates one unindexed occurrence (`fx__rack__servers__t__r`)."
@@ -656,28 +656,28 @@ kind = "single_reference"
 row = "ES-012"
 outcome = "admitted"
 code = ""
-evidence = ["probe:binding-source__plain_reference__owner_instantiated", "probe:binding-source__scalar_actual__owner_instantiated"]
+evidence = ["case:binding-source__plain_reference__owner_instantiated", "case:binding-source__scalar_actual__owner_instantiated"]
 
 [[classifier]]
 kind = "self_binding"
 row = "SELF-BINDING"
 outcome = "refused"
 code = "SI_SELF_BINDING"
-evidence = ["probe:binding-source__self_reference_source__owner_instantiated"]
+evidence = ["case:binding-source__self_reference_source__owner_instantiated"]
 
 [[classifier]]
 kind = "indexed"
 row = "INDEXED-REFERENCE"
 outcome = "refused"
 code = "SI_INDEXED_SOURCE_UNSUPPORTED"
-evidence = ["probe:indexed-reference__indexed_reference__binding_value"]
+evidence = ["case:indexed-reference__indexed_reference__binding_value"]
 
 [[classifier]]
 kind = "other_expression"
 row = "ES-003"
 outcome = "refused"
 code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
-evidence = ["probe:binding-source__expression_source__owner_instantiated"]
+evidence = ["case:binding-source__expression_source__owner_instantiated"]
 
 # ---- findings deliberately not classified ----------------------------------------------------
 

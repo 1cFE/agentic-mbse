@@ -82,9 +82,3 @@ def test_isolated_tree_defines_every_helper_codegen_suite_imports():
     imported = _imported_from(CODEGEN_SUITE, "isolated_tree")
     assert SUITE_HELPERS <= imported
     assert imported <= _names_bound_at_module_level(ISOLATED_TREE)
-
-
-@pytest.mark.parametrize("script", sorted(SCRIPTS.glob("*.py")), ids=lambda p: p.name)
-def test_no_script_imports_tree_helpers_from_probe(script):
-    """`probe.py` retires with the probes (Item 2a P2.1); the helpers live in `isolated_tree.py`."""
-    assert _imported_from(script, "probe") == set()

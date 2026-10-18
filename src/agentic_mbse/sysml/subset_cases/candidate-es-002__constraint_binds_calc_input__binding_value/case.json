@@ -1,0 +1,21 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      8,
+      8
+    ],
+    "description": "constraint g binds calc usage t's input t.v (dc3 U5)"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "candidate-es-002__constraint_binds_calc_input__binding_value",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

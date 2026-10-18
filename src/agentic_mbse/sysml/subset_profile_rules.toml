@@ -1,8 +1,9 @@
 # The executable-subset rule records (EXEC-SUBSET-CONTRACT Item 1).
 #
 # Each rule maps (shape, context) to an outcome. A pair with no admission is `unconfirmed`.
-# Every admission cites evidence: `probe:<id>` is a retained run of the pinned generator under
-# tests/fixtures/subset_profile/probes/<id>/; `corpus:<fixture>` is a snapshot fixture of the
+# Every admission cites evidence: `case:<id>` is a conformance case packaged under
+# src/agentic_mbse/sysml/subset_cases/<id>/, whose generator answer sysml-codegen stores and
+# checks live (EXEC-SUBSET-CONTRACT Item 2a); `corpus:<fixture>` is a snapshot fixture of the
 # generator's accepted corpus, for `admitted` only. `SI_*` codes appear only in the evidence
 # fields `expected_code` and `generator_evidence`.
 #
@@ -26,8 +27,8 @@ fact_requirements = ["binding_source", "occurrence"]
 remedy = "Bind the input to a literal or to one plain reference to a feature that holds the value; compute tuples and arithmetic in a named attribute and bind that."
 semantic_limits = "Applies only where the generator classifies the binding: the consuming usage's owner is instantiated under a generator root or is a package, and a calculation usage is the selected writer in that scope. The input declaration itself is never refused."
 doc_anchor = "generator-subset#binding-source"
-evidence_status = "probe_observed"
-example_probe = "binding-source__expression_source__owner_uninstantiated"
+evidence_status = "case_observed"
+example_case = "binding-source__expression_source__owner_uninstantiated"
 
 [[rule.generator_evidence]]
 code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
@@ -46,36 +47,36 @@ expected_code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
 context = "owner_instantiated"
 outcome = "refused"
 evidence = [
-    "probe:binding-source__expression_source__owner_instantiated",
-    "probe:binding-source__expression_source__owner_instantiated__arithmetic",
-    "probe:binding-source__expression_source__owner_instantiated__constraint_input",
-    "probe:binding-source__expression_source__owner_instantiated__indexed_owner",
-    "probe:binding-source__expression_source__owner_instantiated__nested",
-    "probe:binding-source__expression_source__owner_instantiated__part_usage_owner",
-    "probe:binding-source__expression_source__owner_instantiated__selected_and_overridden",
-    "probe:binding-source__expression_source__owner_instantiated__subtype",
+    "case:binding-source__expression_source__owner_instantiated",
+    "case:binding-source__expression_source__owner_instantiated__arithmetic",
+    "case:binding-source__expression_source__owner_instantiated__constraint_input",
+    "case:binding-source__expression_source__owner_instantiated__indexed_owner",
+    "case:binding-source__expression_source__owner_instantiated__nested",
+    "case:binding-source__expression_source__owner_instantiated__part_usage_owner",
+    "case:binding-source__expression_source__owner_instantiated__selected_and_overridden",
+    "case:binding-source__expression_source__owner_instantiated__subtype",
 ]
 
 [[rule.shape.admission]]
 context = "owner_package"
 outcome = "refused"
 evidence = [
-    "probe:binding-source__expression_source__owner_package",
+    "case:binding-source__expression_source__owner_package",
 ]
 
 [[rule.shape.admission]]
 context = "owner_uninstantiated"
 outcome = "admitted"
 evidence = [
-    "probe:binding-source__expression_source__owner_uninstantiated",
+    "case:binding-source__expression_source__owner_uninstantiated",
 ]
 
 [[rule.shape.admission]]
 context = "writer_overridden"
 outcome = "admitted"
 evidence = [
-    "probe:binding-source__expression_source__writer_overridden",
-    "probe:binding-source__expression_source__writer_overridden__tuple",
+    "case:binding-source__expression_source__writer_overridden",
+    "case:binding-source__expression_source__writer_overridden__tuple",
 ]
 
 [[rule.shape]]
@@ -87,24 +88,24 @@ expected_code = "SI_SELF_BINDING"
 context = "owner_instantiated"
 outcome = "refused"
 evidence = [
-    "probe:binding-source__self_reference_source__owner_instantiated",
-    "probe:binding-source__self_reference_source__owner_instantiated__indexed_owner",
-    "probe:binding-source__self_reference_source__owner_instantiated__part_usage_owner",
-    "probe:binding-source__self_reference_source__owner_instantiated__subtype",
+    "case:binding-source__self_reference_source__owner_instantiated",
+    "case:binding-source__self_reference_source__owner_instantiated__indexed_owner",
+    "case:binding-source__self_reference_source__owner_instantiated__part_usage_owner",
+    "case:binding-source__self_reference_source__owner_instantiated__subtype",
 ]
 
 [[rule.shape.admission]]
 context = "owner_package"
 outcome = "refused"
 evidence = [
-    "probe:binding-source__self_reference_source__owner_package",
+    "case:binding-source__self_reference_source__owner_package",
 ]
 
 [[rule.shape.admission]]
 context = "owner_uninstantiated"
 outcome = "admitted"
 evidence = [
-    "probe:binding-source__self_reference_source__owner_uninstantiated",
+    "case:binding-source__self_reference_source__owner_uninstantiated",
 ]
 
 # ---- ES-001 -------------------------------------------------------------------------------------
@@ -117,8 +118,8 @@ fact_requirements = ["assertion_owner", "constraint"]
 remedy = "Move the constraint to the part definition or part usage that owns the calculation, binding it to the calculation's inputs or result there."
 semantic_limits = "Asserted forms are those the constraint extractor names asserted (definition_typed, inline, named_usage_reference). A calc-usage owner is outside the generator's owner-kind map for every form."
 doc_anchor = "generator-subset#calc-owned-assertion"
-evidence_status = "probe_observed"
-example_probe = "calc-owned-assertion__non_asserted_constraint__calc_definition_owner"
+evidence_status = "case_observed"
+example_case = "calc-owned-assertion__non_asserted_constraint__calc_definition_owner"
 
 [[rule.generator_evidence]]
 code = "SI_CONSTRAINT_UNATTACHED"
@@ -131,17 +132,17 @@ expected_code = "SI_CONSTRAINT_UNATTACHED"
 
 [rule.shape.no_admitted_context]
 citation = "elaboration/elaborate.py:1625 with graph.py:287-292 (a calc-def owner attaches nothing, and an asserted form then grades error); elaborate.py:794-820 (a calc-usage owner is outside the owner-kind map and raises)"
-statement = "An asserted constraint is refused under both owners this rule recognizes; the same constraint owned by a part is a different shape (a control probe)."
+statement = "An asserted constraint is refused under both owners this rule recognizes; the same constraint owned by a part is a different shape (a control case)."
 
 [[rule.shape.admission]]
 context = "calc_definition_owner"
 outcome = "refused"
-evidence = ["probe:calc-owned-assertion__asserted_constraint__calc_definition_owner"]
+evidence = ["case:calc-owned-assertion__asserted_constraint__calc_definition_owner"]
 
 [[rule.shape.admission]]
 context = "calc_usage_owner"
 outcome = "refused"
-evidence = ["probe:calc-owned-assertion__asserted_constraint__calc_usage_owner"]
+evidence = ["case:calc-owned-assertion__asserted_constraint__calc_usage_owner"]
 
 [[rule.shape]]
 id = "non_asserted_constraint"
@@ -151,12 +152,12 @@ expected_code = "SI_CONSTRAINT_UNATTACHED"
 [[rule.shape.admission]]
 context = "calc_definition_owner"
 outcome = "admitted"
-evidence = ["probe:calc-owned-assertion__non_asserted_constraint__calc_definition_owner"]
+evidence = ["case:calc-owned-assertion__non_asserted_constraint__calc_definition_owner"]
 
 [[rule.shape.admission]]
 context = "calc_usage_owner"
 outcome = "refused"
-evidence = ["probe:calc-owned-assertion__non_asserted_constraint__calc_usage_owner"]
+evidence = ["case:calc-owned-assertion__non_asserted_constraint__calc_usage_owner"]
 
 # ---- ES-006 -------------------------------------------------------------------------------------
 
@@ -166,10 +167,10 @@ title = "Conditional expression at an expression-inventory site"
 matrix_rows = ["ES-006"]
 fact_requirements = ["expression_site"]
 remedy = "Compute each branch as its own attribute and select with arithmetic the subset supports, or move the choice into a calculation definition's bare result expression (a handwritten stub)."
-semantic_limits = "Refusal-eligible only for a recognized `if` conditional whose reference walk fails with RESOLVED_TARGET_MISSING; the generator reports it with its generic evidence-gap code, so every probe also checks the error's location. Any other walk failure is unverified. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
+semantic_limits = "Refusal-eligible only for a recognized `if` conditional whose reference walk fails with RESOLVED_TARGET_MISSING; the generator reports it with its generic evidence-gap code, so every case also checks the location of the refusal. Any other walk failure is unverified. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
 doc_anchor = "generator-subset#conditional-expression"
 evidence_status = "partial"
-example_probe = "conditional-expression__conditional_unresolved_branch__other_expression_site"
+example_case = "conditional-expression__conditional_unresolved_branch__other_expression_site"
 
 [[rule.generator_evidence]]
 code = "SI_EVIDENCE_INCOMPLETE"
@@ -187,27 +188,27 @@ expected_code = "SI_EVIDENCE_INCOMPLETE"
 [[rule.shape.admission]]
 context = "attribute_value"
 outcome = "refused"
-evidence = ["probe:conditional-expression__conditional_unresolved_branch__attribute_value"]
+evidence = ["case:conditional-expression__conditional_unresolved_branch__attribute_value"]
 
 [[rule.shape.admission]]
 context = "binding_value"
 outcome = "refused"
-evidence = ["probe:conditional-expression__conditional_unresolved_branch__binding_value"]
+evidence = ["case:conditional-expression__conditional_unresolved_branch__binding_value"]
 
 [[rule.shape.admission]]
 context = "calc_definition_feature_value"
 outcome = "refused"
-evidence = ["probe:conditional-expression__conditional_unresolved_branch__calc_definition_feature_value"]
+evidence = ["case:conditional-expression__conditional_unresolved_branch__calc_definition_feature_value"]
 
 [[rule.shape.admission]]
 context = "constraint_predicate"
 outcome = "refused"
-evidence = ["probe:conditional-expression__conditional_unresolved_branch__constraint_predicate"]
+evidence = ["case:conditional-expression__conditional_unresolved_branch__constraint_predicate"]
 
 [[rule.shape.admission]]
 context = "other_expression_site"
 outcome = "omitted"
-evidence = ["probe:conditional-expression__conditional_unresolved_branch__other_expression_site"]
+evidence = ["case:conditional-expression__conditional_unresolved_branch__other_expression_site"]
 
 # ---- ES-007 -------------------------------------------------------------------------------------
 
@@ -219,8 +220,8 @@ fact_requirements = ["assertion_owner", "constraint", "occurrence"]
 remedy = "Split Boolean data out of numerical assertions, or rewrite the predicate as a numerical comparison the profile admits; the finding's detail reasons name the profile's diagnosis."
 semantic_limits = "The executable profile (executable_profile.py) decides eligibility; this rule only places its BLOCK and NON_NUMERICAL decisions by where the constraint's owner attaches. UNASSESSED is counted, never admitted."
 doc_anchor = "generator-subset#constraint-predicate"
-evidence_status = "probe_observed"
-example_probe = "constraint-predicate__blocked_predicate__owner_uninstantiated"
+evidence_status = "case_observed"
+example_case = "constraint-predicate__blocked_predicate__owner_uninstantiated"
 
 [[rule.generator_evidence]]
 code = "SI_CONSTRAINT_BLOCKED"
@@ -235,24 +236,24 @@ expected_code = "SI_CONSTRAINT_BLOCKED"
 context = "owner_instantiated"
 outcome = "refused"
 evidence = [
-    "probe:constraint-predicate__blocked_predicate__owner_instantiated",
-    "probe:constraint-predicate__blocked_predicate__owner_instantiated__part_usage_owner",
-    "probe:constraint-predicate__blocked_predicate__owner_instantiated__subtype",
-    "probe:constraint-predicate__blocked_predicate__owner_instantiated__under_two",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__part_usage_owner",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__subtype",
+    "case:constraint-predicate__blocked_predicate__owner_instantiated__under_two",
 ]
 
 [[rule.shape.admission]]
 context = "owner_package"
 outcome = "refused"
 evidence = [
-    "probe:constraint-predicate__blocked_predicate__owner_package",
+    "case:constraint-predicate__blocked_predicate__owner_package",
 ]
 
 [[rule.shape.admission]]
 context = "owner_uninstantiated"
 outcome = "admitted"
 evidence = [
-    "probe:constraint-predicate__blocked_predicate__owner_uninstantiated",
+    "case:constraint-predicate__blocked_predicate__owner_uninstantiated",
 ]
 
 [[rule.shape]]
@@ -263,7 +264,7 @@ reason = "constraint_predicate_non_numerical"
 context = "owner_instantiated"
 outcome = "excluded"
 evidence = [
-    "probe:constraint-predicate__non_numerical_predicate__owner_instantiated",
+    "case:constraint-predicate__non_numerical_predicate__owner_instantiated",
 ]
 
 # ---- Indexed references -------------------------------------------------------------------------
@@ -276,8 +277,8 @@ fact_requirements = ["expression_site"]
 remedy = "Name the element with its own feature and reference that feature instead of indexing a collection."
 semantic_limits = "The expression inventory refuses an authored index model-wide, before any instantiation, wherever it walks a declared feature value or a constraint predicate. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
 doc_anchor = "generator-subset#indexed-reference"
-evidence_status = "probe_observed"
-example_probe = "indexed-reference__indexed_reference__other_expression_site"
+evidence_status = "case_observed"
+example_case = "indexed-reference__indexed_reference__other_expression_site"
 
 [[rule.generator_evidence]]
 code = "SI_INDEXED_SOURCE_UNSUPPORTED"
@@ -291,27 +292,27 @@ expected_code = "SI_INDEXED_SOURCE_UNSUPPORTED"
 [[rule.shape.admission]]
 context = "attribute_value"
 outcome = "refused"
-evidence = ["probe:indexed-reference__indexed_reference__attribute_value"]
+evidence = ["case:indexed-reference__indexed_reference__attribute_value"]
 
 [[rule.shape.admission]]
 context = "binding_value"
 outcome = "refused"
-evidence = ["probe:indexed-reference__indexed_reference__binding_value"]
+evidence = ["case:indexed-reference__indexed_reference__binding_value"]
 
 [[rule.shape.admission]]
 context = "calc_definition_feature_value"
 outcome = "refused"
-evidence = ["probe:indexed-reference__indexed_reference__calc_definition_feature_value"]
+evidence = ["case:indexed-reference__indexed_reference__calc_definition_feature_value"]
 
 [[rule.shape.admission]]
 context = "constraint_predicate"
 outcome = "refused"
-evidence = ["probe:indexed-reference__indexed_reference__constraint_predicate"]
+evidence = ["case:indexed-reference__indexed_reference__constraint_predicate"]
 
 [[rule.shape.admission]]
 context = "other_expression_site"
 outcome = "omitted"
-evidence = ["probe:indexed-reference__indexed_reference__other_expression_site"]
+evidence = ["case:indexed-reference__indexed_reference__other_expression_site"]
 
 # ---- ES-005 -------------------------------------------------------------------------------------
 
@@ -323,8 +324,8 @@ fact_requirements = ["expression_site"]
 remedy = "Write the computation with operators the subset supports (explicit multiplication, arithmetic min/max identities) or with NumericalFunctions::sum; or move it into a calculation definition's bare result expression (a handwritten stub)."
 semantic_limits = "Callable identity is decided by the shared allowlist (invocation_allowlist.py, today only NumericalFunctions::sum), the same predicate the generator's inventory refuses through. Operators are not invocations. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
 doc_anchor = "generator-subset#invocation-callable"
-evidence_status = "probe_observed"
-example_probe = "invocation-callable__unsupported_callable__other_expression_site"
+evidence_status = "case_observed"
+example_case = "invocation-callable__unsupported_callable__other_expression_site"
 
 [[rule.generator_evidence]]
 code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
@@ -338,27 +339,27 @@ expected_code = "SI_EXPRESSION_SOURCE_UNSUPPORTED"
 [[rule.shape.admission]]
 context = "attribute_value"
 outcome = "refused"
-evidence = ["probe:invocation-callable__unsupported_callable__attribute_value", "probe:invocation-callable__unsupported_callable__attribute_value__max", "probe:invocation-callable__unsupported_callable__attribute_value__size"]
+evidence = ["case:invocation-callable__unsupported_callable__attribute_value", "case:invocation-callable__unsupported_callable__attribute_value__max", "case:invocation-callable__unsupported_callable__attribute_value__size"]
 
 [[rule.shape.admission]]
 context = "binding_value"
 outcome = "refused"
-evidence = ["probe:invocation-callable__unsupported_callable__binding_value"]
+evidence = ["case:invocation-callable__unsupported_callable__binding_value"]
 
 [[rule.shape.admission]]
 context = "calc_definition_feature_value"
 outcome = "refused"
-evidence = ["probe:invocation-callable__unsupported_callable__calc_definition_feature_value"]
+evidence = ["case:invocation-callable__unsupported_callable__calc_definition_feature_value"]
 
 [[rule.shape.admission]]
 context = "constraint_predicate"
 outcome = "refused"
-evidence = ["probe:invocation-callable__unsupported_callable__constraint_predicate"]
+evidence = ["case:invocation-callable__unsupported_callable__constraint_predicate"]
 
 [[rule.shape.admission]]
 context = "other_expression_site"
 outcome = "omitted"
-evidence = ["probe:invocation-callable__unsupported_callable__other_expression_site"]
+evidence = ["case:invocation-callable__unsupported_callable__other_expression_site"]
 
 # ---- ES-004 -------------------------------------------------------------------------------------
 
@@ -368,32 +369,18 @@ title = "Part multiplicity the occurrence model cannot expand"
 matrix_rows = ["ES-004"]
 fact_requirements = ["occurrence", "part_multiplicity"]
 remedy = "Give the part usage an exact literal multiplicity, unordered and unique, or remove the multiplicity; model a variable count as an attribute."
-semantic_limits = "Only part usages the generator visits (generator roots and the composite part usages reachable from them) are expanded; the multiplicity is resolved per parent occurrence. Attribute usages and unvisited part usages are never expanded. A nonunique part usage and a negative bound are rejected by SysIDE before the generator runs, so those shapes have no probe and stay unconfirmed. A redefinition that drops the bounds expands to one occurrence (matrix row G1)."
+semantic_limits = "Only part usages the generator visits (generator roots and the composite part usages reachable from them) are expanded; the multiplicity is resolved per parent occurrence. Attribute usages and unvisited part usages are never expanded. A nonunique part usage and a negative bound are rejected by SysIDE before the generator runs, so the rule has no shape for them (retired by the owner, 2026-10-18). A redefinition that drops the bounds expands to one occurrence (matrix row G1)."
 doc_anchor = "generator-subset#part-multiplicity"
-evidence_status = "partial"
-example_probe = "part-multiplicity__range__unexpanded_part_usage"
+evidence_status = "case_observed"
+example_case = "part-multiplicity__range__unexpanded_part_usage"
 
 [[rule.generator_evidence]]
 code = "SI_MULTIPLICITY_UNSUPPORTED"
-site = "elaboration/occurrence.py:827 (ordered), :835 (nonunique), :894 (range), in _multiplicity_indices :812-899"
+site = "elaboration/occurrence.py:827 (ordered), :894 (range), in _multiplicity_indices :812-899"
 
 [[rule.generator_evidence]]
 code = "SI_MULTIPLICITY_UNRESOLVED"
 site = "elaboration/occurrence.py:859 (upper), :886 (lower)"
-
-[[rule.generator_evidence]]
-code = "SI_MULTIPLICITY_INVALID"
-site = "elaboration/occurrence.py:869"
-
-[[rule.shape]]
-id = "negative_bound"
-reason = "part_multiplicity_negative_bound"
-expected_code = "SI_MULTIPLICITY_INVALID"
-
-[[rule.shape]]
-id = "nonunique"
-reason = "part_multiplicity_nonunique"
-expected_code = "SI_MULTIPLICITY_UNSUPPORTED"
 
 [[rule.shape]]
 id = "ordered"
@@ -404,15 +391,15 @@ expected_code = "SI_MULTIPLICITY_UNSUPPORTED"
 context = "expanded_part_usage"
 outcome = "refused"
 evidence = [
-    "probe:part-multiplicity__ordered__expanded_part_usage",
-    "probe:part-multiplicity__ordered__expanded_part_usage__under_two",
+    "case:part-multiplicity__ordered__expanded_part_usage",
+    "case:part-multiplicity__ordered__expanded_part_usage__under_two",
 ]
 
 [[rule.shape.admission]]
 context = "unexpanded_part_usage"
 outcome = "admitted"
 evidence = [
-    "probe:part-multiplicity__ordered__unexpanded_part_usage",
+    "case:part-multiplicity__ordered__unexpanded_part_usage",
 ]
 
 [[rule.shape]]
@@ -424,19 +411,19 @@ expected_code = "SI_MULTIPLICITY_UNSUPPORTED"
 context = "expanded_part_usage"
 outcome = "refused"
 evidence = [
-    "probe:part-multiplicity__range__expanded_part_usage",
-    "probe:part-multiplicity__range__expanded_part_usage__depth_two",
-    "probe:part-multiplicity__range__expanded_part_usage__root",
-    "probe:part-multiplicity__range__expanded_part_usage__subtype",
-    "probe:part-multiplicity__range__expanded_part_usage__under_two",
+    "case:part-multiplicity__range__expanded_part_usage",
+    "case:part-multiplicity__range__expanded_part_usage__depth_two",
+    "case:part-multiplicity__range__expanded_part_usage__root",
+    "case:part-multiplicity__range__expanded_part_usage__subtype",
+    "case:part-multiplicity__range__expanded_part_usage__under_two",
 ]
 
 [[rule.shape.admission]]
 context = "unexpanded_part_usage"
 outcome = "admitted"
 evidence = [
-    "probe:part-multiplicity__range__unexpanded_part_usage",
-    "probe:part-multiplicity__range__unexpanded_part_usage__non_composite",
+    "case:part-multiplicity__range__unexpanded_part_usage",
+    "case:part-multiplicity__range__unexpanded_part_usage__non_composite",
 ]
 
 [[rule.shape]]
@@ -448,16 +435,16 @@ expected_code = "SI_MULTIPLICITY_UNRESOLVED"
 context = "expanded_part_usage"
 outcome = "refused"
 evidence = [
-    "probe:part-multiplicity__unresolved_bound__expanded_part_usage",
-    "probe:part-multiplicity__unresolved_bound__expanded_part_usage__under_two",
-    "probe:part-multiplicity__unresolved_bound__expanded_part_usage__referenced",
+    "case:part-multiplicity__unresolved_bound__expanded_part_usage",
+    "case:part-multiplicity__unresolved_bound__expanded_part_usage__under_two",
+    "case:part-multiplicity__unresolved_bound__expanded_part_usage__referenced",
 ]
 
 [[rule.shape.admission]]
 context = "unexpanded_part_usage"
 outcome = "admitted"
 evidence = [
-    "probe:part-multiplicity__unresolved_bound__unexpanded_part_usage",
+    "case:part-multiplicity__unresolved_bound__unexpanded_part_usage",
 ]
 
 # ---- ES-010 omission ----------------------------------------------------------------------------
@@ -470,8 +457,8 @@ fact_requirements = ["string_value"]
 remedy = "Keep String values as documentation; the generated catalog and contract carry numeric and Boolean values only. Do not bind a String to a calculation input (the ES-010 refusal side)."
 semantic_limits = "Both spellings (an attribute declaration and the :>> redefinition shorthand) are dropped; no generator site raises, so the evidence is the generated output itself. The refusal side, a String value bound to a calculation input the generator projects, is a candidate (refused at projection) and this rule still reports it omitted."
 doc_anchor = "generator-subset#string-value-omission"
-evidence_status = "probe_observed"
-example_probe = "string-value-omission__string_value__attribute_value__redefinition_shorthand"
+evidence_status = "case_observed"
+example_case = "string-value-omission__string_value__attribute_value__redefinition_shorthand"
 generator_evidence = []  # an omission has no raise site
 
 [[rule.shape]]
@@ -482,6 +469,6 @@ reason = "string_value_not_generated"
 context = "attribute_value"
 outcome = "omitted"
 evidence = [
-    "probe:string-value-omission__string_value__attribute_value__attribute_declaration",
-    "probe:string-value-omission__string_value__attribute_value__redefinition_shorthand",
+    "case:string-value-omission__string_value__attribute_value__attribute_declaration",
+    "case:string-value-omission__string_value__attribute_value__redefinition_shorthand",
 ]

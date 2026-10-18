@@ -9,7 +9,7 @@ Plan Phase 10. Trees:
 - `corpus`: sysml-codegen `b5663c07` `tests/fixtures/v6_recapture_batch/batch.json`, one run per
   fixture directory. Zero `refused` on the snapshot fixtures; on the refusal fixtures every
   `refused` finding's code must be in the fixture's recorded code list (a lower bound) or be
-  recorded for a probe.
+  recorded for a conformance case.
 
 Each tree is read from a `git archive` export into a temp directory, loaded with
 `SysideAdapter.load_model`, extracted once and evaluated with the default (generator) roots.
@@ -200,7 +200,7 @@ def finding_json(
         "occurrence_count": f.occurrence_count,
         "via_roots": [str(r) for r in f.via_roots],
         "evidence": [
-            getattr(e, "probe_id", None) or getattr(e, "fixture", None) for e in f.evidence
+            getattr(e, "case_id", None) or getattr(e, "fixture", None) for e in f.evidence
         ],
         "expected_code": _expected_code(f),
         "unsupported_callables": list(callables.get(f.subject.element_id, ())),
@@ -376,7 +376,7 @@ def run_corpus(agentic_rev: str, work: Path) -> tuple[list[dict[str, Any]], dict
     return runs, manifest
 
 
-def corpus_checks(runs: list[dict[str, Any]], probe_codes: set[str]) -> list[dict[str, Any]]:
+def corpus_checks(runs: list[dict[str, Any]], case_codes: set[str]) -> list[dict[str, Any]]:
     """Per fixture: snapshot fixtures need zero refused; refusal fixtures need each refused code listed."""
     checks = []
     for data in runs:
@@ -390,12 +390,12 @@ def corpus_checks(runs: list[dict[str, Any]], probe_codes: set[str]) -> list[dic
             )
         else:
             outside = sorted({f["expected_code"] for f in refused} - set(data["batch_codes"]))
-            unprobed = [c for c in outside if c not in probe_codes]
-            ok = not unprobed
+            uncased = [c for c in outside if c not in case_codes]
+            ok = not uncased
             note = (
                 f"refusal fixture: {len(refused)} refused, codes {sorted({f['expected_code'] for f in refused})}"
-                + (f"; outside the record but probe-recorded: {outside}" if outside else "")
-                + (f"; NEEDS PROBE: {unprobed}" if unprobed else "")
+                + (f"; outside the record but case-recorded: {outside}" if outside else "")
+                + (f"; NEEDS CASE: {uncased}" if uncased else "")
             )
         checks.append(
             {"fixture": data["label"], "status": data["batch_status"], "ok": ok, "note": note}
@@ -403,7 +403,7 @@ def corpus_checks(runs: list[dict[str, Any]], probe_codes: set[str]) -> list[dic
     return checks
 
 
-def recorded_probe_codes() -> set[str]:
+def recorded_refusal_codes() -> set[str]:
     return {
         shape.expected_code
         for rule in PACKAGED_RULES.rules
@@ -455,7 +455,7 @@ def main() -> int:
                 print(f"{tree}: verdict {runs[0]['verdict']}, counts {runs[0]['counts']}")
                 continue
             runs, manifest = run_corpus(agentic_rev, work)
-            checks = corpus_checks(runs, recorded_probe_codes())
+            checks = corpus_checks(runs, recorded_refusal_codes())
             md = [
                 title,
                 "",

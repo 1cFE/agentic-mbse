@@ -1,0 +1,30 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      6,
+      6
+    ],
+    "description": "package-owned calc usage t binds xs to (a, b)"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "binding-source",
+        "shape": "expression_source",
+        "context": "owner_package",
+        "outcome": "refused",
+        "subject": "fx::t::xs",
+        "line": 6
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "binding-source__expression_source__owner_package",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "schema": "subset-case/1",
+  "kind": "control",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      7,
+      7
+    ],
+    "description": "each input bound to one plain reference"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "binding-source__plain_reference__owner_instantiated",
+    "note": "Item 1 probe, moved in Item 2a P2.1. It superseded the prototype case es003_admitted_fixed_arity."
+  }
+}

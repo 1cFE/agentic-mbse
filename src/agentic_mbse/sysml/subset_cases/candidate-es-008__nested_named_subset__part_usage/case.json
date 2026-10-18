@@ -1,0 +1,21 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      11,
+      18
+    ],
+    "description": "named server subsets inside named rack subsets, each redefining psu efficiency (dc3 U2)"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "candidate-es-008__nested_named_subset__part_usage",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

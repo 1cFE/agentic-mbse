@@ -1,0 +1,30 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      7,
+      7
+    ],
+    "description": "plain (non-asserted) constraint f1 owned by calc usage path, located at the owner"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "calc-owned-assertion",
+        "shape": "non_asserted_constraint",
+        "context": "calc_usage_owner",
+        "outcome": "refused",
+        "subject": "fx::Site::path::f1",
+        "line": 7
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "calc-owned-assertion__non_asserted_constraint__calc_usage_owner",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

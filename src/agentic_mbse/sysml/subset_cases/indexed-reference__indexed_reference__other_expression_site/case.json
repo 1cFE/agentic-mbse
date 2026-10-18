@@ -1,0 +1,30 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      8,
+      8
+    ],
+    "description": "calc usage m's bare result expression qs#(1).v + 4272.5, never examined and dropped: the unique literal 4272.5 must appear nowhere in the output; control is m's output"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": [
+      {
+        "rule": "indexed-reference",
+        "shape": "indexed_reference",
+        "context": "other_expression_site",
+        "outcome": "omitted",
+        "subject": "fx::Site::m",
+        "line": 8
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "indexed-reference__indexed_reference__other_expression_site",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

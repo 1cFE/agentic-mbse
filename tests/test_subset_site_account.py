@@ -86,7 +86,7 @@ def test_the_five_computed_reason_sites_are_accounted_and_mapped() -> None:
 def test_no_evidence_gap_site_is_a_capability_refusal_by_code_alone() -> None:
     for s in ACCOUNT.rows:
         if "EVIDENCE_INCOMPLETE" in s.code and s.disposition is Disposition.IN_SCOPE:
-            assert any(e.startswith("probe:") for e in s.evidence), s.site_id
+            assert any(e.startswith("case:") for e in s.evidence), s.site_id
 
 
 def test_an_internal_invariant_cites_the_guard_that_keeps_valid_input_away() -> None:

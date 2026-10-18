@@ -1,0 +1,21 @@
+{
+  "schema": "subset-case/1",
+  "kind": "control",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      5,
+      5
+    ],
+    "description": "numeric attribute fuel_code valued by the redefinition shorthand"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "string-value-omission__numeric_value__attribute_value",
+    "note": "Item 1 probe, moved in Item 2a P2.1. It superseded the prototype case es010_admitted_numeric_value."
+  }
+}
