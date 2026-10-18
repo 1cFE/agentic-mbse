@@ -11,6 +11,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
+- `EXEC-SUBSET-CONTRACT` Item 3, L6 integration and execution-target settings ([epic](backlog/epic_executable-subset-contract.md)): spec in progress at [active/l6-subset-profile/spec.md](active/l6-subset-profile/spec.md), branch `l6-subset-profile`. Owner gates R3-1 and R3-2 open.
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 
 ## Concrete remaining work
