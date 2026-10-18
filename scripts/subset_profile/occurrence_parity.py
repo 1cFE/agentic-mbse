@@ -59,7 +59,7 @@ from tests.helpers.subset_probe_judge import PINNED_CODEGEN_REV  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 SEED_DIR = REPO_ROOT / "tests" / "fixtures" / "subset_profile" / "occurrence"
-EVIDENCE = REPO_ROOT / ".project" / "active" / "exec-subset-profile" / "evidence"
+EVIDENCE = REPO_ROOT / ".project" / "completed" / "20261018_exec-subset-profile" / "evidence"
 DC3_PINS = {"dc3_baseline": "808464df", "dc3_repaired": "60b44d53"}
 CASE_TIMEOUT_S = 900
 

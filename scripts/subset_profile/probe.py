@@ -17,7 +17,7 @@ Design § Probe harness, steps 1-5. One run builds one fresh tree under `--tmp-r
    written to the probe's `observation.json` (`observation.base.json` with `--base`).
 
 The sibling checkouts are only read with `git archive`; the run fails if codegen's `git status`
-changes. Logs go to `.project/active/exec-subset-profile/evidence/probes/`. Exit status is 0 only
+changes. Logs go to `.project/completed/20261018_exec-subset-profile/evidence/probes/`. Exit status is 0 only
 if every requested probe certifies.
 """
 
@@ -53,7 +53,9 @@ from tests.helpers.subset_probe_judge import (  # noqa: E402
 )
 
 PROBES_DIR = REPO_ROOT / "tests" / "fixtures" / "subset_profile" / "probes"
-LOG_DIR = REPO_ROOT / ".project" / "active" / "exec-subset-profile" / "evidence" / "probes"
+LOG_DIR = (
+    REPO_ROOT / ".project" / "completed" / "20261018_exec-subset-profile" / "evidence" / "probes"
+)
 BASE_REV = "a718efec"  # design base: the same-generator comparison point (design § Probe harness 6)
 GENERATE_TIMEOUT_S = 900
 # Variables that would point the child at a Python environment other than the tree's own.

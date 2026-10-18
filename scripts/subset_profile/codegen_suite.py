@@ -40,7 +40,14 @@ from probe import (  # noqa: E402  (this directory is on sys.path when the scrip
 
 from tests.helpers.subset_probe_judge import PINNED_CODEGEN_REV  # noqa: E402
 
-OUT_DIR = REPO_ROOT / ".project" / "active" / "exec-subset-profile" / "evidence" / "codegen-suite"
+OUT_DIR = (
+    REPO_ROOT
+    / ".project"
+    / "completed"
+    / "20261018_exec-subset-profile"
+    / "evidence"
+    / "codegen-suite"
+)
 SUITE_TIMEOUT_S = 3600
 
 

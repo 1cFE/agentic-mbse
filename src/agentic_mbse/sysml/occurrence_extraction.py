@@ -1,7 +1,7 @@
 """The summary occurrence port: sysml-codegen `b5663c07` instantiation, read from SysIDE.
 
 This is the approved summary port (R1, Option A, owner 2026-10-18), productionized from spike
-F1 (`.project/active/exec-subset-profile/spikes/f1-occurrence-port/occurrence_port.py`). It
+F1 (`.project/completed/20261018_exec-subset-profile/spikes/f1-occurrence-port/occurrence_port.py`). It
 agrees with the generator by imitation, not by shared code, so it is held to the generator by
 the parity seed in `tests/fixtures/subset_profile/occurrence/` (codegen-oracle captures) and,
 from Item 2, by a permanent parity test in codegen CI (end condition (ii)).

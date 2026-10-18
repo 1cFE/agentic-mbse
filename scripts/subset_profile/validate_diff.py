@@ -35,7 +35,12 @@ DC3_TREES = {
     "dc3-repaired": "60b44d53460fccd2f44811d8abfd42bc270e90b2",
 }
 DEFAULT_OUT = (
-    REPO_ROOT / ".project" / "active" / "exec-subset-profile" / "evidence" / "validate-diff.md"
+    REPO_ROOT
+    / ".project"
+    / "completed"
+    / "20261018_exec-subset-profile"
+    / "evidence"
+    / "validate-diff.md"
 )
 TIMEOUT_S = 1800
 

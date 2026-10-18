@@ -4,7 +4,7 @@
 
 Reads `tests/fixtures/subset_profile/inventory/matrix.toml` (through the one loader,
 `tests/helpers/subset_matrix.py`) and the packaged rule records, and writes
-`.project/active/exec-subset-profile/evidence/matrix.md` by default. Pure: no SysIDE.
+`.project/completed/20261018_exec-subset-profile/evidence/matrix.md` by default. Pure: no SysIDE.
 """
 
 from __future__ import annotations
@@ -26,7 +26,9 @@ from tests.helpers.subset_matrix import (  # noqa: E402
     load_matrix,
 )
 
-DEFAULT_OUT = REPO_ROOT / ".project" / "active" / "exec-subset-profile" / "evidence" / "matrix.md"
+DEFAULT_OUT = (
+    REPO_ROOT / ".project" / "completed" / "20261018_exec-subset-profile" / "evidence" / "matrix.md"
+)
 
 
 def _cell(text: str) -> str:

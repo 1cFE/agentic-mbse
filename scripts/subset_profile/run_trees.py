@@ -37,7 +37,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from probe import export_tree, git, resolve_rev  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-EVIDENCE = REPO_ROOT / ".project" / "active" / "exec-subset-profile" / "evidence"
+EVIDENCE = REPO_ROOT / ".project" / "completed" / "20261018_exec-subset-profile" / "evidence"
 CODEGEN_REPO = Path.home() / "src" / "sysml-codegen"
 DC3_REPO = Path.home() / "src" / "dc3"
 PINNED_CODEGEN_REV = "b5663c07e987a892e27d21e68cec40d0656574ee"

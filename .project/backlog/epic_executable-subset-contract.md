@@ -4,7 +4,7 @@
 **Status**: Draft — revised after architecture and history audit
 **Priority**: Not assigned (owner)
 **Created**: 2026-10-14
-**Revised**: 2026-10-15
+**Revised**: 2026-10-18 (Item 1 closed)
 **Estimated Effort**: Re-estimate after Item 1's capability inventory and boundary design; the original ~10-day estimate excluded snapshot integration, occurrence-aware evidence and independent differential coverage.
 
 ---
@@ -107,11 +107,13 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 ## Backlog Items
 
-### Item 1: Capability inventory, boundary design and shared profile
+### Item 1: Capability inventory, boundary design and shared profile ✅
+
+**Status**: Complete (2026-10-18) — certified with recorded limits; archived to `.project/completed/20261018_exec-subset-profile/`. Success criteria met, with the owner-accepted limit that dc3 B8 reports `unconfirmed` (calc-usage-owned constraints are refused first under B1). Owner calls 2026-10-18: R3 disposition approved (`evidence/r3-proposal.md`), retiring the unprobeable `part-multiplicity/nonunique` and `negative_bound` shapes; G1/G2 go to Item 2 via `kerml-expert` before any codegen fix; the sysml-codegen ADR 0012 amendment files when Item 1 merges. Decision: ADR 0001. Promise: P-0001.
 
 **Type**: Design and implementation
-**Effort**: Re-estimate after inventory. [AGENT] Re-estimated 2026-10-18 at Item 1's close-out: [re-estimate](../active/exec-subset-profile/evidence/re-estimate.md) (Item 2 ~23-37 engineer-days).
-**Status**: [AGENT] Implemented 2026-10-18 (`.project/active/exec-subset-profile/`); audited 2026-10-18 (certify with recorded limits) and audit fixes applied, final revision `ce0ad1ff`; awaiting the owner's R3 decision and B8 acceptance.
+**Effort**: Re-estimate after inventory. [AGENT] Re-estimated 2026-10-18 at Item 1's close-out: [re-estimate](../completed/20261018_exec-subset-profile/evidence/re-estimate.md) (Item 2 ~23-37 engineer-days).
+**Status**: [AGENT] Implemented 2026-10-18 (`.project/completed/20261018_exec-subset-profile/`); audited 2026-10-18 (certify with recorded limits) and audit fixes applied, final revision `ce0ad1ff`; awaiting the owner's R3 decision and B8 acceptance.
 **Dependencies**: Co-developed with Item 2; Item 4 can proceed independently.
 
 **Objective**: Define and implement the structural contract without duplicating model interpretation or broadening current refusals accidentally.
@@ -144,12 +146,12 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 **Success Criteria**: the inventory is complete relative to the pinned generator surface; every deferred case has an owner and coverage limitation; independently accepted near-neighbors remain accepted; detector failures and incomplete scope cannot produce a clean assessment.
 
-**Deliverables**: `.project/active/exec-subset-profile/{spec,design,plan}.md`; capability/refusal matrix; shared facts/evaluator, records and tests.
+**Deliverables**: `.project/completed/20261018_exec-subset-profile/{spec,design,plan}.md`; capability/refusal matrix; shared facts/evaluator, records and tests.
 
 ### Item 2 (sysml-codegen): Independent conformance and read-only readiness check
 
 **Type**: Integration
-**Effort**: Re-estimate with Item 1
+**Effort**: Re-estimated 2026-10-18 at 23–37 engineer-days (`completed/20261018_exec-subset-profile/evidence/re-estimate.md`). [AGENT] (ratified by owner, 2026-10-18) consider splitting into a conformance-corpus item and a readiness-check item before it is specced. Item 1 routed its open gaps here (R3 table). Item 1's dev scripts under `scripts/subset_profile/` default their evidence output to Item 1's archive folder; parameterize the output directory before reusing them, so Item 2 evidence does not overwrite Item 1's.
 **Dependencies**: Item 1; Item 4 supplies hazard references.
 
 **Scope**:
