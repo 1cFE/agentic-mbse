@@ -235,18 +235,22 @@ def extract_web_content(
     metadata: dict = {}
     backend = "trafilatura"
     extraction_warnings: list[str] = []
+    image_base: str | None = None  # set when the arXiv paper converts; its figures are saved
     is_arxiv = _is_arxiv_html_url(final_url)
 
     if is_arxiv:
         log.info("arXiv HTML detected, converting the paper with Pandoc")
+        # One source for the article and its image base, as on the PDF route.
+        source = ArxivSource.from_fetch(fetched)
         try:
-            article = extract_article(fetched.text())
+            article = extract_article(source.html)
             if sanitize:
                 from agentic_mbse.extraction.html_sanitize import strip_hidden_content
 
                 article = strip_hidden_content(article)
             markdown = convert_article(article)
             backend = "pandoc-arxiv"
+            image_base = source.image_base
             # Still grab metadata from trafilatura (title, author, date)
             _, metadata = _extract_with_trafilatura(html, final_url)
         except ArxivConversionError as exc:
@@ -331,13 +335,8 @@ def extract_web_content(
 
     # Step 4a: Save the paper's figures (pandoc-arxiv only)
     image_count = 0
-    if backend == "pandoc-arxiv":
-        images = persist_images(
-            full_markdown,
-            ArxivSource.from_fetch(fetched).image_base,
-            output_dir / "images",
-            fetch_image,
-        )
+    if image_base is not None:
+        images = persist_images(full_markdown, image_base, output_dir / "images", fetch_image)
         full_markdown, image_count = images.markdown, images.saved_count
         extraction_warnings.extend(images.warnings)
 
