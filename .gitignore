@@ -49,7 +49,10 @@ tests/corpus/page_images/
 .orchestrate-logs/
 
 # This checkout's own install from `agentic-mbse install-commands --assistant claude`
-.agents/skills/
+# Vendor the project workflow pack; keep other local skills ignored.
+.agents/skills/*
+!.agents/skills/my-*/
+!.agents/skills/show-me/
 .agentic-mbse/
 .claude/skills/
 .claude/agents/
