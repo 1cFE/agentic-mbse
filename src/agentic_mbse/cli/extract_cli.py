@@ -168,6 +168,15 @@ def _cost_to_dict(c: CostRecord) -> dict:
     }
 
 
+def _print_warnings(label: str, warnings: list[str]) -> None:
+    """Print extraction warnings for *label* to stderr."""
+    if not warnings:
+        return
+    print(f"        ⚠ {label}: {len(warnings)} warning(s):", file=sys.stderr)
+    for w in warnings:
+        print(f"          - {w}", file=sys.stderr)
+
+
 def _print_pipeline_summary(label: str, result: PipelineResult) -> None:
     stats = [f"{result.metrics.char_count:,} chars"]
     if result.metrics.heading_count:
@@ -237,10 +246,7 @@ def _extract_url(url: str, args: argparse.Namespace) -> int:
         print(f"   ok   {url} ({', '.join(stats)})")
         if result.markdown_path:
             print(f"        → {result.markdown_path}")
-        if result.warnings:
-            print(f"        ⚠ {len(result.warnings)} warning(s):")
-            for w in result.warnings:
-                print(f"          - {w}")
+        _print_warnings(url, result.warnings)
         return EXIT_SUCCESS
     else:
         print(f"  FAIL  {url}: {result.error}")
@@ -499,6 +505,14 @@ def cmd_extract(args: argparse.Namespace) -> int:
             )
             result = extract_pdf(doc, config=config)
 
+            # Warnings are shown and saved before the error branch, so a
+            # failed extraction still reports why the arXiv shortcut fell back.
+            _print_warnings(label, result.warnings)
+            metrics_dict = result.metrics.to_dict()
+            if result.warnings:
+                metrics_dict["warnings"] = result.warnings
+            (output_dir / "metrics.json").write_text(json.dumps(metrics_dict, indent=2))
+
             if result.error:
                 print(f"  FAIL  {label}: {result.error}")
                 failed += 1
@@ -528,7 +542,6 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
             # Write output artifacts (output_dir already created above)
             (output_dir / "output.md").write_text(markdown)
-            (output_dir / "metrics.json").write_text(json.dumps(result.metrics.to_dict(), indent=2))
             (output_dir / "decisions.json").write_text(
                 json.dumps([_decision_to_dict(d) for d in result.decisions], indent=2)
             )

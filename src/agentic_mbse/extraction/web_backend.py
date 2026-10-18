@@ -22,9 +22,9 @@ from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
 from agentic_mbse.extraction.arxiv_html import (
+    MIN_CONTENT_CHARS,
     ArxivConversionError,
-    _postprocess_markdown,
-    _preprocess_html,
+    _convert_document,
     _run_pandoc,
 )
 from agentic_mbse.extraction.base import ExtractionResult, sanitize_filename
@@ -35,9 +35,6 @@ from agentic_mbse.extraction.pandoc_convert import (
     resolve_fetched_version,
     strip_arxiv_version,
 )
-
-# Minimum extracted content length before trying fallback
-_MIN_CONTENT_LENGTH = 100
 
 # Content types routed to the web backend
 _HTML_CONTENT_TYPES = frozenset(
@@ -247,22 +244,6 @@ def _is_arxiv_html_url(url: str) -> bool:
     return bool(_ARXIV_HTML_RE.match(url))
 
 
-def _extract_with_arxiv_pandoc(html: str) -> str | None:
-    """Convert arXiv/LaTeXML HTML to markdown via Pandoc with arXiv-specific
-    pre/post-processing.
-
-    Reuses the proven pipeline from arxiv_html that the PDF extraction arXiv
-    shortcut uses. Returns None on failure.
-    """
-    try:
-        markdown = _run_pandoc(_preprocess_html(html))
-    except ArxivConversionError:
-        return None
-    if not markdown.strip():
-        return None
-    return _postprocess_markdown(markdown)
-
-
 def _fallback_pandoc(html: str) -> str | None:
     """Fallback: convert HTML to markdown via Pandoc if available."""
     try:
@@ -343,16 +324,20 @@ def extract_web_content(
     markdown: str | None = None
     metadata: dict = {}
     backend = "trafilatura"
+    extraction_warnings: list[str] = []
 
     if _is_arxiv_html_url(final_url):
         log.info("arXiv HTML detected, using Pandoc extraction pipeline")
-        markdown = _extract_with_arxiv_pandoc(html)
-        if markdown and len(markdown) >= _MIN_CONTENT_LENGTH:
+        try:
+            markdown = _convert_document(html)
             backend = "pandoc-arxiv"
             # Still grab metadata from trafilatura (title, author, date)
             _, metadata = _extract_with_trafilatura(html, final_url)
-        else:
-            log.warning("Pandoc arXiv extraction failed/short, falling back to trafilatura")
+        except ArxivConversionError as exc:
+            log.warning("Pandoc arXiv extraction failed (%s), falling back to trafilatura", exc)
+            extraction_warnings.append(
+                f"arXiv Pandoc conversion failed ({exc}); used trafilatura instead"
+            )
             markdown = None  # fall through to trafilatura below
 
     if markdown is None:
@@ -360,13 +345,13 @@ def extract_web_content(
         backend = "trafilatura"
 
     # Step 3b: Fallback to pandoc if trafilatura returned too little
-    if not markdown or len(markdown) < _MIN_CONTENT_LENGTH:
+    if not markdown or len(markdown) < MIN_CONTENT_CHARS:
         log.info(
             "trafilatura returned %d chars, trying pandoc fallback",
             len(markdown or ""),
         )
         pandoc_md = _fallback_pandoc(html)
-        if pandoc_md and len(pandoc_md) >= _MIN_CONTENT_LENGTH:
+        if pandoc_md and len(pandoc_md) >= MIN_CONTENT_CHARS:
             markdown = pandoc_md
             backend = "pandoc-fallback"
 
@@ -427,11 +412,11 @@ def extract_web_content(
 
     # Step 4a: Download images (pandoc-arxiv only)
     image_count = 0
-    extraction_warnings: list[str] = []
     if backend == "pandoc-arxiv":
-        full_markdown, image_count, extraction_warnings = _download_arxiv_images(
+        full_markdown, image_count, image_warnings = _download_arxiv_images(
             full_markdown, final_url, output_dir
         )
+        extraction_warnings.extend(image_warnings)
 
     # Write markdown — when the caller provides output_dir (e.g., batch mode
     # with --output), use "output.md" to avoid filename collisions between

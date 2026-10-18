@@ -169,10 +169,15 @@ class PipelineConfig:
 # ---------------------------------------------------------------------------
 
 
-def _try_arxiv_shortcut(pdf_path: Path, config: PipelineConfig) -> PipelineResult | None:
+def _try_arxiv_shortcut(
+    pdf_path: Path, config: PipelineConfig
+) -> tuple[PipelineResult | None, list[str]]:
     """Attempt arXiv HTML shortcut via Pandoc.
 
-    Returns PipelineResult with source="pandoc_arxiv" on success, None on failure.
+    Returns ``(result, warnings)``. ``result`` has source="pandoc_arxiv" on
+    success and is None when the shortcut does not apply or fails. Every
+    failure, and an ignored ``arxiv_html_path``, adds a warning; the shortcut
+    simply not applying (no Pandoc, no arXiv ID) does not.
     """
     from agentic_mbse.extraction.frontmatter import compute_source_hash
     from agentic_mbse.extraction.pandoc_convert import (
@@ -184,20 +189,28 @@ def _try_arxiv_shortcut(pdf_path: Path, config: PipelineConfig) -> PipelineResul
         strip_arxiv_version,
     )
 
-    try:
-        if not _pandoc_available():
-            return None
+    if not _pandoc_available():
+        if config.arxiv_html_path is None:
+            return None, []
+        return None, [
+            f"arXiv HTML {config.arxiv_html_path} ignored: Pandoc not found on PATH; "
+            "extracted the PDF instead"
+        ]
 
+    try:
         arxiv_id = None
         if config.arxiv_html_path is not None:
             html_source = str(config.arxiv_html_path)
         else:
             arxiv_id = detect_arxiv_id(pdf_path)
             if arxiv_id is None:
-                return None
+                return None, []
             html_url = check_arxiv_html(arxiv_id)
             if html_url is None:
-                return None
+                return None, [
+                    f"arXiv paper {arxiv_id} identified but arXiv serves no HTML "
+                    "version; extracted the PDF instead"
+                ]
             html_source = html_url
 
         markdown, raw_bytes = convert_arxiv_html(html_source)
@@ -220,10 +233,10 @@ def _try_arxiv_shortcut(pdf_path: Path, config: PipelineConfig) -> PipelineResul
             source_url=source_url,
             content_hash=content_hash,
             raw_source_bytes=raw_bytes if config.save_source else None,
-        )
-    except Exception:
+        ), []
+    except Exception as exc:
         logger.debug("arXiv shortcut failed, falling through to PDF extraction", exc_info=True)
-        return None
+        return None, [f"arXiv HTML shortcut failed ({exc}); extracted the PDF instead"]
 
 
 def _try_detect_tables(pdf_path: Path, config: PipelineConfig) -> dict[int, list[DetectedTable]]:
@@ -377,12 +390,13 @@ def extract_pdf(
     # ------------------------------------------------------------------
     if prof:
         _t = time.perf_counter()
-    arxiv_result = _try_arxiv_shortcut(pdf_path, config)
+    arxiv_result, shortcut_warnings = _try_arxiv_shortcut(pdf_path, config)
     if prof:
         prof.arxiv_shortcut = time.perf_counter() - _t
     if arxiv_result is not None:
         arxiv_result.elapsed_seconds = time.time() - start_time
         arxiv_result.profile = prof
+        arxiv_result.warnings = shortcut_warnings
         return arxiv_result
 
     # ------------------------------------------------------------------
@@ -401,6 +415,7 @@ def extract_pdf(
             error=str(exc),
             elapsed_seconds=time.time() - start_time,
             profile=prof,
+            warnings=shortcut_warnings,
         )
     if prof:
         prof.base_extraction = time.perf_counter() - _t
@@ -709,4 +724,5 @@ def extract_pdf(
         claude_pages_succeeded=len(claude_results),
         image_count=image_count,
         profile=prof,
+        warnings=shortcut_warnings,
     )

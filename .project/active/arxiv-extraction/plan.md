@@ -180,15 +180,15 @@ def test_arxiv_pandoc_failure_warns_and_keeps_trafilatura_backend(): ...
 
 **See design:** D12 (where warnings travel), D13 (which outcomes warn), invariant 7, Architecture diagram.
 
-- [ ] **`types.py:107-124`**: `PipelineResult.warnings: list[str] = field(default_factory=list)`.
-- [ ] **`pipeline.py`**: `_try_arxiv_shortcut` (`:172-226`) returns `(PipelineResult | None, list[str])`. Warn on: ignored `--html-path` (Pandoc absent, `:188-189`), identified ID with no HTML available, and any exception (fetch error, conversion error). Keep the log line. Stay silent on no ID and on Pandoc absent without `--html-path`. `extract_pdf` (`:380-386` and the base-extraction error return at `:398`, and the normal return) attaches the warnings to whichever result it returns.
-- [ ] **`web_backend.py`**: when the arXiv Pandoc attempt fails or is short (`:414-417`), add an actionable warning to the result's warnings. Initialize `extraction_warnings` before Step 3 so fallback and image warnings share one list; it already flows into `metrics.json` (`:509-511`) and `ExtractionResult.warnings`. The `D16` skip of `_fallback_pandoc` waits for phase 5.
-- [ ] **`extract_cli.py`**: one helper (for example `_print_warnings(label, warnings)`) that writes to `sys.stderr`. Use it in the web route (replace the stdout block at `:240-243`) and in the PDF branch. In the PDF branch (`:500-531`), print warnings and write `metrics.json` (with `"warnings"` when non-empty) before the `if result.error` check at `:502`; on success the later `metrics.json` write includes the same warnings. The output dir already exists at that point (`:483`).
+- [x] **`types.py:107-124`**: `PipelineResult.warnings: list[str] = field(default_factory=list)`.
+- [x] **`pipeline.py`**: `_try_arxiv_shortcut` (`:172-226`) returns `(PipelineResult | None, list[str])`. Warn on: ignored `--html-path` (Pandoc absent, `:188-189`), identified ID with no HTML available, and any exception (fetch error, conversion error). Keep the log line. Stay silent on no ID and on Pandoc absent without `--html-path`. `extract_pdf` (`:380-386` and the base-extraction error return at `:398`, and the normal return) attaches the warnings to whichever result it returns.
+- [x] **`web_backend.py`**: when the arXiv Pandoc attempt fails or is short (`:414-417`), add an actionable warning to the result's warnings. Initialize `extraction_warnings` before Step 3 so fallback and image warnings share one list; it already flows into `metrics.json` (`:509-511`) and `ExtractionResult.warnings`. The `D16` skip of `_fallback_pandoc` waits for phase 5.
+- [x] **`extract_cli.py`**: one helper (for example `_print_warnings(label, warnings)`) that writes to `sys.stderr`. Use it in the web route (replace the stdout block at `:240-243`) and in the PDF branch. In the PDF branch (`:500-531`), print warnings and write `metrics.json` (with `"warnings"` when non-empty) before the `if result.error` check at `:502`; on success the later `metrics.json` write includes the same warnings. The output dir already exists at that point (`:483`).
 
 ### Validation
 
-- [ ] Green.
-- [ ] Manual: run `uv run agentic-mbse extract <small local pdf> --budget 0 --html-path /tmp/does-not-exist.html -o /tmp/arxiv-p2`. The load fails, the run falls through to PDF extraction, stderr shows one warning, and `/tmp/arxiv-p2/<doc>/metrics.json` contains it.
+- [x] Green.
+- [x] Manual: run `uv run agentic-mbse extract <small local pdf> --budget 0 --html-path /tmp/does-not-exist.html -o /tmp/arxiv-p2`. The load fails, the run falls through to PDF extraction, stderr shows one warning, and `/tmp/arxiv-p2/<doc>/metrics.json` contains it.
 
 **What we know works after this phase:** every route has one reporting channel that reaches the result, disk and stderr, including on PDF error results. Today's silent fallbacks now warn.
 
@@ -539,10 +539,27 @@ Environment setup the numbers depend on, for later sessions:
 - The real-Pandoc test imports `_MD_IMAGE_RE` from `web_backend` until Phase 6 moves it into `arxiv_html`.
 
 ### Phase 2 Completion
-**Completed:**
+**Completed:** 2026-10-18
 **Actual Changes:**
+- `types.py`: `PipelineResult.warnings: list[str]` (appended after the provenance fields).
+- `pipeline.py`: `_try_arxiv_shortcut` returns `(PipelineResult | None, list[str])`. It warns on an ignored `arxiv_html_path` (Pandoc absent), an identified ID with no HTML version, and any exception (message carries the exception text). It stays silent on no ID and on Pandoc absent without `arxiv_html_path`. The debug log line with traceback is kept. `extract_pdf` attaches the shortcut warnings to the shortcut result, the base-extraction error result and the normal result.
+- `arxiv_html.py`: new `_convert_document(document, pandoc_path)` = pre-process → `_run_pandoc` → post-process → `MIN_CONTENT_CHARS` check. `convert_article` now selects, wraps and calls it.
+- `pandoc_convert.convert_arxiv_html` and the web route's arXiv branch both call `_convert_document`, so the pre/run/post sequence exists once.
+- `web_backend.py`: `_extract_with_arxiv_pandoc` deleted (the web arXiv branch calls `_convert_document` directly); `_MIN_CONTENT_LENGTH` replaced by `arxiv_html.MIN_CONTENT_CHARS`. An `ArxivConversionError` in the arXiv branch adds `arXiv Pandoc conversion failed (<reason>); used trafilatura instead` to `extraction_warnings`, which is now created before Step 3 and later extended with image warnings. It already flows into `metrics.json` and `ExtractionResult.warnings`.
+- `extract_cli.py`: `_print_warnings(label, warnings)` writes to stderr and serves both routes; the web route's stdout warning block is gone. The PDF branch prints warnings and writes `metrics.json` (with `"warnings"` when non-empty) before `if result.error`; the later duplicate `metrics.json` write was removed, so there is one write.
+- Tests: `test_pipeline.py` (existing shortcut tests now assert their warnings or their absence; new: ignored `--html-path`, warnings on a base-extraction error result, and a real generated PDF with an unreadable `arxiv_html_path` through the real pipeline). `test_web_backend.py` (real fixture page at an arXiv URL with Pandoc missing, short output and a Pandoc error: backend stays `trafilatura`, one warning in the result and in `metrics.json`; a non-arXiv page has no warning). `test_extract_cli.py` new `TestWarningsChannel` (PDF error result keeps warnings in stderr and `metrics.json` with no `output.md`; success with warnings; no warnings means no key and empty stderr; a real PDF through `cmd_extract` with a missing `--html-path`; web warnings on stderr only). `test_pandoc_convert.py` stubs now return at least `MIN_CONTENT_CHARS`, plus a short-output test.
+- Full suite: 2810 passed, same 3 baseline failures. mypy unchanged at 97. ruff clean on touched files; format hunk counts on touched files are at or below base.
+- Manual check run: `extract /tmp/arxiv-trim/small.pdf --budget 0 --html-path /tmp/does-not-exist.html -o /tmp/arxiv-p2` exits 0, stdout shows `[pdf_pipeline]`, stderr shows exactly one warning naming the missing file, and `metrics.json` contains it.
+
 **Issues:**
+- The first manual run showed a full traceback on stderr because I had raised the shortcut's log line to `warning`. The warning channel already tells the user; the log line went back to `debug` with `exc_info`, as before.
+- Until Phase 3, `detect_arxiv_id` is still the weak first-page regex. So a citation-only PDF whose cited paper has no HTML version now gets the "identified but arXiv serves no HTML version" warning. Phase 3 removes the false identification and with it this warning.
+
 **Deviations:**
+- The minimum-length check now applies to `convert_arxiv_html`, so the PDF shortcut falls back with a warning on Pandoc output under 100 characters. The plan scheduled this with Phase 5's test migration. It came earlier because routing both arXiv conversions through `_convert_document` removed the last copy of the pre/run/post sequence. Changelog note: `convert_arxiv_html` raises `ArxivConversionError` for output under `MIN_CONTENT_CHARS`.
+- `_extract_with_arxiv_pandoc` and `_MIN_CONTENT_LENGTH` were removed in this phase rather than Phase 5. Phase 5 swaps the web branch's `_convert_document(html)` for `convert_article` on the `ArxivSource`.
+- `_try_arxiv_shortcut` still catches `Exception` (now with a warning instead of silence). Phase 5 narrows it to `ArxivConversionError` and the loader's fetch/read errors when the loader lands.
+- PDF `metrics.json` is now written for error results too (zero metrics, plus warnings when present). The skip check keys on `output.md`, so a failed document is still retried on the next run.
 
 ### Phase 3 Completion
 **Completed:**

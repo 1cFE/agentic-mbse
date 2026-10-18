@@ -1,8 +1,9 @@
 """Tests for agentic_mbse.extraction.web_backend — web content extraction pipeline."""
 
 import hashlib
+import json
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -342,7 +343,7 @@ def test_arxiv_source_records_fetched_version(tmp_path):
     with (
         patch("agentic_mbse.extraction.web_backend.fetch_url", side_effect=fake_fetch),
         patch(
-            "agentic_mbse.extraction.web_backend._extract_with_arxiv_pandoc",
+            "agentic_mbse.extraction.web_backend._convert_document",
             return_value="A" * 200,  # non-empty, no image refs (skips downloads)
         ),
     ):
@@ -354,3 +355,57 @@ def test_arxiv_source_records_fetched_version(tmp_path):
     assert result.backend_used == "pandoc-arxiv"
     md_text = (tmp_path / "output.md").read_text()
     assert 'source: "https://arxiv.org/html/1706.03762v7"' in md_text
+
+
+# ---------------------------------------------------------------------------
+# arXiv Pandoc fallback warnings
+# ---------------------------------------------------------------------------
+
+_ARXIV_PAGE = FIXTURES / "arxiv_2610.14224v1_page.html"
+_ARXIV_URL = "https://arxiv.org/html/2610.14224v1"
+
+
+@pytest.mark.parametrize(
+    ("pandoc", "reason"),
+    [
+        pytest.param(
+            {"side_effect": FileNotFoundError("pandoc")}, "Pandoc not found", id="missing"
+        ),
+        pytest.param(
+            {"return_value": MagicMock(returncode=0, stdout="tiny\n", stderr="")},
+            "too short",
+            id="short-output",
+        ),
+        pytest.param(
+            {"return_value": MagicMock(returncode=1, stdout="", stderr="parse error")},
+            "parse error",
+            id="pandoc-error",
+        ),
+    ],
+)
+def test_arxiv_pandoc_failure_warns_and_keeps_trafilatura_backend(tmp_path, pandoc, reason):
+    """Failed arXiv conversion → trafilatura output, honest backend, warning in result and metrics."""
+    fetched = _make_fetch_result(html_path=_ARXIV_PAGE, url=_ARXIV_URL)
+
+    with (
+        patch("agentic_mbse.extraction.web_backend.fetch_url", return_value=fetched),
+        patch("subprocess.run", **pandoc),
+    ):
+        result = extract_web_content(_ARXIV_URL, output_dir=tmp_path)
+
+    assert result.success
+    assert result.backend_used == "trafilatura"
+    assert len(result.warnings) == 1
+    assert reason in result.warnings[0]
+    assert "used trafilatura instead" in result.warnings[0]
+    metrics = json.loads((tmp_path / "metrics.json").read_text())
+    assert metrics["warnings"] == result.warnings
+
+
+def test_non_arxiv_url_has_no_arxiv_warning(tmp_path):
+    with patch("agentic_mbse.extraction.web_backend.fetch_url", return_value=_make_fetch_result()):
+        result = extract_web_content("https://example.com/article", output_dir=tmp_path)
+
+    assert result.success
+    assert result.warnings == []
+    assert "warnings" not in json.loads((tmp_path / "metrics.json").read_text())

@@ -178,6 +178,8 @@ class TestExtractPdfArxivShortcut:
             result = extract_pdf(Path("/fake.pdf"))
         assert result.source != "pandoc_arxiv"
         mock_base.assert_called_once()
+        assert len(result.warnings) == 1
+        assert "2301.12345" in result.warnings[0] and "no HTML" in result.warnings[0]
 
     def test_no_arxiv_id(self):
         """No arXiv ID → falls through to PDF extraction."""
@@ -191,6 +193,7 @@ class TestExtractPdfArxivShortcut:
             result = extract_pdf(Path("/fake.pdf"))
         assert result.source != "pandoc_arxiv"
         mock_base.assert_called_once()
+        assert result.warnings == []
 
     def test_pandoc_not_available(self):
         """No Pandoc → falls through to PDF extraction."""
@@ -203,6 +206,23 @@ class TestExtractPdfArxivShortcut:
             result = extract_pdf(Path("/fake.pdf"))
         assert result.source != "pandoc_arxiv"
         mock_base.assert_called_once()
+        assert result.warnings == []
+
+    def test_ignored_html_path_warns(self):
+        """No Pandoc + explicit arxiv_html_path → PDF extraction, one warning naming the path."""
+        cfg = PipelineConfig(arxiv_html_path=Path("/tmp/paper.html"))
+        with (
+            _patch_pandoc_unavailable(),
+            _patch_base() as mock_base,
+            _patch_tables(),
+            _patch_claude_page(),
+        ):
+            result = extract_pdf(Path("/fake.pdf"), cfg)
+        assert result.source == "pdf_pipeline"
+        mock_base.assert_called_once()
+        assert len(result.warnings) == 1
+        assert "/tmp/paper.html" in result.warnings[0]
+        assert "Pandoc not found" in result.warnings[0]
 
     def test_explicit_html_path_overrides_autodetect(self):
         """config.arxiv_html_path skips detect_arxiv_id + check_arxiv_html."""
@@ -232,6 +252,46 @@ class TestExtractPdfArxivShortcut:
         assert result.source != "pandoc_arxiv"
         assert result.error is None
         mock_base.assert_called_once()
+        assert len(result.warnings) == 1
+        assert "boom" in result.warnings[0]
+
+    def test_warnings_on_base_extraction_error_result(self):
+        """Base extraction fails after the shortcut fell back → error result keeps the warning."""
+        with (
+            _patch_pandoc_available(),
+            patch(f"{_PANDOC}.detect_arxiv_id", side_effect=RuntimeError("boom")),
+            patch(f"{_P}.extract_pages", side_effect=RuntimeError("corrupt PDF")),
+        ):
+            result = extract_pdf(Path("/fake.pdf"))
+        assert result.error == "corrupt PDF"
+        assert len(result.warnings) == 1
+        assert "boom" in result.warnings[0]
+
+    def test_missing_html_file_warns_and_extracts_real_pdf(self, tmp_path):
+        """Real PDF bytes, unreadable arxiv_html_path → the PDF's own text plus a warning."""
+        import pymupdf  # type: ignore[import-untyped]
+
+        pdf_path = tmp_path / "own.pdf"
+        doc = pymupdf.open()
+        doc.new_page().insert_text((72, 90), "The document's own text about magnets.")
+        doc.save(pdf_path)
+        doc.close()
+        cfg = PipelineConfig(
+            arxiv_html_path=tmp_path / "missing.html",
+            enable_claude=False,
+            enable_tables=False,
+            enable_equations=False,
+        )
+
+        with _patch_pandoc_available():
+            result = extract_pdf(pdf_path, cfg)
+
+        assert result.error is None
+        assert result.source == "pdf_pipeline"
+        assert "own text about magnets" in result.markdown
+        assert len(result.warnings) == 1
+        assert "missing.html" in result.warnings[0]
+        assert result.warnings[0].endswith("extracted the PDF instead")
 
 
 # ---------------------------------------------------------------------------

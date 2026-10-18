@@ -144,6 +144,21 @@ def _run_pandoc(html: str, pandoc_path: str = "pandoc") -> str:
     return result.stdout
 
 
+def _convert_document(document: str, pandoc_path: str = "pandoc") -> str:
+    """Convert an arXiv HTML document to cleaned markdown.
+
+    Applies the LaTeXML pre-processing, runs Pandoc and post-processes the
+    output. Raises ``ArxivConversionError`` when Pandoc fails or the output is
+    shorter than ``MIN_CONTENT_CHARS``.
+    """
+    markdown = _postprocess_markdown(_run_pandoc(_preprocess_html(document), pandoc_path))
+    if len(markdown) < MIN_CONTENT_CHARS:
+        raise ArxivConversionError(
+            f"Pandoc output too short ({len(markdown)} chars, minimum {MIN_CONTENT_CHARS})"
+        )
+    return markdown
+
+
 def convert_article(html: str, pandoc_path: str = "pandoc") -> str:
     """Convert the paper in an arXiv HTML page to markdown.
 
@@ -155,11 +170,4 @@ def convert_article(html: str, pandoc_path: str = "pandoc") -> str:
     article = select_article(html)
     if article is None:
         raise ArxivConversionError("no recognized arXiv article container")
-
-    document = f"<html><body>{article}</body></html>"
-    markdown = _postprocess_markdown(_run_pandoc(_preprocess_html(document), pandoc_path))
-    if len(markdown) < MIN_CONTENT_CHARS:
-        raise ArxivConversionError(
-            f"Pandoc output too short ({len(markdown)} chars, minimum {MIN_CONTENT_CHARS})"
-        )
-    return markdown
+    return _convert_document(f"<html><body>{article}</body></html>", pandoc_path)

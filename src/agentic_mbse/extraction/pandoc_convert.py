@@ -11,11 +11,7 @@ import shutil
 import urllib.request
 from pathlib import Path
 
-from agentic_mbse.extraction.arxiv_html import (
-    _postprocess_markdown,
-    _preprocess_html,
-    _run_pandoc,
-)
+from agentic_mbse.extraction.arxiv_html import _convert_document
 from agentic_mbse.extraction.http import USER_AGENT
 
 # ---------------------------------------------------------------------------
@@ -164,7 +160,8 @@ def convert_arxiv_html(
 
     Raises:
         ``FileNotFoundError`` if Pandoc is not installed.
-        ``ArxivConversionError`` if Pandoc fails or times out.
+        ``ArxivConversionError`` if Pandoc fails or times out, or its output is
+        shorter than ``arxiv_html.MIN_CONTENT_CHARS``.
     """
     if not _pandoc_available(pandoc_path):
         raise FileNotFoundError(
@@ -186,5 +183,4 @@ def convert_arxiv_html(
         raw_bytes = p.read_bytes()
         raw_html = raw_bytes.decode("utf-8")
 
-    markdown = _run_pandoc(_preprocess_html(raw_html), pandoc_path)
-    return _postprocess_markdown(markdown), raw_bytes
+    return _convert_document(raw_html, pandoc_path), raw_bytes

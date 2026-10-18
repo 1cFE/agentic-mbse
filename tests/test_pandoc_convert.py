@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from agentic_mbse.extraction.arxiv_html import MIN_CONTENT_CHARS, ArxivConversionError
 from agentic_mbse.extraction.pandoc_convert import (
     _pandoc_available,
     check_arxiv_html,
@@ -15,6 +16,9 @@ from agentic_mbse.extraction.pandoc_convert import (
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+# Pandoc output shorter than MIN_CONTENT_CHARS counts as a failed conversion.
+_PADDING = "x" * MIN_CONTENT_CHARS
 
 
 class TestStripArxivVersion:
@@ -195,7 +199,7 @@ class TestConvertArxivHtml:
         mock_available.return_value = True
         mock_run.return_value = MagicMock(
             returncode=0,
-            stdout="# Heading\n\nConverted content\n",
+            stdout="# Heading\n\nConverted content\n" + _PADDING,
             stderr="",
         )
 
@@ -220,7 +224,7 @@ class TestConvertArxivHtml:
         mock_available.return_value = True
         mock_run.return_value = MagicMock(
             returncode=0,
-            stdout="Clean output\n",
+            stdout="Clean output\n" + _PADDING,
             stderr="",
         )
 
@@ -242,7 +246,7 @@ class TestConvertArxivHtml:
         mock_available.return_value = True
         mock_run.return_value = MagicMock(
             returncode=0,
-            stdout="Text\\hspace{0pt}more `<!-- -->`{=html}end\n",
+            stdout="Text\\hspace{0pt}more `<!-- -->`{=html}end\n" + _PADDING,
             stderr="",
         )
 
@@ -253,6 +257,18 @@ class TestConvertArxivHtml:
 
         assert "\\hspace{0pt}" not in markdown
         assert "`<!-- -->`{=html}" not in markdown
+
+    @patch("agentic_mbse.extraction.pandoc_convert._pandoc_available")
+    @patch("subprocess.run")
+    def test_short_output_raises(self, mock_run, mock_available, tmp_path):
+        mock_available.return_value = True
+        mock_run.return_value = MagicMock(returncode=0, stdout="Tiny\n", stderr="")
+
+        html_file = tmp_path / "test.html"
+        html_file.write_text("<p>content</p>")
+
+        with pytest.raises(ArxivConversionError, match="too short"):
+            convert_arxiv_html(html_file)
 
     @patch("agentic_mbse.extraction.pandoc_convert._pandoc_available")
     def test_pandoc_not_available(self, mock_available, tmp_path):

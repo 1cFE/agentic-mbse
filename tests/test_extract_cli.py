@@ -1,6 +1,7 @@
 """Tests for agentic_mbse.cli.extract_cli — Phase 2 (pipeline + CLI rewrite)."""
 
 import hashlib
+import json
 import subprocess
 import warnings
 from pathlib import Path
@@ -962,3 +963,117 @@ class TestPdfUrlProvenance:
         assert len(out_dirs) == 1
         assert (out_dirs[0] / "raw.pdf").exists()
         assert (out_dirs[0] / "raw.pdf").read_bytes() == pdf_bytes
+
+
+# ---------------------------------------------------------------------------
+# Warnings channel: stderr and metrics.json, for both routes
+# ---------------------------------------------------------------------------
+
+
+class TestWarningsChannel:
+    def _pdf_args(self, tmp_path, **overrides):
+        pdf = tmp_path / "paper.pdf"
+        if not pdf.exists():
+            pdf.write_bytes(b"fake pdf content")
+        defaults = dict(path=str(pdf), output=str(tmp_path / "out"))
+        defaults.update(overrides)
+        return MockArgs(**defaults)
+
+    def test_pdf_warnings_in_stderr_and_metrics_even_on_error(self, tmp_path, capsys):
+        result = _make_pipeline_result(error="corrupt PDF")
+        result.warnings = ["arXiv HTML shortcut failed (boom); extracted the PDF instead"]
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=result):
+            rc = cmd_extract(self._pdf_args(tmp_path))
+
+        assert rc == EXIT_FAILURE
+        out_dir = tmp_path / "out" / "paper"
+        assert not (out_dir / "output.md").exists()
+        metrics = json.loads((out_dir / "metrics.json").read_text())
+        assert metrics["warnings"] == result.warnings
+        captured = capsys.readouterr()
+        assert "shortcut failed (boom)" in captured.err
+        assert "boom" not in captured.out
+        assert "FAIL  paper.pdf: corrupt PDF" in captured.out
+
+    def test_pdf_success_warnings_saved_with_metrics(self, tmp_path, capsys):
+        result = _make_pipeline_result()
+        result.warnings = ["first warning", "second warning"]
+
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf", return_value=result):
+            rc = cmd_extract(self._pdf_args(tmp_path))
+
+        assert rc == EXIT_SUCCESS
+        metrics = json.loads((tmp_path / "out" / "paper" / "metrics.json").read_text())
+        assert metrics["warnings"] == ["first warning", "second warning"]
+        assert metrics["char_count"] == result.metrics.char_count
+        err = capsys.readouterr().err
+        assert "paper.pdf: 2 warning(s)" in err
+        assert "- first warning" in err and "- second warning" in err
+
+    def test_pdf_without_warnings_prints_and_saves_none(self, tmp_path, capsys):
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+        ):
+            cmd_extract(self._pdf_args(tmp_path))
+
+        metrics = json.loads((tmp_path / "out" / "paper" / "metrics.json").read_text())
+        assert "warnings" not in metrics
+        assert capsys.readouterr().err == ""
+
+    def test_real_pdf_with_unreadable_html_path(self, tmp_path, capsys):
+        """Real PDF through the real pipeline: the bad --html-path warns, the PDF is extracted."""
+        import pymupdf  # type: ignore[import-untyped]
+
+        pdf = tmp_path / "paper.pdf"
+        doc = pymupdf.open()
+        doc.new_page().insert_text((72, 90), "The document's own text about magnets.")
+        doc.save(pdf)
+        doc.close()
+        args = self._pdf_args(
+            tmp_path,
+            html_path=str(tmp_path / "missing.html"),
+            budget=0.0,
+            no_tables=True,
+            no_equations=True,
+        )
+
+        with patch("agentic_mbse.extraction.pandoc_convert._pandoc_available", return_value=True):
+            rc = cmd_extract(args)
+
+        assert rc == EXIT_SUCCESS
+        out_dir = tmp_path / "out" / "paper"
+        assert "own text about magnets" in (out_dir / "output.md").read_text()
+        [warning] = json.loads((out_dir / "metrics.json").read_text())["warnings"]
+        assert "missing.html" in warning
+        captured = capsys.readouterr()
+        assert warning in captured.err
+        assert "[pdf_pipeline]" in captured.out
+
+    def test_web_warnings_go_to_stderr_not_stdout(self, tmp_path, capsys):
+        from agentic_mbse.extraction.base import ExtractionResult
+
+        web_result = ExtractionResult(
+            success=True,
+            output_dir=tmp_path,
+            markdown_path=tmp_path / "output.md",
+            char_count=500,
+            backend_used="trafilatura",
+            warnings=["arXiv Pandoc conversion failed (boom); used trafilatura instead"],
+        )
+        args = MockArgs(path="https://arxiv.org/html/2610.14224v1", output=str(tmp_path))
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="html"),
+            patch(
+                "agentic_mbse.extraction.web_backend.extract_web_content",
+                return_value=web_result,
+            ),
+        ):
+            rc = cmd_extract(args)
+
+        assert rc == EXIT_SUCCESS
+        captured = capsys.readouterr()
+        assert "used trafilatura instead" in captured.err
+        assert "used trafilatura instead" not in captured.out
+        assert "backend: trafilatura" in captured.out
