@@ -1,0 +1,11 @@
+Apply the should-fix items from the fresh audit `.project/active/positional-binding-check/audit.md` (verdict: Certify) for EXEC-SUBSET-CONTRACT Item 4. Read it first.
+
+Repository checks: the orchestrator ran them on `73be541e` — 3936 passed, the same 6 failures as `main` at `ccd57d83`; ruff 118 and mypy 97, unchanged; touched files clean. Tick that spec criterion with this evidence.
+
+Do:
+1. **Unresolved `:>` subsetting (audit item 1).** First add a kept learning test in `tests/learning/test_syside_input_redefinition.py` for `calc c :> missing { in b = 3; in a = 10; }` (and a constraint usage equivalent): what does SysIDE 0.8.4 give for the subsetted target and for the inputs' redefinitions? If it can yield a silent clean pass, extend the placeholder detection in `parameter_redefinition_extraction.py` to subsetting targets (reuse the same `owning_relationship is None` discrimination), report `L2_CHECK_UNVERIFIABLE` with a named reason, add the fixture, and confirm the test fails without the fix. If SysIDE behaves otherwise, record what it does and why no fix is needed.
+2. **Run summary line (audit item 2).** When L2 passes only because of pinned positional warnings, the final summary must say so (e.g. that pinned positional warnings remain and are not a value or route-parity check), not a bare "All quality checks passed!". Keep exit codes as designed; add a test.
+3. **`out_before_in` (audit item 3).** Correct the fixture's stale header to what it actually does (L1 passes; L2 reports two positional errors; SysIDE's direction error is in `diagnostics.validation`, which no level reads — backlog `VALIDATE-SEMA-DIAGNOSTICS`), and add a test that pins that behavior so the register's claim is protected.
+4. Any other audit items you judge cheap and correct; list the rest as deferred with reasons.
+
+Same rules as earlier briefs: owner boundary (no Item 2, no sysml-codegen writes), read-only siblings, never stage the six unrelated working-tree edits, no repo-wide `ruff format`, green as the plan defines it. Commit with outcome-led subjects ending `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Add an "Audit fixes" section to the audit. Finish with what changed per item and the ARTIFACT line (audit.md).
