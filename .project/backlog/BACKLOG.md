@@ -357,7 +357,7 @@ fixture and integration path. Filing avoids a mock-only validator that would not
 inherited attribute defaults for the same target.
 
 **Fixture shape**: A part usage has two unrelated typed targets, and both targets redefine the same
-attribute literal. The profile should warn before codegen chooses sorted-first behavior.
+attribute literal. Codegen does not choose sorted-first: it refuses the model (`SI_REDEFINITION_INVALID`, "incomparable exact user-definition typings"), while the screen reports it incomplete (case `candidate-ambiguous-typing__incomparable_typings__part_usage`, sysml-codegen Item 2a `evidence/r3-closure.md`).
 
 **Severity**: WARNING
 
