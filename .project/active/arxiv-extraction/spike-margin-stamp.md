@@ -18,3 +18,9 @@
 - Fixtures can be generated with pymupdf (`insert_text(..., rotate=90)` in the left margin) rather than committing downloaded papers.
 
 Sample PDFs were fetched to a session scratchpad and are not kept.
+
+## Addendum: the paper container in arXiv HTML
+
+**Question:** Does real arXiv HTML hold the whole paper, and only the paper, in one `<article class="ltx_document">`? (Design's unverified assumption.)
+
+**Answer: yes, on all three pages checked** (1706.03762, 2310.06825, 2610.14224; fetched 2026-10-18). Each page has exactly one `article.ltx_document`. Inside it: the title, authors, abstract, figures, tables, math, the bibliography and (for 2610.14224, the only one with one) the appendix. Outside it: the header, navigation, issue dialog and footer, plus every `<img src="data:...">` on the page (one per page). The pages are saved locally, untracked, at `.project/active/arxiv-extraction/ref/` for building the trimmed fixture.
