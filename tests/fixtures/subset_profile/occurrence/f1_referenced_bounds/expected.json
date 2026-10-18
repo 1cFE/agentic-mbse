@@ -1,0 +1,278 @@
+{
+ "calc_attachment": {},
+ "counts": {
+  "76a43fdd-ce7d-5cbe-b8ed-200e3f78c313": 1,
+  "8d0004e3-fe66-594b-84e0-34bc3aedf284": 5,
+  "a92d4739-1761-51d6-ad4f-1e36b9f7ed8f": 1,
+  "b4445e50-25bd-5728-8779-519d36ed5a74": 1,
+  "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9": 8,
+  "d844efc9-4b0f-51a9-8ed7-aaaab0e0234e": 1
+ },
+ "def_occurrences": {
+  "83aaaceb-ee65-5dad-b6dc-fb91a044bf95": 3,
+  "9e5e874f-e4d1-519e-a1e1-a7b95b22bbe3": 1,
+  "c125ff73-7918-5cc6-b95e-c90bd533fc0e": 1,
+  "d8b09b49-7f2b-581e-9701-509103a22e7d": 13
+ },
+ "full": {
+  "code": "None",
+  "detail": "SI_MULTIPLICITY_UNRESOLVED: <model>: reference='k': upper multiplicity on 'racks' is not a known finite integer [root-0/model.sysml:11]",
+  "ran": false,
+  "type": "ElaborationDiagnosticError"
+ },
+ "identity": {
+  "agentic_mbse_file": "/tmp/subset-profile/parity-qnsmotxp/agentic-mbse/src/agentic_mbse/__init__.py",
+  "agentic_mbse_version": "0.1.3",
+  "agentic_rev": "d244991c0ef3fabd2776cc55d245b37b2dbfa310",
+  "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
+  "license_key_present": true,
+  "python_version": "3.12.3",
+  "syside_file": "/tmp/subset-profile/parity-qnsmotxp/sysml-codegen/.venv/lib/python3.12/site-packages/syside/__init__.py",
+  "syside_version": "0.8.4",
+  "sysml_codegen_file": "/tmp/subset-profile/parity-qnsmotxp/sysml-codegen/src/sysml_codegen/__init__.py",
+  "sysml_codegen_version": "0.1.1",
+  "uv_lock_sha256": "a17e9fa120983389d45d2e2a47edbe4da38d67ffe78c07c5f048aacacabee4d4"
+ },
+ "inputs": [
+  "cases/f1_referenced_bounds/model.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "626be9e1-7ed6-5468-8f09-7950f8864817": "f1d",
+  "76a43fdd-ce7d-5cbe-b8ed-200e3f78c313": "f1d::tuned",
+  "83aaaceb-ee65-5dad-b6dc-fb91a044bf95": "f1d::Site",
+  "8d0004e3-fe66-594b-84e0-34bc3aedf284": "f1d::pkgracks",
+  "9e5e874f-e4d1-519e-a1e1-a7b95b22bbe3": "f1d::Hall",
+  "a4f716a1-daa7-5e6a-ae68-37d23cb3e845": "f1d::Hall::racks",
+  "a92d4739-1761-51d6-ad4f-1e36b9f7ed8f": "f1d::hall",
+  "b4445e50-25bd-5728-8779-519d36ed5a74": "f1d::small",
+  "c125ff73-7918-5cc6-b95e-c90bd533fc0e": "f1d::BigSite",
+  "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9": "f1d::Site::racks",
+  "d844efc9-4b0f-51a9-8ed7-aaaab0e0234e": "f1d::site",
+  "d8b09b49-7f2b-581e-9701-509103a22e7d": "f1d::Rack"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9"
+   ],
+   "closure": [
+    "83aaaceb-ee65-5dad-b6dc-fb91a044bf95"
+   ],
+   "path": "76a43fdd-ce7d-5cbe-b8ed-200e3f78c313[]",
+   "type": "83aaaceb-ee65-5dad-b6dc-fb91a044bf95",
+   "usage": "76a43fdd-ce7d-5cbe-b8ed-200e3f78c313"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "76a43fdd-ce7d-5cbe-b8ed-200e3f78c313[]/ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9[0]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "76a43fdd-ce7d-5cbe-b8ed-200e3f78c313[]/ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9[1]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "8d0004e3-fe66-594b-84e0-34bc3aedf284[0]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "8d0004e3-fe66-594b-84e0-34bc3aedf284"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "8d0004e3-fe66-594b-84e0-34bc3aedf284[1]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "8d0004e3-fe66-594b-84e0-34bc3aedf284"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "8d0004e3-fe66-594b-84e0-34bc3aedf284[2]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "8d0004e3-fe66-594b-84e0-34bc3aedf284"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "8d0004e3-fe66-594b-84e0-34bc3aedf284[3]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "8d0004e3-fe66-594b-84e0-34bc3aedf284"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "8d0004e3-fe66-594b-84e0-34bc3aedf284[4]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "8d0004e3-fe66-594b-84e0-34bc3aedf284"
+  },
+  {
+   "children": [
+    "a4f716a1-daa7-5e6a-ae68-37d23cb3e845"
+   ],
+   "closure": [
+    "9e5e874f-e4d1-519e-a1e1-a7b95b22bbe3"
+   ],
+   "path": "a92d4739-1761-51d6-ad4f-1e36b9f7ed8f[]",
+   "type": "9e5e874f-e4d1-519e-a1e1-a7b95b22bbe3",
+   "usage": "a92d4739-1761-51d6-ad4f-1e36b9f7ed8f"
+  },
+  {
+   "children": [
+    "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9"
+   ],
+   "closure": [
+    "83aaaceb-ee65-5dad-b6dc-fb91a044bf95"
+   ],
+   "path": "b4445e50-25bd-5728-8779-519d36ed5a74[]",
+   "type": "83aaaceb-ee65-5dad-b6dc-fb91a044bf95",
+   "usage": "b4445e50-25bd-5728-8779-519d36ed5a74"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "b4445e50-25bd-5728-8779-519d36ed5a74[]/ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9[0]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "b4445e50-25bd-5728-8779-519d36ed5a74[]/ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9[1]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9"
+  },
+  {
+   "children": [
+    "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9"
+   ],
+   "closure": [
+    "83aaaceb-ee65-5dad-b6dc-fb91a044bf95",
+    "c125ff73-7918-5cc6-b95e-c90bd533fc0e"
+   ],
+   "path": "d844efc9-4b0f-51a9-8ed7-aaaab0e0234e[]",
+   "type": "c125ff73-7918-5cc6-b95e-c90bd533fc0e",
+   "usage": "d844efc9-4b0f-51a9-8ed7-aaaab0e0234e"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "d844efc9-4b0f-51a9-8ed7-aaaab0e0234e[]/ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9[0]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "d844efc9-4b0f-51a9-8ed7-aaaab0e0234e[]/ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9[1]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "d844efc9-4b0f-51a9-8ed7-aaaab0e0234e[]/ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9[2]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9"
+  },
+  {
+   "children": [],
+   "closure": [
+    "d8b09b49-7f2b-581e-9701-509103a22e7d"
+   ],
+   "path": "d844efc9-4b0f-51a9-8ed7-aaaab0e0234e[]/ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9[3]",
+   "type": "d8b09b49-7f2b-581e-9701-509103a22e7d",
+   "usage": "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9"
+  }
+ ],
+ "roots": [
+  "76a43fdd-ce7d-5cbe-b8ed-200e3f78c313",
+  "8d0004e3-fe66-594b-84e0-34bc3aedf284",
+  "a92d4739-1761-51d6-ad4f-1e36b9f7ed8f",
+  "b4445e50-25bd-5728-8779-519d36ed5a74",
+  "d844efc9-4b0f-51a9-8ed7-aaaab0e0234e"
+ ],
+ "strict": {
+  "code": "SI_MULTIPLICITY_UNRESOLVED",
+  "detail": "upper multiplicity on 'racks' is not a known finite integer",
+  "ok": false,
+  "type": "MultiplicityExpansionError"
+ },
+ "unexpandable": [
+  [
+   "a4f716a1-daa7-5e6a-ae68-37d23cb3e845",
+   "a92d4739-1761-51d6-ad4f-1e36b9f7ed8f[]",
+   "SI_MULTIPLICITY_UNRESOLVED"
+  ]
+ ],
+ "visits": [
+  [
+   "76a43fdd-ce7d-5cbe-b8ed-200e3f78c313",
+   null
+  ],
+  [
+   "8d0004e3-fe66-594b-84e0-34bc3aedf284",
+   null
+  ],
+  [
+   "a4f716a1-daa7-5e6a-ae68-37d23cb3e845",
+   "a92d4739-1761-51d6-ad4f-1e36b9f7ed8f[]"
+  ],
+  [
+   "a92d4739-1761-51d6-ad4f-1e36b9f7ed8f",
+   null
+  ],
+  [
+   "b4445e50-25bd-5728-8779-519d36ed5a74",
+   null
+  ],
+  [
+   "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9",
+   "76a43fdd-ce7d-5cbe-b8ed-200e3f78c313[]"
+  ],
+  [
+   "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9",
+   "b4445e50-25bd-5728-8779-519d36ed5a74[]"
+  ],
+  [
+   "ccbe5b3b-ea88-5d2a-a2df-5c7fdccee0d9",
+   "d844efc9-4b0f-51a9-8ed7-aaaab0e0234e[]"
+  ],
+  [
+   "d844efc9-4b0f-51a9-8ed7-aaaab0e0234e",
+   null
+  ]
+ ],
+ "writers": [],
+ "writers_status": "no_calc_usages_selected"
+}

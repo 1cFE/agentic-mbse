@@ -1,0 +1,136 @@
+{
+ "calc_attachment": {},
+ "counts": {
+  "4d759b18-1344-54b4-bd03-b74341bdd618": 1,
+  "82a029db-ce00-5bfb-ae19-0efda66d6b76": 1,
+  "b643bd58-349f-50da-a116-e062237a8708": 1,
+  "fe3f6ec1-83e7-5a85-b229-5658c82dccef": 3
+ },
+ "def_occurrences": {
+  "72dcf9b0-133d-55af-96f6-d2c54c59d574": 1,
+  "992f6482-83d8-5ad8-a9db-113baf38ba75": 4,
+  "9e03629d-5008-5356-849e-1ef80d92893c": 2
+ },
+ "full": {
+  "code": "None",
+  "detail": "No calculation, constraint, or calculation definition found in models. There is nothing to generate: check that the model paths include the library and design files you meant to load.",
+  "ran": false,
+  "type": "CodeGenerationError"
+ },
+ "identity": {
+  "agentic_mbse_file": "/tmp/subset-profile/parity-qnsmotxp/agentic-mbse/src/agentic_mbse/__init__.py",
+  "agentic_mbse_version": "0.1.3",
+  "agentic_rev": "d244991c0ef3fabd2776cc55d245b37b2dbfa310",
+  "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
+  "license_key_present": true,
+  "python_version": "3.12.3",
+  "syside_file": "/tmp/subset-profile/parity-qnsmotxp/sysml-codegen/.venv/lib/python3.12/site-packages/syside/__init__.py",
+  "syside_version": "0.8.4",
+  "sysml_codegen_file": "/tmp/subset-profile/parity-qnsmotxp/sysml-codegen/src/sysml_codegen/__init__.py",
+  "sysml_codegen_version": "0.1.1",
+  "uv_lock_sha256": "a17e9fa120983389d45d2e2a47edbe4da38d67ffe78c07c5f048aacacabee4d4"
+ },
+ "inputs": [
+  "cases/f1_multiplicity_only_on_redef/model.sysml"
+ ],
+ "load_errors": false,
+ "names": {
+  "4d759b18-1344-54b4-bd03-b74341bdd618": "f1b::Site::racks",
+  "6e2efe71-501e-52b9-b11c-223425fc24c1": "f1b",
+  "72dcf9b0-133d-55af-96f6-d2c54c59d574": "f1b::BigSite",
+  "82a029db-ce00-5bfb-ae19-0efda66d6b76": "f1b::plain",
+  "992f6482-83d8-5ad8-a9db-113baf38ba75": "f1b::Rack",
+  "9e03629d-5008-5356-849e-1ef80d92893c": "f1b::Site",
+  "b643bd58-349f-50da-a116-e062237a8708": "f1b::site",
+  "fe3f6ec1-83e7-5a85-b229-5658c82dccef": "f1b::BigSite::racks"
+ },
+ "occurrences": [
+  {
+   "children": [
+    "4d759b18-1344-54b4-bd03-b74341bdd618"
+   ],
+   "closure": [
+    "9e03629d-5008-5356-849e-1ef80d92893c"
+   ],
+   "path": "82a029db-ce00-5bfb-ae19-0efda66d6b76[]",
+   "type": "9e03629d-5008-5356-849e-1ef80d92893c",
+   "usage": "82a029db-ce00-5bfb-ae19-0efda66d6b76"
+  },
+  {
+   "children": [],
+   "closure": [
+    "992f6482-83d8-5ad8-a9db-113baf38ba75"
+   ],
+   "path": "82a029db-ce00-5bfb-ae19-0efda66d6b76[]/4d759b18-1344-54b4-bd03-b74341bdd618[]",
+   "type": "992f6482-83d8-5ad8-a9db-113baf38ba75",
+   "usage": "4d759b18-1344-54b4-bd03-b74341bdd618"
+  },
+  {
+   "children": [
+    "fe3f6ec1-83e7-5a85-b229-5658c82dccef"
+   ],
+   "closure": [
+    "72dcf9b0-133d-55af-96f6-d2c54c59d574",
+    "9e03629d-5008-5356-849e-1ef80d92893c"
+   ],
+   "path": "b643bd58-349f-50da-a116-e062237a8708[]",
+   "type": "72dcf9b0-133d-55af-96f6-d2c54c59d574",
+   "usage": "b643bd58-349f-50da-a116-e062237a8708"
+  },
+  {
+   "children": [],
+   "closure": [
+    "992f6482-83d8-5ad8-a9db-113baf38ba75"
+   ],
+   "path": "b643bd58-349f-50da-a116-e062237a8708[]/4d759b18-1344-54b4-bd03-b74341bdd618[0]",
+   "type": "992f6482-83d8-5ad8-a9db-113baf38ba75",
+   "usage": "fe3f6ec1-83e7-5a85-b229-5658c82dccef"
+  },
+  {
+   "children": [],
+   "closure": [
+    "992f6482-83d8-5ad8-a9db-113baf38ba75"
+   ],
+   "path": "b643bd58-349f-50da-a116-e062237a8708[]/4d759b18-1344-54b4-bd03-b74341bdd618[1]",
+   "type": "992f6482-83d8-5ad8-a9db-113baf38ba75",
+   "usage": "fe3f6ec1-83e7-5a85-b229-5658c82dccef"
+  },
+  {
+   "children": [],
+   "closure": [
+    "992f6482-83d8-5ad8-a9db-113baf38ba75"
+   ],
+   "path": "b643bd58-349f-50da-a116-e062237a8708[]/4d759b18-1344-54b4-bd03-b74341bdd618[2]",
+   "type": "992f6482-83d8-5ad8-a9db-113baf38ba75",
+   "usage": "fe3f6ec1-83e7-5a85-b229-5658c82dccef"
+  }
+ ],
+ "roots": [
+  "82a029db-ce00-5bfb-ae19-0efda66d6b76",
+  "b643bd58-349f-50da-a116-e062237a8708"
+ ],
+ "strict": {
+  "ok": true
+ },
+ "unexpandable": [],
+ "visits": [
+  [
+   "4d759b18-1344-54b4-bd03-b74341bdd618",
+   "82a029db-ce00-5bfb-ae19-0efda66d6b76[]"
+  ],
+  [
+   "82a029db-ce00-5bfb-ae19-0efda66d6b76",
+   null
+  ],
+  [
+   "b643bd58-349f-50da-a116-e062237a8708",
+   null
+  ],
+  [
+   "fe3f6ec1-83e7-5a85-b229-5658c82dccef",
+   "b643bd58-349f-50da-a116-e062237a8708[]"
+  ]
+ ],
+ "writers": [],
+ "writers_status": "no_calc_usages_selected"
+}
