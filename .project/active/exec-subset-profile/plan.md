@@ -1,6 +1,6 @@
 # Implementation Plan: Executable-subset capability contract (EXEC-SUBSET-CONTRACT Item 1)
 
-**Status:** In Progress (Phases 1–2 complete)
+**Status:** In Progress (Phases 1–3 complete)
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `exec-subset-profile` (plan written at `1ff91e07`; `src/`, `tests/`, `scripts/` and `pyproject.toml` are unchanged since the design base `a718efec`)
@@ -273,23 +273,23 @@ Also: `test_invocation_allowlist.py` (pure) asserts `SUPPORTED_INVOCATION_IDS` e
 
 **See design for:** [§ Architecture, "ES-005 reuses the allowlist"](design.md#architecture), [R1 grandfathered exception](design.md#what-owning-the-contract-means-in-plain-words), review S8.
 
-- [ ] `src/agentic_mbse/sysml/invocation_allowlist.py` (NEW, pure): `SUPPORTED_INVOCATION_IDS`, `is_supported_invocation_id(uuid) -> bool`.
-- [ ] `src/agentic_mbse/sysml/reference_use.py` (EDIT):
+- [x] `src/agentic_mbse/sysml/invocation_allowlist.py` (NEW, pure): `SUPPORTED_INVOCATION_IDS`, `is_supported_invocation_id(uuid) -> bool`.
+- [x] `src/agentic_mbse/sysml/reference_use.py` (EDIT):
   - `_STANDARD_SUM_FUNCTION_ID` (`:61`) moves to the allowlist module. `_is_plural_invocation` (`:379-392`) and `_require_supported_invocation` (`:395-428`) call the predicate. The raise stays where it is (grandfathered).
   - Add public `invocation_uses(expression) -> tuple[InvocationUse, ...]`: a total walk that resolves no references and uses the same dispatch order as `_walk` (`:302-339`). A failure raises `SemanticEvidenceError` with its existing code; the caller turns it into `InvocationFailed`.
-- [ ] `tests/test_sysml/test_invocation_allowlist.py`, `tests/test_sysml/test_invocation_uses.py` (NEW).
-- [ ] `tests/test_sysml/test_reference_use.py`: **no edit**; it must stay green.
-- [ ] `tests/test_sysml/test_public_api_exports.py`: update only if `invocation_uses` is exported from the package `__init__`.
+- [x] `tests/test_sysml/test_invocation_allowlist.py`, `tests/test_sysml/test_invocation_uses.py` (NEW).
+- [x] `tests/test_sysml/test_reference_use.py`: **no edit**; it must stay green.
+- [x] `tests/test_sysml/test_public_api_exports.py`: update only if `invocation_uses` is exported from the package `__init__`. Not exported, so no edit; the test stays green.
 
 ### Validation
 
 **Automated:**
-- [ ] New tests pass; `test_reference_use.py` unchanged and green.
-- [ ] Standing checks green.
+- [x] New tests pass; `test_reference_use.py` unchanged and green.
+- [x] Standing checks green.
 
 **Manual (P-9):**
-- [ ] Commit. In a temp tree with codegen `b5663c07`, run codegen's pytest suite once with agentic-mbse at `a718efec` and once at this commit. Results must be identical. Log to `evidence/same-generator-phase3.log`.
-- [ ] Re-run the four smoke probes at this commit; observations must match Phase 1's.
+- [x] Commit. In a temp tree with codegen `b5663c07`, run codegen's pytest suite once with agentic-mbse at `a718efec` and once at this commit. Results must be identical. Log to `evidence/same-generator-phase3.log`.
+- [x] Re-run the four smoke probes at this commit; observations must match Phase 1's.
 
 **If codegen's results differ:** the refactor is not byte-faithful. Fix the code until they match. Never record the difference as accepted.
 
@@ -859,6 +859,37 @@ See [design § Potential Risks](design.md#potential-risks). Phase-specific mitig
 - **Test-first order:** the port was ported before its tests, because the oracle captures are its specification and could only be taken once it was committed. The parity test then ran red (no captures) before the capture, and the controls stand in for "see it fail for the right reason".
 
 ### Phase 3 Completion
+**Completed:** 2026-10-18. Edit at `83f48525`; codegen-suite runner at `1f1fa7e9`, `c347dba6`, `175dbd13`.
+
+**Outcome:** the refactor is byte-faithful for codegen. Codegen's own pytest suite gives identical per-test results with agentic-mbse at the design base, just before the edit and at the edit; the four smoke probes are unchanged.
+
+| Run (codegen `b5663c07`, isolated tree) | agentic-mbse | Result |
+|---|---|---|
+| base | `a718efec` | 2685 passed, 53 failed, 7 errors, 9 skipped |
+| before the edit | `c347dba6` | 2685 passed, 53 failed, 7 errors, 9 skipped |
+| after the edit | `83f48525` | 2685 passed, 53 failed, 7 errors, 9 skipped |
+| `codegen_suite.py diff` base→after, before→after | | 2754 tests compared, 0 differ: IDENTICAL |
+
+The 60 failures and errors are the same tests in every run and are environmental: codegen's study and ledger tests need a git work tree (`RootError: no project root`, `git status` / `git diff` over the exported package), and a `git archive` export has none. Logs: `evidence/same-generator-phase3.log`, per-test JSON and full output in `evidence/codegen-suite/`.
+
+Smoke probes at `83f48525`: 4/4 certify, and every observation field except the agentic-mbse revision is identical to Phase 1's (`evidence/smoke-probes-phase3.md`). The committed `observation.json` files stay at Phase 1's revision.
+
+**Actual Changes:**
+- `src/agentic_mbse/sysml/invocation_allowlist.py` (new, pure): `STANDARD_SUM_FUNCTION_ID`, `SUPPORTED_INVOCATION_IDS`, `is_supported_invocation_id`, and `InvocationUse` (callable id and name, authored text, location; `supported` is computed from the predicate).
+- `src/agentic_mbse/sysml/reference_use.py` (edit): imports the allowlist; `_require_supported_invocation` calls the predicate through `_is_supported_invocation`, and its raise and message are unchanged; the function-id and diagnostic reads are factored into `_invoked_function_id`, `_invocation_reference`, `_invoked_function_name`, shared by the raise and the new walk. New public `invocation_uses(expression)`: same dispatch order as `_walk`, resolves no reference, refuses nothing, raises the walk's named codes (`EXPRESSION_DEPTH_EXHAUSTED` with operation `invocation_uses`, `OPERAND_ITERATION_FAILED`, a malformed unit annotation). One line was reformatted by `ruff format` (`ExactSemanticPath(...)` in `_reference_use`), needed for the modified file to pass the format check.
+- `scripts/subset_profile/codegen_suite.py` (new): `run --agentic-rev REV --label NAME` and `diff A B`, per-test outcomes from JUnit XML.
+- Tests: `test_invocation_allowlist.py` (4, includes a subprocess purity check), `test_invocation_uses.py` (16: the stencil cases plus nested calls and a conditional, a property test that the reference walk raises exactly when `invocation_uses` reports an unsupported call, and the depth failure). `test_reference_use.py` unchanged and green; selector-ownership gate green.
+
+**Validation:** `pytest tests/` 2938 pass, the same 3 environment failures; `ruff check src/ tests/` 118 (baseline); `mypy src/` 97 in 19 files (baseline), none in new or edited files. New and edited files pass `ruff format --check`; the new modules pass `mypy --strict`. Red check: with the `reference_use` edit stashed, both new test files fail on the missing import.
+
+**Issues:**
+- The first codegen-suite runs failed with "No module named pytest": plain `uv sync --frozen` does not install codegen's `dev` extra. The runner now adds `uv sync --frozen --extra dev` (same lock). The first `-rA` parse also lost 41 parametrized ids containing spaces; outcomes now come from JUnit XML.
+
+**Deviations from Plan:**
+- **`_is_plural_invocation` keys on `sum`'s identity, not on the allowlist predicate.** Plurality is `sum`'s collection semantics. Keying it on the allowlist would make any callable added later consume a collection. The two are the same set today, so behavior is unchanged; `_require_supported_invocation` and `invocation_uses` use the predicate, as planned.
+- **`InvocationUse` lives in `invocation_allowlist.py`,** not `reference_use.py`, so Phase 4's pure `subset_facts.py` can hold it without importing a SysIDE reader.
+- **Three codegen-suite runs, not two:** `a718efec` (the plan's comparison point) and `c347dba6` (immediately before the edit) as "before", `83f48525` as "after", per the brief.
+- **Test-first order:** the module and tests were written in one pass; the stash check above stands in for watching them fail first.
 
 ### Phase 4 Completion
 

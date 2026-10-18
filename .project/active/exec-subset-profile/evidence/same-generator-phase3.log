@@ -1,0 +1,18 @@
+# Same-generator check for the Phase 3 edit (plan P-9)
+# codegen b5663c07 pytest suite, run in isolated trees by scripts/subset_profile/codegen_suite.py;
+# per-test outcomes from JUnit XML in evidence/codegen-suite/<label>.json, full output in <label>.log.
+# base a718efec = design base; before c347dba6 = last commit before the edit; after 83f48525 = the edit.
+
+phase3-base-a718efec: agentic a718efecad0ad6f31c4752f1b3f289fb83be336b exit=1 | = 53 failed, 2685 passed, 9 skipped, 124 deselected, 7 errors in 115.43s (0:01:55) =
+phase3-after-83f48525: agentic 83f48525b867445364104a64f816a36133a6a319 exit=1 | = 53 failed, 2685 passed, 9 skipped, 124 deselected, 7 errors in 114.88s (0:01:54) =
+2754 tests compared, 0 differ: IDENTICAL
+exit=0
+
+phase3-before-c347dba6: agentic c347dba69eae5e47f0df4b8f2226c29e49598962 exit=1 | = 53 failed, 2685 passed, 9 skipped, 124 deselected, 7 errors in 114.67s (0:01:54) =
+phase3-after-83f48525: agentic 83f48525b867445364104a64f816a36133a6a319 exit=1 | = 53 failed, 2685 passed, 9 skipped, 124 deselected, 7 errors in 114.88s (0:01:54) =
+2754 tests compared, 0 differ: IDENTICAL
+exit=0
+
+# The 53 failures and 7 errors are the same tests in all three runs. They need a git work tree
+# (sysml_codegen.study.roots.RootError: no project root; git status / git diff over the exported package),
+# which a git-archive export does not have. They are a property of the isolated tree, not of agentic-mbse.
