@@ -1,7 +1,7 @@
 # Implementation Plan: Reliable arXiv extraction
 
 **Work item:** ARXIV-EXTRACTION
-**Status:** In Progress
+**Status:** Implementation complete (Phases 0–8, 2026-10-18); awaiting audit
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `fix/arxiv-extraction` (worktree `/home/reid/src/agentic-mbse-worktrees/arxiv-extraction`), base local `main` at `8b027bbc`. `src/`, `tests/`, `docs/` and `pyproject.toml` have no diff from the base at planning time.
@@ -478,13 +478,13 @@ Corroborate the fixtures against today's real arXiv pages: a consumer's run with
 
 ### Steps
 
-- [ ] Record date, `pandoc --version`, and the branch commit.
-- [ ] Web route: `uv run agentic-mbse extract https://arxiv.org/html/2610.14224 -o /tmp/harness2-web > /tmp/harness2-web.txt 2>&1`.
-- [ ] PDF route: `uv run agentic-mbse extract https://arxiv.org/pdf/2610.14224 -o /tmp/harness2-pdf --budget 0 > /tmp/harness2-pdf.txt 2>&1`. This exercises both the stamp and the arxiv.org source URL.
-- [ ] For each route record: fetched source URL and version (frontmatter), backend, saved image count versus files in `images/`, any dangling refs (`grep -o "](images/[^)]*)"` each checked for existence), data-URI refs by type (`grep -o "data:image/[a-z+]*" output.md | sort | uniq -c`): in-article `data:image/svg+xml` refs are expected and legitimate (LaTeXML pictures such as the title logo and inline diagrams; paper content under invariant 6), while the footer `[LOGO]` PNG (`iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO`) and any other chrome data URI must be absent, chrome strings absent (`Report Issue`, footer and nav text chosen in phase 1), and every warning printed.
-- [ ] If network is unavailable, record that and stop. Either way this step does not block close. Any surprise against a bet (B1, B2, B5) gets surfaced in the record, not silently patched.
+- [x] Record date, `pandoc --version`, and the branch commit.
+- [x] Web route: `uv run agentic-mbse extract https://arxiv.org/html/2610.14224 -o /tmp/harness2-web > /tmp/harness2-web.txt 2>&1`.
+- [x] PDF route: `uv run agentic-mbse extract https://arxiv.org/pdf/2610.14224 -o /tmp/harness2-pdf --budget 0 > /tmp/harness2-pdf.txt 2>&1`. This exercises both the stamp and the arxiv.org source URL.
+- [x] For each route record: fetched source URL and version (frontmatter), backend, saved image count versus files in `images/`, any dangling refs (`grep -o "](images/[^)]*)"` each checked for existence), data-URI refs by type (`grep -o "data:image/[a-z+]*" output.md | sort | uniq -c`): in-article `data:image/svg+xml` refs are expected and legitimate (LaTeXML pictures such as the title logo and inline diagrams; paper content under invariant 6), while the footer `[LOGO]` PNG (`iVBORw0KGgoAAAANSUhEUgAAAAsAAAAO`) and any other chrome data URI must be absent, chrome strings absent (`Report Issue`, footer and nav text chosen in phase 1), and every warning printed.
+- [x] If network is unavailable, record that and stop. Either way this step does not block close. Any surprise against a bet (B1, B2, B5) gets surfaced in the record, not silently patched.
 
-**Record:** _(fill in)_
+**Record:** see "Phase 8 Record" under Implementation Notes.
 
 ---
 
@@ -725,8 +725,29 @@ Every spec row has at least one named test except the live check, which is Phase
 - Full suite 2909 passed, same 3 baseline failures. mypy at 97. ruff clean. Format hunks at base on touched files.
 
 ### Phase 8 Record
-**Completed:**
-**Result:**
+**Completed:** 2026-10-18 16:45–16:46 UTC. Network was available. Pandoc 3.1.3 (`~/.local/opt/pandoc-3.1.3/bin` on PATH), branch commit `ca7dc35e`. Output went to scratch directories outside the repo: `/tmp/harness2-web`, `/tmp/harness2-pdf` (logs `/tmp/harness2-web.txt`, `/tmp/harness2-pdf.txt`).
+
+**Result: both routes pass.** In both, every figure of the paper is saved locally and referenced relatively, no chrome reaches the output, and no download fails.
+
+**Figure count.** The full paper has 19 figures, not 9. The 9 in the orchestrator brief and the Phase 6 acceptance are the figures in the trimmed fixture (main body, Figures 1–9). The live page also has Figures 10–19 in Appendix E (`A5.F10`–`A5.F19`): 12 SVG `<object>` figures and 7 `<img>` figures in all. "Figure 1:" through "Figure 19:" captions all appear in the output on both routes.
+
+| Check | Web route `extract https://arxiv.org/html/2610.14224` | PDF route `extract https://arxiv.org/pdf/2610.14224 --budget 0` |
+|---|---|---|
+| Exit, summary line | 0; `(244,277 chars, 19 images, backend: pandoc-arxiv)` | 0; `[pandoc_arxiv] (244,110 chars, 35 headings, 13 table rows, 19 images, 3.9s)` |
+| Fetched source and version | frontmatter `source: "https://arxiv.org/html/2610.14224v1"` (bare URL fetched, v1 recorded) | frontmatter `source: "https://arxiv.org/pdf/2610.14224"` (the PDF URL; see observation 2) |
+| Identity evidence | n/a | Re-fetched PDF: `identify_arxiv_paper` gives `2610.14224v1` from the stamp alone, and `("stamp", "url")` with the final URL. B2 holds on the real arXiv PDF |
+| Saved images vs figures | 19 files in `images/`, 19 distinct `images/<name>` refs, `metrics.json` `image_count: 19`, 19 figures | same: 19 files, 19 refs, `image_count: 19`, 19 figures |
+| Every image ref has a file | yes: 0 refs outside `images/`, 0 missing files | yes: 0 outside, 0 missing |
+| SVG figures (D17/D17a) | all 12 `.svg` figures saved, including through the web sanitizer | all 12 saved |
+| Chrome absent | 0 hits each for `Report Issue`, `Instructions for reporting errors`, `modal-form` (issue dialog), `html-header-nav`, `ltx_TOC` (navigation), `major funders`, `Simons Foundation`, `Operational Status` (footers, funder logos), `09 Oct 2026` (watermark), and the footer logo PNG prefix | same, all 0 |
+| Data URIs | 12, all `data:image/svg+xml`: LaTeXML pictures inside the article (title logo, inline diagrams), kept under invariant 6. No PNG/chrome data URI | same 12 |
+| Download failures / warnings | none (no `warnings` in `metrics.json`, none on stderr) | none |
+| Content hash | `e0c817d9…069bb` (raw fetched HTML) | same hash; the Phase 5 manual run on the saved `ref/` page gave the same value |
+
+**Observations.** None of these is against a design bet; recorded, not patched.
+1. **One non-figure graphic stays unresolved.** The page has 20 `ltx_graphics`; the 20th is the title logo `2610.14224v1/figures/harnessmind_logo.png`. It sits inside the title's inline LaTeXML `<svg>` picture (`<foreignObject>`), which Pandoc turns into one `data:image/svg+xml` URI. The logo's relative `<img>` therefore lives inside the data URI, where persistence never sees it (B4 covers markdown refs only), so the title logo won't render offline. It is decoration, not a figure. If wanted, it is follow-up work, outside this item's spec.
+2. **PDF-URL provenance names the PDF, while the hash covers the HTML.** For a PDF URL, the CLI's frontmatter prefers `source_url_override` (the PDF URL) over `PipelineResult.source_url` (`https://arxiv.org/html/2610.14224v1`). The `content_hash_sha256` is of the fetched HTML, so the source and the hash name different artifacts, and the fetched HTML version isn't in the frontmatter. This precedence predates this item (`extract_cli.py`, frontmatter block). R5 required existing provenance to be preserved, so it was not changed; it is a candidate for the filed extraction-provenance work.
+3. Both outputs start with LaTeXML error residue from the paper's own source (`\\tl_set:Ne\\comptag`, `comptag \\reportnumber\\uselogo`). It is inside the article, so it is paper content by the selection rule, not chrome.
 
 ---
 
