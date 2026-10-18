@@ -1,0 +1,15 @@
+kind = "record"
+rule = "string-value-omission"
+shape = "string_value"
+context = "attribute_value"
+variant = "attribute_declaration"
+expected_outcome = "omitted"
+
+[construct]
+description = "String attribute fuel_unit declared with its value, attribute fuel_unit : String = \"liter\""
+file = "model.sysml"
+lines = [4, 4]
+
+[expect]
+omitted_element = "fx__gen__fuel_unit"
+positive_control = "fx__gen__rate"

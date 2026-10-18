@@ -1,0 +1,13 @@
+kind = "record"
+rule = "conditional-expression"
+shape = "conditional_unresolved_branch"
+context = "other_expression_site"
+expected_outcome = "admitted"
+
+[construct]
+description = "calc usage m's bare result expression if v < 1.0 ? v else 1.0, never examined; control is m's output"
+file = "model.sysml"
+lines = [6, 6]
+
+[expect]
+positive_control = "fx__site__m__r"

@@ -1,0 +1,13 @@
+kind = "record"
+rule = "indexed-reference"
+shape = "indexed_reference"
+context = "other_expression_site"
+expected_outcome = "admitted"
+
+[construct]
+description = "calc usage m's bare result expression qs#(1).v, never examined; control is m's output"
+file = "model.sysml"
+lines = [8, 8]
+
+[expect]
+positive_control = "fx__site__m__r"

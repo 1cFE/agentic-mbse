@@ -1,0 +1,13 @@
+kind = "reproduction"
+rule = "candidate-es-008"
+shape = "nested_named_subset"
+context = "part_usage"
+expected_outcome = "refused"
+
+[construct]
+description = "named server subsets inside named rack subsets, each redefining psu efficiency (dc3 U2)"
+file = "model.sysml"
+lines = [11, 18]
+
+[expect]
+code = "SI_REDEFINITION_INVALID"

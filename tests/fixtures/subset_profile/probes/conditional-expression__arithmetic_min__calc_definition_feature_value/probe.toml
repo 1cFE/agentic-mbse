@@ -1,0 +1,14 @@
+kind = "control"
+rule = "conditional-expression"
+shape = "arithmetic_min"
+context = "calc_definition_feature_value"
+expected_outcome = "admitted"
+supersedes = "es006_admitted_arithmetic_min"
+
+[construct]
+description = "calc def Min2's result written as arithmetic, no conditional"
+file = "model.sysml"
+lines = [3, 3]
+
+[expect]
+positive_control = "fx__site__m__r"

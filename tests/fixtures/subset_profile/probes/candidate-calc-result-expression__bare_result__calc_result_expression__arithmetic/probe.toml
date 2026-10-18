@@ -1,0 +1,14 @@
+kind = "reproduction"
+rule = "candidate-calc-result-expression"
+shape = "bare_result"
+context = "calc_result_expression"
+variant = "arithmetic"
+expected_outcome = "refused"
+
+[construct]
+description = "calc def Twice whose result is the bare expression 2.0 * v (return r declared without a value)"
+file = "model.sysml"
+lines = [3, 3]
+
+[expect]
+code = "SI_EVIDENCE_INCOMPLETE"

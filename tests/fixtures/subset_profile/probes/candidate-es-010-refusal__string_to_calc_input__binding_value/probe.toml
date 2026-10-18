@@ -1,0 +1,14 @@
+kind = "reproduction"
+rule = "candidate-es-010-refusal"
+shape = "string_to_calc_input"
+context = "binding_value"
+expected_outcome = "refused"
+supersedes = "es010_refused_string_calc_input"
+
+[construct]
+description = "String fuel_unit bound to calc input u and valued on the instance; refused at projection"
+file = "model.sysml"
+lines = [4, 5]
+
+[expect]
+code = "SI_RENDERING_COLLISION"

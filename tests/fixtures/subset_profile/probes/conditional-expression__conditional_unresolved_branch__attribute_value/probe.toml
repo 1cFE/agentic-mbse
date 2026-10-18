@@ -1,0 +1,13 @@
+kind = "record"
+rule = "conditional-expression"
+shape = "conditional_unresolved_branch"
+context = "attribute_value"
+expected_outcome = "refused"
+
+[construct]
+description = "attribute low valued by if x < y ? x else y"
+file = "model.sysml"
+lines = [6, 6]
+
+[expect]
+code = "SI_EVIDENCE_INCOMPLETE"

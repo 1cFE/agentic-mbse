@@ -1,0 +1,14 @@
+kind = "control"
+rule = "string-value-omission"
+shape = "numeric_value"
+context = "attribute_value"
+expected_outcome = "admitted"
+supersedes = "es010_admitted_numeric_value"
+
+[construct]
+description = "numeric attribute fuel_code valued by the redefinition shorthand"
+file = "model.sysml"
+lines = [5, 5]
+
+[expect]
+positive_control = "fx__gen__fuel_code"
