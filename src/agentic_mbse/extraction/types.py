@@ -122,3 +122,5 @@ class PipelineResult:
     source_url: str | None = None
     content_hash: str | None = None
     raw_source_bytes: bytes | None = None
+    # Fallbacks and failures the caller should see (shown on stderr, saved to metrics.json)
+    warnings: list[str] = field(default_factory=list)

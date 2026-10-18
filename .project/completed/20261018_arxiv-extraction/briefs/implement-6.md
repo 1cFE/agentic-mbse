@@ -1,0 +1,7 @@
+Audit round 1 is in .project/active/arxiv-extraction/audit.md (verdict Needs Work). Orchestrator calls [AGENT]:
+
+- Must-fix: implement design D18 (end of design.md), saving in-article data: images as files under images/ in both routes, counted in image_count. Acceptance: on the real fixture and in a live rerun of 2610.14224 (both routes), zero `data:` links remain in output.md, every image ref points at an existing file, and the saved count equals the files written. Also check whether the title logo (Phase 8 follow-up) is now covered; record either way.
+- Take audit suggestions 1 (persist_images catches the realistic fetch failures, including ValueError and http.client.HTTPException, and warns rather than crashing; no bare except), 2 (keep the conversion warning when the web route double-fails), 3 (give the shared Pandoc runner and its error a route-neutral public name in arxiv_html, or move it to a neutral module, so the plain-HTML fallback stops importing a private arXiv name; choose the smaller clean change), 5 (docs sentence), 6 (build ArxivSource once up front in the web route, as the PDF route does).
+- Leave suggestion 4 (the web route sanitizes, by design D17a) and 7 (detect_arxiv_id kept for outside callers).
+- The spec evidence line and spike addendum are already corrected.
+Test-first, green, one commit per logical change with decision-led subjects and the Co-Authored-By line; update plan Implementation Notes (add a "Post-audit fixes" section). End with ARTIFACT: <plan path>.

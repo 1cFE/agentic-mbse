@@ -162,6 +162,17 @@ class PipelineConfig:
     quality_gate: QualityGateConfig = field(default_factory=QualityGateConfig)
     profile: bool = False
     save_source: bool = False  # carry raw bytes on PipelineResult for --save-source
+    pdf_source_url: str | None = None  # URL the PDF was fetched from (arXiv identity evidence)
+    # Automatic arXiv HTML substitution: None follows ARXIV_SHORTCUT_DEFAULT
+    # (pandoc_convert); False also forbids arxiv_html_path.
+    arxiv_shortcut: bool | None = None
+
+    def __post_init__(self) -> None:
+        if self.arxiv_shortcut is False and self.arxiv_html_path is not None:
+            raise ValueError(
+                "arxiv_shortcut=False contradicts arxiv_html_path: the HTML path asks "
+                "for the arXiv HTML shortcut that arxiv_shortcut=False disables"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -169,61 +180,106 @@ class PipelineConfig:
 # ---------------------------------------------------------------------------
 
 
-def _try_arxiv_shortcut(pdf_path: Path, config: PipelineConfig) -> PipelineResult | None:
+def _try_arxiv_shortcut(
+    pdf_path: Path, config: PipelineConfig
+) -> tuple[PipelineResult | None, list[str]]:
     """Attempt arXiv HTML shortcut via Pandoc.
 
-    Returns PipelineResult with source="pandoc_arxiv" on success, None on failure.
+    Returns ``(result, warnings)``. ``result`` has source="pandoc_arxiv" on
+    success and is None when the shortcut does not apply or fails. Every
+    failure, an ignored ``arxiv_html_path`` and each figure that could not be
+    saved adds a warning; the shortcut simply not applying (turned off, no
+    Pandoc, no arXiv ID) does not.
     """
+    import pymupdf  # type: ignore[import-untyped]
+
+    from agentic_mbse.extraction.arxiv_html import (
+        ArxivConversionError,
+        convert_article,
+        extract_article,
+        fetch_image,
+        load_arxiv_html,
+        persist_images,
+    )
     from agentic_mbse.extraction.frontmatter import compute_source_hash
     from agentic_mbse.extraction.pandoc_convert import (
         _pandoc_available,
         check_arxiv_html,
-        convert_arxiv_html,
-        detect_arxiv_id,
+        identify_arxiv_paper,
+        resolve_arxiv_shortcut,
         resolve_fetched_version,
         strip_arxiv_version,
     )
 
+    # An explicit arxiv_html_path is a source override; automatic detection
+    # runs only when the shortcut is on. Neither applying is not a failure.
+    if config.arxiv_html_path is None and not resolve_arxiv_shortcut(config.arxiv_shortcut):
+        return None, []
+
+    if not _pandoc_available():
+        if config.arxiv_html_path is None:
+            return None, []
+        return None, [
+            f"arXiv HTML {config.arxiv_html_path} ignored: Pandoc not found on PATH; "
+            "extracted the PDF instead"
+        ]
+
+    # The failures the shortcut falls back from: an unreadable PDF during
+    # identification, an HTML page that can't be fetched, read or decoded, and
+    # a page with no recognized article or a failed Pandoc run.
     try:
-        if not _pandoc_available():
-            return None
-
-        arxiv_id = None
+        arxiv_id: str | None = None
+        source_url: str | None = None
         if config.arxiv_html_path is not None:
-            html_source = str(config.arxiv_html_path)
+            source = load_arxiv_html(config.arxiv_html_path)
         else:
-            arxiv_id = detect_arxiv_id(pdf_path)
+            identity = identify_arxiv_paper(pdf_path, config.pdf_source_url)
+            if identity.conflict is not None:
+                return None, [
+                    f"arXiv identity conflict ({identity.conflict}); extracted the PDF instead"
+                ]
+            arxiv_id = identity.arxiv_id
             if arxiv_id is None:
-                return None
-            html_url = check_arxiv_html(arxiv_id)
-            if html_url is None:
-                return None
-            html_source = html_url
-
-        markdown, raw_bytes = convert_arxiv_html(html_source)
-        metrics = compute_metrics(markdown)
-        content_hash = compute_source_hash(raw_bytes)
-
-        # Record the version arXiv actually served (bare URL = latest), so
-        # provenance names the fetched version rather than the pinned one.
-        source_url = html_source if html_source.startswith("http") else None
-        if arxiv_id is not None:
-            bare_id, _ = strip_arxiv_version(arxiv_id)
-            version = resolve_fetched_version(raw_bytes.decode("utf-8", "replace"), bare_id)
-            if version is not None:
-                source_url = f"https://arxiv.org/html/{bare_id}v{version}"
-
-        return PipelineResult(
-            markdown=markdown,
-            metrics=metrics,
-            source="pandoc_arxiv",
-            source_url=source_url,
-            content_hash=content_hash,
-            raw_source_bytes=raw_bytes if config.save_source else None,
-        )
-    except Exception:
+                return None, []
+            source_url = check_arxiv_html(arxiv_id)
+            if source_url is None:
+                return None, [
+                    f"arXiv paper {arxiv_id} identified but arXiv serves no HTML "
+                    "version; extracted the PDF instead"
+                ]
+            source = load_arxiv_html(source_url)
+        markdown = convert_article(extract_article(source.html))
+    except (ArxivConversionError, OSError, UnicodeDecodeError, pymupdf.FileDataError) as exc:
         logger.debug("arXiv shortcut failed, falling through to PDF extraction", exc_info=True)
-        return None
+        return None, [f"arXiv HTML shortcut failed ({exc}); extracted the PDF instead"]
+
+    # Record the version arXiv actually served (bare URL = latest), so
+    # provenance names the fetched version rather than the pinned one.
+    if arxiv_id is not None:
+        bare_id, _ = strip_arxiv_version(arxiv_id)
+        version = resolve_fetched_version(source.html, bare_id)
+        if version is not None:
+            source_url = f"https://arxiv.org/html/{bare_id}v{version}"
+
+    # Save the paper's figures beside the output. Without an images directory
+    # (programmatic use) refs stay as the page wrote them, a documented limit.
+    image_count = 0
+    image_warnings: list[str] = []
+    if config.extracted_images_dir is not None:
+        images = persist_images(
+            markdown, source.image_base, config.extracted_images_dir, fetch_image
+        )
+        markdown, image_count, image_warnings = images.markdown, images.saved_count, images.warnings
+
+    return PipelineResult(
+        markdown=markdown,
+        metrics=compute_metrics(markdown),
+        source="pandoc_arxiv",
+        image_count=image_count,
+        source_url=source_url,
+        content_hash=compute_source_hash(source.raw_bytes),
+        raw_source_bytes=source.raw_bytes if config.save_source else None,
+    ), image_warnings
 
 
 def _try_detect_tables(pdf_path: Path, config: PipelineConfig) -> dict[int, list[DetectedTable]]:
@@ -377,12 +433,13 @@ def extract_pdf(
     # ------------------------------------------------------------------
     if prof:
         _t = time.perf_counter()
-    arxiv_result = _try_arxiv_shortcut(pdf_path, config)
+    arxiv_result, shortcut_warnings = _try_arxiv_shortcut(pdf_path, config)
     if prof:
         prof.arxiv_shortcut = time.perf_counter() - _t
     if arxiv_result is not None:
         arxiv_result.elapsed_seconds = time.time() - start_time
         arxiv_result.profile = prof
+        arxiv_result.warnings = shortcut_warnings
         return arxiv_result
 
     # ------------------------------------------------------------------
@@ -401,6 +458,7 @@ def extract_pdf(
             error=str(exc),
             elapsed_seconds=time.time() - start_time,
             profile=prof,
+            warnings=shortcut_warnings,
         )
     if prof:
         prof.base_extraction = time.perf_counter() - _t
@@ -709,4 +767,5 @@ def extract_pdf(
         claude_pages_succeeded=len(claude_results),
         image_count=image_count,
         profile=prof,
+        warnings=shortcut_warnings,
     )

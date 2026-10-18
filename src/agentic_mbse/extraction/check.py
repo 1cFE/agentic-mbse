@@ -29,7 +29,8 @@ from agentic_mbse.extraction.pandoc_convert import (
     _pandoc_available,
     check_arxiv_html,
     convert_arxiv_html,
-    detect_arxiv_id,
+    identify_arxiv_paper,
+    resolve_arxiv_shortcut,
 )
 from agentic_mbse.extraction.pymupdf_backend import extract_pages
 from agentic_mbse.extraction.quality_gate import _assess_math_garbling
@@ -67,6 +68,10 @@ class ProbeResult:
     error: str | None = None
     cost_usd: float | None = None
     model: str | None = None
+    # Pandoc probe only: extract would take the arXiv HTML shortcut for this PDF
+    # (shortcut enabled, paper identified, its HTML version fetched and
+    # converted). Drives the arxiv_shortcut capability.
+    arxiv_shortcut_applies: bool = False
 
 
 @dataclass
@@ -325,23 +330,44 @@ def probe_docling(pdf_path: Path) -> ProbeResult:
     )
 
 
-def probe_pandoc(pdf_path: Path) -> ProbeResult:
-    """Probe Pandoc availability and arXiv HTML conversion."""
+def probe_pandoc(pdf_path: Path, *, arxiv_shortcut: bool | None = None) -> ProbeResult:
+    """Probe Pandoc and predict the PDF pipeline's arXiv shortcut for *pdf_path*.
+
+    Applies the same shortcut control and identity rule as ``extract``, so a
+    PDF that merely cites an arXiv paper is reported as not identified and
+    nothing is fetched. Images are not downloaded: this is a probe.
+    """
     if not _pandoc_available():
         return ProbeResult("pandoc", ProbeStatus.NOT_INSTALLED)
+    if not resolve_arxiv_shortcut(arxiv_shortcut):
+        return ProbeResult(
+            "pandoc", ProbeStatus.PASS, detail="binary found, arXiv shortcut disabled"
+        )
 
     detail_parts = ["binary found"]
+    arxiv_shortcut_applies = False
     try:
-        arxiv_id = detect_arxiv_id(pdf_path)
-        if arxiv_id:
-            detail_parts.append(f"arXiv ID detected ({arxiv_id})")
-            html_url = check_arxiv_html(arxiv_id)
+        identity = identify_arxiv_paper(pdf_path)
+        if identity.conflict is not None:
+            detail_parts.append(f"no arXiv paper identified (conflict: {identity.conflict})")
+        elif identity.arxiv_id is None:
+            detail_parts.append("no arXiv paper identified")
+        else:
+            evidence = "+".join(identity.evidence)
+            detail_parts.append(f"arXiv paper identified ({identity.arxiv_id} from {evidence})")
+            html_url = check_arxiv_html(identity.arxiv_id)
             if html_url:
-                md = convert_arxiv_html(html_url)
-                detail_parts.append(f"HTML converted ({len(md)} chars)")
+                markdown, _raw_bytes = convert_arxiv_html(html_url)
+                detail_parts.append(f"HTML converted ({len(markdown)} chars)")
+                arxiv_shortcut_applies = True
             else:
                 detail_parts.append("no HTML available")
-        return ProbeResult("pandoc", ProbeStatus.PASS, detail=", ".join(detail_parts))
+        return ProbeResult(
+            "pandoc",
+            ProbeStatus.PASS,
+            detail=", ".join(detail_parts),
+            arxiv_shortcut_applies=arxiv_shortcut_applies,
+        )
     except Exception as exc:
         return ProbeResult("pandoc", ProbeStatus.FAIL, error=str(exc)[:200])
 
@@ -414,11 +440,7 @@ def compute_capabilities(
 ) -> dict[str, bool]:
     """Map component statuses to user-visible capabilities."""
     pandoc_probe = next((p for p in probes if p.component == "pandoc"), None)
-    pandoc_has_arxiv = (
-        pandoc_probe is not None
-        and pandoc_probe.detail is not None
-        and "arXiv" in pandoc_probe.detail
-    )
+    shortcut_applies = pandoc_probe is not None and pandoc_probe.arxiv_shortcut_applies
 
     return {
         "base_extraction": _probe_ok(probes, "pymupdf4llm"),
@@ -428,7 +450,7 @@ def compute_capabilities(
             and (_probe_ok(probes, "gmft") or _probe_ok(probes, "img2table"))
         ),
         "math_reextraction": _probe_ok(probes, "claude"),
-        "arxiv_shortcut": _probe_ok(probes, "pandoc") and pandoc_has_arxiv,
+        "arxiv_shortcut": _probe_ok(probes, "pandoc") and shortcut_applies,
         "docling_tables": _probe_ok(probes, "docling"),
     }
 
@@ -467,7 +489,7 @@ _CAPABILITY_LABELS: dict[str, str] = {
     "table_detection": "Table detection and enhancement (GMFT + Img2Table)",
     "table_enhancement": "Table enhancement via Claude",
     "math_reextraction": "Math/equation re-extraction (Claude)",
-    "arxiv_shortcut": "arXiv HTML shortcut (Pandoc + arXiv ID found)",
+    "arxiv_shortcut": "arXiv HTML shortcut (PDF identified as an arXiv paper with an HTML version)",
     "docling_tables": "Third-pass table detection (Docling)",
 }
 
@@ -556,8 +578,13 @@ def run_check(
     pdf_path: Path,
     claude_model: str = "haiku",
     claude_budget: float = 2.0,
+    arxiv_shortcut: bool | None = None,
 ) -> CheckResult:
-    """Run all component probes against a PDF and return aggregated results."""
+    """Run all component probes against a PDF and return aggregated results.
+
+    *arxiv_shortcut* is the same control ``extract`` takes (None follows
+    ``ARXIV_SHORTCUT_DEFAULT``), so the Pandoc probe predicts that run.
+    """
     all_false_caps = {
         "base_extraction": False,
         "table_detection": False,
@@ -608,7 +635,7 @@ def run_check(
     _restore_env()
 
     # 3. Pandoc probe
-    pandoc_result = probe_pandoc(pdf_path)
+    pandoc_result = probe_pandoc(pdf_path, arxiv_shortcut=arxiv_shortcut)
 
     # 4. Claude probe — cost warning to stderr (only if budget > 0 AND installed)
     if claude_budget > 0 and shutil.which("claude"):
