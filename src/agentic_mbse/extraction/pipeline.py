@@ -187,15 +187,19 @@ def _try_arxiv_shortcut(
 
     Returns ``(result, warnings)``. ``result`` has source="pandoc_arxiv" on
     success and is None when the shortcut does not apply or fails. Every
-    failure, and an ignored ``arxiv_html_path``, adds a warning; the shortcut
-    simply not applying (turned off, no Pandoc, no arXiv ID) does not.
+    failure, an ignored ``arxiv_html_path`` and each figure that could not be
+    saved adds a warning; the shortcut simply not applying (turned off, no
+    Pandoc, no arXiv ID) does not.
     """
     import pymupdf  # type: ignore[import-untyped]
 
     from agentic_mbse.extraction.arxiv_html import (
         ArxivConversionError,
         convert_article,
+        extract_article,
+        fetch_image,
         load_arxiv_html,
+        persist_images,
     )
     from agentic_mbse.extraction.frontmatter import compute_source_hash
     from agentic_mbse.extraction.pandoc_convert import (
@@ -244,7 +248,7 @@ def _try_arxiv_shortcut(
                     "version; extracted the PDF instead"
                 ]
             source = load_arxiv_html(source_url)
-        markdown = convert_article(source.html)
+        markdown = convert_article(extract_article(source.html))
     except (ArxivConversionError, OSError, UnicodeDecodeError, pymupdf.FileDataError) as exc:
         logger.debug("arXiv shortcut failed, falling through to PDF extraction", exc_info=True)
         return None, [f"arXiv HTML shortcut failed ({exc}); extracted the PDF instead"]
@@ -257,14 +261,25 @@ def _try_arxiv_shortcut(
         if version is not None:
             source_url = f"https://arxiv.org/html/{bare_id}v{version}"
 
+    # Save the paper's figures beside the output. Without an images directory
+    # (programmatic use) refs stay as the page wrote them, a documented limit.
+    image_count = 0
+    image_warnings: list[str] = []
+    if config.extracted_images_dir is not None:
+        images = persist_images(
+            markdown, source.image_base, config.extracted_images_dir, fetch_image
+        )
+        markdown, image_count, image_warnings = images.markdown, images.saved_count, images.warnings
+
     return PipelineResult(
         markdown=markdown,
         metrics=compute_metrics(markdown),
         source="pandoc_arxiv",
+        image_count=image_count,
         source_url=source_url,
         content_hash=compute_source_hash(source.raw_bytes),
         raw_source_bytes=source.raw_bytes if config.save_source else None,
-    ), []
+    ), image_warnings
 
 
 def _try_detect_tables(pdf_path: Path, config: PipelineConfig) -> dict[int, list[DetectedTable]]:

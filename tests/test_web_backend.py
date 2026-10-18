@@ -15,6 +15,7 @@ from agentic_mbse.extraction.web_backend import (
     classify_url,
     extract_web_content,
 )
+from tests.helpers.arxiv_page import assert_all_figures_saved, serve_figure
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -343,14 +344,14 @@ def test_arxiv_source_records_fetched_version(tmp_path):
 
     with (
         patch("agentic_mbse.extraction.web_backend.fetch_url", side_effect=fake_fetch),
+        # The 1 KB version fixture has no article element; conversion is not the subject.
+        patch("agentic_mbse.extraction.web_backend.extract_article", side_effect=lambda h: h),
         patch(
             "agentic_mbse.extraction.web_backend.convert_article",
             return_value="A" * 200,  # non-empty, no image refs (skips downloads)
         ),
     ):
-        result = extract_web_content(
-            "https://arxiv.org/html/1706.03762v1", output_dir=tmp_path
-        )
+        result = extract_web_content("https://arxiv.org/html/1706.03762v1", output_dir=tmp_path)
 
     assert result.success
     assert result.backend_used == "pandoc-arxiv"
@@ -432,13 +433,11 @@ def _serve(html: str | None = None, url: str = _ARXIV_URL):
 
 
 @pytest.mark.skipif(shutil.which("pandoc") is None, reason="needs Pandoc")
-def test_arxiv_web_route_outputs_paper_only(tmp_path):
+def test_arxiv_web_route_outputs_paper_only_with_all_figures_saved(tmp_path):
+    """Real page, real sanitizer, real Pandoc: paper only, and all nine figures on disk."""
     with (
         _serve(),
-        patch(
-            "agentic_mbse.extraction.web_backend._download_arxiv_images",
-            side_effect=lambda md, base, out: (md, 0, []),
-        ),
+        patch("agentic_mbse.extraction.web_backend.fetch_image", side_effect=serve_figure),
     ):
         result = extract_web_content(_ARXIV_URL, output_dir=tmp_path)
 
@@ -450,6 +449,28 @@ def test_arxiv_web_route_outputs_paper_only(tmp_path):
         assert s not in output, f"chrome {s!r} in output"
     for s in _PAPER_TEXT:
         assert s in output, f"paper part {s!r} missing"
+    assert_all_figures_saved(output, tmp_path / "images", result.image_count)
+
+
+@pytest.mark.skipif(shutil.which("pandoc") is None, reason="needs Pandoc")
+def test_arxiv_web_route_failed_figure_warns_and_keeps_ref(tmp_path):
+    def all_but_one(url: str) -> bytes:
+        if url.endswith("total_cost.svg"):
+            raise OSError("HTTP Error 503")
+        return serve_figure(url)
+
+    with (
+        _serve(),
+        patch("agentic_mbse.extraction.web_backend.fetch_image", side_effect=all_but_one),
+    ):
+        result = extract_web_content(_ARXIV_URL, output_dir=tmp_path)
+
+    output = (tmp_path / "output.md").read_text()
+    assert result.image_count == 8 == len(list((tmp_path / "images").iterdir()))
+    assert "](2610.14224v1/total_cost.svg)" in output
+    [warning] = result.warnings
+    assert "total_cost.svg" in warning and "503" in warning
+    assert json.loads((tmp_path / "metrics.json").read_text())["warnings"] == [warning]
 
 
 def test_unrecognized_container_falls_back_to_trafilatura_with_warning(tmp_path):
@@ -514,20 +535,18 @@ def test_arxiv_raw_bytes_and_hash_are_the_fetched_page(tmp_path):
 
 def test_arxiv_images_resolve_against_normalized_serving_url(tmp_path):
     """B5: a trailing-slash serving URL is normalized before figure refs resolve."""
-    seen: list[str] = []
-
-    def record(md, base, out):
-        seen.append(base)
-        return md, 0, []
-
     with (
         _serve(url="https://arxiv.org/html/2610.14224v1/"),
         patch(
             "agentic_mbse.extraction.web_backend.convert_article",
-            return_value="# Paper\n\n" + "text " * 40,
+            return_value="# Paper\n\n![f](2610.14224v1/components.png)\n\n" + "text " * 40,
         ),
-        patch("agentic_mbse.extraction.web_backend._download_arxiv_images", side_effect=record),
+        patch(
+            "agentic_mbse.extraction.web_backend.fetch_image", side_effect=serve_figure
+        ) as fetch,
     ):
-        extract_web_content("https://arxiv.org/html/2610.14224v1", output_dir=tmp_path)
+        result = extract_web_content("https://arxiv.org/html/2610.14224v1", output_dir=tmp_path)
 
-    assert seen == ["https://arxiv.org/html/2610.14224v1"]
+    fetch.assert_called_once_with("https://arxiv.org/html/2610.14224v1/components.png")
+    assert result.image_count == 1
+    assert "![f](images/components.png)" in (tmp_path / "output.md").read_text()

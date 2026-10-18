@@ -17,9 +17,8 @@ from __future__ import annotations
 import json
 import logging
 import re
-import urllib.request
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlparse
 
 from agentic_mbse.extraction.arxiv_html import (
     MIN_CONTENT_CHARS,
@@ -27,6 +26,9 @@ from agentic_mbse.extraction.arxiv_html import (
     ArxivSource,
     _run_pandoc,
     convert_article,
+    extract_article,
+    fetch_image,
+    persist_images,
 )
 from agentic_mbse.extraction.base import ExtractionResult, sanitize_filename
 from agentic_mbse.extraction.frontmatter import build_frontmatter, compute_source_hash
@@ -52,104 +54,7 @@ _PDF_CONTENT_TYPES = frozenset(
 )
 
 
-_MD_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)(\{[^}]*\})?")
-
 log = logging.getLogger(__name__)
-
-
-def _download_arxiv_images(
-    markdown: str,
-    page_url: str,
-    output_dir: Path,
-    *,
-    max_image_bytes: int = 10 * 1024 * 1024,
-    timeout: int = 15,
-) -> tuple[str, int, list[str]]:
-    """Download images from arXiv markdown and rewrite refs to local paths.
-
-    Returns (rewritten_markdown, download_count, warnings).
-    """
-    from agentic_mbse.extraction.http import USER_AGENT
-
-    matches = list(_MD_IMAGE_RE.finditer(markdown))
-    if not matches:
-        return markdown, 0, []
-
-    images_dir = output_dir / "images"
-    download_count = 0
-    warnings: list[str] = []
-    used_filenames: dict[str, int] = {}  # basename -> times seen
-
-    # Process replacements in reverse order to preserve string positions
-    replacements: list[tuple[int, int, str]] = []
-
-    for m in matches:
-        alt, img_url, attr_block = m.group(1), m.group(2), m.group(3) or ""
-        attr_str = attr_block
-
-        # Skip data: URIs
-        if img_url.startswith("data:"):
-            continue
-
-        # Resolve URL (normalize repeated slashes from LaTeXML paths)
-        if img_url.startswith("/"):
-            # Root-relative: resolve against arxiv.org
-            normalized = re.sub(r"/+", "/", img_url)
-            abs_url = f"https://arxiv.org{normalized}"
-        elif img_url.startswith(("http://", "https://")):
-            abs_url = img_url
-        else:
-            # Relative to page URL
-            abs_url = urljoin(page_url, img_url)
-
-        # Extract filename
-        parsed_path = urlparse(abs_url).path
-        basename = Path(parsed_path).name
-        if not basename:
-            continue
-
-        # Handle duplicate filenames
-        if basename in used_filenames:
-            used_filenames[basename] += 1
-            stem = Path(basename).stem
-            suffix = Path(basename).suffix
-            local_name = f"{stem}_{used_filenames[basename]}{suffix}"
-        else:
-            used_filenames[basename] = 1
-            local_name = basename
-
-        # Download
-        try:
-            req = urllib.request.Request(abs_url)
-            req.add_header("User-Agent", USER_AGENT)
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = resp.read(max_image_bytes + 1)
-                if len(data) > max_image_bytes:
-                    msg = f"Image too large ({len(data)} bytes), skipping: {abs_url}"
-                    log.warning(msg)
-                    warnings.append(msg)
-                    continue
-        except Exception as exc:
-            msg = f"Failed to download image: {abs_url} ({exc})"
-            log.warning(msg)
-            warnings.append(msg)
-            continue
-
-        # Save
-        images_dir.mkdir(parents=True, exist_ok=True)
-        (images_dir / local_name).write_bytes(data)
-        download_count += 1
-
-        # Record replacement
-        new_ref = f"![{alt}](images/{local_name}){attr_str}"
-        replacements.append((m.start(), m.end(), new_ref))
-
-    # Apply replacements in reverse order
-    result = markdown
-    for start, end, new_text in reversed(replacements):
-        result = result[:start] + new_text + result[end:]
-
-    return result, download_count, warnings
 
 
 def check_web_deps() -> None:
@@ -322,7 +227,9 @@ def extract_web_content(
 
     # Step 3: Extract — arXiv HTML converts only the paper's article element
     # through Pandoc; everything else goes through trafilatura with a
-    # whole-page Pandoc fallback.
+    # whole-page Pandoc fallback. The article is taken from the raw page and
+    # sanitized on its own, because the sanitizer deletes the SVG figure
+    # objects that extract_article turns into images (design D17a).
     markdown: str | None = None
     metadata: dict = {}
     backend = "trafilatura"
@@ -332,7 +239,12 @@ def extract_web_content(
     if is_arxiv:
         log.info("arXiv HTML detected, converting the paper with Pandoc")
         try:
-            markdown = convert_article(html)
+            article = extract_article(fetched.text())
+            if sanitize:
+                from agentic_mbse.extraction.html_sanitize import strip_hidden_content
+
+                article = strip_hidden_content(article)
+            markdown = convert_article(article)
             backend = "pandoc-arxiv"
             # Still grab metadata from trafilatura (title, author, date)
             _, metadata = _extract_with_trafilatura(html, final_url)
@@ -415,13 +327,17 @@ def extract_web_content(
         output_dir = Path.cwd() / dir_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Step 4a: Download images (pandoc-arxiv only)
+    # Step 4a: Save the paper's figures (pandoc-arxiv only)
     image_count = 0
     if backend == "pandoc-arxiv":
-        full_markdown, image_count, image_warnings = _download_arxiv_images(
-            full_markdown, ArxivSource.from_fetch(fetched).serving_url, output_dir
+        images = persist_images(
+            full_markdown,
+            ArxivSource.from_fetch(fetched).image_base,
+            output_dir / "images",
+            fetch_image,
         )
-        extraction_warnings.extend(image_warnings)
+        full_markdown, image_count = images.markdown, images.saved_count
+        extraction_warnings.extend(images.warnings)
 
     # Write markdown — when the caller provides output_dir (e.g., batch mode
     # with --output), use "output.md" to avoid filename collisions between

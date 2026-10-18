@@ -38,6 +38,7 @@ from agentic_mbse.extraction.types import (
     PageResult,
     PipelineResult,
 )
+from tests.helpers.arxiv_page import assert_all_figures_saved, serve_figure
 from tests.helpers.arxiv_pdfs import CITATION, OTHER_STAMP, STAMP, make_pdf
 
 # ---------------------------------------------------------------------------
@@ -455,6 +456,84 @@ class TestShortcutPaperOnly:
         assert result.error is not None
         [warning] = result.warnings
         assert warning.startswith("arXiv HTML shortcut failed")
+
+
+class TestShortcutFigures:
+    """The PDF shortcut saves the paper's figures into extracted_images_dir (R1)."""
+
+    def _extract(self, tmp_path, fetch, **config):
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        with (
+            _patch_pandoc_available(),
+            patch(f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2610.14224"),
+            _served_page(),
+            patch("agentic_mbse.extraction.arxiv_html.fetch_image", side_effect=fetch),
+        ):
+            return extract_pdf(pdf, _real_pdf_config(**config))
+
+    @pytest.mark.skipif(shutil.which("pandoc") is None, reason="needs Pandoc")
+    def test_all_nine_figures_saved_with_real_pandoc(self, tmp_path):
+        images = tmp_path / "out" / "images"
+        result = self._extract(tmp_path, serve_figure, extracted_images_dir=images)
+
+        assert result.source == "pandoc_arxiv"
+        assert result.warnings == []
+        assert_all_figures_saved(result.markdown, images, result.image_count)
+
+    def test_failed_figure_warns_and_keeps_its_ref(self, tmp_path):
+        markdown = (
+            "# Paper\n\n![a](2610.14224v1/ok.png)\n\n![b](2610.14224v1/gone.png)\n\n" + "x " * 60
+        )
+
+        def fetch(url: str) -> bytes:
+            if url.endswith("gone.png"):
+                raise OSError("HTTP Error 404")
+            return b"PNG"
+
+        images = tmp_path / "out" / "images"
+        with _pandoc_returns(markdown):
+            result = self._extract(tmp_path, fetch, extracted_images_dir=images)
+
+        assert result.image_count == 1 == len(list(images.iterdir()))
+        assert "![a](images/ok.png)" in result.markdown
+        assert "![b](2610.14224v1/gone.png)" in result.markdown
+        [warning] = result.warnings
+        assert "gone.png" in warning and "404" in warning
+
+    def test_without_images_dir_refs_stay_and_nothing_is_fetched(self, tmp_path):
+        markdown = "# Paper\n\n![a](2610.14224v1/ok.png)\n\n" + "x " * 60
+        fetch = MagicMock(side_effect=AssertionError("no fetch without an images dir"))
+        with _pandoc_returns(markdown):
+            result = self._extract(tmp_path, fetch)
+
+        fetch.assert_not_called()
+        assert result.image_count == 0
+        assert "![a](2610.14224v1/ok.png)" in result.markdown
+
+    def test_local_html_path_copies_figures_beside_it(self, tmp_path):
+        page_dir = tmp_path / "page"
+        (page_dir / "2610.14224v1").mkdir(parents=True)
+        (page_dir / "2610.14224v1" / "fig.png").write_bytes(b"LOCAL")
+        page = page_dir / "paper.html"
+        page.write_bytes(_ARXIV_PAGE.read_bytes())
+        markdown = "# Paper\n\n![f](2610.14224v1/fig.png)\n\n" + "x " * 60
+        images = tmp_path / "out" / "images"
+
+        fetch = MagicMock(side_effect=AssertionError("a local page's figures are copied"))
+        with (
+            _patch_pandoc_available(),
+            _pandoc_returns(markdown),
+            patch("agentic_mbse.extraction.arxiv_html.fetch_image", fetch),
+        ):
+            result = extract_pdf(
+                make_pdf(tmp_path / "p.pdf"),
+                _real_pdf_config(arxiv_html_path=page, extracted_images_dir=images),
+            )
+
+        fetch.assert_not_called()
+        assert result.image_count == 1
+        assert (images / "fig.png").read_bytes() == b"LOCAL"
+        assert "![f](images/fig.png)" in result.markdown
 
 
 class TestShortcutControl:

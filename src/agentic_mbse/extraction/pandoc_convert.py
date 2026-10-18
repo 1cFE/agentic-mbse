@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
-from agentic_mbse.extraction.arxiv_html import convert_article, load_arxiv_html
+from agentic_mbse.extraction.arxiv_html import convert_article, extract_article, load_arxiv_html
 from agentic_mbse.extraction.http import USER_AGENT
 
 # Whether the PDF pipeline substitutes a PDF's identified arXiv paper with its
@@ -236,4 +236,4 @@ def convert_arxiv_html(
             "apt install pandoc (or brew install pandoc)"
         )
     source = load_arxiv_html(html_source)
-    return convert_article(source.html, pandoc_path), source.raw_bytes
+    return convert_article(extract_article(source.html), pandoc_path), source.raw_bytes

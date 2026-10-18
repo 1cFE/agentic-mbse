@@ -13,11 +13,14 @@ from __future__ import annotations
 import re
 import subprocess
 import tempfile
+import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import unquote, urljoin, urlparse
+from urllib.request import url2pathname
 
-from agentic_mbse.extraction.http import DEFAULT_TIMEOUT, FetchResult, fetch_url
+from agentic_mbse.extraction.http import DEFAULT_TIMEOUT, USER_AGENT, FetchResult, fetch_url
 
 # Converted markdown shorter than this is treated as a failed conversion.
 MIN_CONTENT_CHARS = 100
@@ -34,6 +37,8 @@ _PANDOC_TIMEOUT_SECONDS = 60
 _ARTICLE_OPEN_RE = re.compile(r"<article(?=[\s>])[^>]*>", re.IGNORECASE)
 _ARTICLE_CLOSE_RE = re.compile(r"</article\s*>", re.IGNORECASE)
 _CLASS_ATTR_RE = re.compile(r"""\bclass\s*=\s*(?:"([^"]*)"|'([^']*)')""", re.IGNORECASE)
+_OBJECT_RE = re.compile(r"<object\b([^>]*)>(.*?)</object\s*>", re.IGNORECASE | re.DOTALL)
+_ATTR_RE = re.compile(r'([\w-]+)\s*=\s*"([^"]*)"')
 
 
 class ArxivConversionError(Exception):
@@ -151,6 +156,37 @@ def select_article(html: str) -> str | None:
     return html[opening.start() : closing.end()]
 
 
+def _svg_object_as_img(m: re.Match[str]) -> str:
+    """Rewrite one LaTeXML SVG figure ``<object>`` as an ``<img>``; leave other objects alone."""
+    attrs = dict(_ATTR_RE.findall(m.group(1)))
+    is_svg_figure = (
+        attrs.get("type") == "image/svg+xml"
+        and "ltx_graphics" in attrs.get("class", "").split()
+        and "data" in attrs
+    )
+    if not is_svg_figure:
+        return m.group(0)
+    fallback = " ".join(re.sub(r"<[^>]+>", " ", m.group(2)).split())
+    alt = (fallback or "Refer to caption").replace('"', "&quot;")
+    kept = "".join(f' {k}="{attrs[k]}"' for k in ("id", "class", "width", "height") if k in attrs)
+    return f'<img src="{attrs["data"]}" alt="{alt}"{kept}>'
+
+
+def extract_article(html: str) -> str:
+    """Return the paper's article element, with SVG figure objects rewritten as images.
+
+    Pandoc drops ``<object>`` elements, so LaTeXML figures embedded as
+    ``<object type="image/svg+xml" class="ltx_graphics">`` become ``<img>``
+    here (design D17). Both routes call this on the raw page, before the web
+    route sanitizes, because the sanitizer deletes every ``<object>`` (D17a).
+    Raises ``ArxivConversionError`` when the page has no recognized article.
+    """
+    article = select_article(html)
+    if article is None:
+        raise ArxivConversionError("no recognized arXiv article container")
+    return _OBJECT_RE.sub(_svg_object_as_img, article)
+
+
 # ---------------------------------------------------------------------------
 # Pandoc
 # ---------------------------------------------------------------------------
@@ -199,13 +235,14 @@ def _run_pandoc(html: str, pandoc_path: str = "pandoc") -> str:
     return result.stdout
 
 
-def _convert_document(document: str, pandoc_path: str = "pandoc") -> str:
-    """Convert an arXiv HTML document to cleaned markdown.
+def convert_article(article: str, pandoc_path: str = "pandoc") -> str:
+    """Convert an extracted article fragment to cleaned markdown.
 
-    Applies the LaTeXML pre-processing, runs Pandoc and post-processes the
-    output. Raises ``ArxivConversionError`` when Pandoc fails or the output is
-    shorter than ``MIN_CONTENT_CHARS``.
+    Wraps the fragment as a bare document, applies the LaTeXML pre-processing,
+    runs Pandoc and post-processes the output. Raises ``ArxivConversionError``
+    when Pandoc fails or the output is shorter than ``MIN_CONTENT_CHARS``.
     """
+    document = f"<html><body>{article}</body></html>"
     markdown = _postprocess_markdown(_run_pandoc(_preprocess_html(document), pandoc_path))
     if len(markdown) < MIN_CONTENT_CHARS:
         raise ArxivConversionError(
@@ -214,15 +251,106 @@ def _convert_document(document: str, pandoc_path: str = "pandoc") -> str:
     return markdown
 
 
-def convert_article(html: str, pandoc_path: str = "pandoc") -> str:
-    """Convert the paper in an arXiv HTML page to markdown.
+# ---------------------------------------------------------------------------
+# Image persistence
+# ---------------------------------------------------------------------------
 
-    Selects the article element, wraps it as a bare document, and converts it
-    with Pandoc. Raises ``ArxivConversionError`` when the page has no
-    recognized article, when Pandoc fails, or when the output is shorter than
-    ``MIN_CONTENT_CHARS``.
+# A Pandoc markdown image ref: ![alt](src){attrs}
+_MD_IMAGE_RE = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)(\{[^}]*\})?")
+
+MAX_IMAGE_BYTES = 10 * 1024 * 1024
+_IMAGE_TIMEOUT_SECONDS = 15
+
+ImageFetcher = Callable[[str], bytes]
+
+
+class ImageFetchError(Exception):
+    """An image could not be obtained for a reason other than an I/O error."""
+
+
+def fetch_image(
+    url: str, *, max_bytes: int = MAX_IMAGE_BYTES, timeout: int = _IMAGE_TIMEOUT_SECONDS
+) -> bytes:
+    """Download one image over http(s).
+
+    Raises ``OSError`` (``urllib.error.URLError``, timeouts) on network and
+    HTTP errors and ``ImageFetchError`` when the body exceeds *max_bytes*.
     """
-    article = select_article(html)
-    if article is None:
-        raise ArxivConversionError("no recognized arXiv article container")
-    return _convert_document(f"<html><body>{article}</body></html>", pandoc_path)
+    request = urllib.request.Request(url)
+    request.add_header("User-Agent", USER_AGENT)
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        data: bytes = response.read(max_bytes + 1)
+    if len(data) > max_bytes:
+        raise ImageFetchError(f"larger than {max_bytes} bytes")
+    return data
+
+
+@dataclass(frozen=True)
+class ImagePersistResult:
+    markdown: str  # refs rewritten for saved images only
+    saved_count: int  # files written
+    warnings: list[str]  # one per URL not saved
+
+
+def _resolve_image_url(base: str, ref: str) -> str:
+    """Join *ref* onto *base*, collapsing repeated slashes in the path (LaTeXML emits ``//``)."""
+    parsed = urlparse(urljoin(base, ref))
+    return parsed._replace(path=re.sub(r"/{2,}", "/", parsed.path)).geturl()
+
+
+def _read_image(url: str, fetch: ImageFetcher) -> bytes:
+    """Return the bytes behind *url*: fetched for http(s), read from disk for file."""
+    parsed = urlparse(url)
+    if parsed.scheme in ("http", "https"):
+        return fetch(url)
+    if parsed.scheme == "file":
+        return Path(url2pathname(parsed.path)).read_bytes()
+    raise ImageFetchError(f"unsupported URL scheme {parsed.scheme!r}")
+
+
+def _unique_name(url: str, taken: set[str]) -> str:
+    """The URL's file name, suffixed ``_2``, ``_3``… if another URL already took it."""
+    name = Path(unquote(urlparse(url).path)).name or "image"
+    stem, suffix = Path(name).stem, Path(name).suffix
+    n = 1
+    while name in taken:
+        n += 1
+        name = f"{stem}_{n}{suffix}"
+    return name
+
+
+def persist_images(
+    markdown: str, base: str, images_dir: Path, fetch: ImageFetcher
+) -> ImagePersistResult:
+    """Save every image *markdown* references into *images_dir* and point the refs at it.
+
+    Each ref resolves against *base* (``ArxivSource.image_base``). Each distinct
+    URL is read once: http(s) through *fetch*, ``file:`` from disk. Saved refs
+    become ``images/<name>`` with their attributes kept; a URL that can't be
+    saved leaves every one of its refs exactly as written and adds one warning.
+    ``data:`` URIs are left alone.
+    """
+    urls = dict.fromkeys(
+        _resolve_image_url(base, m.group(2))
+        for m in _MD_IMAGE_RE.finditer(markdown)
+        if not m.group(2).startswith("data:")
+    )
+    saved: dict[str, str] = {}  # resolved URL -> file name under images_dir
+    warnings: list[str] = []
+    for url in urls:
+        try:
+            data = _read_image(url, fetch)
+        except (OSError, ImageFetchError) as exc:
+            warnings.append(f"Image not saved; kept its original reference: {url} ({exc})")
+            continue
+        name = _unique_name(url, set(saved.values()))
+        images_dir.mkdir(parents=True, exist_ok=True)
+        (images_dir / name).write_bytes(data)
+        saved[url] = name
+
+    def rewrite(m: re.Match[str]) -> str:
+        alt, ref, attrs = m.group(1), m.group(2), m.group(3) or ""
+        name = None if ref.startswith("data:") else saved.get(_resolve_image_url(base, ref))
+        return m.group(0) if name is None else f"![{alt}](images/{name}){attrs}"
+
+    return ImagePersistResult(_MD_IMAGE_RE.sub(rewrite, markdown), len(saved), warnings)

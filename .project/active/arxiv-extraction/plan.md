@@ -377,7 +377,7 @@ Every figure in the converted article is saved once under `images/` and referenc
 
 ### Added by design amendment D17 (2026-10-18)
 
-- [ ] Test first: on the real fixture, every `<object type="image/svg+xml" class="ltx_graphics …">` inside the article (figures 5, 6, 7, 9 of 2610.14224) yields a markdown image ref after conversion, and is persisted like any other figure. Then implement the `<object>` → `<img>` rewrite in `arxiv_html` pre-processing (design D17).
+- [x] Test first: on the real fixture, every `<object type="image/svg+xml" class="ltx_graphics …">` inside the article (figures 5, 6, 7, 9 of 2610.14224) yields a markdown image ref after conversion, and is persisted like any other figure. Then implement the `<object>` → `<img>` rewrite in `arxiv_html` pre-processing (design D17).
 
 ### Assumption under test
 
@@ -415,15 +415,15 @@ def test_local_html_refs(tmp_path): ...   # absolute http → fetched; <base hre
 
 **See design:** D7 (resolution), D8 (dedupe, naming, counts), D9 (`fetch_image` boundary), invariants 2, 3, 6, `ImagePersistResult` fields, Implementation Notes "Test migration".
 
-- [ ] **`arxiv_html.py`**: `fetch_image` (User-Agent from `http.USER_AGENT`, reads `max_bytes + 1`, raises on oversize and HTTP error), `ImagePersistResult`, and `persist_images`. Move `_MD_IMAGE_RE` from `web_backend.py:53` here. Keep `//` collapsing in the path; drop the hard-coded `https://arxiv.org` prefix (D7).
-- [ ] **`pipeline._try_arxiv_shortcut`**: when `config.extracted_images_dir` is set, run `persist_images(markdown, source.image_base, config.extracted_images_dir)`; set `image_count` from `saved_count`; append its warnings. Without an images dir, refs stay remote (documented limitation, phase 7). Check `PipelineResult`'s image-count field name in `types.py` before wiring.
-- [ ] **`web_backend.py`**: replace `_download_arxiv_images` (`:58-150`) with `persist_images(full_markdown, source.image_base, output_dir / "images")` at `:487-492`; delete the old function.
-- [ ] **Tests**: migrate `tests/test_web_images.py` cases into `tests/test_arxiv_html.py` against `persist_images` with an injected fetch; rewrite the duplicate-URL expectation to one file; delete `tests/test_web_images.py` once every case has a home. Add the CLI test that a failed image on each route shows in `metrics.json["warnings"]` and stderr.
+- [x] **`arxiv_html.py`**: `fetch_image` (User-Agent from `http.USER_AGENT`, reads `max_bytes + 1`, raises on oversize and HTTP error), `ImagePersistResult`, and `persist_images`. Move `_MD_IMAGE_RE` from `web_backend.py:53` here. Keep `//` collapsing in the path; drop the hard-coded `https://arxiv.org` prefix (D7).
+- [x] **`pipeline._try_arxiv_shortcut`**: when `config.extracted_images_dir` is set, run `persist_images(markdown, source.image_base, config.extracted_images_dir)`; set `image_count` from `saved_count`; append its warnings. Without an images dir, refs stay remote (documented limitation, phase 7). Check `PipelineResult`'s image-count field name in `types.py` before wiring.
+- [x] **`web_backend.py`**: replace `_download_arxiv_images` (`:58-150`) with `persist_images(full_markdown, source.image_base, output_dir / "images")` at `:487-492`; delete the old function.
+- [x] **Tests**: migrate `tests/test_web_images.py` cases into `tests/test_arxiv_html.py` against `persist_images` with an injected fetch; rewrite the duplicate-URL expectation to one file; delete `tests/test_web_images.py` once every case has a home. Add the CLI test that a failed image on each route shows in `metrics.json["warnings"]` and stderr.
 
 ### Validation
 
-- [ ] Green.
-- [ ] Manual: repeat the phase 5 `--html-path` run with a temp copy of the fixture next to a `2610.14224v1/` folder holding two small PNGs; `/tmp/arxiv-p6/images/` holds them, `output.md` refs `images/<name>`, and `metrics.json` reports the matching count.
+- [x] Green.
+- [x] Manual: repeat the phase 5 `--html-path` run with a temp copy of the fixture next to a `2610.14224v1/` folder holding two small PNGs; `/tmp/arxiv-p6/images/` holds them, `output.md` refs `images/<name>`, and `metrics.json` reports the matching count.
 
 **What we know works after this phase:** both routes produce portable output: figures on disk, relative refs, honest counts, one warning per unsaved image.
 
@@ -626,10 +626,41 @@ Environment setup the numbers depend on, for later sessions:
 - **For the changelog:** `convert_arxiv_html` now converts only the page's `<article class="ltx_document">` and raises `ArxivConversionError` for a page without one. URLs are fetched through `http.fetch_url`, which honors the response charset and sends the same User-Agent. Web warnings for a failed arXiv conversion now say "arXiv paper conversion failed".
 
 ### Phase 6 Completion
-**Completed:**
+**Completed:** 2026-10-18
+**Acceptance (orchestrator brief):** on the real fixture, all 9 figures of 2610.14224, including the SVG Figures 5, 6, 7 and 9, end up as relative `images/<name>` refs to files that exist. The saved count equals the files written, in both routes. One shared assertion (`tests/helpers/arxiv_page.py::assert_all_figures_saved`) checks this in three places, each through real Pandoc:
+- `test_arxiv_html.py::test_all_nine_fixture_figures_persist` (module level)
+- `test_web_backend.py::test_arxiv_web_route_outputs_paper_only_with_all_figures_saved` (web route, real sanitizer)
+- `test_pipeline.py::TestShortcutFigures::test_all_nine_figures_saved_with_real_pandoc` (PDF route)
+
 **Actual Changes:**
+- `arxiv_html.py`:
+  - New `extract_article(html)` = `select_article` plus the D17 rewrite. Each `<object>` with `type="image/svg+xml"`, class `ltx_graphics` and a `data` URL becomes `<img src=… alt=… id class width height>`. The alt is the object's fallback text, or "Refer to caption". Other objects are untouched. It raises `ArxivConversionError("no recognized arXiv article container")`.
+  - `convert_article` now takes the extracted article fragment, not the page. `_convert_document` was folded into it, since it had no other caller.
+  - Image persistence added: `_MD_IMAGE_RE` (moved from `web_backend`), `MAX_IMAGE_BYTES`, `ImageFetcher`, `ImageFetchError`, `fetch_image(url, *, max_bytes, timeout)` (User-Agent from `http.USER_AGENT`, reads `max_bytes + 1`), `ImagePersistResult`, and `persist_images(markdown, base, images_dir, fetch)`.
+  - `persist_images` resolves each ref with `urljoin(base, ref)` and collapses `//` in the path. Distinct URLs are read once: http(s) through `fetch`, `file:` copied from disk, any other scheme a warning. A colliding basename gets `stem_N.ext`. Saved refs become `images/<name>` with their attribute block kept. A URL that can't be saved leaves every one of its refs byte-identical and adds one warning. `data:` refs are never touched.
+- D17a step order in both routes:
+  - `convert_arxiv_html` and the PDF shortcut call `convert_article(extract_article(source.html))`.
+  - The web arXiv branch calls `extract_article(fetched.text())` on the raw page, sanitizes only that slice (when `sanitize`), then `convert_article`. The whole-page sanitize still feeds trafilatura and metadata. Raw-byte save and hash are unchanged.
+- `pipeline._try_arxiv_shortcut`: when `extracted_images_dir` is set, runs `persist_images(markdown, source.image_base, extracted_images_dir, fetch_image)`. It sets `PipelineResult.image_count` from `saved_count` and returns the image warnings, which `extract_pdf` attaches to the result. Without an images dir, refs stay as the page wrote them.
+- `web_backend.py`: Step 4a calls `persist_images(full_markdown, ArxivSource.from_fetch(fetched).image_base, output_dir / "images", fetch_image)`. `_download_arxiv_images`, its `_MD_IMAGE_RE` and the now-unused `urllib.request`/`urljoin` imports were deleted. The file is fully ruff-formatted, as it was at base.
+- `persist_images` takes the fetcher as a required argument rather than a default. Each route passes `fetch_image`, and the tests stub the name in that route's namespace (`web_backend.fetch_image`; `arxiv_html.fetch_image` for the PDF route, which imports it at call time). A bound default argument could not have been stubbed that way.
+- Fixture `tests/fixtures/arxiv_2610.14224v1_page.html` regenerated (115,118 bytes). It adds Section 2's heading and intro plus subsection 2.2 (Figures 3 and 4), so all nine figures are present. The trim script is `/tmp/arxiv-trim/trim_v2.py`, and the head comment records the change.
+- Tests:
+  - New `tests/helpers/arxiv_page.py`: fixture path, the nine `FIGURES`, a `serve_figure` stub and `assert_all_figures_saved`.
+  - `test_arxiv_html.py`: `TestExtractArticle` (real fixture: four objects rewritten, all nine figure `src`s present, exact `<img>` for Figure 5; fallback text as alt; non-`ltx_graphics` and non-SVG objects untouched; no article raises). `TestConvertArticle` on fragments; its real-Pandoc test now requires the nine figure refs in page order. `TestPersistImages` (14 cases: attributes kept, root-relative and absolute, same URL twice gives one fetch and one file, same URL failing gives one warning and both refs kept, partial failure, `_2`/`_3` collisions, `//` collapse, `data:` untouched, no-op, local HTML with `<base href>` covering absolute/relative/based/root-relative/missing, local HTML without base, unsupported scheme). `TestFetchImage` (User-Agent, oversize raises, oversize through persist). Every `tests/test_web_images.py` case has a home here, so that file is deleted.
+  - `test_web_backend.py`: the nine-figure web acceptance; one failed SVG figure (count 8, ref kept, warning in result and `metrics.json`); the trailing-slash serving URL test now asserts the fetched figure URL; the version-provenance test stubs `extract_article` (its 1 KB fixture has no article).
+  - `test_pipeline.py::TestShortcutFigures`: nine-figure PDF acceptance, a failed figure, no images dir (nothing fetched, refs kept), and `--html-path` copying local figures without fetching.
+  - `test_extract_cli.py::TestFigureWarningsThroughCli`: one failed figure on each route reaches `metrics.json["warnings"]` and stderr, and the saved one is on disk and referenced.
+- Full suite: 2892 passed, same 3 baseline failures. mypy at 97. ruff clean on touched files. Format hunk counts are at or below base on touched files; new files are fully formatted.
+- Manual: copied the fixture to `/tmp/arxiv-p6-page/paper.html` with `2610.14224v1/{intro_teaser,components}.png` beside it, then ran `extract --html-path … stamp.pdf --budget 0 -o /tmp/arxiv-p6`. Exit 0. `images/` holds exactly those two files, `output.md` refs `images/intro_teaser.png` and `images/components.png`, and stderr and `metrics.json` carry 7 warnings, one per missing figure, each naming its `file://` URL.
+
 **Issues:**
+- **Saved-image count is not in `metrics.json` or CLI output.** The plan's manual step expected "`metrics.json` reports the matching count". It doesn't, on either route: `metrics.json` comes from `compute_metrics` (its `figure_ref_count` counts refs, including in-article data URIs), and neither CLI summary prints `image_count`. The count is reported on `PipelineResult.image_count` and `ExtractionResult.image_count`, which the acceptance tests check against the files. This was not changed here; Phase 7's acceptance sweep flags it against the spec row "report matching saved-image counts".
+
 **Deviations:**
+- `convert_article` changed contract from page to article fragment, and `extract_article` is new (design D3 listed `convert_article(html)` on the page). D17a needs a step between selection and conversion where the web route sanitizes, so selection-plus-rewrite and conversion became two calls. Neither function branches on the route.
+- `persist_images` signature: `fetch` is a required positional argument, and the fetcher is called as `fetch(url)`, using `fetch_image`'s own size and timeout defaults (design sketch: `fetch=fetch_image` keyword default).
+- The fixture grew past the ~80 KB aim to 115 KB so the nine-figure acceptance could run on it.
 
 ### Phase 7 Completion
 **Completed:**

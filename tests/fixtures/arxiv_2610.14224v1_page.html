@@ -1,8 +1,9 @@
 <!-- Test fixture: trimmed copy of https://arxiv.org/html/2610.14224v1, fetched 2026-10-18.
      Edits: chrome outside the article element is verbatim except that nested table-of-contents
      entries were removed; inside the article only the front matter (title, authors,
-     abstract, teaser figure), Section 1, Section 4, the first two bibliography entries
-     and Appendix B are kept; everything else in the article was deleted. One data-URI
+     abstract, teaser figure), Section 1, Section 2's heading, intro and subsection 2.2,
+     Section 4, the first two bibliography entries and Appendix B are kept, so all
+     nine figures remain; everything else in the article was deleted. One data-URI
      <img> was inserted at the end of Section 1, marked SYNTHETIC EDIT. -->
 <!DOCTYPE html><html lang="en">
 <head>
@@ -347,6 +348,182 @@ model serves as both executor and editor.</p>
 </figure>
 <!-- SYNTHETIC EDIT (test fixture): the only non-arXiv markup in this file. -->
 <p class="ltx_p"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" alt="in-article data URI"></p>
+</section>
+<section id="S2" class="ltx_section">
+<h2 class="ltx_title ltx_title_section"><span class="ltx_tag ltx_tag_section">2 </span><span id="S2.2" class="ltx_text ltx_font_smallcaps">Harness<sup id="S2.2.1" class="ltx_sup"><span id="S2.2.1.1" class="ltx_text ltx_font_upright">2</span></sup></span></h2>
+
+<div id="S2.p1" class="ltx_para">
+<p id="S2.p1.1" class="ltx_p">We first define recursive agent harnessing and its open-world setting
+(§<a href="#S2.SS1" title="2.1 Recursive Agent Harnessing ‣ 2 Harness2 ‣ Harness2: Recursive Agent Harnessing foran Open World" class="ltx_ref"><span class="ltx_text ltx_ref_tag">2.1</span></a>). We then present task-level recursion for refining
+the execution harness (§<a href="#S2.SS2" title="2.2 Task-Level Recursion ‣ 2 Harness2 ‣ Harness2: Recursive Agent Harnessing foran Open World" class="ltx_ref"><span class="ltx_text ltx_ref_tag">2.2</span></a>), followed by
+harnessing-level recursion for updating the improvement harness across
+tasks (§<a href="#S2.SS3" title="2.3 Harnessing-Level Recursion ‣ 2 Harness2 ‣ Harness2: Recursive Agent Harnessing foran Open World" class="ltx_ref"><span class="ltx_text ltx_ref_tag">2.3</span></a>).</p>
+</div>
+<section id="S2.SS2" class="ltx_subsection">
+<h3 class="ltx_title ltx_title_subsection"><span class="ltx_tag ltx_tag_subsection">2.2 </span>Task-Level Recursion</h3>
+
+<div id="S2.SS2.p1" class="ltx_para">
+<p id="S2.SS2.p1.1" class="ltx_p">Task-level recursion aims to improve the execution harness for the
+current task. The challenge in our open-world setting is to guide
+revisions without ground-truth feedback. We therefore introduce a
+<em id="S2.SS2.p1.1.1" class="ltx_emph ltx_font_italic">contrastive improvement step</em> that proposes changes, executes
+them, and examines their behavioral consequences. Building on this
+step, parallel and sequential recursion use the generated harnesses
+and execution evidence for further refinement.</p>
+</div>
+<section id="S2.SS2.SSS1" class="ltx_subsubsection">
+<h4 class="ltx_title ltx_title_subsubsection"><span class="ltx_tag ltx_tag_subsubsection">2.2.1 </span>A Contrastive Improvement Step</h4>
+
+<figure id="S2.F3" class="ltx_figure"><img src="2610.14224v1/harness2_main_new.png" id="S2.F3.g1" class="ltx_graphics ltx_centering ltx_img_landscape" style="aspect-ratio:476/152;" width="476" height="152" alt="Refer to caption">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span id="S2.F3.4" class="ltx_text" style="font-size:90%;">Figure 3</span>: </span><span id="S2.F3.5" class="ltx_text" style="font-size:90%;">The <span id="S2.F3.5.1" class="ltx_text ltx_font_smallcaps">Harness<sup id="S2.F3.5.1.1" class="ltx_sup"><span id="S2.F3.5.1.1.1" class="ltx_text ltx_font_upright">2</span></sup></span> pipeline. Task-level recursion proposes invariant and
+domain-specific harness edits, probes their effects, and composes a successor
+execution harness. After each task, harnessing-level recursion updates the
+improvement harness with reusable harnesses and lessons from the refinement
+process.</span></figcaption>
+</figure>
+<div id="S2.SS2.SSS1.p1" class="ltx_para">
+<p id="S2.SS2.SSS1.p1.1" class="ltx_p">A contrastive step consists of <span id="S2.SS2.SSS1.p1.1.1" class="ltx_text ltx_font_bold">Propose</span>, <span id="S2.SS2.SSS1.p1.1.2" class="ltx_text ltx_font_bold">Probe</span>, and
+<span id="S2.SS2.SSS1.p1.1.3" class="ltx_text ltx_font_bold">Compose</span>. Let <math id="S2.SS2.SSS1.p1.m1" class="ltx_Math" alttext="e=(\tau,y)" display="inline" intent=":literal"><semantics><mrow><mi>e</mi><mo>=</mo><mrow><mo stretchy="false">(</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo stretchy="false">)</mo></mrow></mrow><annotation encoding="application/x-tex">e=(\tau,y)</annotation></semantics></math> denote an execution record, with
+trajectory <math id="S2.SS2.SSS1.p1.m2" class="ltx_Math" alttext="\tau" display="inline" intent=":literal"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math> and deliverable <math id="S2.SS2.SSS1.p1.m3" class="ltx_Math" alttext="y" display="inline" intent=":literal"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>. The step applies an improvement
+operation <math id="S2.SS2.SSS1.p1.m4" class="ltx_Math" alttext="\Phi" display="inline" intent=":literal"><semantics><mi mathvariant="normal">Φ</mi><annotation encoding="application/x-tex">\Phi</annotation></semantics></math> to the current execution harness <math id="S2.SS2.SSS1.p1.m5" class="ltx_Math" alttext="\mathcal{H}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">ℋ</mi><annotation encoding="application/x-tex">\mathcal{H}</annotation></semantics></math> and
+the available task-local execution and improvement history <math id="S2.SS2.SSS1.p1.m6" class="ltx_Math" alttext="\mathcal{E}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">ℰ</mi><annotation encoding="application/x-tex">\mathcal{E}</annotation></semantics></math>:</p>
+<table id="S2.E1" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S2.E1.m1" class="ltx_Math" alttext="(\mathcal{H}^{\prime},e^{\prime},\xi)=\Phi(q_{t},\mathcal{H},\mathcal{E};\mathcal{R}_{t})." display="block" intent=":literal"><semantics><mrow><mrow><mrow><mo stretchy="false">(</mo><msup><mi class="ltx_font_mathcaligraphic">ℋ</mi><mo>′</mo></msup><mo>,</mo><msup><mi>e</mi><mo>′</mo></msup><mo>,</mo><mi>ξ</mi><mo stretchy="false">)</mo></mrow><mo>=</mo><mrow><mi mathvariant="normal">Φ</mi><mo>⁡</mo><mrow><mo stretchy="false">(</mo><msub><mi>q</mi><mi>t</mi></msub><mo>,</mo><mi class="ltx_font_mathcaligraphic">ℋ</mi><mo>,</mo><mi class="ltx_font_mathcaligraphic">ℰ</mi><mo>,</mo><msub><mi class="ltx_font_mathcaligraphic">ℛ</mi><mi>t</mi></msub><mo stretchy="false">)</mo></mrow></mrow></mrow><mo lspace="0em">.</mo></mrow><annotation encoding="application/x-tex">(\mathcal{H}^{\prime},e^{\prime},\xi)=\Phi(q_{t},\mathcal{H},\mathcal{E};\mathcal{R}_{t}).</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(1)</span></td></tr></tbody>
+</table>
+<p id="S2.SS2.SSS1.p1.2" class="ltx_p">It returns a successor harness <math id="S2.SS2.SSS1.p1.m7" class="ltx_Math" alttext="\mathcal{H}^{\prime}" display="inline" intent=":literal"><semantics><msup><mi class="ltx_font_mathcaligraphic">ℋ</mi><mo>′</mo></msup><annotation encoding="application/x-tex">\mathcal{H}^{\prime}</annotation></semantics></math>, its execution record
+<math id="S2.SS2.SSS1.p1.m8" class="ltx_Math" alttext="e^{\prime}" display="inline" intent=":literal"><semantics><msup><mi>e</mi><mo>′</mo></msup><annotation encoding="application/x-tex">e^{\prime}</annotation></semantics></math>, and a step record <math id="S2.SS2.SSS1.p1.m9" class="ltx_Math" alttext="\xi" display="inline" intent=":literal"><semantics><mi>ξ</mi><annotation encoding="application/x-tex">\xi</annotation></semantics></math> containing the reference executions,
+candidate harnesses and probes, composition decisions, and successor
+execution. The model and environment are omitted because they stay
+unchanged; the improvement harness <math id="S2.SS2.SSS1.p1.m10" class="ltx_Math" alttext="\mathcal{R}_{t}" display="inline" intent=":literal"><semantics><msub><mi class="ltx_font_mathcaligraphic">ℛ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\mathcal{R}_{t}</annotation></semantics></math> also remains fixed
+throughout the task.</p>
+</div>
+<div id="S2.SS2.SSS1.p2" class="ltx_para ltx_noindent">
+<p id="S2.SS2.SSS1.p2.1" class="ltx_p"><span id="S2.SS2.SSS1.p2.1.1" class="ltx_text ltx_font_bold">Propose.</span>
+The pipeline first obtains a reference execution
+<math id="S2.SS2.SSS1.p2.m1" class="ltx_Math" alttext="e^{0}\sim\mathcal{A}(q_{t};\mathcal{M},\mathcal{H})" display="inline" intent=":literal"><semantics><mrow><msup><mi>e</mi><mn>0</mn></msup><mo>∼</mo><mrow><mi class="ltx_font_mathcaligraphic">𝒜</mi><mo>⁡</mo><mrow><mo stretchy="false">(</mo><msub><mi>q</mi><mi>t</mi></msub><mo>,</mo><mi class="ltx_font_mathcaligraphic">ℳ</mi><mo>,</mo><mi class="ltx_font_mathcaligraphic">ℋ</mi><mo stretchy="false">)</mo></mrow></mrow></mrow><annotation encoding="application/x-tex">e^{0}\sim\mathcal{A}(q_{t};\mathcal{M},\mathcal{H})</annotation></semantics></math>.
+Here <math id="S2.SS2.SSS1.p2.m2" class="ltx_Math" alttext="\sim" display="inline" intent=":literal"><semantics><mo>∼</mo><annotation encoding="application/x-tex">\sim</annotation></semantics></math> denotes sampling an execution from the agent. The reference reveals how the
+harness behaves, not whether its deliverable is correct. Conditioned on
+the task, current harness, reference, earlier history, and library in
+<math id="S2.SS2.SSS1.p2.m3" class="ltx_Math" alttext="\mathcal{R}_{t}" display="inline" intent=":literal"><semantics><msub><mi class="ltx_font_mathcaligraphic">ℛ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\mathcal{R}_{t}</annotation></semantics></math>, the pipeline proposes two candidates. The
+<span id="S2.SS2.SSS1.p2.1.2" class="ltx_text ltx_font_bold">invariant</span> candidate targets agentic deficiencies that may recur
+across domains, such as planning, tool use, context management, or
+delegation. The <span id="S2.SS2.SSS1.p2.1.3" class="ltx_text ltx_font_bold">domain-specific</span> candidate targets the knowledge,
+procedures, and constraints of the current domain or environment.
+Each candidate is an executable harness obtained by editing the current
+harness’s component files. Proposals may reuse or adapt
+existing harness components from the library, but task-specific facts
+must be checked against the current task’s evidence.</p>
+</div>
+<div id="S2.SS2.SSS1.p3" class="ltx_para ltx_noindent">
+<p id="S2.SS2.SSS1.p3.1" class="ltx_p"><span id="S2.SS2.SSS1.p3.1.1" class="ltx_text ltx_font_bold">Probe.</span>
+Each candidate harness is executed on the same task under matched
+model and environment configurations. Comparing its trajectory and
+deliverable with those of the reference execution yields a
+<span id="S2.SS2.SSS1.p3.1.2" class="ltx_text ltx_font_bold">behavioral contrast</span>, providing evidence of whether the edits
+mitigate the targeted deficiency, leave the relevant behavior unchanged,
+or introduce regressions. These contrasts inform subsequent composition
+rather than verify task correctness, as execution stochasticity and
+shared model biases limit the reliability of the evidence.</p>
+</div>
+<div id="S2.SS2.SSS1.p4" class="ltx_para ltx_noindent">
+<p id="S2.SS2.SSS1.p4.1" class="ltx_p"><span id="S2.SS2.SSS1.p4.1.1" class="ltx_text ltx_font_bold">Compose.</span>
+The pipeline reads the reference, candidate harnesses, their diffs
+against the current harness, and all available task-local execution
+evidence to form the successor <math id="S2.SS2.SSS1.p4.m1" class="ltx_Math" alttext="\mathcal{H}^{\prime}" display="inline" intent=":literal"><semantics><msup><mi class="ltx_font_mathcaligraphic">ℋ</mi><mo>′</mo></msup><annotation encoding="application/x-tex">\mathcal{H}^{\prime}</annotation></semantics></math>.
+Composition is selective: it may merge supported changes, revise
+conflicting edits, adopt one candidate, or preserve the current harness.
+Each decision is tied to a concrete observation rather than a presumed
+score gain. The composed harness is then executed to produce <math id="S2.SS2.SSS1.p4.m2" class="ltx_Math" alttext="e^{\prime}" display="inline" intent=":literal"><semantics><msup><mi>e</mi><mo>′</mo></msup><annotation encoding="application/x-tex">e^{\prime}</annotation></semantics></math>,
+and the decisions and their evidence are recorded in <math id="S2.SS2.SSS1.p4.m3" class="ltx_Math" alttext="\xi" display="inline" intent=":literal"><semantics><mi>ξ</mi><annotation encoding="application/x-tex">\xi</annotation></semantics></math>.
+The step therefore returns an executed successor together with the
+evidence and decisions behind its refinement.</p>
+</div>
+</section>
+<section id="S2.SS2.SSS2" class="ltx_subsubsection">
+<h4 class="ltx_title ltx_title_subsubsection"><span class="ltx_tag ltx_tag_subsubsection">2.2.2 </span>Parallel and Sequential Recursion</h4>
+
+<figure id="S2.F4" class="ltx_figure"><img src="2610.14224v1/scaling.png" id="S2.F4.g1" class="ltx_graphics ltx_centering ltx_img_landscape" style="aspect-ratio:476/119;" width="476" height="119" alt="Refer to caption">
+<figcaption class="ltx_caption ltx_centering"><span class="ltx_tag ltx_tag_figure"><span id="S2.F4.5" class="ltx_text" style="font-size:90%;">Figure 4</span>: </span><span id="S2.F4.6" class="ltx_text" style="font-size:90%;">Two forms of task-level recursion.
+<span id="S2.F4.6.1" class="ltx_text ltx_font_bold">(a) Parallel recursion</span> probes multiple candidates and independently
+composes successor harnesses. <span id="S2.F4.6.2" class="ltx_text ltx_font_bold">(b) Sequential recursion</span> carries each refined harness and
+accumulated execution evidence into the next step.</span></figcaption>
+</figure>
+<div id="S2.SS2.SSS2.p1" class="ltx_para">
+<p id="S2.SS2.SSS2.p1.1" class="ltx_p">Building on the contrastive improvement step, we introduce two
+forms of task-level recursion (Figure <a href="#S2.F4" title="Figure 4 ‣ 2.2.2 Parallel and Sequential Recursion ‣ 2.2 Task-Level Recursion ‣ 2 Harness2 ‣ Harness2: Recursive Agent Harnessing foran Open World" class="ltx_ref"><span class="ltx_text ltx_ref_tag">4</span></a>): <em id="S2.SS2.SSS2.p1.1.1" class="ltx_emph ltx_font_italic">parallel recursion</em> composes
+refinements from multiple candidate harnesses and their executions,
+while <em id="S2.SS2.SSS2.p1.1.2" class="ltx_emph ltx_font_italic">sequential recursion</em> carries the refined harness and
+execution evidence into subsequent steps. A positive integer <math id="S2.SS2.SSS2.p1.m1" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+controls the exploration budget: <math id="S2.SS2.SSS2.p1.m2" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> candidates per scope and
+<math id="S2.SS2.SSS2.p1.m3" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> compositions in parallel, or <math id="S2.SS2.SSS2.p1.m4" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> chained steps in sequence.
+The improvement harness <math id="S2.SS2.SSS2.p1.m5" class="ltx_Math" alttext="\mathcal{R}_{t}" display="inline" intent=":literal"><semantics><msub><mi class="ltx_font_mathcaligraphic">ℛ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\mathcal{R}_{t}</annotation></semantics></math> remains fixed throughout.</p>
+</div>
+<div id="S2.SS2.SSS2.p2" class="ltx_para ltx_noindent">
+<p id="S2.SS2.SSS2.p2.1" class="ltx_p"><span id="S2.SS2.SSS2.p2.1.1" class="ltx_text ltx_font_bold">Parallel Recursion.</span>
+Parallel recursion follows the aggregation principle of RSA <cite class="ltx_cite ltx_citemacro_citep">(<a href="#bib.bib33" title="" class="ltx_ref">Venkatraman et al., 2025</a>)</cite>, but operates on executable
+harnesses and their behavioral consequences rather than reasoning
+outputs. The pipeline collects <math id="S2.SS2.SSS2.p2.m1" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> reference executions of the current
+harness <math id="S2.SS2.SSS2.p2.m2" class="ltx_Math" alttext="\mathcal{H}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">ℋ</mi><annotation encoding="application/x-tex">\mathcal{H}</annotation></semantics></math>, then independently proposes and probes
+<math id="S2.SS2.SSS2.p2.m3" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> invariant and <math id="S2.SS2.SSS2.p2.m4" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> domain-specific candidates. Let <math id="S2.SS2.SSS2.p2.m5" class="ltx_Math" alttext="\mathcal{B}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>
+denote the reference executions and <math id="S2.SS2.SSS2.p2.m6" class="ltx_Math" alttext="\mathcal{P}" display="inline" intent=":literal"><semantics><mi class="ltx_font_mathcaligraphic">𝒫</mi><annotation encoding="application/x-tex">\mathcal{P}</annotation></semantics></math> the pool of
+candidate harnesses paired with their execution records.
+Each of <math id="S2.SS2.SSS2.p2.m7" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> independent composition sessions receives the full pool:</p>
+<table id="S2.E2" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S2.E2.m1" class="ltx_math_unparsed" alttext="\mathcal{H}^{\prime}_{j}=\textsc{Compose}_{j}(q_{t},\mathcal{H},\mathcal{B},\mathcal{P};\mathcal{R}_{t}),\qquad j=1,\ldots,k." display="block" intent=":literal"><semantics><mrow><msubsup><mi class="ltx_font_mathcaligraphic">ℋ</mi><mi>j</mi><mo>′</mo></msubsup><mo>=</mo><msub><mtext class="ltx_font_smallcaps">Compose</mtext><mi>j</mi></msub><mrow><mo stretchy="false">(</mo><msub><mi>q</mi><mi>t</mi></msub><mo>,</mo><mi class="ltx_font_mathcaligraphic">ℋ</mi><mo>,</mo><mi class="ltx_font_mathcaligraphic">ℬ</mi><mo>,</mo><mi class="ltx_font_mathcaligraphic">𝒫</mi><mo>;</mo><msub><mi class="ltx_font_mathcaligraphic">ℛ</mi><mi>t</mi></msub><mo stretchy="false">)</mo></mrow><mo rspace="2.167em">,</mo><mi>j</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi mathvariant="normal">…</mi><mo>,</mo><mi>k</mi><mo lspace="0em">.</mo></mrow><annotation encoding="application/x-tex">\mathcal{H}^{\prime}_{j}=\textsc{Compose}_{j}(q_{t},\mathcal{H},\mathcal{B},\mathcal{P};\mathcal{R}_{t}),\qquad j=1,\ldots,k.</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(2)</span></td></tr></tbody>
+</table>
+<p id="S2.SS2.SSS2.p2.2" class="ltx_p">Each session selectively combines or revises supported edits to
+produce a successor <math id="S2.SS2.SSS2.p2.m8" class="ltx_Math" alttext="\mathcal{H}^{\prime}_{j}" display="inline" intent=":literal"><semantics><msubsup><mi class="ltx_font_mathcaligraphic">ℋ</mi><mi>j</mi><mo>′</mo></msubsup><annotation encoding="application/x-tex">\mathcal{H}^{\prime}_{j}</annotation></semantics></math>, which is then executed.
+The recursive update thus uses generated harnesses and execution
+evidence for further refinement, not merely output ranking.
+Our implementation performs one population update; <math id="S2.SS2.SSS2.p2.m9" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> controls
+its width rather than its depth.</p>
+</div>
+<div id="S2.SS2.SSS2.p3" class="ltx_para ltx_noindent">
+<p id="S2.SS2.SSS2.p3.1" class="ltx_p"><span id="S2.SS2.SSS2.p3.1.1" class="ltx_text ltx_font_bold">Sequential Recursion.</span>
+Sequential recursion applies iterative self-refinement
+<cite class="ltx_cite ltx_citemacro_citep">(<a href="#bib.bib24" title="" class="ltx_ref">Madaan et al., 2023</a>)</cite> to the execution harness.
+Starting from <math id="S2.SS2.SSS2.p3.m1" class="ltx_Math" alttext="\mathcal{H}^{(0)}=\mathcal{H}_{0}" display="inline" intent=":literal"><semantics><mrow><msup><mi class="ltx_font_mathcaligraphic">ℋ</mi><mrow><mo stretchy="false">(</mo><mn>0</mn><mo stretchy="false">)</mo></mrow></msup><mo>=</mo><msub><mi class="ltx_font_mathcaligraphic">ℋ</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">\mathcal{H}^{(0)}=\mathcal{H}_{0}</annotation></semantics></math>, it chains <math id="S2.SS2.SSS2.p3.m2" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+contrastive steps, each conditioned on the preceding harness
+and accumulated execution history <math id="S2.SS2.SSS2.p3.m3" class="ltx_Math" alttext="\mathcal{E}^{(r-1)}" display="inline" intent=":literal"><semantics><msup><mi class="ltx_font_mathcaligraphic">ℰ</mi><mrow><mo stretchy="false">(</mo><mrow><mi>r</mi><mo>−</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow></msup><annotation encoding="application/x-tex">\mathcal{E}^{(r-1)}</annotation></semantics></math>:</p>
+<table id="S2.E3" class="ltx_equation ltx_eqn_table">
+
+<tbody><tr class="ltx_equation ltx_eqn_row ltx_align_baseline">
+<td class="ltx_eqn_cell ltx_eqn_center_padleft"></td>
+<td class="ltx_eqn_cell ltx_align_center"><math id="S2.E3.m1" class="ltx_math_unparsed" alttext="(\mathcal{H}^{(r)},e^{(r)},\xi^{(r)})=\Phi(q_{t},\mathcal{H}^{(r-1)},\mathcal{E}^{(r-1)};\mathcal{R}_{t}),\qquad r=1,\ldots,k." display="block" intent=":literal"><semantics><mrow><mrow><mo stretchy="false">(</mo><msup><mi class="ltx_font_mathcaligraphic">ℋ</mi><mrow><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo></mrow></msup><mo>,</mo><msup><mi>e</mi><mrow><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo></mrow></msup><mo>,</mo><msup><mi>ξ</mi><mrow><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo></mrow></msup><mo stretchy="false">)</mo></mrow><mo>=</mo><mi mathvariant="normal">Φ</mi><mrow><mo stretchy="false">(</mo><msub><mi>q</mi><mi>t</mi></msub><mo>,</mo><msup><mi class="ltx_font_mathcaligraphic">ℋ</mi><mrow><mo stretchy="false">(</mo><mrow><mi>r</mi><mo>−</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow></msup><mo>,</mo><msup><mi class="ltx_font_mathcaligraphic">ℰ</mi><mrow><mo stretchy="false">(</mo><mrow><mi>r</mi><mo>−</mo><mn>1</mn></mrow><mo stretchy="false">)</mo></mrow></msup><mo>;</mo><msub><mi class="ltx_font_mathcaligraphic">ℛ</mi><mi>t</mi></msub><mo stretchy="false">)</mo></mrow><mo rspace="2.167em">,</mo><mi>r</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi mathvariant="normal">…</mi><mo>,</mo><mi>k</mi><mo lspace="0em">.</mo></mrow><annotation encoding="application/x-tex">(\mathcal{H}^{(r)},e^{(r)},\xi^{(r)})=\Phi(q_{t},\mathcal{H}^{(r-1)},\mathcal{E}^{(r-1)};\mathcal{R}_{t}),\qquad r=1,\ldots,k.</annotation></semantics></math></td>
+<td class="ltx_eqn_cell ltx_eqn_center_padright"></td>
+<td rowspan="1" class="ltx_eqn_cell ltx_eqn_eqno ltx_align_middle ltx_align_right"><span class="ltx_tag ltx_tag_equation ltx_align_right">(3)</span></td></tr></tbody>
+</table>
+<p id="S2.SS2.SSS2.p3.2" class="ltx_p">Here, <math id="S2.SS2.SSS2.p3.m4" class="ltx_Math" alttext="\Phi" display="inline" intent=":literal"><semantics><mi mathvariant="normal">Φ</mi><annotation encoding="application/x-tex">\Phi</annotation></semantics></math> is the contrastive step defined in
+Equation <a href="#S2.E1" title="Equation 1 ‣ 2.2.1 A Contrastive Improvement Step ‣ 2.2 Task-Level Recursion ‣ 2 Harness2 ‣ Harness2: Recursive Agent Harnessing foran Open World" class="ltx_ref"><span class="ltx_text ltx_ref_tag">1</span></a>, returning the refined harness,
+its execution record <math id="S2.SS2.SSS2.p3.m5" class="ltx_Math" alttext="e^{(r)}" display="inline" intent=":literal"><semantics><msup><mi>e</mi><mrow><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo></mrow></msup><annotation encoding="application/x-tex">e^{(r)}</annotation></semantics></math>, and the step record <math id="S2.SS2.SSS2.p3.m6" class="ltx_Math" alttext="\xi^{(r)}" display="inline" intent=":literal"><semantics><msup><mi>ξ</mi><mrow><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo></mrow></msup><annotation encoding="application/x-tex">\xi^{(r)}</annotation></semantics></math>.
+The initial history contains <math id="S2.SS2.SSS2.p3.m7" class="ltx_Math" alttext="k" display="inline" intent=":literal"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math> base executions and is extended
+after each step with <math id="S2.SS2.SSS2.p3.m8" class="ltx_Math" alttext="\xi^{(r)}" display="inline" intent=":literal"><semantics><msup><mi>ξ</mi><mrow><mo stretchy="false">(</mo><mi>r</mi><mo stretchy="false">)</mo></mrow></msup><annotation encoding="application/x-tex">\xi^{(r)}</annotation></semantics></math>. Later steps can therefore retain,
+revise, or correct earlier changes using both current and
+previous evidence.</p>
+</div>
+<div id="S2.SS2.SSS2.p4" class="ltx_para ltx_noindent">
+<p id="S2.SS2.SSS2.p4.1" class="ltx_p"><span id="S2.SS2.SSS2.p4.1.1" class="ltx_text ltx_font_bold">Final Selection.</span>
+For <math id="S2.SS2.SSS2.p4.m1" class="ltx_Math" alttext="k&gt;1" display="inline" intent=":literal"><semantics><mrow><mi>k</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">k&gt;1</annotation></semantics></math>, an agentic selector compares anonymized deliverables
+against the task request and source materials. It returns an
+existing output without access to its originating harness or
+synthesizing new content. The corresponding harness is denoted
+<math id="S2.SS2.SSS2.p4.m2" class="ltx_Math" alttext="\mathcal{H}_{t}^{\star}" display="inline" intent=":literal"><semantics><msubsup><mi class="ltx_font_mathcaligraphic">ℋ</mi><mi>t</mi><mo>⋆</mo></msubsup><annotation encoding="application/x-tex">\mathcal{H}_{t}^{\star}</annotation></semantics></math>, where the star indicates adoption rather
+than verified optimality. Selection adds no harness revision.
+At <math id="S2.SS2.SSS2.p4.m3" class="ltx_Math" alttext="k=1" display="inline" intent=":literal"><semantics><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">k=1</annotation></semantics></math>, both forms reduce to the basic contrastive step and
+bypass selection. Appendix <a href="#A8" title="Appendix H Prompts ‣ Harness2: Recursive Agent Harnessing foran Open World" class="ltx_ref"><span class="ltx_text ltx_ref_tag">H</span></a> provides the stage prompts.</p>
+</div>
+</section>
+</section>
 </section>
 <section id="S4" class="ltx_section">
 <h2 class="ltx_title ltx_title_section"><span class="ltx_tag ltx_tag_section">4 </span>Analysis</h2>

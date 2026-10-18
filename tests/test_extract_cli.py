@@ -5,7 +5,7 @@ import json
 import subprocess
 import warnings
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -1223,3 +1223,89 @@ class TestArxivShortcutFlag:
         assert parsed() is None
         assert parsed("--arxiv-shortcut") is True
         assert parsed("--no-arxiv-shortcut") is False
+
+
+# ---------------------------------------------------------------------------
+# Figure persistence through the CLI: a failed figure is visible on both routes
+# ---------------------------------------------------------------------------
+
+_PAPER_WITH_FIGURES = (
+    "# Paper\n\n![a](2610.14224v1/ok.png)\n\n![b](2610.14224v1/gone.png)\n\n" + "text " * 40
+)
+
+
+def _fetch_all_but_gone(url: str) -> bytes:
+    if url.endswith("gone.png"):
+        raise OSError("HTTP Error 404")
+    return b"PNG"
+
+
+class TestFigureWarningsThroughCli:
+    def _assert_one_failed_figure(self, out_dir, capsys):
+        output = (out_dir / "output.md").read_text()
+        assert "](images/ok.png)" in output
+        assert (out_dir / "images" / "ok.png").read_bytes() == b"PNG"
+        assert "](2610.14224v1/gone.png)" in output
+        [warning] = json.loads((out_dir / "metrics.json").read_text())["warnings"]
+        assert "gone.png" in warning and "404" in warning
+        assert warning in capsys.readouterr().err
+
+    def test_pdf_route(self, tmp_path, capsys):
+        from agentic_mbse.extraction.http import FetchResult
+        from tests.helpers.arxiv_page import ARXIV_PAGE
+        from tests.helpers.arxiv_pdfs import STAMP, make_pdf
+
+        pdf = make_pdf(tmp_path / "paper.pdf", stamps=(STAMP,))
+        served = FetchResult(
+            content=ARXIV_PAGE.read_bytes(),
+            final_url="https://arxiv.org/html/2610.14224",
+            content_type="text/html",
+        )
+        args = MockArgs(path=str(pdf), output=str(tmp_path / "out"), budget=0.0)
+        with (
+            patch("agentic_mbse.extraction.pandoc_convert._pandoc_available", return_value=True),
+            patch(
+                "agentic_mbse.extraction.pandoc_convert.check_arxiv_html",
+                return_value="https://arxiv.org/html/2610.14224",
+            ),
+            patch("agentic_mbse.extraction.arxiv_html.fetch_url", return_value=served),
+            patch(
+                "subprocess.run",
+                return_value=MagicMock(returncode=0, stdout=_PAPER_WITH_FIGURES, stderr=""),
+            ),
+            patch(
+                "agentic_mbse.extraction.arxiv_html.fetch_image", side_effect=_fetch_all_but_gone
+            ),
+        ):
+            rc = cmd_extract(args)
+
+        assert rc == EXIT_SUCCESS
+        self._assert_one_failed_figure(tmp_path / "out" / "paper", capsys)
+
+    def test_web_route(self, tmp_path, capsys):
+        from agentic_mbse.extraction.http import FetchResult
+        from tests.helpers.arxiv_page import ARXIV_PAGE
+
+        served = FetchResult(
+            content=ARXIV_PAGE.read_bytes(),
+            final_url="https://arxiv.org/html/2610.14224v1",
+            content_type="text/html",
+            encoding="utf-8",
+        )
+        args = MockArgs(path="https://arxiv.org/html/2610.14224v1", output=str(tmp_path / "out"))
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="html"),
+            patch("agentic_mbse.extraction.web_backend.fetch_url", return_value=served),
+            patch(
+                "subprocess.run",
+                return_value=MagicMock(returncode=0, stdout=_PAPER_WITH_FIGURES, stderr=""),
+            ),
+            patch(
+                "agentic_mbse.extraction.web_backend.fetch_image", side_effect=_fetch_all_but_gone
+            ),
+        ):
+            rc = cmd_extract(args)
+
+        assert rc == EXIT_SUCCESS
+        self._assert_one_failed_figure(tmp_path / "out", capsys)
