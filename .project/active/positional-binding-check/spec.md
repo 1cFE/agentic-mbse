@@ -1,6 +1,6 @@
 # Spec: Positional-binding hazard and check (EXEC-SUBSET-CONTRACT Item 4)
 
-**Status:** Audited 2026-10-18, Certify (`audit.md`; Det-6 `out_before_in` row and Repo-1 left open); revised after spec review (2026-10-18)
+**Status:** Audited 2026-10-18, Certify; audit fixes applied 2026-10-18 (`audit.md`; Repo-1 met; Det-6 `out_before_in` row left open for the owner); revised after spec review (2026-10-18)
 **Owner:** Reid Westwood
 **Created:** 2026-10-18
 **Complexity:** MEDIUM
@@ -81,7 +81,7 @@ Paths below are the intended homes; design may rename them, but each criterion m
 
 **Repository checks**
 
-- [ ] `uv run pytest tests/`, `uv run mypy src/` and `uv run ruff check src/ tests/` pass. The evidence states which tests needed the SysIDE licence and which slow tests ran or skipped.
+- [x] `uv run pytest tests/`, `uv run mypy src/` and `uv run ruff check src/ tests/` pass. The evidence states which tests needed the SysIDE licence and which slow tests ran or skipped. *(Met as the plan defines green: equal to the `main` baseline at `ccd57d83`, whose 6 environment test failures, 97 mypy errors and 118 ruff errors are pre-existing. Orchestrator run on `73be541e`: 3936 passed, the same 6 failures; ruff 118, mypy 97; touched files clean. Re-run after the audit fixes: 3947 passed, the same 6 failures; mypy 97; ruff 118; touched files clean. Record: `evidence/repository-checks.md`, audit.md "Audit fixes".)*
 
 ## Known Requirements
 

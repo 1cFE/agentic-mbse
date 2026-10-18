@@ -145,3 +145,36 @@ The subsetting gap (Advisory 1) is a gap in D19 as designed, not a deviation fro
 - I did not re-derive the 125 identities or the outcome counts; I checked that the comparison is independent and read its recorded result.
 - I did not read sysml-codegen's conformance test or re-run it; `evidence/codegen-conformance.md` is the implementer's record.
 - I did not check whether fusion-tea or dc3 contain any calc or constraint usage that subsets another feature (the read was refused).
+
+---
+
+## Audit fixes
+
+**Applied:** 2026-10-18, on top of `a669650d`. All seven cheap items are done; Advisory 8 is deferred. Repo-1 is now ticked in the spec. Det-6's `out_before_in` row stays open for the owner.
+
+**Repository checks.** Orchestrator run on `73be541e`: 3936 passed, the same 6 failures as `main` at `ccd57d83`; ruff 118, mypy 97; touched files clean. Re-run after these fixes: 3947 passed, the same 6 failures; mypy 97; ruff 118; every touched Python file passes `ruff check` and `ruff format --check`. The slow tree test was re-run (3 passed: fusion-tea still gives exactly 125 identities, dc3 none). The corpus slow tests were not re-run. Sibling checkouts unchanged. Record: `evidence/repository-checks.md` "After the audit fixes".
+
+**1. Unresolved `:>` subsetting: confirmed and fixed.** The learning tests (`tests/learning/test_syside_input_redefinition.py`, section A1) show what SysIDE 0.8.4 does for `calc c :> missing { in b = 3; in a = 10; }` and the constraint equivalent, spelled `:>`, `subsets` and `::>`:
+- The owner has one explicit `Subsetting` (`ReferenceSubsetting` for `::>`), whose target is an unowned `<placeholder Feature>` (`owning_relationship is None`). SysIDE puts `No Feature named 'missing' found.` in `diagnostics.sema`; the parser has nothing.
+- The inputs get no redefinition at all. Their relationships are an implied `FeatureTyping` and `Subsetting`, the same as a new parameter. So the audit's prediction held: L2 passed the swap silently.
+- When the subsetted feature does resolve (`calc c :> s` with `s : Sub`), the inputs get implied redefinitions to `Sub::a` and `Sub::b` by position, so the unresolved case really does hide a swap.
+
+The fix: `_explicit_targets` (`src/agentic_mbse/sysml/parameter_redefinition_extraction.py`) now yields explicit `Subsetting` targets, tested after `Redefinition` because `Redefinition` is a subtype. The existing placeholder test then reports the owner as `L2_CHECK_UNVERIFIABLE`, reason `POSITIONAL_UNRESOLVED_OWNER_TYPE`, with a detail saying "the owner's explicit Subsetting targets an unresolved reference (<placeholder Feature>)". `Subsetting` joins the adapter's closed type map (`syside_adapter.py`). New fixture `tests/fixtures/positional_binding/unresolved/unresolved_subsetting.sysml`, run by the fixture suite, by `test_unresolved_subsetting_is_an_owner_failure` (`tests/test_sysml/test_parameter_redefinition_extraction.py`) and through L2 by `test_the_m1_fixtures_are_unverifiable_through_l2`. All three failed before the fix: the extractor gave no failure and the fixture header's two unverifiable results were missing. The register's Limits now list these shapes. I kept the existing cause rather than adding one, because its meaning ("the owner's explicit type, supertype or redefinition target is a placeholder") already covers this; its comment now names subsetting.
+
+**2. Run summary line: fixed.** When the run passes and any level has pinned positional warnings, the last line is now "✅ Quality checks passed with N pinned positional warnings; not a value or route-parity check" instead of "✅ All quality checks passed!" (`src/agentic_mbse/validation/runner.py`). The exit code is still 0, as designed. The count and text live in `common.py` (`pinned_positional_warnings`, `pinned_note`, and `AggregatedResult.pinned_note`), shared with the L2 header note. Tests: `test_the_run_summary_names_pinned_warnings_and_still_exits_zero` (failed against the old runner) and `test_the_run_summary_is_unqualified_without_pinned_warnings`, in `tests/test_validation/test_positional_binding_policy.py`. The register says the same.
+
+**3. `out_before_in`: header corrected and behavior pinned.** The header of `tests/fixtures/positional_binding/l1/out_before_in.sysml` now states the observed result: L1 passes; L2 fails with two positional errors, `a → O::o` and `b → O::a`; SysIDE's `redefinition-direction-conformance` is in `diagnostics.validation`, which no level reads (backlog `VALIDATE-SEMA-DIAGNOSTICS`). `test_out_before_in_passes_l1_and_fails_l2_on_two_positional_errors` (`tests/test_validation/test_positional_binding.py`) asserts all of it, and is labelled current behavior pending the owner's Det-6 decision.
+
+**4. Pin message: fixed.** An unpinned positional ERROR that can be pinned now says, before its copyable fields, "Pin these fields only for a mismatch that existed at the pin list's recorded_against revision; repair a new one" (`positional_check.PIN_ELIGIBILITY`). A pinned warning and an unpinnable finding do not carry it. The tree reproduction still parses the fields, since they stay last in brackets. Test: `test_only_an_unpinned_error_says_pins_are_for_legacy_mismatches`.
+
+**5. Empty sweep: register only.** The register's Limits now say that if the owner sweeps returned nothing, L2 would inspect no inputs and pass, that only the `Positional inputs inspected` metric shows it, and that only the reproduction script treats zero as a failure. No code change, because zero owners is a legitimate result for a model with no calcs.
+
+**6. Special-parameter phrase: fixed.** The "Not flagged" line now says SysIDE checks subject, actor and stakeholder positions but `validate` does not currently report that diagnostic (backlog `VALIDATE-SEMA-DIAGNOSTICS`).
+
+**7. `~/.claude` as a root marker: register only.** "Where the list is found" now says a tree under the home directory with no marker of its own usually finds the home directory as its root and looks at `~/positional-pins.toml`. The marker behavior itself is pre-existing and shared, so it is not changed here.
+
+**Deferred.**
+- Advisory 8 (duplication of `_direction` and `_READ_ERRORS` with Item 1): no change, as the audit itself says, because both copies are short and commented. Worth revisiting only if Item 1's reading changes.
+- The audit's ungraded note that a whitespace-only `revision` in the pin list is accepted: not changed. It is a format nicety with no effect on matching, and the spec did not ask for it.
+
+**Not checked.** I did not check whether fusion-tea or dc3 contain calc or constraint usages with explicit subsetting; the tree tests assert zero unverifiable results and still pass with the new check, so at the pinned revisions (fusion-tea `f96ad312`, both dc3 revisions) none subsets an unresolved feature.

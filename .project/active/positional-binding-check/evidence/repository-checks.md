@@ -31,3 +31,12 @@ The 6 failures are the baseline's 6, node for node: three in `tests/test_check.p
 ## Siblings
 
 sysml-codegen `8396cb23`, dc3 `60b44d5`, fusion-tea `f96ad312` (checkout HEADs): no working-tree changes before or after this session's runs. Every read went through `git archive`, `ls-tree`, `cat-file`, `rev-parse`, `ls-remote` or `status`.
+
+## After the audit fixes
+
+- Orchestrator run on `73be541e` (before the fixes): 3936 passed, the same 6 failures as `main` at `ccd57d83`; ruff 118, mypy 97; touched files clean.
+- Re-run after the fixes (working tree before commit): `uv run pytest tests/` gives 6 failed (the same 6, node for node), 3947 passed, 8 skipped, 17 deselected, 1 xfailed. The 11 new tests are 4 learning tests (A1), 1 extraction test, 4 policy tests, 1 fixture-suite case for `unresolved_subsetting` and the `out_before_in` test.
+- `uv run mypy src/`: 97. `uv run ruff check src/ tests/`: 118. Every touched Python file passes `ruff check` and `ruff format --check`.
+- Slow lane: only `tests/test_validation/test_positional_binding_trees.py` re-run (3 passed): fusion-tea still gives exactly the 125 identities and dc3 none, with the new subsetting check in place. The corpus slow tests were not re-run.
+- Siblings: sysml-codegen `8396cb23`, dc3 `60b44d5`, fusion-tea `f96ad312` have no working-tree changes after the runs.
+

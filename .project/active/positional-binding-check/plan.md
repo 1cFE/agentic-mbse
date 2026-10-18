@@ -1,6 +1,6 @@
 # Implementation Plan: Positional-binding hazard and check (EXEC-SUBSET-CONTRACT Item 4)
 
-**Status:** Implementation complete (Phases 1-8 done); next `/_my_audit`
+**Status:** Implementation complete (Phases 1-8 done), audited (Certify) and audit fixes applied; next `/_my_close`
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `positional-binding-check` (base `main` at `ccd57d83`)
@@ -928,7 +928,19 @@ See `design.md#potential-risks` for the full list. Phase-specific mitigations:
 - Example markers: `expect` names are relative to the wrapper package, not fully qualified, so the docs read naturally.
 - Manual read as an author: the skill paragraph and role sentence first showed only one repair; both now name by-name, definition order and `redefines`.
 
+### Audit fixes
+**Completed:** 2026-10-18 (from `audit.md`, verdict Certify; details in its "Audit fixes" section)
+
+**Changes Made:**
+- Advisory 1: learning tests A1 (`tests/learning/test_syside_input_redefinition.py`) show an unresolved `:>`, `subsets` or `::>` on a calc or constraint usage gives an explicit `Subsetting` to an unowned `<placeholder Feature>` and leaves the inputs looking like new parameters, so L2 passed silently. `_explicit_targets` (`parameter_redefinition_extraction.py`) now checks `Subsetting` targets after `Redefinition`; `Subsetting` joins the adapter's closed type map. New fixture `unresolved/unresolved_subsetting.sysml`; reports `L2_CHECK_UNVERIFIABLE` with `POSITIONAL_UNRESOLVED_OWNER_TYPE` and a detail naming the Subsetting. The three new tests failed before the fix.
+- Advisory 2: `runner.py` ends a pass that rests on pinned positional warnings with "Quality checks passed with N pinned positional warnings; not a value or route-parity check". Exit code unchanged (0). The count is `AggregatedResult.pinned_note` in `common.py`, so the runner's double import block gains no names.
+- Advisory 3: `l1/out_before_in.sysml` header rewritten to the observed result; `test_out_before_in_passes_l1_and_fails_l2_on_two_positional_errors` pins it.
+- Advisory 4: an unpinned, pinnable positional ERROR now says the fields are for mismatches that existed at the list's `recorded_against` revision (`positional_check.PIN_ELIGIBILITY`).
+- Advisories 5, 6, 7: register text in `docs/patterns/semantic-hazards.md`.
+
+**Deviations:** none from the brief. Advisory 8 not changed (see the audit).
+
 ---
 
-**Status:** Implementation complete
-**Next Step:** `/_my_audit`.
+**Status:** Implementation complete; audit fixes applied
+**Next Step:** `/_my_close`.
