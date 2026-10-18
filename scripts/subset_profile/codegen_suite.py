@@ -4,7 +4,8 @@
     uv run python scripts/subset_profile/codegen_suite.py diff NAME_A NAME_B
 
 The same-generator check (design § Probe harness step 6, plan P-9). `run` builds a fresh tree with
-the `probe.py` pattern (codegen at the pin, agentic-mbse at REV, `uv sync --frozen`), runs
+the `probe.py` pattern (codegen at the pin, agentic-mbse at REV, `uv sync --frozen`, plus
+codegen's `dev` extra from the same lock), runs
 codegen's suite with its own configuration from inside the tree, and writes every test's outcome
 to `evidence/codegen-suite/<NAME>.json` with the run identity. `diff` compares two such runs
 test by test; it exits non-zero on any difference, so identical results are the only pass.
@@ -76,6 +77,16 @@ def run(args: argparse.Namespace) -> int:
     before = sibling_state(codegen_repo)
     env = child_env(read_license_key())
     python = build_tree(tree, codegen_repo, codegen, agentic, env)
+    # The suite needs codegen's `dev` extra (pytest, jsonschema), still pinned by its uv.lock.
+    dev = subprocess.run(
+        ["uv", "sync", "--frozen", "--extra", "dev"],
+        cwd=tree / "sysml-codegen",
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    if dev.returncode != 0:
+        raise SystemExit(f"uv sync --frozen --extra dev failed in {tree}:\n{dev.stderr}")
     identity = {k: v for k, v in vars(read_identity(tree, python, env, codegen, agentic)).items()}
     argv = [str(python), "-I", "-m", "pytest", "-rA", "-p", "no:cacheprovider", "--color=no"]
     done = subprocess.run(
