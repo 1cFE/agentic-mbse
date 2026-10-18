@@ -23,3 +23,7 @@
 ## Owner boundary (2026-10-18)
 
 - [OWNER] "I am working with another agent on item 2, so do not touch that." Item 4 must not modify sysml-codegen or any Item 2 artifact. It records the generator semantic discrepancy as a finding for upstream only. sysml-codegen PR #21 (ADR 0018, `.project/adr/` only) was opened before this instruction.
+
+## Gate outcomes
+
+- **R4-1 (2026-10-18):** [AGENT] (ratified by owner, "A is fine") pin-list integrity rests on review of changes to the pin file; no toolkit-verified digest. Rejected for now: a recorded digest of the pinned set.
