@@ -208,7 +208,7 @@ def test_c3_non_numerical_is_one_warning_per_statement(monkeypatch):
     identified = identify(narrowed)
     monkeypatch.setattr(
         level6_architecture,
-        "extract_identified_constraint_facts",
+        "constraint_facts",
         lambda _model: identified,
     )
 

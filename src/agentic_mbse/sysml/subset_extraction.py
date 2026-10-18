@@ -449,9 +449,13 @@ def _occurrence(
     return result
 
 
-def _constraints(model: Any, collector: _Collector) -> IdentifiedConstraintFacts | None:
+def _constraints(
+    model: Any,
+    collector: _Collector,
+    constraint_facts: Callable[[Any], IdentifiedConstraintFacts],
+) -> IdentifiedConstraintFacts | None:
     try:
-        constraints = extract_identified_constraint_facts(model)
+        constraints = constraint_facts(model)
     except SemanticEvidenceError as error:
         collector.failures.append(FactFailure(FactKind.CONSTRAINT, None, error.code, error.detail))
         return None
@@ -463,14 +467,22 @@ def _sorted(facts: list[_Fact]) -> tuple[_Fact, ...]:
     return tuple(sorted(facts, key=lambda fact: fact.sort_key()))
 
 
-def extract_subset_facts(model: Any, extra_roots: Iterable[Any] = ()) -> SubsetFacts:
+def extract_subset_facts(
+    model: Any,
+    extra_roots: Iterable[Any] = (),
+    constraint_facts: Callable[[Any], IdentifiedConstraintFacts] = (
+        extract_identified_constraint_facts
+    ),
+) -> SubsetFacts:
     """Every subset fact for one loaded model, each kind total, in deterministic order.
 
     `extra_roots` are caller-supplied `PartUsage` roots for the occurrence facts (design D7).
+    `constraint_facts` produces the model's constraint facts; `validate` passes its run's shared
+    extraction so the facts are computed once per run (Item 3 design D14).
     """
     collector = _Collector([], set())
     structure = _occurrence(model, extra_roots, collector)
-    constraints = _constraints(model, collector)
+    constraints = _constraints(model, collector, constraint_facts)
 
     multiplicities: list[PartMultiplicityFact] = []
     if structure is not None:

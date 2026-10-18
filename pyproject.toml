@@ -103,6 +103,7 @@ addopts = "-v --tb=short -m 'not slow'"
 markers = [
     "corpus: integration tests against real corpus PDFs (may cost money)",
     "slow: tests that take >5s (corpus PDF extraction); run with: pytest -m slow",
+    "syside: tests that load a model through SysIDE; a label only, never skipped (needs SYSIDE_LICENSE_KEY)",
 ]
 
 [tool.coverage.run]

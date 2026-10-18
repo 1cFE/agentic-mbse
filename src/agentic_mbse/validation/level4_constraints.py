@@ -10,7 +10,6 @@ import sys
 from collections import Counter
 from typing import Any
 
-from agentic_mbse.sysml.constraint_extraction import extract_identified_constraint_facts
 from agentic_mbse.sysml.executable_profile import (
     Eligibility,
     evaluate_identified_profile,
@@ -33,6 +32,7 @@ from agentic_mbse.validation.common import (
     print_header,
     print_result,
 )
+from agentic_mbse.validation.session import constraint_facts
 
 
 def eligibility_coverage_metrics(model: Any) -> dict:
@@ -62,7 +62,7 @@ def eligibility_coverage_metrics(model: Any) -> dict:
         Metrics dict: assessed denominator, eligibility admit/block/unassessed counts,
         and the admit-rate percentage.
     """
-    result = evaluate_identified_profile(extract_identified_constraint_facts(model))
+    result = evaluate_identified_profile(constraint_facts(model))
     counts = Counter(item.decision.eligibility for item in result.decisions)
 
     admitted = counts[Eligibility.ADMIT]

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.validation.positional_check import is_pinned_positional_warning
+from agentic_mbse.validation.session import active_session
 
 if TYPE_CHECKING:
     from agentic_mbse.sysml.types import ValidationIssue
@@ -109,9 +110,15 @@ def load_sysml_model(files: list[Path]) -> tuple[Any, Any]:
     Returns:
         (model, diagnostics) tuple
 
+    Inside a `ValidationSession` (the runner's run), the same file list is loaded once and
+    shared by every level (design D14).
+
     Raises:
         Exception: If model loading fails catastrophically
     """
+    session = active_session()
+    if session is not None:
+        return session.load(files)
     # Use try_load_model to get model even with errors
     model, diagnostics = SysideAdapter.load_model(files)
     return model, diagnostics

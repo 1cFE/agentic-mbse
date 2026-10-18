@@ -17,7 +17,6 @@ from typing import Any
 
 import yaml
 
-from agentic_mbse.sysml.constraint_extraction import extract_identified_constraint_facts
 from agentic_mbse.sysml.executable_profile import Eligibility, evaluate_identified_profile
 from agentic_mbse.sysml.expression import (
     evaluate_true_static_expression,
@@ -46,6 +45,7 @@ from .common import (
     load_sysml_model,
     print_header,
 )
+from .session import constraint_facts
 
 # --- Functions from L7 (manifest validation) ---
 
@@ -647,7 +647,7 @@ def check_constraint_executability(model: Any) -> list[ValidationIssue]:
     # D7 (Item 4): an extraction failure must surface, not collapse to "no diagnostics" — no
     # `except Exception: ...` swallow here, matching the discipline this function has kept since
     # Item 4 removed the equivalent swallow for constraint enumeration.
-    result = evaluate_identified_profile(extract_identified_constraint_facts(model))
+    result = evaluate_identified_profile(constraint_facts(model))
 
     issues: list[ValidationIssue] = []
     for identified in result.decisions:
@@ -689,9 +689,7 @@ def check_constraint_executability(model: Any) -> list[ValidationIssue]:
                 suggestion=suggestions,
                 # One aggregated WARNING per statement, so the branchable code is the
                 # first diagnostic's reason; the full set stays in `message`.
-                reason_code=next(
-                    (diagnostic.reason for diagnostic in decision.diagnostics), None
-                ),
+                reason_code=next((diagnostic.reason for diagnostic in decision.diagnostics), None),
             )
         )
     return issues

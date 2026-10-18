@@ -68,7 +68,7 @@ def test_executable_share_denominator_includes_non_numerical(monkeypatch):
     identified = identify(narrowed)
     monkeypatch.setattr(
         level4_constraints,
-        "extract_identified_constraint_facts",
+        "constraint_facts",
         lambda _model: identified,
     )
 

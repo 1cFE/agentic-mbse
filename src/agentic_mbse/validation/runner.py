@@ -42,6 +42,8 @@ except ImportError:
     from level5_traceability import validate_traceability
     from level6_architecture import validate_architecture
 
+# Absolute in both modes: `common` already imports the installed package's modules this way.
+from agentic_mbse.validation.session import ValidationSession
 
 # Registry of all quality checks
 # Levels 1-6 implemented (complete quality pyramid)
@@ -107,34 +109,35 @@ def run_all_checks(
         print(f"Running: Level {specific_level} only")
     print(f"{'=' * 70}")
 
-    # Run checks
-    for name, check_func in calls:
-        if verbose:
-            print(f"\nRunning: {name}...")
-
-        try:
-            result = check_func(models_path)
-            results.append(result)
-
-            # Print result
-            print_result(result)
-
-            # Fail-fast mode: stop on first failure
-            if fail_fast and not result.success:
-                print(f"\n❌ Stopping at first failure (Level {result.level})")
-                print("   Use --complete to run all levels regardless of failures")
-                break
-
-        except Exception as e:
-            print(f"\n❌ Error running {name}: {e}")
+    # Run checks. One model load and one constraint extraction are shared by every level (D14).
+    with ValidationSession():
+        for name, check_func in calls:
             if verbose:
-                import traceback
+                print(f"\nRunning: {name}...")
 
-                traceback.print_exc()
+            try:
+                result = check_func(models_path)
+                results.append(result)
 
-            # Treat exceptions as failures
-            if fail_fast:
-                break
+                # Print result
+                print_result(result)
+
+                # Fail-fast mode: stop on first failure
+                if fail_fast and not result.success:
+                    print(f"\n❌ Stopping at first failure (Level {result.level})")
+                    print("   Use --complete to run all levels regardless of failures")
+                    break
+
+            except Exception as e:
+                print(f"\n❌ Error running {name}: {e}")
+                if verbose:
+                    import traceback
+
+                    traceback.print_exc()
+
+                # Treat exceptions as failures
+                if fail_fast:
+                    break
 
     # Calculate aggregate stats
     passed = sum(1 for r in results if r.success)
