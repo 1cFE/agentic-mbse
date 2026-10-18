@@ -13,6 +13,14 @@
     "verdict": "incomplete",
     "findings": [
       {
+        "rule": "calc-usage-result",
+        "shape": "bare_result",
+        "context": "other_expression_site",
+        "outcome": "omitted",
+        "subject": "fx::Site::m",
+        "line": 6
+      },
+      {
         "rule": "invocation-callable",
         "shape": "unsupported_callable",
         "context": "other_expression_site",

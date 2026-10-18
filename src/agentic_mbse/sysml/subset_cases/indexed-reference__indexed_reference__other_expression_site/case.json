@@ -13,6 +13,14 @@
     "verdict": "clear",
     "findings": [
       {
+        "rule": "calc-usage-result",
+        "shape": "bare_result",
+        "context": "other_expression_site",
+        "outcome": "omitted",
+        "subject": "fx::Site::m",
+        "line": 8
+      },
+      {
         "rule": "indexed-reference",
         "shape": "indexed_reference",
         "context": "other_expression_site",

@@ -1,0 +1,37 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      5,
+      5
+    ],
+    "description": "String label valued by reading fuel_unit, which is declared with its value \"liter\""
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": [
+      {
+        "rule": "string-value-omission",
+        "shape": "string_value",
+        "context": "attribute_value",
+        "outcome": "omitted",
+        "subject": "fx::Gen::fuel_unit",
+        "line": 4
+      },
+      {
+        "rule": "string-value-omission",
+        "shape": "string_value",
+        "context": "attribute_value",
+        "outcome": "omitted",
+        "subject": "fx::Gen::label",
+        "line": 5
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "Item 2a P4: String family, declaration spelling read by another attribute."
+  }
+}

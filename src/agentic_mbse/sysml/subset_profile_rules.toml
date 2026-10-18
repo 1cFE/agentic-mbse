@@ -198,6 +198,30 @@ evidence = [
     "case:calc-owned-assertion__non_asserted_constraint__unmapped_owner_kind__constraint_definition",
 ]
 
+# ---- CALC-USAGE-BARE-RESULT-DROP ----------------------------------------------------------------
+
+[[rule]]
+id = "calc-usage-result"
+title = "Calc usage's own bare result expression is not executed"
+matrix_rows = ["CALC-USAGE-BARE-RESULT-DROP"]
+fact_requirements = ["expression_site"]
+remedy = "Do not give a calculation usage its own result expression; put the expression in a calculation definition (a `return` with a value, or a definition whose result is left unbound) and type the usage by it."
+semantic_limits = "Every calculation usage that owns a bare result expression, instantiated or not. The generator computes the usage's result from its definition and never reads the usage's expression. The omission is a candidate refusal (qualification `candidate_refusal`), not an accepted outcome."
+doc_anchor = "generator-subset#calc-usage-result"
+evidence_status = "case_observed"
+example_case = "calc-usage-result__bare_result__other_expression_site"
+generator_evidence = []  # an omission has no raise site
+
+[[rule.shape]]
+id = "bare_result"
+reason = "calc_usage_bare_result_not_executed"
+
+[[rule.shape.admission]]
+context = "other_expression_site"
+outcome = "omitted"
+qualification = "candidate_refusal"
+evidence = ["case:calc-usage-result__bare_result__other_expression_site"]
+
 # ---- ES-006 -------------------------------------------------------------------------------------
 
 [[rule]]
@@ -636,6 +660,9 @@ context = "attribute_value"
 outcome = "omitted"
 evidence = [
     "case:string-value-omission__string_value__attribute_value__attribute_declaration",
+    "case:string-value-omission__string_value__attribute_value__read_by_attribute",
+    "case:string-value-omission__string_value__attribute_value__read_by_attribute_shorthand",
     "case:string-value-omission__string_value__attribute_value__redefinition_shorthand",
     "case:string-value-omission__string_value__attribute_value__template",
+    "case:string-value-omission__string_value__attribute_value__template_shorthand",
 ]

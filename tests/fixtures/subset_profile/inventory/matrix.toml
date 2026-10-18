@@ -395,18 +395,18 @@ upstream = []
 [[row]]
 id = "CALC-USAGE-BARE-RESULT-DROP"
 title = "Calc usage whose body ends in a bare result expression"
-class = "tracked_gap"
-contexts = ["a calc usage body ending in a bare expression, e.g. `calc m : Twice { in v = x; ScalarFunctions::max(v, 4271.5) }`"]
+class = "shared_rule"
+rule = "calc-usage-result"
+shapes = ["bare_result"]
+contexts = ["other_expression_site"]
 outcome = "omitted"
-evidence_status = "observed_in_record_cases"
+evidence_status = "case_observed"
 evidence = [
-    "case:invocation-callable__unsupported_callable__other_expression_site",
-    "case:conditional-expression__conditional_unresolved_branch__other_expression_site",
-    "case:indexed-reference__indexed_reference__other_expression_site",
+    "case:calc-usage-result__bare_result__other_expression_site",
 ]
-owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2, generator correctness)"
-coverage_limitation = "No rule of its own. The three site rules record this context (`other_expression_site`) as omitted for their shapes (an indexed reference, an unsupported invocation, a conditional with an unresolved branch), so those drops are reported; a bare result expression holding none of those shapes, plain arithmetic say, draws no finding and is dropped unreported."
-statement = "Found by Item 1's probes: the expression is never examined and produces nothing in the generated output; the usage's result comes from its definition. No diagnostic. Item 1's probes put a unique literal in the dropped expression and showed that it appeared in no generated file while the usage's own result was generated."
+owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 2a"
+coverage_limitation = "The record qualifies the omission as a candidate refusal (sysml-codegen Item 2a RG1-3): under KerML the usage's expression and the definition's bound result both hold, so the generator's answer is one of two contradictory bindings. Making the generator refuse is the owner's decision (RG-1). The three site rules still report their own shapes at this context."
+statement = "Found by Item 1's probes and pinned in Item 2a: the expression is never examined and the usage's result comes from its definition. No diagnostic. In Item 2a's case the usage's input binding is lost too (`in v = x` reaches no entry point), because the generator's member walk over the usage does not see the `in` member when the body ends in an expression."
 sites = []
 site_status = "no_raise_site"
 dc3 = []

@@ -27,7 +27,7 @@ fixture is refused and evaluates CLEAR), ES-002, ES-008, ES-009, the ES-010 refu
 CALC-DEF-BARE-RESULT; ES-011, G2, L6-LIBRARY-ALIAS-SOURCE and the PUSH-DOWN rows are tracked as
 unconfirmed; and the site account's follow-up sites are outside every rule. A calculation
 usage's bare result expression is dropped from the output (CALC-USAGE-BARE-RESULT-DROP); the
-site rules report that drop as `omitted` only for the shapes they recognize.
+`calc-usage-result` rule reports every one `omitted`, qualified as a candidate refusal.
 
 Each finding is counterfactual: what the generator does with this construct as if the rest of
 the model were admitted. The generator itself stops at its first error class.
@@ -142,6 +142,7 @@ SUBSET_REASON_CODES = frozenset(
         "constraint_predicate_blocked",
         "constraint_predicate_non_numerical",
         "string_value_not_generated",
+        "calc_usage_bare_result_not_executed",
     }
 )
 
@@ -242,6 +243,17 @@ class Qualification(StrEnum):
     NONE = "none"
     #: Admitted as a handwritten stub (`MANUAL_REQUIRED`), not executed.
     MANUAL_STUB = "manual_stub"
+    #: Admitted, excluded or omitted today, but a loss that should block: a candidate refusal
+    #: pending the owner's decision (sysml-codegen Item 2a D10, gate RG-1). The outcome states
+    #: what the generator does now; this says it is not an accepted outcome.
+    CANDIDATE_REFUSAL = "candidate_refusal"
+
+
+#: The outcomes each qualification may qualify.
+_QUALIFIED_OUTCOMES: Mapping[Qualification, frozenset[Outcome]] = {
+    Qualification.MANUAL_STUB: frozenset({Outcome.ADMITTED}),
+    Qualification.CANDIDATE_REFUSAL: frozenset({Outcome.ADMITTED, Outcome.EXCLUDED, Outcome.OMITTED}),
+}
 
 
 # ---- records ----------------------------------------------------------------------------------
@@ -454,8 +466,10 @@ def _admission(
     qualification = _member(
         Qualification, table.get("qualification", "none"), f"{where}.qualification"
     )
-    if qualification is not Qualification.NONE and outcome is not Outcome.ADMITTED:
-        raise RecordError(f"{where}: only an admission carries a qualification")
+    if qualification is not Qualification.NONE and outcome not in _QUALIFIED_OUTCOMES[qualification]:
+        raise RecordError(
+            f"{where}: qualification {qualification.value} cannot qualify outcome {outcome.value}"
+        )
     return context, Admission(outcome, evidence, qualification)
 
 
@@ -1023,6 +1037,20 @@ def _conditional_expression(facts: SubsetFacts) -> list[_RuleOutput]:
     return out
 
 
+def _calc_usage_result(facts: SubsetFacts) -> list[_RuleOutput]:
+    """CALC-USAGE-BARE-RESULT-DROP: a calc usage's own bare result expression.
+
+    The generator computes the usage's result from its definition and never reads the usage's
+    expression. The fact is the usage's `result_expression`, which SysIDE sets only for an
+    expression the usage owns, never one inherited from the definition.
+    """
+    return [
+        _at_site(site, "bare_result")
+        for site in facts.sites
+        if site.role is SiteRole.OTHER_EXPRESSION_SITE
+    ]
+
+
 def _string_value_omission(facts: SubsetFacts) -> list[_RuleOutput]:
     """ES-010 omission: a String value, in either spelling, never reaches generated output."""
     return [
@@ -1215,6 +1243,12 @@ _RULES: Mapping[str, _RuleSpec] = {
         _OWNER_CONTEXTS | {ContextId.WRITER_OVERRIDDEN},
         (FactKind.BINDING_SOURCE,),
         _binding_source,
+    ),
+    "calc-usage-result": _model_wide(
+        ("bare_result",),
+        (ContextId.OTHER_EXPRESSION_SITE,),
+        _SITE_REQUIREMENTS,
+        _calc_usage_result,
     ),
     "calc-owned-assertion": _model_wide(
         ("asserted_constraint", "non_asserted_constraint"),

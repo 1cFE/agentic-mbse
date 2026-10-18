@@ -280,6 +280,32 @@ def test_only_an_admission_carries_a_qualification() -> None:
         load(data)
 
 
+def bare_result_admission(data: dict[str, Any]) -> dict[str, Any]:
+    admission: dict[str, Any] = shape(data, "calc-usage-result", "bare_result")["admission"][0]
+    return admission
+
+
+def test_a_candidate_refusal_qualifies_an_omission() -> None:
+    data = packaged_data()
+    assert bare_result_admission(data)["outcome"] == "omitted"
+    assert bare_result_admission(data)["qualification"] == "candidate_refusal"
+    load(data)
+
+
+def test_a_manual_stub_cannot_qualify_an_omission() -> None:
+    data = packaged_data()
+    bare_result_admission(data)["qualification"] = "manual_stub"
+    with pytest.raises(RecordError, match="manual_stub cannot qualify outcome omitted"):
+        load(data)
+
+
+def test_a_candidate_refusal_cannot_qualify_a_refusal() -> None:
+    data = packaged_data()
+    bare_result_admission(data)["outcome"] = "refused"
+    with pytest.raises(RecordError, match="candidate_refusal cannot qualify outcome refused"):
+        load(data)
+
+
 # ---- schema and closed vocabularies ---------------------------------------------------------
 
 
