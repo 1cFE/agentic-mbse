@@ -7,8 +7,6 @@ import pytest
 
 from agentic_mbse.extraction.pandoc_convert import (
     _pandoc_available,
-    _postprocess_markdown,
-    _preprocess_html,
     check_arxiv_html,
     convert_arxiv_html,
     detect_arxiv_id,
@@ -59,52 +57,6 @@ class TestResolveFetchedVersion:
     def test_recovers_from_real_fixture(self):
         html = (FIXTURES / "arxiv_1706.03762_latest.html").read_text()
         assert resolve_fetched_version(html, "1706.03762") == 7
-
-
-class TestPreprocessHtml:
-    def test_strip_figure_tags(self):
-        html = '<p>Text</p><figure class="ltx_figure"><img src="x"></figure>'
-        result = _preprocess_html(html)
-        assert "<figure" not in result
-        assert "</figure>" not in result
-        assert "<p>Text</p>" in result
-        assert '<img src="x">' in result
-
-    def test_strip_css_transform_wrappers(self):
-        html = (
-            '<div class="ltx_inline-block ltx_transformed_outer" '
-            'style="transform:scale(0.8)">'
-            '<span class="ltx_transformed_inner" style="transform:scale(1.25)">'
-            "content</span></div>"
-        )
-        result = _preprocess_html(html)
-        assert "ltx_transformed_outer" not in result
-        assert "ltx_transformed_inner" not in result
-        assert "content" in result
-
-    def test_preserve_normal_html(self):
-        html = "<p>Normal paragraph</p><table><tr><td>cell</td></tr></table>"
-        result = _preprocess_html(html)
-        assert result == html
-
-
-class TestPostprocessMarkdown:
-    def test_strip_hspace(self):
-        md = "Text\\hspace{0pt}more text"
-        result = _postprocess_markdown(md)
-        assert "\\hspace" not in result
-        assert "Textmore text" in result
-
-    def test_strip_html_comment_artifacts(self):
-        md = "Some text`<!-- -->`{=html}more"
-        result = _postprocess_markdown(md)
-        assert "`<!-- -->`{=html}" not in result
-        assert "Some textmore" in result
-
-    def test_preserve_normal_markdown(self):
-        md = "# Heading\n\nParagraph with **bold** text."
-        result = _postprocess_markdown(md)
-        assert result == md
 
 
 class TestDetectArxivId:

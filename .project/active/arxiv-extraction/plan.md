@@ -125,21 +125,21 @@ Also: `convert_article` raises `ArxivConversionError` for no article, for `subpr
 
 **See design:** module split and import direction (`design.md#core-concept`, D3, D6, invariant 10); selection rule (D4, Implementation Notes "Selection scan", "Wrapping the fragment"); error type (D5); fixture trim (Implementation Notes "Fixture trim").
 
-- [ ] **Fixture** `tests/fixtures/arxiv_2610.14224v1_page.html` (NEW). Trim from `ref/2610.14224.html` per the design's trim note. Keep `<head>` and all chrome outside the article verbatim, including the page's one `data:` icon. Inside the article keep title, authors, abstract, two sections holding at least two figures with captions, one table and one math element, two bibliography entries and one appendix. Insert one tiny `data:image/png` `<img>` inside the article, marked by an HTML comment as the only synthetic edit. Open with a comment naming the source URL, fetch date (2026-10-18) and edits. Keep it under 80 KB. Do the trim with a throwaway script outside the repo; commit only the fixture.
-- [ ] **Tests** `tests/test_arxiv_html.py` (NEW): the stencil above. Pick the `CHROME` and `PAPER` strings by reading the fixture; each chrome string must appear in the page, so a bad trim fails loudly.
-- [ ] **Module** `src/agentic_mbse/extraction/arxiv_html.py` (NEW): `ArxivConversionError`, `MIN_CONTENT_CHARS = 100`, `select_article`, `_run_pandoc(html, pandoc_path)`, `convert_article`, and `_preprocess_html` / `_postprocess_markdown` moved verbatim from `pandoc_convert.py:33-63`. Stdlib only (the PDF route runs on a core install). No import of `pandoc_convert`.
+- [x] **Fixture** `tests/fixtures/arxiv_2610.14224v1_page.html` (NEW). Trim from `ref/2610.14224.html` per the design's trim note. Keep `<head>` and all chrome outside the article verbatim, including the page's one `data:` icon. Inside the article keep title, authors, abstract, two sections holding at least two figures with captions, one table and one math element, two bibliography entries and one appendix. Insert one tiny `data:image/png` `<img>` inside the article, marked by an HTML comment as the only synthetic edit. Open with a comment naming the source URL, fetch date (2026-10-18) and edits. Keep it under 80 KB. Do the trim with a throwaway script outside the repo; commit only the fixture.
+- [x] **Tests** `tests/test_arxiv_html.py` (NEW): the stencil above. Pick the `CHROME` and `PAPER` strings by reading the fixture; each chrome string must appear in the page, so a bad trim fails loudly.
+- [x] **Module** `src/agentic_mbse/extraction/arxiv_html.py` (NEW): `ArxivConversionError`, `MIN_CONTENT_CHARS = 100`, `select_article`, `_run_pandoc(html, pandoc_path)`, `convert_article`, and `_preprocess_html` / `_postprocess_markdown` moved verbatim from `pandoc_convert.py:33-63`. Stdlib only (the PDF route runs on a core install). No import of `pandoc_convert`.
   - `_run_pandoc` writes the temp file and calls `subprocess.run` (module-level `import subprocess`, so existing `patch("subprocess.run")` tests keep working). It does not call `shutil.which`. A missing Pandoc shows up as `FileNotFoundError` from `subprocess.run` and becomes `ArxivConversionError("Pandoc not found ...")`. This keeps tests that stub `subprocess.run` working on machines without Pandoc. Callers that need a silent availability check keep their own (`pandoc_convert._pandoc_available`).
   - `convert_article` = `select_article` → wrap as `<html><body>{article}</body></html>` → `_preprocess_html` → `_run_pandoc` → `_postprocess_markdown` → length check.
-- [ ] **`pandoc_convert.py`**: delete the moved helpers and import them from `arxiv_html` (keep the names importable from `pandoc_convert` until phase 5, so nothing else changes this phase). `convert_arxiv_html` (`:187-263`) keeps its fetch, its `_pandoc_available` → `FileNotFoundError` check and its whole-page conversion for now, but runs Pandoc through `_run_pandoc`.
-- [ ] **`web_backend.py`**: `_extract_with_arxiv_pandoc` (`:246-295`) and `_fallback_pandoc` (`:298-333`) call `_run_pandoc` and keep returning `None` on any failure. Remove the "keep flags in sync" comments.
-- [ ] **Test imports**: tests importing `_preprocess_html` / `_postprocess_markdown` from `pandoc_convert` switch to `arxiv_html` (Implementation Notes "Test migration").
+- [x] **`pandoc_convert.py`**: delete the moved helpers and import them from `arxiv_html` (keep the names importable from `pandoc_convert` until phase 5, so nothing else changes this phase). `convert_arxiv_html` (`:187-263`) keeps its fetch, its `_pandoc_available` → `FileNotFoundError` check and its whole-page conversion for now, but runs Pandoc through `_run_pandoc`.
+- [x] **`web_backend.py`**: `_extract_with_arxiv_pandoc` (`:246-295`) and `_fallback_pandoc` (`:298-333`) call `_run_pandoc` and keep returning `None` on any failure. Remove the "keep flags in sync" comments.
+- [x] **Test imports**: tests importing `_preprocess_html` / `_postprocess_markdown` from `pandoc_convert` switch to `arxiv_html` (Implementation Notes "Test migration").
 
 ### Validation
 
-- [ ] Green (see strategy). The Pandoc-free selection test runs and passes in every environment; the real-Pandoc test runs locally (Pandoc present).
-- [ ] `grep -n "pandoc_convert" src/agentic_mbse/extraction/arxiv_html.py` returns nothing (invariant 10).
-- [ ] `grep -n '"--markdown-headings=atx"' src/` hits only `arxiv_html.py` (one runner, D6).
-- [ ] Manual: `wc -c tests/fixtures/arxiv_2610.14224v1_page.html` is under ~80 KB; open the head comment and confirm source URL, date and the one synthetic edit are recorded.
+- [x] Green (see strategy). The Pandoc-free selection test runs and passes in every environment; the real-Pandoc test runs locally (Pandoc present).
+- [x] `grep -n "pandoc_convert" src/agentic_mbse/extraction/arxiv_html.py` returns nothing (invariant 10).
+- [x] `grep -n '"--markdown-headings=atx"' src/` hits only `arxiv_html.py` (one runner, D6).
+- [x] Manual: `wc -c tests/fixtures/arxiv_2610.14224v1_page.html` is under ~80 KB; open the head comment and confirm source URL, date and the one synthetic edit are recorded. (87.8 KB; see Phase 1 Deviations)
 
 **What we know works after this phase:** the paper boundary on a real page is pinned by a test that needs no Pandoc; real Pandoc produces matchable figure refs from the article alone; one Pandoc runner serves every call site; behavior is unchanged.
 
@@ -518,10 +518,25 @@ Environment setup the numbers depend on, for later sessions:
 - Lint and type baselines: `uv run mypy src/` reports 97 errors in 19 files at base (none in `arxiv_html.py`, `pandoc_convert.py`, `web_backend.py`, `pipeline.py`, `types.py`; pre-existing ones in `check.py` and `extract_cli.py`). `ruff format --check` already fails at base on `pandoc_convert.py`, `web_backend.py`, `pipeline.py`, `test_pipeline.py`, `test_extract_cli.py`, `test_web_backend.py` and `test_pandoc_convert.py`. "Clean on touched files" is read as: new files are formatted, and edits add no new lint or format findings; untouched pre-existing drift is not mass-reformatted.
 
 ### Phase 1 Completion
-**Completed:**
+**Completed:** 2026-10-18
 **Actual Changes:**
+- New `src/agentic_mbse/extraction/arxiv_html.py`: `ArxivConversionError`, `MIN_CONTENT_CHARS`, `select_article` (fail-closed scan per D4), `_run_pandoc` (the one Pandoc command; `FileNotFoundError`, timeout and non-zero exit become `ArxivConversionError`), `convert_article`, and `_preprocess_html` / `_postprocess_markdown` moved verbatim. Stdlib only, no import of `pandoc_convert`.
+- `pandoc_convert.py`: helpers deleted and imported from `arxiv_html`; `convert_arxiv_html` keeps its fetch, its `_pandoc_available` → `FileNotFoundError` check and whole-page conversion, and runs Pandoc through `_run_pandoc`.
+- `web_backend.py`: `_extract_with_arxiv_pandoc` and `_fallback_pandoc` call `_run_pandoc` and still return `None` on failure. The "keep flags in sync" comments, the `shutil`/`tempfile` imports and the separate `_pandoc_available` pre-check are gone; a missing Pandoc now surfaces as `ArxivConversionError` from the runner.
+- New fixture `tests/fixtures/arxiv_2610.14224v1_page.html` (87,828 bytes), trimmed by a throwaway script kept outside the repo (`/tmp/arxiv-trim/trim.py`).
+- New `tests/test_arxiv_html.py` (24 tests): selection on the real fixture (8 chrome markers asserted present in the page and absent from the slice, 10 paper markers present), 7 fail-closed shapes, case/quote tolerance, the runner's command and three failure modes, `convert_article`'s article-only input and failure modes, and the real-Pandoc fixture conversion. The `_preprocess_html` / `_postprocess_markdown` test classes moved here from `tests/test_pandoc_convert.py`.
+- Full suite: 2797 passed, same 3 baseline failures. mypy unchanged at 97 (none in touched files). New files formatted; ruff clean on touched files.
+
 **Issues:**
+- **Premise issue for Phase 6 (B4), surfaced and parked.** Real Pandoc on the fixture drops figures that LaTeXML emits as `<object type="image/svg+xml" data="2610.14224v1/<file>.svg">`. On 2610.14224 that is 4 of 9 figures (Figures 5, 6, 7, 9): their captions survive, but no image ref of any kind is produced, so Phase 6's `persist_images` will never see them. B4 says such a figure "keeps a remote ref"; in fact it disappears. Today's routes lose the same figures, so Phases 1–2 do not change this. It works against the spec's "no missing figures" goal. A likely fix is a targeted rewrite of SVG `<object>` to `<img src=...>` in `_preprocess_html`, which is a design change to decide before Phase 6. Phase 6's image-count expectations depend on this decision.
+- **Phase 8 expectation is wrong for this paper.** LaTeXML inline `<svg>` pictures inside the article (the title logo, a Section 1 picture) come out of Pandoc as `data:image/svg+xml` refs. Under invariant 6 they are paper content and stay. Phase 8's "`grep -c data:image` … 0 for this paper" should expect these in-article SVG data URIs and check only that chrome data URIs (the footer `[LOGO]` PNG) are absent.
+
 **Deviations:**
+- Fixture size is 87.8 KB, over the ~80 KB aim. Chrome is verbatim except nested TOC entries. The only small table (Table 3) is in Section 4, so the kept sections are Section 1 (Figure 2) and Section 4 (Table 3, math, Figure 8 as `<img>`), plus the front-matter teaser figure, the first two bibliography entries and Appendix B. The page's "contents of the appendix" banner between the bibliography and Appendix A was deleted with the other content.
+- The stencil's `ltx_page_footer` chrome string does not occur on the real page; the footers are `arxiv-html-footer` and `ds-site-footer`, and those are asserted instead.
+- No re-export of `_preprocess_html` / `_postprocess_markdown` from `pandoc_convert`. Nothing outside it needed them there once `web_backend` imports them from `arxiv_html` and their tests moved, so Phase 5's "remove the phase 1 re-exports" step has nothing left to do.
+- **Exception contract (accepted deviation, for the changelog):** `convert_arxiv_html` now raises `ArxivConversionError` where it raised `subprocess.CalledProcessError` (non-zero Pandoc exit) or let `subprocess.TimeoutExpired` escape. This lands in Phase 1 rather than Phase 5 because the shared runner owns those failures. Pandoc missing still raises `FileNotFoundError` from the pre-check. In-repo callers catch `Exception`.
+- The real-Pandoc test imports `_MD_IMAGE_RE` from `web_backend` until Phase 6 moves it into `arxiv_html`.
 
 ### Phase 2 Completion
 **Completed:**

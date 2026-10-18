@@ -8,11 +8,14 @@ from __future__ import annotations
 
 import re
 import shutil
-import subprocess
-import tempfile
 import urllib.request
 from pathlib import Path
 
+from agentic_mbse.extraction.arxiv_html import (
+    _postprocess_markdown,
+    _preprocess_html,
+    _run_pandoc,
+)
 from agentic_mbse.extraction.http import USER_AGENT
 
 # ---------------------------------------------------------------------------
@@ -23,44 +26,6 @@ from agentic_mbse.extraction.http import USER_AGENT
 def _pandoc_available(pandoc_path: str = "pandoc") -> bool:
     """Check if Pandoc is available on the system PATH."""
     return shutil.which(pandoc_path) is not None
-
-
-# ---------------------------------------------------------------------------
-# HTML pre/post-processing (from h6_pandoc_shortcut.py)
-# ---------------------------------------------------------------------------
-
-
-def _preprocess_html(html: str) -> str:
-    """Pre-process arXiv HTML before Pandoc conversion.
-
-    Strips ``<figure>`` tags (so tables inside convert properly) and CSS
-    transform wrappers (LaTeXML scaling artifacts).
-    """
-    # Strip <figure> tags but keep inner content
-    html = re.sub(r"<figure[^>]*>", "", html)
-    html = html.replace("</figure>", "")
-
-    # Strip CSS transform wrappers (LaTeXML artifacts)
-    html = re.sub(
-        r'<div class="ltx_inline-block[^"]*ltx_transformed_outer[^>]*>',
-        "",
-        html,
-    )
-    html = re.sub(r'<span class="ltx_transformed_inner[^>]*>', "", html)
-
-    return html
-
-
-def _postprocess_markdown(md: str) -> str:
-    r"""Post-process Pandoc markdown output.
-
-    Cleans up LaTeXML artifacts that Pandoc doesn't handle:
-    - ``\hspace{0pt}`` noise
-    - HTML comment artifacts (``<!-- -->`{=html}``)
-    """
-    md = md.replace("\\hspace{0pt}", "")
-    md = re.sub(r"`<!-- -->`\{=html\}", "", md)
-    return md
 
 
 # ---------------------------------------------------------------------------
@@ -198,8 +163,8 @@ def convert_arxiv_html(
         ``(markdown, raw_html_bytes)`` — raw bytes before preprocessing.
 
     Raises:
-        ``subprocess.CalledProcessError`` on Pandoc failure.
         ``FileNotFoundError`` if Pandoc is not installed.
+        ``ArxivConversionError`` if Pandoc fails or times out.
     """
     if not _pandoc_available(pandoc_path):
         raise FileNotFoundError(
@@ -221,43 +186,5 @@ def convert_arxiv_html(
         raw_bytes = p.read_bytes()
         raw_html = raw_bytes.decode("utf-8")
 
-    # Pre-process
-    processed_html = _preprocess_html(raw_html)
-
-    # Write to temp file for Pandoc
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".html", delete=False, encoding="utf-8"
-    ) as f:
-        f.write(processed_html)
-        tmp_path = Path(f.name)
-
-    try:
-        cmd = [
-            pandoc_path,
-            str(tmp_path),
-            "-f",
-            "html-native_divs-native_spans",
-            "-t",
-            "markdown-header_attributes",
-            "--wrap=none",
-            "--markdown-headings=atx",
-        ]
-
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-
-        if result.returncode != 0:
-            raise subprocess.CalledProcessError(
-                result.returncode, cmd, result.stdout, result.stderr
-            )
-
-        markdown = result.stdout
-    finally:
-        tmp_path.unlink(missing_ok=True)
-
-    # Post-process
+    markdown = _run_pandoc(_preprocess_html(raw_html), pandoc_path)
     return _postprocess_markdown(markdown), raw_bytes
