@@ -1,6 +1,6 @@
 # Implementation Plan: Executable-subset capability contract (EXEC-SUBSET-CONTRACT Item 1)
 
-**Status:** In Progress (Phases 1–7 complete)
+**Status:** Implementation complete (Phases 1–11, 2026-10-18); awaiting `/_my_audit` and the owner's R3 decision
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `exec-subset-profile` (plan written at `1ff91e07`; `src/`, `tests/`, `scripts/` and `pyproject.toml` are unchanged since the design base `a718efec`)
@@ -691,23 +691,23 @@ No new test. The repository checks are the gate. `adr.sh index` regenerates `IND
 
 **See design for:** [Appendix B](design.md#appendix-b--adr-drafts-r1), spec [Close-out criteria](spec.md#close-out).
 
-- [ ] `.project/scripts/adr.sh new subset-profile-capability-ownership` and fill it from Appendix B.1. Provenance `[AGENT] (ratified by owner, 2026-10-18)`. Seams `[agentic-mbse, sysml-codegen, l6, guidance]`. Invariant 6 states end condition (ii): a permanent parity test in codegen CI. Include P-4's eighth abort member only if the ADR text names the vocabulary. Then `adr.sh index`.
-- [ ] `evidence/adr-0012-amendment-draft.md` (NEW): Appendix B.2 with end condition (ii) filled in, the commands to run in sysml-codegen, and a header line saying it is for Item 2 to file. **Do not write into sysml-codegen.**
-- [ ] `evidence/r3-proposal.md` (NEW), headed **PROPOSED — owner approval required**: one row per GENERATOR-SUBSET-PATTERNS section (`.project/backlog/item_generator-subset-patterns.md`) and per remaining gap (ES-002, ES-008, ES-009, ES-011, the ES-010 refusal side, every `unconfirmed` pair, any R2-halted pair, the ten PUSH-DOWN rows, G1/G2), each with a proposed destination item or follow-up and the reproduction result from Phase 6.
-- [ ] `evidence/re-estimate.md` (NEW): re-estimated effort for Items 1 and 2. Item 2's estimate includes the permanent parity CI test (end condition (ii)), the code mapping, the screen-bypassing corpus, filing the ADR 0012 amendment, per-site codes and mutation tests, and the G1/G2 questions.
-- [ ] `evidence/repository-checks.md` (NEW): final `pytest`/`mypy`/`ruff` results, which tests needed the SysIDE license, and which were skipped and why.
-- [ ] `.project/CURRENT_WORK.md`: update status and the open owner items (R2, R3, any `unverified` acceptance).
+- [x] `.project/scripts/adr.sh new subset-profile-capability-ownership` and fill it from Appendix B.1. Provenance `[AGENT] (ratified by owner, 2026-10-18)`. Seams `[agentic-mbse, sysml-codegen, l6, guidance]`. Invariant 6 states end condition (ii): a permanent parity test in codegen CI. Include P-4's eighth abort member only if the ADR text names the vocabulary. Then `adr.sh index`.
+- [x] `evidence/adr-0012-amendment-draft.md` (NEW): Appendix B.2 with end condition (ii) filled in, the commands to run in sysml-codegen, and a header line saying it is for Item 2 to file. **Do not write into sysml-codegen.**
+- [x] `evidence/r3-proposal.md` (NEW), headed **PROPOSED — owner approval required**: one row per GENERATOR-SUBSET-PATTERNS section (`.project/backlog/item_generator-subset-patterns.md`) and per remaining gap (ES-002, ES-008, ES-009, ES-011, the ES-010 refusal side, every `unconfirmed` pair, any R2-halted pair, the ten PUSH-DOWN rows, G1/G2), each with a proposed destination item or follow-up and the reproduction result from Phase 6.
+- [x] `evidence/re-estimate.md` (NEW): re-estimated effort for Items 1 and 2. Item 2's estimate includes the permanent parity CI test (end condition (ii)), the code mapping, the screen-bypassing corpus, filing the ADR 0012 amendment, per-site codes and mutation tests, and the G1/G2 questions.
+- [x] `evidence/repository-checks.md` (NEW): final `pytest`/`mypy`/`ruff` results, which tests needed the SysIDE license, and which were skipped and why.
+- [x] `.project/CURRENT_WORK.md`: update status and the open owner items (R2, R3, any `unverified` acceptance).
 
 The `.project/product/` entry for the shared-contract promise belongs to `/_my_close`, not this plan.
 
 ### Validation
 
 **Automated:**
-- [ ] Standing checks green.
+- [x] Standing checks green.
 
 **Manual:**
-- [ ] `.project/adr/INDEX.md` lists the new entry; its body matches B.1 with (ii).
-- [ ] `git -C ~/src/sysml-codegen status` shows no change.
+- [x] `.project/adr/INDEX.md` lists the new entry; its body matches B.1 with (ii).
+- [x] `git -C ~/src/sysml-codegen status` shows no change.
 
 **Done when:** the ADR is filed, the drafts and proposal exist and are marked as drafts/proposed, and the re-estimate is recorded. Traces to spec "R3 proposal is recorded", "Re-estimate is recorded", "Repository checks pass".
 
@@ -1160,6 +1160,22 @@ Roles: 155 internal invariant (each with its cited guard), 95 snapshot integrity
 **Validation:** standing checks at `9b123cf3`: `pytest tests/` 3502 pass, the same 3 environment failures; `ruff check src/ tests/` 118; `mypy src/` 97 in 19 files. With slow tests (`-m ""`): 3512 pass, 5 fail: the same 3 plus `test_corpus_integration.py::test_ground_truth_scoring` and `test_equations.py::TestCorpusEquations::test_hawker_recall`, both because the corpus PDFs are not present locally (`tests/corpus/pdfs/`). New scripts pass `ruff check`, `ruff format --check` and `mypy --strict`.
 
 ### Phase 11 Completion
+**Completed:** 2026-10-18.
+
+**Outcome:** the R1 decision is filed, Item 2's codegen amendment is ready to file, R3 is proposed, and the re-estimate is recorded.
+
+**Actual Changes:**
+- `.project/adr/0001-subset-profile-capability-ownership.md` (new, via `adr.sh new`; the repo's first ADR), from design Appendix B.1 with end condition (ii) and the owner's 2026-10-18 "A (ii)" reply. Provenance `[AGENT] (ratified by owner, 2026-10-18)`, seams `[agentic-mbse, sysml-codegen, l6, guidance]`. Invariant 6 states the permanent parity test in codegen CI, with the recorded parity run as the check until it exists. The ADR does not name the abort vocabulary, so P-4's extra members are not in it. `adr.sh index` regenerated `INDEX.md`, which lists 0001.
+- `evidence/adr-0012-amendment-draft.md` (new): Appendix B.2 with end condition (ii), the commands to run in sysml-codegen, and a header saying it is Item 2's to file. Nothing was written into sysml-codegen.
+- `evidence/r3-proposal.md` (new), headed **PROPOSED — owner approval required**: every GENERATOR-SUBSET-PATTERNS section and § 2 row; G1, G2; the calc-usage bare-result drop; the calc-def bare-result refusal; the ES-010 refusal side; ES-002, ES-008, ES-009, ES-011; DEEP-QUALIFIED-WIRING; L6-LIBRARY-ALIAS-SOURCE; the 82 follow-up sites; "CLEAR is not 'generates'"; every `unconfirmed` pair; the ten PUSH-DOWN rows; the `sump_pump` nondeterminism. No R2-halted pair exists.
+- `evidence/re-estimate.md` (new): Item 1 ~12-15 engineer-days of equivalent work done, ~1-2 left plus owner time; Item 2 ~23-37 engineer-days, including the parity CI test, the code mapping, the screen-bypassing corpus, filing the ADR 0012 amendment, per-site codes and mutation tests, the gaps, and G1/G2. Recorded on the epic's Item 1.
+- `evidence/repository-checks.md` (new): final checks, skips and the license dependence of each Item 1 test file, measured with the key emptied.
+- `.project/CURRENT_WORK.md`, the spec's and this plan's status, and the epic's Item 1 status and effort lines.
+
+**Validation:** no code changed in this phase; the standing checks at `9b123cf3` (Phase 10) stand. `git status` of `~/src/sysml-codegen` (HEAD `b5663c07`) and `~/src/dc3` (HEAD `60b44d53`) is empty, both HEADs unchanged since before Phase 10.
+
+**Deviations from Plan:**
+- The re-estimate is in engineer-days with the basis stated; Item 1's own effort is an equivalent-work judgment, because it was agent-implemented.
 
 ---
 

@@ -1,6 +1,6 @@
 # Current Work
 
-**Last Updated**: 2026-10-12
+**Last Updated**: 2026-10-18
 **Checkout**: `main` at `adbef75` (PR #18 merged 2026-10-10, carrying the `WRAP-SPLIT` planning artifacts and Item 1). Workflows installed here with `uv run agentic-mbse install-commands --assistant claude --link-mode symlink`; re-run it after editing `skills/`.
 
 [OWNER] Reports successful operation in Fusion TEA and requested reconciliation of tracking against actual remaining work. The [status report](reports/2026-10-04-0901-status-report.md#tracking-reconciliation--progress) carries investigation progress, evidence, and limits. This refresh updates local tracking; sibling repositories were inspected read-only.
@@ -11,7 +11,8 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
-- EXEC-SUBSET-PROFILE ([EXEC-SUBSET-CONTRACT epic](backlog/epic_executable-subset-contract.md) Item 1) — implementing [plan](active/exec-subset-profile/plan.md): Phases 1–7 done 2026-10-18 (probe harness; occurrence port at parity with codegen on 73 of 73 recorded cases; shared invocation allowlist, codegen suite identical before and after; subset facts extracted totally; pure evaluator with evidence-gated records; 80 probes certify, 62 cited, no R2). Next Phase 8 (capability/refusal matrix). Branch `exec-subset-profile`.
+- EXEC-SUBSET-PROFILE ([EXEC-SUBSET-CONTRACT epic](backlog/epic_executable-subset-contract.md) Item 1): all 11 [plan](active/exec-subset-profile/plan.md) phases implemented 2026-10-18; final implementation revision `9b123cf3`. Results: dc3 repaired CLEAR with zero refused; dc3 baseline INCOMPLETE (B1-B7 found, B8 only `unconfirmed`, 50 unverified checks all on already-refused sites); codegen corpus floor holds (14/14 snapshot fixtures CLEAR); same-generator check and codegen suite identical; 502 sites accounted ([reconciliation](active/exec-subset-profile/evidence/site-reconciliation.md)). R1 filed as [ADR 0001](adr/0001-subset-profile-capability-ownership.md). Next: `/_my_audit`, then `/_my_close`. Branch `exec-subset-profile`.
+  - **Open for the owner:** approve or revise the [R3 proposal](active/exec-subset-profile/evidence/r3-proposal.md) (PROPOSED); accept or reject the dc3 baseline's INCOMPLETE verdict and B8 reported only as `unconfirmed` ([acceptance](active/exec-subset-profile/evidence/acceptance.md)); note that `validate` on `tests/fixtures/sump_pump` is nondeterministic before and after Item 1 ([validate diff](active/exec-subset-profile/evidence/validate-diff.md)); the Items 1-2 [re-estimate](active/exec-subset-profile/evidence/re-estimate.md). No R2 item is open. The ADR 0012 amendment is a [ready-to-file draft](active/exec-subset-profile/evidence/adr-0012-amendment-draft.md) for Item 2.
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 
 ## Concrete remaining work
