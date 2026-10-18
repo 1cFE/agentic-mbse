@@ -1,0 +1,5 @@
+agentic-mbse 427239aeac029e55746af35e24599d9a388ffb95
+declared_multiplicity  flagged 0/34 (not catchable (F1 Surprise 1)): OK []
+no_effective_decl      flagged 1/34 (must be caught): OK ['f1_effective_declaration_slot']
+writer_is_base         flagged 1/34 (must be caught): OK ['f1_calc_redefined_everywhere']
+typed_anywhere         flagged 12/34 (must be caught): OK ['es004_admitted_exact_redefinition', 'es004_admitted_uninstantiated_template', 'es004_refused_range_parts', 'es004_refused_unbounded_parts', 'f1_calc_redefined_everywhere', 'f1_effective_declaration_slot', 'f1_inherited_multiplicity_redef', 'f1_inherited_ordered_redef', 'f1_multiplicity_only_on_redef', 'f1_nested_subtypes', 'f1_referenced_bounds', 'f1_zero_and_bad_multiplicities']

@@ -1,6 +1,6 @@
 # Implementation Plan: Executable-subset capability contract (EXEC-SUBSET-CONTRACT Item 1)
 
-**Status:** In Progress (Phase 1 complete)
+**Status:** In Progress (Phases 1–2 complete)
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 **Branch:** `exec-subset-profile` (plan written at `1ff91e07`; `src/`, `tests/`, `scripts/` and `pyproject.toml` are unchanged since the design base `a718efec`)
@@ -214,31 +214,31 @@ Also write `test_default_roots_equal_generator_rule` on a fixture with nested, p
 
 **See design for:** [R1 Option A](design.md#option-a--copy-the-instantiation-logic-into-agentic-mbse-as-a-shared-fact), [D7](design.md#key-decisions), [D13–D14](design.md#key-decisions), [Appendix A occurrence types](design.md#appendix-a--data-model), F1 [Surprises 1–3](spikes/f1-findings.md#summary-of-findings).
 
-- [ ] `src/agentic_mbse/sysml/occurrence_facts.py` (NEW, pure): `OccurrenceStructure`, `OccurrenceNode`, `MultiplicityReading`, `Attachment`, `WriterSelection`, `OccurrenceAbort` (with P-4's `IDENTITY_UNSTABLE`). Counts are per parent occurrence (review S4).
-- [ ] `src/agentic_mbse/sysml/occurrence_extraction.py` (NEW): `extract_occurrence_structure(model, extra_roots=()) -> OccurrenceStructure | FactFailure`. Port `spikes/f1-occurrence-port/occurrence_port.py` function by function:
+- [x] `src/agentic_mbse/sysml/occurrence_facts.py` (NEW, pure): `OccurrenceStructure`, `OccurrenceNode`, `MultiplicityReading`, `Attachment`, `WriterSelection`, `OccurrenceAbort` (with P-4's `IDENTITY_UNSTABLE`). Counts are per parent occurrence (review S4).
+- [x] `src/agentic_mbse/sysml/occurrence_extraction.py` (NEW): `extract_occurrence_structure(model, extra_roots=()) -> OccurrenceStructure | FactFailure`. Port `spikes/f1-occurrence-port/occurrence_port.py` function by function:
   - Keep the docstring's codegen line map and add the abort-member column (P-5).
   - Route the two raw reads through `resolved_referent` and `resolved_chaining_features` (P-1).
   - Writer selection records selected and overridden scope counts per usage (design Implementation Note (a)).
   - Caller roots: compute reach from extra `PartUsage` roots separately from the generator root set (D7).
   - Mirror D14's two generator behaviors exactly; do not fix them.
-- [ ] `tests/helpers/occurrence_oracle_schema.py` (NEW, P-3).
-- [ ] `scripts/subset_profile/occurrence_parity.py` (NEW): promote `oracle.py`, `compare.py` and `run_all.sh`. Subcommands: `capture CASE…` (writes `expected.json` from codegen's oracle in an isolated tree) and `compare --all` (the recorded 72-case run, plus the new seed fixture).
-- [ ] `tests/fixtures/subset_profile/occurrence/<case>/{model.sysml, expected.json}` (NEW): the 11 F1 edge fixtures, the 22 prototype fixtures from `.project/concepts/convince-me-exec-subset/evidence/01-fixtures/`, and P-6's new fixture. Capture every `expected.json` with `occurrence_parity.py capture`; never hand-write one.
-- [ ] `tests/fixtures/subset_profile/cases/roots_mixed_owners.sysml` (NEW) for the default-roots test.
-- [ ] `tests/test_sysml/test_occurrence_parity.py`, `tests/test_sysml/test_occurrence_facts.py`, `tests/test_sysml/test_occurrence_extraction_roots.py` (NEW).
-- [ ] `tests/test_sysml/test_semantic_selector_ownership.py`: **no edit.** It must stay green with the port in place; that is the evidence P-1 holds.
+- [x] `tests/helpers/occurrence_oracle_schema.py` (NEW, P-3).
+- [x] `scripts/subset_profile/occurrence_parity.py` (NEW): promote `oracle.py`, `compare.py` and `run_all.sh`. Subcommands: `capture CASE…` (writes `expected.json` from codegen's oracle in an isolated tree) and `compare --all` (the recorded 72-case run, plus the new seed fixture).
+- [x] `tests/fixtures/subset_profile/occurrence/<case>/{model.sysml, expected.json}` (NEW): the 11 F1 edge fixtures, the 22 prototype fixtures from `.project/concepts/convince-me-exec-subset/evidence/01-fixtures/`, and P-6's new fixture. Capture every `expected.json` with `occurrence_parity.py capture`; never hand-write one.
+- [x] `tests/fixtures/subset_profile/cases/roots_mixed_owners.sysml` (NEW) for the default-roots test.
+- [x] `tests/test_sysml/test_occurrence_parity.py`, `tests/test_sysml/test_occurrence_facts.py`, `tests/test_sysml/test_occurrence_extraction_roots.py` (NEW).
+- [x] `tests/test_sysml/test_semantic_selector_ownership.py`: **no edit.** It must stay green with the port in place; that is the evidence P-1 holds.
 
 ### Validation
 
 **Automated:**
-- [ ] Parity test passes on every seed case. Abort cases match on stage and mapped code.
-- [ ] Selector-ownership gate green, unchanged.
-- [ ] Standing checks green.
+- [x] Parity test passes on every seed case. Abort cases match on stage and mapped code.
+- [x] Selector-ownership gate green, unchanged.
+- [x] Standing checks green.
 
 **Manual:**
-- [ ] `occurrence_parity.py compare --all` at the committed revision: every case matches (72 plus the new fixture). Log to `evidence/occurrence-parity.log`.
-- [ ] Mutant control: run the spike's `mutants.py` patches against the production port on the pytest seed only. `typed_anywhere`, `writer_is_base` and `no_effective_decl` are each caught by at least one seed case. `declared_multiplicity` is not catchable (F1 Surprise 1) and is recorded as such. Log to `evidence/occurrence-parity-controls.log`.
-- [ ] `python -I -c "import agentic_mbse.sysml.occurrence_extraction, sys; assert not any(m.startswith('sysml_codegen') for m in sys.modules)"`.
+- [x] `occurrence_parity.py compare --all` at the committed revision: every case matches (72 plus the new fixture). Log to `evidence/occurrence-parity.log`.
+- [x] Mutant control: run the spike's `mutants.py` patches against the production port on the pytest seed only. `typed_anywhere`, `writer_is_base` and `no_effective_decl` are each caught by at least one seed case. `declared_multiplicity` is not catchable (F1 Surprise 1) and is recorded as such. Log to `evidence/occurrence-parity-controls.log`.
+- [x] `python -I -c "import agentic_mbse.sysml.occurrence_extraction, sys; assert not any(m.startswith('sysml_codegen') for m in sys.modules)"`.
 
 **Done when:** the parity test passes on the seed, the recorded run matches on all cases, and the controls bite. Traces to spec "Roots are reported and generator-equivalent by default" (first test) and Requirements on specific families → ES-004 facts; design invariant 10.
 
@@ -820,6 +820,43 @@ See [design § Potential Risks](design.md#potential-risks). Phase-specific mitig
 - **Test-first order:** the judge and its tests were written in one pass rather than test-then-fail. The mutant check above stands in for "see it fail for the right reason".
 
 ### Phase 2 Completion
+**Completed:** 2026-10-18. Port at `d244991c`, captures at `427239ae`, evidence logs with this note.
+
+**Outcome:** the parity test passes on all 34 seed cases; the recorded run matches on **73 of 73** (34 seed, 37 codegen corpus, both dc3 trees); the controls bite. No parity case needed a port change after its first run. Run identity: codegen `b5663c07`, agentic-mbse `427239ae`, SysIDE 0.8.4, Python 3.12.3, `uv.lock` `a17e9fa1…`.
+
+| Check | Result |
+|---|---|
+| `test_occurrence_parity.py` | 34/34 seed cases match their oracle capture; 34/34 captures carry the pinned oracle identity |
+| `occurrence_parity.py compare --all` (`evidence/occurrence-parity.log`) | 73/73 match, and every stored `expected.json` equals today's oracle. The four abort cases match on stage and code. dc3 repaired: codegen's full graph also agrees |
+| Mutant controls on the seed only (`evidence/occurrence-parity-controls.log`) | `no_effective_decl` 1/34 (only the new P-6 fixture), `writer_is_base` 1/34 (`f1_calc_redefined_everywhere`), `typed_anywhere` 12/34, `declared_multiplicity` 0/34 (not catchable, F1 Surprise 1) |
+| `python -I` import check | `sysml_codegen` never imported |
+| Selector-ownership gate | 20/20 green, file unchanged. P-1 holds: no new `reference_use` accessor was needed |
+
+**Actual Changes:**
+- `src/agentic_mbse/sysml/occurrence_facts.py` (new, pure): `OccurrenceAbort` (9 members), `BuildStage`, `MultiplicityResolution`, `MultiplicityReading` (resolution computed in codegen's check order; `__post_init__` refuses a reading holding bounds the generator never reads), `PathStep`, `UsageVisit` (one per usage per parent occurrence, so counts are per parent, review S4), `OccurrenceNode`, `OccurrenceScope`/`PackageScope`, `AttachmentCause`, `CalcAttachment`, `WriterSelection`, `OccurrenceStructure` (order validated at construction; `selected_scopes` / `overridden_scopes` per usage for Implementation Note (a)), `OccurrenceFailure`.
+- `src/agentic_mbse/sysml/fact_refs.py` (new, pure): `ElementRef`, `SafeLocation`.
+- `src/agentic_mbse/sysml/occurrence_extraction.py` (new): `extract_occurrence_structure(model, extra_roots=())`, ported function by function. The docstring keeps the codegen line map with an abort-member column (P-5) and names G1/G2 as mirrored. Also public `declaration_id`, `semantic_owner`, `safe_location` for Phase 4.
+- `tests/helpers/occurrence_oracle_schema.py` (new, P-3): `to_oracle_schema`, `strip_oracle_only_fields`, `schema_differences`, and the only `SI_*` mapping tables.
+- `scripts/subset_profile/occurrence_parity.py` (`capture`, `compare --all`, `controls`), `occurrence_oracle.py` (the F1 oracle, logic unchanged), `occurrence_port_run.py` (runs the exported port in the tree).
+- `tests/fixtures/subset_profile/occurrence/<case>/{model.sysml, expected.json}`: 11 F1 edge + 22 prototype + `f1_effective_declaration_slot` (P-6). `tests/fixtures/subset_profile/cases/roots_mixed_owners.sysml`.
+- Tests: `test_occurrence_parity.py` (69), `test_occurrence_facts.py` (26, includes a subprocess purity check), `test_occurrence_extraction_roots.py` (4).
+
+**Validation:** standing checks green by the "Green, defined" note: `pytest tests/` 2918 pass, the same 3 environment failures; `ruff check src/ tests/` 118 (baseline); `mypy src/` 97 errors in 19 files, none in new files. New files pass `ruff check`, `ruff format --check` and `mypy --strict`. Sibling `git status` empty before and after every run.
+
+**Issues:**
+- **P-6 fixture shape.** An inherited redefinition (`part def B :> A { part :>> x; }`) does not put both declarations in `usage.usages`. The shape that does is the one dc3 uses: a usage typed by a definition and subsetting a sibling that redefines the definition's feature (`part rack_a : Rack :> racks`). The package name `f1p` was picked so the effective declaration is the smaller UUID; four other spellings made it the larger, which the mutant would have kept by luck.
+
+**Deviations from Plan:**
+- **The abort vocabulary has 9 members, not 7 + 1.** P-4's `IDENTITY_UNSTABLE` plus `EFFECTIVE_DECLARATION_AMBIGUOUS` for `occurrence.py:249-285` (no unique effective declaration for one slot), which no Appendix A member names. `REDEFINITION_ROOT_FAMILY` covers the slot-index family raises and the calc slot with ≠1 root (`elaborate.py:1209-1222`). `WRITER_AMBIGUOUS` covers both most-specific-definition raises and `_require_one_writer`.
+- **`extract_occurrence_structure` returns `OccurrenceStructure | OccurrenceFailure`, not `| FactFailure`.** `FactFailure` belongs to Phase 4 (it is keyed by `FactKind`, which spans kinds this module does not know). `OccurrenceFailure` also records the `BuildStage`, which parity compares. Phase 4 wraps it as `FactFailure(OCCURRENCE, abort)`. A SysIDE adapter error (`SemanticEvidenceError`) is not a generator abort and propagates for Phase 4 to record.
+- **New pure module `fact_refs.py`** holds `ElementRef` and `SafeLocation`, because both the occurrence and the subset facts need them and neither should import the other's module for it. Phase 4's `subset_facts.py` imports them from there.
+- **The occurrence structure is id-based.** It holds declaration UUIDs, not `ElementRef`s; Phase 4 builds refs where a fact needs a name or location. Appendix A's `Attachment.scopes_by_root` and `WriterSelection.selected_scopes_by_root` are per-scope records instead (each scope carries its root), with counting methods on the structure.
+- **Caller roots (D7):** a caller root that is already a generator root adds nothing; any other is traversed after the generator's roots in its own occurrence namespace, so its paths cannot collide with generator paths. An abort while traversing a caller root fails the whole structure (honest, and unreachable on the seed). A non-`PartUsage` extra root raises `TypeError`.
+- **Duplicate occurrence identity mirrors codegen exactly:** it aborts only when the second occurrence differs from the first (`existing != occurrence`, `occurrence.py:1033`). The spike aborted on any repeat.
+- **Abort cases compare `fatal` only.** In all four seed abort cases codegen's strict first error equals the abort, so nothing is hidden on the seed; a case where a multiplicity refusal precedes an abort would compare on the abort alone.
+- **A writer-stage abort has no oracle equivalent** (the oracle records `writers_status: error` and keeps the occurrences). No seed or corpus case has one; if one appears, the comparison reports a mismatch.
+- **Two scripts beyond the plan's one:** the oracle and the port runner execute inside the tree's codegen venv, so they are separate files that `occurrence_parity.py` starts. `controls` is a subcommand of `occurrence_parity.py` and runs in-process against the stored seed expectations.
+- **Test-first order:** the port was ported before its tests, because the oracle captures are its specification and could only be taken once it was committed. The parity test then ran red (no captures) before the capture, and the controls stand in for "see it fail for the right reason".
 
 ### Phase 3 Completion
 
