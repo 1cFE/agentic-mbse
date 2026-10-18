@@ -15,10 +15,15 @@ that run's code export (step 6).
 (`crashed, recorded as pass` for `❌ Error running Level N`), the level's printed block, the exit
 code and the wall time.
 
+`before-after --base B --branch HEAD [--trees ...] [--out STEM]` runs both revisions on each
+tree (Appendix C steps 1-10 and 12), parsing both sides from text for now, and writes
+`evidence/<STEM>.{json,md}`; it exits 1 on any pass -> fail, any L1-L5 text difference, a wrong
+resolved root, or fusion-tea's branch time above 1.10 x base.
+
 `session-equality` runs L1-L6 on each exported tree in this process, standalone and then inside
 one `ValidationSession`, and compares every level's full result (Phase 1, I10/B5). It writes
-`evidence/session-equality.json` and exits 1 if any level differs. Phase 11 adds `before-after`
-and `l6-evidence`.
+`evidence/session-equality.json` and exits 1 if any level differs. Phase 11 completes `before-after`
+(all trees, the report-based branch side, step 11) and adds `l6-evidence`.
 """
 
 from __future__ import annotations
@@ -200,6 +205,21 @@ def run_validate(
     )
 
 
+def export_trees(parent: Path, labels: list[str]) -> dict[str, dict[str, Any]]:
+    """Export each named tree to `<parent>/trees/<label>`; its commit and settings input (3-5)."""
+    if find_project_root(start=parent) is not None:
+        raise IsolationBreachError(f"{parent} is inside a project root")
+    trees: dict[str, dict[str, Any]] = {}
+    for label, repo, rev in TREES:
+        if label not in labels:
+            continue
+        commit = resolve_rev(repo, rev)
+        tree_dir = parent / "trees" / label
+        export_tree(repo, commit, tree_dir)
+        trees[label] = {"commit": commit, "settings": tree_settings(tree_dir)}
+    return trees
+
+
 def baseline(base: str) -> int:
     siblings = {"dc3": DC3, "fusion-tea": FUSION_TEA}
     before = {name: sibling_state(repo) for name, repo in siblings.items()}
@@ -207,17 +227,11 @@ def baseline(base: str) -> int:
     runs: list[TreeRun] = []
     with tempfile.TemporaryDirectory(dir="/tmp", prefix="l6-consumers-") as scratch:
         parent = Path(scratch)
-        if find_project_root(start=parent) is not None:
-            raise IsolationBreachError(f"{parent} is inside a project root")
         code = parent / "code-base"
         code_commit = export_code(base, code)
         record["agentic_mbse"] = {"base": code_commit}
         record["syside_version"] = syside_version(child_env(read_license_key()))
-        for label, repo, rev in TREES:
-            commit = resolve_rev(repo, rev)
-            tree_dir = parent / "trees" / label
-            export_tree(repo, commit, tree_dir)
-            record["trees"][label] = {"commit": commit, "settings": tree_settings(tree_dir)}
+        record["trees"] = export_trees(parent, [label for label, _, _ in TREES])
         for label, _repo, _rev in TREES:
             tree_dir = parent / "trees" / label
             commit = record["trees"][label]["commit"]
@@ -283,6 +297,155 @@ def baseline_markdown(record: dict[str, Any], runs: list[TreeRun]) -> str:
             out.append("```")
             out.append("")
     return "\n".join(out).rstrip() + "\n"
+
+
+TIME_LIMIT = 1.10  # fusion-tea branch wall time / base wall time (Appendix C step 10)
+_PIN_LIST = re.compile(r"Positional pin list: .*\(looked at (?P<path>.+)/positional-pins\.toml\)")
+
+
+def resolved_root(run: TreeRun) -> str | None:
+    """The project root the run's L2 looked at for its pin list (Appendix C step 7)."""
+    for line in run.levels[2].block:
+        found = _PIN_LIST.search(line)
+        if found:
+            return found["path"]
+    return None
+
+
+def compare_runs(base: TreeRun, branch: TreeRun) -> dict[str, Any]:
+    """Status per level before -> after, and whether L1-L5's printed blocks are identical (step 9)."""
+    levels = {}
+    flags: list[str] = []
+    for n in range(1, 7):
+        before, after = base.levels[n], branch.levels[n]
+        identical = (before.header, before.block) == (after.header, after.block)
+        levels[n] = {"before": before.status, "after": after.status, "identical_text": identical}
+        if before.status != "failed" and after.status == "failed":
+            flags.append(f"{base.tree} L{n}: {before.status} -> failed")
+        if n <= 5 and not identical:
+            flags.append(f"{base.tree} L{n}: printed result differs from base")
+    if base.exit_code == 0 and branch.exit_code != 0:
+        flags.append(f"{base.tree}: run passed at base and fails on the branch")
+    return {"levels": levels, "flags": flags}
+
+
+def before_after(base: str, branch: str, labels: list[str], out_name: str) -> int:
+    """Appendix C steps 1-10 and 12; Phase 11 adds the report-based branch side and step 11."""
+    dirty = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(REPO_ROOT),
+            "status",
+            "--porcelain",
+            "--",
+            "src",
+            "pyproject.toml",
+            "uv.lock",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if dirty:
+        raise SystemExit(f"refusing a dirty branch:\n{dirty}")
+    head = resolve_rev(REPO_ROOT, "HEAD")
+    if resolve_rev(REPO_ROOT, branch) != head:
+        raise SystemExit(f"--branch {branch} is not HEAD ({head})")
+    siblings = {"dc3": DC3, "fusion-tea": FUSION_TEA}
+    before = {name: sibling_state(repo) for name, repo in siblings.items()}
+    record: dict[str, Any] = {"command": f"before-after --base {base} --branch {branch}"}
+    comparisons: dict[str, dict[str, Any]] = {}
+    runs: dict[str, tuple[TreeRun, TreeRun]] = {}
+    with tempfile.TemporaryDirectory(dir="/tmp", prefix="l6-before-after-") as scratch:
+        parent = Path(scratch)
+        codes = {"base": parent / "code-base", "branch": parent / "code-branch"}
+        commits = {
+            "base": export_code(base, codes["base"]),
+            "branch": export_code(branch, codes["branch"]),
+        }
+        record["agentic_mbse"] = commits
+        record["syside_version"] = syside_version(child_env(read_license_key()))
+        record["trees"] = export_trees(parent, labels)
+        for label, tree in record["trees"].items():
+            tree_dir = parent / "trees" / label
+            pair = []
+            for side in ("base", "branch"):
+                print(f"running {label} at {side} {commits[side][:8]} ...", flush=True)
+                run = run_validate(
+                    label, tree_dir, tree["commit"], side, codes[side], commits[side]
+                )
+                print(f"  exit {run.exit_code}, {run.wall_time_s} s", flush=True)
+                pair.append(run)
+            base_run, branch_run = pair
+            runs[label] = (base_run, branch_run)
+            comparison = compare_runs(base_run, branch_run)
+            expected_root = str(parent / tree["settings"]["root"])
+            for run in pair:
+                if resolved_root(run) != expected_root:
+                    comparison["flags"].append(
+                        f"{label} ({run.code_label}): resolved root {resolved_root(run)}, expected {expected_root}"
+                    )
+            comparison["exit"] = [base_run.exit_code, branch_run.exit_code]
+            comparison["wall_time_s"] = [base_run.wall_time_s, branch_run.wall_time_s]
+            comparison["ratio"] = round(branch_run.wall_time_s / base_run.wall_time_s, 3)
+            if label == "fusion-tea" and comparison["ratio"] > TIME_LIMIT:
+                comparison["flags"].append(
+                    f"fusion-tea branch time {branch_run.wall_time_s} s is over {TIME_LIMIT} x base {base_run.wall_time_s} s"
+                )
+            comparisons[label] = comparison
+    after = {name: sibling_state(repo) for name, repo in siblings.items()}
+    record["siblings_unchanged"] = before == after
+    record["skipped_links"] = SKIPPED_LINKS
+    record["comparisons"] = comparisons
+    record["runs"] = {
+        label: [
+            {k: v for k, v in asdict(run).items() if k not in ("stdout", "stderr")} for run in pair
+        ]
+        for label, pair in runs.items()
+    }
+    flags = [flag for c in comparisons.values() for flag in c["flags"]]
+    if before != after:
+        flags.append("a sibling checkout changed during the run")
+    record["flags"] = flags
+    EVIDENCE.mkdir(parents=True, exist_ok=True)
+    (EVIDENCE / f"{out_name}.json").write_text(json.dumps(record, indent=2) + "\n")
+    (EVIDENCE / f"{out_name}.md").write_text(before_after_markdown(record))
+    return 1 if flags else 0
+
+
+def before_after_markdown(record: dict[str, Any]) -> str:
+    commits = record["agentic_mbse"]
+    out = [
+        "# Before/after: `validate --complete models`, base vs branch",
+        "",
+        f"Written by `scripts/l6_subset/run_consumers.py {record['command']}`. Base `{commits['base']}`, branch `{commits['branch']}`; SysIDE {record['syside_version']}. Each tree and each code revision is a `git archive` export under /tmp; target unset; runs one at a time. Sibling checkouts unchanged: {record['siblings_unchanged']}.",
+        "",
+        "## Flags",
+        "",
+    ]
+    out += [f"- **{flag}**" for flag in record["flags"]] or [
+        "None. No level or run goes from pass to fail, L1-L5 print identically, and the time criterion holds."
+    ]
+    out += [
+        "",
+        "## Per tree",
+        "",
+        "| Tree | Exit base -> branch | Wall time base -> branch (s) | Ratio | L1 | L2 | L3 | L4 | L5 | L6 |",
+        "|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for label, c in record["comparisons"].items():
+        cells = [
+            f"{v['before']} -> {v['after']}{'' if v['identical_text'] else ' (text differs)'}"
+            for v in c["levels"].values()
+        ]
+        out.append(
+            f"| {label} | {c['exit'][0]} -> {c['exit'][1]} | {c['wall_time_s'][0]} -> {c['wall_time_s'][1]} | {c['ratio']} | "
+            + " | ".join(cells)
+            + " |"
+        )
+    out += ["", f"Time criterion: fusion-tea branch time at most {TIME_LIMIT} x base."]
+    return "\n".join(out) + "\n"
 
 
 def _level_view(check: Any, models: str) -> Any:
@@ -410,7 +573,14 @@ def main() -> int:
         "session-equality", help="L1-L6 with and without the session, in process"
     )
     equality.add_argument("--trees", nargs="+", default=[label for label, _, _ in TREES])
+    compare = commands.add_parser("before-after", help="base and branch on the named trees")
+    compare.add_argument("--base", required=True)
+    compare.add_argument("--branch", required=True)
+    compare.add_argument("--trees", nargs="+", default=[label for label, _, _ in TREES])
+    compare.add_argument("--out", default="before-after", help="evidence file stem")
     args = parser.parse_args()
+    if args.command == "before-after":
+        return before_after(args.base, args.branch, args.trees, args.out)
     if args.command == "baseline":
         return baseline(args.base)
     if args.command == "session-equality":
