@@ -22,14 +22,21 @@ The rule, one outcome per input, in this order (design Implementation Notes):
 
 A finding whose target is a subject, actor or stakeholder slot gets its own reason (D20). A
 finding whose owner or target has no qualified name has no identity (D9).
+
+Pins change only a finding's ``pinned`` mark, and only on an exact identity match (I2). A pin
+no finding matches is judged by its file (D13): stale if the file was validated, stale if the
+file does not exist, out of scope if it exists but was not validated. A pin whose owner or
+input could not be inspected is not judged at all: the inspection failure is already the
+blocking result, and calling the pin stale would claim something nobody checked.
 """
 
 from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import StrEnum
+from pathlib import PurePosixPath
 
 from agentic_mbse.sysml.fact_refs import ElementRef, SafeLocation
 from agentic_mbse.sysml.parameter_redefinition_facts import (
@@ -40,13 +47,16 @@ from agentic_mbse.sysml.parameter_redefinition_facts import (
     RedefinedFormal,
     RedefinitionFailure,
 )
-from agentic_mbse.validation.positional_pins import FindingIdentity
+from agentic_mbse.validation.positional_pins import FindingIdentity, Pin, PinList
 
 __all__ = [
     "FindingReason",
     "InputOutcome",
+    "PinScope",
     "PositionalFinding",
     "PositionalResult",
+    "StalePin",
+    "StaleReason",
     "decide",
 ]
 
@@ -84,6 +94,7 @@ class PositionalFinding:
     target: RedefinedFormal
     location: SafeLocation
     reason: FindingReason
+    pinned: bool
 
     def sort_key(self) -> tuple[tuple[str, int, str], str, str, str]:
         """Location, then owner, input and target names; never an element id (see the fact's key)."""
@@ -95,16 +106,48 @@ class PositionalFinding:
         )
 
 
+class StaleReason(StrEnum):
+    """Why an unmatched pin is stale; rendered as the issue's `reason_code` (D13)."""
+
+    NOT_FOUND_IN_VALIDATED_FILE = "not_found_in_validated_file"
+    PINNED_FILE_MISSING = "pinned_file_missing"
+
+
+@dataclass(frozen=True)
+class StalePin:
+    pin: Pin
+    reason: StaleReason
+
+
+@dataclass(frozen=True)
+class PinScope:
+    """A valid pin list and what the caller found on disk, as data (D13).
+
+    Paths are POSIX paths relative to the pin list's pin root. ``validated_files`` are the
+    files this run loaded; ``existing_files`` are the files that exist under the pin root,
+    at least every pinned file that does.
+    """
+
+    pin_list: PinList
+    validated_files: frozenset[PurePosixPath]
+    existing_files: frozenset[PurePosixPath]
+
+
 @dataclass(frozen=True)
 class PositionalResult:
-    """Findings and failures in sorted order, and the count of each outcome.
+    """Findings, failures and unmatched pins in sorted order, and the count of each outcome.
 
     ``outcomes`` lists every :class:`InputOutcome` in declaration order, zeros included.
+    ``stale``, ``out_of_scope`` and ``not_judged`` partition the pins no finding matched;
+    all three are empty without a pin list.
     """
 
     findings: tuple[PositionalFinding, ...]
     failures: tuple[RedefinitionFailure, ...]
     outcomes: Mapping[InputOutcome, int]
+    stale: tuple[StalePin, ...]
+    out_of_scope: tuple[Pin, ...]
+    not_judged: tuple[Pin, ...]
 
     @property
     def inputs_inspected(self) -> int:
@@ -151,6 +194,7 @@ def _judge(fact: InputRedefinitionFact) -> tuple[InputOutcome, list[PositionalFi
             reason=FindingReason.SWAP
             if target.role is ParameterRole.ORDINARY
             else FindingReason.SPECIAL_SLOT,
+            pinned=False,
         )
         for target in implied
         if target.name is not None
@@ -166,16 +210,60 @@ def _judge(fact: InputRedefinitionFact) -> tuple[InputOutcome, list[PositionalFi
     return InputOutcome.IMPLICIT_MATCHING, []
 
 
-def decide(facts: ParameterRedefinitionFacts) -> PositionalResult:
-    """Every positional finding in the facts, with the extraction's failures carried as-is."""
+def decide(facts: ParameterRedefinitionFacts, pins: PinScope | None) -> PositionalResult:
+    """Every positional finding in the facts, marked pinned where ``pins`` names its identity.
+
+    ``pins`` is None when there is no usable pin list. The extraction's failures are carried
+    as-is; a pin never applies to one (I2).
+    """
     counts: Counter[InputOutcome] = Counter()
     findings: list[PositionalFinding] = []
     for fact in facts.facts:
         outcome, found = _judge(fact)
         counts[outcome] += 1
         findings.extend(found)
+    pinned_identities = (
+        frozenset() if pins is None else frozenset(p.identity for p in pins.pin_list.pins)
+    )
+    findings = [replace(f, pinned=True) if f.identity in pinned_identities else f for f in findings]
+    stale: list[StalePin] = []
+    out_of_scope: list[Pin] = []
+    not_judged: list[Pin] = []
+    if pins is not None:
+        matched = {f.identity for f in findings}
+        uninspected = _uninspected_names(facts)
+        for pin in pins.pin_list.pins:
+            if pin.identity in matched:
+                continue
+            if uninspected is None or _names(pin) & uninspected:
+                not_judged.append(pin)
+            elif pin.file in pins.validated_files:
+                stale.append(StalePin(pin, StaleReason.NOT_FOUND_IN_VALIDATED_FILE))
+            elif pin.file not in pins.existing_files:
+                stale.append(StalePin(pin, StaleReason.PINNED_FILE_MISSING))
+            else:
+                out_of_scope.append(pin)
     return PositionalResult(
         findings=tuple(sorted(findings, key=PositionalFinding.sort_key)),
         failures=facts.failures,
         outcomes={outcome: counts[outcome] for outcome in InputOutcome},
+        stale=tuple(sorted(stale, key=lambda s: s.pin.identity)),
+        out_of_scope=tuple(sorted(out_of_scope, key=lambda p: p.identity)),
+        not_judged=tuple(sorted(not_judged, key=lambda p: p.identity)),
     )
+
+
+def _uninspected_names(facts: ParameterRedefinitionFacts) -> frozenset[str] | None:
+    """Qualified names of the owners and inputs that failed; None if no owner was listed."""
+    if not facts.owners_enumerated:
+        return None
+    return frozenset(
+        f.subject.qualified_name
+        for f in facts.failures
+        if f.subject is not None and f.subject.qualified_name is not None
+    )
+
+
+def _names(pin: Pin) -> frozenset[str]:
+    """The owner and input qualified names a pin refers to."""
+    return frozenset({pin.identity.owner, f"{pin.identity.owner}::{pin.identity.input}"})

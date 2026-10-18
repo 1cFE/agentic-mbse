@@ -10,7 +10,8 @@ from pathlib import Path
 import tomllib
 import yaml
 
-MANIFEST = ".agentic-mbse/install.json"
+from agentic_mbse.project_root import MANIFEST
+
 LEGACY_MANIFEST = ".claude/.tool-hashes.json"
 # Other repositories install their own bundles through this surface, with their own manifest.
 # Change this string whenever any of it changes shape:

@@ -12,13 +12,13 @@ import tomllib
 from dotenv import load_dotenv
 
 from agentic_mbse.cli.installation import (
-    MANIFEST,
     Installer,
     bundle_kind,
     install_assistants,
     is_source_checkout,
     skill_bundles,
 )
+from agentic_mbse.project_root import find_project_root
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS, run_all_checks
 
 # Project templates split by ownership:
@@ -117,24 +117,6 @@ def get_docs_dir() -> Path:
 def get_project_templates_dir() -> Path:
     """Get path to bundled project templates directory."""
     return _get_data_root() / "project_templates"
-
-
-def find_project_root() -> Path | None:
-    """Walk up from CWD to find a project root.
-
-    Looks for work/BACKLOG.md, the native install manifest, or legacy .claude/.
-    Returns None if neither found.
-    """
-    current = Path.cwd()
-    while True:
-        if (current / "work" / "BACKLOG.md").exists():
-            return current
-        if (current / MANIFEST).is_file() or (current / ".claude").is_dir():
-            return current
-        parent = current.parent
-        if parent == current:
-            return None
-        current = parent
 
 
 def cmd_status(args) -> int:

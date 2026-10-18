@@ -116,7 +116,7 @@ def load(fixture: Fixture) -> Any:
 
 
 def run(fixture: Fixture) -> PositionalResult:
-    return decide(extract_parameter_redefinitions(load(fixture)))
+    return decide(extract_parameter_redefinitions(load(fixture)), None)
 
 
 def found(result: PositionalResult) -> set[Finding]:

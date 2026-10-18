@@ -377,35 +377,35 @@ def test_unmatched_pin_in_an_existing_unvalidated_file_is_out_of_scope():
 
 #### 1. Pin module
 **File:** `src/agentic_mbse/validation/positional_pins.py` (NEW, or extend if Phase 3 created it)
-- [ ] `FindingIdentity`, `Pin`, `PinList`, `PinListAbsent`, `PinListInvalid`, `PinListResult`.
-- [ ] `load(path, pin_root) -> PinListResult` with `tomllib`. Invalid on: unreadable file, TOML syntax error, wrong or missing `schema`, missing `recorded_against` or either field, non-date `date`, empty `revision`, unknown key at any level, wrong type, missing pin key, non-positive `line`, duplicate identity, absolute `file`, `..` in `file`. Each with its own `reason_code`.
-- [ ] `discover(validated_path) -> Path | PinListAbsent` using `find_project_root(start=...)`; looks only at `<root>/positional-pins.toml`.
-- [ ] Never writes a file (I3).
+- [x] `FindingIdentity`, `Pin`, `PinList`, `PinListAbsent`, `PinListInvalid`, `PinListResult`.
+- [x] `load(path, pin_root) -> PinListResult` with `tomllib`. Invalid on: unreadable file, TOML syntax error, wrong or missing `schema`, missing `recorded_against` or either field, non-date `date`, empty `revision`, unknown key at any level, wrong type, missing pin key, non-positive `line`, duplicate identity, absolute `file`, `..` in `file`. Each with its own `reason_code`.
+- [x] `discover(validated_path) -> Path | PinListAbsent` using `find_project_root(start=...)`; looks only at `<root>/positional-pins.toml`.
+- [x] Never writes a file (I3).
 
 #### 2. Project root
 **File:** `src/agentic_mbse/cli/__init__.py:122-136` (MODIFY)
-- [ ] `find_project_root(start: Path | None = None)`; default `Path.cwd()`. Existing callers unchanged. Markers unchanged (`work/BACKLOG.md`, `.agentic-mbse/install.json`, `.claude/`).
-- [ ] If importing from `cli/` into `validation/` creates an import cycle, move the function's body to a small shared module and keep the `cli` name as a re-export. Record the choice in Implementation Notes.
+- [x] `find_project_root(start: Path | None = None)`; default `Path.cwd()`. Existing callers unchanged. Markers unchanged (`work/BACKLOG.md`, `.agentic-mbse/install.json`, `.claude/`).
+- [x] If importing from `cli/` into `validation/` creates an import cycle, move the function's body to a small shared module and keep the `cli` name as a re-export. Record the choice in Implementation Notes.
 
 #### 3. Pins in the decision
 **File:** `src/agentic_mbse/validation/positional_binding.py` (MODIFY)
-- [ ] `decide` marks a finding `pinned` only on exact identity match; never for identity `None` (D9), never for failures (I2).
-- [ ] Unmatched pins: stale `not_found_in_validated_file` if the pinned file was validated, stale `pinned_file_missing` if it does not exist under the pin root, out of scope if it exists but was not validated (D13). Keep `decide` pure: file existence is passed in by the caller as data.
-- [ ] Changed target for a pinned owner/input: the new identity is an unpinned finding and the old pin is stale (Pol-1).
+- [x] `decide` marks a finding `pinned` only on exact identity match; never for identity `None` (D9), never for failures (I2).
+- [x] Unmatched pins: stale `not_found_in_validated_file` if the pinned file was validated, stale `pinned_file_missing` if it does not exist under the pin root, out of scope if it exists but was not validated (D13). Keep `decide` pure: file existence is passed in by the caller as data.
+- [x] Changed target for a pinned owner/input: the new identity is an unpinned finding and the old pin is stale (Pol-1).
 
 #### 4. Tests
 **Files:** `tests/test_validation/test_positional_pins.py` (NEW); additions to `tests/test_validation/test_positional_binding_rule.py`
-- [ ] Every invalid case above, one test each; a valid file round-trips; output order sorted regardless of entry order.
-- [ ] Discovery: each of the three markers found from the validated path; no root above the path gives `PinListAbsent(None, None)`; a pin file below the root is ignored; a `positional-pins.toml` in a parent of the project root is ignored.
-- [ ] Pin root: a pin's `file` resolves against the pin file's directory by default and against an explicit pin root when given.
-- [ ] Pure decide: pinned, unpinned, unpinnable, stale (both reasons), out of scope, changed target.
+- [x] Every invalid case above, one test each; a valid file round-trips; output order sorted regardless of entry order.
+- [x] Discovery: each of the three markers found from the validated path; no root above the path gives `PinListAbsent(None, None)`; a pin file below the root is ignored; a `positional-pins.toml` in a parent of the project root is ignored.
+- [x] Pin root: a pin's `file` resolves against the pin file's directory by default and against an explicit pin root when given.
+- [x] Pure decide: pinned, unpinned, unpinnable, stale (both reasons), out of scope, changed target.
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_validation/test_positional_pins.py tests/test_validation/test_positional_binding_rule.py` → pass
-- [ ] `uv run pytest tests/test_cli.py` → no new failures (the `find_project_root` change)
-- [ ] G1, G2, G3
+- [x] `uv run pytest tests/test_validation/test_positional_pins.py tests/test_validation/test_positional_binding_rule.py` → pass
+- [x] `uv run pytest tests/test_cli.py` → no new failures (the `find_project_root` change)
+- [x] G1, G2, G3
 
 **Done when (traces to Pol-1, Pol-2 and Pol-3 at the pure level):** strict parsing rejects every listed defect with its own reason; discovery looks only at the project root; stale and out-of-scope are decided as D13 states.
 
@@ -798,6 +798,23 @@ See `design.md#potential-risks` for the full list. Phase-specific mitigations:
 - Header format: `// finding: owner | input | target [| SPECIAL_SLOT]`, `<none>` for an owner without qualified name; `// unverifiable: CAUSE @ file:line`; multi-file fixtures hold it in `expect.txt`.
 
 ### Phase 4 Completion
+**Completed:** 2026-10-18
+
+**Changes Made:**
+- `src/agentic_mbse/validation/positional_pins.py`: `FindingIdentity`, `Pin`, `PinList`, `PinListAbsent`, `PinListInvalid`, `PinListResult`, the closed `PinListDefect` vocabulary (17 reason codes), `load(path, pin_root)` and `discover(validated_path)`. `load` rejects every listed defect with its own code, plus three the plan did not list: an empty identity part, a `file` naming no file (`""`, `.`) and a `file` with backslashes (it could never match a POSIX path). A TOML datetime is rejected as not a date (Python's `datetime` is a `date` subclass). Pins come out sorted by identity. Neither function writes (tested).
+- `src/agentic_mbse/project_root.py` (NEW): `find_project_root(start=None)` and `MANIFEST`. `cli/__init__.py` imports both names from it, so `agentic_mbse.cli.find_project_root` is the same function and `cli.installation.MANIFEST` the same constant. A relative `start` is taken from the working directory (`Path.absolute`, no symlink resolution, so existing callers see the same paths).
+- `src/agentic_mbse/validation/positional_binding.py`: `PinScope` (the pin list plus the validated and existing files, relative to the pin root, as data), `StaleReason`, `StalePin`; `PositionalFinding.pinned`; `PositionalResult.stale`, `out_of_scope`, `not_judged`; `decide(facts, pins)`.
+- Tests: `tests/test_validation/test_positional_pins.py` (65), 12 pin tests added to `test_positional_binding_rule.py`; the Phase 3 calls now pass `None` explicitly.
+- G1: 6 failed (the baseline 6) / 3882 passed. G2 clean on all 8 touched files. G3: `mypy src/` 97 errors, none in touched files; the three test files clean.
+
+**Issues:**
+- `find_project_root` moved, as the plan allowed: `cli/__init__.py` imports `agentic_mbse.validation`, so `validation` importing `cli` is a cycle. The marker constant `MANIFEST` moved with it, because `cli/installation.py` cannot be imported without running `cli/__init__.py`. `installation.py` now imports `MANIFEST` from `project_root.py`; its value is unchanged.
+
+**Deviations:**
+- **A pin whose owner or input failed inspection is "not judged", not stale.** D13 would call it stale (`not_found_in_validated_file`), which claims the input was checked and the mismatch is gone. The plan's Insp-1 line says a pin for an affected input "changes nothing". So an unmatched pin is not judged when a failure's subject has the pin's owner or `owner::input` as its qualified name, or when the owner population could not be listed. It gives no issue; Phase 5 shows it as a metric. The failure is already the blocking ERROR. A failure with no qualified name (an owner whose `:>>` did not resolve) cannot be tied to a pin, so such a pin is still judged by its file.
+- `decide(facts, pins: PinScope | None)` instead of `decide(facts, pins, validated_files, pin_root_files)`: file data travels with the pin list it describes, so there is no parameter that only matters when a list exists. `None` means no usable list.
+- The I6 import test no longer lists `positional_pins.py`: it is the pin loader, which design Architecture says touches the filesystem. The test now also forbids the decision module from importing the extractor, and allows `pathlib`'s pure path types only.
+- `check()` will live in a separate module in Phase 5, not in `positional_binding.py`: it calls the extractor (SysIDE) and reads the filesystem, which would break I6 for the decision module.
 
 ### Phase 5 Completion
 
