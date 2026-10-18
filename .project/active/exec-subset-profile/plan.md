@@ -1074,3 +1074,8 @@ Controls certified (the prototype's admitted neighbors and the observations): or
 ---
 
 **Status:** Draft → In Progress → Complete
+
+## Orchestrator rulings after Phase 7 (2026-10-18)
+
+- [AGENT] Ratified: for `SI_CONSTRAINT_BLOCKED` only, the judge reads the profile's own `[file:line]` suffix as the error location, still requiring it to fall inside the construct. Reason: the location check is unchanged in force; only its source differs for a code whose generator line carries no `root-0/` location. ES-007 is mapped to `executable_profile` by design, so this is consistent.
+- [AGENT] Calc-def bare-result context stays `unconfirmed` (generator refuses all such calc defs for having no output); the calc-usage bare-result silent drop and the ES-010 refusal side go to the R3 proposal table as candidates/gaps.
