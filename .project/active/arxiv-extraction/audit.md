@@ -216,3 +216,7 @@ The web char-count fix is also correct. Images are now saved on the body before 
 - I did not run the slow corpus tests.
 - I did not check arXiv layouts beyond the saved reference pages.
 - The title-logo follow-up and the owner's default-on gate stay open, and neither blocks.
+
+## Round 2 must-fix verification (orchestrator, 2026-10-18)
+
+Checked at `28663d17` instead of running a third audit round: the three doc sentences (`docs/extraction-internals.md:306`, `:316`, `docs/extraction.md:107`) now match the code; spec R4 names the listing-button removal as `[INFERRED]`; the new fixture test guards against any `data:` link returning. Full suite: 2929 passed, 3 failed (the known environmental baseline), 1 skipped. Ruff clean on touched extraction files. **Status: certified for close**, with the default-on owner gate and the title-logo follow-up open and non-blocking.
