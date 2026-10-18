@@ -122,9 +122,15 @@ def evaluate_tree(label: str, models: Path, root: Path, identity: Identity) -> T
 
 
 def self_check(run: TreeRun) -> None:
-    """The plan's stencil: roots used and both counts are reported, at the expected identity."""
-    if not run.result.scope.roots_used and run.result.scope.roots_available:
-        raise RunError(f"{run.label}: roots were available but none was used")
+    """The plan's stencil: the roots used and both counts are reported, at the expected identity.
+
+    With default roots, the roots used are the generator's roots, which a model with no
+    package-level part usage does not have; roots that could not be computed are a result
+    (verdict INCOMPLETE), reported, not a run failure.
+    """
+    scope = run.result.scope
+    if scope.roots_available and scope.roots_used != scope.generator_root_ids:
+        raise RunError(f"{run.label}: default roots used {scope.roots_used} != generator roots")
     if run.result.counts.declarations is None or run.result.counts.occurrences is None:
         raise RunError(f"{run.label}: declaration or occurrence count missing")
     if not run.identity.codegen_rev.startswith("b5663c07"):
