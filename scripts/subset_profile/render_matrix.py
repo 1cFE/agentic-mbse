@@ -22,6 +22,7 @@ from tests.helpers.subset_matrix import (  # noqa: E402
     UPSTREAM_ITEMS,
     Matrix,
     MatrixRow,
+    SiteStatus,
     load_matrix,
 )
 
@@ -70,8 +71,8 @@ def _row_section(row: MatrixRow) -> list[str]:
         lines.append(f"- **Notes:** {row.statement}")
     if row.l2_relation:
         lines.append(f"- **Relation to L2:** {row.l2_relation}")
-    if row.no_raise_site:
-        lines.append("- **Sites:** none (no raise site)")
+    if row.site_status is not SiteStatus.LISTED:
+        lines.append(f"- **Sites:** none (`{row.site_status.value}`)")
     else:
         lines.append(
             f"- **Sites:** {len(row.sites)}"

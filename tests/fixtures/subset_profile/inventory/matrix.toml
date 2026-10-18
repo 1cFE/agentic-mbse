@@ -4,7 +4,8 @@
 # outcome holds, the evidence for that outcome, and the coverage it leaves. Shared-rule rows
 # join the packaged rule records (agentic_mbse/sysml/subset_profile_rules.toml): their contexts
 # are the record contexts with the row's outcome, and their evidence status is the rule's.
-# `sites` holds site-account IDs (site_account.csv). `dc3` cross-references dc3 T-001 B1-B9
+# `sites` holds site-account IDs (site_account.csv); `site_status` says whether they are listed,
+# the case has no raise site, or a reported site was not located. `dc3` cross-references dc3 T-001 B1-B9
 # (models at 808464d); `upstream` cross-references dc3 toolkit-upstream-findings U1-U7.
 #
 # Loaded by tests/helpers/subset_matrix.py; rendered to the item's evidence/matrix.md by
@@ -33,8 +34,11 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = ""
 statement = "A non-asserted constraint owned by a calc def is admitted (graded, not refused). An asserted constraint is refused under every owner the rule computes, so it carries an SA-1 statement instead of an admitted-context probe. The part-owned assert stays admitted (control probe). Lifting the refusal is sysml-codegen [CALCDEF-GATE-IMPLEMENTATION]."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._owner_kind::coded::SI_CONSTRAINT_UNATTACHED::1",
+    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._halt_on_error_dispositions::coded::SI_CONSTRAINT_UNATTACHED::1",
+]
+site_status = "listed"
 dc3 = ["B1"]
 upstream = ["U1"]
 
@@ -56,8 +60,10 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = ""
 statement = "The refused element is the sequence actual, not the parameter declaration: an `ordered nonunique` input bound to a scalar generates (control probe binding-source__scalar_actual__owner_instantiated). dc3's T-001 attributes B2 to multiplicity expansion; that expansion runs only on part usages (ES-004), so B2 is cross-referenced here and not from ES-004. Admitted where the owner is not instantiated or another writer wins in every scope. `owner_other` stays unconfirmed."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._collect_bound_members::coded-returned::SI_SELF_BINDING|SI_INDEXED_SOURCE_UNSUPPORTED|SI_EXPRESSION_SOURCE_UNSUPPORTED::1",
+]
+site_status = "listed"
 dc3 = ["B2"]
 upstream = []
 
@@ -79,8 +85,15 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "`nonunique` and negative part multiplicities stay unconfirmed: SysIDE 0.8.4 rejects both before the generator runs, so no probe can be authored. G1 and G2 are generator-correctness questions the rule mirrors rather than corrects (rows G1, G2)."
 statement = "Applies only to part usages the generator expands (a root, or a composite part usage reachable from one). Attribute-usage multiplicity is never expanded (control probe part-multiplicity__attribute_multiplicity__attribute_usage), and neither are templates or non-composite `ref part` usages."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNSUPPORTED::1",
+    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNSUPPORTED::2",
+    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::1",
+    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_INVALID::1",
+    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::2",
+    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNSUPPORTED::3",
+]
+site_status = "listed"
 dc3 = ["B3"]
 upstream = []
 
@@ -102,8 +115,10 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "A calc def's bare result expression (`calc_result_expression`) stays unconfirmed: the generator refuses every such calc def for having no output, whatever the expression holds (row CALC-DEF-BARE-RESULT), so the design's expected handwritten stub was not observed."
 statement = "Model-wide at expression-inventory sites, instantiated or not. The callable boundary is agentic-mbse's shared allowlist (`invocation_allowlist.py`), which reference_use enforces for the generator. Widening the vocabulary is sysml-codegen [SCALAR-FUNCTION-VOCABULARY]."
-sites = []
-no_raise_site = false
+sites = [
+    "agentic_mbse/sysml/reference_use.py::_require_supported_invocation::shared-evidence::EXPRESSION_KIND_UNSUPPORTED::1",
+]
+site_status = "listed"
 dc3 = ["B4", "B5"]
 upstream = ["U4"]
 
@@ -125,8 +140,10 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "A conditional whose branch references all resolve (`conditional_resolved_branches`) is unconfirmed in every context; no probe has observed one. `calc_result_expression` stays unconfirmed (row CALC-DEF-BARE-RESULT). A refused conditional leaves `indexed-reference` unverified on the same site, because the shared reference walk is what fails; such a model reports verdict INCOMPLETE."
 statement = "The generator reports this with its generic evidence-gap code, so the rule refuses only a positively recognized conditional whose reference walk failed with RESOLVED_TARGET_MISSING. Any other evidence failure stays unverified."
-sites = []
-no_raise_site = false
+sites = [
+    "agentic_mbse/sysml/reference_use.py::_reference_use::shared-evidence::RESOLVED_TARGET_MISSING::1",
+]
+site_status = "listed"
 dc3 = ["B6"]
 upstream = ["U4"]
 
@@ -148,8 +165,32 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1 (eligibility stays with executable_profile.py)"
 coverage_limitation = ""
 statement = "BLOCK is refused where the owner is instantiated or is a package and admitted where it is not. NON_NUMERICAL is excluded, never refused. UNASSESSED never maps to admitted. The predicate decision is executable_profile's; findings carry its reasons as detail reasons."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._build_constraint_nodes::coded::SI_CONSTRAINT_BLOCKED::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_arithmetic::coded-DYNAMIC::derived::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_feature_chain::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_invocation::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_unsupported_node::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_value::coded-DYNAMIC::f'block_{operator}'::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_non_predicate_root::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_non_predicate_root::2",
+    "agentic_mbse/sysml/executable_profile.py::_walk_comparison::coded-DYNAMIC::reason::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_comparison::coded-DYNAMIC::reason::2",
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_feature_chain::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::warn_non_numerical_predicate::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_non_predicate_root::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::warn_non_numerical_predicate::2",
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_non_predicate_root::2",
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_non_predicate_root::3",
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_invocation::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_unsupported_node::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::coded-DYNAMIC::f'warn_non_numerical_{operator}'::1",
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_non_predicate_root::4",
+    "agentic_mbse/sysml/executable_profile.py::_evaluate_usage_against_definition::shared-profile::block_assert_by_reference::1",
+    "agentic_mbse/sysml/executable_profile.py::_evaluate_usage_against_definition::shared-profile::block_unresolved_definition::1",
+    "agentic_mbse/sysml/executable_profile.py::_evaluate_usage_against_definition::shared-profile::block_missing_predicate::1",
+]
+site_status = "listed"
 dc3 = ["B8"]
 upstream = []
 
@@ -182,7 +223,7 @@ owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "The refusal side (a String reaching a generated entry-point input) is a separate candidate, row ES-010-REFUSAL. On that reproduction model this rule reports the String omitted while the generator refuses the model."
 statement = "Dropped from generated output with no diagnostic, in both spellings (`attribute x = \"...\"` and `:>> x = \"...\"`). L6 today flags only the first spelling (dc3 U3). A numeric value stays generated (control probe)."
 sites = []
-no_raise_site = true
+site_status = "no_raise_site"
 dc3 = ["B7"]
 upstream = ["U3"]
 
@@ -203,8 +244,10 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = ""
 statement = "Same classifier and shape as ES-003; the epic keeps the row separate from dc3 B1-B8. A plain reference actual stays admitted (control probe)."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._collect_bound_members::coded-returned::SI_SELF_BINDING|SI_INDEXED_SOURCE_UNSUPPORTED|SI_EXPRESSION_SOURCE_UNSUPPORTED::1",
+]
+site_status = "listed"
 dc3 = []
 upstream = []
 
@@ -226,8 +269,10 @@ owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "`writer_overridden` and `owner_other` stay unconfirmed: no probe observed a self-binding there."
 statement = "20 of the 23 refusal records of codegen's accepted corpus carry this code."
 l2_relation = "Overlaps L2_SELF_NAMED_BINDING (validation/level2_structure.py:322-343) and is wider in one way, narrower in another. Both compare the reference's resolved referent with the bound parameter, as codegen does. L2 checks calc usages only, and in every context, so it reports a self-binding inside a part def nobody instantiates, which the generator admits. The rule also covers constraint-usage inputs and refuses only where the generator classifies the binding. Item 1 leaves L2 unchanged; reconciling the two is Item 3's (L6 adopts the contract)."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._collect_bound_members::coded-returned::SI_SELF_BINDING|SI_INDEXED_SOURCE_UNSUPPORTED|SI_EXPRESSION_SOURCE_UNSUPPORTED::1",
+]
+site_status = "listed"
 dc3 = []
 upstream = []
 
@@ -248,8 +293,11 @@ evidence = [
 owner = "agentic-mbse, EXEC-SUBSET-CONTRACT Item 1"
 coverage_limitation = "`calc_result_expression` stays unconfirmed (row CALC-DEF-BARE-RESULT). Where a site's reference walk fails (a refused conditional or invocation on it), whether it also holds an index is unknown, so this rule reports unverified there."
 statement = "Refused model-wide by the expression inventory, before any instantiation; the binding classifier's own indexed branch is never reached on an inventoried input."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/expression_evidence.py::_indexed_refusal::coded::INDEXED_REFERENCE_UNSUPPORTED::1",
+    "agentic_mbse/sysml/reference_use.py::require_exact_reference_use::shared-evidence::INDEXED_REFERENCE_UNSUPPORTED::1",
+]
+site_status = "listed"
 dc3 = []
 upstream = []
 
@@ -266,8 +314,10 @@ evidence = ["probe:candidate-es-002__constraint_binds_calc_input__binding_value"
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule: the contract reports nothing for this shape. Which other shapes reach the shared SI_OCCURRENCE_MISSING raise sites is not established."
 statement = "Reproduced once: SI_OCCURRENCE_MISSING, \"semantic owner kind 'CalculationUsage' cannot anchor containment\". Binding a calc output works (dc3 U5)."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/occurrence.py::build_containment_address::coded::SI_OCCURRENCE_MISSING::1",
+]
+site_status = "listed"
 dc3 = []
 upstream = ["U5"]
 
@@ -282,8 +332,10 @@ evidence = ["probe:candidate-es-008__nested_named_subset__part_usage"]
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule. Reproduced in one of five spellings only; plain nested subsets with exact multiplicities generate, so the refusing boundary is narrower than dc3 U2 states."
 statement = "SI_REDEFINITION_INVALID, \"incomparable value writers\". One level of named subsetting works."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._require_one_writer::coded::SI_REDEFINITION_INVALID::1",
+]
+site_status = "listed"
 dc3 = []
 upstream = ["U2"]
 
@@ -298,8 +350,10 @@ evidence = ["probe:candidate-es-009__composition_by_subsetting__part_usage"]
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule: the contract reports nothing for this shape."
 statement = "SI_OCCURRENCE_MISSING, \"exact owner address has no target\" on `facility.area`."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_semantic_reference::coded::SI_OCCURRENCE_MISSING::4",
+]
+site_status = "listed"
 dc3 = []
 upstream = ["U6"]
 
@@ -314,8 +368,10 @@ evidence = ["probe:candidate-es-010-refusal__string_to_calc_input__binding_value
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule (design D11): the projection boundary has three entry paths and entry-point membership is an output fact owned by codegen (ADR 0007). The omission rule reports such a String omitted while the generator refuses the model."
 statement = "SI_RENDERING_COLLISION at projection: \"the public EntryPoint seam cannot carry non-numeric default\". Booleans are coerced, not refused."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/project.py::_float_default::coded::SI_RENDERING_COLLISION::1",
+]
+site_status = "listed"
 dc3 = []
 upstream = []
 
@@ -329,9 +385,9 @@ evidence_status = "reported_not_reproduced"
 evidence = ["dc3:work/orchestration/goals/study-ready-baseline/evidence/T-001-blocker-inventory.md#B9"]
 owner = "EXEC-SUBSET-CONTRACT Item 2 (design D12: not probed in Item 1)"
 coverage_limitation = "Never refused by the contract. A dc3 T-001 worker reported SI_EDGE_DANGLING; the coordinator did not reproduce it, the raise site is not located, and dc3 already uses the `out attribute` form."
-statement = "Reproduce or retire in Item 2."
+statement = "Reproduce or retire in Item 2. Site status not_located: SI_EDGE_DANGLING is raised at several scanned sites (the factory sysml_codegen/elaboration/graph.py:964 and its callers), and which one the worker saw is not established, so no site is joined to this row."
 sites = []
-no_raise_site = false
+site_status = "not_located"
 dc3 = ["B9"]
 upstream = ["U7"]
 
@@ -349,8 +405,10 @@ evidence = [
 owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)"
 coverage_limitation = "No rule. The site rules report `calc_result_expression` unconfirmed, so a model with this shape is never called clean, but the refusal itself is not reported."
 statement = "Found by Item 1's probes. SI_EVIDENCE_INCOMPLETE, \"extracted with zero output attributes\", whatever the expression holds (arithmetic or `max`). The design expected a handwritten stub here; none was observed."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/extraction/extractor.py::SysMLDataExtractor._extract_calculation_definition::coded-fixed::SI_EVIDENCE_INCOMPLETE::2",
+]
+site_status = "listed"
 dc3 = []
 upstream = []
 
@@ -370,7 +428,7 @@ owner = "unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2, generator c
 coverage_limitation = "No rule reports the drop. The site rules record this context as admitted for their own shapes (the generator never examines it), which is true and says nothing about the lost expression."
 statement = "Found by Item 1's probes: the expression is never examined and produces nothing in the generated output; the usage's result comes from its definition. No diagnostic."
 sites = []
-no_raise_site = true
+site_status = "no_raise_site"
 dc3 = []
 upstream = []
 
@@ -386,7 +444,7 @@ owner = "EXEC-SUBSET-CONTRACT Item 2 / owner (design D14 a)"
 coverage_limitation = "The contract mirrors the generator (the occurrence port expands one unindexed occurrence) and does not flag that the redefined multiplicity was dropped."
 statement = "Generator-correctness question, not a refusal: the generator generates one unindexed occurrence (`fx__rack__servers__t__r`)."
 sites = []
-no_raise_site = true
+site_status = "no_raise_site"
 dc3 = []
 upstream = []
 
@@ -402,7 +460,7 @@ owner = "EXEC-SUBSET-CONTRACT Item 2 / owner (design D14 b)"
 coverage_limitation = "Not probed in Item 1. The occurrence port mirrors the generator's reading (spike F1 Surprise 2), so the contract inherits the behavior unflagged."
 statement = "Generator-correctness question found by spike F1 against codegen's code; no probe in Item 1."
 sites = []
-no_raise_site = true
+site_status = "no_raise_site"
 dc3 = []
 upstream = []
 
@@ -417,8 +475,10 @@ evidence = ["corpus:deep_cross_scope_probe"]
 owner = "sysml-codegen [DEEP-QUALIFIED-OUTPUT-WIRING]"
 coverage_limitation = "No rule: deciding whether a producer exists in the consumer domain needs codegen's output wiring, which the contract does not model."
 statement = "SI_OCCURRENCE_MISSING, \"exact output ... has no producer in the consumer domain\", a typed refusal record of codegen's accepted corpus. Codegen's backlog owns implementing the wiring."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_calculation_output::coded::SI_OCCURRENCE_MISSING::1",
+]
+site_status = "listed"
 dc3 = []
 upstream = []
 
@@ -434,7 +494,7 @@ owner = "agentic-mbse backlog [L6-LIBRARY-ALIAS-SOURCE]"
 coverage_limitation = "Not affected by Item 1 and not fixed by this epic: the contract has no rule over EXPOSE aliases or value completeness, and Item 1 changes no L6 output (Phase 10 validate diff). What the generator does with such an alias was not probed."
 statement = "An L6 completeness limitation, adjacent to the contract: completeness path-filters the library source declaration and skips the alias."
 sites = []
-no_raise_site = true
+site_status = "no_raise_site"
 dc3 = []
 upstream = []
 
@@ -450,9 +510,9 @@ evidence_status = "code_read"
 evidence = ["backlog:PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS"]
 owner = "agentic-mbse backlog [PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS]"
 coverage_limitation = "No rule and no probe in Item 1. The backlog row names a shared helper `extract_feature_chain_segments`; no function of that name exists in agentic-mbse `src/` at this revision, so the fact the check needs is not confirmed either."
-statement = "Filed by sysml-codegen PUSH-DOWN Item 1 as an ERROR-severity profile check."
+statement = "Filed by sysml-codegen PUSH-DOWN Item 1 as an ERROR-severity profile check. Site status not_located: candidate chain-segment refusals exist (agentic_mbse/sysml/reference_use.py:545, :557, :594, :618; sysml_codegen/extraction/binding_source.py:236, :243, :251), but their reachability from valid input is unknown, so they are explicit follow-ups in the site account, not joined here."
 sites = []
-no_raise_site = false
+site_status = "not_located"
 dc3 = []
 upstream = []
 
@@ -468,7 +528,7 @@ owner = "agentic-mbse backlog [PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-SHAPE-MESSAGE]
 coverage_limitation = "No rule and no probe; a WARNING-severity advisory, not a generator refusal."
 statement = "Filed by sysml-codegen PUSH-DOWN Item 1."
 sites = []
-no_raise_site = true
+site_status = "no_raise_site"
 dc3 = []
 upstream = []
 
@@ -483,8 +543,11 @@ evidence = ["backlog:PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR", "agentic_mbse
 owner = "agentic-mbse backlog [PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR]"
 coverage_limitation = "No rule and no probe in Item 1. Function invocations are covered by ES-005; operators are not, and executable_profile covers predicate operators only."
 statement = "Filed by sysml-codegen PUSH-DOWN Item 1 as an ERROR-severity profile check."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/extraction/calc_compat_renderer.py::_render_operator::free-text::CompilationError::1",
+    "sysml_codegen/extraction/calc_compat_renderer.py::_render_operator::free-text::CompilationError::3",
+]
+site_status = "listed"
 dc3 = []
 upstream = []
 
@@ -500,7 +563,7 @@ owner = "agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-REDEF-PRECEDENCE]"
 coverage_limitation = "No rule: precedence is codegen policy not yet published as shared facts."
 statement = "A WARNING explaining which value wins; the generator admits the model."
 sites = []
-no_raise_site = true
+site_status = "no_raise_site"
 dc3 = []
 upstream = []
 
@@ -514,9 +577,9 @@ evidence_status = "code_read"
 evidence = ["backlog:PUSH-DOWN-HIER-PROFILE-UNSUPPORTED-RHS", "agentic_mbse/sysml/hierarchy.py:38"]
 owner = "agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-UNSUPPORTED-RHS]"
 coverage_limitation = "The callable part is covered by ES-005 at `attribute_value` (a redefinition value is an inventoried feature value); the operator part waits on PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR. The hierarchy-side warning itself is not implemented."
-statement = "Filed as a WARNING trigger that must not duplicate expression support policy."
+statement = "Filed as a WARNING trigger that must not duplicate expression support policy. Site status not_located: no site refuses a redefinition RHS as such; its callable part raises at ES-005's site and its operator part at PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR's."
 sites = []
-no_raise_site = false
+site_status = "not_located"
 dc3 = []
 upstream = []
 
@@ -531,8 +594,11 @@ evidence = ["backlog:PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE", "agentic_mbse/s
 owner = "agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE]; L6 wiring is EXEC-SUBSET-CONTRACT Item 3"
 coverage_limitation = "The generator decision is now part-multiplicity/unresolved_bound (ES-004), refused on expanded part usages with probes; the L6 warning this row files is not wired (Item 3)."
 statement = "Filed as a WARNING; overlaps ES-004's unresolved_bound shape."
-sites = []
-no_raise_site = false
+sites = [
+    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::1",
+    "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::2",
+]
+site_status = "listed"
 dc3 = []
 upstream = []
 
@@ -548,7 +614,7 @@ owner = "agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-AMBIG-INHERITED-ATTR]"
 coverage_limitation = "No rule: most-specific type selection stays in codegen. The occurrence port mirrors codegen's incomparable-typings abort (OccurrenceAbort.INCOMPARABLE_TYPINGS), which makes the contract unverified, not refused, where it fires."
 statement = "Filed as a WARNING before codegen picks sorted-first behavior."
 sites = []
-no_raise_site = true
+site_status = "no_raise_site"
 dc3 = []
 upstream = []
 
@@ -562,9 +628,9 @@ evidence_status = "code_read"
 evidence = ["backlog:PUSH-DOWN-AGG-PROFILE-SUM-SHAPE", "agentic_mbse/sysml/aggregation.py:233"]
 owner = "agentic-mbse backlog [PUSH-DOWN-AGG-PROFILE-SUM-SHAPE]"
 coverage_limitation = "No rule: `sum` is the one admitted callable (ES-005) and its operand boundary is not modeled."
-statement = "Filed as a WARNING over the shared aggregation facts."
+statement = "Filed as a WARNING over the shared aggregation facts. Site status not_located: the one candidate, a `sum` call with other than one argument (sysml_codegen/elaboration/project.py:812), has an unknown role and is an explicit follow-up in the site account."
 sites = []
-no_raise_site = false
+site_status = "not_located"
 dc3 = []
 upstream = []
 
@@ -580,7 +646,7 @@ owner = "agentic-mbse backlog [PUSH-DOWN-AGG-PROFILE-WRAPPER-SHAPE]"
 coverage_limitation = "No rule; any stricter warning must stay separate from generation behavior."
 statement = "Generation is permissive here by the PUSH-DOWN Item 4 record; not probed in Item 1."
 sites = []
-no_raise_site = true
+site_status = "no_raise_site"
 dc3 = []
 upstream = []
 
@@ -594,9 +660,9 @@ evidence_status = "code_read"
 evidence = ["backlog:PUSH-DOWN-AGG-PROFILE-LITERAL-SHAPE", "agentic_mbse/sysml/aggregation.py:233"]
 owner = "agentic-mbse backlog [PUSH-DOWN-AGG-PROFILE-LITERAL-SHAPE]"
 coverage_limitation = "No rule and no probe in Item 1."
-statement = "Filed as an aggregation-specific WARNING."
+statement = "Filed as an aggregation-specific WARNING. Site status not_located: no scanned site was identified as refusing a literal aggregation operand."
 sites = []
-no_raise_site = false
+site_status = "not_located"
 dc3 = []
 upstream = []
 

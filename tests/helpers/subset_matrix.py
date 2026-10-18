@@ -75,6 +75,15 @@ class RowEvidence(StrEnum):
     REPORTED_NOT_REPRODUCED = "reported_not_reproduced"
 
 
+class SiteStatus(StrEnum):
+    #: The row's sites are listed in `sites` (from the site account).
+    LISTED = "listed"
+    #: The case has no raise site at all: a silent omission or an admission.
+    NO_RAISE_SITE = "no_raise_site"
+    #: A raise site is reported but not located among the scanned sites.
+    NOT_LOCATED = "not_located"
+
+
 RULE_STATUSES = frozenset(
     {RowEvidence.PROBE_OBSERVED, RowEvidence.PARTIAL, RowEvidence.CODE_READ_PENDING_ITEM_2}
 )
@@ -100,7 +109,7 @@ _ROW_REQUIRED = {
     "owner",
     "coverage_limitation",
     "sites",
-    "no_raise_site",
+    "site_status",
     "dc3",
     "upstream",
 }
@@ -138,8 +147,7 @@ class MatrixRow:
     coverage_limitation: str
     #: Site-account IDs (filled from `site_account.csv`).
     sites: tuple[str, ...]
-    #: True when the case has no raise site at all (a silent omission or admission).
-    no_raise_site: bool
+    site_status: SiteStatus
     dc3: tuple[str, ...]
     upstream: tuple[str, ...]
     l2_relation: str
@@ -261,9 +269,10 @@ def _row(table: Mapping[str, Any]) -> MatrixRow:
     upstream = _texts(table["upstream"], f"{where} upstream")
     if not set(dc3) <= DC3_ITEMS or not set(upstream) <= UPSTREAM_ITEMS:
         raise MatrixError(f"{where}: dc3 must be in B1-B9 and upstream in U1-U7")
-    no_raise_site = table["no_raise_site"]
-    if not isinstance(no_raise_site, bool):
-        raise MatrixError(f"{where}: no_raise_site must be a boolean")
+    site_status = _member(SiteStatus, table["site_status"], where)
+    sites = _texts(table["sites"], f"{where} sites")
+    if (site_status is SiteStatus.LISTED) != bool(sites):
+        raise MatrixError(f"{where}: sites are listed iff site_status is `listed`")
     contexts = _texts(table["contexts"], f"{where} contexts")
     if not contexts:
         raise MatrixError(f"{where}: contexts is empty")
@@ -279,8 +288,8 @@ def _row(table: Mapping[str, Any]) -> MatrixRow:
         evidence=evidence,
         owner=_text(table["owner"], where),
         coverage_limitation=_text(table["coverage_limitation"], where, empty=True),
-        sites=_texts(table["sites"], f"{where} sites"),
-        no_raise_site=no_raise_site,
+        sites=sites,
+        site_status=site_status,
         dc3=dc3,
         upstream=upstream,
         l2_relation=_text(table.get("l2_relation", ""), where, empty=True),

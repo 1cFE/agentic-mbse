@@ -86,7 +86,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse, EXEC-SUBSET-CONTRACT Item 1
 - **Coverage limitation:** none (implemented in Item 1)
 - **Notes:** A non-asserted constraint owned by a calc def is admitted (graded, not refused). An asserted constraint is refused under every owner the rule computes, so it carries an SA-1 statement instead of an admitted-context probe. The part-owned assert stays admitted (control probe). Lifting the refusal is sysml-codegen [CALCDEF-GATE-IMPLEMENTATION].
-- **Sites:** 0
+- **Sites:** 2: `sysml_codegen/elaboration/elaborate.py::_ExactElaborator._owner_kind::coded::SI_CONSTRAINT_UNATTACHED::1`, `sysml_codegen/elaboration/elaborate.py::_ExactElaborator._halt_on_error_dispositions::coded::SI_CONSTRAINT_UNATTACHED::1`
 
 ### ES-003: Calc or constraint input bound to a sequence actual such as (a, b)
 
@@ -99,7 +99,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse, EXEC-SUBSET-CONTRACT Item 1
 - **Coverage limitation:** none (implemented in Item 1)
 - **Notes:** The refused element is the sequence actual, not the parameter declaration: an `ordered nonunique` input bound to a scalar generates (control probe binding-source__scalar_actual__owner_instantiated). dc3's T-001 attributes B2 to multiplicity expansion; that expansion runs only on part usages (ES-004), so B2 is cross-referenced here and not from ES-004. Admitted where the owner is not instantiated or another writer wins in every scope. `owner_other` stays unconfirmed.
-- **Sites:** 0
+- **Sites:** 1: `sysml_codegen/elaboration/elaborate.py::_ExactElaborator._collect_bound_members::coded-returned::SI_SELF_BINDING|SI_INDEXED_SOURCE_UNSUPPORTED|SI_EXPRESSION_SOURCE_UNSUPPORTED::1`
 
 ### ES-004: Ordered, nonunique, ranged, unresolved or negative multiplicity on an expanded part usage
 
@@ -116,7 +116,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse, EXEC-SUBSET-CONTRACT Item 1
 - **Coverage limitation:** `nonunique` and negative part multiplicities stay unconfirmed: SysIDE 0.8.4 rejects both before the generator runs, so no probe can be authored. G1 and G2 are generator-correctness questions the rule mirrors rather than corrects (rows G1, G2).
 - **Notes:** Applies only to part usages the generator expands (a root, or a composite part usage reachable from one). Attribute-usage multiplicity is never expanded (control probe part-multiplicity__attribute_multiplicity__attribute_usage), and neither are templates or non-composite `ref part` usages.
-- **Sites:** 0
+- **Sites:** 6: `sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNSUPPORTED::1`, `sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNSUPPORTED::2`, `sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::1`, `sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_INVALID::1`, `sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::2`, `sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNSUPPORTED::3`
 
 ### ES-005: Invocation of any callable other than NumericalFunctions::sum
 
@@ -129,7 +129,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse, EXEC-SUBSET-CONTRACT Item 1
 - **Coverage limitation:** A calc def's bare result expression (`calc_result_expression`) stays unconfirmed: the generator refuses every such calc def for having no output, whatever the expression holds (row CALC-DEF-BARE-RESULT), so the design's expected handwritten stub was not observed.
 - **Notes:** Model-wide at expression-inventory sites, instantiated or not. The callable boundary is agentic-mbse's shared allowlist (`invocation_allowlist.py`), which reference_use enforces for the generator. Widening the vocabulary is sysml-codegen [SCALAR-FUNCTION-VOCABULARY].
-- **Sites:** 0
+- **Sites:** 1: `agentic_mbse/sysml/reference_use.py::_require_supported_invocation::shared-evidence::EXPRESSION_KIND_UNSUPPORTED::1`
 
 ### ES-006: Conditional expression `if ... ? ... else ...`
 
@@ -143,7 +143,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse, EXEC-SUBSET-CONTRACT Item 1
 - **Coverage limitation:** A conditional whose branch references all resolve (`conditional_resolved_branches`) is unconfirmed in every context; no probe has observed one. `calc_result_expression` stays unconfirmed (row CALC-DEF-BARE-RESULT). A refused conditional leaves `indexed-reference` unverified on the same site, because the shared reference walk is what fails; such a model reports verdict INCOMPLETE.
 - **Notes:** The generator reports this with its generic evidence-gap code, so the rule refuses only a positively recognized conditional whose reference walk failed with RESOLVED_TARGET_MISSING. Any other evidence failure stays unverified.
-- **Sites:** 0
+- **Sites:** 1: `agentic_mbse/sysml/reference_use.py::_reference_use::shared-evidence::RESOLVED_TARGET_MISSING::1`
 
 ### ES-007: Constraint predicate the executable profile blocks or excludes
 
@@ -159,7 +159,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse, EXEC-SUBSET-CONTRACT Item 1 (eligibility stays with executable_profile.py)
 - **Coverage limitation:** none (implemented in Item 1)
 - **Notes:** BLOCK is refused where the owner is instantiated or is a package and admitted where it is not. NON_NUMERICAL is excluded, never refused. UNASSESSED never maps to admitted. The predicate decision is executable_profile's; findings carry its reasons as detail reasons.
-- **Sites:** 0
+- **Sites:** 23: `sysml_codegen/elaboration/elaborate.py::_ExactElaborator._build_constraint_nodes::coded::SI_CONSTRAINT_BLOCKED::1`, `agentic_mbse/sysml/executable_profile.py::_walk_arithmetic::coded-DYNAMIC::derived::1`, `agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_feature_chain::1`, `agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_invocation::1`, `agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_unsupported_node::1`, `agentic_mbse/sysml/executable_profile.py::_walk_value::coded-DYNAMIC::f'block_{operator}'::1`, `agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_non_predicate_root::1`, `agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_non_predicate_root::2`, `agentic_mbse/sysml/executable_profile.py::_walk_comparison::coded-DYNAMIC::reason::1`, `agentic_mbse/sysml/executable_profile.py::_walk_comparison::coded-DYNAMIC::reason::2`, `agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_feature_chain::1`, `agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::warn_non_numerical_predicate::1`, `agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_non_predicate_root::1`, `agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::warn_non_numerical_predicate::2`, `agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_non_predicate_root::2`, `agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_non_predicate_root::3`, `agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_invocation::1`, `agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_unsupported_node::1`, `agentic_mbse/sysml/executable_profile.py::_walk_proposition::coded-DYNAMIC::f'warn_non_numerical_{operator}'::1`, `agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::block_non_predicate_root::4`, `agentic_mbse/sysml/executable_profile.py::_evaluate_usage_against_definition::shared-profile::block_assert_by_reference::1`, `agentic_mbse/sysml/executable_profile.py::_evaluate_usage_against_definition::shared-profile::block_unresolved_definition::1`, `agentic_mbse/sysml/executable_profile.py::_evaluate_usage_against_definition::shared-profile::block_missing_predicate::1`
 
 ### ES-010: String-valued attribute, both spellings (omission side)
 
@@ -172,7 +172,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse, EXEC-SUBSET-CONTRACT Item 1
 - **Coverage limitation:** The refusal side (a String reaching a generated entry-point input) is a separate candidate, row ES-010-REFUSAL. On that reproduction model this rule reports the String omitted while the generator refuses the model.
 - **Notes:** Dropped from generated output with no diagnostic, in both spellings (`attribute x = "..."` and `:>> x = "..."`). L6 today flags only the first spelling (dc3 U3). A numeric value stays generated (control probe).
-- **Sites:** none (no raise site)
+- **Sites:** none (`no_raise_site`)
 
 ### ES-012: Arithmetic expression bound directly to a calc input, e.g. `in v = rate * fuel_code`
 
@@ -185,7 +185,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse, EXEC-SUBSET-CONTRACT Item 1
 - **Coverage limitation:** none (implemented in Item 1)
 - **Notes:** Same classifier and shape as ES-003; the epic keeps the row separate from dc3 B1-B8. A plain reference actual stays admitted (control probe).
-- **Sites:** 0
+- **Sites:** 1: `sysml_codegen/elaboration/elaborate.py::_ExactElaborator._collect_bound_members::coded-returned::SI_SELF_BINDING|SI_INDEXED_SOURCE_UNSUPPORTED|SI_EXPRESSION_SOURCE_UNSUPPORTED::1`
 
 ### SELF-BINDING: Input bound to a reference to itself (`in x = x`)
 
@@ -199,7 +199,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Coverage limitation:** `writer_overridden` and `owner_other` stay unconfirmed: no probe observed a self-binding there.
 - **Notes:** 20 of the 23 refusal records of codegen's accepted corpus carry this code.
 - **Relation to L2:** Overlaps L2_SELF_NAMED_BINDING (validation/level2_structure.py:322-343) and is wider in one way, narrower in another. Both compare the reference's resolved referent with the bound parameter, as codegen does. L2 checks calc usages only, and in every context, so it reports a self-binding inside a part def nobody instantiates, which the generator admits. The rule also covers constraint-usage inputs and refuses only where the generator classifies the binding. Item 1 leaves L2 unchanged; reconciling the two is Item 3's (L6 adopts the contract).
-- **Sites:** 0
+- **Sites:** 1: `sysml_codegen/elaboration/elaborate.py::_ExactElaborator._collect_bound_members::coded-returned::SI_SELF_BINDING|SI_INDEXED_SOURCE_UNSUPPORTED|SI_EXPRESSION_SOURCE_UNSUPPORTED::1`
 
 ### INDEXED-REFERENCE: Indexed reference `x#(i)` in a value, binding or predicate
 
@@ -212,7 +212,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse, EXEC-SUBSET-CONTRACT Item 1
 - **Coverage limitation:** `calc_result_expression` stays unconfirmed (row CALC-DEF-BARE-RESULT). Where a site's reference walk fails (a refused conditional or invocation on it), whether it also holds an index is unknown, so this rule reports unverified there.
 - **Notes:** Refused model-wide by the expression inventory, before any instantiation; the binding classifier's own indexed branch is never reached on an inventoried input.
-- **Sites:** 0
+- **Sites:** 2: `sysml_codegen/elaboration/expression_evidence.py::_indexed_refusal::coded::INDEXED_REFERENCE_UNSUPPORTED::1`, `agentic_mbse/sysml/reference_use.py::require_exact_reference_use::shared-evidence::INDEXED_REFERENCE_UNSUPPORTED::1`
 
 ### ES-002: Constraint binding a calc usage's input parameter
 
@@ -223,7 +223,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)
 - **Coverage limitation:** No rule: the contract reports nothing for this shape. Which other shapes reach the shared SI_OCCURRENCE_MISSING raise sites is not established.
 - **Notes:** Reproduced once: SI_OCCURRENCE_MISSING, "semantic owner kind 'CalculationUsage' cannot anchor containment". Binding a calc output works (dc3 U5).
-- **Sites:** 0
+- **Sites:** 1: `sysml_codegen/elaboration/occurrence.py::build_containment_address::coded::SI_OCCURRENCE_MISSING::1`
 
 ### ES-008: Named subset nested inside a named subset, each redefining a value
 
@@ -234,7 +234,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)
 - **Coverage limitation:** No rule. Reproduced in one of five spellings only; plain nested subsets with exact multiplicities generate, so the refusing boundary is narrower than dc3 U2 states.
 - **Notes:** SI_REDEFINITION_INVALID, "incomparable value writers". One level of named subsetting works.
-- **Sites:** 0
+- **Sites:** 1: `sysml_codegen/elaboration/elaborate.py::_ExactElaborator._require_one_writer::coded::SI_REDEFINITION_INVALID::1`
 
 ### ES-009: Composition by subsetting a top-level usage
 
@@ -245,7 +245,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)
 - **Coverage limitation:** No rule: the contract reports nothing for this shape.
 - **Notes:** SI_OCCURRENCE_MISSING, "exact owner address has no target" on `facility.area`.
-- **Sites:** 0
+- **Sites:** 1: `sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_semantic_reference::coded::SI_OCCURRENCE_MISSING::4`
 
 ### ES-010-REFUSAL: Non-numeric default reaching a generated entry-point input (ES-010 refusal side)
 
@@ -256,7 +256,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)
 - **Coverage limitation:** No rule (design D11): the projection boundary has three entry paths and entry-point membership is an output fact owned by codegen (ADR 0007). The omission rule reports such a String omitted while the generator refuses the model.
 - **Notes:** SI_RENDERING_COLLISION at projection: "the public EntryPoint seam cannot carry non-numeric default". Booleans are coerced, not refused.
-- **Sites:** 0
+- **Sites:** 1: `sysml_codegen/elaboration/project.py::_float_default::coded::SI_RENDERING_COLLISION::1`
 
 ### ES-011: Arithmetic on a named calc return result (`c.r * k`)
 
@@ -266,8 +266,8 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Evidence:** `dc3:work/orchestration/goals/study-ready-baseline/evidence/T-001-blocker-inventory.md#B9`
 - **Owner:** EXEC-SUBSET-CONTRACT Item 2 (design D12: not probed in Item 1)
 - **Coverage limitation:** Never refused by the contract. A dc3 T-001 worker reported SI_EDGE_DANGLING; the coordinator did not reproduce it, the raise site is not located, and dc3 already uses the `out attribute` form.
-- **Notes:** Reproduce or retire in Item 2.
-- **Sites:** 0
+- **Notes:** Reproduce or retire in Item 2. Site status not_located: SI_EDGE_DANGLING is raised at several scanned sites (the factory sysml_codegen/elaboration/graph.py:964 and its callers), and which one the worker saw is not established, so no site is joined to this row.
+- **Sites:** none (`not_located`)
 
 ### CALC-DEF-BARE-RESULT: Calc def whose result is a bare expression
 
@@ -278,7 +278,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2)
 - **Coverage limitation:** No rule. The site rules report `calc_result_expression` unconfirmed, so a model with this shape is never called clean, but the refusal itself is not reported.
 - **Notes:** Found by Item 1's probes. SI_EVIDENCE_INCOMPLETE, "extracted with zero output attributes", whatever the expression holds (arithmetic or `max`). The design expected a handwritten stub here; none was observed.
-- **Sites:** 0
+- **Sites:** 1: `sysml_codegen/extraction/extractor.py::SysMLDataExtractor._extract_calculation_definition::coded-fixed::SI_EVIDENCE_INCOMPLETE::2`
 
 ### CALC-USAGE-BARE-RESULT-DROP: Calc usage whose body ends in a bare result expression
 
@@ -289,7 +289,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** unassigned until R3 (proposed: EXEC-SUBSET-CONTRACT Item 2, generator correctness)
 - **Coverage limitation:** No rule reports the drop. The site rules record this context as admitted for their own shapes (the generator never examines it), which is true and says nothing about the lost expression.
 - **Notes:** Found by Item 1's probes: the expression is never examined and produces nothing in the generated output; the usage's result comes from its definition. No diagnostic.
-- **Sites:** none (no raise site)
+- **Sites:** none (`no_raise_site`)
 
 ### G1: Part redefinition that omits bounds expands to one occurrence and loses `ordered`
 
@@ -300,7 +300,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** EXEC-SUBSET-CONTRACT Item 2 / owner (design D14 a)
 - **Coverage limitation:** The contract mirrors the generator (the occurrence port expands one unindexed occurrence) and does not flag that the redefined multiplicity was dropped.
 - **Notes:** Generator-correctness question, not a refusal: the generator generates one unindexed occurrence (`fx__rack__servers__t__r`).
-- **Sites:** none (no raise site)
+- **Sites:** none (`no_raise_site`)
 
 ### G2: Usage-level override of a definition-owned referenced bound is ignored
 
@@ -311,7 +311,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** EXEC-SUBSET-CONTRACT Item 2 / owner (design D14 b)
 - **Coverage limitation:** Not probed in Item 1. The occurrence port mirrors the generator's reading (spike F1 Surprise 2), so the contract inherits the behavior unflagged.
 - **Notes:** Generator-correctness question found by spike F1 against codegen's code; no probe in Item 1.
-- **Sites:** none (no raise site)
+- **Sites:** none (`no_raise_site`)
 
 ### DEEP-QUALIFIED-WIRING: Deep qualified reference to a concrete calculation output
 
@@ -322,7 +322,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** sysml-codegen [DEEP-QUALIFIED-OUTPUT-WIRING]
 - **Coverage limitation:** No rule: deciding whether a producer exists in the consumer domain needs codegen's output wiring, which the contract does not model.
 - **Notes:** SI_OCCURRENCE_MISSING, "exact output ... has no producer in the consumer domain", a typed refusal record of codegen's accepted corpus. Codegen's backlog owns implementing the wiring.
-- **Sites:** 0
+- **Sites:** 1: `sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_calculation_output::coded::SI_OCCURRENCE_MISSING::1`
 
 ### L6-LIBRARY-ALIAS-SOURCE: EXPOSE alias to an attribute of a library-typed part passes L6 with the source unset
 
@@ -333,7 +333,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse backlog [L6-LIBRARY-ALIAS-SOURCE]
 - **Coverage limitation:** Not affected by Item 1 and not fixed by this epic: the contract has no rule over EXPOSE aliases or value completeness, and Item 1 changes no L6 output (Phase 10 validate diff). What the generator does with such an alias was not probed.
 - **Notes:** An L6 completeness limitation, adjacent to the contract: completeness path-filters the library source declaration and skips the alias.
-- **Sites:** none (no raise site)
+- **Sites:** none (`no_raise_site`)
 
 ### PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS: Feature chain whose segment extraction is empty, lossy or anonymous
 
@@ -343,8 +343,8 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Evidence:** `backlog:PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS`
 - **Owner:** agentic-mbse backlog [PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS]
 - **Coverage limitation:** No rule and no probe in Item 1. The backlog row names a shared helper `extract_feature_chain_segments`; no function of that name exists in agentic-mbse `src/` at this revision, so the fact the check needs is not confirmed either.
-- **Notes:** Filed by sysml-codegen PUSH-DOWN Item 1 as an ERROR-severity profile check.
-- **Sites:** 0
+- **Notes:** Filed by sysml-codegen PUSH-DOWN Item 1 as an ERROR-severity profile check. Site status not_located: candidate chain-segment refusals exist (agentic_mbse/sysml/reference_use.py:545, :557, :594, :618; sysml_codegen/extraction/binding_source.py:236, :243, :251), but their reachability from valid input is unknown, so they are explicit follow-ups in the site account, not joined here.
+- **Sites:** none (`not_located`)
 
 ### PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-SHAPE-MESSAGE: Expression that reconstructs only through the opaque str(node) fallback
 
@@ -355,7 +355,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse backlog [PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-SHAPE-MESSAGE]
 - **Coverage limitation:** No rule and no probe; a WARNING-severity advisory, not a generator refusal.
 - **Notes:** Filed by sysml-codegen PUSH-DOWN Item 1.
-- **Sites:** none (no raise site)
+- **Sites:** none (`no_raise_site`)
 
 ### PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR: Operator outside the codegen-supported operator set
 
@@ -366,7 +366,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse backlog [PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR]
 - **Coverage limitation:** No rule and no probe in Item 1. Function invocations are covered by ES-005; operators are not, and executable_profile covers predicate operators only.
 - **Notes:** Filed by sysml-codegen PUSH-DOWN Item 1 as an ERROR-severity profile check.
-- **Sites:** 0
+- **Sites:** 2: `sysml_codegen/extraction/calc_compat_renderer.py::_render_operator::free-text::CompilationError::1`, `sysml_codegen/extraction/calc_compat_renderer.py::_render_operator::free-text::CompilationError::3`
 
 ### PUSH-DOWN-HIER-PROFILE-REDEF-PRECEDENCE: Design-level override and type-level literal redefinition of the same target
 
@@ -377,7 +377,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-REDEF-PRECEDENCE]
 - **Coverage limitation:** No rule: precedence is codegen policy not yet published as shared facts.
 - **Notes:** A WARNING explaining which value wins; the generator admits the model.
-- **Sites:** none (no raise site)
+- **Sites:** none (`no_raise_site`)
 
 ### PUSH-DOWN-HIER-PROFILE-UNSUPPORTED-RHS: Redefinition whose right-hand side is an unsupported expression
 
@@ -387,8 +387,8 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Evidence:** `backlog:PUSH-DOWN-HIER-PROFILE-UNSUPPORTED-RHS`, `agentic_mbse/sysml/hierarchy.py:38`
 - **Owner:** agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-UNSUPPORTED-RHS]
 - **Coverage limitation:** The callable part is covered by ES-005 at `attribute_value` (a redefinition value is an inventoried feature value); the operator part waits on PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR. The hierarchy-side warning itself is not implemented.
-- **Notes:** Filed as a WARNING trigger that must not duplicate expression support policy.
-- **Sites:** 0
+- **Notes:** Filed as a WARNING trigger that must not duplicate expression support policy. Site status not_located: no site refuses a redefinition RHS as such; its callable part raises at ES-005's site and its operator part at PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR's.
+- **Sites:** none (`not_located`)
 
 ### PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE: Child part usage with no resolvable multiplicity bound
 
@@ -399,7 +399,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE]; L6 wiring is EXEC-SUBSET-CONTRACT Item 3
 - **Coverage limitation:** The generator decision is now part-multiplicity/unresolved_bound (ES-004), refused on expanded part usages with probes; the L6 warning this row files is not wired (Item 3).
 - **Notes:** Filed as a WARNING; overlaps ES-004's unresolved_bound shape.
-- **Sites:** 0
+- **Sites:** 2: `sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::1`, `sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::2`
 
 ### PUSH-DOWN-HIER-PROFILE-AMBIG-INHERITED-ATTR: Usage with incomparable typings supplying different inherited defaults
 
@@ -410,7 +410,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-AMBIG-INHERITED-ATTR]
 - **Coverage limitation:** No rule: most-specific type selection stays in codegen. The occurrence port mirrors codegen's incomparable-typings abort (OccurrenceAbort.INCOMPARABLE_TYPINGS), which makes the contract unverified, not refused, where it fires.
 - **Notes:** Filed as a WARNING before codegen picks sorted-first behavior.
-- **Sites:** none (no raise site)
+- **Sites:** none (`no_raise_site`)
 
 ### PUSH-DOWN-AGG-PROFILE-SUM-SHAPE: `sum(...)` over an operand that does not decompose to a child feature chain
 
@@ -420,8 +420,8 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Evidence:** `backlog:PUSH-DOWN-AGG-PROFILE-SUM-SHAPE`, `agentic_mbse/sysml/aggregation.py:233`
 - **Owner:** agentic-mbse backlog [PUSH-DOWN-AGG-PROFILE-SUM-SHAPE]
 - **Coverage limitation:** No rule: `sum` is the one admitted callable (ES-005) and its operand boundary is not modeled.
-- **Notes:** Filed as a WARNING over the shared aggregation facts.
-- **Sites:** 0
+- **Notes:** Filed as a WARNING over the shared aggregation facts. Site status not_located: the one candidate, a `sum` call with other than one argument (sysml_codegen/elaboration/project.py:812), has an unknown role and is an explicit follow-up in the site account.
+- **Sites:** none (`not_located`)
 
 ### PUSH-DOWN-AGG-PROFILE-WRAPPER-SHAPE: Aggregation wrapper compatibility (`sum(Evaluation(...))`, `sum(filter(...))`)
 
@@ -432,7 +432,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Owner:** agentic-mbse backlog [PUSH-DOWN-AGG-PROFILE-WRAPPER-SHAPE]
 - **Coverage limitation:** No rule; any stricter warning must stay separate from generation behavior.
 - **Notes:** Generation is permissive here by the PUSH-DOWN Item 4 record; not probed in Item 1.
-- **Sites:** none (no raise site)
+- **Sites:** none (`no_raise_site`)
 
 ### PUSH-DOWN-AGG-PROFILE-LITERAL-SHAPE: Literal where aggregation decomposition cannot use it as a term (`sum(5.0)`)
 
@@ -442,5 +442,5 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Evidence:** `backlog:PUSH-DOWN-AGG-PROFILE-LITERAL-SHAPE`, `agentic_mbse/sysml/aggregation.py:233`
 - **Owner:** agentic-mbse backlog [PUSH-DOWN-AGG-PROFILE-LITERAL-SHAPE]
 - **Coverage limitation:** No rule and no probe in Item 1.
-- **Notes:** Filed as an aggregation-specific WARNING.
-- **Sites:** 0
+- **Notes:** Filed as an aggregation-specific WARNING. Site status not_located: no scanned site was identified as refusing a literal aggregation operand.
+- **Sites:** none (`not_located`)

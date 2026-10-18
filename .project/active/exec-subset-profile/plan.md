@@ -598,21 +598,21 @@ def test_sites_join_matrix():
 
 **See design for:** [D10](design.md#key-decisions), spec [Inventory and site account criteria](spec.md#inventory-and-site-account) and [Inventory content](spec.md#inventory-content).
 
-- [ ] `scripts/subset_profile/scan_sites.py` (NEW, hardened from `.project/concepts/convince-me-exec-subset/evidence/02-inventory.py`): runs on `git archive` exports; writes scanner revision and recognized forms to its output header; maps the five computed `executable_profile` sites to `REASON_CODES`; `--reconcile` exits non-zero on an unaccounted site or an orphan row.
-- [ ] `tests/fixtures/subset_profile/inventory/scanner.toml` (NEW): scanner revision, recognized forms, blind spots. The blind spots include at least: silent omissions (no raise site), computed codes beyond the resolver, unrecognized exception classes or helpers, unproven public reachability.
-- [ ] `tests/fixtures/subset_profile/inventory/site_account.csv` (NEW): one row per site with stable ID, disposition, evidence pointer, owner, role (or `unknown`), matrix row, rule. Seed from the prototype's `02-classification.csv`, which is an unreviewed draft: every row is re-inspected and gets its own evidence pointer. No `SI_EVIDENCE_INCOMPLETE` site is classified as a capability refusal by code alone, and no site reachable by valid input is an internal invariant.
-- [ ] Fill each matrix row's `sites` list from the account.
-- [ ] `tests/test_subset_site_account.py` (NEW): the join; unique IDs; closed disposition and role vocabularies; `scanner.toml` lists the required blind spots.
-- [ ] Run `scan_sites.py --reconcile` and write `evidence/site-reconciliation.md`: final counts against 441 / 59, every added or removed site by ID with its cause.
+- [x] `scripts/subset_profile/scan_sites.py` (NEW, hardened from `.project/concepts/convince-me-exec-subset/evidence/02-inventory.py`): runs on `git archive` exports; writes scanner revision and recognized forms to its output header; maps the five computed `executable_profile` sites to `REASON_CODES`; `--reconcile` exits non-zero on an unaccounted site or an orphan row.
+- [x] `tests/fixtures/subset_profile/inventory/scanner.toml` (NEW): scanner revision, recognized forms, blind spots. The blind spots include at least: silent omissions (no raise site), computed codes beyond the resolver, unrecognized exception classes or helpers, unproven public reachability.
+- [x] `tests/fixtures/subset_profile/inventory/site_account.csv` (NEW): one row per site with stable ID, disposition, evidence pointer, owner, role (or `unknown`), matrix row, rule. Seed from the prototype's `02-classification.csv`, which is an unreviewed draft: every row is re-inspected and gets its own evidence pointer. No `SI_EVIDENCE_INCOMPLETE` site is classified as a capability refusal by code alone, and no site reachable by valid input is an internal invariant.
+- [x] Fill each matrix row's `sites` list from the account.
+- [x] `tests/test_subset_site_account.py` (NEW): the join; unique IDs; closed disposition and role vocabularies; `scanner.toml` lists the required blind spots.
+- [x] Run `scan_sites.py --reconcile` and write `evidence/site-reconciliation.md`: final counts against 441 / 59, every added or removed site by ID with its cause.
 
 ### Validation
 
 **Automated:**
-- [ ] `tests/test_subset_site_account.py` and `tests/test_subset_matrix.py` pass. Standing checks green.
+- [x] `tests/test_subset_site_account.py` and `tests/test_subset_matrix.py` pass. Standing checks green.
 
 **Manual:**
-- [ ] `--reconcile` exits 0 with zero unaccounted sites and zero orphan rows.
-- [ ] Spot-check ten rows across roles against the cited code.
+- [x] `--reconcile` exits 0 with zero unaccounted sites and zero orphan rows.
+- [x] Spot-check ten rows across roles against the cited code.
 
 **Done when:** reconcile is clean and every count difference is itemized. The agentic-mbse count is final only after Phase 10's rescan at the final revision. Traces to spec "Site account is total", "Sites and matrix rows are joined", "Count reconciliation is explicit", "Blind spots are listed".
 
@@ -1093,6 +1093,37 @@ dc3 mapping, asserted per item: B1, U1 → ES-001; B2 → ES-003 (not ES-004); B
 - **DEEP-QUALIFIED-WIRING** cites codegen's corpus refusal record `deep_cross_scope_probe` (`SI_OCCURRENCE_MISSING`), not an Item 1 probe.
 
 ### Phase 9 Completion
+**Completed:** 2026-10-18, at agentic-mbse `6f66acd6` (`src/` unchanged since `755d0186`).
+
+**Outcome:** the account is total over the scanner's forms: `scan_sites.py --reconcile` reports 0 unaccounted and 0 orphan (exit 0). 502 sites: sysml-codegen 441 (recorded 441), agentic-mbse 61 (recorded 59). Both added sites are Item 1's own and are itemized in `evidence/site-reconciliation.md`. The agentic-mbse count is re-taken at the final revision in Phase 10.
+
+| Disposition | sysml-codegen | agentic-mbse | Total |
+|---|---|---|---|
+| in scope | 19 | 25 | 44 |
+| handled elsewhere | 354 | 22 | 376 |
+| explicit follow-up | 68 | 14 | 82 |
+
+Roles: 155 internal invariant (each with its cited guard), 95 snapshot integrity, 91 public capability (44 in scope, 37 follow-up, 10 codegen naming collisions handled by codegen), 58 environment, 45 unknown (all follow-up), 43 relay/plumbing, 15 malformed input.
+
+**Scanner faithfulness:** run at the prototype's revisions (codegen `b5663c07`, agentic-mbse `d546a00f`), the hardened scanner reproduces the prototype's 500 site IDs exactly, with the same lines and order, and the ID set equals `02-sites.baseline`. So the +2 is a tree change, not a scanner change.
+
+**Actual Changes:**
+- `scripts/subset_profile/scan_sites.py` (new): the prototype's AST forms with module globals replaced by a per-module visitor state; exports both trees with `git archive` (reusing `probe.export_tree`, which checks the embedded commit); writes the scan identity, forms, blind spots and counts as `#` header lines; refuses to run if `scanner.toml`'s forms differ from the coded ones; maps the five computed `executable_profile` reason sites and checks every mapped reason against `REASON_CODES` read from the exported file (an unmapped one is an error); `--reconcile` exits 1 on any unaccounted site or orphan row.
+- `tests/fixtures/subset_profile/inventory/scanner.toml` (new): revision, forms, six blind spots (the four required plus dynamic dispatch and non-Python surfaces), and the five computed-site reason sets, recorded per call line from Phase 5's exhaustive walk.
+- `tests/fixtures/subset_profile/inventory/site_account.csv` (new): 502 rows with disposition, role, owner, matrix rows, rule, evidence (the site's `file.py:line`, then any probe or guard), coverage limitation for follow-ups, and a note naming the raising condition.
+- `matrix.toml`: every row's `sites` filled from the account; `no_raise_site` (a boolean) became `site_status` (`listed`, `no_raise_site`, `not_located`), so a row such as ES-011, whose reported raise site was never located, says so instead of claiming it has none. The five `not_located` rows say what was looked for.
+- `tests/helpers/subset_site_account.py` (new, pure loader) and `tests/test_subset_site_account.py` (new, 15 tests): the stencil join; matrix sites equal the in-scope sites naming each row; IDs agree with their columns; header identity and count; required blind spots; the five computed sites mapped; no `SI_EVIDENCE_INCOMPLETE` site in scope without a probe; every internal invariant cites a guard; in-scope roles; both trees present; five loader rejections.
+- Evidence: `site-reconciliation.md`, `site-reconcile-phase9.log`, `site-scan-prototype-rev.log`; `matrix.md` re-rendered.
+
+**How every row was inspected:** seven reviewers, one per source-file group, each re-read every site at its line in the exported trees against one written rule set (closed role and disposition vocabularies; nothing in scope by code alone for `SI_EVIDENCE_INCOMPLETE`; internal invariant only with a cited guard; `unknown` before a guess). I merged their rows, checked them mechanically (vocabulary, ordering, required fields, guard citations), and spot-checked ten rows across roles against the code; all ten agree. The prototype's `02-classification.csv` was a seed only.
+
+**Validation:** `pytest tests/` 3502 pass, the same 3 environment failures; `ruff check src/ tests/` 118; `mypy src/` 97 in 19 files. New files pass `ruff check`, `ruff format --check` and `mypy --strict` (loaders, scanner, renderer).
+
+**Deviations from Plan:**
+- **A site may name several matrix rows** (`;`-separated). `elaborate.py:1939` is the one raise site of ES-003, ES-012 and SELF-BINDING (the binding classifier records all three codes there), and the two unresolved-bound sites serve ES-004 and PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE. Picking one row would leave the others falsely site-less.
+- **An internal invariant may cite "no caller under src/"** instead of a guard line, for four codegen accessors only tests call.
+- **`site_status` replaces `no_raise_site`** in the matrix (above).
+- **Judgment calls listed for the owner** in `site-reconciliation.md` § Judgment calls: codegen naming collisions handled by codegen; ES-002 and ES-009 sites wider than their rows; the ES-005/ES-006/INDEXED-REFERENCE join at the agentic-mbse raise sites; UNSUPPORTED-OPERATOR's sites become stubs, not refusals; 37 public-capability follow-ups that go to R3.
 
 ### Phase 10 Completion
 **Final implementation revision:**
