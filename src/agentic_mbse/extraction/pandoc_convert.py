@@ -17,6 +17,16 @@ from urllib.parse import urlparse
 from agentic_mbse.extraction.arxiv_html import _convert_document
 from agentic_mbse.extraction.http import USER_AGENT
 
+# Whether the PDF pipeline substitutes a PDF's identified arXiv paper with its
+# HTML version when the caller doesn't say. The only place this default is set.
+ARXIV_SHORTCUT_DEFAULT = True
+
+
+def resolve_arxiv_shortcut(explicit: bool | None) -> bool:
+    """Return *explicit* when the caller set it, otherwise ``ARXIV_SHORTCUT_DEFAULT``."""
+    return ARXIV_SHORTCUT_DEFAULT if explicit is None else explicit
+
+
 # ---------------------------------------------------------------------------
 # Pandoc availability
 # ---------------------------------------------------------------------------

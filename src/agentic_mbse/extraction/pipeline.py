@@ -163,6 +163,16 @@ class PipelineConfig:
     profile: bool = False
     save_source: bool = False  # carry raw bytes on PipelineResult for --save-source
     pdf_source_url: str | None = None  # URL the PDF was fetched from (arXiv identity evidence)
+    # Automatic arXiv HTML substitution: None follows ARXIV_SHORTCUT_DEFAULT
+    # (pandoc_convert); False also forbids arxiv_html_path.
+    arxiv_shortcut: bool | None = None
+
+    def __post_init__(self) -> None:
+        if self.arxiv_shortcut is False and self.arxiv_html_path is not None:
+            raise ValueError(
+                "arxiv_shortcut=False contradicts arxiv_html_path: the HTML path asks "
+                "for the arXiv HTML shortcut that arxiv_shortcut=False disables"
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -178,7 +188,7 @@ def _try_arxiv_shortcut(
     Returns ``(result, warnings)``. ``result`` has source="pandoc_arxiv" on
     success and is None when the shortcut does not apply or fails. Every
     failure, and an ignored ``arxiv_html_path``, adds a warning; the shortcut
-    simply not applying (no Pandoc, no arXiv ID) does not.
+    simply not applying (turned off, no Pandoc, no arXiv ID) does not.
     """
     from agentic_mbse.extraction.frontmatter import compute_source_hash
     from agentic_mbse.extraction.pandoc_convert import (
@@ -186,9 +196,15 @@ def _try_arxiv_shortcut(
         check_arxiv_html,
         convert_arxiv_html,
         identify_arxiv_paper,
+        resolve_arxiv_shortcut,
         resolve_fetched_version,
         strip_arxiv_version,
     )
+
+    # An explicit arxiv_html_path is a source override; automatic detection
+    # runs only when the shortcut is on. Neither applying is not a failure.
+    if config.arxiv_html_path is None and not resolve_arxiv_shortcut(config.arxiv_shortcut):
+        return None, []
 
     if not _pandoc_available():
         if config.arxiv_html_path is None:

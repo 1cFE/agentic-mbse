@@ -296,15 +296,15 @@ def test_help_names_default(): ...                               # help text con
 
 **See design:** D10 (tri-state, constant, `resolve_arxiv_shortcut`, `BooleanOptionalAction`), invariants 4, 8, 9.
 
-- [ ] **`pandoc_convert.py`**: `ARXIV_SHORTCUT_DEFAULT = True` and `resolve_arxiv_shortcut`.
-- [ ] **`pipeline.py`**: `PipelineConfig.arxiv_shortcut: bool | None = None` (append) and `__post_init__` raising `ValueError` for `arxiv_shortcut=False` with `arxiv_html_path` set. `_try_arxiv_shortcut` returns `(None, [])` before any work when `arxiv_shortcut is False`; it runs automatic detection only when `resolve_arxiv_shortcut(config.arxiv_shortcut)` is true; `arxiv_html_path` runs unless explicitly disabled.
-- [ ] **`extract_cli.py`**: add `--arxiv-shortcut/--no-arxiv-shortcut` (`argparse.BooleanOptionalAction`, `default=None`) near `--html-path` (`:793`); help text names the default by reading the constant. Reject the contradiction with `parser.error`-style exit 2 at the top of `cmd_extract` (exit code 2 is already used for `--check` FAIL; the test asserts the usage message, not only the code). Pass `arxiv_shortcut=args.arxiv_shortcut` into `PipelineConfig`. The `--check` probe takes the flag in phase 7.
-- [ ] Review the diff: the default's value is written only in `ARXIV_SHORTCUT_DEFAULT`; the field, the CLI default and the help text all read it or default to `None` (invariant 8).
+- [x] **`pandoc_convert.py`**: `ARXIV_SHORTCUT_DEFAULT = True` and `resolve_arxiv_shortcut`.
+- [x] **`pipeline.py`**: `PipelineConfig.arxiv_shortcut: bool | None = None` (append) and `__post_init__` raising `ValueError` for `arxiv_shortcut=False` with `arxiv_html_path` set. `_try_arxiv_shortcut` returns `(None, [])` before any work when `arxiv_shortcut is False`; it runs automatic detection only when `resolve_arxiv_shortcut(config.arxiv_shortcut)` is true; `arxiv_html_path` runs unless explicitly disabled.
+- [x] **`extract_cli.py`**: add `--arxiv-shortcut/--no-arxiv-shortcut` (`argparse.BooleanOptionalAction`, `default=None`) near `--html-path` (`:793`); help text names the default by reading the constant. Reject the contradiction with `parser.error`-style exit 2 at the top of `cmd_extract` (exit code 2 is already used for `--check` FAIL; the test asserts the usage message, not only the code). Pass `arxiv_shortcut=args.arxiv_shortcut` into `PipelineConfig`. The `--check` probe takes the flag in phase 7.
+- [x] Review the diff: the default's value is written only in `ARXIV_SHORTCUT_DEFAULT`; the field, the CLI default and the help text all read it or default to `None` (invariant 8).
 
 ### Validation
 
-- [ ] Green.
-- [ ] Manual: `uv run agentic-mbse extract --help` shows both flag forms and the default; `uv run agentic-mbse extract x.pdf --no-arxiv-shortcut --html-path y.html` exits 2 with a clear message.
+- [x] Green.
+- [x] Manual: `uv run agentic-mbse extract --help` shows both flag forms and the default; `uv run agentic-mbse extract x.pdf --no-arxiv-shortcut --html-path y.html` exits 2 with a clear message.
 
 **What we know works after this phase:** users can force PDF extraction with Pandoc on PATH; contradictory settings fail clearly; the default lives in one line.
 
@@ -572,10 +572,24 @@ Environment setup the numbers depend on, for later sessions:
 **Deviations:** None. Manual check (orchestrator): citation-only PDF with Pandoc 3.1.3 on PATH extracted via `pdf_pipeline`, 49 chars of its own text, no Harness² content.
 
 ### Phase 4 Completion
-**Completed:**
+**Completed:** 2026-10-18
 **Actual Changes:**
+- `pandoc_convert.py`: `ARXIV_SHORTCUT_DEFAULT = True` (the only place the default is written; invariant 8) and `resolve_arxiv_shortcut(explicit)`, which reads the constant at call time.
+- `pipeline.py`: `PipelineConfig.arxiv_shortcut: bool | None = None`, appended after `pdf_source_url`; no existing field touched (invariant 9). `__post_init__` raises `ValueError` for `arxiv_shortcut=False` with `arxiv_html_path`. `_try_arxiv_shortcut` returns `(None, [])` before any other work (Pandoc probe, identity, HEAD probe) when there is no `arxiv_html_path` and `resolve_arxiv_shortcut(config.arxiv_shortcut)` is false. One check covers both explicit opt-out and a default-off build, because opt-out with an HTML path cannot exist. An explicit `arxiv_html_path` runs under either default.
+- `extract_cli.py`: `--arxiv-shortcut/--no-arxiv-shortcut` (`argparse.BooleanOptionalAction`, `default=None`) after `--html-path`. Its help explains the evidence rule and the contradiction, and names the default by reading `pandoc_convert.ARXIV_SHORTCUT_DEFAULT` at registration (module attribute, not a value import, so a flip changes the help). `cmd_extract` rejects `--no-arxiv-shortcut` with `--html-path` first thing, printing an argparse-style `agentic-mbse extract: error: …` line to stderr and returning the new `EXIT_USAGE = 2`. `PipelineConfig` gets `arxiv_shortcut=args.arxiv_shortcut`.
+- Tests:
+  - `test_pipeline.py::TestShortcutControl` runs real stamp PDFs through `_run_shortcut`. That helper was lifted out of `TestArxivIdentityInPipeline._run` so both classes share it. The class covers opt-out skipping identity, the HTML probe and Pandoc with no warning; the `ValueError`; `resolve_arxiv_shortcut` under both constant values; the shipped default being on; a default-off build skipping detection; explicit on overriding default off; and `arxiv_html_path` running under default off.
+  - `test_extract_cli.py::TestArxivShortcutFlag` covers the contradiction (exit 2, message names both flags, `extract_pdf` not called), forwarding of `None/True/False` into `PipelineConfig`, forwarding through a PDF URL and through a `--urls-from` batch, help naming `on`/`off` from the constant, and parser defaults for both forms.
+  - The `MockArgs` stubs in `test_extract_cli.py`, `test_check.py` and `test_profile.py` gained `arxiv_shortcut=None`.
+- Full suite: 2849 passed, same 3 baseline failures. mypy unchanged at 97. ruff clean on touched files; format hunk counts at or below base.
+- Manual: `extract --help` shows `[--arxiv-shortcut | --no-arxiv-shortcut]` and "(default: on)". `extract small.pdf --no-arxiv-shortcut --html-path y.html` exits 2 with the error line and creates no output directory.
+
 **Issues:**
+- **Pre-existing bug fixed: batch PDF URLs recursed forever.** `_extract_pdf_url` shallow-copies `args` and calls `cmd_extract`, but the copy kept `urls_from`, so `cmd_extract` re-entered batch mode on the same file (`RecursionError`). The new batch forwarding test found it. A PDF URL inside `--urls-from` never worked before this. The fix sets `pdf_args.urls_from = None` on the copy. The plan's premise that the flag reaches batch inputs "with no extra plumbing" holds once the recursion is gone.
+
 **Deviations:**
+- Exit 2 comes from a named `EXIT_USAGE` constant in `extract_cli.py` rather than a bare `2`. The `--check` FAIL path still returns a literal `2` as before; it was left untouched.
+- `--check` does not take the flag yet; that is Phase 7 as planned.
 
 ### Phase 5 Completion
 **Completed:**

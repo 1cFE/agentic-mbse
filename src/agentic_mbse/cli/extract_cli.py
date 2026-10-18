@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from agentic_mbse.extraction.profile import ProfileEntry
 
+from agentic_mbse.extraction import pandoc_convert
 from agentic_mbse.extraction.base import (
     ExtractionResult,
     check_processing_needed,
@@ -24,6 +25,8 @@ from agentic_mbse.extraction.types import CostRecord, PageDecision, PipelineResu
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS
 
 SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
+
+EXIT_USAGE = 2  # argparse's exit status for contradictory or invalid arguments
 
 
 # ---------------------------------------------------------------------------
@@ -276,6 +279,7 @@ def _extract_pdf_url(url: str, args: argparse.Namespace) -> int:
         # Shallow-copy args to avoid corrupting shared state in batch mode
         pdf_args = copy.copy(args)
         pdf_args.path = str(tmp_pdf)
+        pdf_args.urls_from = None  # extract this one PDF, not the batch file again
         pdf_args.source_url_override = fetched.final_url
         rc = cmd_extract(pdf_args)
 
@@ -358,6 +362,14 @@ def cmd_extract(args: argparse.Namespace) -> int:
             stacklevel=2,
         )
         args.save_source = True
+
+    if args.arxiv_shortcut is False and args.html_path:
+        print(
+            "agentic-mbse extract: error: --no-arxiv-shortcut cannot be combined with "
+            "--html-path (the HTML path asks for the shortcut the flag disables)",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
 
     # --check-json implies --check
     if args.check_json:
@@ -503,6 +515,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
                 profile=args.profile,
                 save_source=getattr(args, "save_source", False),
                 pdf_source_url=getattr(args, "source_url_override", None),
+                arxiv_shortcut=args.arxiv_shortcut,
             )
             result = extract_pdf(doc, config=config)
 
@@ -809,6 +822,17 @@ def register_extract_subcommand(subparsers: argparse._SubParsersAction) -> None:
         default=None,
         metavar="PATH",
         help="arXiv HTML file path for Pandoc shortcut (overrides auto-detect)",
+    )
+    p.add_argument(
+        "--arxiv-shortcut",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help=(
+            "Replace a PDF with its arXiv HTML version (converted by Pandoc) when the PDF's "
+            "arXiv margin stamp or arxiv.org source URL identifies the paper; citations never "
+            "count. --no-arxiv-shortcut forces normal PDF extraction and cannot be combined "
+            f"with --html-path (default: {'on' if pandoc_convert.ARXIV_SHORTCUT_DEFAULT else 'off'})"
+        ),
     )
     # Web extraction flags
     p.add_argument(

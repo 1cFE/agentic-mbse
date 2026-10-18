@@ -15,7 +15,10 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from agentic_mbse.extraction.pandoc_convert import ArxivIdentity
+import pytest
+
+from agentic_mbse.extraction import pandoc_convert
+from agentic_mbse.extraction.pandoc_convert import ArxivIdentity, resolve_arxiv_shortcut
 from agentic_mbse.extraction.pipeline import (
     EnhancerBudget,
     ImageCollector,
@@ -303,23 +306,30 @@ def _served_page():
     return patch(f"{_PANDOC}.urllib.request.urlopen", return_value=resp)
 
 
+def _run_shortcut(pdf: Path, **config):
+    """Run the real pipeline on *pdf* with Pandoc present and the arXiv network stubbed.
+
+    Returns ``(result, head, run)``: the HTML-availability probe and Pandoc mocks.
+    """
+    with (
+        _patch_pandoc_available(),
+        patch(
+            f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2610.14224"
+        ) as head,
+        _served_page(),
+        patch(
+            "subprocess.run",
+            return_value=MagicMock(returncode=0, stdout="# Harness2\n\n" + "x" * 200, stderr=""),
+        ) as run,
+    ):
+        result = extract_pdf(pdf, _real_pdf_config(**config))
+    return result, head, run
+
+
 class TestArxivIdentityInPipeline:
     """Real PDF bytes through the real identity rule (design D1, invariants 4 and 5)."""
 
-    def _run(self, pdf: Path, **config):
-        with (
-            _patch_pandoc_available(),
-            patch(
-                f"{_PANDOC}.check_arxiv_html", return_value="https://arxiv.org/html/2610.14224"
-            ) as head,
-            _served_page(),
-            patch(
-                "subprocess.run",
-                return_value=MagicMock(returncode=0, stdout="# Harness2\n\n" + "x" * 200, stderr=""),
-            ) as run,
-        ):
-            result = extract_pdf(pdf, _real_pdf_config(**config))
-        return result, head, run
+    _run = staticmethod(_run_shortcut)
 
     def test_citation_only_never_probes_or_converts(self, tmp_path):
         result, head, run = self._run(make_pdf(tmp_path / "c.pdf", prose=CITATION))
@@ -358,6 +368,60 @@ class TestArxivIdentityInPipeline:
         pdf = make_pdf(tmp_path / "c.pdf", prose=CITATION)
         result, head, _run = self._run(pdf, pdf_source_url="https://arxiv.org/pdf/2610.14224v1")
         head.assert_called_once_with("2610.14224v1")
+        assert result.source == "pandoc_arxiv"
+
+
+class TestShortcutControl:
+    """arxiv_shortcut tri-state and the one default constant (design D10, invariants 4 and 8)."""
+
+    def test_opt_out_skips_identity_probe_and_pandoc(self, tmp_path):
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        with patch(f"{_PANDOC}.identify_arxiv_paper") as ident:
+            result, head, run = _run_shortcut(pdf, arxiv_shortcut=False)
+        ident.assert_not_called()
+        head.assert_not_called()
+        run.assert_not_called()
+        assert result.source == "pdf_pipeline"
+        assert result.warnings == []  # opt-out is not a failure
+
+    def test_opt_out_with_html_path_raises(self):
+        with pytest.raises(ValueError, match="arxiv_html_path"):
+            PipelineConfig(arxiv_shortcut=False, arxiv_html_path=Path("x.html"))
+
+    def test_resolve_reads_the_constant(self, monkeypatch):
+        monkeypatch.setattr(pandoc_convert, "ARXIV_SHORTCUT_DEFAULT", False)
+        assert resolve_arxiv_shortcut(None) is False
+        assert resolve_arxiv_shortcut(True) is True
+        monkeypatch.setattr(pandoc_convert, "ARXIV_SHORTCUT_DEFAULT", True)
+        assert resolve_arxiv_shortcut(None) is True
+        assert resolve_arxiv_shortcut(False) is False
+
+    def test_shipped_default_is_on(self):
+        """Owner gate R3 is open; the provisional default is on."""
+        assert pandoc_convert.ARXIV_SHORTCUT_DEFAULT is True
+
+    def test_default_off_skips_automatic_detection(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(pandoc_convert, "ARXIV_SHORTCUT_DEFAULT", False)
+        result, head, run = _run_shortcut(make_pdf(tmp_path / "s.pdf", stamps=(STAMP,)))
+        head.assert_not_called()
+        run.assert_not_called()
+        assert result.source == "pdf_pipeline"
+        assert result.warnings == []
+
+    def test_explicit_on_overrides_default_off(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(pandoc_convert, "ARXIV_SHORTCUT_DEFAULT", False)
+        pdf = make_pdf(tmp_path / "s.pdf", stamps=(STAMP,))
+        result, head, _run = _run_shortcut(pdf, arxiv_shortcut=True)
+        head.assert_called_once_with("2610.14224v1")
+        assert result.source == "pandoc_arxiv"
+
+    def test_html_path_runs_even_if_default_off(self, tmp_path, monkeypatch):
+        """An explicit --html-path is a source override, not automatic detection."""
+        monkeypatch.setattr(pandoc_convert, "ARXIV_SHORTCUT_DEFAULT", False)
+        page = Path(__file__).parent / "fixtures" / "arxiv_2610.14224v1_page.html"
+        result, head, run = _run_shortcut(make_pdf(tmp_path / "p.pdf"), arxiv_html_path=page)
+        head.assert_not_called()
+        run.assert_called_once()
         assert result.source == "pandoc_arxiv"
 
 

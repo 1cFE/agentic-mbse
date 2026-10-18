@@ -7,6 +7,8 @@ import warnings
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
+
 from agentic_mbse.cli.extract_cli import (
     cmd_extract,
     discover_documents,
@@ -42,6 +44,7 @@ class MockArgs:
             docling=False,
             model="sonnet",
             html_path=None,
+            arxiv_shortcut=None,
             dry_run=False,
             profile=False,
             check=False,
@@ -1106,3 +1109,117 @@ class TestPdfSourceUrlForwarding:
             cmd_extract(args)
 
         assert mock_extract.call_args.kwargs["config"].pdf_source_url is None
+
+
+# ---------------------------------------------------------------------------
+# --arxiv-shortcut / --no-arxiv-shortcut
+# ---------------------------------------------------------------------------
+
+
+class TestArxivShortcutFlag:
+    def _pdf(self, tmp_path):
+        pdf = tmp_path / "paper.pdf"
+        pdf.write_bytes(b"fake pdf content")
+        return pdf
+
+    def test_contradiction_with_html_path_is_a_usage_error(self, tmp_path, capsys):
+        args = MockArgs(
+            path=str(self._pdf(tmp_path)),
+            output=str(tmp_path / "out"),
+            arxiv_shortcut=False,
+            html_path=str(tmp_path / "paper.html"),
+        )
+        with patch("agentic_mbse.cli.extract_cli.extract_pdf") as mock_extract:
+            rc = cmd_extract(args)
+
+        assert rc == 2
+        mock_extract.assert_not_called()
+        err = capsys.readouterr().err
+        assert "--no-arxiv-shortcut" in err and "--html-path" in err
+
+    @pytest.mark.parametrize("value", [None, True, False])
+    def test_flag_reaches_pipeline_config(self, tmp_path, value):
+        args = MockArgs(
+            path=str(self._pdf(tmp_path)), output=str(tmp_path / "out"), arxiv_shortcut=value
+        )
+        with patch(
+            "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+        ) as mock_extract:
+            cmd_extract(args)
+
+        assert mock_extract.call_args.kwargs["config"].arxiv_shortcut is value
+
+    def _fetched_pdf(self):
+        from agentic_mbse.extraction.http import FetchResult
+
+        return FetchResult(
+            content=b"%PDF-1.4 fake",
+            final_url="https://arxiv.org/pdf/2610.14224v1",
+            content_type="application/pdf",
+        )
+
+    def test_flag_reaches_pdf_url_extraction(self, tmp_path):
+        args = MockArgs(
+            path="https://arxiv.org/pdf/2610.14224v1",
+            output=str(tmp_path / "out"),
+            arxiv_shortcut=False,
+        )
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="pdf"),
+            patch("agentic_mbse.extraction.http.fetch_url", return_value=self._fetched_pdf()),
+            patch(
+                "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+            ) as mock_extract,
+        ):
+            cmd_extract(args)
+
+        config = mock_extract.call_args.kwargs["config"]
+        assert config.arxiv_shortcut is False
+        assert config.pdf_source_url == "https://arxiv.org/pdf/2610.14224v1"
+
+    def test_flag_reaches_batch_pdf_urls(self, tmp_path):
+        urls = tmp_path / "urls.txt"
+        urls.write_text("https://arxiv.org/pdf/2610.14224v1\n")
+        args = MockArgs(urls_from=str(urls), output=str(tmp_path / "out"), arxiv_shortcut=False)
+        with (
+            patch("agentic_mbse.extraction.web_backend.check_web_deps"),
+            patch("agentic_mbse.extraction.web_backend.classify_url", return_value="pdf"),
+            patch("agentic_mbse.extraction.http.fetch_url", return_value=self._fetched_pdf()),
+            patch(
+                "agentic_mbse.cli.extract_cli.extract_pdf", return_value=_make_pipeline_result()
+            ) as mock_extract,
+        ):
+            cmd_extract(args)
+
+        assert mock_extract.call_args.kwargs["config"].arxiv_shortcut is False
+
+    @pytest.mark.parametrize(("default", "word"), [(True, "on"), (False, "off")])
+    def test_help_names_the_constant_default(self, monkeypatch, default, word):
+        import argparse
+
+        from agentic_mbse.cli.extract_cli import register_extract_subcommand
+        from agentic_mbse.extraction import pandoc_convert
+
+        monkeypatch.setattr(pandoc_convert, "ARXIV_SHORTCUT_DEFAULT", default)
+        subparsers = argparse.ArgumentParser(prog="agentic-mbse").add_subparsers()
+        register_extract_subcommand(subparsers)
+        text = " ".join(subparsers.choices["extract"].format_help().split())
+
+        assert "--arxiv-shortcut, --no-arxiv-shortcut" in text
+        assert f"(default: {word})" in text
+
+    def test_parser_defaults_to_none_and_accepts_both_forms(self):
+        import argparse
+
+        from agentic_mbse.cli.extract_cli import register_extract_subcommand
+
+        parser = argparse.ArgumentParser(prog="agentic-mbse")
+        register_extract_subcommand(parser.add_subparsers(dest="command"))
+
+        def parsed(*flags: str) -> bool | None:
+            return parser.parse_args(["extract", "x.pdf", *flags]).arxiv_shortcut
+
+        assert parsed() is None
+        assert parsed("--arxiv-shortcut") is True
+        assert parsed("--no-arxiv-shortcut") is False
