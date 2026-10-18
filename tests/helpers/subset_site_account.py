@@ -80,8 +80,10 @@ class SiteRow:
     #: The matrix rows covering the site (`;`-separated in the file); non-empty iff in scope.
     #: One generator site can be the raise site of several rows (the binding-source classifier).
     matrix_rows: tuple[str, ...]
-    #: The rule record, when the matrix rows are shared rules (they then share one rule).
-    rule: str
+    #: The rule records of the shared-rule matrix rows, `;`-separated in the file. More than one
+    #: when one site serves rows of several rules (elaborate.py:1939 also emits the indexed
+    #: source refusal, which the matrix places at INDEXED-REFERENCE).
+    rules: tuple[str, ...]
     #: `file.py:line` at the scanned revision, then any further pointers, `;`-separated.
     evidence: tuple[str, ...]
     #: Required for an explicit follow-up.
@@ -120,7 +122,7 @@ def _row(raw: dict[str, str]) -> SiteRow:
         role=role,
         owner=raw["owner"].strip(),
         matrix_rows=tuple(m.strip() for m in raw["matrix_row"].split(";") if m.strip()),
-        rule=raw["rule"].strip(),
+        rules=tuple(r.strip() for r in raw["rule"].split(";") if r.strip()),
         evidence=evidence,
         coverage_limitation=raw["coverage_limitation"].strip(),
         note=raw["note"].strip(),
@@ -133,7 +135,7 @@ def _row(raw: dict[str, str]) -> SiteRow:
         raise SiteAccountError(f"{where}: matrix_row is required iff the site is in scope")
     if len(set(row.matrix_rows)) != len(row.matrix_rows):
         raise SiteAccountError(f"{where}: matrix_row repeats a row")
-    if row.rule and not row.matrix_rows:
+    if row.rules and not row.matrix_rows:
         raise SiteAccountError(f"{where}: a rule needs a matrix row")
     if (disposition is Disposition.EXPLICIT_FOLLOW_UP) != bool(row.coverage_limitation):
         raise SiteAccountError(f"{where}: coverage_limitation is required iff explicit follow-up")

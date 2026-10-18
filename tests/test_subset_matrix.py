@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from agentic_mbse.sysml.subset_profile import PACKAGED_RULES, Outcome, ProbeRef
+from agentic_mbse.sysml.subset_profile import PACKAGED_RULES, ContextId, Outcome, ProbeRef
 from tests.helpers.subset_matrix import (
     BINDING_KINDS,
     MATRIX_PATH,
@@ -128,14 +128,15 @@ def test_b8_keeps_non_numerical_and_malformed_apart() -> None:
     }
     non_numerical = splits["NON_NUMERICAL"]
     malformed = splits["MALFORMED_NUMERICAL (block_non_numerical_containment)"]
-    assert (non_numerical.count, non_numerical.outcome) == (4, RowOutcome.EXCLUDED)
-    assert (malformed.count, malformed.outcome) == (4, RowOutcome.REFUSED)
+    # As the dc3 baseline run reports them (audit S4): calc-usage owners, so `owner_other`.
+    assert (non_numerical.count, non_numerical.outcome) == (4, RowOutcome.UNCONFIRMED)
+    assert (malformed.count, malformed.outcome) == (2, RowOutcome.UNCONFIRMED)
     rule = PACKAGED_RULES.rule("constraint-predicate")
     for split in row.split:
         assert split.shape in row.shapes
-        assert Outcome(split.outcome.value) in {
-            a.outcome for a in rule.shape(split.shape).admissions.values()
-        }
+        admission = rule.shape(split.shape).admissions.get(ContextId(split.context))
+        recorded = Outcome.UNCONFIRMED if admission is None else admission.outcome
+        assert Outcome(split.outcome.value) is recorded
 
 
 def test_binding_source_classifier_is_fully_placed() -> None:

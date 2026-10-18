@@ -5,7 +5,7 @@ package fx {
     part def Site {
         attribute x : Real = 1.0;
         part qs : Q[2];
-        calc m : Twice { in v = x; qs#(1).v }
+        calc m : Twice { in v = x; qs#(1).v + 4272.5 }
     }
     part site : Site;
 }

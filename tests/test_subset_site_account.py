@@ -41,8 +41,7 @@ def test_sites_join_matrix() -> None:
         if s.disposition is Disposition.IN_SCOPE:
             assert set(s.matrix_rows) <= MATRIX.keys(), s.site_id
             rules = {MATRIX[m].rule for m in s.matrix_rows if MATRIX[m].cls is RowClass.SHARED_RULE}
-            assert len(rules) <= 1, s.site_id
-            assert (s.rule or None) == (rules.pop() if rules else None), s.site_id
+            assert set(s.rules) == rules and len(s.rules) == len(rules), s.site_id
         if s.disposition is Disposition.EXPLICIT_FOLLOW_UP:
             assert s.owner and s.coverage_limitation, s.site_id
     for row in MATRIX.values():

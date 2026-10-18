@@ -14,7 +14,17 @@ How a decision is made:
    design D3 requires, so "no `refused` without a probe" holds when the records load.
 3. **Missing facts are not findings.** A rule whose required fact kind was not enumerated, or
    whose element failed to extract, reports an :class:`UnverifiedCheck`, and the verdict is
-   `INCOMPLETE`. Rules whose facts are available still report.
+   `INCOMPLETE`, or `REFUSED_INCOMPLETE` when a finding is refused. Rules whose facts are
+   available still report.
+
+**CLEAR is relative to the implemented rules.** A shape no rule recognizes draws no finding, so
+a model can be CLEAR and still be refused by the generator. The refusal families the matrix
+records with no rule are DEEP-QUALIFIED-WIRING (codegen's `deep_cross_scope_probe` corpus
+fixture is refused and evaluates CLEAR), ES-002, ES-008, ES-009, the ES-010 refusal side and
+CALC-DEF-BARE-RESULT; ES-011, G2, L6-LIBRARY-ALIAS-SOURCE and the PUSH-DOWN rows are tracked as
+unconfirmed; and the site account's follow-up sites are outside every rule. A calculation
+usage's bare result expression is dropped from the output (CALC-USAGE-BARE-RESULT-DROP); the
+site rules report that drop as `omitted` only for the shapes they recognize.
 
 Each finding is counterfactual: what the generator does with this construct as if the rest of
 the model were admitted. The generator itself stops at its first error class.
@@ -140,18 +150,25 @@ class Outcome(StrEnum):
     ADMITTED = "admitted"
     #: The generator leaves it out of the generated contract by policy (NON_NUMERICAL).
     EXCLUDED = "excluded"
-    #: The generator drops it from the generated output silently (String values).
+    #: The generator drops it from the generated output silently (String values, a calc
+    #: usage's bare result expression).
     OMITTED = "omitted"
     #: The rule recognizes the pair and no probe has observed it.
     UNCONFIRMED = "unconfirmed"
 
 
 class Verdict(StrEnum):
-    #: A check could not run (missing facts) or the roots were narrowed. Never clean.
+    #: At least one probe-backed refusal, and a check could not run or the roots were narrowed.
+    #: Both facts stand: the refusals are certain, and the findings are not the whole picture.
+    REFUSED_INCOMPLETE = "refused_incomplete"
+    #: No refusal, and a check could not run (missing facts) or the roots were narrowed. Never
+    #: clean.
     INCOMPLETE = "incomplete"
     REFUSED = "refused"
     UNCONFIRMED = "unconfirmed"
-    #: Complete, and every finding is admitted, excluded or omitted. The only clean verdict.
+    #: Complete, and every finding is admitted, excluded or omitted. The only clean verdict,
+    #: and clean only over the implemented rules (see the module docstring): CLEAR does not
+    #: mean the generator accepts the model.
     CLEAR = "clear"
 
 
@@ -182,7 +199,7 @@ class ContextId(StrEnum):
     #: A calc def's bare result expression; not inventoried, compiled to a stub
     #: (`extraction/expression_compiler.py:285-303`).
     CALC_RESULT_EXPRESSION = "calc_result_expression"
-    #: A calc usage's bare result expression; not inventoried.
+    #: A calc usage's bare result expression; not inventoried, and dropped from the output.
     OTHER_EXPRESSION_SITE = "other_expression_site"
     #: The constraint's semantic owner is a calc def (`elaborate.py:1625`, `graph.py:287-292`).
     CALC_DEFINITION_OWNER = "calc_definition_owner"
@@ -444,16 +461,20 @@ def _shape(
     expected_code = None if expected is None else _code(expected, f"{where}.expected_code")
     if refused and expected_code is None:
         raise RecordError(f"{where}: a refused shape needs its expected_code")
-    admitted_by_probe = any(
-        a.outcome is Outcome.ADMITTED and any(isinstance(e, ProbeRef) for e in a.evidence)
+    # The gate proves a refusal is not a universal ban: some context of the shape is probed
+    # not refused. A certified omission or exclusion proves that as well as an admission.
+    not_refused_by_probe = any(
+        a.outcome is not Outcome.REFUSED and any(isinstance(e, ProbeRef) for e in a.evidence)
         for a in admissions.values()
     )
     statement = table.get("no_admitted_context")
     no_admitted: NoAdmittedContext | None = None
     if statement is not None:
         _keys(statement, {"citation", "statement"}, set(), f"{where}.no_admitted_context")
-        if admitted_by_probe:
-            raise RecordError(f"{where}: no_admitted_context contradicts an admitted-context probe")
+        if not_refused_by_probe:
+            raise RecordError(
+                f"{where}: no_admitted_context contradicts a probe of a context not refused"
+            )
         no_admitted = NoAdmittedContext(
             _text(statement["citation"], f"{where}.no_admitted_context.citation"),
             _text(statement["statement"], f"{where}.no_admitted_context.statement"),
@@ -464,10 +485,11 @@ def _shape(
                 f"{where}: no_admitted_context needs refused probes in every computable context; "
                 f"missing {uncovered}"
             )
-    if refused and not admitted_by_probe and no_admitted is None:
+    if refused and not not_refused_by_probe and no_admitted is None:
         raise RecordError(
-            f"{where}: a refused shape needs an admitted-context probe or a no_admitted_context "
-            "statement (design invariant 3, SA-1)"
+            f"{where}: a refused shape needs a probe of a context it is not refused in "
+            "(admitted, omitted or excluded) or a no_admitted_context statement "
+            "(design invariant 3 as generalized by audit S1, SA-1)"
         )
     ordered = dict(sorted(admissions.items(), key=lambda item: item[0].value))
     return ShapeRecord(shape_id, reason, expected_code, ordered, no_admitted)
@@ -567,7 +589,8 @@ def load_rule_records(text: str) -> RuleRecords:
 
     Enforced here: closed vocabularies, every field present, exactly the implemented rules and
     shapes, evidence for every listed outcome (D3), probe ids naming their own pair, an
-    admitted-context probe or an SA-1 statement for every refused shape (invariant 3), and an
+    probe of a context that is not refused (admitted, omitted or excluded) or an SA-1 statement
+    for every refused shape (invariant 3, generalized by audit S1), and an
     evidence status that matches the admissions. Whether each cited probe certifies is checked
     by the test suite, which holds the probes (`tests/test_subset_probe_evidence.py`).
     """
@@ -1238,9 +1261,11 @@ def _decide(rule: RuleRecord, recognized: _Recognized) -> SubsetFinding:
 def _verdict(
     findings: tuple[SubsetFinding, ...], unverified: tuple[UnverifiedCheck, ...], narrowed: bool
 ) -> Verdict:
-    if unverified or narrowed:
-        return Verdict.INCOMPLETE
     outcomes = {f.outcome for f in findings}
+    if unverified or narrowed:
+        if Outcome.REFUSED in outcomes:
+            return Verdict.REFUSED_INCOMPLETE
+        return Verdict.INCOMPLETE
     if Outcome.REFUSED in outcomes:
         return Verdict.REFUSED
     if Outcome.UNCONFIRMED in outcomes:
@@ -1267,7 +1292,8 @@ def evaluate_subset_profile(
     `roots` selects which roots count as instantiated: the generator's own by default. A
     caller root (extracted with `extract_subset_facts(extra_roots=...)`) widens the scope, and
     whatever only it reaches is `BEYOND_GENERATOR_ROOTS`, which is never refused. Leaving out a
-    generator root narrows the scope, and the verdict is then `INCOMPLETE`.
+    generator root narrows the scope, and the verdict is then `INCOMPLETE` (or
+    `REFUSED_INCOMPLETE`).
     """
     structure = facts.occurrence
     roots_used = frozenset() if structure is None else _roots_used(structure, roots)

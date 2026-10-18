@@ -66,7 +66,7 @@ id = "non-python-surface"
 statement = "Refusals in generated code templates, in the SysIDE parser itself, or in the teax execution layer are outside both scanned `src/` trees."
 
 # ---- the five computed executable_profile reason sites ------------------------------------------
-# Reasons each site can emit, recorded from tests/test_sysml/test_executable_profile_computed_reasons.py
+# Reasons each site can emit, pinned exactly by tests/test_sysml/test_executable_profile_computed_reasons.py
 # (each test drives its site over every operand fact the closed category vocabulary allows; the
 # reasons below are the ones observed at that call line). The scanner checks each is in
 # REASON_CODES as read from the exported executable_profile.py.

@@ -2,12 +2,13 @@ kind = "record"
 rule = "invocation-callable"
 shape = "unsupported_callable"
 context = "other_expression_site"
-expected_outcome = "admitted"
+expected_outcome = "omitted"
 
 [construct]
-description = "calc usage m's bare result expression ScalarFunctions::max(v, 1.0), never examined; control is m's output"
+description = "calc usage m's bare result expression ScalarFunctions::max(v, 4271.5), never examined and dropped: the unique literal 4271.5 must appear nowhere in the output; control is m's output"
 file = "model.sysml"
 lines = [6, 6]
 
 [expect]
+omitted_element = "4271.5"
 positive_control = "fx__site__m__r"

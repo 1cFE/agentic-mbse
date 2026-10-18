@@ -168,6 +168,23 @@ def test_binding_placement_follows_attachment_and_writer_selection() -> None:
     )
 
 
+def test_a_consumer_attached_as_neither_calculation_nor_constraint_is_owner_other() -> None:
+    # `consumer_placement`'s fallback: the root `p` is instantiated, but the generator attaches
+    # `P::t` as neither a calculation nor a constraint usage, so it never classifies the binding.
+    # Placing it anywhere the records refuse would emit a refusal no probe has observed (R2).
+    facts = syn.facts(
+        occurrence=syn.structure(
+            roots=["fx::p"], visits=[syn.visit("fx::p", "fx::p", syn.exact(1))]
+        ),
+        bindings=[syn.binding("fx::P::t", "fx::P::t::xs", BindingKind.OTHER_EXPRESSION, 7)],
+    )
+    result = evaluate_subset_profile(facts, RECORDS)
+    (finding,) = by_rule(result, "binding-source")
+    assert finding.context_id is ContextId.OWNER_OTHER
+    assert finding.outcome is Outcome.UNCONFIRMED
+    assert Outcome.REFUSED not in {f.outcome for f in result.findings}
+
+
 def test_uninstantiated_beside_a_refused_multiplicity_is_beneath_it() -> None:
     facts = syn.facts(
         occurrence=syn.structure(
@@ -217,7 +234,23 @@ def test_widened_roots_report_beyond_generator_roots_never_refused() -> None:
 
 def test_narrowed_roots_are_incomplete() -> None:
     result = evaluate_subset_profile(instantiated_binding(), RECORDS, ExplicitRoots(frozenset()))
+    assert Outcome.REFUSED not in {f.outcome for f in result.findings}
     assert result.scope.narrowed and result.verdict is Verdict.INCOMPLETE
+
+
+def test_an_unverified_check_does_not_hide_a_refusal() -> None:
+    """Audit S3: refusals and an incomplete check are both in the verdict, neither outranks."""
+    failure = FactFailure(FactKind.STRING_VALUE, None, ScopeCause.ENUMERATION_FAILED, "listing")
+    refused = dataclasses.replace(
+        instantiated_binding(),
+        enumerated=frozenset(FactKind) - {FactKind.STRING_VALUE},
+        failures=(failure,),
+    )
+    assert evaluate_subset_profile(refused, RECORDS).verdict is Verdict.REFUSED_INCOMPLETE
+    not_refused = dataclasses.replace(refused, occurrence=syn.structure(roots=["fx::p"], visits=[]))
+    result = evaluate_subset_profile(not_refused, RECORDS)
+    assert result.unverified and Outcome.REFUSED not in {f.outcome for f in result.findings}
+    assert result.verdict is Verdict.INCOMPLETE
 
 
 def test_an_unextracted_root_is_a_caller_error() -> None:
@@ -255,7 +288,7 @@ def test_failed_fact_is_unverified_and_others_still_report() -> None:
         base, failures=(FactFailure(FactKind.EXPRESSION_SITE, None, MISSING, ""),)
     )
     result = evaluate_subset_profile(facts, RECORDS)
-    assert result.verdict is Verdict.INCOMPLETE
+    assert result.verdict is Verdict.REFUSED_INCOMPLETE
     assert {u.rule_id for u in result.unverified} >= {
         "invocation-callable",
         "conditional-expression",
@@ -276,7 +309,7 @@ def test_element_failure_carries_rule_safe_location_and_cause() -> None:
         SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED,
     )
     assert by_rule(result, "binding-source"), "the binding that did extract still reports"
-    assert result.verdict is Verdict.INCOMPLETE
+    assert result.verdict is Verdict.REFUSED_INCOMPLETE
 
 
 def test_enumeration_failure_is_unverified_for_its_rules_only() -> None:
@@ -291,7 +324,7 @@ def test_enumeration_failure_is_unverified_for_its_rules_only() -> None:
         ("string-value-omission", ScopeCause.ENUMERATION_FAILED)
     ]
     assert by_rule(result, "binding-source")
-    assert result.verdict is Verdict.INCOMPLETE
+    assert result.verdict is Verdict.REFUSED_INCOMPLETE
 
 
 def test_a_kind_missing_without_its_own_failure_is_still_unverified() -> None:

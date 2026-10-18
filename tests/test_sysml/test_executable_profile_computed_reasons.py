@@ -11,13 +11,24 @@ revision; the prototype cited the same lines):
 
 Each test drives its site through the walk over every operand fact the closed category
 vocabulary allows (`expression_facts.OperandTypeFact`), with every unit state the guards
-distinguish, and collects every reason the site emitted. `EligibilityDiagnostic` already
-refuses an unknown reason at construction; these tests also prove each site was reached.
+distinguish, and collects every reason the site emitted. At the three sites whose reason comes
+from a helper, the reasons are read from the helper's returns, so a reason another site emits
+on the same walk is not counted. Each site's set must equal the list `scanner.toml` records for
+it exactly: a site that stops emitting a reason, or starts emitting another known one, fails
+here instead of drifting from the site account. `EligibilityDiagnostic` already refuses an
+unknown reason at construction.
 """
 
 from __future__ import annotations
 
 import itertools
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
+from pathlib import Path
+from typing import Any
+
+import pytest
+import tomllib
 
 from agentic_mbse.sysml import executable_profile as ep
 from agentic_mbse.sysml.expression_facts import (
@@ -37,6 +48,34 @@ UNITS = (
     UnitFact(unit="SI::millimetre", dimension="ISQBase::LengthUnit"),
     UnitFact(unit="SI::second", dimension="ISQBase::DurationUnit"),
 )
+
+
+SCANNER = Path(__file__).parents[1] / "fixtures" / "subset_profile" / "inventory" / "scanner.toml"
+SITE = "agentic_mbse/sysml/executable_profile.py::"
+
+
+def recorded_reasons(site: str) -> set[str]:
+    """The reasons `scanner.toml` lists for one computed site."""
+    sites = tomllib.loads(SCANNER.read_text(encoding="utf-8"))["computed_site"]
+    (entry,) = [e for e in sites if e["site_id"] == SITE + site]
+    return set(entry["reasons"])
+
+
+@contextmanager
+def returns_of(monkeypatch: pytest.MonkeyPatch, name: str) -> Iterator[set[str]]:
+    """Collect every reason string the module helper `name` returns while the block runs."""
+    seen: set[str] = set()
+    helper: Callable[..., Any] = getattr(ep, name)
+
+    def recording(*args: Any) -> Any:
+        result = helper(*args)
+        if isinstance(result, str) and result != "ok":
+            seen.add(result)
+        return result
+
+    with monkeypatch.context() as patch:
+        patch.setattr(ep, name, recording)
+        yield seen
 
 
 def every_fact() -> list[OperandTypeFact]:
@@ -69,20 +108,20 @@ def reasons_from_proposition(node: ExpressionIR) -> set[str]:
     return {d.reason for d in diagnostics}
 
 
-def test_site_542_arithmetic_reasons_are_closed() -> None:
-    emitted: set[str] = set()
-    for operator in ("+", "-", "*", "/", "**", "^"):
-        for left, right in itertools.product(every_fact(), repeat=2):
-            node = OperatorNode(
-                operator=operator, operands=[leaf(left), leaf(right)], operand_type=None
-            )
-            emitted |= reasons_from_value(node)
-        for only in every_fact():
-            emitted |= reasons_from_value(
-                OperatorNode(operator=operator, operands=[leaf(only)], operand_type=None)
-            )
+def test_site_542_arithmetic_reasons_are_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    with returns_of(monkeypatch, "_derive_arithmetic_fact") as emitted:
+        for operator in ("+", "-", "*", "/", "**", "^"):
+            for left, right in itertools.product(every_fact(), repeat=2):
+                node = OperatorNode(
+                    operator=operator, operands=[leaf(left), leaf(right)], operand_type=None
+                )
+                reasons_from_value(node)
+            for only in every_fact():
+                reasons_from_value(
+                    OperatorNode(operator=operator, operands=[leaf(only)], operand_type=None)
+                )
     assert emitted <= ep.REASON_CODES
-    assert {"block_derived_unit_unsupported", "block_unit_conversion_required"} <= emitted
+    assert emitted == recorded_reasons("_walk_arithmetic::coded-DYNAMIC::derived::1")
 
 
 def test_site_597_value_position_connective_reasons_are_closed() -> None:
@@ -92,34 +131,31 @@ def test_site_597_value_position_connective_reasons_are_closed() -> None:
         node = OperatorNode(operator=operator, operands=[leaf(real), leaf(real)], operand_type=None)
         emitted |= reasons_from_value(node)
     assert emitted == {"block_xor", "block_implies"} <= ep.REASON_CODES
+    assert emitted == recorded_reasons("_walk_value::coded-DYNAMIC::f'block_{operator}'::1")
 
 
-def test_site_660_equality_reasons_are_closed() -> None:
-    emitted: set[str] = set()
-    for operator in ("==", "!="):
-        for left, right in itertools.product(every_fact(), repeat=2):
-            node = OperatorNode(
-                operator=operator, operands=[leaf(left), leaf(right)], operand_type=None
-            )
-            emitted |= reasons_from_proposition(node)
+def test_site_660_equality_reasons_are_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    with returns_of(monkeypatch, "classify_equality") as emitted:
+        for operator in ("==", "!="):
+            for left, right in itertools.product(every_fact(), repeat=2):
+                node = OperatorNode(
+                    operator=operator, operands=[leaf(left), leaf(right)], operand_type=None
+                )
+                reasons_from_proposition(node)
     assert emitted <= ep.REASON_CODES
-    assert {
-        "warn_non_numerical_equality",
-        "block_integer_equality_unpreservable",
-        "block_real_equality_requires_tolerance",
-    } <= emitted
+    assert emitted == recorded_reasons("_walk_comparison::coded-DYNAMIC::reason::1")
 
 
-def test_site_711_ordering_reasons_are_closed() -> None:
-    emitted: set[str] = set()
-    for operator in ("<", "<=", ">", ">="):
-        for left, right in itertools.product(every_fact(), repeat=2):
-            node = OperatorNode(
-                operator=operator, operands=[leaf(left), leaf(right)], operand_type=None
-            )
-            emitted |= reasons_from_proposition(node)
+def test_site_711_ordering_reasons_are_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    with returns_of(monkeypatch, "classify_ordering") as emitted:
+        for operator in ("<", "<=", ">", ">="):
+            for left, right in itertools.product(every_fact(), repeat=2):
+                node = OperatorNode(
+                    operator=operator, operands=[leaf(left), leaf(right)], operand_type=None
+                )
+                reasons_from_proposition(node)
     assert emitted <= ep.REASON_CODES
-    assert {"block_ordering_category_pair", "block_incompatible_dimensions"} <= emitted
+    assert emitted == recorded_reasons("_walk_comparison::coded-DYNAMIC::reason::2")
 
 
 def test_site_813_proposition_connective_reasons_are_closed() -> None:
@@ -131,3 +167,6 @@ def test_site_813_proposition_connective_reasons_are_closed() -> None:
         )
         emitted |= reasons_from_proposition(node)
     assert emitted == {"warn_non_numerical_xor", "warn_non_numerical_implies"} <= ep.REASON_CODES
+    assert emitted == recorded_reasons(
+        "_walk_proposition::coded-DYNAMIC::f'warn_non_numerical_{operator}'::1"
+    )

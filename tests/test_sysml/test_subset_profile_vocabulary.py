@@ -51,7 +51,13 @@ def test_enums_are_the_documented_closed_sets() -> None:
         "omitted",
         "unconfirmed",
     }
-    assert {v.value for v in Verdict} == {"incomplete", "refused", "unconfirmed", "clear"}
+    assert {v.value for v in Verdict} == {
+        "refused_incomplete",
+        "incomplete",
+        "refused",
+        "unconfirmed",
+        "clear",
+    }
     assert {s.value for s in EvidenceStatus} == {
         "probe_observed",
         "partial",

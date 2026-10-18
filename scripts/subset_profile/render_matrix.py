@@ -59,7 +59,8 @@ def _row_section(row: MatrixRow) -> list[str]:
         lines.extend(_record_lines(PACKAGED_RULES.rule(row.rule), row.shapes))
     for split in row.split:
         lines.append(
-            f"- **Split:** {split.count} × {split.label} → `{split.outcome.value}` (`{split.shape}`)"
+            f"- **Split (dc3 baseline):** {split.count} × {split.label} → `{split.outcome.value}`"
+            f" (`{split.shape}` at `{split.context}`). {split.reason}"
         )
     lines.append(f"- **Evidence status:** `{row.evidence_status.value}`")
     lines.append("- **Evidence:** " + ", ".join(f"`{e}`" for e in row.evidence))

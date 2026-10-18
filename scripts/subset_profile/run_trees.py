@@ -126,7 +126,7 @@ def self_check(run: TreeRun) -> None:
 
     With default roots, the roots used are the generator's roots, which a model with no
     package-level part usage does not have; roots that could not be computed are a result
-    (verdict INCOMPLETE), reported, not a run failure.
+    (verdict INCOMPLETE or REFUSED_INCOMPLETE), reported, not a run failure.
     """
     scope = run.result.scope
     if scope.roots_available and scope.roots_used != scope.generator_root_ids:

@@ -166,7 +166,7 @@ title = "Conditional expression at an expression-inventory site"
 matrix_rows = ["ES-006"]
 fact_requirements = ["expression_site"]
 remedy = "Compute each branch as its own attribute and select with arithmetic the subset supports, or move the choice into a calculation definition's bare result expression (a handwritten stub)."
-semantic_limits = "Refusal-eligible only for a recognized `if` conditional whose reference walk fails with RESOLVED_TARGET_MISSING; the generator reports it with its generic evidence-gap code, so every probe also checks the error's location. Any other walk failure is unverified. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined (admitted, and dropped from the output)."
+semantic_limits = "Refusal-eligible only for a recognized `if` conditional whose reference walk fails with RESOLVED_TARGET_MISSING; the generator reports it with its generic evidence-gap code, so every probe also checks the error's location. Any other walk failure is unverified. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
 doc_anchor = "generator-subset#conditional-expression"
 evidence_status = "partial"
 example_probe = "conditional-expression__conditional_unresolved_branch__other_expression_site"
@@ -206,7 +206,7 @@ evidence = ["probe:conditional-expression__conditional_unresolved_branch__constr
 
 [[rule.shape.admission]]
 context = "other_expression_site"
-outcome = "admitted"
+outcome = "omitted"
 evidence = ["probe:conditional-expression__conditional_unresolved_branch__other_expression_site"]
 
 # ---- ES-007 -------------------------------------------------------------------------------------
@@ -274,7 +274,7 @@ title = "Indexed element reference at an expression-inventory site"
 matrix_rows = ["INDEXED-REFERENCE"]
 fact_requirements = ["expression_site"]
 remedy = "Name the element with its own feature and reference that feature instead of indexing a collection."
-semantic_limits = "The expression inventory refuses an authored index model-wide, before any instantiation, wherever it walks a declared feature value or a constraint predicate. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined (admitted, and dropped from the output)."
+semantic_limits = "The expression inventory refuses an authored index model-wide, before any instantiation, wherever it walks a declared feature value or a constraint predicate. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
 doc_anchor = "generator-subset#indexed-reference"
 evidence_status = "probe_observed"
 example_probe = "indexed-reference__indexed_reference__other_expression_site"
@@ -310,7 +310,7 @@ evidence = ["probe:indexed-reference__indexed_reference__constraint_predicate"]
 
 [[rule.shape.admission]]
 context = "other_expression_site"
-outcome = "admitted"
+outcome = "omitted"
 evidence = ["probe:indexed-reference__indexed_reference__other_expression_site"]
 
 # ---- ES-005 -------------------------------------------------------------------------------------
@@ -321,7 +321,7 @@ title = "Invocation of a callable outside the executable subset"
 matrix_rows = ["ES-005"]
 fact_requirements = ["expression_site"]
 remedy = "Write the computation with operators the subset supports (explicit multiplication, arithmetic min/max identities) or with NumericalFunctions::sum; or move it into a calculation definition's bare result expression (a handwritten stub)."
-semantic_limits = "Callable identity is decided by the shared allowlist (invocation_allowlist.py, today only NumericalFunctions::sum), the same predicate the generator's inventory refuses through. Operators are not invocations. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined (admitted, and dropped from the output)."
+semantic_limits = "Callable identity is decided by the shared allowlist (invocation_allowlist.py, today only NumericalFunctions::sum), the same predicate the generator's inventory refuses through. Operators are not invocations. A calculation definition whose result is a bare expression is refused for having no output whatever the expression holds, so that context stays unconfirmed; a calculation usage's bare result expression is never examined and is dropped from the output (omitted)."
 doc_anchor = "generator-subset#invocation-callable"
 evidence_status = "probe_observed"
 example_probe = "invocation-callable__unsupported_callable__other_expression_site"
@@ -357,7 +357,7 @@ evidence = ["probe:invocation-callable__unsupported_callable__constraint_predica
 
 [[rule.shape.admission]]
 context = "other_expression_site"
-outcome = "admitted"
+outcome = "omitted"
 evidence = ["probe:invocation-callable__unsupported_callable__other_expression_site"]
 
 # ---- ES-004 -------------------------------------------------------------------------------------

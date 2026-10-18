@@ -143,10 +143,23 @@ def test_a_probe_variant_of_the_same_pair_is_evidence() -> None:
     ]
 
 
-def test_a_refused_shape_needs_an_admitted_context_probe() -> None:
+def test_a_refused_shape_needs_a_probe_of_a_context_it_is_not_refused_in() -> None:
     data = data_with({BINDING: {"owner_instantiated": "refused"}})
-    with pytest.raises(RecordError, match="admitted-context probe or a no_admitted_context"):
+    with pytest.raises(RecordError, match="context it is not refused in"):
         load(data)
+    data = data_with({BINDING: {"owner_instantiated": "refused", "owner_package": "refused"}})
+    with pytest.raises(RecordError, match="context it is not refused in"):
+        load(data)
+
+
+@pytest.mark.parametrize("partner", ["admitted", "omitted", "excluded"])
+def test_a_certified_omission_or_exclusion_meets_the_gate_like_an_admission(
+    partner: str,
+) -> None:
+    """Audit S1: the gate proves a refusal is not a universal ban; any non-refused probe does."""
+    data = data_with({BINDING: {"owner_instantiated": "refused", "owner_uninstantiated": partner}})
+    admissions = load(data).rule("binding-source").shape("expression_source").admissions
+    assert {a.outcome for a in admissions.values()} == {Outcome.REFUSED, Outcome(partner)}
 
 
 def test_sa1_statement_needs_refused_probes_in_every_computable_context() -> None:

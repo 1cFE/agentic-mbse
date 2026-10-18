@@ -118,12 +118,18 @@ _ROW_OPTIONAL = {"rule", "shapes", "l2_relation", "statement", "split"}
 
 @dataclass(frozen=True)
 class OutcomeSplit:
-    """One of several distinct generator outcomes a row's dc3 item carries (B8)."""
+    """One of several distinct outcomes a row's dc3 item carries on the dc3 baseline run (B8).
+
+    `context` is where the run places the constructs, and `outcome` is what the records decide
+    there; `reason` says why that outcome holds on dc3.
+    """
 
     label: str
     count: int
     outcome: RowOutcome
     shape: str
+    context: str
+    reason: str
 
 
 @dataclass(frozen=True)
@@ -237,7 +243,7 @@ def _member(enum: type[_E], value: Any, where: str) -> _E:
 
 
 def _split(table: Mapping[str, Any], where: str) -> OutcomeSplit:
-    _keys(table, {"label", "count", "outcome", "shape"}, set(), where)
+    _keys(table, {"label", "count", "outcome", "shape", "context", "reason"}, set(), where)
     count = table["count"]
     if not isinstance(count, int) or count < 1:
         raise MatrixError(f"{where}: count must be a positive integer")
@@ -246,6 +252,8 @@ def _split(table: Mapping[str, Any], where: str) -> OutcomeSplit:
         count=count,
         outcome=_member(RowOutcome, table["outcome"], where),
         shape=_text(table["shape"], where),
+        context=_text(table["context"], where),
+        reason=_text(table["reason"], where),
     )
 
 
