@@ -3,7 +3,7 @@
 EXEC-SUBSET-CONTRACT Item 4 (positional-binding check) reads, for each authored input of a
 calc or constraint owner, the redefinitions SysIDE resolved for it and whether each one is
 implied (by position) or explicit. These tests pin what SysIDE 0.8.4 actually does for the
-de-risk flags R1-R6 in `.project/active/positional-binding-check/design.md`. Findings and
+de-risk flags R1-R6 in `.project/completed/20261018_positional-binding-check/design.md`. Findings and
 their consequences for the design are in `learning-findings.md` beside it.
 
 Every test asserts observed behavior, including where the design's rule tolerates either

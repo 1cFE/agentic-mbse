@@ -1,6 +1,6 @@
 # Spec: Positional-binding hazard and check (EXEC-SUBSET-CONTRACT Item 4)
 
-**Status:** Audited 2026-10-18, Certify; audit fixes applied 2026-10-18 (`audit.md`; Repo-1 met; Det-6 `out_before_in` row left open for the owner); revised after spec review (2026-10-18)
+**Status:** Audited 2026-10-18, Certify; audit fixes applied 2026-10-18 (`audit.md`; Repo-1 met; Det-6 met with recorded limit at close); revised after spec review (2026-10-18)
 **Owner:** Reid Westwood
 **Created:** 2026-10-18
 **Complexity:** MEDIUM
@@ -38,7 +38,7 @@ Paths below are the intended homes; design may rename them, but each criterion m
   - An ordinary `in` parameter of a requirement or case definition, positionally swapped in a usage: **flagged**.
   - A reversed constraint usage nested in a requirement (`assert`/`require`/`assume constraint`): **flagged**.
 - [x] A fixture reproducing the dc3 out-of-order shape (dc3 WI-008 `design.md:63`, `RAW_LEARNINGS.md:29`) and a fixture reproducing the prototype's dc3 swap mutation (two inputs of `'Serial Path 8'`, dc3 `60b44d5` `designs/ac_coupled/ac_facility.sysml:226-227`), each reduced to a minimal model that cites its dc3 source and revision, are flagged at exactly the swapped inputs.
-- [ ] Valid shapes near the old prototype heuristic, each with a stated expected result: the prototype's first-run misfire `inherit_def_extends` (**must pass**, no finding and no unverifiable result; `04-README.md` surprise 3); a usage with more inputs than its definition (extra inputs are new parameters, not flagged); a definition that adds a new first input without redeclaring the inherited ones (`calc def D :> Sub { in c; }`, flagged `c → Sub::a`); and a definition with an `out` declared before an `in` (expected result recorded in design from SysIDE output).
+- [x] Valid shapes near the old prototype heuristic, each with a stated expected result: the prototype's first-run misfire `inherit_def_extends` (**must pass**, no finding and no unverifiable result; `04-README.md` surprise 3); a usage with more inputs than its definition (extra inputs are new parameters, not flagged); a definition that adds a new first input without redeclaring the inherited ones (`calc def D :> Sub { in c; }`, flagged `c → Sub::a`); and a definition with an `out` declared before an `in` (expected result recorded in design from SysIDE output). — **Met with recorded limit (Det-6, [AGENT] closed by orchestrator 2026-10-18, owner did not object):** `out_before_in` passes L1 because SysIDE puts its `redefinition-direction-conformance` error in `diagnostics.validation`, which L1 does not read; L2 flags it with two positional errors, pinned by a test. The L1 gap is backlog `VALIDATE-SEMA-DIAGNOSTICS`.
 - [x] The multiple-types fixture (an input with an explicit redefinition of one type's formal and an implied redefinition of another type's formal) has a stated expected result per the finding rule, confirmed against SysIDE in design.
 - [x] Existing fixtures under `tests/fixtures/` are run through the check. Any new positional finding there is listed and justified in the evidence, not suppressed to keep existing expectations unchanged.
 

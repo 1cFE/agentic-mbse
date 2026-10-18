@@ -25,3 +25,18 @@ The rules for writing an entry are in `README.md`, in this directory. Do not rew
 
 **Fact:** sysml-codegen commits absolute symlinks under `.claude/`, which Python's `tarfile` extraction refuses, and its study tests need a git work tree, so a `git archive` export fails 60 tests (53 failed, 7 errors) for environmental reasons alone.
 **Evidence:** `scripts/subset_profile/probe.py` export step; `.project/completed/20261018_exec-subset-profile/evidence/same-generator.md` (identical 60 at every revision).
+
+## [SysIDE 0.8.4] 2026-10-18
+
+**Fact:** An unresolved type, supertype, `:>>` target or `:>` subsetting target does not raise or leave the reference empty: it points at a shared `<placeholder Classifier>` / `<placeholder Feature>` element whose `owning_relationship is None`. Inputs of such an owner silently lose their implied redefinitions and read as brand-new parameters, so a positional swap behind a typo passes unless the placeholder is detected.
+**Evidence:** `tests/learning/test_syside_input_redefinition.py` (M1 and subsetting cases); `.project/completed/20261018_positional-binding-check/learning-findings.md`.
+
+## [SysIDE 0.8.4 diagnostics] 2026-10-18
+
+**Fact:** Load diagnostics come in three buckets, `diagnostics.parser`, `diagnostics.sema` and `diagnostics.validation`, and `agentic-mbse validate` L1 reads only `parser`. So `reference-error` ("No Type named 'Sbu' found.") and `redefinition-direction-conformance` pass every level today; `try_load_model` returns a model despite them.
+**Evidence:** Item 4 Phase 1 notes in `.project/completed/20261018_positional-binding-check/plan.md`; fixture `tests/fixtures/positional_binding/l1/out_before_in.sysml`; backlog `VALIDATE-SEMA-DIAGNOSTICS`.
+
+## [SysIDE 0.8.4] 2026-10-18
+
+**Fact:** Anonymous elements (e.g. an unnamed `assert constraint` and its inputs) get a fresh random `element_id` on every load, so any sort or identity key that includes it is nondeterministic across runs; sort by location and names instead.
+**Evidence:** Item 4 Phase 3 notes in `.project/completed/20261018_positional-binding-check/plan.md` (a test failed 1 run in 3 before the fix).

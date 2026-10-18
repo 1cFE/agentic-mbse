@@ -9,7 +9,7 @@ Loading whole directories keeps multi-file fixtures resolved; a result that appe
 a subdirectory is loaded without its siblings is reported separately, as a partial-load result.
 
 No pin list is used: the check is run as `validate` runs it on a tree with no project root, so
-every mismatch is an ERROR. Writes `.project/active/positional-binding-check/evidence/
+every mismatch is an ERROR. Writes `.project/completed/20261018_positional-binding-check/evidence/
 existing-fixture-scan.md`. Everything from the "## Justification" heading on is kept on rerun.
 """
 
@@ -29,7 +29,10 @@ from agentic_mbse.validation.positional_check import check
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = REPO_ROOT / "tests" / "fixtures"
 OWN = FIXTURES / "positional_binding"
-OUT = REPO_ROOT / ".project/active/positional-binding-check/evidence/existing-fixture-scan.md"
+OUT = (
+    REPO_ROOT
+    / ".project/completed/20261018_positional-binding-check/evidence/existing-fixture-scan.md"
+)
 KEEP_FROM = "## Justification"
 REPORTED = {
     ValidationCode.L2_POSITIONAL_BINDING,

@@ -1,7 +1,7 @@
 """Tests for the positional-binding fact layer (`parameter_redefinition_extraction.py`).
 
 The SysIDE behavior these rely on is pinned by `tests/learning/test_syside_input_redefinition.py`
-and recorded in `.project/active/positional-binding-check/learning-findings.md`. These tests
+and recorded in `.project/completed/20261018_positional-binding-check/learning-findings.md`. These tests
 read it through the production extractor and Item 1's identity helpers instead.
 """
 

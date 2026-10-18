@@ -39,7 +39,7 @@ Each observation names the fixture or test that shows it.
 - **An input with an explicit redefinition gets no positional one, but still takes up its position.** This goes further than the KerML text above, which exempts only invocation expressions. With `in local redefines a = 10; in b = 3;`, `b` still lands on position 2, `Sub::b` (`tests/fixtures/positional_binding/native_values/sub_rename.sysml`; `tests/learning/test_syside_input_redefinition.py`).
 - **Mixing spellings leaves a parameter unbound.** With `in b = 3; in :>> a = 10;`, both inputs land on `Sub::a`, nothing binds `Sub::b`, and native evaluation gives no value at all (`tests/fixtures/positional_binding/native_values/sub_mixed.sysml`, `tests/fixtures/positional_binding/spelling/mixed_spelling.sysml`).
 - **A parameterless subdefinition passes positions through.** With `calc def Sub3 :> Sub;` and a usage typed by `Sub3` with reversed inputs, the inputs land on `Sub::a` and `Sub::b` as if the usage were typed by `Sub` (`tests/fixtures/positional_binding/prototype/inherit_def_no_params_usage_reversed.sysml`).
-- **An `out` parameter counts.** In `calc def O { out o : Real; in a : Real; in b : Real; }`, a usage's first input lands on `O::o`. SysIDE then reports `redefinition-direction-conformance`, but that diagnostic is not a parser error, so `validate` level 1 passes the model; level 2 reports it as two positional findings (`tests/fixtures/positional_binding/l1/out_before_in.sysml`, `.project/active/positional-binding-check/evidence/phase1-fixture-truth.md`).
+- **An `out` parameter counts.** In `calc def O { out o : Real; in a : Real; in b : Real; }`, a usage's first input lands on `O::o`. SysIDE then reports `redefinition-direction-conformance`, but that diagnostic is not a parser error, so `validate` level 1 passes the model; level 2 reports it as two positional findings (`tests/fixtures/positional_binding/l1/out_before_in.sysml`, `.project/completed/20261018_positional-binding-check/evidence/phase1-fixture-truth.md`).
 - **Subject, actor and stakeholder count toward positions.** In a requirement or case, a usage that leaves out the subject puts its first ordinary input on the subject slot, and SysIDE reports a subject-position error. The same holds for actors and stakeholders (`tests/fixtures/positional_binding/requirements/`).
 - **A multiply-typed input lands on one parameter per type** (`tests/fixtures/positional_binding/prototype/multiple_types.sysml`).
 - **Constraints behave the same way.** Constraint usages, `assert constraint` and constraints nested in requirements bind their inputs by position (`tests/fixtures/positional_binding/prototype/constraint_reversed.sysml`, `tests/fixtures/positional_binding/prototype/assert_constraint_reversed.sysml`, `tests/fixtures/positional_binding/requirements/requirement_nested_constraint_reversed.sysml`).
@@ -53,7 +53,7 @@ For the reversed calculation usage, native SysIDE evaluation and generated execu
 | `tests/fixtures/positional_binding/native_values/gen_byname/` (inputs by name) | 7 | 7 |
 | `tests/fixtures/positional_binding/native_values/gen_reversed/` (inputs reversed, unprefixed) | -7 | 7 |
 
-The generator wires each input to the parameter with the same declared name, so the generated route gives the intended 7 while the native model says -7. Consequence: a passing generated run says nothing about whether the native model is correct. Generated-side log: `.project/active/positional-binding-check/evidence/cross-route/eval_generated.log`.
+The generator wires each input to the parameter with the same declared name, so the generated route gives the intended 7 while the native model says -7. Consequence: a passing generated run says nothing about whether the native model is correct. Generated-side log: `.project/completed/20261018_positional-binding-check/evidence/cross-route/eval_generated.log`.
 
 This divergence is claimed for calculation usages only. Constraint usages were not run through both routes, and sysml-codegen's own fixture notes say constraint actuals bind positionally there too (`sysml-codegen@b5663c07:tests/fixtures/modeled_default_fidelity/PROVENANCE.md`, "Authoring note"), so the routes may agree for constraints.
 
@@ -140,10 +140,10 @@ Copy `owner`, `input`, `target`, `file` and `line` from the finding's message, w
 ### Evidence and upstream
 
 - Fixtures: `tests/fixtures/positional_binding/` (each file's header states its expected findings), run by `tests/test_validation/test_positional_binding.py`.
-- Tree reproduction, including fusion-tea `f96ad312` (125 mismatches, value effect unknown) and two dc3 revisions (none): `.project/active/positional-binding-check/evidence/run-trees.md`.
+- Tree reproduction, including fusion-tea `f96ad312` (125 mismatches, value effect unknown) and two dc3 revisions (none): `.project/completed/20261018_positional-binding-check/evidence/run-trees.md`.
 - Native behavior pinned by learning tests: `tests/learning/test_syside_input_redefinition.py`.
 - sysml-codegen records parser positional behavior in `sysml-codegen@b5663c07:tests/fixtures/modeled_default_fidelity/PROVENANCE.md` and tracks POSITIONAL-FORMAL-REDEFINITION in `sysml-codegen@b5663c07:.project/backlog/BACKLOG.md`.
-- A draft finding for sysml-codegen about its by-name wiring (the -7 versus 7 above) is at `.project/active/positional-binding-check/evidence/upstream-codegen-finding.md`. **It is unfiled** until it is filed in sysml-codegen.
+- A draft finding for sysml-codegen about its by-name wiring (the -7 versus 7 above) is at `.project/completed/20261018_positional-binding-check/evidence/upstream-codegen-finding.md`. **It is unfiled** until it is filed in sysml-codegen.
 
 ## Candidates, not yet reproduced
 

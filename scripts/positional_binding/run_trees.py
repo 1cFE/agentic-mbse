@@ -23,7 +23,7 @@ fusion-tea `f96ad312` (`models/`):
 dc3 `808464d` and `60b44d5` (`models/`): the new L2 with no pin options. Expect no positional
 finding and no unverifiable result.
 
-Writes `.project/active/positional-binding-check/evidence/run-trees.{md,json}` and
+Writes `.project/completed/20261018_positional-binding-check/evidence/run-trees.{md,json}` and
 `run-trees-sites.md` (the mutation and stale sites). Exits 1 if any expectation fails, after
 writing the evidence; an identity difference on fusion-tea or a dc3 result is a premise
 surprise (plan "Premise-surprise rule"), never a reason to change the check.
@@ -55,7 +55,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "subset_profile"))
 from probe import IsolationBreachError, git, resolve_rev, sibling_state  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-EVIDENCE = REPO_ROOT / ".project/active/positional-binding-check/evidence"
+EVIDENCE = REPO_ROOT / ".project/completed/20261018_positional-binding-check/evidence"
 BASELINE = REPO_ROOT / "tests/fixtures/positional_binding/baselines/fusion-tea-f96ad312.toml"
 BASE_REV = "ccd57d83"
 FUSION_TEA = Path("/home/reid/src/fusion-tea")

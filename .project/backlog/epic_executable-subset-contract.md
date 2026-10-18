@@ -4,7 +4,7 @@
 **Status**: Draft — revised after architecture and history audit
 **Priority**: Not assigned (owner)
 **Created**: 2026-10-14
-**Revised**: 2026-10-18 (Item 1 closed)
+**Revised**: 2026-10-18 (Items 1 and 4 closed)
 **Estimated Effort**: Re-estimate after Item 1's capability inventory and boundary design; the original ~10-day estimate excluded snapshot integration, occurrence-aware evidence and independent differential coverage.
 
 ---
@@ -188,7 +188,9 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 **Deliverables**: `.project/active/l6-subset-profile/{spec,design,plan}.md`; L6/settings/CLI changes and managed guidance updates.
 
-### Item 4: Positional-binding hazard and check
+### Item 4: Positional-binding hazard and check ✅
+
+**Status**: Complete (2026-10-18) — certified; archived to `.project/completed/20261018_positional-binding-check/`. Success criteria met; the `out_before_in` row is met with a recorded limit (L1 does not read `diagnostics.validation`; backlog `VALIDATE-SEMA-DIAGNOSTICS`). fusion-tea `f96ad312` reproduces exactly the prototype's 125 identities; both dc3 trees are zero. Decision: ADR 0002 (pin-list contract; R4-1 by review). Promise: P-0002. Open for the owner: R4-3 (fusion-tea adopts the pin list with its pin move) and routing the draft codegen by-name-wiring finding to Item 2.
 
 **Type**: Implementation
 **Effort**: Re-estimate for semantic boundary cases
@@ -204,7 +206,7 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 **Success Criteria**: swapped toy and dc3 interleave mutations are detected; explicit rename/by-name and ordinary in-order cases pass; the dc3 trees remain clean, and fusion-tea matches the explicitly approved D1 policy and recorded finding baseline; inability to inspect cannot silently pass. A blanket clean-pass assertion is not an acceptance criterion. The register and guidance cite retained fixtures and correct specification sections.
 
-**Deliverables**: `.project/active/positional-binding-check/{spec,design,plan}.md` (combine artifacts where proportionate); check, fixtures, register and guidance.
+**Deliverables**: `.project/completed/20261018_positional-binding-check/{spec,design,plan}.md` (combine artifacts where proportionate); check, fixtures, register and guidance.
 
 ### Item 5: Executable guidance contracts
 
