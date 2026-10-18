@@ -48,3 +48,28 @@ Gate: DISPOSED (spec-F1 routed to owner under R4-1; spec-F2–F6 accepted). No o
 Epic: EXEC-SUBSET-CONTRACT
 
 spec-F1 owner decision recorded: `[AGENT] (ratified by owner 2026-10-18, "A is fine")` — pin-list integrity rests on review of the pin file; no digest. The conditional BLOCK on spec-F1 no longer applies. spec-F3 is superseded by spec review L1-2: D1 is now graded `[AGENT] (ratified by owner, 2026-10-15)`. The lens was not re-run on the revision; the revision narrows the finding rule's exemption, excludes subject/actor/stakeholder parameters, and changes the fusion-tea reference to the prototype log, none of which narrows the point recorded above.
+
+## design — 2026-10-18 — branch `positional-binding-check` (HEAD 42ee0dc1) + .project/active/positional-binding-check/design.md
+Epic: EXEC-SUBSET-CONTRACT
+
+Method note: run inline by an independent subagent during `/_my_design_review`, because `~/.claude/scripts/product-lens.md` was unreadable (permission denied). It derived the point from the epic (Item 4, D1, principles 1, 5 and 6, Critical Success Factor), `briefs/align.md`, `.project/product/INDEX.md` (P-0001 covers only the subset contract) and the spec-stage entry above, before reading the design. It read `design.md`, `level2_structure.py:400-455` and `find_project_root` (`cli/__init__.py:122-137`); it relied on the design's citations for `fact_refs.py`, `subset_extraction.py` and `subset_facts.py`. No tests were run and no SysIDE behavior was checked; R1 and R2 were unresolved at the time.
+
+Point (re-derived): an author who writes correctly named calc or constraint inputs in the wrong order gets a silently wrong value, and native SysIDE and the generated/TEAx route disagree on it (-7 vs 7). Item 4 must detect implicit name/target mismatches from resolved evidence; block new mismatches and warn on explicitly pinned legacy ones until migration; never let a pinned warning or an inspection failure read as "values correct" or "routes agree"; and get the hazard into guidance authors read. It must not change binding behavior (R4-2), edit fusion-tea (R4-3), or touch sysml-codegen or Item 2 (owner boundary).
+
+Falsifier:
+- An unpinned reversed input passes L2.
+- A pin downgrades something other than an exact legacy identity.
+- A pinned warning or an inspection failure reads as clean.
+- Any code, test or edit crosses into sysml-codegen or fusion-tea.
+
+Findings:
+- design-F1 [DON'T] "A pinned warning does not by itself fail L2" is presented in The Point under D1's ratified grade. It was decided by the orchestrator as execution of D1 (spec-review L2-2; `spec.md:91` grades it `[AGENT]`). It is the one change to what fails L2, so its grade should show in The Point and beside I1. — capture-fidelity §1; spec-review L2-2 (agent) — disposition: carried into `design-review.md` as should-fix S1
+- design-F2 [DO] D14 and Integration Strategy tell target repos to write a pin list by hand from the findings. Nothing in the shipped text (Appendix C) says pins are only for mismatches that existed at the `recorded_against` revision and that new mismatches are fixed, not pinned. Review is the only enforcement of "legacy" (owner "A is fine"), so reviewers need that sentence. Without it a pin drifts into the "intentional use" disposition R4-1 reserves. — epic D1 (agent-ratified); R4-1 outcome (agent-ratified) — disposition: carried as should-fix S2; becomes a BLOCK if shipped docs present pins as a general way to accept mismatches
+- design-F3 [DO] The new fact family sits in the shared `sysml/` layer (principle 1), but the design does not say whether it is L2-internal or a shared surface that Item 2 or codegen's open POSITIONAL-FORMAL-REDEFINITION work may consume, and it has no version marker like `SUBSET_PROFILE_VERSION`. — epic principle 1, Item 2 scope 6 (INHERITED); owner boundary (owner) — disposition: carried as should-fix S3
+- design-F4 [DON'T, minor] D2 imports Item 1's private `_element_ref` and `_IdentityError`; nothing in Item 1's module records that L2 depends on them. — design D2 (agent) — disposition: carried as minor N4
+- design-F5 [can't-find] D11 says discovery stops at the markers `find_project_root` uses and lists `.git` and `pyproject.toml`; `cli/__init__.py:122-137` checks only `work/BACKLOG.md`, the install manifest and `.claude/`. — design D11 (agent) — disposition: folded into must-fix M2
+- design-F6 [DO, minor] Zero inputs inspected fails only in the reproduction. If an owner sweep silently returns nothing after a SysIDE upgrade, target repos get a clean L2; the retained learning tests (R6) are the only guard. Name that dependency in Risks. — epic principle 5; Item 4 success "cannot silently pass" (INHERITED) — disposition: carried as minor N5
+
+Smells: smell 1 (consumer compensating for a producer or platform guarantee) did not fire; the generator discrepancy goes upstream as an unfiled draft (R4-2). Smell 7 (ownership change without saying so) did not fire as unstated: the L2 pass rule moves part of "what fails L2" into a project-owned file, and I1, I2 and Risks say so, though its grade is blurred (F1); the fact family and the private import leave ownership questions unsaid (F3, F4). Item 2 is not touched.
+
+Gate: OPEN. No owner or `[HARD]` contradiction, so not BLOCKED. F1–F6 are dispositioned in `design-review.md`.
