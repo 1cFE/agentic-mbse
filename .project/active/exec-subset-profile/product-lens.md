@@ -52,3 +52,43 @@ Findings:
 Smells: smell 7 (changes who owns an invariant without saying so) FIRED: design-F1. Escalated into the design review's Fundamental Assessment. The R1 recommendation is held back from the owner until revised. Smell 1 (consumer compensating for a producer guarantee) did not fire: the contract describes the generator's behavior with probe evidence, and Item 2 is scheduled to make the producer consume it.
 
 Gate: ESCALATED (design-F1 via smell 7). No owner/`[HARD]` contradiction, so not BLOCKED. R1 presentation waits on design-review M1 and M2.
+
+## implementation — 2026-10-18 — rev 8b2b3a76 (implementation revision 9b123cf3), `src/agentic_mbse/sysml/subset_*`, `occurrence_*`, `invocation_allowlist.py`, `fact_refs.py`, `reference_use.py` diff 23d9ef32..044e32c1, `evidence/acceptance.md`
+Epic: EXEC-SUBSET-CONTRACT
+
+Method note: the lens instruction file (`~/.claude/scripts/product-lens.md`) was again unreadable in this non-interactive session, and Bash was denied. The lens ran inline from file reads only. No tests or scripts were run; the acceptance numbers below are the recorded evidence, not reproduced.
+
+Epic finding references: none (the epic's Product-Lens section still reads "Not yet run").
+
+Point (re-derived): a target-repo author, and the tools that speak to them (L6, guidance, later codegen `check`), needs one versioned answer to "will the pinned generator take this model shape, and how sure are we?" The answer is only useful if each of its three states is honest:
+- "refused" means a probe saw the generator refuse it.
+- "unknown" (unconfirmed or unverified) is never presented as fine.
+- "clean" means clean only over what the contract actually checks, and says so.
+
+[source: epic Item 1 objective and success criteria ("detector failures and incomplete scope cannot produce a clean assessment"; "every deferred case has an owner and coverage limitation"), and design principles 4-6, grade: INHERITED / agent-ratified. ADR 0001, grade `[AGENT] (ratified by owner, 2026-10-18)`: ownership, Option A with end condition (ii), invariants 1-6. README, `docs/` and `.project/product/` still state no generator-compatibility promise; `.project/product/INDEX.md` does not exist.]
+
+Falsifier: the spec entry's four, plus: a consumer that reads only the result object can take `CLEAR` to mean "the generator accepts this model".
+
+What holds in the code:
+- Records decide; rules only recognize. The loader refuses any non-`unconfirmed` outcome without probe evidence, and any refused shape without an admitted-context probe or an SA-1 statement (`subset_profile.py:395-473`).
+- Missing fact kinds, element failures and narrowed roots all force `INCOMPLETE` (`subset_profile.py:1194-1248`).
+- The vocabulary is closed. `SI_*` codes appear only in evidence fields (`subset_profile.py:247`, `:373-376`). The evaluator imports nothing from codegen (`subset_profile.py:26-70`, `occurrence_extraction.py:44-70`).
+- No R2: zero `refused` on the 14 snapshot fixtures and on dc3 repaired. Occurrence parity is 73/73 at `9b123cf3` (`evidence/acceptance.md`).
+- D2: 502 sites, 0 unaccounted (`evidence/site-reconciliation.md`).
+
+Findings:
+- impl-F1 [DO] `CLEAR` does not carry its own coverage limit. The verdict docstring reads "Complete … The only clean verdict" (`subset_profile.py:154-155`), and ADR 0001 invariant 2 repeats "only verdict `CLEAR` is clean". But `ScopeReport` (`subset_profile.py:692-705`) reports only roots and fact kinds. It does not say which matrix rows have no rule: ES-002, ES-008, ES-009, ES-010-REFUSAL, CALC-DEF-BARE-RESULT, DEEP-QUALIFIED-WIRING, and the 82 explicit follow-up sites. The recorded counterexample is `deep_cross_scope_probe`: the evaluator says `CLEAR` and the generator refuses it (`evidence/acceptance.md`, corpus section). Today the limit lives only in prose for the owner. Item 3 (L6) and Item 5 (guidance) would have to rebuild it from the matrix. That is a consumer compensating for a missing producer guarantee (smell 1, latent: no consumer exists yet). Suggested disposition: have the result name the contract's coverage. Either put the uncovered matrix rows, or a pointer to them pinned by `SUBSET_PROFILE_VERSION`, in `ScopeReport`, or reword the `CLEAR` docstring and ADR 0001's wording to "clean over the implemented rules". Then make Item 3 render that limit next to the verdict. — epic Item 1 success criteria and principle 4 (INHERITED); ADR 0001 invariant 2 (agent/ratified) — disposition: DISPOSE
+- impl-F2 [DO] `INCOMPLETE` outranks `REFUSED` in the single verdict (`subset_profile.py:1241-1245`). dc3 baseline has 236 probe-backed refusals, and its headline is "incomplete". Nothing is lost: the findings are all present, and INCOMPLETE is never clean. But a consumer that renders only the verdict softens a certain "the generator will refuse this" into "we couldn't finish". This is the case that matters most to an author with `execution-target = generated`. Suggested disposition: report completeness and the worst outcome as two fields, or let `REFUSED` dominate with completeness alongside. Recording it as an Item 3 rendering obligation is also acceptable. — epic Item 3 scope 3 ("confirmed unsupported capabilities are errors") (INHERITED) — disposition: DISPOSE
+- impl-F3 [DO] The ownership change is now stated in agentic-mbse but not yet in the repo that must uphold it. sysml-codegen ADR 0012 still says slot construction and multiplicity reads have "narrow codegen ownership". Its amendment is only a draft (`evidence/adr-0012-amendment-draft.md`), deferred to Item 2. Meanwhile agentic-mbse ships the second reader on this branch, and the CI parity guard does not exist yet. ADR 0001 invariant 6 names the manual parity run as the interim check. A codegen agent changing those reads before Item 2 would still be told by its own ADR that it owns them alone. Suggested disposition: file the 0012 amendment, through the owner or Item 2's first step, at or before this branch merges, not at Item 2's end. Under the ADR README's cross-seam rule, the decision belongs where it is upheld. — `.project/adr/README.md` § Cross-seam placement; ADR 0001 invariant 6 (agent/ratified) — disposition: DISPOSE
+
+Earlier open items, checked against the code:
+- design-F1 (ESCALATED via smell 7, ADR 0012 ownership): resolved as an escalation. The owner chose Option A (ii), and ADR 0001 states the ownership change. The residual gap is the unfiled codegen amendment, carried as impl-F3. It is not a BLOCK.
+- design-F2 (unbounded second occurrence derivation): resolved. End condition (ii) bounds it with a permanent parity test, and the port's docstring holds itself to the parity seed (`occurrence_extraction.py:1-7`). That test lands in Item 2; until then the recorded run (73/73) is the check.
+- design-F3 (authority after Item 2): resolved. ADR 0001 invariant 5 names Item 2's screen-bypassed corpus as ground truth.
+- No earlier entry is BLOCKED, so no open BLOCK remains.
+
+Already surfaced, not re-raised: dc3 baseline INCOMPLETE, with B8 reported only as `unconfirmed`; the B3 count (15 here vs T-001's "(20)"), not reconciled; the R3 proposal. All three are open owner items in `CURRENT_WORK.md`.
+
+Smells: smell 1 (consumer compensating for a producer guarantee) fired, latent: impl-F1. Smell 7 (ownership change without saying so): the earlier firing is answered in agentic-mbse; the upholding-repo half is impl-F3.
+
+Gate: OPEN, with impl-F1, impl-F2 and impl-F3 awaiting disposition. No owner or `[HARD]` contradiction, so not BLOCKED. None stops audit. impl-F1 should be disposed before Item 3 consumes the verdict.
