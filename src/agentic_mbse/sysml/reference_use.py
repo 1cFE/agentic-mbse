@@ -26,6 +26,11 @@ from uuid import UUID
 
 from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 from agentic_mbse.sysml.data_models import ResolvedTargetFact, SingletonTerm
+from agentic_mbse.sysml.invocation_allowlist import (
+    STANDARD_SUM_FUNCTION_ID,
+    InvocationUse,
+    is_supported_invocation_id,
+)
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
 __all__ = [
@@ -39,6 +44,7 @@ __all__ = [
     "build_aggregation_term",
     "evidence_error",
     "inspect_reference_uses",
+    "invocation_uses",
     "is_standard_library_use",
     "materialize_operands",
     "operand_bearing_operands",
@@ -54,11 +60,6 @@ __all__ = [
 #: not selectable by a caller: a consumer that could widen it could also decide, per call
 #: site, how much of an expression counts as evidence.
 MAX_EXPRESSION_DEPTH = 100
-
-# Reload-stable declaration identity of ``NumericalFunctions::sum`` in the SysML
-# standard library.  Its spelling is not authority: a different declaration called
-# ``sum`` is still a different function and must not gain collection semantics.
-_STANDARD_SUM_FUNCTION_ID = UUID("6d745ea3-e265-5ddd-aa6c-b3fe29dc4272")
 
 #: The authored spelling of a reference.  ``bare`` is a name with no prefix, ``qualified``
 #: carries a ``::`` package path, ``chain`` is a dotted feature chain.
@@ -376,46 +377,69 @@ def unit_annotation_value(expression: Any) -> Any | None:
     return operands[0]
 
 
+def _invoked_function_id(node: Any) -> UUID | None:
+    """The declaration identity of the function an invocation resolved to, if it has one."""
+    function = getattr(node, "function", None)
+    if function is None:
+        return None
+    try:
+        return SysideAdapter.element_id(function)
+    except ValueError:
+        return None
+
+
 def _is_plural_invocation(node: Any) -> bool:
     """Whether this invocation makes the references beneath it plural.
 
     A supported ``sum`` invocation consumes a collection, so its contained references are
     plural.  Every other supported context stays scalar.  This preserves the existing
     aggregation semantics without choosing a concrete occurrence.
+
+    Plurality is ``sum``'s own semantics, so it keys on ``sum``'s identity rather than on the
+    allowlist: a callable added to the allowlist later would not thereby consume a collection.
     """
-    function = getattr(node, "function", None)
-    if function is None:
-        return False
+    return _invoked_function_id(node) == STANDARD_SUM_FUNCTION_ID
+
+
+def _is_supported_invocation(node: Any) -> bool:
+    function_id = _invoked_function_id(node)
+    return function_id is not None and is_supported_invocation_id(function_id)
+
+
+def _invocation_reference(node: Any) -> str | None:
+    """The authored invocation for a diagnostic, or ``None`` when SysIDE cannot give it."""
     try:
-        return SysideAdapter.element_id(function) == _STANDARD_SUM_FUNCTION_ID
-    except ValueError:
-        return False
-
-
-def _require_supported_invocation(node: Any) -> None:
-    """Refuse every ordinary invocation except the exact standard-library ``sum``.
-
-    Operator expressions share SysIDE's invocation base but are handled by their own
-    grammar.  For an ordinary call, declaration identity is the capability boundary.
-    Refusing here keeps unsupported calls out of the graph and preserves the whole
-    authored expression for the public diagnostic.
-    """
-    if _is_plural_invocation(node):
-        return
-    try:
-        reference = (
+        return (
             SysideAdapter.authored_text(node)
             if SysideAdapter.is_live_element(node)
             else str(getattr(node, "name", None) or "") or None
         )
     except SemanticEvidenceError:
-        reference = None
+        return None
+
+
+def _invoked_function_name(node: Any) -> str | None:
     function = getattr(node, "function", None)
-    function_name = str(
-        getattr(function, "qualified_name", None)
-        or getattr(function, "name", None)
-        or "<unresolved>"
-    )
+    name = getattr(function, "qualified_name", None) or getattr(function, "name", None)
+    return str(name) if name else None
+
+
+def _require_supported_invocation(node: Any) -> None:
+    """Refuse every ordinary invocation outside the allowlist (today, the exact ``sum``).
+
+    Operator expressions share SysIDE's invocation base but are handled by their own
+    grammar.  For an ordinary call, declaration identity is the capability boundary.
+    Refusing here keeps unsupported calls out of the graph and preserves the whole
+    authored expression for the public diagnostic.
+
+    This raise is a capability decision living in the fact layer, grandfathered because it is
+    the generator's ES-005 refusal path; the allowlist it consults is the pure
+    :mod:`~agentic_mbse.sysml.invocation_allowlist`.
+    """
+    if _is_supported_invocation(node):
+        return
+    reference = _invocation_reference(node)
+    function_name = _invoked_function_name(node) or "<unresolved>"
     raise SemanticEvidenceError(
         SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED,
         operation="inspect_reference_uses",
@@ -426,6 +450,54 @@ def _require_supported_invocation(node: Any) -> None:
         location=SysideAdapter.get_source_location(node),
         reference=reference,
     )
+
+
+def invocation_uses(expression: Any) -> tuple[InvocationUse, ...]:
+    """Return every ordinary invocation in one expression, supported or not, in first-seen order.
+
+    The total companion of :func:`inspect_reference_uses`: it visits exactly the nodes that
+    walk visits, in the same dispatch order, but resolves no reference and refuses nothing, so
+    an unsupported call is reported instead of raised. Reference leaves (index, chain and
+    feature references) are not descended, as there; a unit annotation is walked through its
+    value operand only. A walk that cannot complete raises the same named
+    ``SemanticEvidenceError`` the reference walk would.
+    """
+    return tuple(_invocations(expression, depth=0))
+
+
+def _invocations(node: Any, *, depth: int) -> list[InvocationUse]:
+    if node is None:
+        return []
+    if depth >= MAX_EXPRESSION_DEPTH:
+        raise evidence_error(
+            SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED,
+            "invocation_uses",
+            "maximum expression traversal depth exhausted before all operands were visited",
+            node,
+        )
+    if any(
+        SysideAdapter.is_instance(node, leaf)
+        for leaf in ("IndexExpression", "FeatureChainExpression", "FeatureReferenceExpression")
+    ):
+        return []
+    unit_value = unit_annotation_value(node)
+    if unit_value is not None:
+        return _invocations(unit_value, depth=depth + 1)
+    found: list[InvocationUse] = []
+    if SysideAdapter.is_instance(node, "InvocationExpression") and not SysideAdapter.is_instance(
+        node, "OperatorExpression"
+    ):
+        found.append(
+            InvocationUse(
+                callable_id=_invoked_function_id(node),
+                callable_name=_invoked_function_name(node),
+                authored_text=_invocation_reference(node),
+                location=SysideAdapter.get_source_location(node),
+            )
+        )
+    for operand in operand_bearing_operands(node):
+        found.extend(_invocations(operand, depth=depth + 1))
+    return found
 
 
 def _indexed_use(node: Any) -> IndexedReferenceUse:
@@ -448,9 +520,7 @@ def _reference_use(node: Any, *, plural: bool) -> ExactReferenceUse:
     authored = authored_reference_text(node)
     qualifier = _authored_qualifier(authored)
     return ExactReferenceUse(
-        path=ExactSemanticPath(
-            root=fact, segments=(fact,), leaf=fact, resolved_member_names=()
-        ),
+        path=ExactSemanticPath(root=fact, segments=(fact,), leaf=fact, resolved_member_names=()),
         form="qualified" if qualifier else "bare",
         authored_text=authored,
         authored_segments=tuple(authored.split(".")),
