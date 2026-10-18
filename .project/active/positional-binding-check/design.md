@@ -19,6 +19,7 @@ Add one L2 check, `L2_POSITIONAL_BINDING`, that reports an authored calculation 
 - Epic: `.project/backlog/epic_executable-subset-contract.md` (Item 4; D1)
 - Prototype: `.project/concepts/convince-me-exec-subset/evidence/04-README.md`, `04-detector.py`, `04-fixtures/`, `04-*.log`
 - Item 1 archive (fact layer and reproduction pattern): `.project/completed/20261018_exec-subset-profile/`
+- Learning test for R1–R6: `.project/active/positional-binding-check/learning-findings.md`; tests in `tests/learning/test_syside_input_redefinition.py`
 - Decision records: ADR 0001 (`.project/adr/0001-subset-profile-capability-ownership.md`); this design does not touch the subset contract it governs.
 - Epic Required Reading for Item 4: none listed.
 
@@ -263,6 +264,8 @@ Carried from the spec: no change to generator or SysIDE binding (R4-2); no fusio
 ## De-risk flags: SysIDE 0.8.4 behavior not verified by reading
 
 Each flag names what the design relies on, what is already observed, and whether a learning test is needed before planning. One learning-test file can cover R1–R6: `tests/test_sysml/test_parameter_redefinition_surface.py`, following `test_conditional_operator_spelling.py`.
+
+**Learning test result (2026-10-18).** All six flags were run against SysIDE 0.8.4. The kept tests are in `tests/learning/test_syside_input_redefinition.py`, and the findings are in `learning-findings.md`. R1(a) holds: in the mixed spelling, `b` implicitly redefines `Sub::a`, so B2 and the spec's criterion stand. R1(b): an input with an explicit redefinition never also gets an implied one, so `multiple_types_with_rename` expects only (q::c, b, Add::q). R2 confirms B3, and the subject, actor and stakeholder all count toward positions. R3 and R5 confirm. R4: positions count `out`, but SysIDE rejects that model with `redefinition-direction-conformance`, so `out_before_in` fails at L1 before L2 runs. R6: the sweeps reach requirement, case and `assert constraint` owners, but never standard-library owners, because `model.elements` covers only the model's own documents.
 
 - **R1. Implied redefinitions on inputs that also have an explicit one, and on siblings of an explicit input.** Observed: the prototype never inspected implied relationships on explicit inputs (it skipped them). Must show, for `calc def Sub { in a; in b; }`: (a) `in b = 3; in :>> a = 10;` gives `b` an implied redefinition of `Sub::a` (B2); (b) for `in y redefines b = 3; in x redefines a = 10;`, whether `y` and `x` also carry implied redefinitions, and of which formals. **Needed before planning.** (a) decides whether a spec criterion is achievable from resolved evidence.
 - **R2. Special parameters.** Must show: a `subject`, `actor` and `stakeholder` parameter each appears in `owned_features` with direction `in`, and its `owning_membership` is an instance of `syside.SubjectMembership` / `ActorMembership` / `StakeholderMembership`; a requirement def's `subject vehicle` carries an implied redefinition of `RequirementCheck::subj`; and in `requirement def R { subject v; in lo; in hi; }`, whether the subject counts toward the positions of `lo` and `hi`. **Needed before planning.** It sets the role field (B3) and the requirement fixtures' expected identities.
