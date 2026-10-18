@@ -1,0 +1,72 @@
+{
+  "probe_id": "invocation-callable__explicit_operator__attribute_value",
+  "model_sha256": "aff0f89d10be3fd003e8b13b1972d25a8563a02fb32e3341ecbd8cbee2c4eb98",
+  "identity": {
+    "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
+    "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b",
+    "sysml_codegen_version": "0.1.1",
+    "agentic_mbse_version": "0.1.3",
+    "syside_version": "0.8.4",
+    "python_version": "3.12.3",
+    "uv_lock_sha256": "a17e9fa120983389d45d2e2a47edbe4da38d67ffe78c07c5f048aacacabee4d4",
+    "tree_root": "/tmp/p10/probe-final2/run-lr242rwo",
+    "sysml_codegen_file": "/tmp/p10/probe-final2/run-lr242rwo/sysml-codegen/src/sysml_codegen/__init__.py",
+    "agentic_mbse_file": "/tmp/p10/probe-final2/run-lr242rwo/agentic-mbse/src/agentic_mbse/__init__.py",
+    "syside_file": "/tmp/p10/probe-final2/run-lr242rwo/sysml-codegen/.venv/lib/python3.12/site-packages/syside/__init__.py",
+    "license_key_present": true
+  },
+  "run": {
+    "argv": [
+      "/tmp/p10/probe-final2/run-lr242rwo/sysml-codegen/.venv/bin/python",
+      "-I",
+      "-m",
+      "sysml_codegen",
+      "generate",
+      "--models",
+      "/tmp/p10/probe-final2/run-lr242rwo/probes/invocation-callable__explicit_operator__attribute_value/in/model.sysml",
+      "--output",
+      "/tmp/p10/probe-final2/run-lr242rwo/probes/invocation-callable__explicit_operator__attribute_value/out"
+    ],
+    "exit_code": 0,
+    "timed_out": false,
+    "error_lines": [],
+    "generated_files": {
+      "IMPLEMENTATION_BACKLOG.md": "5a5da20de5316aad1a7dee8bb58e626d2dda1dd7a45b2b56cc5e5fb94173b35a",
+      "__init__.py": "551468aa2d1109b64b89bc487f83eb4a5fe6e19606d7f4d730a8d5ad6d04e469",
+      "contracts/generation_manifest.json": "4f299d4486140ccd65f29bc580f443fa63de95b4d2e286361d27988f5c12b6ff",
+      "contracts/model_contract.json": "363582f0ec3b0d554a4f02c51c02de629ff20efe2b8ae2cc93b84f7ccb46b6a3",
+      "contracts/package_contract.json": "d7600a550eb5e39fd0a77709ca40a0c1a6f05233210efa6d92f7fa6a912f4056",
+      "contracts/verify.py": "ad0a855af17d18af5f3e8c36b1a6c500f492d88ec777b40f307c646306c67284",
+      "handwritten/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "handwritten/fx/__init__.py": "200b1c90d646c8c58c2644945ee551dddc12adcfdab30b7ae4197891284a70c8",
+      "handwritten/fx/site/__init__.py": "200b1c90d646c8c58c2644945ee551dddc12adcfdab30b7ae4197891284a70c8",
+      "handwritten/fx/site/eff_impl.py": "d2d3e3197e0a360726981ea555a5010f2e4183c42d3f663c9fdeb329e7f040e6",
+      "inputs/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "inputs/fx_params.json": "fb7523c6ec2eb8c6058398cb44ea5aa744a6fedb65f4dda8f95f349ec0134483",
+      "modules/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "modules/fx/__init__.py": "0fc3fea2d8e92bff93b86e656a302cf2800727bd2c3f9ff8d264930dcc73c8e1",
+      "modules/fx/site/__init__.py": "0fc3fea2d8e92bff93b86e656a302cf2800727bd2c3f9ff8d264930dcc73c8e1",
+      "modules/fx/site/eff.py": "4ebb8caea04170d2b867bdbd561902058ed934db453b226060f829ab1397c629",
+      "pipelines/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "pipelines/pipeline.yaml": "702eeb03ac2f50dab407d677e02ab48bde89493696babb348a26b19cd3b39e55",
+      "primitives.py": "1bc6be58e5290b102d762227c33f138ecc4f9feaa00fa2f4cfd02f87f5f71998",
+      "schemas/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "schemas/fx_params.py": "776de1ca86c07bcd332c56317627bcdacda20e0624fcf7dfebc6c8ba85ced61c",
+      "tests/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "tests/test_implementations_runnable.py": "506dc048006726b7a660e5ad59cbcbe6a56cdd217fc62f78b5256b688ed905cb"
+    },
+    "catalog_names": [
+      "fx__site__a",
+      "fx__site__b",
+      "fx__site__eff__eff"
+    ],
+    "mentions": {
+      "fx__site__eff__eff": [
+        "contracts/model_contract.json",
+        "pipelines/pipeline.yaml"
+      ]
+    }
+  },
+  "certifies": true,
+  "failed_check": null
+}

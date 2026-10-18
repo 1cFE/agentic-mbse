@@ -1,0 +1,9 @@
+$ /tmp/p10/probe-final2/run-lr242rwo/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/p10/probe-final2/run-lr242rwo/probes/candidate-es-008__nested_named_subset__part_usage/in/model.sysml --output /tmp/p10/probe-final2/run-lr242rwo/probes/candidate-es-008__nested_named_subset__part_usage/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/p10/probe-final2/run-lr242rwo/probes/candidate-es-008__nested_named_subset__part_usage/in/model.sysml
+INFO: Output to /tmp/p10/probe-final2/run-lr242rwo/probes/candidate-es-008__nested_named_subset__part_usage/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_REDEFINITION_INVALID: <model>: reference='fx::facility::it_system::rack_1::server_2::psu::efficiency': exact scope OccurrenceId(steps=(OccurrenceStep(containment_slot=FeatureSlotId(root_declaration=DeclarationId(value=UUID('6ab29f3e-0bdb-5df4-8bd7-81e94fc2bc1f'))), occurrence_index=None), OccurrenceStep(containment_slot=FeatureSlotId(root_declaration=DeclarationId(value=UUID('8ca134ff-9f0d-5420-ae06-4630c84c7f67'))), occurrence_index=None), OccurrenceStep(containment_slot=FeatureSlotId(root_declaration=DeclarationId(value=UUID('2622dc36-9275-5ffb-ae28-17168533c0c2'))), occurrence_index=None), OccurrenceStep(containment_slot=FeatureSlotId(root_declaration=DeclarationId(value=UUID('4f7fc9d1-6782-5c61-b472-ef45313e827c'))), occurrence_index=0), OccurrenceStep(containment_slot=FeatureSlotId(root_declaration=DeclarationId(value=UUID('d4a5f829-2278-57d2-b0e1-57d555a41a1c'))), occurrence_index=None))) has incomparable value writers fx::facility::it_system::rack_1::server_1::psu::efficiency, fx::facility::it_system::rack_1::server_2::psu::efficiency, fx::facility::it_system::rack_2::server_1::psu::efficiency, fx::facility::it_system::rack_2::server_2::psu::efficiency [root-0/model.sysml:13]

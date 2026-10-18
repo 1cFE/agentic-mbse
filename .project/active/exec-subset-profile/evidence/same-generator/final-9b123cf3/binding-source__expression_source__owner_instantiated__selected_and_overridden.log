@@ -1,0 +1,9 @@
+$ /tmp/p10/probe-final2/run-lr242rwo/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/p10/probe-final2/run-lr242rwo/probes/binding-source__expression_source__owner_instantiated__selected_and_overridden/in/model.sysml --output /tmp/p10/probe-final2/run-lr242rwo/probes/binding-source__expression_source__owner_instantiated__selected_and_overridden/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/p10/probe-final2/run-lr242rwo/probes/binding-source__expression_source__owner_instantiated__selected_and_overridden/in/model.sysml
+INFO: Output to /tmp/p10/probe-final2/run-lr242rwo/probes/binding-source__expression_source__owner_instantiated__selected_and_overridden/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model is not ready for the exact route: SI_EXPRESSION_SOURCE_UNSUPPORTED: fx__Site__c.v: reference='x * 2.0': unsupported exact source form expression_source ('x * 2.0') [root-0/model.sysml:6]

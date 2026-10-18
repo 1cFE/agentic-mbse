@@ -1,0 +1,75 @@
+{
+  "probe_id": "calc-owned-assertion__non_asserted_constraint__calc_definition_owner",
+  "model_sha256": "7af6aa28eb9b5af60818017a12cde7258176bd630667eed3e3f1f0974dea0e90",
+  "identity": {
+    "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
+    "agentic_rev": "a718efecad0ad6f31c4752f1b3f289fb83be336b",
+    "sysml_codegen_version": "0.1.1",
+    "agentic_mbse_version": "0.1.3",
+    "syside_version": "0.8.4",
+    "python_version": "3.12.3",
+    "uv_lock_sha256": "a17e9fa120983389d45d2e2a47edbe4da38d67ffe78c07c5f048aacacabee4d4",
+    "tree_root": "/tmp/p10/probe-base/run-f21fij5g",
+    "sysml_codegen_file": "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/src/sysml_codegen/__init__.py",
+    "agentic_mbse_file": "/tmp/p10/probe-base/run-f21fij5g/agentic-mbse/src/agentic_mbse/__init__.py",
+    "syside_file": "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/lib/python3.12/site-packages/syside/__init__.py",
+    "license_key_present": true
+  },
+  "run": {
+    "argv": [
+      "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/bin/python",
+      "-I",
+      "-m",
+      "sysml_codegen",
+      "generate",
+      "--models",
+      "/tmp/p10/probe-base/run-f21fij5g/probes/calc-owned-assertion__non_asserted_constraint__calc_definition_owner/in/model.sysml",
+      "--output",
+      "/tmp/p10/probe-base/run-f21fij5g/probes/calc-owned-assertion__non_asserted_constraint__calc_definition_owner/out"
+    ],
+    "exit_code": 0,
+    "timed_out": false,
+    "error_lines": [],
+    "generated_files": {
+      "IMPLEMENTATION_BACKLOG.md": "aabc55af92e38f2b3604799b621e3cd8266c9adac6085cc74af7855e50f14570",
+      "__init__.py": "f0a3be05e39a3e8be953a4be1f48f2ad845ebf9003dac8d01ee408aac8590590",
+      "contracts/generation_manifest.json": "979ca833ec5fe6ba44c2ce66ed99b0698190eee4c8ba1552f56f842537c9a07b",
+      "contracts/model_contract.json": "eaad9d08ab153c1cac62e13e3e65c16ce25cdff2e9b621bc038d8e74086aa9fe",
+      "contracts/package_contract.json": "66bf657fce65202b7fe99f51bc76f69babad6004f012da965572bf14b2def651",
+      "contracts/verify.py": "ad0a855af17d18af5f3e8c36b1a6c500f492d88ec777b40f307c646306c67284",
+      "handwritten/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "handwritten/fx/__init__.py": "200b1c90d646c8c58c2644945ee551dddc12adcfdab30b7ae4197891284a70c8",
+      "handwritten/fx/eff2_impl.py": "bda8bfea346499692f05286f812ad50c763b08ead055907b7350cf234395bd3f",
+      "inputs/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "inputs/fx_params.json": "5c0eef01c6c2e0d9a8a7bc0688b0af0e84a0f44c54e03e468bd14c01b824137b",
+      "modules/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "modules/constraints/__init__.py": "0fc3fea2d8e92bff93b86e656a302cf2800727bd2c3f9ff8d264930dcc73c8e1",
+      "modules/constraints/constraintreportaggregatormodule.py": "fe28ef4dff0f42cbf5286f4611c1555b42dca15d53b64b2b061b0a96d369f628",
+      "modules/constraints/predicates.py": "913c98224455d24988865c2e1577431505539e1f5177be4da6df3202c6d5f491",
+      "modules/fx/__init__.py": "0fc3fea2d8e92bff93b86e656a302cf2800727bd2c3f9ff8d264930dcc73c8e1",
+      "modules/fx/eff2.py": "94ad1e2b5514c447eb078cfe2cc70af80b791228955c80728db367db76e9260c",
+      "pipelines/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "pipelines/pipeline.yaml": "b0fb5c5b75565d64f5b7c9cff8df81528bc0911ea8495455be84117102404680",
+      "primitives.py": "1bc6be58e5290b102d762227c33f138ecc4f9feaa00fa2f4cfd02f87f5f71998",
+      "schemas/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "schemas/constraint_types.py": "c7910f974bd106e6d58f61bd0ae5ce28a2f63135bf841327a6b76a7a1d21cc49",
+      "schemas/fx_params.py": "2a4decb67d75828dc486d664c57292bf7e55bb8b7c2b1b0b6f3cc6662e737ce9",
+      "tests/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "tests/test_implementations_runnable.py": "0b69c9395635de47166c3a697175394ed55dce1753508c7729cbe8e0bc142e2e"
+    },
+    "catalog_names": [
+      "constraint_report",
+      "fx__site__ea",
+      "fx__site__eb",
+      "fx__site__path__r"
+    ],
+    "mentions": {
+      "fx__site__path__r": [
+        "contracts/model_contract.json",
+        "pipelines/pipeline.yaml"
+      ]
+    }
+  },
+  "certifies": true,
+  "failed_check": null
+}

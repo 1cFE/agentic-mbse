@@ -1,0 +1,69 @@
+{
+  "probe_id": "binding-source__expression_source__owner_uninstantiated",
+  "model_sha256": "d79ed7ef31aa16e57f5724fd6ab2968f1befc53d00cb71851ef0604a039ccad6",
+  "identity": {
+    "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
+    "agentic_rev": "a718efecad0ad6f31c4752f1b3f289fb83be336b",
+    "sysml_codegen_version": "0.1.1",
+    "agentic_mbse_version": "0.1.3",
+    "syside_version": "0.8.4",
+    "python_version": "3.12.3",
+    "uv_lock_sha256": "a17e9fa120983389d45d2e2a47edbe4da38d67ffe78c07c5f048aacacabee4d4",
+    "tree_root": "/tmp/p10/probe-base/run-f21fij5g",
+    "sysml_codegen_file": "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/src/sysml_codegen/__init__.py",
+    "agentic_mbse_file": "/tmp/p10/probe-base/run-f21fij5g/agentic-mbse/src/agentic_mbse/__init__.py",
+    "syside_file": "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/lib/python3.12/site-packages/syside/__init__.py",
+    "license_key_present": true
+  },
+  "run": {
+    "argv": [
+      "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/bin/python",
+      "-I",
+      "-m",
+      "sysml_codegen",
+      "generate",
+      "--models",
+      "/tmp/p10/probe-base/run-f21fij5g/probes/binding-source__expression_source__owner_uninstantiated/in/model.sysml",
+      "--output",
+      "/tmp/p10/probe-base/run-f21fij5g/probes/binding-source__expression_source__owner_uninstantiated/out"
+    ],
+    "exit_code": 0,
+    "timed_out": false,
+    "error_lines": [],
+    "generated_files": {
+      "IMPLEMENTATION_BACKLOG.md": "c12e5c0839dc4bfd9b4c9e918fa3d83084d465ad759f2ef0e2e518274475c25f",
+      "__init__.py": "1d89664b2ab5598720f1b49f058d5a03fd36253ffa9230035483700a35a6e973",
+      "contracts/generation_manifest.json": "bfcca8d3e75d209ba56c5bce218c75ebf34bed205dd6c58dd7c2a2397bfc138b",
+      "contracts/model_contract.json": "fdf8ecc981f0a682ba4581cdc7128a0fcfe7221aac04ed4adbf00e3db56202a2",
+      "contracts/package_contract.json": "b97c25511fa1a537e612fedf712e9c6d9fba1c3c6ad4ad1de825f3ba59473f77",
+      "contracts/verify.py": "ad0a855af17d18af5f3e8c36b1a6c500f492d88ec777b40f307c646306c67284",
+      "handwritten/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "handwritten/fx/__init__.py": "200b1c90d646c8c58c2644945ee551dddc12adcfdab30b7ae4197891284a70c8",
+      "handwritten/fx/total_impl.py": "fa801d0cca198d84abbb7587e4ffe4bfc553b161fa6bb9ff472c72186ecd6258",
+      "inputs/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "inputs/fx_params.json": "4eaa43db0a6110c24afe36083668fdfdcd8a7e3344596de0eeeed7ccc17519e6",
+      "modules/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "modules/fx/__init__.py": "0fc3fea2d8e92bff93b86e656a302cf2800727bd2c3f9ff8d264930dcc73c8e1",
+      "modules/fx/total.py": "88edd09f834217ef421a85e40d132ae77b662df4082177eaa94abc9ec69238a7",
+      "pipelines/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "pipelines/pipeline.yaml": "4f480baaf15e7db40e0955f29c26b27edfe5020516652e84d1f78bcf1c3b3723",
+      "primitives.py": "1bc6be58e5290b102d762227c33f138ecc4f9feaa00fa2f4cfd02f87f5f71998",
+      "schemas/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "schemas/fx_params.py": "f7986a5ec17c1f16235276e7f2741ba3f77ea26bbd925a7b3350c8726f2f2ea6",
+      "tests/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "tests/test_implementations_runnable.py": "9b56f07a6874f5bee9e18ae33baa82155c22fc9b80dd9d18e2622446d57b5fb2"
+    },
+    "catalog_names": [
+      "fx__meter__load",
+      "fx__meter__m__r"
+    ],
+    "mentions": {
+      "fx__meter__m__r": [
+        "contracts/model_contract.json",
+        "pipelines/pipeline.yaml"
+      ]
+    }
+  },
+  "certifies": true,
+  "failed_check": null
+}

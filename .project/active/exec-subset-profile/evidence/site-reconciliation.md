@@ -1,6 +1,6 @@
 # Site account reconciliation (plan Phase 9)
 
-**Status:** Phase 9 run, at agentic-mbse `6f66acd6`. The agentic-mbse count is final only after Phase 10's rescan at the final implementation revision; that section is appended below when it runs.
+**Status:** final. Phase 9 ran at agentic-mbse `6f66acd6`; Phase 10 re-ran the scan at the final implementation revision `9b123cf3` (§ Final rescan, at the end). The counts below hold at both.
 
 ## What was reconciled
 
@@ -68,3 +68,7 @@ Matrix rows with no joined site: `no_raise_site` for ES-010, CALC-USAGE-BARE-RES
 - **ES-005, ES-006 and INDEXED-REFERENCE** are joined at their agentic-mbse raise sites (`reference_use.py:443`, `:514`, `:702`) and codegen's inventory refusal (`expression_evidence.py:210`); codegen's mapping site (`elaborated_pipeline.py:424`) is a relay. `reference_use.py:514` raises for any unresolved reference, not only a conditional's branch; the contract refuses only a positively recognized conditional there.
 - **PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR** joins `extraction/calc_compat_renderer.py:115` and `:120`, which codegen catches and turns into a `MANUAL_REQUIRED` stub (`expression_compiler.py:291`), not a user-facing refusal.
 - **37 public-capability follow-ups** are valid-model refusals no matrix row covers. Notable: an `inout` or non-attribute `out` calc parameter (`elaborate.py:1860`, `:1872`); a quantity-typed referenced feature (`elaborate.py:2074`, as `SI_EDGE_DANGLING`); untyped or multiply-typed calc usages (`elaborate.py:1677`); a scalar reference with several targets (`elaborate.py:2350`, `:2483`); `null`/`*` literal bindings (`elaborate.py:2669`); calc def parameters typed outside ScalarValues (`extractor.py:315`, `:329`); a calc def expression reaching outside its def (`expression_compiler.py:221`, as `SI_EDGE_DANGLING`); expressions past the 100-level depth limit (six agentic-mbse sites). They go to the R3 proposal for a destination.
+
+## Final rescan (plan Phase 10)
+
+`scan_sites.py --agentic-rev 9b123cf3 --reconcile site_account.csv` at the final implementation revision `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`: **0 unaccounted, 0 orphan, exit 0** (`site-reconcile-final.log`; scan output `site-scan-final.csv`). The scan is identical to Phase 9's, site for site and line for line: `src/` did not change between `6f66acd6` and `9b123cf3`. Final counts: **sysml-codegen 441 (recorded 441), agentic-mbse 61 (recorded 59, +2 itemized above), total 502.** The account's header now names the final scan identity.

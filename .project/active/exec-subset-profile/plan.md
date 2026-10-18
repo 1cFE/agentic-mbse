@@ -643,24 +643,24 @@ assert report.identity.agentic_rev == FINAL_REV and report.identity.codegen_rev.
 
 **See design for:** [§ Probe harness step 6](design.md#probe-harness), [§ Validation Approach, Recorded runs](design.md#validation-approach), spec [acceptance criteria](spec.md#rule-records-and-evaluator).
 
-- [ ] Commit. Record this commit as the final revision in Implementation Notes.
-- [ ] `scripts/subset_profile/run_trees.py` (NEW): exports a tree, loads it with `SysideAdapter.load_model`, evaluates with default roots, writes JSON plus a markdown summary with roots used, declaration and occurrence counts kept separate, dedup applied, and every `unconfirmed` and `unverified` itemized with cause.
-- [ ] **dc3 baseline** → `evidence/dc3-baseline.{json,md}`: every confirmed B1–B8 category with locations and rule IDs.
-- [ ] **dc3 repaired** → `evidence/dc3-repaired.{json,md}`: zero `refused`; omissions counted (prototype saw 30 String omissions); `unverified` and `unconfirmed` itemized.
-- [ ] **Codegen corpus** → `evidence/corpus.{json,md}`: counts read from `batch.json` stated (expected 14 / 23); zero `refused` on the 14 snapshot fixtures; on the 23 refusal fixtures, every `refused` code is in the recorded list or has a probe record. The evidence says snapshot fixtures prove elaboration and projection, not full generation.
-- [ ] **Same-generator check** → `evidence/same-generator.md`: `probe.py run --all --agentic-rev a718efec --base` and `--agentic-rev FINAL`; codegen's v6 corpus and codegen's pytest suite in each temp tree. Results identical.
-- [ ] **Occurrence parity** at the final revision → `evidence/occurrence-parity.log` updated.
-- [ ] **Final rescan** → `scan_sites.py --reconcile` at the final revision, so sites Item 1 added are counted; update `site_account.csv` and `evidence/site-reconciliation.md`.
-- [ ] **`validate` diff** → `evidence/validate-diff.md`: `agentic-mbse validate` on `tests/fixtures/` model directories and both dc3 trees, at `a718efec` and at the final revision, diffed. Identical.
+- [x] Commit. Record this commit as the final revision in Implementation Notes.
+- [x] `scripts/subset_profile/run_trees.py` (NEW): exports a tree, loads it with `SysideAdapter.load_model`, evaluates with default roots, writes JSON plus a markdown summary with roots used, declaration and occurrence counts kept separate, dedup applied, and every `unconfirmed` and `unverified` itemized with cause.
+- [x] **dc3 baseline** → `evidence/dc3-baseline.{json,md}`: every confirmed B1–B8 category with locations and rule IDs.
+- [x] **dc3 repaired** → `evidence/dc3-repaired.{json,md}`: zero `refused`; omissions counted (prototype saw 30 String omissions); `unverified` and `unconfirmed` itemized.
+- [x] **Codegen corpus** → `evidence/corpus.{json,md}`: counts read from `batch.json` stated (expected 14 / 23); zero `refused` on the 14 snapshot fixtures; on the 23 refusal fixtures, every `refused` code is in the recorded list or has a probe record. The evidence says snapshot fixtures prove elaboration and projection, not full generation.
+- [x] **Same-generator check** → `evidence/same-generator.md`: `probe.py run --all --agentic-rev a718efec --base` and `--agentic-rev FINAL`; codegen's v6 corpus and codegen's pytest suite in each temp tree. Results identical.
+- [x] **Occurrence parity** at the final revision → `evidence/occurrence-parity.log` updated.
+- [x] **Final rescan** → `scan_sites.py --reconcile` at the final revision, so sites Item 1 added are counted; update `site_account.csv` and `evidence/site-reconciliation.md`.
+- [x] **`validate` diff** → `evidence/validate-diff.md`: `agentic-mbse validate` on `tests/fixtures/` model directories and both dc3 trees, at `a718efec` and at the final revision, diffed. Identical.
 
 ### Validation
 
 **Automated:**
-- [ ] Standing checks green at the final revision.
+- [x] Standing checks green at the final revision.
 
 **Manual:**
-- [ ] Each evidence file states the identity it ran with.
-- [ ] R2 check: a `refused` finding on a corpus snapshot fixture or on dc3 repaired follows the [R2 surfacing map](#r2-surfacing-map).
+- [x] Each evidence file states the identity it ran with.
+- [x] R2 check: a `refused` finding on a corpus snapshot fixture or on dc3 repaired follows the [R2 surfacing map](#r2-surfacing-map).
 
 **How to decide what this phase can turn up:**
 - A dc3 baseline category that appears only as `unconfirmed`: itemize it with its context and the missing probe, and list it for the owner. It does not block the other criteria.
@@ -1126,7 +1126,38 @@ Roles: 155 internal invariant (each with its cited guard), 95 snapshot integrity
 - **Judgment calls listed for the owner** in `site-reconciliation.md` § Judgment calls: codegen naming collisions handled by codegen; ES-002 and ES-009 sites wider than their rows; the ES-005/ES-006/INDEXED-REFERENCE join at the agentic-mbse raise sites; UNSUPPORTED-OPERATOR's sites become stubs, not refusals; 37 public-capability follow-ups that go to R3.
 
 ### Phase 10 Completion
-**Final implementation revision:**
+**Final implementation revision:** `9b123cf323e5dfc2af56ebf9144cec86d1eeac9b`. Every Phase 10 run below ran there. (`38b63b1b` was frozen first; a `scripts/`-only fix to `run_trees.py`'s self-check moved HEAD, so every run was repeated at `9b123cf3`. `src/`, `pyproject.toml` and `uv.lock` are identical at both, and unchanged since `755d0186`.)
+
+**Completed:** 2026-10-18.
+
+**Outcome:** all eight recorded runs exist at one revision. The dc3 baseline accounts for B1-B7 as findings and B8 only as `unconfirmed`, with verdict **INCOMPLETE** (50 unverified checks, all on already-refused sites); dc3 repaired refuses nothing (verdict **CLEAR**, 0 unverified); the corpus floor holds; the same-generator check and the codegen suite are identical; `validate` output is unchanged except one pre-existing nondeterministic fixture. No R2. Summary: `evidence/acceptance.md`.
+
+| Run | Result |
+|---|---|
+| dc3 baseline `808464df` (`dc3-baseline.{json,md}`) | INCOMPLETE. 274 declarations / 101 occurrences: 236 refused, 32 omitted, 6 unconfirmed; 50 unverified. B1 164, B2 29 bindings, B3 15 usages (72 occurrences), B4 1, B5 22, B6 5 (all `refused`); B7 32 `omitted`; B8 4 non-numerical + 2 blocked, `unconfirmed` at `owner_other` |
+| dc3 repaired `60b44d53` (`dc3-repaired.{json,md}`) | CLEAR. 0 refused, 0 unverified, 0 unconfirmed; 30 String omissions; 15 library `[*]` usages admitted as unexpanded templates |
+| Codegen corpus (`corpus.{json,md}`) | Manifest read: 37 fixtures, 14 snapshot, 23 refusal. 14/14 snapshot fixtures CLEAR, zero refused. 23/23 refusal fixtures pass (every refused code in the record's list or a probe-recorded pair) |
+| Same-generator (`same-generator.md`) | Probes 80/80 certify at `a718efec` (base) and at `9b123cf3`; every observation identical except `identity.agentic_rev`. Codegen suite 2754 tests, 0 differ |
+| Occurrence parity (`occurrence-parity.log`) | 73/73 match at `9b123cf3` |
+| Final rescan (`site-reconcile-final.log`) | 502 sites (441 / 61), 0 unaccounted, 0 orphan; identical to Phase 9's scan |
+| `validate` diff (`validate-diff.md`) | 15 of 16 inputs identical, both dc3 trees included. `tests/fixtures/sump_pump` differs, and is nondeterministic at both revisions (below) |
+
+**What this phase turned up, for the owner:**
+- **dc3 baseline is INCOMPLETE, not CLEAR or REFUSED.** As Phase 7 anticipated: on the 22 `size` bindings, the 5 conditionals and the `product` site, the reference walk fails, so `indexed-reference` (28) and the binding kind (22) are `unverified` there. Each unverified location is a refused finding's location. Itemized in `acceptance.md`. The evaluator was not changed.
+- **B8 appears only as `unconfirmed`.** Its six constraints are owned by calc usages (`owner_other`); the generator refuses them first for their owner (B1). The missing probe would be a blocked / non-numerical predicate under a calc-usage owner, which would show ES-001's code. Counts agree with L6 once its double-reporting is accounted for (4 diagnostics on 2 blocked constraints).
+- **Count differences against T-001, noted, not reconciled** (T-001 ran with agentic-mbse `8b027bbc`): B2 is 5 input declarations in T-001 and 29 refused bindings here; B3 is "(20)" in T-001 and 15 here, which is every `[*]` part usage in `models/`; B7 is 10 in T-001 (3 flagged by L6) and 32 valued String features here.
+- **A CLEAR verdict does not mean the generator accepts the model.** `deep_cross_scope_probe` (a corpus refusal fixture) is CLEAR because DEEP-QUALIFIED-WIRING has no rule; the same holds for every tracked gap without a rule and the 82 follow-up sites.
+- **`tests/fixtures/sump_pump` validate output is nondeterministic at both revisions** (it loads three variants of the same packages): repeated runs give four different outputs at the base and four at the final, sharing the most common one. Not an Item 1 change; out of scope.
+
+**Actual Changes:**
+- `scripts/subset_profile/run_trees.py` (new): exports each tree, evaluates with default roots, writes JSON and markdown with roots used, declaration and occurrence counts apart, the dedup rule, and every `refused`, `unconfirmed` and `unverified` itemized; the corpus mode reads `batch.json` and applies the snapshot / refusal-fixture checks. Self-check per run: default roots used equal the generator's roots, both counts present, codegen identity `b5663c07`, checkout at the final revision with `src/` clean.
+- `scripts/subset_profile/validate_diff.py` (new): exports and syncs each revision separately, runs `validate --complete --verbose` on every base-revision fixture directory and both dc3 trees, diffs with temp paths normalized.
+- Evidence: `acceptance.md`, `dc3-baseline.*`, `dc3-repaired.*`, `corpus.*`, `same-generator.md` and `same-generator/` (both probe runs' observations and logs, the suite diff), `codegen-suite/phase10-*`, `occurrence-parity.log`, `site-reconcile-final.log`, `site-scan-final.csv`, `validate-diff.md`, `validate-repeat-sump-pump.{py,log}`. `site_account.csv`'s header now names the final scan.
+
+**Issues:**
+- The probe harness writes `observation.json` and logs in place. The committed ones are the records' evidence at `ecc18940`, so the run outputs were moved under `same-generator/` and the committed files restored from git.
+
+**Validation:** standing checks at `9b123cf3`: `pytest tests/` 3502 pass, the same 3 environment failures; `ruff check src/ tests/` 118; `mypy src/` 97 in 19 files. With slow tests (`-m ""`): 3512 pass, 5 fail: the same 3 plus `test_corpus_integration.py::test_ground_truth_scoring` and `test_equations.py::TestCorpusEquations::test_hawker_recall`, both because the corpus PDFs are not present locally (`tests/corpus/pdfs/`). New scripts pass `ruff check`, `ruff format --check` and `mypy --strict`.
 
 ### Phase 11 Completion
 

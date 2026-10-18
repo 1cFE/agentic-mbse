@@ -1,0 +1,89 @@
+skipped absolute link .claude/agents/kerml-expert.md -> /home/reid/1cfe/agentic-mbse/agents/kerml-expert.md
+skipped absolute link .claude/agents/syside-expert.md -> /home/reid/1cfe/agentic-mbse/agents/syside-expert.md
+skipped absolute link .claude/agents/sysml-expert.md -> /home/reid/1cfe/agentic-mbse/agents/sysml-expert.md
+skipped absolute link .claude/agents/sysmlv2-validator.md -> /home/reid/1cfe/agentic-mbse/agents/sysmlv2-validator.md
+skipped absolute link .claude/skills/sysml-conventions -> /home/reid/1cfe/agentic-mbse/skills/sysml-conventions
+tree /tmp/p10/probe-final2/run-lr242rwo
+identity {"codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee", "agentic_rev": "9b123cf323e5dfc2af56ebf9144cec86d1eeac9b", "sysml_codegen_version": "0.1.1", "agentic_mbse_version": "0.1.3", "syside_version": "0.8.4", "python_version": "3.12.3", "uv_lock_sha256": "a17e9fa120983389d45d2e2a47edbe4da38d67ffe78c07c5f048aacacabee4d4", "tree_root": "/tmp/p10/probe-final2/run-lr242rwo", "sysml_codegen_file": "/tmp/p10/probe-final2/run-lr242rwo/sysml-codegen/src/sysml_codegen/__init__.py", "agentic_mbse_file": "/tmp/p10/probe-final2/run-lr242rwo/agentic-mbse/src/agentic_mbse/__init__.py", "syside_file": "/tmp/p10/probe-final2/run-lr242rwo/sysml-codegen/.venv/lib/python3.12/site-packages/syside/__init__.py", "license_key_present": true}
+binding-source__exact_ordered_input__owner_instantiated: exit=0 certifies=True failed_check=None
+binding-source__expression_source__owner_instantiated: exit=1 certifies=True failed_check=None
+binding-source__expression_source__owner_instantiated__arithmetic: exit=1 certifies=True failed_check=None
+binding-source__expression_source__owner_instantiated__constraint_input: exit=1 certifies=True failed_check=None
+binding-source__expression_source__owner_instantiated__indexed_owner: exit=1 certifies=True failed_check=None
+binding-source__expression_source__owner_instantiated__nested: exit=1 certifies=True failed_check=None
+binding-source__expression_source__owner_instantiated__part_usage_owner: exit=1 certifies=True failed_check=None
+binding-source__expression_source__owner_instantiated__selected_and_overridden: exit=1 certifies=True failed_check=None
+binding-source__expression_source__owner_instantiated__subtype: exit=1 certifies=True failed_check=None
+binding-source__expression_source__owner_package: exit=1 certifies=True failed_check=None
+binding-source__expression_source__owner_uninstantiated: exit=0 certifies=True failed_check=None
+binding-source__expression_source__writer_overridden: exit=0 certifies=True failed_check=None
+binding-source__expression_source__writer_overridden__tuple: exit=0 certifies=True failed_check=None
+binding-source__plain_reference__owner_instantiated: exit=0 certifies=True failed_check=None
+binding-source__scalar_actual__owner_instantiated: exit=0 certifies=True failed_check=None
+binding-source__self_reference_source__owner_instantiated: exit=1 certifies=True failed_check=None
+binding-source__self_reference_source__owner_instantiated__indexed_owner: exit=1 certifies=True failed_check=None
+binding-source__self_reference_source__owner_instantiated__part_usage_owner: exit=1 certifies=True failed_check=None
+binding-source__self_reference_source__owner_instantiated__subtype: exit=1 certifies=True failed_check=None
+binding-source__self_reference_source__owner_package: exit=1 certifies=True failed_check=None
+binding-source__self_reference_source__owner_uninstantiated: exit=0 certifies=True failed_check=None
+calc-owned-assertion__asserted_constraint__calc_definition_owner: exit=1 certifies=True failed_check=None
+calc-owned-assertion__asserted_constraint__calc_usage_owner: exit=1 certifies=True failed_check=None
+calc-owned-assertion__non_asserted_constraint__calc_definition_owner: exit=0 certifies=True failed_check=None
+calc-owned-assertion__non_asserted_constraint__calc_usage_owner: exit=1 certifies=True failed_check=None
+calc-owned-assertion__part_owned_assert__owner_instantiated: exit=0 certifies=True failed_check=None
+candidate-calc-result-expression__bare_result__calc_result_expression__arithmetic: exit=1 certifies=True failed_check=None
+candidate-calc-result-expression__bare_result__calc_result_expression__max: exit=1 certifies=True failed_check=None
+candidate-es-002__constraint_binds_calc_input__binding_value: exit=1 certifies=True failed_check=None
+candidate-es-008__nested_named_subset__part_usage: exit=1 certifies=True failed_check=None
+candidate-es-009__composition_by_subsetting__part_usage: exit=1 certifies=True failed_check=None
+candidate-es-010-refusal__string_to_calc_input__binding_value: exit=1 certifies=True failed_check=None
+conditional-expression__arithmetic_min__calc_definition_feature_value: exit=0 certifies=True failed_check=None
+conditional-expression__conditional_unresolved_branch__attribute_value: exit=1 certifies=True failed_check=None
+conditional-expression__conditional_unresolved_branch__binding_value: exit=1 certifies=True failed_check=None
+conditional-expression__conditional_unresolved_branch__calc_definition_feature_value: exit=1 certifies=True failed_check=None
+conditional-expression__conditional_unresolved_branch__constraint_predicate: exit=1 certifies=True failed_check=None
+conditional-expression__conditional_unresolved_branch__other_expression_site: exit=0 certifies=True failed_check=None
+constraint-predicate__blocked_predicate__owner_instantiated: exit=1 certifies=True failed_check=None
+constraint-predicate__blocked_predicate__owner_instantiated__part_usage_owner: exit=1 certifies=True failed_check=None
+constraint-predicate__blocked_predicate__owner_instantiated__subtype: exit=1 certifies=True failed_check=None
+constraint-predicate__blocked_predicate__owner_instantiated__under_two: exit=1 certifies=True failed_check=None
+constraint-predicate__blocked_predicate__owner_package: exit=1 certifies=True failed_check=None
+constraint-predicate__blocked_predicate__owner_uninstantiated: exit=0 certifies=True failed_check=None
+constraint-predicate__non_numerical_predicate__owner_instantiated: exit=0 certifies=True failed_check=None
+constraint-predicate__numeric_and__owner_instantiated: exit=0 certifies=True failed_check=None
+indexed-reference__indexed_reference__attribute_value: exit=1 certifies=True failed_check=None
+indexed-reference__indexed_reference__binding_value: exit=1 certifies=True failed_check=None
+indexed-reference__indexed_reference__calc_definition_feature_value: exit=1 certifies=True failed_check=None
+indexed-reference__indexed_reference__constraint_predicate: exit=1 certifies=True failed_check=None
+indexed-reference__indexed_reference__other_expression_site: exit=0 certifies=True failed_check=None
+invocation-callable__explicit_operator__attribute_value: exit=0 certifies=True failed_check=None
+invocation-callable__unsupported_callable__attribute_value: exit=1 certifies=True failed_check=None
+invocation-callable__unsupported_callable__attribute_value__max: exit=1 certifies=True failed_check=None
+invocation-callable__unsupported_callable__attribute_value__size: exit=1 certifies=True failed_check=None
+invocation-callable__unsupported_callable__binding_value: exit=1 certifies=True failed_check=None
+invocation-callable__unsupported_callable__calc_definition_feature_value: exit=1 certifies=True failed_check=None
+invocation-callable__unsupported_callable__constraint_predicate: exit=1 certifies=True failed_check=None
+invocation-callable__unsupported_callable__other_expression_site: exit=0 certifies=True failed_check=None
+part-multiplicity__attribute_multiplicity__attribute_usage: exit=0 certifies=True failed_check=None
+part-multiplicity__exact_redefinition__expanded_part_usage: exit=0 certifies=True failed_check=None
+part-multiplicity__exact_redefinition__expanded_part_usage__prototype: exit=0 certifies=True failed_check=None
+part-multiplicity__ordered__expanded_part_usage: exit=1 certifies=True failed_check=None
+part-multiplicity__ordered__expanded_part_usage__under_two: exit=1 certifies=True failed_check=None
+part-multiplicity__ordered__unexpanded_part_usage: exit=0 certifies=True failed_check=None
+part-multiplicity__range__expanded_part_usage: exit=1 certifies=True failed_check=None
+part-multiplicity__range__expanded_part_usage__depth_two: exit=1 certifies=True failed_check=None
+part-multiplicity__range__expanded_part_usage__root: exit=1 certifies=True failed_check=None
+part-multiplicity__range__expanded_part_usage__subtype: exit=1 certifies=True failed_check=None
+part-multiplicity__range__expanded_part_usage__under_two: exit=1 certifies=True failed_check=None
+part-multiplicity__range__unexpanded_part_usage: exit=0 certifies=True failed_check=None
+part-multiplicity__range__unexpanded_part_usage__non_composite: exit=0 certifies=True failed_check=None
+part-multiplicity__redefinition_drops_bounds__expanded_part_usage: exit=0 certifies=True failed_check=None
+part-multiplicity__unresolved_bound__expanded_part_usage: exit=1 certifies=True failed_check=None
+part-multiplicity__unresolved_bound__expanded_part_usage__referenced: exit=1 certifies=True failed_check=None
+part-multiplicity__unresolved_bound__expanded_part_usage__under_two: exit=1 certifies=True failed_check=None
+part-multiplicity__unresolved_bound__unexpanded_part_usage: exit=0 certifies=True failed_check=None
+string-value-omission__numeric_value__attribute_value: exit=0 certifies=True failed_check=None
+string-value-omission__string_value__attribute_value__attribute_declaration: exit=0 certifies=True failed_check=None
+string-value-omission__string_value__attribute_value__redefinition_shorthand: exit=0 certifies=True failed_check=None
+80/80 probes certify
+exit=0

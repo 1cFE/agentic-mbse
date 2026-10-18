@@ -1,0 +1,9 @@
+$ /tmp/p10/probe-final2/run-lr242rwo/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/p10/probe-final2/run-lr242rwo/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/in/model.sysml --output /tmp/p10/probe-final2/run-lr242rwo/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/p10/probe-final2/run-lr242rwo/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/in/model.sysml
+INFO: Output to /tmp/p10/probe-final2/run-lr242rwo/probes/calc-owned-assertion__asserted_constraint__calc_usage_owner/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_CONSTRAINT_UNATTACHED: <model>: reference='fx::Site::path': constraint owner does not match a supported mapped metatype: fx::Site::path [root-0/model.sysml:8]

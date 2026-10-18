@@ -1,0 +1,9 @@
+$ /tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/p10/probe-base/run-f21fij5g/probes/invocation-callable__unsupported_callable__attribute_value__max/in/model.sysml --output /tmp/p10/probe-base/run-f21fij5g/probes/invocation-callable__unsupported_callable__attribute_value__max/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/p10/probe-base/run-f21fij5g/probes/invocation-callable__unsupported_callable__attribute_value__max/in/model.sysml
+INFO: Output to /tmp/p10/probe-base/run-f21fij5g/probes/invocation-callable__unsupported_callable__attribute_value__max/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_EXPRESSION_SOURCE_UNSUPPORTED: ScalarFunctions::max(a, b): reference='ScalarFunctions::max(a, b)': inspect_reference_uses: invocation of 'ScalarFunctions::max' is valid SysML but is not supported by this executable subset; only NumericalFunctions::sum is supported [root-0/model.sysml:6]

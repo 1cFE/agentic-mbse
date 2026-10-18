@@ -1,0 +1,69 @@
+{
+  "probe_id": "part-multiplicity__attribute_multiplicity__attribute_usage",
+  "model_sha256": "138d86ee3e4e9521adf009472f0097cf4122a94929d7c57ca5bb80034a4da14b",
+  "identity": {
+    "codegen_rev": "b5663c07e987a892e27d21e68cec40d0656574ee",
+    "agentic_rev": "a718efecad0ad6f31c4752f1b3f289fb83be336b",
+    "sysml_codegen_version": "0.1.1",
+    "agentic_mbse_version": "0.1.3",
+    "syside_version": "0.8.4",
+    "python_version": "3.12.3",
+    "uv_lock_sha256": "a17e9fa120983389d45d2e2a47edbe4da38d67ffe78c07c5f048aacacabee4d4",
+    "tree_root": "/tmp/p10/probe-base/run-f21fij5g",
+    "sysml_codegen_file": "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/src/sysml_codegen/__init__.py",
+    "agentic_mbse_file": "/tmp/p10/probe-base/run-f21fij5g/agentic-mbse/src/agentic_mbse/__init__.py",
+    "syside_file": "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/lib/python3.12/site-packages/syside/__init__.py",
+    "license_key_present": true
+  },
+  "run": {
+    "argv": [
+      "/tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/bin/python",
+      "-I",
+      "-m",
+      "sysml_codegen",
+      "generate",
+      "--models",
+      "/tmp/p10/probe-base/run-f21fij5g/probes/part-multiplicity__attribute_multiplicity__attribute_usage/in/model.sysml",
+      "--output",
+      "/tmp/p10/probe-base/run-f21fij5g/probes/part-multiplicity__attribute_multiplicity__attribute_usage/out"
+    ],
+    "exit_code": 0,
+    "timed_out": false,
+    "error_lines": [],
+    "generated_files": {
+      "IMPLEMENTATION_BACKLOG.md": "aabc55af92e38f2b3604799b621e3cd8266c9adac6085cc74af7855e50f14570",
+      "__init__.py": "b56ec13ac078e995de6fb4bb57a60d06efcba861b8593175b2a3f1f3b9a5f1c4",
+      "contracts/generation_manifest.json": "261d429b50eb973c32ed6c5d7c4ef07b281033ebb15b1a0cb62038a070759c41",
+      "contracts/model_contract.json": "1d2380dea40686e7bf19d9cb3f1306ecb084672fa1995022f72c6c121d6d25cd",
+      "contracts/package_contract.json": "3e5a82a3ed9d4ed53d167d82e88879b2c150d1d24be39db7ab2c36790c1be9c5",
+      "contracts/verify.py": "ad0a855af17d18af5f3e8c36b1a6c500f492d88ec777b40f307c646306c67284",
+      "handwritten/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "handwritten/fx/__init__.py": "200b1c90d646c8c58c2644945ee551dddc12adcfdab30b7ae4197891284a70c8",
+      "handwritten/fx/twice_impl.py": "6f6562416b7db85fef65e73efbeb465ad948f5be423941bb8e8e0e17404dc7d6",
+      "inputs/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "inputs/fx_params.json": "127571ec36afcddeb8904b439cebce3f89a9fe1994e402c377b84c050f2ee886",
+      "modules/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "modules/fx/__init__.py": "0fc3fea2d8e92bff93b86e656a302cf2800727bd2c3f9ff8d264930dcc73c8e1",
+      "modules/fx/twice.py": "239ba901e802d4112b78778f911dfa7117c347048f06ed94f10da6c25244e404",
+      "pipelines/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "pipelines/pipeline.yaml": "b31b074db6f51657b878e4e9e72dabf026be5395a82c1f917addcdea05adb1c0",
+      "primitives.py": "1bc6be58e5290b102d762227c33f138ecc4f9feaa00fa2f4cfd02f87f5f71998",
+      "schemas/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "schemas/fx_params.py": "3d9fecd8fb039bf9f579142b2e8b6a78b76eb0bb26f1b3e6b05501a1ae0c66c8",
+      "tests/__init__.py": "fdb87b916dfcceb58c446d8769dc3583722ec7cbc0206ceec05ecd830cbe440c",
+      "tests/test_implementations_runnable.py": "5090dcecefdbbd7e7f06b6163a4923e5c8e295ed3ad74773336079e4a23477b6"
+    },
+    "catalog_names": [
+      "fx__rack__load",
+      "fx__rack__m__r"
+    ],
+    "mentions": {
+      "fx__rack__m__r": [
+        "contracts/model_contract.json",
+        "pipelines/pipeline.yaml"
+      ]
+    }
+  },
+  "certifies": true,
+  "failed_check": null
+}

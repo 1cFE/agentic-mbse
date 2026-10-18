@@ -1,0 +1,9 @@
+$ /tmp/p10/probe-final2/run-lr242rwo/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/p10/probe-final2/run-lr242rwo/probes/constraint-predicate__blocked_predicate__owner_instantiated__under_two/in/model.sysml --output /tmp/p10/probe-final2/run-lr242rwo/probes/constraint-predicate__blocked_predicate__owner_instantiated__under_two/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/p10/probe-final2/run-lr242rwo/probes/constraint-predicate__blocked_predicate__owner_instantiated__under_two/in/model.sysml
+INFO: Output to /tmp/p10/probe-final2/run-lr242rwo/probes/constraint-predicate__blocked_predicate__owner_instantiated__under_two/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_CONSTRAINT_BLOCKED: fx__hall__sites[0]__c: constraint profile blocked execution: block_non_numerical_containment: the numerical assertion contains a non-numerical feature_ref and generation stops; separate it into its own assertion or rewrite it as a numerical comparison [model.sysml:6]; SI_CONSTRAINT_BLOCKED: fx__hall__sites[1]__c: constraint profile blocked execution: block_non_numerical_containment: the numerical assertion contains a non-numerical feature_ref and generation stops; separate it into its own assertion or rewrite it as a numerical comparison [model.sysml:6]

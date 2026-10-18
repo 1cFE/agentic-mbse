@@ -1,0 +1,9 @@
+$ /tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/p10/probe-base/run-f21fij5g/probes/conditional-expression__conditional_unresolved_branch__attribute_value/in/model.sysml --output /tmp/p10/probe-base/run-f21fij5g/probes/conditional-expression__conditional_unresolved_branch__attribute_value/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/p10/probe-base/run-f21fij5g/probes/conditional-expression__conditional_unresolved_branch__attribute_value/in/model.sysml
+INFO: Output to /tmp/p10/probe-base/run-f21fij5g/probes/conditional-expression__conditional_unresolved_branch__attribute_value/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: if x < y ? x else y: reference='if x < y ? x else y': inspect_reference_uses: resolved reference has no exact target [root-0/model.sysml:6]

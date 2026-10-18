@@ -1,0 +1,9 @@
+$ /tmp/p10/probe-base/run-f21fij5g/sysml-codegen/.venv/bin/python -I -m sysml_codegen generate --models /tmp/p10/probe-base/run-f21fij5g/probes/part-multiplicity__unresolved_bound__expanded_part_usage/in/model.sysml --output /tmp/p10/probe-base/run-f21fij5g/probes/part-multiplicity__unresolved_bound__expanded_part_usage/out
+exit=1 timed_out=False
+--- stdout
+--- stderr
+INFO: Generating code from /tmp/p10/probe-base/run-f21fij5g/probes/part-multiplicity__unresolved_bound__expanded_part_usage/in/model.sysml
+INFO: Output to /tmp/p10/probe-base/run-f21fij5g/probes/part-multiplicity__unresolved_bound__expanded_part_usage/out
+INFO: Package name: generated_code
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_MULTIPLICITY_UNRESOLVED: <model>: reference='fx::Rack::servers': upper multiplicity on 'servers' is not a known finite integer [root-0/model.sysml:5]
