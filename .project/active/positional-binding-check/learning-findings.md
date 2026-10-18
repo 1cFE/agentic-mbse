@@ -1,6 +1,6 @@
 # Learning Test: how SysIDE 0.8.4 surfaces calc and constraint input redefinitions
 
-**Date:** 2026-10-18 · **Branch:** positional-binding-check · **Base commit:** 42ee0dc1 · **SysIDE:** 0.8.4 · **Serves:** design R1–R6 (`design.md`, De-risk flags)
+**Date:** 2026-10-18 · **Branch:** positional-binding-check · **Base commit:** 42ee0dc1 · **SysIDE:** 0.8.4 · **Serves:** design R1–R6 (`design.md`, De-risk flags); design review M1, M4, S4 (`design-review.md`)
 
 ## Summary of Findings
 
@@ -15,11 +15,18 @@ Per flag:
 - **R5: confirms.**
 - **R6: one part contradicted, no harm to the design.** The four sweeps do reach requirement, case and `assert constraint` owners. But standard-library owners never come back from them, so the library exclusion in D4 never has anything to remove.
 
+The design review (`design-review.md`) added three questions. Two of them need an owner decision before planning:
+
+- **M1 (unresolved type): confirms the review's concern, and contradicts how the design planned to catch it.** When a calc or constraint usage's type does not resolve, its inputs get no implied redefinition. They look exactly like new parameters, so a swap passes silently. The design's `TARGET_UNRESOLVED` would not fire, because the type is not missing. SysIDE points it at a shared placeholder element that reads normally. The placeholder can be recognized from the API: it is the only kind of type target with no owning relationship.
+- **M4 (requirement or case with no subject): premise surprise for the owner.** The first ordinary `in` of a subject-less requirement or case definition does implicitly redefine the library `subj`, as the review feared. But SysIDE itself reports that model as an error ("Subject must be the first input parameter"). So it is not a correct model that the check would wrongly flag. It is an incorrect model that no validation level reports today, and the positional check would report it under the wrong name. Which way to go is the owner's call; see the M4 section.
+- **S4 (formal ownership): confirms the review.** A target formal can be owned by a usage, not only a definition. When a redefining usage also restates its type, each implied input gets two targets, one owned by the parent usage and one by the definition. With the rule as designed this produces no false flag on a deliberate rename, because explicit inputs still carry no implied targets.
+
 What this means for the plan:
 
 - The rule and fact shape stand as designed.
 - Fixture expectations change in two places: `multiple_types_with_rename` (one finding, not two) and `out_before_in` (a level 1 rejection, not an L2 result).
 - Requirement and case fixtures must restate the subject, and any actor or stakeholder, before the ordinary inputs. Otherwise SysIDE rejects them.
+- M1 and M4 change what the check must treat as unverifiable or excluded. They need decisions before the plan (see their sections).
 
 ## Question / Goal
 
@@ -132,14 +139,107 @@ Either way, it cannot be an L2 pass-or-flag fixture under `validate`.
 
 **Verdict.** Confirms owner coverage and B5 on these inputs. It contradicts the design's expectation that "standard-library owners appear and carry the `StandardLibrary` tier". They do not appear. D4's library exclusion is harmless, but nothing reaches it through this sweep. The plan should not write a test expecting library owners from these sweeps.
 
+## Design review questions
+
+These answer the SysIDE questions raised in `design-review.md`. The tests are in the same file, under section headers M1, M4 and S4.
+
+### M1: an owner whose type does not resolve
+
+**Observed.** Two shapes, with the same result for a calc usage and a constraint usage. The first is a typo in the type name: `calc c : Sbu { in b = 3; in a = 10; }` and `constraint k : Lee { ... }`. The second is a partial run: `validate` given only `designs/`, while `calc def Sub` and `constraint def Le` live in a sibling `defs/` folder.
+
+- **The inputs get no implied redefinition at all.** Their `heritage` holds only an implied `FeatureTyping` and an implied `Subsetting`. That is exactly what an input of an untyped calc has, and an untyped calc has no formals. By the design's rule, every input reads as a new parameter, so a swap passes clean.
+- **The typing is not missing.** The owner keeps its explicit `FeatureTyping`, but the type is a stand-in element (a placeholder).
+  - The placeholder is a `syside.Classifier` named `<placeholder Classifier>`, with qualified name `'<placeholder Classifier>'`.
+  - It has no owning relationship and no owning namespace. Every real type has an owning relationship.
+  - It lives in a synthetic document `memory://placeholders.sysml`.
+  - One placeholder element is shared: the calc and the constraint point at the same `element_id`.
+- **The same happens for other unresolved references:**
+  - An unresolved supertype (`calc def D :> Missing`) gives an explicit `Subclassification` to the placeholder Classifier.
+  - An unresolved explicit redefinition on an input (`in :>> zz`) gives a `Redefinition` whose target is a `syside.Feature` named `<placeholder Feature>`, also with no owning relationship. Reading it raises nothing.
+  - A usage whose own `:>>` target does not resolve (`calc :>> cc` in a part def whose supertype is missing) has no name and no qualified name. Its inputs get no redefinitions.
+- **The diagnostics are semantic errors with a location, not a link to the owner.**
+  - The loader returns `reference-error` diagnostics at Error severity, such as "No Type named 'Sbu' found.". In the partial run there is also "No Namespace named 'Defs' found." on the import line.
+  - They are in `diagnostics.sema`. `diagnostics.parser` is empty, and L1 reads only the parser diagnostics.
+  - Each diagnostic carries a file, line, column and message. Nothing in it names the owner element, so tying it to an owner means matching locations.
+- **A tier check gives no signal.** `SysideAdapter.document_tier` on the placeholder reads `Project`.
+- **Placeholders do not come back from sweeps.** A `model.elements(Classifier, include_subtypes=True)` sweep does not return the placeholder.
+- When the `defs/` folder is loaded too, the same usage resolves normally: `b` implicitly redefines `Defs::Sub::a`.
+
+**Can "unresolved type of this owner" be told apart from the API?** Yes, from the owner itself, without the diagnostics. Look at the target of each explicit `FeatureTyping`, `Subclassification` or `Redefinition` on the owner, and on each input's own explicit redefinitions. A target with `owning_relationship is None` is a placeholder. I checked this on these shapes only. Matching the name `<placeholder ...>` or the document URL would also work on these shapes, but that is a name test, and the adapter's rules exclude URL and name tests.
+
+**Pinned by.** `test_m1_an_unresolved_type_gives_the_inputs_no_implied_redefinition`, `test_m1_inputs_of_an_unresolved_owner_look_exactly_like_new_parameters`, `test_m1_the_loader_reports_a_semantic_reference_error_with_a_location_only`, `test_m1_the_owner_keeps_an_explicit_typing_to_a_shared_placeholder_classifier`, `test_m1_the_placeholder_reads_as_a_project_tier_element`, `test_m1_placeholders_are_not_returned_by_model_sweeps`, `test_m1_unresolved_supertypes_and_redefinitions_also_target_placeholders`, `test_m1_a_partial_run_without_the_definitions_behaves_like_a_typo`.
+
+**Verdict.** It confirms the review's H1: an owner whose type did not resolve passes clean under the design as written. It contradicts the design's assumption that `TARGET_UNRESOLVED` ("a redefinition whose target cannot be read") covers unresolved evidence. The target reads fine; it is a placeholder.
+
+This affects the design in three places:
+
+- The extractor needs an explicit placeholder test on owner typings, supertypes and input redefinitions to report these owners as unverifiable.
+- An input with an unresolved `:>> zz` would otherwise be recorded as explicitly redefining a target named `<placeholder Feature>`, and never flagged.
+- An owner with an unresolved `:>>` has no qualified name, so any finding on it is unpinnable (D9).
+
+The spec's partial-scope test must either use a self-contained subfolder or expect unverifiable results.
+
+### M4: requirement and case definitions with no subject
+
+**Observed.**
+
+- In a definition with two ordinary inputs and no `subject`, `actor` or `stakeholder` (`requirement def X { in lo : Real; in hi : Real; }`), the first input `lo` has an implied redefinition of the library subject.
+  - The same holds for `case def`, `use case def`, `analysis def` and `verification def`.
+  - The targets are `Requirements::RequirementCheck::subj`, `Cases::Case::subj`, `UseCases::UseCase::subj`, `AnalysisCases::AnalysisCase::subj` and `VerificationCases::VerificationCase::subj`.
+- The second input `hi` gets no redefinition at all. The other inputs do not shift onto anything; the library types have only the one positional parameter.
+- `lo` stays an ordinary input. Its owning membership is plain `FeatureMembership`, so the role exclusion does not cover it.
+- **SysIDE reports every one of these definitions as an error.** The code is `requirement-definition-subject-parameter-position` or `case-definition-subject-parameter-position`, and the message is "Subject must be the first input parameter". It is a semantic diagnostic, so L1 does not see it today (see M1).
+- **A requirement usage typed by such a def** gets both the definition's formals and the library subject:
+  - In declaration order, `requirement r : R { in lo = 1; in hi = 3; }` gives `lo` → `R::lo` and `RequirementCheck::subj`, and `hi` → `R::hi`.
+  - Swapped, `hi` → `R::lo` and `subj`, and `lo` → `R::hi`.
+  - SysIDE adds a `requirement-usage-subject-parameter-position` error for the usage.
+
+**Pinned by.** `test_m4_the_first_ordinary_input_lands_on_the_library_subject_and_is_an_error` (five kinds), `test_m4_a_usage_of_a_subject_less_requirement_def_also_lands_on_the_library_subject`.
+
+**Verdict: premise surprise, for the owner.** The review's mechanism is confirmed: `lo` lands on the library `subj`, and the rule as designed flags (X, lo, `…::subj`). That includes the in-order usage, where `lo` gets a second target `RequirementCheck::subj` alongside its matching `R::lo`.
+
+The review's premise does not hold. It assumed this is a correct requirement definition that the check would wrongly flag. SysIDE says it is not correct: in SysML v2 a requirement or case's first input is its subject. So the check would not be putting an ERROR on a valid model. It would be reporting a real model error, which no level reports today, under the positional-binding code and with a by-name repair hint that does not fit.
+
+The owner has three choices (I have not chosen one):
+
+- **(a)** Let the finding stand as designed. Correct in outcome, misleading in message.
+- **(b)** The review's candidate rule: an implied target that is itself a subject, actor or stakeholder parameter is not a positional finding. This leaves the SysIDE error unreported unless something else reads semantic diagnostics.
+- **(c)** Report the subject-position error as what it is, for example by reading SysIDE's semantic diagnostics, which M1 also points toward. Then exempt it from the positional finding.
+
+I'd lean to (c) if M1 is resolved by reading semantic diagnostics, and to (a) otherwise, because an ERROR with an imperfect message beats silence on a model SysIDE rejects.
+
+### S4: what owns the formals of a usage redefined in a subpart
+
+**Observed.** Three shapes, all accepted by SysIDE without errors.
+
+| Parent `Q1` | Redefining usage | Each input's targets (owner, its metatype) |
+|---|---|---|
+| `calc c : Sub;` | `calc :>> c { in b = 3; in a = 10; }` | `b` → `Sub::a` (Sub, CalculationDefinition); `a` → `Sub::b` |
+| `calc c : Sub { in a; in b; }` | `calc :>> c { in b = 3; in a = 10; }` | `b` → `Q1::c::a` (Q1::c, CalculationUsage); `a` → `Q1::c::b` |
+| `calc c : Sub { in a; in b; }` | `calc :>> c : Sub { in b = 3; in a = 10; }` | `b` → `Q1::c::a` (CalculationUsage) and `Sub::a` (CalculationDefinition); `a` → `Q1::c::b` and `Sub::b` |
+
+The deliberate rename `in local redefines a = 10; in b = 3;` behaves the same way in each row:
+
+- `local` carries one explicit target: `Sub::a` in row 1, `Q1::c::a` in rows 2 and 3.
+- `local` carries no implied target.
+- `b` gets the same targets as in the table, all matching its name.
+
+**Pinned by.** `test_s4_a_parent_usage_without_inputs_leaves_the_definition_owning_the_formals`, `test_s4_a_parent_usage_that_restates_inputs_owns_the_formals_itself`, `test_s4_restating_the_type_too_gives_targets_owned_by_both_usage_and_definition`.
+
+**Verdict.** It confirms the review's S4. A target's owner is a usage whenever the parent usage restates its inputs, so the field should be named for the owning type, not a definition.
+
+It confirms H3's shape in row 3: an input gets implied targets owned by both a usage and a definition. D7 would treat that as the several-owners case.
+
+It does not confirm H3's feared false flag. The deliberate rename is never flagged, because an explicit input carries no implied target for D7 to judge (R1b). A swapped input in row 3 yields two findings per input, one per owner, the same way a multiple-typed input does. The fixture for that shape should expect four identities: (Q4::c, b, Q1::c::a), (Q4::c, b, Sub::a), (Q4::c, a, Q1::c::b), (Q4::c, a, Sub::b).
+
 ## Incidental observations
 
 - `heritage.relationships` also holds implied `FeatureTyping` and `Subsetting` entries. For example, an input with a literal value gets an implied typing by `ScalarValues::Positive`. The extractor has to filter by `syside.Redefinition`, as the prototype did.
-- On a `ModelError`, SysIDE's `Diagnostics` object cannot be iterated directly. Read `.errors` (or `.all`) instead. Each message has `.code`, `.severity` and `.message`.
+- On a `ModelError`, SysIDE's `Diagnostics` object cannot be iterated directly. Read `.errors`, `.sema`, `.parser` (or `.all`) instead. Each message has `.code`, `.severity`, `.message`, `.filename`, `.line` and `.col`.
 
 ## Tests Written
 
-- `tests/learning/test_syside_input_redefinition.py`: 26 tests (25 functions, one run for both actor and stakeholder). Each section header names its flag. Each test loads an inline model with `syside.load_model(sysml_source=...)`. The R6 tests write a file under `tmp_path` and load it through `SysideAdapter.load_model`, the way production loads. Rejected models are loaded through `pytest.raises(syside.ModelError)`, and the test asserts the exact error codes.
+- `tests/learning/test_syside_input_redefinition.py`: 43 tests (38 functions; the actor/stakeholder test runs twice and the M4 definition test runs once per kind, five times). Each section header names its flag. Each test loads an inline model with `syside.load_model(sysml_source=...)`. The R6 tests and the M1 partial-run test write files under `tmp_path` and load it through `SysideAdapter.load_model`, the way production loads. Rejected models are loaded through `pytest.raises(syside.ModelError)`, and the test asserts the exact error codes.
 - `tests/learning/__init__.py`: package marker, matching the other test directories.
 - Location: the orchestrator asked for `tests/learning/`. The design had suggested `tests/test_sysml/test_parameter_redefinition_surface.py`. I followed the orchestrator. `tests/learning/` did not exist before, so this file starts that convention.
 
@@ -157,5 +257,7 @@ uv run mypy --follow-imports=silent tests/learning/
 ## Open Questions / Follow-ups
 
 - How the plan handles `out_before_in`, given that SysIDE rejects it (R4).
+- Owner decision on M4: (a), (b) or (c) above.
+- Design decision on M1: the placeholder test (`owning_relationship is None`) and whether to read SysIDE's semantic diagnostics. The placeholder test was checked only on the shapes above.
 - Not checked: quoted owner names in finding identities (B4), and implied redefinitions on `inout` parameters. The prototype counted `inout` as input. These tests use `in` only.
 - Not checked: ordering among subject, actor and stakeholder themselves, which the spec puts out of scope.

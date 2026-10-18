@@ -433,3 +433,354 @@ def test_r6_sweeps_never_return_standard_library_owners_and_every_tier_reads(
     tiers = {SysideAdapter.document_tier(e) for e in _swept_owners(model).values()}
     assert tiers == {syside.DocumentTier.Project}
     assert len(list(model.stdlib_docs)) > 0
+
+
+# --- M1 (design review): an owner whose type does not resolve ---------------------------
+
+
+def _load_diagnostics(body: str) -> tuple[Any, Any]:
+    """Load a model SysIDE rejects; return the model and the full diagnostics object."""
+    with pytest.raises(syside.ModelError) as raised:
+        syside.load_model(sysml_source=_source(body))
+    return raised.value.model, raised.value.diagnostics
+
+
+def _relationship_kinds(feature: Any) -> list[tuple[str, bool]]:
+    return [(type(r).__name__, r.is_implied) for r in feature.heritage.relationships]
+
+
+def _explicit_typing_target(owner: Any) -> Any:
+    (typing,) = list(owner.owned_typings.collect())
+    return typing.type
+
+
+TYPO = (
+    "part q { calc c : Sbu { in b = 3; in a = 10; } constraint k : Lee { in lim = 5; in x = 3; } }"
+)
+
+
+def test_m1_an_unresolved_type_gives_the_inputs_no_implied_redefinition() -> None:
+    model, _ = _load_diagnostics(TYPO)
+    c = _owner(model, syside.CalculationUsage, "c")
+    k = _owner(model, syside.ConstraintUsage, "k")
+    assert _shape(c) == [("b", []), ("a", [])]
+    assert _shape(k) == [("lim", []), ("x", [])]
+
+
+def test_m1_inputs_of_an_unresolved_owner_look_exactly_like_new_parameters() -> None:
+    """Same relationships as an input of an untyped calc, which has no formals to bind."""
+    model, _ = _load_diagnostics(TYPO + " part u { calc n { in b = 3; } }")
+    (new_parameter,) = _inputs(_owner(model, syside.CalculationUsage, "n"))
+    for owner in (
+        _owner(model, syside.CalculationUsage, "c"),
+        _owner(model, syside.ConstraintUsage, "k"),
+    ):
+        for feature in _inputs(owner):
+            assert _relationship_kinds(feature) == _relationship_kinds(new_parameter)
+            assert _relationship_kinds(feature) == [("FeatureTyping", True), ("Subsetting", True)]
+
+
+def test_m1_the_loader_reports_a_semantic_reference_error_with_a_location_only() -> None:
+    """The error is in `.sema`, not `.parser`, and carries file, line, column and text.
+
+    Nothing in the message links it to the owner element; only the location does.
+    """
+    _, diagnostics = _load_diagnostics(TYPO)
+    assert list(diagnostics.parser) == []
+    assert sorted((str(d.code), str(d.message)) for d in diagnostics.sema) == [
+        ("reference-error", "No Type named 'Lee' found."),
+        ("reference-error", "No Type named 'Sbu' found."),
+    ]
+    for d in diagnostics.sema:
+        assert d.severity == syside.DiagnosticSeverity.Error
+        assert (str(d.filename), d.line) == ("memory://sysml_model.sysml", 1)
+
+
+def test_m1_the_owner_keeps_an_explicit_typing_to_a_shared_placeholder_classifier() -> None:
+    """The typing is not absent: it targets an unowned `<placeholder Classifier>`.
+
+    The calc and the constraint point at the same placeholder element, which has no
+    owning relationship, while every real type does.
+    """
+    model, _ = _load_diagnostics(TYPO)
+    calc_type = _explicit_typing_target(_owner(model, syside.CalculationUsage, "c"))
+    constraint_type = _explicit_typing_target(_owner(model, syside.ConstraintUsage, "k"))
+    for placeholder in (calc_type, constraint_type):
+        assert type(placeholder) is syside.Classifier
+        assert placeholder.name == "<placeholder Classifier>"
+        assert str(placeholder.qualified_name) == "'<placeholder Classifier>'"
+        assert placeholder.owning_relationship is None
+        assert placeholder.owning_namespace is None
+        assert str(placeholder.document.url) == "memory://placeholders.sysml"
+    assert calc_type.element_id == constraint_type.element_id
+    resolved = _explicit_typing_target(
+        _owner(_load("part q { calc c : Sub; }"), syside.CalculationUsage, "c")
+    )
+    assert resolved.owning_relationship is not None
+
+
+def test_m1_the_placeholder_reads_as_a_project_tier_element() -> None:
+    """A tier check gives no signal: the placeholder document reads `Project`."""
+    model, _ = _load_diagnostics(TYPO)
+    placeholder = _explicit_typing_target(_owner(model, syside.CalculationUsage, "c"))
+    assert SysideAdapter.document_tier(placeholder) is syside.DocumentTier.Project
+
+
+def test_m1_placeholders_are_not_returned_by_model_sweeps() -> None:
+    model, _ = _load_diagnostics(TYPO)
+    names = {e.name for e in model.elements(syside.Classifier, include_subtypes=True)}
+    assert "<placeholder Classifier>" not in names
+
+
+def test_m1_unresolved_supertypes_and_redefinitions_also_target_placeholders() -> None:
+    model, diagnostics = _load_diagnostics(
+        "calc def D :> Missing { in z; } "
+        "part q { calc c : Sub { in :>> zz = 1; } } "
+        "part def Q2 :> Q1 { calc :>> cc { in b = 3; } }"
+    )
+    assert sorted(str(d.message) for d in diagnostics.sema) == [
+        "No Classifier named 'Missing' found.",
+        "No Classifier named 'Q1' found.",
+        "No Feature named 'cc' found.",
+        "No Feature named 'zz' found.",
+    ]
+    d = _owner(model, syside.CalculationDefinition, "D")
+    (subclassification,) = [
+        r
+        for r in d.heritage.relationships
+        if isinstance(r, syside.Subclassification) and not r.is_implied
+    ]
+    assert subclassification.general.name == "<placeholder Classifier>"
+    assert subclassification.general.owning_relationship is None
+    # An unresolved explicit redefinition reads fine: its target is a placeholder Feature.
+    (zz,) = _inputs(_owner(model, syside.CalculationUsage, "c"))
+    assert _redefinitions(zz) == [("'<placeholder Feature>'", False)]
+    (redefinition,) = [r for r in zz.heritage.relationships if isinstance(r, syside.Redefinition)]
+    assert type(redefinition.redefined_feature) is syside.Feature
+    assert redefinition.redefined_feature.owning_relationship is None
+    # A usage whose `:>>` target does not resolve has no name and no qualified name.
+    (cc,) = [
+        e
+        for e in model.elements(syside.CalculationUsage)
+        if any(isinstance(r, syside.Redefinition) for r in e.heritage.relationships)
+    ]
+    assert (cc.name, cc.declared_name, cc.qualified_name) == (None, None, None)
+    assert _shape(cc) == [("b", [])]
+
+
+def test_m1_a_partial_run_without_the_definitions_behaves_like_a_typo(tmp_path: Path) -> None:
+    (tmp_path / "defs").mkdir()
+    (tmp_path / "designs").mkdir()
+    (tmp_path / "defs" / "defs.sysml").write_text(
+        "package Defs { private import ScalarValues::*; "
+        "calc def Sub { in a : Real; in b : Real; return r : Real = a - b; } "
+        "constraint def Le { in x : Real; in lim : Real; x <= lim } }"
+    )
+    (tmp_path / "designs" / "use.sysml").write_text(
+        "package Use {\n"
+        "    private import Defs::*;\n"
+        "    part q {\n"
+        "        calc c : Sub { in b = 3; in a = 10; }\n"
+        "        constraint k : Le { in lim = 5; in x = 3; }\n"
+        "    }\n"
+        "}\n"
+    )
+    model, diagnostics = SysideAdapter.load_model([tmp_path / "designs"])
+    assert diagnostics.contains_errors()
+    assert list(diagnostics.parser) == []
+    assert sorted((str(d.code), str(d.message), d.line) for d in diagnostics.sema) == [
+        ("reference-error", "No Namespace named 'Defs' found.", 2),
+        ("reference-error", "No Type named 'Le' found.", 5),
+        ("reference-error", "No Type named 'Sub' found.", 4),
+    ]
+    c = _owner(model, syside.CalculationUsage, "c")
+    k = _owner(model, syside.ConstraintUsage, "k")
+    assert _shape(c) == [("b", []), ("a", [])]
+    assert _shape(k) == [("lim", []), ("x", [])]
+    assert _explicit_typing_target(c).name == "<placeholder Classifier>"
+
+    model, diagnostics = SysideAdapter.load_model([tmp_path])
+    assert not diagnostics.contains_errors()
+    assert _shape(_owner(model, syside.CalculationUsage, "c")) == [
+        ("b", [("Defs::Sub::a", True)]),
+        ("a", [("Defs::Sub::b", True)]),
+    ]
+
+
+# --- M4 (design review): requirement and case definitions with no subject ---------------
+
+
+@pytest.mark.parametrize(
+    ("keyword", "kind", "library_subj", "code"),
+    [
+        (
+            "requirement def",
+            "RequirementDefinition",
+            "Requirements::RequirementCheck::subj",
+            "requirement-definition-subject-parameter-position",
+        ),
+        (
+            "case def",
+            "CaseDefinition",
+            "Cases::Case::subj",
+            "case-definition-subject-parameter-position",
+        ),
+        (
+            "use case def",
+            "UseCaseDefinition",
+            "UseCases::UseCase::subj",
+            "case-definition-subject-parameter-position",
+        ),
+        (
+            "analysis def",
+            "AnalysisCaseDefinition",
+            "AnalysisCases::AnalysisCase::subj",
+            "case-definition-subject-parameter-position",
+        ),
+        (
+            "verification def",
+            "VerificationCaseDefinition",
+            "VerificationCases::VerificationCase::subj",
+            "case-definition-subject-parameter-position",
+        ),
+    ],
+)
+def test_m4_the_first_ordinary_input_lands_on_the_library_subject_and_is_an_error(
+    keyword: str, kind: str, library_subj: str, code: str
+) -> None:
+    """The first `in` implicitly redefines the library `subj`; the rest get no redefinition.
+
+    SysIDE reports this as an error, so a subject-less definition with inputs is not a
+    model SysIDE accepts.
+    """
+    model, codes = _load_rejected(f"{keyword} X {{ in lo : Real; in hi : Real; }}")
+    assert codes == [code]
+    x = _owner(model, getattr(syside, kind), "X")
+    assert type(x).__name__ == kind
+    assert _shape(x) == [("lo", [(library_subj, True)]), ("hi", [])]
+    (lo, _) = _inputs(x)
+    assert type(lo.owning_membership) is syside.FeatureMembership
+
+
+def test_m4_a_usage_of_a_subject_less_requirement_def_also_lands_on_the_library_subject() -> None:
+    """In declaration order, `lo` matches `R::lo` but also carries the library `subj`."""
+    model, codes = _load_rejected(
+        "requirement def R { in lo : Real; in hi : Real; } "
+        "part q { requirement r : R { in lo = 1; in hi = 3; } requirement rs : R { in hi = 3; in lo = 1; } }"
+    )
+    assert codes == [
+        "requirement-definition-subject-parameter-position",
+        "requirement-usage-subject-parameter-position",
+    ]
+    subj = ("Requirements::RequirementCheck::subj", True)
+    assert _shape(_owner(model, syside.RequirementUsage, "r")) == [
+        ("lo", [("P::R::lo", True), subj]),
+        ("hi", [("P::R::hi", True)]),
+    ]
+    assert _shape(_owner(model, syside.RequirementUsage, "rs")) == [
+        ("hi", [("P::R::lo", True), subj]),
+        ("lo", [("P::R::hi", True)]),
+    ]
+
+
+# --- S4 (design review): what owns the formals of a usage redefined in a subpart --------
+
+
+def _target_owners(owner: Any) -> list[tuple[str | None, list[tuple[str, str, str]]]]:
+    """(declared name, [(target, target's owning type, its metatype)]) per input."""
+    return [
+        (
+            f.declared_name,
+            [
+                (
+                    str(r.redefined_feature.qualified_name),
+                    str(r.redefined_feature.owning_type.qualified_name),
+                    type(r.redefined_feature.owning_type).__name__,
+                )
+                for r in f.heritage.relationships
+                if isinstance(r, syside.Redefinition)
+            ],
+        )
+        for f in _inputs(owner)
+    ]
+
+
+def _subpart_c(model: Any, part_def: str) -> Any:
+    (c,) = [
+        f
+        for f in _owner(model, syside.PartDefinition, part_def).owned_features.collect()
+        if f.name == "c"
+    ]
+    return c
+
+
+def test_s4_a_parent_usage_without_inputs_leaves_the_definition_owning_the_formals() -> None:
+    model = _load(
+        "part def Q1 { calc c : Sub; } "
+        "part def Q2 :> Q1 { calc :>> c { in b = 3; in a = 10; } } "
+        "part def Q3 :> Q1 { calc :>> c { in local redefines a = 10; in b = 3; } }"
+    )
+    assert _target_owners(_subpart_c(model, "Q2")) == [
+        ("b", [("P::Sub::a", "P::Sub", "CalculationDefinition")]),
+        ("a", [("P::Sub::b", "P::Sub", "CalculationDefinition")]),
+    ]
+    assert _target_owners(_subpart_c(model, "Q3")) == [
+        ("local", [("P::Sub::a", "P::Sub", "CalculationDefinition")]),
+        ("b", [("P::Sub::b", "P::Sub", "CalculationDefinition")]),
+    ]
+
+
+def test_s4_a_parent_usage_that_restates_inputs_owns_the_formals_itself() -> None:
+    """Targets are the parent usage's own inputs, owned by a `CalculationUsage`."""
+    model = _load(
+        "part def Q1 { calc c : Sub { in a; in b; } } "
+        "part def Q2 :> Q1 { calc :>> c { in b = 3; in a = 10; } } "
+        "part def Q3 :> Q1 { calc :>> c { in local redefines a = 10; in b = 3; } }"
+    )
+    assert _target_owners(_subpart_c(model, "Q2")) == [
+        ("b", [("P::Q1::c::a", "P::Q1::c", "CalculationUsage")]),
+        ("a", [("P::Q1::c::b", "P::Q1::c", "CalculationUsage")]),
+    ]
+    assert _target_owners(_subpart_c(model, "Q3")) == [
+        ("local", [("P::Q1::c::a", "P::Q1::c", "CalculationUsage")]),
+        ("b", [("P::Q1::c::b", "P::Q1::c", "CalculationUsage")]),
+    ]
+
+
+def test_s4_restating_the_type_too_gives_targets_owned_by_both_usage_and_definition() -> None:
+    """`calc :>> c : Sub` has two supertypes, so each implied input gets two targets.
+
+    An explicit input still gets no implied target (R1b), so a deliberate rename carries
+    only its one explicit target.
+    """
+    model = _load(
+        "part def Q1 { calc c : Sub { in a; in b; } } "
+        "part def Q4 :> Q1 { calc :>> c : Sub { in b = 3; in a = 10; } } "
+        "part def Q5 :> Q1 { calc :>> c : Sub { in local redefines a = 10; in b = 3; } }"
+    )
+    assert _target_owners(_subpart_c(model, "Q4")) == [
+        (
+            "b",
+            [
+                ("P::Q1::c::a", "P::Q1::c", "CalculationUsage"),
+                ("P::Sub::a", "P::Sub", "CalculationDefinition"),
+            ],
+        ),
+        (
+            "a",
+            [
+                ("P::Q1::c::b", "P::Q1::c", "CalculationUsage"),
+                ("P::Sub::b", "P::Sub", "CalculationDefinition"),
+            ],
+        ),
+    ]
+    assert _target_owners(_subpart_c(model, "Q5")) == [
+        ("local", [("P::Q1::c::a", "P::Q1::c", "CalculationUsage")]),
+        (
+            "b",
+            [
+                ("P::Q1::c::b", "P::Q1::c", "CalculationUsage"),
+                ("P::Sub::b", "P::Sub", "CalculationDefinition"),
+            ],
+        ),
+    ]
