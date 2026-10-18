@@ -1,6 +1,6 @@
 """Run the subset-profile evaluator over the acceptance trees and record what it reports.
 
-    uv run python scripts/subset_profile/run_trees.py --final-rev REV (--tree NAME ... | --all)
+    uv run python scripts/subset_profile/run_trees.py --final-rev REV --out DIR (--tree NAME ... | --all)
 
 Plan Phase 10. Trees:
 
@@ -14,7 +14,7 @@ Plan Phase 10. Trees:
 Each tree is read from a `git archive` export into a temp directory, loaded with
 `SysideAdapter.load_model`, extracted once and evaluated with the default (generator) roots.
 The evaluator runs from this checkout, which must be at `--final-rev` with `src/` clean; that is
-the identity every output records. Outputs: `evidence/<tree>.json` and `evidence/<tree>.md`.
+the identity every output records. Outputs: `<DIR>/<tree>.json` and `<DIR>/<tree>.md`.
 """
 
 from __future__ import annotations
@@ -34,11 +34,10 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from probe import export_tree, git, resolve_rev  # noqa: E402
+from isolated_tree import CODEGEN_SIBLING, export_tree, git, resolve_rev  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-EVIDENCE = REPO_ROOT / ".project" / "completed" / "20261018_exec-subset-profile" / "evidence"
-CODEGEN_REPO = Path.home() / "src" / "sysml-codegen"
+CODEGEN_REPO = CODEGEN_SIBLING
 DC3_REPO = Path.home() / "src" / "dc3"
 PINNED_CODEGEN_REV = "b5663c07e987a892e27d21e68cec40d0656574ee"
 DC3_BASELINE_REV = "808464df85d50521e4fbb9ba7cceb63d382aa832"
@@ -413,12 +412,13 @@ def recorded_probe_codes() -> set[str]:
     }
 
 
-def write(label: str, payload: dict[str, Any], markdown: list[str]) -> None:
-    (EVIDENCE / f"{label}.json").write_text(
+def write(out: Path, label: str, payload: dict[str, Any], markdown: list[str]) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    (out / f"{label}.json").write_text(
         json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    (EVIDENCE / f"{label}.md").write_text("\n".join(markdown).rstrip() + "\n", encoding="utf-8")
-    print(f"wrote {EVIDENCE / label}.{{json,md}}")
+    (out / f"{label}.md").write_text("\n".join(markdown).rstrip() + "\n", encoding="utf-8")
+    print(f"wrote {out / label}.{{json,md}}")
 
 
 def main() -> int:
@@ -426,6 +426,7 @@ def main() -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--final-rev", required=True)
+    parser.add_argument("--out", type=Path, required=True, help="directory for the run's evidence")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--tree", action="append", choices=TREES)
     group.add_argument("--all", action="store_true")
@@ -440,6 +441,7 @@ def main() -> int:
                 rev = DC3_BASELINE_REV if tree == "dc3-baseline" else DC3_REPAIRED_REV
                 runs = run_dc3(tree, rev, agentic_rev, work)
                 write(
+                    args.out,
                     tree,
                     runs[0],
                     [
@@ -475,7 +477,7 @@ def main() -> int:
             ]
             for data in runs:
                 md += run_markdown(data)
-            write("corpus", {"manifest": manifest, "checks": checks, "runs": runs}, md)
+            write(args.out, "corpus", {"manifest": manifest, "checks": checks, "runs": runs}, md)
             failed = [c for c in checks if not c["ok"]]
             print(f"corpus: {len(checks) - len(failed)}/{len(checks)} fixtures pass the check")
     return 0

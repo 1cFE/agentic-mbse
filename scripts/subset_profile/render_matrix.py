@@ -1,10 +1,10 @@
 """Render the capability/refusal matrix and the rule records to a markdown evidence file.
 
-    uv run python scripts/subset_profile/render_matrix.py [--out PATH]
+    uv run python scripts/subset_profile/render_matrix.py --out PATH
 
 Reads `tests/fixtures/subset_profile/inventory/matrix.toml` (through the one loader,
-`tests/helpers/subset_matrix.py`) and the packaged rule records, and writes
-`.project/completed/20261018_exec-subset-profile/evidence/matrix.md` by default. Pure: no SysIDE.
+`tests/helpers/subset_matrix.py`) and the packaged rule records, and writes the markdown to
+`--out`. Pure: no SysIDE.
 """
 
 from __future__ import annotations
@@ -24,10 +24,6 @@ from tests.helpers.subset_matrix import (  # noqa: E402
     MatrixRow,
     SiteStatus,
     load_matrix,
-)
-
-DEFAULT_OUT = (
-    REPO_ROOT / ".project" / "completed" / "20261018_exec-subset-profile" / "evidence" / "matrix.md"
 )
 
 
@@ -132,7 +128,7 @@ def render(matrix: Matrix) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--out", type=Path, required=True, help="markdown report path")
     args = parser.parse_args()
     args.out.write_text(render(load_matrix()), encoding="utf-8")
     print(f"wrote {args.out}")

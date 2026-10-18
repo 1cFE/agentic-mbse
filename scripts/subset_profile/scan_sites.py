@@ -51,10 +51,10 @@ import tomllib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from probe import export_tree, git, resolve_rev  # noqa: E402
+from isolated_tree import CODEGEN_SIBLING, export_tree, git, resolve_rev  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CODEGEN_REPO = Path.home() / "src" / "sysml-codegen"
+CODEGEN_REPO = CODEGEN_SIBLING
 PINNED_CODEGEN_REV = "b5663c07e987a892e27d21e68cec40d0656574ee"
 SCANNER_TOML = REPO_ROOT / "tests" / "fixtures" / "subset_profile" / "inventory" / "scanner.toml"
 FIELDS = ("file", "line", "function", "channel", "code", "via", "ordinal", "site_id", "resolved")

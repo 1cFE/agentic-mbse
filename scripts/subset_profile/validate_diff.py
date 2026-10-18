@@ -1,6 +1,6 @@
 """Show `agentic-mbse validate` output is unchanged between two agentic-mbse revisions.
 
-    uv run python scripts/subset_profile/validate_diff.py --base a718efec --final REV [--out PATH]
+    uv run python scripts/subset_profile/validate_diff.py --base a718efec --final REV --out PATH
 
 Plan Phase 10, spec "Consumer output is unchanged". Each revision is exported with `git archive`
 into its own temp tree and synced there (`uv sync --frozen`), so each runs its own code. Both run
@@ -11,7 +11,7 @@ into its own temp tree and synced there (`uv sync --frozen`), so each runs its o
 - dc3 `models/` at `808464df` (baseline) and `60b44d53` (repaired), each exported once.
 
 Output text is normalized only by replacing each temp-tree prefix with a placeholder. The result
-is a markdown report with every difference, written to the item's `evidence/validate-diff.md`.
+is a markdown report with every difference, written to `--out`.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from probe import child_env, export_tree, read_license_key, resolve_rev  # noqa: E402
+from isolated_tree import child_env, export_tree, read_license_key, resolve_rev  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DC3_REPO = Path.home() / "src" / "dc3"
@@ -34,14 +34,6 @@ DC3_TREES = {
     "dc3-baseline": "808464df85d50521e4fbb9ba7cceb63d382aa832",
     "dc3-repaired": "60b44d53460fccd2f44811d8abfd42bc270e90b2",
 }
-DEFAULT_OUT = (
-    REPO_ROOT
-    / ".project"
-    / "completed"
-    / "20261018_exec-subset-profile"
-    / "evidence"
-    / "validate-diff.md"
-)
 TIMEOUT_S = 1800
 
 
@@ -81,7 +73,7 @@ def main() -> int:
     )
     parser.add_argument("--base", required=True)
     parser.add_argument("--final", required=True)
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--out", type=Path, required=True, help="markdown report path")
     args = parser.parse_args()
     base, final = resolve_rev(REPO_ROOT, args.base), resolve_rev(REPO_ROOT, args.final)
     env = child_env(read_license_key())

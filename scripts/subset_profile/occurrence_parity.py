@@ -1,12 +1,12 @@
 """Hold the occurrence port to sysml-codegen: capture oracle expectations, compare, run controls.
 
     uv run python scripts/subset_profile/occurrence_parity.py capture (CASE... | --all) [--agentic-rev REV]
-    uv run python scripts/subset_profile/occurrence_parity.py compare --all [--agentic-rev REV]
-    uv run python scripts/subset_profile/occurrence_parity.py controls
+    uv run python scripts/subset_profile/occurrence_parity.py compare --all --out DIR [--agentic-rev REV]
+    uv run python scripts/subset_profile/occurrence_parity.py controls --out DIR
 
 Promoted from spike F1 (`oracle.py`, `compare.py`, `run_all.sh`, `mutants.py`, `controls.sh`).
 
-- `capture` builds an isolated tree (the `probe.py` pattern: `git archive` of codegen at the pin
+- `capture` builds an isolated tree (`isolated_tree.py`: `git archive` of codegen at the pin
   and of agentic-mbse at REV, `uv sync --frozen`), runs codegen's own oracle
   (`occurrence_oracle.py`) on each parity-seed case and writes its `expected.json`. An
   expectation is only ever written by this command.
@@ -14,10 +14,10 @@ Promoted from spike F1 (`oracle.py`, `compare.py`, `run_all.sh`, `mutants.py`, `
   in one tree on the recorded F1 run: the 34 parity-seed cases (11 F1 edge fixtures, 22
   prototype fixtures, the P-6 fixture), all 37 codegen corpus fixtures and both dc3 trees. It
   also checks that each stored `expected.json` still equals today's oracle. Log:
-  `evidence/occurrence-parity.log`.
+  `<DIR>/occurrence-parity.log`.
 - `controls` runs the F1 mutant ports against the stored seed expectations, in this checkout,
   with no codegen. Each catchable mutant must be flagged by at least one case. Log:
-  `evidence/occurrence-parity-controls.log`.
+  `<DIR>/occurrence-parity-controls.log`.
 
 The sibling checkouts are only read with `git archive`; a run fails if either one's HEAD or
 status changes.
@@ -39,7 +39,8 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from probe import (  # noqa: E402  (this directory is on sys.path when the script runs)
+from isolated_tree import (  # noqa: E402  (this directory is on sys.path when the script runs)
+    CODEGEN_SIBLING,
     IsolationBreachError,
     build_tree,
     child_env,
@@ -59,7 +60,6 @@ from tests.helpers.subset_probe_judge import PINNED_CODEGEN_REV  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 SEED_DIR = REPO_ROOT / "tests" / "fixtures" / "subset_profile" / "occurrence"
-EVIDENCE = REPO_ROOT / ".project" / "completed" / "20261018_exec-subset-profile" / "evidence"
 DC3_PINS = {"dc3_baseline": "808464df", "dc3_repaired": "60b44d53"}
 CASE_TIMEOUT_S = 900
 
@@ -90,7 +90,7 @@ def isolated_tree(
     before = {repo: sibling_state(repo) for repo in (codegen_repo, dc3_repo)}
     env = child_env(read_license_key())
     python = build_tree(tree, codegen_repo, codegen, agentic, env)
-    identity = vars(read_identity(tree, python, env, codegen, agentic))
+    identity = read_identity(tree, python, env, codegen, agentic)
     print(f"tree {tree}\nidentity {json.dumps(identity)}")
     yield tree, python, env, identity
     for repo, state in before.items():
@@ -235,8 +235,8 @@ def compare(args: argparse.Namespace) -> int:
             matched += not problems
         lines.append(f"TOTAL {matched}/{len(cases)} match")
     log = "\n".join(lines) + "\n"
-    EVIDENCE.mkdir(parents=True, exist_ok=True)
-    (EVIDENCE / "occurrence-parity.log").write_text(log)
+    args.out.mkdir(parents=True, exist_ok=True)
+    (args.out / "occurrence-parity.log").write_text(log)
     print(log)
     return 0 if matched == len(cases) else 1
 
@@ -331,8 +331,8 @@ def controls(args: argparse.Namespace) -> int:
             f"{'OK' if verdict else 'UNEXPECTED'} {flagged}"
         )
     log = "\n".join(lines) + "\n"
-    EVIDENCE.mkdir(parents=True, exist_ok=True)
-    (EVIDENCE / "occurrence-parity-controls.log").write_text(log)
+    args.out.mkdir(parents=True, exist_ok=True)
+    (args.out / "occurrence-parity-controls.log").write_text(log)
     print(log)
     return 0 if ok else 1
 
@@ -345,15 +345,17 @@ def main() -> int:
     for name in ("capture", "compare"):
         command = sub.add_parser(name)
         command.add_argument("--agentic-rev", default="HEAD")
-        command.add_argument(
-            "--codegen-repo", type=Path, default=Path.home() / "src" / "sysml-codegen"
-        )
+        command.add_argument("--codegen-repo", type=Path, default=CODEGEN_SIBLING)
         command.add_argument("--dc3-repo", type=Path, default=Path.home() / "src" / "dc3")
         command.add_argument("--tmp-root", type=Path, default=Path("/tmp/subset-profile"))
     sub.choices["capture"].add_argument("cases", nargs="*", help="parity-seed case names")
     sub.choices["capture"].add_argument("--all", action="store_true", help="every parity-seed case")
     sub.choices["compare"].add_argument("--all", action="store_true", required=True)
     sub.add_parser("controls")
+    for name in ("compare", "controls"):
+        sub.choices[name].add_argument(
+            "--out", type=Path, required=True, help="directory for the run's log"
+        )
     args = parser.parse_args()
     if args.command in ("capture", "compare"):
         args.codegen_repo, args.dc3_repo = args.codegen_repo.resolve(), args.dc3_repo.resolve()
