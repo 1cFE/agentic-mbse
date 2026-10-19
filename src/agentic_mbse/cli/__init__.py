@@ -20,6 +20,8 @@ from agentic_mbse.cli.installation import (
 )
 from agentic_mbse.project_root import find_project_root
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS, run_all_checks
+from agentic_mbse.validation.execution_target import ALLOWED_VALUES, Target
+from agentic_mbse.validation.report import build_report, write_report
 
 # Project templates split by ownership:
 # - USER_OWNED: Only created once, never auto-updated (user customizes these)
@@ -351,10 +353,17 @@ def cmd_validate(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return EXIT_USAGE
+    if args.json_report is not None and not args.json_report.parent.is_dir():
+        print(
+            f"Error: --json-report directory does not exist: {args.json_report.parent}",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
     if not Path(args.path).exists():
         print(f"Error: Path does not exist: {args.path}")
         return EXIT_FAILURE
 
+    override = None if args.execution_target is None else Target(args.execution_target)
     result = run_all_checks(
         models_path=args.path,
         fail_fast=not args.complete,
@@ -362,8 +371,22 @@ def cmd_validate(args: argparse.Namespace) -> int:
         verbose=args.verbose,
         positional_pins=args.positional_pins,
         positional_pins_root=args.positional_pins_root,
+        execution_target=override,
     )
-    return EXIT_SUCCESS if result.overall_success else EXIT_FAILURE
+    exit_code = EXIT_SUCCESS if result.overall_success else EXIT_FAILURE
+    if args.json_report is not None:
+        command = {
+            "path": args.path,
+            "mode": "complete" if args.complete else "fail-fast",
+            "level": args.level,
+            "execution_target": args.execution_target,
+        }
+        try:
+            write_report(args.json_report, build_report(result, command, exit_code))
+        except OSError as error:
+            print(f"Error: cannot write --json-report {args.json_report}: {error}", file=sys.stderr)
+            return EXIT_FAILURE
+    return exit_code
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -787,6 +810,20 @@ def main(argv: list[str] | None = None) -> int:
             "Directory the pin list's file paths are relative to (default: the pin list's "
             "directory); needs --positional-pins"
         ),
+    )
+    validate_parser.add_argument(
+        "--execution-target",
+        choices=ALLOWED_VALUES,
+        help=(
+            "L6: how this project runs, overriding [tool.agentic-mbse] execution-target in "
+            "pyproject.toml (decides how loud generator findings are, never what they are)"
+        ),
+    )
+    validate_parser.add_argument(
+        "--json-report",
+        type=Path,
+        metavar="PATH",
+        help="Write every level's full result, untruncated, as JSON to PATH after the run",
     )
     validate_parser.set_defaults(func=cmd_validate)
 

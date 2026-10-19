@@ -45,6 +45,16 @@ from .common import (
     load_sysml_model,
     print_header,
 )
+from .execution_target import (
+    FromFile,
+    FromOverride,
+    Target,
+    TargetResolution,
+    TargetSettingError,
+    Unset,
+    describe_target,
+    resolve_target,
+)
 from .session import constraint_facts
 
 # --- Functions from L7 (manifest validation) ---
@@ -911,9 +921,70 @@ def check_attr_redef_expression_dropped(model: Any) -> list[ValidationIssue]:
 # --- New orchestrator (combines L7 + L8 + ADR-002) ---
 
 
+def _target_detail(resolution: TargetResolution) -> dict[str, Any]:
+    """The target resolution as the JSON report records it."""
+    file: Path | None
+    file_value: str | None = None
+    match resolution.source:
+        case FromFile(path):
+            file = path
+        case FromOverride(path, value):
+            file, file_value = path, value
+        case Unset(path):
+            file = path
+    return {
+        "target": resolution.target.value,
+        "source": type(resolution.source).__name__,
+        "description": describe_target(resolution),
+        "root": None if resolution.root is None else str(resolution.root),
+        "file": None if file is None else str(file),
+        "file_value": file_value,
+    }
+
+
+def _setting_invalid_result(error: TargetSettingError) -> QualityCheckResult:
+    """L6 with a broken setting: one `L6_SETTING_INVALID` ERROR, the target metric, no checks."""
+    result = QualityCheckResult(
+        level=6,
+        level_name="Architecture & Pipeline Readiness",
+        success=False,
+        metrics={"Execution target": f"invalid ({error.path}; see L6_SETTING_INVALID)"},
+        report_detail={
+            "target": {
+                "target": None,
+                "source": "invalid",
+                "file": str(error.path),
+                "fault": error.fault.value,
+                "settings_fault": None
+                if error.settings_fault is None
+                else error.settings_fault.value,
+                "detail": error.detail,
+            }
+        },
+    )
+    result.add_issue(
+        ValidationIssue(
+            level=6,
+            severity=Severity.ERROR,
+            code=ValidationCode.L6_SETTING_INVALID,
+            message=f"execution target setting is invalid; L6 ran no checks: {error.detail}",
+            location=str(error.path),
+            suggestion=(
+                "Fix [tool.agentic-mbse] in pyproject.toml: allowed keys are 'execution-target' "
+                'and \'research\'; execution-target is "generated" or "native"'
+            ),
+            reason_code=error.fault.value
+            if error.settings_fault is None
+            else error.settings_fault.value,
+        )
+    )
+    return result
+
+
 def validate_architecture(
     models_path: str,
     design_path_filter: str | None = "designs",
+    execution_target: Target | None = None,
 ) -> QualityCheckResult:
     """
     Main entry point for Level 6 validation.
@@ -926,11 +997,20 @@ def validate_architecture(
         design_path_filter: Path component to filter design attribute checks.
             Only files whose path contains this component are checked.
             Use None or empty string to check all files.
+        execution_target: `--execution-target` (generated or native), or None to read the
+            project's `[tool.agentic-mbse] execution-target` (Item 3 design D3)
 
     Returns:
         QualityCheckResult with architecture & pipeline readiness issues
     """
     print_header("Architecture & Pipeline Readiness", 6)
+
+    # The target comes first: a broken setting stops L6 before any check runs (D3).
+    resolution = resolve_target(Path(models_path), execution_target)
+    if isinstance(resolution, TargetSettingError):
+        return _setting_invalid_result(resolution)
+    target_metrics = {"Execution target": describe_target(resolution)}
+    target_detail = {"target": _target_detail(resolution)}
 
     # Discover SysML files
     try:
@@ -949,7 +1029,8 @@ def validate_architecture(
             level_name="Architecture & Pipeline Readiness",
             success=True,
             warnings=["No SysML files found"],
-            metrics={"Files checked": 0},
+            metrics={**target_metrics, "Files checked": 0},
+            report_detail=target_detail,
         )
 
     # Load model
@@ -1012,7 +1093,9 @@ def validate_architecture(
         level=6,
         level_name="Architecture & Pipeline Readiness",
         success=success,
+        report_detail=target_detail,
         metrics={
+            **target_metrics,
             "Calc defs checked": num_calc_defs,
             "Calc usages checked": num_calc_usages,
             "Bindings validated": num_bindings,

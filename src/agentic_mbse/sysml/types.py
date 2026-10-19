@@ -101,6 +101,13 @@ class ValidationCode(str, Enum):
     # C7 (Item 9): `attribute :>> attr = <expr>` parses as an AttributeUsage, but codegen's
     # redefinition scan reads only ReferenceUsage -> the override is silently dropped -> WARN.
     L6_ATTR_REDEF_EXPR_DROPPED = "L6_ATTR_REDEF_EXPR_DROPPED"
+    # EXEC-SUBSET-CONTRACT Item 3: a check that could not run, or could not inspect an element,
+    # names itself instead of passing silently; ERROR under every execution target (design D4).
+    L6_CHECK_ERROR = "L6_CHECK_ERROR"
+    # A broken [tool.agentic-mbse] table or execution-target value; L6 runs no checks (D3).
+    L6_SETTING_INVALID = "L6_SETTING_INVALID"
+    # A level that raised; the runner records it as a failed level (any level number).
+    LEVEL_CRASHED = "LEVEL_CRASHED"
 
 
 class ValidationIssue(BaseModel):

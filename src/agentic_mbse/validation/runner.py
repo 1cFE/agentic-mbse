@@ -7,6 +7,8 @@ Runs all 6 quality levels in sequence with configurable behavior.
 
 import argparse
 import sys
+import time
+import traceback
 from collections.abc import Callable
 from functools import partial
 from pathlib import Path
@@ -43,6 +45,8 @@ except ImportError:
     from level6_architecture import validate_architecture
 
 # Absolute in both modes: `common` already imports the installed package's modules this way.
+from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
+from agentic_mbse.validation.execution_target import Target
 from agentic_mbse.validation.session import ValidationSession
 
 # Registry of all quality checks
@@ -57,6 +61,22 @@ QUALITY_CHECKS: list[tuple[str, Callable[[str], QualityCheckResult]]] = [
 ]
 
 
+def crashed_result(number: int, name: str, error: Exception) -> QualityCheckResult:
+    """The failed result for level `number` that raised `error`, with one `LEVEL_CRASHED` ERROR."""
+    result = QualityCheckResult(
+        level=number, level_name=name.removeprefix(f"Level {number}: "), success=False
+    )
+    result.add_issue(
+        ValidationIssue(
+            level=number,
+            severity=Severity.ERROR,
+            code=ValidationCode.LEVEL_CRASHED,
+            message=f"Level {number} crashed: {type(error).__name__}: {error}",
+        )
+    )
+    return result
+
+
 def run_all_checks(
     models_path: str,
     fail_fast: bool = True,
@@ -64,6 +84,7 @@ def run_all_checks(
     verbose: bool = False,
     positional_pins: Path | None = None,
     positional_pins_root: Path | None = None,
+    execution_target: Target | None = None,
 ) -> AggregatedResult:
     """
     Run all quality checks
@@ -75,6 +96,8 @@ def run_all_checks(
         verbose: Show detailed output
         positional_pins: L2's `--positional-pins` pin list, or None to look at the project root
         positional_pins_root: L2's `--positional-pins-root`; needs `positional_pins`
+        execution_target: L6's `--execution-target` override, or None to read the project's
+            setting; accepted and unused when L6 does not run
 
     Returns:
         AggregatedResult with all check results
@@ -89,16 +112,20 @@ def run_all_checks(
             raise ValueError(
                 f"Level {specific_level} not yet implemented (only {len(QUALITY_CHECKS)} levels available)"
             )
-        checks_to_run = [QUALITY_CHECKS[specific_level - 1]]
+        checks_to_run = [(specific_level, *QUALITY_CHECKS[specific_level - 1])]
     else:
-        checks_to_run = QUALITY_CHECKS
-    # L2 takes the positional pin options; every level is still called as check(models_path).
-    level2: Callable[[str], QualityCheckResult] = partial(
-        validate_structure, positional_pins=positional_pins, pin_root=positional_pins_root
-    )
-    calls: list[tuple[str, Callable[[str], QualityCheckResult]]] = [
-        (name, level2 if check_func is validate_structure else check_func)
-        for name, check_func in checks_to_run
+        checks_to_run = [(n, *check) for n, check in enumerate(QUALITY_CHECKS, start=1)]
+    # L2 takes the positional pin options and L6 the target override; every level is still
+    # called as check(models_path).
+    with_options: dict[Callable[..., QualityCheckResult], Callable[[str], QualityCheckResult]] = {
+        validate_structure: partial(
+            validate_structure, positional_pins=positional_pins, pin_root=positional_pins_root
+        ),
+        validate_architecture: partial(validate_architecture, execution_target=execution_target),
+    }
+    calls: list[tuple[int, str, Callable[[str], QualityCheckResult]]] = [
+        (number, name, with_options.get(check_func, check_func))
+        for number, name, check_func in checks_to_run
     ]
 
     print(f"\n{'=' * 70}")
@@ -110,41 +137,40 @@ def run_all_checks(
     print(f"{'=' * 70}")
 
     # Run checks. One model load and one constraint extraction are shared by every level (D14).
-    with ValidationSession():
-        for name, check_func in calls:
+    started = time.perf_counter()
+    with ValidationSession() as session:
+        for number, name, check_func in calls:
             if verbose:
                 print(f"\nRunning: {name}...")
 
             try:
                 result = check_func(models_path)
-                results.append(result)
-
-                # Print result
-                print_result(result)
-
-                # Fail-fast mode: stop on first failure
-                if fail_fast and not result.success:
-                    print(f"\n❌ Stopping at first failure (Level {result.level})")
-                    print("   Use --complete to run all levels regardless of failures")
-                    break
-
-            except Exception as e:
-                print(f"\n❌ Error running {name}: {e}")
+            except Exception as error:
+                # A level that raised is a failed level, never a silent pass (design R3-2).
+                result = crashed_result(number, name, error)
                 if verbose:
-                    import traceback
-
                     traceback.print_exc()
+            results.append(result)
+            print_result(result)
 
-                # Treat exceptions as failures
-                if fail_fast:
-                    break
+            # Fail-fast mode: stop on first failure
+            if fail_fast and not result.success:
+                print(f"\n❌ Stopping at first failure (Level {result.level})")
+                print("   Use --complete to run all levels regardless of failures")
+                break
+    wall_time_s = time.perf_counter() - started
 
     # Calculate aggregate stats
     passed = sum(1 for r in results if r.success)
     failed = sum(1 for r in results if not r.success)
 
     aggregated = AggregatedResult(
-        results=results, total_checks=len(results), passed=passed, failed=failed
+        results=results,
+        total_checks=len(results),
+        passed=passed,
+        failed=failed,
+        constraint_extractions=session.constraint_extractions,
+        wall_time_s=wall_time_s,
     )
 
     # Print summary
@@ -155,9 +181,10 @@ def run_all_checks(
     print(f"✅ Passed: {aggregated.passed}")
     print(f"❌ Failed: {aggregated.failed}")
 
-    # A pass that rests on pinned positional warnings says so on its last line (audit Advisory 2).
-    if aggregated.overall_success and aggregated.pinned_note:
-        print(f"\n✅ Quality checks passed with {aggregated.pinned_note}")
+    # A pass that rests on pinned positional warnings, or that L6 qualifies, says so on its last
+    # line (audit Advisory 2; Item 3 design "Final line").
+    if aggregated.overall_success and aggregated.pass_notes:
+        print(f"\n✅ Quality checks passed with {'; '.join(aggregated.pass_notes)}")
     elif aggregated.overall_success:
         print("\n✅ All quality checks passed!")
     else:

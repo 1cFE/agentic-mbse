@@ -7,14 +7,12 @@ for all quality check levels.
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
+from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 from agentic_mbse.validation.positional_check import is_pinned_positional_warning
 from agentic_mbse.validation.session import active_session
-
-if TYPE_CHECKING:
-    from agentic_mbse.sysml.types import ValidationIssue
 
 # ===== Result Dataclasses =====
 
@@ -30,7 +28,13 @@ class QualityCheckResult:
     issues: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     metrics: dict = field(default_factory=dict)
-    structured_issues: list["ValidationIssue"] = field(default_factory=list)
+    structured_issues: list[ValidationIssue] = field(default_factory=list)
+    # Results the level folds into a summary instead of listing as issues (L6 under native).
+    summarized: list[ValidationIssue] = field(default_factory=list)
+    # A qualifier the run's final line must carry when it passes (empty for none).
+    pass_note: str = ""
+    # The level's full structured result for the JSON report (L6's subset profile), or None.
+    report_detail: dict[str, Any] | None = None
 
     @property
     def issue_count(self) -> int:
@@ -40,7 +44,7 @@ class QualityCheckResult:
     def warning_count(self) -> int:
         return len(self.warnings)
 
-    def add_issue(self, issue: "ValidationIssue") -> None:
+    def add_issue(self, issue: ValidationIssue) -> None:
         """Add a structured issue and also populate legacy issues list.
 
         This method provides forward compatibility for new code while
@@ -61,6 +65,8 @@ class AggregatedResult:
     total_checks: int
     passed: int
     failed: int
+    constraint_extractions: int  # the run session's real extractions (design I10)
+    wall_time_s: float
 
     @property
     def overall_success(self) -> bool:
@@ -71,6 +77,27 @@ class AggregatedResult:
         """The note for the pinned positional warnings across every level run, or "" if none."""
         pinned = sum(pinned_positional_warnings(result) for result in self.results)
         return pinned_note(pinned) if pinned else ""
+
+    @property
+    def pass_notes(self) -> list[str]:
+        """What a passing run's final line must say: the pinned note, then each level's note."""
+        notes = [self.pinned_note] if self.pinned_note else []
+        return notes + [result.pass_note for result in self.results if result.pass_note]
+
+
+def check_error_issue(
+    check: str, subject: str, error: Exception, location: str = ""
+) -> ValidationIssue:
+    """`L6_CHECK_ERROR`: `check` could not inspect `subject` because it raised `error` (design D4)."""
+    return ValidationIssue(
+        level=6,
+        severity=Severity.ERROR,
+        code=ValidationCode.L6_CHECK_ERROR,
+        message=f"{check} could not inspect {subject}: {type(error).__name__}: {error}",
+        element_name=subject,
+        location=location,
+        reason_code=type(error).__name__,
+    )
 
 
 # ===== File Discovery =====

@@ -42,6 +42,8 @@ class TestCmdValidate:
             verbose=False,
             positional_pins=None,
             positional_pins_root=None,
+            execution_target=None,
+            json_report=None,
         )
         result = cmd_validate(args)
         assert result == EXIT_FAILURE
@@ -66,6 +68,8 @@ package TestPackage {
             verbose=False,
             positional_pins=None,
             positional_pins_root=None,
+            execution_target=None,
+            json_report=None,
         )
         result = cmd_validate(args)
         # May succeed or fail depending on model quality
@@ -83,6 +87,8 @@ package TestPackage {
             verbose=False,
             positional_pins=None,
             positional_pins_root=None,
+            execution_target=None,
+            json_report=None,
         )
         result = cmd_validate(args)
         assert result in [EXIT_SUCCESS, EXIT_FAILURE]

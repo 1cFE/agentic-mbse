@@ -81,7 +81,7 @@ def read_toolkit_table(root: Path) -> ToolkitTable | SettingsDefect:
             pyproject,
             SettingsFault.UNDERSCORE_TABLE,
             f"{pyproject}: [tool.{UNDERSCORE_SPELLING}] is not read; "
-            f"the toolkit's table is {dotted(TOOLKIT_TABLE)}",
+            f"the toolkit's table is {dotted(TOOLKIT_TABLE)}, with keys {_allowed()}",
         )
     toolkit = tool.get(TOOLKIT_TABLE[-1])
     if toolkit is None:
@@ -94,10 +94,13 @@ def read_toolkit_table(root: Path) -> ToolkitTable | SettingsDefect:
             pyproject,
             SettingsFault.UNKNOWN_KEY,
             f"{pyproject}: unknown key {', '.join(map(repr, unknown))} in "
-            f"{dotted(TOOLKIT_TABLE)}; allowed keys are "
-            f"{', '.join(map(repr, sorted(TOOLKIT_KEYS)))}",
+            f"{dotted(TOOLKIT_TABLE)}; allowed keys are {_allowed()}",
         )
     return ToolkitTable(pyproject, toolkit)
+
+
+def _allowed() -> str:
+    return ", ".join(map(repr, sorted(TOOLKIT_KEYS)))
 
 
 def _not_a_table(pyproject: Path, table_path: tuple[str, ...]) -> SettingsDefect:
