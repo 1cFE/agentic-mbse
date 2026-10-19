@@ -1,6 +1,6 @@
 # Implementation Plan: L6 integration and execution-target settings (EXEC-SUBSET-CONTRACT Item 3)
 
-**Status:** Phase 1 stopped at its stop condition; waiting on the owner
+**Status:** Phase 1 complete; Phases 2–5 in progress
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 
@@ -96,24 +96,24 @@ def test_no_session_means_todays_behaviour(): ...
 
 **See `design.md` for:** D14, Implementation Notes "Session details", I10, B5.
 
-- [x] `pyproject.toml:103-106`: register the label-only `syside` marker (no skip logic). *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
-- [x] `tests/test_validation/test_session.py` (NEW): the stencil above. *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
-- [x] `src/agentic_mbse/validation/session.py` (NEW): `ValidationSession` as a context variable; load cache keyed by resolved path, size and `mtime_ns`; constraint-fact memo keyed by `id(model)` holding a strong model reference; stores facts or the raised exception; counts real extractions. *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
-- [x] `src/agentic_mbse/validation/common.py:102` `load_sysml_model`: consult the active session. *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
-- [x] `src/agentic_mbse/validation/level4_constraints.py:65` and `level6_architecture.py:650`: get facts through the session (direct call when no session is active). *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
-- [x] `src/agentic_mbse/sysml/subset_extraction.py:466`: add the `constraint_facts` keyword, default `extract_identified_constraint_facts`, used at `:454`. Not called by L6 yet. *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
-- [x] `src/agentic_mbse/validation/runner.py:58` `run_all_checks`: wrap the level loop in `ValidationSession()`. *Written, not committed (stop rule): `evidence/session-uncommitted.patch`.*
+- [x] `pyproject.toml:103-106`: register the label-only `syside` marker (no skip logic). *Done, committed `1058e4dc`.*
+- [x] `tests/test_validation/test_session.py` (NEW): the stencil above. *Done, committed `1058e4dc`.*
+- [x] `src/agentic_mbse/validation/session.py` (NEW): `ValidationSession` as a context variable; load cache keyed by resolved path, size and `mtime_ns`; constraint-fact memo keyed by `id(model)` holding a strong model reference; stores facts or the raised exception; counts real extractions. *Done, committed `1058e4dc`.*
+- [x] `src/agentic_mbse/validation/common.py:102` `load_sysml_model`: consult the active session. *Done, committed `1058e4dc`.*
+- [x] `src/agentic_mbse/validation/level4_constraints.py:65` and `level6_architecture.py:650`: get facts through the session (direct call when no session is active). *Done, committed `1058e4dc`.*
+- [x] `src/agentic_mbse/sysml/subset_extraction.py:466`: add the `constraint_facts` keyword, default `extract_identified_constraint_facts`, used at `:454`. Not called by L6 yet. *Done, committed `1058e4dc`.*
+- [x] `src/agentic_mbse/validation/runner.py:58` `run_all_checks`: wrap the level loop in `ValidationSession()`. *Done, committed `1058e4dc`.*
 
 ### Validation
 
 **Automated:**
-- [ ] `uv run pytest tests/test_validation/test_session.py` passes. *Not met: 21 of 22 pass; the `sump_pump` case fails (`evidence/session-check.md`).*
-- [ ] Full suite: green rule against `evidence/baseline.md`.
+- [x] `uv run pytest tests/test_validation/test_session.py` passes. *Done: 24 pass after `sump_pump` was split into its three subfolders (orchestrator decision 2, below). Before that, 21 of 22 passed.*
+- [x] Full suite: green rule against `evidence/baseline.md`. *Done: the 6 baseline failures only.*
 - [x] ruff check, ruff format --check on touched files; `uv run mypy src/`. *Done: no new mypy errors or ruff findings.*
 
 **Manual (the stop condition):**
-- [ ] Commit the session change. Run `run_consumers.py before-after --base ebb3d467 --branch HEAD --trees fusion-tea` (a first cut of Phase 11's subcommand: steps 1–9 of Appendix C for one tree, plus the timing in step 10). Record both wall times and the L1–L6 issue-line comparison in `evidence/session-check.md`.
-- [x] **Stop and report to the orchestrator** if any level's result differs in the with/without test, if any fusion-tea L1–L6 issue line differs from base, or if branch wall time is more than 1.10 × base. Do not start Phase 2. *Fired: the with/without test differs on `sump_pump`. Stopped before the commit and before Phase 2.*
+- [x] Commit the session change. Run `run_consumers.py before-after --base ebb3d467 --branch HEAD --trees fusion-tea` (a first cut of Phase 11's subcommand: steps 1–9 of Appendix C for one tree, plus the timing in step 10). Record both wall times and the L1–L6 issue-line comparison in `evidence/session-check.md`. *Done: session `1058e4dc`; run at `00adb102` (after Phases 2–3, which add no code on the validate path). fusion-tea 411.4 s → 206.0 s (0.501), L1–L6 identical, no flags (`evidence/session-check-before-after.md`).*
+- [x] **Stop and report to the orchestrator** if any level's result differs in the with/without test, if any fusion-tea L1–L6 issue line differs from base, or if branch wall time is more than 1.10 × base. Do not start Phase 2. *Fired: the with/without test differs on `sump_pump`. Stopped before the commit and before Phase 2.* *Resolved by the orchestrator's answers (below); the subprocess check passed.*
 
 **What we know works after this phase:** one load and one extraction per run, with every level's result unchanged and fusion-tea not slower. Every later phase builds on that.
 
@@ -156,15 +156,15 @@ def test_misspelled_key_fails_the_guard(tmp_path): ...
 
 **See `design.md` for:** D1, I6, Implementation Notes "Settings reader", Data model (`SettingsFault`).
 
-- [ ] `tests/test_project_settings.py` (NEW), additions in `tests/test_research/test_holdout.py`: stencil above.
-- [ ] `src/agentic_mbse/project_settings.py` (NEW): `TOOLKIT_KEYS`, `read_toolkit_table(root)`, `SettingsDefect` with `SettingsFault`. Standard library only. `add_execution_target` comes in Phase 9.
-- [ ] `src/agentic_mbse/research/holdout.py:241` `_research_table`: call `read_toolkit_table`; turn a defect into `HoldoutGuardError`; keep validating only `holdout-guard`. Replace the "its only key is 'research'" message (`:283`) with the allowed set, and update the research tests that assert the old text (record them).
+- [x] `tests/test_project_settings.py` (NEW), additions in `tests/test_research/test_holdout.py`: stencil above. *Done `8e455049`.*
+- [x] `src/agentic_mbse/project_settings.py` (NEW): `TOOLKIT_KEYS`, `read_toolkit_table(root)`, `SettingsDefect` with `SettingsFault`. Standard library only. `add_execution_target` comes in Phase 9. *Done.*
+- [x] `src/agentic_mbse/research/holdout.py:241` `_research_table`: call `read_toolkit_table`; turn a defect into `HoldoutGuardError`; keep validating only `holdout-guard`. Replace the "its only key is 'research'" message (`:283`) with the allowed set, and update the research tests that assert the old text (record them). *Done; `test_hook_config.py:172` expected text updated to the allowed-set message.*
 
 ### Validation
 
-- [ ] New and research test suites pass; full suite green rule.
-- [ ] ruff and mypy on touched files.
-- [ ] Manual: a `tmp_path` project with both `execution-target = "generated"` and a valid `holdout-guard` passes the guard.
+- [x] New and research test suites pass; full suite green rule. *Done: 594 research + settings tests pass; full suite = baseline 6.*
+- [x] ruff and mypy on touched files. *Done: no new findings.*
+- [x] Manual: a `tmp_path` project with both `execution-target = "generated"` and a valid `holdout-guard` passes the guard. *Done as a test instead: `test_holdout.py::test_both_keys_pass_the_guard`.*
 
 **What we know works:** one key set, two readers, each checking only its own value.
 
@@ -210,13 +210,13 @@ def test_subdirectory_reads_root_file_and_ignores_nested_pyproject(tmp_path): ..
 
 **See `design.md` for:** D2, D3, Data model, The severity table, `LEGACY_CATEGORY` paragraph, Appendix A.
 
-- [ ] `tests/test_validation/test_execution_target.py` (NEW).
-- [ ] `tests/fixtures/l6/native_lowered.toml` (NEW): an empty lowered set. Codes move into it only in Phase 8, each with its audit row (review S3).
-- [ ] `src/agentic_mbse/validation/execution_target.py` (NEW). Every generator-only candidate in `LEGACY_CATEGORY` starts as `LEGACY_KEPT`. `resolve_target` uses `find_project_root` (`project_root.py:19`) unchanged and `read_toolkit_table`.
+- [x] `tests/test_validation/test_execution_target.py` (NEW). *Done `00adb102`.*
+- [x] `tests/fixtures/l6/native_lowered.toml` (NEW): an empty lowered set. Codes move into it only in Phase 8, each with its audit row (review S3). *Done.*
+- [x] `src/agentic_mbse/validation/execution_target.py` (NEW). Every generator-only candidate in `LEGACY_CATEGORY` starts as `LEGACY_KEPT`. `resolve_target` uses `find_project_root` (`project_root.py:19`) unchanged and `read_toolkit_table`. *Done.*
 
 ### Validation
 
-- [ ] New tests pass; full suite green rule; ruff and mypy on touched files.
+- [x] New tests pass; full suite green rule; ruff and mypy on touched files. *Done: severity table test passes cell by cell; full suite = baseline 6; no new mypy or ruff findings.*
 
 **What we know works:** severity is one tested table; target resolution covers file, override, unset, no root and every fault.
 
@@ -713,17 +713,25 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 ## Implementation Notes
 
 ### Phase 1 Completion
-**Completed:** Not complete. Stopped 2026-10-18 at the stop condition; waiting on the owner.
+**Completed:** 2026-10-19. Stopped 2026-10-18 at the stop condition; resumed on the orchestrator's answers.
 **Actual Changes:**
 - Step 1a, committed: `evidence/baseline.md` (repo checks at `ebb3d467`), `scripts/l6_subset/run_consumers.py` (`baseline`, and `session-equality`), `evidence/baseline-consumers.{json,md}`.
-- Session, written but not committed (saved as `evidence/session-uncommitted.patch`, still in the working tree): `validation/session.py` (`ValidationSession`, `active_session()`, `constraint_facts(model)`), `load_sysml_model` consults the session (`common.py`), L4 and L6 call `constraint_facts` (`level4_constraints.py:65`, `level6_architecture.py:650`), `extract_subset_facts(..., constraint_facts=...)` keyword (`subset_extraction.py`), `run_all_checks` wraps the level loop (`runner.py`), `syside` marker (`pyproject.toml`), `tests/test_validation/test_session.py`. Two existing tests now patch `constraint_facts` instead of the removed module name (`test_item12_checks.py:211`, `test_level4_reconciliation.py:71`).
+- Session, committed `1058e4dc` after the orchestrator's answers: `validation/session.py` (`ValidationSession`, `active_session()`, `constraint_facts(model)`), `load_sysml_model` consults the session (`common.py`), L4 and L6 call `constraint_facts` (`level4_constraints.py:65`, `level6_architecture.py:650`), `extract_subset_facts(..., constraint_facts=...)` keyword (`subset_extraction.py`), `run_all_checks` wraps the level loop (`runner.py`), `syside` marker (`pyproject.toml`), `tests/test_validation/test_session.py`. Two existing tests now patch `constraint_facts` instead of the removed module name (`test_item12_checks.py:211`, `test_level4_reconciliation.py:71`).
 - Stop evidence: `evidence/session-check.md`, `evidence/session-equality.json`, `evidence/session-check-scripts/`.
 
 **Issues:**
 - The with/without test fails on `tests/fixtures/sump_pump`. That folder holds three copies of the same packages, and today's code, with no session, gives different L2, L4 and L6 results from one fresh load to the next on it (L6's `pump_fit` ERROR on 5 to 10 of 10 loads). Its three subfolders, and every other fixture, are stable. So the session is not the cause, but the plan's rule is "any difference stops", so this is the owner's call.
 - On all three consumer trees, every level's full result is identical with and without the session, with one load and one extraction, in about half the time (fusion-tea 407.8 s → 205.7 s, in process).
 
+**Orchestrator decisions, 2026-10-18** (each [AGENT]):
+1. Accepted: the `sump_pump` difference comes from the fixture already varying between loads with today's code (three copies of the same packages loaded together), not from the session. B5 holds.
+2. Approved: the with/without test uses `sump_pump/right`, `sump_pump/seed` and `sump_pump/wrong` as three separate fixtures, with a comment pointing to the backlog row. No double-run tolerance.
+3. Already filed: backlog `VALIDATE-SUMP-PUMP-NONDETERMINISM` (since Item 1's close); the orchestrator added the L2/L4 evidence. No new row.
+
+**Phase 1 close:** `run_consumers.py before-after --base ebb3d467 --branch HEAD --trees fusion-tea --out session-check-before-after` at `00adb102`: base 411.4 s, branch 206.0 s (ratio 0.501, limit 1.10); every level's status and printed block identical; resolved root agrees; siblings unchanged. A first run at `62621ad7` gave the same timing (414.8 → 206.4 s) but flagged a wrong expected root, a bug in the script's comparison (fixed in `5d0bf73c`), so it was rerun. Another agent's test suites ran on the machine during both runs; base and branch ran back to back under the same load.
+
 **Deviations:**
+- `sump_pump` (combined) stays in the count and `extract_subset_facts` tests as `sump_pump/right`, which is stable.
 - The with/without test runs L2–L6 in order inside one session per fixture, rather than one level per session as in the stencil. This also tests that a level is not changed by an earlier level's use of the shared model, which is what B5 claims.
 - The session raises `ValueError` if handed a directory instead of files, because a directory's mtime does not track its files. The levels always pass discovered files.
 - Added a `model_loads` counter next to `constraint_extractions`, so the test can check one load per run.
@@ -731,6 +739,18 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 - `run_consumers.py session-equality` was added: the full-result comparison on the consumer trees, which the text-based `before-after` cannot do (text shows only the first five issues per level).
 - The repository baseline was taken in the checkout with the Phase 1 edits set aside. A `git archive` export run added 8 environment-only failures from console-script paths, so it was not used.
 
+
+### Phase 2 Completion
+**Completed:** 2026-10-19, `8e455049`.
+**Changes:** `src/agentic_mbse/project_settings.py` (`TOOLKIT_KEYS`, `read_toolkit_table`, `ToolkitTable`, `SettingsDefect`, `SettingsFault`, `dotted`); `research/holdout.py` reads through it and keeps its own `holdout-guard` and research-table checks; `tests/test_project_settings.py`; three tests added to `tests/test_research/test_holdout.py`.
+**Changed assertion:** `tests/test_research/test_hook_config.py:172` expected "its only key is 'research'"; it now expects "allowed keys are 'execution-target', 'research'" (the design's intended message change).
+**Deviations:** `ToolkitTable` carries the file path as well as the table, so the guard's messages still name the file. The reader also reports a non-UTF-8 file as `UNREADABLE` (the guard already treated it as unreadable).
+
+### Phase 3 Completion
+**Completed:** 2026-10-19, `00adb102`.
+**Changes:** `src/agentic_mbse/validation/execution_target.py`; `tests/test_validation/test_execution_target.py`; `tests/fixtures/l6/native_lowered.toml` (empty).
+**Deviations:** `describe_target` (the `Execution target` metric text) lives here beside `resolve_target`, so the metric and the resolution cannot drift. An invalid `execution-target` value is an error even with an override, like a malformed file (the spec names only the malformed case; the same reasoning applies). `resolve_target` raises `ValueError` if handed `Target.UNSET` as an override, since unset is the absence of an override. The legacy-code test reads the 17 codes from the L6 source files, so a new legacy code cannot be missed.
+
 ---
 
-**Status:** Phase 1 stopped at its stop condition; waiting on the owner
+**Status:** Phase 1 complete; Phases 2–5 in progress

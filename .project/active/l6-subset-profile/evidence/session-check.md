@@ -1,6 +1,6 @@
 # Session check (Phase 1 stop condition)
 
-**Outcome: the stop rule fired, so Phase 1 is stopped before the commit and the before/after run.** The with/without test differs on one repo fixture, `tests/fixtures/sump_pump`. The evidence below says the session does not cause the difference: that fixture gives different results from one fresh load to the next with today's code and no session. Whether that counts as a B5 failure, and how the test should treat the fixture, is the owner's call.
+**Outcome: the stop rule fired, and the orchestrator accepted the evidence below (plan Phase 1 notes). The session was then committed and the subprocess timing passed (`session-check-before-after.md`: fusion-tea 411.4 s → 206.0 s).** The with/without test differs on one repo fixture, `tests/fixtures/sump_pump`. The evidence below says the session does not cause the difference: that fixture gives different results from one fresh load to the next with today's code and no session. Whether that counts as a B5 failure, and how the test should treat the fixture, is the owner's call.
 
 ## What differs
 
@@ -25,7 +25,7 @@ So the with/without comparison on `sump_pump/` compares two draws from a result 
 | dc3 `808464d` | all six | 34.6 | 17.3 | 1 | 1 |
 | dc3 `60b44d5` | all six | 25.2 | 12.7 | 1 | 1 |
 
-- The code was this checkout's working tree (HEAD `0d69c883` plus the uncommitted session change, `session-equality.json` → `code` has its hash). The change is saved as `session-uncommitted.patch`.
+- The code was this checkout's working tree (HEAD `0d69c883` plus the uncommitted session change, `session-equality.json` → `code` has its hash). The change was later committed unchanged as `1058e4dc` (with `sump_pump` split in the test).
 - The timing is in process, not the plan's subprocess `before-after` run (that needs the session committed). For comparison, the subprocess `validate --complete` baseline took 410.9 s on fusion-tea (`baseline-consumers.md`), close to the 407.8 s standalone figure.
 - The machine was not idle for the whole run: another agent's test suites (`~/src/subset-conformance`) started partway through. Each run uses one core of 12. The halving matches what removing one of two ~200 s extractions predicts.
 - dc3 and fusion-tea HEAD and `git status` were unchanged before and after.
