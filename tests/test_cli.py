@@ -686,7 +686,8 @@ class TestModificationDetectionIntegration:
         import json
 
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        # The target is given so the only prompt is the modified-file one.
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, execution_target="generated")
         cmd_init(args)
         command_path = tmp_path / ".agents" / "skills" / "orchestrate-modeling" / "SKILL.md"
         hashes = json.loads((tmp_path / ".agentic-mbse" / "install.json").read_text())
@@ -735,7 +736,8 @@ class TestModificationDetectionIntegration:
         """Re-init with modification prompts user."""
         # First init
         monkeypatch.setattr("sys.stdin.isatty", lambda: True)
-        args = MockArgs(path=str(tmp_path), force=False, dev=False)
+        # The target is given so the only prompt is the modified-file one.
+        args = MockArgs(path=str(tmp_path), force=False, dev=False, execution_target="generated")
         cmd_init(args)
 
         # Modify a tool-owned file

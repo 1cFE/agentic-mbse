@@ -15,10 +15,13 @@ from enum import StrEnum
 from pathlib import Path
 
 from agentic_mbse.project_root import find_project_root
-from agentic_mbse.project_settings import SettingsDefect, SettingsFault, read_toolkit_table
+from agentic_mbse.project_settings import (
+    TARGET_KEY,
+    SettingsDefect,
+    SettingsFault,
+    read_toolkit_table,
+)
 from agentic_mbse.sysml.types import ValidationCode
-
-TARGET_KEY = "execution-target"
 
 
 class Target(StrEnum):

@@ -1,0 +1,5 @@
+[project]
+name = "plant"
+
+[tool.agentic-mbse]
+execution-target = "generated"

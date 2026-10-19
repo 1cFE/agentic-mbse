@@ -1,0 +1,11 @@
+# Project settings
+
+[project]
+name = "plant"   # the model package
+version = "0.1.0"
+
+
+# Lint settings follow.
+[tool.ruff]
+line-length = 100
+# end of file
