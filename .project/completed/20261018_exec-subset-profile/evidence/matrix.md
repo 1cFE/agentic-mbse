@@ -34,7 +34,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 | PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR | tracked_gap |  | unconfirmed | code_read | agentic-mbse backlog [PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-OPERATOR] |  |  |
 | PUSH-DOWN-HIER-PROFILE-REDEF-PRECEDENCE | advisory_omission_policy |  | unconfirmed | code_read | agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-REDEF-PRECEDENCE] |  |  |
 | PUSH-DOWN-HIER-PROFILE-UNSUPPORTED-RHS | tracked_gap |  | unconfirmed | code_read | agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-UNSUPPORTED-RHS] |  |  |
-| PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE | tracked_gap |  | unconfirmed | code_read | agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE]; L6 wiring is EXEC-SUBSET-CONTRACT Item 3 |  |  |
+| PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE | tracked_gap |  | unconfirmed | code_read | agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE]; closed by EXEC-SUBSET-CONTRACT Item 3 (L6 reports it) |  |  |
 | PUSH-DOWN-HIER-PROFILE-AMBIG-INHERITED-ATTR | advisory_omission_policy |  | unconfirmed | code_read | agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-AMBIG-INHERITED-ATTR] |  |  |
 | PUSH-DOWN-AGG-PROFILE-SUM-SHAPE | tracked_gap |  | unconfirmed | code_read | agentic-mbse backlog [PUSH-DOWN-AGG-PROFILE-SUM-SHAPE] |  |  |
 | PUSH-DOWN-AGG-PROFILE-WRAPPER-SHAPE | advisory_omission_policy |  | unconfirmed | code_read | agentic-mbse backlog [PUSH-DOWN-AGG-PROFILE-WRAPPER-SHAPE] |  |  |
@@ -307,7 +307,7 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Class:** `tracked_gap`
 - **Outcome:** `unconfirmed` in: a part usage overriding the attribute a definition-owned part multiplicity references
 - **Evidence status:** `code_read`
-- **Evidence:** `doc:.project/active/exec-subset-profile/spikes/f1-findings.md`, `sysml_codegen/elaboration/occurrence.py:812-899`
+- **Evidence:** `doc:.project/completed/20261018_exec-subset-profile/spikes/f1-findings.md`, `sysml_codegen/elaboration/occurrence.py:812-899`
 - **Owner:** EXEC-SUBSET-CONTRACT Item 2 / owner (design D14 b)
 - **Coverage limitation:** Not probed in Item 1. The occurrence port mirrors the generator's reading (spike F1 Surprise 2), so the contract inherits the behavior unflagged.
 - **Notes:** Generator-correctness question found by spike F1 against codegen's code; no probe in Item 1.
@@ -395,10 +395,10 @@ Records verified against sysml-codegen `b5663c07e987a892e27d21e68cec40d0656574ee
 - **Class:** `tracked_gap`
 - **Outcome:** `unconfirmed` in: `part cell[pack_count]` where `pack_count` has no integer literal default
 - **Evidence status:** `code_read`
-- **Evidence:** `backlog:PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE`, `agentic_mbse/sysml/hierarchy.py:141`
-- **Owner:** agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE]; L6 wiring is EXEC-SUBSET-CONTRACT Item 3
-- **Coverage limitation:** The generator decision is now part-multiplicity/unresolved_bound (ES-004), refused on expanded part usages with probes; the L6 warning this row files is not wired (Item 3).
-- **Notes:** Filed as a WARNING; overlaps ES-004's unresolved_bound shape.
+- **Evidence:** `backlog:PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE`, `agentic_mbse/sysml/hierarchy.py:141`, `doc:tests/test_validation/test_l6_contract.py#test_invocation_callable_at_attribute_and_part_multiplicity_unresolved_reported`
+- **Owner:** agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE]; closed by EXEC-SUBSET-CONTRACT Item 3 (L6 reports it)
+- **Coverage limitation:** Closed by EXEC-SUBSET-CONTRACT Item 3: L6 reports the generator decision, part-multiplicity/unresolved_bound (ES-004, refused on expanded part usages with probes), through the execution target; test_l6_contract.py::test_invocation_callable_at_attribute_and_part_multiplicity_unresolved_reported.
+- **Notes:** Closed: L6 reports ES-004's unresolved_bound finding, which this row overlaps.
 - **Sites:** 2: `sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::1`, `sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::2`
 
 ### PUSH-DOWN-HIER-PROFILE-AMBIG-INHERITED-ATTR: Usage with incomparable typings supplying different inherited defaults

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Level 6: Architecture & Pipeline Readiness
+Level 6: Architecture & Generator Subset
 
 Application-specific validation: ADR-002 rules, manifest subsystem
-checks, and codegen readiness requirements.
+checks, codegen checks, and the generator subset contract (EXEC-SUBSET-CONTRACT
+Item 3: run first, presented through the execution target).
 
 Merged from:
 - Level 7 (Architectural Integrity): manifest-based subsystem validation
@@ -14,6 +15,7 @@ Merged from:
 
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import yaml
 
@@ -27,6 +29,8 @@ from agentic_mbse.sysml.reference_use import (
     resolved_chaining_features,
     resolved_referent,
 )
+from agentic_mbse.sysml.subset_extraction import extract_subset_facts
+from agentic_mbse.sysml.subset_profile import SubsetProfileResult, evaluate_subset_profile
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 
@@ -39,6 +43,7 @@ from .adr002 import (
 )
 from .common import (
     QualityCheckResult,
+    check_error_issue,
     discover_sysml_files,
     get_element_location,
     get_qualified_name,
@@ -56,6 +61,9 @@ from .execution_target import (
     resolve_target,
 )
 from .session import constraint_facts
+from .subset_presentation import present, string_subjects
+
+LEVEL_NAME = "Architecture & Generator Subset"
 
 # --- Functions from L7 (manifest validation) ---
 
@@ -486,6 +494,7 @@ def check_binding_formats(
 def check_design_attr_completeness(
     model: Any,
     design_path_filter: str | None = "designs",
+    string_subjects: frozenset[UUID] | None = None,
 ) -> tuple[list[ValidationIssue], int]:
     """
     Validate design attributes have values or EXPOSE bindings.
@@ -500,12 +509,17 @@ def check_design_attr_completeness(
         design_path_filter: Path component to filter files by. Only attributes
             in files whose path contains this component are checked. Use None
             or empty string to check all files.
+        string_subjects: Element ids the subset contract reports as omitted String values
+            (`string-value-omission`). Those get no `L6_DESIGN_ATTR_UNEXTRACTABLE`: the
+            contract's `omitted` finding replaces it (Item 3 design D10). None when the
+            contract did not run, so every legacy error stays.
 
     Returns:
         Tuple of (list of ValidationIssue, count of design attrs checked)
     """
     issues: list[ValidationIssue] = []
     attrs_checked = 0
+    omitted_strings = string_subjects or frozenset()
 
     try:
         attrs = list(SysideAdapter.elements_of_type(model, "AttributeUsage"))
@@ -545,6 +559,8 @@ def check_design_attr_completeness(
                 # the static evaluator does not apply.
                 if is_expose_binding(attr, attr.feature_value_expression):
                     continue
+                if omitted_strings and _element_id(attr) in omitted_strings:
+                    continue
                 try:
                     evaluate_true_static_expression(attr.feature_value_expression)
                 except (ValueError, TypeError) as e:
@@ -583,6 +599,13 @@ def check_design_attr_completeness(
             continue
 
     return issues, attrs_checked
+
+
+def _element_id(element: Any) -> UUID | None:
+    try:
+        return SysideAdapter.element_id(element)
+    except ValueError:
+        return None
 
 
 def check_anonymous_returns(model: Any) -> list[ValidationIssue]:
@@ -946,7 +969,7 @@ def _setting_invalid_result(error: TargetSettingError) -> QualityCheckResult:
     """L6 with a broken setting: one `L6_SETTING_INVALID` ERROR, the target metric, no checks."""
     result = QualityCheckResult(
         level=6,
-        level_name="Architecture & Pipeline Readiness",
+        level_name=LEVEL_NAME,
         success=False,
         metrics={"Execution target": f"invalid ({error.path}; see L6_SETTING_INVALID)"},
         report_detail={
@@ -981,6 +1004,19 @@ def _setting_invalid_result(error: TargetSettingError) -> QualityCheckResult:
     return result
 
 
+def _run_contract(model: Any) -> tuple[SubsetProfileResult | None, list[ValidationIssue]]:
+    """The subset contract's result over the shared model and constraint facts.
+
+    A crash in extraction or evaluation is one `L6_CHECK_ERROR` and no result, so the verdict
+    reads "not computed" and every legacy String error stays (design D4, D10).
+    """
+    try:
+        facts = extract_subset_facts(model, constraint_facts=constraint_facts)
+        return evaluate_subset_profile(facts), []
+    except Exception as error:
+        return None, [check_error_issue("subset_profile", "the loaded model", error)]
+
+
 def validate_architecture(
     models_path: str,
     design_path_filter: str | None = "designs",
@@ -989,8 +1025,9 @@ def validate_architecture(
     """
     Main entry point for Level 6 validation.
 
-    Combines ADR-002 checks, manifest subsystem validation, and
-    codegen readiness checks into a single architecture level.
+    Runs the generator subset contract first, then the ADR-002, codegen and manifest checks,
+    over one loaded model, and shows the contract's result through the execution target
+    (Item 3 design, Core Concept).
 
     Args:
         models_path: Path to models directory
@@ -1001,9 +1038,9 @@ def validate_architecture(
             project's `[tool.agentic-mbse] execution-target` (Item 3 design D3)
 
     Returns:
-        QualityCheckResult with architecture & pipeline readiness issues
+        QualityCheckResult with the architecture and generator subset issues
     """
-    print_header("Architecture & Pipeline Readiness", 6)
+    print_header(LEVEL_NAME, 6)
 
     # The target comes first: a broken setting stops L6 before any check runs (D3).
     resolution = resolve_target(Path(models_path), execution_target)
@@ -1018,7 +1055,7 @@ def validate_architecture(
     except ValueError as e:
         return QualityCheckResult(
             level=6,
-            level_name="Architecture & Pipeline Readiness",
+            level_name=LEVEL_NAME,
             success=False,
             issues=[str(e)],
         )
@@ -1026,7 +1063,7 @@ def validate_architecture(
     if not files:
         return QualityCheckResult(
             level=6,
-            level_name="Architecture & Pipeline Readiness",
+            level_name=LEVEL_NAME,
             success=True,
             warnings=["No SysML files found"],
             metrics={**target_metrics, "Files checked": 0},
@@ -1039,12 +1076,14 @@ def validate_architecture(
     except Exception as e:
         return QualityCheckResult(
             level=6,
-            level_name="Architecture & Pipeline Readiness",
+            level_name=LEVEL_NAME,
             success=False,
             issues=[f"Failed to load model: {e}"],
         )
 
-    all_issues: list[ValidationIssue] = []
+    # The contract runs first: its String subjects feed the design-attribute check (D10).
+    contract, contract_errors = _run_contract(model)
+    all_issues: list[ValidationIssue] = list(contract_errors)
 
     # Count elements for metrics
     try:
@@ -1076,26 +1115,31 @@ def validate_architecture(
     binding_issues, num_bindings = check_binding_formats(model)
     all_issues.extend(binding_issues)
     design_attr_issues, num_design_attrs = check_design_attr_completeness(
-        model, design_path_filter=design_path_filter
+        model, design_path_filter=design_path_filter, string_subjects=string_subjects(contract)
     )
     all_issues.extend(design_attr_issues)
 
     # Manifest checks (from old L7)
     manifest_issues, manifests_checked = _check_manifests(models_path, model)
 
-    # Build result — ERROR-only failure criteria (matches old L8 behavior)
+    shown = present(resolution.target, contract, all_issues)
+
+    # ERROR-only failure criteria (matches old L8 behavior), over the issues as shown.
     # Manifest issues are unstructured strings; also fail if any found
-    success = not any(i.severity == Severity.ERROR for i in all_issues)
+    success = not any(i.severity == Severity.ERROR for i in shown.issues)
     if manifest_issues:
         success = False
 
     result = QualityCheckResult(
         level=6,
-        level_name="Architecture & Pipeline Readiness",
+        level_name=LEVEL_NAME,
         success=success,
-        report_detail=target_detail,
+        summarized=shown.summarized,
+        pass_note=shown.pass_note if success else "",
+        report_detail={**target_detail, **shown.profile},
         metrics={
             **target_metrics,
+            **shown.metrics,
             "Calc defs checked": num_calc_defs,
             "Calc usages checked": num_calc_usages,
             "Bindings validated": num_bindings,
@@ -1150,8 +1194,8 @@ def validate_architecture(
         },
     )
 
-    # Add structured issues
-    for issue in all_issues:
+    # Add structured issues, in the order D13 gives them
+    for issue in shown.issues:
         result.add_issue(issue)
 
     # Add manifest issues (unstructured strings)

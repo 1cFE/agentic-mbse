@@ -122,9 +122,7 @@ class TestMasterOrchestrator:
         """Test that fail-fast mode stops at first failure"""
         from agentic_mbse.validation.runner import run_all_checks
 
-        result = run_all_checks(
-            str(invalid_sysml_file.parent.parent), fail_fast=True
-        )
+        result = run_all_checks(str(invalid_sysml_file.parent.parent), fail_fast=True)
 
         # Should stop at Level 1 (syntax failure)
         assert result.total_checks == 1
@@ -135,9 +133,7 @@ class TestMasterOrchestrator:
         """Test that complete mode runs all levels regardless of failures"""
         from agentic_mbse.validation.runner import run_all_checks
 
-        result = run_all_checks(
-            str(valid_sysml_file.parent.parent), fail_fast=False
-        )
+        result = run_all_checks(str(valid_sysml_file.parent.parent), fail_fast=False)
 
         # Should run all implemented levels (currently just Level 1)
         assert result.total_checks >= 1
@@ -146,9 +142,7 @@ class TestMasterOrchestrator:
         """Test running specific level only"""
         from agentic_mbse.validation.runner import run_all_checks
 
-        result = run_all_checks(
-            str(valid_sysml_file.parent.parent), specific_level=1
-        )
+        result = run_all_checks(str(valid_sysml_file.parent.parent), specific_level=1)
 
         # Should run only Level 1
         assert result.total_checks == 1
@@ -739,7 +733,7 @@ class TestEndToEnd:
         result = run_all_checks("tests/fixtures/sample_models/", fail_fast=False)
         level_6_results = [r for r in result.results if r.level == 6]
         assert len(level_6_results) == 1, "Level 6 should run once in full suite"
-        assert level_6_results[0].level_name == "Architecture & Pipeline Readiness"
+        assert level_6_results[0].level_name == "Architecture & Generator Subset"
 
     def test_level_6_only_mode(self):
         """Test --level=6 runs only Level 6"""
@@ -748,7 +742,7 @@ class TestEndToEnd:
         result = run_all_checks("tests/fixtures/sample_models/", specific_level=6)
         assert len(result.results) == 1
         assert result.results[0].level == 6
-        assert result.results[0].level_name == "Architecture & Pipeline Readiness"
+        assert result.results[0].level_name == "Architecture & Generator Subset"
 
     def test_fail_fast_mode(self):
         """Test that fail-fast mode stops appropriately"""
@@ -778,7 +772,7 @@ class TestEndToEnd:
 
 
 class TestLevel6Architecture:
-    """Tests for Level 6: Architecture & Pipeline Readiness validation."""
+    """Tests for Level 6: Architecture & Generator Subset validation."""
 
     def test_validation_codes_exist(self):
         """All L6 ValidationCode entries are defined"""
@@ -797,7 +791,7 @@ class TestLevel6Architecture:
 
         result = validate_architecture("tests/fixtures/sample_models/")
         assert result.level == 6
-        assert result.level_name == "Architecture & Pipeline Readiness"
+        assert result.level_name == "Architecture & Generator Subset"
 
     def test_module_returns_quality_check_result(self):
         """validate_architecture returns QualityCheckResult"""
@@ -807,16 +801,14 @@ class TestLevel6Architecture:
         result = validate_architecture("tests/fixtures/sample_models/")
         assert isinstance(result, QualityCheckResult)
         assert result.level == 6
-        assert result.level_name == "Architecture & Pipeline Readiness"
+        assert result.level_name == "Architecture & Generator Subset"
 
     def test_check_qualified_names_on_valid_model(self):
         """Valid models produce no qualified name issues"""
         from agentic_mbse.validation.level6_architecture import validate_architecture
 
         result = validate_architecture("tests/fixtures/sample_models/")
-        qname_issues = [
-            i for i in result.structured_issues if "QUALIFIED_NAME" in str(i.code)
-        ]
+        qname_issues = [i for i in result.structured_issues if "QUALIFIED_NAME" in str(i.code)]
         assert len(qname_issues) == 0, f"Unexpected issues: {qname_issues}"
 
     def test_metrics_include_element_counts(self):
@@ -835,9 +827,7 @@ class TestLevel6Architecture:
 
         result = validate_architecture("tests/fixtures/sample_models/")
         no_output_issues = [
-            i
-            for i in result.structured_issues
-            if i.code == ValidationCode.L6_CALC_DEF_NO_OUTPUT
+            i for i in result.structured_issues if i.code == ValidationCode.L6_CALC_DEF_NO_OUTPUT
         ]
         assert len(no_output_issues) == 0, f"Unexpected no-output issues: {no_output_issues}"
 
@@ -878,14 +868,13 @@ class TestLevel6Architecture:
         for issue in incomplete_issues:
             assert issue.severity == Severity.ERROR, f"Expected ERROR, got {issue.severity}"
 
-
     def test_validate_architecture_returns_result(self, tmp_path):
         """L6 orchestrator returns QualityCheckResult with level=6 for empty dir."""
         from agentic_mbse.validation.level6_architecture import validate_architecture
 
         result = validate_architecture(str(tmp_path))
         assert result.level == 6
-        assert result.level_name == "Architecture & Pipeline Readiness"
+        assert result.level_name == "Architecture & Generator Subset"
 
     def test_check_manifests_no_designs_dir(self, tmp_path):
         """_check_manifests returns empty when no designs/ directory."""
@@ -929,10 +918,11 @@ class TestLevel6NegativeCases:
 
         result = validate_architecture(self.FIXTURES)
         no_output = [
-            i for i in result.structured_issues
-            if i.code == ValidationCode.L6_CALC_DEF_NO_OUTPUT
+            i for i in result.structured_issues if i.code == ValidationCode.L6_CALC_DEF_NO_OUTPUT
         ]
-        assert len(no_output) >= 1, f"Expected L6_CALC_DEF_NO_OUTPUT, got: {result.structured_issues}"
+        assert len(no_output) >= 1, (
+            f"Expected L6_CALC_DEF_NO_OUTPUT, got: {result.structured_issues}"
+        )
         assert no_output[0].severity == Severity.ERROR
         assert "NoOutputCalc" in no_output[0].message
 
@@ -950,8 +940,7 @@ class TestLevel6NegativeCases:
 
         result = validate_architecture(self.FIXTURES)
         no_dir = [
-            i for i in result.structured_issues
-            if i.code == ValidationCode.L6_CALC_DEF_NO_DIRECTION
+            i for i in result.structured_issues if i.code == ValidationCode.L6_CALC_DEF_NO_DIRECTION
         ]
         # Currently 0 due to syside not exposing typing attribute
         assert len(no_dir) == 0
@@ -1037,9 +1026,7 @@ class TestLevel6NegativeCases:
         design_dir = tmp_path / "designs" / "latin1_design"
         design_dir.mkdir(parents=True)
         # Valid YAML in latin-1; byte 0xE9 is not a legal UTF-8 sequence start.
-        (design_dir / "manifest.yaml").write_bytes(
-            "subsystems:\n  - caf\xe9\n".encode("latin-1")
-        )
+        (design_dir / "manifest.yaml").write_bytes("subsystems:\n  - caf\xe9\n".encode("latin-1"))
 
         with pytest.raises(ManifestError, match="could not be read"):
             load_manifest(design_dir)
@@ -1066,8 +1053,7 @@ class TestLevel6NegativeCases:
 
         result = validate_architecture(self.ADR002_FIXTURES)
         v1_issues = [
-            i for i in result.structured_issues
-            if i.code == ValidationCode.V1_CALC_DEF_LOCATION
+            i for i in result.structured_issues if i.code == ValidationCode.V1_CALC_DEF_LOCATION
         ]
         assert len(v1_issues) >= 1, "Expected V1_CALC_DEF_LOCATION from adr002_violations"
         assert any("designs/" in i.message for i in v1_issues)
@@ -1079,8 +1065,7 @@ class TestLevel6NegativeCases:
 
         result = validate_architecture(self.ADR002_FIXTURES)
         v2_issues = [
-            i for i in result.structured_issues
-            if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION
+            i for i in result.structured_issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION
         ]
         assert len(v2_issues) >= 1, "Expected V2_DYNAMIC_EXPRESSION from adr002_violations"
 
@@ -1091,8 +1076,7 @@ class TestLevel6NegativeCases:
 
         result = validate_architecture(self.ADR002_FIXTURES)
         v4_issues = [
-            i for i in result.structured_issues
-            if i.code == ValidationCode.V4_UNSUPPORTED_OPERATOR
+            i for i in result.structured_issues if i.code == ValidationCode.V4_UNSUPPORTED_OPERATOR
         ]
         assert len(v4_issues) >= 1, "Expected V4_UNSUPPORTED_OPERATOR from adr002_violations"
         assert any("**" in i.message for i in v4_issues)
@@ -1127,7 +1111,7 @@ class TestLevelDistinctness:
         from agentic_mbse.validation.runner import run_all_checks
 
         result = run_all_checks(f"{self.FIXTURES}/l2_unbound_input", fail_fast=False)
-        assert result.results[0].success is True   # L1 passes
+        assert result.results[0].success is True  # L1 passes
         assert result.results[1].success is False  # L2 fails
         assert result.results[1].metrics["Unbound inputs"] == 1
         # L3-L6 all pass

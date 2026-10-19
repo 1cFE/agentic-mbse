@@ -1,6 +1,6 @@
 # Implementation Plan: L6 integration and execution-target settings (EXEC-SUBSET-CONTRACT Item 3)
 
-**Status:** Phase 1 complete; Phases 2–5 in progress
+**Status:** Phases 1–5 complete; Phase 6 next
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 
@@ -348,20 +348,20 @@ The `unconfirmed` and `beneath_refused_multiplicity` shapes can be taken from It
 
 **See `design.md` for:** Core Concept, D8, D9, D10, D11, D13, "What a user sees in L6", Final line, I3, I5, I9, Implementation Notes "Matrix row closing".
 
-- [ ] Tests and fixtures above (NEW).
-- [ ] `src/agentic_mbse/sysml/subset_coverage.py` (NEW): `SUBSET_COVERAGE_VERSION`, the list (DEEP-QUALIFIED-WIRING, ES-002, ES-008, ES-009, ES-010 refusal side, CALC-DEF-BARE-RESULT, the follow-up sites).
-- [ ] `src/agentic_mbse/sysml/types.py`: the `L6_SUBSET_*` codes from D8 except the two advisory codes (Phase 6). Rename the `:82` comment.
-- [ ] `src/agentic_mbse/validation/subset_presentation.py` (NEW): `present(...)` returning issues, `summarized`, metrics, `pass_note`, report detail; shadowed-by from subject ids (D9); D13 ordering.
-- [ ] `src/agentic_mbse/validation/level6_architecture.py`: contract first (`extract_subset_facts(model, constraint_facts=session...)`, `evaluate_subset_profile`), wrapped so a crash is `L6_CHECK_ERROR` and the verdict line reads `not computed`; pass `string_subjects` into `check_design_attr_completeness` (D10; `None` if the contract failed); title rename at `:3`, `:935`, `:943`, `:951`, `:963`, `:1015`.
-- [ ] `src/agentic_mbse/validation/runner.py:54`: title rename. Update `tests/test_sysml_quality_checks.py:742`, `:751` (record in notes).
-- [ ] `src/agentic_mbse/validation/report.py`: fill L6's `profile`.
-- [ ] Matrix: close MULTIPLICITY-SHAPE in `tests/fixtures/subset_profile/inventory/matrix.toml` citing the new test; regenerate `matrix.md` with `scripts/subset_profile/render_matrix.py`; `tests/test_subset_matrix.py` still passes.
-- [ ] Grep tests, `skills/` and `scripts/` for the old title and for strings the new L6 output changes (design risk "text output changes"); fix or record each hit.
+- [x] Tests and fixtures above (NEW). *Done: 13 fixtures (the stencil's 12 plus `beneath_refused_multiplicity`), `test_l6_contract.py` (112 cases), `test_subset_coverage.py` (4).*
+- [x] `src/agentic_mbse/sysml/subset_coverage.py` (NEW): `SUBSET_COVERAGE_VERSION`, the list (DEEP-QUALIFIED-WIRING, ES-002, ES-008, ES-009, ES-010 refusal side, CALC-DEF-BARE-RESULT, the follow-up sites).
+- [x] `src/agentic_mbse/sysml/types.py`: the `L6_SUBSET_*` codes from D8 except the two advisory codes (Phase 6). Rename the `:82` comment.
+- [x] `src/agentic_mbse/validation/subset_presentation.py` (NEW): `present(...)` returning issues, `summarized`, metrics, `pass_note`, report detail; shadowed-by from subject ids (D9); D13 ordering.
+- [x] `src/agentic_mbse/validation/level6_architecture.py`: contract first (`extract_subset_facts(model, constraint_facts=session...)`, `evaluate_subset_profile`), wrapped so a crash is `L6_CHECK_ERROR` and the verdict line reads `not computed`; pass `string_subjects` into `check_design_attr_completeness` (D10; `None` if the contract failed); title rename at `:3`, `:935`, `:943`, `:951`, `:963`, `:1015`.
+- [x] `src/agentic_mbse/validation/runner.py:54`: title rename. Update `tests/test_sysml_quality_checks.py:742`, `:751` (record in notes).
+- [x] `src/agentic_mbse/validation/report.py`: fill L6's `profile`. *Done without editing `report.py`: L6 puts the profile in `report_detail`, which the report already writes as `profile`.*
+- [x] Matrix: close MULTIPLICITY-SHAPE in `tests/fixtures/subset_profile/inventory/matrix.toml` citing the new test; regenerate `matrix.md` with `scripts/subset_profile/render_matrix.py`; `tests/test_subset_matrix.py` still passes.
+- [x] Grep tests, `skills/` and `scripts/` for the old title and for strings the new L6 output changes (design risk "text output changes"); fix or record each hit.
 
 ### Validation
 
-- [ ] New tests pass; full suite green rule; ruff and mypy on touched files.
-- [ ] Manual: `--level=6 --execution-target=generated` on `tests/fixtures/l6/contract/refused_incomplete` prints the verdict line with the refused count first, and the first printed issue lines are refusals.
+- [x] New tests pass; full suite green rule; ruff and mypy on touched files. *Done: see Phase 5 Completion.*
+- [x] Manual: `--level=6 --execution-target=generated` on `tests/fixtures/l6/contract/refused_incomplete` prints the verdict line with the refused count first, and the first printed issue lines are refusals. *Done: verdict line `refused_incomplete: 1 refused, then incomplete: 1 unverified; 0 unassessed constraints; not a generation check`; first issue line `ERROR: refused (subset-profile/v1): invocation-callable/unsupported_callable in attribute_value: ...`, then the unverified ERROR.*
 
 **What we know works:** the contract is wired into L6, with every target's presentation, the String replacement and the report profile.
 
@@ -763,6 +763,26 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 - The report's per-issue `display` is the issue's severity: an issue reaches `issues` only as ERROR or WARNING, and summarized results are in `summarized`.
 - `agentic_mbse.version` in the report is the source tree's `__version__`, so an export run reports its own version, not the venv's metadata.
 
+
+### Phase 5 Completion
+**Completed:** 2026-10-19, commit recorded in git log ("L6 runs the subset contract first ...").
+**Changes:** `sysml/types.py` (six `L6_SUBSET_*` codes; L6 comment renamed); `sysml/subset_coverage.py` (NEW); `validation/subset_presentation.py` (NEW: `present`, `string_subjects`, `shadowed_by`); L6 runs the contract first (`_run_contract`, crash → `L6_CHECK_ERROR` from `subset_profile`), passes `string_subjects` to `check_design_attr_completeness`, shows every issue through `present`, and is titled through `LEVEL_NAME`; `runner.py` title. Fixtures `tests/fixtures/l6/contract/*`; tests `test_l6_contract.py`, `test_subset_coverage.py`. Matrix row closed in `matrix.toml`; `matrix.md` re-rendered.
+**Checks:** full suite 6 failed / 4196 passed; the 6 are the baseline list. mypy 97 errors (baseline). Touched files pass `ruff format --check`; `ruff check` is clean except the baseline E712s below.
+**Changed assertions:** `tests/test_sysml_quality_checks.py:742`, `:751` (and the class docstring at `:781`) now expect "Architecture & Generator Subset" (the rename). The file was not `ruff format`-clean before; formatting it, per the green rule, reflowed 58 lines without changing any test. Its four E712 findings are baseline findings and were left alone.
+**Decisions and deviations:**
+- **No Item 1 probe gives verdict `unconfirmed`** (every probe is evidence for a listed pair). The `unconfirmed` fixture is a non-numerical asserted constraint owned by an action def (`constraint-predicate` / `non_numerical_predicate` / `owner_other`). The B8 fixture is the same predicate under a calc usage with an asserted constraint, dc3's shape, not dc3's text.
+- **`beyond_generator_roots` cannot reach L6**, which always uses the generator's roots. Its message is tested through `present()` on Item 1's `widened_roots.sysml` with a caller root. `beneath_refused_multiplicity` has its own L6 fixture.
+- **The native summary line leaves out "0 advisories"** until Phase 6 adds the advisories, so it never prints a count of something that did not run.
+- **Shadowed-by applies to any outcome** (D9 says every finding not refused by the shadowing rule), and the report's `shadowed_by` also carries the refused finding's element id.
+- **The unassessed WARNING sorts after the contract's omitted findings.** D13 does not place it.
+- **The report's severities are the enum's lowercase values** (`error`, `warning`, `info`). Each profile finding's `display` is the table's value (`error`, `warning`, `native_summary`, `count_only`). Admitted findings appear only in the profile, as `count_only`.
+- **`pass_note` is set only when L6 passes.**
+- **String suppression is by element id.** If SysIDE gives an attribute no id, the legacy error stays.
+- **The coverage module's docstring was corrected:** its follow-up sites include agentic-mbse's shared-evidence walkers, not only sysml-codegen sites. `NO_RULE_FAMILIES` keeps the design's printed order, so the test compares it to the matrix as a set.
+- **Re-rendering `matrix.md` also fixed one stale `doc:` path** that `matrix.toml` already had right (left over from Item 1's archive move).
+- **Grep for the old title:** only `skills/model-validation/SKILL.md:28` and `CLAUDE.md:124` remain. Both are Phase 10 items, so they are unchanged. No test, skill or script asserts the final-line text that unset runs now change.
+- **Location text:** contract findings use the contract's `SafeLocation.file`, which prints as `///tmp/...` for a `/tmp` project, as the existing `L6_CONSTRAINT_NON_NUMERICAL` warnings already do. Not normalized here.
+
 ---
 
-**Status:** Phase 1 complete; Phases 2–5 in progress
+**Status:** Phases 1–5 complete; Phase 6 next
