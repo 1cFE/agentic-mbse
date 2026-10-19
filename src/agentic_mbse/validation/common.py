@@ -107,8 +107,6 @@ def discover_sysml_files(base_path: str, pattern: str = "**/*.sysml") -> list[Pa
     """
     Discover all SysML files recursively
 
-    Reuses pattern from test_sysml_parsing.py:82-100
-
     Args:
         base_path: Root directory to search
         pattern: Glob pattern for matching files

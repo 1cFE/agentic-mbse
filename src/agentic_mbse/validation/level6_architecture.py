@@ -185,10 +185,12 @@ def _check_manifests(models_path: str, model: Any) -> tuple[list[str], int]:
 def _segment_is_quoted(segment: str) -> bool:
     """Whether a `::`-delimited name segment is a quoted name (e.g. 'Trap Plant').
 
-    C6b (Item 12): codegen's Item-5 sanitization turns a quoted name into a valid
-    Python identifier (`'Trap Plant'` -> `Trap_Plant`), so a space inside a quoted
-    segment is legal, not a malformed qualified name. Only an *unquoted* space is a
-    real EQN-derivation failure.
+    C6b (Item 12): `sanitize_name` (`sysml/qualified_names.py`, which sysml-codegen
+    `b5663c07` re-exports at `core/qualified_names.py:10-17`) turns a quoted name into
+    a valid Python identifier (`'Trap Plant'` -> `Trap_Plant`), so a space inside a
+    quoted segment is legal, not a malformed qualified name. Only an *unquoted* space
+    is flagged. That codegen sanitizes every segment, so L6_INVALID_QUALIFIED_NAME is
+    not a generator refusal; backlog L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES.
     """
     s = segment.strip()
     return len(s) >= 2 and s.startswith("'") and s.endswith("'")
@@ -244,7 +246,7 @@ def check_qualified_names(model: Any) -> list[ValidationIssue]:
                 )
             else:
                 # Validate format: must have :: separator or be simple name.
-                # A space inside a quoted segment is legal (C6b, sanitized by codegen).
+                # A space inside a quoted segment is legal (C6b, sanitize_name).
                 qname_str = str(qname)
                 unquoted_space = any(
                     " " in seg and not _segment_is_quoted(seg) for seg in qname_str.split("::")
@@ -550,8 +552,9 @@ def check_design_attr_completeness(
 
             if has_value:
                 # D3 (L6-EXPOSE-CONSISTENCY): an EXPOSE binding is complete. Codegen
-                # wires the alias to its source, so it needs no numeric default and
-                # the static evaluator does not apply.
+                # wires the alias to its source (sysml-codegen `b5663c07`,
+                # `elaboration/elaborate.py:982-1012`), so it needs no numeric default
+                # and the static evaluator does not apply.
                 if is_expose_binding(attr, attr.feature_value_expression):
                     continue
                 if omitted_strings and _element_id(attr) in omitted_strings:
@@ -565,8 +568,8 @@ def check_design_attr_completeness(
                             severity=Severity.ERROR,
                             code=ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE,
                             message=(
-                                f"Design attribute '{attr_name}' has expression but codegen "
-                                f"cannot extract a numeric default: {e}"
+                                f"Design attribute '{attr_name}' has an expression with no "
+                                f"static numeric value: {e}"
                             ),
                             element_name=attr_name,
                             location=location,
@@ -609,7 +612,8 @@ def check_anonymous_returns(model: Any) -> list[ValidationIssue]:
 
     An anonymous `return : Real = <expr>` has no declared name (syside synthesizes
     `result`, but declared_name is empty), so codegen derives no output channel from
-    it. Mirrors codegen's V8 diagnostic. The named forms — `out attribute`, named
+    it. Mirrors codegen's V8 diagnostic (sysml-codegen `b5663c07`,
+    `extraction/extractor.py:191-215`, REQ-EXT-11). The named forms — `out attribute`, named
     `return` (inline or body-assignment), and bare `in` — carry a declared name and
     are accepted.
 
@@ -795,8 +799,10 @@ def check_body_assignment_impl_loss(model: Any) -> list[ValidationIssue]:
 
     The form `return attribute y : Real; y = <expr>` declares a named output with
     no inline value and assigns it in the calc body. Extraction captures the output
-    channel but loses auto-impl — codegen cannot recover the expression until its
-    deferred-capture support lands, so the modeler must hand-write the stencil body.
+    channel but loses auto-impl: sysml-codegen `b5663c07` drops the body-assignment
+    target as a parameter (`extraction/extractor.py:249-264`) and marks the output
+    MANUAL_REQUIRED, "no expression AST" (`extraction/expression_compiler.py:265-274`),
+    so the modeler must hand-write the stencil body.
     Prefer the inline form `return y : Real = <expr>` / `out attribute y : Real =
     <expr>`. WARNING, so Level 6 stays passing.
 
@@ -871,20 +877,17 @@ def check_attr_redef_expression_dropped(model: Any) -> list[ValidationIssue]:
     """
     C7 (Item 9): WARN an `attribute :>>` redefinition carrying an expression value.
 
-    Codegen's redefinition scan (hierarchy_resolver._extract_single_redefinition)
-    reads only ReferenceUsage members, so a redefinition written WITH the
-    `attribute` keyword parses as an AttributeUsage and is silently dropped — its
-    override never reaches the pipeline. This fires only when the dropped RHS is a
-    computed expression (the dangerous case, where no supported one-line rewrite
-    exists). The two forms codegen accepts or teaches do NOT fire:
-    - the bare `:>> attr = <literal>` / bare `:>> attr = <expr>` forms parse as
-      ReferenceUsage and are captured (D1 mechanism b);
-    - the `attribute :>> attr = <literal>` form is an AttributeUsage too, but is
-      taught in semantic-operators.md (use the bare form) rather than warned — the
-      prior-epic C7 boundary is expression-vs-literal.
-
-    WARNING severity, so Level 6 stays passing. Mirrors semantic-operators.md
-    "attribute :>> with an expression is dropped".
+    Written for an older sysml-codegen whose redefinition scan
+    (`hierarchy_resolver._extract_single_redefinition`) read only ReferenceUsage
+    members, so a redefinition written WITH the `attribute` keyword (an
+    AttributeUsage) was dropped. sysml-codegen `b5663c07` has deleted that scan
+    (`tests/helpers/live_extraction.py:9-10`); its current one takes every Feature with
+    a qualified name and a value (`elaboration/elaborate.py:832-898`), so both spellings
+    are treated alike. The check is kept unchanged under every target; backlog
+    L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES decides it. It fires only when the RHS is a
+    computed expression; the bare `:>> attr = ...` forms (ReferenceUsage) and the
+    `attribute :>> attr = <literal>` form (taught in semantic-operators.md) do NOT
+    fire. WARNING severity, so Level 6 stays passing.
 
     Detection: an AttributeUsage with a non-empty owned_redefinitions and a
     feature_value_expression that is not a literal.
@@ -919,8 +922,8 @@ def check_attr_redef_expression_dropped(model: Any) -> list[ValidationIssue]:
                     code=ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED,
                     message=(
                         f"Attribute redefinition '{name}' uses the `attribute :>>` form with an "
-                        f"expression value; codegen scans only ReferenceUsage redefinitions, so "
-                        f"this override is silently dropped at extraction"
+                        f"expression value; earlier sysml-codegen versions dropped this "
+                        f"override at extraction"
                     ),
                     element_name=name,
                     location=get_element_location(attr),
