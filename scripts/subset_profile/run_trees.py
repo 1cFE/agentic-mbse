@@ -1,12 +1,14 @@
 """Run the subset-profile evaluator over the acceptance trees and record what it reports.
 
-    uv run python scripts/subset_profile/run_trees.py --final-rev REV --out DIR (--tree NAME ... | --all)
+    uv run python scripts/subset_profile/run_trees.py --final-rev REV --codegen-rev REV --out DIR \
+        (--tree NAME ... | --all)
 
-Plan Phase 10. Trees:
+Item 1 Phase 10's acceptance trees, rerun by Item 2a P7 against the 2a contract. `--codegen-rev`
+names the sysml-codegen revision the findings are judged against (Item 1 used `b5663c07`). Trees:
 
 - `dc3-baseline`: dc3 `808464df` `models/`. Every confirmed T-001 category B1-B8 must appear.
-- `dc3-repaired`: dc3 `60b44d53` `models/`, which generates at the pinned codegen. Zero `refused`.
-- `corpus`: sysml-codegen `b5663c07` `tests/fixtures/v6_recapture_batch/batch.json`, one run per
+- `dc3-repaired`: dc3 `60b44d53` `models/`, which generates at that codegen. Zero `refused`.
+- `corpus`: sysml-codegen at `--codegen-rev`, `tests/fixtures/v6_recapture_batch/batch.json`, one run per
   fixture directory. Zero `refused` on the snapshot fixtures; on the refusal fixtures every
   `refused` finding's code must be in the fixture's recorded code list (a lower bound) or be
   recorded for a conformance case.
@@ -39,7 +41,6 @@ from isolated_tree import CODEGEN_SIBLING, export_tree, git, resolve_rev  # noqa
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CODEGEN_REPO = CODEGEN_SIBLING
 DC3_REPO = Path.home() / "src" / "dc3"
-PINNED_CODEGEN_REV = "b5663c07e987a892e27d21e68cec40d0656574ee"
 DC3_BASELINE_REV = "808464df85d50521e4fbb9ba7cceb63d382aa832"
 DC3_REPAIRED_REV = "60b44d53460fccd2f44811d8abfd42bc270e90b2"
 BATCH = "tests/fixtures/v6_recapture_batch/batch.json"
@@ -132,8 +133,6 @@ def self_check(run: TreeRun) -> None:
         raise RunError(f"{run.label}: default roots used {scope.roots_used} != generator roots")
     if run.result.counts.declarations is None or run.result.counts.occurrences is None:
         raise RunError(f"{run.label}: declaration or occurrence count missing")
-    if not run.identity.codegen_rev.startswith("b5663c07"):
-        raise RunError(f"{run.label}: codegen identity {run.identity.codegen_rev}")
 
 
 def with_export(repo: Path, rev: str, subdir: str, work: Path) -> Path:
@@ -343,23 +342,27 @@ def run_markdown(data: dict[str, Any]) -> list[str]:
 # ---- the three trees ------------------------------------------------------------------------------
 
 
-def run_dc3(label: str, rev: str, agentic_rev: str, work: Path) -> list[dict[str, Any]]:
+def run_dc3(
+    label: str, rev: str, agentic_rev: str, codegen_rev: str, work: Path
+) -> list[dict[str, Any]]:
     models = with_export(DC3_REPO, rev, "models", work)
-    identity = Identity(agentic_rev, PINNED_CODEGEN_REV, "dc3", rev, "models/", _syside_version())
+    identity = Identity(agentic_rev, codegen_rev, "dc3", rev, "models/", _syside_version())
     return [run_json(evaluate_tree(label, models, models.parent, identity))]
 
 
-def run_corpus(agentic_rev: str, work: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    root = with_export(CODEGEN_REPO, PINNED_CODEGEN_REV, ".", work)
+def run_corpus(
+    agentic_rev: str, codegen_rev: str, work: Path
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    root = with_export(CODEGEN_REPO, codegen_rev, ".", work)
     batch = json.loads((root / BATCH).read_text(encoding="utf-8"))
     runs = []
     for name in batch["fixtures"]:
         record = batch["records"][name]
         identity = Identity(
             agentic_rev,
-            PINNED_CODEGEN_REV,
+            codegen_rev,
             "sysml-codegen",
-            PINNED_CODEGEN_REV,
+            codegen_rev,
             f"tests/fixtures/{name}/",
             _syside_version(),
         )
@@ -426,12 +429,14 @@ def main() -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--final-rev", required=True)
+    parser.add_argument("--codegen-rev", required=True)
     parser.add_argument("--out", type=Path, required=True, help="directory for the run's evidence")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--tree", action="append", choices=TREES)
     group.add_argument("--all", action="store_true")
     args = parser.parse_args()
     agentic_rev = require_final_checkout(args.final_rev)
+    codegen_rev = resolve_rev(CODEGEN_REPO, args.codegen_rev)
     trees = TREES if args.all else tuple(args.tree)
     with tempfile.TemporaryDirectory(prefix="subset-trees-") as tmp:
         work = Path(tmp)
@@ -439,7 +444,7 @@ def main() -> int:
             title = f"# Subset-profile run: {tree}"
             if tree in ("dc3-baseline", "dc3-repaired"):
                 rev = DC3_BASELINE_REV if tree == "dc3-baseline" else DC3_REPAIRED_REV
-                runs = run_dc3(tree, rev, agentic_rev, work)
+                runs = run_dc3(tree, rev, agentic_rev, codegen_rev, work)
                 write(
                     args.out,
                     tree,
@@ -454,14 +459,14 @@ def main() -> int:
                 )
                 print(f"{tree}: verdict {runs[0]['verdict']}, counts {runs[0]['counts']}")
                 continue
-            runs, manifest = run_corpus(agentic_rev, work)
+            runs, manifest = run_corpus(agentic_rev, codegen_rev, work)
             checks = corpus_checks(runs, recorded_refusal_codes())
             md = [
                 title,
                 "",
                 "Generated by `scripts/subset_profile/run_trees.py`.",
                 "",
-                f"`{BATCH}` at `{PINNED_CODEGEN_REV}` (status `{manifest['status']}`): {manifest['fixtures']} fixtures, "
+                f"`{BATCH}` at `{codegen_rev}` (status `{manifest['status']}`): {manifest['fixtures']} fixtures, "
                 f"{manifest['captured']} snapshot records, {manifest['refused']} typed refusal records (read from the manifest; the batch README says 15 and 22).",
                 "",
                 "The snapshot fixtures prove admission through elaboration and projection, not full generation. They contain no function invocations, no `ordered` or `nonunique` multiplicity and no range multiplicity, so they are a regression floor, not proof that the rules are not overbroad.",

@@ -12,9 +12,12 @@
 
 schema = 1
 
+# The revisions Item 2a's pre-merge gate checked these records against (codegen_gate.json). A
+# record cannot name the commit that contains it, so agentic_rev is the last commit before this
+# table's refresh; the refresh changes no rule.
 [verified_against]
-codegen_rev = "b5663c07e987a892e27d21e68cec40d0656574ee"
-agentic_rev = "b1e95ec93598a60aa95fd14cf16256dab6e3d047"
+codegen_rev = "fdc1f7849e8356850832a8c30f9194444eef885c"
+agentic_rev = "42798bc0cfa23150807fbbc70db4950cae964c8d"
 syside_version = "0.8.4"
 
 # ---- ES-003, ES-012, self-binding ---------------------------------------------------------------

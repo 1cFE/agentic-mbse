@@ -12,6 +12,14 @@ and writes every test's outcome to `<DIR>/<NAME>.json` with the run identity, an
 report to `<DIR>/<NAME>.log`. `diff` compares two such runs test by test; it exits non-zero on
 any difference, so identical results are the only pass.
 
+A run passes only when every selected test passed. A failure, an error or a skip fails it: the
+only skip in codegen's subset tests is `requires_license`, and a run with license-gated skips
+does not count. A passing run of the default selection writes the gate receipt
+(`gate_receipt.py`) to this checkout's `tests/fixtures/subset_profile/codegen_gate.json`: the
+digest of the covered files in the exported agentic-mbse tree, both revisions, and the packaged
+case IDs that a passed codegen test was parametrized with. The run refuses to write it if any
+packaged case has no passed test. A failing run leaves the receipt alone.
+
 The sibling checkouts are only read with `git archive`; the run fails if codegen's HEAD or status
 changes.
 """
@@ -27,7 +35,9 @@ import tempfile
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 
-from isolated_tree import (  # this directory is on sys.path when the script runs
+# Both modules sit beside this script, whose directory is on sys.path when it runs.
+import gate_receipt
+from isolated_tree import (
     CODEGEN_SIBLING,
     REPO_ROOT,
     IsolationBreachError,
@@ -59,6 +69,31 @@ def outcomes(junit: Path) -> dict[str, str]:
             raise SystemExit(f"JUnit report repeats test id {test_id}")
         found[test_id] = outcome
     return found
+
+
+def passed_case_ids(outcome_by_id: dict[str, str], packaged: set[str]) -> set[str]:
+    """The packaged case IDs that some passed test was parametrized with, as its whole id."""
+    params = {
+        test_id[test_id.index("[") + 1 : -1]
+        for test_id, outcome in outcome_by_id.items()
+        if outcome == "passed" and test_id.endswith("]")
+    }
+    return packaged & params
+
+
+def receipt(tree: Path, codegen: str, agentic: str, outcome_by_id: dict[str, str]) -> dict:
+    """The gate receipt for a passing run (design D13). Raises SystemExit if a case went untested."""
+    exported = tree / "agentic-mbse"
+    packaged = gate_receipt.packaged_case_ids(exported)
+    tested = passed_case_ids(outcome_by_id, packaged)
+    if packaged - tested:
+        raise SystemExit(f"no passed codegen test for packaged cases {sorted(packaged - tested)}")
+    return {
+        "digest": gate_receipt.digest(exported),
+        "codegen_rev": codegen,
+        "agentic_rev": agentic,
+        "case_ids": sorted(tested),
+    }
 
 
 def run(args: argparse.Namespace) -> int:
@@ -123,8 +158,17 @@ def run(args: argparse.Namespace) -> int:
     for outcome in result["outcomes"].values():
         counts[outcome] = counts.get(outcome, 0) + 1
     print(f"{args.label}: agentic {agentic[:12]} exit={done.returncode} {counts} | {tail}")
+    passed = done.returncode == 0 and set(counts) == {"passed"}
+    if passed and not args.select:
+        written = receipt(tree, codegen, agentic, result["outcomes"])
+        (REPO_ROOT / gate_receipt.RECEIPT).write_text(json.dumps(written, indent=1) + "\n")
+        print(f"wrote {gate_receipt.RECEIPT}: {len(written['case_ids'])} cases")
+    elif passed:
+        print("not the default selection: no receipt written")
+    else:
+        print("the run did not pass: no receipt written")
     shutil.rmtree(tree)
-    return 0
+    return 0 if passed else 1
 
 
 def diff(args: argparse.Namespace) -> int:

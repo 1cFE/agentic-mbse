@@ -82,3 +82,17 @@ def test_isolated_tree_defines_every_helper_codegen_suite_imports():
     imported = _imported_from(CODEGEN_SUITE, "isolated_tree")
     assert SUITE_HELPERS <= imported
     assert imported <= _names_bound_at_module_level(ISOLATED_TREE)
+
+
+def test_a_case_counts_for_the_receipt_only_through_a_passed_test_with_its_whole_id(monkeypatch):
+    monkeypatch.syspath_prepend(str(SCRIPTS))
+    from codegen_suite import passed_case_ids
+
+    outcomes = {
+        "t::test_live[a__b]": "passed",
+        "t::test_live[a__b__c]": "failed",
+        "t::test_parity[case/a__d]": "passed",
+        "t::test_other": "passed",
+        "t::test_live[e]": "skipped",
+    }
+    assert passed_case_ids(outcomes, {"a__b", "a__b__c", "a__d", "e"}) == {"a__b"}
