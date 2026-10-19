@@ -241,6 +241,24 @@ codegen, so a two-names-one-identifier collision fails loudly at generation. PUS
 
 ---
 
+### [SUBSET-PROFILE-TYPING-AND-LITERAL-CANDIDATES] Typing and literal shapes the generator refuses and the subset contract is silent on
+
+**Priority**: P2
+**Owner**: Reid Westwood
+**Status**: Filed 2026-10-19 by sysml-codegen EXEC-SUBSET-CONTRACT Item 2a (final-audit fixes), routed to epic Item 3 (`epic_executable-subset-contract.md`)
+**Source**: sysml-codegen `.project/active/subset-profile-conformance/audit.md` (final, Advisory 1); entries in sysml-codegen `tests/expectations/subset_profile/disagreements.json`
+
+**What**: twenty recorded disagreements where the generator refuses on a typing or literal fact. The final audit judged that the screen could probably decide each from facts agentic-mbse already extracts; Item 2a attempted no rule for them (tail sites) and did not check fact by fact. For each, decide by the rule criterion (a stateable reaching context, shared facts, no heuristic) whether a rule reports it, and name any missing fact. Each entry points at this row.
+
+- Screen silent, value typing: `fixture:plant_value_shapes` (enumeration-typed calc input), `fixture:feature_typing_integrity`, `case:calc-def-parameter__untyped`, `case:calc-def-parameter__quantity_typed`, `case:feature-type__untyped_attribute`, `case:feature-type__subsetting_without_typing`, `case:feature-type__quantity_value`.
+- Screen silent, usage typing: `case:calc-usage-typing__untyped`, `case:calc-usage-typing__subsetting_only`, `case:calc-usage-typing__library_calc_def`, `case:constraint-typing__inherited_by_subsetting`, `case:constraint-typing__untyped_with_bound_input`, `case:part-typing__two_definitions`.
+- Screen silent, literals: `case:literal-binding__null`, `case:literal-binding__unbounded`, and `fixture:non_finite_literal`, whose blocking diagnostic is already a shared fact (`constraint_extraction.py` `_literal_node`, `constraint_facts.py` `EXTRACTION_DIAGNOSTIC_SEVERITY`).
+- Screen refuses with a code that does not map (`constraint-predicate/blocked_predicate` against the generator's `SI_EDGE_DANGLING`): `case:blocked-predicate-unmapped-code__untyped_assert`, `…__constraint_check_typed` (the profile selects a library definition codegen does not index), `…__quantity_operands_mixed_units`, `…__quantity_operands_same_units` (quantity-typed operand). The question here is which shape and reason the screen should report, not whether it refuses.
+
+**Cases**: every `case:` subject is a sysml-codegen codegen-home case (`tests/fixtures/subset_profile/<id>/`, answers in `tests/expectations/subset_profile/cases/`); every `fixture:` subject is a sysml-codegen fixture. A rule that reports `refused` needs a packaged case showing the refusal (Item 1 records rule).
+
+---
+
 ### [PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-SHAPE-MESSAGE] Opaque Expression Reconstruction Profile Warning
 
 **Priority**: P2
