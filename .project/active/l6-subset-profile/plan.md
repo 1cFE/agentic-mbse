@@ -1,6 +1,6 @@
 # Implementation Plan: L6 integration and execution-target settings (EXEC-SUBSET-CONTRACT Item 3)
 
-**Status:** Phases 1–6 complete; Phase 7 next
+**Status:** Phases 1–7 complete; Phase 8 next
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 
@@ -465,16 +465,16 @@ Drive each site with fakes (`SysideAdapter.elements_of_type`, `SysideAdapter.is_
 
 **See `design.md` for:** Appendix B (the site list and each change), D4, D16, I1, Implementation Notes "Exception-site pattern".
 
-- [ ] `tests/test_validation/test_l6_check_errors.py` (NEW).
-- [ ] `src/agentic_mbse/sysml/expression.py:466-567`: `Unextractable`, `UnextractableValueError`, `UnextractableTypeError`; each deliberate raise uses the subclass of its current type.
-- [ ] `src/agentic_mbse/validation/level6_architecture.py`: every Appendix B site; `:540` catches `Unextractable` only; `validate_architecture` wraps each top-level check call; counts at `:973`, `:978` become `not computed` plus `L6_CHECK_ERROR`. Keep the display-only fallbacks in `get_qualified_name` and `get_element_location`.
-- [ ] `src/agentic_mbse/validation/adr002.py`: every Appendix B site; delete `_get_calc_usage_names` (`:268`).
-- [ ] Before editing, reconcile Appendix B's line numbers with the current file (they are at `ebb3d467`; Phase 5 moved some). Record the mapping in notes.
+- [x] `tests/test_validation/test_l6_check_errors.py` (NEW). *Done `dff51e5b`: 29 sites × 3 targets, plus counts, D16, deletion and the surprise test (101 cases).*
+- [x] `src/agentic_mbse/sysml/expression.py:466-567`: `Unextractable`, `UnextractableValueError`, `UnextractableTypeError`; each deliberate raise uses the subclass of its current type. *Done: 6 ValueError and 2 TypeError raises, plus the non-numeric literal (see notes).*
+- [x] `src/agentic_mbse/validation/level6_architecture.py`: every Appendix B site; `:540` catches `Unextractable` only; `validate_architecture` wraps each top-level check call; counts at `:973`, `:978` become `not computed` plus `L6_CHECK_ERROR`. Keep the display-only fallbacks in `get_qualified_name` and `get_element_location`. *Done.*
+- [x] `src/agentic_mbse/validation/adr002.py`: every Appendix B site; delete `_get_calc_usage_names` (`:268`). *Done.*
+- [x] Before editing, reconcile Appendix B's line numbers with the current file (they are at `ebb3d467`; Phase 5 moved some). Record the mapping in notes. *Done (notes).*
 
 ### Validation
 
-- [ ] New tests pass; full suite green rule (existing tests that asserted a swallowed failure now see `L6_CHECK_ERROR`: record each); ruff and mypy.
-- [ ] Manual: `grep -n "except Exception" src/agentic_mbse/validation/level6_architecture.py src/agentic_mbse/validation/adr002.py` lists only sites that report, plus the two display-only fallbacks.
+- [x] New tests pass; full suite green rule (existing tests that asserted a swallowed failure now see `L6_CHECK_ERROR`: record each); ruff and mypy. *Done: 6 failed (baseline) / 4325 passed; mypy 97; ruff 118. No existing test asserted a swallowed failure.*
+- [x] Manual: `grep -n "except Exception" src/agentic_mbse/validation/level6_architecture.py src/agentic_mbse/validation/adr002.py` lists only sites that report, plus the two display-only fallbacks. *Done: 22 hits, each followed by `_element_error`, `_enumeration_error` or `check_error_issue`, plus the model-load handler (`:1162`), which already reported. The two display-only fallbacks live in `common.py:216-240`, not in these files.*
 
 **What we know works:** no failed inspection in L6 reads as clean, as zero, or as a model defect.
 
@@ -799,6 +799,20 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 - `ruff format` on `expression.py` (required by the green rule for touched files) also reflowed one pre-existing `is_reference_type` return (`:205`), not a behaviour change.
 - The two Item 1 matrix rows for these advisories (`PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-SHAPE-MESSAGE`, `PUSH-DOWN-AGG-PROFILE-WRAPPER-SHAPE`) were not edited: the plan closes only MULTIPLICITY-SHAPE, and `test_subset_matrix.py` constrains the PUSH-DOWN rows.
 
+### Phase 7 Completion
+**Completed:** 2026-10-19, `dff51e5b`.
+**Line mapping (Appendix B at `ebb3d467` → before this phase's edits, after Phases 5–6):** `level6_architecture.py` 191→210, 230→249, 246→265, 289→308, 320→339, 374→393, 418→437, 470→489, 502→527, 520→545, 540→567, 572→599, 623→657, 723→755, 759→791, 832→864, 907→939, 960→1089, 973→1104, 978→1109. `adr002.py` was unchanged since `ebb3d467`, so its lines held (87, 177, 207, 254, 268, 277, 335, 423, 624).
+**Changes:** `level6_architecture.py`: `_element_error`, `_enumeration_error`; every element loop reports and continues, every failed enumeration ends its check with one error; the two `AttributeError` catches are now element errors with no `L6_MISSING_QUALIFIED_NAME`; the owner type test (`:520`) reaches the element handler, so the attribute is not checked; `:540` catches `Unextractable` only. `validate_architecture` runs the legacy checks from one table (`_LEGACY_CHECKS`, in today's order) through `_guarded`, which `_run_contract` and `_run_advisories` now share, and the counts go through `_count`/`_count_elements`. `adr002.py`: `_element_error` at its four element handlers; `_is_invocation`, `_is_calc_usage`, `_is_part_usage` and `is_expose_binding` no longer catch, so a failure reaches the calling attribute's handler; `_get_calc_usage_names` deleted. `expression.py`: `Unextractable` and its two subclasses. Fixture `tests/fixtures/l6/check_errors/models/` (one library and one design file); tests `tests/test_validation/test_l6_check_errors.py`.
+**How the sites are forced:** a patched `SysideAdapter.elements_of_type` or `is_instance` raises only when called from the named function (read from the caller's frame), or returns the real elements wrapped so that one attribute read raises. Every other read is real, so each test runs the real L6 on a real model. A test with nothing forced shows the fixture reaches every site with no check error. For the three EXPOSE sites, a probe confirmed the test discriminates: with today's "return False on failure", `plant::Plant::exposed` gets V2, V4 and UNEXTRACTABLE findings; with the change it gets none.
+**Decisions and deviations:**
+- **"Not computed" covers every count a failure touched, not only `:973` and `:978`.** A check that reported any `L6_CHECK_ERROR` (element or check scope) prints "not computed" for its per-code counts, and for "Bindings validated" or "Design attrs checked" where those are its counts. The spec says "a count the failure affected prints not computed"; a partial count is affected.
+- **A non-numeric literal is the evaluator's own signal.** `float(expr.value)` on a String literal raises a plain `ValueError` at `ebb3d467`, and that is where today's legacy String error comes from. It is now re-raised as `UnextractableValueError` with the same message. Without this, a String the contract does not report (the B6 fallback D10 describes) would turn into `L6_CHECK_ERROR` instead of keeping its legacy error.
+- **`Unextractable` keeps the design's name** with `# noqa: N818` (ruff wants an `Error` suffix; it is a marker the two `*Error` classes carry).
+- `adr002.py` imports `check_error_issue` absolutely, outside its relative/direct `try`, as Phase 1 did in `runner.py`, so mypy reports no new error.
+- The count check is named `count of CalculationDefinition` / `count of CalculationUsage` in its message.
+
+**Surprise 1 (premise conflict, for the owner): a design attribute that calls anything but `sum` now fails L6 under every target.** `check_static_expressions` (V2) reads an attribute's references through `inspect_reference_uses`, which deliberately raises `SemanticEvidenceError` on every non-`sum` invocation (the ES-005 refusal path, `reference_use.py:420-452`). At `ebb3d467` the broad `except` at `adr002.py:624` hid this, so V2 skipped the attribute and L6 showed only the `V4_STATIC_FUNCTION_INVOCATION` WARNING, whose docstring says "WARNING, not ERROR, so Level 6 stays passing". Under I1 the raise is now `L6_CHECK_ERROR`, so `attribute x : Real = abs(2.0);` in `designs/` fails L6 under unset, `generated` and `native`. The contract already reports the same site (an `invocation-callable` refusal and an unverified `indexed-reference` check). I followed I1, because the design names D15 as its only exception, and pinned the behaviour in `test_static_expression_walker_refusal_is_a_check_error` so a change of mind changes one test. The alternative is to treat a shared walker's own `SemanticEvidenceError` inside a legacy check like D15: a WARNING that V2 could not inspect the attribute, never silent. Phase 11 measures whether any consumer tree is affected; dc3 `60b44d5`, the only tree passing L6 today, has verdict `clear`, so it has no unsupported call in an attribute value.
+
 ---
 
-**Status:** Phases 1–6 complete; Phase 7 next
+**Status:** Phases 1–7 complete; Phase 8 next
