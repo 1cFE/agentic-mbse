@@ -6,7 +6,7 @@
   },
   "agentic_mbse": {
     "base": "ebb3d46710a4c1476bb12fa0e9decf0088ddb2c5",
-    "branch": "0ba0bf0215bc3177e724d1cfe2d42aa2480f34b1"
+    "branch": "41b14ca957a154821e76f595b8ff5a939037b18d"
   },
   "syside_version": "0.8.4",
   "trees": {
@@ -44,11 +44,11 @@
       }
     }
   },
-  "scratch": "/tmp/l6-before-after-v7g_wmyv",
+  "scratch": "/tmp/l6-before-after-7wijcycx",
   "siblings_unchanged": true,
   "skipped_links": {
     "agentic-mbse@ebb3d467": [],
-    "agentic-mbse@0ba0bf02": [],
+    "agentic-mbse@41b14ca9": [],
     "fusion-tea@f96ad312": [
       ".project/active/aries-comparison-preparation/current-readiness/revealed-results/c0/selected-forward/native/pkg_link/stellarator_tea -> /tmp/aries-r3-execution-20260920/exploration/stellarator_e2e/generated",
       ".project/active/aries-comparison-preparation/current-readiness/revealed-results/c0/table5-conditioned/native/pkg_link/stellarator_tea -> /tmp/aries-r3-execution-20260920/exploration/stellarator_e2e/generated",
@@ -188,10 +188,10 @@
         1
       ],
       "wall_time_s": [
-        421.9,
-        210.7
+        412.7,
+        212.0
       ],
-      "ratio": 0.499,
+      "ratio": 0.514,
       "l6_changes": {
         "omitted_warnings": 131,
         "omitted_expected": 131,
@@ -284,10 +284,10 @@
         1
       ],
       "wall_time_s": [
-        44.8,
-        17.9
+        35.0,
+        18.1
       ],
-      "ratio": 0.4,
+      "ratio": 0.517,
       "l6_changes": {
         "omitted_warnings": 32,
         "omitted_expected": 32,
@@ -421,7 +421,7 @@
         "code_commit": "ebb3d46710a4c1476bb12fa0e9decf0088ddb2c5",
         "module_file": "code-base/src/agentic_mbse/__init__.py",
         "exit_code": 1,
-        "wall_time_s": 421.9,
+        "wall_time_s": 412.7,
         "levels": {
           "1": {
             "status": "passed",
@@ -450,7 +450,7 @@
               "   Positional pins out of scope: 0",
               "   Positional pins not judged (inspection failed): 0",
               "   Positional unverifiable: 0",
-              "   Positional pin list: none (looked at /tmp/l6-before-after-v7g_wmyv/trees/fusion-tea/positional-pins.toml)",
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/fusion-tea/positional-pins.toml)",
               "",
               "   Issues found: 465",
               "   - WARN: Unused calc def: integrated_heat_electricity::'Heat Driven Closure' at file:models/library/analyses/integrated_heat_electricity.sysml:46",
@@ -533,10 +533,10 @@
         "tree": "fusion-tea",
         "tree_commit": "f96ad312c63e8c66695971b12feab971f3ba6eb3",
         "code_label": "branch",
-        "code_commit": "0ba0bf0215bc3177e724d1cfe2d42aa2480f34b1",
+        "code_commit": "41b14ca957a154821e76f595b8ff5a939037b18d",
         "module_file": "code-branch/src/agentic_mbse/__init__.py",
         "exit_code": 1,
-        "wall_time_s": 210.7,
+        "wall_time_s": 212.0,
         "levels": {
           "1": {
             "status": "passed",
@@ -565,7 +565,7 @@
               "   Positional pins out of scope: 0",
               "   Positional pins not judged (inspection failed): 0",
               "   Positional unverifiable: 0",
-              "   Positional pin list: none (looked at /tmp/l6-before-after-v7g_wmyv/trees/fusion-tea/positional-pins.toml)",
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/fusion-tea/positional-pins.toml)",
               "",
               "   Issues found: 465",
               "   - WARN: Unused calc def: integrated_heat_electricity::'Heat Driven Closure' at file:models/library/analyses/integrated_heat_electricity.sysml:46",
@@ -613,7 +613,7 @@
             "status": "failed",
             "header": "\u274c Level 6: Architecture & Generator Subset",
             "block": [
-              "   Execution target: unset (no execution-target in /tmp/l6-before-after-v7g_wmyv/trees/fusion-tea/pyproject.toml)",
+              "   Execution target: unset (no execution-target in /tmp/l6-before-after-7wijcycx/trees/fusion-tea/pyproject.toml)",
               "   Execution target note: generator findings are shown as warnings because execution-target is not set. Add execution-target = \"generated\" or \"native\" under [tool.agentic-mbse] in pyproject.toml, or run agentic-mbse init --execution-target=generated|native.",
               "   Generator subset (subset-profile/v1, subset-coverage/v1): clear: no refusals found by the implemented rules; 0 refused; 0 unverified; 0 unassessed constraints; not a generation check",
               "   Coverage limit: no rule yet for DEEP-QUALIFIED-WIRING, ES-002, ES-008, ES-009, ES-010-REFUSAL, CALC-DEF-BARE-RESULT, and 85 follow-up sites; a clear verdict says nothing about these",
@@ -658,7 +658,7 @@
         "code_commit": "ebb3d46710a4c1476bb12fa0e9decf0088ddb2c5",
         "module_file": "code-base/src/agentic_mbse/__init__.py",
         "exit_code": 1,
-        "wall_time_s": 44.8,
+        "wall_time_s": 35.0,
         "levels": {
           "1": {
             "status": "passed",
@@ -687,7 +687,7 @@
               "   Positional pins out of scope: 0",
               "   Positional pins not judged (inspection failed): 0",
               "   Positional unverifiable: 0",
-              "   Positional pin list: none (looked at /tmp/l6-before-after-v7g_wmyv/trees/dc3-baseline/positional-pins.toml)"
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/dc3-baseline/positional-pins.toml)"
             ]
           },
           "3": {
@@ -762,10 +762,10 @@
         "tree": "dc3-baseline",
         "tree_commit": "808464df85d50521e4fbb9ba7cceb63d382aa832",
         "code_label": "branch",
-        "code_commit": "0ba0bf0215bc3177e724d1cfe2d42aa2480f34b1",
+        "code_commit": "41b14ca957a154821e76f595b8ff5a939037b18d",
         "module_file": "code-branch/src/agentic_mbse/__init__.py",
         "exit_code": 1,
-        "wall_time_s": 17.9,
+        "wall_time_s": 18.1,
         "levels": {
           "1": {
             "status": "passed",
@@ -794,7 +794,7 @@
               "   Positional pins out of scope: 0",
               "   Positional pins not judged (inspection failed): 0",
               "   Positional unverifiable: 0",
-              "   Positional pin list: none (looked at /tmp/l6-before-after-v7g_wmyv/trees/dc3-baseline/positional-pins.toml)"
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/dc3-baseline/positional-pins.toml)"
             ]
           },
           "3": {
@@ -834,7 +834,7 @@
             "status": "failed",
             "header": "\u274c Level 6: Architecture & Generator Subset",
             "block": [
-              "   Execution target: unset (no execution-target in /tmp/l6-before-after-v7g_wmyv/trees/dc3-baseline/pyproject.toml)",
+              "   Execution target: unset (no execution-target in /tmp/l6-before-after-7wijcycx/trees/dc3-baseline/pyproject.toml)",
               "   Execution target note: generator findings are shown as warnings because execution-target is not set. Add execution-target = \"generated\" or \"native\" under [tool.agentic-mbse] in pyproject.toml, or run agentic-mbse init --execution-target=generated|native.",
               "   Generator subset (subset-profile/v1, subset-coverage/v1): refused_incomplete: 236 refused, then incomplete: 50 unverified; 0 unassessed constraints; not a generation check",
               "   Coverage limit: no rule yet for DEEP-QUALIFIED-WIRING, ES-002, ES-008, ES-009, ES-010-REFUSAL, CALC-DEF-BARE-RESULT, and 85 follow-up sites; a clear verdict says nothing about these",
@@ -908,7 +908,7 @@
               "   Positional pins out of scope: 0",
               "   Positional pins not judged (inspection failed): 0",
               "   Positional unverifiable: 0",
-              "   Positional pin list: none (looked at /tmp/l6-before-after-v7g_wmyv/trees/dc3-repaired/positional-pins.toml)"
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/dc3-repaired/positional-pins.toml)"
             ]
           },
           "3": {
@@ -975,7 +975,7 @@
         "tree": "dc3-repaired",
         "tree_commit": "60b44d53460fccd2f44811d8abfd42bc270e90b2",
         "code_label": "branch",
-        "code_commit": "0ba0bf0215bc3177e724d1cfe2d42aa2480f34b1",
+        "code_commit": "41b14ca957a154821e76f595b8ff5a939037b18d",
         "module_file": "code-branch/src/agentic_mbse/__init__.py",
         "exit_code": 0,
         "wall_time_s": 13.3,
@@ -1007,7 +1007,7 @@
               "   Positional pins out of scope: 0",
               "   Positional pins not judged (inspection failed): 0",
               "   Positional unverifiable: 0",
-              "   Positional pin list: none (looked at /tmp/l6-before-after-v7g_wmyv/trees/dc3-repaired/positional-pins.toml)"
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/dc3-repaired/positional-pins.toml)"
             ]
           },
           "3": {
@@ -1047,7 +1047,7 @@
             "status": "passed",
             "header": "\u2705 Level 6: Architecture & Generator Subset",
             "block": [
-              "   Execution target: unset (no execution-target in /tmp/l6-before-after-v7g_wmyv/trees/dc3-repaired/pyproject.toml)",
+              "   Execution target: unset (no execution-target in /tmp/l6-before-after-7wijcycx/trees/dc3-repaired/pyproject.toml)",
               "   Execution target note: generator findings are shown as warnings because execution-target is not set. Add execution-target = \"generated\" or \"native\" under [tool.agentic-mbse] in pyproject.toml, or run agentic-mbse init --execution-target=generated|native.",
               "   Generator subset (subset-profile/v1, subset-coverage/v1): clear: no refusals found by the implemented rules; 0 refused; 0 unverified; 0 unassessed constraints; not a generation check",
               "   Coverage limit: no rule yet for DEEP-QUALIFIED-WIRING, ES-002, ES-008, ES-009, ES-010-REFUSAL, CALC-DEF-BARE-RESULT, and 85 follow-up sites; a clear verdict says nothing about these",

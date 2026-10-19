@@ -191,10 +191,11 @@ Each contract issue reads `<outcome> (subset-profile/v1): <rule>/<shape> in <con
 | State | Option given | Terminal, no option | Neither |
 |---|---|---|---|
 | Table readable, no `execution-target`, layout permits | write it | prompt: generated / native / leave unset (default); write the choice | write nothing; print the unset note with the TOML line and the `init` form |
-| No file | create a file holding only the table | same | same |
+| No file, and no `pyproject.toml` in any parent directory | create a file holding only the table, and say uv now treats the directory as its own project | same | same |
+| No file, but a parent directory has a `pyproject.toml` (added on audit impl-F2) | write nothing; print why (a new file would split this directory from that uv project), the lines to create by hand, and the per-run `--execution-target` alternative; **exit 1** | print the same | print the same |
 | Key present, valid, same value | report "already set" | report value, no prompt | report value |
 | Key present, different or invalid value | never change; report both values and the allowed values; **exit 1** | never change; report | never change; report |
-| Existing defect: the settings reader returns any `SettingsDefect` (unknown key such as `execution_target`, `[tool.agentic_mbse]`, `[tool.agentic-mbse]` not a table, unparseable) | write nothing; print the defect; **exit 1** | print the defect | print the defect |
+| Existing defect: the settings reader returns any `SettingsDefect` (unknown key such as `execution_target`, `[tool.agentic_mbse]`, `[tool.agentic-mbse]` not a table, unparseable), or the file cannot be read (audit advisory 4) | write nothing; print the defect; **exit 1** | print the defect | print the defect |
 | Refused layout (below) | print the line and reason; **exit 1** | print the line and reason | print the line and reason |
 
 Refused layouts, each with a test: the file is a symlink; it has more than one hard link (`os.replace` would split it); it starts with a UTF-8 BOM or is not UTF-8; `agentic-mbse` is an inline table; `agentic-mbse` is defined through dotted keys; two or more lines match the `[tool.agentic-mbse]` header pattern; the verification after insertion fails for any other reason. `--force` changes no row. The rest of `init` always completes. `install-commands` never calls this step.

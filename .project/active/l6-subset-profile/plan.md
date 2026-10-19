@@ -1,6 +1,6 @@
 # Implementation Plan: L6 integration and execution-target settings (EXEC-SUBSET-CONTRACT Item 3)
 
-**Status:** Phases 1–11 complete; ready for `/_my_audit`
+**Status:** Phases 1–11 complete; audit fixes applied (2026-10-19); ready for the audit's targeted B1 re-check
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 
@@ -883,6 +883,27 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 **Issues encountered:** the first `l6-evidence` pass printed the resolved root as `None` for an override run, because the root pattern did not match "override ...; <path> sets none", and showed occurrences as 0 where the record has none. Both were fixed in the script and the evidence regenerated. `before-after` was not rerun: its root check uses the unset wording, which the old pattern matched.
 **Repository checks:** see `evidence/repository-checks.md`. Same 6 failures, mypy 97 and ruff 118 as the baseline, same sets.
 
+### Audit fixes
+
+**Completed:** 2026-10-19, on `audit.md` (Needs Work at `d0b9fb12`) and `briefs/align.md` § Audit decisions. One commit per fix, `da603e0d`..`41b14ca9`.
+
+- **B1 (must-fix), `da603e0d`.** A legacy check's call into a shared expression walker now goes through `_walk` (`adr002.py`). The walker's own `SemanticEvidenceError` becomes `L6_CHECK_UNVERIFIED`: WARNING under every target, never in the native summary, naming the check, the element and the walker's reason, with the walker's code in `reason_code` (`common.check_unverified_issue`; new `Category.CHECK_UNVERIFIED`, W/W/W). Any other exception stays `L6_CHECK_ERROR`. The calls covered are V2's `design_reference_uses` and `_contains_feature_chain`, V4's `extract_operators` and the function-invocation check's `traverse_expression`. Resolvers (`resolved_referent` in `is_expose_binding`), SysIDE reads and type tests outside a walk stay `L6_CHECK_ERROR`.
+  - **Code choice:** a new code, not `L6_SUBSET_ADVISORY_UNVERIFIED`. That code's `reason_code`, message, suggestion and report detail all name an advisory, and the legacy checks are not advisories. Same severity row as D15's advisory-unverified.
+  - **Tests** (`test_l6_check_errors.py`): the pinning test is flipped and parametrized over all three targets (WARNING, not summarized, no check error; the run passes under unset and native, fails under generated). New: a non-`SemanticEvidenceError` from the walker is still `L6_CHECK_ERROR` (all targets); under `generated` the same attribute fails on the contract's `invocation-callable` refusal (`L6_SUBSET_REFUSED`, ERROR); both V4 walker calls report unverified. `test_execution_target.py` gains the three table cells.
+  - **Design:** D4, D8, D15, I1, the severity table and Appendix B now state the exception where the rule is.
+  - **Surprise, recorded so the owner sees it:** the audit's scenario ("a non-`sum` call in a `designs/` attribute passed L6 at `ebb3d467` with one WARNING") is not exact. Under `designs/`, `abs(2.0)` also gets `L6_DESIGN_ATTR_UNEXTRACTABLE` (ERROR, legacy kept, every target) from the design-attribute check, at `ebb3d467` and now; checked by running both revisions on the fixture. So a native project with that attribute in `designs/` still fails L6, for a reason this item did not introduce. The pass→fail regression the audit describes is real outside the `designs` filter (V2 checks every non-`library/` file; the completeness check only `designs/`). The test uses that layout (`analysis/plant.sysml`): at `ebb3d467` L6 passed with one `V4_STATIC_FUNCTION_INVOCATION` WARNING, and it passes again now under unset and native. Whether `L6_DESIGN_ATTR_UNEXTRACTABLE` on a function call should be generator-only under native was not in scope and is not decided here.
+- **impl-F3, `79798a65`.** Design I8 now reads "byte-identical across runs, apart from `run_info.wall_time_s`".
+- **impl-F2 (should-fix), `7962f3b6`.** `inspect_execution_target` (`project_settings.py`): with no `pyproject.toml` at the root, `enclosing_pyproject` looks for one in any parent directory. If found, the result is `Blocked` with the new reason `BlockReason.NESTED`; `init` prints why (a new file would make uv treat the directory as its own project, outside the parent's environment), the lines to create by hand, and the per-run `--execution-target` alternative. It exits 1 when `--execution-target` was given, 0 otherwise. In a standalone directory the file is still created, and `init` now adds "uv will now treat <dir> as its own project, because it has a pyproject.toml". README's `init` paragraph says both in one sentence; the design's `init` table has the new row. Tests: nested with and without the option, nearest-parent search, standalone message.
+  - Deviation: the hint does not suggest putting the setting in the parent's file. After `init`, the target holds the root markers, so L6 reads only `<target>/pyproject.toml`; the parent's table would not be read.
+- **Advisory 4, `a08a633f`.** `read_bytes()` failing with `OSError` is now `Blocked` (`DEFECT`, "cannot read <path>: ..."), like the reader. Test with a mode-000 file (skipped as root).
+- **Advisory 2, `d00dfb4b`.** A failed calc-def listing in `check_qualified_names` now reports its `L6_CHECK_ERROR` and the calc-usage half still runs. A failed usage listing keeps the calc-def half's findings (it used to drop them too). Test: calc-def listing forced to fail, `calc _t` still gets `L6_INVALID_QUALIFIED_NAME`.
+- **Advisory 1, `41b14ca9`.** The path-discovery and model-load exits of `validate_architecture` now carry the `Execution target` metric and the `report_detail` target block. The target was already resolved before them. Tests for both exits. Both new tests and the advisory 2 test fail on the code before the fix.
+- **Advisory 3 (owner-visible, no code change).** Two of the four codes lowered under `native` rest on judgment, not on a SysIDE or fixture result for the native route: `L6_CALC_DEF_NO_INSTANTIATION` (`evidence/legacy-l6-audit.md:34` records its own caveat) and `L6_MISSING_QUALIFIED_NAME` ("Confirmed (weak)", `:22`). Both meet the spec's "cause that exists only in the generator" test. The owner may want to confirm them.
+- **Advisory 5 (note, no code change).** The evaluator's `float(None)` `TypeError` reads as `L6_CHECK_ERROR`, not UNEXTRACTABLE; both are ERROR.
+- **Counts:** a check that reports `L6_CHECK_UNVERIFIED` keeps its printed counts (they are not "not computed"), because the check did run on every other element; the WARNING names the element it could not decide.
+
+- **Checks after the fixes:** full suite 6 failures (the baseline set), 4426 passed; mypy 97 and ruff 118, same sets (`evidence/repository-checks.md` § After the audit fixes). `before-after --base ebb3d467 --branch HEAD` at `41b14ca9`: exit 0, **no flags**. Every level count, L6 issue code and expected change matches the Phase 11 run exactly; no tree shows `L6_CHECK_UNVERIFIED` or `L6_CHECK_ERROR`. fusion-tea 412.7 → 212.0 s (0.51). `evidence/before-after.{json,md}` regenerated.
+
 ---
 
-**Status:** Phases 1–11 complete; ready for `/_my_audit`
+**Status:** Phases 1–11 complete; audit fixes applied (2026-10-19); ready for the audit's targeted B1 re-check

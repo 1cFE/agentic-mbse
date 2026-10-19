@@ -1,6 +1,6 @@
 # Before/after: `validate --complete models`, base vs branch
 
-Written by `scripts/l6_subset/run_consumers.py before-after --base ebb3d467 --branch HEAD`. Base `ebb3d46710a4c1476bb12fa0e9decf0088ddb2c5`, branch `0ba0bf0215bc3177e724d1cfe2d42aa2480f34b1`; SysIDE 0.8.4. Each tree and each code revision is a `git archive` export under one /tmp directory; target unset; runs one at a time. The base side is read from its text output, the branch side from its `--json-report`. Sibling checkouts unchanged: True.
+Written by `scripts/l6_subset/run_consumers.py before-after --base ebb3d467 --branch HEAD`. Base `ebb3d46710a4c1476bb12fa0e9decf0088ddb2c5`, branch `41b14ca957a154821e76f595b8ff5a939037b18d`; SysIDE 0.8.4. Each tree and each code revision is a `git archive` export under one /tmp directory; target unset; runs one at a time. The base side is read from its text output, the branch side from its `--json-report`. Sibling checkouts unchanged: True.
 
 ## Flags (stop-and-show)
 
@@ -12,8 +12,8 @@ Each level cell is `status before -> after (issues before -> after)`.
 
 | Tree | Exit | Wall time (s) | Ratio | L1 | L2 | L3 | L4 | L5 | L6 |
 |---|---|---|---|---|---|---|---|---|---|
-| fusion-tea | 1 -> 1 | 421.9 -> 210.7 | 0.499 | passed -> passed (0 -> 0) | failed -> failed (465 -> 465) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | failed -> failed (408 -> 539, text differs) |
-| dc3-baseline | 1 -> 1 | 44.8 -> 17.9 | 0.4 | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | failed -> failed (11 -> 332, text differs) |
+| fusion-tea | 1 -> 1 | 412.7 -> 212.0 | 0.514 | passed -> passed (0 -> 0) | failed -> failed (465 -> 465) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | failed -> failed (408 -> 539, text differs) |
+| dc3-baseline | 1 -> 1 | 35.0 -> 18.1 | 0.517 | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | failed -> failed (11 -> 332, text differs) |
 | dc3-repaired | 0 -> 0 | 25.6 -> 13.3 | 0.52 | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 0) | passed -> passed (0 -> 30, text differs) |
 
 Time criterion: fusion-tea branch time at most 1.1 x base. L6's text differs by design (new title, contract lines), so only L1-L5 text is compared.
