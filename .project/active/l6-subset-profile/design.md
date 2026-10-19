@@ -210,7 +210,7 @@ Refused layouts, each with a test: the file is a symlink; it has more than one h
 - **I5.** Under unset and `generated`, for every site, the combined severity of legacy plus contract issues is not lower than today's, except the String case (D10).
 - **I6.** Each `[tool.agentic-mbse]` reader rejects any key outside `TOOLKIT_KEYS` and validates only its own key's value.
 - **I7.** `init` never changes an existing `execution-target` value, never writes when the table has a defect, and never rewrites any byte outside the inserted text. The written file parses, and its parsed value equals the original plus one key.
-- **I8.** For the same tree, path and target, the text output and the JSON report are byte-identical across runs.
+- **I8.** For the same tree, path and target, the text output and the JSON report are byte-identical across runs, apart from `run_info.wall_time_s` (amended 2026-10-19 on audit impl-F3).
 - **I9.** No line in `validate` stdout or in the JSON report contains "generated-ready", "generation-ready", "ready to generate", "will generate", "generator accepts" or "readiness". The verdict line never contains "clean", "ready" or "passed".
 - **I10.** With the session, each level's result equals its result without the session (B5). Inside one run, `extract_identified_constraint_facts` runs at most once per loaded model.
 
