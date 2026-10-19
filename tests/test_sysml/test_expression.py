@@ -1312,7 +1312,7 @@ def test_authored_reference_text_covers_reference_and_chain_spellings():
 
 
 def test_reconstruct_expression_dispatch_order_invariants():
-    source = inspect.getsource(expression.reconstruct_expression)
+    source = inspect.getsource(expression._reconstruction_branch)
     assert source.index('"FeatureChainExpression"') < source.index('"OperatorExpression"')
     assert source.index('"LiteralInteger"') < source.index('hasattr(expr_node, "function")')
     assert source.index('"NullExpression"') < source.index('hasattr(expr_node, "function")')

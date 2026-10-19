@@ -113,6 +113,10 @@ class ValidationCode(str, Enum):
     L6_SUBSET_OMITTED = "L6_SUBSET_OMITTED"
     L6_SUBSET_UNVERIFIED = "L6_SUBSET_UNVERIFIED"
     L6_SUBSET_UNASSESSED = "L6_SUBSET_UNASSESSED"
+    # The two routed advisories beside the contract (D12), at most WARNING; `reason_code` names
+    # the advisory. ADVISORY_UNVERIFIED: its walker could not inspect a site (D15).
+    L6_SUBSET_ADVISORY = "L6_SUBSET_ADVISORY"
+    L6_SUBSET_ADVISORY_UNVERIFIED = "L6_SUBSET_ADVISORY_UNVERIFIED"
     # A broken [tool.agentic-mbse] table or execution-target value; L6 runs no checks (D3).
     L6_SETTING_INVALID = "L6_SETTING_INVALID"
     # A level that raised; the runner records it as a failed level (any level number).

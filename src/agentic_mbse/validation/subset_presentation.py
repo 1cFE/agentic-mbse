@@ -5,7 +5,8 @@ contract's result and the legacy checks' issues and returns what L6 prints and r
 
 - `issues`: shown, in D13 order (check errors, then ERROR, then WARNING; within a tier the
   legacy issues in check order, then contract findings refused, unverified, unconfirmed,
-  excluded, omitted, each in the contract's own order).
+  excluded, omitted, each in the contract's own order, then the advisories and the advisory
+  sites that could not be inspected).
 - `summarized`: the results `native` folds into its one INFO summary line (D5).
 - `metrics`: the verdict, coverage and scope lines, plus the native summary line.
 - `pass_note`: what a passing run's final line must add.
@@ -22,6 +23,12 @@ from typing import Any
 from uuid import UUID
 
 from agentic_mbse.sysml.fact_refs import SafeLocation
+from agentic_mbse.sysml.subset_advisories import (
+    Advisories,
+    Advisory,
+    AdvisoryKind,
+    AdvisoryUnverified,
+)
 from agentic_mbse.sysml.subset_coverage import (
     FOLLOW_UP_SITES,
     NO_RULE_FAMILIES,
@@ -77,6 +84,18 @@ _RANK = {
     Outcome.OMITTED: _OMITTED,
 }
 _SEVERITY = {Display.ERROR: Severity.ERROR, Display.WARNING: Severity.WARNING}
+# D13 groups within a tier: legacy issues, then contract results, then advisories.
+_LEGACY_GROUP, _CONTRACT_GROUP, _ADVISORY_GROUP = range(3)
+_ADVISORY_SUGGESTION = {
+    AdvisoryKind.OPAQUE_EXPRESSION: (
+        "Messages about this expression can only show SysIDE's node text; written with "
+        "operators, references, literals or sum, it can be named"
+    ),
+    AdvisoryKind.WRAPPER: (
+        "Aggregation decomposition unwraps this call and keeps only its first operand, so the "
+        "wrapper's own effect is not checked there; sum the attribute directly if that is meant"
+    ),
+}
 
 
 @dataclass
@@ -144,6 +163,25 @@ def _unverified_message(check: UnverifiedCheck, version: str) -> str:
     subject = check.subject.qualified_name if check.subject and check.subject.qualified_name else ""
     tail = f": {subject}" if subject else ""
     return f"unverified ({version}): {check.rule_id} in {context}: {check.cause.value}{tail}: {check.detail}"
+
+
+def _advisory_message(advisory: Advisory) -> str:
+    kinds = ", ".join(advisory.node_kinds)
+    site = advisory.location.qualified_name or _where(advisory.location) or "unknown site"
+    match advisory.kind:
+        case AdvisoryKind.OPAQUE_EXPRESSION:
+            what = f"{kinds} has no structural rendering"
+        case AdvisoryKind.WRAPPER:
+            what = f"sum over {kinds}"
+    return f"advisory ({advisory.kind.value}, not a generator refusal): {what} at {site}"
+
+
+def _advisory_unverified_message(record: AdvisoryUnverified) -> str:
+    site = record.location.qualified_name or _where(record.location) or "unknown site"
+    return (
+        f"advisory unverified ({record.kind.value}): could not inspect the {record.node_kind} "
+        f"at {site}: {record.code.value}: {record.detail}"
+    )
 
 
 def _shown(issue: ValidationIssue, shown: Display) -> ValidationIssue:
@@ -227,13 +265,15 @@ def _location_detail(location: SafeLocation | None) -> dict[str, Any] | None:
 def present(
     target: Target,
     result: SubsetProfileResult | None,
+    advisories: Advisories | None,
     legacy: Sequence[ValidationIssue],
     rules: RuleRecords = PACKAGED_RULES,
 ) -> Presentation:
-    """Render the contract `result` (None when it failed) and the `legacy` issues under `target`.
+    """Render the contract `result`, the `advisories` and the `legacy` issues under `target`.
 
-    `legacy` is every issue the legacy checks and the contract's own failure produced, in check
-    order. Check failures (`L6_CHECK_ERROR`) are ERROR under every target and print first.
+    `result` and `advisories` are None when that step failed; its `L6_CHECK_ERROR` is then in
+    `legacy`, which holds every issue the legacy checks and those failures produced, in check
+    order. Check failures are ERROR under every target and print first.
     """
     out = Presentation()
     version = result.subset_profile_version if result else SUBSET_PROFILE_VERSION
@@ -250,7 +290,7 @@ def present(
             continue
         if shown is not Display.BASE:
             issue = _shown(issue, shown)
-        ranked.append(((_tier(issue), 0, 0, position), issue))
+        ranked.append(((_tier(issue), _LEGACY_GROUP, 0, position), issue))
 
     findings_detail: list[dict[str, Any]] = []
     unverified_detail: list[dict[str, Any]] = []
@@ -279,7 +319,7 @@ def present(
                 summary[finding.outcome] += 1
                 continue
             issue = _shown(issue, shown)
-            ranked.append(((_tier(issue), 1, _RANK[finding.outcome], index), issue))
+            ranked.append(((_tier(issue), _CONTRACT_GROUP, _RANK[finding.outcome], index), issue))
 
         shown_unverified = display(Category.UNVERIFIED, target)
         for index, check in enumerate(result.unverified):
@@ -299,7 +339,7 @@ def present(
                 ),
                 reason_code=str(check.cause.value),
             )
-            ranked.append(((_tier(issue), 1, _UNVERIFIED, index), issue))
+            ranked.append(((_tier(issue), _CONTRACT_GROUP, _UNVERIFIED, index), issue))
         if target is Target.NATIVE and result.unverified:
             issue = ValidationIssue(
                 level=6,
@@ -310,7 +350,7 @@ def present(
                     "run; each is listed in --json-report"
                 ),
             )
-            ranked.append(((_tier(issue), 1, _UNVERIFIED, 0), issue))
+            ranked.append(((_tier(issue), _CONTRACT_GROUP, _UNVERIFIED, 0), issue))
 
         unassessed = result.counts.unassessed_constraints
         if unassessed:
@@ -328,7 +368,50 @@ def present(
             if shown is Display.NATIVE_SUMMARY:
                 out.summarized.append(issue)
             else:
-                ranked.append(((_tier(issue), 1, _UNASSESSED, 0), _shown(issue, shown)))
+                ranked.append(
+                    ((_tier(issue), _CONTRACT_GROUP, _UNASSESSED, 0), _shown(issue, shown))
+                )
+
+    advisory_summarized = 0
+    advisory_detail: list[dict[str, Any]] | None = None
+    advisory_unverified_detail: list[dict[str, Any]] | None = None
+    if advisories is not None:
+        advisory_detail, advisory_unverified_detail = [], []
+        shown = display(Category.ADVISORY, target)
+        for index, advisory in enumerate(advisories.findings):
+            advisory_detail.append(_advisory_detail(advisory, shown))
+            issue = ValidationIssue(
+                level=6,
+                severity=Severity.INFO,
+                code=ValidationCode.L6_SUBSET_ADVISORY,
+                message=_advisory_message(advisory),
+                element_name=advisory.location.qualified_name or "",
+                location=_where(advisory.location),
+                suggestion=_ADVISORY_SUGGESTION[advisory.kind],
+                reason_code=advisory.kind.value,
+            )
+            if shown is Display.NATIVE_SUMMARY:
+                out.summarized.append(issue)
+                advisory_summarized += 1
+                continue
+            ranked.append(((_tier(issue), _ADVISORY_GROUP, 0, index), _shown(issue, shown)))
+        shown = display(Category.ADVISORY_UNVERIFIED, target)
+        for index, record in enumerate(advisories.unverified):
+            advisory_unverified_detail.append(_advisory_unverified_detail(record, shown))
+            issue = ValidationIssue(
+                level=6,
+                severity=_SEVERITY[shown],
+                code=ValidationCode.L6_SUBSET_ADVISORY_UNVERIFIED,
+                message=_advisory_unverified_message(record),
+                element_name=record.location.qualified_name or "",
+                location=_where(record.location),
+                suggestion=(
+                    "The advisory could not inspect this site, so it says nothing about it; "
+                    "this is not a generator refusal"
+                ),
+                reason_code=record.code.value,
+            )
+            ranked.append(((_tier(issue), _ADVISORY_GROUP, 1, index), issue))
 
     out.issues = [issue for _, issue in sorted(ranked, key=lambda item: item[0])]
 
@@ -340,7 +423,10 @@ def present(
     out.metrics["Generator subset scope"] = _scope_line(result)
     if target is Target.NATIVE:
         out.metrics["Generator-only findings (native: INFO summary)"] = _native_summary(
-            result, summary, legacy_summarized
+            result,
+            summary,
+            advisory_summarized if advisories is not None else None,
+            legacy_summarized,
         )
 
     verdict = None if result is None else result.verdict
@@ -360,6 +446,8 @@ def present(
         "counts": _counts_detail(result),
         "findings": findings_detail,
         "unverified": unverified_detail,
+        "advisories": advisory_detail,
+        "advisory_unverified": advisory_unverified_detail,
         "check_errors": [
             issue.model_dump(mode="json")
             for issue in legacy
@@ -376,16 +464,22 @@ def _tier(issue: ValidationIssue) -> int:
 
 
 def _native_summary(
-    result: SubsetProfileResult | None, summary: dict[Outcome, int], legacy: int
+    result: SubsetProfileResult | None,
+    summary: dict[Outcome, int],
+    advisories: int | None,
+    legacy: int,
 ) -> str:
+    """The native INFO summary line; a step that failed reads "not computed", never 0."""
     if result is None:
-        return f"not computed (see L6_CHECK_ERROR); {legacy} legacy; all listed in --json-report"
-    unassessed = result.counts.unassessed_constraints
-    return (
-        f"{summary[Outcome.REFUSED]} refused, {summary[Outcome.UNCONFIRMED]} unconfirmed, "
-        f"{summary[Outcome.OMITTED]} omitted, {summary[Outcome.EXCLUDED]} excluded, "
-        f"{unassessed} unassessed constraints, {legacy} legacy; all listed in --json-report"
-    )
+        contract = "contract not computed (see L6_CHECK_ERROR)"
+    else:
+        contract = (
+            f"{summary[Outcome.REFUSED]} refused, {summary[Outcome.UNCONFIRMED]} unconfirmed, "
+            f"{summary[Outcome.OMITTED]} omitted, {summary[Outcome.EXCLUDED]} excluded, "
+            f"{result.counts.unassessed_constraints} unassessed constraints"
+        )
+    advised = "advisories not computed" if advisories is None else f"{advisories} advisories"
+    return f"{contract}, {advised}, {legacy} legacy; all listed in --json-report"
 
 
 def _finding_detail(
@@ -419,6 +513,28 @@ def _finding_detail(
             "shape_id": shadow.shape_id,
             "element_id": str(shadow.subject.element_id),
         },
+    }
+
+
+def _advisory_detail(advisory: Advisory, shown: Display) -> dict[str, Any]:
+    return {
+        "kind": advisory.kind.value,
+        "matrix_row": advisory.kind.matrix_row,
+        "location": _location_detail(advisory.location),
+        "node_kinds": list(advisory.node_kinds),
+        "display": shown.value,
+    }
+
+
+def _advisory_unverified_detail(record: AdvisoryUnverified, shown: Display) -> dict[str, Any]:
+    return {
+        "kind": record.kind.value,
+        "matrix_row": record.kind.matrix_row,
+        "location": _location_detail(record.location),
+        "code": record.code.value,
+        "node_kind": record.node_kind,
+        "detail": record.detail,
+        "display": shown.value,
     }
 
 

@@ -15,6 +15,7 @@ from typing import Any
 
 import pytest
 
+from agentic_mbse.sysml.subset_advisories import Advisories
 from agentic_mbse.sysml.subset_coverage import NO_RULE_FAMILIES
 from agentic_mbse.sysml.subset_extraction import extract_subset_facts
 from agentic_mbse.sysml.subset_facts import BindingKind
@@ -49,6 +50,7 @@ BANNED = [
 ]
 VERDICT_KEY = "Generator subset (subset-profile/v1, subset-coverage/v1)"
 NOTE = "generated compatibility not established"
+NO_ADVISORIES = Advisories(findings=(), unverified=())
 
 
 class Run:
@@ -260,7 +262,9 @@ def test_beyond_generator_roots_message_names_the_context():
     result = evaluate_subset_profile(facts, roots=ExplicitRoots(frozenset(roots)))
     for target in (Target.UNSET, Target.GENERATED):
         (issue,) = [
-            i for i in present(target, result, []).issues if i.code.value == "L6_SUBSET_UNCONFIRMED"
+            i
+            for i in present(target, result, NO_ADVISORIES, []).issues
+            if i.code.value == "L6_SUBSET_UNCONFIRMED"
         ]
         assert issue.severity.value == "warning"
         assert "; context beyond_generator_roots is unconfirmed by design" in issue.message
@@ -354,8 +358,8 @@ def test_unassessed_count_in_verdict_line_and_one_warning(l6, target):
 def test_native_summary_findings_all_in_report_with_rule_reason_location(l6):
     run = l6("refused_incomplete", "native")
     assert run.l6["metrics"]["Generator-only findings (native: INFO summary)"] == (
-        "1 refused, 0 unconfirmed, 0 omitted, 0 excluded, 0 unassessed constraints, 0 legacy; "
-        "all listed in --json-report"
+        "1 refused, 0 unconfirmed, 0 omitted, 0 excluded, 0 unassessed constraints, "
+        "0 advisories, 0 legacy; all listed in --json-report"
     )
     assert run.issues(ValidationCode.L6_SUBSET_REFUSED) == []
     (summarized,) = [
@@ -496,7 +500,7 @@ def test_dc3_sized_report_holds_every_evaluator_finding(target, capsys):
     counts = dict(result.counts.by_outcome)
     assert (counts[Outcome.REFUSED], counts[Outcome.OMITTED]) == (236, 32)
 
-    shown = present(target, result, [])
+    shown = present(target, result, NO_ADVISORIES, [])
     level = QualityCheckResult(
         level=6,
         level_name=level6_architecture.LEVEL_NAME,

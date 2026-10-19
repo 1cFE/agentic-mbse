@@ -29,6 +29,7 @@ from agentic_mbse.sysml.reference_use import (
     resolved_chaining_features,
     resolved_referent,
 )
+from agentic_mbse.sysml.subset_advisories import Advisories, extract_advisories
 from agentic_mbse.sysml.subset_extraction import extract_subset_facts
 from agentic_mbse.sysml.subset_profile import SubsetProfileResult, evaluate_subset_profile
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
@@ -1017,6 +1018,18 @@ def _run_contract(model: Any) -> tuple[SubsetProfileResult | None, list[Validati
         return None, [check_error_issue("subset_profile", "the loaded model", error)]
 
 
+def _run_advisories(model: Any) -> tuple[Advisories | None, list[ValidationIssue]]:
+    """The two advisories over the contract's expression sites.
+
+    A walker's own `SemanticEvidenceError` is an advisory-unverified record inside the result
+    (D15); any other exception is one `L6_CHECK_ERROR` and no result.
+    """
+    try:
+        return extract_advisories(model), []
+    except Exception as error:
+        return None, [check_error_issue("subset_advisories", "the loaded model", error)]
+
+
 def validate_architecture(
     models_path: str,
     design_path_filter: str | None = "designs",
@@ -1119,10 +1132,14 @@ def validate_architecture(
     )
     all_issues.extend(design_attr_issues)
 
+    # The advisories run after the legacy checks (D12, D15).
+    advisories, advisory_errors = _run_advisories(model)
+    all_issues.extend(advisory_errors)
+
     # Manifest checks (from old L7)
     manifest_issues, manifests_checked = _check_manifests(models_path, model)
 
-    shown = present(resolution.target, contract, all_issues)
+    shown = present(resolution.target, contract, advisories, all_issues)
 
     # ERROR-only failure criteria (matches old L8 behavior), over the issues as shown.
     # Manifest issues are unstructured strings; also fail if any found

@@ -5,6 +5,7 @@ ASTs, including visitor-pattern traversal and reference extraction.
 """
 
 from collections.abc import Callable
+from enum import Enum, auto
 from typing import Any, cast
 
 from agentic_mbse.errors import SemanticEvidenceCode
@@ -204,9 +205,9 @@ def is_reference_type(expr: Any) -> bool:
         >>> is_reference_type(MockFeatureReferenceExpression(name="radius"))  # True
         >>> is_reference_type(MockLiteralRational(3.0))  # False
     """
-    return SysideAdapter.is_instance(
-        expr, "FeatureChainExpression"
-    ) or SysideAdapter.is_instance(expr, "FeatureReferenceExpression")
+    return SysideAdapter.is_instance(expr, "FeatureChainExpression") or SysideAdapter.is_instance(
+        expr, "FeatureReferenceExpression"
+    )
 
 
 # Supported operators for static expressions (per ADR-002)
@@ -295,6 +296,93 @@ UNARY_RANK = 2
 RIGHT_ASSOC = frozenset({"**", "^"})
 
 
+class _Branch(Enum):
+    """Which branch `reconstruct_expression` takes for one node, in its dispatch order."""
+
+    TEXT = auto()  # already a string
+    EMPTY = auto()  # None
+    REFERENCE = auto()  # feature chain or feature reference: the authored text
+    OPERATOR = auto()
+    NUMBER = auto()
+    BOOLEAN = auto()
+    STRING = auto()
+    INFINITY = auto()
+    NULL = auto()
+    INVOCATION = auto()
+    TEXT_FALLBACK = auto()  # no structural branch applies: `str(node)`
+
+
+def _reconstruction_branch(expr_node: Any) -> _Branch:
+    """The one ordered dispatch shared by `reconstruct_expression` and `falls_to_text_fallback`."""
+    if isinstance(expr_node, str):
+        return _Branch.TEXT
+    if expr_node is None:
+        return _Branch.EMPTY
+    # FeatureChainExpression MUST be before OperatorExpression because FCE is a
+    # subtype of OE in SysIDE's type system.
+    if SysideAdapter.is_instance(expr_node, "FeatureChainExpression"):
+        return _Branch.REFERENCE
+    if SysideAdapter.is_instance(expr_node, "OperatorExpression"):
+        return _Branch.OPERATOR
+    if SysideAdapter.is_instance(expr_node, "FeatureReferenceExpression"):
+        return _Branch.REFERENCE
+    # Literal/null branches MUST dispatch before the invocation catch-all. A literal without a
+    # `value` falls through to the later branches.
+    if SysideAdapter.is_instance(expr_node, "LiteralInteger") or SysideAdapter.is_instance(
+        expr_node, "LiteralRational"
+    ):
+        if hasattr(expr_node, "value"):
+            return _Branch.NUMBER
+    if SysideAdapter.is_instance(expr_node, "LiteralBoolean"):
+        if hasattr(expr_node, "value"):
+            return _Branch.BOOLEAN
+    if SysideAdapter.is_instance(expr_node, "LiteralString"):
+        if hasattr(expr_node, "value"):
+            return _Branch.STRING
+    if SysideAdapter.is_instance(expr_node, "LiteralInfinity"):
+        return _Branch.INFINITY
+    if SysideAdapter.is_instance(expr_node, "NullExpression"):
+        return _Branch.NULL
+    if hasattr(expr_node, "function") and hasattr(expr_node.function, "name"):
+        return _Branch.INVOCATION
+    return _Branch.TEXT_FALLBACK
+
+
+def falls_to_text_fallback(expr_node: Any) -> bool:
+    """True iff `reconstruct_expression` renders this node with `str(node)`, not structurally.
+
+    Reads only this node, not its operands; `text_fallback_nodes` walks an expression.
+    """
+    return _reconstruction_branch(expr_node) is _Branch.TEXT_FALLBACK
+
+
+def text_fallback_nodes(expr_node: Any, _depth: int = 0) -> tuple[Any, ...]:
+    """Every node `reconstruct_expression(expr_node)` renders with `str(node)`, in its order.
+
+    Descends exactly where reconstruction descends (operator and invocation operands, through
+    `materialize_operands`), so it raises the `SemanticEvidenceError` reconstruction would.
+    """
+    branch = _reconstruction_branch(expr_node)
+    if branch in (_Branch.TEXT, _Branch.EMPTY):
+        return ()
+    if _depth >= MAX_EXPRESSION_DEPTH:
+        raise evidence_error(
+            SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED,
+            "text_fallback_nodes",
+            "maximum expression traversal depth exhausted before every operand was visited",
+            expr_node,
+        )
+    if branch is _Branch.TEXT_FALLBACK:
+        return (expr_node,)
+    if branch in (_Branch.OPERATOR, _Branch.INVOCATION):
+        return tuple(
+            node
+            for operand in materialize_operands(expr_node)
+            for node in text_fallback_nodes(operand, _depth + 1)
+        )
+    return ()
+
+
 def reconstruct_expression(expr_node: Any, _depth: int = 0) -> str:
     """Reconstruct expression text from SysML AST nodes.
 
@@ -315,44 +403,26 @@ def reconstruct_expression(expr_node: Any, _depth: int = 0) -> str:
             expr_node,
         )
 
-    # FeatureChainExpression MUST be before OperatorExpression because FCE is a
-    # subtype of OE in SysIDE's type system.
-    if SysideAdapter.is_instance(expr_node, "FeatureChainExpression"):
+    branch = _reconstruction_branch(expr_node)
+    if branch is _Branch.REFERENCE:
         return authored_reference_text(expr_node)
-
-    if SysideAdapter.is_instance(expr_node, "OperatorExpression"):
+    if branch is _Branch.OPERATOR:
         return reconstruct_operator_expression(expr_node, _depth)
-
-    if SysideAdapter.is_instance(expr_node, "FeatureReferenceExpression"):
-        return authored_reference_text(expr_node)
-
-    # Literal/null branches MUST dispatch before the invocation catch-all.
-    if SysideAdapter.is_instance(expr_node, "LiteralInteger") or SysideAdapter.is_instance(
-        expr_node, "LiteralRational"
-    ):
-        if hasattr(expr_node, "value"):
-            return str(expr_node.value)
-
-    if SysideAdapter.is_instance(expr_node, "LiteralBoolean"):
-        if hasattr(expr_node, "value"):
-            return "true" if expr_node.value else "false"
-
-    if SysideAdapter.is_instance(expr_node, "LiteralString"):
-        if hasattr(expr_node, "value"):
-            return f'"{expr_node.value}"'
-
-    if SysideAdapter.is_instance(expr_node, "LiteralInfinity"):
+    if branch is _Branch.NUMBER:
+        return str(expr_node.value)
+    if branch is _Branch.BOOLEAN:
+        return "true" if expr_node.value else "false"
+    if branch is _Branch.STRING:
+        return f'"{expr_node.value}"'
+    if branch is _Branch.INFINITY:
         return "*"
-
-    if SysideAdapter.is_instance(expr_node, "NullExpression"):
+    if branch is _Branch.NULL:
         return "null"
-
-    if hasattr(expr_node, "function") and hasattr(expr_node.function, "name"):
+    if branch is _Branch.INVOCATION:
         func_name = expr_node.function.name
         operands = materialize_operands(expr_node)
         args = ", ".join(reconstruct_expression(op, _depth + 1) for op in operands)
         return f"{func_name}({args})"
-
     return str(expr_node)
 
 

@@ -244,6 +244,15 @@ def _site_candidates(model: Any) -> list[_SiteCandidate]:
     return candidates
 
 
+def expression_sites(model: Any) -> list[tuple[Any, Any]]:
+    """`(declaration, expression)` for every expression site the contract inspects.
+
+    The same sites, in the same order, as the `EXPRESSION_SITE` facts; L6's advisories walk
+    them (Item 3 design D12).
+    """
+    return [(c.declaration, c.expression) for c in _site_candidates(model)]
+
+
 def _feature_role(feature: Any, expression: Any) -> SiteRole:
     """`_role_for_owner` (`expression_evidence.py:328-347`)."""
     owner = getattr(feature, "owning_type", None)
