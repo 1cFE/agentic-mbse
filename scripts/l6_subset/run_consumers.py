@@ -16,14 +16,19 @@ that run's code export (step 6).
 code and the wall time.
 
 `before-after --base B --branch HEAD [--trees ...] [--out STEM]` runs both revisions on each
-tree (Appendix C steps 1-10 and 12), parsing both sides from text for now, and writes
-`evidence/<STEM>.{json,md}`; it exits 1 on any pass -> fail, any L1-L5 text difference, a wrong
-resolved root, or fusion-tea's branch time above 1.10 x base.
+tree (Appendix C steps 1-12) and writes `evidence/<STEM>.{json,md}`. The base side is parsed
+from text; the branch side runs with `--json-report` and is read from the report. It exits 1 on
+any pass -> fail, any L1-L5 text difference, a wrong resolved root, a branch run with other than
+one constraint extraction, or fusion-tea's branch time above 1.10 x base. Expected new String
+warnings and UNEXTRACTABLE counts (step 11) are listed apart and never set the exit code.
+
+`l6-evidence --branch HEAD` runs the branch's `validate --level=6 --json-report` on dc3: the
+baseline under `generated` and unset, the repaired tree under `generated`. It writes
+`evidence/dc3-baseline-l6.md` and `evidence/dc3-repaired-l6.md`, every count read from the report.
 
 `session-equality` runs L1-L6 on each exported tree in this process, standalone and then inside
 one `ValidationSession`, and compares every level's full result (Phase 1, I10/B5). It writes
-`evidence/session-equality.json` and exits 1 if any level differs. Phase 11 completes `before-after`
-(all trees, the report-based branch side, step 11) and adds `l6-evidence`.
+`evidence/session-equality.json` and exits 1 if any level differs.
 """
 
 from __future__ import annotations
@@ -39,6 +44,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from collections import Counter
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -106,6 +112,7 @@ class TreeRun:
     levels: dict[int, LevelText]
     stdout: str
     stderr: str
+    report: dict[str, Any] | None = None  # the `--json-report` file, for branch runs
 
 
 def parse_levels(stdout: str) -> dict[int, LevelText]:
@@ -171,18 +178,27 @@ def syside_version(env: dict[str, str]) -> str:
 
 
 def run_validate(
-    tree: str, tree_dir: Path, tree_commit: str, code_label: str, code: Path, code_commit: str
+    tree: str,
+    tree_dir: Path,
+    tree_commit: str,
+    code_label: str,
+    code: Path,
+    code_commit: str,
+    options: tuple[str, ...] = ("--complete",),
+    report: Path | None = None,
 ) -> TreeRun:
-    """`agentic_mbse validate --complete models` from `code`'s source, in `tree_dir` (step 6)."""
+    """`agentic_mbse validate <options> models` from `code`'s source, in `tree_dir` (step 6).
+
+    With `report`, the run adds `--json-report <report>` and the parsed file is kept.
+    """
     env = child_env(read_license_key())
     env["PYTHONPATH"] = str(code / "src")
+    command = [str(PYTHON), "-P", "-c", _CHILD, "validate", *options]
+    if report is not None:
+        command += ["--json-report", str(report)]
     started = time.perf_counter()
     completed = subprocess.run(
-        [str(PYTHON), "-P", "-c", _CHILD, "validate", "--complete", "models"],
-        cwd=tree_dir,
-        capture_output=True,
-        text=True,
-        env=env,
+        [*command, "models"], cwd=tree_dir, capture_output=True, text=True, env=env
     )
     wall = time.perf_counter() - started
     module = _MODULE_FILE.search(completed.stdout)
@@ -202,6 +218,7 @@ def run_validate(
         levels=parse_levels(completed.stdout),
         stdout=completed.stdout,
         stderr=completed.stderr,
+        report=None if report is None else json.loads(report.read_text()),
     )
 
 
@@ -301,6 +318,19 @@ def baseline_markdown(record: dict[str, Any], runs: list[TreeRun]) -> str:
 
 TIME_LIMIT = 1.10  # fusion-tea branch wall time / base wall time (Appendix C step 10)
 _PIN_LIST = re.compile(r"Positional pin list: .*\(looked at (?P<path>.+)/positional-pins\.toml\)")
+_TARGET_ROOT = re.compile(r"\((?:from|no execution-target in) (?P<path>.+)/pyproject\.toml\)")
+_LEGACY_METRIC = re.compile(r"^\s+(?P<code>(?:L6|V\d)_[A-Z_0-9]+): (?P<count>\d+)$")
+_PASSING = ("passed", "crashed, recorded as pass")
+
+# Appendix C step 11: expected, not a stop. `omitted` is the new L6_SUBSET_OMITTED WARNINGs;
+# `unextractable` is L6_DESIGN_ATTR_UNEXTRACTABLE before -> after.
+EXPECTED: dict[str, dict[str, Any]] = {
+    "fusion-tea": {"omitted": 131, "unextractable": (108, 108)},
+    "dc3-baseline": {"omitted": 32, "unextractable": (3, 0)},
+    "dc3-repaired": {"omitted": 30, "unextractable": (0, 0)},
+}
+OMITTED = "L6_SUBSET_OMITTED"
+UNEXTRACTABLE = "L6_DESIGN_ATTR_UNEXTRACTABLE"
 
 
 def resolved_root(run: TreeRun) -> str | None:
@@ -312,49 +342,175 @@ def resolved_root(run: TreeRun) -> str | None:
     return None
 
 
+def report_level(report: dict[str, Any], number: int) -> dict[str, Any] | None:
+    return next((lv for lv in report["levels"] if lv["level"] == number), None)
+
+
+def report_root(report: dict[str, Any]) -> str | None:
+    """The project root L6's `Execution target` metric names (step 7, branch side)."""
+    l6 = report_level(report, 6)
+    if l6 is None:
+        return None
+    found = _TARGET_ROOT.search(str(l6["metrics"].get("Execution target", "")))
+    return None if found is None else found["path"]
+
+
+def report_statuses(report: dict[str, Any]) -> dict[int, dict[str, Any]]:
+    """Per level: status and issue count from the report (step 8, branch side)."""
+    out = {n: {"status": "not run", "issues": None} for n in range(1, 7)}
+    for level in report["levels"]:
+        out[level["level"]] = {
+            "status": level["status"],
+            "issues": len(level["issues"]) + len(level["unstructured"]),
+        }
+    return out
+
+
+def text_issue_count(level: LevelText) -> int | None:
+    for line in level.block:
+        if line.strip().startswith("Issues found:"):
+            return int(line.strip().removeprefix("Issues found: "))
+    return 0 if level.status in ("passed", "failed") else None
+
+
+def text_code_counts(level: LevelText) -> Counter[str]:
+    """The legacy L6 code counts the base prints as metrics (`L6_...: N`)."""
+    counts: Counter[str] = Counter()
+    for line in level.block:
+        found = _LEGACY_METRIC.match(line)
+        if found:
+            counts[found["code"]] = int(found["count"])
+    return counts
+
+
+def report_code_counts(report: dict[str, Any], number: int) -> Counter[str]:
+    """Issue codes the report lists for one level, shown and summarized, per display."""
+    level = report_level(report, number)
+    counts: Counter[str] = Counter()
+    if level is None:
+        return counts
+    for issue in level["issues"] + level["summarized"]:
+        counts[f"{issue['code']} ({issue['display']})"] += 1
+    return counts
+
+
 def compare_runs(base: TreeRun, branch: TreeRun) -> dict[str, Any]:
-    """Status per level before -> after, and whether L1-L5's printed blocks are identical (step 9)."""
+    """Status per level before -> after, and whether L1-L5's printed blocks are identical (step 9).
+
+    The base status comes from its text; the branch status from its report, which must agree
+    with the branch's own text.
+    """
+    if branch.report is None:
+        raise ValueError(f"{branch.tree}: the branch run has no report")
+    after_levels = report_statuses(branch.report)
     levels = {}
     flags: list[str] = []
     for n in range(1, 7):
-        before, after = base.levels[n], branch.levels[n]
-        identical = (before.header, before.block) == (after.header, after.block)
-        levels[n] = {"before": before.status, "after": after.status, "identical_text": identical}
-        if before.status != "failed" and after.status == "failed":
-            flags.append(f"{base.tree} L{n}: {before.status} -> failed")
+        before, after_text = base.levels[n], branch.levels[n]
+        after = after_levels[n]["status"]
+        identical = (before.header, before.block) == (after_text.header, after_text.block)
+        levels[n] = {
+            "before": before.status,
+            "after": after,
+            "issues": [text_issue_count(before), after_levels[n]["issues"]],
+            "identical_text": identical,
+        }
+        if before.status in _PASSING and after not in ("passed", "not run"):
+            flags.append(f"{base.tree} L{n}: {before.status} -> {after}")
         if n <= 5 and not identical:
             flags.append(f"{base.tree} L{n}: printed result differs from base")
+        # The branch prints a crashed level as a failed one; the report names it crashed.
+        agrees = after == after_text.status or (
+            after == "crashed" and after_text.status == "failed"
+        )
+        if not agrees:
+            flags.append(f"{base.tree} L{n}: report says {after}, text says {after_text.status}")
     if base.exit_code == 0 and branch.exit_code != 0:
         flags.append(f"{base.tree}: run passed at base and fails on the branch")
-    return {"levels": levels, "flags": flags}
+    extractions = branch.report["run_info"]["constraint_extractions"]
+    if extractions != 1:
+        flags.append(f"{base.tree}: branch ran {extractions} constraint extractions, not 1")
+    return {"levels": levels, "flags": flags, "constraint_extractions": extractions}
 
 
-def before_after(base: str, branch: str, labels: list[str], out_name: str) -> int:
-    """Appendix C steps 1-10 and 12; Phase 11 adds the report-based branch side and step 11."""
-    dirty = subprocess.run(
-        [
-            "git",
-            "-C",
-            str(REPO_ROOT),
-            "status",
-            "--porcelain",
-            "--",
-            "src",
-            "pyproject.toml",
-            "uv.lock",
-        ],
+def time_flag(label: str, base_s: float, branch_s: float) -> str | None:
+    """Step 10: only fusion-tea is held to the 1.10 x limit."""
+    if label == "fusion-tea" and branch_s > TIME_LIMIT * base_s:
+        return f"fusion-tea branch time {branch_s} s is over {TIME_LIMIT} x base {base_s} s"
+    return None
+
+
+def branch_refusal(dirty: str, branch_commit: str, head: str) -> str | None:
+    """Step 1: why the branch side cannot be trusted, or None."""
+    if dirty.strip():
+        return f"refusing a dirty branch:\n{dirty.strip()}"
+    if branch_commit != head:
+        return f"--branch {branch_commit} is not HEAD ({head})"
+    return None
+
+
+def report_metric_counts(report: dict[str, Any], number: int) -> dict[str, Any]:
+    """The legacy L6 code counts the branch prints as metrics; a value may be `not computed`."""
+    level = report_level(report, number)
+    if level is None:
+        return {}
+    return {
+        key: value
+        for key, value in level["metrics"].items()
+        if re.fullmatch(r"(?:L6|V\d)_[A-Z_0-9]+", key)
+    }
+
+
+def l6_changes(label: str, base: TreeRun, branch: TreeRun) -> dict[str, Any]:
+    """Step 11: the expected new warnings, and every legacy L6 count that changed.
+
+    Legacy counts are compared metric to metric, the same printed count on both sides.
+    """
+    if branch.report is None:
+        raise ValueError(f"{label}: the branch run has no report")
+    metric_before = text_code_counts(base.levels[6])
+    metric_after = report_metric_counts(branch.report, 6)
+    issues_after = report_code_counts(branch.report, 6)
+    unextractable_after = sum(
+        n for key, n in issues_after.items() if key.startswith(UNEXTRACTABLE + " ")
+    )
+    expected = EXPECTED[label]
+    return {
+        "omitted_warnings": issues_after[f"{OMITTED} (warning)"],
+        "omitted_expected": expected["omitted"],
+        "unextractable": [metric_before.get(UNEXTRACTABLE, 0), unextractable_after],
+        "unextractable_metric_after": metric_after.get(UNEXTRACTABLE),
+        "unextractable_expected": list(expected["unextractable"]),
+        "metric_changes": {
+            code: [metric_before.get(code), metric_after.get(code)]
+            for code in sorted(set(metric_before) | set(metric_after))
+            if metric_before.get(code) != metric_after.get(code)
+        },
+        "branch_codes": dict(sorted(issues_after.items())),
+    }
+
+
+def _git_dirty(paths: tuple[str, ...]) -> str:
+    return subprocess.run(
+        ["git", "-C", str(REPO_ROOT), "status", "--porcelain", "--", *paths],
         check=True,
         capture_output=True,
         text=True,
-    ).stdout.strip()
-    if dirty:
-        raise SystemExit(f"refusing a dirty branch:\n{dirty}")
+    ).stdout
+
+
+def before_after(base: str, branch: str, labels: list[str], out_name: str) -> int:
+    """Appendix C steps 1-12."""
     head = resolve_rev(REPO_ROOT, "HEAD")
-    if resolve_rev(REPO_ROOT, branch) != head:
-        raise SystemExit(f"--branch {branch} is not HEAD ({head})")
+    refusal = branch_refusal(
+        _git_dirty(("src", "pyproject.toml", "uv.lock")), resolve_rev(REPO_ROOT, branch), head
+    )
+    if refusal:
+        raise SystemExit(refusal)
     siblings = {"dc3": DC3, "fusion-tea": FUSION_TEA}
     before = {name: sibling_state(repo) for name, repo in siblings.items()}
     record: dict[str, Any] = {"command": f"before-after --base {base} --branch {branch}"}
+    record["siblings_before"] = before
     comparisons: dict[str, dict[str, Any]] = {}
     runs: dict[str, tuple[TreeRun, TreeRun]] = {}
     with tempfile.TemporaryDirectory(dir="/tmp", prefix="l6-before-after-") as scratch:
@@ -367,32 +523,50 @@ def before_after(base: str, branch: str, labels: list[str], out_name: str) -> in
         record["agentic_mbse"] = commits
         record["syside_version"] = syside_version(child_env(read_license_key()))
         record["trees"] = export_trees(parent, labels)
+        record["scratch"] = str(parent)
         for label, tree in record["trees"].items():
             tree_dir = parent / "trees" / label
-            pair = []
-            for side in ("base", "branch"):
-                print(f"running {label} at {side} {commits[side][:8]} ...", flush=True)
-                run = run_validate(
-                    label, tree_dir, tree["commit"], side, codes[side], commits[side]
-                )
-                print(f"  exit {run.exit_code}, {run.wall_time_s} s", flush=True)
-                pair.append(run)
-            base_run, branch_run = pair
+            print(f"running {label} at base {commits['base'][:8]} ...", flush=True)
+            base_run = run_validate(
+                label, tree_dir, tree["commit"], "base", codes["base"], commits["base"]
+            )
+            print(f"  exit {base_run.exit_code}, {base_run.wall_time_s} s", flush=True)
+            print(f"running {label} at branch {commits['branch'][:8]} ...", flush=True)
+            branch_run = run_validate(
+                label,
+                tree_dir,
+                tree["commit"],
+                "branch",
+                codes["branch"],
+                commits["branch"],
+                report=parent / f"report-{label}.json",
+            )
+            print(f"  exit {branch_run.exit_code}, {branch_run.wall_time_s} s", flush=True)
             runs[label] = (base_run, branch_run)
             comparison = compare_runs(base_run, branch_run)
             expected_root = str(tree_dir.parent / tree["settings"]["root"])
-            for run in pair:
-                if resolved_root(run) != expected_root:
+            assert branch_run.report is not None
+            roots = {
+                "base (L2 pin list)": resolved_root(base_run),
+                "branch (L2 pin list)": resolved_root(branch_run),
+                "branch (L6 execution target)": report_root(branch_run.report),
+            }
+            comparison["roots"] = {
+                k: v and str(Path(v).relative_to(parent)) for k, v in roots.items()
+            }
+            for where, root in roots.items():
+                if root != expected_root:
                     comparison["flags"].append(
-                        f"{label} ({run.code_label}): resolved root {resolved_root(run)}, expected {expected_root}"
+                        f"{label} {where}: resolved root {root}, expected {expected_root}"
                     )
             comparison["exit"] = [base_run.exit_code, branch_run.exit_code]
             comparison["wall_time_s"] = [base_run.wall_time_s, branch_run.wall_time_s]
             comparison["ratio"] = round(branch_run.wall_time_s / base_run.wall_time_s, 3)
-            if label == "fusion-tea" and comparison["ratio"] > TIME_LIMIT:
-                comparison["flags"].append(
-                    f"fusion-tea branch time {branch_run.wall_time_s} s is over {TIME_LIMIT} x base {base_run.wall_time_s} s"
-                )
+            slow = time_flag(label, base_run.wall_time_s, branch_run.wall_time_s)
+            if slow:
+                comparison["flags"].append(slow)
+            comparison["l6_changes"] = l6_changes(label, base_run, branch_run)
+            comparison["pass_notes"] = branch_run.report["pass_notes"]
             comparisons[label] = comparison
     after = {name: sibling_state(repo) for name, repo in siblings.items()}
     record["siblings_unchanged"] = before == after
@@ -400,7 +574,8 @@ def before_after(base: str, branch: str, labels: list[str], out_name: str) -> in
     record["comparisons"] = comparisons
     record["runs"] = {
         label: [
-            {k: v for k, v in asdict(run).items() if k not in ("stdout", "stderr")} for run in pair
+            {k: v for k, v in asdict(run).items() if k not in ("stdout", "stderr", "report")}
+            for run in pair
         ]
         for label, pair in runs.items()
     }
@@ -419,32 +594,293 @@ def before_after_markdown(record: dict[str, Any]) -> str:
     out = [
         "# Before/after: `validate --complete models`, base vs branch",
         "",
-        f"Written by `scripts/l6_subset/run_consumers.py {record['command']}`. Base `{commits['base']}`, branch `{commits['branch']}`; SysIDE {record['syside_version']}. Each tree and each code revision is a `git archive` export under /tmp; target unset; runs one at a time. Sibling checkouts unchanged: {record['siblings_unchanged']}.",
+        f"Written by `scripts/l6_subset/run_consumers.py {record['command']}`. Base `{commits['base']}`, branch `{commits['branch']}`; SysIDE {record['syside_version']}. Each tree and each code revision is a `git archive` export under one /tmp directory; target unset; runs one at a time. The base side is read from its text output, the branch side from its `--json-report`. Sibling checkouts unchanged: {record['siblings_unchanged']}.",
         "",
-        "## Flags",
+        "## Flags (stop-and-show)",
         "",
     ]
     out += [f"- **{flag}**" for flag in record["flags"]] or [
-        "None. No level or run goes from pass to fail, L1-L5 print identically, and the time criterion holds."
+        "None. No level or run goes from pass to fail, L1-L5 print identically, every run resolved the expected project root, each branch run extracted constraints once, and the time criterion holds."
     ]
     out += [
         "",
         "## Per tree",
         "",
-        "| Tree | Exit base -> branch | Wall time base -> branch (s) | Ratio | L1 | L2 | L3 | L4 | L5 | L6 |",
+        "Each level cell is `status before -> after (issues before -> after)`.",
+        "",
+        "| Tree | Exit | Wall time (s) | Ratio | L1 | L2 | L3 | L4 | L5 | L6 |",
         "|---|---|---|---|---|---|---|---|---|---|",
     ]
     for label, c in record["comparisons"].items():
-        cells = [
-            f"{v['before']} -> {v['after']}{'' if v['identical_text'] else ' (text differs)'}"
-            for v in c["levels"].values()
-        ]
+        cells = []
+        for v in c["levels"].values():
+            differs = "" if v["identical_text"] else ", text differs"
+            cells.append(
+                f"{v['before']} -> {v['after']} ({v['issues'][0]} -> {v['issues'][1]}{differs})"
+            )
         out.append(
             f"| {label} | {c['exit'][0]} -> {c['exit'][1]} | {c['wall_time_s'][0]} -> {c['wall_time_s'][1]} | {c['ratio']} | "
             + " | ".join(cells)
             + " |"
         )
-    out += ["", f"Time criterion: fusion-tea branch time at most {TIME_LIMIT} x base."]
+    out += [
+        "",
+        f"Time criterion: fusion-tea branch time at most {TIME_LIMIT} x base. L6's text differs by design (new title, contract lines), so only L1-L5 text is compared.",
+        "",
+        "## Resolved project root",
+        "",
+        "| Tree | Settings input (step 5) | Base (L2 pin list) | Branch (L2 pin list) | Branch (L6 execution target) | Constraint extractions (branch) |",
+        "|---|---|---|---|---|---|",
+    ]
+    for label, c in record["comparisons"].items():
+        settings = record["trees"][label]["settings"]
+        roots = list(c["roots"].values())
+        out.append(
+            f"| {label} | root `{settings['root']}`, `{settings['pyproject']}`, tables {json.dumps(settings['tables'])} | `{roots[0]}` | `{roots[1]}` | `{roots[2]}` | {c['constraint_extractions']} |"
+        )
+    out += [
+        "",
+        "## Expected L6 changes (step 11, not a stop)",
+        "",
+        "| Tree | New `L6_SUBSET_OMITTED` WARNINGs (expected) | `L6_DESIGN_ATTR_UNEXTRACTABLE` before -> after (expected) | Branch pass notes |",
+        "|---|---|---|---|",
+    ]
+    for label, c in record["comparisons"].items():
+        ch = c["l6_changes"]
+        out.append(
+            f"| {label} | {ch['omitted_warnings']} ({ch['omitted_expected']}) | {ch['unextractable'][0]} -> {ch['unextractable'][1]} ({ch['unextractable_expected'][0]} -> {ch['unextractable_expected'][1]}) | {'; '.join(c['pass_notes']) or 'none'} |"
+        )
+    out += [
+        "",
+        "UNEXTRACTABLE after is the report's issue count, shown and summarized, after the String suppression (design D10). The printed metric after is in the next table.",
+        "",
+        "## Legacy L6 counts that changed",
+        "",
+        "Both sides are the legacy count metrics L6 prints (`<CODE>: N`), so each pair counts the same thing. `None` means the side prints no such metric.",
+        "",
+    ]
+    for label, c in record["comparisons"].items():
+        changed = c["l6_changes"]["metric_changes"]
+        if not changed:
+            out.append(f"- {label}: none")
+            continue
+        listed = ", ".join(f"`{code}` {b} -> {a}" for code, (b, a) in changed.items())
+        out.append(f"- {label}: {listed}")
+    out += ["", "## Branch L6 issue codes by display", ""]
+    for label, c in record["comparisons"].items():
+        codes = ", ".join(f"`{k}` {n}" for k, n in c["l6_changes"]["branch_codes"].items())
+        out.append(f"- {label}: {codes or 'none'}")
+    return "\n".join(out) + "\n"
+
+
+# ---- l6-evidence -------------------------------------------------------------------------------
+
+# dc3's blocker categories (dc3 T-001) and the contract rule/shape/context each is (Item 1
+# acceptance.md:21-31).
+DC3_CATEGORIES = (
+    ("B1", "calc-owned-assertion", "asserted_constraint", "calc_usage_owner"),
+    ("B2", "binding-source", "expression_source", "owner_instantiated"),
+    ("B3", "part-multiplicity", "unresolved_bound", "expanded_part_usage"),
+    ("B4", "invocation-callable", "unsupported_callable", "calc_definition_feature_value"),
+    ("B5", "invocation-callable", "unsupported_callable", "binding_value"),
+    (
+        "B6",
+        "conditional-expression",
+        "conditional_unresolved_branch",
+        "calc_definition_feature_value",
+    ),
+    ("B7", "string-value-omission", "string_value", "attribute_value"),
+    ("B8", "constraint-predicate", "non_numerical_predicate", "owner_other"),
+    ("B8", "constraint-predicate", "blocked_predicate", "owner_other"),
+)
+L6_RUNS = (
+    ("dc3-baseline", "generated", ("--level=6", "--execution-target=generated")),
+    ("dc3-baseline", "unset", ("--level=6",)),
+    ("dc3-repaired", "generated", ("--level=6", "--execution-target=generated")),
+)
+
+
+def l6_summary(report: dict[str, Any]) -> dict[str, Any]:
+    """The L6 facts the evidence files state, all from one report."""
+    l6 = report_level(report, 6)
+    if l6 is None:
+        raise ValueError("the report has no L6")
+    profile = l6["profile"]
+    findings = profile["findings"]
+    by_category = []
+    for name, rule, shape, context in DC3_CATEGORIES:
+        rows = [
+            f
+            for f in findings
+            if (f["rule_id"], f["shape_id"], f["context_id"]) == (rule, shape, context)
+        ]
+        by_category.append(
+            {
+                "category": name,
+                "rule": f"{rule} / {shape} / {context}",
+                "count": len(rows),
+                "occurrences": sum(f["occurrence_count"] or 0 for f in rows),
+                "outcomes": sorted({f["outcome"] for f in rows}),
+                "displays": sorted({f["display"] for f in rows}),
+                "shadowed_by": sorted(
+                    {
+                        f"{f['shadowed_by']['rule_id']}/{f['shadowed_by']['shape_id']}"
+                        for f in rows
+                        if f["shadowed_by"]
+                    }
+                ),
+                "unshadowed": sum(1 for f in rows if not f["shadowed_by"]),
+                "example": rows[0] if rows else None,
+            }
+        )
+    listed = {(c[1], c[2], c[3]) for c in DC3_CATEGORIES}
+    others = Counter(
+        f"{f['rule_id']} / {f['shape_id']} / {f['context_id']} ({f['outcome']})"
+        for f in findings
+        if (f["rule_id"], f["shape_id"], f["context_id"]) not in listed
+    )
+    return {
+        "status": l6["status"],
+        "exit_code": report["exit_code"],
+        "pass_notes": report["pass_notes"],
+        "metrics": l6["metrics"],
+        "verdict": profile["verdict"],
+        "counts": profile["counts"],
+        "findings": len(findings),
+        "by_outcome_listed": dict(Counter(f["outcome"] for f in findings)),
+        "unverified": len(profile["unverified"]),
+        "unverified_by_rule": dict(Counter(u["rule_id"] for u in profile["unverified"])),
+        "advisories": len(profile["advisories"] or []),
+        "check_errors": profile["check_errors"],
+        "categories": by_category,
+        "other_findings": dict(others),
+        "codes": dict(sorted(report_code_counts(report, 6).items())),
+        "constraint_extractions": report["run_info"]["constraint_extractions"],
+        "root": report_root(report),
+    }
+
+
+def l6_evidence(branch: str) -> int:
+    """Appendix C's `l6-evidence`: steps 1-5, then the three L6 runs on dc3 (see `L6_RUNS`)."""
+    head = resolve_rev(REPO_ROOT, "HEAD")
+    refusal = branch_refusal(
+        _git_dirty(("src", "pyproject.toml", "uv.lock")), resolve_rev(REPO_ROOT, branch), head
+    )
+    if refusal:
+        raise SystemExit(refusal)
+    siblings = {"dc3": DC3, "fusion-tea": FUSION_TEA}
+    before = {name: sibling_state(repo) for name, repo in siblings.items()}
+    summaries: dict[tuple[str, str], dict[str, Any]] = {}
+    with tempfile.TemporaryDirectory(dir="/tmp", prefix="l6-evidence-") as scratch:
+        parent = Path(scratch)
+        code = parent / "code-branch"
+        commit = export_code(branch, code)
+        version = syside_version(child_env(read_license_key()))
+        trees = export_trees(parent, ["dc3-baseline", "dc3-repaired"])
+        for label, target, options in L6_RUNS:
+            tree_dir = parent / "trees" / label
+            print(f"running {label} --level=6, target {target} ...", flush=True)
+            run = run_validate(
+                label,
+                tree_dir,
+                trees[label]["commit"],
+                "branch",
+                code,
+                commit,
+                options=options,
+                report=parent / f"report-{label}-{target}.json",
+            )
+            assert run.report is not None
+            summary = l6_summary(run.report)
+            summary["wall_time_s"] = run.wall_time_s
+            summary["process_exit"] = run.exit_code
+            summary["root"] = summary["root"] and str(Path(summary["root"]).relative_to(parent))
+            summary["options"] = " ".join(options)
+            summaries[label, target] = summary
+            print(f"  exit {run.exit_code}, verdict {summary['verdict']}", flush=True)
+    after = {name: sibling_state(repo) for name, repo in siblings.items()}
+    context = {"commit": commit, "syside": version, "trees": trees, "unchanged": before == after}
+    (EVIDENCE / "dc3-baseline-l6.md").write_text(
+        dc3_markdown(
+            "dc3 baseline: L6 under `generated`, and unset",
+            "dc3-baseline",
+            [summaries["dc3-baseline", "generated"], summaries["dc3-baseline", "unset"]],
+            context,
+        )
+    )
+    (EVIDENCE / "dc3-repaired-l6.md").write_text(
+        dc3_markdown(
+            "dc3 repaired: L6 under `generated`",
+            "dc3-repaired",
+            [summaries["dc3-repaired", "generated"]],
+            context,
+        )
+    )
+    if before != after:
+        raise IsolationBreachError("a sibling checkout changed during the run")
+    return 0
+
+
+def dc3_markdown(
+    title: str, label: str, summaries: list[dict[str, Any]], context: dict[str, Any]
+) -> str:
+    tree = context["trees"][label]
+    out = [
+        f"# {title}",
+        "",
+        f"Written by `scripts/l6_subset/run_consumers.py l6-evidence`. agentic-mbse branch `{context['commit']}`; SysIDE {context['syside']}; dc3 `{tree['commit']}` from a `git archive` export under /tmp. Settings input: root `{tree['settings']['root']}`, `{tree['settings']['pyproject']}`, tables {json.dumps(tree['settings']['tables'])}. Sibling checkouts unchanged: {context['unchanged']}. Every count below is read from the run's `--json-report`.",
+    ]
+    for s in summaries:
+        counts = s["counts"]
+        out += [
+            "",
+            f"## `validate {s['options']} models`",
+            "",
+            f"- Exit {s['process_exit']} (report {s['exit_code']}); L6 {s['status']}; wall time {s['wall_time_s']} s; constraint extractions {s['constraint_extractions']}; resolved root `{s['root']}`.",
+            f"- Pass notes: {'; '.join(s['pass_notes']) or 'none'}.",
+            f"- Verdict `{s['verdict']}`. Findings {s['findings']}, by outcome {json.dumps(counts['by_outcome'])} (declarations {counts['declarations']}, occurrences {counts['occurrences']}); unverified {s['unverified']} {json.dumps(s['unverified_by_rule'])}; unassessed constraints {counts['unassessed_constraints']}; advisories {s['advisories']}; check errors {len(s['check_errors'])}.",
+            "",
+            "Metrics as printed:",
+            "",
+            "```text",
+            *[f"{k}: {v}" for k, v in s["metrics"].items()],
+            "```",
+            "",
+            "| Category | Rule / shape / context | Declarations (occurrences) | Outcome | Shown as | Shadowed by |",
+            "|---|---|---|---|---|---|",
+        ]
+        for c in s["categories"]:
+            if not c["count"]:
+                out.append(f"| {c['category']} | `{c['rule']}` | 0 | - | - | - |")
+                continue
+            shadow = ", ".join(c["shadowed_by"]) or "-"
+            if c["shadowed_by"]:
+                shadow += f" ({c['count'] - c['unshadowed']} of {c['count']})"
+            out.append(
+                f"| {c['category']} | `{c['rule']}` | {c['count']} ({c['occurrences']}) | {', '.join(c['outcomes'])} | {', '.join(c['displays'])} | {shadow} |"
+            )
+        if s["other_findings"]:
+            out += [
+                "",
+                "Findings outside B1-B8: "
+                + ", ".join(f"`{k}` {n}" for k, n in s["other_findings"].items())
+                + ".",
+            ]
+        out += [
+            "",
+            "L6 issue codes by display: "
+            + (", ".join(f"`{k}` {n}" for k, n in s["codes"].items()) or "none")
+            + ".",
+        ]
+        out += ["", "### One finding per category: location, reason, remedy", ""]
+        for c in s["categories"]:
+            example = c["example"]
+            if example is None:
+                continue
+            location = example["location"] or {}
+            out.append(
+                f"- **{c['category']}** `{example['subject']['qualified_name']}` at `{location.get('file')}:{location.get('line')}`: {example['outcome']}, reason `{example['reason']}`. Remedy: {example['remedy']}"
+            )
     return "\n".join(out) + "\n"
 
 
@@ -578,7 +1014,11 @@ def main() -> int:
     compare.add_argument("--branch", required=True)
     compare.add_argument("--trees", nargs="+", default=[label for label, _, _ in TREES])
     compare.add_argument("--out", default="before-after", help="evidence file stem")
+    evidence = commands.add_parser("l6-evidence", help="the dc3 L6 evidence files")
+    evidence.add_argument("--branch", required=True)
     args = parser.parse_args()
+    if args.command == "l6-evidence":
+        return l6_evidence(args.branch)
     if args.command == "before-after":
         return before_after(args.base, args.branch, args.trees, args.out)
     if args.command == "baseline":
