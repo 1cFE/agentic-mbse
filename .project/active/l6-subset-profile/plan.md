@@ -1,6 +1,6 @@
 # Implementation Plan: L6 integration and execution-target settings (EXEC-SUBSET-CONTRACT Item 3)
 
-**Status:** Phases 1–9 complete; Phase 10 next
+**Status:** Phases 1–10 complete; Phase 11 next
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 
@@ -611,15 +611,15 @@ The L6 output half is already asserted in Phase 5.
 
 **See `design.md` for:** Component Overview "Docs"; spec § Docs.
 
-- [ ] `tests/test_shipped_text.py`: additions above.
-- [ ] `README.md`, `skills/model-validation/SKILL.md` (including its level table row): the four statements; the setting and how to set it.
-- [ ] `docs/research-seam.md:350`, `:414-415`: the shared key set; the guard now accepts `execution-target` (the intended relaxation).
-- [ ] `CLAUDE.md` § Architecture, Level 6 bullet: change "Architecture & pipeline readiness (ADR-002, manifests, codegen)" to the new title with a short description. One line only; not the Change Coordination proposal Item 6 reserves.
-- [ ] Re-run `uv run agentic-mbse install-commands --assistant claude` so the local install matches `skills/` (CLAUDE.md § Change Coordination).
+- [x] `tests/test_shipped_text.py`: additions above.
+- [x] `README.md`, `skills/model-validation/SKILL.md` (including its level table row): the four statements; the setting and how to set it.
+- [x] `docs/research-seam.md:350`, `:414-415`: the shared key set; the guard now accepts `execution-target` (the intended relaxation).
+- [x] `CLAUDE.md` § Architecture, Level 6 bullet: change "Architecture & pipeline readiness (ADR-002, manifests, codegen)" to the new title with a short description. One line only; not the Change Coordination proposal Item 6 reserves.
+- [x] Re-run `uv run agentic-mbse install-commands --assistant claude` so the local install matches `skills/` (CLAUDE.md § Change Coordination).
 
 ### Validation
 
-- [ ] Tests pass; full suite green rule; ruff on touched test files.
+- [x] Tests pass; full suite green rule; ruff on touched test files.
 
 **What we know works:** every user-facing text states the boundary the same way.
 
@@ -845,6 +845,21 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 **Manual check:** `init --execution-target=native` in a fresh `/tmp` directory, then `validate --level=6` on its `models/` printed `Execution target: native (from /tmp/p9m/empty/pyproject.toml)`. The same check is `test_init_writes_the_file_l6_reads`, with the project's own root marker removed so `init`'s `.agentic-mbse/install.json` is what finds the file.
 **Checks:** full suite 6 failures, the baseline set (pandoc, equations, index); ruff 118; mypy 97; touched files pass `ruff check` and `ruff format --check`.
 
+### Phase 10 Completion
+
+**Completed:** 2026-10-19
+**Changes made:**
+- `README.md` § Validate SysML Models: two paragraphs and the TOML snippet. They name L6's title, `subset-profile/v1`, the eight implemented rules (what is assessed), that the profile is incomplete (the `Coverage limit` line), that L6 is not a generation check and never runs the generator, and that asking sysml-codegen itself is a future step that does not exist yet. Then the setting, what each value does, `init --execution-target`, `validate --execution-target` and `--json-report`.
+- `skills/model-validation/SKILL.md`: the level table's row 6 is now "Architecture & Generator Subset", and one paragraph before "These checks do not establish..." states the same four points and the setting. The row used to say "readiness", a banned word.
+- `docs/research-seam.md:350`: `[tool.agentic-mbse]` holds `research` and `execution-target`, and the guard never reads `execution-target`'s value. `:414`: the fault list allows both keys.
+- `CLAUDE.md`: only the Level 6 bullet in § Architecture changed.
+- `tests/test_shipped_text.py`: 5 tests (each L6 doc states the four points and has no banned word; the doc's rule count equals `PACKAGED_RULES`; the skill's table row; the CLAUDE.md line; the research-seam key set). The banned list is imported from `tests/test_validation/test_l6_contract.py` so there is one list.
+- Re-ran `uv run agentic-mbse install-commands --assistant claude` (41 installed).
+**Decisions and deviations:**
+- "Not `sysml-codegen check`" is stated without writing that command, because the spec says no command is shown for a check that does not exist. A test asserts the string `sysml-codegen check` is absent from both docs.
+- The docs say each rule is "traced to sysml-codegen's source or to a probe run against it", not "a refusal", because `string-value-omission` is an omission with no generator error.
+**Checks:** full suite 6 failures, the baseline set; ruff 118; mypy 97; touched test file passes `ruff check` and `ruff format --check`.
+
 ---
 
-**Status:** Phases 1–9 complete; Phase 10 next
+**Status:** Phases 1–10 complete; Phase 11 next
