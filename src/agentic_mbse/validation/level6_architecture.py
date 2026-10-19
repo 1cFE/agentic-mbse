@@ -1149,6 +1149,8 @@ def validate_architecture(
             level_name=LEVEL_NAME,
             success=False,
             issues=[str(e)],
+            metrics=target_metrics,
+            report_detail=target_detail,
         )
 
     if not files:
@@ -1170,6 +1172,8 @@ def validate_architecture(
             level_name=LEVEL_NAME,
             success=False,
             issues=[f"Failed to load model: {e}"],
+            metrics=target_metrics,
+            report_detail=target_detail,
         )
 
     # The contract runs first: its String subjects feed the design-attribute check (D10).

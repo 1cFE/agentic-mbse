@@ -544,3 +544,27 @@ def test_failed_calc_def_listing_still_checks_calc_usages(monkeypatch, tmp_path)
     ]
     assert [i.element_name for i in invalid] == ["lib::Site::_t"]
 
+
+def _assert_target_recorded(result: QualityCheckResult, pyproject: Path) -> None:
+    assert not result.success
+    assert result.metrics["Execution target"] == f"native (from {pyproject})"
+    assert result.report_detail["target"]["target"] == "native"
+    assert result.report_detail["target"]["source"] == "FromFile"
+    assert result.report_detail["target"]["file"] == str(pyproject)
+
+
+def test_missing_models_path_still_records_the_target(tmp_path):
+    """The path-discovery exit names the target and its source (audit advisory 1)."""
+    models = make_project(tmp_path, pyproject=target_table('"native"'))
+    result = level6_architecture.validate_architecture(str(models / "absent"))
+    assert any("Path does not exist" in issue for issue in result.issues)
+    _assert_target_recorded(result, models.parent / "pyproject.toml")
+
+
+def test_failed_model_load_still_records_the_target(monkeypatch, tmp_path):
+    """The model-load exit names the target and its source (audit advisory 1)."""
+    raising(level6_architecture, "load_sysml_model", ForcedError("load failed"))(monkeypatch)
+    models = make_project(tmp_path, pyproject=target_table('"native"'))
+    result = level6_architecture.validate_architecture(str(models))
+    assert result.issues == ["Failed to load model: load failed"]
+    _assert_target_recorded(result, models.parent / "pyproject.toml")
