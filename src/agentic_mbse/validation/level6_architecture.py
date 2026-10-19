@@ -221,11 +221,12 @@ def check_qualified_names(model: Any) -> list[ValidationIssue]:
     """
     issues: list[ValidationIssue] = []
 
-    # Check CalculationDefinitions
+    # Check CalculationDefinitions; a failed listing ends only this half, not the usage half.
     try:
         calc_defs = list(SysideAdapter.elements_of_type(model, "CalculationDefinition"))
     except Exception as error:
-        return [_enumeration_error("check_qualified_names", "CalculationDefinition", error)]
+        calc_defs = []
+        issues.append(_enumeration_error("check_qualified_names", "CalculationDefinition", error))
 
     for calc_def in calc_defs:
         try:
@@ -271,7 +272,8 @@ def check_qualified_names(model: Any) -> list[ValidationIssue]:
     try:
         calc_usages = list(SysideAdapter.elements_of_type(model, "CalculationUsage"))
     except Exception as error:
-        return [_enumeration_error("check_qualified_names", "CalculationUsage", error)]
+        issues.append(_enumeration_error("check_qualified_names", "CalculationUsage", error))
+        return issues
 
     for calc_usage in calc_usages:
         try:

@@ -523,3 +523,24 @@ def test_other_legacy_walker_calls_report_unverified(function, check, monkeypatc
         w.reason_code == SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED.value for w in warnings
     )
     assert not _errors(result, check)
+
+
+@pytest.mark.syside
+def test_failed_calc_def_listing_still_checks_calc_usages(monkeypatch, tmp_path):
+    """A failed calc-def listing ends only that half of `check_qualified_names` (audit adv. 2)."""
+    enumeration("check_qualified_names", "CalculationDefinition")(monkeypatch)
+    calcs = (FIXTURE / "library" / "calcs.sysml").read_text().replace("calc t :", "calc _t :")
+    assert "calc _t :" in calcs
+    models = {
+        "library/calcs.sysml": calcs,
+        "designs/plant.sysml": (FIXTURE / "designs" / "plant.sysml").read_text(),
+    }
+    result = level6_architecture.validate_architecture(
+        str(make_project(tmp_path, pyproject=target_table('"native"'), models=models))
+    )
+    assert len(_errors(result, "check_qualified_names")) == 1
+    invalid = [
+        i for i in result.structured_issues if i.code is ValidationCode.L6_INVALID_QUALIFIED_NAME
+    ]
+    assert [i.element_name for i in invalid] == ["lib::Site::_t"]
+
