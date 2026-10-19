@@ -9,6 +9,7 @@ Implements validation rules from ADR-002 (Calculation Architecture):
 
 These checks are integrated into Level 6 architecture validation.
 """
+
 from typing import Any
 
 from agentic_mbse.sysml.expression import (
@@ -24,6 +25,7 @@ from agentic_mbse.sysml.reference_use import (
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
+from agentic_mbse.validation.common import check_error_issue
 
 try:
     from .common import get_element_location, get_qualified_name
@@ -37,6 +39,13 @@ except ImportError:
 # so `a ^ b` in a static design expression slipped through; removing it makes the
 # operator check flag it as V4_UNSUPPORTED_OPERATOR, matching codegen V4.
 SUPPORTED_OPERATORS = {"+", "-", "*", "/", "["}
+
+
+def _element_error(check: str, element: Any, error: Exception) -> ValidationIssue:
+    """`L6_CHECK_ERROR` for one element `check` could not inspect (Item 3 design D4)."""
+    return check_error_issue(
+        check, get_qualified_name(element), error, get_element_location(element)
+    )
 
 
 def check_calc_def_locations(model: Any) -> list[ValidationIssue]:
@@ -84,9 +93,8 @@ def check_calc_def_locations(model: Any) -> list[ValidationIssue]:
                     )
                 )
 
-        except Exception:
-            # Skip elements we can't analyze
-            continue
+        except Exception as error:
+            issues.append(_element_error("check_calc_def_locations", calc_def, error))
 
     return issues
 
@@ -124,9 +132,7 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
             # calculations belong. The `library/` path skip below misses flat-layout
             # calc defs (no `library/` dir), so key off the owner type, not the path.
             owner = getattr(attr, "owner", None)
-            if owner is not None and SysideAdapter.is_instance(
-                owner, "CalculationDefinition"
-            ):
+            if owner is not None and SysideAdapter.is_instance(owner, "CalculationDefinition"):
                 continue
 
             # Only check design files (not library calc defs)
@@ -139,10 +145,7 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
                 continue  # Skip library files (calc defs have different rules)
 
             # Check if attribute has an expression
-            if (
-                not hasattr(attr, "feature_value_expression")
-                or not attr.feature_value_expression
-            ):
+            if not hasattr(attr, "feature_value_expression") or not attr.feature_value_expression:
                 continue
 
             expr = attr.feature_value_expression
@@ -174,8 +177,8 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
                         )
                     )
 
-        except Exception:
-            continue
+        except Exception as error:
+            issues.append(_element_error("check_supported_operators", attr, error))
 
     return issues
 
@@ -199,13 +202,11 @@ def check_static_function_invocations(model: Any) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
 
     def _is_invocation(node: Any) -> Any:
-        try:
-            if SysideAdapter.is_instance(
-                node, "InvocationExpression"
-            ) and not SysideAdapter.is_instance(node, "OperatorExpression"):
-                return node
-        except Exception:
-            return None
+        # A failed type test reaches the attribute's handler below (Appendix B, :207).
+        if SysideAdapter.is_instance(
+            node, "InvocationExpression"
+        ) and not SysideAdapter.is_instance(node, "OperatorExpression"):
+            return node
         return None
 
     for attr in SysideAdapter.elements_of_type(model, "AttributeUsage"):
@@ -218,9 +219,7 @@ def check_static_function_invocations(model: Any) -> list[ValidationIssue]:
             # C5/C6a (Item 12): a calc-def-internal `out attribute X = f(...)` is where
             # function invocations legitimately live; the `library/` skip below misses
             # flat-layout calc defs, so also skip by owner type.
-            if owner is not None and SysideAdapter.is_instance(
-                owner, "CalculationDefinition"
-            ):
+            if owner is not None and SysideAdapter.is_instance(owner, "CalculationDefinition"):
                 continue
 
             doc = attr.document
@@ -251,31 +250,15 @@ def check_static_function_invocations(model: Any) -> list[ValidationIssue]:
                     suggestion="Move the calculation into a calc def",
                 )
             )
-        except Exception:
-            continue
+        except Exception as error:
+            issues.append(_element_error("check_static_function_invocations", attr, error))
 
     return issues
 
 
-def _get_calc_usage_names(model: Any) -> set:
-    """Get set of all calc usage instance names."""
-    names = set()
-    for usage in SysideAdapter.elements_of_type(model, "CalculationUsage"):
-        try:
-            name = usage.name if hasattr(usage, "name") else ""
-            if name:
-                names.add(name)
-        except Exception:
-            continue
-    return names
-
-
 def _is_calc_usage(element: Any) -> bool:
-    """Check if element is a CalculationUsage."""
-    try:
-        return SysideAdapter.is_instance(element, "CalculationUsage")
-    except Exception:
-        return False
+    """Check if element is a CalculationUsage. A failed test raises to the caller's handler."""
+    return SysideAdapter.is_instance(element, "CalculationUsage")
 
 
 def reference_is_dynamic(use: ReferenceUse) -> bool:
@@ -329,11 +312,8 @@ def _is_calc_output_reference(
 
 
 def _is_part_usage(element: Any) -> bool:
-    """Check if element is a PartUsage."""
-    try:
-        return SysideAdapter.is_instance(element, "PartUsage")
-    except Exception:
-        return False
+    """Check if element is a PartUsage. A failed test raises to the caller's handler."""
+    return SysideAdapter.is_instance(element, "PartUsage")
 
 
 def is_expose_binding(attr: Any, expr: Any) -> bool:
@@ -346,8 +326,10 @@ def is_expose_binding(attr: Any, expr: Any) -> bool:
     2. The chain's first member resolves to a CalculationUsage or a PartUsage.
     3. That head has the same owner as `attr` (it is a sibling).
 
-    Chain length and the chain's final target are not checked. The function never
-    raises: on any analysis failure it returns False.
+    Chain length and the chain's final target are not checked. A failed read raises: the
+    caller reports the attribute as a check failure and makes no finding for it (Item 3
+    design Appendix B). Returning False instead would make a false V2, V4 or
+    UNEXTRACTABLE finding.
 
     This is the one EXPOSE predicate. Its consumers are check_static_expressions
     (V2), check_supported_operators (V4), and check_design_attr_completeness (L6).
@@ -359,70 +341,65 @@ def is_expose_binding(attr: Any, expr: Any) -> bool:
     Returns:
         True if this is an EXPOSE binding, False otherwise
     """
-    try:
-        # 1. Check expression type - must be FeatureChainExpression
-        # This is the key distinguisher: EXPOSE uses FeatureChain,
-        # computed expressions use OperatorExpression
-        type_name = type(expr).__name__
-        if "FeatureChain" not in type_name:
-            return False
-
-        # 2. Get the chain elements to identify the source instance
-        if not hasattr(expr, "owned_members"):
-            return False
-
-        chain_members = list(expr.owned_members)
-        if len(chain_members) < 1:
-            return False
-
-        # 3. The first chain element should reference a calc or part usage
-        # AST structure: chain_member -> feature_value_expression -> referent
-        first_member = chain_members[0]
-
-        # Get the referenced element (the calc or part instance)
-        # Path: first_member.feature_value_expression.referent
-        source_instance = None
-
-        if hasattr(first_member, "feature_value_expression"):
-            fve = first_member.feature_value_expression
-            if fve is not None:
-                source_instance = resolved_referent(fve)
-
-        # Fallback paths for different AST structures
-        if source_instance is None and hasattr(first_member, "member_element"):
-            source_instance = first_member.member_element
-        if source_instance is None:
-            source_instance = resolved_referent(first_member)
-
-        if source_instance is None:
-            return False
-
-        # 4. Verify it's either a CalculationUsage OR a PartUsage
-        is_calc = _is_calc_usage(source_instance)
-        is_part = _is_part_usage(source_instance)
-
-        if not is_calc and not is_part:
-            return False
-
-        # 5. Verify it's a sibling (same owner as the attribute)
-        attr_owner = attr.owner if hasattr(attr, "owner") else None
-        source_owner = source_instance.owner if hasattr(source_instance, "owner") else None
-
-        if attr_owner is None or source_owner is None:
-            return False
-
-        # Same owner means they're siblings
-        if attr_owner is not source_owner:
-            return False
-
-        # All criteria met - this is an EXPOSE pattern
-        # For CalculationUsage: direct EXPOSE (e.g., attribute x = calc.output)
-        # For PartUsage: part-headed EXPOSE (e.g., attribute x = sibling_part.volume)
-        return True
-
-    except Exception:
-        # Conservative: don't exempt if we can't analyze
+    # 1. Check expression type - must be FeatureChainExpression
+    # This is the key distinguisher: EXPOSE uses FeatureChain,
+    # computed expressions use OperatorExpression
+    type_name = type(expr).__name__
+    if "FeatureChain" not in type_name:
         return False
+
+    # 2. Get the chain elements to identify the source instance
+    if not hasattr(expr, "owned_members"):
+        return False
+
+    chain_members = list(expr.owned_members)
+    if len(chain_members) < 1:
+        return False
+
+    # 3. The first chain element should reference a calc or part usage
+    # AST structure: chain_member -> feature_value_expression -> referent
+    first_member = chain_members[0]
+
+    # Get the referenced element (the calc or part instance)
+    # Path: first_member.feature_value_expression.referent
+    source_instance = None
+
+    if hasattr(first_member, "feature_value_expression"):
+        fve = first_member.feature_value_expression
+        if fve is not None:
+            source_instance = resolved_referent(fve)
+
+    # Fallback paths for different AST structures
+    if source_instance is None and hasattr(first_member, "member_element"):
+        source_instance = first_member.member_element
+    if source_instance is None:
+        source_instance = resolved_referent(first_member)
+
+    if source_instance is None:
+        return False
+
+    # 4. Verify it's either a CalculationUsage OR a PartUsage
+    is_calc = _is_calc_usage(source_instance)
+    is_part = _is_part_usage(source_instance)
+
+    if not is_calc and not is_part:
+        return False
+
+    # 5. Verify it's a sibling (same owner as the attribute)
+    attr_owner = attr.owner if hasattr(attr, "owner") else None
+    source_owner = source_instance.owner if hasattr(source_instance, "owner") else None
+
+    if attr_owner is None or source_owner is None:
+        return False
+
+    # Same owner means they're siblings
+    if attr_owner is not source_owner:
+        return False
+
+    # All criteria met - this is an EXPOSE pattern
+    # For CalculationUsage: direct EXPOSE (e.g., attribute x = calc.output)
+    # For PartUsage: part-headed EXPOSE (e.g., attribute x = sibling_part.volume)
+    return True
 
 
 def _generate_calc_def_guidance(attr_name: str, ref_names: list[str]) -> str:
@@ -566,10 +543,7 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
                 continue  # Skip library files
 
             # Check if attribute has an expression
-            if (
-                not hasattr(attr, "feature_value_expression")
-                or not attr.feature_value_expression
-            ):
+            if not hasattr(attr, "feature_value_expression") or not attr.feature_value_expression:
                 continue
 
             expr = attr.feature_value_expression
@@ -601,9 +575,7 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
             attr_name = get_qualified_name(attr)
             location = get_element_location(attr)
             ref_names = [
-                use.path.leaf.element_name
-                if isinstance(use, ExactReferenceUse)
-                else use.reference
+                use.path.leaf.element_name if isinstance(use, ExactReferenceUse) else use.reference
                 for use in uses
             ]
 
@@ -612,16 +584,14 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
                     level=6,
                     severity=Severity.ERROR,
                     code=ValidationCode.V2_DYNAMIC_EXPRESSION,
-                    message=(
-                        f"Derived expression references design attributes: {ref_names}"
-                    ),
+                    message=(f"Derived expression references design attributes: {ref_names}"),
                     element_name=attr_name,
                     location=location,
                     suggestion=_generate_calc_def_guidance(attr_name, ref_names),
                 )
             )
 
-        except Exception:
-            continue
+        except Exception as error:
+            issues.append(_element_error("check_static_expressions", attr, error))
 
     return issues

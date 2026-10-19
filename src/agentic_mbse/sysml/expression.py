@@ -533,6 +533,24 @@ def extract_literal_value(expr: Any) -> float | int | str | bool | None:
     return None
 
 
+class Unextractable(Exception):  # noqa: N818 - a marker the two *Error types carry (D16)
+    """Marker: `evaluate_true_static_expression` decided the expression has no static value.
+
+    Its deliberate raises carry this marker through `UnextractableValueError` and
+    `UnextractableTypeError`, so a caller can tell "not a static number" from an evaluator or
+    accessor failure (Item 3 design D16). Existing `except ValueError` and `except TypeError`
+    callers are unaffected.
+    """
+
+
+class UnextractableValueError(ValueError, Unextractable):
+    """A deliberate `ValueError` from `evaluate_true_static_expression`."""
+
+
+class UnextractableTypeError(TypeError, Unextractable):
+    """A deliberate `TypeError` from `evaluate_true_static_expression`."""
+
+
 def evaluate_true_static_expression(expr: Any) -> float:
     """Evaluate a true static expression to a numeric value.
 
@@ -552,9 +570,9 @@ def evaluate_true_static_expression(expr: Any) -> float:
         Evaluated numeric value as float
 
     Raises:
-        ValueError: If expression contains feature references, unsupported operators,
-                   or division by zero
-        TypeError: If expression is None or unexpected type
+        UnextractableValueError: If expression contains feature references, unsupported
+                   operators, a non-numeric literal, or division by zero
+        UnextractableTypeError: If expression is None or unexpected type
 
     Examples:
         >>> evaluate_true_static_expression(MockLiteralRational(3.14159))
@@ -564,18 +582,21 @@ def evaluate_true_static_expression(expr: Any) -> float:
         6.0
     """
     if expr is None:
-        raise TypeError("Cannot evaluate None expression")
+        raise UnextractableTypeError("Cannot evaluate None expression")
 
     # Case 1: Literal values
     if is_literal_type(expr):
         if hasattr(expr, "value"):
-            return float(expr.value)
-        raise ValueError(f"Literal without value: {type(expr).__name__}")
+            try:
+                return float(expr.value)
+            except ValueError as error:  # a non-numeric literal, e.g. a String
+                raise UnextractableValueError(str(error)) from error
+        raise UnextractableValueError(f"Literal without value: {type(expr).__name__}")
 
     # Case 2: Feature reference - ERROR (model violation)
     if is_reference_type(expr):
         ref_name = get_reference_name(expr) or "<unknown>"
-        raise ValueError(
+        raise UnextractableValueError(
             f"Feature reference '{ref_name}' found in static expression. "
             f"This violates ADR-002 Rule 3. Run 'agentic-mbse validate' "
             f"to identify and fix the violation."
@@ -589,7 +610,7 @@ def evaluate_true_static_expression(expr: Any) -> float:
         operands = materialize_operands(expr)
 
         if operator not in STATIC_OPERATORS:
-            raise ValueError(
+            raise UnextractableValueError(
                 f"Unsupported operator '{operator}' in static expression. "
                 f"Supported: {STATIC_OPERATORS}. "
                 f"Complex operations require a calc def in library/."
@@ -600,7 +621,7 @@ def evaluate_true_static_expression(expr: Any) -> float:
             # First operand is the value, second is the unit (ignore)
             if operands:
                 return evaluate_true_static_expression(operands[0])
-            raise ValueError("Unit annotation without operands")
+            raise UnextractableValueError("Unit annotation without operands")
 
         # Unary operators
         if len(operands) == 1:
@@ -609,7 +630,7 @@ def evaluate_true_static_expression(expr: Any) -> float:
                 return -val
             if operator == "+":
                 return val
-            raise ValueError(f"Unknown unary operator: {operator}")
+            raise UnextractableValueError(f"Unknown unary operator: {operator}")
 
         # Binary operators
         if len(operands) >= 2:
@@ -624,15 +645,17 @@ def evaluate_true_static_expression(expr: Any) -> float:
                 return left * right
             if operator == "/":
                 if right == 0:
-                    raise ValueError(
+                    raise UnextractableValueError(
                         "Division by zero in static expression. "
                         "Check your model for divide-by-zero conditions."
                     )
                 return left / right
 
-        raise ValueError(f"Operator '{operator}' with unexpected operand count: {len(operands)}")
+        raise UnextractableValueError(
+            f"Operator '{operator}' with unexpected operand count: {len(operands)}"
+        )
 
-    raise TypeError(f"Cannot evaluate expression of type: {type(expr).__name__}")
+    raise UnextractableTypeError(f"Cannot evaluate expression of type: {type(expr).__name__}")
 
 
 def is_true_static_expression(expr: Any) -> bool:

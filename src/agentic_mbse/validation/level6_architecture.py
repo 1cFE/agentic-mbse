@@ -13,14 +13,17 @@ Merged from:
 - ADR-002 calls (previously in Level 2)
 """
 
+from collections.abc import Callable
+from functools import partial
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 from uuid import UUID
 
 import yaml
 
 from agentic_mbse.sysml.executable_profile import Eligibility, evaluate_identified_profile
 from agentic_mbse.sysml.expression import (
+    Unextractable,
     evaluate_true_static_expression,
     is_literal_node,
 )
@@ -191,6 +194,18 @@ def _segment_is_quoted(segment: str) -> bool:
     return len(s) >= 2 and s.startswith("'") and s.endswith("'")
 
 
+def _element_error(check: str, element: Any, error: Exception) -> ValidationIssue:
+    """`L6_CHECK_ERROR` for one element `check` could not inspect (design D4, element scope)."""
+    return check_error_issue(
+        check, get_qualified_name(element), error, get_element_location(element)
+    )
+
+
+def _enumeration_error(check: str, type_name: str, error: Exception) -> ValidationIssue:
+    """`L6_CHECK_ERROR` for a check that could not list its elements (D4, check scope)."""
+    return check_error_issue(check, f"the model's {type_name} elements", error)
+
+
 def check_qualified_names(model: Any) -> list[ValidationIssue]:
     """
     Validate all calc defs and usages have valid qualified names.
@@ -207,8 +222,8 @@ def check_qualified_names(model: Any) -> list[ValidationIssue]:
     # Check CalculationDefinitions
     try:
         calc_defs = list(SysideAdapter.elements_of_type(model, "CalculationDefinition"))
-    except Exception:
-        calc_defs = []
+    except Exception as error:
+        return [_enumeration_error("check_qualified_names", "CalculationDefinition", error)]
 
     for calc_def in calc_defs:
         try:
@@ -246,24 +261,15 @@ def check_qualified_names(model: Any) -> list[ValidationIssue]:
                             suggestion="Qualified names should be Package::Element format",
                         )
                     )
-        except AttributeError:
-            element_name = getattr(calc_def, "name", "<unnamed>")
-            issues.append(
-                ValidationIssue(
-                    level=6,
-                    severity=Severity.ERROR,
-                    code=ValidationCode.L6_MISSING_QUALIFIED_NAME,
-                    message=f"Calc def '{element_name}' missing qualified_name attribute",
-                    element_name=str(element_name),
-                    location=get_element_location(calc_def),
-                )
-            )
+        except Exception as error:
+            # A failed read is not a missing name: report it, make no finding (Appendix B).
+            issues.append(_element_error("check_qualified_names", calc_def, error))
 
     # Check CalculationUsages (EQN derivability)
     try:
         calc_usages = list(SysideAdapter.elements_of_type(model, "CalculationUsage"))
-    except Exception:
-        calc_usages = []
+    except Exception as error:
+        return [_enumeration_error("check_qualified_names", "CalculationUsage", error)]
 
     for calc_usage in calc_usages:
         try:
@@ -305,18 +311,8 @@ def check_qualified_names(model: Any) -> list[ValidationIssue]:
                                 )
                             )
                             break
-        except AttributeError:
-            element_name = str(getattr(calc_usage, "name", "<unnamed>"))
-            issues.append(
-                ValidationIssue(
-                    level=6,
-                    severity=Severity.ERROR,
-                    code=ValidationCode.L6_MISSING_QUALIFIED_NAME,
-                    message=f"Calc usage '{element_name}' missing qualified_name attribute",
-                    element_name=element_name,
-                    location=get_element_location(calc_usage),
-                )
-            )
+        except Exception as error:
+            issues.append(_element_error("check_qualified_names", calc_usage, error))
 
     return issues
 
@@ -336,8 +332,8 @@ def check_calc_def_structure(model: Any) -> list[ValidationIssue]:
 
     try:
         calc_defs = list(SysideAdapter.elements_of_type(model, "CalculationDefinition"))
-    except Exception:
-        calc_defs = []
+    except Exception as error:
+        return [_enumeration_error("check_calc_def_structure", "CalculationDefinition", error)]
 
     for calc_def in calc_defs:
         try:
@@ -390,8 +386,8 @@ def check_calc_def_structure(model: Any) -> list[ValidationIssue]:
                     )
                 )
 
-        except Exception:
-            continue
+        except Exception as error:
+            issues.append(_element_error("check_calc_def_structure", calc_def, error))
 
     return issues
 
@@ -434,8 +430,8 @@ def check_binding_formats(
 
     try:
         calc_usages = list(SysideAdapter.elements_of_type(model, "CalculationUsage"))
-    except Exception:
-        calc_usages = []
+    except Exception as error:
+        return [_enumeration_error("check_binding_formats", "CalculationUsage", error)], 0
 
     for calc_usage in calc_usages:
         try:
@@ -486,8 +482,8 @@ def check_binding_formats(
                             )
                         )
 
-        except Exception:
-            continue
+        except Exception as error:
+            issues.append(_element_error("check_binding_formats", calc_usage, error))
 
     return issues, bindings_checked
 
@@ -524,8 +520,8 @@ def check_design_attr_completeness(
 
     try:
         attrs = list(SysideAdapter.elements_of_type(model, "AttributeUsage"))
-    except Exception:
-        attrs = []
+    except Exception as error:
+        return [_enumeration_error("check_design_attr_completeness", "AttributeUsage", error)], 0
 
     for attr in attrs:
         try:
@@ -537,13 +533,11 @@ def check_design_attr_completeness(
                 if design_path_filter not in doc_path.parts:
                     continue
 
+            # A failed owner test reaches the element handler below, so the attribute is
+            # reported and not checked (Appendix B, :520).
             owner = attr.owner if hasattr(attr, "owner") else None
-            if owner:
-                try:
-                    if SysideAdapter.is_instance(owner, "CalculationUsage"):
-                        continue
-                except Exception:
-                    pass
+            if owner and SysideAdapter.is_instance(owner, "CalculationUsage"):
+                continue
 
             attrs_checked += 1
             attr_name = get_qualified_name(attr)
@@ -564,7 +558,7 @@ def check_design_attr_completeness(
                     continue
                 try:
                     evaluate_true_static_expression(attr.feature_value_expression)
-                except (ValueError, TypeError) as e:
+                except Unextractable as e:  # only the evaluator's own signal (D16)
                     issues.append(
                         ValidationIssue(
                             level=6,
@@ -596,8 +590,8 @@ def check_design_attr_completeness(
                     )
                 )
 
-        except Exception:
-            continue
+        except Exception as error:
+            issues.append(_element_error("check_design_attr_completeness", attr, error))
 
     return issues, attrs_checked
 
@@ -654,8 +648,8 @@ def check_anonymous_returns(model: Any) -> list[ValidationIssue]:
                             ),
                         )
                     )
-        except Exception:
-            continue
+        except Exception as error:
+            issues.append(_element_error("check_anonymous_returns", calc_def, error))
 
     return issues
 
@@ -745,6 +739,7 @@ def check_calc_bearing_instantiation(model: Any) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
 
     # Union of every type name reachable through a part usage (chain + retypes).
+    # A partial set would make false findings, so a failure here ends the check (Appendix B).
     instantiated: set[str] = set()
     try:
         for part_usage in SysideAdapter.elements_of_type(model, "PartUsage"):
@@ -752,8 +747,8 @@ def check_calc_bearing_instantiation(model: Any) -> list[ValidationIssue]:
                 type_name = getattr(typ, "name", None)
                 if type_name:
                     instantiated.add(str(type_name))
-    except Exception:
-        pass
+    except Exception as error:
+        return [_enumeration_error("check_calc_bearing_instantiation", "PartUsage", error)]
 
     for part_def in SysideAdapter.elements_of_type(model, "PartDefinition"):
         try:
@@ -788,8 +783,8 @@ def check_calc_bearing_instantiation(model: Any) -> list[ValidationIssue]:
                     ),
                 )
             )
-        except Exception:
-            continue
+        except Exception as error:
+            issues.append(_element_error("check_calc_bearing_instantiation", part_def, error))
 
     return issues
 
@@ -861,8 +856,8 @@ def check_body_assignment_impl_loss(model: Any) -> list[ValidationIssue]:
                             ),
                         )
                     )
-        except Exception:
-            continue
+        except Exception as error:
+            issues.append(_element_error("check_body_assignment_impl_loss", calc_def, error))
 
     return issues
 
@@ -936,8 +931,8 @@ def check_attr_redef_expression_dropped(model: Any) -> list[ValidationIssue]:
                     ),
                 )
             )
-        except Exception:
-            continue
+        except Exception as error:
+            issues.append(_element_error("check_attr_redef_expression_dropped", attr, error))
 
     return issues
 
@@ -1005,17 +1000,29 @@ def _setting_invalid_result(error: TargetSettingError) -> QualityCheckResult:
     return result
 
 
+_T = TypeVar("_T")
+
+
+def _guarded(check: str, call: Callable[[], _T]) -> tuple[_T | None, list[ValidationIssue]]:
+    """`call()`'s result, or None and one `L6_CHECK_ERROR` naming `check` if it raised (D4)."""
+    try:
+        return call(), []
+    except Exception as error:
+        return None, [check_error_issue(check, "the loaded model", error)]
+
+
 def _run_contract(model: Any) -> tuple[SubsetProfileResult | None, list[ValidationIssue]]:
     """The subset contract's result over the shared model and constraint facts.
 
     A crash in extraction or evaluation is one `L6_CHECK_ERROR` and no result, so the verdict
     reads "not computed" and every legacy String error stays (design D4, D10).
     """
-    try:
-        facts = extract_subset_facts(model, constraint_facts=constraint_facts)
-        return evaluate_subset_profile(facts), []
-    except Exception as error:
-        return None, [check_error_issue("subset_profile", "the loaded model", error)]
+    return _guarded(
+        "subset_profile",
+        lambda: evaluate_subset_profile(
+            extract_subset_facts(model, constraint_facts=constraint_facts)
+        ),
+    )
 
 
 def _run_advisories(model: Any) -> tuple[Advisories | None, list[ValidationIssue]]:
@@ -1024,10 +1031,76 @@ def _run_advisories(model: Any) -> tuple[Advisories | None, list[ValidationIssue
     A walker's own `SemanticEvidenceError` is an advisory-unverified record inside the result
     (D15); any other exception is one `L6_CHECK_ERROR` and no result.
     """
-    try:
-        return extract_advisories(model), []
-    except Exception as error:
-        return None, [check_error_issue("subset_advisories", "the loaded model", error)]
+    return _guarded("subset_advisories", lambda: extract_advisories(model))
+
+
+# The legacy checks in the order they run (D13 prints their issues in this order), each with
+# the issue codes it emits, so a failed check's counts read "not computed" (Appendix B).
+_LEGACY_CHECKS: tuple[
+    tuple[Callable[[Any], list[ValidationIssue]], tuple[ValidationCode, ...]], ...
+] = (
+    (check_calc_def_locations, (ValidationCode.V1_CALC_DEF_LOCATION,)),
+    (check_static_expressions, (ValidationCode.V2_DYNAMIC_EXPRESSION,)),
+    (check_supported_operators, (ValidationCode.V4_UNSUPPORTED_OPERATOR,)),
+    (check_static_function_invocations, (ValidationCode.V4_STATIC_FUNCTION_INVOCATION,)),
+    (
+        check_qualified_names,
+        (ValidationCode.L6_MISSING_QUALIFIED_NAME, ValidationCode.L6_INVALID_QUALIFIED_NAME),
+    ),
+    (
+        check_calc_def_structure,
+        (ValidationCode.L6_CALC_DEF_NO_OUTPUT, ValidationCode.L6_CALC_DEF_NO_DIRECTION),
+    ),
+    (check_anonymous_returns, (ValidationCode.L6_ANONYMOUS_RETURN,)),
+    (check_body_assignment_impl_loss, (ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS,)),
+    (
+        check_constraint_executability,
+        (
+            ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL,
+            ValidationCode.L6_CONSTRAINT_NON_NUMERICAL,
+        ),
+    ),
+    (check_calc_bearing_instantiation, (ValidationCode.L6_CALC_DEF_NO_INSTANTIATION,)),
+    (check_attr_redef_expression_dropped, (ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED,)),
+)
+
+# The per-code count metrics, in their printed order.
+_COUNTED_CODES = (
+    ValidationCode.L6_MISSING_QUALIFIED_NAME,
+    ValidationCode.L6_INVALID_QUALIFIED_NAME,
+    ValidationCode.L6_CALC_DEF_NO_OUTPUT,
+    ValidationCode.L6_CALC_DEF_NO_DIRECTION,
+    ValidationCode.L6_INVALID_BINDING_FORMAT,
+    ValidationCode.L6_DESIGN_ATTR_INCOMPLETE,
+    ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE,
+    ValidationCode.L6_ANONYMOUS_RETURN,
+    ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS,
+    ValidationCode.V4_STATIC_FUNCTION_INVOCATION,
+    ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL,
+    ValidationCode.L6_CONSTRAINT_NON_NUMERICAL,
+    ValidationCode.L6_CALC_DEF_NO_INSTANTIATION,
+    ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED,
+)
+
+NOT_COMPUTED = "not computed"
+
+
+def _reported_failure(issues: list[ValidationIssue]) -> bool:
+    return any(issue.code is ValidationCode.L6_CHECK_ERROR for issue in issues)
+
+
+def _count(value: int | None, failed: bool) -> int | str:
+    """A count metric: the number, or "not computed" when its check reported a failure."""
+    return NOT_COMPUTED if value is None or failed else value
+
+
+def _element_count(model: Any, type_name: str) -> int:
+    return len(list(SysideAdapter.elements_of_type(model, type_name)))
+
+
+def _count_elements(model: Any, type_name: str) -> tuple[int | None, list[ValidationIssue]]:
+    """The model's number of `type_name` elements, or None and one `L6_CHECK_ERROR`."""
+    return _guarded(f"count of {type_name}", partial(_element_count, model, type_name))
 
 
 def validate_architecture(
@@ -1098,38 +1171,37 @@ def validate_architecture(
     contract, contract_errors = _run_contract(model)
     all_issues: list[ValidationIssue] = list(contract_errors)
 
-    # Count elements for metrics
-    try:
-        num_calc_defs = len(list(SysideAdapter.elements_of_type(model, "CalculationDefinition")))
-    except Exception:
-        num_calc_defs = 0
+    num_calc_defs, count_errors = _count_elements(model, "CalculationDefinition")
+    all_issues.extend(count_errors)
+    num_calc_usages, count_errors = _count_elements(model, "CalculationUsage")
+    all_issues.extend(count_errors)
 
-    try:
-        num_calc_usages = len(list(SysideAdapter.elements_of_type(model, "CalculationUsage")))
-    except Exception:
-        num_calc_usages = 0
-
-    # ADR-002 checks (from old L2)
-    all_issues.extend(check_calc_def_locations(model))
-    all_issues.extend(check_static_expressions(model))
-    all_issues.extend(check_supported_operators(model))
-    all_issues.extend(check_static_function_invocations(model))  # C5 (Item 12)
-
-    # Codegen readiness checks (from old L8)
-    all_issues.extend(check_qualified_names(model))
-    all_issues.extend(check_calc_def_structure(model))
-
-    # Item 12 architecture checks (mirror codegen's shipped behavior)
-    all_issues.extend(check_anonymous_returns(model))
-    all_issues.extend(check_body_assignment_impl_loss(model))
-    all_issues.extend(check_constraint_executability(model))
-    all_issues.extend(check_calc_bearing_instantiation(model))
-    all_issues.extend(check_attr_redef_expression_dropped(model))  # C7 (Item 9)
-    binding_issues, num_bindings = check_binding_formats(model)
+    # ADR-002, codegen and Item 12 checks, each wrapped so an escaped exception names it (D4).
+    uncounted: set[ValidationCode] = set()
+    for check, codes in _LEGACY_CHECKS:
+        found, errors = _guarded(check.__name__, partial(check, model))
+        issues = errors + (found or [])
+        if _reported_failure(issues):
+            uncounted.update(codes)
+        all_issues.extend(issues)
+    bindings, errors = _guarded("check_binding_formats", lambda: check_binding_formats(model))
+    binding_issues, num_bindings = bindings or ([], None)
+    binding_issues = errors + binding_issues
+    if _reported_failure(binding_issues):
+        uncounted.add(ValidationCode.L6_INVALID_BINDING_FORMAT)
     all_issues.extend(binding_issues)
-    design_attr_issues, num_design_attrs = check_design_attr_completeness(
-        model, design_path_filter=design_path_filter, string_subjects=string_subjects(contract)
+    design_attrs, errors = _guarded(
+        "check_design_attr_completeness",
+        lambda: check_design_attr_completeness(
+            model, design_path_filter=design_path_filter, string_subjects=string_subjects(contract)
+        ),
     )
+    design_attr_issues, num_design_attrs = design_attrs or ([], None)
+    design_attr_issues = errors + design_attr_issues
+    if _reported_failure(design_attr_issues):
+        uncounted.update(
+            (ValidationCode.L6_DESIGN_ATTR_INCOMPLETE, ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE)
+        )
     all_issues.extend(design_attr_issues)
 
     # The advisories run after the legacy checks (D12, D15).
@@ -1147,6 +1219,10 @@ def validate_architecture(
     if manifest_issues:
         success = False
 
+    code_counts: dict[str, int | str] = {
+        code.value: _count(sum(1 for i in all_issues if i.code is code), failed=code in uncounted)
+        for code in _COUNTED_CODES
+    }
     result = QualityCheckResult(
         level=6,
         level_name=LEVEL_NAME,
@@ -1157,57 +1233,16 @@ def validate_architecture(
         metrics={
             **target_metrics,
             **shown.metrics,
-            "Calc defs checked": num_calc_defs,
-            "Calc usages checked": num_calc_usages,
-            "Bindings validated": num_bindings,
-            "Design attrs checked": num_design_attrs,
+            "Calc defs checked": _count(num_calc_defs, failed=False),
+            "Calc usages checked": _count(num_calc_usages, failed=False),
+            "Bindings validated": _count(
+                num_bindings, failed=ValidationCode.L6_INVALID_BINDING_FORMAT in uncounted
+            ),
+            "Design attrs checked": _count(
+                num_design_attrs, failed=ValidationCode.L6_DESIGN_ATTR_INCOMPLETE in uncounted
+            ),
             "Manifests checked": manifests_checked,
-            "L6_MISSING_QUALIFIED_NAME": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_MISSING_QUALIFIED_NAME]
-            ),
-            "L6_INVALID_QUALIFIED_NAME": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_INVALID_QUALIFIED_NAME]
-            ),
-            "L6_CALC_DEF_NO_OUTPUT": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_CALC_DEF_NO_OUTPUT]
-            ),
-            "L6_CALC_DEF_NO_DIRECTION": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_CALC_DEF_NO_DIRECTION]
-            ),
-            "L6_INVALID_BINDING_FORMAT": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_INVALID_BINDING_FORMAT]
-            ),
-            "L6_DESIGN_ATTR_INCOMPLETE": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_DESIGN_ATTR_INCOMPLETE]
-            ),
-            "L6_DESIGN_ATTR_UNEXTRACTABLE": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE]
-            ),
-            "L6_ANONYMOUS_RETURN": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_ANONYMOUS_RETURN]
-            ),
-            "L6_BODY_ASSIGNMENT_IMPL_LOSS": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS]
-            ),
-            "V4_STATIC_FUNCTION_INVOCATION": len(
-                [i for i in all_issues if i.code == ValidationCode.V4_STATIC_FUNCTION_INVOCATION]
-            ),
-            "L6_CONSTRAINT_MALFORMED_NUMERICAL": len(
-                [
-                    i
-                    for i in all_issues
-                    if i.code == ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL
-                ]
-            ),
-            "L6_CONSTRAINT_NON_NUMERICAL": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_CONSTRAINT_NON_NUMERICAL]
-            ),
-            "L6_CALC_DEF_NO_INSTANTIATION": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_CALC_DEF_NO_INSTANTIATION]
-            ),
-            "L6_ATTR_REDEF_EXPR_DROPPED": len(
-                [i for i in all_issues if i.code == ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED]
-            ),
+            **code_counts,
         },
     )
 
