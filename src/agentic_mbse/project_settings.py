@@ -202,7 +202,10 @@ def inspect_execution_target(root: Path) -> TargetSlot:
         return _layout(
             pyproject, "it has more than one hard link, and replacing it would split them"
         )
-    raw = pyproject.read_bytes()
+    try:
+        raw = pyproject.read_bytes()
+    except OSError as error:
+        return Blocked(pyproject, BlockReason.DEFECT, f"cannot read {pyproject}: {error}")
     if raw.startswith(_BOM):
         return _layout(pyproject, "it starts with a UTF-8 byte order mark")
     try:

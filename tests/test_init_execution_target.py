@@ -114,6 +114,22 @@ def test_enclosing_pyproject_finds_the_nearest_parent(tmp_path):
     assert project_settings.enclosing_pyproject(tmp_path / "x" / "y") == tmp_path / "pyproject.toml"
 
 
+@pytest.mark.skipif(os.geteuid() == 0, reason="root reads a mode-000 file")
+def test_unreadable_file_is_blocked_not_a_traceback(tmp_path):
+    root = _project(tmp_path, PLAIN)
+    (root / "pyproject.toml").chmod(0)
+    try:
+        slot = project_settings.inspect_execution_target(root)
+        code, out = _init(root, "--execution-target=native")
+    finally:
+        (root / "pyproject.toml").chmod(0o644)
+    assert isinstance(slot, project_settings.Blocked)
+    assert slot.reason is project_settings.BlockReason.DEFECT
+    assert code == 1
+    assert f"Execution target: cannot read {root / 'pyproject.toml'}" in out
+    assert (root / "pyproject.toml").read_bytes() == PLAIN
+
+
 # ---- refusals --------------------------------------------------------------------------------
 
 PLAIN = b'[project]\nname = "plant"\n'
