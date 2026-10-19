@@ -1,6 +1,6 @@
 # Implementation Plan: L6 integration and execution-target settings (EXEC-SUBSET-CONTRACT Item 3)
 
-**Status:** Phases 1–10 complete; Phase 11 next
+**Status:** Phases 1–11 complete; ready for `/_my_audit`
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 
@@ -651,17 +651,17 @@ def test_refuses_dirty_branch_or_head_mismatch(): ...
 
 **See `design.md` for:** Appendix C (all 12 steps; stop-and-show in steps 9 and 10), risk "Retyping the evaluator's raises".
 
-- [ ] `scripts/l6_subset/run_consumers.py`: complete `before-after` (all trees; steps 1, 9–12) and `l6-evidence`.
-- [ ] `tests/test_l6_run_consumers.py` (NEW).
-- [ ] Commit everything; run `before-after --base ebb3d467 --branch HEAD` alone on an idle machine. Writes `evidence/before-after.{json,md}`.
-- [ ] Run `l6-evidence`. Writes `evidence/dc3-baseline-l6.md` (generated and unset runs) and `evidence/dc3-repaired-l6.md`, every count read from the report.
-- [ ] `evidence/repository-checks.md`: final `uv run pytest tests/`, `uv run mypy src/`, `uv run ruff check src/ tests/` results against `evidence/baseline.md`; the `syside`-marked tests (`uv run pytest -m syside --collect-only -q`); whether the licence was present; anything skipped.
+- [x] `scripts/l6_subset/run_consumers.py`: complete `before-after` (all trees; steps 1, 9–12) and `l6-evidence`.
+- [x] `tests/test_l6_run_consumers.py` (NEW).
+- [x] Commit everything; run `before-after --base ebb3d467 --branch HEAD` alone on an idle machine. Writes `evidence/before-after.{json,md}`.
+- [x] Run `l6-evidence`. Writes `evidence/dc3-baseline-l6.md` (generated and unset runs) and `evidence/dc3-repaired-l6.md`, every count read from the report.
+- [x] `evidence/repository-checks.md`: final `uv run pytest tests/`, `uv run mypy src/`, `uv run ruff check src/ tests/` results against `evidence/baseline.md`; the `syside`-marked tests (`uv run pytest -m syside --collect-only -q`); whether the licence was present; anything skipped.
 
 ### Validation
 
-- [ ] Expected (from the spike and design): dc3 baseline 236 refused / 32 omitted / 6 unconfirmed / 50 unverified, `refused_incomplete`, B1–B6 refused ERROR, B7 omitted WARNING, B8 unconfirmed WARNING shadowed by B1. dc3 `60b44d5` `clear` with 30 omitted. New omitted WARNINGs 131 / 30 / 32. `L6_DESIGN_ATTR_UNEXTRACTABLE` fusion-tea 108 → 108, dc3 baseline 3 → 0. `run_info.constraint_extractions == 1`. Any difference is explained in the evidence.
-- [ ] dc3 and fusion-tea HEAD and `git status` unchanged before and after.
-- [ ] **Stop-and-show.** If the script exits 1 (any level or run goes from pass to fail, any L1–L5 issue line differs, or fusion-tea branch time exceeds 1.10 × base), stop. Do not merge, do not "fix" toward a pass. Report to the orchestrator with the flagged rows from `before-after.md`; the orchestrator shows the owner before merge.
+- [x] Expected (from the spike and design): dc3 baseline 236 refused / 32 omitted / 6 unconfirmed / 50 unverified, `refused_incomplete`, B1–B6 refused ERROR, B7 omitted WARNING, B8 unconfirmed WARNING shadowed by B1. dc3 `60b44d5` `clear` with 30 omitted. New omitted WARNINGs 131 / 30 / 32. `L6_DESIGN_ATTR_UNEXTRACTABLE` fusion-tea 108 → 108, dc3 baseline 3 → 0. `run_info.constraint_extractions == 1`. Any difference is explained in the evidence.
+- [x] dc3 and fusion-tea HEAD and `git status` unchanged before and after.
+- [x] **Stop-and-show.** If the script exits 1 (any level or run goes from pass to fail, any L1–L5 issue line differs, or fusion-tea branch time exceeds 1.10 × base), stop. Do not merge, do not "fix" toward a pass. Report to the orchestrator with the flagged rows from `before-after.md`; the orchestrator shows the owner before merge.
 
 **What we know works:** the branch's effect on real consumer trees is measured, and any pass→fail is in the owner's hands.
 
@@ -860,6 +860,29 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 - The docs say each rule is "traced to sysml-codegen's source or to a probe run against it", not "a refusal", because `string-value-omission` is an omission with no generator error.
 **Checks:** full suite 6 failures, the baseline set; ruff 118; mypy 97; touched test file passes `ruff check` and `ruff format --check`.
 
+### Phase 11 Completion
+
+**Completed:** 2026-10-19
+**Changes made:**
+- `scripts/l6_subset/run_consumers.py`: `before-after` reads the branch side from `--json-report` (status, issue counts, the root L6 resolved, `run_info.constraint_extractions`) and checks the report against the branch's own text. It flags a level that crashed-recorded-as-pass at the base and now reports crashed, and checks the root on three readings (base L2, branch L2, branch L6). Step 11 counts are listed apart from the flags. New `l6-evidence` writes the two dc3 files. Pure helpers: `compare_runs`, `time_flag`, `branch_refusal`, `l6_changes`, `l6_summary`.
+- `tests/test_l6_run_consumers.py` (10 cases), with no consumer tree.
+- Evidence: `before-after.{json,md}`, `dc3-baseline-l6.md`, `dc3-repaired-l6.md`, `repository-checks.md`.
+**Before/after (`before-after --base ebb3d467 --branch HEAD`, branch `0ba0bf02`, exit 0, no flags):**
+
+| Tree | Exit | L1 | L2 | L3 | L4 | L5 | L6 | Wall time (s) | Root |
+|---|---|---|---|---|---|---|---|---|---|
+| fusion-tea `f96ad312` | 1 → 1 | pass → pass | fail → fail (465 → 465) | pass → pass | pass → pass | pass → pass | fail → fail (408 → 539) | 421.9 → 210.7 (0.50) | `trees/fusion-tea` |
+| dc3 `808464d` | 1 → 1 | pass → pass | pass → pass | pass → pass | pass → pass | pass → pass | fail → fail (11 → 332) | 44.8 → 17.9 | `trees/dc3-baseline` |
+| dc3 `60b44d5` | 0 → 0 | pass → pass | pass → pass | pass → pass | pass → pass | pass → pass | pass → pass (0 → 30) | 25.6 → 13.3 | `trees/dc3-repaired` |
+
+- No level or run went from pass to fail. L1–L5 printed identically on every tree. Each branch run extracted constraints once. Sibling checkouts were unchanged.
+- **Expected changes (not a stop), all as predicted:** new String `L6_SUBSET_OMITTED` WARNINGs 131 on fusion-tea, 32 on `808464d`, 30 on `60b44d5`. `L6_DESIGN_ATTR_UNEXTRACTABLE` fusion-tea 108 → 108, `808464d` 3 → 0 (its 3 String errors became omitted warnings).
+- **Other L6 changes, all explained:** fusion-tea L6 408 → 539 is +131 omitted warnings. `808464d` L6 11 → 332 is −3 UNEXTRACTABLE errors, +236 refused, +32 omitted, +6 unconfirmed, +50 unverified (all WARNING, target unset); the 8 legacy constraint diagnostics are unchanged. `60b44d5` L6 0 → 30 is the 30 omitted warnings; it still passes, with the note "generated compatibility not established".
+- Surprise 1 (Phase 7: a non-`sum` call in a design attribute now fails L6 as `L6_CHECK_ERROR`) did not happen on any tree: 0 check errors on all three.
+**dc3 evidence (`l6-evidence`):** `808464d` under `generated`: `refused_incomplete`, 236 refused / 32 omitted / 6 unconfirmed / 50 unverified, the same as Item 1's record. B1–B6 refused shown as ERROR, B7 omitted WARNING, all 6 B8 unconfirmed WARNING and shadowed by B1. Unset: the same findings, all WARNING. `60b44d5` under `generated`: `clear`, 30 omitted, 15 admitted.
+**Issues encountered:** the first `l6-evidence` pass printed the resolved root as `None` for an override run, because the root pattern did not match "override ...; <path> sets none", and showed occurrences as 0 where the record has none. Both were fixed in the script and the evidence regenerated. `before-after` was not rerun: its root check uses the unset wording, which the old pattern matched.
+**Repository checks:** see `evidence/repository-checks.md`. Same 6 failures, mypy 97 and ruff 118 as the baseline, same sets.
+
 ---
 
-**Status:** Phases 1–10 complete; Phase 11 next
+**Status:** Phases 1–11 complete; ready for `/_my_audit`

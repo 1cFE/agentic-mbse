@@ -11,7 +11,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
-- `EXEC-SUBSET-CONTRACT` Item 3, L6 integration and execution-target settings ([epic](backlog/epic_executable-subset-contract.md)): spec revised after review at [active/l6-subset-profile/spec.md](active/l6-subset-profile/spec.md), branch `l6-subset-profile`. R3-1 and R3-2 decided 2026-10-18 (delegated by owner; `briefs/align.md` § Gate outcomes). Design and plan done; Phase 1 stopped at its stop condition 2026-10-18: the with/without test differs on `tests/fixtures/sump_pump`, which already varies between loads with today's code (`evidence/session-check.md`). Next: owner decides how to treat that fixture.
+- `EXEC-SUBSET-CONTRACT` Item 3, L6 integration and execution-target settings ([epic](backlog/epic_executable-subset-contract.md)): spec revised after review at [active/l6-subset-profile/spec.md](active/l6-subset-profile/spec.md), branch `l6-subset-profile`. R3-1 and R3-2 decided 2026-10-18 (delegated by owner; `briefs/align.md` § Gate outcomes). Plan Phases 1–11 implemented 2026-10-19 ([plan](active/l6-subset-profile/plan.md)). The before/after safeguard found no pass→fail on dc3 `808464d`, dc3 `60b44d5` or fusion-tea `f96ad312` (`evidence/before-after.md`). Owner notes in the plan: Phase 7 surprise 1 (a non-`sum` call in a design attribute now fails L6), and Phase 9 uv side effects of a table-only `pyproject.toml`. Next: `/_my_audit`.
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 
 ## Concrete remaining work

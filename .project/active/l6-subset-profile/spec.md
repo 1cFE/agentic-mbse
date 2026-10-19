@@ -1,6 +1,6 @@
 # Spec: L6 integration and execution-target settings
 
-**Status:** Draft, revised after spec review (2026-10-18)
+**Status:** Implementation complete, plan Phases 1–11 (2026-10-19); awaiting `/_my_audit`
 **Owner:** Reid Westwood
 **Created:** 2026-10-18
 **Complexity:** HIGH. The parts: a settings reader shared with research, a byte-preserving `pyproject.toml` writer and `init` prompt, evaluator wiring and presentation for 5 verdicts × 3 targets, two small additive library pieces, an audit of 17 L6 issue codes plus manifest and setup failures, per-site work on 28 exception sites (26 broad, 2 `AttributeError`) and the runner, a structured report, docs, and four evidence files. Expect several implementation sessions. The plan must be persistent (`plan.md`).
