@@ -1,6 +1,6 @@
 # Implementation Plan: L6 integration and execution-target settings (EXEC-SUBSET-CONTRACT Item 3)
 
-**Status:** Phases 1–7 complete; Phase 8 next
+**Status:** Phases 1–8 complete; Phase 9 next
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 
@@ -512,14 +512,14 @@ def test_kept_code_unchanged_under_every_target(): ...
 
 **See `design.md` for:** Appendix A, B2, `LEGACY_CATEGORY` paragraph, Implementation Notes "Codegen citations", I5.
 
-- [ ] `evidence/legacy-l6-audit.md` (NEW): from Appendix A and `spikes/f4-codegen-citations.md`. Columns: what the check does, today's severity, category, severity per target, evidence. Separate table of lowerings under `native`. Note the simple-name collision in `L6_CALC_DEF_NO_INSTANTIATION` (`level6_architecture.py:700-762`) and the "kept (follow-up)" rows pointing at backlog `L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES`.
-- [ ] `tests/fixtures/l6/native_lowered.toml`: add the four codes. `execution_target.py`: move the same four to `LEGACY_GENERATOR_ONLY`, in the same commit.
-- [ ] `level6_architecture.py` (`:847`, the "codegen's V8" reference near `:584`, others in `f4-codegen-citations.md`), `adr002.py:478`, `common.py:82`: correct or delete each citation. Never cite a working-tree line; read codegen only from a `git archive b5663c07` export.
+- [x] `evidence/legacy-l6-audit.md` (NEW): from Appendix A and `spikes/f4-codegen-citations.md`. Columns: what the check does, today's severity, category, severity per target, evidence. Separate table of lowerings under `native`. Note the simple-name collision in `L6_CALC_DEF_NO_INSTANTIATION` (`level6_architecture.py:700-762`) and the "kept (follow-up)" rows pointing at backlog `L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES`. *Done `7c7d2210`.*
+- [x] `tests/fixtures/l6/native_lowered.toml`: add the four codes. `execution_target.py`: move the same four to `LEGACY_GENERATOR_ONLY`, in the same commit. *Done `7c7d2210` (audit, fixture and mapping together).*
+- [x] `level6_architecture.py` (`:847`, the "codegen's V8" reference near `:584`, others in `f4-codegen-citations.md`), `adr002.py:478`, `common.py:82`: correct or delete each citation. Never cite a working-tree line; read codegen only from a `git archive b5663c07` export. *Done `48a1c35d`.*
 
 ### Validation
 
-- [ ] Tests pass; full suite green rule; ruff and mypy.
-- [ ] Manual: `grep -n "codegen\|V8\|hierarchy_resolver" src/agentic_mbse/validation/level6_architecture.py src/agentic_mbse/validation/adr002.py src/agentic_mbse/validation/common.py`; every hit matches a row in `f4-codegen-citations.md` marked accurate, or is a pointer to the follow-up.
+- [x] Tests pass; full suite green rule; ruff and mypy. *Done: 6 failed (baseline) / 4345 passed; mypy 97; ruff 118.*
+- [x] Manual: `grep -n "codegen\|V8\|hierarchy_resolver" src/agentic_mbse/validation/level6_architecture.py src/agentic_mbse/validation/adr002.py src/agentic_mbse/validation/common.py`; every hit matches a row in `f4-codegen-citations.md` marked accurate, or is a pointer to the follow-up. *Done: 22 hits. Each is a site at `b5663c07` that `f4-codegen-citations.md` marks accurate or that Phase 8 re-read in a fresh export (V8, EXPOSE wiring, body assignment, `sanitize_name`, `^`, the `sum`-only refusal), a stale claim now saying the cited code is gone with the backlog pointer (FORMULA chains, `computed_attribute_extractor`, `hierarchy_resolver`), or a section label ("codegen checks", "Codegen Readiness").*
 
 **What we know works:** `native` relaxes only what has evidence, and the code and the audit cannot drift apart.
 
@@ -813,6 +813,16 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 
 **Surprise 1 (premise conflict, for the owner): a design attribute that calls anything but `sum` now fails L6 under every target.** `check_static_expressions` (V2) reads an attribute's references through `inspect_reference_uses`, which deliberately raises `SemanticEvidenceError` on every non-`sum` invocation (the ES-005 refusal path, `reference_use.py:420-452`). At `ebb3d467` the broad `except` at `adr002.py:624` hid this, so V2 skipped the attribute and L6 showed only the `V4_STATIC_FUNCTION_INVOCATION` WARNING, whose docstring says "WARNING, not ERROR, so Level 6 stays passing". Under I1 the raise is now `L6_CHECK_ERROR`, so `attribute x : Real = abs(2.0);` in `designs/` fails L6 under unset, `generated` and `native`. The contract already reports the same site (an `invocation-callable` refusal and an unverified `indexed-reference` check). I followed I1, because the design names D15 as its only exception, and pinned the behaviour in `test_static_expression_walker_refusal_is_a_check_error` so a change of mind changes one test. The alternative is to treat a shared walker's own `SemanticEvidenceError` inside a legacy check like D15: a WARNING that V2 could not inspect the attribute, never silent. Phase 11 measures whether any consumer tree is affected; dc3 `60b44d5`, the only tree passing L6 today, has verdict `clear`, so it has no unsupported call in an attribute value.
 
+### Phase 8 Completion
+**Completed:** 2026-10-19. Lowerings `7c7d2210`; citations `48a1c35d`. (Phase 7 follow-up `335d1be2`: the manifest check call is now wrapped like every other check, so a crash there is `L6_CHECK_ERROR` with "Manifests checked: not computed", not a crashed level.)
+**Changes:** `evidence/legacy-l6-audit.md` (NEW: 17 code rows with the String/other split of UNEXTRACTABLE, plus manifest and setup failures; the "Lowered under native" table; the simple-name collision note); `tests/fixtures/l6/native_lowered.toml` (4 codes); `execution_target.py` (the same 4 to `LEGACY_GENERATOR_ONLY`); tests in `test_execution_target.py` (lowered set is exactly the four; the audit's lowered table equals the fixture; the audit has a row for every code) and `test_l6_contract.py` (each lowered code is the native summary under native and unchanged under the others; nine kept codes unchanged under every target). Citation corrections in `adr002.py`, `level6_architecture.py`, `common.py`.
+**Codegen source:** a fresh `git archive b5663c07` export under `/tmp` (`git get-tar-commit-id` checked), read with `sed` only. `~/src/sysml-codegen` HEAD stayed `8396cb23` with an empty `git status --porcelain`. Every site cited in code or in the audit was re-read there.
+**Decisions and deviations:**
+- **All four lowerings are in one commit**, each with its audit row and fixture entry in that same commit. The brief's "each in the same commit as its audit row and fixture" holds; they were not split into four commits.
+- **The audit tests find the evidence file by glob** (`.project/*/*l6-subset-profile/evidence/legacy-l6-audit.md`), so they keep working after `/_my_close` moves the folder to `.project/completed/`.
+- **Two issue messages changed, because they made false codegen claims:** `L6_DESIGN_ATTR_UNEXTRACTABLE` now reads "has an expression with no static numeric value: ..." (was "... but codegen cannot extract a numeric default: ..."), and `L6_ATTR_REDEF_EXPR_DROPPED` now says "earlier sysml-codegen versions dropped this override at extraction" (was "codegen scans only ReferenceUsage redefinitions, so this override is silently dropped"). No test, skill or script asserted either text. Both are L6 lines, so the Phase 11 L1–L5 comparison is not affected.
+- `_is_supported_formula`'s REQ-CA-06/07 and "Item 5" references were removed. f4 found no REQ-CA-07 in codegen and did not check the self-reference path, so the comment now states the rule only.
+
 ---
 
-**Status:** Phases 1–7 complete; Phase 8 next
+**Status:** Phases 1–8 complete; Phase 9 next
