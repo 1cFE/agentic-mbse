@@ -1,0 +1,16 @@
+Apply the audit fixes for EXEC-SUBSET-CONTRACT Item 3 (`.project/active/l6-subset-profile/`). Read `audit.md`, the new implementation block in `product-lens.md`, and `briefs/align.md` § Audit decisions (2026-10-19) — those decisions are made; implement them, don't relitigate.
+
+## Fix
+
+1. **B1 (must-fix).** Per align § Audit decisions: inside a legacy L6 check (V2 `check_static_expressions`, `adr002.py:524-597`, and any other legacy check that calls a shared walker), the walker's own `SemanticEvidenceError` becomes a WARNING naming the check, the element and the walker's reason; WARNING under every target, not in the native summary. Every other exception stays `L6_CHECK_ERROR`. Decide whether this reuses an existing code or needs a new one; keep it consistent with D15's `L6_SUBSET_ADVISORY_UNVERIFIED` and record the choice. Flip `tests/test_validation/test_l6_check_errors.py:429-446` to assert the WARNING, parametrized over all three targets; add a test that a non-`SemanticEvidenceError` from the walker is still `L6_CHECK_ERROR`; add a test that under `generated` the same attribute still fails via the contract's refusal. Update design I1/D15 text so the exception is stated where the rule is.
+2. **impl-F2 (should-fix).** `inspect_execution_target` (`project_settings.py:181-189`): if no `pyproject.toml` at the root but a parent directory has one, block with a new reason and print the line to add by hand, saying why. Standalone case: still create the file, and `init`'s output (`cli/__init__.py:743-747`) adds one line that uv will now treat this directory as its own project. README `init` paragraph: one sentence. Tests for both.
+3. **Advisory 1.** `level6_architecture.py:1142-1150` and `:1163-1171`: early exits record the `Execution target` metric and `report_detail` (target and source), resolving the target before them if needed. Test.
+4. **Advisory 2.** `check_qualified_names` (`level6_architecture.py:225-228`): a failed calc-def enumeration ends only that half; the calc-usage half still runs. Test.
+5. **Advisory 4.** `project_settings.py:194`: catch `OSError` on `read_bytes()` and return a `Blocked` result like the reader at `:71`. Test.
+6. **impl-F3.** Amend design I8 to "byte-identical apart from `run_info.wall_time_s`".
+
+Advisory 3 and 5 are notes: no code change. Record 3 in plan notes as an owner-visible item (two of the four native lowerings are judgment calls).
+
+## Rules
+
+Same as before: no writes to `~/src/sysml-codegen`, dc3, fusion-tea; nothing in Item 2. Green = no new failures vs `evidence/baseline.md` (6 pytest, ruff 118, mypy 97); touched files clean under ruff check, ruff format --check, mypy. Never repo-wide `ruff format`. Explicit-path staging only; never stage `.gitignore`, `.project/EPIC_GUIDE.md`, `.project/README.md`, `.project/active/README.md`, `.project/backlog/README.md`, `.project/epic_template.md`. Commit each fix with a subject leading with the behavior. Add a short "Audit fixes" section to `plan.md` with what changed. Then re-run `scripts/l6_subset/run_consumers.py before-after --base ebb3d467 --branch HEAD` (all three trees) and report whether any flag fired; update `evidence/before-after.md` and `evidence/repository-checks.md`. Stop and report if any flag fires.
