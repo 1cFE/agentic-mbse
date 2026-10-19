@@ -268,18 +268,18 @@ def test_execution_target_with_level_1_to_5_is_accepted_and_unused(tmp_path): ..
 
 **See `design.md` for:** Runner and report, D3, D6, D8, Implementation Notes "JSON report schema", "What a user sees in L6" item 1.
 
-- [ ] Tests above (NEW files). A shared fixture-project builder in `tests/helpers/l6_projects.py` (NEW): writes `work/BACKLOG.md`, a `models/` tree and an optional `pyproject.toml`; later phases add model shapes to it.
-- [ ] `src/agentic_mbse/sysml/types.py`: add `L6_CHECK_ERROR`, `L6_SETTING_INVALID`, `LEVEL_CRASHED` (the `L6_SUBSET_*` codes land in Phase 5).
-- [ ] `src/agentic_mbse/validation/common.py`: `QualityCheckResult` gains `summarized`, `pass_note`, `report_detail` (default empty); `AggregatedResult` collects pass notes and joins them with the pinned note; `check_error_issue()`.
-- [ ] `src/agentic_mbse/validation/runner.py:128-137`: crash → failed result with one `LEVEL_CRASHED` ERROR, level number from its `QUALITY_CHECKS` position, traceback only with `--verbose`, fail-fast stops. Thread the override to L6 with `functools.partial` like L2 (`:94-100`). Final line at `:155-157` prints all notes.
-- [ ] `src/agentic_mbse/validation/report.py` (NEW): `validate-report/v1` per the schema note.
-- [ ] `src/agentic_mbse/validation/level6_architecture.py` `validate_architecture` (`:930` area): new `execution_target` keyword; resolve first; on `TargetSettingError` emit `L6_SETTING_INVALID` and the target metric, run no checks, fail. Otherwise emit the target metric and continue with today's checks.
-- [ ] `src/agentic_mbse/cli/__init__.py` (`cmd_validate` `:338`, argparse near `:758`): `--execution-target {generated,native}`, `--json-report PATH` (parent must exist, else exit 2; write failure exits 1).
+- [x] Tests above (NEW files). A shared fixture-project builder in `tests/helpers/l6_projects.py` (NEW): writes `work/BACKLOG.md`, a `models/` tree and an optional `pyproject.toml`; later phases add model shapes to it. *Done `2afa2a2c`.*
+- [x] `src/agentic_mbse/sysml/types.py`: add `L6_CHECK_ERROR`, `L6_SETTING_INVALID`, `LEVEL_CRASHED` (the `L6_SUBSET_*` codes land in Phase 5). *Done.*
+- [x] `src/agentic_mbse/validation/common.py`: `QualityCheckResult` gains `summarized`, `pass_note`, `report_detail` (default empty); `AggregatedResult` collects pass notes and joins them with the pinned note; `check_error_issue()`. *Done; `AggregatedResult` also carries `constraint_extractions` and `wall_time_s` for the report's `run_info`.*
+- [x] `src/agentic_mbse/validation/runner.py:128-137`: crash → failed result with one `LEVEL_CRASHED` ERROR, level number from its `QUALITY_CHECKS` position, traceback only with `--verbose`, fail-fast stops. Thread the override to L6 with `functools.partial` like L2 (`:94-100`). Final line at `:155-157` prints all notes. *Done.*
+- [x] `src/agentic_mbse/validation/report.py` (NEW): `validate-report/v1` per the schema note. *Done.*
+- [x] `src/agentic_mbse/validation/level6_architecture.py` `validate_architecture` (`:930` area): new `execution_target` keyword; resolve first; on `TargetSettingError` emit `L6_SETTING_INVALID` and the target metric, run no checks, fail. Otherwise emit the target metric and continue with today's checks. *Done.*
+- [x] `src/agentic_mbse/cli/__init__.py` (`cmd_validate` `:338`, argparse near `:758`): `--execution-target {generated,native}`, `--json-report PATH` (parent must exist, else exit 2; write failure exits 1). *Done.*
 
 ### Validation
 
-- [ ] New tests pass; full suite green rule; ruff and mypy on touched files.
-- [ ] Manual: `uv run agentic-mbse validate --level=6 --json-report /tmp/r.json tests/fixtures/sample_models` writes a report; `jq '.levels[0].status'` reads `passed` or `failed`, never missing.
+- [x] New tests pass; full suite green rule; ruff and mypy on touched files. *Done: full suite = baseline 6; mypy 97 (baseline set).*
+- [x] Manual: `uv run agentic-mbse validate --level=6 --json-report /tmp/r.json tests/fixtures/sample_models` writes a report; `jq '.levels[0].status'` reads `passed` or `failed`, never missing. *Done: `levels[0].status` = `passed`; `run_info.constraint_extractions` = 1.*
 
 **What we know works:** a crash can no longer read as a pass; every setting fault fails L6 under every target and override; the report exists for every run.
 
@@ -750,6 +750,18 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 **Completed:** 2026-10-19, `00adb102`.
 **Changes:** `src/agentic_mbse/validation/execution_target.py`; `tests/test_validation/test_execution_target.py`; `tests/fixtures/l6/native_lowered.toml` (empty).
 **Deviations:** `describe_target` (the `Execution target` metric text) lives here beside `resolve_target`, so the metric and the resolution cannot drift. An invalid `execution-target` value is an error even with an override, like a malformed file (the spec names only the malformed case; the same reasoning applies). `resolve_target` raises `ValueError` if handed `Target.UNSET` as an override, since unset is the absence of an override. The legacy-code test reads the 17 codes from the L6 source files, so a new legacy code cannot be missed.
+
+
+### Phase 4 Completion
+**Completed:** 2026-10-19, `2afa2a2c`.
+**Changes:** `sysml/types.py` (`L6_CHECK_ERROR`, `L6_SETTING_INVALID`, `LEVEL_CRASHED`); `validation/common.py` (`summarized`, `pass_note`, `report_detail`; `AggregatedResult.pass_notes`, `constraint_extractions`, `wall_time_s`; `check_error_issue()`); `validation/runner.py` (`crashed_result`, override threading, final line); `validation/report.py` (NEW); L6 resolves the target first (`_setting_invalid_result`, `_target_detail`); `cli/__init__.py` (`--execution-target`, `--json-report`). Tests: `tests/helpers/l6_projects.py`, `test_runner_crash.py`, `test_json_report.py`, `test_l6_settings_cli.py`.
+**Changed assertions:** `tests/test_cli.py` `TestCmdValidate` builds the argument object by hand; its three tests now also pass `execution_target=None, json_report=None`.
+**Deviations:**
+- **I8 versus the report schema.** The schema has `run_info.wall_time_s`, a measured time, so the report cannot be byte-identical across runs. The I8 test compares reports with that one field blanked. Everything else is byte-identical. Surfaced here per the capture-fidelity rule; the alternative is to drop `wall_time_s` from the schema.
+- The `[tool.agentic_mbse]` defect message now also lists the allowed keys, because the spec asks that the error name "the key and the allowed keys" for that case too (`project_settings.py`, a Phase 2 file).
+- The crashed level no longer prints the old `❌ Error running Level N` line; it prints as a failed level with its `LEVEL_CRASHED` issue. `run_consumers.py`'s base-side parser still reads the old line for the base revision.
+- The report's per-issue `display` is the issue's severity: an issue reaches `issues` only as ERROR or WARNING, and summarized results are in `summarized`.
+- `agentic_mbse.version` in the report is the source tree's `__version__`, so an export run reports its own version, not the venv's metadata.
 
 ---
 
