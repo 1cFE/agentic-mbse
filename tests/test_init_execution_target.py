@@ -83,6 +83,35 @@ def test_no_file_creates_only_the_table(tmp_path):
     os.umask(umask)
     assert (root / "pyproject.toml").stat().st_mode & 0o777 == 0o666 & ~umask
     assert "Execution target: created with" in out
+    assert f"uv will now treat {root} as its own project, because it has a pyproject.toml" in out
+
+
+@pytest.mark.parametrize("option", [None, "native"])
+def test_no_file_under_a_parent_project_creates_none_and_says_why(option, tmp_path):
+    (tmp_path / "pyproject.toml").write_bytes(PLAIN)
+    root = _project(tmp_path, None)
+    code, out = _init(root, *([f"--execution-target={option}"] if option else []))
+    assert code == (1 if option else 0)
+    assert not (root / "pyproject.toml").exists()
+    assert (tmp_path / "pyproject.toml").read_bytes() == PLAIN
+    assert f"not created, because {tmp_path / 'pyproject.toml'} encloses this directory" in out
+    assert "make uv treat this directory as its own project" in out
+    line = project_settings.target_line(option or "generated|native")
+    assert f"[tool.agentic-mbse] and this line: {line}" in out
+    assert "pass --execution-target to each validate run" in out
+
+
+def test_enclosing_pyproject_finds_the_nearest_parent(tmp_path):
+    (tmp_path / "pyproject.toml").write_bytes(PLAIN)
+    (tmp_path / "a").mkdir()
+    (tmp_path / "a" / "pyproject.toml").write_bytes(PLAIN)
+    (tmp_path / "a" / "b" / "c").mkdir(parents=True)
+    assert project_settings.enclosing_pyproject(tmp_path / "a" / "b" / "c") == (
+        tmp_path / "a" / "pyproject.toml"
+    )
+    (tmp_path / "x").mkdir()
+    (tmp_path / "x" / "pyproject.toml").mkdir()  # a directory is not a project file
+    assert project_settings.enclosing_pyproject(tmp_path / "x" / "y") == tmp_path / "pyproject.toml"
 
 
 # ---- refusals --------------------------------------------------------------------------------

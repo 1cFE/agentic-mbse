@@ -132,6 +132,8 @@ _PROBE_VALUE = "generated"
 class BlockReason(StrEnum):
     DEFECT = "defect"  # the settings reader returned a `SettingsDefect`
     LAYOUT = "layout"  # a file layout the insert does not handle
+    # No file here, but a parent directory has one: creating it would split uv's project.
+    NESTED = "nested"
 
 
 @dataclass(frozen=True)
@@ -186,7 +188,16 @@ def inspect_execution_target(root: Path) -> TargetSlot:
     try:
         status = pyproject.lstat()
     except FileNotFoundError:
-        return Insertable(pyproject, None, None, {})
+        enclosing = enclosing_pyproject(root)
+        if enclosing is None:
+            return Insertable(pyproject, None, None, {})
+        return Blocked(
+            pyproject,
+            BlockReason.NESTED,
+            f"{pyproject}: not created, because {enclosing} encloses this directory, and a "
+            "pyproject.toml here would make uv treat this directory as its own project, "
+            "outside that project's environment",
+        )
     if status.st_nlink > 1:
         return _layout(
             pyproject, "it has more than one hard link, and replacing it would split them"
@@ -221,6 +232,15 @@ def inspect_execution_target(root: Path) -> TargetSlot:
     return _layout(
         pyproject, "the file with the line added does not parse to the original plus one key"
     )
+
+
+def enclosing_pyproject(root: Path) -> Path | None:
+    """The nearest `pyproject.toml` in a directory above `root`, as uv's project search finds it."""
+    for parent in root.resolve().parents:
+        candidate = parent / "pyproject.toml"
+        if candidate.is_file():
+            return candidate
+    return None
 
 
 def add_execution_target(root: Path, value: str) -> SettingWrite:

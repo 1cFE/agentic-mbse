@@ -745,6 +745,8 @@ def _init_execution_target(target: Path, option: str | None) -> int:
         f"Execution target: {done} {project_settings.target_line(choice)} "
         f"under [tool.agentic-mbse] in {written.path}"
     )
+    if written.created:
+        print(f"  uv will now treat {target} as its own project, because it has a pyproject.toml")
     return EXIT_SUCCESS
 
 
@@ -754,9 +756,15 @@ def _report_execution_target_slot(
     """Print why nothing was written; exit 1 if that refuses an explicit `--execution-target`."""
     if isinstance(slot, project_settings.Blocked):
         print(f"Execution target: {slot.detail}")
+        line = project_settings.target_line(option or "generated|native")
         if slot.reason is project_settings.BlockReason.LAYOUT:
-            line = project_settings.target_line(option or "generated|native")
             print(f"  Add this line under [tool.agentic-mbse] by hand: {line}")
+        elif slot.reason is project_settings.BlockReason.NESTED:
+            print(
+                f"  To set it, create {slot.path} by hand with [tool.agentic-mbse] and this "
+                f"line: {line}. That makes this directory its own uv project; to avoid that, "
+                "pass --execution-target to each validate run instead."
+            )
         return EXIT_SUCCESS if option is None else EXIT_FAILURE
     allowed = " and ".join(map(repr, ALLOWED_VALUES))
     existing = f"{slot.path} sets execution-target = {slot.value!r}"

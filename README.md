@@ -27,7 +27,7 @@ How loud the generator findings are depends on how the project runs, set in its 
 execution-target = "generated"  # or "native"
 ```
 
-`generated` shows refusals as errors. `native` (the project does not run generated code) folds generator-only findings into one INFO summary. With no setting, refusals are warnings and the run ends with "generated compatibility not established". `agentic-mbse init --execution-target=generated` adds the line, and `validate --execution-target=native` overrides it for one run. `validate --json-report report.json` writes every finding in full.
+`generated` shows refusals as errors. `native` (the project does not run generated code) folds generator-only findings into one INFO summary. With no setting, refusals are warnings and the run ends with "generated compatibility not established". `agentic-mbse init --execution-target=generated` adds the line. With no `pyproject.toml` it creates one holding only that table, so uv then treats the directory as its own project; if a parent directory has a `pyproject.toml`, it writes nothing and prints the line instead. `validate --execution-target=native` overrides the setting for one run. `validate --json-report report.json` writes every finding in full.
 
 ### Initialize Project
 
