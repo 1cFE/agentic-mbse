@@ -318,7 +318,8 @@ def baseline_markdown(record: dict[str, Any], runs: list[TreeRun]) -> str:
 
 TIME_LIMIT = 1.10  # fusion-tea branch wall time / base wall time (Appendix C step 10)
 _PIN_LIST = re.compile(r"Positional pin list: .*\(looked at (?P<path>.+)/positional-pins\.toml\)")
-_TARGET_ROOT = re.compile(r"\((?:from|no execution-target in) (?P<path>.+)/pyproject\.toml\)")
+# Every `Execution target` wording that names a file: from, no key in, or an override.
+_TARGET_ROOT = re.compile(r"(?P<path>/[^ ;()]+)/pyproject\.toml")
 _LEGACY_METRIC = re.compile(r"^\s+(?P<code>(?:L6|V\d)_[A-Z_0-9]+): (?P<count>\d+)$")
 _PASSING = ("passed", "crashed, recorded as pass")
 
@@ -693,6 +694,24 @@ DC3_CATEGORIES = (
     ("B8", "constraint-predicate", "non_numerical_predicate", "owner_other"),
     ("B8", "constraint-predicate", "blocked_predicate", "owner_other"),
 )
+# Item 1's record (`completed/20261018_exec-subset-profile/evidence/dc3-baseline.md`,
+# `dc3-repaired.md`); the spec requires these counts and any difference explained.
+DC3_EXPECTED = {
+    "dc3-baseline": {
+        "verdict": "refused_incomplete",
+        "refused": 236,
+        "omitted": 32,
+        "unconfirmed": 6,
+        "unverified": 50,
+    },
+    "dc3-repaired": {
+        "verdict": "clear",
+        "refused": 0,
+        "omitted": 30,
+        "unconfirmed": 0,
+        "unverified": 0,
+    },
+}
 L6_RUNS = (
     ("dc3-baseline", "generated", ("--level=6", "--execution-target=generated")),
     ("dc3-baseline", "unset", ("--level=6",)),
@@ -719,7 +738,10 @@ def l6_summary(report: dict[str, Any]) -> dict[str, Any]:
                 "category": name,
                 "rule": f"{rule} / {shape} / {context}",
                 "count": len(rows),
-                "occurrences": sum(f["occurrence_count"] or 0 for f in rows),
+                # None when no finding in the category counts occurrences.
+                "occurrences": sum(f["occurrence_count"] for f in rows)
+                if any(f["occurrence_count"] is not None for f in rows)
+                else None,
                 "outcomes": sorted({f["outcome"] for f in rows}),
                 "displays": sorted({f["display"] for f in rows}),
                 "shadowed_by": sorted(
@@ -821,6 +843,22 @@ def l6_evidence(branch: str) -> int:
     return 0
 
 
+def _against_expected(label: str, summary: dict[str, Any]) -> str:
+    expected = DC3_EXPECTED[label]
+    found = {
+        "verdict": summary["verdict"],
+        **{
+            k: summary["counts"]["by_outcome"].get(k, 0)
+            for k in ("refused", "omitted", "unconfirmed")
+        },
+        "unverified": summary["unverified"],
+    }
+    differs = [f"{k} {found[k]} (expected {v})" for k, v in expected.items() if found[k] != v]
+    if differs:
+        return "DIFFERS: " + ", ".join(differs)
+    return "same (" + ", ".join(f"{k} {v}" for k, v in expected.items()) + ")"
+
+
 def dc3_markdown(
     title: str, label: str, summaries: list[dict[str, Any]], context: dict[str, Any]
 ) -> str:
@@ -838,6 +876,7 @@ def dc3_markdown(
             "",
             f"- Exit {s['process_exit']} (report {s['exit_code']}); L6 {s['status']}; wall time {s['wall_time_s']} s; constraint extractions {s['constraint_extractions']}; resolved root `{s['root']}`.",
             f"- Pass notes: {'; '.join(s['pass_notes']) or 'none'}.",
+            f"- Against Item 1's record: {_against_expected(label, s)}.",
             f"- Verdict `{s['verdict']}`. Findings {s['findings']}, by outcome {json.dumps(counts['by_outcome'])} (declarations {counts['declarations']}, occurrences {counts['occurrences']}); unverified {s['unverified']} {json.dumps(s['unverified_by_rule'])}; unassessed constraints {counts['unassessed_constraints']}; advisories {s['advisories']}; check errors {len(s['check_errors'])}.",
             "",
             "Metrics as printed:",
@@ -854,10 +893,13 @@ def dc3_markdown(
                 out.append(f"| {c['category']} | `{c['rule']}` | 0 | - | - | - |")
                 continue
             shadow = ", ".join(c["shadowed_by"]) or "-"
+            declared = str(c["count"])
+            if c["occurrences"] is not None:
+                declared += f" ({c['occurrences']})"
             if c["shadowed_by"]:
                 shadow += f" ({c['count'] - c['unshadowed']} of {c['count']})"
             out.append(
-                f"| {c['category']} | `{c['rule']}` | {c['count']} ({c['occurrences']}) | {', '.join(c['outcomes'])} | {', '.join(c['displays'])} | {shadow} |"
+                f"| {c['category']} | `{c['rule']}` | {declared} | {', '.join(c['outcomes'])} | {', '.join(c['displays'])} | {shadow} |"
             )
         if s["other_findings"]:
             out += [
