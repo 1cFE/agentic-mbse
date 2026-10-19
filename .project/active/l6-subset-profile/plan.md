@@ -1,6 +1,6 @@
 # Implementation Plan: L6 integration and execution-target settings (EXEC-SUBSET-CONTRACT Item 3)
 
-**Status:** Phases 1–5 complete; Phase 6 next
+**Status:** Phases 1–6 complete; Phase 7 next
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 
@@ -406,17 +406,17 @@ def test_other_walker_exception_is_check_error(monkeypatch): ...
 
 **See `design.md` for:** D12, D15, I1, I4, Implementation Notes "The reconstruction predicate".
 
-- [ ] **First, before touching `expression.py`:** confirm `git diff ebb3d467 -- src/agentic_mbse/sysml/expression.py` is empty, then record `reconstruct_expression`'s text for every value expression in `tests/fixtures/**/*.sysml` into `tests/fixtures/l6/reconstruct_texts_ebb3d467.json` with a small recording script in `scripts/l6_subset/record_reconstruct_texts.py` (NEW). Commit the fixture before the refactor.
-- [ ] Tests above (NEW), advisory fixtures from `spikes/s2_advisory_shapes.py`'s candidates in `tests/fixtures/l6/advisories/`.
-- [ ] `src/agentic_mbse/sysml/expression.py:298-356`: one ordered dispatch; `falls_to_text_fallback`; `text_fallback_nodes`. Additive public names only.
-- [ ] `src/agentic_mbse/sysml/subset_advisories.py` (NEW): opaque-expression and wrapper advisories over the contract's expression sites; wrapper filtered to `KNOWN_WRAPPER_FUNCTIONS` (`aggregation.py:72`); `SemanticEvidenceError` → advisory-unverified record.
-- [ ] `src/agentic_mbse/sysml/types.py`: `L6_SUBSET_ADVISORY`, `L6_SUBSET_ADVISORY_UNVERIFIED`.
-- [ ] `level6_architecture.py` and `subset_presentation.py`: call the advisories after the legacy checks; render; native summary counts advisories; advisory-unverified stays a WARNING outside the summary.
+- [x] **First, before touching `expression.py`:** confirm `git diff ebb3d467 -- src/agentic_mbse/sysml/expression.py` is empty, then record `reconstruct_expression`'s text for every value expression in `tests/fixtures/**/*.sysml` into `tests/fixtures/l6/reconstruct_texts_ebb3d467.json` with a small recording script in `scripts/l6_subset/record_reconstruct_texts.py` (NEW). Commit the fixture before the refactor. *Done `74ae78a5`: 268 files, 2253 expressions, recorded twice byte-identical.*
+- [x] Tests above (NEW), advisory fixtures from `spikes/s2_advisory_shapes.py`'s candidates in `tests/fixtures/l6/advisories/`. *Done: 8 fixtures (committed with the record), `test_text_fallback.py` (4), `test_l6_advisories.py` (24).*
+- [x] `src/agentic_mbse/sysml/expression.py:298-356`: one ordered dispatch; `falls_to_text_fallback`; `text_fallback_nodes`. Additive public names only. *Done `22342afa`.*
+- [x] `src/agentic_mbse/sysml/subset_advisories.py` (NEW): opaque-expression and wrapper advisories over the contract's expression sites; wrapper filtered to `KNOWN_WRAPPER_FUNCTIONS` (`aggregation.py:72`); `SemanticEvidenceError` → advisory-unverified record. *Done.*
+- [x] `src/agentic_mbse/sysml/types.py`: `L6_SUBSET_ADVISORY`, `L6_SUBSET_ADVISORY_UNVERIFIED`. *Done.*
+- [x] `level6_architecture.py` and `subset_presentation.py`: call the advisories after the legacy checks; render; native summary counts advisories; advisory-unverified stays a WARNING outside the summary. *Done.*
 
 ### Validation
 
-- [ ] Output-unchanged test passes against the recorded fixture; new tests pass; full suite green rule; ruff and mypy.
-- [ ] Manual: `--level=6` on the spike's `sum(cells.?{...}.mass)` fixture under unset passes with one `L6_SUBSET_ADVISORY_UNVERIFIED` WARNING.
+- [x] Output-unchanged test passes against the recorded fixture; new tests pass; full suite green rule; ruff and mypy. *Done: full suite 6 failed (the baseline 6) / 4224 passed; mypy 97; ruff 118 (baseline).*
+- [x] Manual: `--level=6` on the spike's `sum(cells.?{...}.mass)` fixture under unset passes with one `L6_SUBSET_ADVISORY_UNVERIFIED` WARNING. *Done: exit 0, one `WARN: advisory unverified (wrapper): ... EXPRESSION_KIND_UNSUPPORTED ...`, final line "passed with generated compatibility not established".*
 
 **What we know works:** both advisories fire where they should, never block, and the shared reconstruction function is byte-for-byte unchanged.
 
@@ -783,6 +783,22 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 - **Grep for the old title:** only `skills/model-validation/SKILL.md:28` and `CLAUDE.md:124` remain. Both are Phase 10 items, so they are unchanged. No test, skill or script asserts the final-line text that unset runs now change.
 - **Location text:** contract findings use the contract's `SafeLocation.file`, which prints as `///tmp/...` for a `/tmp` project, as the existing `L6_CONSTRAINT_NON_NUMERICAL` warnings already do. Not normalized here.
 
+### Phase 6 Completion
+**Completed:** 2026-10-19, record `74ae78a5`, refactor and advisories `22342afa`.
+**Changes:** `tests/helpers/reconstruct_texts.py` (NEW: `reconstruct_all`, `reconstruct_file`), `scripts/l6_subset/record_reconstruct_texts.py` (NEW; refuses to record if `expression.py` differs from `ebb3d467`), `tests/fixtures/l6/reconstruct_texts_ebb3d467.json`; `sysml/expression.py` (`_Branch`, `_reconstruction_branch`, `falls_to_text_fallback`, `text_fallback_nodes`; `reconstruct_expression` dispatches through `_reconstruction_branch`); `sysml/subset_extraction.py` (`expression_sites`, a public view of the contract's own site list); `sysml/subset_advisories.py` (NEW); `sysml/types.py` (two codes); `validation/subset_presentation.py` (`present` gains `advisories`; issues, `summarized`, profile `advisories` and `advisory_unverified`); `level6_architecture.py` (`_run_advisories` after the legacy checks). Fixtures `tests/fixtures/l6/advisories/*` (8); tests `tests/test_sysml/test_text_fallback.py`, `tests/test_validation/test_l6_advisories.py`.
+**What the record covers:** every `Expression` SysIDE enumerates in each fixture file, each file loaded alone (so the record does not depend on which files share a load), keyed by enumeration position, line:column and node type. 2253 expressions over 268 files, including 4 recorded raises (`OPERAND_ITERATION_FAILED` on `Cell.metadata` and on three body expressions `{ in m ...; ... }`) and one text fallback (`new Cell()`). The advisory fixtures were written before recording, so the record pins those shapes too. The unchanged-output test compares only the recorded files, so later fixtures do not break it.
+**Changed assertions:**
+- `tests/test_sysml/test_expression.py:1315` (`test_reconstruct_expression_dispatch_order_invariants`) read the branch order from `reconstruct_expression`'s source; it now reads it from `_reconstruction_branch`, where the order now lives. Same three assertions.
+- `tests/test_validation/test_l6_contract.py`: the native summary line now includes `0 advisories` (the design's line 6 order); the two direct `present(...)` calls pass an empty `Advisories`.
+**Decisions and deviations:**
+- **"Invokes `sum`" is decided by declaration identity**: any `invocation_uses` entry whose callable id is `STANDARD_SUM_FUNCTION_ID`, the allowlist's own constant. No name test was added.
+- **The wrapper advisory's walker can raise** before decomposition through `invocation_uses`; that raise is also the walker's own `SemanticEvidenceError` and gives an advisory-unverified record.
+- **The advisory-unverified record names the site's expression type**, not the inner node that failed: `SemanticEvidenceError` does not carry the failing node. Its code and detail are in the message.
+- **Advisory messages do not carry the profile version**: the advisories are not part of `subset-profile/v1`. Each says "not a generator refusal".
+- **The native summary says "not computed"** for the contract or the advisories when that step failed, rather than 0.
+- `ruff format` on `expression.py` (required by the green rule for touched files) also reflowed one pre-existing `is_reference_type` return (`:205`), not a behaviour change.
+- The two Item 1 matrix rows for these advisories (`PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-SHAPE-MESSAGE`, `PUSH-DOWN-AGG-PROFILE-WRAPPER-SHAPE`) were not edited: the plan closes only MULTIPLICITY-SHAPE, and `test_subset_matrix.py` constrains the PUSH-DOWN rows.
+
 ---
 
-**Status:** Phases 1–5 complete; Phase 6 next
+**Status:** Phases 1–6 complete; Phase 7 next
