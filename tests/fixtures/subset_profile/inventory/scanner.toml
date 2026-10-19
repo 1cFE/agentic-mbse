@@ -87,9 +87,9 @@ reasons = [
 site_id = "agentic_mbse/sysml/executable_profile.py::_walk_proposition::coded-DYNAMIC::f'warn_non_numerical_{operator}'::1"
 reasons = ["warn_non_numerical_implies", "warn_non_numerical_xor"]
 
-# ---- linked sites no packaged case can fire ------------------------------------------------------
-# Every in-scope public row linked to a shared rule has a packaged case that fires it in the screen
-# (tests/test_subset_site_account.py), except these. Each statement says why no model reaches it.
+# ---- public sites no packaged case can fire ------------------------------------------------------
+# Every public row has a packaged case that fires it in the screen (tests/test_subset_site_account.py),
+# except these. Each statement says why no model reaches it through the screen or the generator.
 
 [[unwitnessed_site]]
 site_id = "agentic_mbse/sysml/executable_profile.py::_evaluate_usage_against_definition::shared-profile::block_unresolved_definition::1"
@@ -98,3 +98,11 @@ statement = "A definition-typed assertion always resolves to a ConstraintDefinit
 [[unwitnessed_site]]
 site_id = "agentic_mbse/sysml/reference_use.py::require_exact_reference_use::shared-evidence::INDEXED_REFERENCE_UNSUPPORTED::1"
 statement = "Reached only through decompose_aggregation_expression (aggregation.py:259, :294, :447), a public function nothing under src/ calls, so neither the screen nor sysml-codegen's generator reaches it. The generator refuses an authored index at its own site (expression_evidence.py `_indexed_refusal`), and the screen recognizes one through the indexed-reference rule."
+
+[[unwitnessed_site]]
+site_id = "agentic_mbse/sysml/expression.py::traverse_expression::shared-evidence::EXPRESSION_DEPTH_EXHAUSTED::1"
+statement = "Reached only through agentic_mbse.validation's level 6 checks (validation/adr002.py:236, :464) and expression.py get_operators, none of which the screen or sysml-codegen's generator calls. A 120-term sum reaches the depth limits of the walks those two halves do run (reference_use.py _walk, _invocations; subset_extraction.py _conditionals; constraint_extraction.py _expression_ir), which are witnessed."
+
+[[unwitnessed_site]]
+site_id = "agentic_mbse/sysml/expression.py::reconstruct_expression::shared-evidence::EXPRESSION_DEPTH_EXHAUSTED::1"
+statement = "On the screen and generator paths it reconstructs only what a walk with the same 100-level budget has already descended, or a single reference: sysml-codegen's extractor.py:148 runs after the expression evidence inventory, whose reference walk refuses a deep expression first; constraint_extraction.py calls it on one reference (:550, :566, :618) or on an unsupported node (:593). aggregation.py:311 and hierarchy.py:120 are reached only through exported functions nothing under src/ calls. Tried in Item 2a P6: a 120-term calc def result (refused first at reference_use.py _walk) and a constraint predicate wrapping a 120-term sum in a conditional (its branches are unresolved and the conditional-expression rule refuses; the depth limit is not reached)."

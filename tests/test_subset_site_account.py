@@ -118,9 +118,9 @@ def test_an_explicit_follow_up_may_name_the_row_it_is_routed_to() -> None:
     assert len(routed) == 4
 
 
-def _linked_public_sites() -> set[str]:
-    """The rows a shared rule links to that refuse a public capability (plan PD5, from P2)."""
-    return {s.site_id for s in ACCOUNT.rows if s.rules and s.role is Role.PUBLIC_CAPABILITY}
+def _public_sites() -> set[str]:
+    """The rows that refuse a public capability: linked ones from P2, all of them from P6 (PD5)."""
+    return {s.site_id for s in ACCOUNT.rows if s.role is Role.PUBLIC_CAPABILITY}
 
 
 def test_every_witness_names_an_accounted_site() -> None:
@@ -129,15 +129,15 @@ def test_every_witness_names_an_accounted_site() -> None:
     assert {(c, w) for c, w in named if w not in accounted} == set()
 
 
-def test_every_linked_public_site_has_a_packaged_witness_or_says_why_none_can() -> None:
+def test_every_public_site_has_a_packaged_witness_or_says_why_none_can() -> None:
     """Whether each witness really fires its site is sysml-codegen's live check."""
     data = tomllib.loads((INVENTORY / "scanner.toml").read_text(encoding="utf-8"))
     unwitnessed = {u["site_id"]: u["statement"] for u in data["unwitnessed_site"]}
     witnessed = {w for ws in WITNESSES.values() for w in ws}
-    linked = _linked_public_sites()
+    public = _public_sites()
     assert all(statement.strip() for statement in unwitnessed.values())
-    assert unwitnessed.keys() <= linked
-    assert linked - witnessed == unwitnessed.keys()
+    assert unwitnessed.keys() <= public
+    assert public - witnessed == unwitnessed.keys()
 
 
 @pytest.mark.parametrize(
