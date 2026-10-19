@@ -1,9 +1,9 @@
 # Audit: EXEC-SUBSET-CONTRACT Item 3 — L6 integration and execution-target settings
 
-**Verdict:** Needs Work
-**Audited:** 2026-10-19
+**Verdict:** Certify
+**Audited:** 2026-10-19 (Needs Work at `d0b9fb12`; B1 re-checked and certified at `600fea84`, see § Re-check)
 **Branch:** `l6-subset-profile` (base `ebb3d467`)
-**Commit:** `d0b9fb12`
+**Commit:** `600fea84`
 
 ---
 
@@ -16,6 +16,8 @@ Projects that only run natively must not be buried in generator noise. So each p
 The item also fixes four ways today's L6 misleads: hand-written generator checks that disagree with the contract (the String case), failed inspections that read as clean or as model defects (26 broad `except` sites plus 2 `AttributeError` catches), a crashed level that counted as a pass, and no setting at all.
 
 ## Summary
+
+**Update at re-check:** B1 and the should-fix items are fixed at `600fea84`, so the verdict is Certify (§ Re-check). The text below is the original pass at `d0b9fb12`.
 
 Most of this is solid. The severity table matches the spec and the align decisions cell by cell. The settings reader and the `init` writer are careful: a closed key set, every defect is an error, and the insert is verified by re-parsing. The session cache is sound. A crashed level now fails the run. The before/after evidence shows no consumer tree went from pass to fail.
 
@@ -42,7 +44,7 @@ The R3-2 gate outcome ("a check that ... cannot inspect what it was asked to ins
 
 **B1 (must-fix). A non-`sum` call in a design attribute fails L6 under every target, including `native` and unset.** `adr002.py:524-597` (`check_static_expressions`) reads references through `design_reference_uses`, which raises `SemanticEvidenceError` on any call outside the allowlist (`reference_use.py:427-452`). The element handler at `adr002.py:596-597` turns that into `L6_CHECK_ERROR`, and `CHECK_FAILURE` is ERROR in every column (`execution_target.py:189`).
 
-- **Failure scenario.** A native project has `attribute area : Real = sqrt(2.0);` (or `abs(...)`, `max(...)`) in a `designs/` file. At `ebb3d467`, L6 passed with one `V4_STATIC_FUNCTION_INVOCATION` WARNING. Now `validate` exits 1 under `native`, `generated` and unset, with "check_static_expressions could not inspect ... is not supported by this executable subset". The contract already reports the same site, as a refused `invocation-callable` finding, which `native` correctly folds into its INFO summary. The legacy path then fails the run anyway. The pinning test `tests/test_validation/test_l6_check_errors.py:429-446` asserts this failure under `NATIVE`.
+- **Failure scenario** (corrected at re-check: the regression is outside `designs/`; under `designs/` the attribute already failed at `ebb3d467`, see § Re-check). A native project has `attribute area : Real = sqrt(2.0);` (or `abs(...)`, `max(...)`) in a non-`library/` file outside `designs/`. At `ebb3d467`, L6 passed with one `V4_STATIC_FUNCTION_INVOCATION` WARNING. Now `validate` exits 1 under `native`, `generated` and unset, with "check_static_expressions could not inspect ... is not supported by this executable subset". The contract already reports the same site, as a refused `invocation-callable` finding, which `native` correctly folds into its INFO summary. The legacy path then fails the run anyway. The pinning test `tests/test_validation/test_l6_check_errors.py:429-446` asserts this failure under `NATIVE`.
 - **Why the three consumer trees did not catch it.** None of them has a non-`sum` call in a design attribute (0 check errors on all three). That shows they are unaffected, not that the outcome is right.
 - **What should change.** See Decision 1 below. In short: inside a legacy check, the shared walker's own `SemanticEvidenceError` should be a WARNING saying V2 could not inspect the attribute. It should be WARNING under every target, never in the native summary, and never silent. That is D15's rule. Any other exception stays `L6_CHECK_ERROR`. The pinning test flips to assert that. It should also be parametrized over all three targets: today it runs only `NATIVE`, although its docstring says "every target".
 
@@ -139,11 +141,30 @@ D9 "shadowed by" matches on the same subject id, not the spec's owner-based cond
 
 ---
 
+## Re-check (2026-10-19, `git diff ffad416f..600fea84`)
+
+**Result: B1 is resolved, and so are the should-fix items. Verdict changes to Certify.** I read the source diff and the new tests' assertions. I did not run anything. The repo checks (6 baseline failures, mypy 97, ruff 118) and the before/after with no flags come from the owner's independent run and from `evidence/repository-checks.md`.
+
+- **B1: resolved.** The shared-walker calls in V2 and both V4 checks now go through `_walk` (`adr002.py:73-83`). A walker's own `SemanticEvidenceError` becomes `L6_CHECK_UNVERIFIED` (`common.py:104-120`), and every other exception still reaches the `L6_CHECK_ERROR` handler (`adr002.py:215-218`, `:292-297`, `:636-639`). The new category is W/W/W (`execution_target.py:191`). It is routed before the legacy lookup (`subset_presentation.py:256-257`), so it is never folded into the native summary. Tests: the flipped pinning test now runs under all three targets. It checks for a WARNING, that nothing is summarized, that there is no check error, and that the run fails only under `generated` (`test_l6_check_errors.py:456`). Three more tests cover the other cases: under `generated` the same site still fails through the contract's `invocation-callable` refusal; any other exception from the walker is still a check error under every target; and both V4 walker calls report unverified. A new code instead of reusing `L6_SUBSET_ADVISORY_UNVERIFIED` is the right call, because that code's wording names an advisory. Design D4, D8, D15, I1, the severity table and Appendix B are amended to match.
+- **The implementer's `designs/` note: confirmed.** At `ebb3d467`, `evaluate_true_static_expression` has no branch for an invocation. It raises `TypeError("Cannot evaluate expression of type ...")` (`expression.py:658`), and the old `except (ValueError, TypeError)` turned that into `L6_DESIGN_ATTR_UNEXTRACTABLE` ERROR for any attribute under `designs/`. That raise is now `UnextractableTypeError`, so the same ERROR is produced today. So my B1 scenario was wrong for `designs/` (corrected above). The real regression was V2's, which checks every file except `library/` paths, i.e. files outside `designs/`. The fix covers it, and the new test puts the attribute in `analysis/` for that reason. Keeping the `designs/` ERROR is correct. Under unset and `generated`, removing it would relax an existing error, which is the R3-1 owner gate. Under `native`, R3-1 does not apply. There the spec's evidence rule decides (`spec.md:170`): `legacy-l6-audit.md:29` records this row as kept, with no generator-only cause shown. So a native project with `sqrt(2.0)` under `designs/` still fails L6, for a reason this item did not introduce. Whether L6's static evaluator should accept calls is a question for backlog `L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES`, not this item.
+- **impl-F2: resolved, as recommended.** `enclosing_pyproject` (`project_settings.py:240-246`) blocks creating the file when a parent directory has a `pyproject.toml` (new reason `NESTED`). It exits 1 only when `--execution-target` was given. The message gives the lines to add and the per-run `--execution-target` alternative (`cli/__init__.py:762-767`). The standalone case still creates the file, now with a line saying uv will treat the directory as its own project (`:748-749`), and the README says the same. I accept the implementer's deviation of not pointing to the parent's file: after `init` the directory holds the root markers, so L6 would never read the parent's table.
+- **Advisory 1: resolved.** Both early exits now carry the target metric and the report's target block (`level6_architecture.py:1152-1153`, `:1175-1176`), with a test for each.
+- **Advisory 2: resolved.** A failed calc-def listing records its error and the usage half still runs. A failed usage listing now keeps the calc-def half's findings too (`level6_architecture.py:224-229`, `:272-276`). There is a test for the calc-def case.
+- **Advisory 4: resolved.** `read_bytes()` errors are now `Blocked` (`DEFECT`) with "cannot read" (`project_settings.py:205-208`). Tested with a mode-000 file.
+- **impl-F3: resolved.** I8 now says "apart from `run_info.wall_time_s`", which matches the test.
+
+New notes from the re-check (none blocks):
+
+- **`_walk` also wraps the visitor's own reads.** In `check_static_function_invocations`, `_is_invocation` runs inside `traverse_expression`. So a `SemanticEvidenceError` raised by `SysideAdapter.is_instance` in that visitor would read as "walker declined" (WARNING), not as a check error (`adr002.py:242-247`, `:274`). I did not check whether `is_instance` can raise that type. If it can, an accessor fault would be shown one tier too quietly. It would still be visible, never silent.
+- **Counts stay numeric when a check reports unverified.** `_reported_failure` (`level6_architecture.py:1095`) looks only for `L6_CHECK_ERROR`. So, for example, `V4_STATIC_FUNCTION_INVOCATION: 0` can print while one attribute went undecided. The plan records this as deliberate, because the WARNING names the element. It is a small departure from "a count the failure affected prints not computed", and it is defensible because this is not a failure.
+- **`enclosing_pyproject` walks to the filesystem root.** A stray `~/pyproject.toml` therefore blocks file creation for every project under `$HOME`. This fails safe: nothing is written, and the line is printed.
+- **Advisory 3 is still the owner's call.** Two of the four `native` lowerings rest on judgment. The plan records that for the owner.
+
 ## Certification
 
 **Checked:** spec, design rev 1, plan (all 11 phases and notes), `briefs/align.md`; the full `src/` diff `ebb3d467..HEAD` for `execution_target.py`, `project_settings.py`, `session.py`, `subset_presentation.py`, `report.py`, `runner.py`, `common.py`, `cli/__init__.py`, `holdout.py`, `adr002.py`, `level6_architecture.py` and the evaluator's `Unextractable` raises in `expression.py`; the names and scope of the tests in the new test files; `evidence/legacy-l6-audit.md`, `repository-checks.md`, `dc3-baseline-l6.md`, `dc3-repaired-l6.md`, and the before/after table in plan Phase 11.
 
-**Marked:** nothing. The verdict is Needs Work. The brief also asks for `audit.md` only to be committed. So I did not tick spec success criteria, change the epic heading or edit `CURRENT_WORK.md`. Once B1 is fixed, a targeted re-check of B1 is enough to certify, and the success-criteria ticks can be made then.
+**Marked at re-check:** nothing, because this pass was told to edit `audit.md` only. The verdict is now Certify, so the spec's success-criteria ticks, the epic heading and `CURRENT_WORK.md` can be updated by whoever commits. **Original pass:** nothing was marked; the verdict was Needs Work. The brief also asks for `audit.md` only to be committed. So I did not tick spec success criteria, change the epic heading or edit `CURRENT_WORK.md`. Once B1 is fixed, a targeted re-check of B1 is enough to certify, and the success-criteria ticks can be made then.
 
 **Not checked:**
 
