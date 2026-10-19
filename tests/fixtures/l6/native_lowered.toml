@@ -2,4 +2,9 @@
 # A code moves here only in the change that adds its row to the legacy-check audit
 # (.project/active/l6-subset-profile/evidence/legacy-l6-audit.md), together with its move to
 # LEGACY_GENERATOR_ONLY in src/agentic_mbse/validation/execution_target.py.
-lowered = []
+lowered = [
+    "L6_MISSING_QUALIFIED_NAME",
+    "L6_ANONYMOUS_RETURN",
+    "L6_CALC_DEF_NO_INSTANTIATION",
+    "L6_BODY_ASSIGNMENT_IMPL_LOSS",
+]

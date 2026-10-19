@@ -528,3 +528,57 @@ def test_dc3_sized_report_holds_every_evaluator_finding(target, capsys):
     printed = capsys.readouterr().out
     if target is Target.GENERATED:
         assert "Issues found: 268" in printed and "... and 263 more" in printed
+
+
+# ---- legacy codes under native (Phase 8) --------------------------------------------------
+
+
+def _legacy(code: ValidationCode, severity: str) -> Any:
+    from agentic_mbse.sysml.types import Severity, ValidationIssue
+
+    return ValidationIssue(
+        level=6, severity=Severity(severity), code=code, message=f"legacy {code.value}"
+    )
+
+
+@pytest.mark.parametrize(
+    ("code", "severity"),
+    [
+        (ValidationCode.L6_MISSING_QUALIFIED_NAME, "error"),
+        (ValidationCode.L6_ANONYMOUS_RETURN, "error"),
+        (ValidationCode.L6_CALC_DEF_NO_INSTANTIATION, "error"),
+        (ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS, "warning"),
+    ],
+)
+def test_lowered_code_is_native_summary_under_native_and_unchanged_under_others(code, severity):
+    issue = _legacy(code, severity)
+    for target in (Target.UNSET, Target.GENERATED):
+        shown = present(target, None, NO_ADVISORIES, [issue])
+        assert [(i.code, i.severity.value) for i in shown.issues] == [(code, severity)]
+        assert shown.summarized == []
+    shown = present(Target.NATIVE, None, NO_ADVISORIES, [issue])
+    assert [i.code for i in shown.issues] == []
+    assert [(i.code, i.severity.value) for i in shown.summarized] == [(code, "info")]
+    assert ", 1 legacy;" in shown.metrics["Generator-only findings (native: INFO summary)"]
+
+
+@pytest.mark.parametrize(
+    ("code", "severity"),
+    [
+        (ValidationCode.L6_INVALID_QUALIFIED_NAME, "error"),
+        (ValidationCode.L6_INVALID_BINDING_FORMAT, "error"),
+        (ValidationCode.L6_DESIGN_ATTR_INCOMPLETE, "error"),
+        (ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE, "error"),
+        (ValidationCode.L6_CALC_DEF_NO_OUTPUT, "error"),
+        (ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED, "warning"),
+        (ValidationCode.V4_STATIC_FUNCTION_INVOCATION, "warning"),
+        (ValidationCode.L6_CONSTRAINT_NON_NUMERICAL, "warning"),
+        (ValidationCode.V2_DYNAMIC_EXPRESSION, "error"),
+    ],
+)
+def test_kept_code_unchanged_under_every_target(code, severity):
+    issue = _legacy(code, severity)
+    for target in Target:
+        shown = present(target, None, NO_ADVISORIES, [issue])
+        assert [(i.code, i.severity.value) for i in shown.issues] == [(code, severity)]
+        assert shown.summarized == []

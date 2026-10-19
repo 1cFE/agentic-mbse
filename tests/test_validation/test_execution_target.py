@@ -245,3 +245,42 @@ def test_subdirectory_reads_root_file_and_ignores_nested_pyproject(tmp_path):
 def test_unset_is_not_an_override(tmp_path):
     with pytest.raises(ValueError, match="unset is no override"):
         resolve_target(_project(tmp_path, None), Target.UNSET)
+
+
+LOWERED = frozenset(
+    {
+        "L6_MISSING_QUALIFIED_NAME",
+        "L6_ANONYMOUS_RETURN",
+        "L6_CALC_DEF_NO_INSTANTIATION",
+        "L6_BODY_ASSIGNMENT_IMPL_LOSS",
+    }
+)
+
+
+def test_lowered_set_is_exactly_the_four_evidenced_codes():
+    assert lowered_under_native(LEGACY_CATEGORY) == LOWERED
+    fixture = tomllib.loads((REPO / "tests/fixtures/l6/native_lowered.toml").read_text())
+    assert frozenset(fixture["lowered"]) == LOWERED
+
+
+def _audit() -> Path:
+    """The legacy-check audit, under `.project/active/` now and `.project/completed/` after close."""
+    (path,) = REPO.glob(".project/*/*l6-subset-profile/evidence/legacy-l6-audit.md")
+    return path
+
+
+def test_audit_lowered_table_matches_fixture():
+    text = _audit().read_text(encoding="utf-8")
+    section = text.split("## Lowered under native", 1)[1].split("\n## ", 1)[0]
+    codes = re.findall(r"^\| `([A-Z0-9_]+)` \|", section, flags=re.MULTILINE)
+    assert frozenset(codes) == lowered_under_native(LEGACY_CATEGORY)
+    assert len(codes) == len(set(codes))
+
+
+def test_audit_has_one_row_per_legacy_code_plus_manifest_and_setup():
+    text = _audit().read_text(encoding="utf-8")
+    section = text.split("## Every legacy L6 code", 1)[1].split("\n## ", 1)[0]
+    first_cells = re.findall(r"^\| ([^|]+?) \|", section, flags=re.MULTILINE)
+    codes = {cell.split("`")[1] for cell in first_cells if cell.startswith("`")}
+    assert codes == {code.value for code in LEGACY_CATEGORY}
+    assert {"Manifest failures", "Setup failures"} <= set(first_cells)

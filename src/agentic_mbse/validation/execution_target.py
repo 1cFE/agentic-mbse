@@ -194,26 +194,27 @@ def display(category: Category, target: Target) -> Display:
     return _TABLE[category][_COLUMN[target]]
 
 
-# Each of the 17 codes the legacy L6 checks emit (design Appendix A). A generator-only candidate
-# stays LEGACY_KEPT until the change that adds its row to `evidence/legacy-l6-audit.md` and to
-# `tests/fixtures/l6/native_lowered.toml` moves it to LEGACY_GENERATOR_ONLY.
+# Each of the 17 codes the legacy L6 checks emit (design Appendix A). A code is
+# LEGACY_GENERATOR_ONLY only together with its row in the legacy-check audit's "Lowered under
+# native" table (`evidence/legacy-l6-audit.md`) and `tests/fixtures/l6/native_lowered.toml`;
+# a test keeps the three equal. Four have that evidence (Item 3 Phase 8).
 LEGACY_CATEGORY: Mapping[ValidationCode, Category] = {
     ValidationCode.V1_CALC_DEF_LOCATION: Category.LEGACY_OWN_APPLICABILITY,
     ValidationCode.V2_DYNAMIC_EXPRESSION: Category.LEGACY_OWN_APPLICABILITY,
     ValidationCode.V4_UNSUPPORTED_OPERATOR: Category.LEGACY_OWN_APPLICABILITY,
     ValidationCode.V4_STATIC_FUNCTION_INVOCATION: Category.LEGACY_KEPT,
-    ValidationCode.L6_MISSING_QUALIFIED_NAME: Category.LEGACY_KEPT,
+    ValidationCode.L6_MISSING_QUALIFIED_NAME: Category.LEGACY_GENERATOR_ONLY,
     ValidationCode.L6_INVALID_QUALIFIED_NAME: Category.LEGACY_KEPT,
     ValidationCode.L6_CALC_DEF_NO_OUTPUT: Category.LEGACY_KEPT,
     ValidationCode.L6_CALC_DEF_NO_DIRECTION: Category.LEGACY_KEPT,
     ValidationCode.L6_INVALID_BINDING_FORMAT: Category.LEGACY_KEPT,
     ValidationCode.L6_DESIGN_ATTR_INCOMPLETE: Category.LEGACY_KEPT,
     ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE: Category.LEGACY_KEPT,
-    ValidationCode.L6_ANONYMOUS_RETURN: Category.LEGACY_KEPT,
-    ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS: Category.LEGACY_KEPT,
+    ValidationCode.L6_ANONYMOUS_RETURN: Category.LEGACY_GENERATOR_ONLY,
+    ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS: Category.LEGACY_GENERATOR_ONLY,
     ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL: Category.LEGACY_KEPT,
     ValidationCode.L6_CONSTRAINT_NON_NUMERICAL: Category.LEGACY_KEPT,
-    ValidationCode.L6_CALC_DEF_NO_INSTANTIATION: Category.LEGACY_KEPT,
+    ValidationCode.L6_CALC_DEF_NO_INSTANTIATION: Category.LEGACY_GENERATOR_ONLY,
     ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED: Category.LEGACY_KEPT,
 }
 
