@@ -253,6 +253,8 @@ def _rule_suggestion(rules: RuleRecords) -> dict[str, tuple[str, str]]:
 def _legacy_category(issue: ValidationIssue) -> Category:
     if issue.code is ValidationCode.L6_CHECK_ERROR:
         return Category.CHECK_FAILURE
+    if issue.code is ValidationCode.L6_CHECK_UNVERIFIED:
+        return Category.CHECK_UNVERIFIED
     return LEGACY_CATEGORY.get(issue.code, Category.LEGACY_KEPT)
 
 

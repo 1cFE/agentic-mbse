@@ -153,6 +153,7 @@ class Category(StrEnum):
     LEGACY_KEPT = "legacy_kept"
     LEGACY_GENERATOR_ONLY = "legacy_generator_only"
     CHECK_FAILURE = "check_failure"
+    CHECK_UNVERIFIED = "check_unverified"
     SETTING_INVALID = "setting_invalid"
 
 
@@ -187,6 +188,7 @@ _TABLE: Mapping[Category, tuple[Display, Display, Display]] = {
     Category.LEGACY_KEPT: (_B, _B, _B),
     Category.LEGACY_GENERATOR_ONLY: (_B, _B, _S),
     Category.CHECK_FAILURE: (_E, _E, _E),
+    Category.CHECK_UNVERIFIED: (_W, _W, _W),
     Category.SETTING_INVALID: (_E, _E, _E),
 }
 _COLUMN = {Target.UNSET: 0, Target.GENERATED: 1, Target.NATIVE: 2}

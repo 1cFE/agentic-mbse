@@ -23,10 +23,9 @@ import pytest
 from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 from agentic_mbse.sysml import expression
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
-from agentic_mbse.sysml.types import ValidationCode
+from agentic_mbse.sysml.types import Severity, ValidationCode
 from agentic_mbse.validation import adr002, level6_architecture
 from agentic_mbse.validation.common import QualityCheckResult
-from agentic_mbse.validation.execution_target import Target
 from tests.helpers.l6_projects import make_project, target_table
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "l6" / "check_errors" / "models"
@@ -425,22 +424,102 @@ def test_dead_calc_usage_names_helper_is_deleted():  # adr002 :268
     assert not hasattr(adr002, "_get_calc_usage_names")
 
 
-@pytest.mark.syside
-def test_static_expression_walker_refusal_is_a_check_error(tmp_path):
-    """A design attribute calling anything but `sum` fails L6 under every target.
+def _abs_project(tmp_path: Path, target: str) -> Path:
+    """The fixture with `scaled = a * 2.0` replaced by `abs(2.0)`: a call outside the subset.
 
-    `check_static_expressions` reads references through `inspect_reference_uses`, which raises
-    `SemanticEvidenceError` on every non-`sum` call (the ES-005 refusal path). Today's code
-    skipped V2 for that attribute silently; under I1 it is now `L6_CHECK_ERROR`. Pinned here
-    so a decision to treat it like D15 changes a test (plan Phase 7 notes, surprise 1).
+    The design file moves to `analysis/`, outside the design-attribute check's `designs` filter,
+    so V2 is the only legacy check with an ERROR to give: at `ebb3d467` this model passed L6
+    with one `V4_STATIC_FUNCTION_INVOCATION` WARNING. (Under `designs/`, the evaluator's
+    `L6_DESIGN_ATTR_UNEXTRACTABLE` ERROR fires on `abs(2.0)` before and after this item.)
     """
     model = FIXTURE / "designs" / "plant.sysml"
     text = model.read_text().replace("= a * 2.0;", "= abs(2.0);")
+    assert "abs(2.0)" in text
     models = {"library/calcs.sysml": (FIXTURE / "library" / "calcs.sysml").read_text()}
-    root = make_project(tmp_path, models={**models, "designs/plant.sysml": text})
-    result = level6_architecture.validate_architecture(str(root), execution_target=Target.NATIVE)
-    (error,) = _errors(result, "check_static_expressions")
-    assert error.reason_code == SemanticEvidenceError.__name__
-    assert SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED.value not in error.message
-    assert "is not supported by this executable subset" in error.message
+    pyproject = None if target == "unset" else target_table(f'"{target}"')
+    return make_project(
+        tmp_path, pyproject=pyproject, models={**models, "analysis/plant.sysml": text}
+    )
+
+
+def _unverified(result: QualityCheckResult, check: str) -> list[Any]:
+    return [
+        i
+        for i in result.structured_issues
+        if i.code is ValidationCode.L6_CHECK_UNVERIFIED
+        and i.message.startswith(f"{check} could not inspect ")
+    ]
+
+
+@pytest.mark.syside
+@pytest.mark.parametrize("target", TARGETS)
+def test_static_expression_walker_refusal_is_a_warning(target, tmp_path):
+    """A design attribute calling anything but `sum`: V2 could not inspect it, under every target.
+
+    `check_static_expressions` reads references through `inspect_reference_uses`, which raises
+    `SemanticEvidenceError` on every non-`sum` call (the ES-005 refusal path). That is the walker
+    declining the attribute, not a crash, so it is an `L6_CHECK_UNVERIFIED` WARNING naming the
+    check, the attribute and the walker's reason, never folded into the native summary (design
+    D15, I1; align § Audit decisions, B1). At `ebb3d467` this attribute passed L6.
+    """
+    result = level6_architecture.validate_architecture(str(_abs_project(tmp_path, target)))
+    (warning,) = _unverified(result, "check_static_expressions")
+    assert warning.severity is Severity.WARNING
+    assert warning.element_name == "plant::Plant::scaled"
+    assert warning.reason_code == SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED.value
+    assert "is not supported by this executable subset" in warning.message
+    assert ValidationCode.L6_CHECK_UNVERIFIED not in {i.code for i in result.summarized}
+    assert not _errors(result, "check_static_expressions")
+    assert result.success is (target != "generated")
+
+
+@pytest.mark.syside
+def test_static_expression_walker_refusal_still_fails_generated_via_contract(tmp_path):
+    """Under `generated` the same attribute fails on the contract's refusal, not on V2."""
+    result = level6_architecture.validate_architecture(str(_abs_project(tmp_path, "generated")))
+    refused = [
+        i
+        for i in result.structured_issues
+        if i.code is ValidationCode.L6_SUBSET_REFUSED and i.element_name == "plant::Plant::scaled"
+    ]
+    assert refused and all(i.severity is Severity.ERROR for i in refused)
+    assert any(i.reason_code == "invocation_callable_unsupported" for i in refused)
+    assert not any(i.code is CHECK_ERROR for i in result.structured_issues)
     assert not result.success
+
+
+@pytest.mark.syside
+@pytest.mark.parametrize("target", TARGETS)
+def test_static_expression_walker_other_exception_is_still_a_check_error(
+    target, monkeypatch, tmp_path
+):
+    """Only the walker's own `SemanticEvidenceError` is a WARNING; anything else stays an ERROR."""
+    raising(adr002, "design_reference_uses", ForcedError("walker bug"))(monkeypatch)
+    result = _l6(tmp_path, target)
+    errors = _errors(result, "check_static_expressions")
+    assert errors and all(e.reason_code == ForcedError.__name__ for e in errors)
+    assert not _unverified(result, "check_static_expressions")
+    assert not result.success
+
+
+@pytest.mark.syside
+@pytest.mark.parametrize(
+    ("function", "check"),
+    [
+        ("extract_operators", "check_supported_operators"),
+        ("traverse_expression", "check_static_function_invocations"),
+    ],
+)
+def test_other_legacy_walker_calls_report_unverified(function, check, monkeypatch, tmp_path):
+    """V4's walker calls get the same rule as V2's: a declined element is a WARNING."""
+    declined = SemanticEvidenceError(
+        SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED, function, "forced depth exhaustion"
+    )
+    raising(adr002, function, declined)(monkeypatch)
+    result = _l6(tmp_path, "native")
+    warnings = _unverified(result, check)
+    assert warnings and all(w.severity is Severity.WARNING for w in warnings)
+    assert all(
+        w.reason_code == SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED.value for w in warnings
+    )
+    assert not _errors(result, check)

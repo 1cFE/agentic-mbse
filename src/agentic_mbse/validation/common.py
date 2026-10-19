@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from agentic_mbse.errors import SemanticEvidenceError
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 from agentic_mbse.validation.positional_check import is_pinned_positional_warning
@@ -97,6 +98,25 @@ def check_error_issue(
         element_name=subject,
         location=location,
         reason_code=type(error).__name__,
+    )
+
+
+def check_unverified_issue(
+    check: str, subject: str, error: SemanticEvidenceError, location: str = ""
+) -> ValidationIssue:
+    """`L6_CHECK_UNVERIFIED`: a shared walker that `check` called declined `subject` (D15, I1)."""
+    return ValidationIssue(
+        level=6,
+        severity=Severity.WARNING,
+        code=ValidationCode.L6_CHECK_UNVERIFIED,
+        message=f"{check} could not inspect {subject}: {error}",
+        element_name=subject,
+        location=location,
+        suggestion=(
+            "The check says nothing about this element; this is neither a model defect "
+            "nor a crash of the check"
+        ),
+        reason_code=error.code.value,
     )
 
 

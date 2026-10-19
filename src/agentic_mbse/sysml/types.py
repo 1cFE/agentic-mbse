@@ -104,6 +104,10 @@ class ValidationCode(str, Enum):
     # EXEC-SUBSET-CONTRACT Item 3: a check that could not run, or could not inspect an element,
     # names itself instead of passing silently; ERROR under every execution target (design D4).
     L6_CHECK_ERROR = "L6_CHECK_ERROR"
+    # A legacy check whose call into a shared expression walker raised that walker's own
+    # `SemanticEvidenceError`: the check could not decide this element. WARNING under every
+    # target, never in the native summary (design D15, I1).
+    L6_CHECK_UNVERIFIED = "L6_CHECK_UNVERIFIED"
     # The subset contract's findings in L6, one code per outcome (Item 3 design D8). Each carries
     # the contract's reason (or an unverified check's cause) in `reason_code`; the execution
     # target decides the severity (`validation/execution_target.py`).

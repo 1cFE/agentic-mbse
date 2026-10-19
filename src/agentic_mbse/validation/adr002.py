@@ -10,8 +10,10 @@ Implements validation rules from ADR-002 (Calculation Architecture):
 These checks are integrated into Level 6 architecture validation.
 """
 
-from typing import Any
+from collections.abc import Callable
+from typing import Any, TypeVar
 
+from agentic_mbse.errors import SemanticEvidenceError
 from agentic_mbse.sysml.expression import (
     design_reference_uses,
     extract_operators,
@@ -25,7 +27,7 @@ from agentic_mbse.sysml.reference_use import (
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
-from agentic_mbse.validation.common import check_error_issue
+from agentic_mbse.validation.common import check_error_issue, check_unverified_issue
 
 try:
     from .common import get_element_location, get_qualified_name
@@ -48,6 +50,37 @@ def _element_error(check: str, element: Any, error: Exception) -> ValidationIssu
     return check_error_issue(
         check, get_qualified_name(element), error, get_element_location(element)
     )
+
+
+def _element_unverified(check: str, element: Any, error: SemanticEvidenceError) -> ValidationIssue:
+    """`L6_CHECK_UNVERIFIED` for one element whose walker declined it (design D15, I1)."""
+    return check_unverified_issue(
+        check, get_qualified_name(element), error, get_element_location(element)
+    )
+
+
+class _WalkerDeclinedError(Exception):
+    """A shared expression walker raised its own `SemanticEvidenceError` inside a check."""
+
+    def __init__(self, error: SemanticEvidenceError) -> None:
+        super().__init__(str(error))
+        self.error = error
+
+
+_T = TypeVar("_T")
+
+
+def _walk(walker: Callable[..., _T], *args: Any) -> _T:
+    """`walker(*args)`; the walker's `SemanticEvidenceError` is re-raised as `_WalkerDeclinedError`.
+
+    Marks the calls into the shared expression walkers (`inspect_reference_uses` through
+    `design_reference_uses`, and `traverse_expression`), so a check's element handler can tell
+    the walker declining an element from any other failure, which stays `L6_CHECK_ERROR`.
+    """
+    try:
+        return walker(*args)
+    except SemanticEvidenceError as error:
+        raise _WalkerDeclinedError(error) from error
 
 
 def check_calc_def_locations(model: Any) -> list[ValidationIssue]:
@@ -159,7 +192,7 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
                 continue
 
             # Extract all operators from expression
-            operators = extract_operators(expr)
+            operators = _walk(extract_operators, expr)
 
             # Check for unsupported operators
             for op in operators:
@@ -179,6 +212,8 @@ def check_supported_operators(model: Any) -> list[ValidationIssue]:
                         )
                     )
 
+        except _WalkerDeclinedError as declined:
+            issues.append(_element_unverified("check_supported_operators", attr, declined.error))
         except Exception as error:
             issues.append(_element_error("check_supported_operators", attr, error))
 
@@ -205,7 +240,8 @@ def check_static_function_invocations(model: Any) -> list[ValidationIssue]:
     issues: list[ValidationIssue] = []
 
     def _is_invocation(node: Any) -> Any:
-        # A failed type test reaches the attribute's handler below (Appendix B, :207).
+        # A failed type test reaches the attribute's handler below (Appendix B, :207); one
+        # that raises `SemanticEvidenceError` is the walk declining, like any walker's (D15).
         if SysideAdapter.is_instance(
             node, "InvocationExpression"
         ) and not SysideAdapter.is_instance(node, "OperatorExpression"):
@@ -235,7 +271,7 @@ def check_static_function_invocations(model: Any) -> list[ValidationIssue]:
             if not expr:
                 continue
 
-            if not traverse_expression(expr, _is_invocation):
+            if not _walk(traverse_expression, expr, _is_invocation):
                 continue
 
             attr_name = get_qualified_name(attr)
@@ -252,6 +288,10 @@ def check_static_function_invocations(model: Any) -> list[ValidationIssue]:
                     location=get_element_location(attr),
                     suggestion="Move the calculation into a calc def",
                 )
+            )
+        except _WalkerDeclinedError as declined:
+            issues.append(
+                _element_unverified("check_static_function_invocations", attr, declined.error)
             )
         except Exception as error:
             issues.append(_element_error("check_static_function_invocations", attr, error))
@@ -443,7 +483,7 @@ def _contains_feature_chain(expr: Any) -> bool:
     def _visitor(node: Any) -> Any:
         return node if "FeatureChain" in type(node).__name__ else None
 
-    return bool(traverse_expression(expr, _visitor))
+    return bool(_walk(traverse_expression, expr, _visitor))
 
 
 def _is_supported_formula(attr: Any, uses: tuple[ExactReferenceUse, ...]) -> bool:
@@ -552,7 +592,7 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
             expr = attr.feature_value_expression
 
             # Extract all feature references (std lib filtered by default per Phase 1)
-            uses = design_reference_uses(expr)
+            uses = _walk(design_reference_uses, expr)
 
             # TRUE STATIC: No refs after filtering = only literals + std lib
             if not any(reference_is_dynamic(use) for use in uses):
@@ -593,6 +633,8 @@ def check_static_expressions(model: Any) -> list[ValidationIssue]:
                 )
             )
 
+        except _WalkerDeclinedError as declined:
+            issues.append(_element_unverified("check_static_expressions", attr, declined.error))
         except Exception as error:
             issues.append(_element_error("check_static_expressions", attr, error))
 
