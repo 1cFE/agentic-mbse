@@ -1,6 +1,6 @@
 # Implementation Plan: L6 integration and execution-target settings (EXEC-SUBSET-CONTRACT Item 3)
 
-**Status:** Phases 1–8 complete; Phase 9 next
+**Status:** Phases 1–9 complete; Phase 10 next
 **Created:** 2026-10-18
 **Last Updated:** 2026-10-18
 
@@ -565,15 +565,15 @@ def test_install_commands_leaves_pyproject_untouched(): ...
 
 **See `design.md` for:** D7, the `init` section and its table, refused layouts, Implementation Notes "Insert algorithm".
 
-- [ ] Tests and golden files (NEW).
-- [ ] `src/agentic_mbse/project_settings.py`: `add_execution_target(file, value) -> SettingWrite`.
-- [ ] `src/agentic_mbse/cli/__init__.py` `cmd_init` (`:369`, argparse near `:804`): `--execution-target`; settings step after the installer saves; prompt only when stdin is a terminal; exit 1 only when the option was given and could not be written, or on a disagreement or defect with the option. `install-commands` never calls it.
+- [x] Tests and golden files (NEW).
+- [x] `src/agentic_mbse/project_settings.py`: `add_execution_target(file, value) -> SettingWrite`.
+- [x] `src/agentic_mbse/cli/__init__.py` `cmd_init` (`:369`, argparse near `:804`): `--execution-target`; settings step after the installer saves; prompt only when stdin is a terminal; exit 1 only when the option was given and could not be written, or on a disagreement or defect with the option. `install-commands` never calls it.
 
 ### Validation
 
-- [ ] Tests pass; full suite green rule; ruff and mypy.
-- [ ] Manual (review m9): in an empty `tmp` directory, run `init --execution-target=native`, then `uv run --directory <dir> python -c pass` and `uv lock --directory <dir>`. Record what uv does with a `pyproject.toml` that has no `[project]`. If uv errors where it would not with no file, stop and report: the "create a file holding only the table" row then needs an owner call.
-- [ ] Manual: `init` in a `tmp` copy of a project, then `validate --level=6` shows `generated (from <path>)` or `native (...)`, confirming `init` and L6 read the same file.
+- [x] Tests pass; full suite green rule; ruff and mypy.
+- [x] Manual (review m9): in an empty `tmp` directory, run `init --execution-target=native`, then `uv run --directory <dir> python -c pass` and `uv lock --directory <dir>`. Record what uv does with a `pyproject.toml` that has no `[project]`. If uv errors where it would not with no file, stop and report: the "create a file holding only the table" row then needs an owner call.
+- [x] Manual: `init` in a `tmp` copy of a project, then `validate --level=6` shows `generated (from <path>)` or `native (...)`, confirming `init` and L6 read the same file.
 
 **What we know works:** `init` can set the target without ever damaging a committed file.
 
@@ -823,6 +823,28 @@ See `design.md#potential-risks`. Phase-specific mitigations:
 - **Two issue messages changed, because they made false codegen claims:** `L6_DESIGN_ATTR_UNEXTRACTABLE` now reads "has an expression with no static numeric value: ..." (was "... but codegen cannot extract a numeric default: ..."), and `L6_ATTR_REDEF_EXPR_DROPPED` now says "earlier sysml-codegen versions dropped this override at extraction" (was "codegen scans only ReferenceUsage redefinitions, so this override is silently dropped"). No test, skill or script asserted either text. Both are L6 lines, so the Phase 11 L1–L5 comparison is not affected.
 - `_is_supported_formula`'s REQ-CA-06/07 and "Item 5" references were removed. f4 found no REQ-CA-07 in codegen and did not check the self-reference path, so the comment now states the rule only.
 
+### Phase 9 Completion
+
+**Completed:** 2026-10-19
+**Changes made:**
+- `src/agentic_mbse/project_settings.py`: `inspect_execution_target(root)` returns `Insertable`, `Present` (the existing value) or `Blocked` (`BlockReason.DEFECT` or `LAYOUT`, with the reason). `add_execution_target(root, value)` writes and returns `Written`, or the same `Present` / `Blocked`. `TARGET_KEY` moved here; `validation/execution_target.py` imports it.
+- `src/agentic_mbse/cli/__init__.py`: `init --execution-target {generated,native}`; `_init_execution_target` runs after the installer saves and after the summary; `_report_execution_target_slot` prints the existing value, the defect, or the layout reason plus the line to add by hand; `_prompt_for_execution_target` asks only on a terminal (default: leave unset; EOF also leaves it unset). The noninteractive note reuses L6's `UNSET_NOTE` (`subset_presentation.py:58`), so `init` and L6 print the same line and `init` form.
+- Tests: `tests/test_init_execution_target.py` (50 cases); golden files `tests/fixtures/l6/init_golden/<case>/{before,after}.toml`, the six cases the plan names, written by hand. No `.gitattributes` and `core.autocrlf` unset, so git keeps the CRLF case's bytes.
+- `tests/test_cli.py`: the two tests that fake a terminal (`test_orchestrator_is_hash_tracked_and_modification_is_preserved`, `test_reinit_with_modification_prompts`) now pass `execution_target="generated"`. Without it the new prompt read the real stdin and pytest raised. This is the intended change: a terminal `init` now asks.
+**Decisions and deviations:**
+- **The layout check runs before any prompt.** `inspect_execution_target` builds the insert with a probe value and verifies it with `tomllib`, so a layout that cannot take the line is reported without asking first, as the design's table needs. The insert has the same shape for either value; `add_execution_target` builds and verifies again with the real value before writing.
+- **A sub-table alone is not a refused layout.** A file with only `[tool.agentic-mbse.research]` defines `agentic-mbse` implicitly; appending `[tool.agentic-mbse]` after it is valid TOML 1.0 (golden case `existing_research_table`). "Inline table" and "dotted keys" are named only when the probe fails and no header exists.
+- **Two header lines can only both parse when one is inside a string**, because TOML rejects a table declared twice (that file is an existing `TOML_SYNTAX` defect instead). The `two_headers` test uses a header inside a multi-line string plus a real one. A header only inside a string is the `fails_verification` case.
+- The functions take the project root, not the file path, to match `read_toolkit_table(root)`.
+- Exit 1 cases: option given and the layout is refused, the file has a defect, or the key holds a different or invalid value. Without the option every case exits 0 and prints what it found.
+**uv check (review m9), for the owner.** Run on `init --execution-target=native` in an empty `/tmp` directory, uv 0.12.23. uv does not error, so the plan's stop condition is not met and the "create a file holding only the table" row stands. But the file changes what uv does there:
+- `uv run --directory <dir> python -c pass` exits 0, creates `<dir>/.venv`, and warns `No requires-python value found in the workspace. Defaulting to >=3.12`. With no file it creates nothing.
+- `uv lock --directory <dir>` exits 0 and writes `uv.lock`. With no file it exits 2 ("No pyproject.toml found").
+- In a directory inside another uv project, the table-only file makes the child its own project: `uv run` there creates a separate `.venv` and stops using the parent's. Without the file it uses the parent's.
+- If this matters, the alternative is to refuse "no file" and print the line instead. Not changed here.
+**Manual check:** `init --execution-target=native` in a fresh `/tmp` directory, then `validate --level=6` on its `models/` printed `Execution target: native (from /tmp/p9m/empty/pyproject.toml)`. The same check is `test_init_writes_the_file_l6_reads`, with the project's own root marker removed so `init`'s `.agentic-mbse/install.json` is what finds the file.
+**Checks:** full suite 6 failures, the baseline set (pandoc, equations, index); ruff 118; mypy 97; touched files pass `ruff check` and `ruff format --check`.
+
 ---
 
-**Status:** Phases 1–8 complete; Phase 9 next
+**Status:** Phases 1–9 complete; Phase 10 next
