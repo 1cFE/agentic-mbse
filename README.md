@@ -16,6 +16,19 @@ pip install -e .
 agentic-mbse validate models/
 ```
 
+Level 6 (Architecture & Generator Subset) checks the ADR-002 architecture rules and the project's manifests, then compares the model with the generator subset profile, `subset-profile/v1`. The profile has eight implemented rules, each traced to sysml-codegen's source or to a probe run against it: binding sources, constraints owned by a calculation, conditional expressions, constraint predicates, indexed references, function calls outside the supported set, part multiplicities and String values the generator drops. Each finding names its rule, the outcome (refused, unconfirmed, omitted or excluded) and a remedy.
+
+The profile is incomplete. Some generator refusals have no rule yet; L6 names them on its `Coverage limit` line, and a clear result says nothing about them. L6 is not a generation check: it never runs the generator. A check that asks sysml-codegen itself is a separate, future step in sysml-codegen, and does not exist yet.
+
+How loud the generator findings are depends on how the project runs, set in its `pyproject.toml`:
+
+```toml
+[tool.agentic-mbse]
+execution-target = "generated"  # or "native"
+```
+
+`generated` shows refusals as errors. `native` (the project does not run generated code) folds generator-only findings into one INFO summary. With no setting, refusals are warnings and the run ends with "generated compatibility not established". `agentic-mbse init --execution-target=generated` adds the line, and `validate --execution-target=native` overrides it for one run. `validate --json-report report.json` writes every finding in full.
+
 ### Initialize Project
 
 ```bash
