@@ -254,6 +254,11 @@ SITES = [
         "count of CalculationUsage",
         enumeration("_element_count", "CalculationUsage"),
     ),
+    Site(
+        "new: manifest checks",
+        "manifest_checks",
+        raising(level6_architecture, "_check_manifests", ForcedError("manifest bug")),
+    ),
     # adr002.py
     Site(
         "adr002 :87 calc def locations per def",
@@ -361,6 +366,12 @@ def test_site_failure_is_check_error_naming_check(site, target, monkeypatch, tmp
 def test_failed_counts_print_not_computed(site, metric, monkeypatch, tmp_path):  # :973, :978
     site.force(monkeypatch)
     assert _l6(tmp_path, "unset").metrics[metric] == "not computed"
+
+
+@pytest.mark.syside
+def test_failed_manifest_check_prints_not_computed(monkeypatch, tmp_path):
+    SITE["new: manifest checks"].force(monkeypatch)
+    assert _l6(tmp_path, "unset").metrics["Manifests checked"] == "not computed"
 
 
 @pytest.mark.syside

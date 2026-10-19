@@ -1209,7 +1209,11 @@ def validate_architecture(
     all_issues.extend(advisory_errors)
 
     # Manifest checks (from old L7)
-    manifest_issues, manifests_checked = _check_manifests(models_path, model)
+    manifests, manifest_errors = _guarded(
+        "manifest_checks", partial(_check_manifests, models_path, model)
+    )
+    manifest_issues, manifests_checked = manifests or ([], None)
+    all_issues.extend(manifest_errors)
 
     shown = present(resolution.target, contract, advisories, all_issues)
 
@@ -1241,7 +1245,7 @@ def validate_architecture(
             "Design attrs checked": _count(
                 num_design_attrs, failed=ValidationCode.L6_DESIGN_ATTR_INCOMPLETE in uncounted
             ),
-            "Manifests checked": manifests_checked,
+            "Manifests checked": _count(manifests_checked, failed=False),
             **code_counts,
         },
     )
