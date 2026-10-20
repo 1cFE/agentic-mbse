@@ -21,13 +21,19 @@ from tests.test_sysml.test_subset_profile_version import PINNED, contract_digest
 # A version maps to exactly one list. Changing the list means a new version and a new digest.
 COVERAGE_PINNED = {
     "subset-coverage/v1": "531d8fd53be0fee4fa548a53d4cacab25d9fab8d7e875130b122aa4b78424781",
+    "subset-coverage/v2": "bb67041223ba4703fb463e0eac895f3ac75528c087de4d40b72fd81d2c86da78",
 }
 
-# `SUBSET_PROFILE_VERSION`'s digest at ebb3d467, before Item 3 (I4: library additions only add).
-PROFILE_AT_EBB3D467 = (
-    "subset-profile/v1",
-    "30491315a96efaf8b75a6349787f0dd3498519d565b907a14211ab41bd68456b",
+# The profile as Item 2a left it (I4: Item 3's library additions only add). Item 3 pinned v1 at
+# ebb3d467; Item 2a's v2 replaced it before Item 3's additions were rebased onto it.
+PROFILE_BEFORE_ITEM_3_ADDITIONS = (
+    "subset-profile/v2",
+    "02d82855eb2a7a37e4d65244649a2ab481ea073db70e7c5e45504f9559d43e51",
 )
+
+
+# Site IDs of sysml-codegen's raise sites, whose account lives in sysml-codegen since Item 2a.
+CODEGEN_PREFIX = "sysml_codegen/"
 
 
 def coverage_digest() -> str:
@@ -53,14 +59,19 @@ def test_coverage_list_matches_no_rule_rows_of_the_matrix_fixture():
     assert set(NO_RULE_FAMILIES) == no_rule
 
 
-def test_follow_up_sites_match_the_site_account():
+def test_follow_up_sites_are_sorted_and_unique():
+    assert list(FOLLOW_UP_SITES) == sorted(set(FOLLOW_UP_SITES))
+
+
+def test_agentic_follow_up_sites_match_the_site_account():
+    """The sysml-codegen half is checked against codegen's own account, by codegen's suite."""
     account = load_site_account()
     follow_up = sorted(
         row.site_id for row in account.rows if row.disposition is Disposition.EXPLICIT_FOLLOW_UP
     )
-    assert list(FOLLOW_UP_SITES) == follow_up
+    assert [s for s in FOLLOW_UP_SITES if not s.startswith(CODEGEN_PREFIX)] == follow_up
 
 
-def test_subset_profile_version_and_digest_unchanged_from_ebb3d467():
-    assert (SUBSET_PROFILE_VERSION, contract_digest()) == PROFILE_AT_EBB3D467
-    assert PINNED[SUBSET_PROFILE_VERSION] == PROFILE_AT_EBB3D467[1]
+def test_subset_profile_version_and_digest_unchanged_by_item_3_additions():
+    assert (SUBSET_PROFILE_VERSION, contract_digest()) == PROFILE_BEFORE_ITEM_3_ADDITIONS
+    assert PINNED[SUBSET_PROFILE_VERSION] == PROFILE_BEFORE_ITEM_3_ADDITIONS[1]

@@ -16,7 +16,7 @@ pip install -e .
 agentic-mbse validate models/
 ```
 
-Level 6 (Architecture & Generator Subset) checks the ADR-002 architecture rules and the project's manifests, then compares the model with the generator subset profile, `subset-profile/v1`. The profile has eight implemented rules, each traced to sysml-codegen's source or to a probe run against it: binding sources, constraints owned by a calculation, conditional expressions, constraint predicates, indexed references, function calls outside the supported set, part multiplicities and String values the generator drops. Each finding names its rule, the outcome (refused, unconfirmed, omitted or excluded) and a remedy.
+Level 6 (Architecture & Generator Subset) checks the ADR-002 architecture rules and the project's manifests, then compares the model with the generator subset profile, `subset-profile/v2`. The profile has nine implemented rules, each traced to sysml-codegen's source or to a conformance case run against it: binding sources, constraints owned by a calculation, conditional expressions, constraint predicates, indexed references, function calls outside the supported set, part multiplicities, and the String values and calculation-usage result expressions the generator drops. Each finding names its rule, the outcome (refused, unconfirmed, omitted or excluded) and a remedy.
 
 The profile is incomplete. Some generator refusals have no rule yet; L6 names them on its `Coverage limit` line, and a clear result says nothing about them. L6 is not a generation check: it never runs the generator. A check that asks sysml-codegen itself is a separate, future step in sysml-codegen, and does not exist yet.
 

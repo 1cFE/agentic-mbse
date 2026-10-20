@@ -52,7 +52,7 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "subset_profile"))
 
-from probe import IsolationBreachError, git, resolve_rev, sibling_state  # noqa: E402
+from isolated_tree import IsolationBreachError, git, resolve_rev, sibling_state  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE = REPO_ROOT / ".project/completed/20261018_positional-binding-check/evidence"
@@ -87,7 +87,7 @@ SKIPPED_LINKS: dict[str, list[str]] = {}
 def export_tree(repo: Path, commit: str, dest: Path) -> None:
     """Extract `git archive <commit>` whole into `dest`, after checking its embedded commit id.
 
-    Like `scripts/subset_profile/probe.py:export_tree`, except for which absolute symlinks it
+    Like `scripts/subset_profile/isolated_tree.py:export_tree`, except for which absolute symlinks it
     skips: any outside `models/` (fusion-tea's `.project/` holds links into `/tmp`), each named
     in the evidence. The check loads only `models/`, where an absolute link aborts the export.
     """
