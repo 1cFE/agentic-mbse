@@ -1,0 +1,39 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      6,
+      6
+    ],
+    "description": "calc usage m whose bare result is if v < 4273.5 ? 1.0 else 2.0, whose branches are literals"
+  },
+  "screen": {
+    "verdict": "incomplete",
+    "findings": [
+      {
+        "rule": "calc-usage-result",
+        "shape": "bare_result",
+        "context": "other_expression_site",
+        "outcome": "omitted",
+        "subject": "fx::Site::m",
+        "line": 6
+      },
+      {
+        "rule": "conditional-expression",
+        "shape": "conditional_unresolved_branch",
+        "context": "other_expression_site",
+        "outcome": "omitted",
+        "subject": "fx::Site::m",
+        "line": 6
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/reference_use.py::_reference_use::shared-evidence::RESOLVED_TARGET_MISSING::1"
+  ],
+  "provenance": {
+    "note": "New in Item 2a P2.2: an R3 section 3 unconfirmed pair."
+  }
+}

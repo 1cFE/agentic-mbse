@@ -1,9 +1,11 @@
 """Load the site account (`tests/fixtures/subset_profile/inventory/site_account.csv`).
 
 One row per candidate refusal site that `scripts/subset_profile/scan_sites.py` recognizes in
-sysml-codegen at the pin and in agentic-mbse at the implementation revision. Each row carries
-its D2 disposition, semantic role, owner, evidence pointer and, for an in-scope site, the matrix
-row that covers it. The join to the matrix is asserted in `tests/test_subset_site_account.py`.
+agentic-mbse at the implementation revision. Each row carries its D2 disposition, semantic role,
+owner, evidence pointer and, for an in-scope site, the matrix row that covers it. The join to the
+matrix is asserted in `tests/test_subset_site_account.py`. The sysml-codegen sites have their own
+account in sysml-codegen (`tests/expectations/subset_profile/site_account.csv`, EXEC-SUBSET-CONTRACT
+Item 2a D7).
 
 Pure and stdlib-only. Leading `#` lines are the scan identity and are kept as `header`.
 """
@@ -77,12 +79,10 @@ class SiteRow:
     disposition: Disposition
     role: Role
     owner: str
-    #: The matrix rows covering the site (`;`-separated in the file); non-empty iff in scope.
-    #: One generator site can be the raise site of several rows (the binding-source classifier).
+    #: The matrix rows covering the site (`;`-separated in the file). Required for an in-scope
+    #: site; an explicit follow-up may name the R3 row it is routed to; nothing else has one.
     matrix_rows: tuple[str, ...]
-    #: The rule records of the shared-rule matrix rows, `;`-separated in the file. More than one
-    #: when one site serves rows of several rules (elaborate.py:1939 also emits the indexed
-    #: source refusal, which the matrix places at INDEXED-REFERENCE).
+    #: The rule records of the shared-rule matrix rows, `;`-separated in the file.
     rules: tuple[str, ...]
     #: `file.py:line` at the scanned revision, then any further pointers, `;`-separated.
     evidence: tuple[str, ...]
@@ -131,8 +131,10 @@ def _row(raw: dict[str, str]) -> SiteRow:
         raise SiteAccountError(f"{where}: owner, evidence and note are required")
     if not row.evidence[0].startswith(f"{row.file}:{row.line}"):
         raise SiteAccountError(f"{where}: evidence must start with the site, {row.file}:{row.line}")
-    if (disposition is Disposition.IN_SCOPE) != bool(row.matrix_rows):
-        raise SiteAccountError(f"{where}: matrix_row is required iff the site is in scope")
+    if disposition is Disposition.IN_SCOPE and not row.matrix_rows:
+        raise SiteAccountError(f"{where}: an in-scope site names its matrix row")
+    if disposition is Disposition.HANDLED_ELSEWHERE and row.matrix_rows:
+        raise SiteAccountError(f"{where}: a site handled elsewhere names no matrix row")
     if len(set(row.matrix_rows)) != len(row.matrix_rows):
         raise SiteAccountError(f"{where}: matrix_row repeats a row")
     if row.rules and not row.matrix_rows:

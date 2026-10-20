@@ -162,6 +162,7 @@ def _owner_kind(owner: Any) -> OwnerKind:
         ("CalculationDefinition", OwnerKind.CALCULATION_DEFINITION),
         ("CalculationUsage", OwnerKind.CALCULATION_USAGE),
         ("Package", OwnerKind.PACKAGE),
+        ("RequirementDefinition", OwnerKind.REQUIREMENT_DEFINITION),
     ):
         if _is(owner, type_name):
             return kind

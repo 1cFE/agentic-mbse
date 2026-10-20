@@ -1,0 +1,32 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      6,
+      6
+    ],
+    "description": "asserted predicate x > 0.0 and enabled (BLOCK) in Site, instantiated by site"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "constraint-predicate",
+        "shape": "blocked_predicate",
+        "context": "owner_instantiated",
+        "outcome": "refused",
+        "subject": "fx::Site::c",
+        "line": 6
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::warn_non_numerical_predicate::1"
+  ],
+  "provenance": {
+    "from_probe": "constraint-predicate__blocked_predicate__owner_instantiated",
+    "note": "Item 1 probe, moved in Item 2a P2.1. It superseded the prototype case es007_refused_boolean_mixed."
+  }
+}

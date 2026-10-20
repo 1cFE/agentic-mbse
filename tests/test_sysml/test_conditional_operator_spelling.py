@@ -20,9 +20,8 @@ FIXTURE = (
     Path(__file__).parents[1]
     / "fixtures"
     / "subset_profile"
-    / "occurrence"
-    / "es006_refused_conditional"
-    / "model.sysml"
+    / "cases"
+    / "conditional_operator.sysml"
 )
 
 

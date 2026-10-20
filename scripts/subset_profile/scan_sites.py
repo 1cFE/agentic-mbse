@@ -1,14 +1,16 @@
-"""Enumerate the candidate refusal sites in sysml-codegen and agentic-mbse, and reconcile the account.
+"""Enumerate the candidate refusal sites in agentic-mbse, and reconcile the account.
 
-    uv run python scripts/subset_profile/scan_sites.py --agentic-rev REV [--codegen-rev REV]
+    uv run python scripts/subset_profile/scan_sites.py --agentic-rev REV
         [--out CSV] [--reconcile ACCOUNT_CSV]
 
 Hardened from the prototype `.project/concepts/convince-me-exec-subset/evidence/02-inventory.py`
-(design D10). The recognized forms are the prototype's, unchanged; what changed is how it runs:
+(design D10). `scan_sites/1` scanned sysml-codegen too; that half moved to sysml-codegen's
+`tests/helpers/subset_profile/site_scan.py` (EXEC-SUBSET-CONTRACT Item 2a D7), and this script
+scans agentic-mbse only (`scan_sites/2`). It runs as follows:
 
-- Both trees are read from `git archive` exports of the named revisions into a temp directory,
-  never from a working checkout. Each export's embedded commit id is checked.
-- The output CSV starts with `#` header lines naming the scanner revision, both tree revisions
+- The tree is read from a `git archive` export of the named revision into a temp directory,
+  never from a working checkout. The export's embedded commit id is checked.
+- The output CSV starts with `#` header lines naming the scanner revision, the tree revision
   and every recognized form, read from `tests/fixtures/subset_profile/inventory/scanner.toml`.
   The script refuses to run if that file's forms differ from the ones coded here.
 - The five computed `executable_profile` reason sites are mapped to the reasons each can emit
@@ -18,21 +20,20 @@ Hardened from the prototype `.project/concepts/convince-me-exec-subset/evidence/
 - `--reconcile` compares the scan with the site account and exits 1 on any scanned site with no
   account row (unaccounted) or account row with no scanned site (orphan).
 
+`scan_sites/1` found executable_profile's `_diagnostic` factory only because a sysml-codegen
+function has the same name, so its factory search ran over both trees. `scan_sites/2` declares
+`_diagnostic` as a form instead; the 61 site IDs are unchanged.
+
 A site is where a refusal originates. Its ID is (path, enclosing qualname, channel, code,
 ordinal within that function), which survives line moves. Channels:
 
-  coded            ElaborationCode/ReadinessCode/SemanticEvidenceCode literal at a construction
-                   or factory call
-  coded-fixed      construction of a subclass that fixes its code in `__init__`
   coded-relay      the code is `<expr>.code`: forwarding an already-coded refusal
   coded-returned   the code is a local bound from a helper whose every return is a code literal
   coded-mapped     the code is `TABLE.get(k, default)` over a module-level literal table
   plumbing         the code is a parameter of the enclosing function (a factory)
   coded-DYNAMIC    the code is computed some other way
-  free-text        raise of a codegen public exception class that carries no code
-  builtin          raise of a builtin exception in codegen
-  shared-evidence  SemanticEvidenceError(...) (or a factory of it) in agentic-mbse
-  shared-profile   executable_profile `_diagnostic(...)` with a literal reason in agentic-mbse
+  shared-evidence  SemanticEvidenceError(...) (or a factory of it) with a literal code
+  shared-profile   executable_profile `_diagnostic(...)` with a literal reason
 """
 
 from __future__ import annotations
@@ -51,66 +52,20 @@ import tomllib
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from probe import export_tree, git, resolve_rev  # noqa: E402
+from isolated_tree import export_tree, git, resolve_rev  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CODEGEN_REPO = Path.home() / "src" / "sysml-codegen"
-PINNED_CODEGEN_REV = "b5663c07e987a892e27d21e68cec40d0656574ee"
 SCANNER_TOML = REPO_ROOT / "tests" / "fixtures" / "subset_profile" / "inventory" / "scanner.toml"
 FIELDS = ("file", "line", "function", "channel", "code", "via", "ordinal", "site_id", "resolved")
 
-# ---- recognized forms (the prototype's, unchanged; scanner.toml must list exactly these) ------
+# ---- recognized forms (scanner.toml must list exactly these) -----------------------------------
 
-CODE_ENUMS = frozenset({"ElaborationCode", "ReadinessCode", "SemanticEvidenceCode"})
+CODE_ENUMS = frozenset({"SemanticEvidenceCode"})
 # Classes whose constructor takes a code (first positional or code=).
-CODE_TAKING = frozenset(
-    {
-        "ElaborationInvariantError",
-        "MultiplicityExpansionError",
-        "OccurrenceResolutionError",
-        "_ReferenceResolutionError",
-        "Diagnostic",
-        "ReadinessFinding",
-        "SemanticEvidenceError",
-    }
-)
-# Codegen public exception classes that carry free text only.
-FREE_TEXT = frozenset(
-    {
-        "CodeGenerationError",
-        "SysMLParsingError",
-        "SourceAdmissionError",
-        "PredicateCompileError",
-        "CompilationError",
-        "GraphValidationError",
-        "ExpressionInventoryError",
-        "ScopePolicyMismatchError",
-        "PackageSealError",
-        "ProvenanceError",
-        "InstanceGraphSnapshotError",
-        "SnapshotShapeError",
-        "SnapshotIntegrityError",
-        "SnapshotCompatibilityError",
-        "SnapshotStaleSourceError",
-        "SnapshotCertifiabilityError",
-    }
-)
-BUILTIN = frozenset(
-    {
-        "ValueError",
-        "RuntimeError",
-        "TypeError",
-        "KeyError",
-        "AssertionError",
-        "LookupError",
-        "NotImplementedError",
-        "IndexError",
-    }
-)
-# Not on the generation path: study/ and cli/install.py are separate tools; contracts/verify.py
-# uses an unrelated seal-verification Diagnostic class.
-EXCLUDE = ("study/", "cli/install.py", "contracts/verify.py")
+CODE_TAKING = frozenset({"SemanticEvidenceError"})
 SHARED_EVIDENCE_CLASS = "SemanticEvidenceError"
+# executable_profile's reason factory: `_diagnostic(reason, ...)`.
+SHARED_PROFILE_FACTORY = "_diagnostic"
 COMPUTED_PROFILE_FILE = "agentic_mbse/sysml/executable_profile.py"
 
 
@@ -183,28 +138,6 @@ def code_tables(tree: ast.Module) -> dict[str, list[str]]:
     return out
 
 
-def fixed_code_classes(trees: Iterable[ast.Module]) -> dict[str, str]:
-    """Subclasses whose __init__ calls super().__init__(ElaborationCode.X, ...)."""
-    fixed: dict[str, str] = {}
-    for tree in trees:
-        for cls in ast.walk(tree):
-            if not isinstance(cls, ast.ClassDef):
-                continue
-            for item in cls.body:
-                if isinstance(item, ast.FunctionDef) and item.name == "__init__":
-                    for call in ast.walk(item):
-                        if (
-                            isinstance(call, ast.Call)
-                            and isinstance(call.func, ast.Attribute)
-                            and call.func.attr == "__init__"
-                            and call.args
-                        ):
-                            codes = literal_codes(call.args[0])
-                            if codes is not None:
-                                fixed[cls.name] = "|".join(codes)
-    return fixed
-
-
 def _code_expr(node: ast.Call, factory_pos: dict[str, int]) -> ast.expr | None:
     for kw in node.keywords:
         if kw.arg == "code":
@@ -214,9 +147,10 @@ def _code_expr(node: ast.Call, factory_pos: dict[str, int]) -> ast.expr | None:
 
 
 def factories(trees: Iterable[ast.Module]) -> dict[str, int]:
-    """Functions that take a code parameter and pass it to a code-taking constructor (fixpoint)."""
+    """The declared profile factory, plus every function that takes a code parameter and passes
+    it to a code-taking constructor (fixpoint)."""
     trees = list(trees)
-    found: dict[str, int] = {}
+    found: dict[str, int] = {SHARED_PROFILE_FACTORY: 0}
     while True:
         before = dict(found)
         for tree in trees:
@@ -240,17 +174,10 @@ class _FunctionScope:
 
 
 class _Visitor(ast.NodeVisitor):
-    """Collect the sites in one module. `shared` selects the agentic-mbse forms."""
+    """Collect the sites in one module."""
 
-    def __init__(
-        self,
-        rel: str,
-        tree: ast.Module,
-        fixed: dict[str, str],
-        factory_pos: dict[str, int],
-        shared: bool,
-    ) -> None:
-        self.rel, self.fixed, self.factory_pos, self.shared = rel, fixed, factory_pos, shared
+    def __init__(self, rel: str, tree: ast.Module, factory_pos: dict[str, int]) -> None:
+        self.rel, self.factory_pos = rel, factory_pos
         self.returners, self.tables = code_returners(tree), code_tables(tree)
         self.scope = _FunctionScope()
         self.stack: list[str] = []
@@ -323,64 +250,30 @@ class _Visitor(ast.NodeVisitor):
 
     def visit_Call(self, node: ast.Call) -> None:
         name = callee(node)
-        in_super_init = bool(self.stack) and self.stack[-1] == "__init__"
-        if self.shared:
-            if name in {SHARED_EVIDENCE_CLASS} | set(self.factory_pos):
-                channel, code = self.classify_code(_code_expr(node, self.factory_pos))
-                if channel == "coded":
-                    channel = "shared-evidence" if code.isupper() else "shared-profile"
-                self.add(node, channel, code, name or "?")
-        elif name in self.factory_pos or (name in CODE_TAKING and not in_super_init):
-            not_elaboration = (
-                name == "Diagnostic"
-                and not node.args
-                and not any(kw.arg == "code" for kw in node.keywords)
-            )
-            if not not_elaboration:
-                channel, code = self.classify_code(_code_expr(node, self.factory_pos))
-                self.add(node, channel, code, name or "?")
-        elif name in self.fixed:
-            self.add(node, "coded-fixed", self.fixed[name], name)
-        self.generic_visit(node)
-
-    def visit_Raise(self, node: ast.Raise) -> None:
-        if not self.shared and node.exc is not None:
-            target = node.exc.func if isinstance(node.exc, ast.Call) else node.exc
-            if isinstance(target, ast.Name):
-                name: str | None = target.id
-            elif isinstance(target, ast.Attribute):
-                name = target.attr
-            else:
-                name = None
-            if name is not None and name in FREE_TEXT:
-                self.add(node, "free-text", name, name)
-            elif name is not None and name in BUILTIN:
-                self.add(node, "builtin", name, name)
+        if name in {SHARED_EVIDENCE_CLASS} | set(self.factory_pos):
+            channel, code = self.classify_code(_code_expr(node, self.factory_pos))
+            if channel == "coded":
+                channel = "shared-evidence" if code.isupper() else "shared-profile"
+            self.add(node, channel, code, name or "?")
         self.generic_visit(node)
 
 
-def _sources(root: Path, package: str, exclude: tuple[str, ...]) -> list[tuple[str, ast.Module]]:
-    out = []
-    for path in sorted((root / package).rglob("*.py")):
-        rel = str(path.relative_to(root))
-        if any(rel.replace(f"{package}/", "", 1).startswith(e) for e in exclude):
-            continue
-        out.append((rel, ast.parse(path.read_text(encoding="utf-8"))))
-    return out
+def _sources(root: Path) -> list[tuple[str, ast.Module]]:
+    return [
+        (str(path.relative_to(root)), ast.parse(path.read_text(encoding="utf-8")))
+        for path in sorted((root / "agentic_mbse").rglob("*.py"))
+    ]
 
 
-def scan_sources(codegen_src: Path, agentic_src: Path) -> list[dict[str, str]]:
-    """Every recognized site in the two `src/` roots, in file then source order."""
-    cg = _sources(codegen_src, "sysml_codegen", EXCLUDE)
-    am = _sources(agentic_src, "agentic_mbse", ())
-    fixed = fixed_code_classes(tree for _, tree in cg)
-    factory_pos = factories(tree for _, tree in cg + am)
+def scan_sources(agentic_src: Path) -> list[dict[str, str]]:
+    """Every recognized site in agentic-mbse's `src/` root, in file then source order."""
+    sources = _sources(agentic_src)
+    factory_pos = factories(tree for _, tree in sources)
     rows: list[dict[str, str]] = []
-    for sources, shared in ((cg, False), (am, True)):
-        for rel, tree in sources:
-            visitor = _Visitor(rel, tree, fixed, factory_pos, shared)
-            visitor.visit(tree)
-            rows += visitor.rows
+    for rel, tree in sources:
+        visitor = _Visitor(rel, tree, factory_pos)
+        visitor.visit(tree)
+        rows += visitor.rows
     return rows
 
 
@@ -401,10 +294,8 @@ def load_scanner_spec(path: Path = SCANNER_TOML) -> ScannerSpec:
     coded = {
         "code_enums": sorted(CODE_ENUMS),
         "code_taking": sorted(CODE_TAKING),
-        "free_text": sorted(FREE_TEXT),
-        "builtin": sorted(BUILTIN),
-        "exclude": sorted(EXCLUDE),
         "shared_evidence_class": [SHARED_EVIDENCE_CLASS],
+        "shared_profile_factory": [SHARED_PROFILE_FACTORY],
     }
     listed = {k: sorted(v) for k, v in forms.items() if k != "channels"}
     if listed != coded:
@@ -436,10 +327,10 @@ def reason_codes(agentic_src: Path) -> frozenset[str]:
 
 
 def resolve_computed(rows: list[dict[str, str]], spec: ScannerSpec, codes: frozenset[str]) -> None:
-    """Fill `resolved` for each mapped computed site; any unmapped agentic-mbse one is an error."""
+    """Fill `resolved` for each mapped computed site; any unmapped one is an error."""
     seen = set()
     for row in rows:
-        if row["channel"] != "coded-DYNAMIC" or not row["file"].startswith("agentic_mbse/"):
+        if row["channel"] != "coded-DYNAMIC":
             continue
         reasons = spec.computed.get(row["site_id"])
         if reasons is None:
@@ -502,35 +393,25 @@ def main() -> int:
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--agentic-rev", required=True)
-    parser.add_argument("--codegen-rev", default=PINNED_CODEGEN_REV)
     parser.add_argument("--out", type=Path)
     parser.add_argument("--reconcile", type=Path, metavar="ACCOUNT_CSV")
     args = parser.parse_args()
 
     spec = load_scanner_spec()
-    codegen_rev = resolve_rev(CODEGEN_REPO, args.codegen_rev)
     agentic_rev = resolve_rev(REPO_ROOT, args.agentic_rev)
     with tempfile.TemporaryDirectory(prefix="subset-scan-") as tmp:
-        export_tree(CODEGEN_REPO, codegen_rev, Path(tmp) / "sysml-codegen")
         export_tree(REPO_ROOT, agentic_rev, Path(tmp) / "agentic-mbse")
-        codegen_src, agentic_src = (
-            Path(tmp) / "sysml-codegen" / "src",
-            Path(tmp) / "agentic-mbse" / "src",
-        )
-        rows = scan_sources(codegen_src, agentic_src)
+        agentic_src = Path(tmp) / "agentic-mbse" / "src"
+        rows = scan_sources(agentic_src)
         resolve_computed(rows, spec, reason_codes(agentic_src))
 
-    counts = Counter(
-        "sysml-codegen" if r["file"].startswith("sysml_codegen/") else "agentic-mbse" for r in rows
-    )
     header = [
         f"scanner: {spec.revision}; {_scanner_identity()}",
-        f"sysml-codegen: {codegen_rev} (git archive, src/)",
         f"agentic-mbse: {agentic_rev} (git archive, src/)",
         "recognized forms: "
         + "; ".join(f"{k}={','.join(v)}" for k, v in sorted(spec.forms.items())),
         f"blind spots: {', '.join(spec.blind_spots)} (scanner.toml)",
-        f"sites: {len(rows)} ({counts['sysml-codegen']} sysml-codegen, {counts['agentic-mbse']} agentic-mbse)",
+        f"sites: {len(rows)} (agentic-mbse)",
     ]
     for line in header:
         print(line)

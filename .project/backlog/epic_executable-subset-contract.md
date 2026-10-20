@@ -4,7 +4,7 @@
 **Status**: Draft — revised after architecture and history audit
 **Priority**: Not assigned (owner)
 **Created**: 2026-10-14
-**Revised**: 2026-10-18 (Items 1 and 4 closed)
+**Revised**: 2026-10-18 (Items 1 and 4 closed; Item 2 split into 2a and 2b)
 **Estimated Effort**: Re-estimate after Item 1's capability inventory and boundary design; the original ~10-day estimate excluded snapshot integration, occurrence-aware evidence and independent differential coverage.
 
 ---
@@ -148,23 +148,47 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 **Deliverables**: `.project/completed/20261018_exec-subset-profile/{spec,design,plan}.md`; capability/refusal matrix; shared facts/evaluator, records and tests.
 
-### Item 2 (sysml-codegen): Independent conformance and read-only readiness check
+### Item 2 (sysml-codegen): Independent conformance and read-only readiness check — split
 
+**Split** 2026-10-18 into Item 2a (conformance) and Item 2b (readiness check). [AGENT] (ratified by owner, 2026-10-18). Reason: the combined estimate was 23–37 engineer-days, and the readiness check's preparation-path and snapshot scopes were the least examined third of it. 2a goes first: `check` is only as trustworthy as the conformance evidence behind it. Item 1 routed its open gaps here ([R3 table](../completed/20261018_exec-subset-profile/evidence/r3-proposal.md)); they belong to 2a. The original six scope points are kept verbatim below, assigned to one half or split between them.
+
+**Owner gates for both halves** [OWNER] (2026-10-18): any change to what the generator accepts or refuses, including a G1/G2 fix after the `kerml-expert` check; the String metadata policy (open decision 3); merges, PRs and the ADR 0012 amendment filing.
+
+### Item 2a (sysml-codegen): Independent conformance corpus and per-site codes ✅
+
+**Status**: Complete (2026-10-20) — certified (final-audit re-check 2026-10-19, every spec success criterion met), then integrated with merged Item 3 after the rebase onto PR #32 (this repo `e2bff13f`, gate receipt `3bb043ea`; sysml-codegen `ceb6796e`). Not merged yet: branch `subset-conformance` in both repos, for a coordinated merge. Integration changes L6 output two ways: the verdict line names `subset-profile/v2, subset-coverage/v2`, and the coverage line says 70 follow-up sites instead of 85. Owner gates still pending: RG-1 (12 candidate accept/refuse changes, `rg1-recommendations.md`), RG-2 (String policy, `rg2-string-policy.md`), RG-3 (the merge, and filing the staged ADR 0001, sysml-codegen ADR 0012 and ADR 0016, and P-0001 amendments; check the owner's sysml-codegen branch `adr-0012-occurrence-summary-amendment` for overlap first). The epic-level Success Criteria above were not re-ticked at this close; they span several items.
+
+**Location**: archived in sysml-codegen git at `c381fb00eb8e51248f68701e00ac997ebf2cd413:.project/active/subset-profile-conformance/` (sysml-codegen closes by deleting the folder; git history is its archive)
 **Type**: Integration
-**Effort**: Re-estimated 2026-10-18 at 23–37 engineer-days (`completed/20261018_exec-subset-profile/evidence/re-estimate.md`). [AGENT] (ratified by owner, 2026-10-18) consider splitting into a conformance-corpus item and a readiness-check item before it is specced. Item 1 routed its open gaps here (R3 table). Item 1's dev scripts under `scripts/subset_profile/` default their evidence output to Item 1's archive folder; parameterize the output directory before reusing them, so Item 2 evidence does not overwrite Item 1's.
-**Dependencies**: Item 1; Item 4 supplies hazard references.
+**Effort**: [AGENT] ~25–35 engineer-days, revised at spec review 2026-10-18 (sysml-codegen `c381fb00:.project/active/subset-profile-conformance/spec-review.md` L2-2); the first figure, 17–27, omitted silent-loss, String-fixture and fixture-classification work.
+**Dependencies**: Item 1 (merged, PR #30). Item 4 supplies hazard references; until it does, scope 6's link is recorded as pending.
 
 **Scope**:
-1. Integrate shared decisions where required facts are available, collecting independent findings before output mutation. Do not assume all occurrence-aware facts exist before elaboration. Codegen adapters own diagnostic-code and remedy rendering. Pin the profile and declare compatible package requirements.
-2. Build `tests/conformance/subset_profile/` with independent elaboration tests that bypass the new screen. Include each refusal condition, accepted near-neighbors, inherited/redefined contexts, alternate spellings, templates versus instances, and dc3 proto3/proto4nest/conv shapes. Exercise all existing successful fixtures against the profile.
-3. Supplement behavior tests with an AST/factory inventory contract. Adding an unclassified public refusal fails inventory tests. Merely naming a rule does not establish coverage: each relevant condition needs a witness, and a mutation that disables its detector must fail conformance. Classify the 137 free-text and 130 builtin candidate sites per site or justified family: public capability, malformed input, environment, snapshot compatibility/integrity, relay/plumbing or internal invariant. Reachable public capability refusals need stable reasons/codes; not every Python exception needs a new enum member. Internal-invariant exemptions need evidence that a well-formed supported input cannot reach them. Scanner completeness is bounded by its recognized syntax/factories; add mutation cases for new exception classes, helpers and computed mappings, and report unresolved coverage instead of declaring all 500 sites public refusals.
-4. Factor the actual read-only preparation path for `generate` and `check`: admission, facts/capability assessment, elaboration, projection, generation metadata/type/name/collision/totality checks, body/plan compilation and coverage checks. Keep destination mutation and emission outside it. State any destination/environment checks that require separate assessment. `check` writes no generated package or clears no directory; use sentinel tests. Readiness does not certify runtime behavior or handwritten implementation correctness.
-5. Integrate the new policy with snapshot authority, certifiability, receipts and version checks. Decide how existing snapshots can be assessed, rejected or upgraded if required facts are absent; no fallback to a silent live-only screen. Test live/replay decision parity, supported historical snapshots, unsupported authority versions and both package-skew directions using isolated artifacts. For every known silent-loss family, keep a model with explicit expected semantic presence/absence at the appropriate seam and an admitted control. Detect a newly missing declaration even when generation exits successfully; cover both accepted metadata omission and loss that must block.
-6. Resolve String metadata policy and reproduce or retire ES-011. Update `modeling-assumptions.md` with actual admitted/excluded behavior. Link the still-open POSITIONAL-FORMAL-REDEFINITION item to the hazard entry without changing its disposition artificially.
+1. From original scope 1: codegen adapters own diagnostic-code and remedy rendering. Map the neutral reason IDs to `ElaborationCode` (one-to-many by design). Pin the profile and declare compatible package requirements. Adopting the decisions inside `generate` before output mutation is 2b.
+2. Original scope 2: Build `tests/conformance/subset_profile/` with independent elaboration tests that bypass the new screen. Include each refusal condition, accepted near-neighbors, inherited/redefined contexts, alternate spellings, templates versus instances, and dc3 proto3/proto4nest/conv shapes. Exercise all existing successful fixtures against the profile.
+3. Original scope 3: Supplement behavior tests with an AST/factory inventory contract. Adding an unclassified public refusal fails inventory tests. Merely naming a rule does not establish coverage: each relevant condition needs a witness, and a mutation that disables its detector must fail conformance. Classify the 137 free-text and 130 builtin candidate sites per site or justified family: public capability, malformed input, environment, snapshot compatibility/integrity, relay/plumbing or internal invariant. Reachable public capability refusals need stable reasons/codes; not every Python exception needs a new enum member. Internal-invariant exemptions need evidence that a well-formed supported input cannot reach them. Scanner completeness is bounded by its recognized syntax/factories; add mutation cases for new exception classes, helpers and computed mappings, and report unresolved coverage instead of declaring all 500 sites public refusals.
+4. From original scope 5, the silent-loss part: for every known silent-loss family, keep a model with explicit expected semantic presence/absence at the appropriate seam and an admitted control; cover both accepted metadata omission and loss that must block. [AGENT] (ratified by owner, 2026-10-18): the requirement applies to the known families. A general detector for unknown losses ("a newly missing declaration even when generation exits successfully") is a recorded limit, not an acceptance gate, because name search over output is not a strong enough oracle (Item 1 finding).
+5. Original scope 6: Resolve String metadata policy and reproduce or retire ES-011. Update `modeling-assumptions.md` with actual admitted/excluded behavior. Link the still-open POSITIONAL-FORMAL-REDEFINITION item to the hazard entry without changing its disposition artificially.
+6. Item 1's routed work: the permanent occurrence-parity test in codegen CI; the R3 gaps (ES-002, ES-008, ES-009, ES-010 refusal side, ES-011, calc-def bare result, calc-usage bare-result drop, DEEP-QUALIFIED-WIRING rule decision, PUSH-DOWN rows routed to Item 2); the unconfirmed-pair probes; the 85 follow-up sites; G1/G2 semantics checks via `kerml-expert` (any resulting generator change is an owner gate).
 
-**Success Criteria**: independent corpus and detector-disable mutations pass; a new unclassified refusal fails; historical baseline findings match the matrix; check and generate fail at the same preparation seam without mutating a sentinel destination; replay and compatibility evidence pass.
+**Success Criteria**: independent corpus and detector-disable mutations pass; a new unclassified refusal fails the inventory; historical baseline findings match the matrix; every known silent-loss family has a presence/absence fixture and an admitted control; every R3 row routed to Item 2 is resolved, reproduced, retired or explicitly deferred with an owner.
 
-**Deliverables**: sysml-codegen `.project/active/subset-profile-screen/{spec,design,plan}.md`; preparation API/CLI, diagnostic adapters, inventory, corpus and compatibility evidence.
+**Deliverables**: sysml-codegen `c381fb00:.project/active/subset-profile-conformance/{spec,design,plan}.md`; diagnostic mapping, inventory contract, conformance corpus, parity CI test and evidence.
+
+### Item 2b (sysml-codegen): Read-only readiness check and snapshot authority
+
+**Type**: Integration
+**Effort**: [AGENT] ~6–10 engineer-days; not examined by Item 1, so the least certain estimate in the epic.
+**Dependencies**: Item 2a.
+
+**Scope**:
+1. From original scope 1: Integrate shared decisions where required facts are available, collecting independent findings before output mutation. Do not assume all occurrence-aware facts exist before elaboration. Uses 2a's diagnostic adapters and profile pin.
+2. Original scope 4: Factor the actual read-only preparation path for `generate` and `check`: admission, facts/capability assessment, elaboration, projection, generation metadata/type/name/collision/totality checks, body/plan compilation and coverage checks. Keep destination mutation and emission outside it. State any destination/environment checks that require separate assessment. `check` writes no generated package or clears no directory; use sentinel tests. Readiness does not certify runtime behavior or handwritten implementation correctness.
+3. From original scope 5, the snapshot part: integrate the new policy with snapshot authority, certifiability, receipts and version checks. Decide how existing snapshots can be assessed, rejected or upgraded if required facts are absent; no fallback to a silent live-only screen. Test live/replay decision parity, supported historical snapshots, unsupported authority versions and both package-skew directions using isolated artifacts.
+
+**Success Criteria**: check and generate fail at the same preparation seam without mutating a sentinel destination; replay and compatibility evidence pass.
+
+**Deliverables**: sysml-codegen `.project/active/subset-profile-screen/{spec,design,plan}.md`; preparation API/CLI and compatibility evidence.
 
 ### Item 3: L6 integration and execution-target settings ✅
 
@@ -256,7 +280,7 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 - Corrected Item 4 can start independently. It addresses a demonstrated silent-value hazard, not the only possible silent failure.
 - Items 1 and 2 begin with inventory and boundary design together. Re-estimate and resolve policy decisions before implementing the shared screen.
 - Merge companion facts/profile first, then compatible codegen integration with explicit version and snapshot behavior. Keep temporary skew fail-closed and test both directions.
-- Items 3 and 5 consume the agreed contract; executable-example completion depends on Item 2. Item 6 integrates the final behavior.
+- Items 3 and 5 consume the agreed contract; executable-example completion depends on Item 2 (2a for conformance evidence, 2b for `check`). Item 6 integrates the final behavior.
 - At each relevant audit, reuse pinned regression evidence where still applicable and rerun affected checks. Completion requires confirmed baseline categories, consumer expectations consistent with D1, independent boundary fixtures, full read-only check parity, D3 guidance coverage and honest reporting of exclusions/unverified scope.
 
 ## Dependencies and related work

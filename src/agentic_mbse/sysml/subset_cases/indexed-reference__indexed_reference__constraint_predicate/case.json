@@ -1,0 +1,40 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      8,
+      8
+    ],
+    "description": "asserted predicate qs#(1).v > 0.0"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "constraint-predicate",
+        "shape": "blocked_predicate",
+        "context": "owner_instantiated",
+        "outcome": "refused",
+        "subject": "fx::Site::c",
+        "line": 8
+      },
+      {
+        "rule": "indexed-reference",
+        "shape": "indexed_reference",
+        "context": "constraint_predicate",
+        "outcome": "refused",
+        "subject": "fx::Site::c",
+        "line": 8
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/executable_profile.py::_walk_value::shared-profile::block_feature_chain::1"
+  ],
+  "provenance": {
+    "from_probe": "indexed-reference__indexed_reference__constraint_predicate",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

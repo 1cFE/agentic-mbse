@@ -1,0 +1,30 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      5,
+      5
+    ],
+    "description": "String attribute fuel_unit valued by the redefinition shorthand :>> fuel_unit = \"liter\""
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": [
+      {
+        "rule": "string-value-omission",
+        "shape": "string_value",
+        "context": "attribute_value",
+        "outcome": "omitted",
+        "subject": "fx::gen::fuel_unit",
+        "line": 5
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "string-value-omission__string_value__attribute_value__redefinition_shorthand",
+    "note": "Item 1 probe, moved in Item 2a P2.1. It superseded the prototype case es010_omitted_string_value."
+  }
+}

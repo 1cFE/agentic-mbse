@@ -1,0 +1,30 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      5,
+      5
+    ],
+    "description": "Base::t binds xs to (a, b) and Derived redefines t in d1"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": [
+      {
+        "rule": "binding-source",
+        "shape": "expression_source",
+        "context": "writer_overridden",
+        "outcome": "admitted",
+        "subject": "fx::Base::t::xs",
+        "line": 5
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "binding-source__expression_source__writer_overridden__tuple",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

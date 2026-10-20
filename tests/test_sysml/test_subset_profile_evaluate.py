@@ -27,10 +27,10 @@ from agentic_mbse.sysml.subset_facts import (
 )
 from agentic_mbse.sysml.subset_profile import (
     PACKAGED_RULES,
+    CaseRef,
     ContextId,
     ExplicitRoots,
     Outcome,
-    ProbeRef,
     SubsetFinding,
     SubsetProfileResult,
     Verdict,
@@ -42,7 +42,7 @@ from tests.helpers.subset_records import records_with
 MISSING = SemanticEvidenceCode.RESOLVED_TARGET_MISSING
 
 # One refused pair per rule the tests below exercise, with the admitted partner the loader
-# demands (design invariant 3). Probe ids are only syntax here; the evidence test owns them.
+# demands (design invariant 3). Case ids are only syntax here; the citation test owns them.
 RECORDS = records_with(
     {
         ("binding-source", "expression_source"): {
@@ -89,7 +89,7 @@ def test_listed_pair_takes_the_record_outcome_and_evidence() -> None:
     (finding,) = by_rule(result, "binding-source")
     assert (finding.context_id, finding.outcome) == (ContextId.OWNER_INSTANTIATED, Outcome.REFUSED)
     assert finding.reason == "binding_source_expression"
-    assert finding.evidence == (ProbeRef("binding-source__expression_source__owner_instantiated"),)
+    assert finding.evidence == (CaseRef("binding-source__expression_source__owner_instantiated"),)
     assert finding.occurrence_count == 1 and finding.via_roots == (syn.uid("fx::p"),)
     assert result.verdict is Verdict.REFUSED
 
@@ -171,7 +171,7 @@ def test_binding_placement_follows_attachment_and_writer_selection() -> None:
 def test_a_consumer_attached_as_neither_calculation_nor_constraint_is_owner_other() -> None:
     # `consumer_placement`'s fallback: the root `p` is instantiated, but the generator attaches
     # `P::t` as neither a calculation nor a constraint usage, so it never classifies the binding.
-    # Placing it anywhere the records refuse would emit a refusal no probe has observed (R2).
+    # Placing it anywhere the records refuse would emit a refusal no case has observed (R2).
     facts = syn.facts(
         occurrence=syn.structure(
             roots=["fx::p"], visits=[syn.visit("fx::p", "fx::p", syn.exact(1))]

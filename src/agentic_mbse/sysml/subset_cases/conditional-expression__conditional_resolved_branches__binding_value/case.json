@@ -1,0 +1,31 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      7,
+      7
+    ],
+    "description": "calc usage t binds v to if x < y ? 1.0 else 2.0, whose branches are literals"
+  },
+  "screen": {
+    "verdict": "refused_incomplete",
+    "findings": [
+      {
+        "rule": "conditional-expression",
+        "shape": "conditional_unresolved_branch",
+        "context": "binding_value",
+        "outcome": "refused",
+        "subject": "fx::Site::t::v",
+        "line": 7
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/reference_use.py::_reference_use::shared-evidence::RESOLVED_TARGET_MISSING::1"
+  ],
+  "provenance": {
+    "note": "New in Item 2a P2.2: an R3 section 3 unconfirmed pair."
+  }
+}

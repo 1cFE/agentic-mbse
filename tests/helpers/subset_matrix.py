@@ -58,15 +58,15 @@ class RowOutcome(StrEnum):
 
 class RowEvidence(StrEnum):
     #: The three rule-record statuses; a shared-rule row carries its rule's status.
-    PROBE_OBSERVED = "probe_observed"
+    CASE_OBSERVED = "case_observed"
     PARTIAL = "partial"
     CODE_READ_PENDING_ITEM_2 = "code_read_pending_item_2"
-    #: A certified `reproduction` probe of a candidate family (no record cites it).
-    REPRODUCTION_PROBE = "reproduction_probe"
-    #: A certified `control` probe: the generator runs the shape and no rule recognizes it.
-    CONTROL_PROBE = "control_probe"
-    #: Seen in the generated output of certified `record` probes taken for another rule.
-    OBSERVED_IN_RECORD_PROBES = "observed_in_record_probes"
+    #: A packaged `reproduction` case of a candidate family (no record cites it).
+    REPRODUCTION_CASE = "reproduction_case"
+    #: A packaged `control` case: the generator runs the shape and no rule recognizes it.
+    CONTROL_CASE = "control_case"
+    #: Seen in the generator's output on `record` cases taken for another rule.
+    OBSERVED_IN_RECORD_CASES = "observed_in_record_cases"
     #: A record of the generator's owner-accepted corpus (`v6_recapture_batch/batch.json`).
     CORPUS_RECORD = "corpus_record"
     #: Read from code or a backlog row; no run of the pinned generator observed it in Item 1.
@@ -76,8 +76,11 @@ class RowEvidence(StrEnum):
 
 
 class SiteStatus(StrEnum):
-    #: The row's sites are listed in `sites` (from the site account).
+    #: The row's agentic-mbse sites are listed in `sites` (from the site account).
     LISTED = "listed"
+    #: The row's sites are all sysml-codegen sites. sysml-codegen's site account
+    #: (`tests/expectations/subset_profile/site_account.csv`) names the row in `matrix_row`.
+    CODEGEN_ACCOUNT = "codegen_account"
     #: The case has no raise site at all: a silent omission or an admission.
     NO_RAISE_SITE = "no_raise_site"
     #: A raise site is reported but not located among the scanned sites.
@@ -85,16 +88,16 @@ class SiteStatus(StrEnum):
 
 
 RULE_STATUSES = frozenset(
-    {RowEvidence.PROBE_OBSERVED, RowEvidence.PARTIAL, RowEvidence.CODE_READ_PENDING_ITEM_2}
+    {RowEvidence.CASE_OBSERVED, RowEvidence.PARTIAL, RowEvidence.CODE_READ_PENDING_ITEM_2}
 )
 DC3_ITEMS = frozenset(f"B{n}" for n in range(1, 10))
 UPSTREAM_ITEMS = frozenset(f"U{n}" for n in range(1, 8))
 BINDING_KINDS = ("literal", "single_reference", "self_binding", "indexed", "other_expression")
 
-#: `probe:<id>`, `corpus:<fixture>`, `backlog:<agentic-mbse row>`, `dc3:<path>`, `doc:<path>`, or a
+#: `case:<id>`, `corpus:<fixture>`, `backlog:<agentic-mbse row>`, `dc3:<path>`, `doc:<path>`, or a
 #: code citation `sysml_codegen/...py:<line>` (at the pin) / `agentic_mbse/...py:<line>`.
 _EVIDENCE_REF = re.compile(
-    r"(probe|corpus|backlog|dc3|doc):[A-Za-z0-9_./#-]+"
+    r"(case|corpus|backlog|dc3|doc):[A-Za-z0-9_./#-]+"
     r"|(sysml_codegen|agentic_mbse)/[a-z0-9_/]+\.py:\d+(-\d+)?"
 )
 
@@ -151,7 +154,7 @@ class MatrixRow:
     owner: str
     #: What stays uncovered; empty only for a shared rule implemented in Item 1.
     coverage_limitation: str
-    #: Site-account IDs (filled from `site_account.csv`).
+    #: agentic-mbse site-account IDs (filled from `site_account.csv`).
     sites: tuple[str, ...]
     site_status: SiteStatus
     dc3: tuple[str, ...]
@@ -160,8 +163,8 @@ class MatrixRow:
     statement: str
     split: tuple[OutcomeSplit, ...]
 
-    def probe_ids(self) -> tuple[str, ...]:
-        return tuple(e.removeprefix("probe:") for e in self.evidence if e.startswith("probe:"))
+    def case_ids(self) -> tuple[str, ...]:
+        return tuple(e.removeprefix("case:") for e in self.evidence if e.startswith("case:"))
 
 
 @dataclass(frozen=True)

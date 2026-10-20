@@ -1,0 +1,32 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      7,
+      7
+    ],
+    "description": "calc input v bound to ScalarFunctions::max(a, b)"
+  },
+  "screen": {
+    "verdict": "refused_incomplete",
+    "findings": [
+      {
+        "rule": "invocation-callable",
+        "shape": "unsupported_callable",
+        "context": "binding_value",
+        "outcome": "refused",
+        "subject": "fx::Site::t::v",
+        "line": 7
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/reference_use.py::_require_supported_invocation::shared-evidence::EXPRESSION_KIND_UNSUPPORTED::1"
+  ],
+  "provenance": {
+    "from_probe": "invocation-callable__unsupported_callable__binding_value",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

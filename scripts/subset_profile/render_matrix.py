@@ -1,10 +1,10 @@
 """Render the capability/refusal matrix and the rule records to a markdown evidence file.
 
-    uv run python scripts/subset_profile/render_matrix.py [--out PATH]
+    uv run python scripts/subset_profile/render_matrix.py --out PATH
 
 Reads `tests/fixtures/subset_profile/inventory/matrix.toml` (through the one loader,
-`tests/helpers/subset_matrix.py`) and the packaged rule records, and writes
-`.project/completed/20261018_exec-subset-profile/evidence/matrix.md` by default. Pure: no SysIDE.
+`tests/helpers/subset_matrix.py`) and the packaged rule records, and writes the markdown to
+`--out`. Pure: no SysIDE.
 """
 
 from __future__ import annotations
@@ -26,10 +26,6 @@ from tests.helpers.subset_matrix import (  # noqa: E402
     load_matrix,
 )
 
-DEFAULT_OUT = (
-    REPO_ROOT / ".project" / "completed" / "20261018_exec-subset-profile" / "evidence" / "matrix.md"
-)
-
 
 def _cell(text: str) -> str:
     return text.replace("|", "\\|").replace("\n", " ")
@@ -48,7 +44,9 @@ def _record_lines(rule: RuleRecord, shapes: tuple[str, ...]) -> list[str]:
             "; ".join(f"{o}: {c}" for o, c in by_outcome.items()) or "every context unconfirmed"
         )
         sa1 = " SA-1 statement." if shape.no_admitted_context else ""
-        lines.append(f"  - `{shape_id}`: {recorded}.{sa1}")
+        unobservable = ", ".join(c.value for c in shape.unobservable)
+        hidden = f" Unobservable: {unobservable}." if unobservable else ""
+        lines.append(f"  - `{shape_id}`: {recorded}.{sa1}{hidden}")
     return lines
 
 
@@ -74,7 +72,9 @@ def _row_section(row: MatrixRow) -> list[str]:
         lines.append(f"- **Notes:** {row.statement}")
     if row.l2_relation:
         lines.append(f"- **Relation to L2:** {row.l2_relation}")
-    if row.site_status is not SiteStatus.LISTED:
+    if row.site_status is SiteStatus.CODEGEN_ACCOUNT:
+        lines.append("- **Sites:** in sysml-codegen's site account (`codegen_account`)")
+    elif row.site_status is not SiteStatus.LISTED:
         lines.append(f"- **Sites:** none (`{row.site_status.value}`)")
     else:
         lines.append(
@@ -132,7 +132,7 @@ def render(matrix: Matrix) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--out", type=Path, required=True, help="markdown report path")
     args = parser.parse_args()
     args.out.write_text(render(load_matrix()), encoding="utf-8")
     print(f"wrote {args.out}")

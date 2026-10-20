@@ -19,16 +19,27 @@ from agentic_mbse.sysml.expression import (
     text_fallback_nodes,
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
-from tests.helpers.reconstruct_texts import FIXTURES, RECORD, reconstruct_file
+from tests.helpers.reconstruct_texts import (
+    FIXTURES,
+    RECORD,
+    RELOCATIONS,
+    reconstruct_file,
+    recorded_path,
+)
 
 
 @pytest.mark.syside
 def test_reconstruct_expression_output_unchanged_on_every_fixture_expression():
     recorded = json.loads(RECORD.read_text(encoding="utf-8"))
+    relocations = json.loads(RELOCATIONS.read_text(encoding="utf-8"))
     assert len(recorded) >= 268
-    now = {relative: reconstruct_file(FIXTURES / relative) for relative in recorded}
-    changed = sorted(relative for relative in recorded if now[relative] != recorded[relative])
+    assert set(relocations["moved"]) | set(relocations["left"]) <= set(recorded)
+    assert [k for k in relocations["moved"] if (FIXTURES / k).exists()] == []
+    paths = {relative: recorded_path(relative, relocations) for relative in recorded}
+    now = {relative: reconstruct_file(path) for relative, path in paths.items() if path is not None}
+    changed = sorted(relative for relative in now if now[relative] != recorded[relative])
     assert changed == []
+    assert len(now) == len(recorded) - len(relocations["left"])
 
 
 # ---- the shared dispatch ----------------------------------------------------------------------

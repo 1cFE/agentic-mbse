@@ -4,40 +4,23 @@
 # so this file is the scanner's declared surface. The site account (site_account.csv) is total
 # over these forms only: anything a blind spot names is outside it by construction.
 
-scanner_revision = "scan_sites/1: the prototype 02-inventory.py forms, unchanged; run on git archive exports"
+scanner_revision = "scan_sites/2: scan_sites/1's agentic-mbse forms, with executable_profile's _diagnostic declared; the sysml-codegen half moved to sysml-codegen (EXEC-SUBSET-CONTRACT Item 2a D7); run on git archive exports"
 
 [forms]
 channels = [
-    "coded", "coded-fixed", "coded-relay", "coded-returned", "coded-mapped", "plumbing",
-    "coded-DYNAMIC", "free-text", "builtin", "shared-evidence", "shared-profile",
+    "coded-relay", "coded-returned", "coded-mapped", "plumbing", "coded-DYNAMIC",
+    "shared-evidence", "shared-profile",
 ]
 # Enum classes whose member, written literally, is a site's code.
-code_enums = ["ElaborationCode", "ReadinessCode", "SemanticEvidenceCode"]
+code_enums = ["SemanticEvidenceCode"]
 # Constructors that take a code (first positional or `code=`); factories forwarding a code
 # parameter to one of these are found by fixpoint, not listed.
-code_taking = [
-    "Diagnostic", "ElaborationInvariantError", "MultiplicityExpansionError",
-    "OccurrenceResolutionError", "ReadinessFinding", "SemanticEvidenceError",
-    "_ReferenceResolutionError",
-]
-# Codegen public exception classes raised with free text only.
-free_text = [
-    "CodeGenerationError", "CompilationError", "ExpressionInventoryError",
-    "GraphValidationError", "InstanceGraphSnapshotError", "PackageSealError",
-    "PredicateCompileError", "ProvenanceError", "ScopePolicyMismatchError",
-    "SnapshotCertifiabilityError", "SnapshotCompatibilityError", "SnapshotIntegrityError",
-    "SnapshotShapeError", "SnapshotStaleSourceError", "SourceAdmissionError",
-    "SysMLParsingError",
-]
-# Builtin exceptions recognized when raised in sysml-codegen (not in agentic-mbse).
-builtin = [
-    "AssertionError", "IndexError", "KeyError", "LookupError", "NotImplementedError",
-    "RuntimeError", "TypeError", "ValueError",
-]
-# sysml_codegen/ paths not on the generation path.
-exclude = ["cli/install.py", "contracts/verify.py", "study/"]
+code_taking = ["SemanticEvidenceError"]
 # The one agentic-mbse exception class recognized directly (plus its factories).
 shared_evidence_class = ["SemanticEvidenceError"]
+# executable_profile's reason factory, `_diagnostic(reason, ...)`. scan_sites/1 matched it only
+# through a sysml-codegen function of the same name.
+shared_profile_factory = ["_diagnostic"]
 
 # ---- blind spots: what the account cannot see -------------------------------------------------
 
@@ -47,11 +30,11 @@ statement = "A construct the generator drops without raising has no site. ES-010
 
 [[blind_spot]]
 id = "computed-code-beyond-resolver"
-statement = "A code computed in a way the resolver does not follow (anything but a literal, a literal conditional, `.code` relay, a parameter, a literal-returning helper or a literal table) is reported as coded-DYNAMIC with its expression text, not its codes. The five executable_profile sites are mapped by hand below; codegen's snapshot replay (`_diagnostic_from_data`) is validated by enum construction, so it cannot introduce a new code, but which codes it replays is not resolved."
+statement = "A code computed in a way the resolver does not follow (anything but a literal, a literal conditional, `.code` relay, a parameter, a literal-returning helper or a literal table) is reported as coded-DYNAMIC with its expression text, not its codes. The five executable_profile sites are mapped by hand below."
 
 [[blind_spot]]
 id = "unrecognized-exception-class-or-helper"
-statement = "A raise of a class outside [forms] (a new codegen exception class, a third-party exception, a re-raise of a caught exception) is not a site. A helper that builds a refusal without calling a recognized constructor is not a site either. agentic-mbse builtin raises (`ValueError`, `TypeError`, `RecordError`, ...) are not recognized at all: only SemanticEvidenceError and executable_profile reasons are."
+statement = "A raise of a class outside [forms] (a third-party exception, a re-raise of a caught exception) is not a site. A helper that builds a refusal without calling a recognized constructor is not a site either. agentic-mbse builtin raises (`ValueError`, `TypeError`, `RecordError`, ...) are not recognized at all: only SemanticEvidenceError and executable_profile reasons are. sysml-codegen's scanner reports every raise in its own tree, recognized or not."
 
 [[blind_spot]]
 id = "unproven-public-reachability"
@@ -63,7 +46,7 @@ statement = "A site reached through a callback, a dispatch table of callables, o
 
 [[blind_spot]]
 id = "non-python-surface"
-statement = "Refusals in generated code templates, in the SysIDE parser itself, or in the teax execution layer are outside both scanned `src/` trees."
+statement = "Refusals in the SysIDE parser itself, or anywhere outside agentic-mbse's `src/` tree, are outside this scan."
 
 # ---- the five computed executable_profile reason sites ------------------------------------------
 # Reasons each site can emit, pinned exactly by tests/test_sysml/test_executable_profile_computed_reasons.py
@@ -103,3 +86,23 @@ reasons = [
 [[computed_site]]
 site_id = "agentic_mbse/sysml/executable_profile.py::_walk_proposition::coded-DYNAMIC::f'warn_non_numerical_{operator}'::1"
 reasons = ["warn_non_numerical_implies", "warn_non_numerical_xor"]
+
+# ---- public sites no packaged case can fire ------------------------------------------------------
+# Every public row has a packaged case that fires it in the screen (tests/test_subset_site_account.py),
+# except these. Each statement says why no model reaches it through the screen or the generator.
+
+[[unwitnessed_site]]
+site_id = "agentic_mbse/sysml/executable_profile.py::_evaluate_usage_against_definition::shared-profile::block_unresolved_definition::1"
+statement = "A definition-typed assertion always resolves to a ConstraintDefinition: an untyped `assert constraint c;` is typed by the library default, and a typing by an attribute or part def still resolves to one. Every spelling tried in Item 2a P2.4 reaches block_missing_predicate instead. The branch is reached only by synthetic facts (tests/test_sysml/test_executable_profile.py::test_unresolved_definition_lookup_blocks)."
+
+[[unwitnessed_site]]
+site_id = "agentic_mbse/sysml/reference_use.py::require_exact_reference_use::shared-evidence::INDEXED_REFERENCE_UNSUPPORTED::1"
+statement = "Reached only through decompose_aggregation_expression (aggregation.py:259, :294, :447), a public function nothing under src/ calls, so neither the screen nor sysml-codegen's generator reaches it. The generator refuses an authored index at its own site (expression_evidence.py `_indexed_refusal`), and the screen recognizes one through the indexed-reference rule."
+
+[[unwitnessed_site]]
+site_id = "agentic_mbse/sysml/expression.py::traverse_expression::shared-evidence::EXPRESSION_DEPTH_EXHAUSTED::1"
+statement = "Reached only through agentic_mbse.validation's level 6 checks (validation/adr002.py:236, :464) and expression.py get_operators, none of which the screen or sysml-codegen's generator calls. A 120-term sum reaches the depth limits of the walks those two halves do run (reference_use.py _walk, _invocations; subset_extraction.py _conditionals; constraint_extraction.py _expression_ir), which are witnessed."
+
+[[unwitnessed_site]]
+site_id = "agentic_mbse/sysml/expression.py::reconstruct_expression::shared-evidence::EXPRESSION_DEPTH_EXHAUSTED::1"
+statement = "On the screen and generator paths it reconstructs only what a walk with the same 100-level budget has already descended, or a single reference: sysml-codegen's extractor.py:148 runs after the expression evidence inventory, whose reference walk refuses a deep expression first; constraint_extraction.py calls it on one reference (:550, :566, :618) or on an unsupported node (:593). aggregation.py:311 and hierarchy.py:120 are reached only through exported functions nothing under src/ calls. Tried in Item 2a P6: a 120-term calc def result (refused first at reference_use.py _walk) and a constraint predicate wrapping a 120-term sum in a conditional (its branches are unresolved and the conditional-expression rule refuses; the depth limit is not reached)."

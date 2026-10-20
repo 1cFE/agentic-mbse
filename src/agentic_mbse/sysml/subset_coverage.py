@@ -5,19 +5,24 @@ module names what the rules do not cover, so L6 can print it beside the verdict 
 the JSON report (Item 3 design D11). It has its own version, separate from
 `SUBSET_PROFILE_VERSION`, so changing the list never moves the profile's version or digest.
 
-The two lists are copied from Item 1's inventory (`tests/fixtures/subset_profile/inventory/`):
+The two lists are copied from the inventories (this repo's `tests/fixtures/subset_profile/inventory/`
+and, for codegen sites, sysml-codegen's site account):
 
 - `NO_RULE_FAMILIES`: the matrix rows (`matrix.toml`) whose class is `tracked_gap` and whose
   outcome is `refused`. The generator refuses these shapes and no rule reports them.
-- `FOLLOW_UP_SITES`: the site-account rows (`site_account.csv`) with disposition
-  `explicit_follow_up`: raise sites (sysml-codegen at `b5663c07`, and agentic-mbse's shared
-  evidence walkers) whose refusals the contract does not report yet.
+- `FOLLOW_UP_SITES`: the site-account rows with disposition `explicit_follow_up`: raise sites
+  whose refusals the contract does not report yet. agentic-mbse's shared evidence walkers come
+  from this repo's `site_account.csv`; sysml-codegen's sites come from codegen's own account
+  (`tests/expectations/subset_profile/site_account.csv` there), which holds them since
+  EXEC-SUBSET-CONTRACT Item 2a moved them.
 
-A test pins the content to `SUBSET_COVERAGE_VERSION` by digest and checks both lists against the
-inventory. Changing either list means bumping the version.
+A test pins the content to `SUBSET_COVERAGE_VERSION` by digest and checks the families and the
+agentic-mbse sites against the inventory; a sysml-codegen conformance test, run by the pre-merge
+gate, checks the codegen sites against codegen's account. Changing either list means bumping
+the version.
 """
 
-SUBSET_COVERAGE_VERSION = "subset-coverage/v1"
+SUBSET_COVERAGE_VERSION = "subset-coverage/v2"
 
 NO_RULE_FAMILIES: tuple[str, ...] = (
     "DEEP-QUALIFIED-WIRING",
@@ -56,46 +61,33 @@ FOLLOW_UP_SITES: tuple[str, ...] = (
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._feature_python_type::coded::SI_EDGE_DANGLING::1",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._feature_python_type::coded::SI_EDGE_DANGLING::2",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._feature_python_type::coded::SI_EDGE_DANGLING::3",
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._index_calculation_payloads::coded::SI_EDGE_DANGLING::1",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._index_calculation_payloads::coded::SI_ID_MISSING::1",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._index_calculation_payloads::coded::SI_ID_MISSING::2",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._index_constraint_associations::coded::SI_EDGE_DANGLING::1",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._index_constraint_associations::coded::SI_EDGE_DANGLING::2",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._index_constraint_associations::coded::SI_EDGE_DANGLING::6",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._output_ports::coded::SI_EDGE_DANGLING::1",
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._output_ports::coded::SI_EDGE_DANGLING::2",
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_aliases::coded::SI_OCCURRENCE_MISSING::1",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_bindings::coded::SI_EDGE_DANGLING::1",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_calculation_output::coded::SI_OCCURRENCE_AMBIGUOUS::1",
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_semantic_reference::coded::SI_OCCURRENCE_AMBIGUOUS::1",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_semantic_reference::coded::SI_OCCURRENCE_MISSING::1",
     "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_semantic_reference::coded::SI_OCCURRENCE_MISSING::2",
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._resolve_semantic_reference::coded::SI_OCCURRENCE_MISSING::3",
-    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._typed_definition::builtin::ValueError::1",
+    "sysml_codegen/elaboration/elaborate.py::_ExactElaborator._typed_definition::coded::SI_TYPE_INVALID::1",
     "sysml_codegen/elaboration/expression_evidence.py::ExpressionEvidenceInventory.__init__::free-text::ExpressionInventoryError::1",
-    "sysml_codegen/elaboration/graph.py::InstanceGraph._dangling::coded::SI_EDGE_DANGLING::1",
-    "sysml_codegen/elaboration/graph.py::InstanceGraph._expression_reference_count::builtin::TypeError::1",
-    "sysml_codegen/elaboration/graph.py::InstanceGraph._graph_failure::coded::SI_EDGE_DANGLING::1",
+    "sysml_codegen/elaboration/graph.py::InstanceGraph._expression_reference_count::unrecognized::UnsupportedExpressionIRError::1",
+    "sysml_codegen/elaboration/graph.py::InstanceGraph._validate_occurrences::coded::SI_EDGE_DANGLING::1",
     "sysml_codegen/elaboration/identity.py::declaration_id_for::coded-fixed::SI_ID_MISSING|SI_ID_UNSTABLE::1",
     "sysml_codegen/elaboration/occurrence.py::FeatureSlotIndex._root_of::coded-fixed::SI_REDEFINITION_INVALID::2",
     "sysml_codegen/elaboration/occurrence.py::FeatureSlotIndex.effective_declaration::coded-fixed::SI_REDEFINITION_INVALID::3",
     "sysml_codegen/elaboration/occurrence.py::OccurrenceIndex.resolve_address::coded::SI_OCCURRENCE_AMBIGUOUS::1",
     "sysml_codegen/elaboration/occurrence.py::OccurrenceIndex.resolve_address::coded::SI_OCCURRENCE_AMBIGUOUS::2",
-    "sysml_codegen/elaboration/occurrence.py::OccurrenceIndex.resolve_address::coded::SI_OCCURRENCE_AMBIGUOUS::3",
     "sysml_codegen/elaboration/occurrence.py::OccurrenceIndex.resolve_address::coded::SI_OCCURRENCE_MISSING::1",
     "sysml_codegen/elaboration/occurrence.py::OccurrenceIndex.resolve_address::coded::SI_OCCURRENCE_MISSING::2",
     "sysml_codegen/elaboration/occurrence.py::_effective_type::coded-fixed::SI_REDEFINITION_INVALID::1",
     "sysml_codegen/elaboration/occurrence.py::build_feature_slot_index::coded-fixed::SI_REDEFINITION_INVALID::2",
     "sysml_codegen/elaboration/occurrence.py::build_occurrence_index.add_usage::coded-fixed::SI_REDEFINITION_INVALID::1",
     "sysml_codegen/elaboration/occurrence.py::build_occurrence_index.native_child_declarations::coded-fixed::SI_REDEFINITION_INVALID::1",
-    "sysml_codegen/elaboration/project.py::_Projection._build_calculation_modules::coded::SI_SNAPSHOT_INVALID::2",
     "sysml_codegen/elaboration/project.py::_Projection._compile_computed_expression.render::coded::SI_SNAPSHOT_INVALID::5",
-    "sysml_codegen/elaboration/project.py::_Projection._declaring_package::coded::SI_RENDERING_COLLISION::1",
-    "sysml_codegen/elaboration/project.py::_Projection._entry_source::coded::SI_RENDERING_COLLISION::2",
-    "sysml_codegen/elaboration/project.py::_predicate_source_key::coded::SI_SNAPSHOT_INVALID::1",
     "sysml_codegen/extraction/binding_source.py::bound_formal::coded::RESOLVED_TARGET_MISSING::1",
-    "sysml_codegen/extraction/binding_source.py::exact_path_from_relationship::coded::INDEXED_REFERENCE_UNSUPPORTED::1",
-    "sysml_codegen/extraction/binding_source.py::exact_path_from_relationship::coded::RESOLVED_TARGET_MISSING::2",
     "sysml_codegen/extraction/binding_source.py::exact_path_from_relationship::coded::RESOLVED_TARGET_MISSING::3",
     "sysml_codegen/extraction/calc_compat_renderer.py::_render::free-text::CompilationError::1",
     "sysml_codegen/extraction/calc_compat_renderer.py::_render::free-text::CompilationError::2",
@@ -112,6 +104,4 @@ FOLLOW_UP_SITES: tuple[str, ...] = (
     "sysml_codegen/extraction/extractor.py::SysMLDataExtractor._extract_attribute::coded-fixed::SI_TYPE_INVALID::2",
     "sysml_codegen/extraction/extractor.py::SysMLDataExtractor._extract_calculation_definition::coded-fixed::SI_EVIDENCE_INCOMPLETE::1",
     "sysml_codegen/generation/predicate_compiler.py::_compile_reference::free-text::PredicateCompileError::2",
-    "sysml_codegen/generation/predicate_compiler.py::compile_predicate_body::free-text::PredicateCompileError::3",
-    "sysml_codegen/orchestration/exact_pipeline_context.py::_computation_digest::free-text::CodeGenerationError::1",
 )

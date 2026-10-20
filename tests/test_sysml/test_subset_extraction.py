@@ -28,7 +28,6 @@ from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "subset_profile"
 CASES = FIXTURES / "cases"
-SEED = FIXTURES / "occurrence"
 ALL_KINDS = frozenset(FactKind)
 
 
@@ -118,7 +117,7 @@ def test_enumeration_failure_leaves_the_kind_out(monkeypatch: pytest.MonkeyPatch
 
 
 def test_occurrence_abort_is_one_failure_and_other_kinds_report() -> None:
-    model, _ = SysideAdapter.load_model([SEED / "f1_abort_recursive_containment" / "model.sysml"])
+    model, _ = SysideAdapter.load_model([CASES / "recursive_containment.sysml"])
     facts = extract_subset_facts(model)
     assert facts.occurrence is None
     occurrence_failures = [f for f in facts.failures if f.fact_kind is FactKind.OCCURRENCE]
@@ -197,7 +196,7 @@ def test_string_values_in_both_spellings() -> None:
 
 
 def test_part_multiplicities_come_from_the_occurrence_port() -> None:
-    model, _ = SysideAdapter.load_model([SEED / "es004_refused_range_parts" / "model.sysml"])
+    model, _ = SysideAdapter.load_model([CASES / "range_multiplicity_parts.sysml"])
     facts = extract_subset_facts(model)
     assert facts.occurrence is not None
     assert len(facts.multiplicities) == len(facts.occurrence.part_usages)
@@ -233,7 +232,7 @@ def _comparable(facts: SubsetFacts) -> tuple[Any, ...]:
 def test_both_dc3_style_failures_are_listed_not_raised() -> None:
     """An unsupported call and a conditional in one model: extraction returns, failures listed."""
     model, _ = SysideAdapter.load_model(
-        [SEED / "es005_refused_product" / "model.sysml", CASES / "conditional.sysml"]
+        [CASES / "product_invocation.sysml", CASES / "conditional.sysml"]
     )
     facts = extract_subset_facts(model)
     assert facts.enumerated == ALL_KINDS

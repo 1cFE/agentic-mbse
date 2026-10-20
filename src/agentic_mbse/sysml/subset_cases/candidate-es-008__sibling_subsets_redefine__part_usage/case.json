@@ -1,0 +1,20 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      11,
+      12
+    ],
+    "description": "two named subsets of racks, rack_1 and rack_2, each redefine servers.psu.efficiency"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P3: ES-008 spelling 2 of 5: one level of named subsets, each redefining the value."
+  }
+}

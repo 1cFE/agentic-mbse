@@ -16,12 +16,14 @@ from typing import Any
 import pytest
 
 from agentic_mbse.sysml.subset_advisories import Advisories
-from agentic_mbse.sysml.subset_coverage import NO_RULE_FAMILIES
+from agentic_mbse.sysml.subset_coverage import NO_RULE_FAMILIES, SUBSET_COVERAGE_VERSION
 from agentic_mbse.sysml.subset_extraction import extract_subset_facts
 from agentic_mbse.sysml.subset_facts import BindingKind
 from agentic_mbse.sysml.subset_profile import (
+    SUBSET_PROFILE_VERSION,
     ExplicitRoots,
     Outcome,
+    SubsetProfileResult,
     Verdict,
     evaluate_subset_profile,
 )
@@ -48,7 +50,7 @@ BANNED = [
     "generator accepts",
     "readiness",
 ]
-VERDICT_KEY = "Generator subset (subset-profile/v1, subset-coverage/v1)"
+VERDICT_KEY = f"Generator subset ({SUBSET_PROFILE_VERSION}, {SUBSET_COVERAGE_VERSION})"
 NOTE = "generated compatibility not established"
 NO_ADVISORIES = Advisories(findings=(), unverified=())
 
@@ -165,7 +167,6 @@ def test_unset_note_printed_even_with_no_generator_findings(l6):
     [
         ("clear", "unset", True),
         ("clear", "generated", True),
-        ("unconfirmed", "generated", True),
         ("clear", "native", False),
     ],
 )
@@ -193,8 +194,8 @@ def test_refused_incomplete_puts_refused_count_before_incomplete(l6):
 def test_refusals_print_first_under_generated(l6):  # D13
     run = l6("refused_incomplete", "generated")
     lines = run.printed_issue_lines()
-    assert lines[0].startswith("ERROR: refused (subset-profile/v1): invocation-callable/")
-    assert lines[1].startswith("ERROR: unverified (subset-profile/v1): indexed-reference")
+    assert lines[0].startswith(f"ERROR: refused ({SUBSET_PROFILE_VERSION}): invocation-callable/")
+    assert lines[1].startswith(f"ERROR: unverified ({SUBSET_PROFILE_VERSION}): indexed-reference")
 
 
 @pytest.mark.syside
@@ -233,7 +234,7 @@ def test_incomplete_fails_under_generated_and_warns_under_unset(l6):
 @pytest.mark.syside
 @pytest.mark.parametrize("target", ["generated", "unset"])
 def test_unconfirmed_is_never_error_and_names_by_design_context(l6, target):
-    plain = l6("unconfirmed", target)
+    plain = l6("unconfirmed_calc_result", target)
     assert plain.verdict_line.startswith("unconfirmed: 1 unconfirmed; 0 refused; 0 unverified;")
     (issue,) = plain.issues(ValidationCode.L6_SUBSET_UNCONFIRMED)
     assert issue["severity"] == "warning"
@@ -248,8 +249,20 @@ def test_unconfirmed_is_never_error_and_names_by_design_context(l6, target):
 
 
 @pytest.mark.syside
-def test_beyond_generator_roots_message_names_the_context():
-    """L6 evaluates with the generator's roots, so it never sees this context; the renderer does."""
+def test_assertion_owned_by_an_action_def_is_refused(l6):
+    """Item 3's first `unconfirmed` fixture; Item 2a's v2 records refuse an owner codegen cannot attach."""
+    run = l6("action_owned_assertion", "generated")
+    assert run.verdict_line.startswith("refused: 1 refused; 0 unverified;")
+    (finding,) = run.findings("calc-owned-assertion")
+    assert (finding["shape_id"], finding["context_id"], finding["outcome"]) == (
+        "asserted_constraint",
+        "unmapped_owner_kind",
+        "refused",
+    )
+
+
+def _beyond_generator_roots_result() -> SubsetProfileResult:
+    """The widened-roots model evaluated with a caller root: one unconfirmed finding, by design."""
     model, _ = SysideAdapter.load_model([FIXTURES / "subset_profile/cases/widened_roots.sysml"])
     template = next(
         u
@@ -259,7 +272,29 @@ def test_beyond_generator_roots_message_names_the_context():
     facts = extract_subset_facts(model, extra_roots=(template,))
     assert facts.occurrence is not None
     roots = {*facts.occurrence.generator_root_ids, *facts.occurrence.caller_root_ids}
-    result = evaluate_subset_profile(facts, roots=ExplicitRoots(frozenset(roots)))
+    return evaluate_subset_profile(facts, roots=ExplicitRoots(frozenset(roots)))
+
+
+@pytest.mark.syside
+def test_unconfirmed_verdict_sets_the_pass_note_and_raises_no_error():
+    """Final line for an `unconfirmed` verdict under `generated` and unset.
+
+    Built from an evaluated result, not a CLI run: under subset-profile/v2 every unconfirmed
+    pair a model can reach under the generator's roots comes with an L6 error or a refusal
+    (Item 2a records each one as observed or unobservable), so no fixture run passes with it.
+    """
+    result = _beyond_generator_roots_result()
+    assert result.verdict is Verdict.UNCONFIRMED
+    for target in (Target.UNSET, Target.GENERATED):
+        check = present(target, result, NO_ADVISORIES, [])
+        assert check.pass_note == NOTE
+        assert [i.severity.value for i in check.issues] == ["warning"]
+
+
+@pytest.mark.syside
+def test_beyond_generator_roots_message_names_the_context():
+    """L6 evaluates with the generator's roots, so it never sees this context; the renderer does."""
+    result = _beyond_generator_roots_result()
     for target in (Target.UNSET, Target.GENERATED):
         (issue,) = [
             i
@@ -309,7 +344,7 @@ def test_unverified_error_generated_warning_unset_separate_warning_native(l6):
     (aggregated,) = native.issues(ValidationCode.L6_SUBSET_UNVERIFIED)
     assert aggregated["severity"] == "warning"
     assert aggregated["message"] == (
-        "unverified (subset-profile/v1): 1 subset checks could not run; each is listed in "
+        f"unverified ({SUBSET_PROFILE_VERSION}): 1 subset checks could not run; each is listed in "
         "--json-report"
     )
     assert not [
@@ -348,7 +383,7 @@ def test_unassessed_count_in_verdict_line_and_one_warning(l6, target):
         assert summarized == []
         (issue,) = shown
         assert issue["severity"] == "warning"
-        assert issue["message"].startswith("unassessed (subset-profile/v1): 1 constraints")
+        assert issue["message"].startswith(f"unassessed ({SUBSET_PROFILE_VERSION}): 1 constraints")
 
 
 # ---- native ---------------------------------------------------------------------------------

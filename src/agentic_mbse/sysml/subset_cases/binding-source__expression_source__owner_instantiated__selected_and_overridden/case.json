@@ -1,0 +1,30 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      6,
+      6
+    ],
+    "description": "calc c binds v to x * 2.0; selected in s1, overridden in s2 (B5, design note (a))"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "binding-source",
+        "shape": "expression_source",
+        "context": "owner_instantiated",
+        "outcome": "refused",
+        "subject": "fx::Site::c::v",
+        "line": 6
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "binding-source__expression_source__owner_instantiated__selected_and_overridden",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

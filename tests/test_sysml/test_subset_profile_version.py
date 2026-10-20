@@ -2,8 +2,9 @@
 
 Changing either changes the digest below. When it does, bump `SUBSET_PROFILE_VERSION` and add
 the new version's digest here; a version maps to exactly one digest, so an edit cannot ride
-under an old version. (Before Item 1 ships, `v1` is re-pinned as Phases 6-7 add probe
-evidence; the plan's implementation notes record each re-pin.)
+under an old version. `v1` is Item 1's contract as merged. Item 2a moves to `v2` at its first
+record change and re-pins `v2` with each later one until it merges (Item 2a design
+Implementation Notes); the plan's implementation notes record each re-pin.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from tests.helpers.subset_records import RECORDS_RESOURCE
 
 PINNED = {
     "subset-profile/v1": "30491315a96efaf8b75a6349787f0dd3498519d565b907a14211ab41bd68456b",
+    "subset-profile/v2": "02d82855eb2a7a37e4d65244649a2ab481ea073db70e7c5e45504f9559d43e51",
 }
 
 

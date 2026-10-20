@@ -1,0 +1,30 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      5,
+      5
+    ],
+    "description": "servers : Server[2] ordered, expanded under root rack"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "part-multiplicity",
+        "shape": "ordered",
+        "context": "expanded_part_usage",
+        "outcome": "refused",
+        "subject": "fx::Rack::servers",
+        "line": 5
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "part-multiplicity__ordered__expanded_part_usage",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

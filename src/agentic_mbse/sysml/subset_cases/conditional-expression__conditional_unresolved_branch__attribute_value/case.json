@@ -1,0 +1,32 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      6,
+      6
+    ],
+    "description": "attribute low valued by if x < y ? x else y"
+  },
+  "screen": {
+    "verdict": "refused_incomplete",
+    "findings": [
+      {
+        "rule": "conditional-expression",
+        "shape": "conditional_unresolved_branch",
+        "context": "attribute_value",
+        "outcome": "refused",
+        "subject": "fx::Site::low",
+        "line": 6
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/reference_use.py::_reference_use::shared-evidence::RESOLVED_TARGET_MISSING::1"
+  ],
+  "provenance": {
+    "from_probe": "conditional-expression__conditional_unresolved_branch__attribute_value",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

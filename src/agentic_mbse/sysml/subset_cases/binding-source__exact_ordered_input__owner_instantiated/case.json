@@ -1,0 +1,21 @@
+{
+  "schema": "subset-case/1",
+  "kind": "control",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      6,
+      6
+    ],
+    "description": "exact [1] ordered nonunique input bound to a"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "binding-source__exact_ordered_input__owner_instantiated",
+    "note": "Item 1 probe, moved in Item 2a P2.1. It superseded the prototype case es003_neighbor_exact_ordered_param."
+  }
+}

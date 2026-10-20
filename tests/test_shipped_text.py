@@ -9,6 +9,7 @@ import pytest
 import tomllib
 
 from agentic_mbse.cli import TOOL_OWNED_TEMPLATES, cmd_init
+from agentic_mbse.sysml.subset_profile import SUBSET_PROFILE_VERSION
 from agentic_mbse.validation.positional_check import PINNED_DISCLAIMER
 from agentic_mbse.validation.subset_presentation import PACKAGED_RULES
 from tests.helpers.shipped import REPO_ROOT, SKILLS, frontmatter
@@ -212,8 +213,8 @@ L6_DOCS = ("README.md", "skills/model-validation/SKILL.md")
 def test_doc_states_profile_version_scope_incompleteness_and_not_codegen_check(relative):
     text = " ".join((REPO_ROOT / relative).read_text(encoding="utf-8").split())
     lowered = text.lower()
-    assert "subset-profile/v1" in text
-    assert "eight implemented rules" in lowered  # what was assessed
+    assert SUBSET_PROFILE_VERSION in text
+    assert "nine implemented rules" in lowered  # what was assessed
     assert "incomplete" in lowered and "coverage limit" in lowered
     assert "not a generation check" in lowered
     assert "future step" in lowered and "does not exist yet" in lowered
@@ -223,7 +224,7 @@ def test_doc_states_profile_version_scope_incompleteness_and_not_codegen_check(r
 
 
 def test_doc_rule_count_matches_the_packaged_profile():
-    assert len(PACKAGED_RULES.rules) == 8
+    assert len(PACKAGED_RULES.rules) == 9
 
 
 def test_model_validation_table_row_uses_new_l6_title():

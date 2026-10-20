@@ -1,0 +1,32 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      6,
+      6
+    ],
+    "description": "the BLOCK predicate in Site, instantiated through hall.sites[2] (B5)"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "constraint-predicate",
+        "shape": "blocked_predicate",
+        "context": "owner_instantiated",
+        "outcome": "refused",
+        "subject": "fx::Site::c",
+        "line": 6
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::warn_non_numerical_predicate::1"
+  ],
+  "provenance": {
+    "from_probe": "constraint-predicate__blocked_predicate__owner_instantiated__under_two",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

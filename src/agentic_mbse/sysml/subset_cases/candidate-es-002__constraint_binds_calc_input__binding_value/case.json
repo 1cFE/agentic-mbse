@@ -1,0 +1,21 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      8,
+      8
+    ],
+    "description": "constraint g binds calc usage t's input t.v (dc3 U5)"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "candidate-es-002__constraint_binds_calc_input__binding_value",
+    "note": "Item 1 probe, moved in Item 2a P2.1. It is the minimal model of the dc3 prototype proto3 (finding U5). The prototype was dc3 session scratch and is in no dc3 revision; this shape is rebuilt from its description in dc3 60b44d53460fccd2f44811d8abfd42bc270e90b2 .project/active/toolkit-upstream-findings.md."
+  }
+}

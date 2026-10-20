@@ -1,0 +1,40 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      6,
+      6
+    ],
+    "description": "calc usage m's bare result expression if v < 4273.5 ? v else 1.0, never examined and dropped: the unique literal 4273.5 must appear nowhere in the output; control is m's output"
+  },
+  "screen": {
+    "verdict": "incomplete",
+    "findings": [
+      {
+        "rule": "calc-usage-result",
+        "shape": "bare_result",
+        "context": "other_expression_site",
+        "outcome": "omitted",
+        "subject": "fx::Site::m",
+        "line": 6
+      },
+      {
+        "rule": "conditional-expression",
+        "shape": "conditional_unresolved_branch",
+        "context": "other_expression_site",
+        "outcome": "omitted",
+        "subject": "fx::Site::m",
+        "line": 6
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/reference_use.py::_reference_use::shared-evidence::RESOLVED_TARGET_MISSING::1"
+  ],
+  "provenance": {
+    "from_probe": "conditional-expression__conditional_unresolved_branch__other_expression_site",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

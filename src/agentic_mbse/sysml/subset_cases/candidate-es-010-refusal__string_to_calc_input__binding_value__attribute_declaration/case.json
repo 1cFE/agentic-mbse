@@ -1,0 +1,29 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      4,
+      4
+    ],
+    "description": "String fuel_unit declared with a value and bound to calc input u; refused at projection"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": [
+      {
+        "rule": "string-value-omission",
+        "shape": "string_value",
+        "context": "attribute_value",
+        "outcome": "omitted",
+        "subject": "fx::Gen::fuel_unit",
+        "line": 4
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "Item 2a P4: ES-010 refusal side, declaration spelling."
+  }
+}

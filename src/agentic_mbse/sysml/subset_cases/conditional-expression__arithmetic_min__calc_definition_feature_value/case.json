@@ -1,0 +1,21 @@
+{
+  "schema": "subset-case/1",
+  "kind": "control",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      3,
+      3
+    ],
+    "description": "calc def Min2's result written as arithmetic, no conditional"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "conditional-expression__arithmetic_min__calc_definition_feature_value",
+    "note": "Item 1 probe, moved in Item 2a P2.1. It superseded the prototype case es006_admitted_arithmetic_min."
+  }
+}

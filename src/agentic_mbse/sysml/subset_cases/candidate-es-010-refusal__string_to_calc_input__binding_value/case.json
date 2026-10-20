@@ -1,0 +1,30 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      4,
+      5
+    ],
+    "description": "String fuel_unit bound to calc input u and valued on the instance; refused at projection"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": [
+      {
+        "rule": "string-value-omission",
+        "shape": "string_value",
+        "context": "attribute_value",
+        "outcome": "omitted",
+        "subject": "fx::gen::fuel_unit",
+        "line": 5
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "candidate-es-010-refusal__string_to_calc_input__binding_value",
+    "note": "Item 1 probe, moved in Item 2a P2.1. It superseded the prototype case es010_refused_string_calc_input."
+  }
+}

@@ -70,11 +70,12 @@ def data_with(pairs: Pairs) -> dict[str, Any]:
     """The packaged data with exactly these admissions: (rule, shape) -> {context: outcome}."""
     data = copy.deepcopy(packaged_data())
     for rule in data["rule"]:
-        rule.pop("example_probe", None)
+        rule.pop("example_case", None)
         observed = 0
         for shape in rule["shape"]:
             shape.pop("admission", None)
             shape.pop("no_admitted_context", None)
+            shape.pop("unobservable", None)
             chosen = pairs.get((rule["id"], shape["id"]), {})
             if chosen:
                 observed += 1
@@ -82,15 +83,15 @@ def data_with(pairs: Pairs) -> dict[str, Any]:
                     {
                         "context": context,
                         "outcome": outcome,
-                        "evidence": [f"probe:{rule['id']}__{shape['id']}__{context}"],
+                        "evidence": [f"case:{rule['id']}__{shape['id']}__{context}"],
                     }
                     for context, outcome in sorted(chosen.items())
                 ]
-                rule["example_probe"] = shape["admission"][0]["evidence"][0].removeprefix("probe:")
+                rule["example_case"] = shape["admission"][0]["evidence"][0].removeprefix("case:")
         rule["evidence_status"] = (
             "code_read_pending_item_2"
             if observed == 0
-            else "probe_observed"
+            else "case_observed"
             if observed == len(rule["shape"])
             else "partial"
         )

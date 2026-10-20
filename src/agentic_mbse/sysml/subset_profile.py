@@ -8,10 +8,13 @@ How a decision is made:
 1. **Rules recognize.** Each rule function reads the facts, recognizes a *shape* and computes
    its *context* from the closed :class:`ContextId` vocabulary. A rule never decides an outcome.
 2. **Records decide.** The packaged records (`subset_profile_rules.toml`) map each
-   (rule, shape, context) to an :class:`Outcome` and the evidence for it: a probe of the
-   pinned generator, or for `admitted` a corpus snapshot fixture. A pair the records do not
-   list is `unconfirmed`. The loader refuses any non-`unconfirmed` entry without the evidence
-   design D3 requires, so "no `refused` without a probe" holds when the records load.
+   (rule, shape, context) to an :class:`Outcome` and the evidence for it: a conformance case
+   (`case:<id>`, packaged under `subset_cases/`, see `conformance_case.py`), or for
+   `admitted` a corpus snapshot fixture. A pair the records do not list is `unconfirmed`. The
+   loader refuses any non-`unconfirmed` entry without the evidence design D3 requires, so
+   "no `refused` without a case" holds when the records load. The loader checks a citation's
+   form only; that the case exists and shows its pair is checked by the test suite, and that
+   the generator does what the case says is checked live in sysml-codegen.
 3. **Missing facts are not findings.** A rule whose required fact kind was not enumerated, or
    whose element failed to extract, reports an :class:`UnverifiedCheck`, and the verdict is
    `INCOMPLETE`, or `REFUSED_INCOMPLETE` when a finding is refused. Rules whose facts are
@@ -24,7 +27,7 @@ fixture is refused and evaluates CLEAR), ES-002, ES-008, ES-009, the ES-010 refu
 CALC-DEF-BARE-RESULT; ES-011, G2, L6-LIBRARY-ALIAS-SOURCE and the PUSH-DOWN rows are tracked as
 unconfirmed; and the site account's follow-up sites are outside every rule. A calculation
 usage's bare result expression is dropped from the output (CALC-USAGE-BARE-RESULT-DROP); the
-site rules report that drop as `omitted` only for the shapes they recognize.
+`calc-usage-result` rule reports every one `omitted`, qualified as a candidate refusal.
 
 Each finding is counterfactual: what the generator does with this construct as if the rest of
 the model were admitted. The generator itself stops at its first error class.
@@ -57,6 +60,7 @@ from agentic_mbse.sysml.fact_refs import ElementRef, SafeLocation
 from agentic_mbse.sysml.occurrence_facts import (
     Attachment,
     AttachmentCause,
+    MultiplicityReading,
     MultiplicityResolution,
     OccurrenceAbort,
     OccurrenceScope,
@@ -85,6 +89,7 @@ __all__ = [
     "SUBSET_REASON_CODES",
     "Admission",
     "ContextId",
+    "CaseRef",
     "CorpusRef",
     "EvidenceRef",
     "EvidenceStatus",
@@ -94,7 +99,6 @@ __all__ = [
     "GeneratorRoots",
     "NoAdmittedContext",
     "Outcome",
-    "ProbeRef",
     "Qualification",
     "RecordError",
     "RootSelection",
@@ -105,6 +109,7 @@ __all__ = [
     "SubsetCounts",
     "SubsetFinding",
     "SubsetProfileResult",
+    "Unobservable",
     "UnverifiedCheck",
     "Verdict",
     "evaluate_subset_profile",
@@ -117,7 +122,7 @@ __all__ = [
 
 #: The decision version. Changing the records or the invocation allowlist changes it; a test
 #: pins a digest of both to this string (design invariant 9).
-SUBSET_PROFILE_VERSION = "subset-profile/v1"
+SUBSET_PROFILE_VERSION = "subset-profile/v2"
 
 #: Every reason a finding can carry. Disjoint from the executable profile's `REASON_CODES`
 #: (design D4); ES-007 findings carry those as `detail_reasons` instead.
@@ -129,16 +134,15 @@ SUBSET_REASON_CODES = frozenset(
         "binding_source_self_reference",
         "indexed_reference_unsupported",
         "part_multiplicity_ordered",
-        "part_multiplicity_nonunique",
         "part_multiplicity_range",
         "part_multiplicity_unresolved_bound",
-        "part_multiplicity_negative_bound",
         "invocation_callable_unsupported",
         "conditional_expression_unsupported",
         "conditional_expression_resolved_branches",
         "constraint_predicate_blocked",
         "constraint_predicate_non_numerical",
         "string_value_not_generated",
+        "calc_usage_bare_result_not_executed",
     }
 )
 
@@ -153,12 +157,12 @@ class Outcome(StrEnum):
     #: The generator drops it from the generated output silently (String values, a calc
     #: usage's bare result expression).
     OMITTED = "omitted"
-    #: The rule recognizes the pair and no probe has observed it.
+    #: The rule recognizes the pair and no conformance case has observed it.
     UNCONFIRMED = "unconfirmed"
 
 
 class Verdict(StrEnum):
-    #: At least one probe-backed refusal, and a check could not run or the roots were narrowed.
+    #: At least one case-backed refusal, and a check could not run or the roots were narrowed.
     #: Both facts stand: the refusals are certain, and the findings are not the whole picture.
     REFUSED_INCOMPLETE = "refused_incomplete"
     #: No refusal, and a check could not run (missing facts) or the roots were narrowed. Never
@@ -206,6 +210,9 @@ class ContextId(StrEnum):
     #: The constraint's semantic owner is a calc usage, an unmapped owner kind
     #: (`elaborate.py:794-820`).
     CALC_USAGE_OWNER = "calc_usage_owner"
+    #: The constraint's semantic owner is any other kind outside the generator's owner map
+    #: (`elaborate.py:800-827`): an item def, an attribute def, a constraint def and so on.
+    UNMAPPED_OWNER_KIND = "unmapped_owner_kind"
     #: The part usage is visited under a generator root (`occurrence.py:812-899`, `:927-1046`).
     EXPANDED_PART_USAGE = "expanded_part_usage"
     #: The part usage is never visited: a template, or a non-composite usage.
@@ -224,11 +231,11 @@ ALWAYS_UNCONFIRMED_CONTEXTS = frozenset(
 
 
 class EvidenceStatus(StrEnum):
-    #: Every shape of the rule has at least one probe-observed admission.
-    PROBE_OBSERVED = "probe_observed"
+    #: Every shape of the rule has at least one case-observed admission.
+    CASE_OBSERVED = "case_observed"
     #: Some shapes do.
     PARTIAL = "partial"
-    #: None does; every pair reports `unconfirmed` until probed (Item 2 owns verification).
+    #: None does; every pair reports `unconfirmed` until a case observes it.
     CODE_READ_PENDING_ITEM_2 = "code_read_pending_item_2"
 
 
@@ -236,6 +243,17 @@ class Qualification(StrEnum):
     NONE = "none"
     #: Admitted as a handwritten stub (`MANUAL_REQUIRED`), not executed.
     MANUAL_STUB = "manual_stub"
+    #: Admitted, excluded or omitted today, but a loss that should block: a candidate refusal
+    #: pending the owner's decision (sysml-codegen Item 2a D10, gate RG-1). The outcome states
+    #: what the generator does now; this says it is not an accepted outcome.
+    CANDIDATE_REFUSAL = "candidate_refusal"
+
+
+#: The outcomes each qualification may qualify.
+_QUALIFIED_OUTCOMES: Mapping[Qualification, frozenset[Outcome]] = {
+    Qualification.MANUAL_STUB: frozenset({Outcome.ADMITTED}),
+    Qualification.CANDIDATE_REFUSAL: frozenset({Outcome.ADMITTED, Outcome.EXCLUDED, Outcome.OMITTED}),
+}
 
 
 # ---- records ----------------------------------------------------------------------------------
@@ -270,10 +288,10 @@ class RecordError(ValueError):
 
 
 @dataclass(frozen=True)
-class ProbeRef:
-    """A retained probe run, `tests/fixtures/subset_profile/probes/<probe_id>/`."""
+class CaseRef:
+    """A packaged conformance case, `subset_cases/<case_id>/` (see `conformance_case.py`)."""
 
-    probe_id: str
+    case_id: str
 
 
 @dataclass(frozen=True)
@@ -283,7 +301,7 @@ class CorpusRef:
     fixture: str
 
 
-EvidenceRef: TypeAlias = ProbeRef | CorpusRef
+EvidenceRef: TypeAlias = CaseRef | CorpusRef
 
 
 @dataclass(frozen=True)
@@ -299,6 +317,18 @@ class NoAdmittedContext:
 
     citation: str
     statement: str
+
+
+@dataclass(frozen=True)
+class Unobservable:
+    """An `unconfirmed` pair no case can observe, and why (Item 2a design § B).
+
+    Its cases show what happens instead: another refusal that comes first, or a model the
+    shape cannot be authored in. The pair still reports `unconfirmed`.
+    """
+
+    reason: str
+    evidence: tuple[CaseRef, ...]
 
 
 @dataclass(frozen=True)
@@ -325,6 +355,7 @@ class ShapeRecord:
     expected_code: str | None
     admissions: Mapping[ContextId, Admission]
     no_admitted_context: NoAdmittedContext | None
+    unobservable: Mapping[ContextId, Unobservable]
 
     def contexts_with(self, outcome: Outcome) -> tuple[ContextId, ...]:
         return tuple(c for c, a in self.admissions.items() if a.outcome is outcome)
@@ -339,9 +370,9 @@ class RuleRecord:
     shapes: tuple[ShapeRecord, ...]
     remedy: str
     semantic_limits: str
-    #: A probe whose model the generator runs (admitted, omitted or excluded). None only while
+    #: A case whose model the generator runs (admitted, omitted or excluded). None only while
     #: the rule has no observed evidence.
-    example_probe: str | None
+    example_case: str | None
     doc_anchor: str
     evidence_status: EvidenceStatus
     generator_evidence: tuple[GeneratorEvidence, ...]
@@ -397,16 +428,16 @@ def _evidence(
     value: str, rule_id: str, shape_id: str, context: ContextId, where: str
 ) -> EvidenceRef:
     kind, _, target = value.partition(":")
-    if kind == "probe":
+    if kind == "case":
         pair = f"{rule_id}__{shape_id}__{context.value}"
         if target != pair and not target.startswith(f"{pair}__"):
-            raise RecordError(f"{where}: probe {target!r} does not probe {pair}")
-        return ProbeRef(target)
+            raise RecordError(f"{where}: case {target!r} is not a case of {pair}")
+        return CaseRef(target)
     if kind == "corpus":
         if target not in SNAPSHOT_FIXTURES:
             raise RecordError(f"{where}: corpus fixture {target!r} is not a snapshot fixture")
         return CorpusRef(target)
-    raise RecordError(f"{where}: evidence {value!r} is neither probe:<id> nor corpus:<fixture>")
+    raise RecordError(f"{where}: evidence {value!r} is neither case:<id> nor corpus:<fixture>")
 
 
 def _admission(
@@ -430,20 +461,51 @@ def _admission(
     evidence = tuple(
         _evidence(e, rule_id, shape_id, context, f"{where}.evidence") for e in table["evidence"]
     )
-    if outcome is not Outcome.ADMITTED and not all(isinstance(e, ProbeRef) for e in evidence):
-        raise RecordError(f"{where}: outcome {outcome.value} requires probe evidence only")
+    if outcome is not Outcome.ADMITTED and not all(isinstance(e, CaseRef) for e in evidence):
+        raise RecordError(f"{where}: outcome {outcome.value} requires case evidence only")
     qualification = _member(
         Qualification, table.get("qualification", "none"), f"{where}.qualification"
     )
-    if qualification is not Qualification.NONE and outcome is not Outcome.ADMITTED:
-        raise RecordError(f"{where}: only an admission carries a qualification")
+    if qualification is not Qualification.NONE and outcome not in _QUALIFIED_OUTCOMES[qualification]:
+        raise RecordError(
+            f"{where}: qualification {qualification.value} cannot qualify outcome {outcome.value}"
+        )
     return context, Admission(outcome, evidence, qualification)
+
+
+def _unobservable(
+    table: Mapping[str, Any],
+    rule_id: str,
+    shape_id: str,
+    contexts: frozenset[ContextId],
+    where: str,
+) -> tuple[ContextId, Unobservable]:
+    _keys(table, {"context", "reason", "evidence"}, set(), where)
+    context = _member(ContextId, table["context"], f"{where}.context")
+    if context not in contexts:
+        raise RecordError(f"{where}: rule {rule_id} cannot compute context {context.value}")
+    if context in ALWAYS_UNCONFIRMED_CONTEXTS:
+        raise RecordError(f"{where}: context {context.value} is unconfirmed by design")
+    if not isinstance(table["evidence"], list) or not table["evidence"]:
+        raise RecordError(f"{where}: an unobservable pair requires case evidence")
+    evidence = tuple(
+        _evidence(e, rule_id, shape_id, context, f"{where}.evidence") for e in table["evidence"]
+    )
+    cases = tuple(e for e in evidence if isinstance(e, CaseRef))
+    if len(cases) != len(evidence):
+        raise RecordError(f"{where}: an unobservable pair requires case evidence only")
+    return context, Unobservable(_text(table["reason"], f"{where}.reason"), cases)
 
 
 def _shape(
     table: Mapping[str, Any], rule_id: str, contexts: frozenset[ContextId], where: str
 ) -> ShapeRecord:
-    _keys(table, {"id", "reason"}, {"expected_code", "admission", "no_admitted_context"}, where)
+    _keys(
+        table,
+        {"id", "reason"},
+        {"expected_code", "admission", "no_admitted_context", "unobservable"},
+        where,
+    )
     shape_id = _text(table["id"], f"{where}.id")
     reason = table["reason"]
     if reason not in SUBSET_REASON_CODES:
@@ -456,24 +518,34 @@ def _shape(
         if context in admissions:
             raise RecordError(f"{where}: context {context.value} is listed twice")
         admissions[context] = admission
+    unobservable: dict[ContextId, Unobservable] = {}
+    for i, entry in enumerate(table.get("unobservable", [])):
+        context, entry_record = _unobservable(
+            entry, rule_id, shape_id, contexts, f"{where}.unobservable[{i}]"
+        )
+        if context in admissions:
+            raise RecordError(f"{where}: context {context.value} is decided and unobservable")
+        if context in unobservable:
+            raise RecordError(f"{where}: context {context.value} is unobservable twice")
+        unobservable[context] = entry_record
     refused = [c for c, a in admissions.items() if a.outcome is Outcome.REFUSED]
     expected = table.get("expected_code")
     expected_code = None if expected is None else _code(expected, f"{where}.expected_code")
     if refused and expected_code is None:
         raise RecordError(f"{where}: a refused shape needs its expected_code")
-    # The gate proves a refusal is not a universal ban: some context of the shape is probed
-    # not refused. A certified omission or exclusion proves that as well as an admission.
-    not_refused_by_probe = any(
-        a.outcome is not Outcome.REFUSED and any(isinstance(e, ProbeRef) for e in a.evidence)
+    # The gate proves a refusal is not a universal ban: some context of the shape has a case
+    # that is not refused. An omission or exclusion proves that as well as an admission.
+    not_refused_by_case = any(
+        a.outcome is not Outcome.REFUSED and any(isinstance(e, CaseRef) for e in a.evidence)
         for a in admissions.values()
     )
     statement = table.get("no_admitted_context")
     no_admitted: NoAdmittedContext | None = None
     if statement is not None:
         _keys(statement, {"citation", "statement"}, set(), f"{where}.no_admitted_context")
-        if not_refused_by_probe:
+        if not_refused_by_case:
             raise RecordError(
-                f"{where}: no_admitted_context contradicts a probe of a context not refused"
+                f"{where}: no_admitted_context contradicts a case of a context not refused"
             )
         no_admitted = NoAdmittedContext(
             _text(statement["citation"], f"{where}.no_admitted_context.citation"),
@@ -482,26 +554,29 @@ def _shape(
         uncovered = sorted(c.value for c in contexts - ALWAYS_UNCONFIRMED_CONTEXTS - set(refused))
         if uncovered:
             raise RecordError(
-                f"{where}: no_admitted_context needs refused probes in every computable context; "
+                f"{where}: no_admitted_context needs refused cases in every computable context; "
                 f"missing {uncovered}"
             )
-    if refused and not not_refused_by_probe and no_admitted is None:
+    if refused and not not_refused_by_case and no_admitted is None:
         raise RecordError(
-            f"{where}: a refused shape needs a probe of a context it is not refused in "
+            f"{where}: a refused shape needs a case of a context it is not refused in "
             "(admitted, omitted or excluded) or a no_admitted_context statement "
             "(design invariant 3 as generalized by audit S1, SA-1)"
         )
     ordered = dict(sorted(admissions.items(), key=lambda item: item[0].value))
-    return ShapeRecord(shape_id, reason, expected_code, ordered, no_admitted)
+    unobservable_ordered = dict(sorted(unobservable.items(), key=lambda item: item[0].value))
+    return ShapeRecord(
+        shape_id, reason, expected_code, ordered, no_admitted, unobservable_ordered
+    )
 
 
 def _status(shapes: tuple[ShapeRecord, ...]) -> EvidenceStatus:
     observed = [
-        any(isinstance(e, ProbeRef) for a in s.admissions.values() for e in a.evidence)
+        any(isinstance(e, CaseRef) for a in s.admissions.values() for e in a.evidence)
         for s in shapes
     ]
     if all(observed):
-        return EvidenceStatus.PROBE_OBSERVED
+        return EvidenceStatus.CASE_OBSERVED
     return EvidenceStatus.PARTIAL if any(observed) else EvidenceStatus.CODE_READ_PENDING_ITEM_2
 
 
@@ -518,7 +593,7 @@ def _rule(table: Mapping[str, Any], where: str) -> RuleRecord:
         "generator_evidence",
         "shape",
     }
-    _keys(table, required, {"example_probe"}, where)
+    _keys(table, required, {"example_case"}, where)
     rule_id = _text(table["id"], f"{where}.id")
     spec = _RULES.get(rule_id)
     if spec is None:
@@ -546,12 +621,12 @@ def _rule(table: Mapping[str, Any], where: str) -> RuleRecord:
         )
     example: str | None = None
     if status is EvidenceStatus.CODE_READ_PENDING_ITEM_2:
-        if "example_probe" in table:
+        if "example_case" in table:
             raise RecordError(f"{where}: a rule with no observed evidence has no working example")
     else:
-        example = _text(table.get("example_probe"), f"{where}.example_probe")
+        example = _text(table.get("example_case"), f"{where}.example_case")
         if not example.startswith(f"{rule_id}__"):
-            raise RecordError(f"{where}: example_probe {example!r} is not a probe of this rule")
+            raise RecordError(f"{where}: example_case {example!r} is not a case of this rule")
     rows = table["matrix_rows"]
     if not isinstance(rows, list) or not rows:
         raise RecordError(f"{where}: matrix_rows must list the matrix rows the rule covers")
@@ -577,7 +652,7 @@ def _rule(table: Mapping[str, Any], where: str) -> RuleRecord:
         shapes=shapes,
         remedy=_text(table["remedy"], f"{where}.remedy"),
         semantic_limits=_text(table["semantic_limits"], f"{where}.semantic_limits"),
-        example_probe=example,
+        example_case=example,
         doc_anchor=_text(table["doc_anchor"], f"{where}.doc_anchor"),
         evidence_status=status,
         generator_evidence=tuple(evidence),
@@ -588,11 +663,12 @@ def load_rule_records(text: str) -> RuleRecords:
     """Parse and validate the records. Raises :class:`RecordError` on any violation.
 
     Enforced here: closed vocabularies, every field present, exactly the implemented rules and
-    shapes, evidence for every listed outcome (D3), probe ids naming their own pair, an
-    probe of a context that is not refused (admitted, omitted or excluded) or an SA-1 statement
-    for every refused shape (invariant 3, generalized by audit S1), and an
-    evidence status that matches the admissions. Whether each cited probe certifies is checked
-    by the test suite, which holds the probes (`tests/test_subset_probe_evidence.py`).
+    shapes, evidence for every listed outcome (D3), case ids naming their own pair, a case of
+    a context that is not refused (admitted, omitted or excluded) or an SA-1 statement for
+    every refused shape (invariant 3, generalized by audit S1), and an evidence status that
+    matches the admissions. The citation's form is all this reads: that each cited case is
+    packaged and shows its pair is `tests/test_subset_case_citations.py`'s check, and that the
+    generator does what the case says is sysml-codegen's (Item 2a design D4).
     """
     try:
         data = tomllib.loads(text)
@@ -888,10 +964,12 @@ def _at_site(site: ExpressionSiteFact, shape_id: str) -> _Recognized:
 
 
 def _calc_owned_assertion(facts: SubsetFacts) -> list[_RuleOutput]:
-    """ES-001: a constraint owned by a calc def or a calc usage."""
+    """ES-001: a constraint owned by a calc def, a calc usage or any owner kind the generator
+    does not map (Item 2a P3 widened it to the last)."""
     context_of = {
         OwnerKind.CALCULATION_DEFINITION: ContextId.CALC_DEFINITION_OWNER,
         OwnerKind.CALCULATION_USAGE: ContextId.CALC_USAGE_OWNER,
+        OwnerKind.OTHER: ContextId.UNMAPPED_OWNER_KIND,
     }
     out: list[_RuleOutput] = []
     for fact in facts.assertions:
@@ -939,7 +1017,7 @@ def _conditional_expression(facts: SubsetFacts) -> list[_RuleOutput]:
 
     Refusal-eligible only for a recognized conditional with `RESOLVED_TARGET_MISSING`; any other
     reference failure leaves the site unverified, and a conditional whose references all
-    resolve is a separate shape no probe has observed.
+    resolve is a separate shape no case has observed.
     """
     out: list[_RuleOutput] = []
     for site in facts.sites:
@@ -957,6 +1035,20 @@ def _conditional_expression(facts: SubsetFacts) -> list[_RuleOutput]:
                 )
             )
     return out
+
+
+def _calc_usage_result(facts: SubsetFacts) -> list[_RuleOutput]:
+    """CALC-USAGE-BARE-RESULT-DROP: a calc usage's own bare result expression.
+
+    The generator computes the usage's result from its definition and never reads the usage's
+    expression. The fact is the usage's `result_expression`, which SysIDE sets only for an
+    expression the usage owns, never one inherited from the definition.
+    """
+    return [
+        _at_site(site, "bare_result")
+        for site in facts.sites
+        if site.role is SiteRole.OTHER_EXPRESSION_SITE
+    ]
 
 
 def _string_value_omission(facts: SubsetFacts) -> list[_RuleOutput]:
@@ -994,18 +1086,33 @@ def _binding_source(facts: SubsetFacts, view: _Instantiation) -> list[_RuleOutpu
 
 _MULTIPLICITY_SHAPE: Mapping[MultiplicityResolution, str] = {
     MultiplicityResolution.ORDERED: "ordered",
-    MultiplicityResolution.NONUNIQUE: "nonunique",
     MultiplicityResolution.RANGE: "range",
     MultiplicityResolution.UNRESOLVED_UPPER: "unresolved_bound",
     MultiplicityResolution.UNRESOLVED_LOWER: "unresolved_bound",
-    MultiplicityResolution.NEGATIVE: "negative_bound",
 }
+
+#: SysIDE 0.8.4 rejects a nonunique part usage and a negative bound before the generator runs,
+#: so the owner retired both shapes (Item 1 R3 disposition, 2026-10-18). A model that loads
+#: with either means that premise no longer holds, and the rule cannot say what follows.
+_RETIRED_RESOLUTIONS = frozenset(
+    {MultiplicityResolution.NONUNIQUE, MultiplicityResolution.NEGATIVE}
+)
+
+
+def _shape_of(reading: MultiplicityReading) -> str | None:
+    resolution = reading.resolution
+    if resolution in _RETIRED_RESOLUTIONS:
+        raise ValueError(
+            f"a part multiplicity resolved {resolution.value}, which SysIDE was found to reject "
+            "before the generator runs; the part-multiplicity rule has no shape for it"
+        )
+    return _MULTIPLICITY_SHAPE.get(resolution)
 
 
 def _visit_shapes(visits: Iterable[UsageVisit]) -> dict[str, list[UsageVisit]]:
     by_shape: dict[str, list[UsageVisit]] = {}
     for visit in visits:
-        shape = _MULTIPLICITY_SHAPE.get(visit.reading.resolution)
+        shape = _shape_of(visit.reading)
         if shape is not None:
             by_shape.setdefault(shape, []).append(visit)
     return by_shape
@@ -1031,7 +1138,7 @@ def _part_multiplicity(facts: SubsetFacts, view: _Instantiation) -> list[_RuleOu
                     _Recognized(shape, context, fact.usage, fact.location, len(visits), roots)
                 )
             continue
-        unparented = _MULTIPLICITY_SHAPE.get(fact.shape.reading.resolution)
+        unparented = _shape_of(fact.shape.reading)
         if unparented is not None:
             unvisited = (
                 ContextId.BENEATH_REFUSED_MULTIPLICITY
@@ -1137,9 +1244,19 @@ _RULES: Mapping[str, _RuleSpec] = {
         (FactKind.BINDING_SOURCE,),
         _binding_source,
     ),
+    "calc-usage-result": _model_wide(
+        ("bare_result",),
+        (ContextId.OTHER_EXPRESSION_SITE,),
+        _SITE_REQUIREMENTS,
+        _calc_usage_result,
+    ),
     "calc-owned-assertion": _model_wide(
         ("asserted_constraint", "non_asserted_constraint"),
-        (ContextId.CALC_DEFINITION_OWNER, ContextId.CALC_USAGE_OWNER),
+        (
+            ContextId.CALC_DEFINITION_OWNER,
+            ContextId.CALC_USAGE_OWNER,
+            ContextId.UNMAPPED_OWNER_KIND,
+        ),
         (FactKind.CONSTRAINT, FactKind.ASSERTION_OWNER),
         _calc_owned_assertion,
     ),
@@ -1162,7 +1279,7 @@ _RULES: Mapping[str, _RuleSpec] = {
         ("unsupported_callable",), _SITE_CONTEXTS, _SITE_REQUIREMENTS, _invocation_callable
     ),
     "part-multiplicity": _instantiated(
-        ("negative_bound", "nonunique", "ordered", "range", "unresolved_bound"),
+        ("ordered", "range", "unresolved_bound"),
         (
             ContextId.EXPANDED_PART_USAGE,
             ContextId.UNEXPANDED_PART_USAGE,

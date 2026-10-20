@@ -1,0 +1,20 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      11,
+      14
+    ],
+    "description": "in one named subset rack_1, two nested named subsets server_1 and server_2 each redefine psu.efficiency"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": []
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P3: ES-008 spelling 3 of 5: the nesting under one rack is enough."
+  }
+}

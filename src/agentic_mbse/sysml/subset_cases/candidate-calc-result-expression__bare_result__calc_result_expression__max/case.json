@@ -1,0 +1,32 @@
+{
+  "schema": "subset-case/1",
+  "kind": "reproduction",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      3,
+      3
+    ],
+    "description": "calc def Big whose result is the bare expression ScalarFunctions::max(a, b)"
+  },
+  "screen": {
+    "verdict": "incomplete",
+    "findings": [
+      {
+        "rule": "invocation-callable",
+        "shape": "unsupported_callable",
+        "context": "calc_result_expression",
+        "outcome": "unconfirmed",
+        "subject": "fx::Big",
+        "line": 3
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/reference_use.py::_require_supported_invocation::shared-evidence::EXPRESSION_KIND_UNSUPPORTED::1"
+  ],
+  "provenance": {
+    "from_probe": "candidate-calc-result-expression__bare_result__calc_result_expression__max",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

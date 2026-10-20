@@ -1,0 +1,29 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      3,
+      3
+    ],
+    "description": "calc def First whose bare result is xs#(1)"
+  },
+  "screen": {
+    "verdict": "unconfirmed",
+    "findings": [
+      {
+        "rule": "indexed-reference",
+        "shape": "indexed_reference",
+        "context": "calc_result_expression",
+        "outcome": "unconfirmed",
+        "subject": "fx::First",
+        "line": 3
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "note": "New in Item 2a P2.2: an R3 section 3 unconfirmed pair."
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      7,
+      7
+    ],
+    "description": "asserted Boolean predicate enabled (NON_NUMERICAL) in instantiated Site; numeric sibling calc t"
+  },
+  "screen": {
+    "verdict": "clear",
+    "findings": [
+      {
+        "rule": "constraint-predicate",
+        "shape": "non_numerical_predicate",
+        "context": "owner_instantiated",
+        "outcome": "excluded",
+        "subject": "fx::Site::c",
+        "line": 7
+      }
+    ]
+  },
+  "agentic_site_witnesses": [
+    "agentic_mbse/sysml/executable_profile.py::_walk_proposition::shared-profile::warn_non_numerical_predicate::1"
+  ],
+  "provenance": {
+    "from_probe": "constraint-predicate__non_numerical_predicate__owner_instantiated",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

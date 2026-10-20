@@ -1,7 +1,7 @@
 """The capability/refusal matrix places every named case, classifies and owns it, and joins the records.
 
-Pure: reads `tests/fixtures/subset_profile/` and the packaged rule records only, so it keeps
-passing after the item folder under `.project/` is archived.
+Pure: reads `tests/fixtures/subset_profile/`, the packaged rule records and the packaged
+conformance cases only, so it keeps passing after the item folder under `.project/` is archived.
 """
 
 from __future__ import annotations
@@ -10,7 +10,8 @@ from pathlib import Path
 
 import pytest
 
-from agentic_mbse.sysml.subset_profile import PACKAGED_RULES, ContextId, Outcome, ProbeRef
+from agentic_mbse.sysml.conformance_case import CaseKind, load_packaged_case, packaged_case_ids
+from agentic_mbse.sysml.subset_profile import PACKAGED_RULES, CaseRef, ContextId, Outcome
 from tests.helpers.subset_matrix import (
     BINDING_KINDS,
     MATRIX_PATH,
@@ -21,9 +22,6 @@ from tests.helpers.subset_matrix import (
     RowOutcome,
     load_matrix,
 )
-from tests.helpers.subset_probe_judge import ProbeKind, judge, load_observation, load_probe
-
-PROBES_DIR = Path(__file__).parent / "fixtures" / "subset_profile" / "probes"
 
 PUSH_DOWN_ROWS = {
     "PUSH-DOWN-EXPR-PROFILE-CHAIN-SEGMENTS",
@@ -73,24 +71,25 @@ UPSTREAM_MAPPING = {
     "U7": {"ES-011"},
 }
 
-# Which probe kind a non-rule row's evidence status requires.
-STATUS_PROBE_KIND = {
-    RowEvidence.REPRODUCTION_PROBE: ProbeKind.REPRODUCTION,
-    RowEvidence.CONTROL_PROBE: ProbeKind.CONTROL,
-    RowEvidence.OBSERVED_IN_RECORD_PROBES: ProbeKind.RECORD,
+# Which case kind a non-rule row's evidence status requires.
+STATUS_CASE_KIND = {
+    RowEvidence.REPRODUCTION_CASE: CaseKind.REPRODUCTION,
+    RowEvidence.CONTROL_CASE: CaseKind.CONTROL,
+    RowEvidence.OBSERVED_IN_RECORD_CASES: CaseKind.RECORD,
 }
+PACKAGED = set(packaged_case_ids())
 
 MATRIX = load_matrix()
 
 
-def _cited_probes(rule_id: str) -> set[str]:
+def _cited_cases(rule_id: str) -> set[str]:
     rule = PACKAGED_RULES.rule(rule_id)
     return {
-        ref.probe_id
+        ref.case_id
         for shape in rule.shapes
         for admission in shape.admissions.values()
         for ref in admission.evidence
-        if isinstance(ref, ProbeRef)
+        if isinstance(ref, CaseRef)
     }
 
 
@@ -188,38 +187,36 @@ def test_shared_rule_row_contexts_are_the_record_contexts_with_its_outcome() -> 
         assert set(row.contexts) == recorded, row.row_id
 
 
-def test_shared_rule_row_probes_are_cited_by_its_rule_or_are_its_controls() -> None:
+def test_shared_rule_row_cases_are_cited_by_its_rule_or_are_its_controls() -> None:
     for row in MATRIX.values():
         if row.cls is not RowClass.SHARED_RULE:
             continue
         assert row.rule is not None
-        cited = _cited_probes(row.rule)
-        for probe_id in row.probe_ids():
-            probe = load_probe(PROBES_DIR / probe_id)
-            assert probe_id in cited or (
-                probe.kind is ProbeKind.CONTROL and probe.rule == row.rule
-            ), (row.row_id, probe_id)
+        cited = _cited_cases(row.rule)
+        for case_id in row.case_ids():
+            case = load_packaged_case(case_id)
+            assert case_id in cited or (
+                case.kind is CaseKind.CONTROL and case_id.startswith(f"{row.rule}__")
+            ), (row.row_id, case_id)
 
 
 @pytest.mark.parametrize("row_id", list(MATRIX))
-def test_every_cited_probe_exists_and_certifies(row_id: str) -> None:
+def test_every_cited_case_is_packaged_with_the_kind_its_status_names(row_id: str) -> None:
     row = MATRIX[row_id]
-    for probe_id in row.probe_ids():
-        probe = load_probe(PROBES_DIR / probe_id)
-        observation, recorded = load_observation(PROBES_DIR / probe_id / "observation.json")
-        assert judge(probe, observation).certifies and recorded.certifies, probe_id
-        expected_kind = STATUS_PROBE_KIND.get(row.evidence_status)
-        if expected_kind is not None:
-            assert probe.kind is expected_kind, (row_id, probe_id)
+    assert set(row.case_ids()) <= PACKAGED, set(row.case_ids()) - PACKAGED
+    expected_kind = STATUS_CASE_KIND.get(row.evidence_status)
+    if expected_kind is not None:
+        for case_id in row.case_ids():
+            assert load_packaged_case(case_id).kind is expected_kind, (row_id, case_id)
 
 
-def test_probe_backed_rows_cite_a_probe() -> None:
+def test_case_backed_rows_cite_a_case() -> None:
     for row in MATRIX.values():
-        if row.evidence_status in STATUS_PROBE_KIND or row.evidence_status in {
-            RowEvidence.PROBE_OBSERVED,
+        if row.evidence_status in STATUS_CASE_KIND or row.evidence_status in {
+            RowEvidence.CASE_OBSERVED,
             RowEvidence.PARTIAL,
         }:
-            assert row.probe_ids(), row.row_id
+            assert row.case_ids(), row.row_id
         if row.evidence_status is RowEvidence.CORPUS_RECORD:
             assert any(e.startswith("corpus:") for e in row.evidence), row.row_id
 
@@ -227,7 +224,7 @@ def test_probe_backed_rows_cite_a_probe() -> None:
 def test_every_row_not_implemented_in_item_1_states_its_coverage_limitation() -> None:
     for row in MATRIX.values():
         implemented = row.cls is RowClass.SHARED_RULE
-        if not implemented or row.evidence_status is not RowEvidence.PROBE_OBSERVED:
+        if not implemented or row.evidence_status is not RowEvidence.CASE_OBSERVED:
             assert row.coverage_limitation.strip(), row.row_id
         assert row.owner.strip(), row.row_id
 
@@ -237,10 +234,10 @@ def test_self_binding_states_its_relation_to_l2() -> None:
     assert [r.row_id for r in MATRIX.values() if r.l2_relation] == ["SELF-BINDING"]
 
 
-def test_an_unconfirmed_case_is_never_recorded_as_refused_without_a_probe() -> None:
+def test_an_unconfirmed_case_is_never_recorded_as_refused_without_a_case() -> None:
     for row in MATRIX.values():
         if row.outcome is RowOutcome.REFUSED:
-            assert row.probe_ids() or row.evidence_status is RowEvidence.CORPUS_RECORD, row.row_id
+            assert row.case_ids() or row.evidence_status is RowEvidence.CORPUS_RECORD, row.row_id
 
 
 # ---- the loader rejects a malformed matrix ---------------------------------------------------
@@ -261,7 +258,7 @@ def _write(tmp_path: Path, old: str, new: str) -> Path:
         ('class = "tracked_gap"', 'class = "tracked_gap"\nrule = "binding-source"'),
         ('outcome = "unconfirmed"', 'outcome = "blocked"'),
         ('dc3 = ["B9"]', 'dc3 = ["B10"]'),
-        ('evidence_status = "reproduction_probe"', 'evidence_status = "probe_observed"'),
+        ('evidence_status = "reproduction_case"', 'evidence_status = "case_observed"'),
         ('kind = "literal"', 'kind = "constant"'),
         ('owner = "sysml-codegen [DEEP-QUALIFIED-OUTPUT-WIRING]"', 'owner = ""'),
         ('evidence = ["corpus:deep_cross_scope_probe"]', 'evidence = ["somewhere"]'),

@@ -1,0 +1,30 @@
+{
+  "schema": "subset-case/1",
+  "kind": "record",
+  "construct": {
+    "file": "model.sysml",
+    "lines": [
+      8,
+      8
+    ],
+    "description": "calc input v bound to the indexed reference qs#(1).v"
+  },
+  "screen": {
+    "verdict": "refused",
+    "findings": [
+      {
+        "rule": "indexed-reference",
+        "shape": "indexed_reference",
+        "context": "binding_value",
+        "outcome": "refused",
+        "subject": "fx::Site::t::v",
+        "line": 8
+      }
+    ]
+  },
+  "agentic_site_witnesses": [],
+  "provenance": {
+    "from_probe": "indexed-reference__indexed_reference__binding_value",
+    "note": "Item 1 probe, moved in Item 2a P2.1."
+  }
+}

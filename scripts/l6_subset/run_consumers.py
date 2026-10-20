@@ -56,7 +56,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts" / "subset_profile"))
 sys.path.insert(0, str(REPO_ROOT / "scripts" / "positional_binding"))
 
-from probe import (  # noqa: E402
+from isolated_tree import (  # noqa: E402
     IsolationBreachError,
     child_env,
     read_license_key,
