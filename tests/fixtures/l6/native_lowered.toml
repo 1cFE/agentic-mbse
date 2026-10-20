@@ -1,6 +1,6 @@
 # The legacy L6 codes whose severity `execution-target = "native"` lowers into the INFO summary.
 # A code moves here only in the change that adds its row to the legacy-check audit
-# (.project/active/l6-subset-profile/evidence/legacy-l6-audit.md), together with its move to
+# (.project/completed/20261020_l6-subset-profile/evidence/legacy-l6-audit.md), together with its move to
 # LEGACY_GENERATOR_ONLY in src/agentic_mbse/validation/execution_target.py.
 lowered = [
     "L6_MISSING_QUALIFIED_NAME",

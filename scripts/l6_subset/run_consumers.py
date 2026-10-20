@@ -67,7 +67,7 @@ from run_trees import SKIPPED_LINKS, export_tree  # noqa: E402
 
 from agentic_mbse.project_root import find_project_root  # noqa: E402
 
-EVIDENCE = REPO_ROOT / ".project/active/l6-subset-profile/evidence"
+EVIDENCE = REPO_ROOT / ".project/completed/20261020_l6-subset-profile/evidence"
 PYTHON = REPO_ROOT / ".venv" / "bin" / "python"
 FUSION_TEA = Path("/home/reid/src/fusion-tea")
 DC3 = Path("/home/reid/src/dc3")
