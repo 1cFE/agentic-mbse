@@ -1,0 +1,7 @@
+[project]
+name = "plant"
+
+  [ tool."agentic-mbse" ]   # toolkit settings
+
+[tool.ruff]
+line-length = 100

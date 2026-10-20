@@ -79,7 +79,7 @@ class ValidationCode(str, Enum):
     # Dataflow Issues
     CIRCULAR_IMPORT = "CIRCULAR_IMPORT"
 
-    # Level 6: Architecture & Pipeline Readiness
+    # Level 6: Architecture & Generator Subset
     L6_MISSING_QUALIFIED_NAME = "L6_MISSING_QUALIFIED_NAME"
     L6_INVALID_QUALIFIED_NAME = "L6_INVALID_QUALIFIED_NAME"
     L6_CALC_DEF_NO_OUTPUT = "L6_CALC_DEF_NO_OUTPUT"
@@ -101,6 +101,30 @@ class ValidationCode(str, Enum):
     # C7 (Item 9): `attribute :>> attr = <expr>` parses as an AttributeUsage, but codegen's
     # redefinition scan reads only ReferenceUsage -> the override is silently dropped -> WARN.
     L6_ATTR_REDEF_EXPR_DROPPED = "L6_ATTR_REDEF_EXPR_DROPPED"
+    # EXEC-SUBSET-CONTRACT Item 3: a check that could not run, or could not inspect an element,
+    # names itself instead of passing silently; ERROR under every execution target (design D4).
+    L6_CHECK_ERROR = "L6_CHECK_ERROR"
+    # A legacy check whose call into a shared expression walker raised that walker's own
+    # `SemanticEvidenceError`: the check could not decide this element. WARNING under every
+    # target, never in the native summary (design D15, I1).
+    L6_CHECK_UNVERIFIED = "L6_CHECK_UNVERIFIED"
+    # The subset contract's findings in L6, one code per outcome (Item 3 design D8). Each carries
+    # the contract's reason (or an unverified check's cause) in `reason_code`; the execution
+    # target decides the severity (`validation/execution_target.py`).
+    L6_SUBSET_REFUSED = "L6_SUBSET_REFUSED"
+    L6_SUBSET_UNCONFIRMED = "L6_SUBSET_UNCONFIRMED"
+    L6_SUBSET_EXCLUDED = "L6_SUBSET_EXCLUDED"
+    L6_SUBSET_OMITTED = "L6_SUBSET_OMITTED"
+    L6_SUBSET_UNVERIFIED = "L6_SUBSET_UNVERIFIED"
+    L6_SUBSET_UNASSESSED = "L6_SUBSET_UNASSESSED"
+    # The two routed advisories beside the contract (D12), at most WARNING; `reason_code` names
+    # the advisory. ADVISORY_UNVERIFIED: its walker could not inspect a site (D15).
+    L6_SUBSET_ADVISORY = "L6_SUBSET_ADVISORY"
+    L6_SUBSET_ADVISORY_UNVERIFIED = "L6_SUBSET_ADVISORY_UNVERIFIED"
+    # A broken [tool.agentic-mbse] table or execution-target value; L6 runs no checks (D3).
+    L6_SETTING_INVALID = "L6_SETTING_INVALID"
+    # A level that raised; the runner records it as a failed level (any level number).
+    LEVEL_CRASHED = "LEVEL_CRASHED"
 
 
 class ValidationIssue(BaseModel):

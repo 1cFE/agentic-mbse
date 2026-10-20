@@ -1,0 +1,8 @@
+[project]
+name = "plant"
+
+  [ tool."agentic-mbse" ]   # toolkit settings
+execution-target = "generated"
+
+[tool.ruff]
+line-length = 100

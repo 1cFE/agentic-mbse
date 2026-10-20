@@ -11,6 +11,7 @@ from pathlib import Path
 import tomllib
 from dotenv import load_dotenv
 
+from agentic_mbse import project_settings
 from agentic_mbse.cli.installation import (
     Installer,
     bundle_kind,
@@ -20,6 +21,9 @@ from agentic_mbse.cli.installation import (
 )
 from agentic_mbse.project_root import find_project_root
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS, run_all_checks
+from agentic_mbse.validation.execution_target import ALLOWED_VALUES, Target
+from agentic_mbse.validation.report import build_report, write_report
+from agentic_mbse.validation.subset_presentation import UNSET_NOTE
 
 # Project templates split by ownership:
 # - USER_OWNED: Only created once, never auto-updated (user customizes these)
@@ -351,10 +355,17 @@ def cmd_validate(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return EXIT_USAGE
+    if args.json_report is not None and not args.json_report.parent.is_dir():
+        print(
+            f"Error: --json-report directory does not exist: {args.json_report.parent}",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
     if not Path(args.path).exists():
         print(f"Error: Path does not exist: {args.path}")
         return EXIT_FAILURE
 
+    override = None if args.execution_target is None else Target(args.execution_target)
     result = run_all_checks(
         models_path=args.path,
         fail_fast=not args.complete,
@@ -362,8 +373,22 @@ def cmd_validate(args: argparse.Namespace) -> int:
         verbose=args.verbose,
         positional_pins=args.positional_pins,
         positional_pins_root=args.positional_pins_root,
+        execution_target=override,
     )
-    return EXIT_SUCCESS if result.overall_success else EXIT_FAILURE
+    exit_code = EXIT_SUCCESS if result.overall_success else EXIT_FAILURE
+    if args.json_report is not None:
+        command = {
+            "path": args.path,
+            "mode": "complete" if args.complete else "fail-fast",
+            "level": args.level,
+            "execution_target": args.execution_target,
+        }
+        try:
+            write_report(args.json_report, build_report(result, command, exit_code))
+        except OSError as error:
+            print(f"Error: cannot write --json-report {args.json_report}: {error}", file=sys.stderr)
+            return EXIT_FAILURE
+    return exit_code
 
 
 def cmd_init(args: argparse.Namespace) -> int:
@@ -690,7 +715,87 @@ Add sources with `/manage-sources`, which writes this file through `agentic-mbse
             " and start with the design-model skill"
         )
 
+    return _init_execution_target(target, getattr(args, "execution_target", None))
+
+
+def _init_execution_target(target: Path, option: str | None) -> int:
+    """`init`'s settings step on `<target>/pyproject.toml` (design § `init`).
+
+    Exit 1 only when `--execution-target` was given and was not written. Without the option a
+    terminal is asked, with "leave unset" as the default; otherwise the note says what to add.
+    """
+    print("")
+    slot = project_settings.inspect_execution_target(target)
+    if not isinstance(slot, project_settings.Insertable):
+        return _report_execution_target_slot(slot, option)
+    choice = option
+    if choice is None:
+        if not sys.stdin.isatty():
+            print(f"Execution target note: {UNSET_NOTE}")
+            return EXIT_SUCCESS
+        choice = _prompt_for_execution_target()
+        if choice is None:
+            print(f"Execution target: left unset in {slot.path}")
+            return EXIT_SUCCESS
+    written = project_settings.add_execution_target(target, choice)
+    if not isinstance(written, project_settings.Written):
+        return _report_execution_target_slot(written, option)
+    done = "created with" if written.created else "added"
+    print(
+        f"Execution target: {done} {project_settings.target_line(choice)} "
+        f"under [tool.agentic-mbse] in {written.path}"
+    )
+    if written.created:
+        print(f"  uv will now treat {target} as its own project, because it has a pyproject.toml")
     return EXIT_SUCCESS
+
+
+def _report_execution_target_slot(
+    slot: project_settings.Present | project_settings.Blocked, option: str | None
+) -> int:
+    """Print why nothing was written; exit 1 if that refuses an explicit `--execution-target`."""
+    if isinstance(slot, project_settings.Blocked):
+        print(f"Execution target: {slot.detail}")
+        line = project_settings.target_line(option or "generated|native")
+        if slot.reason is project_settings.BlockReason.LAYOUT:
+            print(f"  Add this line under [tool.agentic-mbse] by hand: {line}")
+        elif slot.reason is project_settings.BlockReason.NESTED:
+            print(
+                f"  To set it, create {slot.path} by hand with [tool.agentic-mbse] and this "
+                f"line: {line}. That makes this directory its own uv project; to avoid that, "
+                "pass --execution-target to each validate run instead."
+            )
+        return EXIT_SUCCESS if option is None else EXIT_FAILURE
+    allowed = " and ".join(map(repr, ALLOWED_VALUES))
+    existing = f"{slot.path} sets execution-target = {slot.value!r}"
+    if slot.value not in ALLOWED_VALUES:
+        print(f"Execution target: {existing}, which is not allowed; allowed values are {allowed}")
+    elif option is None or option == slot.value:
+        print(f"Execution target: already set; {existing}")
+        return EXIT_SUCCESS
+    if option is None:
+        return EXIT_SUCCESS
+    print(
+        f"Execution target: --execution-target={option} not written; {existing}, "
+        f"and init never changes an existing value (allowed values are {allowed})"
+    )
+    return EXIT_FAILURE
+
+
+def _prompt_for_execution_target() -> str | None:
+    """Ask how the project runs; None is "leave unset", the default."""
+    print("How does this project run? This decides how loud L6's generator findings are.")
+    while True:
+        try:
+            answer = input("  Execution target [generated/native/unset] (default: unset): ")
+        except EOFError:
+            return None
+        answer = answer.strip().lower()
+        if answer in ("", "unset"):
+            return None
+        if answer in ALLOWED_VALUES:
+            return answer
+        print(f"  Answer generated, native or unset, not {answer!r}.")
 
 
 def cmd_install_commands(args: argparse.Namespace) -> int:
@@ -788,6 +893,20 @@ def main(argv: list[str] | None = None) -> int:
             "directory); needs --positional-pins"
         ),
     )
+    validate_parser.add_argument(
+        "--execution-target",
+        choices=ALLOWED_VALUES,
+        help=(
+            "L6: how this project runs, overriding [tool.agentic-mbse] execution-target in "
+            "pyproject.toml (decides how loud generator findings are, never what they are)"
+        ),
+    )
+    validate_parser.add_argument(
+        "--json-report",
+        type=Path,
+        metavar="PATH",
+        help="Write every level's full result, untruncated, as JSON to PATH after the run",
+    )
     validate_parser.set_defaults(func=cmd_validate)
 
     # init command
@@ -821,6 +940,14 @@ def main(argv: list[str] | None = None) -> int:
         choices=("symlink", "copy"),
         default="symlink",
         help="Claude skill aliases: relative symlinks or copies",
+    )
+    init_parser.add_argument(
+        "--execution-target",
+        choices=ALLOWED_VALUES,
+        help=(
+            "Add [tool.agentic-mbse] execution-target to pyproject.toml; never changes an "
+            "existing value (without it, a terminal is asked and other runs leave it unset)"
+        ),
     )
     init_parser.set_defaults(func=cmd_init)
 

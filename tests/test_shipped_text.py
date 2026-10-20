@@ -10,7 +10,9 @@ import tomllib
 
 from agentic_mbse.cli import TOOL_OWNED_TEMPLATES, cmd_init
 from agentic_mbse.validation.positional_check import PINNED_DISCLAIMER
+from agentic_mbse.validation.subset_presentation import PACKAGED_RULES
 from tests.helpers.shipped import REPO_ROOT, SKILLS, frontmatter
+from tests.test_validation.test_l6_contract import BANNED as L6_BANNED
 
 SLASH_REFERENCE = re.compile(r"`(/[a-z0-9-]+)`")
 SKILL_PATH = re.compile(r"\.agents/skills/([a-z0-9-]+)((?:/[\w.-]+)*)")
@@ -199,3 +201,45 @@ def test_plant_idiom_order_does_not_matter_is_qualified_by_its_context():
     assert lines
     for line in lines:
         assert "The order of a calculation usage's inputs does matter" in line, line
+
+
+# ---- Level 6 and the generator subset (Item 3 Phase 10) ----------------------------------------
+
+L6_DOCS = ("README.md", "skills/model-validation/SKILL.md")
+
+
+@pytest.mark.parametrize("relative", L6_DOCS)
+def test_doc_states_profile_version_scope_incompleteness_and_not_codegen_check(relative):
+    text = " ".join((REPO_ROOT / relative).read_text(encoding="utf-8").split())
+    lowered = text.lower()
+    assert "subset-profile/v1" in text
+    assert "eight implemented rules" in lowered  # what was assessed
+    assert "incomplete" in lowered and "coverage limit" in lowered
+    assert "not a generation check" in lowered
+    assert "future step" in lowered and "does not exist yet" in lowered
+    assert "sysml-codegen check" not in lowered  # the future boundary, with no command shown
+    assert "execution-target" in text and "init --execution-target" in text
+    assert [banned for banned in L6_BANNED if banned in lowered] == []
+
+
+def test_doc_rule_count_matches_the_packaged_profile():
+    assert len(PACKAGED_RULES.rules) == 8
+
+
+def test_model_validation_table_row_uses_new_l6_title():
+    text = (REPO_ROOT / "skills/model-validation/SKILL.md").read_text(encoding="utf-8")
+    (row,) = [line for line in text.splitlines() if line.startswith("| 6 ")]
+    assert "Architecture & Generator Subset" in row and "not a generation check" in row
+
+
+def test_claude_md_level_6_line_uses_new_title():
+    text = (REPO_ROOT / "CLAUDE.md").read_text(encoding="utf-8")
+    (line,) = [line for line in text.splitlines() if line.strip().startswith("- Level 6:")]
+    assert "Architecture & Generator Subset" in line and "readiness" not in line
+
+
+def test_research_seam_describes_shared_key_set():
+    text = (REPO_ROOT / "docs/research-seam.md").read_text(encoding="utf-8")
+    assert "holds only `research` and `execution-target`" in text
+    assert "a key other than `research` or `execution-target` in `[tool.agentic-mbse]`" in text
+    assert "holds only `research`," not in text

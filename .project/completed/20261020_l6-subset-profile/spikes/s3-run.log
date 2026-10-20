@@ -1,0 +1,88 @@
+== two-spelling fixture: load errors 0
+  attrs_checked: 3
+  legacy_unextractable_issues: 2
+  legacy_flagged_with_id: 2
+  string_findings: 2
+  legacy_ids_in_string_ids: 2
+  legacy_not_string: {}
+  string findings not flagged by legacy: 0
+  D::site::label: AttributeUsage, legacy iterates=True, in designs/=True, expose=False, static eval raises ValueError
+  D::site::kind: AttributeUsage, legacy iterates=True, in designs/=True, expose=False, static eval raises ValueError
+== dc3 60b44d5: load errors 0
+  attrs_checked: 72
+  legacy_unextractable_issues: 0
+  legacy_flagged_with_id: 0
+  string_findings: 30
+  legacy_ids_in_string_ids: 0
+  legacy_not_string: {}
+  string findings not flagged by legacy: 30
+  ac_coupled_facility::'AC Coupled Facility'::electrical::mv_transformer::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_facility::'AC Coupled Facility'::electrical::ups::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_facility::'AC Coupled Facility'::electrical::pdu::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_facility::'AC Coupled Facility'::it_system::rack_1::distribution_kind: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_facility::'AC Coupled Facility'::it_system::rack_2::distribution_kind: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_facility::'AC Coupled Facility'::cooling::liquid_class: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::genset::fuel_unit: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::mppt::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::mppt::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::pv_inverter::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::pv_inverter::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::pv_transformer::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::pv_transformer::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::genset_transformer::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::genset_transformer::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::bess_transformer::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::bess_transformer::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::source_bus::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_facility::'DC Native Facility'::electrical::bus_converter::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_facility::'DC Native Facility'::electrical::aux_inverter::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_facility::'DC Native Facility'::it_system::rack_1::distribution_kind: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_facility::'DC Native Facility'::it_system::rack_2::distribution_kind: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_facility::'DC Native Facility'::cooling::liquid_class: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::genset::fuel_unit: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::mppt::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::mppt::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::genset_rectifier::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::genset_rectifier::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::source_bus::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc3_source_load_example::illustrative_scenario::genset::fuel_unit: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+== dc3 808464d: load errors 0
+  attrs_checked: 49
+  legacy_unextractable_issues: 3
+  legacy_flagged_with_id: 3
+  string_findings: 32
+  legacy_ids_in_string_ids: 3
+  legacy_not_string: {}
+  string findings not flagged by legacy: 29
+  ac_coupled_facility::ac_facility::electrical::mv_transformer::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_facility::ac_facility::electrical::ups::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_facility::ac_facility::electrical::pdu::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_facility::ac_facility::it_system::rack_1::distribution_kind: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_facility::ac_facility::it_system::rack_2::distribution_kind: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_facility::ac_facility::cooling::liquid_class: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::genset::fuel_unit: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::mppt::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::mppt::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::pv_inverter::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::pv_inverter::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::pv_transformer::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::pv_transformer::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::genset_transformer::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::genset_transformer::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::bess_transformer::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::bess_transformer::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  ac_coupled_site::ac_site::source_bus::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_facility::dc_facility::electrical::bus_converter::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_facility::dc_facility::electrical::aux_inverter::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_facility::dc_facility::it_system::rack_1::distribution_kind: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_facility::dc_facility::it_system::rack_2::distribution_kind: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_facility::dc_facility::cooling::liquid_class: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::genset::fuel_unit: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::mppt::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::mppt::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::genset_rectifier::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::genset_rectifier::conversion_level: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc_native_site::dc_site::source_bus::redundancy: ReferenceUsage, legacy iterates=False, in designs/=True, expose=False, static eval raises ValueError
+  dc3_baseline_costs::cost_reference::period: AttributeUsage, legacy iterates=True, in designs/=True, expose=False, static eval raises ValueError
+  dc3_baseline_costs::cost_reference::terminal: AttributeUsage, legacy iterates=True, in designs/=True, expose=False, static eval raises ValueError
+  dc3_source_load_example::illustrative_scenario::genset::fuel_unit: AttributeUsage, legacy iterates=True, in designs/=True, expose=False, static eval raises ValueError

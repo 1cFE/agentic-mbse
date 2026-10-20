@@ -1,0 +1,28 @@
+== fusion-tea (f96ad312): validate --level=6 models
+Running: Level 6 only
+Level 6: Architecture & Pipeline Readiness
+❌ Level 6: Architecture & Pipeline Readiness
+   Issues found: 408
+❌ Stopping at first failure (Level 6)
+✅ Passed: 0
+❌ Failed: 1
+❌ Quality checks failed
+exit code: 1
+== dc3-baseline (808464d): validate --level=6 models
+Running: Level 6 only
+Level 6: Architecture & Pipeline Readiness
+❌ Level 6: Architecture & Pipeline Readiness
+   Issues found: 11
+❌ Stopping at first failure (Level 6)
+✅ Passed: 0
+❌ Failed: 1
+❌ Quality checks failed
+exit code: 1
+== dc3-repaired (60b44d5): validate --level=6 models
+Running: Level 6 only
+Level 6: Architecture & Pipeline Readiness
+✅ Level 6: Architecture & Pipeline Readiness
+✅ Passed: 1
+❌ Failed: 0
+✅ All quality checks passed!
+exit code: 0

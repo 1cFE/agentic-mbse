@@ -102,7 +102,7 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 - [ ] The positional check detects unintended implicit name/target mismatches, accepts deliberate explicit redefinition and verified by-name forms, and reports inspection failures honestly.
 - [ ] Every collected shipped example has appropriate definition checks, an executable test, an identified fragment exemption, or verified expected diagnostics. Complete execution examples exercise their instantiated context through the generator corpus. Approved D3 requires executable or exact expected-negative evidence for 100% of generated-use recommendations and remedies; hash-only exemptions cannot satisfy that target.
 - [ ] Rendered capability guidance and hazard references agree with the records and packaged assets. Known misleading examples are corrected or qualified.
-- [ ] Execution-target behavior is tested for generated, native, unset, malformed and unknown settings, including retained legacy readiness checks and noninteractive init.
+- [x] Execution-target behavior is tested for generated, native, unset, malformed and unknown settings, including retained legacy readiness checks and noninteractive init.
 - [ ] Repository-defined tests, type checks and lint pass in both repositories; evidence distinguishes licensed checks, skips and unrun routes.
 
 ## Backlog Items
@@ -166,7 +166,7 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 **Deliverables**: sysml-codegen `.project/active/subset-profile-screen/{spec,design,plan}.md`; preparation API/CLI, diagnostic adapters, inventory, corpus and compatibility evidence.
 
-### Item 3: L6 integration and execution-target settings
+### Item 3: L6 integration and execution-target settings ✅
 
 **Type**: Implementation
 **Effort**: Re-estimate after Item 1
@@ -186,7 +186,8 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 **Success Criteria**: CLI tests cover all settings states, root discovery, retained checks, inspection failures and preservation behavior. Baseline confirmed categories appear in one explicit L6 run, both String spellings agree, and native capability summaries do not hide check failures.
 
-**Deliverables**: `.project/active/l6-subset-profile/{spec,design,plan}.md`; L6/settings/CLI changes and managed guidance updates.
+**Location**: `.project/completed/20261020_l6-subset-profile/`
+**Deliverables**: `.project/completed/20261020_l6-subset-profile/{spec,design,plan}.md`; L6/settings/CLI changes and managed guidance updates.
 
 ### Item 4: Positional-binding hazard and check ✅
 

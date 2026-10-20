@@ -4,3 +4,4 @@
 
 - 0001 · agentic-mbse owns the executable-subset capability contract and its occurrence summary · seams: agentic-mbse, sysml-codegen, l6, guidance
 - 0002 · Legacy positional mismatches are pinned only in a project-root positional-pins.toml, trusted by review, and only pinned positional warnings are exempt from L2's pass rule · seams: l2, validate-cli, target-projects
+- 0003 · Each target project declares execution-target in its pyproject.toml; the target sets how loud generator findings are, and only a real inspection failure fails a run regardless of target · seams: l6, validate-cli, init, target-projects, research-holdout-guard

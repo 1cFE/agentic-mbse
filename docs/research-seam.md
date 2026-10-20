@@ -347,7 +347,7 @@ Some projects hold material out of the repository: a sealed paper, a validation 
 holdout-guard = "scripts/holdout_guard.py"
 ```
 
-The table's only key is `holdout-guard`. Any other key is a fault, because a misspelled key would otherwise switch the guard off without a word. The table's name is checked the same way: `[tool.agentic-mbse]` holds only `research`, so any other key there (a misspelled `[tool.agentic-mbse.reseach]`, say) is a fault, and so is a `[tool.agentic_mbse]` table.
+The table's only key is `holdout-guard`. Any other key is a fault, because a misspelled key would otherwise switch the guard off without a word. The table's name is checked the same way: `[tool.agentic-mbse]` holds only `research` and `execution-target` (validation's setting), so any other key there (a misspelled `[tool.agentic-mbse.reseach]`, say) is a fault, and so is a `[tool.agentic_mbse]` table. The guard never reads `execution-target`'s value, so a bad value there is validation's error, not the guard's.
 
 **Write the guard** as a Python file with three functions:
 
@@ -412,7 +412,7 @@ A match refuses as `holdout_hit` with the rule id, and nothing in the seam can w
 **It fails closed.** If the guard cannot answer, nothing it would check gets through. Each of these faults refuses every `register`, `retire` and `add-entry` as `precondition_failed`, with a reason that starts `hold-out guard unavailable:` and names the fault:
 
 - `pyproject.toml` cannot be read, or `[tool]`, `[tool.agentic-mbse]` or `[tool.agentic-mbse.research]` is not a table
-- a key other than `research` in `[tool.agentic-mbse]`, or a `[tool.agentic_mbse]` table
+- a key other than `research` or `execution-target` in `[tool.agentic-mbse]`, or a `[tool.agentic_mbse]` table
 - a key other than `holdout-guard` in the research table, or a value that is not a non-empty path
 - no file at the path, or a file that is not a Python module
 - the file raises while loading, or lacks one of the three functions

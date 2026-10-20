@@ -1,0 +1,8 @@
+[project]
+name = "plant"
+
+[tool.agentic-mbse.research]
+holdout-guard = "scripts/holdout_guard.py"
+
+[tool.agentic-mbse]
+execution-target = "generated"

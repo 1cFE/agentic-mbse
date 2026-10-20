@@ -1,0 +1,1089 @@
+{
+  "command": "before-after --base ebb3d467 --branch HEAD",
+  "siblings_before": {
+    "dc3": "60b44d53460fccd2f44811d8abfd42bc270e90b2\n",
+    "fusion-tea": "f96ad312c63e8c66695971b12feab971f3ba6eb3\n"
+  },
+  "agentic_mbse": {
+    "base": "ebb3d46710a4c1476bb12fa0e9decf0088ddb2c5",
+    "branch": "41b14ca957a154821e76f595b8ff5a939037b18d"
+  },
+  "syside_version": "0.8.4",
+  "trees": {
+    "fusion-tea": {
+      "commit": "f96ad312c63e8c66695971b12feab971f3ba6eb3",
+      "settings": {
+        "root": "fusion-tea",
+        "pyproject": "fusion-tea/pyproject.toml",
+        "tables": {
+          "agentic-mbse": "absent",
+          "agentic_mbse": "absent"
+        }
+      }
+    },
+    "dc3-baseline": {
+      "commit": "808464df85d50521e4fbb9ba7cceb63d382aa832",
+      "settings": {
+        "root": "dc3-baseline",
+        "pyproject": "dc3-baseline/pyproject.toml",
+        "tables": {
+          "agentic-mbse": "absent",
+          "agentic_mbse": "absent"
+        }
+      }
+    },
+    "dc3-repaired": {
+      "commit": "60b44d53460fccd2f44811d8abfd42bc270e90b2",
+      "settings": {
+        "root": "dc3-repaired",
+        "pyproject": "dc3-repaired/pyproject.toml",
+        "tables": {
+          "agentic-mbse": "absent",
+          "agentic_mbse": "absent"
+        }
+      }
+    }
+  },
+  "scratch": "/tmp/l6-before-after-7wijcycx",
+  "siblings_unchanged": true,
+  "skipped_links": {
+    "agentic-mbse@ebb3d467": [],
+    "agentic-mbse@41b14ca9": [],
+    "fusion-tea@f96ad312": [
+      ".project/active/aries-comparison-preparation/current-readiness/revealed-results/c0/selected-forward/native/pkg_link/stellarator_tea -> /tmp/aries-r3-execution-20260920/exploration/stellarator_e2e/generated",
+      ".project/active/aries-comparison-preparation/current-readiness/revealed-results/c0/table5-conditioned/native/pkg_link/stellarator_tea -> /tmp/aries-r3-execution-20260920/exploration/stellarator_e2e/generated",
+      ".project/active/aries-comparison-preparation/package/selected-mode/native/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      ".project/active/aries-comparison-preparation/package/table5-conditioned/native/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/audit-evidence/controls/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/audit-evidence/metadata/execution/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/audit-evidence/native/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/audit-evidence/native/schema-link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/implementation/controls-complete/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/implementation/controls-final/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/implementation/controls/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/implementation/native/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      ".project/active/mfe-major-radius-study-package/implementation/native/schema-link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "archive/models/tests/solar_battery/costing.sysml -> /home/reid/1cfe/fusion-tea/models/library/foundation/costing.sysml",
+      "exploration/aries_integrated/studies/20260922-aries-integrated-cost-uncertainty/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260922-aries-integrated-cost-uncertainty/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260922-aries-integrated-equipment-costs/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260922-aries-integrated-lcoe/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260922-aries-integrated-lcoe/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-flow-scaling-check/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-flow-scaling-check/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-reconciled-alternative-economics/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-reconciled-alternative-economics/results-attempt1/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-reconciled-alternative-economics/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-reference-heat-electricity-reconciliation/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-revised-reference-network/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-revised-reference-network/results-attempt1/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260925-aries-revised-reference-network/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260926-aries-design-choice-interactions/preparation-r1/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260926-aries-design-choice-interactions/preparation/_work/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/aries_integrated/studies/20260926-aries-design-choice-interactions/results/native/pkg_link/aries_integrated -> /home/reid/1cfe/fusion-tea/exploration/aries_integrated/aries_integrated",
+      "exploration/costed_loop_brayton/links/costed_loop_brayton_tea -> /home/reid/1cfe/fusion-tea/exploration/costed_loop_brayton/costed_loop_brayton_tea",
+      "exploration/costed_loop_brayton/studies/20260926-design-study-parameters-b/preparation/_work/pkg_link/costed_loop_brayton_tea -> /home/reid/1cfe/fusion-tea/exploration/costed_loop_brayton/costed_loop_brayton_tea",
+      "exploration/costed_loop_brayton/studies/20260926-design-study-parameters-b/results/native/pkg_link/costed_loop_brayton_tea -> /home/reid/1cfe/fusion-tea/exploration/costed_loop_brayton/costed_loop_brayton_tea",
+      "exploration/costed_loop_brayton/studies/20260926-design-study-parameters/preparation/_work/pkg_link/costed_loop_brayton_tea -> /home/reid/1cfe/fusion-tea/exploration/costed_loop_brayton/costed_loop_brayton_tea",
+      "exploration/costed_loop_brayton/studies/20260926-design-study-parameters/results/native/pkg_link/costed_loop_brayton_tea -> /home/reid/1cfe/fusion-tea/exploration/costed_loop_brayton/costed_loop_brayton_tea",
+      "exploration/exp_spike/pkg/exp_toy_tea -> /home/reid/1cfe/fusion-tea/exploration/exp_spike/generated",
+      "exploration/pipeline_spike/pkg/solar_battery_tea -> /home/reid/1cfe/fusion-tea/exploration/pipeline_spike/generated",
+      "exploration/stellarator_e2e/studies/20260916-bounded-feasibility-transfer/results/entry-model-inspection/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "exploration/stellarator_e2e/studies/20260916-stellaris-reference-reconciliation/results/entry-model-inspection/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "exploration/stellarator_e2e/studies/20260918-computed-tritium-breeding/results/entry-model-inspection/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/active/WI-052_mfe-financial-rate-limits/prototype/link/wi052_probe -> /tmp/fusion-mfe-financial-rate-limits/work/active/WI-052_mfe-financial-rate-limits/prototype/generated",
+      "work/active/WI-054_faithful-model-equations-and-citations/evidence/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/active/WI-055_winding-pack-input-domain/evidence/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/active/WI-056_primary-loop-heat-capacity-domain/evidence/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/active/WI-059_coil-thermal-and-total-support-inventory/evidence/native-baseline/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/active/WI-059_coil-thermal-and-total-support-inventory/evidence/offdesign-work-r2/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/active/WI-059_coil-thermal-and-total-support-inventory/evidence/offdesign-work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/analysis/20260913-winding-completion-audit/link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/absolute-conductor-current-margin/evidence/T-004_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-025_pin/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-033_integration/_work/pkg_link/stellarator_tea -> /tmp/fusion-mfe-financial-rate-limits/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-037_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-041_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-044_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/fusion-audit-remediation/evidence/T-050_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea-codex-test/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/magnet-coil-realism/evidence/T-002_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/magnet-coil-realism/evidence/T-007_integration-r2/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/magnet-coil-realism/evidence/T-007_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/magnet-design-transfer/evidence/T005-integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/stellaris-reference-reconciliation/evidence/T-004_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/stellaris-reference-reconciliation/evidence/T-007_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/tape-procurement-consistency/evidence/T-006_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated",
+      "work/orchestration/goals/winding-pack-casing-fit/evidence/T-004_integration/_work/pkg_link/stellarator_tea -> /home/reid/1cfe/fusion-tea/exploration/stellarator_e2e/generated"
+    ],
+    "dc3@808464df": [],
+    "dc3@60b44d53": []
+  },
+  "comparisons": {
+    "fusion-tea": {
+      "levels": {
+        "1": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "2": {
+          "before": "failed",
+          "after": "failed",
+          "issues": [
+            465,
+            465
+          ],
+          "identical_text": true
+        },
+        "3": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "4": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "5": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "6": {
+          "before": "failed",
+          "after": "failed",
+          "issues": [
+            408,
+            539
+          ],
+          "identical_text": false
+        }
+      },
+      "flags": [],
+      "constraint_extractions": 1,
+      "roots": {
+        "base (L2 pin list)": "trees/fusion-tea",
+        "branch (L2 pin list)": "trees/fusion-tea",
+        "branch (L6 execution target)": "trees/fusion-tea"
+      },
+      "exit": [
+        1,
+        1
+      ],
+      "wall_time_s": [
+        412.7,
+        212.0
+      ],
+      "ratio": 0.514,
+      "l6_changes": {
+        "omitted_warnings": 131,
+        "omitted_expected": 131,
+        "unextractable": [
+          108,
+          108
+        ],
+        "unextractable_metric_after": 108,
+        "unextractable_expected": [
+          108,
+          108
+        ],
+        "metric_changes": {},
+        "branch_codes": {
+          "L6_DESIGN_ATTR_INCOMPLETE (error)": 119,
+          "L6_DESIGN_ATTR_UNEXTRACTABLE (error)": 108,
+          "L6_SUBSET_OMITTED (warning)": 131,
+          "V2_DYNAMIC_EXPRESSION (error)": 96,
+          "V4_UNSUPPORTED_OPERATOR (error)": 85
+        }
+      },
+      "pass_notes": []
+    },
+    "dc3-baseline": {
+      "levels": {
+        "1": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "2": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "3": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "4": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "5": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "6": {
+          "before": "failed",
+          "after": "failed",
+          "issues": [
+            11,
+            332
+          ],
+          "identical_text": false
+        }
+      },
+      "flags": [],
+      "constraint_extractions": 1,
+      "roots": {
+        "base (L2 pin list)": "trees/dc3-baseline",
+        "branch (L2 pin list)": "trees/dc3-baseline",
+        "branch (L6 execution target)": "trees/dc3-baseline"
+      },
+      "exit": [
+        1,
+        1
+      ],
+      "wall_time_s": [
+        35.0,
+        18.1
+      ],
+      "ratio": 0.517,
+      "l6_changes": {
+        "omitted_warnings": 32,
+        "omitted_expected": 32,
+        "unextractable": [
+          3,
+          0
+        ],
+        "unextractable_metric_after": 0,
+        "unextractable_expected": [
+          3,
+          0
+        ],
+        "metric_changes": {
+          "L6_DESIGN_ATTR_UNEXTRACTABLE": [
+            3,
+            0
+          ]
+        },
+        "branch_codes": {
+          "L6_CONSTRAINT_MALFORMED_NUMERICAL (error)": 4,
+          "L6_CONSTRAINT_NON_NUMERICAL (warning)": 4,
+          "L6_SUBSET_OMITTED (warning)": 32,
+          "L6_SUBSET_REFUSED (warning)": 236,
+          "L6_SUBSET_UNCONFIRMED (warning)": 6,
+          "L6_SUBSET_UNVERIFIED (warning)": 50
+        }
+      },
+      "pass_notes": []
+    },
+    "dc3-repaired": {
+      "levels": {
+        "1": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "2": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "3": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "4": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "5": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            0
+          ],
+          "identical_text": true
+        },
+        "6": {
+          "before": "passed",
+          "after": "passed",
+          "issues": [
+            0,
+            30
+          ],
+          "identical_text": false
+        }
+      },
+      "flags": [],
+      "constraint_extractions": 1,
+      "roots": {
+        "base (L2 pin list)": "trees/dc3-repaired",
+        "branch (L2 pin list)": "trees/dc3-repaired",
+        "branch (L6 execution target)": "trees/dc3-repaired"
+      },
+      "exit": [
+        0,
+        0
+      ],
+      "wall_time_s": [
+        25.6,
+        13.3
+      ],
+      "ratio": 0.52,
+      "l6_changes": {
+        "omitted_warnings": 30,
+        "omitted_expected": 30,
+        "unextractable": [
+          0,
+          0
+        ],
+        "unextractable_metric_after": 0,
+        "unextractable_expected": [
+          0,
+          0
+        ],
+        "metric_changes": {},
+        "branch_codes": {
+          "L6_SUBSET_OMITTED (warning)": 30
+        }
+      },
+      "pass_notes": [
+        "generated compatibility not established"
+      ]
+    }
+  },
+  "runs": {
+    "fusion-tea": [
+      {
+        "tree": "fusion-tea",
+        "tree_commit": "f96ad312c63e8c66695971b12feab971f3ba6eb3",
+        "code_label": "base",
+        "code_commit": "ebb3d46710a4c1476bb12fa0e9decf0088ddb2c5",
+        "module_file": "code-base/src/agentic_mbse/__init__.py",
+        "exit_code": 1,
+        "wall_time_s": 412.7,
+        "levels": {
+          "1": {
+            "status": "passed",
+            "header": "\u2705 Level 1: Syntax Validation",
+            "block": [
+              "   Files checked: 80",
+              "   Errors: 0",
+              "   Warnings: 0"
+            ]
+          },
+          "2": {
+            "status": "failed",
+            "header": "\u274c Level 2: Structural Completeness",
+            "block": [
+              "   Unused definitions: 9",
+              "   Unbound inputs: 0",
+              "   Undefined bindings: 0",
+              "   Placeholder bindings: 331",
+              "   Self-named bindings: 0",
+              "   Orphaned elements: 0",
+              "   Positional inputs inspected: 7654",
+              "   Positional input outcomes: explicit 0, anonymous 0, implicit_matching 5573, implicit_mismatch 125, new_parameter 1956, special_parameter 0, anonymous_target 0",
+              "   Positional bindings (blocking): 125",
+              "   Positional bindings pinned (legacy warning): 0",
+              "   Positional pins stale: 0",
+              "   Positional pins out of scope: 0",
+              "   Positional pins not judged (inspection failed): 0",
+              "   Positional unverifiable: 0",
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/fusion-tea/positional-pins.toml)",
+              "",
+              "   Issues found: 465",
+              "   - WARN: Unused calc def: integrated_heat_electricity::'Heat Driven Closure' at file:models/library/analyses/integrated_heat_electricity.sysml:46",
+              "   - WARN: Unused calc def: mfe_account_costs::'Power Supplies Cost' at file:models/library/analyses/mfe_account_costs.sysml:196",
+              "   - WARN: Unused calc def: mfe_account_costs::'Divertor Cost' at file:models/library/analyses/mfe_account_costs.sysml:224",
+              "   - WARN: Unused calc def: mfe_account_costs::'Aux Cooling Cost' at file:models/library/analyses/mfe_account_costs.sysml:617",
+              "   - WARN: Unused calc def: mfe_conductor_current::'Current Driven Pack Sizing' at file:models/library/analyses/mfe_conductor_current.sysml:39",
+              "   ... and 460 more"
+            ]
+          },
+          "3": {
+            "status": "passed",
+            "header": "\u2705 Level 3: Dataflow Integrity",
+            "block": [
+              "   Documents analyzed: 34",
+              "   Circular dependencies: 0"
+            ]
+          },
+          "4": {
+            "status": "passed",
+            "header": "\u2705 Level 4: Constraint Coverage",
+            "block": [
+              "   Total constraints: 345",
+              "   ConstraintUsage: 345",
+              "   ConstraintDefinition: 42",
+              "   Constraint usages assessed (incl. satisfy): 345",
+              "   Admitted numerical: 345",
+              "   Malformed numerical: 0",
+              "   Non-numerical: 0",
+              "   Unassessed (satisfy/require/plain): 0",
+              "   Executable share: 100.0%"
+            ]
+          },
+          "5": {
+            "status": "passed",
+            "header": "\u2705 Level 5: Traceability & Documentation",
+            "block": [
+              "   Total elements: 243",
+              "   Documented: 243",
+              "   Missing docs: 0",
+              "   Coverage: 100.0%"
+            ]
+          },
+          "6": {
+            "status": "failed",
+            "header": "\u274c Level 6: Architecture & Pipeline Readiness",
+            "block": [
+              "   Calc defs checked: 173",
+              "   Calc usages checked: 705",
+              "   Bindings validated: 5149",
+              "   Design attrs checked: 6180",
+              "   Manifests checked: 0",
+              "   L6_MISSING_QUALIFIED_NAME: 0",
+              "   L6_INVALID_QUALIFIED_NAME: 0",
+              "   L6_CALC_DEF_NO_OUTPUT: 0",
+              "   L6_CALC_DEF_NO_DIRECTION: 0",
+              "   L6_INVALID_BINDING_FORMAT: 0",
+              "   L6_DESIGN_ATTR_INCOMPLETE: 119",
+              "   L6_DESIGN_ATTR_UNEXTRACTABLE: 108",
+              "   L6_ANONYMOUS_RETURN: 0",
+              "   L6_BODY_ASSIGNMENT_IMPL_LOSS: 0",
+              "   V4_STATIC_FUNCTION_INVOCATION: 0",
+              "   L6_CONSTRAINT_MALFORMED_NUMERICAL: 0",
+              "   L6_CONSTRAINT_NON_NUMERICAL: 0",
+              "   L6_CALC_DEF_NO_INSTANTIATION: 0",
+              "   L6_ATTR_REDEF_EXPR_DROPPED: 0",
+              "",
+              "   Issues found: 408",
+              "   - ERROR: Derived expression references design attributes: ['electric'] at file:models/designs/aries_cs_integrated/plant.sysml:35",
+              "   - ERROR: Derived expression references design attributes: ['electric'] at file:models/designs/aries_cs_integrated/plant.sysml:36",
+              "   - ERROR: Derived expression references design attributes: ['electric'] at file:models/designs/aries_cs_integrated/plant.sysml:37",
+              "   - ERROR: Derived expression references design attributes: ['ua'] at file:models/designs/aries_cs_integrated/plant.sysml:248",
+              "   - ERROR: Derived expression references design attributes: ['ua'] at file:models/designs/aries_cs_integrated/plant.sysml:252",
+              "   ... and 403 more"
+            ]
+          }
+        }
+      },
+      {
+        "tree": "fusion-tea",
+        "tree_commit": "f96ad312c63e8c66695971b12feab971f3ba6eb3",
+        "code_label": "branch",
+        "code_commit": "41b14ca957a154821e76f595b8ff5a939037b18d",
+        "module_file": "code-branch/src/agentic_mbse/__init__.py",
+        "exit_code": 1,
+        "wall_time_s": 212.0,
+        "levels": {
+          "1": {
+            "status": "passed",
+            "header": "\u2705 Level 1: Syntax Validation",
+            "block": [
+              "   Files checked: 80",
+              "   Errors: 0",
+              "   Warnings: 0"
+            ]
+          },
+          "2": {
+            "status": "failed",
+            "header": "\u274c Level 2: Structural Completeness",
+            "block": [
+              "   Unused definitions: 9",
+              "   Unbound inputs: 0",
+              "   Undefined bindings: 0",
+              "   Placeholder bindings: 331",
+              "   Self-named bindings: 0",
+              "   Orphaned elements: 0",
+              "   Positional inputs inspected: 7654",
+              "   Positional input outcomes: explicit 0, anonymous 0, implicit_matching 5573, implicit_mismatch 125, new_parameter 1956, special_parameter 0, anonymous_target 0",
+              "   Positional bindings (blocking): 125",
+              "   Positional bindings pinned (legacy warning): 0",
+              "   Positional pins stale: 0",
+              "   Positional pins out of scope: 0",
+              "   Positional pins not judged (inspection failed): 0",
+              "   Positional unverifiable: 0",
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/fusion-tea/positional-pins.toml)",
+              "",
+              "   Issues found: 465",
+              "   - WARN: Unused calc def: integrated_heat_electricity::'Heat Driven Closure' at file:models/library/analyses/integrated_heat_electricity.sysml:46",
+              "   - WARN: Unused calc def: mfe_account_costs::'Power Supplies Cost' at file:models/library/analyses/mfe_account_costs.sysml:196",
+              "   - WARN: Unused calc def: mfe_account_costs::'Divertor Cost' at file:models/library/analyses/mfe_account_costs.sysml:224",
+              "   - WARN: Unused calc def: mfe_account_costs::'Aux Cooling Cost' at file:models/library/analyses/mfe_account_costs.sysml:617",
+              "   - WARN: Unused calc def: mfe_conductor_current::'Current Driven Pack Sizing' at file:models/library/analyses/mfe_conductor_current.sysml:39",
+              "   ... and 460 more"
+            ]
+          },
+          "3": {
+            "status": "passed",
+            "header": "\u2705 Level 3: Dataflow Integrity",
+            "block": [
+              "   Documents analyzed: 34",
+              "   Circular dependencies: 0"
+            ]
+          },
+          "4": {
+            "status": "passed",
+            "header": "\u2705 Level 4: Constraint Coverage",
+            "block": [
+              "   Total constraints: 345",
+              "   ConstraintUsage: 345",
+              "   ConstraintDefinition: 42",
+              "   Constraint usages assessed (incl. satisfy): 345",
+              "   Admitted numerical: 345",
+              "   Malformed numerical: 0",
+              "   Non-numerical: 0",
+              "   Unassessed (satisfy/require/plain): 0",
+              "   Executable share: 100.0%"
+            ]
+          },
+          "5": {
+            "status": "passed",
+            "header": "\u2705 Level 5: Traceability & Documentation",
+            "block": [
+              "   Total elements: 243",
+              "   Documented: 243",
+              "   Missing docs: 0",
+              "   Coverage: 100.0%"
+            ]
+          },
+          "6": {
+            "status": "failed",
+            "header": "\u274c Level 6: Architecture & Generator Subset",
+            "block": [
+              "   Execution target: unset (no execution-target in /tmp/l6-before-after-7wijcycx/trees/fusion-tea/pyproject.toml)",
+              "   Execution target note: generator findings are shown as warnings because execution-target is not set. Add execution-target = \"generated\" or \"native\" under [tool.agentic-mbse] in pyproject.toml, or run agentic-mbse init --execution-target=generated|native.",
+              "   Generator subset (subset-profile/v1, subset-coverage/v1): clear: no refusals found by the implemented rules; 0 refused; 0 unverified; 0 unassessed constraints; not a generation check",
+              "   Coverage limit: no rule yet for DEEP-QUALIFIED-WIRING, ES-002, ES-008, ES-009, ES-010-REFUSAL, CALC-DEF-BARE-RESULT, and 85 follow-up sites; a clear verdict says nothing about these",
+              "   Generator subset scope: executable profile executable-profile/v4; roots used 156 of 156 (not narrowed); fact kinds not enumerated: none",
+              "   Calc defs checked: 173",
+              "   Calc usages checked: 705",
+              "   Bindings validated: 5149",
+              "   Design attrs checked: 6180",
+              "   Manifests checked: 0",
+              "   L6_MISSING_QUALIFIED_NAME: 0",
+              "   L6_INVALID_QUALIFIED_NAME: 0",
+              "   L6_CALC_DEF_NO_OUTPUT: 0",
+              "   L6_CALC_DEF_NO_DIRECTION: 0",
+              "   L6_INVALID_BINDING_FORMAT: 0",
+              "   L6_DESIGN_ATTR_INCOMPLETE: 119",
+              "   L6_DESIGN_ATTR_UNEXTRACTABLE: 108",
+              "   L6_ANONYMOUS_RETURN: 0",
+              "   L6_BODY_ASSIGNMENT_IMPL_LOSS: 0",
+              "   V4_STATIC_FUNCTION_INVOCATION: 0",
+              "   L6_CONSTRAINT_MALFORMED_NUMERICAL: 0",
+              "   L6_CONSTRAINT_NON_NUMERICAL: 0",
+              "   L6_CALC_DEF_NO_INSTANTIATION: 0",
+              "   L6_ATTR_REDEF_EXPR_DROPPED: 0",
+              "",
+              "   Issues found: 539",
+              "   - ERROR: Derived expression references design attributes: ['electric'] at file:models/designs/aries_cs_integrated/plant.sysml:35",
+              "   - ERROR: Derived expression references design attributes: ['electric'] at file:models/designs/aries_cs_integrated/plant.sysml:36",
+              "   - ERROR: Derived expression references design attributes: ['electric'] at file:models/designs/aries_cs_integrated/plant.sysml:37",
+              "   - ERROR: Derived expression references design attributes: ['ua'] at file:models/designs/aries_cs_integrated/plant.sysml:248",
+              "   - ERROR: Derived expression references design attributes: ['ua'] at file:models/designs/aries_cs_integrated/plant.sysml:252",
+              "   ... and 534 more"
+            ]
+          }
+        }
+      }
+    ],
+    "dc3-baseline": [
+      {
+        "tree": "dc3-baseline",
+        "tree_commit": "808464df85d50521e4fbb9ba7cceb63d382aa832",
+        "code_label": "base",
+        "code_commit": "ebb3d46710a4c1476bb12fa0e9decf0088ddb2c5",
+        "module_file": "code-base/src/agentic_mbse/__init__.py",
+        "exit_code": 1,
+        "wall_time_s": 35.0,
+        "levels": {
+          "1": {
+            "status": "passed",
+            "header": "\u2705 Level 1: Syntax Validation",
+            "block": [
+              "   Files checked: 23",
+              "   Errors: 0",
+              "   Warnings: 0"
+            ]
+          },
+          "2": {
+            "status": "passed",
+            "header": "\u2705 Level 2: Structural Completeness",
+            "block": [
+              "   Unused definitions: 0",
+              "   Unbound inputs: 0",
+              "   Undefined bindings: 0",
+              "   Placeholder bindings: 0",
+              "   Self-named bindings: 0",
+              "   Orphaned elements: 0",
+              "   Positional inputs inspected: 357",
+              "   Positional input outcomes: explicit 0, anonymous 0, implicit_matching 302, implicit_mismatch 0, new_parameter 55, special_parameter 0, anonymous_target 0",
+              "   Positional bindings (blocking): 0",
+              "   Positional bindings pinned (legacy warning): 0",
+              "   Positional pins stale: 0",
+              "   Positional pins out of scope: 0",
+              "   Positional pins not judged (inspection failed): 0",
+              "   Positional unverifiable: 0",
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/dc3-baseline/positional-pins.toml)"
+            ]
+          },
+          "3": {
+            "status": "passed",
+            "header": "\u2705 Level 3: Dataflow Integrity",
+            "block": [
+              "   Documents analyzed: 17",
+              "   Circular dependencies: 0"
+            ]
+          },
+          "4": {
+            "status": "passed",
+            "header": "\u2705 Level 4: Constraint Coverage",
+            "block": [
+              "   Total constraints: 164",
+              "   ConstraintUsage: 164",
+              "   ConstraintDefinition: 5",
+              "   Constraint usages assessed (incl. satisfy): 164",
+              "   Admitted numerical: 158",
+              "   Malformed numerical: 2",
+              "   Non-numerical: 4",
+              "   Unassessed (satisfy/require/plain): 0",
+              "   Executable share: 96.3%"
+            ]
+          },
+          "5": {
+            "status": "passed",
+            "header": "\u2705 Level 5: Traceability & Documentation",
+            "block": [
+              "   Total elements: 70",
+              "   Documented: 70",
+              "   Missing docs: 0",
+              "   Coverage: 100.0%"
+            ]
+          },
+          "6": {
+            "status": "failed",
+            "header": "\u274c Level 6: Architecture & Pipeline Readiness",
+            "block": [
+              "   Calc defs checked: 6",
+              "   Calc usages checked: 41",
+              "   Bindings validated: 134",
+              "   Design attrs checked: 49",
+              "   Manifests checked: 0",
+              "   L6_MISSING_QUALIFIED_NAME: 0",
+              "   L6_INVALID_QUALIFIED_NAME: 0",
+              "   L6_CALC_DEF_NO_OUTPUT: 0",
+              "   L6_CALC_DEF_NO_DIRECTION: 0",
+              "   L6_INVALID_BINDING_FORMAT: 0",
+              "   L6_DESIGN_ATTR_INCOMPLETE: 0",
+              "   L6_DESIGN_ATTR_UNEXTRACTABLE: 3",
+              "   L6_ANONYMOUS_RETURN: 0",
+              "   L6_BODY_ASSIGNMENT_IMPL_LOSS: 0",
+              "   V4_STATIC_FUNCTION_INVOCATION: 0",
+              "   L6_CONSTRAINT_MALFORMED_NUMERICAL: 4",
+              "   L6_CONSTRAINT_NON_NUMERICAL: 4",
+              "   L6_CALC_DEF_NO_INSTANTIATION: 0",
+              "   L6_ATTR_REDEF_EXPR_DROPPED: 0",
+              "",
+              "   Issues found: 11",
+              "   - WARN: Constraint 'dc3_baseline_annual::annual_reference::ac_demand::input_domain' is not a numerical statement and will not execute: warn_non_numerical_predicate at models/designs/examples/baseline_annual.sysml:57",
+              "   - ERROR: Constraint 'dc3_baseline_costs::cost_reference::ac_total::delivered_domain' is a malformed numerical statement: feature_ref (block_non_numerical_containment) at models/designs/examples/baseline_costs.sysml:74",
+              "   - ERROR: Constraint 'dc3_baseline_costs::cost_reference::ac_total::delivered_domain' is a malformed numerical statement: feature_ref (block_non_numerical_containment) at models/designs/examples/baseline_costs.sysml:74",
+              "   - WARN: Constraint 'dc3_baseline_annual::annual_reference::ac_balance::input_domain' is not a numerical statement and will not execute: warn_non_numerical_predicate at models/designs/examples/baseline_annual.sysml:84",
+              "   - WARN: Constraint 'dc3_baseline_annual::annual_reference::dc_demand::input_domain' is not a numerical statement and will not execute: warn_non_numerical_predicate at models/designs/examples/baseline_annual.sysml:97",
+              "   ... and 6 more"
+            ]
+          }
+        }
+      },
+      {
+        "tree": "dc3-baseline",
+        "tree_commit": "808464df85d50521e4fbb9ba7cceb63d382aa832",
+        "code_label": "branch",
+        "code_commit": "41b14ca957a154821e76f595b8ff5a939037b18d",
+        "module_file": "code-branch/src/agentic_mbse/__init__.py",
+        "exit_code": 1,
+        "wall_time_s": 18.1,
+        "levels": {
+          "1": {
+            "status": "passed",
+            "header": "\u2705 Level 1: Syntax Validation",
+            "block": [
+              "   Files checked: 23",
+              "   Errors: 0",
+              "   Warnings: 0"
+            ]
+          },
+          "2": {
+            "status": "passed",
+            "header": "\u2705 Level 2: Structural Completeness",
+            "block": [
+              "   Unused definitions: 0",
+              "   Unbound inputs: 0",
+              "   Undefined bindings: 0",
+              "   Placeholder bindings: 0",
+              "   Self-named bindings: 0",
+              "   Orphaned elements: 0",
+              "   Positional inputs inspected: 357",
+              "   Positional input outcomes: explicit 0, anonymous 0, implicit_matching 302, implicit_mismatch 0, new_parameter 55, special_parameter 0, anonymous_target 0",
+              "   Positional bindings (blocking): 0",
+              "   Positional bindings pinned (legacy warning): 0",
+              "   Positional pins stale: 0",
+              "   Positional pins out of scope: 0",
+              "   Positional pins not judged (inspection failed): 0",
+              "   Positional unverifiable: 0",
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/dc3-baseline/positional-pins.toml)"
+            ]
+          },
+          "3": {
+            "status": "passed",
+            "header": "\u2705 Level 3: Dataflow Integrity",
+            "block": [
+              "   Documents analyzed: 17",
+              "   Circular dependencies: 0"
+            ]
+          },
+          "4": {
+            "status": "passed",
+            "header": "\u2705 Level 4: Constraint Coverage",
+            "block": [
+              "   Total constraints: 164",
+              "   ConstraintUsage: 164",
+              "   ConstraintDefinition: 5",
+              "   Constraint usages assessed (incl. satisfy): 164",
+              "   Admitted numerical: 158",
+              "   Malformed numerical: 2",
+              "   Non-numerical: 4",
+              "   Unassessed (satisfy/require/plain): 0",
+              "   Executable share: 96.3%"
+            ]
+          },
+          "5": {
+            "status": "passed",
+            "header": "\u2705 Level 5: Traceability & Documentation",
+            "block": [
+              "   Total elements: 70",
+              "   Documented: 70",
+              "   Missing docs: 0",
+              "   Coverage: 100.0%"
+            ]
+          },
+          "6": {
+            "status": "failed",
+            "header": "\u274c Level 6: Architecture & Generator Subset",
+            "block": [
+              "   Execution target: unset (no execution-target in /tmp/l6-before-after-7wijcycx/trees/dc3-baseline/pyproject.toml)",
+              "   Execution target note: generator findings are shown as warnings because execution-target is not set. Add execution-target = \"generated\" or \"native\" under [tool.agentic-mbse] in pyproject.toml, or run agentic-mbse init --execution-target=generated|native.",
+              "   Generator subset (subset-profile/v1, subset-coverage/v1): refused_incomplete: 236 refused, then incomplete: 50 unverified; 0 unassessed constraints; not a generation check",
+              "   Coverage limit: no rule yet for DEEP-QUALIFIED-WIRING, ES-002, ES-008, ES-009, ES-010-REFUSAL, CALC-DEF-BARE-RESULT, and 85 follow-up sites; a clear verdict says nothing about these",
+              "   Generator subset scope: executable profile executable-profile/v4; roots used 8 of 8 (not narrowed); fact kinds not enumerated: none",
+              "   Calc defs checked: 6",
+              "   Calc usages checked: 41",
+              "   Bindings validated: 134",
+              "   Design attrs checked: 49",
+              "   Manifests checked: 0",
+              "   L6_MISSING_QUALIFIED_NAME: 0",
+              "   L6_INVALID_QUALIFIED_NAME: 0",
+              "   L6_CALC_DEF_NO_OUTPUT: 0",
+              "   L6_CALC_DEF_NO_DIRECTION: 0",
+              "   L6_INVALID_BINDING_FORMAT: 0",
+              "   L6_DESIGN_ATTR_INCOMPLETE: 0",
+              "   L6_DESIGN_ATTR_UNEXTRACTABLE: 0",
+              "   L6_ANONYMOUS_RETURN: 0",
+              "   L6_BODY_ASSIGNMENT_IMPL_LOSS: 0",
+              "   V4_STATIC_FUNCTION_INVOCATION: 0",
+              "   L6_CONSTRAINT_MALFORMED_NUMERICAL: 4",
+              "   L6_CONSTRAINT_NON_NUMERICAL: 4",
+              "   L6_CALC_DEF_NO_INSTANTIATION: 0",
+              "   L6_ATTR_REDEF_EXPR_DROPPED: 0",
+              "",
+              "   Issues found: 332",
+              "   - ERROR: Constraint 'dc3_baseline_costs::cost_reference::ac_total::delivered_domain' is a malformed numerical statement: feature_ref (block_non_numerical_containment) at models/designs/examples/baseline_costs.sysml:74",
+              "   - ERROR: Constraint 'dc3_baseline_costs::cost_reference::ac_total::delivered_domain' is a malformed numerical statement: feature_ref (block_non_numerical_containment) at models/designs/examples/baseline_costs.sysml:74",
+              "   - ERROR: Constraint 'dc3_baseline_costs::cost_reference::dc_total::delivered_domain' is a malformed numerical statement: feature_ref (block_non_numerical_containment) at models/designs/examples/baseline_costs.sysml:134",
+              "   - ERROR: Constraint 'dc3_baseline_costs::cost_reference::dc_total::delivered_domain' is a malformed numerical statement: feature_ref (block_non_numerical_containment) at models/designs/examples/baseline_costs.sysml:134",
+              "   - WARN: Constraint 'dc3_baseline_annual::annual_reference::ac_demand::input_domain' is not a numerical statement and will not execute: warn_non_numerical_predicate at models/designs/examples/baseline_annual.sysml:57",
+              "   ... and 327 more"
+            ]
+          }
+        }
+      }
+    ],
+    "dc3-repaired": [
+      {
+        "tree": "dc3-repaired",
+        "tree_commit": "60b44d53460fccd2f44811d8abfd42bc270e90b2",
+        "code_label": "base",
+        "code_commit": "ebb3d46710a4c1476bb12fa0e9decf0088ddb2c5",
+        "module_file": "code-base/src/agentic_mbse/__init__.py",
+        "exit_code": 0,
+        "wall_time_s": 25.6,
+        "levels": {
+          "1": {
+            "status": "passed",
+            "header": "\u2705 Level 1: Syntax Validation",
+            "block": [
+              "   Files checked: 24",
+              "   Errors: 0",
+              "   Warnings: 0"
+            ]
+          },
+          "2": {
+            "status": "passed",
+            "header": "\u2705 Level 2: Structural Completeness",
+            "block": [
+              "   Unused definitions: 0",
+              "   Unbound inputs: 0",
+              "   Undefined bindings: 0",
+              "   Placeholder bindings: 0",
+              "   Self-named bindings: 0",
+              "   Orphaned elements: 0",
+              "   Positional inputs inspected: 528",
+              "   Positional input outcomes: explicit 0, anonymous 0, implicit_matching 391, implicit_mismatch 0, new_parameter 137, special_parameter 0, anonymous_target 0",
+              "   Positional bindings (blocking): 0",
+              "   Positional bindings pinned (legacy warning): 0",
+              "   Positional pins stale: 0",
+              "   Positional pins out of scope: 0",
+              "   Positional pins not judged (inspection failed): 0",
+              "   Positional unverifiable: 0",
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/dc3-repaired/positional-pins.toml)"
+            ]
+          },
+          "3": {
+            "status": "passed",
+            "header": "\u2705 Level 3: Dataflow Integrity",
+            "block": [
+              "   Documents analyzed: 15",
+              "   Circular dependencies: 0"
+            ]
+          },
+          "4": {
+            "status": "passed",
+            "header": "\u2705 Level 4: Constraint Coverage",
+            "block": [
+              "   Total constraints: 99",
+              "   ConstraintUsage: 99",
+              "   ConstraintDefinition: 6",
+              "   Constraint usages assessed (incl. satisfy): 99",
+              "   Admitted numerical: 99",
+              "   Malformed numerical: 0",
+              "   Non-numerical: 0",
+              "   Unassessed (satisfy/require/plain): 0",
+              "   Executable share: 100.0%"
+            ]
+          },
+          "5": {
+            "status": "passed",
+            "header": "\u2705 Level 5: Traceability & Documentation",
+            "block": [
+              "   Total elements: 80",
+              "   Documented: 80",
+              "   Missing docs: 0",
+              "   Coverage: 100.0%"
+            ]
+          },
+          "6": {
+            "status": "passed",
+            "header": "\u2705 Level 6: Architecture & Pipeline Readiness",
+            "block": [
+              "   Calc defs checked: 14",
+              "   Calc usages checked: 40",
+              "   Bindings validated: 228",
+              "   Design attrs checked: 72",
+              "   Manifests checked: 0",
+              "   L6_MISSING_QUALIFIED_NAME: 0",
+              "   L6_INVALID_QUALIFIED_NAME: 0",
+              "   L6_CALC_DEF_NO_OUTPUT: 0",
+              "   L6_CALC_DEF_NO_DIRECTION: 0",
+              "   L6_INVALID_BINDING_FORMAT: 0",
+              "   L6_DESIGN_ATTR_INCOMPLETE: 0",
+              "   L6_DESIGN_ATTR_UNEXTRACTABLE: 0",
+              "   L6_ANONYMOUS_RETURN: 0",
+              "   L6_BODY_ASSIGNMENT_IMPL_LOSS: 0",
+              "   V4_STATIC_FUNCTION_INVOCATION: 0",
+              "   L6_CONSTRAINT_MALFORMED_NUMERICAL: 0",
+              "   L6_CONSTRAINT_NON_NUMERICAL: 0",
+              "   L6_CALC_DEF_NO_INSTANTIATION: 0",
+              "   L6_ATTR_REDEF_EXPR_DROPPED: 0"
+            ]
+          }
+        }
+      },
+      {
+        "tree": "dc3-repaired",
+        "tree_commit": "60b44d53460fccd2f44811d8abfd42bc270e90b2",
+        "code_label": "branch",
+        "code_commit": "41b14ca957a154821e76f595b8ff5a939037b18d",
+        "module_file": "code-branch/src/agentic_mbse/__init__.py",
+        "exit_code": 0,
+        "wall_time_s": 13.3,
+        "levels": {
+          "1": {
+            "status": "passed",
+            "header": "\u2705 Level 1: Syntax Validation",
+            "block": [
+              "   Files checked: 24",
+              "   Errors: 0",
+              "   Warnings: 0"
+            ]
+          },
+          "2": {
+            "status": "passed",
+            "header": "\u2705 Level 2: Structural Completeness",
+            "block": [
+              "   Unused definitions: 0",
+              "   Unbound inputs: 0",
+              "   Undefined bindings: 0",
+              "   Placeholder bindings: 0",
+              "   Self-named bindings: 0",
+              "   Orphaned elements: 0",
+              "   Positional inputs inspected: 528",
+              "   Positional input outcomes: explicit 0, anonymous 0, implicit_matching 391, implicit_mismatch 0, new_parameter 137, special_parameter 0, anonymous_target 0",
+              "   Positional bindings (blocking): 0",
+              "   Positional bindings pinned (legacy warning): 0",
+              "   Positional pins stale: 0",
+              "   Positional pins out of scope: 0",
+              "   Positional pins not judged (inspection failed): 0",
+              "   Positional unverifiable: 0",
+              "   Positional pin list: none (looked at /tmp/l6-before-after-7wijcycx/trees/dc3-repaired/positional-pins.toml)"
+            ]
+          },
+          "3": {
+            "status": "passed",
+            "header": "\u2705 Level 3: Dataflow Integrity",
+            "block": [
+              "   Documents analyzed: 15",
+              "   Circular dependencies: 0"
+            ]
+          },
+          "4": {
+            "status": "passed",
+            "header": "\u2705 Level 4: Constraint Coverage",
+            "block": [
+              "   Total constraints: 99",
+              "   ConstraintUsage: 99",
+              "   ConstraintDefinition: 6",
+              "   Constraint usages assessed (incl. satisfy): 99",
+              "   Admitted numerical: 99",
+              "   Malformed numerical: 0",
+              "   Non-numerical: 0",
+              "   Unassessed (satisfy/require/plain): 0",
+              "   Executable share: 100.0%"
+            ]
+          },
+          "5": {
+            "status": "passed",
+            "header": "\u2705 Level 5: Traceability & Documentation",
+            "block": [
+              "   Total elements: 80",
+              "   Documented: 80",
+              "   Missing docs: 0",
+              "   Coverage: 100.0%"
+            ]
+          },
+          "6": {
+            "status": "passed",
+            "header": "\u2705 Level 6: Architecture & Generator Subset",
+            "block": [
+              "   Execution target: unset (no execution-target in /tmp/l6-before-after-7wijcycx/trees/dc3-repaired/pyproject.toml)",
+              "   Execution target note: generator findings are shown as warnings because execution-target is not set. Add execution-target = \"generated\" or \"native\" under [tool.agentic-mbse] in pyproject.toml, or run agentic-mbse init --execution-target=generated|native.",
+              "   Generator subset (subset-profile/v1, subset-coverage/v1): clear: no refusals found by the implemented rules; 0 refused; 0 unverified; 0 unassessed constraints; not a generation check",
+              "   Coverage limit: no rule yet for DEEP-QUALIFIED-WIRING, ES-002, ES-008, ES-009, ES-010-REFUSAL, CALC-DEF-BARE-RESULT, and 85 follow-up sites; a clear verdict says nothing about these",
+              "   Generator subset scope: executable profile executable-profile/v4; roots used 6 of 6 (not narrowed); fact kinds not enumerated: none",
+              "   Calc defs checked: 14",
+              "   Calc usages checked: 40",
+              "   Bindings validated: 228",
+              "   Design attrs checked: 72",
+              "   Manifests checked: 0",
+              "   L6_MISSING_QUALIFIED_NAME: 0",
+              "   L6_INVALID_QUALIFIED_NAME: 0",
+              "   L6_CALC_DEF_NO_OUTPUT: 0",
+              "   L6_CALC_DEF_NO_DIRECTION: 0",
+              "   L6_INVALID_BINDING_FORMAT: 0",
+              "   L6_DESIGN_ATTR_INCOMPLETE: 0",
+              "   L6_DESIGN_ATTR_UNEXTRACTABLE: 0",
+              "   L6_ANONYMOUS_RETURN: 0",
+              "   L6_BODY_ASSIGNMENT_IMPL_LOSS: 0",
+              "   V4_STATIC_FUNCTION_INVOCATION: 0",
+              "   L6_CONSTRAINT_MALFORMED_NUMERICAL: 0",
+              "   L6_CONSTRAINT_NON_NUMERICAL: 0",
+              "   L6_CALC_DEF_NO_INSTANTIATION: 0",
+              "   L6_ATTR_REDEF_EXPR_DROPPED: 0",
+              "",
+              "   Issues found: 30",
+              "   - WARN: omitted (subset-profile/v1): string-value-omission/string_value in attribute_value: string_value_not_generated: ac_coupled_facility::'AC Coupled Facility'::electrical::mv_transformer::conversion_level at models/designs/ac_coupled/ac_facility.sysml:45",
+              "   - WARN: omitted (subset-profile/v1): string-value-omission/string_value in attribute_value: string_value_not_generated: ac_coupled_facility::'AC Coupled Facility'::electrical::ups::conversion_level at models/designs/ac_coupled/ac_facility.sysml:51",
+              "   - WARN: omitted (subset-profile/v1): string-value-omission/string_value in attribute_value: string_value_not_generated: ac_coupled_facility::'AC Coupled Facility'::electrical::pdu::conversion_level at models/designs/ac_coupled/ac_facility.sysml:57",
+              "   - WARN: omitted (subset-profile/v1): string-value-omission/string_value in attribute_value: string_value_not_generated: ac_coupled_facility::'AC Coupled Facility'::it_system::rack_1::distribution_kind at models/designs/ac_coupled/ac_facility.sysml:81",
+              "   - WARN: omitted (subset-profile/v1): string-value-omission/string_value in attribute_value: string_value_not_generated: ac_coupled_facility::'AC Coupled Facility'::it_system::rack_2::distribution_kind at models/designs/ac_coupled/ac_facility.sysml:97",
+              "   ... and 25 more"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "flags": []
+}

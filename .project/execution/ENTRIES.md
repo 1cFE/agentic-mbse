@@ -40,3 +40,8 @@ The rules for writing an entry are in `README.md`, in this directory. Do not rew
 
 **Fact:** Anonymous elements (e.g. an unnamed `assert constraint` and its inputs) get a fresh random `element_id` on every load, so any sort or identity key that includes it is nondeterministic across runs; sort by location and names instead.
 **Evidence:** Item 4 Phase 3 notes in `.project/completed/20261018_positional-binding-check/plan.md` (a test failed 1 run in 3 before the fix).
+
+## [uv 0.12.23] 2026-10-20
+
+**Fact:** A `pyproject.toml` holding only a `[tool...]` table and no `[project]` still makes uv treat that directory as its own project: `uv run` there creates a new `.venv` (warning "No requires-python value found"), `uv lock` succeeds and writes `uv.lock` instead of exiting 2, and a directory nested in another uv project stops using the parent's environment. That is why `init --execution-target` refuses to create the file under a parent `pyproject.toml`.
+**Evidence:** Item 3 Phase 9 notes and § Audit fixes in `.project/completed/20261020_l6-subset-profile/plan.md`; ADR 0003.

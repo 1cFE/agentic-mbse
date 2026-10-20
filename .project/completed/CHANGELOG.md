@@ -4,6 +4,33 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-20] - L6 Generator Subset and Execution Target
+
+**Type**: Item (`EXEC-SUBSET-CONTRACT` Item 3; branch `l6-subset-profile`; orchestrated run, briefs in `20261020_l6-subset-profile/briefs/`)
+**Duration**: 2 days (spec created 2026-10-18; closed 2026-10-20)
+
+### Summary
+
+`agentic-mbse validate` L6 now runs Item 1's executable-subset contract, so a modeler learns in one pass which shapes the pinned generator refuses, instead of one generator run at a time (dc3 `808464d`: 236 refused, 32 omitted, 6 unconfirmed, 50 unverified). A project declares `[tool.agentic-mbse] execution-target = "generated" | "native"` in its `pyproject.toml`, `validate --execution-target` overrides it for one run, and `init --execution-target` writes it without touching another byte. Unset shows generator findings as warnings and never says generated-ready; `native` folds generator-only findings into an INFO summary; `generated` makes confirmed refusals errors. A crashed level or failed inspection now fails the run under every target (`L6_CHECK_ERROR`, `LEVEL_CRASHED`); `--json-report` writes the full result. One extraction session per run halves fusion-tea's `validate --complete` time (422 s to 211 s). The before/after safeguard on dc3 `808464d`, dc3 `60b44d5` and fusion-tea `f96ad312` found no level going from pass to fail. Audit: Needs Work on B1 (a walker's deliberate non-`sum` refusal read as a crash, failing native projects); fixed as the `L6_CHECK_UNVERIFIED` WARNING, re-checked: Certify.
+
+**Promises the product now makes.** [P-0003](../product/0003-l6-generator-subset.md): L6 reports generator refusals at a loudness set by the execution target and never claims the model will generate.
+
+**Decision: the execution-target setting.** [AGENT] (ratified by owner 2026-10-18; gates delegated) [ADR 0003](../adr/0003-execution-target-setting.md).
+
+**Behaviour found.** A table-only `pyproject.toml` makes uv treat the folder as its own project (execution register). `tests/fixtures/sump_pump` gives different results load to load at the base too (backlog `VALIDATE-SUMP-PUMP-NONDETERMINISM`).
+
+**Open for the owner.** An `abs(2.0)`-style call in a `designs/` attribute still fails L6 via `L6_DESIGN_ATTR_UNEXTRACTABLE`, as on `main`, even under `native` (backlog `L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES`). Two of the four native lowerings (`L6_CALC_DEF_NO_INSTANTIATION`, `L6_MISSING_QUALIFIED_NAME`) rest on a generator-only cause, not a native-route result.
+
+### Deliverables
+
+- Code: `src/agentic_mbse/validation/{session.py, execution_target.py, subset_presentation.py, report.py}`, `src/agentic_mbse/project_settings.py`, `src/agentic_mbse/sysml/{subset_coverage.py, subset_advisories.py}`; L6, ADR-002 checks, runner, CLI and `init` changes; `scripts/l6_subset/`.
+- Tests: session, settings, severity table, L6 contract (112), check errors, advisories, init, shipped text, run-consumers; suite 4411+ passed with the 6 failures already on `main`.
+- Docs: README, `skills/model-validation/SKILL.md`, CLAUDE.md L6 line, `docs/research-seam.md`.
+- Records: ADR 0003, P-0003, one execution fact.
+- Artifacts: spec, spec-review, design (rev 1), design-review, spike findings, plan, audit, product-lens, evidence, briefs.
+
+---
+
 ## [2026-10-18] - Positional-Binding Check
 
 **Type**: Item (`EXEC-SUBSET-CONTRACT` Item 4; branch `positional-binding-check`; orchestrated run, briefs in `20261018_positional-binding-check/briefs/`)

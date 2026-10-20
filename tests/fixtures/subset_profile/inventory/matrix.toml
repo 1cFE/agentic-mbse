@@ -592,10 +592,10 @@ class = "tracked_gap"
 contexts = ["`part cell[pack_count]` where `pack_count` has no integer literal default"]
 outcome = "unconfirmed"
 evidence_status = "code_read"
-evidence = ["backlog:PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE", "agentic_mbse/sysml/hierarchy.py:141"]
-owner = "agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE]; L6 wiring is EXEC-SUBSET-CONTRACT Item 3"
-coverage_limitation = "The generator decision is now part-multiplicity/unresolved_bound (ES-004), refused on expanded part usages with probes; the L6 warning this row files is not wired (Item 3)."
-statement = "Filed as a WARNING; overlaps ES-004's unresolved_bound shape."
+evidence = ["backlog:PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE", "agentic_mbse/sysml/hierarchy.py:141", "doc:tests/test_validation/test_l6_contract.py#test_invocation_callable_at_attribute_and_part_multiplicity_unresolved_reported"]
+owner = "agentic-mbse backlog [PUSH-DOWN-HIER-PROFILE-MULTIPLICITY-SHAPE]; closed by EXEC-SUBSET-CONTRACT Item 3 (L6 reports it)"
+coverage_limitation = "Closed by EXEC-SUBSET-CONTRACT Item 3: L6 reports the generator decision, part-multiplicity/unresolved_bound (ES-004, refused on expanded part usages with probes), through the execution target; test_l6_contract.py::test_invocation_callable_at_attribute_and_part_multiplicity_unresolved_reported."
+statement = "Closed: L6 reports ES-004's unresolved_bound finding, which this row overlaps."
 sites = [
     "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::1",
     "sysml_codegen/elaboration/occurrence.py::_multiplicity_indices::coded::SI_MULTIPLICITY_UNRESOLVED::2",

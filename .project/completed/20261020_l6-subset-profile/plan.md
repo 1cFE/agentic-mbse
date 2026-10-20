@@ -1,0 +1,909 @@
+# Implementation Plan: L6 integration and execution-target settings (EXEC-SUBSET-CONTRACT Item 3)
+
+**Status:** Phases 1–11 complete; audit fixes applied (2026-10-19); ready for the audit's targeted B1 re-check
+**Created:** 2026-10-18
+**Last Updated:** 2026-10-18
+
+## Source Documents
+
+- **Spec:** `.project/active/l6-subset-profile/spec.md` (revised after spec review; success criteria are the contract)
+- **Design:** `.project/active/l6-subset-profile/design.md` (rev 1; review resolutions in `design-review.md`). Component details, data model, severity table, issue codes, report schema and appendices live there. This plan links to them and does not repeat them.
+- **Spike:** `spikes/findings.md`, `spikes/f4-codegen-citations.md` (consumer-tree results, advisory shapes, String ids, codegen citations at `b5663c07`)
+- **Owner decisions and gates:** `briefs/align.md`. Owner boundary: nothing in Item 2, no writes in sysml-codegen. dc3 and fusion-tea are read only through `git archive` copies.
+
+## The Point
+
+`agentic-mbse validate` should tell a modeler up front which model shapes the pinned code generator will refuse, using Item 1's contract (`src/agentic_mbse/sysml/subset_profile.py`, `subset-profile/v1`). Today nothing calls that contract, so a modeler finds refusals one generator run at a time: dc3 found its blockers over five runs, and the contract reports 236 refused findings on that baseline in one pass. [AGENT] (ratified by owner, 2026-10-18; `briefs/align.md`)
+
+Each project says in its committed `pyproject.toml` how it runs: `[tool.agentic-mbse] execution-target = "generated" | "native"`. The target only decides how loud a finding is, never what is true:
+
+- Unset (the default): generator findings are warnings, with a note naming the setting.
+- `native`: generator-only findings fold into one INFO summary line.
+- `generated`: confirmed refusals are errors.
+
+Two things must hold in everything a user reads:
+
+- Nothing claims a model "will generate". `clear` means only "no refusals found by the implemented rules", and L6 is not `sysml-codegen check` (ADR 0001 invariant 2).
+- A broken check never passes. Under every target, a crash or a failed inspection fails the run ([AGENT] delegated by owner, 2026-10-18, gate R3-2). The safeguard for that decision is the before/after run in Phase 11: any consumer tree that goes from pass to fail goes to the owner before merge.
+
+This ladders to the epic (`.project/backlog/epic_executable-subset-contract.md`): Item 1 built the contract, this item makes `validate` its first consumer, Item 2 (another agent, not touched here) builds `sysml-codegen check`.
+
+## Implementation Strategy
+
+**Phasing rationale.** The riskiest change touches every level, not just L6: one model load and one constraint extraction shared across the run (`design.md` D14, bet B5). It goes first and alone, against a recorded baseline, so any change in another level's results is caught before anything is built on it. Then the pieces L6 needs, smallest and purest first: the settings reader, the severity table, the runner and report. Then L6 itself in three steps: the contract and its presentation, the advisories, the exception sites. The audit, `init` and docs follow, because they depend on the codes and wording settled earlier. The before/after safeguard is last because it measures the finished branch.
+
+**Critical path.** Phase 1 (baseline + session) → Phase 2 (settings) → Phase 3 (severity table) → Phase 4 (runner, report, target in L6) → Phase 5 (contract in L6) → Phase 7 (exception sites) → Phase 11 (safeguard). Phases 6, 8, 9 and 10 hang off that path: 6 and 8 need Phase 5; 9 needs Phase 2; 10 needs the wording from Phases 5 and 6.
+
+**First proof point.** Phase 1's with/without test: each of L2–L6 on the fixture models gives the same result with and without the shared session, and one fusion-tea `validate --complete` on the branch is no more than 10% slower than at `ebb3d467` (it should be faster, since L6 stops extracting a second time).
+
+**Overall validation approach.**
+
+- Each phase starts by writing its tests from the stencil, and the design's fixtures where it gives them.
+- **Green rule, every phase:** no test failure that is not in the Phase 1 baseline list; every new or modified file passes `uv run ruff check <files>`, `uv run ruff format --check <files>` and `uv run mypy src/`. Format only the files the phase touched (`uv run ruff format <files>`). Never run repo-wide `ruff format`.
+- An existing test whose assertion changes because a swallowed failure now reports, or because of the L6 rename, is the intended change. Record each one in that phase's Implementation Notes with the reason.
+- Fixture projects for CLI tests are built in `tmp_path` with a `work/BACKLOG.md` marker, so the project root is never this checkout or `$HOME` (`design.md#validation-approach`).
+- Tests that need a parsed model carry the label-only `syside` marker added in Phase 1. It never skips. Tests that can use fakes do (`design.md` Validation Approach, review S4).
+
+**Spec criteria trace.** Each phase's "Done when" names the spec criteria it closes, by the bold group heading in `spec.md` § Success Criteria. The table at the end maps every criterion to its phase and test file.
+
+---
+
+## Phase 1: Baseline, then the shared extraction session alone
+
+### Goal
+
+Record what passes and fails at `ebb3d467`, then land `ValidationSession` (`design.md` D14) with no other change, and prove each level's results are unchanged.
+
+### Assumption Under Test
+
+Bet B5: levels 2–6 only read the loaded model, so one shared load and one shared constraint extraction give each level exactly the result it gets today. And sharing does not make fusion-tea slower.
+
+### Step 1a: Baseline (no code change)
+
+- [x] Confirm `git diff --stat ebb3d467 HEAD -- src tests pyproject.toml uv.lock` is empty. If it is not, take the repository baseline from a `git archive ebb3d467` export instead of the checkout, and say so in the evidence. *Done: empty; checkout used (`evidence/baseline.md`).*
+- [x] Run `uv run pytest tests/`, `uv run mypy src/`, `uv run ruff check src/ tests/`. Record pass/fail counts and the exact list of failing test ids, mypy errors and ruff findings in `evidence/baseline.md`. This list is the green rule's reference for every later phase. Record whether `SYSIDE_LICENSE_KEY` was present. *Done: 6 failed / 3947 passed, 97 mypy errors, 118 ruff findings; licence present (`evidence/baseline.md`).*
+- [x] Write the export-and-run core of `scripts/l6_subset/run_consumers.py` (NEW) now, because Phase 11 extends it: Appendix C steps 2–8 (export a code revision and each consumer tree with Item 4's rules from `scripts/positional_binding/run_trees.py`, check the extraction parent is not a project root, record each tree's root and `pyproject.toml` table, run `-m agentic_mbse validate --complete models` with `PYTHONPATH=<code export>/src` and `cwd=<tree>`, check `agentic_mbse.__file__` is inside the export, capture stdout, stderr, exit code and wall time, parse per-level status from text). Subcommand `baseline --base ebb3d467` runs only the base revision on all three trees. *Done: `baseline` subcommand. Also added `session-equality` (see notes).*
+- [x] Run `baseline` once, alone on an idle machine. Write `evidence/baseline-consumers.{json,md}`: per tree and level, pass/fail or "crashed, recorded as pass"; exit code; wall time; the L1–L6 issue lines. Expected from the spike: fusion-tea and dc3 `808464d` fail L6, dc3 `60b44d5` passes. Record SysIDE version. *Done: matches the spike (fusion-tea and dc3 `808464d` fail L6, `60b44d5` passes); SysIDE 0.8.4; fusion-tea 410.9 s (`evidence/baseline-consumers.md`).*
+
+### Step 1b: Test stencil (write before the session code)
+
+```python
+# tests/test_validation/test_session.py
+@pytest.mark.syside
+@pytest.mark.parametrize("level", [2, 3, 4, 5, 6])
+@pytest.mark.parametrize("fixture", SESSION_FIXTURES)  # sample_models, sump_pump, adr002_violations, l6_negative, ...
+def test_level_result_is_identical_with_and_without_session(level, fixture):
+    without = run_level(level, fixture)
+    with ValidationSession():
+        with_session = run_level(level, fixture)
+    assert result_view(with_session) == result_view(without)   # success, issues, warnings, metrics
+
+def test_constraint_facts_extracted_once_per_model_in_a_run(monkeypatch, fixture_files):
+    calls = count_calls(monkeypatch, "extract_identified_constraint_facts")
+    with ValidationSession() as session:
+        run_all_levels(fixture_files)
+    assert calls.n == 1 and session.constraint_extractions == 1
+
+def test_memo_reraises_the_same_extraction_error_on_every_call(): ...
+def test_cached_load_is_dropped_when_a_file_size_or_mtime_changes(tmp_path): ...
+def test_extract_subset_facts_default_keyword_matches_todays_output(): ...   # I4
+def test_no_session_means_todays_behaviour(): ...
+```
+
+`result_view` compares `success`, `issues`, `warnings` and `metrics` exactly. L1 is not in the list: it does not call `load_sysml_model` (D14).
+
+### Changes Required
+
+**See `design.md` for:** D14, Implementation Notes "Session details", I10, B5.
+
+- [x] `pyproject.toml:103-106`: register the label-only `syside` marker (no skip logic). *Done, committed `1058e4dc`.*
+- [x] `tests/test_validation/test_session.py` (NEW): the stencil above. *Done, committed `1058e4dc`.*
+- [x] `src/agentic_mbse/validation/session.py` (NEW): `ValidationSession` as a context variable; load cache keyed by resolved path, size and `mtime_ns`; constraint-fact memo keyed by `id(model)` holding a strong model reference; stores facts or the raised exception; counts real extractions. *Done, committed `1058e4dc`.*
+- [x] `src/agentic_mbse/validation/common.py:102` `load_sysml_model`: consult the active session. *Done, committed `1058e4dc`.*
+- [x] `src/agentic_mbse/validation/level4_constraints.py:65` and `level6_architecture.py:650`: get facts through the session (direct call when no session is active). *Done, committed `1058e4dc`.*
+- [x] `src/agentic_mbse/sysml/subset_extraction.py:466`: add the `constraint_facts` keyword, default `extract_identified_constraint_facts`, used at `:454`. Not called by L6 yet. *Done, committed `1058e4dc`.*
+- [x] `src/agentic_mbse/validation/runner.py:58` `run_all_checks`: wrap the level loop in `ValidationSession()`. *Done, committed `1058e4dc`.*
+
+### Validation
+
+**Automated:**
+- [x] `uv run pytest tests/test_validation/test_session.py` passes. *Done: 24 pass after `sump_pump` was split into its three subfolders (orchestrator decision 2, below). Before that, 21 of 22 passed.*
+- [x] Full suite: green rule against `evidence/baseline.md`. *Done: the 6 baseline failures only.*
+- [x] ruff check, ruff format --check on touched files; `uv run mypy src/`. *Done: no new mypy errors or ruff findings.*
+
+**Manual (the stop condition):**
+- [x] Commit the session change. Run `run_consumers.py before-after --base ebb3d467 --branch HEAD --trees fusion-tea` (a first cut of Phase 11's subcommand: steps 1–9 of Appendix C for one tree, plus the timing in step 10). Record both wall times and the L1–L6 issue-line comparison in `evidence/session-check.md`. *Done: session `1058e4dc`; run at `00adb102` (after Phases 2–3, which add no code on the validate path). fusion-tea 411.4 s → 206.0 s (0.501), L1–L6 identical, no flags (`evidence/session-check-before-after.md`).*
+- [x] **Stop and report to the orchestrator** if any level's result differs in the with/without test, if any fusion-tea L1–L6 issue line differs from base, or if branch wall time is more than 1.10 × base. Do not start Phase 2. *Fired: the with/without test differs on `sump_pump`. Stopped before the commit and before Phase 2.* *Resolved by the orchestrator's answers (below); the subprocess check passed.*
+
+**What we know works after this phase:** one load and one extraction per run, with every level's result unchanged and fusion-tea not slower. Every later phase builds on that.
+
+**Done when:** I10 and B5 hold on fixtures and on fusion-tea. Spec trace: supports § Consumer evidence (`before-after.md` time and per-level comparison); no spec criterion closes here.
+
+---
+
+## Phase 2: Shared settings module and the holdout guard
+
+### Goal
+
+One definition of the keys allowed in `[tool.agentic-mbse]`, read by both research and validation (`design.md` D1).
+
+### Assumption Under Test
+
+The holdout guard can switch to the shared reader without changing any research behaviour except accepting `execution-target` (the intended relaxation in `design.md#potential-risks`).
+
+### Test Stencil
+
+```python
+# tests/test_project_settings.py
+def test_toolkit_keys_are_exactly_execution_target_and_research():
+    assert TOOLKIT_KEYS == {"execution-target", "research"}
+
+@pytest.mark.parametrize("key", ["execution_target", "executiontarget"])
+def test_unknown_key_is_a_defect_naming_key_and_allowed_set(tmp_path, key): ...
+def test_underscore_table_is_a_defect(tmp_path): ...
+def test_reseach_subtable_typo_is_a_defect(tmp_path): ...   # [tool.agentic-mbse.reseach]
+def test_absent_file_or_table_is_an_empty_table_not_a_defect(tmp_path): ...
+def test_malformed_toml_is_a_defect_with_path_and_parse_error(tmp_path): ...
+def test_reader_never_checks_values(tmp_path): ...   # execution-target = 1 is not a reader defect
+
+# tests/test_research/test_holdout.py (add)
+def test_both_keys_pass_the_guard(tmp_path): ...
+def test_bad_execution_target_value_does_not_refuse_register(tmp_path): ...
+def test_misspelled_key_fails_the_guard(tmp_path): ...
+```
+
+### Changes Required
+
+**See `design.md` for:** D1, I6, Implementation Notes "Settings reader", Data model (`SettingsFault`).
+
+- [x] `tests/test_project_settings.py` (NEW), additions in `tests/test_research/test_holdout.py`: stencil above. *Done `8e455049`.*
+- [x] `src/agentic_mbse/project_settings.py` (NEW): `TOOLKIT_KEYS`, `read_toolkit_table(root)`, `SettingsDefect` with `SettingsFault`. Standard library only. `add_execution_target` comes in Phase 9. *Done.*
+- [x] `src/agentic_mbse/research/holdout.py:241` `_research_table`: call `read_toolkit_table`; turn a defect into `HoldoutGuardError`; keep validating only `holdout-guard`. Replace the "its only key is 'research'" message (`:283`) with the allowed set, and update the research tests that assert the old text (record them). *Done; `test_hook_config.py:172` expected text updated to the allowed-set message.*
+
+### Validation
+
+- [x] New and research test suites pass; full suite green rule. *Done: 594 research + settings tests pass; full suite = baseline 6.*
+- [x] ruff and mypy on touched files. *Done: no new findings.*
+- [x] Manual: a `tmp_path` project with both `execution-target = "generated"` and a valid `holdout-guard` passes the guard. *Done as a test instead: `test_holdout.py::test_both_keys_pass_the_guard`.*
+
+**What we know works:** one key set, two readers, each checking only its own value.
+
+**Done when:** spec § One key set, two readers: bullets 1, 2, 4, 5 (the "bad holdout-guard does not fail validate" bullet closes in Phase 4, when L6 reads the table).
+
+---
+
+## Phase 3: The pure severity policy
+
+### Goal
+
+`validation/execution_target.py` with the target types, `resolve_target()`, `Category`, `Display`, `display()` and `LEGACY_CATEGORY` (`design.md` D2, Data model, The severity table).
+
+### Assumption Under Test
+
+The whole target behaviour fits one pure table, and check failures cannot reach the native summary (I2).
+
+### Test Stencil
+
+```python
+# tests/test_validation/test_execution_target.py
+EXPECTED = {  # copied cell by cell from design.md "The severity table"
+    (Category.REFUSED, Target.UNSET): Display.WARNING,
+    (Category.REFUSED, Target.GENERATED): Display.ERROR,
+    ...
+}
+def test_display_matches_every_cell():
+    assert {(c, t): display(c, t) for c in Category for t in Target} == EXPECTED
+
+def test_check_failure_and_setting_invalid_are_error_everywhere(): ...   # I2
+def test_legacy_category_covers_exactly_the_17_l6_codes(): ...
+def test_lowered_set_equals_native_lowered_fixture():
+    assert lowered(LEGACY_CATEGORY) == load_toml("tests/fixtures/l6/native_lowered.toml")   # empty now
+
+def test_resolve_target_from_file_override_and_unset(tmp_path): ...
+def test_override_with_malformed_file_is_still_an_error(tmp_path): ...
+def test_invalid_value_names_value_and_both_allowed(tmp_path): ...   # "generate", 1, ""
+def test_no_root_resolves_unset_with_looked_at_none(tmp_path): ...
+def test_subdirectory_reads_root_file_and_ignores_nested_pyproject(tmp_path): ...
+```
+
+### Changes Required
+
+**See `design.md` for:** D2, D3, Data model, The severity table, `LEGACY_CATEGORY` paragraph, Appendix A.
+
+- [x] `tests/test_validation/test_execution_target.py` (NEW). *Done `00adb102`.*
+- [x] `tests/fixtures/l6/native_lowered.toml` (NEW): an empty lowered set. Codes move into it only in Phase 8, each with its audit row (review S3). *Done.*
+- [x] `src/agentic_mbse/validation/execution_target.py` (NEW). Every generator-only candidate in `LEGACY_CATEGORY` starts as `LEGACY_KEPT`. `resolve_target` uses `find_project_root` (`project_root.py:19`) unchanged and `read_toolkit_table`. *Done.*
+
+### Validation
+
+- [x] New tests pass; full suite green rule; ruff and mypy on touched files. *Done: severity table test passes cell by cell; full suite = baseline 6; no new mypy or ruff findings.*
+
+**What we know works:** severity is one tested table; target resolution covers file, override, unset, no root and every fault.
+
+**Done when:** the policy level of two spec criteria is proven by unit test: § Check failures fail under every target ("under `native`, none is counted in the INFO summary") and § Where the setting is read from (root file used, nested file ignored, no root gives unset). Both close end to end through the CLI in Phase 4, together with § Settings states bullets 4–7.
+
+---
+
+## Phase 4: Runner crash handling, JSON report, and the target in L6
+
+### Goal
+
+A crashed level fails the run. `validate` gains `--execution-target` and `--json-report`. L6 resolves the target first, prints the target metric, and stops with `L6_SETTING_INVALID` on any setting error (`design.md` D3, D6, D8, Runner and report).
+
+### Assumption Under Test
+
+The runner can record a crash and carry the override and pass notes without knowing anything about targets. The report schema can hold every issue of every level, including crashed ones and unstructured strings.
+
+### Test Stencil
+
+```python
+# tests/test_validation/test_runner_crash.py
+@pytest.mark.parametrize("level", [3, 6])
+def test_level_that_raises_is_failed_and_named(monkeypatch, level, fixture_project):
+    make_level_raise(monkeypatch, level, RuntimeError("boom"))
+    code, out = run_cli("validate", f"--level={level}", fixture_project)
+    assert code == 1 and f"Level {level} crashed: RuntimeError: boom" in out
+    assert "All quality checks passed" not in out
+
+# tests/test_validation/test_json_report.py
+def test_report_holds_every_issue_warning_and_pass_note(tmp_path, fixture_project): ...
+def test_unstructured_plus_structured_equals_issues_per_level(): ...   # design note m3
+def test_crashed_level_appears_with_status_crashed(): ...
+def test_missing_report_parent_exits_2(): ...
+def test_report_is_byte_identical_across_runs(): ...   # I8
+
+# tests/test_validation/test_l6_settings_cli.py
+@pytest.mark.parametrize("override", [None, "generated", "native"])
+def test_malformed_pyproject_exits_1_naming_file_and_parse_error(override, tmp_path): ...
+def test_unknown_value_exits_1_naming_value_and_allowed(tmp_path): ...
+def test_unknown_key_or_underscore_table_exits_1_naming_key(tmp_path): ...
+def test_override_wins_and_output_says_so(tmp_path): ...   # both directions
+def test_no_root_metric_names_execution_target_option(tmp_path): ...
+def test_target_metric_names_source_every_run(tmp_path): ...
+def test_bad_holdout_guard_does_not_fail_validate(tmp_path): ...
+def test_execution_target_with_level_1_to_5_is_accepted_and_unused(tmp_path): ...
+```
+
+### Changes Required
+
+**See `design.md` for:** Runner and report, D3, D6, D8, Implementation Notes "JSON report schema", "What a user sees in L6" item 1.
+
+- [x] Tests above (NEW files). A shared fixture-project builder in `tests/helpers/l6_projects.py` (NEW): writes `work/BACKLOG.md`, a `models/` tree and an optional `pyproject.toml`; later phases add model shapes to it. *Done `2afa2a2c`.*
+- [x] `src/agentic_mbse/sysml/types.py`: add `L6_CHECK_ERROR`, `L6_SETTING_INVALID`, `LEVEL_CRASHED` (the `L6_SUBSET_*` codes land in Phase 5). *Done.*
+- [x] `src/agentic_mbse/validation/common.py`: `QualityCheckResult` gains `summarized`, `pass_note`, `report_detail` (default empty); `AggregatedResult` collects pass notes and joins them with the pinned note; `check_error_issue()`. *Done; `AggregatedResult` also carries `constraint_extractions` and `wall_time_s` for the report's `run_info`.*
+- [x] `src/agentic_mbse/validation/runner.py:128-137`: crash → failed result with one `LEVEL_CRASHED` ERROR, level number from its `QUALITY_CHECKS` position, traceback only with `--verbose`, fail-fast stops. Thread the override to L6 with `functools.partial` like L2 (`:94-100`). Final line at `:155-157` prints all notes. *Done.*
+- [x] `src/agentic_mbse/validation/report.py` (NEW): `validate-report/v1` per the schema note. *Done.*
+- [x] `src/agentic_mbse/validation/level6_architecture.py` `validate_architecture` (`:930` area): new `execution_target` keyword; resolve first; on `TargetSettingError` emit `L6_SETTING_INVALID` and the target metric, run no checks, fail. Otherwise emit the target metric and continue with today's checks. *Done.*
+- [x] `src/agentic_mbse/cli/__init__.py` (`cmd_validate` `:338`, argparse near `:758`): `--execution-target {generated,native}`, `--json-report PATH` (parent must exist, else exit 2; write failure exits 1). *Done.*
+
+### Validation
+
+- [x] New tests pass; full suite green rule; ruff and mypy on touched files. *Done: full suite = baseline 6; mypy 97 (baseline set).*
+- [x] Manual: `uv run agentic-mbse validate --level=6 --json-report /tmp/r.json tests/fixtures/sample_models` writes a report; `jq '.levels[0].status'` reads `passed` or `failed`, never missing. *Done: `levels[0].status` = `passed`; `run_info.constraint_extractions` = 1.*
+
+**What we know works:** a crash can no longer read as a pass; every setting fault fails L6 under every target and override; the report exists for every run.
+
+**Done when:** spec § Settings states bullets 4–7; § One key set, two readers bullet 3; § Where the setting is read from (all three); § Check failures fail under every target bullet 3 (crashed level, L6 and one other); § Structured report except the profile content and the dc3-sized count (Phase 5).
+
+---
+
+## Phase 5: L6 consumes the contract
+
+### Goal
+
+L6 runs the contract first over the shared model and facts, passes the String subject ids to the legacy design-attribute check, and presents every result through `display()`: verdict, coverage and scope lines, the native summary, issue order, the final-line note, the report's `profile`, "shadowed by", and the renamed title.
+
+### Assumption Under Test
+
+The contract's result alone is enough to render every spec presentation criterion with no outcome logic in L6 (I3). Suppressing the legacy String error by subject id loses no String anywhere (B6).
+
+### Test Stencil (write first; one fixture model per verdict)
+
+```python
+# tests/test_validation/test_l6_contract.py
+VERDICT_FIXTURES = {  # tests/fixtures/l6/contract/<name>/models/*.sysml
+    "refused": ..., "refused_incomplete": ..., "incomplete": ..., "unconfirmed": ...,
+    "clear": ..., "clear_unassessed": ..., "b8_shadowed": ..., "strings_both_spellings": ...,
+    "excluded_non_numerical": ..., "native_correctness_error": ..., "string_outside_roots": ...,
+    "invocation_rhs_and_multiplicity": ...,
+}
+BANNED = ["generated-ready", "generation-ready", "ready to generate", "will generate",
+          "generator accepts", "readiness"]
+
+@pytest.mark.syside
+@pytest.mark.parametrize("target", ["unset", "generated", "native"])
+@pytest.mark.parametrize("name", VERDICT_FIXTURES)
+def test_stdout_and_report_have_no_banned_wording(name, target, tmp_path): ...   # I9
+
+def test_one_refused_finding_exit_code_by_target(): ...   # generated 1, native 0, unset 0 + note
+def test_unset_note_printed_even_with_no_generator_findings(): ...
+def test_native_summary_findings_all_in_report_with_rule_reason_location(): ...
+def test_verdict_line_fields_and_never_clean_ready_passed(): ...
+def test_refused_incomplete_puts_refused_count_before_incomplete(): ...
+def test_clear_line_and_coverage_limit_line(): ...
+def test_incomplete_fails_under_generated_and_warns_under_unset(): ...
+def test_unconfirmed_is_never_error_and_names_by_design_context(): ...
+def test_b8_shadowed_by_names_the_refused_finding_and_outcome_stays_unconfirmed(): ...
+def test_unverified_error_generated_warning_unset_separate_warning_native(): ...
+def test_excluded_is_warning_with_reason_under_generated(): ...
+def test_unassessed_count_in_verdict_line_and_one_warning(): ...
+def test_final_line_says_generated_compatibility_not_established(): ...
+def test_level_title_is_architecture_and_generator_subset(): ...
+def test_both_string_spellings_inside_and_outside_designs_are_omitted_no_unextractable(): ...
+def test_string_outside_every_generator_root_is_still_omitted(): ...   # B6
+def test_native_correctness_error_stays_error_under_native(): ...
+def test_invocation_callable_at_attribute_and_part_multiplicity_unresolved_reported(): ...
+def test_contract_crash_is_check_error_under_every_target(monkeypatch): ...
+def test_dc3_sized_report_holds_every_evaluator_finding(): ...   # synthetic, tests/helpers/subset_synthetic.py
+
+# tests/test_subset_coverage.py
+def test_coverage_list_pinned_to_its_version(): ...
+def test_coverage_list_matches_no_rule_rows_of_the_matrix_fixture(): ...   # as tests/test_subset_matrix.py does
+def test_subset_profile_version_and_digest_unchanged_from_ebb3d467(): ...   # I4
+```
+
+The `unconfirmed` and `beneath_refused_multiplicity` shapes can be taken from Item 1's matrix fixtures under `tests/fixtures/subset_profile/`. B8 copies dc3's calc-owned-assertion shape (Item 1 `evidence/acceptance.md:21-31`).
+
+### Changes Required
+
+**See `design.md` for:** Core Concept, D8, D9, D10, D11, D13, "What a user sees in L6", Final line, I3, I5, I9, Implementation Notes "Matrix row closing".
+
+- [x] Tests and fixtures above (NEW). *Done: 13 fixtures (the stencil's 12 plus `beneath_refused_multiplicity`), `test_l6_contract.py` (112 cases), `test_subset_coverage.py` (4).*
+- [x] `src/agentic_mbse/sysml/subset_coverage.py` (NEW): `SUBSET_COVERAGE_VERSION`, the list (DEEP-QUALIFIED-WIRING, ES-002, ES-008, ES-009, ES-010 refusal side, CALC-DEF-BARE-RESULT, the follow-up sites).
+- [x] `src/agentic_mbse/sysml/types.py`: the `L6_SUBSET_*` codes from D8 except the two advisory codes (Phase 6). Rename the `:82` comment.
+- [x] `src/agentic_mbse/validation/subset_presentation.py` (NEW): `present(...)` returning issues, `summarized`, metrics, `pass_note`, report detail; shadowed-by from subject ids (D9); D13 ordering.
+- [x] `src/agentic_mbse/validation/level6_architecture.py`: contract first (`extract_subset_facts(model, constraint_facts=session...)`, `evaluate_subset_profile`), wrapped so a crash is `L6_CHECK_ERROR` and the verdict line reads `not computed`; pass `string_subjects` into `check_design_attr_completeness` (D10; `None` if the contract failed); title rename at `:3`, `:935`, `:943`, `:951`, `:963`, `:1015`.
+- [x] `src/agentic_mbse/validation/runner.py:54`: title rename. Update `tests/test_sysml_quality_checks.py:742`, `:751` (record in notes).
+- [x] `src/agentic_mbse/validation/report.py`: fill L6's `profile`. *Done without editing `report.py`: L6 puts the profile in `report_detail`, which the report already writes as `profile`.*
+- [x] Matrix: close MULTIPLICITY-SHAPE in `tests/fixtures/subset_profile/inventory/matrix.toml` citing the new test; regenerate `matrix.md` with `scripts/subset_profile/render_matrix.py`; `tests/test_subset_matrix.py` still passes.
+- [x] Grep tests, `skills/` and `scripts/` for the old title and for strings the new L6 output changes (design risk "text output changes"); fix or record each hit.
+
+### Validation
+
+- [x] New tests pass; full suite green rule; ruff and mypy on touched files. *Done: see Phase 5 Completion.*
+- [x] Manual: `--level=6 --execution-target=generated` on `tests/fixtures/l6/contract/refused_incomplete` prints the verdict line with the refused count first, and the first printed issue lines are refusals. *Done: verdict line `refused_incomplete: 1 refused, then incomplete: 1 unverified; 0 unassessed constraints; not a generation check`; first issue line `ERROR: refused (subset-profile/v1): invocation-callable/unsupported_callable in attribute_value: ...`, then the unverified ERROR.*
+
+**What we know works:** the contract is wired into L6, with every target's presentation, the String replacement and the report profile.
+
+**Done when:** spec § Settings states bullets 1–3; § Presentation (all); § Structured report (all); § Both String spellings (test half); § Library additions bullets 1, 2, 4; § Check failures bullets 4 (contract crash) and 5 (native-correctness error stays ERROR).
+
+---
+
+## Phase 6: Advisories and the extracted `falls_to_text_fallback`
+
+### Goal
+
+The two routed advisories (UNSUPPORTED-SHAPE-MESSAGE, WRAPPER-SHAPE) in `sysml/subset_advisories.py`, detected through the walkers' own code, with `reconstruct_expression`'s output proven unchanged (`design.md` D12, D15).
+
+### Assumption Under Test
+
+`reconstruct_expression`'s dispatch can be refactored into a shared predicate without changing a single output text. Item 2's agent depends on that function, so this is the one place this item edits shared library logic.
+
+### Test Stencil
+
+```python
+# tests/test_sysml/test_text_fallback.py
+@pytest.mark.syside
+def test_reconstruct_expression_output_unchanged_on_every_fixture_expression():
+    recorded = json.loads(Path("tests/fixtures/l6/reconstruct_texts_ebb3d467.json").read_text())
+    assert reconstruct_all("tests/fixtures/**/*.sysml") == recorded
+
+def test_falls_to_text_fallback_true_for_constructor_false_for_if_as_istype(): ...
+def test_text_fallback_nodes_raises_where_reconstruction_raises(): ...   # Cell.metadata
+
+# tests/test_validation/test_l6_advisories.py
+@pytest.mark.parametrize("target", ["unset", "generated", "native"])
+def test_opaque_expression_fires_on_new_cell_and_not_on_plain_ref(target): ...
+def test_wrapper_fires_on_collect_select_and_not_on_bare_sum(target): ...
+def test_wrapper_ignores_abs_inside_sum(): ...   # ES-005's refusal, not this advisory
+def test_advisory_at_most_warning_info_under_native(): ...
+def test_walker_semantic_evidence_error_is_advisory_unverified_warning(): ...
+    # sum(cells.?{ in c : Cell; c.ok }.mass) and Cell.metadata; L6 passes under unset
+def test_other_walker_exception_is_check_error(monkeypatch): ...
+```
+
+### Changes Required
+
+**See `design.md` for:** D12, D15, I1, I4, Implementation Notes "The reconstruction predicate".
+
+- [x] **First, before touching `expression.py`:** confirm `git diff ebb3d467 -- src/agentic_mbse/sysml/expression.py` is empty, then record `reconstruct_expression`'s text for every value expression in `tests/fixtures/**/*.sysml` into `tests/fixtures/l6/reconstruct_texts_ebb3d467.json` with a small recording script in `scripts/l6_subset/record_reconstruct_texts.py` (NEW). Commit the fixture before the refactor. *Done `74ae78a5`: 268 files, 2253 expressions, recorded twice byte-identical.*
+- [x] Tests above (NEW), advisory fixtures from `spikes/s2_advisory_shapes.py`'s candidates in `tests/fixtures/l6/advisories/`. *Done: 8 fixtures (committed with the record), `test_text_fallback.py` (4), `test_l6_advisories.py` (24).*
+- [x] `src/agentic_mbse/sysml/expression.py:298-356`: one ordered dispatch; `falls_to_text_fallback`; `text_fallback_nodes`. Additive public names only. *Done `22342afa`.*
+- [x] `src/agentic_mbse/sysml/subset_advisories.py` (NEW): opaque-expression and wrapper advisories over the contract's expression sites; wrapper filtered to `KNOWN_WRAPPER_FUNCTIONS` (`aggregation.py:72`); `SemanticEvidenceError` → advisory-unverified record. *Done.*
+- [x] `src/agentic_mbse/sysml/types.py`: `L6_SUBSET_ADVISORY`, `L6_SUBSET_ADVISORY_UNVERIFIED`. *Done.*
+- [x] `level6_architecture.py` and `subset_presentation.py`: call the advisories after the legacy checks; render; native summary counts advisories; advisory-unverified stays a WARNING outside the summary. *Done.*
+
+### Validation
+
+- [x] Output-unchanged test passes against the recorded fixture; new tests pass; full suite green rule; ruff and mypy. *Done: full suite 6 failed (the baseline 6) / 4224 passed; mypy 97; ruff 118 (baseline).*
+- [x] Manual: `--level=6` on the spike's `sum(cells.?{...}.mass)` fixture under unset passes with one `L6_SUBSET_ADVISORY_UNVERIFIED` WARNING. *Done: exit 0, one `WARN: advisory unverified (wrapper): ... EXPRESSION_KIND_UNSUPPORTED ...`, final line "passed with generated compatibility not established".*
+
+**What we know works:** both advisories fire where they should, never block, and the shared reconstruction function is byte-for-byte unchanged.
+
+**Done when:** spec § Library additions bullet 3 (each advisory fires and does not fire, at most WARNING, INFO under native); I4's `expression.py` clause.
+
+---
+
+## Phase 7: Exception sites
+
+### Goal
+
+Every site in `design.md` Appendix B reports `L6_CHECK_ERROR` at the narrowest safe scope, makes no dependent finding, and shows `not computed` for an affected count. D16 narrows the unextractable catch.
+
+### Assumption Under Test
+
+The propagated helpers reach a per-element handler, not the whole check (verified by reading in the design review; proven here by test). Retyping the evaluator's deliberate raises misses none.
+
+### Test Stencil
+
+```python
+# tests/test_validation/test_l6_check_errors.py
+SITES = [  # one entry per Appendix B row; how each forces its exception
+    Site("level6_architecture.py:191", force=raise_in("elements_of_type", ...), check="..."),
+    ...
+    Site("level6_architecture.py:723", force=..., no_finding="L6_CALC_DEF_NO_INSTANTIATION"),
+    Site("adr002.py:423", force=..., no_finding={"V2_DYNAMIC_EXPRESSION", "V4_UNSUPPORTED_OPERATOR",
+                                                 "L6_DESIGN_ATTR_UNEXTRACTABLE"}),
+]
+@pytest.mark.parametrize("target", ["unset", "generated", "native"])
+@pytest.mark.parametrize("site", SITES, ids=str)
+def test_site_failure_is_check_error_naming_check(site, target, monkeypatch):
+    result = run_l6_with(site.force, target, monkeypatch)
+    assert has_issue(result, "L6_CHECK_ERROR", names=site.check) and not result.success
+    assert site.no_finding is None or not has_code(result, site.no_finding)
+    assert not in_native_summary(result, "L6_CHECK_ERROR")
+
+def test_failed_counts_print_not_computed(): ...   # :973, :978
+def test_unextractable_catch_only_takes_evaluator_signal(monkeypatch): ...   # D16, :540
+def test_evaluator_deliberate_raises_are_unextractable_subclasses(): ...
+def test_existing_value_type_error_callers_still_catch(): ...
+```
+
+Drive each site with fakes (`SysideAdapter.elements_of_type`, `SysideAdapter.is_instance`, or the wrapped helper) where possible; mark the rest `syside` (S4).
+
+### Changes Required
+
+**See `design.md` for:** Appendix B (the site list and each change), D4, D16, I1, Implementation Notes "Exception-site pattern".
+
+- [x] `tests/test_validation/test_l6_check_errors.py` (NEW). *Done `dff51e5b`: 29 sites × 3 targets, plus counts, D16, deletion and the surprise test (101 cases).*
+- [x] `src/agentic_mbse/sysml/expression.py:466-567`: `Unextractable`, `UnextractableValueError`, `UnextractableTypeError`; each deliberate raise uses the subclass of its current type. *Done: 6 ValueError and 2 TypeError raises, plus the non-numeric literal (see notes).*
+- [x] `src/agentic_mbse/validation/level6_architecture.py`: every Appendix B site; `:540` catches `Unextractable` only; `validate_architecture` wraps each top-level check call; counts at `:973`, `:978` become `not computed` plus `L6_CHECK_ERROR`. Keep the display-only fallbacks in `get_qualified_name` and `get_element_location`. *Done.*
+- [x] `src/agentic_mbse/validation/adr002.py`: every Appendix B site; delete `_get_calc_usage_names` (`:268`). *Done.*
+- [x] Before editing, reconcile Appendix B's line numbers with the current file (they are at `ebb3d467`; Phase 5 moved some). Record the mapping in notes. *Done (notes).*
+
+### Validation
+
+- [x] New tests pass; full suite green rule (existing tests that asserted a swallowed failure now see `L6_CHECK_ERROR`: record each); ruff and mypy. *Done: 6 failed (baseline) / 4325 passed; mypy 97; ruff 118. No existing test asserted a swallowed failure.*
+- [x] Manual: `grep -n "except Exception" src/agentic_mbse/validation/level6_architecture.py src/agentic_mbse/validation/adr002.py` lists only sites that report, plus the two display-only fallbacks. *Done: 22 hits, each followed by `_element_error`, `_enumeration_error` or `check_error_issue`, plus the model-load handler (`:1162`), which already reported. The two display-only fallbacks live in `common.py:216-240`, not in these files.*
+
+**What we know works:** no failed inspection in L6 reads as clean, as zero, or as a model defect.
+
+**Done when:** spec § Check failures fail under every target bullets 1 and 2 (every site under every target; the five over-reporting sites make no dependent finding).
+
+---
+
+## Phase 8: Legacy-check audit dispositions and codegen citations
+
+### Goal
+
+`evidence/legacy-l6-audit.md` with one row per L6 code plus manifest and setup failures, the four native lowerings moved into `LEGACY_CATEGORY` together with their rows, and every codegen citation corrected or removed.
+
+### Assumption Under Test
+
+Appendix A's four confirmed rows are the only lowerings with evidence. The table test from Phase 3 keeps code and evidence in step.
+
+### Test Stencil
+
+```python
+# tests/test_validation/test_execution_target.py (extend)
+def test_lowered_set_is_exactly_the_four_evidenced_codes():
+    assert lowered(LEGACY_CATEGORY) == {"L6_MISSING_QUALIFIED_NAME", "L6_ANONYMOUS_RETURN",
+                                        "L6_CALC_DEF_NO_INSTANTIATION", "L6_BODY_ASSIGNMENT_IMPL_LOSS"}
+    assert lowered(LEGACY_CATEGORY) == load_toml("tests/fixtures/l6/native_lowered.toml")
+
+def test_audit_lowered_table_matches_fixture():   # parses the evidence file's "lowered under native" table
+    ...
+# tests/test_validation/test_l6_contract.py (extend)
+def test_lowered_code_is_native_summary_under_native_and_unchanged_under_others(): ...
+def test_kept_code_unchanged_under_every_target(): ...
+```
+
+### Changes Required
+
+**See `design.md` for:** Appendix A, B2, `LEGACY_CATEGORY` paragraph, Implementation Notes "Codegen citations", I5.
+
+- [x] `evidence/legacy-l6-audit.md` (NEW): from Appendix A and `spikes/f4-codegen-citations.md`. Columns: what the check does, today's severity, category, severity per target, evidence. Separate table of lowerings under `native`. Note the simple-name collision in `L6_CALC_DEF_NO_INSTANTIATION` (`level6_architecture.py:700-762`) and the "kept (follow-up)" rows pointing at backlog `L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES`. *Done `7c7d2210`.*
+- [x] `tests/fixtures/l6/native_lowered.toml`: add the four codes. `execution_target.py`: move the same four to `LEGACY_GENERATOR_ONLY`, in the same commit. *Done `7c7d2210` (audit, fixture and mapping together).*
+- [x] `level6_architecture.py` (`:847`, the "codegen's V8" reference near `:584`, others in `f4-codegen-citations.md`), `adr002.py:478`, `common.py:82`: correct or delete each citation. Never cite a working-tree line; read codegen only from a `git archive b5663c07` export. *Done `48a1c35d`.*
+
+### Validation
+
+- [x] Tests pass; full suite green rule; ruff and mypy. *Done: 6 failed (baseline) / 4345 passed; mypy 97; ruff 118.*
+- [x] Manual: `grep -n "codegen\|V8\|hierarchy_resolver" src/agentic_mbse/validation/level6_architecture.py src/agentic_mbse/validation/adr002.py src/agentic_mbse/validation/common.py`; every hit matches a row in `f4-codegen-citations.md` marked accurate, or is a pointer to the follow-up. *Done: 22 hits. Each is a site at `b5663c07` that `f4-codegen-citations.md` marks accurate or that Phase 8 re-read in a fresh export (V8, EXPOSE wiring, body assignment, `sanitize_name`, `^`, the `sum`-only refusal), a stale claim now saying the cited code is gone with the backlog pointer (FORMULA chains, `computed_attribute_extractor`, `hierarchy_resolver`), or a section label ("codegen checks", "Codegen Readiness").*
+
+**What we know works:** `native` relaxes only what has evidence, and the code and the audit cannot drift apart.
+
+**Done when:** spec § Audit and docs bullets 1 and 2.
+
+---
+
+## Phase 9: `init` writes the setting
+
+### Goal
+
+`init --execution-target`, the interactive prompt, and the noninteractive message, with byte-preserving insertion and every refusal case (`design.md` D7, the `init` table, I7).
+
+### Assumption Under Test
+
+Bet B3: a text insert verified by `tomllib` against the whole parsed document is enough to add one key safely.
+
+### Test Stencil
+
+```python
+# tests/test_init_execution_target.py
+GOLDEN = Path("tests/fixtures/l6/init_golden")   # <case>/before.toml, <case>/after.toml
+@pytest.mark.parametrize("force", [False, True])
+@pytest.mark.parametrize("case", ["comments_and_blank_lines", "existing_research_table",
+                                  "table_present_no_key", "no_table", "crlf", "no_final_newline"])
+def test_golden_insert_is_byte_exact_and_parses(case, force, tmp_path):
+    run_init(tmp_path, case, "--execution-target=generated", force=force)
+    assert (tmp_path / "pyproject.toml").read_bytes() == (GOLDEN / case / "after.toml").read_bytes()
+    assert parsed(after) == parsed(before) | one_key
+
+def test_no_file_creates_only_the_table(): ...
+@pytest.mark.parametrize("layout", ["symlink", "hardlink", "bom", "not_utf8", "inline_table",
+                                    "dotted_keys", "two_headers", "existing_defect"])
+def test_refused_layout_writes_nothing_prints_line_and_exits_1(layout): ...
+def test_existing_value_never_changed_by_reinit_force_or_disagreeing_option(): ...
+def test_interactive_prompt_default_leaves_unset(monkeypatch): ...
+def test_noninteractive_no_option_writes_nothing_and_prints_line_and_init_form(): ...
+def test_rest_of_install_completes_when_setting_step_refuses(): ...
+def test_install_commands_leaves_pyproject_untouched(): ...
+```
+
+### Changes Required
+
+**See `design.md` for:** D7, the `init` section and its table, refused layouts, Implementation Notes "Insert algorithm".
+
+- [x] Tests and golden files (NEW).
+- [x] `src/agentic_mbse/project_settings.py`: `add_execution_target(file, value) -> SettingWrite`.
+- [x] `src/agentic_mbse/cli/__init__.py` `cmd_init` (`:369`, argparse near `:804`): `--execution-target`; settings step after the installer saves; prompt only when stdin is a terminal; exit 1 only when the option was given and could not be written, or on a disagreement or defect with the option. `install-commands` never calls it.
+
+### Validation
+
+- [x] Tests pass; full suite green rule; ruff and mypy.
+- [x] Manual (review m9): in an empty `tmp` directory, run `init --execution-target=native`, then `uv run --directory <dir> python -c pass` and `uv lock --directory <dir>`. Record what uv does with a `pyproject.toml` that has no `[project]`. If uv errors where it would not with no file, stop and report: the "create a file holding only the table" row then needs an owner call.
+- [x] Manual: `init` in a `tmp` copy of a project, then `validate --level=6` shows `generated (from <path>)` or `native (...)`, confirming `init` and L6 read the same file.
+
+**What we know works:** `init` can set the target without ever damaging a committed file.
+
+**Done when:** spec § `init` (all seven bullets).
+
+---
+
+## Phase 10: Docs and the CLAUDE.md L6 line
+
+### Goal
+
+README, `skills/model-validation/SKILL.md` and L6 output each state the profile version, what was assessed, that it is incomplete relative to the generator, and that L6 is not `sysml-codegen check` (described as the future boundary, no command shown). `docs/research-seam.md` describes the shared key set.
+
+### Assumption Under Test
+
+The shipped text can state the boundary without any banned wording.
+
+### Test Stencil
+
+```python
+# tests/test_shipped_text.py (extend)
+@pytest.mark.parametrize("path", ["README.md", "skills/model-validation/SKILL.md"])
+def test_doc_states_profile_version_scope_incompleteness_and_not_codegen_check(path):
+    text = Path(path).read_text().lower()
+    assert "subset-profile/v1" in text and "not a generation check" in text ...
+    assert not any(b in text for b in BANNED)
+
+def test_research_seam_describes_shared_key_set(): ...
+def test_model_validation_table_row_uses_new_l6_title(): ...
+```
+
+The L6 output half is already asserted in Phase 5.
+
+### Changes Required
+
+**See `design.md` for:** Component Overview "Docs"; spec § Docs.
+
+- [x] `tests/test_shipped_text.py`: additions above.
+- [x] `README.md`, `skills/model-validation/SKILL.md` (including its level table row): the four statements; the setting and how to set it.
+- [x] `docs/research-seam.md:350`, `:414-415`: the shared key set; the guard now accepts `execution-target` (the intended relaxation).
+- [x] `CLAUDE.md` § Architecture, Level 6 bullet: change "Architecture & pipeline readiness (ADR-002, manifests, codegen)" to the new title with a short description. One line only; not the Change Coordination proposal Item 6 reserves.
+- [x] Re-run `uv run agentic-mbse install-commands --assistant claude` so the local install matches `skills/` (CLAUDE.md § Change Coordination).
+
+### Validation
+
+- [x] Tests pass; full suite green rule; ruff on touched test files.
+
+**What we know works:** every user-facing text states the boundary the same way.
+
+**Done when:** spec § Audit and docs bullet 3.
+
+---
+
+## Phase 11: The before/after safeguard and consumer evidence
+
+### Goal
+
+Run Appendix C in full on the finished branch, and write the dc3 evidence from the JSON report.
+
+### Assumption Under Test
+
+Bet B4: nothing that passes `validate --complete` today on the three consumer trees hides a crash or a swallowed failure. If it does, that is the R3-2 case the owner reserved.
+
+### Test Stencil
+
+```python
+# tests/test_l6_run_consumers.py (NEW): the script's pure parts, no consumer trees needed
+def test_parses_base_level_status_including_crashed_recorded_as_pass(): ...
+def test_flags_pass_to_fail_and_l1_l5_difference_first(): ...
+def test_time_criterion_fails_above_1_10(): ...
+def test_refuses_dirty_branch_or_head_mismatch(): ...
+```
+
+### Changes Required
+
+**See `design.md` for:** Appendix C (all 12 steps; stop-and-show in steps 9 and 10), risk "Retyping the evaluator's raises".
+
+- [x] `scripts/l6_subset/run_consumers.py`: complete `before-after` (all trees; steps 1, 9–12) and `l6-evidence`.
+- [x] `tests/test_l6_run_consumers.py` (NEW).
+- [x] Commit everything; run `before-after --base ebb3d467 --branch HEAD` alone on an idle machine. Writes `evidence/before-after.{json,md}`.
+- [x] Run `l6-evidence`. Writes `evidence/dc3-baseline-l6.md` (generated and unset runs) and `evidence/dc3-repaired-l6.md`, every count read from the report.
+- [x] `evidence/repository-checks.md`: final `uv run pytest tests/`, `uv run mypy src/`, `uv run ruff check src/ tests/` results against `evidence/baseline.md`; the `syside`-marked tests (`uv run pytest -m syside --collect-only -q`); whether the licence was present; anything skipped.
+
+### Validation
+
+- [x] Expected (from the spike and design): dc3 baseline 236 refused / 32 omitted / 6 unconfirmed / 50 unverified, `refused_incomplete`, B1–B6 refused ERROR, B7 omitted WARNING, B8 unconfirmed WARNING shadowed by B1. dc3 `60b44d5` `clear` with 30 omitted. New omitted WARNINGs 131 / 30 / 32. `L6_DESIGN_ATTR_UNEXTRACTABLE` fusion-tea 108 → 108, dc3 baseline 3 → 0. `run_info.constraint_extractions == 1`. Any difference is explained in the evidence.
+- [x] dc3 and fusion-tea HEAD and `git status` unchanged before and after.
+- [x] **Stop-and-show.** If the script exits 1 (any level or run goes from pass to fail, any L1–L5 issue line differs, or fusion-tea branch time exceeds 1.10 × base), stop. Do not merge, do not "fix" toward a pass. Report to the orchestrator with the flagged rows from `before-after.md`; the orchestrator shows the owner before merge.
+
+**What we know works:** the branch's effect on real consumer trees is measured, and any pass→fail is in the owner's hands.
+
+**Done when:** spec § Consumer evidence (all three); § Both String spellings (evidence half); § Audit and docs bullet 4.
+
+---
+
+## Spec criteria trace
+
+| Spec group (`spec.md` § Success Criteria) | Phase | Test or evidence |
+|---|---|---|
+| Settings states 1–3 (generated, native, unset with a refused finding) | 5 | `tests/test_validation/test_l6_contract.py` |
+| Settings states 4–7 (malformed, unknown value, unknown key, override) | 4 | `tests/test_validation/test_l6_settings_cli.py` |
+| One key set, two readers 1, 2, 4, 5 | 2 | `tests/test_project_settings.py`, `tests/test_research/test_holdout.py` |
+| One key set, two readers 3 (bad holdout-guard does not fail validate) | 4 | `test_l6_settings_cli.py` |
+| Where the setting is read from (3) | 3, 4 | `test_execution_target.py`, `test_l6_settings_cli.py` |
+| `init` (7) | 9 | `tests/test_init_execution_target.py` |
+| Presentation (12) | 5 | `test_l6_contract.py` |
+| Structured report | 4, 5 | `test_json_report.py`, `test_l6_contract.py` |
+| Check failures 1, 2 (sites, no dependent finding) | 7 | `test_l6_check_errors.py` |
+| Check failures 3 (crashed level) | 4 | `test_runner_crash.py` |
+| Check failures 4, 5 (evaluator crash; native-correctness stays ERROR) | 5 | `test_l6_contract.py` |
+| Both String spellings | 5, 11 | `test_l6_contract.py`, `evidence/dc3-baseline-l6.md` |
+| Library additions 1, 2 (coverage version; profile version unchanged) | 5 | `tests/test_subset_coverage.py` |
+| Library additions 3 (advisories) | 6 | `tests/test_validation/test_l6_advisories.py` |
+| Library additions 4 (UNSUPPORTED-RHS, MULTIPLICITY-SHAPE; matrix row closed) | 5 | `test_l6_contract.py`, `matrix.toml` |
+| Consumer evidence (3) | 11 | `evidence/dc3-baseline-l6.md`, `dc3-repaired-l6.md`, `before-after.md` |
+| Audit and docs 1, 2 (audit; citations) | 8 | `evidence/legacy-l6-audit.md` |
+| Audit and docs 3 (docs) | 10 | `tests/test_shipped_text.py` |
+| Audit and docs 4 (repo checks) | 11 | `evidence/repository-checks.md` |
+
+---
+
+## Environment Setup
+
+See CLAUDE.md. All commands through `uv run`. Model-loading tests need `SYSIDE_LICENSE_KEY` in `.env`. Consumer trees are read only through `git archive` exports under `/tmp`, never the checkouts in `~/src/dc3` or `~/src/fusion-tea`. sysml-codegen is read only from a `git archive b5663c07` export.
+
+## Risk Management
+
+See `design.md#potential-risks`. Phase-specific mitigations:
+
+- **Phase 1:** the session is the only change, measured against a recorded baseline, with an explicit stop. If B5 fails, the remedy is a design question, not a local patch.
+- **Phase 5:** the largest phase. If it runs past one session, split at the boundary between "contract in, verdict lines and String" and "native summary, shadowed-by, final line, report profile", and check off what is done.
+- **Phase 6:** the reconstruction texts are recorded and committed before `expression.py` changes, so the comparison cannot drift with the code.
+- **Phase 7:** Appendix B's line numbers are at `ebb3d467`; reconcile them first. A deliberate evaluator raise that was missed shows up as a new `L6_CHECK_ERROR` in Phase 11's UNEXTRACTABLE count.
+- **Phase 9:** uv's handling of a `[project]`-less file is checked by hand before the "no file" row is relied on.
+- **Phase 11:** a pass→fail is the owner's call, not the implementer's.
+
+## Implementation Notes
+
+### Phase 1 Completion
+**Completed:** 2026-10-19. Stopped 2026-10-18 at the stop condition; resumed on the orchestrator's answers.
+**Actual Changes:**
+- Step 1a, committed: `evidence/baseline.md` (repo checks at `ebb3d467`), `scripts/l6_subset/run_consumers.py` (`baseline`, and `session-equality`), `evidence/baseline-consumers.{json,md}`.
+- Session, committed `1058e4dc` after the orchestrator's answers: `validation/session.py` (`ValidationSession`, `active_session()`, `constraint_facts(model)`), `load_sysml_model` consults the session (`common.py`), L4 and L6 call `constraint_facts` (`level4_constraints.py:65`, `level6_architecture.py:650`), `extract_subset_facts(..., constraint_facts=...)` keyword (`subset_extraction.py`), `run_all_checks` wraps the level loop (`runner.py`), `syside` marker (`pyproject.toml`), `tests/test_validation/test_session.py`. Two existing tests now patch `constraint_facts` instead of the removed module name (`test_item12_checks.py:211`, `test_level4_reconciliation.py:71`).
+- Stop evidence: `evidence/session-check.md`, `evidence/session-equality.json`, `evidence/session-check-scripts/`.
+
+**Issues:**
+- The with/without test fails on `tests/fixtures/sump_pump`. That folder holds three copies of the same packages, and today's code, with no session, gives different L2, L4 and L6 results from one fresh load to the next on it (L6's `pump_fit` ERROR on 5 to 10 of 10 loads). Its three subfolders, and every other fixture, are stable. So the session is not the cause, but the plan's rule is "any difference stops", so this is the owner's call.
+- On all three consumer trees, every level's full result is identical with and without the session, with one load and one extraction, in about half the time (fusion-tea 407.8 s → 205.7 s, in process).
+
+**Orchestrator decisions, 2026-10-18** (each [AGENT]):
+1. Accepted: the `sump_pump` difference comes from the fixture already varying between loads with today's code (three copies of the same packages loaded together), not from the session. B5 holds.
+2. Approved: the with/without test uses `sump_pump/right`, `sump_pump/seed` and `sump_pump/wrong` as three separate fixtures, with a comment pointing to the backlog row. No double-run tolerance.
+3. Already filed: backlog `VALIDATE-SUMP-PUMP-NONDETERMINISM` (since Item 1's close); the orchestrator added the L2/L4 evidence. No new row.
+
+**Phase 1 close:** `run_consumers.py before-after --base ebb3d467 --branch HEAD --trees fusion-tea --out session-check-before-after` at `00adb102`: base 411.4 s, branch 206.0 s (ratio 0.501, limit 1.10); every level's status and printed block identical; resolved root agrees; siblings unchanged. A first run at `62621ad7` gave the same timing (414.8 → 206.4 s) but flagged a wrong expected root, a bug in the script's comparison (fixed in `5d0bf73c`), so it was rerun. Another agent's test suites ran on the machine during both runs; base and branch ran back to back under the same load.
+
+**Deviations:**
+- `sump_pump` (combined) stays in the count and `extract_subset_facts` tests as `sump_pump/right`, which is stable.
+- The with/without test runs L2–L6 in order inside one session per fixture, rather than one level per session as in the stencil. This also tests that a level is not changed by an earlier level's use of the shared model, which is what B5 claims.
+- The session raises `ValueError` if handed a directory instead of files, because a directory's mtime does not track its files. The levels always pass discovered files.
+- Added a `model_loads` counter next to `constraint_extractions`, so the test can check one load per run.
+- `run_all_checks` imports `ValidationSession` absolutely, outside the relative/direct-execution `try`, so mypy gets no new errors (`common.py` already uses absolute imports, so direct execution already needed the installed package).
+- `run_consumers.py session-equality` was added: the full-result comparison on the consumer trees, which the text-based `before-after` cannot do (text shows only the first five issues per level).
+- The repository baseline was taken in the checkout with the Phase 1 edits set aside. A `git archive` export run added 8 environment-only failures from console-script paths, so it was not used.
+
+
+### Phase 2 Completion
+**Completed:** 2026-10-19, `8e455049`.
+**Changes:** `src/agentic_mbse/project_settings.py` (`TOOLKIT_KEYS`, `read_toolkit_table`, `ToolkitTable`, `SettingsDefect`, `SettingsFault`, `dotted`); `research/holdout.py` reads through it and keeps its own `holdout-guard` and research-table checks; `tests/test_project_settings.py`; three tests added to `tests/test_research/test_holdout.py`.
+**Changed assertion:** `tests/test_research/test_hook_config.py:172` expected "its only key is 'research'"; it now expects "allowed keys are 'execution-target', 'research'" (the design's intended message change).
+**Deviations:** `ToolkitTable` carries the file path as well as the table, so the guard's messages still name the file. The reader also reports a non-UTF-8 file as `UNREADABLE` (the guard already treated it as unreadable).
+
+### Phase 3 Completion
+**Completed:** 2026-10-19, `00adb102`.
+**Changes:** `src/agentic_mbse/validation/execution_target.py`; `tests/test_validation/test_execution_target.py`; `tests/fixtures/l6/native_lowered.toml` (empty).
+**Deviations:** `describe_target` (the `Execution target` metric text) lives here beside `resolve_target`, so the metric and the resolution cannot drift. An invalid `execution-target` value is an error even with an override, like a malformed file (the spec names only the malformed case; the same reasoning applies). `resolve_target` raises `ValueError` if handed `Target.UNSET` as an override, since unset is the absence of an override. The legacy-code test reads the 17 codes from the L6 source files, so a new legacy code cannot be missed.
+
+
+### Phase 4 Completion
+**Completed:** 2026-10-19, `2afa2a2c`.
+**Changes:** `sysml/types.py` (`L6_CHECK_ERROR`, `L6_SETTING_INVALID`, `LEVEL_CRASHED`); `validation/common.py` (`summarized`, `pass_note`, `report_detail`; `AggregatedResult.pass_notes`, `constraint_extractions`, `wall_time_s`; `check_error_issue()`); `validation/runner.py` (`crashed_result`, override threading, final line); `validation/report.py` (NEW); L6 resolves the target first (`_setting_invalid_result`, `_target_detail`); `cli/__init__.py` (`--execution-target`, `--json-report`). Tests: `tests/helpers/l6_projects.py`, `test_runner_crash.py`, `test_json_report.py`, `test_l6_settings_cli.py`.
+**Changed assertions:** `tests/test_cli.py` `TestCmdValidate` builds the argument object by hand; its three tests now also pass `execution_target=None, json_report=None`.
+**Deviations:**
+- **I8 versus the report schema.** The schema has `run_info.wall_time_s`, a measured time, so the report cannot be byte-identical across runs. The I8 test compares reports with that one field blanked. Everything else is byte-identical. Surfaced here per the capture-fidelity rule; the alternative is to drop `wall_time_s` from the schema.
+- The `[tool.agentic_mbse]` defect message now also lists the allowed keys, because the spec asks that the error name "the key and the allowed keys" for that case too (`project_settings.py`, a Phase 2 file).
+- The crashed level no longer prints the old `❌ Error running Level N` line; it prints as a failed level with its `LEVEL_CRASHED` issue. `run_consumers.py`'s base-side parser still reads the old line for the base revision.
+- The report's per-issue `display` is the issue's severity: an issue reaches `issues` only as ERROR or WARNING, and summarized results are in `summarized`.
+- `agentic_mbse.version` in the report is the source tree's `__version__`, so an export run reports its own version, not the venv's metadata.
+
+
+### Phase 5 Completion
+**Completed:** 2026-10-19, commit recorded in git log ("L6 runs the subset contract first ...").
+**Changes:** `sysml/types.py` (six `L6_SUBSET_*` codes; L6 comment renamed); `sysml/subset_coverage.py` (NEW); `validation/subset_presentation.py` (NEW: `present`, `string_subjects`, `shadowed_by`); L6 runs the contract first (`_run_contract`, crash → `L6_CHECK_ERROR` from `subset_profile`), passes `string_subjects` to `check_design_attr_completeness`, shows every issue through `present`, and is titled through `LEVEL_NAME`; `runner.py` title. Fixtures `tests/fixtures/l6/contract/*`; tests `test_l6_contract.py`, `test_subset_coverage.py`. Matrix row closed in `matrix.toml`; `matrix.md` re-rendered.
+**Checks:** full suite 6 failed / 4196 passed; the 6 are the baseline list. mypy 97 errors (baseline). Touched files pass `ruff format --check`; `ruff check` is clean except the baseline E712s below.
+**Changed assertions:** `tests/test_sysml_quality_checks.py:742`, `:751` (and the class docstring at `:781`) now expect "Architecture & Generator Subset" (the rename). The file was not `ruff format`-clean before; formatting it, per the green rule, reflowed 58 lines without changing any test. Its four E712 findings are baseline findings and were left alone.
+**Decisions and deviations:**
+- **No Item 1 probe gives verdict `unconfirmed`** (every probe is evidence for a listed pair). The `unconfirmed` fixture is a non-numerical asserted constraint owned by an action def (`constraint-predicate` / `non_numerical_predicate` / `owner_other`). The B8 fixture is the same predicate under a calc usage with an asserted constraint, dc3's shape, not dc3's text.
+- **`beyond_generator_roots` cannot reach L6**, which always uses the generator's roots. Its message is tested through `present()` on Item 1's `widened_roots.sysml` with a caller root. `beneath_refused_multiplicity` has its own L6 fixture.
+- **The native summary line leaves out "0 advisories"** until Phase 6 adds the advisories, so it never prints a count of something that did not run.
+- **Shadowed-by applies to any outcome** (D9 says every finding not refused by the shadowing rule), and the report's `shadowed_by` also carries the refused finding's element id.
+- **The unassessed WARNING sorts after the contract's omitted findings.** D13 does not place it.
+- **The report's severities are the enum's lowercase values** (`error`, `warning`, `info`). Each profile finding's `display` is the table's value (`error`, `warning`, `native_summary`, `count_only`). Admitted findings appear only in the profile, as `count_only`.
+- **`pass_note` is set only when L6 passes.**
+- **String suppression is by element id.** If SysIDE gives an attribute no id, the legacy error stays.
+- **The coverage module's docstring was corrected:** its follow-up sites include agentic-mbse's shared-evidence walkers, not only sysml-codegen sites. `NO_RULE_FAMILIES` keeps the design's printed order, so the test compares it to the matrix as a set.
+- **Re-rendering `matrix.md` also fixed one stale `doc:` path** that `matrix.toml` already had right (left over from Item 1's archive move).
+- **Grep for the old title:** only `skills/model-validation/SKILL.md:28` and `CLAUDE.md:124` remain. Both are Phase 10 items, so they are unchanged. No test, skill or script asserts the final-line text that unset runs now change.
+- **Location text:** contract findings use the contract's `SafeLocation.file`, which prints as `///tmp/...` for a `/tmp` project, as the existing `L6_CONSTRAINT_NON_NUMERICAL` warnings already do. Not normalized here.
+
+### Phase 6 Completion
+**Completed:** 2026-10-19, record `74ae78a5`, refactor and advisories `22342afa`.
+**Changes:** `tests/helpers/reconstruct_texts.py` (NEW: `reconstruct_all`, `reconstruct_file`), `scripts/l6_subset/record_reconstruct_texts.py` (NEW; refuses to record if `expression.py` differs from `ebb3d467`), `tests/fixtures/l6/reconstruct_texts_ebb3d467.json`; `sysml/expression.py` (`_Branch`, `_reconstruction_branch`, `falls_to_text_fallback`, `text_fallback_nodes`; `reconstruct_expression` dispatches through `_reconstruction_branch`); `sysml/subset_extraction.py` (`expression_sites`, a public view of the contract's own site list); `sysml/subset_advisories.py` (NEW); `sysml/types.py` (two codes); `validation/subset_presentation.py` (`present` gains `advisories`; issues, `summarized`, profile `advisories` and `advisory_unverified`); `level6_architecture.py` (`_run_advisories` after the legacy checks). Fixtures `tests/fixtures/l6/advisories/*` (8); tests `tests/test_sysml/test_text_fallback.py`, `tests/test_validation/test_l6_advisories.py`.
+**What the record covers:** every `Expression` SysIDE enumerates in each fixture file, each file loaded alone (so the record does not depend on which files share a load), keyed by enumeration position, line:column and node type. 2253 expressions over 268 files, including 4 recorded raises (`OPERAND_ITERATION_FAILED` on `Cell.metadata` and on three body expressions `{ in m ...; ... }`) and one text fallback (`new Cell()`). The advisory fixtures were written before recording, so the record pins those shapes too. The unchanged-output test compares only the recorded files, so later fixtures do not break it.
+**Changed assertions:**
+- `tests/test_sysml/test_expression.py:1315` (`test_reconstruct_expression_dispatch_order_invariants`) read the branch order from `reconstruct_expression`'s source; it now reads it from `_reconstruction_branch`, where the order now lives. Same three assertions.
+- `tests/test_validation/test_l6_contract.py`: the native summary line now includes `0 advisories` (the design's line 6 order); the two direct `present(...)` calls pass an empty `Advisories`.
+**Decisions and deviations:**
+- **"Invokes `sum`" is decided by declaration identity**: any `invocation_uses` entry whose callable id is `STANDARD_SUM_FUNCTION_ID`, the allowlist's own constant. No name test was added.
+- **The wrapper advisory's walker can raise** before decomposition through `invocation_uses`; that raise is also the walker's own `SemanticEvidenceError` and gives an advisory-unverified record.
+- **The advisory-unverified record names the site's expression type**, not the inner node that failed: `SemanticEvidenceError` does not carry the failing node. Its code and detail are in the message.
+- **Advisory messages do not carry the profile version**: the advisories are not part of `subset-profile/v1`. Each says "not a generator refusal".
+- **The native summary says "not computed"** for the contract or the advisories when that step failed, rather than 0.
+- `ruff format` on `expression.py` (required by the green rule for touched files) also reflowed one pre-existing `is_reference_type` return (`:205`), not a behaviour change.
+- The two Item 1 matrix rows for these advisories (`PUSH-DOWN-EXPR-PROFILE-UNSUPPORTED-SHAPE-MESSAGE`, `PUSH-DOWN-AGG-PROFILE-WRAPPER-SHAPE`) were not edited: the plan closes only MULTIPLICITY-SHAPE, and `test_subset_matrix.py` constrains the PUSH-DOWN rows.
+
+### Phase 7 Completion
+**Completed:** 2026-10-19, `dff51e5b`.
+**Line mapping (Appendix B at `ebb3d467` → before this phase's edits, after Phases 5–6):** `level6_architecture.py` 191→210, 230→249, 246→265, 289→308, 320→339, 374→393, 418→437, 470→489, 502→527, 520→545, 540→567, 572→599, 623→657, 723→755, 759→791, 832→864, 907→939, 960→1089, 973→1104, 978→1109. `adr002.py` was unchanged since `ebb3d467`, so its lines held (87, 177, 207, 254, 268, 277, 335, 423, 624).
+**Changes:** `level6_architecture.py`: `_element_error`, `_enumeration_error`; every element loop reports and continues, every failed enumeration ends its check with one error; the two `AttributeError` catches are now element errors with no `L6_MISSING_QUALIFIED_NAME`; the owner type test (`:520`) reaches the element handler, so the attribute is not checked; `:540` catches `Unextractable` only. `validate_architecture` runs the legacy checks from one table (`_LEGACY_CHECKS`, in today's order) through `_guarded`, which `_run_contract` and `_run_advisories` now share, and the counts go through `_count`/`_count_elements`. `adr002.py`: `_element_error` at its four element handlers; `_is_invocation`, `_is_calc_usage`, `_is_part_usage` and `is_expose_binding` no longer catch, so a failure reaches the calling attribute's handler; `_get_calc_usage_names` deleted. `expression.py`: `Unextractable` and its two subclasses. Fixture `tests/fixtures/l6/check_errors/models/` (one library and one design file); tests `tests/test_validation/test_l6_check_errors.py`.
+**How the sites are forced:** a patched `SysideAdapter.elements_of_type` or `is_instance` raises only when called from the named function (read from the caller's frame), or returns the real elements wrapped so that one attribute read raises. Every other read is real, so each test runs the real L6 on a real model. A test with nothing forced shows the fixture reaches every site with no check error. For the three EXPOSE sites, a probe confirmed the test discriminates: with today's "return False on failure", `plant::Plant::exposed` gets V2, V4 and UNEXTRACTABLE findings; with the change it gets none.
+**Decisions and deviations:**
+- **"Not computed" covers every count a failure touched, not only `:973` and `:978`.** A check that reported any `L6_CHECK_ERROR` (element or check scope) prints "not computed" for its per-code counts, and for "Bindings validated" or "Design attrs checked" where those are its counts. The spec says "a count the failure affected prints not computed"; a partial count is affected.
+- **A non-numeric literal is the evaluator's own signal.** `float(expr.value)` on a String literal raises a plain `ValueError` at `ebb3d467`, and that is where today's legacy String error comes from. It is now re-raised as `UnextractableValueError` with the same message. Without this, a String the contract does not report (the B6 fallback D10 describes) would turn into `L6_CHECK_ERROR` instead of keeping its legacy error.
+- **`Unextractable` keeps the design's name** with `# noqa: N818` (ruff wants an `Error` suffix; it is a marker the two `*Error` classes carry).
+- `adr002.py` imports `check_error_issue` absolutely, outside its relative/direct `try`, as Phase 1 did in `runner.py`, so mypy reports no new error.
+- The count check is named `count of CalculationDefinition` / `count of CalculationUsage` in its message.
+
+**Surprise 1 (premise conflict, for the owner): a design attribute that calls anything but `sum` now fails L6 under every target.** `check_static_expressions` (V2) reads an attribute's references through `inspect_reference_uses`, which deliberately raises `SemanticEvidenceError` on every non-`sum` invocation (the ES-005 refusal path, `reference_use.py:420-452`). At `ebb3d467` the broad `except` at `adr002.py:624` hid this, so V2 skipped the attribute and L6 showed only the `V4_STATIC_FUNCTION_INVOCATION` WARNING, whose docstring says "WARNING, not ERROR, so Level 6 stays passing". Under I1 the raise is now `L6_CHECK_ERROR`, so `attribute x : Real = abs(2.0);` in `designs/` fails L6 under unset, `generated` and `native`. The contract already reports the same site (an `invocation-callable` refusal and an unverified `indexed-reference` check). I followed I1, because the design names D15 as its only exception, and pinned the behaviour in `test_static_expression_walker_refusal_is_a_check_error` so a change of mind changes one test. The alternative is to treat a shared walker's own `SemanticEvidenceError` inside a legacy check like D15: a WARNING that V2 could not inspect the attribute, never silent. Phase 11 measures whether any consumer tree is affected; dc3 `60b44d5`, the only tree passing L6 today, has verdict `clear`, so it has no unsupported call in an attribute value.
+
+### Phase 8 Completion
+**Completed:** 2026-10-19. Lowerings `7c7d2210`; citations `48a1c35d`. (Phase 7 follow-up `335d1be2`: the manifest check call is now wrapped like every other check, so a crash there is `L6_CHECK_ERROR` with "Manifests checked: not computed", not a crashed level.)
+**Changes:** `evidence/legacy-l6-audit.md` (NEW: 17 code rows with the String/other split of UNEXTRACTABLE, plus manifest and setup failures; the "Lowered under native" table; the simple-name collision note); `tests/fixtures/l6/native_lowered.toml` (4 codes); `execution_target.py` (the same 4 to `LEGACY_GENERATOR_ONLY`); tests in `test_execution_target.py` (lowered set is exactly the four; the audit's lowered table equals the fixture; the audit has a row for every code) and `test_l6_contract.py` (each lowered code is the native summary under native and unchanged under the others; nine kept codes unchanged under every target). Citation corrections in `adr002.py`, `level6_architecture.py`, `common.py`.
+**Codegen source:** a fresh `git archive b5663c07` export under `/tmp` (`git get-tar-commit-id` checked), read with `sed` only. `~/src/sysml-codegen` HEAD stayed `8396cb23` with an empty `git status --porcelain`. Every site cited in code or in the audit was re-read there.
+**Decisions and deviations:**
+- **All four lowerings are in one commit**, each with its audit row and fixture entry in that same commit. The brief's "each in the same commit as its audit row and fixture" holds; they were not split into four commits.
+- **The audit tests find the evidence file by glob** (`.project/*/*l6-subset-profile/evidence/legacy-l6-audit.md`), so they keep working after `/_my_close` moves the folder to `.project/completed/`.
+- **Two issue messages changed, because they made false codegen claims:** `L6_DESIGN_ATTR_UNEXTRACTABLE` now reads "has an expression with no static numeric value: ..." (was "... but codegen cannot extract a numeric default: ..."), and `L6_ATTR_REDEF_EXPR_DROPPED` now says "earlier sysml-codegen versions dropped this override at extraction" (was "codegen scans only ReferenceUsage redefinitions, so this override is silently dropped"). No test, skill or script asserted either text. Both are L6 lines, so the Phase 11 L1–L5 comparison is not affected.
+- `_is_supported_formula`'s REQ-CA-06/07 and "Item 5" references were removed. f4 found no REQ-CA-07 in codegen and did not check the self-reference path, so the comment now states the rule only.
+
+### Phase 9 Completion
+
+**Completed:** 2026-10-19
+**Changes made:**
+- `src/agentic_mbse/project_settings.py`: `inspect_execution_target(root)` returns `Insertable`, `Present` (the existing value) or `Blocked` (`BlockReason.DEFECT` or `LAYOUT`, with the reason). `add_execution_target(root, value)` writes and returns `Written`, or the same `Present` / `Blocked`. `TARGET_KEY` moved here; `validation/execution_target.py` imports it.
+- `src/agentic_mbse/cli/__init__.py`: `init --execution-target {generated,native}`; `_init_execution_target` runs after the installer saves and after the summary; `_report_execution_target_slot` prints the existing value, the defect, or the layout reason plus the line to add by hand; `_prompt_for_execution_target` asks only on a terminal (default: leave unset; EOF also leaves it unset). The noninteractive note reuses L6's `UNSET_NOTE` (`subset_presentation.py:58`), so `init` and L6 print the same line and `init` form.
+- Tests: `tests/test_init_execution_target.py` (50 cases); golden files `tests/fixtures/l6/init_golden/<case>/{before,after}.toml`, the six cases the plan names, written by hand. No `.gitattributes` and `core.autocrlf` unset, so git keeps the CRLF case's bytes.
+- `tests/test_cli.py`: the two tests that fake a terminal (`test_orchestrator_is_hash_tracked_and_modification_is_preserved`, `test_reinit_with_modification_prompts`) now pass `execution_target="generated"`. Without it the new prompt read the real stdin and pytest raised. This is the intended change: a terminal `init` now asks.
+**Decisions and deviations:**
+- **The layout check runs before any prompt.** `inspect_execution_target` builds the insert with a probe value and verifies it with `tomllib`, so a layout that cannot take the line is reported without asking first, as the design's table needs. The insert has the same shape for either value; `add_execution_target` builds and verifies again with the real value before writing.
+- **A sub-table alone is not a refused layout.** A file with only `[tool.agentic-mbse.research]` defines `agentic-mbse` implicitly; appending `[tool.agentic-mbse]` after it is valid TOML 1.0 (golden case `existing_research_table`). "Inline table" and "dotted keys" are named only when the probe fails and no header exists.
+- **Two header lines can only both parse when one is inside a string**, because TOML rejects a table declared twice (that file is an existing `TOML_SYNTAX` defect instead). The `two_headers` test uses a header inside a multi-line string plus a real one. A header only inside a string is the `fails_verification` case.
+- The functions take the project root, not the file path, to match `read_toolkit_table(root)`.
+- Exit 1 cases: option given and the layout is refused, the file has a defect, or the key holds a different or invalid value. Without the option every case exits 0 and prints what it found.
+**uv check (review m9), for the owner.** Run on `init --execution-target=native` in an empty `/tmp` directory, uv 0.12.23. uv does not error, so the plan's stop condition is not met and the "create a file holding only the table" row stands. But the file changes what uv does there:
+- `uv run --directory <dir> python -c pass` exits 0, creates `<dir>/.venv`, and warns `No requires-python value found in the workspace. Defaulting to >=3.12`. With no file it creates nothing.
+- `uv lock --directory <dir>` exits 0 and writes `uv.lock`. With no file it exits 2 ("No pyproject.toml found").
+- In a directory inside another uv project, the table-only file makes the child its own project: `uv run` there creates a separate `.venv` and stops using the parent's. Without the file it uses the parent's.
+- If this matters, the alternative is to refuse "no file" and print the line instead. Not changed here.
+**Manual check:** `init --execution-target=native` in a fresh `/tmp` directory, then `validate --level=6` on its `models/` printed `Execution target: native (from /tmp/p9m/empty/pyproject.toml)`. The same check is `test_init_writes_the_file_l6_reads`, with the project's own root marker removed so `init`'s `.agentic-mbse/install.json` is what finds the file.
+**Checks:** full suite 6 failures, the baseline set (pandoc, equations, index); ruff 118; mypy 97; touched files pass `ruff check` and `ruff format --check`.
+
+### Phase 10 Completion
+
+**Completed:** 2026-10-19
+**Changes made:**
+- `README.md` § Validate SysML Models: two paragraphs and the TOML snippet. They name L6's title, `subset-profile/v1`, the eight implemented rules (what is assessed), that the profile is incomplete (the `Coverage limit` line), that L6 is not a generation check and never runs the generator, and that asking sysml-codegen itself is a future step that does not exist yet. Then the setting, what each value does, `init --execution-target`, `validate --execution-target` and `--json-report`.
+- `skills/model-validation/SKILL.md`: the level table's row 6 is now "Architecture & Generator Subset", and one paragraph before "These checks do not establish..." states the same four points and the setting. The row used to say "readiness", a banned word.
+- `docs/research-seam.md:350`: `[tool.agentic-mbse]` holds `research` and `execution-target`, and the guard never reads `execution-target`'s value. `:414`: the fault list allows both keys.
+- `CLAUDE.md`: only the Level 6 bullet in § Architecture changed.
+- `tests/test_shipped_text.py`: 5 tests (each L6 doc states the four points and has no banned word; the doc's rule count equals `PACKAGED_RULES`; the skill's table row; the CLAUDE.md line; the research-seam key set). The banned list is imported from `tests/test_validation/test_l6_contract.py` so there is one list.
+- Re-ran `uv run agentic-mbse install-commands --assistant claude` (41 installed).
+**Decisions and deviations:**
+- "Not `sysml-codegen check`" is stated without writing that command, because the spec says no command is shown for a check that does not exist. A test asserts the string `sysml-codegen check` is absent from both docs.
+- The docs say each rule is "traced to sysml-codegen's source or to a probe run against it", not "a refusal", because `string-value-omission` is an omission with no generator error.
+**Checks:** full suite 6 failures, the baseline set; ruff 118; mypy 97; touched test file passes `ruff check` and `ruff format --check`.
+
+### Phase 11 Completion
+
+**Completed:** 2026-10-19
+**Changes made:**
+- `scripts/l6_subset/run_consumers.py`: `before-after` reads the branch side from `--json-report` (status, issue counts, the root L6 resolved, `run_info.constraint_extractions`) and checks the report against the branch's own text. It flags a level that crashed-recorded-as-pass at the base and now reports crashed, and checks the root on three readings (base L2, branch L2, branch L6). Step 11 counts are listed apart from the flags. New `l6-evidence` writes the two dc3 files. Pure helpers: `compare_runs`, `time_flag`, `branch_refusal`, `l6_changes`, `l6_summary`.
+- `tests/test_l6_run_consumers.py` (10 cases), with no consumer tree.
+- Evidence: `before-after.{json,md}`, `dc3-baseline-l6.md`, `dc3-repaired-l6.md`, `repository-checks.md`.
+**Before/after (`before-after --base ebb3d467 --branch HEAD`, branch `0ba0bf02`, exit 0, no flags):**
+
+| Tree | Exit | L1 | L2 | L3 | L4 | L5 | L6 | Wall time (s) | Root |
+|---|---|---|---|---|---|---|---|---|---|
+| fusion-tea `f96ad312` | 1 → 1 | pass → pass | fail → fail (465 → 465) | pass → pass | pass → pass | pass → pass | fail → fail (408 → 539) | 421.9 → 210.7 (0.50) | `trees/fusion-tea` |
+| dc3 `808464d` | 1 → 1 | pass → pass | pass → pass | pass → pass | pass → pass | pass → pass | fail → fail (11 → 332) | 44.8 → 17.9 | `trees/dc3-baseline` |
+| dc3 `60b44d5` | 0 → 0 | pass → pass | pass → pass | pass → pass | pass → pass | pass → pass | pass → pass (0 → 30) | 25.6 → 13.3 | `trees/dc3-repaired` |
+
+- No level or run went from pass to fail. L1–L5 printed identically on every tree. Each branch run extracted constraints once. Sibling checkouts were unchanged.
+- **Expected changes (not a stop), all as predicted:** new String `L6_SUBSET_OMITTED` WARNINGs 131 on fusion-tea, 32 on `808464d`, 30 on `60b44d5`. `L6_DESIGN_ATTR_UNEXTRACTABLE` fusion-tea 108 → 108, `808464d` 3 → 0 (its 3 String errors became omitted warnings).
+- **Other L6 changes, all explained:** fusion-tea L6 408 → 539 is +131 omitted warnings. `808464d` L6 11 → 332 is −3 UNEXTRACTABLE errors, +236 refused, +32 omitted, +6 unconfirmed, +50 unverified (all WARNING, target unset); the 8 legacy constraint diagnostics are unchanged. `60b44d5` L6 0 → 30 is the 30 omitted warnings; it still passes, with the note "generated compatibility not established".
+- Surprise 1 (Phase 7: a non-`sum` call in a design attribute now fails L6 as `L6_CHECK_ERROR`) did not happen on any tree: 0 check errors on all three.
+**dc3 evidence (`l6-evidence`):** `808464d` under `generated`: `refused_incomplete`, 236 refused / 32 omitted / 6 unconfirmed / 50 unverified, the same as Item 1's record. B1–B6 refused shown as ERROR, B7 omitted WARNING, all 6 B8 unconfirmed WARNING and shadowed by B1. Unset: the same findings, all WARNING. `60b44d5` under `generated`: `clear`, 30 omitted, 15 admitted.
+**Issues encountered:** the first `l6-evidence` pass printed the resolved root as `None` for an override run, because the root pattern did not match "override ...; <path> sets none", and showed occurrences as 0 where the record has none. Both were fixed in the script and the evidence regenerated. `before-after` was not rerun: its root check uses the unset wording, which the old pattern matched.
+**Repository checks:** see `evidence/repository-checks.md`. Same 6 failures, mypy 97 and ruff 118 as the baseline, same sets.
+
+### Audit fixes
+
+**Completed:** 2026-10-19, on `audit.md` (Needs Work at `d0b9fb12`) and `briefs/align.md` § Audit decisions. One commit per fix, `da603e0d`..`41b14ca9`.
+
+- **B1 (must-fix), `da603e0d`.** A legacy check's call into a shared expression walker now goes through `_walk` (`adr002.py`). The walker's own `SemanticEvidenceError` becomes `L6_CHECK_UNVERIFIED`: WARNING under every target, never in the native summary, naming the check, the element and the walker's reason, with the walker's code in `reason_code` (`common.check_unverified_issue`; new `Category.CHECK_UNVERIFIED`, W/W/W). Any other exception stays `L6_CHECK_ERROR`. The calls covered are V2's `design_reference_uses` and `_contains_feature_chain`, V4's `extract_operators` and the function-invocation check's `traverse_expression`. Resolvers (`resolved_referent` in `is_expose_binding`), SysIDE reads and type tests outside a walk stay `L6_CHECK_ERROR`.
+  - **Code choice:** a new code, not `L6_SUBSET_ADVISORY_UNVERIFIED`. That code's `reason_code`, message, suggestion and report detail all name an advisory, and the legacy checks are not advisories. Same severity row as D15's advisory-unverified.
+  - **Tests** (`test_l6_check_errors.py`): the pinning test is flipped and parametrized over all three targets (WARNING, not summarized, no check error; the run passes under unset and native, fails under generated). New: a non-`SemanticEvidenceError` from the walker is still `L6_CHECK_ERROR` (all targets); under `generated` the same attribute fails on the contract's `invocation-callable` refusal (`L6_SUBSET_REFUSED`, ERROR); both V4 walker calls report unverified. `test_execution_target.py` gains the three table cells.
+  - **Design:** D4, D8, D15, I1, the severity table and Appendix B now state the exception where the rule is.
+  - **Surprise, recorded so the owner sees it:** the audit's scenario ("a non-`sum` call in a `designs/` attribute passed L6 at `ebb3d467` with one WARNING") is not exact. Under `designs/`, `abs(2.0)` also gets `L6_DESIGN_ATTR_UNEXTRACTABLE` (ERROR, legacy kept, every target) from the design-attribute check, at `ebb3d467` and now; checked by running both revisions on the fixture. So a native project with that attribute in `designs/` still fails L6, for a reason this item did not introduce. The pass→fail regression the audit describes is real outside the `designs` filter (V2 checks every non-`library/` file; the completeness check only `designs/`). The test uses that layout (`analysis/plant.sysml`): at `ebb3d467` L6 passed with one `V4_STATIC_FUNCTION_INVOCATION` WARNING, and it passes again now under unset and native. Whether `L6_DESIGN_ATTR_UNEXTRACTABLE` on a function call should be generator-only under native was not in scope and is not decided here.
+- **impl-F3, `79798a65`.** Design I8 now reads "byte-identical across runs, apart from `run_info.wall_time_s`".
+- **impl-F2 (should-fix), `7962f3b6`.** `inspect_execution_target` (`project_settings.py`): with no `pyproject.toml` at the root, `enclosing_pyproject` looks for one in any parent directory. If found, the result is `Blocked` with the new reason `BlockReason.NESTED`; `init` prints why (a new file would make uv treat the directory as its own project, outside the parent's environment), the lines to create by hand, and the per-run `--execution-target` alternative. It exits 1 when `--execution-target` was given, 0 otherwise. In a standalone directory the file is still created, and `init` now adds "uv will now treat <dir> as its own project, because it has a pyproject.toml". README's `init` paragraph says both in one sentence; the design's `init` table has the new row. Tests: nested with and without the option, nearest-parent search, standalone message.
+  - Deviation: the hint does not suggest putting the setting in the parent's file. After `init`, the target holds the root markers, so L6 reads only `<target>/pyproject.toml`; the parent's table would not be read.
+- **Advisory 4, `a08a633f`.** `read_bytes()` failing with `OSError` is now `Blocked` (`DEFECT`, "cannot read <path>: ..."), like the reader. Test with a mode-000 file (skipped as root).
+- **Advisory 2, `d00dfb4b`.** A failed calc-def listing in `check_qualified_names` now reports its `L6_CHECK_ERROR` and the calc-usage half still runs. A failed usage listing keeps the calc-def half's findings (it used to drop them too). Test: calc-def listing forced to fail, `calc _t` still gets `L6_INVALID_QUALIFIED_NAME`.
+- **Advisory 1, `41b14ca9`.** The path-discovery and model-load exits of `validate_architecture` now carry the `Execution target` metric and the `report_detail` target block. The target was already resolved before them. Tests for both exits. Both new tests and the advisory 2 test fail on the code before the fix.
+- **Advisory 3 (owner-visible, no code change).** Two of the four codes lowered under `native` rest on judgment, not on a SysIDE or fixture result for the native route: `L6_CALC_DEF_NO_INSTANTIATION` (`evidence/legacy-l6-audit.md:34` records its own caveat) and `L6_MISSING_QUALIFIED_NAME` ("Confirmed (weak)", `:22`). Both meet the spec's "cause that exists only in the generator" test. The owner may want to confirm them.
+- **Advisory 5 (note, no code change).** The evaluator's `float(None)` `TypeError` reads as `L6_CHECK_ERROR`, not UNEXTRACTABLE; both are ERROR.
+- **Counts:** a check that reports `L6_CHECK_UNVERIFIED` keeps its printed counts (they are not "not computed"), because the check did run on every other element; the WARNING names the element it could not decide.
+
+- **Checks after the fixes:** full suite 6 failures (the baseline set), 4426 passed; mypy 97 and ruff 118, same sets (`evidence/repository-checks.md` § After the audit fixes). `before-after --base ebb3d467 --branch HEAD` at `41b14ca9`: exit 0, **no flags**. Every level count, L6 issue code and expected change matches the Phase 11 run exactly; no tree shows `L6_CHECK_UNVERIFIED` or `L6_CHECK_ERROR`. fusion-tea 412.7 → 212.0 s (0.51). `evidence/before-after.{json,md}` regenerated.
+
+---
+
+**Status:** Phases 1–11 complete; audit fixes applied (2026-10-19); ready for the audit's targeted B1 re-check
