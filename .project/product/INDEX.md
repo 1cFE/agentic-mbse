@@ -4,3 +4,4 @@
 
 - 0001 · agentic-mbse publishes a versioned executable-subset contract: refused only with a recorded generator probe, CLEAR only over the implemented rules · surfaces: agentic_mbse.sysml.subset_profile, sysml-codegen, l6, guidance · checked: 2026-10-18 @ cff1203e
 - 0002 · validate L2 flags inputs bound by position to a differently named formal: new mismatches block, pinned legacy ones warn, and an uninspectable owner never reads clean · surfaces: validate L2, positional-pins.toml, docs/patterns/semantic-hazards.md · checked: 2026-10-18 @ 1681edc8
+- 0003 · validate L6 reports, in one run, which model shapes the pinned generator refuses, at a loudness set by the project's execution-target, and never claims the model will generate · surfaces: validate L6, validate --execution-target, validate --json-report, init --execution-target, "pyproject.toml tool.agentic-mbse" · checked: 2026-10-20 @ 92b9a9b5
