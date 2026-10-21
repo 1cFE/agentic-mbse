@@ -1,14 +1,11 @@
 """The invocation capability boundary: which callables the executable subset supports.
 
-One pure module, imported by the fact layer (`reference_use`, whose refusal of every other
-invocation is the generator's ES-005 refusal) and by the decision layer (`subset_profile`), so
-the two cannot disagree about what is supported (design review S8). It imports no SysIDE.
-
-Changing `SUPPORTED_INVOCATION_IDS` changes the generator's refusals and must bump
-`SUBSET_PROFILE_VERSION`; a test pins a digest of it.
+One pure module that imports no SysIDE. The reference walk (`reference_use`) refuses every
+invocation of a callable outside `SUPPORTED_INVOCATION_IDS`, as the generator's ES-005 refusal
+does.
 
 :class:`InvocationUse` is the pure record of one ordinary invocation, produced by
-`reference_use.invocation_uses` and read by the subset facts.
+`reference_use.invocation_uses`.
 """
 
 from __future__ import annotations

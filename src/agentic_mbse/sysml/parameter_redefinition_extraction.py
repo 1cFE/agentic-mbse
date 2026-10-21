@@ -2,7 +2,7 @@
 
 `extract_parameter_redefinitions(model)` reads the facts in
 :mod:`~agentic_mbse.sysml.parameter_redefinition_facts` and decides nothing. L2-internal
-(design D1): not part of ``SubsetFacts`` and not a surface for Item 2 or sysml-codegen.
+(design D1): not a surface for sysml-codegen.
 
 The reads, each observed on SysIDE 0.8.4 and pinned by
 `tests/learning/test_syside_input_redefinition.py`:
@@ -143,7 +143,7 @@ def _label(element: Any) -> str:
 
 
 def _direction(feature: Any) -> Direction | None:
-    """`in` or `inout`, read as `subset_extraction._is_bound_input` does; else not an input."""
+    """`in` or `inout`; else not an input."""
     direction = getattr(feature, "direction", None)
     if direction is None:
         return None

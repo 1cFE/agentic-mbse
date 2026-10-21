@@ -6,9 +6,8 @@ name, direction and role, and every redefinition SysIDE resolved for it, each ma
 implied (by position) or explicit (``:>>`` or ``redefines``). The positional-binding check
 (`validation/positional_binding.py`) reads these facts and nothing else from SysIDE.
 
-Status: L2-internal. This family has no version marker, is not part of
-:class:`~agentic_mbse.sysml.subset_facts.SubsetFacts`, and is not a surface Item 2 or
-sysml-codegen should consume (design D1). Promoting it needs its own item.
+Status: L2-internal. This family has no version marker and is not a surface sysml-codegen
+should consume (design D1). Promoting it needs its own item.
 
 The extraction (`parameter_redefinition_extraction.py`) is total: every inspected owner and
 input yields exactly one fact or one :class:`RedefinitionFailure`. An owner or input whose

@@ -1,9 +1,8 @@
 """Pure references from a fact to the model element it is about.
 
-Shared by the occurrence facts and the subset facts. Neither type holds a SysIDE node: an
-:class:`ElementRef` names an element by its identity, and a
-:class:`SafeLocation` says where a subject was authored as far as that is known. Both are
-built on the SysIDE side and read anywhere, including the pure decision layer.
+Neither type holds a SysIDE node: an :class:`ElementRef` names an element by its identity, and
+a :class:`SafeLocation` says where a subject was authored as far as that is known. Both are
+built on the SysIDE side (`element_refs.py`) and read without SysIDE.
 """
 
 from __future__ import annotations
