@@ -9,7 +9,7 @@ superseded_by: null
 supersedes: 0003
 provenance: "[AGENT] (direction ratified by owner, 2026-10-21; L6 details are spec D-a to D-c, agent-grade)"
 surfaces: [validate L6, validate --execution-target, init --execution-target, "pyproject.toml tool.agentic-mbse"]
-checked: null
+checked: 2026-10-21 @ 508aad86
 ---
 
 ## Promise

@@ -9,7 +9,7 @@ superseded_by: null
 supersedes: 0001
 provenance: "[AGENT] (ratified by owner, 2026-10-21)"
 surfaces: [MODELING_GUIDE.md, MODELING_PROCESS.md, skills/sysml-conventions, skills/design-model, skills/plan-model, skills/implement-model, skills/model-validation, skills/toolkit-awareness, docs/patterns]
-checked: 2026-10-21 @ 21375f67
+checked: 2026-10-21 @ 508aad86
 ---
 
 ## Promise
