@@ -19,7 +19,7 @@ agentic-mbse never tells a modeller whether a model will generate; only `sysml-c
 ## Authority
 
 - [AGENT] (ratified by owner, 2026-10-21) `.project/adr/0004-generator-is-the-only-generation-authority.md`.
-- `.project/active/retire-subset-profile/spec.md` R3, R4 [NEED] and R5 [INFERRED: owner assumption stated in chat, not contradicted].
+- `.project/active/retire-subset-profile/spec.md` R3, R4 [INFERRED] (ratified by owner, 2026-10-21) and R5 [INFERRED: owner assumption stated in chat, not contradicted].
 
 ## Evidence
 
@@ -30,4 +30,4 @@ agentic-mbse never tells a modeller whether a model will generate; only `sysml-c
 
 The workflow step only runs when the AI modelling skills are used. Nothing runs the check automatically; L6 does not call it (ADR 0004, option C not taken).
 
-The `checked` stamp covers the guidance and workflow text only. The first sentence of the promise also needs L6's copy removed (plan Phase 4), which had not landed at that revision; re-check at close.
+L6's copy of the generator rules was removed in plan Phase 4 (commits `7a68c702`, `2f49eb7b`), so the first sentence of the promise holds; every run that includes L6 now ends with a line pointing to `sysml-codegen check`.

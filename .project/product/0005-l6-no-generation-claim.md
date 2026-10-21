@@ -24,4 +24,4 @@ checked: null
 
 ## Scope
 
-Filed with the decision on 2026-10-21, before the L6 rewire (plan Phase 4) was implemented; `checked` stays null until Phase 4 lands and the item's audit confirms it. The pre-Item-3 `L6_DESIGN_ATTR_UNEXTRACTABLE` reports for String values come back (spec D-c).
+Filed with the decision on 2026-10-21, before the L6 rewire; the rewire landed in plan Phase 4 (`7a68c702`) and the item's Phase 6 audit confirmed it. Every run that includes L6 ends, pass or fail, with a line saying L6 does not check generation and naming `sysml-codegen check` (Phase 6 fix). The pre-Item-3 `L6_DESIGN_ATTR_UNEXTRACTABLE` reports for String values come back (spec D-c).

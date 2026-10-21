@@ -26,12 +26,12 @@ The owner approved this on 2026-10-21 ("Ok go with your recommendation. implemen
 
 ## Why
 
-- **The copy is often silent.** On the 246 test models, the generator refuses 169 and the copy says nothing about 129 of them. It has never flagged a model the generator builds, but its silence was read as "fine".
+- **The copy is often silent.** On the 246 test models, the generator refuses 169 and the copy says nothing about 129 of them. It never reported a refusal for a model the generator builds, though it did report omissions on models that build (see Consequences). Its silence was read as "fine".
 - **It goes wrong when the generator improves.** Two held generator changes (`CALCDEF-GATE-IMPLEMENTATION`, `SCALAR-FUNCTION-VOCABULARY`) would make its rules say "refused" for models the generator then builds, and modellers would rewrite working models.
 - **It costs a two-repository change** every time a generator refusal is added or moved.
 - **Its one unique benefit was answering without the generator installed.** A project that cares whether its model generates installs the generator to generate; dc3 and fusion-tea both have it.
 - **The expensive dc3 mistakes are preventable by guidance.** Three statements (an assert goes on a part, part counts are exact, a calculation input receives one value) would have stopped B1-B3 being built. The early check catches what guidance misses while the model is still small.
-- **The incident was small in the record.** About 20 minutes of agent inventory and about 80 minutes of rework, plus the loss of dc3's stop-on-failure guards on the generated path. The fix is sized to that.
+- **The incident was small in the record.** About 20 minutes of agent inventory and about 80 minutes of rework (dc3 commits from 20:47 to 22:06 UTC on 2026-10-13, `7fb0cd9` to `be457a4`; architecture review `01-current-system.md`, `03-challenge.md` § 1), plus the loss of dc3's stop-on-failure guards on the generated path. The fix is sized to that.
 
 Two assumptions sit under this decision. Both were stated to the owner on 2026-10-21 and not contradicted; neither is an owner statement. (1) A project that has parked generation still runs `check` once early, records the result, and is not blocked by it. (2) The dc3 incident cost the owner little time. If (2) is wrong, seeing every structural problem in one run is worth more, and keeping the three structural rules becomes the better answer.
 
@@ -42,11 +42,12 @@ Two assumptions sit under this decision. Both were stated to the owner on 2026-1
 - **Kept:** `sysml-codegen check` and the load / check / write split from Item 2b; the generator's stable refusal reasons, its refusal site account and the 246 case models as generator regression tests (Item 2a's generator half); the `execution-target` setting (ADR 0005); Item 4's positional-binding check, whose helpers move out of the copy first.
 - **What the workflow does now:** `MODELING_PROCESS.md` and the design, plan, implement, model-validation and toolkit-awareness skills run `sysml-codegen check --models <path>` when the first model pieces exist, at each phase, and before any claim that the model generates. Its exit code is the generation answer. A missing generator is reported as "not checked", never as fine.
 - **The cost:** structural problems are found one generator step at a time, cheaper problems first, because the generator stops after its first failing step. The bet is that the guidance stops modellers building the structural ones in the first place. dc3 is the only incident, so there is no evidence yet either way.
+- **Silent losses no longer reported:** the copy also reported things the generator silently drops from models it builds: String values, and calculation usages' result expressions (`check` exits 0 on both). Nothing reports these now, apart from L6's `L6_DESIGN_ATTR_UNEXTRACTABLE` for attributes under `designs/`. What to do about String values is the owner's open RG-2 question; both losses are recorded in sysml-codegen `.project/backlog/BACKLOG.md`.
 - **Optional, only if a need shows up:** L6 running `check` as a separate command (option C), a supported Python checker function (option D), and the generator listing every problem within its expression step (option E1, step 1 only).
 
 ## Invariants established
 
-1. No agentic-mbse module decides, predicts or reports whether the generator will refuse a model. A generation answer comes from running sysml-codegen.
+1. agentic-mbse keeps no copy of the generator's refusal rules and makes no generation claim. L6 keeps a few legacy convention checks that overlap generator behaviour (such as `L6_ANONYMOUS_RETURN` and `L6_ATTR_REDEF_EXPR_DROPPED`, and the four codes folded under `native`); they are conventions, not a prediction of what the generator does. A generation answer comes from running sysml-codegen.
 2. No agentic-mbse module imports sysml-codegen (unchanged from ADR 0001 invariant 3).
 3. A missing or failed generator run means "generation not checked", never "generates".
 
