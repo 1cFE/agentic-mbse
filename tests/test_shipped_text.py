@@ -9,11 +9,8 @@ import pytest
 import tomllib
 
 from agentic_mbse.cli import TOOL_OWNED_TEMPLATES, cmd_init
-from agentic_mbse.sysml.subset_profile import SUBSET_PROFILE_VERSION
 from agentic_mbse.validation.positional_check import PINNED_DISCLAIMER
-from agentic_mbse.validation.subset_presentation import PACKAGED_RULES
 from tests.helpers.shipped import REPO_ROOT, SKILLS, frontmatter
-from tests.test_validation.test_l6_contract import BANNED as L6_BANNED
 
 SLASH_REFERENCE = re.compile(r"`(/[a-z0-9-]+)`")
 SKILL_PATH = re.compile(r"\.agents/skills/([a-z0-9-]+)((?:/[\w.-]+)*)")
@@ -204,27 +201,29 @@ def test_plant_idiom_order_does_not_matter_is_qualified_by_its_context():
         assert "The order of a calculation usage's inputs does matter" in line, line
 
 
-# ---- Level 6 and the generator subset (Item 3 Phase 10) ----------------------------------------
+# ---- Level 6 and the execution target ---------------------------------------------------------
 
 L6_DOCS = ("README.md", "skills/model-validation/SKILL.md")
+#: Words that would claim L6 says a model generates.
+L6_BANNED = (
+    "generated-ready",
+    "generation-ready",
+    "ready to generate",
+    "will generate",
+    "generator accepts",
+    "readiness",
+)
 
 
 @pytest.mark.parametrize("relative", L6_DOCS)
-def test_doc_states_profile_version_scope_incompleteness_and_not_codegen_check(relative):
+def test_doc_says_l6_is_not_the_generation_answer_and_what_the_setting_does(relative):
     text = " ".join((REPO_ROOT / relative).read_text(encoding="utf-8").split())
     lowered = text.lower()
-    assert SUBSET_PROFILE_VERSION in text
-    assert "nine implemented rules" in lowered  # what was assessed
-    assert "incomplete" in lowered and "coverage limit" in lowered
-    assert "not a generation check" in lowered
+    assert "sysml-codegen check" in text
     assert "execution-target" in text and "init --execution-target" in text
+    assert "targets generated code" in lowered
+    assert "one info summary" in lowered
     assert [banned for banned in L6_BANNED if banned in lowered] == []
-
-
-def test_readme_still_describes_the_generation_check_as_future():
-    # README is rewritten in retire-subset-profile Phase 5, which replaces this test.
-    lowered = " ".join((REPO_ROOT / "README.md").read_text(encoding="utf-8").split()).lower()
-    assert "future step" in lowered and "does not exist yet" in lowered
 
 
 def test_model_validation_names_the_generation_check():
@@ -235,22 +234,20 @@ def test_model_validation_names_the_generation_check():
     assert "uv run sysml-codegen check --models models/" in text
     assert "the generation answer comes from `sysml-codegen check`" in text
     assert "never as fine" in text
+    assert "“Generated code” in `modeling_project/MODELING_PROCESS.md`" in text
 
 
-def test_doc_rule_count_matches_the_packaged_profile():
-    assert len(PACKAGED_RULES.rules) == 9
-
-
-def test_model_validation_table_row_uses_new_l6_title():
+def test_model_validation_table_row_uses_the_l6_title():
     text = (REPO_ROOT / "skills/model-validation/SKILL.md").read_text(encoding="utf-8")
     (row,) = [line for line in text.splitlines() if line.startswith("| 6 ")]
-    assert "Architecture & Generator Subset" in row and "not a generation check" in row
+    assert "Architecture & Codegen Conventions" in row and "not a generation check" in row
 
 
-def test_claude_md_level_6_line_uses_new_title():
+def test_claude_md_level_6_line_uses_the_l6_title():
     text = (REPO_ROOT / "CLAUDE.md").read_text(encoding="utf-8")
     (line,) = [line for line in text.splitlines() if line.strip().startswith("- Level 6:")]
-    assert "Architecture & Generator Subset" in line and "readiness" not in line
+    assert "Architecture & Codegen Conventions" in line and "readiness" not in line
+    assert "sysml-codegen check" in line
 
 
 def test_research_seam_describes_shared_key_set():
@@ -260,7 +257,7 @@ def test_research_seam_describes_shared_key_set():
     assert "holds only `research`," not in text
 
 
-# ---- The generator's three structural limits (retire-subset-profile Phase 2) -------------------
+# ---- The generator's three structural limits ----------------------------------------------------
 
 LIMITS_GUIDANCE = (
     "project_templates/MODELING_GUIDE.md.template",
@@ -280,7 +277,6 @@ def test_guidance_states_the_three_generator_limits(relative):
     for lead in LIMIT_LEADS:
         assert lead in text
     assert text.count("// Correct") >= 3 and text.count("// Incorrect") >= 3
-    assert "subset profile" not in text.lower()
 
 
 def test_pattern_docs_state_the_limits_in_place():
@@ -323,7 +319,7 @@ def test_no_shipped_example_teaches_an_assert_inside_a_calculation_as_correct():
     assert found == []
 
 
-# ---- The workflow runs the generator's check early (retire-subset-profile Phase 3) -------------
+# ---- The workflow runs the generator's check early ----------------------------------------------
 
 CHECK_COMMAND = "uv run sysml-codegen check --models models/"
 WORKFLOW_POINTERS = (
