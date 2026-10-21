@@ -466,13 +466,10 @@ calc def BaseCalculation {
 calc def ExtendedCalculation :>> BaseCalculation {
     // REDEFINITION: Structural specialization
     in input :>> BaseCalculation::input;  // "This IS that parameter"
-
-    // Add design-specific constraints
-    assert constraint ReasonableOutput {
-        output > 0
-    }
 }
 ```
+
+A check on `output` (an `assert constraint`) does not go in the specialized calc def; the code generator refuses an assert inside a calculation. Put it on the part that uses the calc; see [Constraint Syntax Requirements](#constraint-syntax-requirements).
 
 ### Decision Matrix: Binding vs Redefinition
 
@@ -493,27 +490,29 @@ calc def ExtendedCalculation :>> BaseCalculation {
 ### Not a check: plain constraint block
 
 ```sysml
-calc def WrongConstraint {
-    in attribute temperature : Temperature;
+part def WrongConstraint {
+    attribute temperature_k : Real;  // [K]
 
     constraint TempLimit {  // Parses fine — a ConstraintUsage — but never executes
-        temperature < 1000 [K]
+        temperature_k < 1000.0
     }
 }
 ```
 
-### Correct: assert prefix
+### Correct: assert prefix, on a part
 
 ```sysml
-calc def CorrectConstraint {
-    in attribute temperature : Temperature;
+part def CorrectConstraint {
+    attribute temperature_k : Real;  // [K]
 
     assert constraint TempLimit {  // Executes: the assert family is the enforcement opt-in
         doc /* Operating temperature must not exceed limit */
-        temperature < 1000 [K]
+        temperature_k < 1000.0
     }
 }
 ```
+
+The assert sits on a part (a `part def` or a part usage). Inside a `calc def` or a calc usage the code generator refuses it. To check a calculation's result, expose the result on the part that owns the calculation and assert there.
 
 **Constraint Prefix Keywords:**
 - `assert constraint` - Invariants that must always hold. The only form that executes.

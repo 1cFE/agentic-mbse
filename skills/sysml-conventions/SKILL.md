@@ -83,6 +83,64 @@ arithmetic and unit conversions. For any real or reusable calculation — and al
 the value depends on a calc output or another part — express it as a `calc def` in
 `library/analyses/`, not inline.
 
+## Three Structures the Code Generator Refuses
+
+The code generator (sysml-codegen) refuses three structures that parse and validate without complaint, so nothing warns you until it runs. A model built around one of them is expensive to rework. Avoid all three from the first line whenever the project targets generated code (`execution-target = "generated"`); `modeling_project/MODELING_PROCESS.md`, "Generated code", says when to run the generator's own check.
+
+**1. An `assert constraint` goes on a part, not inside a calculation.** Put it in a `part def` or a part usage, bound to the calculation's result there. Not in a `calc def`, and not in a calc usage.
+
+```sysml
+constraint def Positive { in amount : Real; amount > 0.0 }
+
+// Correct: the part owns the check
+part def Heater {
+    attribute voltage : Real = 230.0;
+    attribute current : Real = 4.0;
+    calc power_calc : PowerCalc { in voltage_in = voltage; in current_in = current; }
+    attribute power : Real = power_calc.power;
+    assert constraint power_ok : Positive { in amount = power; }
+}
+
+// Incorrect: the check is inside the calculation
+calc def PowerCalc {
+    in voltage_in : Real;
+    in current_in : Real;
+    return power : Real = voltage_in * current_in;
+    assert constraint power_ok : Positive { in amount = power; }
+}
+```
+
+**2. Part multiplicities are exact.** Give a fixed count: a number (`[3]`), or an `Integer` attribute declared with a value in the part def that owns the parts (`[cell_count]`). Not an open range like `[*]`, `[0..*]` or `[1..*]`, and not an attribute declared at package level.
+
+```sysml
+// Correct: a number
+part cells : Cell[3];
+
+// Correct: an attribute of the owning part def, with its value
+part def Pack {
+    attribute cell_count : Integer = 3;
+    part cells : Cell[cell_count];
+}
+
+// Incorrect: no upper bound
+part cells : Cell[0..*];
+```
+
+Give the count attribute a fixed value (`= 3`). If you give it a default instead (`default := 2`) and redefine it later, in a part usage or a specializing part def (`:>> cell_count = 3;`), the generator still builds the default count (two parts), and nothing warns you.
+
+**3. A calculation input receives one value.** Do not pass a calculation a sequence of values: not a feature that spans several parts (`cells.capacity` when there are three cells), not a list-valued attribute (`Real[3] = (1.0, 2.0, 3.0)`), and not a tuple (`(a, b)`). To work over many parts, total them on the part with `sum(cells.capacity)` and pass the total in.
+
+```sysml
+// Correct: the part sums its cells; the calculation receives one value
+attribute total_capacity : Real = sum(cells.capacity);
+calc usable_calc : UsableCapacity { in total_capacity_in = total_capacity; in dod_in = depth_of_discharge; }
+
+// Incorrect: the calculation receives the three cells' values as a sequence
+calc total_calc : TotalCapacity { in capacities = cells.capacity; }
+```
+
+Fuller treatment: agentic-mbse `docs/patterns/constraints.md` (where an assert goes) and `docs/patterns/adr002-calculations.md` (multiplicities and calculation inputs).
+
 ## Standard Imports
 
 ```sysml

@@ -32,10 +32,10 @@ sysml-codegen reads agentic-mbse through an editable path dependency on `../agen
 
 ## Phase 2: Guidance
 
-- [ ] Probe with `sysml-codegen check`: assert inside a calc usage owned by a part (expect refused), `[*]` part multiplicity (refused), `Real[0..*]` calc input (refused), attribute-valued multiplicity `[N]` (record what happens; decides D-d). Keep the probes as evidence.
-- [ ] Add the three limits to `project_templates/MODELING_GUIDE.md.template` and the matching section of `skills/sysml-conventions/SKILL.md`, with a short correct/incorrect example each; `docs/patterns/constraints.md` and `docs/patterns/adr002-calculations.md` say the same in place.
-- [ ] Correct the calc-owned assert examples: `constraints.md:157-169`, `syntax-reference.md:58-77`, `semantic-operators.md:466-474` and `:497-517`. Keep what each section teaches (the `assert` prefix, calc structure) but put the assert on a part.
-- [ ] Shipped-text tests pass; update any that pin the old text.
+- [x] Probe with `sysml-codegen check`: assert inside a calc usage owned by a part (expect refused), `[*]` part multiplicity (refused), `Real[0..*]` calc input (refused), attribute-valued multiplicity `[N]` (record what happens; decides D-d). Keep the probes as evidence.
+- [x] Add the three limits to `project_templates/MODELING_GUIDE.md.template` and the matching section of `skills/sysml-conventions/SKILL.md`, with a short correct/incorrect example each; `docs/patterns/constraints.md` and `docs/patterns/adr002-calculations.md` say the same in place.
+- [x] Correct the calc-owned assert examples: `constraints.md:157-169`, `syntax-reference.md:58-77`, `semantic-operators.md:466-474` and `:497-517`. Keep what each section teaches (the `assert` prefix, calc structure) but put the assert on a part.
+- [x] Shipped-text tests pass; update any that pin the old text.
 
 ## Phase 3: Workflow runs the check early
 
@@ -67,4 +67,10 @@ sysml-codegen reads agentic-mbse through an editable path dependency on `../agen
 
 ## Implementation notes
 
-(Filled in per phase.)
+**Phase 0 (agentic-mbse half).** Suite baseline in `evidence/suite-baseline-agentic.md`: 5 failed, 4447 passed, all five environment tests outside this item's paths.
+
+**Phase 2.** Probes in `evidence/probes.md` (written by the Phase 0-1 agent). Two deviations from the plan's wording, both following the probes:
+- Limit 3 reads "a calculation input receives one value", not "do not declare a sequence input": a `Real[0..*]` input bound to one scalar builds (probe g2); what is refused is a sequence reaching the input (g1, g3, and `guidance-examples/s_bad3`, a feature across three parts).
+- Limit 2 counts a number or an `Integer` attribute of the owning part def with a fixed value as exact; a package-level attribute is refused (f1). Surprise, beyond the probes: a count given as `default := 2` and redefined to 3 in a usage or a specializing part def builds two parts with no warning (`guidance-examples/m_attr`, `m_attr_spec`). The guidance says so, and `mbse-concepts.md` "Parameterized Multiplicity Pattern" (which taught exactly that override for trade studies) now shows it as incorrect for generated code. `[N]` in the cost-aggregation examples (`adr002-calculations.md`, `mbse-concepts.md`) became `[3]`.
+- Every new or corrected example was run through `sysml-codegen check` as a full model (`evidence/guidance-examples/`). The `semantic-operators.md` prefix example now uses a `Real` attribute in kelvin, because the original `Temperature` type does not load and a quantity type is refused.
+- New shipped-text tests pin the three limits and scan every shipped `sysml` fence for an `assert constraint` inside a calc body that is not labelled incorrect.

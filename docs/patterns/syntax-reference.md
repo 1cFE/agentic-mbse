@@ -61,11 +61,6 @@ calc def MyCalculation {
     attribute intermediate : Real = input_param * 2.0;  // Optional
 
     out attribute result : Real = intermediate * 1.5;  // [units] - Description
-
-    assert constraint Reasonable {
-        doc /* Description of constraint */
-        result > 0 and result < 1000
-    }
 }
 ```
 
@@ -73,7 +68,7 @@ calc def MyCalculation {
 - `in attribute` for inputs
 - `out attribute` for outputs
 - Internal `attribute` for intermediate values
-- `assert constraint` for validation rules
+- No `assert constraint` inside a calc def: the code generator refuses it. Check the result on the part that uses the calc (Syntax 3)
 
 ---
 
@@ -95,6 +90,12 @@ package MyDesign {
 
         // Access output (optional)
         attribute my_result : Real = my_calc.result;
+
+        // Check the result here, on the part, not inside the calc def
+        assert constraint Reasonable {
+            doc /* Description of constraint */
+            my_result > 0 and my_result < 1000
+        }
     }
 }
 ```
@@ -103,6 +104,7 @@ package MyDesign {
 - Import the calc def first
 - Bind inputs using `=` (not `:>>`)
 - Access outputs via dot notation
+- `assert constraint` for validation rules, on the part that owns the calc
 - Use EXPOSE pattern to make outputs accessible to other parts
 
 ---

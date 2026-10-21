@@ -143,6 +143,30 @@ circular-dependency example in `semantic-operators.md`.
 
 ---
 
+## Calculation Inputs and Part Counts
+
+The code generator (sysml-codegen) refuses two calculation-shaped structures that parse and validate without complaint. Avoid both from the start when the project targets generated code. The third limit, where an `assert constraint` goes, is in [constraints.md](constraints.md#checking-a-calculations-result-assert-on-the-part).
+
+**A calculation input receives one value.** Do not pass a calculation a sequence of values: not a feature that spans several parts (`cells.capacity` when there are three cells), not a list-valued attribute (`Real[3] = (1.0, 2.0, 3.0)`), and not a tuple (`(a, b)`). To work over many parts, total them on the part with `sum(cells.capacity)` and pass the total in.
+
+```sysml
+// Correct: the part sums its cells; the calculation receives one value
+attribute total_capacity : Real = sum(cells.capacity);
+calc usable_calc : UsableCapacity { in total_capacity_in = total_capacity; in dod_in = depth_of_discharge; }
+
+// Incorrect: the calculation receives the three cells' values as a sequence
+calc total_calc : TotalCapacity { in capacities = cells.capacity; }
+```
+
+**Part multiplicities are exact.** Give a fixed count: a number (`[3]`), or an `Integer` attribute declared with a fixed value (`= 3`) in the part def that owns the parts. Not an open range like `[*]`, `[0..*]` or `[1..*]`, and not an attribute declared at package level. A count given as a default (`default := 2`) and redefined later (`:>> cell_count = 3;`) builds the default count, with no warning.
+
+```sysml
+part cells : Cell[3];       // Correct: exactly three
+part cells : Cell[0..*];    // Incorrect: no upper bound
+```
+
+---
+
 ## Validated Patterns
 
 ### Multiplicity Cost Aggregation
@@ -150,14 +174,14 @@ circular-dependency example in `semantic-operators.md`.
 **Status:** Parser-validated example (2026-01-12).
 **Evidence:** `syside check` passes with no errors or warnings. This establishes syntax, not runtime occurrence expansion or numerical aggregation.
 
-Use `import NumericalFunctions::sum` then `sum(child.capital_cost)` to aggregate costs from parts with multiplicity `[N]`.
+Use `import NumericalFunctions::sum` then `sum(child.capital_cost)` to aggregate costs from parts with an exact multiplicity such as `[3]` (see [Calculation Inputs and Part Counts](#calculation-inputs-and-part-counts)).
 
 **Correct Pattern:**
 ```sysml
 private import NumericalFunctions::sum;
 
 part def 'Assembly' :> 'Costed Component' {
-    part child : 'Child Component' [N];
+    part child : 'Child Component' [3];
     :>> capital_cost = sum(child.capital_cost);  // Automatic aggregation!
 }
 ```

@@ -244,3 +244,66 @@ def test_research_seam_describes_shared_key_set():
     assert "holds only `research` and `execution-target`" in text
     assert "a key other than `research` or `execution-target` in `[tool.agentic-mbse]`" in text
     assert "holds only `research`," not in text
+
+
+# ---- The generator's three structural limits (retire-subset-profile Phase 2) -------------------
+
+LIMITS_GUIDANCE = (
+    "project_templates/MODELING_GUIDE.md.template",
+    "skills/sysml-conventions/SKILL.md",
+)
+LIMIT_LEADS = (
+    "**1. An `assert constraint` goes on a part, not inside a calculation.**",
+    "**2. Part multiplicities are exact.**",
+    "**3. A calculation input receives one value.**",
+)
+
+
+@pytest.mark.parametrize("relative", LIMITS_GUIDANCE)
+def test_guidance_states_the_three_generator_limits(relative):
+    text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    assert "## Three Structures the Code Generator Refuses" in text
+    for lead in LIMIT_LEADS:
+        assert lead in text
+    assert text.count("// Correct") >= 3 and text.count("// Incorrect") >= 3
+    assert "subset profile" not in text.lower()
+
+
+def test_pattern_docs_state_the_limits_in_place():
+    constraints = (REPO_ROOT / "docs/patterns/constraints.md").read_text(encoding="utf-8")
+    assert "### Checking a Calculation's Result: Assert on the Part" in constraints
+    calculations = (REPO_ROOT / "docs/patterns/adr002-calculations.md").read_text(encoding="utf-8")
+    assert "## Calculation Inputs and Part Counts" in calculations
+
+
+SYSML_FENCE = re.compile(r"```sysml\n(.*?)```", re.DOTALL)
+CALC_OPENER = re.compile(r"\bcalc\b[^;{]*\{")
+
+
+def _calc_bodies(fence: str):
+    """Each `calc def` or calc usage body in a fence, by brace matching."""
+    for match in CALC_OPENER.finditer(fence):
+        depth, start = 1, match.end()
+        for index in range(start, len(fence)):
+            depth += {"{": 1, "}": -1}.get(fence[index], 0)
+            if depth == 0:
+                yield match.group(0), fence[start:index]
+                break
+
+
+def test_no_shipped_example_teaches_an_assert_inside_a_calculation_as_correct():
+    shipped = [*(REPO_ROOT / "docs/patterns").glob("*.md"), *(REPO_ROOT / "skills").rglob("*.md")]
+    shipped += [
+        *(REPO_ROOT / "project_templates").glob("*.template"),
+        *(REPO_ROOT / "agents").glob("*.md"),
+    ]
+    found = []
+    for path in shipped:
+        for fence in SYSML_FENCE.findall(path.read_text(encoding="utf-8")):
+            for opener, body in _calc_bodies(fence):
+                if "assert constraint" not in body:
+                    continue
+                preceding = fence[: fence.index(opener)].rsplit("\n", 2)[-2:]
+                if not any("Incorrect" in line for line in preceding):
+                    found.append(f"{path.relative_to(REPO_ROOT)}: {opener}")
+    assert found == []
