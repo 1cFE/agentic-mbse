@@ -27,7 +27,7 @@ try:
     from .level3_dataflow import validate_dataflow
     from .level4_constraints import analyze_constraints
     from .level5_traceability import validate_traceability
-    from .level6_architecture import generation_note, validate_architecture
+    from .level6_architecture import validate_architecture
 except ImportError:
     # Handle direct execution (not as package)
     from common import (
@@ -42,11 +42,12 @@ except ImportError:
     from level3_dataflow import validate_dataflow
     from level4_constraints import analyze_constraints
     from level5_traceability import validate_traceability
-    from level6_architecture import generation_note, validate_architecture
+    from level6_architecture import validate_architecture
 
 # Absolute in both modes: `common` already imports the installed package's modules this way.
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 from agentic_mbse.validation.execution_target import Target
+from agentic_mbse.validation.level6_architecture import generation_note
 from agentic_mbse.validation.session import ValidationSession
 
 # Registry of all quality checks

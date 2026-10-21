@@ -76,6 +76,7 @@ def generation_note(models_path: str) -> str:
         '(modeling_project/MODELING_PROCESS.md, "Generated code").'
     )
 
+
 # --- Functions from L7 (manifest validation) ---
 
 
