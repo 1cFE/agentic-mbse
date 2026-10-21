@@ -3,9 +3,9 @@ id: 0003
 title: validate L6 reports, in one run, which model shapes the pinned generator refuses, at a loudness set by the project's execution-target, and never claims the model will generate
 date: 2026-10-20
 owner: Reid Westwood
-status: active
+status: superseded
 amended_by: []
-superseded_by: null
+superseded_by: 0005
 supersedes: null
 provenance: "[AGENT] (ratified by owner, 2026-10-18)"
 surfaces: [validate L6, validate --execution-target, validate --json-report, init --execution-target, "pyproject.toml [tool.agentic-mbse]"]
