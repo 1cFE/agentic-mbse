@@ -57,7 +57,7 @@ QUALITY_CHECKS: list[tuple[str, Callable[[str], QualityCheckResult]]] = [
     ("Level 3: Dependency Integrity", validate_dataflow),
     ("Level 4: Constraint Coverage", analyze_constraints),
     ("Level 5: Traceability & Documentation", validate_traceability),
-    ("Level 6: Architecture & Generator Subset", validate_architecture),
+    ("Level 6: Architecture & Codegen Conventions", validate_architecture),
 ]
 
 

@@ -3,7 +3,8 @@
 Schema `validate-report/v1`. One file per run, levels in run order, written after the run,
 including crashed levels. Each level carries its structured issues (with how each is shown),
 the issue strings that have no structured form (`unstructured`), its warnings, the results it
-folded into a summary, and L6's full subset profile. The text output keeps its truncation.
+folded into a summary, and its structured detail (L6: the execution target and where it came
+from). The text output keeps its truncation.
 """
 
 from __future__ import annotations
@@ -60,7 +61,7 @@ def _level(result: QualityCheckResult) -> dict[str, Any]:
         "unstructured": unstructured_issues(result),
         "warnings": result.warnings,
         "summarized": [_issue(issue) for issue in result.summarized],
-        "profile": result.report_detail,
+        "detail": result.report_detail,
     }
 
 

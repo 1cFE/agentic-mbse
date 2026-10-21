@@ -1,7 +1,6 @@
 {
   "note": "Fixture files recorded in reconstruct_texts_ebb3d467.json that moved after the record, keyed as the record keys them. `moved`: the byte-identical file's repo-relative path now (Item 2a's packaged cases, and the Item 3 `unconfirmed` contract fixture renamed `action_owned_assertion` when Item 2a's v2 records refused it). `left`: moved out of this repo with the occurrence-parity seed (Item 2a P1.5); their texts were checked against the record once, at the integration with Item 3 (2026-10-20).",
   "moved": {
-    "l6/contract/unconfirmed/models/library/plant.sysml": "tests/fixtures/l6/contract/action_owned_assertion/models/library/plant.sysml",
     "subset_profile/occurrence/es001_admitted_part_assert/model.sysml": "src/agentic_mbse/sysml/subset_cases/calc-owned-assertion__part_owned_assert__owner_instantiated/model.sysml",
     "subset_profile/occurrence/es001_refused_calc_def_assert/model.sysml": "src/agentic_mbse/sysml/subset_cases/calc-owned-assertion__asserted_constraint__calc_definition_owner/model.sysml",
     "subset_profile/occurrence/es001_refused_calc_usage_assert/model.sysml": "src/agentic_mbse/sysml/subset_cases/calc-owned-assertion__asserted_constraint__calc_usage_owner/model.sysml",
@@ -117,6 +116,28 @@
     "subset_profile/occurrence/f1_multiplicity_only_on_redef/model.sysml": "sysml-codegen tests/fixtures/subset_profile_occurrence_seed/f1_multiplicity_only_on_redef/model.sysml",
     "subset_profile/occurrence/f1_nested_subtypes/model.sysml": "sysml-codegen tests/fixtures/subset_profile_occurrence_seed/f1_nested_subtypes/model.sysml",
     "subset_profile/occurrence/f1_referenced_bounds/model.sysml": "sysml-codegen tests/fixtures/subset_profile_occurrence_seed/f1_referenced_bounds/model.sysml",
-    "subset_profile/occurrence/f1_zero_and_bad_multiplicities/model.sysml": "sysml-codegen tests/fixtures/subset_profile_occurrence_seed/f1_zero_and_bad_multiplicities/model.sysml"
+    "subset_profile/occurrence/f1_zero_and_bad_multiplicities/model.sysml": "sysml-codegen tests/fixtures/subset_profile_occurrence_seed/f1_zero_and_bad_multiplicities/model.sysml",
+    "l6/advisories/opaque_constructor/models/library/pack.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/advisories/opaque_quiet_plain_ref/models/library/pack.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/advisories/unverified_dot_select/models/library/pack.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/advisories/unverified_metadata/models/library/pack.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/advisories/wrapper_collect/models/library/pack.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/advisories/wrapper_quiet_abs_in_sum/models/library/pack.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/advisories/wrapper_quiet_bare_sum/models/library/pack.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/advisories/wrapper_select/models/library/pack.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/b8_shadowed/models/library/plant.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/beneath_refused_multiplicity/models/library/plant.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/clear/models/library/plant.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/clear_unassessed/models/library/plant.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/excluded_non_numerical/models/library/plant.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/incomplete/models/library/plant.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/invocation_rhs_and_multiplicity/models/library/plant.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/native_correctness_error/models/library/plant.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/refused/models/library/plant.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/refused_incomplete/models/library/plant.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/string_outside_roots/models/designs/orphan.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/strings_both_spellings/models/designs/gen_design.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/strings_both_spellings/models/library/gen_library.sysml": "deleted from this repo (retire-subset-profile)",
+    "l6/contract/unconfirmed/models/library/plant.sysml": "deleted from this repo (retire-subset-profile)"
   }
 }

@@ -34,7 +34,7 @@ class QualityCheckResult:
     summarized: list[ValidationIssue] = field(default_factory=list)
     # A qualifier the run's final line must carry when it passes (empty for none).
     pass_note: str = ""
-    # The level's full structured result for the JSON report (L6's subset profile), or None.
+    # The level's structured detail for the JSON report (L6's execution target), or None.
     report_detail: dict[str, Any] | None = None
 
     @property

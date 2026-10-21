@@ -63,7 +63,7 @@ def test_report_holds_every_issue_of_every_level_untruncated(tmp_path):
     assert "... and" in out
     for issue in l6["issues"]:
         assert issue["display"] == issue["severity"]
-    assert l6["profile"]["target"]["target"] == "unset"
+    assert l6["detail"]["target"]["target"] == "unset"
 
 
 @pytest.mark.syside

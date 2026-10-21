@@ -1,15 +1,22 @@
-"""The project's execution target and the severity policy it selects (Item 3 design D2).
+"""The project's execution target: whether it targets generated code, and what that changes in L6.
 
 A project says in its committed `pyproject.toml` how it runs:
-`[tool.agentic-mbse] execution-target = "generated" | "native"`, or leaves it unset. The target
-decides only how loud an L6 result is, never what is true. `display(category, target)` is the
-whole policy: one table, tested cell by cell. Check failures and setting errors are ERROR in
-every column (invariant I2).
+`[tool.agentic-mbse] execution-target = "generated" | "native"`, or leaves it unset.
+
+- `generated` marks a project that targets generated code. The modelling workflow reads it to
+  decide when to run `sysml-codegen check` (`MODELING_PROCESS.md`, "Generated code"). L6
+  shows every result at its own severity, as it does when the target is unset.
+- `native` marks a project that does not run generated code. L6 folds the four codes that only
+  generated code needs (`FOLDED_UNDER_NATIVE`) into one INFO summary; every other code keeps
+  its own severity.
+
+The target changes how a result is shown, never what it is. A broken setting is
+`L6_SETTING_INVALID` and stops L6 under every target.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -21,7 +28,7 @@ from agentic_mbse.project_settings import (
     SettingsFault,
     read_toolkit_table,
 )
-from agentic_mbse.sysml.types import ValidationCode
+from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 
 
 class Target(StrEnum):
@@ -137,97 +144,38 @@ def describe_target(resolution: TargetResolution) -> str:
     return f"{resolution.target.value} ({origin})"
 
 
-class Category(StrEnum):
-    """What kind of result an L6 issue is; with the target, it decides how the issue is shown."""
-
-    REFUSED = "refused"
-    UNCONFIRMED = "unconfirmed"
-    EXCLUDED = "excluded"
-    OMITTED = "omitted"
-    ADMITTED = "admitted"
-    UNVERIFIED = "unverified"
-    UNASSESSED = "unassessed"
-    ADVISORY = "advisory"
-    ADVISORY_UNVERIFIED = "advisory_unverified"
-    LEGACY_OWN_APPLICABILITY = "legacy_own_applicability"
-    LEGACY_KEPT = "legacy_kept"
-    LEGACY_GENERATOR_ONLY = "legacy_generator_only"
-    CHECK_FAILURE = "check_failure"
-    CHECK_UNVERIFIED = "check_unverified"
-    SETTING_INVALID = "setting_invalid"
-
-
-class Display(StrEnum):
-    ERROR = "error"
-    WARNING = "warning"
-    NATIVE_SUMMARY = "native_summary"  # folded into native's one INFO summary line
-    COUNT_ONLY = "count_only"
-    BASE = "base"  # the legacy check's own severity
-
-
-_W, _E, _S, _C, _B = (
-    Display.WARNING,
-    Display.ERROR,
-    Display.NATIVE_SUMMARY,
-    Display.COUNT_ONLY,
-    Display.BASE,
+#: The L6 codes that matter only to generated code. Each has its row in the legacy-check audit's
+#: "Lowered under native" table (`.project/completed/20261020_l6-subset-profile/evidence/
+#: legacy-l6-audit.md`) and in `tests/fixtures/l6/native_lowered.toml`; a test keeps the three
+#: equal.
+FOLDED_UNDER_NATIVE: frozenset[ValidationCode] = frozenset(
+    {
+        ValidationCode.L6_MISSING_QUALIFIED_NAME,
+        ValidationCode.L6_ANONYMOUS_RETURN,
+        ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS,
+        ValidationCode.L6_CALC_DEF_NO_INSTANTIATION,
+    }
 )
 
-# design.md "The severity table": (unset, generated, native) per category.
-_TABLE: Mapping[Category, tuple[Display, Display, Display]] = {
-    Category.REFUSED: (_W, _E, _S),
-    Category.UNCONFIRMED: (_W, _W, _S),
-    Category.EXCLUDED: (_W, _W, _S),
-    Category.OMITTED: (_W, _W, _S),
-    Category.ADMITTED: (_C, _C, _C),
-    Category.UNVERIFIED: (_W, _E, _W),
-    Category.UNASSESSED: (_W, _W, _S),
-    Category.ADVISORY: (_W, _W, _S),
-    Category.ADVISORY_UNVERIFIED: (_W, _W, _W),
-    Category.LEGACY_OWN_APPLICABILITY: (_B, _B, _B),
-    Category.LEGACY_KEPT: (_B, _B, _B),
-    Category.LEGACY_GENERATOR_ONLY: (_B, _B, _S),
-    Category.CHECK_FAILURE: (_E, _E, _E),
-    Category.CHECK_UNVERIFIED: (_W, _W, _W),
-    Category.SETTING_INVALID: (_E, _E, _E),
-}
-_COLUMN = {Target.UNSET: 0, Target.GENERATED: 1, Target.NATIVE: 2}
+UNSET_NOTE = (
+    "execution-target is not set. Under [tool.agentic-mbse] in pyproject.toml, set "
+    'execution-target = "generated" if the project targets generated code (the modelling '
+    'workflow then runs sysml-codegen check), or "native" if it does not (L6 then folds four '
+    "generator-only codes into one INFO summary). agentic-mbse init "
+    "--execution-target=generated|native writes it."
+)
 
 
-def display(category: Category, target: Target) -> Display:
-    """How a result of `category` is shown under `target`."""
-    return _TABLE[category][_COLUMN[target]]
-
-
-# Each of the 17 codes the legacy L6 checks emit (design Appendix A). A code is
-# LEGACY_GENERATOR_ONLY only together with its row in the legacy-check audit's "Lowered under
-# native" table (`evidence/legacy-l6-audit.md`) and `tests/fixtures/l6/native_lowered.toml`;
-# a test keeps the three equal. Four have that evidence (Item 3 Phase 8).
-LEGACY_CATEGORY: Mapping[ValidationCode, Category] = {
-    ValidationCode.V1_CALC_DEF_LOCATION: Category.LEGACY_OWN_APPLICABILITY,
-    ValidationCode.V2_DYNAMIC_EXPRESSION: Category.LEGACY_OWN_APPLICABILITY,
-    ValidationCode.V4_UNSUPPORTED_OPERATOR: Category.LEGACY_OWN_APPLICABILITY,
-    ValidationCode.V4_STATIC_FUNCTION_INVOCATION: Category.LEGACY_KEPT,
-    ValidationCode.L6_MISSING_QUALIFIED_NAME: Category.LEGACY_GENERATOR_ONLY,
-    ValidationCode.L6_INVALID_QUALIFIED_NAME: Category.LEGACY_KEPT,
-    ValidationCode.L6_CALC_DEF_NO_OUTPUT: Category.LEGACY_KEPT,
-    ValidationCode.L6_CALC_DEF_NO_DIRECTION: Category.LEGACY_KEPT,
-    ValidationCode.L6_INVALID_BINDING_FORMAT: Category.LEGACY_KEPT,
-    ValidationCode.L6_DESIGN_ATTR_INCOMPLETE: Category.LEGACY_KEPT,
-    ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE: Category.LEGACY_KEPT,
-    ValidationCode.L6_ANONYMOUS_RETURN: Category.LEGACY_GENERATOR_ONLY,
-    ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS: Category.LEGACY_GENERATOR_ONLY,
-    ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL: Category.LEGACY_KEPT,
-    ValidationCode.L6_CONSTRAINT_NON_NUMERICAL: Category.LEGACY_KEPT,
-    ValidationCode.L6_CALC_DEF_NO_INSTANTIATION: Category.LEGACY_GENERATOR_ONLY,
-    ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED: Category.LEGACY_KEPT,
-}
-
-
-def lowered_under_native(categories: Mapping[ValidationCode, Category]) -> frozenset[str]:
-    """The legacy codes whose severity `native` lowers into the summary."""
-    return frozenset(
-        code.value
-        for code, category in categories.items()
-        if display(category, Target.NATIVE) is Display.NATIVE_SUMMARY
-    )
+def fold(
+    issues: Sequence[ValidationIssue], target: Target
+) -> tuple[list[ValidationIssue], list[ValidationIssue]]:
+    """`issues` split into those shown and those folded into the native summary, as INFO."""
+    if target is not Target.NATIVE:
+        return list(issues), []
+    shown = [issue for issue in issues if issue.code not in FOLDED_UNDER_NATIVE]
+    folded = [
+        issue.model_copy(update={"severity": Severity.INFO})
+        for issue in issues
+        if issue.code in FOLDED_UNDER_NATIVE
+    ]
+    return shown, folded

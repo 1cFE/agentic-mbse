@@ -256,7 +256,9 @@ def test_noninteractive_no_option_writes_nothing_and_prints_line_and_init_form(t
     code, out = _init(root)
     assert code == 0
     assert (root / "pyproject.toml").read_bytes() == PLAIN
-    assert 'Add execution-target = "generated" or "native" under [tool.agentic-mbse]' in out
+    assert 'execution-target = "generated" if the project targets generated code' in out
+    assert "runs sysml-codegen check" in out
+    assert '"native" if it does not' in out
     assert "agentic-mbse init --execution-target=generated|native" in out
 
 

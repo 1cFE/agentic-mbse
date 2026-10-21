@@ -1,4 +1,4 @@
-"""The execution target and its severity table (Item 3 design D2, D3, invariant I2)."""
+"""The execution target: how it is resolved, and the four codes it folds under `native`."""
 
 import re
 from pathlib import Path
@@ -7,10 +7,9 @@ import pytest
 import tomllib
 
 from agentic_mbse.project_settings import SettingsFault
+from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 from agentic_mbse.validation.execution_target import (
-    LEGACY_CATEGORY,
-    Category,
-    Display,
+    FOLDED_UNDER_NATIVE,
     FromFile,
     FromOverride,
     Target,
@@ -19,103 +18,52 @@ from agentic_mbse.validation.execution_target import (
     TargetSettingError,
     Unset,
     describe_target,
-    display,
-    lowered_under_native,
+    fold,
     resolve_target,
 )
 
 REPO = Path(__file__).resolve().parents[2]
-W, E, S, C, B = (
-    Display.WARNING,
-    Display.ERROR,
-    Display.NATIVE_SUMMARY,
-    Display.COUNT_ONLY,
-    Display.BASE,
+LOWERED = frozenset(
+    {
+        "L6_MISSING_QUALIFIED_NAME",
+        "L6_ANONYMOUS_RETURN",
+        "L6_CALC_DEF_NO_INSTANTIATION",
+        "L6_BODY_ASSIGNMENT_IMPL_LOSS",
+    }
 )
-U, G, N = Target.UNSET, Target.GENERATED, Target.NATIVE
-
-# Copied cell by cell from design.md "The severity table".
-EXPECTED = {
-    (Category.REFUSED, U): W,
-    (Category.REFUSED, G): E,
-    (Category.REFUSED, N): S,
-    (Category.UNCONFIRMED, U): W,
-    (Category.UNCONFIRMED, G): W,
-    (Category.UNCONFIRMED, N): S,
-    (Category.EXCLUDED, U): W,
-    (Category.EXCLUDED, G): W,
-    (Category.EXCLUDED, N): S,
-    (Category.OMITTED, U): W,
-    (Category.OMITTED, G): W,
-    (Category.OMITTED, N): S,
-    (Category.ADMITTED, U): C,
-    (Category.ADMITTED, G): C,
-    (Category.ADMITTED, N): C,
-    (Category.UNVERIFIED, U): W,
-    (Category.UNVERIFIED, G): E,
-    (Category.UNVERIFIED, N): W,
-    (Category.UNASSESSED, U): W,
-    (Category.UNASSESSED, G): W,
-    (Category.UNASSESSED, N): S,
-    (Category.ADVISORY, U): W,
-    (Category.ADVISORY, G): W,
-    (Category.ADVISORY, N): S,
-    (Category.ADVISORY_UNVERIFIED, U): W,
-    (Category.ADVISORY_UNVERIFIED, G): W,
-    (Category.ADVISORY_UNVERIFIED, N): W,
-    (Category.LEGACY_OWN_APPLICABILITY, U): B,
-    (Category.LEGACY_OWN_APPLICABILITY, G): B,
-    (Category.LEGACY_OWN_APPLICABILITY, N): B,
-    (Category.LEGACY_KEPT, U): B,
-    (Category.LEGACY_KEPT, G): B,
-    (Category.LEGACY_KEPT, N): B,
-    (Category.LEGACY_GENERATOR_ONLY, U): B,
-    (Category.LEGACY_GENERATOR_ONLY, G): B,
-    (Category.LEGACY_GENERATOR_ONLY, N): S,
-    (Category.CHECK_FAILURE, U): E,
-    (Category.CHECK_FAILURE, G): E,
-    (Category.CHECK_FAILURE, N): E,
-    (Category.CHECK_UNVERIFIED, U): W,
-    (Category.CHECK_UNVERIFIED, G): W,
-    (Category.CHECK_UNVERIFIED, N): W,
-    (Category.SETTING_INVALID, U): E,
-    (Category.SETTING_INVALID, G): E,
-    (Category.SETTING_INVALID, N): E,
-}
 
 
-def test_display_matches_every_cell():
-    assert {(c, t): display(c, t) for c in Category for t in Target} == EXPECTED
+def _issue(code: ValidationCode, severity: Severity = Severity.ERROR) -> ValidationIssue:
+    return ValidationIssue(level=6, severity=severity, code=code, message=code.value)
 
 
-@pytest.mark.parametrize("category", [Category.CHECK_FAILURE, Category.SETTING_INVALID])
-def test_check_failure_and_setting_invalid_are_error_everywhere(category):
-    assert {display(category, t) for t in Target} == {Display.ERROR}
-    summarized = {c for c in Category if display(c, Target.NATIVE) is Display.NATIVE_SUMMARY}
-    assert category not in summarized
-
-
-def test_legacy_category_covers_exactly_the_17_l6_codes():
-    """The codes the legacy L6 checks emit, read from their source, are exactly the mapping's keys."""
-    emitted = set()
-    for name in ("level6_architecture.py", "adr002.py"):
-        source = (REPO / "src/agentic_mbse/validation" / name).read_text()
-        emitted |= set(re.findall(r"ValidationCode\.([A-Z0-9_]+)", source))
-    new_codes = {"L6_CHECK_ERROR", "L6_SETTING_INVALID"} | {
-        code for code in emitted if code.startswith("L6_SUBSET_")
-    }
-    assert {code.value for code in LEGACY_CATEGORY} == emitted - new_codes
-    assert len(LEGACY_CATEGORY) == 17
-    assert set(LEGACY_CATEGORY.values()) <= {
-        Category.LEGACY_OWN_APPLICABILITY,
-        Category.LEGACY_KEPT,
-        Category.LEGACY_GENERATOR_ONLY,
-    }
-
-
-def test_lowered_set_equals_native_lowered_fixture():
+def test_folded_codes_are_exactly_the_four_evidenced_codes():
+    assert {code.value for code in FOLDED_UNDER_NATIVE} == LOWERED
     fixture = tomllib.loads((REPO / "tests/fixtures/l6/native_lowered.toml").read_text())
-    assert lowered_under_native(LEGACY_CATEGORY) == frozenset(fixture["lowered"])
+    assert frozenset(fixture["lowered"]) == LOWERED
+
+
+ISSUES = [
+    _issue(ValidationCode.L6_CHECK_ERROR),
+    _issue(ValidationCode.L6_MISSING_QUALIFIED_NAME),
+    _issue(ValidationCode.L6_CHECK_UNVERIFIED, Severity.WARNING),
+    _issue(ValidationCode.L6_ANONYMOUS_RETURN),
+    _issue(ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE),
+]
+
+
+@pytest.mark.parametrize("target", [Target.UNSET, Target.GENERATED])
+def test_unset_and_generated_show_every_issue_at_its_own_severity(target):
+    assert fold(ISSUES, target) == (ISSUES, [])
+
+
+def test_native_folds_only_the_four_codes_as_info_and_keeps_the_rest_in_order():
+    shown, folded = fold(ISSUES, Target.NATIVE)
+    assert shown == [ISSUES[0], ISSUES[2], ISSUES[4]]
+    assert [(i.code, i.severity) for i in folded] == [
+        (ValidationCode.L6_MISSING_QUALIFIED_NAME, Severity.INFO),
+        (ValidationCode.L6_ANONYMOUS_RETURN, Severity.INFO),
+    ]
 
 
 # --- resolving the target ---------------------------------------------------------------
@@ -250,33 +198,16 @@ def test_unset_is_not_an_override(tmp_path):
         resolve_target(_project(tmp_path, None), Target.UNSET)
 
 
-LOWERED = frozenset(
-    {
-        "L6_MISSING_QUALIFIED_NAME",
-        "L6_ANONYMOUS_RETURN",
-        "L6_CALC_DEF_NO_INSTANTIATION",
-        "L6_BODY_ASSIGNMENT_IMPL_LOSS",
-    }
-)
-
-
-def test_lowered_set_is_exactly_the_four_evidenced_codes():
-    assert lowered_under_native(LEGACY_CATEGORY) == LOWERED
-    fixture = tomllib.loads((REPO / "tests/fixtures/l6/native_lowered.toml").read_text())
-    assert frozenset(fixture["lowered"]) == LOWERED
-
-
 def _audit() -> Path:
-    """The legacy-check audit, under `.project/active/` now and `.project/completed/` after close."""
-    (path,) = REPO.glob(".project/*/*l6-subset-profile/evidence/legacy-l6-audit.md")
-    return path
+    """The legacy-check audit that evidences each L6 code's place under `native`."""
+    return REPO / ".project/completed/20261020_l6-subset-profile/evidence/legacy-l6-audit.md"
 
 
 def test_audit_lowered_table_matches_fixture():
     text = _audit().read_text(encoding="utf-8")
     section = text.split("## Lowered under native", 1)[1].split("\n## ", 1)[0]
     codes = re.findall(r"^\| `([A-Z0-9_]+)` \|", section, flags=re.MULTILINE)
-    assert frozenset(codes) == lowered_under_native(LEGACY_CATEGORY)
+    assert frozenset(codes) == LOWERED
     assert len(codes) == len(set(codes))
 
 
@@ -285,5 +216,15 @@ def test_audit_has_one_row_per_legacy_code_plus_manifest_and_setup():
     section = text.split("## Every legacy L6 code", 1)[1].split("\n## ", 1)[0]
     first_cells = re.findall(r"^\| ([^|]+?) \|", section, flags=re.MULTILINE)
     codes = {cell.split("`")[1] for cell in first_cells if cell.startswith("`")}
-    assert codes == {code.value for code in LEGACY_CATEGORY}
+    assert codes == _emitted_check_codes()
+    assert len(codes) == 17
     assert {"Manifest failures", "Setup failures"} <= set(first_cells)
+
+
+def _emitted_check_codes() -> set[str]:
+    """The codes the L6 checks emit, read from their source; not the check-error or setting codes."""
+    emitted = set()
+    for name in ("level6_architecture.py", "adr002.py"):
+        source = (REPO / "src/agentic_mbse/validation" / name).read_text()
+        emitted |= set(re.findall(r"ValidationCode\.([A-Z0-9_]+)", source))
+    return emitted - {"L6_CHECK_ERROR", "L6_SETTING_INVALID"}
