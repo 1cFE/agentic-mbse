@@ -61,9 +61,9 @@ sysml-codegen reads agentic-mbse through an editable path dependency on `../agen
 
 ## Phase 6: Verify
 
-- [ ] Both suites; byte and refusal identity; TEAx 124/124 if the runtime is available; dc3 `check` answer unchanged.
-- [ ] Fresh-agent audit of both branches against this spec; fix blockers.
-- [ ] Summary for the owner: what changed, what to merge in which order (sysml-codegen first), PR #21 to close.
+- [x] Both suites; byte and refusal identity; TEAx 124/124 if the runtime is available; dc3 `check` answer unchanged.
+- [x] Fresh-agent audit of both branches against this spec; fix blockers.
+- [x] Summary for the owner: what changed, what to merge in which order (sysml-codegen first), PR #21 to close.
 
 ## Implementation notes
 
@@ -103,3 +103,5 @@ sysml-codegen reads agentic-mbse through an editable path dependency on `../agen
 - S6: CURRENT_WORK row says Phases 0-5 are done and notes the expected conflict with `main` (`359a63be`), unresolved. P-0004 and P-0005 Scope updated and both stamped checked at `508aad86`. Deviation: the product README calls entry bodies immutable; the Scope edits follow the brief, on entries filed on this unmerged branch.
 - N2: limit 3 in MODELING_GUIDE, sysml-conventions and `adr002-calculations.md` says a list-valued attribute is refused even when nothing reads it. N3: report schema is `validate-report/v2`. N4: `element_ref` reads the qualified name inside its `try`.
 - Verification at `508aad86`: suite 5 failed (the five baseline IDs), 3559 passed (3567 less the 17 deleted invocation tests, plus 9 new); mypy 88, ruff 118, unchanged.
+
+- **Phase 6 verification (orchestrator, 2026-10-21):** fresh audit [audit.md](audit.md) found no blocker (Needs Work on seven should-fix items); fixes in agentic-mbse `20114983`..`3b34d584` and sysml-codegen `4708f22d`, `a6cdb912` ([evidence/phase-6-codegen-fixes.md](evidence/phase-6-codegen-fixes.md)). After fixes: agentic-mbse 3559 passed, the 5 base failures; sysml-codegen 8503 passed, the 9 base failures; byte manifest 0/123 and refusal records 0/173 differ. Audit ran TEAx 124/124 and dc3 `check` (exit 0, unchanged) before the fixes; the fixes do not touch generator code. Orchestrator confirmed L6 on `guidance-examples/m_attr` ends with the "L6 does not check whether the model generates" line. Not run: slow corpus tests, fusion-tea.
