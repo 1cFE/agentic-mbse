@@ -3,8 +3,8 @@ id: 0003
 title: Each target project declares execution-target in its pyproject.toml; the target sets how loud generator findings are, and only a real inspection failure fails a run regardless of target
 date: 2026-10-20
 owner: Reid Westwood
-status: active
-amended_by: []
+status: amended
+amended_by: [0005]
 superseded_by: null
 provenance: "[AGENT] (ratified by owner 2026-10-18; gate outcomes and audit decisions delegated by owner 2026-10-18)"
 seams: [l6, validate-cli, init, target-projects, research-holdout-guard]

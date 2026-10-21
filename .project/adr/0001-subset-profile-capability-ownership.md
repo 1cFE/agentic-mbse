@@ -3,9 +3,9 @@ id: 0001
 title: agentic-mbse owns the executable-subset capability contract and its occurrence summary
 date: 2026-10-18
 owner: Reid Westwood
-status: active
+status: superseded
 amended_by: []
-superseded_by: null
+superseded_by: 0004
 provenance: "[AGENT] (ratified by owner, 2026-10-18)"
 seams: [agentic-mbse, sysml-codegen, l6, guidance]
 supersedes: null
