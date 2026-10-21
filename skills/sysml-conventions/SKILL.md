@@ -128,7 +128,7 @@ part cells : Cell[0..*];
 
 Give the count attribute a fixed value (`= 3`). If you give it a default instead (`default := 2`) and redefine it later, in a part usage or a specializing part def (`:>> cell_count = 3;`), the generator still builds the default count (two parts), and nothing warns you.
 
-**3. A calculation input receives one value.** Do not pass a calculation a sequence of values: not a feature that spans several parts (`cells.capacity` when there are three cells), not a list-valued attribute (`Real[3] = (1.0, 2.0, 3.0)`), and not a tuple (`(a, b)`). To work over many parts, total them on the part with `sum(cells.capacity)` and pass the total in.
+**3. A calculation input receives one value.** Do not pass a calculation a sequence of values: not a feature that spans several parts (`cells.capacity` when there are three cells), not a list-valued attribute (`Real[3] = (1.0, 2.0, 3.0)`), and not a tuple (`(a, b)`). To work over many parts, total them on the part with `sum(cells.capacity)` and pass the total in. A list-valued attribute is refused even when no calculation reads it, so do not declare one at all.
 
 ```sysml
 // Correct: the part sums its cells; the calculation receives one value

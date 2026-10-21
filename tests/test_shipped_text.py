@@ -294,6 +294,8 @@ def test_guidance_states_the_three_generator_limits(relative):
     for lead in LIMIT_LEADS:
         assert lead in text
     assert text.count("// Correct") >= 3 and text.count("// Incorrect") >= 3
+    # Probe g4: the generator refuses a list-valued attribute that nothing reads.
+    assert "A list-valued attribute is refused even when no calculation reads it" in text
 
 
 def test_pattern_docs_state_the_limits_in_place():
