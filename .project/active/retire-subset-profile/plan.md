@@ -20,15 +20,15 @@ sysml-codegen reads agentic-mbse through an editable path dependency on `../agen
 
 ## Phase 0: Baselines
 
-- [ ] agentic-mbse suite on `e268357f` (record failures). sysml-codegen suite on 2b HEAD (expect the 9 base failures). Byte manifest (123 subjects) and refusal records (173) on 2b HEAD, using the Item 2b Phase 9 commands. `sysml-codegen check` on dc3's models (`/home/reid/src/dc3`), recorded. Record into `evidence/baseline.md`.
+- [x] agentic-mbse suite on `e268357f` (record failures). sysml-codegen suite on 2b HEAD (expect the 9 base failures). Byte manifest (123 subjects) and refusal records (173) on 2b HEAD, using the Item 2b Phase 9 commands. `sysml-codegen check` on dc3's models (`/home/reid/src/dc3`), recorded. Record into `evidence/baseline.md`.
 
 ## Phase 1: sysml-codegen stops using the copy
 
-- [ ] Copy the 154 case models from agentic-mbse `src/agentic_mbse/sysml/subset_cases/` into sysml-codegen test fixtures; point `tests/helpers/subset_profile/cases.py:415-418` at them. Rename helpers and folders from "subset_profile" to what they are now (generator refusal cases) only where it is cheap and clear.
-- [ ] Remove the 2b screen step: `subset_screen.py`, `cli/report.py`, the screen call in `run_check` and `_report_after_the_seal`, comments, the screen-only and screen parts of mixed tests, `CLAUDE.md:77`, `docs/architecture/reference/02-orchestration.md:83,87`.
-- [ ] Remove the agreement-test half of Item 2a: `subset_profile_adapter.py`, the screen half of each stored case, `disagreements.json`, the agreement / reason-mapping / screen-mutation / tripwire / record-coverage / occurrence-parity tests, `_upstream_pins.py` `SUBSET_PROFILE_VERSION`. Keep the generator half (see spec R8).
-- [ ] `git grep` sysml-codegen for `subset_profile`, `occurrence_extraction`, `subset_extraction`, `subset_facts`, `conformance_case`, `subset_cases`: only history remains.
-- [ ] Byte manifest and generator-owned refusal fields unchanged; suite at base failures. Update the 2b spec, plan and audit notes with a short pointer to this plan.
+- [x] Copy the 154 case models from agentic-mbse `src/agentic_mbse/sysml/subset_cases/` into sysml-codegen test fixtures; point `tests/helpers/subset_profile/cases.py:415-418` at them. Rename helpers and folders from "subset_profile" to what they are now (generator refusal cases) only where it is cheap and clear.
+- [x] Remove the 2b screen step: `subset_screen.py`, `cli/report.py`, the screen call in `run_check` and `_report_after_the_seal`, comments, the screen-only and screen parts of mixed tests, `CLAUDE.md:77`, `docs/architecture/reference/02-orchestration.md:83,87`.
+- [x] Remove the agreement-test half of Item 2a: `subset_profile_adapter.py`, the screen half of each stored case, `disagreements.json`, the agreement / reason-mapping / screen-mutation / tripwire / record-coverage / occurrence-parity tests, `_upstream_pins.py` `SUBSET_PROFILE_VERSION`. Keep the generator half (see spec R8).
+- [x] `git grep` sysml-codegen for `subset_profile`, `occurrence_extraction`, `subset_extraction`, `subset_facts`, `conformance_case`, `subset_cases`: only history remains.
+- [x] Byte manifest and generator-owned refusal fields unchanged; suite at base failures. Update the 2b spec, plan and audit notes with a short pointer to this plan.
 
 ## Phase 2: Guidance
 
@@ -53,11 +53,11 @@ sysml-codegen reads agentic-mbse through an editable path dependency on `../agen
 
 ## Phase 5: Documentation
 
-- [ ] `.project/adr/0004-...`: generator is the only refusal authority; supersedes ADR 0001; records the options weighed and the design page as the source. Update ADR 0001's status, `adr/INDEX.md`.
-- [ ] ADR 0003 amended: what the setting does now (D-a). Product promises: P-0001 retired; P-0003 amended; `product/INDEX.md`.
-- [ ] Epic `backlog/epic_executable-subset-contract.md`: Item 1 retired by this work; 2a keeps its generator half; 2b's screen step removed; 3's display removed; Item 5 loses scope 4 and its profile-dependent checks, and scope 5's assert corrections are done here; Item 6 scope 1 done here, the rest rewritten without the profile. Owner decisions section notes 2026-10-21. `BACKLOG.md`: drop `SUBSET-PROFILE-TYPING-AND-LITERAL-CANDIDATES` as moot (one line, why).
+- [x] `.project/adr/0004-...`: generator is the only refusal authority; supersedes ADR 0001; records the options weighed and the design page as the source. Update ADR 0001's status, `adr/INDEX.md`.
+- [x] ADR 0003 amended: what the setting does now (D-a). Product promises: P-0001 retired; P-0003 amended; `product/INDEX.md`.
+- [x] Epic `backlog/epic_executable-subset-contract.md`: Item 1 retired by this work; 2a keeps its generator half; 2b's screen step removed; 3's display removed; Item 5 loses scope 4 and its profile-dependent checks, and scope 5's assert corrections are done here; Item 6 scope 1 done here, the rest rewritten without the profile. Owner decisions section notes 2026-10-21. `BACKLOG.md`: drop `SUBSET-PROFILE-TYPING-AND-LITERAL-CANDIDATES` as moot (one line, why).
 - [ ] Shipped docs: `README.md:19-30`, `CLAUDE.md:124`, `skills/model-validation/SKILL.md`, `docs/research-seam.md:350,415` check. sysml-codegen docs if anything remains.
-- [ ] `CURRENT_WORK.md` row.
+- [x] `CURRENT_WORK.md` row.
 
 ## Phase 6: Verify
 
@@ -66,6 +66,9 @@ sysml-codegen reads agentic-mbse through an editable path dependency on `../agen
 - [ ] Summary for the owner: what changed, what to merge in which order (sysml-codegen first), PR #21 to close.
 
 ## Implementation notes
+
+- **Phases 0-1 (sysml-codegen, 2026-10-21):** commits `eab2e910`, `c670e1a4`, `0f47ea83`, `75e0d32d`, `51078fd3`, `4e037a88` on `subset-profile-screen`. Suite 8442 passed with the same 9 base failures; byte manifest 0/123 differ; refusal records 0/173 differ (the records never held screen output); dc3 `check` exit 0, unchanged. 49 of the 65 copy-side witnesses fire in the generator run and moved into the stored answers; the 16 that fired only in the screen run were dropped. Details: [evidence/phase-1-notes.md](evidence/phase-1-notes.md), [evidence/baseline.md](evidence/baseline.md), [evidence/probes.md](evidence/probes.md). Left for Phase 6 cleanup: the site account's `rule` and `matrix_row` columns still hold the copy's rule IDs; `[SUBSET-SCREEN-SNAPSHOT-CARRIAGE]` is moot.
+- **Phase 5 records:** commits `e058db3f`..`b4ce5f2f`. ADR 0004 supersedes ADR 0001; ADR 0005 amends ADR 0003 (ADR bodies are immutable once filed). P-0004 supersedes P-0001; P-0005 supersedes P-0003 rather than amending it, because P-0003's one-line promise no longer holds; P-0005 needs its check stamp after Phase 4.
 
 **Phase 0 (agentic-mbse half).** Suite baseline in `evidence/suite-baseline-agentic.md`: 5 failed, 4447 passed, all five environment tests outside this item's paths.
 
