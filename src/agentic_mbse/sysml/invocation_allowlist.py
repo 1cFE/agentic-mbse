@@ -3,20 +3,15 @@
 One pure module that imports no SysIDE. The reference walk (`reference_use`) refuses every
 invocation of a callable outside `SUPPORTED_INVOCATION_IDS`, as the generator's ES-005 refusal
 does.
-
-:class:`InvocationUse` is the pure record of one ordinary invocation, produced by
-`reference_use.invocation_uses`.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from uuid import UUID
 
 __all__ = [
     "STANDARD_SUM_FUNCTION_ID",
     "SUPPORTED_INVOCATION_IDS",
-    "InvocationUse",
     "is_supported_invocation_id",
 ]
 
@@ -32,22 +27,3 @@ SUPPORTED_INVOCATION_IDS: frozenset[UUID] = frozenset({STANDARD_SUM_FUNCTION_ID}
 def is_supported_invocation_id(callable_id: UUID) -> bool:
     """Whether an invocation of this declaration is inside the executable subset."""
     return callable_id in SUPPORTED_INVOCATION_IDS
-
-
-@dataclass(frozen=True)
-class InvocationUse:
-    """One ordinary (non-operator) invocation in an expression.
-
-    `callable_id` and `callable_name` are ``None`` when SysIDE resolved no function, which the
-    subset refuses like any unsupported callable. `authored_text` is the invocation as written,
-    when SysIDE can give it.
-    """
-
-    callable_id: UUID | None
-    callable_name: str | None
-    authored_text: str | None
-    location: tuple[str, int] | None
-
-    @property
-    def supported(self) -> bool:
-        return self.callable_id is not None and is_supported_invocation_id(self.callable_id)

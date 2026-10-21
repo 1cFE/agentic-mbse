@@ -28,7 +28,6 @@ from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 from agentic_mbse.sysml.data_models import ResolvedTargetFact, SingletonTerm
 from agentic_mbse.sysml.invocation_allowlist import (
     STANDARD_SUM_FUNCTION_ID,
-    InvocationUse,
     is_supported_invocation_id,
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
@@ -44,7 +43,6 @@ __all__ = [
     "build_aggregation_term",
     "evidence_error",
     "inspect_reference_uses",
-    "invocation_uses",
     "is_standard_library_use",
     "materialize_operands",
     "operand_bearing_operands",
@@ -450,54 +448,6 @@ def _require_supported_invocation(node: Any) -> None:
         location=SysideAdapter.get_source_location(node),
         reference=reference,
     )
-
-
-def invocation_uses(expression: Any) -> tuple[InvocationUse, ...]:
-    """Return every ordinary invocation in one expression, supported or not, in first-seen order.
-
-    The total companion of :func:`inspect_reference_uses`: it visits exactly the nodes that
-    walk visits, in the same dispatch order, but resolves no reference and refuses nothing, so
-    an unsupported call is reported instead of raised. Reference leaves (index, chain and
-    feature references) are not descended, as there; a unit annotation is walked through its
-    value operand only. A walk that cannot complete raises the same named
-    ``SemanticEvidenceError`` the reference walk would.
-    """
-    return tuple(_invocations(expression, depth=0))
-
-
-def _invocations(node: Any, *, depth: int) -> list[InvocationUse]:
-    if node is None:
-        return []
-    if depth >= MAX_EXPRESSION_DEPTH:
-        raise evidence_error(
-            SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED,
-            "invocation_uses",
-            "maximum expression traversal depth exhausted before all operands were visited",
-            node,
-        )
-    if any(
-        SysideAdapter.is_instance(node, leaf)
-        for leaf in ("IndexExpression", "FeatureChainExpression", "FeatureReferenceExpression")
-    ):
-        return []
-    unit_value = unit_annotation_value(node)
-    if unit_value is not None:
-        return _invocations(unit_value, depth=depth + 1)
-    found: list[InvocationUse] = []
-    if SysideAdapter.is_instance(node, "InvocationExpression") and not SysideAdapter.is_instance(
-        node, "OperatorExpression"
-    ):
-        found.append(
-            InvocationUse(
-                callable_id=_invoked_function_id(node),
-                callable_name=_invoked_function_name(node),
-                authored_text=_invocation_reference(node),
-                location=SysideAdapter.get_source_location(node),
-            )
-        )
-    for operand in operand_bearing_operands(node):
-        found.extend(_invocations(operand, depth=depth + 1))
-    return found
 
 
 def _indexed_use(node: Any) -> IndexedReferenceUse:
