@@ -25,8 +25,33 @@ Before editing, record the intended behavior, affected definitions and consumers
 | Shared definition or calculation changes | Identify affected instances and test relevant consumer behavior, including preserved behavior. Shared use alone does not require a full audit. |
 | Coupled changes across model families/subsystems, architectural restructuring, or material uncertainty remaining after focused checks | Substantive independent design/integration assessment. Inspect interacting assumptions and coverage; use `/review-model` or `/audit-models` for the unresolved scope. |
 | Mechanical correction to already reviewed work | Recheck the diff and affected evidence. Reuse the reviewer when review is needed; no new full audit by default. |
+| The project targets generated code (`execution-target = "generated"` in `pyproject.toml`) | Run the generator's check, `sysml-codegen check`, as soon as the first model pieces exist, again at each phase, and before any claim that the model generates. Its exit code is the generation answer. A project that has parked generation runs it once, early. See “Generated code” below. |
 
 Combine related review questions in one independent session when the evidence overlaps. A completed source/design review does not automatically require a second completion audit. Complex work needs positive independent assessment of its consequential design choices and integrated behavior; one continuing reviewer can cover both. Report unverified behavior explicitly instead of declaring completion on a missing check.
+
+## Generated code
+
+Only the code generator can say whether a model generates. Its check works out what `generate` would do, without writing any files:
+
+```bash
+uv run sysml-codegen check --models models/
+```
+
+- **Exit 0:** `generate` would build the model.
+- **Exit 1:** `generate` would refuse the model, or the environment failed (for example a missing dependency). The output gives the reason; record it.
+- **Exit 2:** the command line was wrong (a usage error), so fix it and run again. `uv` also exits 2 when it cannot find `sysml-codegen` (“Failed to spawn”); that case is “sysml-codegen missing” below.
+
+When a project targets generated code (`execution-target = "generated"`), run it:
+
+- **As soon as the first model pieces exist**: the first definitions and one design that loads. The structures the generator refuses (`MODELING_GUIDE.md`, “Three Structures the Code Generator Refuses”) are expensive to remove once a model is built on them, so catch them while the model is small.
+- **At each phase**, after `agentic-mbse validate`.
+- **Before any claim that the model generates.** A passing `agentic-mbse validate` is not that answer.
+
+Record the exit code and the reason line in the work record. Treat a refusal like a failing test: fix the model, or record why the refusal is accepted for now.
+
+**Generation parked.** A project that expects generated code later but has set it aside (its work record or `OVERVIEW.md` says so) runs the check once, early, and records the result. A refusal does not block its work; it records what generation will need.
+
+**sysml-codegen missing.** If the command is not installed or cannot run, the generation answer is unknown. Report “generation not checked: sysml-codegen unavailable”. Never report it as fine.
 
 ## Artifact Contracts
 

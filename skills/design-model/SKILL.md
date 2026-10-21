@@ -26,6 +26,8 @@ Identify where shared quantities are owned and how consumers obtain them. Make p
 
 Use existing patterns and knowledge first. Research a missing source, consult a specialist, or prototype an uncertain language/execution capability when that evidence changes the design. Prototype only enough to answer the question, and record what was and was not demonstrated. A working prototype is not required for an already understood change.
 
+When the project targets generated code (`execution-target = "generated"`), design within the three structures the generator refuses (`modeling_project/MODELING_GUIDE.md`, “Three Structures the Code Generator Refuses”), and run `uv run sysml-codegen check --models models/` on the first model pieces or on a prototype of the uncertain part. Its exit code is the generation answer; see “Generated code” in `modeling_project/MODELING_PROCESS.md`.
+
 Present consequential alternatives with their tradeoffs when owner direction is needed. Ordinary implementation choices remain with the author or coordinator. Surface source conflicts, changes to supported meaning, and premise surprises before proceeding with dependent work.
 
 ## Write the Design

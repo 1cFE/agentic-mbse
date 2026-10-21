@@ -39,9 +39,9 @@ sysml-codegen reads agentic-mbse through an editable path dependency on `../agen
 
 ## Phase 3: Workflow runs the check early
 
-- [ ] `project_templates/MODELING_PROCESS.md.template` Process Selection: a row for projects that target generated code (`execution-target = "generated"`): run `sysml-codegen check <models>` when the first model pieces build, at each phase, and before any claim that the model generates; its exit code is the answer (0 builds, 1 refused, 2 usage). A parked project runs it once early, records the result, and does not block (R5).
-- [ ] Point to it from `skills/design-model`, `plan-model` (an early checkpoint and a final row), `implement-model`, `model-validation` (replace the "does not exist yet" text, add the command beside `validate`), `toolkit-awareness`.
-- [ ] `tests/test_shipped_text.py:219` asserts the opposite today; change it to assert the new text.
+- [x] `project_templates/MODELING_PROCESS.md.template` Process Selection: a row for projects that target generated code (`execution-target = "generated"`): run `sysml-codegen check <models>` when the first model pieces build, at each phase, and before any claim that the model generates; its exit code is the answer (0 builds, 1 refused, 2 usage). A parked project runs it once early, records the result, and does not block (R5).
+- [x] Point to it from `skills/design-model`, `plan-model` (an early checkpoint and a final row), `implement-model`, `model-validation` (replace the "does not exist yet" text, add the command beside `validate`), `toolkit-awareness`.
+- [x] `tests/test_shipped_text.py:219` asserts the opposite today; change it to assert the new text.
 
 ## Phase 4: Delete the copy (only after Phase 1 is committed)
 
@@ -74,3 +74,10 @@ sysml-codegen reads agentic-mbse through an editable path dependency on `../agen
 - Limit 2 counts a number or an `Integer` attribute of the owning part def with a fixed value as exact; a package-level attribute is refused (f1). Surprise, beyond the probes: a count given as `default := 2` and redefined to 3 in a usage or a specializing part def builds two parts with no warning (`guidance-examples/m_attr`, `m_attr_spec`). The guidance says so, and `mbse-concepts.md` "Parameterized Multiplicity Pattern" (which taught exactly that override for trade studies) now shows it as incorrect for generated code. `[N]` in the cost-aggregation examples (`adr002-calculations.md`, `mbse-concepts.md`) became `[3]`.
 - Every new or corrected example was run through `sysml-codegen check` as a full model (`evidence/guidance-examples/`). The `semantic-operators.md` prefix example now uses a `Real` attribute in kelvin, because the original `Temperature` type does not load and a quantity type is refused.
 - New shipped-text tests pin the three limits and scan every shipped `sysml` fence for an `assert constraint` inside a calc body that is not labelled incorrect.
+
+**Phase 3.** `MODELING_PROCESS.md.template` has a Process Selection row and a "Generated code" section (command, exit codes, when to run, parked, missing); the five skills point to it; the modelling guide's checklist has a line for it.
+- The real command is `sysml-codegen check --models <path>` (`--models`/`-m` is required; there is no positional argument), so the text says `uv run sysml-codegen check --models models/`.
+- Exit 2 is ambiguous in practice: `uv run` also exits 2 when `sysml-codegen` is not installed ("Failed to spawn"). The text says so.
+- "Parked" is defined as: the project's work record or `OVERVIEW.md` says generation is set aside. There is no setting for it. Assumption, for the owner to confirm.
+- `test_shipped_text.py`: the inverted assertion now applies only to README, in its own test that Phase 5 replaces (README is outside Phases 2-3's paths); model-validation gets a test pinning the new text. The profile-version assertions are untouched for Phase 4. `model-validation/SKILL.md` keeps its profile description until Phase 4/5; only the "does not exist yet" clause changed.
+- Suite after Phases 2-3: 5 failed (the same five as the baseline), 4459 passed (12 new tests).

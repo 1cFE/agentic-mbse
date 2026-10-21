@@ -27,7 +27,7 @@ Choose checks for the promised behavior and its actual risks. Validate early eno
 | 5 — Documentation | Documentation presence |
 | 6 — Architecture & Generator Subset | ADR-002 rules, manifests, and the generator subset profile (`subset-profile/v2`); not a generation check |
 
-Level 6's subset profile has nine implemented rules, each traced to sysml-codegen's source or to a conformance case run against it: binding sources, calculation-owned constraints, conditional expressions, constraint predicates, indexed references, unsupported function calls, part multiplicities, dropped String values and dropped calculation-usage result expressions. It is incomplete: the `Coverage limit` line names the generator refusals with no rule yet, and a clear verdict says nothing about them. It is not a generation check and never runs the generator; asking sysml-codegen itself is a separate, future step that does not exist yet. `[tool.agentic-mbse] execution-target` in `pyproject.toml` (`generated` or `native`, set by `agentic-mbse init --execution-target`) decides how loud the findings are; unset shows refusals as warnings and reports "generated compatibility not established". Report that note as it stands; do not read a passing L6 as evidence the generator will build the model.
+Level 6's subset profile has nine implemented rules, each traced to sysml-codegen's source or to a conformance case run against it: binding sources, calculation-owned constraints, conditional expressions, constraint predicates, indexed references, unsupported function calls, part multiplicities, dropped String values and dropped calculation-usage result expressions. It is incomplete: the `Coverage limit` line names the generator refusals with no rule yet, and a clear verdict says nothing about them. It is not a generation check and never runs the generator; the generation answer comes from `sysml-codegen check`, below. `[tool.agentic-mbse] execution-target` in `pyproject.toml` (`generated` or `native`, set by `agentic-mbse init --execution-target`) decides how loud the findings are; unset shows refusals as warnings and reports "generated compatibility not established". Report that note as it stands; do not read a passing L6 as evidence the generator will build the model.
 
 These checks do not establish source fidelity or sufficient engineering coverage. Interpret each diagnostic's severity and applicability; retain the actual exit status. L1–L3 errors normally block valid execution, and relevant L6 failures can block a required downstream route. A documented project-specific exception needs applicable evidence, not blanket dismissal of a level or an unchanged issue count.
 
@@ -40,9 +40,16 @@ uv run agentic-mbse validate models/             # fail-fast default
 uv run agentic-mbse validate --complete models/  # report all six levels
 uv run agentic-mbse validate --level=3 models/   # focused level
 uv run pytest tests/models/ -v                  # model regressions, if present
+uv run sysml-codegen check --models models/      # generation answer, when the project targets generated code
 ```
 
 Use the model scope and test selection appropriate to the change. During editing or a prototype, run the checks that answer the immediate question. Before completion, assess all applicable levels and integrated regressions. After repair, rerun the affected checks; broaden when new changes or failures justify it.
+
+## The Generation Check
+
+When the project targets generated code (`execution-target = "generated"`), `sysml-codegen check` is the only answer to whether the model generates. It works out what `generate` would do and writes nothing. Exit 0: `generate` would build the model. Exit 1: it would refuse, or the environment failed; the output gives the reason. Exit 2: a usage error, or `uv` could not find `sysml-codegen`.
+
+Run it as soon as the first model pieces exist, at each phase, and before any claim that the model generates. Record the exit code and reason line. A project that has parked generation runs it once early and records the result without blocking. If sysml-codegen is unavailable, report generation as not checked, never as fine. When and why: “Generated code” in `modeling_project/MODELING_PROCESS.md`.
 
 ## Evidence Beyond Parsing
 

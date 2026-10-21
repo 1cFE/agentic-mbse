@@ -217,10 +217,24 @@ def test_doc_states_profile_version_scope_incompleteness_and_not_codegen_check(r
     assert "nine implemented rules" in lowered  # what was assessed
     assert "incomplete" in lowered and "coverage limit" in lowered
     assert "not a generation check" in lowered
-    assert "future step" in lowered and "does not exist yet" in lowered
-    assert "sysml-codegen check" not in lowered  # the future boundary, with no command shown
     assert "execution-target" in text and "init --execution-target" in text
     assert [banned for banned in L6_BANNED if banned in lowered] == []
+
+
+def test_readme_still_describes_the_generation_check_as_future():
+    # README is rewritten in retire-subset-profile Phase 5, which replaces this test.
+    lowered = " ".join((REPO_ROOT / "README.md").read_text(encoding="utf-8").split()).lower()
+    assert "future step" in lowered and "does not exist yet" in lowered
+
+
+def test_model_validation_names_the_generation_check():
+    text = " ".join(
+        (REPO_ROOT / "skills/model-validation/SKILL.md").read_text(encoding="utf-8").split()
+    )
+    assert "does not exist yet" not in text
+    assert "uv run sysml-codegen check --models models/" in text
+    assert "the generation answer comes from `sysml-codegen check`" in text
+    assert "never as fine" in text
 
 
 def test_doc_rule_count_matches_the_packaged_profile():
@@ -307,3 +321,40 @@ def test_no_shipped_example_teaches_an_assert_inside_a_calculation_as_correct():
                 if not any("Incorrect" in line for line in preceding):
                     found.append(f"{path.relative_to(REPO_ROOT)}: {opener}")
     assert found == []
+
+
+# ---- The workflow runs the generator's check early (retire-subset-profile Phase 3) -------------
+
+CHECK_COMMAND = "uv run sysml-codegen check --models models/"
+WORKFLOW_POINTERS = (
+    "skills/design-model/SKILL.md",
+    "skills/plan-model/SKILL.md",
+    "skills/implement-model/SKILL.md",
+    "skills/model-validation/SKILL.md",
+    "skills/toolkit-awareness/SKILL.md",
+)
+
+
+def test_modeling_process_says_when_and_how_to_run_the_generation_check():
+    text = (REPO_ROOT / "project_templates/MODELING_PROCESS.md.template").read_text(
+        encoding="utf-8"
+    )
+    (row,) = [
+        line
+        for line in text.splitlines()
+        if 'execution-target = "generated"' in line and line.startswith("|")
+    ]
+    assert "first model pieces" in row and "each phase" in row and "parked" in row
+    section = text.split("## Generated code\n", 1)[1].split("\n## ", 1)[0]
+    assert CHECK_COMMAND in section
+    for exit_line in ("**Exit 0:**", "**Exit 1:**", "**Exit 2:**"):
+        assert exit_line in section
+    assert "**Generation parked.**" in section and "does not block" in section
+    assert "**sysml-codegen missing.**" in section and "Never report it as fine" in section
+
+
+@pytest.mark.parametrize("relative", WORKFLOW_POINTERS)
+def test_workflow_skill_points_at_the_generation_check(relative):
+    text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    assert CHECK_COMMAND in text
+    assert "Generated code" in text and "MODELING_PROCESS.md" in text

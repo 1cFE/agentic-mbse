@@ -232,6 +232,7 @@ calc my_calc { in value = other_part.exposed_attr; }
 - [ ] Units specified: `= 3.0 [m]` not `= 3.0`
 - [ ] Naming conventions followed
 - [ ] No calc defs in designs/ (ADR-002)
+- [ ] Generated code only: `uv run sysml-codegen check --models models/` exits 0 (see MODELING_PROCESS.md, "Generated code")
 ```
 
 ---
