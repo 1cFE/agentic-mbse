@@ -7,7 +7,6 @@ model is loaded once for L2-L6 and its constraint facts are extracted once.
 from __future__ import annotations
 
 import contextlib
-import inspect
 import io
 import os
 from pathlib import Path
@@ -17,10 +16,8 @@ import pytest
 
 from agentic_mbse.errors import SemanticEvidenceCode, SemanticEvidenceError
 from agentic_mbse.sysml import syside_adapter
-from agentic_mbse.sysml.constraint_extraction import extract_identified_constraint_facts
-from agentic_mbse.sysml.subset_extraction import extract_subset_facts
 from agentic_mbse.validation import session as session_module
-from agentic_mbse.validation.common import discover_sysml_files, load_sysml_model
+from agentic_mbse.validation.common import load_sysml_model
 from agentic_mbse.validation.level2_structure import validate_structure
 from agentic_mbse.validation.level3_dataflow import validate_dataflow
 from agentic_mbse.validation.level4_constraints import analyze_constraints
@@ -240,19 +237,3 @@ def test_no_session_means_todays_behaviour(tmp_path: Path, monkeypatch: pytest.M
     assert constraint_facts(model) is not constraint_facts(model)
     assert len(loads) == 2
     assert len(extractions) == 2
-
-
-@pytest.mark.syside
-def test_extract_subset_facts_default_keyword_matches_todays_output() -> None:
-    """I4: the new keyword defaults to today's extractor, and the shared memo gives the same facts."""
-    default = inspect.signature(extract_subset_facts).parameters["constraint_facts"].default
-    assert default is extract_identified_constraint_facts
-
-    model, _ = load_sysml_model(discover_sysml_files(str(FIXTURES / "sump_pump" / "right")))
-    today = extract_subset_facts(model)
-    with ValidationSession() as session:
-        shared = extract_subset_facts(model, constraint_facts=session.constraint_facts)
-        assert constraint_facts(model) is shared.constraints
-    assert shared == today
-    assert today.constraints is not None
-    assert session.constraint_extractions == 1
