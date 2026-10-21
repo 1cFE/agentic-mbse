@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Level 6: Architecture & Codegen Conventions
+Level 6: Architecture & Conventions
 
 Application-specific validation: ADR-002 rules, manifest subsystem
 checks, and codegen conventions. The project's execution target decides only how
@@ -65,7 +65,16 @@ from .execution_target import (
 )
 from .session import constraint_facts
 
-LEVEL_NAME = "Architecture & Codegen Conventions"
+LEVEL_NAME = "Architecture & Conventions"
+
+
+def generation_note(models_path: str) -> str:
+    """The line every run that includes L6 ends with, pass or fail: L6 makes no generation claim."""
+    return (
+        "L6 does not check whether the model generates. For that, run "
+        f"`uv run sysml-codegen check --models {models_path}` "
+        '(modeling_project/MODELING_PROCESS.md, "Generated code").'
+    )
 
 # --- Functions from L7 (manifest validation) ---
 

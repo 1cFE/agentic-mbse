@@ -240,13 +240,30 @@ def test_model_validation_names_the_generation_check():
 def test_model_validation_table_row_uses_the_l6_title():
     text = (REPO_ROOT / "skills/model-validation/SKILL.md").read_text(encoding="utf-8")
     (row,) = [line for line in text.splitlines() if line.startswith("| 6 ")]
-    assert "Architecture & Codegen Conventions" in row and "not a generation check" in row
+    assert "Architecture & Conventions" in row and "not a generation check" in row
+
+
+@pytest.mark.parametrize(
+    "relative",
+    (
+        "README.md",
+        "CLAUDE.md",
+        "skills/model-validation/SKILL.md",
+        "skills/toolkit-awareness/SKILL.md",
+    ),
+)
+def test_doc_says_every_l6_run_ends_with_the_generation_pointer(relative):
+    text = " ".join((REPO_ROOT / relative).read_text(encoding="utf-8").split())
+    assert re.search(
+        r"every run that includes (L6|Level 6 \(Architecture & Conventions\)) ends", text, re.I
+    )
+    assert "Codegen Conventions" not in text
 
 
 def test_claude_md_level_6_line_uses_the_l6_title():
     text = (REPO_ROOT / "CLAUDE.md").read_text(encoding="utf-8")
     (line,) = [line for line in text.splitlines() if line.strip().startswith("- Level 6:")]
-    assert "Architecture & Codegen Conventions" in line and "readiness" not in line
+    assert "Architecture & Conventions" in line and "readiness" not in line
     assert "sysml-codegen check" in line
 
 

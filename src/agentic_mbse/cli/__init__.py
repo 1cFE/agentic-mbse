@@ -854,6 +854,11 @@ def main(argv: list[str] | None = None) -> int:
     validate_parser = subparsers.add_parser(
         "validate",
         help="Run quality validation on SysML models",
+        description=(
+            "Run the six quality levels on SysML models. Level 6 (Architecture & Conventions) "
+            "does not check whether the model generates; for that, run "
+            "`uv run sysml-codegen check --models <models>`."
+        ),
     )
     validate_parser.add_argument(
         "path",

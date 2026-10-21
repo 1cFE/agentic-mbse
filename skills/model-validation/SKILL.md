@@ -25,9 +25,9 @@ Choose checks for the promised behavior and its actual risks. Validate early eno
 | 3 — Dependency integrity | Dependency cycles |
 | 4 — Constraint coverage | Authored constraints and executable coverage |
 | 5 — Documentation | Documentation presence |
-| 6 — Architecture & Codegen Conventions | ADR-002 rules, manifests, and codegen structural conventions; not a generation check |
+| 6 — Architecture & Conventions | ADR-002 rules, manifests, and codegen structural conventions; not a generation check |
 
-Level 6 never runs the generator, so a passing L6 is not evidence the model generates; the generation answer comes from `sysml-codegen check`, below. `[tool.agentic-mbse] execution-target` in `pyproject.toml` (`generated` or `native`, set by `agentic-mbse init --execution-target`) marks whether the project targets generated code. Under `native`, L6 folds four generator-only codes into one INFO summary; every other code keeps its severity.
+Level 6 never runs the generator, so a passing L6 is not evidence the model generates; the generation answer comes from `sysml-codegen check`, below. Every run that includes L6 ends, pass or fail, with a line saying L6 does not check generation and naming that command. `[tool.agentic-mbse] execution-target` in `pyproject.toml` (`generated` or `native`, set by `agentic-mbse init --execution-target`) marks whether the project targets generated code. Under `native`, L6 folds four generator-only codes into one INFO summary; every other code keeps its severity.
 
 These checks do not establish source fidelity or sufficient engineering coverage. Interpret each diagnostic's severity and applicability; retain the actual exit status. L1–L3 errors normally block valid execution, and relevant L6 failures can block a required downstream route. A documented project-specific exception needs applicable evidence, not blanket dismissal of a level or an unchanged issue count.
 

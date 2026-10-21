@@ -88,7 +88,7 @@ When the project targets generated code (`[tool.agentic-mbse] execution-target =
 ```bash
 uv run sysml-codegen check --models models/   # exit 0 builds, 1 refused (reason printed), 2 usage error
 ```
-`agentic-mbse validate` does not answer whether the model generates. If `sysml-codegen` is not installed, say generation is not checked. When to run it: “Generated code” in `modeling_project/MODELING_PROCESS.md`.
+`agentic-mbse validate` does not answer whether the model generates; every run that includes Level 6 (Architecture & Conventions) ends with a line saying so and naming this command. If `sysml-codegen` is not installed, say generation is not checked. When to run it: “Generated code” in `modeling_project/MODELING_PROCESS.md`.
 
 Never use bare `python`, `pip`, `python3`, or `syside` without `uv run` prefix.
 

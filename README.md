@@ -16,7 +16,7 @@ pip install -e .
 agentic-mbse validate models/
 ```
 
-Level 6 (Architecture & Codegen Conventions) checks the ADR-002 architecture rules, the project's manifests, and the structural conventions code generation relies on, such as qualified names, calculation structure and binding formats. It does not say whether a model generates. That answer comes from sysml-codegen's own check, `sysml-codegen check --models models/`, which writes nothing; `modeling_project/MODELING_PROCESS.md` ("Generated code") says when to run it.
+Level 6 (Architecture & Conventions) checks the ADR-002 architecture rules, the project's manifests, and the structural conventions code generation relies on, such as qualified names, calculation structure and binding formats. It does not say whether a model generates, and every run that includes L6 ends with a line saying so. That answer comes from sysml-codegen's own check, `sysml-codegen check --models models/`, which writes nothing; `modeling_project/MODELING_PROCESS.md` ("Generated code") says when to run it.
 
 A project says in its `pyproject.toml` whether it targets generated code:
 

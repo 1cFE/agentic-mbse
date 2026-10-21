@@ -79,7 +79,7 @@ class ValidationCode(str, Enum):
     # Dataflow Issues
     CIRCULAR_IMPORT = "CIRCULAR_IMPORT"
 
-    # Level 6: Architecture & Codegen Conventions
+    # Level 6: Architecture & Conventions
     L6_MISSING_QUALIFIED_NAME = "L6_MISSING_QUALIFIED_NAME"
     L6_INVALID_QUALIFIED_NAME = "L6_INVALID_QUALIFIED_NAME"
     L6_CALC_DEF_NO_OUTPUT = "L6_CALC_DEF_NO_OUTPUT"
