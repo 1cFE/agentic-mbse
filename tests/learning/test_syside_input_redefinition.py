@@ -880,7 +880,7 @@ def test_p1_the_library_subject_a_subject_less_case_def_lands_on_reads_subject_m
 
 
 def test_p1_library_formals_carry_reload_stable_uuid5_identities() -> None:
-    """Item 1's `ElementRef` requires UUIDv5 for a named element; library formals have it."""
+    """`ElementRef` (`fact_refs.py`) requires UUIDv5 for a named element; library formals have it."""
     r = _owner(
         _load("part def V; requirement def R { subject v : V; }"), syside.RequirementDefinition, "R"
     )
@@ -946,12 +946,12 @@ def test_p1_quoted_qualified_names_match_the_prototype_log_spelling() -> None:
 
 
 def test_p1_an_anonymous_assert_owner_has_no_qualified_name_through_element_ref() -> None:
-    """D9: Item 1's `_element_ref` gives an anonymous `assert constraint` no qualified name."""
-    from agentic_mbse.sysml.subset_extraction import _element_ref
+    """D9: `element_ref` gives an anonymous `assert constraint` no qualified name."""
+    from agentic_mbse.sysml.element_refs import element_ref
 
     model = _load("part q { assert constraint : Le { in lim = 5; in x = 3; } }")
     (owner,) = list(model.elements(syside.AssertConstraintUsage))
-    ref = _element_ref(owner)
+    ref = element_ref(owner)
     assert ref.qualified_name is None
     assert ref.kind == "AssertConstraintUsage"
     assert [(f.declared_name, _redefinitions(f)) for f in _inputs(owner)] == [
