@@ -1,6 +1,7 @@
 """The `validate --json-report` file: every level's full result, untruncated (Item 3 design D6).
 
-Schema `validate-report/v1`. One file per run, levels in run order, written after the run,
+Schema `validate-report/v2` (v1 named each level's structured detail `profile`; v2 names it
+`detail`). One file per run, levels in run order, written after the run,
 including crashed levels. Each level carries its structured issues (with how each is shown),
 the issue strings that have no structured form (`unstructured`), its warnings, the results it
 folded into a summary, and its structured detail (L6: the execution target and where it came
@@ -18,7 +19,7 @@ import agentic_mbse
 from agentic_mbse.sysml.types import ValidationCode, ValidationIssue
 from agentic_mbse.validation.common import AggregatedResult, QualityCheckResult
 
-REPORT_SCHEMA = "validate-report/v1"
+REPORT_SCHEMA = "validate-report/v2"
 
 
 def _issue(issue: ValidationIssue) -> dict[str, Any]:

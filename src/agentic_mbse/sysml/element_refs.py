@@ -29,9 +29,10 @@ def _qualified_name(element: Any) -> str | None:
 
 def element_ref(element: Any) -> ElementRef:
     """The element's parser UUID, qualified name and metatype name."""
-    qualified_name = _qualified_name(element)
     try:
-        return ElementRef(SysideAdapter.element_id(element), qualified_name, type(element).__name__)
+        return ElementRef(
+            SysideAdapter.element_id(element), _qualified_name(element), type(element).__name__
+        )
     except ValueError as error:
         raise ElementIdentityError(str(error)) from error
 
