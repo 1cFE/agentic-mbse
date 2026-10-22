@@ -1,6 +1,6 @@
 # DRAFT upstream finding for sysml-codegen: calculation inputs wired by declared name, not by position
 
-**Status: DRAFT, UNFILED.** Written in agentic-mbse only, for the owner (or Item 2's agent) to route. Nothing has been written in sysml-codegen. This draft proposes no change to how either route binds (gate R4-2).
+**Status: FILED 2026-10-22** in sysml-codegen `.project/backlog/BACKLOG.md` `[POSITIONAL-FORMAL-REDEFINITION]` (branch `native-generated-compare`, `b08bbfee`, not merged), with the same result re-run at sysml-codegen `6190f996` (generated 7, native −7). Written in agentic-mbse as a draft on 2026-10-18. It proposes no change to how either route binds (gate R4-2).
 
 **Written:** 2026-10-18, EXEC-SUBSET-CONTRACT Item 4 (`.project/active/positional-binding-check/`). Linked from the register entry `docs/patterns/semantic-hazards.md#positional-input-binding`.
 

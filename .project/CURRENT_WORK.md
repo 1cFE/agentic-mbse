@@ -1,6 +1,6 @@
 # Current Work
 
-**Last Updated**: 2026-10-21
+**Last Updated**: 2026-10-22
 **Checkout**: `main` at `adbef75` (PR #18 merged 2026-10-10, carrying the `WRAP-SPLIT` planning artifacts and Item 1). Workflows installed here with `uv run agentic-mbse install-commands --assistant claude --link-mode symlink`; re-run it after editing `skills/`.
 
 [OWNER] Reports successful operation in Fusion TEA and requested reconciliation of tracking against actual remaining work. The [status report](reports/2026-10-04-0901-status-report.md#tracking-reconciliation--progress) carries investigation progress, evidence, and limits. This refresh updates local tracking; sibling repositories were inspected read-only.
@@ -11,7 +11,7 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
-- [Generated results guidance](active/generated-results-guidance/spec.md) — EXEC-SUBSET-CONTRACT Item 5, rescoped 2026-10-22 to four risks. Spec, design and plan done; Phase 0 done; **Phase 1 gate failed 2026-10-22** (design bet B4, and B1 for units; [spike/derisk/RESULTS.md](active/generated-results-guidance/spike/derisk/RESULTS.md)). Waiting on a design decision before Phase 2. Branch `generated-results-guidance`; sysml-codegen branch `native-generated-compare` (no code changes yet).
+- [Generated results guidance](active/generated-results-guidance/spec.md) — EXEC-SUBSET-CONTRACT Item 5, rescoped 2026-10-22 to four risks. Spec, design and plan done; Phase 0 done; **Phase 1 gate failed 2026-10-22** (design bet B4, and B1 for units; [spike/derisk/RESULTS.md](active/generated-results-guidance/spike/derisk/RESULTS.md)). Phases 2-5 (the `compare` command and the guidance text) are parked on that owner decision. Done meanwhile: Phase R re-runs ([evidence/risk1-reruns.md](active/generated-results-guidance/evidence/risk1-reruns.md): default count and positional confirmed; calc def simple-name collision confirmed, fails at run) and Phase U backlog rows in sysml-codegen. Branch `generated-results-guidance`; sysml-codegen branch `native-generated-compare` (`b08bbfee`, backlog only, no code).
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 
 ## Concrete remaining work

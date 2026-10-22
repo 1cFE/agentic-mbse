@@ -1,6 +1,6 @@
 # Implementation Plan: Guidance that keeps generated results honest (EXEC-SUBSET-CONTRACT Item 5, rescoped)
 
-**Status:** In Progress
+**Status:** In Progress. Phases 0, 1 done (Phase 1 gate failed); Phases 2-5 parked pending an owner decision; Phases 6 and 7 done in adapted form (no `compare`).
 **Created:** 2026-10-22
 **Last Updated:** 2026-10-22
 
@@ -172,6 +172,8 @@ The scope, count and marking rules `compare` will use are correct on the shapes 
 
 ## Phase 2: The read-only trace accessor, and byte identity
 
+**Parked: Phase 1 gate failed, owner decision pending** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
+
 ### Goal
 Give `compare` a public, read-only view of the generator's trace (design D2), without changing anything the generator builds (invariant 2, RG-1).
 
@@ -230,6 +232,8 @@ The generator exposes, read-only, everything `compare` needs, and the generated 
 ---
 
 ## Phase 3: `sysml-codegen compare` — counts, values and exit codes
+
+**Parked: Phase 1 gate failed, owner decision pending** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
 
 ### Goal
 The command itself: load and prepare like `check`, build into a temporary folder, run once with simkit, and check counts and values against SysIDE, with exits 0/1/2/3/4. See [Core Concept](design.md#core-concept), [D6, D7, D8, D10, D11](design.md#key-decisions), [Architecture](design.md#architecture).
@@ -293,6 +297,8 @@ Unit tests for the tolerance rule (D8) go in `tests/unit/test_compare_tolerance.
 
 ## Phase 4: Verdicts, the report, and the remaining shapes
 
+**Parked: Phase 1 gate failed, owner decision pending** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
+
 ### Goal
 Add verdict comparison (D9), the full report (D12, report header for B6), and tests for the shapes the design lists under "Not checked by the spike" in [Potential Risks](design.md#potential-risks).
 
@@ -341,6 +347,8 @@ Every exit and every not-compared cause has a test built from a real model, incl
 ---
 
 ## Phase 5: agentic-mbse workflow text and pins
+
+**Parked: Phase 1 gate failed, owner decision pending** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
 
 ### Goal
 Put `compare` into the shipped workflow and fix the guidance for Risks 2 and 3, one home per fact ([D13](design.md#key-decisions)). The Component Overview's "agentic-mbse" list ([design.md § Component Overview](design.md#component-overview)) is the file list; this phase does not restate the wording, which is in D13, D14 and D15.
@@ -409,13 +417,13 @@ The results recorded in the spike and in earlier items still hold at current `ma
 Write the "expected" column of `evidence/risk1-reruns.md` before running, from the design's Phase R table: for each case, the expected `check` exit, `generate` exit, `compare` exit and the expected guidance outcome. Then run and fill the "observed" column. A mismatch is a finding to record, not to fix.
 
 ### Changes required (agentic-mbse)
-- [ ] Revisions: `check` and `generate` results stand for sysml-codegen `origin/main` (Phase 0 SHA), because Phase 2 to 4 showed the generated tree byte-identical on the branch. Record both SHAs and say this.
-- [ ] `evidence/probes/<case>/` (NEW): one model per case, in the `probes.md` format of `.project/completed/20261022_retire-subset-profile/evidence/probes.md`.
-- [ ] `evidence/risk1-reruns.md` (NEW): one row per case in the design's Phase R table, with commands, exits, the reason or difference line, and the guidance outcome.
+- [x] Revisions: `check` and `generate` results stand for sysml-codegen `origin/main` (Phase 0 SHA), because Phase 2 to 4 showed the generated tree byte-identical on the branch. Record both SHAs and say this.
+- [x] `evidence/probes/<case>/` (NEW): one model per case, in the `probes.md` format of `.project/completed/20261022_retire-subset-profile/evidence/probes.md`.
+- [x] `evidence/risk1-reruns.md` (NEW): one row per case in the design's Phase R table, with commands, exits, the reason or difference line, and the guidance outcome.
   - String dropped and calc-usage result expression: record and flag only (RG-2). No guidance text.
   - Calc def simple-name collision and the three formerly `omitted` places: if confirmed (generates and differs), add a warning at the Risk 3 site per the design's Phase R table and a pin in `tests/test_shipped_text.py`; if refused, record the refusal; if not reproduced, record "not reproduced at <rev>".
-- [ ] `evidence/dc3-compare.md` (NEW): `spike/codegen.sh -m sysml_codegen compare --models /home/reid/src/dc3/models`, with the exit code, the summary line, and the not-compared groups. A low share compared is a finding to report, not to tune. Confirm dc3's `git status --short` is still empty.
-- [ ] Link every guidance claim about generator behaviour (Phase 5 text and any warning added here) to its row in `risk1-reruns.md` (invariant 5, spec criterion 5).
+- [ ] ~~`evidence/dc3-compare.md`~~ skipped: needs `compare` (parked): `spike/codegen.sh -m sysml_codegen compare --models /home/reid/src/dc3/models`, with the exit code, the summary line, and the not-compared groups. A low share compared is a finding to report, not to tune. Confirm dc3's `git status --short` is still empty.
+- [ ] (waits on Phase 5, parked) Link every guidance claim about generator behaviour (Phase 5 text and any warning added here) to its row in `risk1-reruns.md` (invariant 5, spec criterion 5).
 
 ### Exit check
 - Every row in the design's Phase R table has an observed result in `evidence/risk1-reruns.md`.
@@ -437,13 +445,13 @@ Risk 4 (each owner-held change that would lift a stated limit names the guidance
 Before editing, list in the phase notes each row to touch and the one fact it gains. After editing, `grep -n` for each row ID in `.project/backlog/BACKLOG.md` and check the fact is there.
 
 ### Changes required (sysml-codegen `.project/backlog/BACKLOG.md`)
-- [ ] `[POSITIONAL-FORMAL-REDEFINITION]` (`:21`): the observed wiring at the recorded `main` SHA (by name; `gen_reversed` native −7, generated 7), that this differs from the row's "follows parser redefinition identity" text, and the agentic-mbse draft finding (`.project/completed/20261018_positional-binding-check/evidence/upstream-codegen-finding.md`) filed here. No ruling on which reading is intended (RG-1).
-- [ ] `[SILENT-LOSSES-UNREPORTED]` (`:53`): fix the stale `retire-subset-profile` path (spec review L4-1); add the Phase R results for the three formerly `omitted` places. Flag only; no proposed guidance wording (RG-2).
-- [ ] `[CALC-USAGE-BINDING-LOST-WITH-RESULT-EXPRESSION]` (`:29`): add the `compare` exit-3 `package run failed:` result with its revision.
-- [ ] `[REGISTRY-CALC-DEF-SIMPLE-NAME-DEDUP]` (`:37`) and `[ATTRIBUTE-MULTIPLICITY-DEFAULT-COUNT]` (`:49`): the Phase R result with revision and reproducer, or "not reproduced at <rev>".
-- [ ] `[CALCDEF-GATE-IMPLEMENTATION]` (`:111`) and `[ATTRIBUTE-MULTIPLICITY-DEFAULT-COUNT]`: a line naming the agentic-mbse files and headings to update when the change lands (D16).
-- [ ] A row for `compare` only if sysml-codegen's backlog process wants one (check `.project/backlog/README.md`).
-- [ ] Commit in sysml-codegen. Then, in agentic-mbse: mark `upstream-codegen-finding.md` as filed, finish the `semantic-hazards.md` "filed at" sentence, and commit.
+- [x] `[POSITIONAL-FORMAL-REDEFINITION]` (`:21`): the observed wiring at the recorded `main` SHA (by name; `gen_reversed` native −7, generated 7), that this differs from the row's "follows parser redefinition identity" text, and the agentic-mbse draft finding (`.project/completed/20261018_positional-binding-check/evidence/upstream-codegen-finding.md`) filed here. No ruling on which reading is intended (RG-1).
+- [x] `[SILENT-LOSSES-UNREPORTED]` (`:53`): fix the stale `retire-subset-profile` path (spec review L4-1); add the Phase R results for the three formerly `omitted` places. Flag only; no proposed guidance wording (RG-2).
+- [x] `[CALC-USAGE-BINDING-LOST-WITH-RESULT-EXPRESSION]` (`:29`): add the `compare` exit-3 `package run failed:` result with its revision.
+- [x] `[REGISTRY-CALC-DEF-SIMPLE-NAME-DEDUP]` (`:37`) and `[ATTRIBUTE-MULTIPLICITY-DEFAULT-COUNT]` (`:49`): the Phase R result with revision and reproducer, or "not reproduced at <rev>".
+- [x] `[CALCDEF-GATE-IMPLEMENTATION]` (`:111`) and `[ATTRIBUTE-MULTIPLICITY-DEFAULT-COUNT]`: a line naming the agentic-mbse files and headings to update when the change lands (D16).
+- [x] (no row: `compare` is parked) A row for `compare` only if sysml-codegen's backlog process wants one (check `.project/backlog/README.md`).
+- [x] Commit in sysml-codegen. Then, in agentic-mbse: mark `upstream-codegen-finding.md` as filed, finish the `semantic-hazards.md` "filed at" sentence, and commit.
 
 ### Exit check
 - Each row ID in the list above shows its new fact on `grep`.
@@ -505,36 +513,39 @@ Before editing, list in the phase notes each row to touch and the one fact it ga
 - The byte-identity "before" records for the Phase 1 models were taken at the end of this phase on the untouched code, as Phase 0's notes said. `identity_record.sh` was committed under `spike/derisk/`.
 - Exit check not met: the probe exits 1. sysml-codegen and TEAx `git status` are empty; dc3 shows only its pre-existing untracked folder. No `__pycache__` under `spike/`.
 
-### Phase 2 Completion
-**Completed:**
-**Byte-identity results:**
-**Issues:**
-**Deviations:**
+### Phases 2-5
+Parked: Phase 1 gate failed, owner decision pending. Not started; no sysml-codegen code written.
 
-### Phase 3 Completion
-**Completed:**
+### Phase 6 Completion (Phase R, adapted: no `compare`)
+**Completed:** 2026-10-22. Record: [evidence/risk1-reruns.md](evidence/risk1-reruns.md); models and outputs in `evidence/probes/`; agentic-mbse `b27427da`.
+**Revisions:** sysml-codegen `native-generated-compare` = `origin/main` `6190f996` (no code change on the branch, so no byte-identity question arises). TEAx `8d877460`, SysIDE 0.8.4.
+**Results:**
+- Confirmed, generate-but-wrong numbers: default count, both forms (2 built for 3; `pack.total` 6.4 against 9.6), and positional binding (generated 7.0, native −7.0; by-name control agrees).
+- Confirmed, generate-but-lost: String values dropped, package runs. Flag only (RG-2).
+- Confirmed, generate then the run fails: the calc-usage result expression (null input `fx__site__m__v`) and the calc def simple-name collision (`Module type 'libb.TwiceModule' is not registered`). The second was unconfirmed going in. Neither returns a wrong number at the model's values.
+- The three formerly `omitted` places are refused as attribute values; the only place each still generates is as a calc usage's result expression, which is the result-expression case.
+- Risk 3: the guide's conditional (two taught forms) and `min` are refused by `check`. Risk 2: a violated assert gives `status: violated`, headline `violation`, and every output is still written.
 **Issues:**
+- None blocking. SysIDE gives no value for `max` in the callable case, so that native value is worked out by hand and labelled.
 **Deviations:**
+- No `compare` (parked), so native values come from SysIDE `evaluate_feature` (or `evaluate` on a calc usage's result expression) where Phase 1 showed it trustworthy, else by hand. The dc3 `compare` run is skipped.
+- Interpreter is dc3's venv through `spike/codegen.sh`, as in the spike and Phase 1, not the agentic-mbse venv the plan's simkit lane names. Both have SysIDE 0.8.4; nothing was written into dc3.
+- The confirmed simple-name collision would, per the design's Phase R table, get a guidance warning. Not added: guidance text is Phase 5, which is parked. Recorded in `risk1-reruns.md` § Guidance outcomes.
 
-### Phase 4 Completion
-**Completed:**
-**Issues:**
+### Phase 7 Completion (Phase U)
+**Completed:** 2026-10-22. sysml-codegen `b08bbfee` on `native-generated-compare` (backlog only; not pushed).
+**Rows touched (each checked by `grep` afterwards):**
+- `[POSITIONAL-FORMAL-REDEFINITION]`: the `6190f996` observation (by name; generated 7, native −7; by-name control agrees), that it differs from the row's "follows parser redefinition identity", no ruling; the agentic-mbse draft finding recorded as filed there.
+- `[CALC-USAGE-BINDING-LOST-WITH-RESULT-EXPRESSION]`: the run failure on the null input at `6190f996`.
+- `[REGISTRY-CALC-DEF-SIMPLE-NAME-DEDUP]`: confirmed, with an inline reproducer and the run failure; title amended from "may register … unconfirmed".
+- `[ATTRIBUTE-MULTIPLICITY-DEFAULT-COUNT]`: confirmed at `6190f996`; stale path fixed; guidance pointer (D16).
+- `[SILENT-LOSSES-UNREPORTED]`: the three formerly `omitted` places and the String re-run; flagged only (RG-2).
+- `[CALCDEF-GATE-IMPLEMENTATION]`: guidance pointer naming every file that states limit 1 (D16).
+- New `[SYSIDE-SINGLE-SCOPE-NATIVE-VALUES]`: the Phase 1 finding, citing `e582f6bb:.project/active/generated-results-guidance/spike/derisk/RESULTS.md`. No row for `compare`.
+- agentic-mbse: `completed/20261018_positional-binding-check/evidence/upstream-codegen-finding.md` status set to filed.
 **Deviations:**
-
-### Phase 5 Completion
-**Completed:**
-**Issues:**
-**Deviations:**
-
-### Phase 6 Completion
-**Completed:**
-**Issues:**
-**Deviations:**
-
-### Phase 7 Completion
-**Completed:**
-**Issues:**
-**Deviations:**
+- The stale `retire-subset-profile` path was in `[ATTRIBUTE-MULTIPLICITY-DEFAULT-COUNT]`, not `[SILENT-LOSSES-UNREPORTED]` as spec review L4-1 and the brief said; `[SILENT-LOSSES-UNREPORTED]` cites only commit-pinned paths. Fixed where it was.
+- The `semantic-hazards.md` "filed at" sentence and "Verified with" row are shipped text (Phase 5), so they wait with Phase 5.
 
 ---
 
