@@ -1,0 +1,9 @@
+A fresh design review is in: .project/active/generated-results-guidance/design-review.md (verdict Revise). Read it and revise design.md. Orchestrator dispositions (execution detail; record them in design-review.md § Resolutions or the review's resolutions section, keyed by ID):
+
+- M1 accepted. Exit 0 means every item was compared and nothing differs. A run where some items are not compared and nothing that was compared differs gets its own non-zero exit code, distinct from "differs" (1) and "nothing compared" (3); the output groups skipped items by the cause (the part multiplicity or reason). Pick the code and record it. Also state plainly, in the design and in the guidance plan, the tension this exposes: the guide's own limit-3 advice (total over parts with sum and pass the total) produces outputs the comparison cannot check. Decide what the guidance says about it, in one place, without restating generator rules.
+- M2 accepted: native scope from the occurrence record's effective usage (effective_usage_id), exposed by the accessor.
+- M3 accepted: make it an explicit bet with a test, and put it in the first de-risk phase.
+- S1: accept only if the argument holds that an individual index cannot carry its own value in SysML (it cannot be redefined per index); if there is any route by which per-index values can differ, keep them "not compared". Record the argument either way.
+- S2-S7 accepted. For S4 the shipped workflow text must treat an unknown-command exit 2 from an older sysml-codegen as "not compared". For S6 make the check mechanically testable or drop it and say why.
+- Order the build phases per S7: phase 1 de-risks B2, M2 and M3 together (and the multiplicity-dependence question), with a stop-and-report if any fails.
+Correct the dc3 premise wherever the design repeats it: dc3 names parts and has no sum, so most of its values should compare.

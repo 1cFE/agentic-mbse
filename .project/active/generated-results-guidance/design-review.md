@@ -172,7 +172,20 @@ The Point, Core Concept and the three-check list give a clear mental model. Deci
 
 ## Resolutions
 
-None yet. This review ran non-interactively for the orchestrator; resolutions are recorded here when the orchestrator or owner rules on each finding.
+Dispositions by the orchestrator, 2026-10-22 (execution detail); applied to `design.md` by the design agent the same day.
+
+- **M1:** accepted. Exit 0 now means everything was compared and nothing differs. Exit 4 means nothing compared differs but some items were not compared; exit 1 takes precedence. Not-compared items are grouped by cause, such as "multiplicity `pack.cells` (3)" (design D5, D6, invariant 1). The tension is stated in the Core Concept: the guide's limit-3 advice (total over the parts with `sum`) produces outputs native SysIDE cannot check. The guidance says it in one place, the `MODELING_PROCESS` exit-4 text (D14), with one pointer sentence after the limit-3 advice. It is a fact about native SysIDE, not a generator rule. The modelling advice is unchanged, and advising named parts to suit the checker was rejected.
+- **M2:** accepted. The accessor returns `effective_usage_id` per occurrence step. It is SysIDE's scope and the source of the count bound (D2, D7, bet B3). The dc3-shaped redefinition model is in Phase 1.
+- **M3:** accepted. This is bet B4, with a two-levels-out test in Phase 1. Fallback: features redefined above the innermost scope are not compared, with the cause "redefined above scope".
+- **S1:** partly accepted. Accepted: "indexed" means a slot whose count is not 1, so `[1]` parts compare. Not accepted: comparing per-index channels. SysML has no syntax to redefine one index directly. But a named subset (`part c1 :> cells { :>> capacity = 4.0; }`) gives one member of the collection its own value. The generator builds that subset as its own slot, and every index from shared declarations. So per-index generated values and SysIDE's per-definition value could agree on a wrong number. The spike's `packredef` probe did not settle this shape. Because a route exists, per-index items stay not compared. The argument is recorded in design D5.
+- **S2:** accepted. B2 uses the concrete method (scope inside an occurrence of a slot with a count other than 1, plus everything downstream), plus a separate zero-occurrence mark from expression references. Phase 1 adds a `[0]` test model.
+- **S3:** accepted. simkit is imported from the environment only, like `study/verify.py:481-490`. The message names both ways to provide it. The TEAx coupling is bet B6, and the report header records the revision and path (D10).
+- **S4:** accepted. The workflow text maps exit 2 with "invalid choice: 'compare'" to "not compared: sysml-codegen does not have `compare`; update it" (D6, Component Overview).
+- **S5:** accepted. Invariant 5 now covers the three limits plus each behaviour confirmed in Phase R.
+- **S6:** accepted by dropping the `min`/`max`/`product`/`size` test. It cannot be decided mechanically, and the per-site qualifier pins prove the criterion (D15).
+- **S7:** accepted. The build order is in Implementation Notes. Phase 1 de-risks B2, B3 (M2) and B4 (M3) together, with stop-and-report. The byte-identity corpus is named, and the comparison covers the whole generated tree (invariant 2). sysml-codegen work branches from `origin/main`.
+- **Minors:** all accepted. Exit 3 reasons are prefixed `environment:` or `package run failed:`. The per-item line and the count check's unit are defined (D12, D7). D8's `--abs-tol` rationale is corrected. `--models` only (D11). The verdict join is in the first test set.
+- **dc3 premise:** corrected in the design. dc3 names parts as subsets and has no `sum`, so most of its values should compare. The uncompared-headline case applies to new projects following limit 3. The Validation Approach adds a run on dc3 `models/` to record the actual share compared.
 
 ---
 
