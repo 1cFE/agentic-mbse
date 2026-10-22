@@ -140,23 +140,23 @@ assert_against(EXPECTED, rows, counts)    # prints PASS/FAIL per row; exit 1 on 
 ### Changes required (agentic-mbse only; read-only in sysml-codegen)
 
 #### 1. Models — `spike/derisk/models/<case>/model.sysml` (NEW)
-- [ ] Reuse: `s1_gen`, `default_count`, `default_count_literal` from `spike/channel-trace/models/`; `gen_reversed`, `gen_byname` from `tests/fixtures/positional_binding/native_values/`.
-- [ ] `zero_slot`: a part with `x : X[0]` and an attribute `total = sum(x.v)` (expected: generated 0; marked "multiplicity … (0)").
-- [ ] `one_slot`: `cell : Cell[1]` with a value read through it (expected: index 0 in the graph, compared, not marked).
-- [ ] `named_subsets`: `racks : Rack[2]` with `rack_1 :> racks`, `rack_2 :> racks`, one of them redefining a value (`:>> capacity = 4.0`), and a total computed from the named parts, the dc3 shape (`/home/reid/src/dc3/models/designs/`). Expected: named-part values compared and not marked; anything reading `racks` itself marked.
-- [ ] `dc3_redefinition`: a specialised part def that redefines a contained part and an attribute value inside it (`part :>> electrical { attribute :>> load = 5.0; part :>> racks[3]; }`), mirroring `dc3/designs/dc_native/dc_facility.sysml`. Expected: native value under the effective usage = 5.0 = generated; native bound 3 = built 3. Also record, for contrast, the native result with the slot root as scope (this shows why M2 mattered; it is not a pass condition).
-- [ ] `outer_redefinition`: an outer part redefining a value inside a nested part two levels down (B4). Expected: generated and native both give the outer value.
-- [ ] `units_int_bool`, `split_files` (two `.sysml` files), `nested_indexed` (calc usage two levels inside `[3]` occurrences): B1 shapes.
-- [ ] Ask the `sysml-expert` or `sysmlv2-validator` agent when unsure how to write a shape; every model must load in SysIDE and pass `sysml-codegen check` (exit 0) before it counts. A model that `check` refuses is recorded as such and replaced with a shape that generates.
+- [x] Reuse: `s1_gen`, `default_count`, `default_count_literal` from `spike/channel-trace/models/`; `gen_reversed`, `gen_byname` from `tests/fixtures/positional_binding/native_values/`.
+- [x] `zero_slot`: a part with `x : X[0]` and an attribute `total = sum(x.v)` (expected: generated 0; marked "multiplicity … (0)").
+- [x] `one_slot`: `cell : Cell[1]` with a value read through it (expected: index 0 in the graph, compared, not marked).
+- [x] `named_subsets`: `racks : Rack[2]` with `rack_1 :> racks`, `rack_2 :> racks`, one of them redefining a value (`:>> capacity = 4.0`), and a total computed from the named parts, the dc3 shape (`/home/reid/src/dc3/models/designs/`). Expected: named-part values compared and not marked; anything reading `racks` itself marked.
+- [x] `dc3_redefinition`: a specialised part def that redefines a contained part and an attribute value inside it (`part :>> electrical { attribute :>> load = 5.0; part :>> racks[3]; }`), mirroring `dc3/designs/dc_native/dc_facility.sysml`. Expected: native value under the effective usage = 5.0 = generated; native bound 3 = built 3. Also record, for contrast, the native result with the slot root as scope (this shows why M2 mattered; it is not a pass condition).
+- [x] `outer_redefinition`: an outer part redefining a value inside a nested part two levels down (B4). Expected: generated and native both give the outer value.
+- [x] `units_int_bool`, `split_files` (two `.sysml` files), `nested_indexed` (calc usage two levels inside `[3]` occurrences): B1 shapes.
+- [x] Ask the `sysml-expert` or `sysmlv2-validator` agent when unsure how to write a shape; every model must load in SysIDE and pass `sysml-codegen check` (exit 0) before it counts. A model that `check` refuses is recorded as such and replaced with a shape that generates.
 
 #### 2. Probe — `spike/derisk/probe_derisk.py` (NEW)
-- [ ] Copy `spike/channel-trace/probe_channels.py` and `probe_count.py`; switch the native scope from `containment_slot.root_declaration` (`probe_channels.py:43`) to `OccurrenceRecord.effective_usage_id`.
-- [ ] Implement the B2 mark from the instance graph: slot counts per (parent occurrence, containment slot); nodes scoped inside an occurrence of a slot with count ≠ 1; downstream closure over consumer edges. For `[0]`, find what the graph records for the reading expression's reference to an empty slot, and record which field it is (this closes the design's Open item "the exact data for the zero-occurrence mark").
-- [ ] Count rows: per (effective usage, owning occurrence), SysIDE's bound from the effective usage's multiplicity in the owner's effective-usage scope, against built occurrences.
-- [ ] Run through `spike/codegen.sh`; scratch under `/tmp/grg-impl/derisk/`.
+- [x] Copy `spike/channel-trace/probe_channels.py` and `probe_count.py`; switch the native scope from `containment_slot.root_declaration` (`probe_channels.py:43`) to `OccurrenceRecord.effective_usage_id`.
+- [x] Implement the B2 mark from the instance graph: slot counts per (parent occurrence, containment slot); nodes scoped inside an occurrence of a slot with count ≠ 1; downstream closure over consumer edges. For `[0]`, find what the graph records for the reading expression's reference to an empty slot, and record which field it is (this closes the design's Open item "the exact data for the zero-occurrence mark").
+- [x] Count rows: per (effective usage, owning occurrence), SysIDE's bound from the effective usage's multiplicity in the owner's effective-usage scope, against built occurrences.
+- [x] Run through `spike/codegen.sh`; scratch under `/tmp/grg-impl/derisk/`.
 
 #### 3. Record — `spike/derisk/RESULTS.md` (NEW)
-- [ ] Same shape as `spike/RESULTS.md`: revisions, commands, output, a verdict per bet (holds / fails), and the zero-slot data source.
+- [x] Same shape as `spike/RESULTS.md`: revisions, commands, output, a verdict per bet (holds / fails), and the zero-slot data source.
 
 ### Exit check
 - `spike/codegen.sh spike/derisk/probe_derisk.py` exits 0, with every row PASS against `EXPECTED.md`.
@@ -488,11 +488,22 @@ Before editing, list in the phase notes each row to touch and the one fact it ga
 - agentic-mbse suite was run with `-p no:randomly` added; it does not change the test set.
 
 ### Phase 1 Completion
-**Completed:**
+**Completed:** 2026-10-22. **Gate FAILED: stopped before Phase 2.** Full record: [spike/derisk/RESULTS.md](spike/derisk/RESULTS.md).
 **Bet verdicts:**
-**Zero-slot data source:**
+- B2 holds. Every multiplicity-wrong native value was marked; `[1]` and named subsets were not.
+- B3 holds. On `dc3_redefinition` the effective usage gives 10.0 and bound 3, matching generated 10.0 and 3 built; the slot root gives 2.0 and 1.
+- **B4 fails.** `evaluate_feature` misses redefinitions that are not in its scope element's own body, giving false differences on correct packages:
+  - `outer_retyping`: a value redefined in the effective usage's type, reached by a re-typing two levels out. Native 3.0, generated 21.0.
+  - calc usages inside a part that redefines one of their inputs (`named_subsets rack_2.d.y`: native 4.0, generated 8.0; `split_files cart.motor.t.y`: native 6.0, generated 12.0). No single scope gives the right value.
+- **B1 fails for units.** SysIDE returns no value for any unit annotation (`Operator '[' is not model-level evaluable`), so those values fall to "no native value". With `experimental_quantities` it converts to SI base units (500 [g] → 0.5) while the generator keeps 500, a false difference. B1 holds for Integer, split files and two indexed levels. Boolean is right on the native side.
+- Design gap, not a bet: every output port is typed `float`, so a Boolean output is written `1.0` against native `True`. D8 needs a rule for this.
+**Zero-slot data source:** none needed. `check` refuses all six `[0]` read forms tried, and graph validation forbids a zero-edge aggregation reference, so no projectable graph reads an empty slot. Gap: count rows cannot see a `[0]` slot (no occurrence records).
 **Issues:**
+- `check` refused some first-draft shapes (computed attribute inside an indexed part: `REGISTRY_CLASS_NAME_COLLISION`; `t.y` read in an expression: `elaboration_feature_declaration_unindexed`; `ISQ::MassValue`). The models were switched to accepted shapes before the probe ran; `EXPECTED.md` lists every change.
+- Observation (RG-1, not ruled on): `named_subsets rack_sum` is generated as 4.0 where SysML means 6.0 (named members' own values ignored). It is marked, so it is not reported as agreement.
 **Deviations:**
+- The byte-identity "before" records for the Phase 1 models were taken at the end of this phase on the untouched code, as Phase 0's notes said. `identity_record.sh` was committed under `spike/derisk/`.
+- Exit check not met: the probe exits 1. sysml-codegen and TEAx `git status` are empty; dc3 shows only its pre-existing untracked folder. No `__pycache__` under `spike/`.
 
 ### Phase 2 Completion
 **Completed:**

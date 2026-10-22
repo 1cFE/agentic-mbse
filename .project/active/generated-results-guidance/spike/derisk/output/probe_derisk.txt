@@ -1,0 +1,145 @@
+syside 0.8.4; cases ['dc3_redefinition', 'default_count', 'default_count_literal', 'gen_byname', 'gen_reversed', 'named_subsets', 'nested_indexed', 'one_slot', 'outer_redefinition', 'outer_retyping', 's1_gen', 'split_files', 'units_int_bool', 'zero_unread']
+=== dc3_redefinition
+  occurrences: 5; marked nodes: 6; zero-edge aggregation references: none
+  PASS value site.electrical.racks[0].d.y  native 2.0  generated 2.0  mark multiplicity site.electrical.racks (3)
+       feature Dc3Redefinition::Double::y, scope Dc3Redefinition::Rack::d; slot-root scope gives 2.0; channel Dc3Redefinition__site__electrical__racks[0]__d__y
+  PASS value site.electrical.racks[1].d.y  native 2.0  generated 2.0  mark multiplicity site.electrical.racks (3)
+       feature Dc3Redefinition::Double::y, scope Dc3Redefinition::Rack::d; slot-root scope gives 2.0; channel Dc3Redefinition__site__electrical__racks[1]__d__y
+  PASS value site.electrical.racks[2].d.y  native 2.0  generated 2.0  mark multiplicity site.electrical.racks (3)
+       feature Dc3Redefinition::Double::y, scope Dc3Redefinition::Rack::d; slot-root scope gives 2.0; channel Dc3Redefinition__site__electrical__racks[2]__d__y
+  PASS value site.electrical.scaled  native 10.0  generated 10.0  mark -
+       feature Dc3Redefinition::Electrical::scaled, scope Dc3Redefinition::'Native Facility'::electrical; slot-root scope gives 2.0; channel Dc3Redefinition__site__electrical__scaled__scaled
+  PASS value site.facility_load  native 6.0  generated 6.0  mark -
+       feature Dc3Redefinition::Facility::facility_load, scope Dc3Redefinition::site; slot-root scope gives 6.0; channel Dc3Redefinition__site__facility_load__facility_load
+  PASS count site.electrical/racks  native 3  built 3  mark -
+       usage Dc3Redefinition::'Native Facility'::electrical::racks, scope Dc3Redefinition::'Native Facility'::electrical; slot-root scope gives 1
+=== default_count
+  occurrences: 3; marked nodes: 5; zero-edge aggregation references: none
+  PASS value pack.cells[0].d.y  native 6.4  generated 6.4  mark multiplicity pack.cells (2)
+       feature Packs::Double::y, scope Packs::Cell::d; slot-root scope gives 6.4; channel Packs__pack__cells[0]__d__y
+  PASS value pack.cells[1].d.y  native 6.4  generated 6.4  mark multiplicity pack.cells (2)
+       feature Packs::Double::y, scope Packs::Cell::d; slot-root scope gives 6.4; channel Packs__pack__cells[1]__d__y
+  PASS value pack.total  native 3.2  generated 6.4  mark multiplicity pack.cells (2)
+       feature Packs::Pack::total, scope Packs::pack; slot-root scope gives 3.2; channel Packs__pack__total__total
+  PASS count pack/cells  native 3  built 2  mark -
+       usage Packs::Pack::cells, scope Packs::pack; slot-root scope gives 3
+=== default_count_literal
+  occurrences: 4; marked nodes: 7; zero-edge aggregation references: none
+  PASS value pack.cells[0].d.y  native 6.4  generated 6.4  mark multiplicity pack.cells (3)
+       feature Packs::Double::y, scope Packs::Cell::d; slot-root scope gives 6.4; channel Packs__pack__cells[0]__d__y
+  PASS value pack.cells[1].d.y  native 6.4  generated 6.4  mark multiplicity pack.cells (3)
+       feature Packs::Double::y, scope Packs::Cell::d; slot-root scope gives 6.4; channel Packs__pack__cells[1]__d__y
+  PASS value pack.cells[2].d.y  native 6.4  generated 6.4  mark multiplicity pack.cells (3)
+       feature Packs::Double::y, scope Packs::Cell::d; slot-root scope gives 6.4; channel Packs__pack__cells[2]__d__y
+  PASS value pack.total  native 3.2  generated 9.600000000000001  mark multiplicity pack.cells (3)
+       feature Packs::Pack::total, scope Packs::pack; slot-root scope gives 3.2; channel Packs__pack__total__total
+  PASS count pack/cells  native 3  built 3  mark -
+       usage Packs::Pack::cells, scope Packs::pack; slot-root scope gives 3
+=== gen_byname
+  occurrences: 1; marked nodes: 0; zero-edge aggregation references: none
+  PASS value plant.diff.r  native 7.0  generated 7.0  mark -
+       feature PositionalByName::Sub::r, scope PositionalByName::Plant::diff; slot-root scope gives 7.0; channel PositionalByName__plant__diff__r
+=== gen_reversed
+  occurrences: 1; marked nodes: 0; zero-edge aggregation references: none
+  PASS value plant.diff.r  native -7.0  generated 7.0  mark -
+       feature PositionalReversed::Sub::r, scope PositionalReversed::Plant::diff; slot-root scope gives -7.0; channel PositionalReversed__plant__diff__r
+=== named_subsets
+  occurrences: 5; marked nodes: 5; zero-edge aggregation references: none
+  PASS value room.named_total  native 6.0  generated 6.0  mark -
+       feature NamedSubsets::Room::named_total, scope NamedSubsets::room; slot-root scope gives 6.0; channel NamedSubsets__room__named_total__named_total
+  PASS value room.rack_1.d.y  native 4.0  generated 4.0  mark -
+       feature NamedSubsets::Double::y, scope NamedSubsets::Rack::d; slot-root scope gives 4.0; channel NamedSubsets__room__rack_1__d__y
+  FAIL value room.rack_2.d.y  native 4.0  generated 8.0  mark -
+       feature NamedSubsets::Double::y, scope NamedSubsets::Rack::d; slot-root scope gives 4.0; channel NamedSubsets__room__rack_2__d__y
+       ! native 4.0 != expected 8.0
+       ! native 4.0 and generated 8.0 differ
+  PASS value room.rack_sum  native 2.0  generated 4.0  mark multiplicity room.racks (2)
+       feature NamedSubsets::Room::rack_sum, scope NamedSubsets::room; slot-root scope gives 2.0; channel NamedSubsets__room__rack_sum__rack_sum
+  PASS value room.racks[0].d.y  native 4.0  generated 4.0  mark multiplicity room.racks (2)
+       feature NamedSubsets::Double::y, scope NamedSubsets::Rack::d; slot-root scope gives 4.0; channel NamedSubsets__room__racks[0]__d__y
+  PASS value room.racks[1].d.y  native 4.0  generated 4.0  mark multiplicity room.racks (2)
+       feature NamedSubsets::Double::y, scope NamedSubsets::Rack::d; slot-root scope gives 4.0; channel NamedSubsets__room__racks[1]__d__y
+  PASS count room/racks  native 2  built 2  mark -
+       usage NamedSubsets::Room::racks, scope NamedSubsets::room; slot-root scope gives 2
+=== nested_indexed
+  occurrences: 9; marked nodes: 12; zero-edge aggregation references: none
+  PASS value pack.modules[0].cells[0].d.y  native 3.0  generated 3.0  mark multiplicity pack.modules (2)
+       feature NestedIndexed::Double::y, scope NestedIndexed::Cell::d; slot-root scope gives 3.0; channel NestedIndexed__pack__modules[0]__cells[0]__d__y
+  PASS value pack.modules[0].cells[1].d.y  native 3.0  generated 3.0  mark multiplicity pack.modules (2)
+       feature NestedIndexed::Double::y, scope NestedIndexed::Cell::d; slot-root scope gives 3.0; channel NestedIndexed__pack__modules[0]__cells[1]__d__y
+  PASS value pack.modules[0].cells[2].d.y  native 3.0  generated 3.0  mark multiplicity pack.modules (2)
+       feature NestedIndexed::Double::y, scope NestedIndexed::Cell::d; slot-root scope gives 3.0; channel NestedIndexed__pack__modules[0]__cells[2]__d__y
+  PASS value pack.modules[1].cells[0].d.y  native 3.0  generated 3.0  mark multiplicity pack.modules (2)
+       feature NestedIndexed::Double::y, scope NestedIndexed::Cell::d; slot-root scope gives 3.0; channel NestedIndexed__pack__modules[1]__cells[0]__d__y
+  PASS value pack.modules[1].cells[1].d.y  native 3.0  generated 3.0  mark multiplicity pack.modules (2)
+       feature NestedIndexed::Double::y, scope NestedIndexed::Cell::d; slot-root scope gives 3.0; channel NestedIndexed__pack__modules[1]__cells[1]__d__y
+  PASS value pack.modules[1].cells[2].d.y  native 3.0  generated 3.0  mark multiplicity pack.modules (2)
+       feature NestedIndexed::Double::y, scope NestedIndexed::Cell::d; slot-root scope gives 3.0; channel NestedIndexed__pack__modules[1]__cells[2]__d__y
+  PASS count pack.modules[0]/cells  native 3  built 3  mark multiplicity pack.modules (2)
+       usage NestedIndexed::Module::cells, scope NestedIndexed::Pack::modules; slot-root scope gives 3
+  PASS count pack.modules[1]/cells  native 3  built 3  mark multiplicity pack.modules (2)
+       usage NestedIndexed::Module::cells, scope NestedIndexed::Pack::modules; slot-root scope gives 3
+  PASS count pack/modules  native 2  built 2  mark -
+       usage NestedIndexed::Pack::modules, scope NestedIndexed::pack; slot-root scope gives 2
+=== one_slot
+  occurrences: 2; marked nodes: 0; zero-edge aggregation references: none
+  PASS value pack.cell[0].d.y  native 5.0  generated 5.0  mark -
+       feature OneSlot::Double::y, scope OneSlot::Cell::d; slot-root scope gives 5.0; channel OneSlot__pack__cell[0]__d__y
+  PASS value pack.total  native 5.0  generated 5.0  mark -
+       feature OneSlot::Pack::total, scope OneSlot::pack; slot-root scope gives 5.0; channel OneSlot__pack__total__total
+  PASS count pack/cell  native 1  built 1  mark -
+       usage OneSlot::Pack::cell, scope OneSlot::pack; slot-root scope gives 1
+=== outer_redefinition
+  occurrences: 3; marked nodes: 0; zero-edge aggregation references: none
+  PASS value outer.middle.inner.tripled  native 21.0  generated 21.0  mark -
+       feature OuterRedefinition::Inner::tripled, scope OuterRedefinition::outer::middle::inner; slot-root scope gives 3.0; channel OuterRedefinition__outer__middle__inner__tripled__tripled
+=== outer_retyping
+  occurrences: 3; marked nodes: 0; zero-edge aggregation references: none
+  FAIL value outer.middle.inner.tripled  native 3.0  generated 21.0  mark -
+       feature OuterRetyping::Inner::tripled, scope OuterRetyping::HotMiddle::inner; slot-root scope gives 3.0; channel OuterRetyping__outer__middle__inner__tripled__tripled
+       ! native 3.0 != expected 21.0
+       ! native 3.0 and generated 21.0 differ
+=== s1_gen
+  occurrences: 5; marked nodes: 5; zero-edge aggregation references: none
+  PASS value host.doubled.r  native 6.0  generated 6.0  mark -
+       feature probe_gen::Scale::r, scope probe_gen::Host::doubled; slot-root scope gives 6.0; channel probe_gen__host__doubled__r
+  PASS value host.neg_load  native -3.0  generated -3.0  mark -
+       feature probe_gen::Host::neg_load, scope probe_gen::host; slot-root scope gives -3.0; channel probe_gen__host__neg_load__neg_load
+  PASS value host.pack.total  native 2.5  generated 7.5  mark multiplicity host.pack.cells (3)
+       feature probe_gen::Pack::total, scope probe_gen::Host::pack; slot-root scope gives 2.5; channel probe_gen__host__pack__total__total
+  PASS count host.pack/cells  native 3  built 3  mark -
+       usage probe_gen::Pack::cells, scope probe_gen::Host::pack; slot-root scope gives 3
+  run channels not traced as outputs: ['constraint_report', 'probe_gen__host__load_negative__59ed7c4a045b7553__evaluation', 'probe_gen__host__load_positive__8c1be9e5676911a7__evaluation']
+=== split_files
+  occurrences: 2; marked nodes: 0; zero-edge aggregation references: none
+  PASS value cart.cart_power  native 10.0  generated 10.0  mark -
+       feature SplitDesign::Cart::cart_power, scope SplitDesign::cart; slot-root scope gives 10.0; channel SplitDesign__cart__cart_power__cart_power
+  PASS value cart.motor.boosted  native 5.0  generated 5.0  mark -
+       feature SplitLib::Motor::boosted, scope SplitDesign::Cart::motor; slot-root scope gives 5.0; channel SplitDesign__cart__motor__boosted__boosted
+  FAIL value cart.motor.t.y  native 6.0  generated 12.0  mark -
+       feature SplitLib::Triple::y, scope SplitLib::Motor::t; slot-root scope gives 6.0; channel SplitDesign__cart__motor__t__y
+       ! native 6.0 != expected 12.0
+       ! native 6.0 and generated 12.0 differ
+=== units_int_bool
+  occurrences: 1; marked nodes: 0; zero-edge aggregation references: none
+  FAIL value box.double_grams  native None  generated 1000.0  mark -
+       feature UnitsIntBool::Box::double_grams, scope UnitsIntBool::box; slot-root scope gives None; channel UnitsIntBool__box__double_grams__double_grams
+       native diagnostics: ["Operator '[' is not model-level evaluable"]
+       ! native None != expected 1000.0
+       ! native None and generated 1000.0 differ
+  FAIL value box.double_mass  native None  generated 4.0  mark -
+       feature UnitsIntBool::Box::double_mass, scope UnitsIntBool::box; slot-root scope gives None; channel UnitsIntBool__box__double_mass__double_mass
+       native diagnostics: ["Operator '[' is not model-level evaluable"]
+       ! native None != expected 4.0
+       ! native None and generated 4.0 differ
+  FAIL value box.heavy  native True  generated 1.0  mark -
+       feature UnitsIntBool::Box::heavy, scope UnitsIntBool::box; slot-root scope gives True; channel UnitsIntBool__box__heavy__heavy
+       ! generated 1.0 != expected True
+       ! native True and generated 1.0 differ
+  PASS value box.n2  native 6  generated 6.0  mark -
+       feature UnitsIntBool::Box::n2, scope UnitsIntBool::box; slot-root scope gives 6; channel UnitsIntBool__box__n2__n2
+=== zero_unread
+  occurrences: 1; marked nodes: 0; zero-edge aggregation references: none
+  PASS value holder.free  native 3.0  generated 3.0  mark -
+       feature ZeroUnread::Holder::free, scope ZeroUnread::holder; slot-root scope gives 3.0; channel ZeroUnread__holder__free__free
+SUMMARY dc3_redefinition=PASS default_count=PASS default_count_literal=PASS gen_byname=PASS gen_reversed=PASS named_subsets=FAIL nested_indexed=PASS one_slot=PASS outer_redefinition=PASS outer_retyping=FAIL s1_gen=PASS split_files=FAIL units_int_bool=FAIL zero_unread=PASS

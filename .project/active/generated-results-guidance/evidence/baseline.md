@@ -70,7 +70,7 @@ All three packages resolve to the subset-conformance checkouts and TEAx's `teax-
 All under `/tmp/grg-impl/identity-before/`, generated from untouched `origin/main` code (`6190f996`).
 
 1. **sysml-codegen fixtures.** `uv run --all-extras python scripts/package_manifest.py record /tmp/grg-impl/identity-before/fixtures.json` → exit 0, `recorded 122 subjects (116 generated)`. The run printed two `REGISTRY_CLASS_NAME_COLLISION` refusals, which are recorded subjects, not script failures. sha256 of `fixtures.json`: `bf6321eb40f3903c3a5dd192609c0ddc996e9877ad2bf5657c952087fb683aa8`.
-2. **Spike models.** `/tmp/grg-impl/scripts/identity_record.sh before` runs `uv run sysml-codegen generate --models <dir> --output /tmp/grg-impl/identity-before/spike/<case> --package-name <case>` from the sysml-codegen root for each case, logging to `log/spike_<case>.txt`:
+2. **Spike models.** `spike/derisk/identity_record.sh before` (committed in Phase 1; first run from `/tmp/grg-impl/scripts/`) runs `uv run sysml-codegen generate --models <dir> --output /tmp/grg-impl/identity-before/spike/<case> --package-name <case>` from the sysml-codegen root for each case, logging to `log/spike_<case>.txt`:
 
    | case | source | generate exit |
    |---|---|---|
