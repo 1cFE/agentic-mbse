@@ -1,0 +1,3 @@
+INFO: Checking evidence/probes/assert_verdict
+INFO: Built computation graph with 5 modules
+INFO: Generator: builds (5 modules)

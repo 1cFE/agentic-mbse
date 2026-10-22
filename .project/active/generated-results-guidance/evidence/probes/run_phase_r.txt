@@ -1,0 +1,75 @@
+== assert_verdict
+  generated channel AssertVerdict__host__doubled__r = 6.0
+  generated channel AssertVerdict__host__neg_load__neg_load = -3.0
+  generated channel AssertVerdict__host__load_negative__aa4535c21c69241c__evaluation = {'actual_value': False, 'constraint_id': 'AssertVerdict__host__load_negative__aa4535c21c69241c', 'margin': -3.0, 'observed': {'v': -3.0}, 'status': 'violated'}
+  generated channel AssertVerdict__host__load_positive__12479c099414261e__evaluation = {'actual_value': True, 'constraint_id': 'AssertVerdict__host__load_positive__12479c099414261e', 'margin': 3.0, 'observed': {'v': 3.0}, 'status': 'satisfied'}
+  generated channel constraint_report = {'assessed_entry_count': 2, 'catalog_fingerprint': '624764171296278015b0f4f8b566a1a02e7dac6ec84f7bd1633c451bafc1092a', 'coverage': {'applicable_gate_total': 2, 'assessed_gate_count': 2, 'authored_usage_total': 2, 'coverage_state': 'complete', 'inapplicable_gate_count': 0, 'unassessed_gate_count': 0, 'unassessed_reasons': {}}, 'headline': 'violation', 'results': [{'actual_value': False, 'constraint_id': 'AssertVerdict__host__load_negative__aa4535c21c69241c', 'margin': -3.0, 'observed': {'v': -3.0}, 'status': 'violated'}, {'actual_value': True, 'constraint_id': 'AssertVerdict__host__load_positive__12479c099414261e', 'margin': 3.0, 'observed': {'v': 3.0}, 'status': 'satisfied'}]}
+  run file assert-verdict-results-4540a0c5/AssertVerdict__host__load_negative__aa4535c21c69241c__evaluation.json: {"actual_value": false, "constraint_id": "AssertVerdict__host__load_negative__aa4535c21c69241c", "margin": -3.0, "observed": {"v": -3.0}, "status": "violated"}
+  run file assert-verdict-results-4540a0c5/AssertVerdict__host__load_positive__12479c099414261e__evaluation.json: {"actual_value": true, "constraint_id": "AssertVerdict__host__load_positive__12479c099414261e", "margin": 3.0, "observed": {"v": 3.0}, "status": "satisfied"}
+  run file assert-verdict-results-4540a0c5/AssertVerdict__host__neg_load__neg_load.json: -3.0
+  run file assert-verdict-results-4540a0c5/constraint_report.json: {"assessed_entry_count": 2, "catalog_fingerprint": "624764171296278015b0f4f8b566a1a02e7dac6ec84f7bd1633c451bafc1092a", "coverage": {"applicable_gate_total": 2, "assessed_gate_count": 2, "authored_usage_total": 2, "coverage_state": "complete", "inapplicable_gate_count": 0, "unassessed_gate_count": 0, "unassessed_reasons": {}}, "headline": "violation", "results": [{"actual_value": false, "constraint_id": "AssertVerdict__host__load_negative__aa4535c21c69241c", "margin": -3.0, "observed": {"v": -3.0}, "status": "violated"}, {"actual_value": true, "constraint_id": "AssertVerdict__host__load_positiv
+  run file assert-verdict-results-4540a0c5/host__doubled_load.json: 6.0
+  run file assert-verdict-results-4540a0c5/manifest.json: {"artifacts": [{"channel": "AssertVerdict__host__doubled__r", "produced": true, "relative_path": "host__doubled_load.json", "type_name": "RootModel[float]"}, {"channel": "AssertVerdict__host__neg_load__neg_load", "produced": true, "relative_path": "AssertVerdict__host__neg_load__neg_load.json", "type_name": "RootModel[float]"}, {"channel": "AssertVerdict__host__load_negative__aa4535c21c69241c__evaluation", "produced": true, "relative_path": "AssertVerdict__host__load_negative__aa4535c21c69241c__evaluation.json", "type_name": "ConstraintEvaluation"}, {"channel": "AssertVerdict__host__load_posit
+  native evaluate_feature(AssertVerdict::Host::doubled_load, scope=AssertVerdict::host) -> 6.0 diagnostics=[]
+  native evaluate_feature(AssertVerdict::Host::neg_load, scope=AssertVerdict::host) -> -3.0 diagnostics=[]
+== calc_def_simple_name
+  package run failed: PipelineValidationError: Module type 'libb.TwiceModule' is not registered
+  simkit.core.pipeline_validator.PipelineValidationError: Module type 'libb.TwiceModule' is not registered
+  native evaluate_feature(Plant::Site::ra, scope=Plant::site) -> 2.0 diagnostics=[]
+  native evaluate_feature(Plant::Site::rb, scope=Plant::site) -> 3.0 diagnostics=[]
+== callable_attribute
+  no package (generate refused)
+== callable_in_result
+  package run failed: ValidationError: 1 validation error for FxParams
+fx__site__m__v
+  Input should be a valid number [type=float_type, input_value=None, input_type=NoneType]
+  native evaluate(fx::Site::m result expression, scope=fx::Site::m) -> None diagnostics=["Function 'max' is not a model-level evaluable function"]
+  native evaluate_feature(fx::Twice::r, scope=fx::Site::m) -> 2.0 (the definition's body, for contrast)
+== cond_branch_attribute
+  no package (generate refused)
+== cond_branch_in_result
+  package run failed: ValidationError: 1 validation error for FxParams
+fx__site__m__v
+  Input should be a valid number [type=float_type, input_value=None, input_type=NoneType]
+  native evaluate(fx::Site::m result expression, scope=fx::Site::m) -> 1.0 diagnostics=[]
+  native evaluate_feature(fx::Twice::r, scope=fx::Site::m) -> 2.0 (the definition's body, for contrast)
+== conditional_calc_def
+  no package (generate refused)
+== conditional_guide
+  no package (generate refused)
+== default_count_spec
+  generated channel Packs__pack__cells[0]__d__y = 6.4
+  generated channel Packs__pack__cells[1]__d__y = 6.4
+  native evaluate_feature(Packs::Pack::cell_count, scope=Packs::pack) -> 3 diagnostics=[]
+  native evaluate_feature(Packs::Pack::cell_count, scope=Packs::BigPack) -> 3 diagnostics=[]
+== default_count_usage
+  generated channel Packs__pack__cells[0]__d__y = 6.4
+  generated channel Packs__pack__cells[1]__d__y = 6.4
+  generated channel Packs__pack__total__total = 6.4
+  native evaluate_feature(Packs::Pack::cell_count, scope=Packs::pack) -> 3 diagnostics=[]
+== indexed_ref_attribute
+  no package (generate refused)
+== indexed_ref_in_result
+  package run failed: ValidationError: 1 validation error for FxParams
+fx__site__m__v
+  Input should be a valid number [type=float_type, input_value=None, input_type=NoneType]
+  native evaluate(fx::Site::m result expression, scope=fx::Site::m) -> 4273.5 diagnostics=[]
+  native evaluate_feature(fx::Twice::r, scope=fx::Site::m) -> 2.0 (the definition's body, for contrast)
+== min_attribute
+  no package (generate refused)
+== positional_byname
+  generated channel PositionalByName__plant__diff__r = 7.0
+  native evaluate_feature(PositionalByName::Plant::result, scope=PositionalByName::plant) -> 7.0 diagnostics=[]
+== positional_reversed
+  generated channel PositionalReversed__plant__diff__r = 7.0
+  native evaluate_feature(PositionalReversed::Plant::result, scope=PositionalReversed::plant) -> -7.0 diagnostics=[]
+== result_expression
+  package run failed: ValidationError: 1 validation error for FxParams
+fx__site__m__v
+  Input should be a valid number [type=float_type, input_value=None, input_type=NoneType]
+  native evaluate(fx::Site::m result expression, scope=fx::Site::m) -> 3.0 diagnostics=[]
+  native evaluate_feature(fx::Twice::r, scope=fx::Site::m) -> 2.0 (the definition's body, for contrast)
+== string_dropped
+  generated channel fx__gen__t__r = 4.0
+  native evaluate_feature(fx::Gen::label, scope=fx::gen) -> 'liter' diagnostics=[]
+  native evaluate_feature(fx::Gen::t, scope=fx::gen) -> '<syside.core.CalculationUsage object>' diagnostics=[]
