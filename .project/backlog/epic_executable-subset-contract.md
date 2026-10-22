@@ -255,6 +255,8 @@ Criteria marked "retired 2026-10-21" depended on the copied rules and no longer 
 
 ### Item 5: Executable guidance contracts
 
+**2026-10-22, rescoped by owner:** "not ceremony, actual risk". Item 5 is now `generated-results-guidance` ([spec](../active/generated-results-guidance/spec.md)): four risks (patterns that generate but compute something different; part-owned asserts report instead of stopping; guidance still teaching refused functions; guidance going stale when held generator changes land). Scopes 1-3 and 8 (the fence inventory, categories, exemption manifest and the 100% D3 target) and scope 7 are out. [AGENT] proposal, ratified by owner 2026-10-22. The text below is the original scope, kept for history.
+
 **Type**: Testing and documentation
 **Effort**: Re-estimate after example inventory
 **Dependencies**: Item 4; Item 2 for generator execution evidence (2026-10-21: no longer depends on Item 1)
