@@ -20,3 +20,15 @@ Gate: DISPOSED (spec-F1, spec-F2, spec-F3, spec-F4, spec-F5)
 - spec-F3: FIXED. Criterion 1 requires "not compared" when the generator is missing or fails.
 - spec-F4: FIXED. Known Requirements carries ADR 0004 invariant 2.
 - spec-F5: DEFERRED to close, recorded in Open Questions.
+
+## design — 2026-10-22 — rev aff26708 + .project/active/generated-results-guidance/design.md (design review)
+Note: the lens script (`~/.claude/scripts/product-lens.md`) could not be read in this session (permission denied); this block was produced inline by the design reviewer against the same sources, not by a separate agent.
+Epic: EXEC-SUBSET-CONTRACT (no earlier epic-level finding)
+Point (re-derived): a modeller following the shipped workflow catches a model that passes `check`, generates, and computes different numbers from the native model; actual risk, not ceremony   [source: owner chat 2026-10-22 recorded in spec Known Requirements `[NEED]`, grade: owner; launch goal, grade: agent/ratified]. Only the generator speaks about generation; agentic-mbse copies none of its rules and imports nothing from it; a missing or failed tool is "not compared", never fine   [source: `.project/adr/0004-generator-is-the-only-generation-authority.md` invariants 1-3, grade: agent/ratified].
+Falsifier: `compare` exits 0 on a model whose relied-on outputs were not compared; or agentic-mbse text restates which functions or forms the generator accepts.
+Findings:
+- design-F1 [DON'T] `compare` exits 0 when at least one item was compared and none differ (D6, invariant 1). On a model following `project_templates/MODELING_GUIDE.md.template:108-112` (total with `sum` on the part, pass it on), every output downstream of the total is "not compared", so the launch goal's "would catch" fails silently for the outputs that matter while the exit code reads success. Following the guide's own advice works against the goal (capture-fidelity law 4, surfaced here) — launch goal, agent/ratified; ADR 0004 invariant 3 (agent/ratified) — disposition: open, design-review M1.
+- design-F2 [DO] A target project on a sysml-codegen without `compare` gets exit 2 ("invalid choice"), which the shipped workflow reads as "fix the command line". It must read as "not compared" — ADR 0004 invariant 3 (agent/ratified) — disposition: open, design-review S4.
+- design-F3 [DO] spec-F5 still stands: the promise "for a model that generates, `sysml-codegen compare` reports whether native and generated results and part counts match, and says what it could not compare" has no durable home. Design proposes it for close (RG-3) — none (no durable source) — disposition: carried to close.
+Smells: (1) consumer compensating for a producer guarantee — not fired: where SysIDE cannot give a value, `compare` reports "not compared" instead of computing one itself. (2) invariant owner changed without saying so — not fired: D1 states that "native and generated agree" moves into sysml-codegen and why.
+Gate: OPEN (design-F1, design-F2 to be disposed by the design revision; design-F3 at close)
