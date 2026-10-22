@@ -53,7 +53,7 @@ Two assumptions sit under this decision. Both were stated to the owner on 2026-1
 
 ## Rejected alternatives
 
-The options weighed, from the architecture review (sysml-codegen `.project/active/subset-profile-screen/architecture-review/index.html` § 5, published at https://claude.ai/artifact/6FtNpSZ3N1conDFWbR8Zsv; reports `01-current-system.md`, `02-alternatives.md`, `03-challenge.md` beside it). Day figures are agent estimates, plus or minus 50%.
+The options weighed, from the architecture review (sysml-codegen `.project/research/2026-10-21-generator-check-architecture-review/index.html` § 5, published at https://claude.ai/artifact/6FtNpSZ3N1conDFWbR8Zsv; reports `01-current-system.md`, `02-alternatives.md`, `03-challenge.md` beside it). Day figures are agent estimates, plus or minus 50%.
 
 - **A. Keep everything as built:** not chosen; high two-repository upkeep, silent on 129 of 169 refusals, and wrong once a held generator change lands.
 - **B. Copy stays in L6, out of `generate` and `check`:** not chosen as a design, because it keeps A's upkeep. Its one change, taking the copy out of `check`, is part of this decision.
@@ -66,4 +66,4 @@ The options weighed, from the architecture review (sysml-codegen `.project/activ
 - **H. Move the generator's checks into agentic-mbse:** rejected. 25-40 days at the highest risk, and the 33 generator-only checks could not move, so L6 would still be incomplete. It would be right only if a generation answer were needed without the generator installed, and no such case is known.
 - **Keep only the three structural rules:** not chosen. It still needs the ported part tree and agreement tests, so most of the upkeep remains for a third of the coverage.
 
-Evidence: spec `.project/active/retire-subset-profile/spec.md`; guidance probes `.project/active/retire-subset-profile/evidence/probes.md`.
+Evidence: spec `.project/completed/20261022_retire-subset-profile/spec.md`; guidance probes `.project/completed/20261022_retire-subset-profile/evidence/probes.md`.

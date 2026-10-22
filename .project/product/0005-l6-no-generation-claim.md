@@ -20,7 +20,7 @@ checked: 2026-10-21 @ 508aad86
 
 - [AGENT] (ratified by owner, 2026-10-21) `.project/adr/0004-generator-is-the-only-generation-authority.md`.
 - `.project/adr/0005-execution-target-after-copy-retired.md` (amends ADR 0003); `.project/adr/0003-execution-target-setting.md` for the setting itself.
-- `.project/active/retire-subset-profile/spec.md` R1, D-a, D-b, D-c.
+- `.project/completed/20261022_retire-subset-profile/spec.md` R1, D-a, D-b, D-c.
 
 ## Scope
 

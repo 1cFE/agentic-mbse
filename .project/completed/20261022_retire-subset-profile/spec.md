@@ -3,7 +3,7 @@
 **Status:** Approved by owner 2026-10-21 ("Ok go with your recommendation. implement it, and document it")
 **Created:** 2026-10-21
 **Repos:** agentic-mbse branch `retire-subset-profile` (worktree `/home/reid/src/subset-conformance/agentic-mbse`, base `main` `e268357f`); sysml-codegen branch `subset-profile-screen` (worktree `/home/reid/src/subset-conformance/sysml-codegen`, Item 2b)
-**Design:** the architecture review in sysml-codegen `.project/active/subset-profile-screen/architecture-review/` (`index.html`, published at https://claude.ai/artifact/6FtNpSZ3N1conDFWbR8Zsv; agent reports `01-current-system.md`, `02-alternatives.md`, `03-challenge.md`). Scope inventory: [scope-report.md](scope-report.md), [codegen-part.md](codegen-part.md), [consumers-part.md](consumers-part.md).
+**Design:** the architecture review in sysml-codegen `.project/research/2026-10-21-generator-check-architecture-review/` (`index.html`, published at https://claude.ai/artifact/6FtNpSZ3N1conDFWbR8Zsv; agent reports `01-current-system.md`, `02-alternatives.md`, `03-challenge.md`). Scope inventory: [scope-report.md](scope-report.md), [codegen-part.md](codegen-part.md), [consumers-part.md](consumers-part.md).
 
 ## The point
 

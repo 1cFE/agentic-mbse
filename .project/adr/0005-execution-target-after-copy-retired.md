@@ -32,4 +32,4 @@ The `[tool.agentic-mbse] execution-target = "generated" | "native"` setting from
 
 - Dropping the setting with the copy: not chosen, because it would remove the workflow's trigger and bring back the legacy generator-only errors for native projects.
 
-Source: `.project/active/retire-subset-profile/spec.md` D-a; plan Phase 4 (L6 rewire).
+Source: `.project/completed/20261022_retire-subset-profile/spec.md` D-a; plan Phase 4 (L6 rewire).
