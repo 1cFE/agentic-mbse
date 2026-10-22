@@ -1,6 +1,6 @@
 # Implementation Plan: Guidance that keeps generated results honest (EXEC-SUBSET-CONTRACT Item 5, rescoped)
 
-**Status:** Draft
+**Status:** In Progress
 **Created:** 2026-10-22
 **Last Updated:** 2026-10-22
 
@@ -84,15 +84,15 @@ Create the sysml-codegen branch and record what "no regression" means before any
 None directly. It makes every later exit check decidable: base failures (all phases), the RG-1 "before" record (Phase 2), and the toolchain revisions (Phases 1 and 6).
 
 ### Steps
-- [ ] sysml-codegen: confirm `git -C /home/reid/src/subset-conformance/sysml-codegen status --short` is empty. If not, stop and report; do not stash or discard someone else's changes.
-- [ ] sysml-codegen: `git -C … fetch origin main`, then `git -C … switch -c native-generated-compare origin/main`. Record the `origin/main` SHA. The design and spike used `6190f996`; if `origin/main` has moved, record the new SHA and whether `git diff --stat 6190f996 origin/main -- src` is empty.
-- [ ] Record the revisions: agentic-mbse HEAD, sysml-codegen `origin/main`, TEAx HEAD (`git -C /home/reid/src/teax rev-parse HEAD`; the spike had `8d877460`), dc3 HEAD, SysIDE version.
-- [ ] agentic-mbse base failures: `uv run pytest tests/ -q -rf`. Expect 5 failures. Record their test IDs.
-- [ ] sysml-codegen base failures, licence sourced: `uv run --extra dev pytest tests/ -q -rf`. Expect 9 failures. Record their test IDs and the skip count.
-- [ ] If either count differs from 5 or 9, record the actual IDs and continue; the recorded IDs are the base. Say so in the notes.
-- [ ] Simkit lane smoke check: run the simkit-lane interpreter with `-c "import sysml_codegen, agentic_mbse, simkit, syside, pytest; print(sysml_codegen.__file__, simkit.__file__)"`. Both paths must resolve under the subset-conformance checkout and TEAx's `teax-simkit`. Then `… -m pytest tests/unit/test_teax_discovery.py -p no:cacheprovider -q` must collect and pass, which shows sysml-codegen's `tests/` package imports under that interpreter.
-- [ ] RG-1 "before" record (see Phase 2 for the corpus): run the three byte-identity records now, on the untouched `origin/main` code, into `/tmp/grg-impl/identity-before/`.
-- [ ] Write `.project/active/generated-results-guidance/evidence/baseline.md` with all of the above (revisions, both failure-ID lists, skip counts, lane smoke output, the byte-identity record paths and their own sha256).
+- [x] sysml-codegen: confirm `git -C /home/reid/src/subset-conformance/sysml-codegen status --short` is empty. If not, stop and report; do not stash or discard someone else's changes.
+- [x] sysml-codegen: `git -C … fetch origin main`, then `git -C … switch -c native-generated-compare origin/main`. Record the `origin/main` SHA. The design and spike used `6190f996`; if `origin/main` has moved, record the new SHA and whether `git diff --stat 6190f996 origin/main -- src` is empty.
+- [x] Record the revisions: agentic-mbse HEAD, sysml-codegen `origin/main`, TEAx HEAD (`git -C /home/reid/src/teax rev-parse HEAD`; the spike had `8d877460`), dc3 HEAD, SysIDE version.
+- [x] agentic-mbse base failures: `uv run pytest tests/ -q -rf`. Expect 5 failures. Record their test IDs.
+- [x] sysml-codegen base failures, licence sourced: `uv run --extra dev pytest tests/ -q -rf`. Expect 9 failures. Record their test IDs and the skip count.
+- [x] If either count differs from 5 or 9, record the actual IDs and continue; the recorded IDs are the base. Say so in the notes.
+- [x] Simkit lane smoke check: run the simkit-lane interpreter with `-c "import sysml_codegen, agentic_mbse, simkit, syside, pytest; print(sysml_codegen.__file__, simkit.__file__)"`. Both paths must resolve under the subset-conformance checkout and TEAx's `teax-simkit`. Then `… -m pytest tests/unit/test_teax_discovery.py -p no:cacheprovider -q` must collect and pass, which shows sysml-codegen's `tests/` package imports under that interpreter.
+- [x] RG-1 "before" record (see Phase 2 for the corpus): run the three byte-identity records now, on the untouched `origin/main` code, into `/tmp/grg-impl/identity-before/`.
+- [x] Write `.project/active/generated-results-guidance/evidence/baseline.md` with all of the above (revisions, both failure-ID lists, skip counts, lane smoke output, the byte-identity record paths and their own sha256).
 
 ### Exit check
 - `git -C …/sysml-codegen branch --show-current` → `native-generated-compare`.
@@ -476,10 +476,16 @@ Before editing, list in the phase notes each row to touch and the one fact it ga
 [To be filled during implementation.]
 
 ### Phase 0 Completion
-**Completed:**
+**Completed:** 2026-10-22
 **Actual Changes:**
+- sysml-codegen: branch `native-generated-compare` created from `origin/main` `6190f996` (unchanged since the design; `src` diff empty). `subset-profile-screen` untouched. Working tree was clean.
+- `evidence/baseline.md`: revisions, both base-failure ID lists (agentic-mbse 5, sysml-codegen 9, as expected; skips 8 and 9), simkit-lane smoke output, the three byte-identity "before" records and their sha256.
+- Byte identity: `package_manifest.py record` gave 122 subjects (116 generated); dc3 `models/` generates (exit 0, 183 files); 5 of 8 spike models generate, the other 3 are refused as in the spike.
 **Issues:**
+- dc3 has an untracked folder that predates this work (`.project/active/toolkit-update-generator-check/`). "dc3 clean" in later checks means no change from that.
 **Deviations:**
+- The Phase 1 models did not exist yet, so their "before" generation is taken at the end of Phase 1 on the same untouched code (sysml-codegen code does not change in Phase 1).
+- agentic-mbse suite was run with `-p no:randomly` added; it does not change the test set.
 
 ### Phase 1 Completion
 **Completed:**
