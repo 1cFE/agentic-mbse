@@ -4,6 +4,31 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-22] - Retire the Copied Generator Rules
+
+**Type**: Item (`EXEC-SUBSET-CONTRACT`, replaces Item 1's design; branch `retire-subset-profile`, [PR #34](https://github.com/1cFE/agentic-mbse/pull/34), merges after sysml-codegen PR #23; orchestrated run, briefs in `20261022_retire-subset-profile/briefs/`)
+**Duration**: 2 days (spec created 2026-10-21; closed 2026-10-22)
+
+### Summary
+
+The generator is now the only thing that says whether a model generates. agentic-mbse's hand-written copy of the generator's refusal rules (the subset profile, Item 1) is deleted with its tests, cases, scripts and pre-merge gate, about 5,400 lines of code plus 72 test files. It was silent on 129 of the 169 models the generator refuses and would have gone wrong once either held generator change landed. In its place the shipped guidance (`MODELING_GUIDE`, `sysml-conventions`, four pattern docs) states the generator's three structural limits, each example checked with `sysml-codegen check`, and `MODELING_PROCESS` "Generated code" makes the workflow run `sysml-codegen check` from the first model pieces and at every phase when `execution-target = "generated"`. L6 is retitled "Architecture & Conventions" and every run ends by saying it does not check generation. sysml-codegen stopped using the copy first (its PR #23); generator answers are unchanged (0 of 123 packages, 0 of 173 refusal records differ; TEAx 124/124). Audit: Needs Work with no blocker; its seven should-fix findings were fixed and verified.
+
+**Promises the product now makes.** [P-0004](../product/0004-generator-answers-generation.md) (only the generator answers whether a model generates; guidance and workflow) supersedes P-0001; [P-0005](../product/0005-l6-no-generation-claim.md) (L6 makes no generation claim) supersedes P-0003.
+
+**Decisions.** [ADR 0004](../adr/0004-generator-is-the-only-generation-authority.md) supersedes ADR 0001; [ADR 0005](../adr/0005-execution-target-after-copy-retired.md) amends ADR 0003. [AGENT] (ratified by owner 2026-10-21).
+
+**Open for the owner.** Two generator behaviours filed in sysml-codegen's backlog, not changed: `[ATTRIBUTE-MULTIPLICITY-DEFAULT-COUNT]` (a redefined default count builds the default, silently; RG-1) and `[SILENT-LOSSES-UNREPORTED]` (values left out of a built package without a report; RG-2). "Generation parked" has no setting; the workflow reads it from the work record or `OVERVIEW.md`.
+
+### Deliverables
+
+- Code: deleted `sysml/subset_*`, `occurrence_*`, `conformance_case.py` + `subset_cases/`, `validation/subset_presentation.py`, `scripts/subset_profile/`, `scripts/l6_subset/`; new `sysml/element_refs.py` (Item 4's helpers); `execution_target.fold()`; L6 rewire and `generation_note`; JSON report `validate-report/v2`.
+- Guidance and workflow: `project_templates/MODELING_GUIDE.md.template`, `MODELING_PROCESS.md.template`, `skills/{sysml-conventions,design-model,plan-model,implement-model,model-validation,toolkit-awareness}`, `docs/patterns/{constraints,syntax-reference,semantic-operators,adr002-calculations,mbse-concepts}.md`, README, CLAUDE.md.
+- Tests: shipped-text pins for the limits, the workflow and L6's note; suite 3559 passed with the 5 base failures.
+- Records: ADR 0004, ADR 0005, P-0004, P-0005; epic Items 1-3, 5, 6 rewritten.
+- Artifacts: spec, plan, scope inventory, briefs, audit, evidence (baselines, generator probes, checked guidance examples).
+
+---
+
 ## [2026-10-20] - L6 Generator Subset and Execution Target
 
 **Type**: Item (`EXEC-SUBSET-CONTRACT` Item 3; branch `l6-subset-profile`; orchestrated run, briefs in `20261020_l6-subset-profile/briefs/`)

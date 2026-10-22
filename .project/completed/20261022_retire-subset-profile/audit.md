@@ -10,7 +10,7 @@ No blocker. Every requirement R1-R9 is met and the generator's behaviour is unch
 
 - agentic-mbse `uv run pytest tests/ -q` (license sourced): 5 failed, 3567 passed, 8 skipped, 1 xfailed. The 5 failures are the 5 base IDs in `evidence/suite-baseline-agentic.md`. mypy 88 errors and ruff `src/ tests/` 118, the counts the plan records as unchanged from base; I did not re-run them on `e268357f`.
 - sysml-codegen `uv run --all-extras pytest tests/ -q -rfEs` (Phase 9 command, license sourced), against this agentic-mbse branch: 8442 passed, 9 failed, 9 skipped, 124 deselected. The 9 failures are exactly the base 9 in `evidence/baseline.md`.
-- Byte manifest (`scripts/package_manifest.py record`, then `compare` against `.project/active/subset-profile-screen/evidence/package-manifest-base.json`): 0 differences. Refusal records (`scripts/refusal_records.py compare`): 0 of 173 differ.
+- Byte manifest (`scripts/package_manifest.py record`, then `compare` against `d7366431:.project/active/subset-profile-screen/evidence/package-manifest-base.json`): 0 differences. Refusal records (`scripts/refusal_records.py compare`): 0 of 173 differ.
 - TEAx lane: Item 2b's `evidence/execution-lane/lane.sh` with agentic-mbse pinned to `1b65ecbe` instead of `e268357f` (copies in my scratchpad): 124 passed, 124 distinct IDs.
 - `sysml-codegen check` on all 12 probes and 10 guidance examples: every exit code and first answer line matches `evidence/probes.md` and `evidence/guidance-examples/README.md`. dc3 (`60b44d5`) `check --models models`: exit 0, "Generator: builds (140 modules)", same as the baseline.
 - `git grep` in both repos for every retired module name and `L6_SUBSET`: hits only under `.project/`. The built wheel contains no subset or occurrence module.
