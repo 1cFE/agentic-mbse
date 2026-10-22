@@ -15,3 +15,5 @@ uv run pytest .project/active/generated-results-guidance/spike/native-path/test_
 **Expected if the bet holds:** `host.load` 3.0, `host.doubled_load` 6.0, `host.doubled.r` 6.0, `host.pack_total` 7.5, `host.pack.total` 7.5, `host.pack.cell_count` 3, each with no diagnostics. The two constraint paths (`load_positive`, `load_negative`) are a side question: if they evaluate to `True` / `False`, native verdicts can be compared too; if they error or return `None`, native verdicts stay out of scope (dc3 evaluated constraints itself, `scripts/models/evaluate_paths.py:97-100`).
 
 **Record:** paste the output below with the SysIDE version and date, then update design bet B1.
+
+**Recorded 2026-10-22 (SysIDE 0.8.4):** ran; see [../RESULTS.md](../RESULTS.md) § S1. Attributes, inherited attributes, calc results and nested parts gave the expected values. `pack_total` and `pack.total` gave 2.5, not 7.5, because the evaluator does not expand `Cell[n]`. The constraint paths returned the usage object; evaluating the constraint's result expression with the usage as scope gives True / False.
