@@ -121,7 +121,7 @@ This only affects agent-invoked commands. Running the same commands directly in 
   - Level 3: Dependency integrity (circular package imports)
   - Level 4: Constraint coverage (constraint counts, coverage metrics)
   - Level 5: Traceability & documentation (doc comment presence)
-  - Level 6: Architecture & Generator Subset (ADR-002, manifests, the generator subset profile; not a generation check)
+  - Level 6: Architecture & Conventions (ADR-002, manifests, codegen structural conventions; not a generation check; every run that includes L6 ends with a line pointing to `sysml-codegen check`, whose answer that is)
 
 - **sysml/**: SysML model analysis utilities:
   - `syside_adapter.py`: Wrapper around syside library for parsing SysML v2

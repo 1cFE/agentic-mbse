@@ -125,7 +125,7 @@ For assemblies with multiple child components:
 private import NumericalFunctions::sum;
 
 part def 'Assembly' :> 'Costed Component' {
-    part child : 'Child Component' [N];
+    part child : 'Child Component' [3];
     :>> capital_cost = sum(child.capital_cost);  // Automatic aggregation!
 }
 ```
@@ -198,26 +198,31 @@ part system {
 
 ### Parameterized Multiplicity Pattern
 
-**Status:** Validated CORRECT (2026-01-12)
-**Evidence:** `syside check` passes
+**Status:** Parses (`syside check`, 2026-01-12). Checked against the code generator 2026-10-21: the count must be fixed where it is declared.
 
-Multiplicity can be an attribute, allowing design files to set counts without modifying definitions.
+A multiplicity can name an `Integer` attribute of the owning part def, so the count has a name instead of a bare number.
 
 ```sysml
+// Correct: the count is fixed where it is declared
 part def 'Assembly' {
-    attribute child_count : Integer default := 2;
-    part child : 'Child Component' [child_count];  // Parameterized!
-}
-
-part my_assembly : 'Assembly' {
-    :>> child_count = 3;  // Override count in design
+    attribute child_count : Integer = 3;
+    part child : 'Child Component' [child_count];
 }
 ```
 
-**Why:** This pattern enables configuration-driven multiplicity without duplicating definitions. Useful for:
-- Scalable system designs
-- Trade studies with different component counts
-- Parameterized architecture exploration
+```sysml
+// Incorrect for generated code: the design's count is ignored
+part def 'Assembly' {
+    attribute child_count : Integer default := 2;
+    part child : 'Child Component' [child_count];
+}
+
+part my_assembly : 'Assembly' {
+    :>> child_count = 3;  // parses, but the generator still builds 2 children
+}
+```
+
+The second form parses and the generator builds it, but it builds the default count (two) and ignores the redefinition, with no warning. Redefining the count in a specializing part def behaves the same way. So a trade study over component counts cannot vary the count from the design file; each count needs its own part def with its own fixed value. An attribute declared at package level (`[N]` with `N` outside the part def) is refused.
 
 ---
 

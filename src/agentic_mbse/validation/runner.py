@@ -47,6 +47,7 @@ except ImportError:
 # Absolute in both modes: `common` already imports the installed package's modules this way.
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 from agentic_mbse.validation.execution_target import Target
+from agentic_mbse.validation.level6_architecture import generation_note
 from agentic_mbse.validation.session import ValidationSession
 
 # Registry of all quality checks
@@ -57,7 +58,7 @@ QUALITY_CHECKS: list[tuple[str, Callable[[str], QualityCheckResult]]] = [
     ("Level 3: Dependency Integrity", validate_dataflow),
     ("Level 4: Constraint Coverage", analyze_constraints),
     ("Level 5: Traceability & Documentation", validate_traceability),
-    ("Level 6: Architecture & Generator Subset", validate_architecture),
+    ("Level 6: Architecture & Conventions", validate_architecture),
 ]
 
 
@@ -190,6 +191,9 @@ def run_all_checks(
     else:
         print("\n❌ Quality checks failed")
         print("   Review issues above and fix before proceeding")
+    # A run that included L6 ends by saying L6 makes no generation claim, pass or fail (P-0005).
+    if any(result.level == 6 for result in results):
+        print(f"\n{generation_note(models_path)}")
 
     return aggregated
 

@@ -50,10 +50,6 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "subset_profile"))
-
-from isolated_tree import IsolationBreachError, git, resolve_rev, sibling_state  # noqa: E402
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE = REPO_ROOT / ".project/completed/20261018_positional-binding-check/evidence"
 BASELINE = REPO_ROOT / "tests/fixtures/positional_binding/baselines/fusion-tea-f96ad312.toml"
@@ -84,12 +80,35 @@ Identity = tuple[str, str, str]
 SKIPPED_LINKS: dict[str, list[str]] = {}
 
 
+class IsolationBreachError(RuntimeError):
+    """The run touched, or resolved code from, something outside its temp tree."""
+
+
+def git(repo: Path, *args: str) -> str:
+    return subprocess.run(
+        ["git", "-C", str(repo), *args], check=True, capture_output=True, text=True
+    ).stdout.strip()
+
+
+def resolve_rev(repo: Path, rev: str) -> str:
+    return git(repo, "rev-parse", "--verify", f"{rev}^{{commit}}")
+
+
+def sibling_state(repo: Path) -> str:
+    """HEAD plus the full porcelain status; any difference after a run is a breach."""
+    return (
+        git(repo, "rev-parse", "HEAD")
+        + "\n"
+        + git(repo, "status", "--porcelain=v1", "--untracked-files=all")
+    )
+
+
 def export_tree(repo: Path, commit: str, dest: Path) -> None:
     """Extract `git archive <commit>` whole into `dest`, after checking its embedded commit id.
 
-    Like `scripts/subset_profile/isolated_tree.py:export_tree`, except for which absolute symlinks it
-    skips: any outside `models/` (fusion-tea's `.project/` holds links into `/tmp`), each named
-    in the evidence. The check loads only `models/`, where an absolute link aborts the export.
+    Absolute symlinks outside `models/` are skipped (fusion-tea's `.project/` holds links into
+    `/tmp`), each named in the evidence. The check loads only `models/`, where an absolute link
+    aborts the export.
     """
     archive = subprocess.run(
         ["git", "-C", str(repo), "archive", commit], check=True, capture_output=True

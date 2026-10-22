@@ -1,0 +1,5 @@
+INFO: Checking /home/reid/src/subset-conformance/agentic-mbse/.project/active/retire-subset-profile/evidence/probes/c_mult_star
+ERROR: Model failed exact-route validation: SI_MULTIPLICITY_UNRESOLVED: <model>: reference='probe_c::Host::kids': upper multiplicity on 'kids' is not a known finite integer [root-0/model.sysml:8] (reason: occurrence_multiplicity_upper_unresolved)
+INFO: Screen subset-profile/v2 (information; the generator's answer above decides): verdict refused; 1 refused; 0 not assessed
+WARNING:   refused part-multiplicity (part_multiplicity_unresolved_bound) probe_c::Host::kids at root-0/model.sysml:8; matches the generator's SI_MULTIPLICITY_UNRESOLVED at root-0/model.sysml:8
+WARNING:     remedy: Give the part usage an exact literal multiplicity, unordered and unique, or remove the multiplicity; model a variable count as an attribute.

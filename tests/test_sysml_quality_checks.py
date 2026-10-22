@@ -733,7 +733,7 @@ class TestEndToEnd:
         result = run_all_checks("tests/fixtures/sample_models/", fail_fast=False)
         level_6_results = [r for r in result.results if r.level == 6]
         assert len(level_6_results) == 1, "Level 6 should run once in full suite"
-        assert level_6_results[0].level_name == "Architecture & Generator Subset"
+        assert level_6_results[0].level_name == "Architecture & Conventions"
 
     def test_level_6_only_mode(self):
         """Test --level=6 runs only Level 6"""
@@ -742,7 +742,7 @@ class TestEndToEnd:
         result = run_all_checks("tests/fixtures/sample_models/", specific_level=6)
         assert len(result.results) == 1
         assert result.results[0].level == 6
-        assert result.results[0].level_name == "Architecture & Generator Subset"
+        assert result.results[0].level_name == "Architecture & Conventions"
 
     def test_fail_fast_mode(self):
         """Test that fail-fast mode stops appropriately"""
@@ -772,7 +772,7 @@ class TestEndToEnd:
 
 
 class TestLevel6Architecture:
-    """Tests for Level 6: Architecture & Generator Subset validation."""
+    """Tests for Level 6: Architecture & Conventions validation."""
 
     def test_validation_codes_exist(self):
         """All L6 ValidationCode entries are defined"""
@@ -791,7 +791,7 @@ class TestLevel6Architecture:
 
         result = validate_architecture("tests/fixtures/sample_models/")
         assert result.level == 6
-        assert result.level_name == "Architecture & Generator Subset"
+        assert result.level_name == "Architecture & Conventions"
 
     def test_module_returns_quality_check_result(self):
         """validate_architecture returns QualityCheckResult"""
@@ -801,7 +801,7 @@ class TestLevel6Architecture:
         result = validate_architecture("tests/fixtures/sample_models/")
         assert isinstance(result, QualityCheckResult)
         assert result.level == 6
-        assert result.level_name == "Architecture & Generator Subset"
+        assert result.level_name == "Architecture & Conventions"
 
     def test_check_qualified_names_on_valid_model(self):
         """Valid models produce no qualified name issues"""
@@ -874,7 +874,7 @@ class TestLevel6Architecture:
 
         result = validate_architecture(str(tmp_path))
         assert result.level == 6
-        assert result.level_name == "Architecture & Generator Subset"
+        assert result.level_name == "Architecture & Conventions"
 
     def test_check_manifests_no_designs_dir(self, tmp_path):
         """_check_manifests returns empty when no designs/ directory."""

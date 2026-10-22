@@ -1,0 +1,5 @@
+INFO: Checking /home/reid/src/subset-conformance/agentic-mbse/.project/active/retire-subset-profile/evidence/probes/g3_calc_sequence_input_bound_to_tuple
+ERROR: Model is not ready for the exact route: SI_EXPRESSION_SOURCE_UNSUPPORTED: probe_g3__Host__total.x: reference='a, b': unsupported exact source form expression_source ('a, b') [root-0/model.sysml:7] (reason: binding_source_form_unsupported)
+INFO: Screen subset-profile/v2 (information; the generator's answer above decides): verdict refused; 1 refused; 0 not assessed
+WARNING:   refused binding-source (binding_source_expression) probe_g3::Host::total::x at root-0/model.sysml:7; matches the generator's SI_EXPRESSION_SOURCE_UNSUPPORTED at root-0/model.sysml:7
+WARNING:     remedy: Bind the input to a literal or to one plain reference to a feature that holds the value; compute tuples and arithmetic in a named attribute and bind that.

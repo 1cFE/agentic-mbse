@@ -1,0 +1,5 @@
+INFO: Checking /tmp/claude-1000/-home-reid-src-agentic-mbse/757488b6-d865-4d53-baa0-842d9ebab104/scratchpad/ex/a_bad
+ERROR: Model failed exact-route validation: SI_CONSTRAINT_UNATTACHED: Heaters::PowerCalc::power_ok: reference='Heaters::PowerCalc::power_ok': constraint Heaters::PowerCalc::power_ok (9bdf92f7-9697-5502-b745-00f196a48d77) is asserted (definition_typed) but its owner Heaters::PowerCalc (calc_def) provides no attachment: owner_kind_unattachable [root-0/m.sysml:10] (reason: elaboration_asserted_constraint_unattached)
+INFO: Screen subset-profile/v2 (information; the generator's answer above decides): verdict refused; 1 refused; 0 not assessed
+WARNING:   refused calc-owned-assertion (calc_owned_asserted_constraint) Heaters::PowerCalc::power_ok at root-0/m.sysml:10; matches the generator's SI_CONSTRAINT_UNATTACHED at root-0/m.sysml:10
+WARNING:     remedy: Move the constraint to the part definition or part usage that owns the calculation, binding it to the calculation's inputs or result there.

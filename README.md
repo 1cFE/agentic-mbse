@@ -16,18 +16,16 @@ pip install -e .
 agentic-mbse validate models/
 ```
 
-Level 6 (Architecture & Generator Subset) checks the ADR-002 architecture rules and the project's manifests, then compares the model with the generator subset profile, `subset-profile/v2`. The profile has nine implemented rules, each traced to sysml-codegen's source or to a conformance case run against it: binding sources, constraints owned by a calculation, conditional expressions, constraint predicates, indexed references, function calls outside the supported set, part multiplicities, and the String values and calculation-usage result expressions the generator drops. Each finding names its rule, the outcome (refused, unconfirmed, omitted or excluded) and a remedy.
+Level 6 (Architecture & Conventions) checks the ADR-002 architecture rules, the project's manifests, and the structural conventions code generation relies on, such as qualified names, calculation structure and binding formats. It does not say whether a model generates, and every run that includes L6 ends with a line saying so. That answer comes from sysml-codegen's own check, `sysml-codegen check --models models/`, which writes nothing; `modeling_project/MODELING_PROCESS.md` ("Generated code") says when to run it.
 
-The profile is incomplete. Some generator refusals have no rule yet; L6 names them on its `Coverage limit` line, and a clear result says nothing about them. L6 is not a generation check: it never runs the generator. A check that asks sysml-codegen itself is a separate, future step in sysml-codegen, and does not exist yet.
-
-How loud the generator findings are depends on how the project runs, set in its `pyproject.toml`:
+A project says in its `pyproject.toml` whether it targets generated code:
 
 ```toml
 [tool.agentic-mbse]
 execution-target = "generated"  # or "native"
 ```
 
-`generated` shows refusals as errors. `native` (the project does not run generated code) folds generator-only findings into one INFO summary. With no setting, refusals are warnings and the run ends with "generated compatibility not established". `agentic-mbse init --execution-target=generated` adds the line. With no `pyproject.toml` it creates one holding only that table, so uv then treats the directory as its own project; if a parent directory has a `pyproject.toml`, it writes nothing and prints the line instead. `validate --execution-target=native` overrides the setting for one run. `validate --json-report report.json` writes every finding in full.
+`generated` marks a project that targets generated code, so the modelling workflow runs `sysml-codegen check` from the first model pieces and at each phase. `native` marks a project that does not run generated code: L6 then folds four codes that only generated code needs (`L6_MISSING_QUALIFIED_NAME`, `L6_ANONYMOUS_RETURN`, `L6_BODY_ASSIGNMENT_IMPL_LOSS`, `L6_CALC_DEF_NO_INSTANTIATION`) into one INFO summary. Every other code keeps its own severity under every setting, and an invalid setting stops L6 with `L6_SETTING_INVALID`. `agentic-mbse init --execution-target=generated` adds the line. With no `pyproject.toml` it creates one holding only that table, so uv then treats the directory as its own project; if a parent directory has a `pyproject.toml`, it writes nothing and prints the line instead. `validate --execution-target=native` overrides the setting for one run. `validate --json-report report.json` writes every finding in full.
 
 ### Initialize Project
 

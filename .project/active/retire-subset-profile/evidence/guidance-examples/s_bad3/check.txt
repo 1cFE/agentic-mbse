@@ -1,0 +1,5 @@
+INFO: Checking /tmp/claude-1000/-home-reid-src-agentic-mbse/757488b6-d865-4d53-baa0-842d9ebab104/scratchpad/ex/s_bad3
+WARNING: Calculation Packs::TotalCapacity output total is a manual stub: unsupported node: invocation (['NumericalFunctions', 'sum']) (reason: compile_invocation)
+ERROR: Model failed exact-route validation: SI_OCCURRENCE_AMBIGUOUS: Packs__pack__total_calc: reference='cells.capacity': exact containment step FeatureSlotId(root_declaration=DeclarationId(value=UUID('552915a7-8468-5ece-83cd-9ad649c4eb2b'))) has 3 concrete occurrences [root-0/m.sysml:11] (reason: occurrence_containment_step_ambiguous)
+INFO: Screen subset-profile/v2 (information; the generator's answer above decides): verdict clear (over the implemented rules; not a promise the generator accepts the model); no findings; 0 not assessed
+INFO: Disagreement: generator_refuses_screen_silent: generator codes ['SI_OCCURRENCE_AMBIGUOUS'], screen reasons []

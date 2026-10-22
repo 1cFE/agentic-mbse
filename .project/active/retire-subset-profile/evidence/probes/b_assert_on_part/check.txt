@@ -1,0 +1,4 @@
+INFO: Checking /home/reid/src/subset-conformance/agentic-mbse/.project/active/retire-subset-profile/evidence/probes/b_assert_on_part
+INFO: Built computation graph with 3 modules
+INFO: Generator: builds (3 modules)
+INFO: Screen subset-profile/v2 (information; the generator's answer above decides): verdict clear (over the implemented rules; not a promise the generator accepts the model); no findings; 0 not assessed

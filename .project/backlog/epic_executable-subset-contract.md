@@ -4,18 +4,22 @@
 **Status**: Draft — revised after architecture and history audit
 **Priority**: Not assigned (owner)
 **Created**: 2026-10-14
-**Revised**: 2026-10-18 (Items 1 and 4 closed; Item 2 split into 2a and 2b)
+**Revised**: 2026-10-18 (Items 1 and 4 closed; Item 2 split into 2a and 2b); 2026-10-21 (the copied generator rules are retired: ADR 0004; Items 1, 2a, 2b, 3, 5 and 6 rewritten below)
 **Estimated Effort**: Re-estimate after Item 1's capability inventory and boundary design; the original ~10-day estimate excluded snapshot integration, occurrence-aware evidence and independent differential coverage.
 
 ---
 
 ## Executive Summary
 
+**Current design (2026-10-21, ADR 0004).** Only the generator says whether a model generates: `sysml-codegen generate`, or its no-write check `sysml-codegen check` (Item 2b). agentic-mbse keeps no copy of the generator's refusal rules. The shipped guidance states the generator's three structural limits (an assert goes on a part, not inside a calculation; part counts are exact; a calculation input receives one value), and the modelling workflow runs `sysml-codegen check` early and at each phase when a project targets generated code. The copy Item 1 built (the "subset profile") is deleted by the `retire-subset-profile` item, with the tests that kept it agreeing with the generator. The next two paragraphs are the original 2026-10-14 framing, kept as history; the phrase "L6 reports that contract without depending on codegen" is the premise ADR 0004 replaced.
+
 The generator (sysml-codegen), validator (L6) and shipped guidance describe overlapping but incompletely reconciled execution requirements. Existing shared constraint-profile and targeted binding contracts prevent some drift; they do not establish compatibility for complete published examples or all supported model shapes. This epic extends those contracts with a versioned **executable-subset profile**, independently tested against generator behavior, and a **semantic-hazard register** for valid but surprising language behavior.
 
 The scope is a declared structural capability contract, not a promise that a static screen predicts every generation or runtime failure. L6 reports that contract without depending on codegen. A new `sysml-codegen check` exercises the shared read-only generation preparation path, including projection and generation preflight. Guidance states which evidence supports each example and which semantics a rewrite changes.
 
-**Critical Success Factor**: one `agentic-mbse validate --level=6` run accounts for the confirmed dc3 baseline categories B1–B8, with locations, stable reasons, remedies and distinct outcomes for refusal, exclusion and omission. B9 is unconfirmed and requires a separate reproducer or retirement. Pinned consumer findings match an explicitly approved baseline and severity policy; fusion-tea currently has 125 positional-binding findings and must not be described as clean. Independent generator tests detect missed and overbroad profile decisions; testing the new screen against itself is not sufficient.
+**Critical Success Factor (current, 2026-10-21)**: a project that targets generated code gets the generator's own answer from `sysml-codegen check` early in its modelling work, and the shipped guidance and examples do not teach patterns the generator refuses.
+
+**Critical Success Factor (original, retired 2026-10-21)**: one `agentic-mbse validate --level=6` run accounts for the confirmed dc3 baseline categories B1–B8, with locations, stable reasons, remedies and distinct outcomes for refusal, exclusion and omission. B9 is unconfirmed and requires a separate reproducer or retirement. Pinned consumer findings match an explicitly approved baseline and severity policy; fusion-tea currently has 125 positional-binding findings and must not be described as clean. Independent generator tests detect missed and overbroad profile decisions; testing the new screen against itself is not sufficient.
 
 **Origin:** [GENERATOR-SUBSET-PATTERNS](item_generator-subset-patterns.md), filed from dc3 WI-008. Proposed absorption remains pending owner approval. That file stays as the origin record; historical claims in it must be read with the corrections below.
 
@@ -80,6 +84,8 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 ## Design principles and contract boundaries
 
+Principles 1 and 3 describe the shared capability evaluator, which ADR 0004 retired; they are kept as history. The rest still apply.
+
 1. **Separate facts, capability decisions and consumer presentation.** Shared AST/occurrence evidence belongs in agentic-mbse. The shared capability evaluator consumes explicit facts and emits neutral stable reasons. L6 owns validation severity; codegen owns `ElaborationCode` mapping and output-specific checks. agentic-mbse must never import sysml-codegen or its types. ADR 0007's neutral-fact ownership does not alone settle capability-policy ownership: Item 1 must document that decision.
 2. **Extend the existing profile rather than duplicate it.** `executable_profile.py` remains the authority for constraint-predicate eligibility, including BLOCK, NON_NUMERICAL and UNASSESSED distinctions. New structural decisions reference it where applicable.
 3. **Independent behavioral evidence.** Compare the shared evaluator with the generator's underlying route with the new screen bypassed in tests. An annotation or an early-screen refusal is not proof of equivalent behavior.
@@ -92,22 +98,26 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 ## Success Criteria
 
-- [ ] A reviewed capability matrix maps confirmed B1–B8 and U1–U7 to exact contexts, independent fixtures, outcomes and diagnostics. B9/ES-011 has a reproducer or explicit retirement; it is never required to occur in dc3 `808464d`.
-- [ ] One L6 run on the baseline accounts for all confirmed in-scope categories with locations and remedies. Expected declaration/occurrence counts and duplicate handling are recorded separately from static text counts. Pinned consumer results match reviewed finding identities and outcomes, including the 125 fusion-tea positional mismatches. Under approved D1, the identified legacy mismatches remain visible warnings and new mismatches are errors; exclusions, omissions and advisories retain explicit expectations.
+Criteria marked "retired 2026-10-21" depended on the copied rules and no longer apply (ADR 0004).
+
+- [ ] A reviewed capability matrix maps confirmed B1–B8 and U1–U7 to exact contexts, independent fixtures, outcomes and diagnostics. B9/ES-011 has a reproducer or explicit retirement; it is never required to occur in dc3 `808464d`. Retired 2026-10-21: the matrix served the copied rules.
+- [ ] One L6 run on the baseline accounts for all confirmed in-scope categories with locations and remedies. Expected declaration/occurrence counts and duplicate handling are recorded separately from static text counts. Pinned consumer results match reviewed finding identities and outcomes, including the 125 fusion-tea positional mismatches. Under approved D1, the identified legacy mismatches remain visible warnings and new mismatches are errors; exclusions, omissions and advisories retain explicit expectations. Retired 2026-10-21 for the L6 part; the positional part was met by Item 4.
 - [ ] Every known silent-loss family has a retained behavioral fixture, including intended metadata omissions; assertions check semantic identity, generated contract/catalog or runtime behavior rather than name substrings alone.
-- [ ] Every shared rule has independent refused and admitted boundary fixtures. Existing generating fixtures remain admitted unless an intentional capability change is separately approved.
-- [ ] A refusal inventory covers elaboration, projection, generation preparation and diagnostic factories. Structural cases map to neutral rules with behavioral coverage; other public checks are explicitly owned and tested. AST annotation tests are supplementary.
-- [ ] `generate` and `check` use the same read-only preparation path before output mutation. Both collect evaluable capability findings; `check` includes projection, compilation and generation preflight and clearly bounds its readiness claim.
+- [ ] Every shared rule has independent refused and admitted boundary fixtures. Existing generating fixtures remain admitted unless an intentional capability change is separately approved. Retired 2026-10-21: there are no shared rules; the 246 case models stay as generator regression tests.
+- [ ] A refusal inventory covers elaboration, projection, generation preparation and diagnostic factories. Structural cases map to neutral rules with behavioral coverage; other public checks are explicitly owned and tested. AST annotation tests are supplementary. 2026-10-21: the refusal site account stays in sysml-codegen; the mapping to neutral rules is retired.
+- [ ] `generate` and `check` use the same read-only preparation path before output mutation. 2026-10-21: they report only the generator's own answer. `check` includes projection, compilation and generation preflight and clearly bounds its readiness claim.
 - [ ] Live/snapshot parity, sealed authority, supported upgrades and both package-skew directions are tested.
 - [ ] The positional check detects unintended implicit name/target mismatches, accepts deliberate explicit redefinition and verified by-name forms, and reports inspection failures honestly.
 - [ ] Every collected shipped example has appropriate definition checks, an executable test, an identified fragment exemption, or verified expected diagnostics. Complete execution examples exercise their instantiated context through the generator corpus. Approved D3 requires executable or exact expected-negative evidence for 100% of generated-use recommendations and remedies; hash-only exemptions cannot satisfy that target.
-- [ ] Rendered capability guidance and hazard references agree with the records and packaged assets. Known misleading examples are corrected or qualified.
+- [ ] Rendered capability guidance and hazard references agree with the records and packaged assets. Known misleading examples are corrected or qualified. 2026-10-21: the rendered-from-records part is retired; the calc-owned assert examples were corrected by `retire-subset-profile`.
 - [x] Execution-target behavior is tested for generated, native, unset, malformed and unknown settings, including retained legacy readiness checks and noninteractive init.
 - [ ] Repository-defined tests, type checks and lint pass in both repositories; evidence distinguishes licensed checks, skips and unrun routes.
 
 ## Backlog Items
 
-### Item 1: Capability inventory, boundary design and shared profile ✅
+### Item 1: Capability inventory, boundary design and shared profile ✅ (retired)
+
+**Retired 2026-10-21** by `retire-subset-profile` (ADR 0004 supersedes ADR 0001; P-0004 supersedes P-0001). The profile, its rules TOML, the fact extraction and occurrence port, the coverage statement, the advisories and the 154 packaged cases are deleted from agentic-mbse; the cases move to sysml-codegen first. Kept as documentation: Item 1's archive, including its write-ups of where each of B1-B8 starts and stops. The record below is history.
 
 **Status**: Complete (2026-10-18) — certified with recorded limits; archived to `.project/completed/20261018_exec-subset-profile/`. Success criteria met, with the owner-accepted limit that dc3 B8 reports `unconfirmed` (calc-usage-owned constraints are refused first under B1). Owner calls 2026-10-18: R3 disposition approved (`evidence/r3-proposal.md`), retiring the unprobeable `part-multiplicity/nonunique` and `negative_bound` shapes; G1/G2 go to Item 2 via `kerml-expert` before any codegen fix; the sysml-codegen ADR 0012 amendment files when Item 1 merges. Decision: ADR 0001. Promise: P-0001.
 
@@ -152,11 +162,15 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 **Split** 2026-10-18 into Item 2a (conformance) and Item 2b (readiness check). [AGENT] (ratified by owner, 2026-10-18). Reason: the combined estimate was 23–37 engineer-days, and the readiness check's preparation-path and snapshot scopes were the least examined third of it. 2a goes first: `check` is only as trustworthy as the conformance evidence behind it. Item 1 routed its open gaps here ([R3 table](../completed/20261018_exec-subset-profile/evidence/r3-proposal.md)); they belong to 2a. The original six scope points are kept verbatim below, assigned to one half or split between them.
 
+**2026-10-21:** both halves lose their copy-related parts (ADR 0004); see each half.
+
 **Owner gates for both halves** [OWNER] (2026-10-18): any change to what the generator accepts or refuses, including a G1/G2 fix after the `kerml-expert` check; the String metadata policy (open decision 3); merges, PRs and the ADR 0012 amendment filing.
 
 ### Item 2a (sysml-codegen): Independent conformance corpus and per-site codes ✅
 
 **Status**: Complete (2026-10-20) — certified (final-audit re-check 2026-10-19, every spec success criterion met), then integrated with merged Item 3 after the rebase onto PR #32 (this repo `e2bff13f`, gate receipt `3bb043ea`; sysml-codegen `ceb6796e`). Not merged yet: branch `subset-conformance` in both repos, for a coordinated merge. Integration changes L6 output two ways: the verdict line names `subset-profile/v2, subset-coverage/v2`, and the coverage line says 70 follow-up sites instead of 85. Owner gates still pending: RG-1 (12 candidate accept/refuse changes, `rg1-recommendations.md`), RG-2 (String policy, `rg2-string-policy.md`), RG-3 (the merge, and filing the staged ADR 0001, sysml-codegen ADR 0012 and ADR 0016, and P-0001 amendments; check the owner's sysml-codegen branch `adr-0012-occurrence-summary-amendment` for overlap first). The epic-level Success Criteria above were not re-ticked at this close; they span several items.
+
+**2026-10-21, after ADR 0004:** 2a keeps its generator half: the stable refusal reasons (`SiteReason`), the refusal site account and its scan tests, the 246 case models with their generator answers, the generator mutations and the refusal records. Its agreement half (the tests comparing the copy with the generator, `disagreements.json`, the occurrence-parity CI test, the profile version pin) is deleted by `retire-subset-profile`. Scope 1 (mapping the copy's reasons to `ElaborationCode`) and the parity test in scope 6 are retired. The staged ADR 0001 and P-0001 amendments listed under RG-3 are moot; RG-1 and RG-2 stand as generator questions.
 
 **Location**: archived in sysml-codegen git at `c381fb00eb8e51248f68701e00ac997ebf2cd413:.project/active/subset-profile-conformance/` (sysml-codegen closes by deleting the folder; git history is its archive)
 **Type**: Integration
@@ -177,6 +191,8 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 ### Item 2b (sysml-codegen): Read-only readiness check and snapshot authority
 
+**2026-10-21, after ADR 0004:** 2b keeps `check`, the load / check / write split and refusing before writing. The screen step that ran the copy after `generate` and `check` and printed its findings is removed (sysml-codegen branch `subset-profile-screen`), so `check` reports only the generator's answer and writes nothing. Scope 1 below is retired; scopes 2 and 3 stand. sysml-codegen PR #21 (ADR 0018, an occurrence summary shared with agentic-mbse) is moot.
+
 **Type**: Integration
 **Effort**: [AGENT] ~6–10 engineer-days; not examined by Item 1, so the least certain estimate in the epic.
 **Dependencies**: Item 2a.
@@ -191,6 +207,8 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 **Deliverables**: sysml-codegen `.project/active/subset-profile-screen/{spec,design,plan}.md`; preparation API/CLI and compatibility evidence.
 
 ### Item 3: L6 integration and execution-target settings ✅
+
+**2026-10-21, after ADR 0004:** L6's display of the copy's findings, the two L6 advisories and the String-subject suppression are removed by `retire-subset-profile`, so L6 makes no generation claim (P-0005 supersedes P-0003). The `execution-target` setting stays with two jobs: under `native` it folds the four legacy generator-only codes into one INFO summary, and it tells the workflow a project targets generated code (ADR 0005 amends ADR 0003). Scope 6's profile-version wording is retired. The record below is history.
 
 **Type**: Implementation
 **Effort**: Re-estimate after Item 1
@@ -237,39 +255,43 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 **Type**: Testing and documentation
 **Effort**: Re-estimate after example inventory
-**Dependencies**: Items 1 and 4; Item 2 for generator execution evidence
+**Dependencies**: Item 4; Item 2 for generator execution evidence (2026-10-21: no longer depends on Item 1)
+
+**2026-10-21, after ADR 0004:** Item 5 no longer renders a doc from rule records and no longer runs profile checks; executable-example evidence comes from sysml-codegen's case models and `sysml-codegen check`. `retire-subset-profile` already stated the three structural limits in the guidance and corrected the four calc-owned assert examples, each run through `sysml-codegen check`.
 
 **Scope**:
 1. Inventory authored SysML fences in shipped patterns, relevant top-level docs, skills, agents and templates using the packaged asset inventory. Distinguish vendored language/reference corpus from authored guidance explicitly; published SysML references are not promises of generator support. Handle nested fences in template examples correctly.
 2. Give each collected example a stable identity and one evidence category:
    - Syntax fragment: an identified exemption with reason and context needed for testing.
-   - Complete definition: parse/semantic and applicable L2/profile checks, without claiming its unused body generated.
+   - Complete definition: parse/semantic and applicable L2 checks, without claiming its unused body generated.
    - Executable example: fixture supplies required definitions, selected root/instantiation and relevant bindings; codegen's independent corpus exercises generation preparation.
    - Deliberate negative/native-only example: verify exact expected findings/outcomes and reject unexpected diagnostics.
 3. Wrappers/imports must be explicit and semantically justified. `native-only` markers list exact capability reasons, not language-invalid errors. Fragment exemptions use an identity/content/reason manifest; additions or changes require explicit review. A constant count cannot hide replacing a checked example with an unchecked one.
-4. Render `docs/patterns/generator-subset.md` from the rule records, including supported context, outcomes, limitations, tested working patterns and fixture links. Assert rendering equality and packaged delivery. Cross-repository corpus links use recorded revisions.
-5. Correct misleading calc-owned assert, conditional, metadata and function guidance. Preserve native-valid teaching where useful, with an explicit execution qualification. Test the ownership × assertion-form combinations that escaped the August integration.
+4. Retired 2026-10-21: rendering `docs/patterns/generator-subset.md` from the rule records, because the records are deleted (ADR 0004). Tested working patterns link to sysml-codegen case models at recorded revisions instead.
+5. Correct misleading calc-owned assert, conditional, metadata and function guidance. The calc-owned assert corrections are done (`retire-subset-profile` Phase 2); conditional, metadata and function guidance remain. Preserve native-valid teaching where useful, with an explicit execution qualification. Test the ownership × assertion-form combinations that escaped the August integration.
 6. Remedies must state preservation obligations. Part-owned generated verdicts do not by themselves preserve fail-closed native guards. Numeric predicate rewrites must preserve the intended domain. The arithmetic min identity needs numerical-domain, cancellation/overflow and tolerance evidence; it is not an identical universal replacement. Metadata moves must account for native consumers. Keep changed behavior visible in the docs.
 7. Add evaluator-author notes to `adr002-calculations.md`, with versioned evidence and scoped claims; prose claims need a fixture/reference even when outside the fence harness.
 8. Record the prototype coverage baseline (26 generation verdicts, 17 definitions, 169 fragments out of 212) and define a stable inventory of generated-use recommendations and remedies, including repeated instances and their context. Approved D3 target: 100% of that inventory has retained executable or exact expected-negative evidence at completion, with justified pure teaching fragments remaining exempt. Reuse canonical fixtures only when each snippet/context is checked against them; a hash alone is insufficient. Report converted and remaining entries by identity and category. Making every pure teaching fragment runnable is not required by D3.
 
 **Success Criteria**: every inventoried fence is accounted for; removing a marker, adding an exemption, changing an expected diagnostic, breaking instantiation or disabling a relevant detector fails the appropriate test. Adding an unrelated rule need not invalidate unrelated examples. Packaged-guidance checks pass and complete execution examples agree with independent generator evidence.
 
-**Deliverables**: `.project/active/shipped-example-contract/{spec,design,plan}.md`; example inventory/harness and corpus links, rendered doc and corrected assets.
+**Deliverables**: `.project/active/shipped-example-contract/{spec,design,plan}.md`; example inventory/harness and corpus links, and corrected assets.
 
 ### Item 6: Proportional workflow gates and knowledge routing
 
 **Type**: Implementation
 **Effort**: Re-estimate after integration design
-**Dependencies**: Items 2, 3 and 5
+**Dependencies**: Item 2b (`sysml-codegen check`) and Item 5 (2026-10-21: no longer depends on Item 3's profile display)
+
+**2026-10-21, after ADR 0004:** scope 1 is done by `retire-subset-profile` Phase 3: `MODELING_PROCESS.md` and the design, plan, implement, model-validation and toolkit-awareness skills run `sysml-codegen check` from the first model pieces, at each phase and before any claim that the model generates, and report a missing generator as "not checked". The evidence is the generator's answer, not L6. A parked project runs the check once early without blocking, which covers the probe half of scope 2. The remaining scopes are restated below without the profile.
 
 **Scope**:
-1. Update modeling skills and MODELING_PROCESS to record the promised execution route and evidence for affected behavior. Generated model changes need applicable L6 and `sysml-codegen check` evidence before claiming readiness. Missing codegen means required generated readiness is unverified, not successful. Research-only or unrelated work does not require irrelevant generation runs.
+1. Done 2026-10-21 (see above). Original text: update modeling skills and MODELING_PROCESS to record the promised execution route and evidence for affected behavior; generated model changes need `sysml-codegen check` evidence before claiming readiness; missing codegen means generation is unverified, not successful; research-only or unrelated work does not require irrelevant generation runs.
 2. Preserve authorized native-only scope and existing owner amendments. When later work requires generation, make the parked seam and first compatibility probe explicit. Changes to a promised route or reserved gate require the applicable owner decision; routine implementation and already-authorized native scope do not require repeated approvals.
-3. For new execution-sensitive structural patterns, cite an admitted tested pattern or probe the unresolved capability early. Use `kerml-expert`/`sysml-expert` for unresolved semantics and `syside-expert` for API questions when consultation can resolve the uncertainty. Do not make a standing specialist roster or consultation for every routine binding edit an acceptance gate. Roles read the profile and hazard register but still verify uncertain claims.
+3. For new execution-sensitive structural patterns, cite an admitted tested pattern or probe the unresolved capability early. Use `kerml-expert`/`sysml-expert` for unresolved semantics and `syside-expert` for API questions when consultation can resolve the uncertainty. Do not make a standing specialist roster or consultation for every routine binding edit an acceptance gate. Roles read the hazard register and the modelling guide's generator limits but still verify uncertain claims.
 4. Ship an upstream-findings starter as a **user-owned project document**, preserving populated records on re-init. `/record-learning` gains a Toolkit category and links approved learnings to findings with evidence, affected versions and disposition. Keep existing approval/curation behavior. Do not silently copy or overwrite owner evidence or auto-file upstream messages.
-5. Raw-learning review names the hazard register and capability doc as formalization destinations. A semantics surprise must have a guidance disposition even if its defect premise is corrected or its support item stays open.
-6. Propose a Context A Change Coordination line requiring capability changes to include affected rule mappings, guidance and hazard disposition in a coordinated merge. Editing CLAUDE.md remains a separately reviewed deliverable; this epic does not silently alter it.
+5. Raw-learning review names the hazard register and the modelling guide's generator limits as formalization destinations. A semantics surprise must have a guidance disposition even if its defect premise is corrected or its support item stays open.
+6. Propose a Context A Change Coordination line requiring a generator capability change to include its guidance and hazard disposition in a coordinated merge. Editing CLAUDE.md remains a separately reviewed deliverable; this epic does not silently alter it.
 
 **Success Criteria**: shipped-text tests cover route-aware evidence and scoped expert routing. Fresh and repeated init preserve the target and populated findings. The installed MODELING_PROCESS/MODELING_GUIDE and skills describe the gate; no nonexistent generated plan template is assumed.
 
@@ -277,6 +299,7 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 
 ## Epic Strategy
 
+- 2026-10-21: ADR 0004 replaces the strategy for Items 1-3 below (there is no shared profile to merge first). Remaining order: `retire-subset-profile` merges with Item 2b (sysml-codegen first), then Item 5, then the rest of Item 6.
 - Corrected Item 4 can start independently. It addresses a demonstrated silent-value hazard, not the only possible silent failure.
 - Items 1 and 2 begin with inventory and boundary design together. Re-estimate and resolve policy decisions before implementing the shared screen.
 - Merge companion facts/profile first, then compatible codegen integration with explicit version and snapshot behavior. Keep temporary skew fail-closed and test both directions.
@@ -288,7 +311,7 @@ The older guidance dates include January commits `0bb8ab4a`, `839bac08`, `f43bb0
 - SysIDE 0.8.4; existing shared facts and executable-profile contracts; codegen live/snapshot authority, certifiability and generation preparation APIs.
 - Proposed absorption: GENERATOR-SUBSET-PATTERNS. Item 1 reconciles **all** PUSH-DOWN profile rows and identifies which are absorbed or remain explicit gaps.
 - Adjacent: L6-LIBRARY-ALIAS-SOURCE and DOCS-DOTTED-PATH-BOUNDARY; account for their effect on claims without automatically expanding scope.
-- Support changes such as CALCDEF-GATE-IMPLEMENTATION and SCALAR-FUNCTION-VOCABULARY require reviewed capability/version/guidance updates, not an assumption that current exclusions are permanent.
+- Support changes such as CALCDEF-GATE-IMPLEMENTATION and SCALAR-FUNCTION-VOCABULARY require reviewed guidance updates (the three structural limits, examples), not an assumption that current exclusions are permanent. With the copy gone (ADR 0004) they need no agentic-mbse rule change.
 
 ## Risks
 
@@ -311,10 +334,11 @@ D1, D2 and D3 were approved by the owner during the 2026-10-15 discussion. Other
 - **D1 — Approved: positional findings.** Block new mismatches and warn on explicitly pinned legacy cases until migration. Fusion-tea migration is separate authorized work, not a prerequisite for accepting this toolkit check. Legacy warning acceptance does not certify cross-route semantic parity.
 - **D2 — Approved: full candidate investigation.** Inspect and classify all 500 candidate sites in the recorded inventory (441 codegen, 59 agentic-mbse), reconciling additions and removals at the implementation revision. Account for each site as in scope, already handled elsewhere, or explicit follow-up, with evidence and ownership. Implement only the scoped shared capability rules; this does not require 500 rules or recoding every exception.
 - **D3 — Approved: guidance coverage.** Require executable or exact expected-negative evidence for every generated-use recommendation and remedy (100% of the identified inventory), while retaining justified pure teaching fragments.
+- **2026-10-21 — Retire the copy; guidance plus an early `sysml-codegen check`.** [AGENT] (ratified by owner, 2026-10-21). The owner's words: "Ok go with your recommendation. implement it, and document it." The recommendation is section 6 of the architecture review (sysml-codegen `.project/active/subset-profile-screen/architecture-review/index.html`). This is an approved agent recommendation, not an owner-originated decision, so it is challenged by re-deriving against ADR 0004's Why. It rests on two agent assumptions stated to the owner and not contradicted: a project that has parked generation still runs one non-blocking early check, and the dc3 incident cost the owner little time. It supersedes ADR 0001, whose owner choice "A (ii)" was between ownership options for the copy; not having a copy was never one of the options offered.
 
 Other decisions remain:
 
-1. Approve shared capability-policy ownership and the fact/decision/consumer boundary after Item 1's design. ADR 0007 alone is not that decision.
+1. Approve shared capability-policy ownership and the fact/decision/consumer boundary after Item 1's design. ADR 0007 alone is not that decision. Moot 2026-10-21: there is no shared capability policy (ADR 0004).
 2. Confirm unset-target behavior and blocking policy for exclusions/omissions. Proposed: no generated-readiness claim when unset; keep check failures distinct and visible.
 3. Decide String metadata policy using the concrete fixtures; positional-use severity and legacy handling are covered by D1.
 4. Approve proposed absorption and disposition of remaining capability gaps. Current refusal does not imply permanent exclusion.

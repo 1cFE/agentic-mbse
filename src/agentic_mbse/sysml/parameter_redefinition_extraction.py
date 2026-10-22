@@ -2,7 +2,7 @@
 
 `extract_parameter_redefinitions(model)` reads the facts in
 :mod:`~agentic_mbse.sysml.parameter_redefinition_facts` and decides nothing. L2-internal
-(design D1): not part of ``SubsetFacts`` and not a surface for Item 2 or sysml-codegen.
+(design D1): not a surface for sysml-codegen.
 
 The reads, each observed on SysIDE 0.8.4 and pinned by
 `tests/learning/test_syside_input_redefinition.py`:
@@ -35,8 +35,8 @@ from typing import Any, TypeVar
 from uuid import UUID
 
 from agentic_mbse.errors import SemanticEvidenceError
+from agentic_mbse.sysml.element_refs import ElementIdentityError, element_ref, safe_location
 from agentic_mbse.sysml.fact_refs import ElementRef
-from agentic_mbse.sysml.occurrence_extraction import safe_location
 from agentic_mbse.sysml.parameter_redefinition_facts import (
     Direction,
     InputRedefinitionFact,
@@ -47,10 +47,6 @@ from agentic_mbse.sysml.parameter_redefinition_facts import (
     RedefinitionFailure,
     RedefinitionFailureCause,
 )
-
-# Item 1's identity helper and its error, imported privately as `subset_extraction.py:42-46`
-# imports `_ASSERTED_FORMS` (design D2). A test asserts both names still exist.
-from agentic_mbse.sysml.subset_extraction import _element_ref, _IdentityError
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 
 __all__ = [
@@ -134,8 +130,8 @@ def _read(cause: RedefinitionFailureCause, what: str, read: Callable[[], _T]) ->
 
 def _identity(element: Any, what: str) -> ElementRef:
     try:
-        return _element_ref(element)
-    except _IdentityError as error:
+        return element_ref(element)
+    except ElementIdentityError as error:
         raise _UnreadableError(Cause.IDENTITY_UNAVAILABLE, f"{what}: {error}") from error
 
 
@@ -147,7 +143,7 @@ def _label(element: Any) -> str:
 
 
 def _direction(feature: Any) -> Direction | None:
-    """`in` or `inout`, read as `subset_extraction._is_bound_input` does; else not an input."""
+    """`in` or `inout`; else not an input."""
     direction = getattr(feature, "direction", None)
     if direction is None:
         return None

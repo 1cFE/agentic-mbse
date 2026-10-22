@@ -9,7 +9,6 @@ from uuid import UUID, uuid5
 from agentic_mbse.sysml.invocation_allowlist import (
     STANDARD_SUM_FUNCTION_ID,
     SUPPORTED_INVOCATION_IDS,
-    InvocationUse,
     is_supported_invocation_id,
 )
 
@@ -22,11 +21,6 @@ def test_the_allowlist_is_exactly_standard_sum() -> None:
     assert SUPPORTED_INVOCATION_IDS == frozenset({SUM})
     assert is_supported_invocation_id(SUM)
     assert not is_supported_invocation_id(uuid5(SUM, "NumericalFunctions::product"))
-
-
-def test_an_unresolved_callable_is_never_supported() -> None:
-    assert not InvocationUse(None, None, "f(x)", None).supported
-    assert InvocationUse(SUM, "NumericalFunctions::sum", "sum(xs)", None).supported
 
 
 def test_reference_use_consults_the_same_allowlist() -> None:

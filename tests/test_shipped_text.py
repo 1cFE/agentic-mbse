@@ -9,11 +9,8 @@ import pytest
 import tomllib
 
 from agentic_mbse.cli import TOOL_OWNED_TEMPLATES, cmd_init
-from agentic_mbse.sysml.subset_profile import SUBSET_PROFILE_VERSION
 from agentic_mbse.validation.positional_check import PINNED_DISCLAIMER
-from agentic_mbse.validation.subset_presentation import PACKAGED_RULES
 from tests.helpers.shipped import REPO_ROOT, SKILLS, frontmatter
-from tests.test_validation.test_l6_contract import BANNED as L6_BANNED
 
 SLASH_REFERENCE = re.compile(r"`(/[a-z0-9-]+)`")
 SKILL_PATH = re.compile(r"\.agents/skills/([a-z0-9-]+)((?:/[\w.-]+)*)")
@@ -204,39 +201,70 @@ def test_plant_idiom_order_does_not_matter_is_qualified_by_its_context():
         assert "The order of a calculation usage's inputs does matter" in line, line
 
 
-# ---- Level 6 and the generator subset (Item 3 Phase 10) ----------------------------------------
+# ---- Level 6 and the execution target ---------------------------------------------------------
 
 L6_DOCS = ("README.md", "skills/model-validation/SKILL.md")
+#: Words that would claim L6 says a model generates.
+L6_BANNED = (
+    "generated-ready",
+    "generation-ready",
+    "ready to generate",
+    "will generate",
+    "generator accepts",
+    "readiness",
+)
 
 
 @pytest.mark.parametrize("relative", L6_DOCS)
-def test_doc_states_profile_version_scope_incompleteness_and_not_codegen_check(relative):
+def test_doc_says_l6_is_not_the_generation_answer_and_what_the_setting_does(relative):
     text = " ".join((REPO_ROOT / relative).read_text(encoding="utf-8").split())
     lowered = text.lower()
-    assert SUBSET_PROFILE_VERSION in text
-    assert "nine implemented rules" in lowered  # what was assessed
-    assert "incomplete" in lowered and "coverage limit" in lowered
-    assert "not a generation check" in lowered
-    assert "future step" in lowered and "does not exist yet" in lowered
-    assert "sysml-codegen check" not in lowered  # the future boundary, with no command shown
+    assert "sysml-codegen check" in text
     assert "execution-target" in text and "init --execution-target" in text
+    assert "targets generated code" in lowered
+    assert "one info summary" in lowered
     assert [banned for banned in L6_BANNED if banned in lowered] == []
 
 
-def test_doc_rule_count_matches_the_packaged_profile():
-    assert len(PACKAGED_RULES.rules) == 9
+def test_model_validation_names_the_generation_check():
+    text = " ".join(
+        (REPO_ROOT / "skills/model-validation/SKILL.md").read_text(encoding="utf-8").split()
+    )
+    assert "does not exist yet" not in text
+    assert "uv run sysml-codegen check --models models/" in text
+    assert "the generation answer comes from `sysml-codegen check`" in text
+    assert "never as fine" in text
+    assert "“Generated code” in `modeling_project/MODELING_PROCESS.md`" in text
 
 
-def test_model_validation_table_row_uses_new_l6_title():
+def test_model_validation_table_row_uses_the_l6_title():
     text = (REPO_ROOT / "skills/model-validation/SKILL.md").read_text(encoding="utf-8")
     (row,) = [line for line in text.splitlines() if line.startswith("| 6 ")]
-    assert "Architecture & Generator Subset" in row and "not a generation check" in row
+    assert "Architecture & Conventions" in row and "not a generation check" in row
 
 
-def test_claude_md_level_6_line_uses_new_title():
+@pytest.mark.parametrize(
+    "relative",
+    (
+        "README.md",
+        "CLAUDE.md",
+        "skills/model-validation/SKILL.md",
+        "skills/toolkit-awareness/SKILL.md",
+    ),
+)
+def test_doc_says_every_l6_run_ends_with_the_generation_pointer(relative):
+    text = " ".join((REPO_ROOT / relative).read_text(encoding="utf-8").split())
+    assert re.search(
+        r"every run that includes (L6|Level 6 \(Architecture & Conventions\)) ends", text, re.I
+    )
+    assert "Codegen Conventions" not in text
+
+
+def test_claude_md_level_6_line_uses_the_l6_title():
     text = (REPO_ROOT / "CLAUDE.md").read_text(encoding="utf-8")
     (line,) = [line for line in text.splitlines() if line.strip().startswith("- Level 6:")]
-    assert "Architecture & Generator Subset" in line and "readiness" not in line
+    assert "Architecture & Conventions" in line and "readiness" not in line
+    assert "sysml-codegen check" in line
 
 
 def test_research_seam_describes_shared_key_set():
@@ -244,3 +272,104 @@ def test_research_seam_describes_shared_key_set():
     assert "holds only `research` and `execution-target`" in text
     assert "a key other than `research` or `execution-target` in `[tool.agentic-mbse]`" in text
     assert "holds only `research`," not in text
+
+
+# ---- The generator's three structural limits ----------------------------------------------------
+
+LIMITS_GUIDANCE = (
+    "project_templates/MODELING_GUIDE.md.template",
+    "skills/sysml-conventions/SKILL.md",
+)
+LIMIT_LEADS = (
+    "**1. An `assert constraint` goes on a part, not inside a calculation.**",
+    "**2. Part multiplicities are exact.**",
+    "**3. A calculation input receives one value.**",
+)
+
+
+@pytest.mark.parametrize("relative", LIMITS_GUIDANCE)
+def test_guidance_states_the_three_generator_limits(relative):
+    text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    assert "## Three Structures the Code Generator Refuses" in text
+    for lead in LIMIT_LEADS:
+        assert lead in text
+    assert text.count("// Correct") >= 3 and text.count("// Incorrect") >= 3
+    # Probe g4: the generator refuses a list-valued attribute that nothing reads.
+    assert "A list-valued attribute is refused even when no calculation reads it" in text
+
+
+def test_pattern_docs_state_the_limits_in_place():
+    constraints = (REPO_ROOT / "docs/patterns/constraints.md").read_text(encoding="utf-8")
+    assert "### Checking a Calculation's Result: Assert on the Part" in constraints
+    calculations = (REPO_ROOT / "docs/patterns/adr002-calculations.md").read_text(encoding="utf-8")
+    assert "## Calculation Inputs and Part Counts" in calculations
+
+
+SYSML_FENCE = re.compile(r"```sysml\n(.*?)```", re.DOTALL)
+CALC_OPENER = re.compile(r"\bcalc\b[^;{]*\{")
+
+
+def _calc_bodies(fence: str):
+    """Each `calc def` or calc usage body in a fence, by brace matching."""
+    for match in CALC_OPENER.finditer(fence):
+        depth, start = 1, match.end()
+        for index in range(start, len(fence)):
+            depth += {"{": 1, "}": -1}.get(fence[index], 0)
+            if depth == 0:
+                yield match.group(0), fence[start:index]
+                break
+
+
+def test_no_shipped_example_teaches_an_assert_inside_a_calculation_as_correct():
+    shipped = [*(REPO_ROOT / "docs/patterns").glob("*.md"), *(REPO_ROOT / "skills").rglob("*.md")]
+    shipped += [
+        *(REPO_ROOT / "project_templates").glob("*.template"),
+        *(REPO_ROOT / "agents").glob("*.md"),
+    ]
+    found = []
+    for path in shipped:
+        for fence in SYSML_FENCE.findall(path.read_text(encoding="utf-8")):
+            for opener, body in _calc_bodies(fence):
+                if "assert constraint" not in body:
+                    continue
+                preceding = fence[: fence.index(opener)].rsplit("\n", 2)[-2:]
+                if not any("Incorrect" in line for line in preceding):
+                    found.append(f"{path.relative_to(REPO_ROOT)}: {opener}")
+    assert found == []
+
+
+# ---- The workflow runs the generator's check early ----------------------------------------------
+
+CHECK_COMMAND = "uv run sysml-codegen check --models models/"
+WORKFLOW_POINTERS = (
+    "skills/design-model/SKILL.md",
+    "skills/plan-model/SKILL.md",
+    "skills/implement-model/SKILL.md",
+    "skills/model-validation/SKILL.md",
+    "skills/toolkit-awareness/SKILL.md",
+)
+
+
+def test_modeling_process_says_when_and_how_to_run_the_generation_check():
+    text = (REPO_ROOT / "project_templates/MODELING_PROCESS.md.template").read_text(
+        encoding="utf-8"
+    )
+    (row,) = [
+        line
+        for line in text.splitlines()
+        if 'execution-target = "generated"' in line and line.startswith("|")
+    ]
+    assert "first model pieces" in row and "each phase" in row and "parked" in row
+    section = text.split("## Generated code\n", 1)[1].split("\n## ", 1)[0]
+    assert CHECK_COMMAND in section
+    for exit_line in ("**Exit 0:**", "**Exit 1:**", "**Exit 2:**"):
+        assert exit_line in section
+    assert "**Generation parked.**" in section and "does not block" in section
+    assert "**sysml-codegen missing.**" in section and "Never report it as fine" in section
+
+
+@pytest.mark.parametrize("relative", WORKFLOW_POINTERS)
+def test_workflow_skill_points_at_the_generation_check(relative):
+    text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    assert CHECK_COMMAND in text
+    assert "Generated code" in text and "MODELING_PROCESS.md" in text

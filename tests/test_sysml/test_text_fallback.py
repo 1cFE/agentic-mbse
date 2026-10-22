@@ -1,8 +1,7 @@
 """`reconstruct_expression`'s output is unchanged by the text-fallback predicate (Item 3 Phase 6).
 
 The texts were recorded from `expression.py` at `ebb3d467`, before its dispatch was shared with
-`falls_to_text_fallback` (`scripts/l6_subset/record_reconstruct_texts.py`). Item 2's agent
-depends on `reconstruct_expression`, so every text must match exactly (design D12a, I4).
+`falls_to_text_fallback` (`tests/helpers/reconstruct_texts.py`). Every text must match exactly.
 """
 
 from __future__ import annotations
@@ -19,27 +18,16 @@ from agentic_mbse.sysml.expression import (
     text_fallback_nodes,
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
-from tests.helpers.reconstruct_texts import (
-    FIXTURES,
-    RECORD,
-    RELOCATIONS,
-    reconstruct_file,
-    recorded_path,
-)
+from tests.helpers.reconstruct_texts import FIXTURES, RECORD, reconstruct_file
 
 
 @pytest.mark.syside
 def test_reconstruct_expression_output_unchanged_on_every_fixture_expression():
     recorded = json.loads(RECORD.read_text(encoding="utf-8"))
-    relocations = json.loads(RELOCATIONS.read_text(encoding="utf-8"))
-    assert len(recorded) >= 268
-    assert set(relocations["moved"]) | set(relocations["left"]) <= set(recorded)
-    assert [k for k in relocations["moved"] if (FIXTURES / k).exists()] == []
-    paths = {relative: recorded_path(relative, relocations) for relative in recorded}
-    now = {relative: reconstruct_file(path) for relative, path in paths.items() if path is not None}
+    assert len(recorded) >= 122
+    now = {relative: reconstruct_file(FIXTURES / relative) for relative in recorded}
     changed = sorted(relative for relative in now if now[relative] != recorded[relative])
     assert changed == []
-    assert len(now) == len(recorded) - len(relocations["left"])
 
 
 # ---- the shared dispatch ----------------------------------------------------------------------

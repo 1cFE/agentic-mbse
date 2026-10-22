@@ -3,9 +3,9 @@ id: 0001
 title: agentic-mbse publishes a versioned executable-subset contract: refused only with a recorded generator probe, CLEAR only over the implemented rules
 date: 2026-10-18
 owner: Reid Westwood
-status: active
+status: superseded
 amended_by: []
-superseded_by: null
+superseded_by: 0004
 supersedes: null
 provenance: "[AGENT] (ratified by owner, 2026-10-18)"
 surfaces: [agentic_mbse.sysml.subset_profile, sysml-codegen, l6, guidance]

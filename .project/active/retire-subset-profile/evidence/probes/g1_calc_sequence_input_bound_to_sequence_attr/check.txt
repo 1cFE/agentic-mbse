@@ -1,0 +1,4 @@
+INFO: Checking /home/reid/src/subset-conformance/agentic-mbse/.project/active/retire-subset-profile/evidence/probes/g1_calc_sequence_input_bound_to_sequence_attr
+ERROR: Model failed exact-route validation: SI_EDGE_DANGLING: probe_g__host__loads: computed calculation contains unsupported typed IR (reason: graph_computed_ir_unsupported)
+INFO: Screen subset-profile/v2 (information; the generator's answer above decides): verdict clear (over the implemented rules; not a promise the generator accepts the model); no findings; 0 not assessed
+INFO: Disagreement: generator_refuses_screen_silent: generator codes ['SI_EDGE_DANGLING'], screen reasons []

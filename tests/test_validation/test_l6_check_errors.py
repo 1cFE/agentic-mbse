@@ -428,7 +428,7 @@ def _abs_project(tmp_path: Path, target: str) -> Path:
     """The fixture with `scaled = a * 2.0` replaced by `abs(2.0)`: a call outside the subset.
 
     The design file moves to `analysis/`, outside the design-attribute check's `designs` filter,
-    so V2 is the only legacy check with an ERROR to give: at `ebb3d467` this model passed L6
+    so V2 is the only check with an ERROR to give: at `ebb3d467` this model passed L6
     with one `V4_STATIC_FUNCTION_INVOCATION` WARNING. (Under `designs/`, the evaluator's
     `L6_DESIGN_ATTR_UNEXTRACTABLE` ERROR fires on `abs(2.0)` before and after this item.)
     """
@@ -470,22 +470,7 @@ def test_static_expression_walker_refusal_is_a_warning(target, tmp_path):
     assert "is not supported by this executable subset" in warning.message
     assert ValidationCode.L6_CHECK_UNVERIFIED not in {i.code for i in result.summarized}
     assert not _errors(result, "check_static_expressions")
-    assert result.success is (target != "generated")
-
-
-@pytest.mark.syside
-def test_static_expression_walker_refusal_still_fails_generated_via_contract(tmp_path):
-    """Under `generated` the same attribute fails on the contract's refusal, not on V2."""
-    result = level6_architecture.validate_architecture(str(_abs_project(tmp_path, "generated")))
-    refused = [
-        i
-        for i in result.structured_issues
-        if i.code is ValidationCode.L6_SUBSET_REFUSED and i.element_name == "plant::Plant::scaled"
-    ]
-    assert refused and all(i.severity is Severity.ERROR for i in refused)
-    assert any(i.reason_code == "invocation_callable_unsupported" for i in refused)
-    assert not any(i.code is CHECK_ERROR for i in result.structured_issues)
-    assert not result.success
+    assert result.success
 
 
 @pytest.mark.syside

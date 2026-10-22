@@ -2,7 +2,7 @@
 
 The SysIDE behavior these rely on is pinned by `tests/learning/test_syside_input_redefinition.py`
 and recorded in `.project/completed/20261018_positional-binding-check/learning-findings.md`. These tests
-read it through the production extractor and Item 1's identity helpers instead.
+read it through the production extractor and `element_refs.py` instead.
 """
 
 from __future__ import annotations
@@ -14,7 +14,6 @@ from uuid import NAMESPACE_URL, uuid5
 
 import pytest
 
-from agentic_mbse.sysml import subset_extraction
 from agentic_mbse.sysml.constraint_extraction import extract_identified_constraint_facts
 from agentic_mbse.sysml.parameter_redefinition_extraction import (
     extract_parameter_redefinitions,
@@ -362,15 +361,6 @@ def test_return_and_out_parameters_are_not_inputs() -> None:
     facts = extract(FIX / "dc3" / "dc3_serial_path_swap.sysml")
     names = [f.declared_name for f in owned_by(facts, "dc3_serial_path_swap::'Serial Path 8'")]
     assert names == [f"eta_0{i}_in" for i in range(1, 9)]
-
-
-# ---- Item 1 relations ------------------------------------------------------------------------
-
-
-def test_item1_private_helpers_this_layer_imports_still_exist() -> None:
-    """D2: a rename in Item 1 fails here first."""
-    assert callable(subset_extraction._element_ref)
-    assert issubclass(subset_extraction._IdentityError, Exception)
 
 
 CONSTRAINT_FIXTURES = [

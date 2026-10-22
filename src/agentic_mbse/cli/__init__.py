@@ -21,9 +21,8 @@ from agentic_mbse.cli.installation import (
 )
 from agentic_mbse.project_root import find_project_root
 from agentic_mbse.validation import EXIT_FAILURE, EXIT_SUCCESS, run_all_checks
-from agentic_mbse.validation.execution_target import ALLOWED_VALUES, Target
+from agentic_mbse.validation.execution_target import ALLOWED_VALUES, UNSET_NOTE, Target
 from agentic_mbse.validation.report import build_report, write_report
-from agentic_mbse.validation.subset_presentation import UNSET_NOTE
 
 # Project templates split by ownership:
 # - USER_OWNED: Only created once, never auto-updated (user customizes these)
@@ -784,7 +783,10 @@ def _report_execution_target_slot(
 
 def _prompt_for_execution_target() -> str | None:
     """Ask how the project runs; None is "leave unset", the default."""
-    print("How does this project run? This decides how loud L6's generator findings are.")
+    print(
+        "Does this project target generated code? generated: the modelling workflow runs "
+        "sysml-codegen check. native: L6 folds four generator-only codes into one INFO summary."
+    )
     while True:
         try:
             answer = input("  Execution target [generated/native/unset] (default: unset): ")
@@ -852,6 +854,11 @@ def main(argv: list[str] | None = None) -> int:
     validate_parser = subparsers.add_parser(
         "validate",
         help="Run quality validation on SysML models",
+        description=(
+            "Run the six quality levels on SysML models. Level 6 (Architecture & Conventions) "
+            "does not check whether the model generates; for that, run "
+            "`uv run sysml-codegen check --models <models>`."
+        ),
     )
     validate_parser.add_argument(
         "path",
@@ -897,8 +904,9 @@ def main(argv: list[str] | None = None) -> int:
         "--execution-target",
         choices=ALLOWED_VALUES,
         help=(
-            "L6: how this project runs, overriding [tool.agentic-mbse] execution-target in "
-            "pyproject.toml (decides how loud generator findings are, never what they are)"
+            "L6: whether this project targets generated code, overriding [tool.agentic-mbse] "
+            "execution-target in pyproject.toml (native folds four generator-only codes into "
+            "one INFO summary; it never changes what a result is)"
         ),
     )
     validate_parser.add_argument(
@@ -945,8 +953,9 @@ def main(argv: list[str] | None = None) -> int:
         "--execution-target",
         choices=ALLOWED_VALUES,
         help=(
-            "Add [tool.agentic-mbse] execution-target to pyproject.toml; never changes an "
-            "existing value (without it, a terminal is asked and other runs leave it unset)"
+            "Add [tool.agentic-mbse] execution-target to pyproject.toml: generated if the "
+            "project targets generated code, native if it does not. Never changes an existing "
+            "value (without it, a terminal is asked and other runs leave it unset)"
         ),
     )
     init_parser.set_defaults(func=cmd_init)

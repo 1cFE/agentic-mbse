@@ -133,3 +133,37 @@ def test_invalid_option_value_is_a_usage_error(tmp_path):
     with pytest.raises(SystemExit) as raised:
         run_cli("validate", "--execution-target=generate", str(make_project(tmp_path)))
     assert raised.value.code == 2
+
+
+def _generation_note(models) -> str:
+    return (
+        "L6 does not check whether the model generates. For that, run "
+        f"`uv run sysml-codegen check --models {models}` "
+        '(modeling_project/MODELING_PROCESS.md, "Generated code").'
+    )
+
+
+@pytest.mark.syside
+@pytest.mark.parametrize("override", OVERRIDES)
+def test_a_passing_l6_run_ends_with_the_generation_pointer(override, tmp_path):
+    """Audit S1: a clean L6 is not a generation answer, so its last line says where that is."""
+    models = make_project(tmp_path)
+    code, out = _validate_l6(models, override)
+    assert code == 0
+    lines = out.strip().splitlines()
+    assert lines[-1] == _generation_note(models)
+    assert lines[-3].startswith("✅ ")
+
+
+def test_a_failing_l6_run_ends_with_the_generation_pointer(tmp_path):
+    models = make_project(tmp_path, pyproject=target_table('"generate"'))
+    code, out = _validate_l6(models)
+    assert code == 1
+    assert out.strip().splitlines()[-1] == _generation_note(models)
+
+
+@pytest.mark.syside
+def test_a_run_without_l6_has_no_generation_pointer(tmp_path):
+    code, out = run_cli("validate", "--level=1", str(make_project(tmp_path)))
+    assert code == 0
+    assert "sysml-codegen check" not in out

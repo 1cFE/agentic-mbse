@@ -32,6 +32,8 @@ For each acceptance condition, identify:
 
 Use this table or the project's equivalent; its purpose is to keep the acceptance evidence traceable. Include structural/analytical agreement and affected consumers where the change concerns them. Tests should expose plausible mistakes, including the original counterexample for a defect, rather than merely reproduce current wiring or copied formulas.
 
+When the project targets generated code (`execution-target = "generated"`), add a checklist row for `uv run sysml-codegen check --models models/` as soon as the first model pieces exist, one at the end of each phase, and a final row before any claim that the model generates. A project that has parked generation gets one early row whose result is recorded and does not block. See “Generated code” in `modeling_project/MODELING_PROCESS.md`.
+
 Choose validation checkpoints where they can catch errors usefully. Run focused checks during editing and integrated validation when a coherent change is ready. Repeating a full suite requires changed inputs, new failures, or another concrete reason. The final checklist must cover applicable regression checks, spec outcomes, and registered verification criteria; see **model-validation** for interpreting results and skips.
 
 ## Keep It Resumable

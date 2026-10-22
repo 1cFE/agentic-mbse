@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Level 6: Architecture & Generator Subset
+Level 6: Architecture & Conventions
 
 Application-specific validation: ADR-002 rules, manifest subsystem
-checks, codegen checks, and the generator subset contract (EXEC-SUBSET-CONTRACT
-Item 3: run first, presented through the execution target).
+checks, and codegen conventions. The project's execution target decides only how
+loud a result is (`execution_target.py`); whether a model generates is
+`sysml-codegen check`'s answer, not L6's.
 
 Merged from:
 - Level 7 (Architectural Integrity): manifest-based subsystem validation
@@ -17,7 +18,6 @@ from collections.abc import Callable
 from functools import partial
 from pathlib import Path
 from typing import Any, TypeVar
-from uuid import UUID
 
 import yaml
 
@@ -32,9 +32,6 @@ from agentic_mbse.sysml.reference_use import (
     resolved_chaining_features,
     resolved_referent,
 )
-from agentic_mbse.sysml.subset_advisories import Advisories, extract_advisories
-from agentic_mbse.sysml.subset_extraction import extract_subset_facts
-from agentic_mbse.sysml.subset_profile import SubsetProfileResult, evaluate_subset_profile
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 
@@ -55,6 +52,7 @@ from .common import (
     print_header,
 )
 from .execution_target import (
+    UNSET_NOTE,
     FromFile,
     FromOverride,
     Target,
@@ -62,12 +60,22 @@ from .execution_target import (
     TargetSettingError,
     Unset,
     describe_target,
+    fold,
     resolve_target,
 )
 from .session import constraint_facts
-from .subset_presentation import present, string_subjects
 
-LEVEL_NAME = "Architecture & Generator Subset"
+LEVEL_NAME = "Architecture & Conventions"
+
+
+def generation_note(models_path: str) -> str:
+    """The line every run that includes L6 ends with, pass or fail: L6 makes no generation claim."""
+    return (
+        "L6 does not check whether the model generates. For that, run "
+        f"`uv run sysml-codegen check --models {models_path}` "
+        '(modeling_project/MODELING_PROCESS.md, "Generated code").'
+    )
+
 
 # --- Functions from L7 (manifest validation) ---
 
@@ -495,7 +503,6 @@ def check_binding_formats(
 def check_design_attr_completeness(
     model: Any,
     design_path_filter: str | None = "designs",
-    string_subjects: frozenset[UUID] | None = None,
 ) -> tuple[list[ValidationIssue], int]:
     """
     Validate design attributes have values or EXPOSE bindings.
@@ -510,17 +517,12 @@ def check_design_attr_completeness(
         design_path_filter: Path component to filter files by. Only attributes
             in files whose path contains this component are checked. Use None
             or empty string to check all files.
-        string_subjects: Element ids the subset contract reports as omitted String values
-            (`string-value-omission`). Those get no `L6_DESIGN_ATTR_UNEXTRACTABLE`: the
-            contract's `omitted` finding replaces it (Item 3 design D10). None when the
-            contract did not run, so every legacy error stays.
 
     Returns:
         Tuple of (list of ValidationIssue, count of design attrs checked)
     """
     issues: list[ValidationIssue] = []
     attrs_checked = 0
-    omitted_strings = string_subjects or frozenset()
 
     try:
         attrs = list(SysideAdapter.elements_of_type(model, "AttributeUsage"))
@@ -558,8 +560,6 @@ def check_design_attr_completeness(
                 # `elaboration/elaborate.py:982-1012`), so it needs no numeric default
                 # and the static evaluator does not apply.
                 if is_expose_binding(attr, attr.feature_value_expression):
-                    continue
-                if omitted_strings and _element_id(attr) in omitted_strings:
                     continue
                 try:
                     evaluate_true_static_expression(attr.feature_value_expression)
@@ -599,13 +599,6 @@ def check_design_attr_completeness(
             issues.append(_element_error("check_design_attr_completeness", attr, error))
 
     return issues, attrs_checked
-
-
-def _element_id(element: Any) -> UUID | None:
-    try:
-        return SysideAdapter.element_id(element)
-    except ValueError:
-        return None
 
 
 def check_anonymous_returns(model: Any) -> list[ValidationIssue]:
@@ -1016,34 +1009,9 @@ def _guarded(check: str, call: Callable[[], _T]) -> tuple[_T | None, list[Valida
         return None, [check_error_issue(check, "the loaded model", error)]
 
 
-def _run_contract(model: Any) -> tuple[SubsetProfileResult | None, list[ValidationIssue]]:
-    """The subset contract's result over the shared model and constraint facts.
-
-    A crash in extraction or evaluation is one `L6_CHECK_ERROR` and no result, so the verdict
-    reads "not computed" and every legacy String error stays (design D4, D10).
-    """
-    return _guarded(
-        "subset_profile",
-        lambda: evaluate_subset_profile(
-            extract_subset_facts(model, constraint_facts=constraint_facts)
-        ),
-    )
-
-
-def _run_advisories(model: Any) -> tuple[Advisories | None, list[ValidationIssue]]:
-    """The two advisories over the contract's expression sites.
-
-    A walker's own `SemanticEvidenceError` is an advisory-unverified record inside the result
-    (D15); any other exception is one `L6_CHECK_ERROR` and no result.
-    """
-    return _guarded("subset_advisories", lambda: extract_advisories(model))
-
-
-# The legacy checks in the order they run (D13 prints their issues in this order), each with
+# The checks in the order they run (their issues print in this order), each with
 # the issue codes it emits, so a failed check's counts read "not computed" (Appendix B).
-_LEGACY_CHECKS: tuple[
-    tuple[Callable[[Any], list[ValidationIssue]], tuple[ValidationCode, ...]], ...
-] = (
+_CHECKS: tuple[tuple[Callable[[Any], list[ValidationIssue]], tuple[ValidationCode, ...]], ...] = (
     (check_calc_def_locations, (ValidationCode.V1_CALC_DEF_LOCATION,)),
     (check_static_expressions, (ValidationCode.V2_DYNAMIC_EXPRESSION,)),
     (check_supported_operators, (ValidationCode.V4_UNSUPPORTED_OPERATOR,)),
@@ -1108,6 +1076,19 @@ def _count_elements(model: Any, type_name: str) -> tuple[int | None, list[Valida
     return _guarded(f"count of {type_name}", partial(_element_count, model, type_name))
 
 
+def _target_note(target: Target, folded: list[ValidationIssue]) -> dict[str, str]:
+    """The metric line the target adds: the unset note, or native's summary of what it folded."""
+    if target is Target.UNSET:
+        return {"Execution target note": UNSET_NOTE}
+    if target is Target.NATIVE:
+        return {
+            "Generator-only findings (native: INFO summary)": (
+                f"{len(folded)} folded; each is listed in --json-report"
+            )
+        }
+    return {}
+
+
 def validate_architecture(
     models_path: str,
     design_path_filter: str | None = "designs",
@@ -1116,9 +1097,8 @@ def validate_architecture(
     """
     Main entry point for Level 6 validation.
 
-    Runs the generator subset contract first, then the ADR-002, codegen and manifest checks,
-    over one loaded model, and shows the contract's result through the execution target
-    (Item 3 design, Core Concept).
+    Runs the ADR-002, codegen and manifest checks over one loaded model. Under the `native`
+    execution target, the codes only generated code needs fold into one INFO summary.
 
     Args:
         models_path: Path to models directory
@@ -1129,7 +1109,7 @@ def validate_architecture(
             project's `[tool.agentic-mbse] execution-target` (Item 3 design D3)
 
     Returns:
-        QualityCheckResult with the architecture and generator subset issues
+        QualityCheckResult with the architecture and codegen-convention issues
     """
     print_header(LEVEL_NAME, 6)
 
@@ -1176,18 +1156,14 @@ def validate_architecture(
             report_detail=target_detail,
         )
 
-    # The contract runs first: its String subjects feed the design-attribute check (D10).
-    contract, contract_errors = _run_contract(model)
-    all_issues: list[ValidationIssue] = list(contract_errors)
-
     num_calc_defs, count_errors = _count_elements(model, "CalculationDefinition")
-    all_issues.extend(count_errors)
+    all_issues: list[ValidationIssue] = list(count_errors)
     num_calc_usages, count_errors = _count_elements(model, "CalculationUsage")
     all_issues.extend(count_errors)
 
     # ADR-002, codegen and Item 12 checks, each wrapped so an escaped exception names it (D4).
     uncounted: set[ValidationCode] = set()
-    for check, codes in _LEGACY_CHECKS:
+    for check, codes in _CHECKS:
         found, errors = _guarded(check.__name__, partial(check, model))
         issues = errors + (found or [])
         if _reported_failure(issues):
@@ -1201,9 +1177,7 @@ def validate_architecture(
     all_issues.extend(binding_issues)
     design_attrs, errors = _guarded(
         "check_design_attr_completeness",
-        lambda: check_design_attr_completeness(
-            model, design_path_filter=design_path_filter, string_subjects=string_subjects(contract)
-        ),
+        lambda: check_design_attr_completeness(model, design_path_filter=design_path_filter),
     )
     design_attr_issues, num_design_attrs = design_attrs or ([], None)
     design_attr_issues = errors + design_attr_issues
@@ -1213,10 +1187,6 @@ def validate_architecture(
         )
     all_issues.extend(design_attr_issues)
 
-    # The advisories run after the legacy checks (D12, D15).
-    advisories, advisory_errors = _run_advisories(model)
-    all_issues.extend(advisory_errors)
-
     # Manifest checks (from old L7)
     manifests, manifest_errors = _guarded(
         "manifest_checks", partial(_check_manifests, models_path, model)
@@ -1224,11 +1194,11 @@ def validate_architecture(
     manifest_issues, manifests_checked = manifests or ([], None)
     all_issues.extend(manifest_errors)
 
-    shown = present(resolution.target, contract, advisories, all_issues)
+    shown, folded = fold(all_issues, resolution.target)
 
     # ERROR-only failure criteria (matches old L8 behavior), over the issues as shown.
     # Manifest issues are unstructured strings; also fail if any found
-    success = not any(i.severity == Severity.ERROR for i in shown.issues)
+    success = not any(i.severity == Severity.ERROR for i in shown)
     if manifest_issues:
         success = False
 
@@ -1240,12 +1210,11 @@ def validate_architecture(
         level=6,
         level_name=LEVEL_NAME,
         success=success,
-        summarized=shown.summarized,
-        pass_note=shown.pass_note if success else "",
-        report_detail={**target_detail, **shown.profile},
+        summarized=folded,
+        report_detail=target_detail,
         metrics={
             **target_metrics,
-            **shown.metrics,
+            **_target_note(resolution.target, folded),
             "Calc defs checked": _count(num_calc_defs, failed=False),
             "Calc usages checked": _count(num_calc_usages, failed=False),
             "Bindings validated": _count(
@@ -1259,8 +1228,7 @@ def validate_architecture(
         },
     )
 
-    # Add structured issues, in the order D13 gives them
-    for issue in shown.issues:
+    for issue in shown:
         result.add_issue(issue)
 
     # Add manifest issues (unstructured strings)

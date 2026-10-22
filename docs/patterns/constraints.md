@@ -153,18 +153,39 @@ part def 'Pressure Vessel' {
 }
 ```
 
-### In Calc Definitions
+### Checking a Calculation's Result: Assert on the Part
+
+An `assert constraint` goes on a part (a `part def` or a part usage), not inside a `calc def` or a calc usage. The code generator refuses an assert that a calculation owns. To check a calculation's result, expose the result on the part that owns the calculation and assert there.
 
 ```sysml
 calc def PowerCalculation {
-    in attribute voltage : Real;
-    in attribute current : Real;
-    out attribute power : Real = voltage * current;
+    in attribute voltage_in : Real;
+    in attribute current_in : Real;
+    out attribute power : Real = voltage_in * current_in;
+}
+
+// Correct: the part that owns the calculation checks its result
+part def 'Heater' {
+    attribute voltage : Real;
+    attribute current : Real;
+    calc power_calc : PowerCalculation { in voltage_in = voltage; in current_in = current; }
+    attribute power : Real = power_calc.power;
 
     assert constraint ReasonablePower {
         doc /* Output power must be reasonable */
         power > 0 and power < 1e9
     }
+}
+```
+
+```sysml
+// Incorrect: the check is inside the calc def, so the generator refuses the model
+calc def PowerCalculation {
+    in attribute voltage_in : Real;
+    in attribute current_in : Real;
+    out attribute power : Real = voltage_in * current_in;
+
+    assert constraint ReasonablePower { power > 0 and power < 1e9 }
 }
 ```
 
