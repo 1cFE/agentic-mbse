@@ -1,0 +1,11 @@
+Write the implementation plan for EXEC-SUBSET-CONTRACT Item 5 (rescoped) from .project/active/generated-results-guidance/design.md (revised after design review; dispositions in design-review.md § Resolutions), the spec (spec.md) and the spike (spike/RESULTS.md). Write plan.md in the same folder.
+
+Orchestrator decisions to build in (execution detail):
+- No second design review: the review's must-fix items were accepted and the design's phase 1 de-risks the remaining bets (B2, B3, B4, multiplicity dependence) with a stop-and-report. Phase 1 is a hard gate: if any bet fails, the implementing agent stops and reports; it does not redesign.
+- Two repos. sysml-codegen work happens in /home/reid/src/subset-conformance/sysml-codegen on a new branch `native-generated-compare` created from origin/main (its current branch subset-profile-screen is merged; leave it alone). agentic-mbse work happens on the current branch `generated-results-guidance` in /home/reid/src/subset-conformance/agentic-mbse. Each phase says which repo, and each phase commits in that repo. No pushes, PRs or merges (owner, RG-3). Merge order sysml-codegen first goes in the handoff, not as a step.
+- simkit for running packages comes from ~/src/teax/packages/teax-simkit, as the spike did (spike/codegen.sh); the plan says how tests get it and what they do when it is missing (skip with a reason in sysml-codegen tests that need it, never a silent pass).
+- RG-1: the corpus byte-identity check (whole generated tree, named models) runs before and after the accessor change and is a phase exit criterion.
+- RG-2: the String and calc-usage-result-expression cases are filed and flagged upstream only; no guidance text about them.
+- Backlog rows in sysml-codegen are filed on the `native-generated-compare` branch (delegated).
+- Every phase names the spec risk it reduces, its exit check (commands and expected results), and keeps to sysml-codegen's and agentic-mbse's existing code style and test layout (read their CLAUDE.md files). Base failures: agentic-mbse suite 5 known failures, sysml-codegen suite 9 known failures; record the IDs at the start and require no new ones.
+Sibling repos to read: /home/reid/src/subset-conformance/sysml-codegen, /home/reid/src/dc3 (read-only), ~/src/teax (read-only).
