@@ -16,6 +16,15 @@
 
 ---
 
+## Source Documents
+
+[Shaping-tier files this epic was built from. These are the provenance
+record — where the epic's goals came from.]
+
+- `{path}` — [concept | concept-design | research]
+
+---
+
 ## Why This Epic?
 
 **Current State**:
@@ -37,6 +46,21 @@
 
 ---
 
+## Epic Strategy
+
+**Value Delivery Path**:
+- [What should become possible first]
+- [What builds on that next]
+
+**Critical Path**:
+- [The sequence that must happen in order]
+
+**Decomposition Logic**:
+- [Why these are the right work-item boundaries]
+- [What detail is intentionally deferred until spec/design time]
+
+---
+
 ## Backlog Items
 
 ### Item 1: [Item Name]
@@ -44,20 +68,26 @@
 **Type**: Research | Implementation | Integration | Testing
 **Effort**: [X days] (spec Xh, design Xh, plan Xh, execute Xh)
 **Dependencies**: None | Item N
+**Required Reading**: [Files the work-item pipeline must read for this item. Usually a subset of Source Documents — concepts, concept-designs, or research relevant to this specific item. Optional for items that need no upstream shaping context.]
+- `{path}`
 
 **Objective**: [One sentence]
 
-**Scope**:
-1. [Component/task 1]
-2. [Component/task 2]
-3. [Component/task 3]
+**Why This Is One Work Item**:
+- [Why these tasks belong together]
+- [Why this deserves its own spec/design/plan cycle]
 
-**Out of Scope**:
+**In Scope (High Level)**:
+- [Capability/task group 1]
+- [Capability/task group 2]
+- [Capability/task group 3]
+
+**Non-Goals / Out of Scope**:
 - [Explicitly excluded]
 
-**Success Criteria**:
-- [ ] [Measurable outcome]
-- [ ] [Deliverable exists]
+**Success / Done State**:
+- [ ] [After this item, X should work]
+- [ ] [After this item, Y confidence or artifact exists]
 
 **Deliverables**:
 - `.project/active/[item_name]/spec.md`

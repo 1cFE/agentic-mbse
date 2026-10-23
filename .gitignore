@@ -52,3 +52,8 @@ tests/corpus/page_images/
 .agents/skills/
 .agentic-mbse/
 .claude/
+
+# Local agentic-project-init Codex installation
+/.codex/
+/AGENTS.md
+/.project/TRIAGE_MEMORIES.md
