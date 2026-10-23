@@ -3,8 +3,8 @@ id: 0004
 title: The generator is the only authority on whether a model generates; agentic-mbse keeps no copy of its refusal rules
 date: 2026-10-21
 owner: Reid Westwood
-status: active
-amended_by: []
+status: amended
+amended_by: [0006]
 superseded_by: null
 provenance: "[AGENT] (ratified by owner, 2026-10-21)"
 seams: [agentic-mbse, sysml-codegen, l6, guidance, modelling-workflow]

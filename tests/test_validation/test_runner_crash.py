@@ -64,13 +64,13 @@ def test_crashed_result_carries_one_level_crashed_error():
 
 def test_check_error_issue_names_check_subject_and_error():
     issue = check_error_issue(
-        "check_anonymous_returns", "calc def Foo", AttributeError("no owner"), "m.sysml:3"
+        "check_calc_def_structure", "calc def Foo", AttributeError("no owner"), "m.sysml:3"
     )
     assert issue.code is ValidationCode.L6_CHECK_ERROR
     assert issue.severity is Severity.ERROR
     assert issue.level == 6
     assert issue.message == (
-        "check_anonymous_returns could not inspect calc def Foo: AttributeError: no owner"
+        "check_calc_def_structure could not inspect calc def Foo: AttributeError: no owner"
     )
     assert issue.location == "m.sysml:3"
     assert issue.reason_code == "AttributeError"

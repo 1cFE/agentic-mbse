@@ -62,9 +62,6 @@ class ValidationCode(str, Enum):
     UNDEFINED_BINDING = "UNDEFINED_BINDING"
     LITERAL_BINDING = "LITERAL_BINDING"
     UNUSED_DEFINITION = "UNUSED_DEFINITION"
-    # C1 (Item 12): an input whose binding resolves to the calc's own parameter.
-    # Same-named features elsewhere do not change that identity. FAIL, L2.
-    L2_SELF_NAMED_BINDING = "L2_SELF_NAMED_BINDING"
     # A structural check could not inspect an element it is responsible for, so the
     # element is UNVERIFIED. Surfaced as an ERROR: an inspection failure must never
     # read as a clean result (self-binding-replacement audit F4).
@@ -80,33 +77,18 @@ class ValidationCode(str, Enum):
     CIRCULAR_IMPORT = "CIRCULAR_IMPORT"
 
     # Level 6: Architecture & Conventions
-    L6_MISSING_QUALIFIED_NAME = "L6_MISSING_QUALIFIED_NAME"
-    L6_INVALID_QUALIFIED_NAME = "L6_INVALID_QUALIFIED_NAME"
-    L6_CALC_DEF_NO_OUTPUT = "L6_CALC_DEF_NO_OUTPUT"
     L6_CALC_DEF_NO_DIRECTION = "L6_CALC_DEF_NO_DIRECTION"
-    L6_INVALID_BINDING_FORMAT = "L6_INVALID_BINDING_FORMAT"
     L6_DESIGN_ATTR_INCOMPLETE = "L6_DESIGN_ATTR_INCOMPLETE"
     L6_DESIGN_ATTR_UNEXTRACTABLE = "L6_DESIGN_ATTR_UNEXTRACTABLE"
-    # Item 12 architecture checks (mirror sysml-codegen's shipped behavior).
-    # C2a: an anonymous `return` (no declared name) yields no output channel -> FAIL (mirrors codegen V8).
-    L6_ANONYMOUS_RETURN = "L6_ANONYMOUS_RETURN"
-    # C2b: `return attribute y; y = expr` body-assignment extracts an output but loses auto-impl -> WARN.
-    L6_BODY_ASSIGNMENT_IMPL_LOSS = "L6_BODY_ASSIGNMENT_IMPL_LOSS"
     # CONSTRAINT-EXEC Item 3: malformed numerical statements fail L6; valid statements outside
     # the numerical executor warn once per statement.
     L6_CONSTRAINT_MALFORMED_NUMERICAL = "L6_CONSTRAINT_MALFORMED_NUMERICAL"
     L6_CONSTRAINT_NON_NUMERICAL = "L6_CONSTRAINT_NON_NUMERICAL"
-    # C4: a calc-bearing part def that no usage instantiates (plainly or by retyping) -> FAIL; its template calcs are dropped.
-    L6_CALC_DEF_NO_INSTANTIATION = "L6_CALC_DEF_NO_INSTANTIATION"
-    # C7 (Item 9): `attribute :>> attr = <expr>` parses as an AttributeUsage, but codegen's
-    # redefinition scan reads only ReferenceUsage -> the override is silently dropped -> WARN.
-    L6_ATTR_REDEF_EXPR_DROPPED = "L6_ATTR_REDEF_EXPR_DROPPED"
     # A check that could not run, or could not inspect an element, names itself instead of
-    # passing silently; ERROR under every execution target.
+    # passing silently; ERROR.
     L6_CHECK_ERROR = "L6_CHECK_ERROR"
     # A check whose call into a shared expression walker raised that walker's own
-    # `SemanticEvidenceError`: the check could not decide this element. WARNING under every
-    # target, never in the native summary.
+    # `SemanticEvidenceError`: the check could not decide this element. WARNING.
     L6_CHECK_UNVERIFIED = "L6_CHECK_UNVERIFIED"
     # A broken [tool.agentic-mbse] table or execution-target value; L6 runs no checks.
     L6_SETTING_INVALID = "L6_SETTING_INVALID"

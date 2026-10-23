@@ -27,7 +27,7 @@ Prioritized list of epics and features.
 | `VALIDATE-SUMP-PUMP-NONDETERMINISM` | [AGENT] Filed 2026-10-18 at `EXEC-SUBSET-CONTRACT` Item 1 close (R3 approved by owner); predates Item 1 | `agentic-mbse validate tests/fixtures/sump_pump` output varies run to run at both the base and final revisions: the directory loads three variants of the same packages. Item 3 Phase 1 (2026-10-18) adds: L6's `pump_fit` ERROR appears on 5–10 of 10 fresh loads, and L2 and L4 results also vary, because the three copies (`right/`, `seed/`, `wrong/`) declare the same `Drainage` and `Station` packages and `import Drainage::*` becomes ambiguous; each subfolder alone is stable (`completed/20261020_l6-subset-profile/evidence/session-check.md`). Test-fixture hygiene, outside the epic ([evidence](../completed/20261018_exec-subset-profile/evidence/validate-diff.md)) |
 | `VALIDATE-SEMA-DIAGNOSTICS` | [AGENT] Filed 2026-10-18 from `EXEC-SUBSET-CONTRACT` Item 4 design review (M1, M4); priority not assigned | No validation level reports SysIDE semantic or validation diagnostics (`diagnostics.sema`, `diagnostics.validation`): L1 reads only parser diagnostics. Item 4 Phase 1 found `validate --level=1` passes a model SysIDE rejects with `redefinition-direction-conformance` (in `diagnostics.validation`), so `reference-error` (unresolved types, e.g. `No Type named 'Sbu' found.`) and errors such as "Subject must be the first input parameter" pass every level. Item 4 handles only the positional consequence (placeholder typing reported as unverifiable). Evidence: `completed/20261018_positional-binding-check/learning-findings.md` (Design review questions) |
 | `CONSTRAINT-EXTRACTION-INHERITED-SCAN` | [AGENT] Filed 2026-10-18 from `EXEC-SUBSET-CONTRACT` Item 3 spike; pre-existing; priority not assigned | `_inherited_into` (`sysml/constraint_extraction.py:873-882`) scans every candidate context's full feature list per constraint: on fusion-tea `f96ad312` 345 constraints give ~34M checks and ~201 s of a ~226 s extraction. L4 and L6 already call this path today. An index from feature to owning contexts would remove it; output must stay identical (Item 2 consumes these facts). Evidence: `completed/20261020_l6-subset-profile/spikes/findings.md` |
-| `L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES` | [AGENT] Filed 2026-10-18 from `EXEC-SUBSET-CONTRACT` Item 3 spike; priority not assigned | `L6_INVALID_QUALIFIED_NAME`, `L6_INVALID_BINDING_FORMAT` and `L6_ATTR_REDEF_EXPR_DROPPED` raise errors on shapes sysml-codegen `b5663c07` accepts, so they are not generator-only. Item 3 keeps them unchanged under every target (no relaxation); decide whether each is a real native-correctness rule, a stale rule to retire, or one to reclassify. Also: 9 of 12 codegen citations in `level6_architecture.py` comments are stale (e.g. deleted `hierarchy_resolver`). Evidence: `completed/20261020_l6-subset-profile/spikes/findings.md` |
+| `L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES` | Resolved 2026-10-23 by [ADR 0006](../adr/0006-each-check-lives-in-one-repo.md): the three checks are deleted as generator copies, and the codegen citations in `adr002.py` and `level6_architecture.py` are gone. [AGENT] Filed 2026-10-18 from `EXEC-SUBSET-CONTRACT` Item 3 spike | `L6_INVALID_QUALIFIED_NAME`, `L6_INVALID_BINDING_FORMAT` and `L6_ATTR_REDEF_EXPR_DROPPED` raise errors on shapes sysml-codegen `b5663c07` accepts, so they are not generator-only. Item 3 keeps them unchanged under every target (no relaxation); decide whether each is a real native-correctness rule, a stale rule to retire, or one to reclassify. Also: 9 of 12 codegen citations in `level6_architecture.py` comments are stale (e.g. deleted `hierarchy_resolver`). Evidence: `completed/20261020_l6-subset-profile/spikes/findings.md` |
 | `C4-PLAIN-SUBTYPE-DOC-TEST` | [INHERITED: ../active/c4-plain-subtype-instantiation/spec.md] Unimplemented draft | Correct stale subtype-chain docstring and add the missing behavior test; current behavior is already deliberate |
 
 ---
@@ -130,7 +130,7 @@ Prioritized list of epics and features.
 
 **Priority**: P2
 **Effort**: ~0.5 day (check + fixture)
-**Status**: Candidate
+**Status**: Moot 2026-10-23. It is a copy of a generator check; [ADR 0006](../adr/0006-each-check-lives-in-one-repo.md) keeps those only in sysml-codegen.
 **Source**: UPSTREAM-FINDINGS Item 12 (F2); warning-reconciliation (Item 7)
 
 **Idea**: A design-attribute binding whose `*_params` key no parameter group provides — the
@@ -228,7 +228,7 @@ codegen, so a two-names-one-identifier collision fails loudly at generation. PUS
 
 **Priority**: P2
 **Effort**: ~0.5-1 day
-**Status**: Filed by sysml-codegen PUSH-DOWN Item 1
+**Status**: Moot 2026-10-23. It is a copy of a generator check; [ADR 0006](../adr/0006-each-check-lives-in-one-repo.md) keeps those only in sysml-codegen. Filed by sysml-codegen PUSH-DOWN Item 1
 **Source**: sysml-codegen `.project/active/expression-reconstruction-push-down/design.md` SC-G
 
 **Rule**: Reject or warn in the codegen-compatible profile when full feature-chain segment extraction is empty, lossy, or uses an unsupported anonymous segment.
@@ -262,7 +262,7 @@ codegen, so a two-names-one-identifier collision fails loudly at generation. PUS
 
 **Priority**: P2
 **Effort**: ~0.5-1 day
-**Status**: Filed by sysml-codegen PUSH-DOWN Item 1
+**Status**: Moot 2026-10-23. It is a copy of a generator check; [ADR 0006](../adr/0006-each-check-lives-in-one-repo.md) keeps those only in sysml-codegen. Filed by sysml-codegen PUSH-DOWN Item 1
 **Source**: sysml-codegen `.project/active/expression-reconstruction-push-down/design.md` SC-G
 
 **Rule**: Error when a codegen-targeted expression uses an operator outside the codegen-supported operator set.

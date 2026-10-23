@@ -1,22 +1,11 @@
 """
-Item 12 (UPSTREAM-FINDINGS) validation checks.
+Item 12 (UPSTREAM-FINDINGS) validation checks that remain after ADR 0006 removed the
+generator copies (C1, C2a, C2b, C4, C6b):
 
-The four non-fileable checks that catch the traps that actually bit fusion-tea,
-each with a negative fixture AND a negative-of-the-negative (the shape codegen
-accepts must NOT fire):
-
-- C1  L2  self-named binding -> FAIL, with no exemption
-       (self_named_deadend, self_named_trap AND self_named_rescue all FAIL: a
-        same-named outer attribute or sibling calc output does not rescue the
-        binding, because exact elaboration never reinterprets a self-binding as an
-        outer reference — D-4 [OWNER-VERBATIM 2026-08-05])
-- C2a L6  anonymous return -> FAIL
-       (anonymous_return FAILs; return_styles does NOT)
 - C3  L6  constraint ineligibility (CONSTRAINT-EXEC Item 3 superseded this: a genuinely
        blocked construct WARNs; an admitted one, like `constraint_model`'s clean
        `measured <= limit`, is silent) -> WARN, L6 still passes
-- C4  L6  calc-bearing part def never instantiated -> FAIL
-       (no_instantiation FAILs; retype_instantiation does NOT — retype counts)
+- C5, C6, F6  ADR-002 operator, function and formula rules
 
 Each check ships with a fixture under tests/fixtures/item12/. Models load via
 syside (SYSIDE_LICENSE_KEY from .env, loaded by conftest).
@@ -31,13 +20,8 @@ from agentic_mbse.validation.adr002 import (
     check_supported_operators,
 )
 from agentic_mbse.validation.common import discover_sysml_files, load_sysml_model
-from agentic_mbse.validation.level2_structure import check_self_named_bindings
 from agentic_mbse.validation.level6_architecture import (
-    check_anonymous_returns,
-    check_body_assignment_impl_loss,
-    check_calc_bearing_instantiation,
     check_constraint_executability,
-    check_qualified_names,
 )
 from tests.helpers.identified_facts import identify
 
@@ -57,111 +41,6 @@ def load_fixture(name: str):
 
 def _codes(issues) -> list[str]:
     return [i.code.value for i in issues]
-
-
-# --- C1: self-named binding (L2) ------------------------------------------------
-
-
-def test_c1_self_named_deadend_fails():
-    """DeadEndPlant binds `in gain = gain`. The reference resolves to the calc's own
-    parameter, so the intended outer value never arrives -> L2 FAIL. This fixture owns
-    no same-named feature at all, which is why it was the one shape the check flagged
-    even while the exemption stood."""
-    issues = check_self_named_bindings(load_fixture("self_named_deadend"))
-    self_named = [i for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
-    assert len(self_named) == 1, f"Expected one self-named FAIL, got {_codes(issues)}"
-    assert self_named[0].severity == Severity.ERROR
-    assert "gain" in self_named[0].message
-
-
-def test_c1_self_named_binding_fires_over_a_covering_attribute():
-    """TrapPlant owns `attribute availability = 0.70` and still binds
-    `in availability = availability`. The outer attribute does not rescue it: exact
-    elaboration never reinterprets a self-binding as an outer reference (D-4
-    [OWNER-VERBATIM 2026-08-05]), so the binding dead-ends on the calc's own parameter
-    and C1 FAILs. The check used to exempt exactly this shape."""
-    issues = check_self_named_bindings(load_fixture("self_named_trap"))
-    self_named = [i for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
-    assert len(self_named) == 1, f"Expected one self-named FAIL, got {_codes(issues)}"
-    assert self_named[0].severity == Severity.ERROR
-    assert "availability" in self_named[0].message
-    assert "TrapLib::TrapPlant::avail_calc" == self_named[0].element_name
-
-
-def test_c1_self_named_binding_fires_over_a_covering_calc_output():
-    """RescuePlant exposes `attribute throughput = source_calc.throughput`, a real
-    producer, and still binds `in throughput = throughput`. A sibling producer is the
-    other shape the exemption used to cover; the same rule removes it. The author's fix
-    is to bind the producer by a distinct path, not to rely on the name collision."""
-    issues = check_self_named_bindings(load_fixture("self_named_rescue"))
-    self_named = [i for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
-    assert len(self_named) == 1, f"Expected one self-named FAIL, got {_codes(issues)}"
-    assert self_named[0].severity == Severity.ERROR
-    assert "throughput" in self_named[0].message
-    assert "RescueLib::RescuePlant::sink_calc" == self_named[0].element_name
-
-
-def test_c1_message_does_not_offer_the_outer_feature_as_a_rescue():
-    """The diagnostic must not send the author looking for a same-named outer feature:
-    that reading is precisely what D-4 forbids, and the old message implied it by saying
-    'no feature named P is in scope to supply it'."""
-    issues = check_self_named_bindings(load_fixture("self_named_trap"))
-    message = next(
-        i.message for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING
-    )
-    assert "is in scope to supply it" not in message
-    assert "never reinterpreted as an outer reference" in message
-
-
-def test_c1_qualified_binding_to_owner_attribute_is_not_self_named():
-    """F-2 (self-binding-replacement Phase 1): `in availability =
-    QualifiedPlant::availability` and the usage-qualified `station::availability`
-    resolve to the OWNER's attribute — a different element from the calc's own
-    parameter — and codegen accepts both (D-6). C1 compares referent identity,
-    not names, so neither may fire. The other direction stays pinned by the
-    three self-named tests above: deadend, trap, and rescue all still FAIL."""
-    issues = check_self_named_bindings(load_fixture("usage_qualified_local"))
-    self_named = [i for i in issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
-    assert self_named == [], f"Qualified referent must not fire C1: {_codes(issues)}"
-
-
-def test_c1_inspection_failure_surfaces_as_error_not_clean(monkeypatch):
-    """Audit F4 (self-binding-replacement): an unexpected failure while inspecting
-    a calc usage must surface as an L2_CHECK_UNVERIFIABLE ERROR, never be swallowed
-    into an empty (clean-looking) issue list. A SysIDE or adapter regression that
-    made the check skip usages silently was exactly the failure mode."""
-    from agentic_mbse.validation import level2_structure
-
-    def _boom(_element):
-        raise RuntimeError("simulated adapter regression")
-
-    monkeypatch.setattr(
-        level2_structure.SysideAdapter, "element_id", staticmethod(_boom)
-    )
-    issues = check_self_named_bindings(load_fixture("self_named_trap"))
-    unverified = [i for i in issues if i.code == ValidationCode.L2_CHECK_UNVERIFIABLE]
-    assert unverified, f"inspection failure must be reported, got {_codes(issues)}"
-    assert all(i.severity == Severity.ERROR for i in unverified)
-    assert "simulated adapter regression" in unverified[0].message
-
-
-# --- C2a: anonymous return (L6) -------------------------------------------------
-
-
-def test_c2a_anonymous_return_fails():
-    """`return : Real = x * 2` has no declared name -> no output channel -> FAIL."""
-    issues = check_anonymous_returns(load_fixture("anonymous_return"))
-    anon = [i for i in issues if i.code == ValidationCode.L6_ANONYMOUS_RETURN]
-    assert len(anon) == 1, f"Expected one anonymous-return FAIL, got {_codes(issues)}"
-    assert anon[0].severity == Severity.ERROR
-
-
-def test_c2a_return_styles_accepted():
-    """The four legal output forms (out attribute, named inline/body return, bare
-    in) all carry a declared name -> anonymous-return check must NOT fire."""
-    issues = check_anonymous_returns(load_fixture("return_styles"))
-    anon = [i for i in issues if i.code == ValidationCode.L6_ANONYMOUS_RETURN]
-    assert anon == [], f"Legal return styles must not fire: {_codes(issues)}"
 
 
 # --- C3: constraint ineligibility (L6, WARN) -------------------------------------
@@ -220,40 +99,6 @@ def test_c3_non_numerical_is_one_warning_per_statement(monkeypatch):
     assert "warn_non_numerical_equality" in issues[0].message
 
 
-# --- C4: calc-bearing part def, no instantiation (L6) ---------------------------
-
-
-def test_c4_no_instantiation_fails():
-    """OrphanCalcHolder owns a template calc but no usage instantiates it -> FAIL."""
-    issues = check_calc_bearing_instantiation(load_fixture("no_instantiation"))
-    no_inst = [i for i in issues if i.code == ValidationCode.L6_CALC_DEF_NO_INSTANTIATION]
-    assert len(no_inst) == 1, f"Expected one no-instantiation FAIL, got {_codes(issues)}"
-    assert no_inst[0].severity == Severity.ERROR
-    assert "OrphanCalcHolder" in no_inst[0].message
-
-
-def test_c4_retype_counts_as_instantiation():
-    """Both IfeDriver and HifDriver are instantiated — IfeDriver via Facility.driver
-    and HifDriver via a retype (`part :>> driver : HifDriver`). Retyping counts, so
-    the check must NOT fire on either."""
-    issues = check_calc_bearing_instantiation(load_fixture("retype_instantiation"))
-    no_inst = [i for i in issues if i.code == ValidationCode.L6_CALC_DEF_NO_INSTANTIATION]
-    assert no_inst == [], f"Retyped instantiation must not fire: {_codes(issues)}"
-
-
-# --- C2b: body-assignment auto-impl-loss (L6, WARN) -----------------------------
-
-
-def test_c2b_body_assignment_warns():
-    """BodyCalc's `return attribute y; y = d*5` keeps the channel but loses
-    auto-impl -> exactly one WARN, on BodyCalc; the inline InlineCalc does NOT."""
-    issues = check_body_assignment_impl_loss(load_fixture("body_assignment"))
-    warns = [i for i in issues if i.code == ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS]
-    assert len(warns) == 1, f"Expected one body-assignment WARN, got {_codes(issues)}"
-    assert warns[0].severity == Severity.WARNING
-    assert "BodyCalc" in warns[0].element_name
-
-
 # --- C5: adr002 operator-set correction (L6) ------------------------------------
 
 
@@ -287,14 +132,6 @@ def test_c6a_calc_def_internal_expr_not_flagged():
     issues = check_static_expressions(load_fixture("c6_false_positives"))
     dyn = [i for i in issues if i.code == ValidationCode.V2_DYNAMIC_EXPRESSION]
     assert dyn == [], f"Calc-def-internal derived expr must not fire V2: {_codes(issues)}"
-
-
-def test_c6b_quoted_name_not_flagged():
-    """'Trap Plant' is a quoted name codegen sanitizes -> must NOT fire
-    L6_INVALID_QUALIFIED_NAME (C6b)."""
-    issues = check_qualified_names(load_fixture("c6_false_positives"))
-    bad = [i for i in issues if i.code == ValidationCode.L6_INVALID_QUALIFIED_NAME]
-    assert bad == [], f"Quoted name must not fire invalid-qualified-name: {_codes(issues)}"
 
 
 def test_c6c_calc_def_internal_power_not_flagged():

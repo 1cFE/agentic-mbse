@@ -3,8 +3,8 @@ id: 0005
 title: execution-target stays after the copy is retired: it folds four legacy L6 codes under native and tells the workflow a project targets generated code
 date: 2026-10-21
 owner: Reid Westwood
-status: active
-amended_by: []
+status: amended
+amended_by: [0006]
 superseded_by: null
 provenance: "[AGENT] (keeping the setting ratified by owner, 2026-10-21; its two remaining jobs are spec D-a, agent-grade)"
 seams: [l6, validate-cli, init, target-projects, modelling-workflow]
