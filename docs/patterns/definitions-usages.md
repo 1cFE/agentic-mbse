@@ -29,6 +29,7 @@ Reference this document when:
 **Naming**: Title Case with single quotes
 **Location**: `models/library/`
 
+<!-- @tool-example -->
 ```sysml
 // Library definition - describes what a component CAN be
 part def 'Component Type' {
@@ -39,8 +40,8 @@ part def 'Component Type' {
     **Reference**: Path to source document
     */
 
-    attribute property_a : Length;
-    attribute property_b : Mass;
+    attribute property_a : Real;
+    attribute property_b : Real;
 }
 
 // Specialized variant
@@ -118,11 +119,12 @@ Am I modeling...
 
 ### Simple Specialization
 
+<!-- @tool-example -->
 ```sysml
 // Base definition
 part def 'Component' {
-    attribute mass : Mass;
-    attribute cost : Cost;
+    attribute mass : Real;
+    attribute cost : Real;
 }
 
 // Specialized definition - adds constraints
@@ -130,13 +132,14 @@ part def 'Heavy Component' :> 'Component' {
     doc /* Component with mass > 100 kg */
 
     assert constraint HeavyWeight {
-        mass > 100 [kg]
+        mass [kg] > 100 [kg]
     }
 }
 ```
 
 ### Abstract Base Pattern
 
+<!-- @tool-example -->
 ```sysml
 // Abstract base - cannot be instantiated directly
 abstract part def 'Abstract Component' {

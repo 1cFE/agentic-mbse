@@ -39,6 +39,7 @@ private import MyDesign::my_component;
 
 ## Syntax 2: Calc Def Definition
 
+<!-- @tool-example -->
 ```sysml
 /**
  * [Title]
@@ -215,6 +216,7 @@ attribute surface_area : Real =
 
 ## Syntax 8: Part Definition
 
+<!-- @tool-example -->
 ```sysml
 part def 'Component Type' {
     doc /*
@@ -332,6 +334,7 @@ private import MyDesign::my_component;
 
 ### Wrong: Forgetting units
 
+<!-- @tool-example -->
 ```sysml
 // BAD: Missing units
 attribute temperature = 300;

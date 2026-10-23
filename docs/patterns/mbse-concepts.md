@@ -20,6 +20,7 @@ Allocation connects functions (what the system does) to components (what perform
 
 ### Library: Define the Pattern
 
+<!-- @tool-example -->
 ```sysml
 action def 'Perform Function' {
     doc /* Function description */
@@ -56,8 +57,8 @@ Parametric constraints express engineering relationships between properties.
 ```sysml
 part def 'Constrained Component' {
     attribute material : Material;
-    attribute temperature_operating : Temperature;
-    attribute load : Force;
+    attribute temperature_operating : Real;
+    attribute load : Real;
 
     constraint TemperatureLimit {
         doc /* Operating temperature must not exceed material limit */
@@ -150,8 +151,8 @@ port def 'Flow Port' {
     doc /* Port for flow connections */
 
     attribute flow_rate : VolumeFlowRate;
-    attribute temperature : Temperature;
-    attribute pressure : Pressure;
+    attribute temperature : Real;
+    attribute pressure : Real;
 }
 
 part def 'Flow Component' {

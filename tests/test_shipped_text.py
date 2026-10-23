@@ -222,7 +222,9 @@ def test_doc_says_l6_is_not_the_generation_answer_and_what_the_setting_does(rela
     assert "sysml-codegen check" in text
     assert "execution-target" in text and "init --execution-target" in text
     assert "targets generated code" in lowered
-    assert "one info summary" in lowered
+    # The native fold was removed: the setting no longer changes L6 output.
+    assert "one info summary" not in lowered
+    assert "does not change" in lowered
     assert [banned for banned in L6_BANNED if banned in lowered] == []
 
 

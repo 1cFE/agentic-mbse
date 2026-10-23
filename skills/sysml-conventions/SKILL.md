@@ -48,6 +48,7 @@ readable quoted name.
 
 **Decision question**: "Could this apply to multiple designs?"
 
+<!-- @tool-example -->
 ```sysml
 // DEFINITION — reusable type (library/)
 part def 'Heat Exchanger' {
@@ -77,6 +78,7 @@ For directory placement of definitions and usages, see the **project-structure**
 | Inline FORMULA: `= radius * 2.0` (same-part siblings) | OK for simple arithmetic |
 | Computation on calc output: `= calc.power * 0.95` | **VIOLATION** — extract to calc def |
 | Self-reference or dotted path: `= self.x`, `= a.b.c` | **VIOLATION** — extract to calc def |
+| Sum over child parts: `= sum(cells.capacity)` | **VIOLATION** — put it on the `part def` in `library/` |
 
 A design attribute may reference same-part siblings inline (a FORMULA) for simple
 arithmetic and unit conversions. For any real or reusable calculation — and always when
@@ -89,6 +91,7 @@ The code generator (sysml-codegen) refuses three structures that parse and valid
 
 **1. An `assert constraint` goes on a part, not inside a calculation.** Put it in a `part def` or a part usage, bound to the calculation's result there. Not in a `calc def`, and not in a calc usage.
 
+<!-- @tool-example fails="SI_CONSTRAINT_UNATTACHED" -->
 ```sysml
 constraint def Positive { in amount : Real; amount > 0.0 }
 
@@ -128,12 +131,12 @@ part def Pack {
 part cells : Cell[0..*];
 ```
 
-Give the count attribute a fixed value (`= 3`). If you give it a default instead (`default := 2`) and redefine it later, in a part usage or a specializing part def (`:>> cell_count = 3;`), the generator still builds the default count (two parts), and nothing warns you.
+Give the count attribute a fixed value (`= 3`) when it never changes. To vary it, give the base a default (`attribute cell_count : Integer default 2;`) and override it in a specializing part def with the `attribute` keyword: `attribute :>> cell_count = 3;` (or `default 3`) builds three parts. Two overrides build the default count (two parts) and nothing warns you: one written without the keyword (`:>> cell_count = 3;`), and any override in a part usage. A base written with `= 2` cannot be overridden at all; the parser refuses the override.
 
-**3. A calculation input receives one value.** Do not pass a calculation a sequence of values: not a feature that spans several parts (`cells.capacity` when there are three cells), not a list-valued attribute (`Real[3] = (1.0, 2.0, 3.0)`), and not a tuple (`(a, b)`). To work over many parts, total them on the part with `sum(cells.capacity)` and pass the total in. A list-valued attribute is refused even when no calculation reads it, so do not declare one at all.
+**3. A calculation input receives one value.** Do not pass a calculation a sequence of values: not a feature that spans several parts (`cells.capacity` when there are three cells), not a list-valued attribute (`Real[3] = (1.0, 2.0, 3.0)`), and not a tuple (`(a, b)`). To work over many parts, total them on the part with `sum(cells.capacity)` and pass the total in. Write the total on a `part def` in `library/`; in a `designs/` attribute, validate level 6 rejects the call and the dotted path. A list-valued attribute is refused even when no calculation reads it, so do not declare one at all.
 
 ```sysml
-// Correct: the part sums its cells; the calculation receives one value
+// Correct: the part def (in library/) sums its cells; the calculation receives one value
 attribute total_capacity : Real = sum(cells.capacity);
 calc usable_calc : UsableCapacity { in total_capacity_in = total_capacity; in dod_in = depth_of_discharge; }
 
@@ -141,15 +144,16 @@ calc usable_calc : UsableCapacity { in total_capacity_in = total_capacity; in do
 calc total_calc : TotalCapacity { in capacities = cells.capacity; }
 ```
 
+**Attribute types are scalar.** The generator's typing admits only `Boolean`, `Integer`, `Real` and `String`. An assert that reads a quantity-typed attribute such as `mass : ISQ::MassValue` is refused (`SI_EDGE_DANGLING ... unsupported exact type`), and a custom type such as `attribute def Cost :> Real;` does not accept a literal value (`= 2.0` is a type error in the parser). Write `attribute mass : Real = 2.0 [kg];` and keep the unit in the value and the doc comment. A `String` attribute bound to a calculation input is refused too (`SI_RENDERING_COLLISION`, non-numeric default).
+
 Fuller treatment: agentic-mbse `docs/patterns/constraints.md` (where an assert goes) and `docs/patterns/adr002-calculations.md` (multiplicities and calculation inputs).
 
 ## Standard Imports
 
 ```sysml
 package MyProject::Library::Components {
-    import ScalarValues::*;    // Real, Integer, Boolean
-    import ISQ::*;             // Physical quantities
-    import SI::*;              // SI units
+    import ScalarValues::*;    // Real, Integer, Boolean, String: the only attribute types the generator accepts
+    import SI::*;              // SI units, for unit literals such as [kg] and [K]
 
     // For cost aggregation over multiplicities:
     private import NumericalFunctions::sum;
@@ -160,6 +164,7 @@ package MyProject::Library::Components {
 
 Every `part def`, `calc def`, and `constraint def` requires a doc comment:
 
+<!-- @tool-example -->
 ```sysml
 part def 'Component' {
     doc /*
@@ -184,9 +189,9 @@ For doc comment field content requirements and citation patterns, see the **sour
 | `[m^3]` written as `[m³]` | Use ASCII only: `[m^3]`, `[kg/m^3]`, `[K]` — syside rejects unicode |
 | `[°C]` for temperature | Use Kelvin: `= 300 [K]` — convert Celsius, or use comment |
 | `:>> radius = 0.5 [m];` without parent | Redefinition (`:>>`) requires a parent type that declares `radius` |
-| `material : Material = SS316;` | Use `material : String = "SS316";` unless Material type is imported |
+| `material : Material = SS316;` | Use `material : String = "SS316";` unless Material type is imported. The generator refuses a `String` bound to a calculation input (`SI_RENDERING_COLLISION`), so give a calculation a number instead |
 | Qualified names in calc expressions | Use local bindings: `in x = other.value;` not `other.value` inline |
-| Self-named binding `in x = x` | Refused (`SI_SELF_BINDING` / L2 error): the RHS resolves to the calc's own input, never an outer feature. Rename the parameter in the `calc def` and bind `in x_in = x;` in the usage, so the bare RHS lands on the part attribute. Renaming only the usage's input does not rename the parameter; it still binds by position |
+| Self-named binding `in x = x` | Refused by the generator (`SI_SELF_BINDING`): the RHS resolves to the calc's own input, never an outer feature. Rename the parameter in the `calc def` and bind `in x_in = x;` in the usage, so the bare RHS lands on the part attribute. Renaming only the usage's input does not rename the parameter; it still binds by position |
 | Calc usage inputs out of definition order | An unprefixed input binds by position, not by name, so correctly named inputs written out of order swap silently (L2 `L2_POSITIONAL_BINDING`). Bind by name, `in :>> a = big;`, or keep definition order; rename on purpose with `redefines`. See agentic-mbse `docs/patterns/semantic-hazards.md#positional-input-binding` |
 | `redefines` when meaning `specializes` | `redefines` replaces a feature; `:>` specializes a type — different semantics |
 | Missing imports for cross-file refs | Every cross-file reference needs explicit `import` or `private import` |
@@ -216,15 +221,16 @@ Three rules, and each one bites:
    `assume constraint`, and a `satisfy` reference are visible, cataloged descriptions that **never
    run**. Writing one where you meant a gate is the single most common way a model ships with no
    check at all. Use them when you mean to describe; use `assert` when you mean to check.
-2. **Bind formals; don't inline the predicate.** `assert constraint TempLimit { temperature < 1000
-   [K] }` parses, but an inline predicate resolves its names by reaching into surrounding scope, and
-   a unit literal inside the predicate is a frequent block. Binding every formal to a real value in
+2. **Bind formals; don't inline the predicate.** An inline predicate resolves its names by reaching
+   into surrounding scope. Binding every formal to a real value in
    scope makes the wiring explicit and lowerable. It is also the form `@inapplicable:` works on —
    see below.
-3. **Units go on the binding, not inside the predicate.** `in temperature = wall_temp_k;` where the
-   attribute carries `[K]`. Codegen carries the authored unit text into port metadata and performs
-   **no conversion**; two consumers of one shared value that annotate different units fail closed
-   with `SI_RENDERING_COLLISION`, naming the key. Fix the model, not the diagnostic.
+3. **In a predicate, annotate both operands with a unit, or neither.** `temperature [K] < 1000 [K]`
+   and `temperature < 1000.0` both build, and the first compares dimensions (`temperature [m] < 1000
+   [K]` is refused, `block_incompatible_dimensions`). One annotated operand, `temperature < 1000 [K]`
+   with `temperature : Real`, is refused (`block_ordering_category_pair`). A unit on a binding
+   (`in limit = 1000.0 [K];`) is accepted and dropped: the generated check compares plain numbers,
+   with no unit check or conversion.
 
 **Marking a constraint inapplicable** — the marker goes on a gate that **does not run**:
 ```sysml
@@ -268,9 +274,6 @@ parameter you meant to vary does not judge the design, it deletes the degree of 
 | Cross-check of two independently computed values | A loose, physically motivated validity band. |
 | Feasibility gate | Prefer a one-sided inequality; if a quantity must equal a value, fix it as an input rather than search for it and then constrain it. |
 | Composition closure | Derive the last term by construction, or fall back to a banded check. |
-
-The authority copy is the lifecycle contract's "Equality intent and authoring policy" in
-sysml-codegen (`.project/concepts/constraint-execution-authoritative-lifecycle-contract.md`).
 
 Its binding-side sibling is agentic-mbse `docs/patterns/design-choices.md`: a calculation or binding that sets installed capacity from demand deletes a design choice in the same way.
 

@@ -14,6 +14,7 @@ Reference this document when:
 
 Every `part def`, `calc def`, `constraint def` requires a doc comment:
 
+<!-- @tool-example -->
 ```sysml
 part def 'Component Type' {
     doc /*
@@ -30,6 +31,7 @@ part def 'Component Type' {
 
 ## Full Doc Comment Template
 
+<!-- @tool-example -->
 ```sysml
 part def 'Component Type' {
     doc /*
@@ -99,6 +101,7 @@ constraint EnergyConservation {
 
 For data from papers, reports, or standards:
 
+<!-- @tool-example -->
 ```sysml
 calc def 'Empirical Scaling' {
     doc /*
@@ -110,7 +113,8 @@ calc def 'Empirical Scaling' {
     **Local Copy**: data/documents/paper.pdf
     **Equation**: (7) on page 42
     */
-    // ...
+    in x : Real;
+    return y : Real = 0.5 * x;
 }
 ```
 
@@ -118,6 +122,7 @@ calc def 'Empirical Scaling' {
 
 For algorithms extracted from existing code:
 
+<!-- @tool-example -->
 ```sysml
 calc def 'Algorithm Implementation' {
     doc /*
@@ -128,7 +133,8 @@ calc def 'Algorithm Implementation' {
     **Lines**: 14-72
     **Original References**: List original papers if applicable
     */
-    // ...
+    in x : Real;
+    return y : Real = 2.0 * x;
 }
 ```
 
@@ -136,6 +142,7 @@ calc def 'Algorithm Implementation' {
 
 For data from standards:
 
+<!-- @tool-example -->
 ```sysml
 part def 'Standard Component' {
     doc /*
@@ -154,6 +161,7 @@ part def 'Standard Component' {
 
 For simple elements where full template is overkill:
 
+<!-- @tool-example -->
 ```sysml
 attribute efficiency : Real {
     doc /* Conversion efficiency, typical range 0.85-0.95 */
@@ -173,6 +181,7 @@ constraint PositiveMass {
 
 Definitions need comprehensive documentation:
 
+<!-- @tool-example -->
 ```sysml
 // library/components.sysml
 part def 'Heat Exchanger' {
@@ -209,41 +218,48 @@ part primary_exchanger : 'Heat Exchanger' {
 
 ### Missing doc comment entirely
 
+<!-- @tool-example -->
 ```sysml
 // BAD: No documentation
 part def 'Component' {
-    attribute property : Length;
+    attribute property : Real;
 }
 
 // GOOD: Documented
-part def 'Component' {
+part def 'Documented Component' {
     doc /* Component description with source */
-    attribute property : Length;
+    attribute property : Real;
 }
 ```
 
 ### Missing source/reference
 
+<!-- @tool-example -->
 ```sysml
 // BAD: No traceability
 calc def 'Scaling Law' {
     doc /* Calculates scaling factor */
     // Where does this formula come from?
+    in x : Real;
+    return factor : Real = 0.8 * x;
 }
 
 // GOOD: Traceable
-calc def 'Scaling Law' {
+calc def 'Traced Scaling Law' {
     doc /*
     Calculates scaling factor per empirical correlation
 
     **Source**: Smith et al. (2020), "Scaling Analysis"
     **Equation**: (12) on page 8
     */
+    in x : Real;
+    return factor : Real = 0.8 * x;
 }
 ```
 
 ### Outdated documentation
 
+<!-- @tool-example -->
 ```sysml
 // BAD: No update date, may be stale
 part def 'Component' {
@@ -251,7 +267,7 @@ part def 'Component' {
 }
 
 // GOOD: Dated for freshness tracking
-part def 'Component' {
+part def 'Dated Component' {
     doc /*
     Component description
 

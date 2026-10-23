@@ -89,6 +89,7 @@ in gain_in = gain;
 The other accepted spelling renames the attribute instead, so the calc input
 keeps its library name:
 
+<!-- @tool-example -->
 <!-- @pinned fixture=tests/fixtures/wi014_toy/toy_plant.sysml owner-class=n/a outcome=generates -->
 ```sysml
 attribute plant_length : Real = 4.0;
@@ -182,10 +183,8 @@ were the owning part's attribute. It is not. The reference resolves to the
 calc's own input parameter, so the attribute's value never reaches the calc and
 the calculation computes on a default — legal SysML, silently inert.
 
-**This shape is refused on both validation paths.** The L2 self-named-binding
-check FAILs it (`L2_SELF_NAMED_BINDING`, compared by referent identity, not by
-name), and elaboration refuses the model with `SI_SELF_BINDING` before
-generation. A same-named attribute in the owning part, a sibling calc output,
+**The generator refuses this shape.** Elaboration refuses the model with
+`SI_SELF_BINDING` before generation; `agentic-mbse validate` does not check it. A same-named attribute in the owning part, a sibling calc output,
 and an inherited attribute are all irrelevant: a self-binding is never
 reinterpreted as an outer reference (D-4 [OWNER-VERBATIM 2026-08-05]; the
 lifecycle contract's blocking-diagnostics clause and violation table).
@@ -213,6 +212,7 @@ not flagged. In the codegen corpus the exact route still refuses `ife_plant`
 
 An input written without `:>>` or `redefines` binds to the definition's parameter at the same position, not to the parameter with the same name (KerML `checkFeatureParameterRedefinition`). Written out of order, correctly named inputs swap silently: the model stays valid and evaluates to a different number. Bind by name with `:>>`, or write the inputs in the definition's order; to give an input its own name on purpose, use `redefines`. Validate level 2 reports an out-of-order input as `L2_POSITIONAL_BINDING`. The full entry, including where the native and generated routes disagree, is [Positional input binding](semantic-hazards.md#positional-input-binding).
 
+<!-- @tool-example -->
 <!-- @positional-example expect="none" -->
 ```sysml
 calc def Sub { in a : Real; in b : Real; return r : Real = a - b; }

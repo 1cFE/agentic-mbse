@@ -13,6 +13,7 @@ This register lists SysML v2 constructs that are valid, parse cleanly, and still
 
 An author writes a calculation usage and gives each input the name of the definition's parameter, in whatever order is convenient:
 
+<!-- @tool-example fails="L2_POSITIONAL_BINDING" -->
 <!-- @positional-example expect="p::c|b|Sub::a; p::c|a|Sub::b" -->
 ```sysml
 calc def Sub { in a : Real; in b : Real; return r : Real = a - b; }
@@ -65,6 +66,7 @@ Pick the definition's parameter you mean, then use one of these:
 - **Write the inputs in definition order**, with the definition's parameter names.
 - **Rename deliberately** with `redefines`, when the usage needs its own name for a parameter.
 
+<!-- @tool-example defect="UNBOUND_INPUT" -->
 <!-- @positional-example expect="none" -->
 ```sysml
 calc def Sub { in a : Real; in b : Real; return r : Real = a - b; }

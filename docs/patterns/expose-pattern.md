@@ -180,6 +180,7 @@ it does not surface and is rejected. Move the arithmetic into a calc def.
 
 ### DON'T: Create Circular EXPOSE Chains
 
+<!-- @tool-example fails="SI_ALIAS_CYCLE" -->
 ```sysml
 // BAD: Circular reference (will cause resolution error)
 part a {
@@ -283,12 +284,12 @@ private import MyDesign::my_component;
 ```sysml
 // WRONG: Type mismatch
 calc my_calc : CalcDef {
-    out power : Power;  // Type is Power
+    out power : Real;  // Type is Real
 }
 attribute exposed_power : Real = my_calc.power;  // Type is Real!
 
 // CORRECT: Match types
-attribute exposed_power : Power = my_calc.power;
+attribute exposed_power : Real = my_calc.power;
 ```
 
 ---

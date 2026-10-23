@@ -210,6 +210,7 @@ data/                        # Machine-readable evidence
 
 ## SysML Quick Reference
 
+<!-- @tool-example -->
 ```sysml
 // Definition (in library/) - Reusable template
 part def 'Component Name' {

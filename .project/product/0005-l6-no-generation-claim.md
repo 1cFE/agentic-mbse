@@ -3,8 +3,8 @@ id: 0005
 title: validate L6 never says whether a model generates; execution-target only folds four legacy generator-only codes under native, and a broken check or setting fails under every target
 date: 2026-10-21
 owner: Reid Westwood
-status: active
-amended_by: []
+status: amended
+amended_by: [0006]
 superseded_by: null
 supersedes: 0003
 provenance: "[AGENT] (direction ratified by owner, 2026-10-21; L6 details are spec D-a to D-c, agent-grade)"

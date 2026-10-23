@@ -2,7 +2,7 @@
 
 Definitive syntax reference for conditional expressions in SysML v2 / KerML.
 
-> The code generator does not accept conditional expressions today. If the model will be generated, run `sysml-codegen check` before relying on one.
+> The code generator does not accept conditional expressions today, in an attribute or in a calc def (`SI_EVIDENCE_INCOMPLETE`). If the model will be generated, run `sysml-codegen check` before relying on one, and prefer type specialization (below) to choose a value per variant.
 
 ## Quick Reference
 
@@ -51,6 +51,7 @@ attribute alpha_fraction : Real =
 
 ### In Calc Definitions
 
+<!-- @tool-example fails="SI_EVIDENCE_INCOMPLETE" -->
 ```sysml
 calc def ConditionalTest {
     in attribute x : Real;
@@ -90,13 +91,14 @@ attribute x = if condition trueValue else falseValue;
 
 | Approach | Use When |
 |----------|----------|
-| **Conditional expressions** | Simple parameter selection, few variants, values differ by condition |
-| **Type specialization** | Complex variant behavior, many variants, need separate documentation per variant |
+| **Conditional expressions** | The model is not generated, and a value is selected by a condition |
+| **Type specialization** | The model is generated (the generator refuses conditionals), or variants differ in behavior or need their own documentation |
 
 ### Conditional Expression Example
 
+<!-- @tool-example fails="SI_EVIDENCE_INCOMPLETE" -->
 ```sysml
-// Good for simple parameter variation
+// Parses, but the generator refuses it; use only in a model that is not generated
 attribute efficiency : Real =
     if temperature < 100? 0.95
     else if temperature < 300? 0.85
@@ -105,19 +107,20 @@ attribute efficiency : Real =
 
 ### Type Specialization Example
 
+<!-- @tool-example -->
 ```sysml
-// Good for complex variants with different behaviors
-abstract calc def PowerBalanceCalcBase {
+// One part def per variant, each fixing its value; the generator accepts this
+part def PowerBalance {
     attribute alpha_fraction : Real;  // To be specialized
 }
 
-calc def PowerBalanceCalcDT :> PowerBalanceCalcBase {
-    :>> alpha_fraction = 0.2002;
+part def PowerBalanceDT :> PowerBalance {
+    attribute :>> alpha_fraction = 0.2002;
     // Can add DT-specific behavior here
 }
 
-calc def PowerBalanceCalcDD :> PowerBalanceCalcBase {
-    :>> alpha_fraction = 0.5001;
+part def PowerBalanceDD :> PowerBalance {
+    attribute :>> alpha_fraction = 0.5001;
     // Can add DD-specific behavior here
 }
 ```

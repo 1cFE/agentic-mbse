@@ -47,10 +47,11 @@ package MyProject::Designs::MyDesign {
 
 ### Don't: Undocumented elements
 
+<!-- @tool-example -->
 ```sysml
 // BAD: No doc comment - where does this come from?
 part def 'Component' {
-    attribute property : Length;
+    attribute property : Real;
 }
 ```
 
@@ -111,6 +112,7 @@ part my_component : 'Component Type' { ... }
 
 ### Don't: Put calc defs in designs
 
+<!-- @tool-example fails="V1_CALC_DEF_LOCATION" dir="designs" -->
 ```sysml
 // BAD: Calc def in design file (violates ADR-002)
 package MyDesign {
@@ -193,6 +195,7 @@ output belong in the library, keeping design files clean and the computation reu
 
 ### Don't: Omit units
 
+<!-- @tool-example -->
 ```sysml
 // BAD: No units - what is this?
 attribute temperature = 300;
@@ -201,10 +204,11 @@ attribute power = 2600;
 
 ### Do: Always specify units
 
+<!-- @tool-example -->
 ```sysml
 // GOOD: Units specified
 attribute temperature = 300 [K];
-attribute power = 2600 [MW];
+attribute power = 2.6e9 [W];
 attribute efficiency = 0.85;  // Dimensionless OK
 ```
 
@@ -245,27 +249,33 @@ calc consumer : ConsumerCalc {
 
 ### Don't: Plain constraint block
 
+<!-- @tool-example -->
 ```sysml
 // BAD: parses fine, but never executes
 constraint TempLimit {
-    temperature < 1000 [K]
+    temperature [K] < 1000 [K]
 }
 ```
 
 ### Do: Use the assert prefix
 
+<!-- @tool-example -->
 ```sysml
 // GOOD: an executed check
-assert constraint TempLimit {
-    doc /* Operating temperature limit */
-    temperature < 1000 [K]
+part def Reactor {
+    attribute temperature : Real = 900.0 [K];
+    assert constraint TempLimit {
+        doc /* Operating temperature limit */
+        temperature [K] < 1000 [K]
+    }
 }
+part reactor : Reactor;
 ```
 
 **Why:** the parser does create a ConstraintUsage without the prefix — it is classified
 `plain_usage`, cataloged, and visible, but the form gate stops it before the predicate is walked.
 The assert family is the only enforcement opt-in; `require` and `assume` are cataloged and visible
-too, and neither executes.
+too, and neither executes. In the predicate, annotate both operands with a unit or neither; `temperature < 1000 [K]` with `temperature : Real` is refused by the generator.
 
 ---
 

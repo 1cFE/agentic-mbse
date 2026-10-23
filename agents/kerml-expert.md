@@ -35,7 +35,7 @@ For function questions, check these INDEX.md sections FIRST:
 | Type casting (BaseFunctions) | 9.4.2 | 13131-13148 |
 | Comparison operators | 9.4.8 | 13232-13247 |
 
-The code generator does not accept most of these functions today. If the model will be generated, tell the user to run `sysml-codegen check` before relying on one.
+The code generator does not accept these functions today, apart from `sum` over child parts (`sum(cells.capacity)`). If the model will be generated, tell the user to run `sysml-codegen check` before relying on one.
 
 ---
 
@@ -78,6 +78,7 @@ Read {SYSML_DOCS_PATH}/SysML_KerMLSpec/full_document.md offset=13200 limit=300
 
 Always suggest the proper import syntax when describing functions:
 
+<!-- @tool-example -->
 ```sysml
 // Import a single function
 private import NumericalFunctions::sum;
