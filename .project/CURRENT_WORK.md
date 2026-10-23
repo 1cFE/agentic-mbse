@@ -11,7 +11,6 @@ The September workflow repairs and harness right-sizing are implemented and inst
 
 ## Active Work
 
-- [Generated results guidance](active/generated-results-guidance/spec.md) — EXEC-SUBSET-CONTRACT Item 5, rescoped 2026-10-22 to four risks. Spec, design and plan done; Phase 0 done; **Phase 1 gate failed 2026-10-22** (design bet B4, and B1 for units; [spike/derisk/RESULTS.md](active/generated-results-guidance/spike/derisk/RESULTS.md)). Phases 2-5 (the `compare` command and the guidance text) are parked on that owner decision. Done meanwhile: Phase R re-runs ([evidence/risk1-reruns.md](active/generated-results-guidance/evidence/risk1-reruns.md): default count and positional confirmed; calc def simple-name collision confirmed, fails at run) and Phase U backlog rows in sysml-codegen. Branch `generated-results-guidance`; sysml-codegen branch `native-generated-compare` (`b08bbfee`, backlog only, no code).
 - [WRAP-SPLIT epic](backlog/epic_wrap-split.md) — wrap the agentic-mbse / fusion-tea split; five items, ~10 days; product-lens CLEAR. Research audit: [wrap-split audit](research/20261005-204804_wrap-split-agentic-mbse-fusion-tea.md).
 
 ## Concrete remaining work

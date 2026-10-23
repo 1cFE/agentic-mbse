@@ -253,9 +253,11 @@ Criteria marked "retired 2026-10-21" depended on the copied rules and no longer 
 
 **Deliverables**: `.project/completed/20261018_positional-binding-check/{spec,design,plan}.md` (combine artifacts where proportionate); check, fixtures, register and guidance.
 
-### Item 5: Executable guidance contracts
+### Item 5: Executable guidance contracts ✅
 
-**2026-10-22, rescoped by owner:** "not ceremony, actual risk". Item 5 is now `generated-results-guidance` ([spec](../active/generated-results-guidance/spec.md)): four risks (patterns that generate but compute something different; part-owned asserts report instead of stopping; guidance still teaching refused functions; guidance going stale when held generator changes land). Scopes 1-3 and 8 (the fence inventory, categories, exemption manifest and the 100% D3 target) and scope 7 are out. [AGENT] proposal, ratified by owner 2026-10-22. The text below is the original scope, kept for history.
+**2026-10-23, closed:** cut by owner to guidance edits ([archive](../completed/20261023_generated-results-guidance/spec.md)). The guide now says a failed assert stops nothing, and each place that teaches conditionals or library functions says to run `sysml-codegen check` first. The automatic native-vs-generated comparison is out: SysIDE cannot compute these models (`spike/derisk/RESULTS.md`). The two known wrong-number generator cases stay in sysml-codegen's backlog for the owner (RG-1).
+
+**2026-10-22, rescoped by owner:** "not ceremony, actual risk". Item 5 is now `generated-results-guidance` ([spec](../completed/20261023_generated-results-guidance/spec.md)): four risks (patterns that generate but compute something different; part-owned asserts report instead of stopping; guidance still teaching refused functions; guidance going stale when held generator changes land). Scopes 1-3 and 8 (the fence inventory, categories, exemption manifest and the 100% D3 target) and scope 7 are out. [AGENT] proposal, ratified by owner 2026-10-22. The text below is the original scope, kept for history.
 
 **Type**: Testing and documentation
 **Effort**: Re-estimate after example inventory

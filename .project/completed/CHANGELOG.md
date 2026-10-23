@@ -4,6 +4,28 @@ Historical record of completed work.
 
 ---
 
+## [2026-10-23] - Guidance That Keeps Generated Results Honest
+
+**Type**: Item (`EXEC-SUBSET-CONTRACT` Item 5, rescoped; branch `generated-results-guidance`; orchestrated run, briefs in `20261023_generated-results-guidance/briefs/`)
+**Duration**: 2 days (spec created 2026-10-22; closed 2026-10-23)
+
+### Summary
+
+The shipped guidance now says that a failed `assert` stops nothing (a generated package records the verdict and computes every output; SysIDE does not run asserts), and every place that teaches conditionals or library functions says to run `sysml-codegen check` before relying on them in a generated model. Every known case where a model generates but computes something different was re-run on sysml-codegen `6190f996`: two remain (a redefined default count, out-of-order calc inputs), both already warned in the guide and filed in sysml-codegen's backlog for the owner (RG-1).
+
+**Dropped.** The automatic native-vs-generated comparison (`sysml-codegen compare`) was designed and spiked, then dropped by the owner on 2026-10-23: SysIDE cannot compute these models, which is why the generator exists. Its evaluation misses redefinitions outside its one scope and gives no value for unit annotations (`spike/derisk/RESULTS.md`; execution fact recorded).
+
+**Open for the owner.** sysml-codegen branch `native-generated-compare` (`b08bbfee`, backlog rows only, not pushed) needs a PR: Phase R results on the risk rows, `[SYSIDE-SINGLE-SCOPE-NATIVE-VALUES]`, the positional finding filed on `[POSITIONAL-FORMAL-REDEFINITION]`. No audit was run; the change is eight sentences and their pins.
+
+### Deliverables
+
+- Guidance: `project_templates/MODELING_GUIDE.md.template`, `skills/sysml-conventions/SKILL.md`, `docs/patterns/{conditionals,syntax-reference,semantic-hazards}.md`, `agents/{kerml-expert,sysmlv2-validator}.md`.
+- Tests: 8 new shipped-text pins in `tests/test_shipped_text.py`; suite 3567 passed with the 5 base failures.
+- Records: execution fact on SysIDE single-scope evaluation; the positional draft finding marked filed.
+- Artifacts: spec, spec review, product lens, design and design review (the dropped `compare`, kept as a record), plan, spikes, evidence (baseline, Risk 1 re-runs), briefs.
+
+---
+
 ## [2026-10-22] - Retire the Copied Generator Rules
 
 **Type**: Item (`EXEC-SUBSET-CONTRACT`, replaces Item 1's design; branch `retire-subset-profile`, [PR #34](https://github.com/1cFE/agentic-mbse/pull/34), merges after sysml-codegen PR #23; orchestrated run, briefs in `20261022_retire-subset-profile/briefs/`)
