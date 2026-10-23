@@ -294,6 +294,8 @@ attribute factor : Real =
     else 0.60;
 ```
 
+The code generator does not accept this today. If the model will be generated, run `sysml-codegen check` before relying on it.
+
 **Key syntax:** `if CONDITION?` (note the `?` after condition, not C-style ternary)
 
 > **Full reference:** See [conditionals.md](conditionals.md) for complete syntax rules, common mistakes, and guidance on conditionals vs type specialization.

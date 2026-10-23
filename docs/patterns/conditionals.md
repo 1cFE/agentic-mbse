@@ -2,6 +2,8 @@
 
 Definitive syntax reference for conditional expressions in SysML v2 / KerML.
 
+> The code generator does not accept conditional expressions today. If the model will be generated, run `sysml-codegen check` before relying on one.
+
 ## Quick Reference
 
 | Syntax | Status |

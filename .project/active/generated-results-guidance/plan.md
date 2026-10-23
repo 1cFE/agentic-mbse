@@ -1,6 +1,8 @@
 # Implementation Plan: Guidance that keeps generated results honest (EXEC-SUBSET-CONTRACT Item 5, rescoped)
 
-**Status:** In Progress. Phases 0, 1 done (Phase 1 gate failed); Phases 2-5 parked pending an owner decision; Phases 6 and 7 done in adapted form (no `compare`).
+**Status:** Complete (2026-10-23). Phases 0, 1 done (Phase 1 gate failed); Phases 2-4 dropped by owner decision 2026-10-23 (no `compare`); Phase 5 replaced by the guidance edits below; Phases 6 and 7 done in adapted form.
+
+**Phase 5 as done (2026-10-23, orchestrator).** A failed-assert note after limit 1 in `project_templates/MODELING_GUIDE.md.template` and `skills/sysml-conventions/SKILL.md`; a "run `sysml-codegen check` first" line at the conditional example in both, at the top of `docs/patterns/conditionals.md`, in `docs/patterns/syntax-reference.md` Syntax 10, after the function table in `agents/kerml-expert.md` and after the error table in `agents/sysmlv2-validator.md`; `docs/patterns/semantic-hazards.md` now says the positional finding is filed. Pins in `tests/test_shipped_text.py` (8 new cases). Full suite: 5 failed (the Phase 0 base IDs), 3567 passed.
 **Created:** 2026-10-22
 **Last Updated:** 2026-10-22
 
@@ -172,7 +174,7 @@ The scope, count and marking rules `compare` will use are correct on the shapes 
 
 ## Phase 2: The read-only trace accessor, and byte identity
 
-**Parked: Phase 1 gate failed, owner decision pending** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
+**Dropped 2026-10-23 (owner): no `compare`.** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
 
 ### Goal
 Give `compare` a public, read-only view of the generator's trace (design D2), without changing anything the generator builds (invariant 2, RG-1).
@@ -233,7 +235,7 @@ The generator exposes, read-only, everything `compare` needs, and the generated 
 
 ## Phase 3: `sysml-codegen compare` — counts, values and exit codes
 
-**Parked: Phase 1 gate failed, owner decision pending** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
+**Dropped 2026-10-23 (owner): no `compare`.** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
 
 ### Goal
 The command itself: load and prepare like `check`, build into a temporary folder, run once with simkit, and check counts and values against SysIDE, with exits 0/1/2/3/4. See [Core Concept](design.md#core-concept), [D6, D7, D8, D10, D11](design.md#key-decisions), [Architecture](design.md#architecture).
@@ -297,7 +299,7 @@ Unit tests for the tolerance rule (D8) go in `tests/unit/test_compare_tolerance.
 
 ## Phase 4: Verdicts, the report, and the remaining shapes
 
-**Parked: Phase 1 gate failed, owner decision pending** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
+**Dropped 2026-10-23 (owner): no `compare`.** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
 
 ### Goal
 Add verdict comparison (D9), the full report (D12, report header for B6), and tests for the shapes the design lists under "Not checked by the spike" in [Potential Risks](design.md#potential-risks).
@@ -348,7 +350,7 @@ Every exit and every not-compared cause has a test built from a real model, incl
 
 ## Phase 5: agentic-mbse workflow text and pins
 
-**Parked: Phase 1 gate failed, owner decision pending** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
+**Dropped 2026-10-23 (owner): no `compare`.** ([spike/derisk/RESULTS.md](spike/derisk/RESULTS.md)). Not started.
 
 ### Goal
 Put `compare` into the shipped workflow and fix the guidance for Risks 2 and 3, one home per fact ([D13](design.md#key-decisions)). The Component Overview's "agentic-mbse" list ([design.md § Component Overview](design.md#component-overview)) is the file list; this phase does not restate the wording, which is in D13, D14 and D15.

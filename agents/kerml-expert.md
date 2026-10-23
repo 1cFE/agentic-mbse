@@ -35,6 +35,8 @@ For function questions, check these INDEX.md sections FIRST:
 | Type casting (BaseFunctions) | 9.4.2 | 13131-13148 |
 | Comparison operators | 9.4.8 | 13232-13247 |
 
+The code generator does not accept most of these functions today. If the model will be generated, tell the user to run `sysml-codegen check` before relying on one.
+
 ---
 
 ## Search Strategy

@@ -110,6 +110,8 @@ calc def PowerCalc {
 }
 ```
 
+A failed assert does not stop anything. In a generated package each constraint records satisfied, violated or indeterminate, and every output is still computed; SysIDE's own evaluation does not run asserts at all. Whatever reads the results must check the constraint verdicts before using the numbers.
+
 **2. Part multiplicities are exact.** Give a fixed count: a number (`[3]`), or an `Integer` attribute declared with a value in the part def that owns the parts (`[cell_count]`). Not an open range like `[*]`, `[0..*]` or `[1..*]`, and not an attribute declared at package level.
 
 ```sysml
@@ -195,6 +197,7 @@ For doc comment field content requirements and citation patterns, see the **sour
 ```sysml
 attribute diff : Real = if x > y? x - y else y - x;
 ```
+The code generator does not accept this today. If the model will be generated, run `sysml-codegen check` before relying on it.
 
 **Constraints — the blessed shape is bindings-only:**
 ```sysml
