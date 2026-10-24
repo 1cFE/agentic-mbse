@@ -334,9 +334,8 @@ part def 'Flow Sub' :> 'Flow Base' {       // 'Flow Base' declares `throughput`
   input file has one key per source attribute, regardless of how many calcs read it.
 - **Only LITERAL values propagate this way.** A `:>>` whose RHS is a chain or a computed
   expression does **not** silently vanish — it falls to the uncovered-parameter diagnostic, so
-  the modeler sees an unresolved input rather than a wrong number. (And a value written as
-  `attribute :>> attr = <expr>` is dropped at extraction — see semantic-operators.md and the
-  L6 `attribute :>>`-with-expression warning.)
+  the modeler sees an unresolved input rather than a wrong number. (Writing `attribute :>> attr`
+  instead of `:>> attr` does not change this; see semantic-operators.md.)
 
 Reference fixtures: `plant_values` (all four mechanisms a/b/c/d, plus the fusion-tea vendored
 plant as the real-scale exemplar), `plant_value_shapes` (the secondary shapes and their

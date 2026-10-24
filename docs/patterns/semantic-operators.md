@@ -154,18 +154,7 @@ part variant : 'Base Plant' {
 }
 ```
 
-**Warning — `attribute :>>` with an expression is dropped.** Writing the redefinition
-*with* the `attribute` keyword and an expression RHS is silently lost at extraction:
-
-```sysml
-part variant : 'Base Plant' {
-    attribute :>> gain = other * 3.0;  // AttributeUsage redefinition + expression — DROPPED
-}
-```
-
-Extraction scans only ReferenceUsage redefinitions, so the `attribute :>>` form with an
-expression never reaches the pipeline. Use the bare form for values; move any real
-computation into a calc def.
+**The `attribute` keyword makes no difference to a value.** `:>> gain = …` and `attribute :>> gain = …` carry the same value into the generated package, in a part usage and in a specializing part def, with a literal or an expression on the right. The keyword matters only for a part-count override (see MODELING_GUIDE.md, part multiplicities). Probed against sysml-codegen `a3429411` on 2026-10-24: all eight combinations generate the native value (agentic-mbse `.project/execution/evidence/redef-forms-20261024/`).
 
 ### Redefinition precedence
 

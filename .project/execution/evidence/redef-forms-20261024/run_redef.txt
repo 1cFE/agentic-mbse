@@ -1,0 +1,32 @@
+== def_attr_expr
+  package inputs: {"def_attr_expr_params.json": {"def_attr_expr__p__y": 5.0}}
+  package outputs: {"def-attr-expr-results-db7f9850/def_attr_expr__p__x__x.json": 15.0, "def-attr-expr-results-db7f9850/def_attr_expr__p__t__r.json": 30.0}
+  native x: (15.0, [])
+== def_attr_lit
+  package inputs: {"def_attr_lit_params.json": {"def_attr_lit__p__x": 0.95}}
+  package outputs: {"def-attr-lit-results-a65d5880/def_attr_lit__p__t__r.json": 1.9}
+  native x: (0.95, [])
+== def_bare_expr
+  package inputs: {"def_bare_expr_params.json": {"def_bare_expr__p__y": 5.0}}
+  package outputs: {"def-bare-expr-results-9ad9d26c/def_bare_expr__p__x__x.json": 15.0, "def-bare-expr-results-9ad9d26c/def_bare_expr__p__t__r.json": 30.0}
+  native x: (15.0, [])
+== def_bare_lit
+  package inputs: {"def_bare_lit_params.json": {"def_bare_lit__p__x": 0.95}}
+  package outputs: {"def-bare-lit-results-3b5aadba/def_bare_lit__p__t__r.json": 1.9}
+  native x: (0.95, [])
+== use_attr_expr
+  package inputs: {"use_attr_expr_params.json": {"use_attr_expr__p__y": 5.0}}
+  package outputs: {"use-attr-expr-results-ff9f7d82/use_attr_expr__p__t__r.json": 30.0, "use-attr-expr-results-ff9f7d82/use_attr_expr__p__x__x.json": 15.0}
+  native x: (15.0, [])
+== use_attr_lit
+  package inputs: {"use_attr_lit_params.json": {"use_attr_lit__p__x": 0.95}}
+  package outputs: {"use-attr-lit-results-b471fef9/use_attr_lit__p__t__r.json": 1.9}
+  native x: (0.95, [])
+== use_bare_expr
+  package inputs: {"use_bare_expr_params.json": {"use_bare_expr__p__y": 5.0}}
+  package outputs: {"use-bare-expr-results-0598a852/use_bare_expr__p__x__x.json": 15.0, "use-bare-expr-results-0598a852/use_bare_expr__p__t__r.json": 30.0}
+  native x: (15.0, [])
+== use_bare_lit
+  package inputs: {"use_bare_lit_params.json": {"use_bare_lit__p__x": 0.95}}
+  package outputs: {"use-bare-lit-results-4c33cc0b/use_bare_lit__p__t__r.json": 1.9}
+  native x: (0.95, [])

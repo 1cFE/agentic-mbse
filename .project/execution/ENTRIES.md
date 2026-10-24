@@ -50,3 +50,8 @@ The rules for writing an entry are in `README.md`, in this directory. Do not rew
 
 **Fact:** `Compiler().evaluate_feature(feature, scope=X)` applies only redefinitions written in `X`'s own body. It misses a value redefined in `X`'s type when an outer usage re-types the part (native 3.0 where the model means 21.0), and a calc usage's result inside a part that redefines one of its inputs (4.0 where the model means 8.0); no single scope fixes the second. It returns no value for any expression reaching a unit annotation (`2.0 [kg]`: "Operator '[' is not model-level evaluable"); `experimental_quantities=True` converts to SI base units (500 g gives 0.5). `sum(cells.capacity)` over `Cell[3]` returns one cell's value. So SysIDE is not a general reference for checking generated packages.
 **Evidence:** `.project/completed/20261023_generated-results-guidance/spike/derisk/RESULTS.md` (B1, B4) and `spike/RESULTS.md` (S1); sysml-codegen backlog `[SYSIDE-SINGLE-SCOPE-NATIVE-VALUES]`.
+
+## [sysml-codegen a3429411] 2026-10-24
+
+**Fact:** A value redefinition reaches the generated package whether or not it has the `attribute` keyword: `:>> x = …` and `attribute :>> x = …` give the native value in a part usage and in a specializing part def, with a literal or an expression on the right (8 of 8 combinations). The keyword matters only for a part-count override. The older statement that the `attribute :>>` form is dropped at extraction was wrong at this commit.
+**Evidence:** `.project/execution/evidence/redef-forms-20261024/run_redef.txt` (models and outputs beside it); first seen in dc3's reinstall audit (dc3 `tooling/reinstall-and-fix`, log finding F1); pinned by sysml-codegen `tests/conformance/test_redefinition_forms.py`.
