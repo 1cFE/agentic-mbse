@@ -1,0 +1,3 @@
+INFO: Checking /tmp/claude-1000/-home-reid-src-agentic-mbse/9366fe1c-453c-484d-b30e-782bbdd1390c/scratchpad/redef/def_bare_expr
+INFO: Built computation graph with 2 modules
+INFO: Generator: builds (2 modules)

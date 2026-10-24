@@ -223,7 +223,7 @@ part my_assembly : 'Assembly' {
 }
 ```
 
-The second form parses and the generator builds it, but it builds the default count (two) and ignores the redefinition, with no warning. Redefining the count in a specializing part def behaves the same way. So a trade study over component counts cannot vary the count from the design file; each count needs its own part def with its own fixed value. An attribute declared at package level (`[N]` with `N` outside the part def) is refused.
+The second form parses and the generator builds it, but it builds the default count (two) and ignores the redefinition, with no warning. To vary the count, override it in a specializing part def with the `attribute` keyword (`attribute :>> child_count = 3;`), which builds three; without the keyword it also builds the default. An attribute declared at package level (`[N]` with `N` outside the part def) is refused.
 
 ---
 

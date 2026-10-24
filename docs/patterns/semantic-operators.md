@@ -132,40 +132,31 @@ part system {
 }
 ```
 
-### Value-carrying redefinition: use the bare `:>>` form
+### Value-carrying redefinition: any form works, except dotted expressions
 
-To redefine a feature *and* give it a value, use the **bare** form — no `attribute`
-keyword:
-
-```sysml
-part variant : 'Base Plant' {
-    :>> gain = 2.0;                     // bare :>> with a value — CAPTURED
-}
-```
-
-The bare `:>> attr = value` parses as a ReferenceUsage, which extraction captures. The
-value overrides the base def's value for this usage.
-
-You can also override a nested attribute with a plain-usage literal:
+The five ways to redefine a feature with a value give the same generated value: `:>> x = v`, `attribute :>> x = v`, `redefines x = v`, `attribute redefines x = v` and `:>> x default v`. That holds in a part usage and in a specializing part def, through two levels, for a literal or an expression on the right:
 
 ```sysml
 part variant : 'Base Plant' {
-    :>> nested.gain = 3.0;             // literal override of a nested attribute — CAPTURED
+    :>> gain = 2.0;                     // kept
+    attribute :>> loss = gain * 0.1;    // kept, same as without the keyword
 }
 ```
 
-**Warning — `attribute :>>` with an expression is dropped.** Writing the redefinition
-*with* the `attribute` keyword and an expression RHS is silently lost at extraction:
+The base must give the value with `default` or not at all. A base written `= v` (or `:= v`) cannot be overridden: the parser refuses the redefinition.
+
+**A dotted override keeps only a plain literal.** `:>> nested.gain = 3.0` is kept. `:>> nested.gain = other * 3.0`, or `= -3.0` (a negative number is an operator, not a literal), is ignored: the generated package uses the base value, and nothing warns you. Use the block form instead, which keeps any right-hand side:
 
 ```sysml
 part variant : 'Base Plant' {
-    attribute :>> gain = other * 3.0;  // AttributeUsage redefinition + expression — DROPPED
+    :>> nested.gain = 3.0;                          // kept
+    part :>> nested { :>> gain = other * 3.0; }     // kept
 }
 ```
 
-Extraction scans only ReferenceUsage redefinitions, so the `attribute :>>` form with an
-expression never reaches the pipeline. Use the bare form for values; move any real
-computation into a calc def.
+Part counts follow different rules: only an `attribute :>>` override in a specializing part def changes a count (MODELING_GUIDE.md, part multiplicities).
+
+Evidence: probes against sysml-codegen `a3429411` on 2026-10-24, in agentic-mbse `.project/execution/evidence/redef-forms-20261024/`. The older advice to use only the bare form described the generator before its August 2026 rewrite.
 
 ### Redefinition precedence
 

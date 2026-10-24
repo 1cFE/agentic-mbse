@@ -332,11 +332,7 @@ part def 'Flow Sub' :> 'Flow Base' {       // 'Flow Base' declares `throughput`
   consumer still collapses to **one** parameter (the calc inputs share the source attribute's
   QN), and one attribute feeding N consumers is **one** channel, not N. This is why the JSON
   input file has one key per source attribute, regardless of how many calcs read it.
-- **Only LITERAL values propagate this way.** A `:>>` whose RHS is a chain or a computed
-  expression does **not** silently vanish — it falls to the uncovered-parameter diagnostic, so
-  the modeler sees an unresolved input rather than a wrong number. (And a value written as
-  `attribute :>> attr = <expr>` is dropped at extraction — see semantic-operators.md and the
-  L6 `attribute :>>`-with-expression warning.)
+- **A dotted override propagates only a plain literal.** `:>> chamber.cost_per_unit = 7.0` (shape c) is kept; with an expression or a negative number on the right it is ignored, and the consumer reads the base value with no warning. Shapes b and d keep an expression too; shape a with an expression has not been probed. See semantic-operators.md.
 
 Reference fixtures: `plant_values` (all four mechanisms a/b/c/d, plus the fusion-tea vendored
 plant as the real-scale exemplar), `plant_value_shapes` (the secondary shapes and their
