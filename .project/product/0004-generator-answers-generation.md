@@ -19,12 +19,12 @@ agentic-mbse never tells a modeller whether a model will generate; only `sysml-c
 ## Authority
 
 - [AGENT] (ratified by owner, 2026-10-21) `.project/adr/0004-generator-is-the-only-generation-authority.md`.
-- `.project/active/retire-subset-profile/spec.md` R3, R4 [INFERRED] (ratified by owner, 2026-10-21) and R5 [INFERRED: owner assumption stated in chat, not contradicted].
+- `.project/completed/20261022_retire-subset-profile/spec.md` R3, R4 [INFERRED] (ratified by owner, 2026-10-21) and R5 [INFERRED: owner assumption stated in chat, not contradicted].
 
 ## Evidence
 
 - `tests/test_shipped_text.py`: `test_guidance_states_the_three_generator_limits`, `test_pattern_docs_state_the_limits_in_place`, `test_no_shipped_example_teaches_an_assert_inside_a_calculation_as_correct`, `test_modeling_process_says_when_and_how_to_run_the_generation_check`, `test_workflow_skill_points_at_the_generation_check`, `test_model_validation_names_the_generation_check`.
-- Every new or corrected example was run through `sysml-codegen check` (`.project/active/retire-subset-profile/evidence/guidance-examples/`, `evidence/probes.md`).
+- Every new or corrected example was run through `sysml-codegen check` (`.project/completed/20261022_retire-subset-profile/evidence/guidance-examples/`, `evidence/probes.md`).
 
 ## Scope
 

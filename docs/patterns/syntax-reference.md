@@ -39,6 +39,7 @@ private import MyDesign::my_component;
 
 ## Syntax 2: Calc Def Definition
 
+<!-- @tool-example -->
 ```sysml
 /**
  * [Title]
@@ -215,6 +216,7 @@ attribute surface_area : Real =
 
 ## Syntax 8: Part Definition
 
+<!-- @tool-example -->
 ```sysml
 part def 'Component Type' {
     doc /*
@@ -294,6 +296,8 @@ attribute factor : Real =
     else 0.60;
 ```
 
+The code generator does not accept this today. If the model will be generated, run `sysml-codegen check` before relying on it.
+
 **Key syntax:** `if CONDITION?` (note the `?` after condition, not C-style ternary)
 
 > **Full reference:** See [conditionals.md](conditionals.md) for complete syntax rules, common mistakes, and guidance on conditionals vs type specialization.
@@ -330,6 +334,7 @@ private import MyDesign::my_component;
 
 ### Wrong: Forgetting units
 
+<!-- @tool-example -->
 ```sysml
 // BAD: Missing units
 attribute temperature = 300;

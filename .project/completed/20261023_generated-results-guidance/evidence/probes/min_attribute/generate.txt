@@ -1,0 +1,5 @@
+INFO: Generating code from evidence/probes/min_attribute
+INFO: Output to /tmp/grg-impl/phaseR/min_attribute/pkg
+INFO: Package name: min_attribute
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_EXPRESSION_SOURCE_UNSUPPORTED: min(a, b): reference='min(a, b)': inspect_reference_uses: invocation of 'NumericalFunctions::min' is valid SysML but is not supported by this executable subset; only NumericalFunctions::sum is supported [root-0/model.sysml:8] (reason: evidence_expression_kind_unsupported)

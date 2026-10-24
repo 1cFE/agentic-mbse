@@ -42,6 +42,8 @@ This extends the Definitions vs Usages pattern:
 | **Inline FORMULA** | `designs/` attribute | ≥1 (same-part sibling) | PASS¹ | `= radius * 2.0` |
 | **Computation on calc output** | `designs/` attribute | ≥1 (calc output) | **FAIL** | `= calc.power * 0.95` |
 | **Self / dotted reference** | `designs/` attribute | self, or a dotted path | **FAIL** | `= self.x`, `= a.b.c` |
+| **Sum over child parts** | `designs/` attribute | dotted path in a function call | **FAIL** | `= sum(cells.capacity)` |
+| **Sum over child parts** | `library/` part def | dotted path in `sum` | PASS (generated) | `= sum(cells.capacity)` |
 
 ¹ Accepted as a convenience for simple arithmetic and unit conversions over same-part
 sibling attributes. For any real or reusable calculation, use a calc def in `library/`
@@ -75,6 +77,7 @@ part component {
 A design attribute may reference **same-part sibling** attributes — a supported "inline
 FORMULA" computed attribute. Reserve it for simple arithmetic and unit conversions:
 
+<!-- @tool-example -->
 ```sysml
 part component {
     attribute length : Real = 3.0 [m];
@@ -89,6 +92,7 @@ For any real or reusable calculation, still prefer a `calc def` in `library/`. I
 named, testable, and reused across designs — the inline form is a convenience, not a
 replacement:
 
+<!-- @tool-example -->
 ```sysml
 // library/geometry.sysml
 calc def AreaCalculation {
@@ -147,10 +151,10 @@ circular-dependency example in `semantic-operators.md`.
 
 The code generator (sysml-codegen) refuses two calculation-shaped structures that parse and validate without complaint. Avoid both from the start when the project targets generated code. The third limit, where an `assert constraint` goes, is in [constraints.md](constraints.md#checking-a-calculations-result-assert-on-the-part).
 
-**A calculation input receives one value.** Do not pass a calculation a sequence of values: not a feature that spans several parts (`cells.capacity` when there are three cells), not a list-valued attribute (`Real[3] = (1.0, 2.0, 3.0)`), and not a tuple (`(a, b)`). To work over many parts, total them on the part with `sum(cells.capacity)` and pass the total in. A list-valued attribute is refused even when no calculation reads it, so do not declare one at all.
+**A calculation input receives one value.** Do not pass a calculation a sequence of values: not a feature that spans several parts (`cells.capacity` when there are three cells), not a list-valued attribute (`Real[3] = (1.0, 2.0, 3.0)`), and not a tuple (`(a, b)`). To work over many parts, total them on the part with `sum(cells.capacity)` and pass the total in. Write the total on a `part def` in `library/`; in a `designs/` attribute, validate level 6 rejects the call and the dotted path. A list-valued attribute is refused even when no calculation reads it, so do not declare one at all.
 
 ```sysml
-// Correct: the part sums its cells; the calculation receives one value
+// Correct: the part def (in library/) sums its cells; the calculation receives one value
 attribute total_capacity : Real = sum(cells.capacity);
 calc usable_calc : UsableCapacity { in total_capacity_in = total_capacity; in dod_in = depth_of_discharge; }
 
@@ -158,7 +162,7 @@ calc usable_calc : UsableCapacity { in total_capacity_in = total_capacity; in do
 calc total_calc : TotalCapacity { in capacities = cells.capacity; }
 ```
 
-**Part multiplicities are exact.** Give a fixed count: a number (`[3]`), or an `Integer` attribute declared with a fixed value (`= 3`) in the part def that owns the parts. Not an open range like `[*]`, `[0..*]` or `[1..*]`, and not an attribute declared at package level. A count given as a default (`default := 2`) and redefined later (`:>> cell_count = 3;`) builds the default count, with no warning.
+**Part multiplicities are exact.** Give a fixed count: a number (`[3]`), or an `Integer` attribute declared with a fixed value (`= 3`) in the part def that owns the parts. Not an open range like `[*]`, `[0..*]` or `[1..*]`, and not an attribute declared at package level. To vary the count, give the base a default (`attribute cell_count : Integer default 2;`) and override it in a specializing part def with the `attribute` keyword (`attribute :>> cell_count = 3;` or `default 3`): that builds three parts. An override written without the keyword (`:>> cell_count = 3;`), or any override in a part usage, builds the default count with no warning. A base written with `= 2` cannot be overridden; the parser refuses the override.
 
 ```sysml
 part cells : Cell[3];       // Correct: exactly three

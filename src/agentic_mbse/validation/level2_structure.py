@@ -14,11 +14,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from agentic_mbse.sysml.binding import classify_binding, extract_bindings
-from agentic_mbse.sysml.reference_use import ExactReferenceUse, resolved_referent
+from agentic_mbse.sysml.binding import extract_bindings
+from agentic_mbse.sysml.reference_use import ExactReferenceUse
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import (
-    BindingType,
     Severity,
     ValidationCode,
     ValidationIssue,
@@ -281,111 +280,6 @@ def _has_default_value(feature: Any) -> bool:
     return False
 
 
-def check_self_named_bindings(model: Any) -> list[ValidationIssue]:
-    """
-    C1 (Item 12): flag every self-named input binding.
-
-    A binding whose right-hand side resolves to the calc's own input parameter
-    (`in P = P`) dead-ends: the intended outer value never reaches the input.
-    Every such binding is a modeling error.
-
-    The comparison is referent identity, mirroring codegen's SRC-01 rule
-    (``extraction/source_evidence.py::is_self_binding``): the value
-    expression's resolved referent element is compared with the bound parameter
-    member itself. A name comparison is wrong in one direction — it also
-    flagged the supported owner-qualified form ``in x = owner::x``, whose
-    referent is the owner's attribute and not the parameter (F-2,
-    self-binding-replacement Phase 1).
-
-    There is no same-named-outer-feature exemption. The check used to suppress the
-    diagnostic when the enclosing part carried an attribute or sibling calc output
-    named `P`, on the theory that the outer feature would be resolved downstream.
-    Exact elaboration never does that: D-4 [OWNER-VERBATIM 2026-08-05] — "Never
-    reinterpret a self-binding as an outer reference" — and the lifecycle contract's
-    blocking-diagnostics clause and violation table put `SI_SELF_BINDING` in the
-    blocking set unconditionally. A validator that stayed silent on a shape the
-    generator refuses was telling the author the model was fine when it was not.
-
-    Returns:
-        List of ValidationIssue (ERROR), one per self-named binding.
-    """
-    issues: list[ValidationIssue] = []
-
-    for calc_usage in SysideAdapter.elements_of_type(model, "CalculationUsage"):
-        try:
-            calc_def = calc_usage.calculation_definition
-            if not calc_def:
-                continue
-
-            input_params = {
-                str(feat.name)
-                for feat in _extract_input_features(calc_def)
-                if getattr(feat, "name", None)
-            }
-
-            for member in getattr(calc_usage, "owned_members", None) or []:
-                param_name = str(getattr(member, "name", "") or "")
-                if param_name not in input_params:
-                    continue
-                expr = getattr(member, "feature_value_expression", None)
-                if classify_binding(expr) != BindingType.REFERENCE:
-                    continue
-                # Self-named: the RHS reference's resolved referent IS the bound
-                # parameter member. An unresolved referent is a load error, not
-                # a self-binding this check can establish.
-                referent = resolved_referent(expr)
-                if referent is None:
-                    continue
-                if SysideAdapter.element_id(referent) != SysideAdapter.element_id(member):
-                    continue
-
-                calc_name = get_qualified_name(calc_usage)
-                issues.append(
-                    ValidationIssue(
-                        level=2,
-                        severity=Severity.ERROR,
-                        code=ValidationCode.L2_SELF_NAMED_BINDING,
-                        message=(
-                            f"Input '{param_name}' in calc '{calc_name}' binds to a "
-                            f"same-named reference that resolves to the calc's own parameter, "
-                            f"so the binding dead-ends. A same-named feature in the enclosing "
-                            f"scope does not rescue it — the binding is never reinterpreted as "
-                            f"an outer reference. Bind the outer feature by a distinct path"
-                        ),
-                        element_name=calc_name,
-                        location=get_element_location(calc_usage),
-                    )
-                )
-        except Exception as error:  # noqa: BLE001 — surfaced as a finding, never swallowed
-            # An inspection failure leaves this usage UNVERIFIED. Reporting it as
-            # an ERROR keeps the run honest: a SysIDE or adapter regression must
-            # read as a failed check, not as a clean model (audit F4).
-            issues.append(
-                ValidationIssue(
-                    level=2,
-                    severity=Severity.ERROR,
-                    code=ValidationCode.L2_CHECK_UNVERIFIABLE,
-                    message=(
-                        f"self-named-binding check could not inspect calc usage "
-                        f"'{_safe_display_name(calc_usage)}': "
-                        f"{type(error).__name__}: {error}. The usage is unverified; "
-                        f"treat this as a check failure, not a clean result"
-                    ),
-                    element_name=_safe_display_name(calc_usage),
-                )
-            )
-
-    return issues
-
-
-def _safe_display_name(element: Any) -> str:
-    """A best-effort name for an element that may itself refuse inspection."""
-    try:
-        return str(get_qualified_name(element) or getattr(element, "name", None) or repr(element))
-    except Exception:  # noqa: BLE001 — naming only; the failure is already being reported
-        return "<unnameable element>"
-
-
 def check_orphaned_elements(model: Any) -> list[ValidationIssue]:
     """
     Check for model elements not reachable from entry points
@@ -450,10 +344,6 @@ def validate_structure(
     all_issues: list[ValidationIssue] = []
     all_issues.extend(check_unused_definitions(model))
     all_issues.extend(check_unbound_inputs(model))
-    # C1 (Item 12): FAIL when `in P = P` resolves the right-hand reference to the
-    # bound input member itself. Same-named features elsewhere do not change that
-    # resolved identity.
-    all_issues.extend(check_self_named_bindings(model))
     all_issues.extend(check_orphaned_elements(model))
     # EXEC-SUBSET-CONTRACT Item 4: inputs that land by position on a differently named formal.
     positional_issues, positional_metrics = check_positional_bindings(
@@ -486,9 +376,6 @@ def validate_structure(
         ),
         "Placeholder bindings": len(
             [i for i in result.structured_issues if i.code == ValidationCode.LITERAL_BINDING]
-        ),
-        "Self-named bindings": len(
-            [i for i in result.structured_issues if i.code == ValidationCode.L2_SELF_NAMED_BINDING]
         ),
         "Orphaned elements": 0,  # No orphan check implemented yet
         **positional_metrics,

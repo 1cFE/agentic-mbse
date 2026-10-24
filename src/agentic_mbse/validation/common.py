@@ -30,8 +30,6 @@ class QualityCheckResult:
     warnings: list[str] = field(default_factory=list)
     metrics: dict = field(default_factory=dict)
     structured_issues: list[ValidationIssue] = field(default_factory=list)
-    # Results the level folds into a summary instead of listing as issues (L6 under native).
-    summarized: list[ValidationIssue] = field(default_factory=list)
     # A qualifier the run's final line must carry when it passes (empty for none).
     pass_note: str = ""
     # The level's structured detail for the JSON report (L6's execution target), or None.

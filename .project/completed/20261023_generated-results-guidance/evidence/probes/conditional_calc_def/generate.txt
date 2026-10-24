@@ -1,0 +1,5 @@
+INFO: Generating code from evidence/probes/conditional_calc_def
+INFO: Output to /tmp/grg-impl/phaseR/conditional_calc_def/pkg
+INFO: Package name: conditional_calc_def
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: if x > y? x - y else y - x: reference='if x > y? x - y else y - x': inspect_reference_uses: resolved reference has no exact target [root-0/model.sysml:7] (reason: evidence_resolved_target_missing)

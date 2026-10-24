@@ -151,11 +151,11 @@ def test_register_says_a_pin_certifies_nothing_and_is_legacy_only():
     assert "reserved to the project owner" in text
 
 
-def test_register_states_its_limits_and_links_the_unfiled_upstream_draft():
+def test_register_states_its_limits_and_links_the_filed_upstream_finding():
     text = register_text()
     assert "placeholder target" in text  # the unresolved-reference test and its verified shapes
     assert "SysIDE 0.8.4" in text
-    assert "evidence/upstream-codegen-finding.md`. **It is unfiled**" in text
+    assert "evidence/upstream-codegen-finding.md`. It was filed on 2026-10-22" in text
     assert "## Candidates, not yet reproduced" in text
 
 
@@ -222,7 +222,9 @@ def test_doc_says_l6_is_not_the_generation_answer_and_what_the_setting_does(rela
     assert "sysml-codegen check" in text
     assert "execution-target" in text and "init --execution-target" in text
     assert "targets generated code" in lowered
-    assert "one info summary" in lowered
+    # The native fold was removed: the setting no longer changes L6 output.
+    assert "one info summary" not in lowered
+    assert "does not change" in lowered
     assert [banned for banned in L6_BANNED if banned in lowered] == []
 
 
@@ -296,6 +298,36 @@ def test_guidance_states_the_three_generator_limits(relative):
     assert text.count("// Correct") >= 3 and text.count("// Incorrect") >= 3
     # Probe g4: the generator refuses a list-valued attribute that nothing reads.
     assert "A list-valued attribute is refused even when no calculation reads it" in text
+
+
+ASSERT_STOPS_NOTHING = "A failed assert does not stop anything."
+
+
+@pytest.mark.parametrize("relative", LIMITS_GUIDANCE)
+def test_guidance_says_a_failed_assert_stops_nothing(relative):
+    # Evidence: generated-results-guidance evidence/risk1-reruns.md, the violated-assert run.
+    text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    assert ASSERT_STOPS_NOTHING in text
+    assert "must check the constraint verdicts before using the numbers" in text
+
+
+# Each place that teaches a conditional or a library function the generator refuses
+# (evidence/risk1-reruns.md: check refused both conditional forms and `min`).
+CHECK_FIRST = (
+    "project_templates/MODELING_GUIDE.md.template",
+    "skills/sysml-conventions/SKILL.md",
+    "docs/patterns/conditionals.md",
+    "docs/patterns/syntax-reference.md",
+    "agents/kerml-expert.md",
+    "agents/sysmlv2-validator.md",
+)
+
+
+@pytest.mark.parametrize("relative", CHECK_FIRST)
+def test_conditional_and_function_teaching_says_run_check_first(relative):
+    text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    assert "The code generator does not accept" in text
+    assert "run `sysml-codegen check` before relying on" in text
 
 
 def test_pattern_docs_state_the_limits_in_place():

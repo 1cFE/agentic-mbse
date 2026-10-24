@@ -1,6 +1,6 @@
 /**
  * L6 negative test: calc def with no output parameter.
- * Should trigger L6_CALC_DEF_NO_OUTPUT.
+ * L6 no longer checks this (ADR 0006); the generator refuses it.
  */
 package NoOutputTest {
     import ScalarValues::*;

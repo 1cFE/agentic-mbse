@@ -1,0 +1,2 @@
+INFO: Checking evidence/probes/cond_branch_attribute
+ERROR: Model failed exact-route validation: SI_EVIDENCE_INCOMPLETE: if x < y ? x else y: reference='if x < y ? x else y': inspect_reference_uses: resolved reference has no exact target [root-0/model.sysml:6] (reason: evidence_resolved_target_missing)

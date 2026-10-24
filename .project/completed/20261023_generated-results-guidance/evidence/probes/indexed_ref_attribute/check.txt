@@ -1,0 +1,2 @@
+INFO: Checking evidence/probes/indexed_ref_attribute
+ERROR: Model failed exact-route validation: SI_INDEXED_SOURCE_UNSUPPORTED: qs#(1).v: reference='qs#(1).v': expression_evidence: indexed element reference is valid SysML but not implemented by this executable subset; the index is never flattened into a supported source [root-0/model.sysml:8] (reason: evidence_indexed_reference_unsupported)

@@ -1,0 +1,3 @@
+INFO: Checking evidence/probes/indexed_ref_in_result
+INFO: Built computation graph with 1 modules
+INFO: Generator: builds (1 modules)

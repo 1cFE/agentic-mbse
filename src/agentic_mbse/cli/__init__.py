@@ -785,7 +785,7 @@ def _prompt_for_execution_target() -> str | None:
     """Ask how the project runs; None is "leave unset", the default."""
     print(
         "Does this project target generated code? generated: the modelling workflow runs "
-        "sysml-codegen check. native: L6 folds four generator-only codes into one INFO summary."
+        "sysml-codegen check. native: it does not."
     )
     while True:
         try:
@@ -905,8 +905,7 @@ def main(argv: list[str] | None = None) -> int:
         choices=ALLOWED_VALUES,
         help=(
             "L6: whether this project targets generated code, overriding [tool.agentic-mbse] "
-            "execution-target in pyproject.toml (native folds four generator-only codes into "
-            "one INFO summary; it never changes what a result is)"
+            "execution-target in pyproject.toml (it never changes what a result is)"
         ),
     )
     validate_parser.add_argument(

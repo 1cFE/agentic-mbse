@@ -7,8 +7,8 @@ package C6Lib {
     //  - C6a: `out attribute derated = availability * 0.9` is a calc-def-internal
     //         derived expression -> NOT V2_DYNAMIC_EXPRESSION (ADR-002 says derived
     //         expressions belong in a calc def). The fix keys off the owner type.
-    //  - C6b: 'Trap Plant' is a quoted name -> NOT L6_INVALID_QUALIFIED_NAME
-    //         (codegen's Item-5 sanitization turns it into a valid identifier).
+    //  - C6b: 'Trap Plant' is a quoted name. L6 no longer checks names for the
+    //         generator (ADR 0006); the model stays as a quoted-name case.
     //  - C6c: `out attribute powered = availability ^ 2` uses power INSIDE a calc
     //         def -> NOT V4_UNSUPPORTED_OPERATOR. Power is unsupported at design
     //         scope but legitimate in a calc def; the flat layout defeats the path

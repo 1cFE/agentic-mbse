@@ -3,8 +3,8 @@ id: 0005
 title: validate L6 never says whether a model generates; execution-target only folds four legacy generator-only codes under native, and a broken check or setting fails under every target
 date: 2026-10-21
 owner: Reid Westwood
-status: active
-amended_by: []
+status: amended
+amended_by: [0006]
 superseded_by: null
 supersedes: 0003
 provenance: "[AGENT] (direction ratified by owner, 2026-10-21; L6 details are spec D-a to D-c, agent-grade)"
@@ -20,7 +20,7 @@ checked: 2026-10-21 @ 508aad86
 
 - [AGENT] (ratified by owner, 2026-10-21) `.project/adr/0004-generator-is-the-only-generation-authority.md`.
 - `.project/adr/0005-execution-target-after-copy-retired.md` (amends ADR 0003); `.project/adr/0003-execution-target-setting.md` for the setting itself.
-- `.project/active/retire-subset-profile/spec.md` R1, D-a, D-b, D-c.
+- `.project/completed/20261022_retire-subset-profile/spec.md` R1, D-a, D-b, D-c.
 
 ## Scope
 

@@ -105,8 +105,8 @@ Criteria marked "retired 2026-10-21" depended on the copied rules and no longer 
 - [ ] Every known silent-loss family has a retained behavioral fixture, including intended metadata omissions; assertions check semantic identity, generated contract/catalog or runtime behavior rather than name substrings alone.
 - [ ] Every shared rule has independent refused and admitted boundary fixtures. Existing generating fixtures remain admitted unless an intentional capability change is separately approved. Retired 2026-10-21: there are no shared rules; the 246 case models stay as generator regression tests.
 - [ ] A refusal inventory covers elaboration, projection, generation preparation and diagnostic factories. Structural cases map to neutral rules with behavioral coverage; other public checks are explicitly owned and tested. AST annotation tests are supplementary. 2026-10-21: the refusal site account stays in sysml-codegen; the mapping to neutral rules is retired.
-- [ ] `generate` and `check` use the same read-only preparation path before output mutation. 2026-10-21: they report only the generator's own answer. `check` includes projection, compilation and generation preflight and clearly bounds its readiness claim.
-- [ ] Live/snapshot parity, sealed authority, supported upgrades and both package-skew directions are tested.
+- [x] `generate` and `check` use the same read-only preparation path before output mutation. 2026-10-21: they report only the generator's own answer. `check` includes projection, compilation and generation preflight and clearly bounds its readiness claim. (Item 2b, closed 2026-10-22.)
+- [x] Live/snapshot parity, sealed authority, supported upgrades and both package-skew directions are tested. (Item 2b, closed 2026-10-22.)
 - [ ] The positional check detects unintended implicit name/target mismatches, accepts deliberate explicit redefinition and verified by-name forms, and reports inspection failures honestly.
 - [ ] Every collected shipped example has appropriate definition checks, an executable test, an identified fragment exemption, or verified expected diagnostics. Complete execution examples exercise their instantiated context through the generator corpus. Approved D3 requires executable or exact expected-negative evidence for 100% of generated-use recommendations and remedies; hash-only exemptions cannot satisfy that target.
 - [ ] Rendered capability guidance and hazard references agree with the records and packaged assets. Known misleading examples are corrected or qualified. 2026-10-21: the rendered-from-records part is retired; the calc-owned assert examples were corrected by `retire-subset-profile`.
@@ -189,7 +189,9 @@ Criteria marked "retired 2026-10-21" depended on the copied rules and no longer 
 
 **Deliverables**: sysml-codegen `c381fb00:.project/active/subset-profile-conformance/{spec,design,plan}.md`; diagnostic mapping, inventory contract, conformance corpus, parity CI test and evidence.
 
-### Item 2b (sysml-codegen): Read-only readiness check and snapshot authority
+### Item 2b (sysml-codegen): Read-only readiness check and snapshot authority ✅
+
+**Closed 2026-10-22** in sysml-codegen PR #23; promise sysml-codegen P-0008. Record retained at sysml-codegen `d7366431:.project/active/subset-profile-screen/`.
 
 **2026-10-21, after ADR 0004:** 2b keeps `check`, the load / check / write split and refusing before writing. The screen step that ran the copy after `generate` and `check` and printed its findings is removed (sysml-codegen branch `subset-profile-screen`), so `check` reports only the generator's answer and writes nothing. Scope 1 below is retired; scopes 2 and 3 stand. sysml-codegen PR #21 (ADR 0018, an occurrence summary shared with agentic-mbse) is moot.
 
@@ -204,7 +206,7 @@ Criteria marked "retired 2026-10-21" depended on the copied rules and no longer 
 
 **Success Criteria**: check and generate fail at the same preparation seam without mutating a sentinel destination; replay and compatibility evidence pass.
 
-**Deliverables**: sysml-codegen `.project/active/subset-profile-screen/{spec,design,plan}.md`; preparation API/CLI and compatibility evidence.
+**Deliverables**: sysml-codegen `d7366431:.project/active/subset-profile-screen/{spec,design,plan}.md`; preparation API/CLI and compatibility evidence.
 
 ### Item 3: L6 integration and execution-target settings ✅
 
@@ -251,7 +253,11 @@ Criteria marked "retired 2026-10-21" depended on the copied rules and no longer 
 
 **Deliverables**: `.project/completed/20261018_positional-binding-check/{spec,design,plan}.md` (combine artifacts where proportionate); check, fixtures, register and guidance.
 
-### Item 5: Executable guidance contracts
+### Item 5: Executable guidance contracts ✅
+
+**2026-10-23, closed:** cut by owner to guidance edits ([archive](../completed/20261023_generated-results-guidance/spec.md)). The guide now says a failed assert stops nothing, and each place that teaches conditionals or library functions says to run `sysml-codegen check` first. The automatic native-vs-generated comparison is out: SysIDE cannot compute these models (`spike/derisk/RESULTS.md`). The two known wrong-number generator cases stay in sysml-codegen's backlog for the owner (RG-1).
+
+**2026-10-22, rescoped by owner:** "not ceremony, actual risk". Item 5 is now `generated-results-guidance` ([spec](../completed/20261023_generated-results-guidance/spec.md)): four risks (patterns that generate but compute something different; part-owned asserts report instead of stopping; guidance still teaching refused functions; guidance going stale when held generator changes land). Scopes 1-3 and 8 (the fence inventory, categories, exemption manifest and the 100% D3 target) and scope 7 are out. [AGENT] proposal, ratified by owner 2026-10-22. The text below is the original scope, kept for history.
 
 **Type**: Testing and documentation
 **Effort**: Re-estimate after example inventory
@@ -334,7 +340,7 @@ D1, D2 and D3 were approved by the owner during the 2026-10-15 discussion. Other
 - **D1 — Approved: positional findings.** Block new mismatches and warn on explicitly pinned legacy cases until migration. Fusion-tea migration is separate authorized work, not a prerequisite for accepting this toolkit check. Legacy warning acceptance does not certify cross-route semantic parity.
 - **D2 — Approved: full candidate investigation.** Inspect and classify all 500 candidate sites in the recorded inventory (441 codegen, 59 agentic-mbse), reconciling additions and removals at the implementation revision. Account for each site as in scope, already handled elsewhere, or explicit follow-up, with evidence and ownership. Implement only the scoped shared capability rules; this does not require 500 rules or recoding every exception.
 - **D3 — Approved: guidance coverage.** Require executable or exact expected-negative evidence for every generated-use recommendation and remedy (100% of the identified inventory), while retaining justified pure teaching fragments.
-- **2026-10-21 — Retire the copy; guidance plus an early `sysml-codegen check`.** [AGENT] (ratified by owner, 2026-10-21). The owner's words: "Ok go with your recommendation. implement it, and document it." The recommendation is section 6 of the architecture review (sysml-codegen `.project/active/subset-profile-screen/architecture-review/index.html`). This is an approved agent recommendation, not an owner-originated decision, so it is challenged by re-deriving against ADR 0004's Why. It rests on two agent assumptions stated to the owner and not contradicted: a project that has parked generation still runs one non-blocking early check, and the dc3 incident cost the owner little time. It supersedes ADR 0001, whose owner choice "A (ii)" was between ownership options for the copy; not having a copy was never one of the options offered.
+- **2026-10-21 — Retire the copy; guidance plus an early `sysml-codegen check`.** [AGENT] (ratified by owner, 2026-10-21). The owner's words: "Ok go with your recommendation. implement it, and document it." The recommendation is section 6 of the architecture review (sysml-codegen `.project/research/2026-10-21-generator-check-architecture-review/index.html`). This is an approved agent recommendation, not an owner-originated decision, so it is challenged by re-deriving against ADR 0004's Why. It rests on two agent assumptions stated to the owner and not contradicted: a project that has parked generation still runs one non-blocking early check, and the dc3 incident cost the owner little time. It supersedes ADR 0001, whose owner choice "A (ii)" was between ownership options for the copy; not having a copy was never one of the options offered.
 
 Other decisions remain:
 

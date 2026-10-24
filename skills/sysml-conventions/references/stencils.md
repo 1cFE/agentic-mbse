@@ -24,6 +24,7 @@ part def 'Component Name' {
 
 ### Calc Definition
 
+<!-- @tool-example -->
 ```sysml
 calc def 'Calculation Name' {
     doc /*
@@ -42,6 +43,7 @@ calc def 'Calculation Name' {
 
 ### Constraint Definition
 
+<!-- @tool-example -->
 ```sysml
 constraint def 'Constraint Name' {
     doc /*

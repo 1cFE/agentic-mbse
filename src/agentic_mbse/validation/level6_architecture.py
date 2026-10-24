@@ -2,16 +2,9 @@
 """
 Level 6: Architecture & Conventions
 
-Application-specific validation: ADR-002 rules, manifest subsystem
-checks, and codegen conventions. The project's execution target decides only how
-loud a result is (`execution_target.py`); whether a model generates is
-`sysml-codegen check`'s answer, not L6's.
-
-Merged from:
-- Level 7 (Architectural Integrity): manifest-based subsystem validation
-- Level 8 (Codegen Readiness): qualified names, calc def structure,
-  binding formats, design attr completeness/extractability
-- ADR-002 calls (previously in Level 2)
+Application-specific validation: ADR-002 rules, manifest subsystem checks, design
+attribute completeness and constraint executability. L6 holds no copy of a generator
+check (ADR 0006); whether a model generates is `sysml-codegen check`'s answer, not L6's.
 """
 
 from collections.abc import Callable
@@ -25,12 +18,6 @@ from agentic_mbse.sysml.executable_profile import Eligibility, evaluate_identifi
 from agentic_mbse.sysml.expression import (
     Unextractable,
     evaluate_true_static_expression,
-    is_literal_node,
-)
-from agentic_mbse.sysml.reference_use import (
-    resolved_chain_target,
-    resolved_chaining_features,
-    resolved_referent,
 )
 from agentic_mbse.sysml.syside_adapter import SysideAdapter
 from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
@@ -60,7 +47,6 @@ from .execution_target import (
     TargetSettingError,
     Unset,
     describe_target,
-    fold,
     resolve_target,
 )
 from .session import constraint_facts
@@ -187,23 +173,6 @@ def _check_manifests(models_path: str, model: Any) -> tuple[list[str], int]:
     return issues, len(manifests_found)
 
 
-# --- Functions from L8 (codegen readiness) ---
-
-
-def _segment_is_quoted(segment: str) -> bool:
-    """Whether a `::`-delimited name segment is a quoted name (e.g. 'Trap Plant').
-
-    C6b (Item 12): `sanitize_name` (`sysml/qualified_names.py`, which sysml-codegen
-    `b5663c07` re-exports at `core/qualified_names.py:10-17`) turns a quoted name into
-    a valid Python identifier (`'Trap Plant'` -> `Trap_Plant`), so a space inside a
-    quoted segment is legal, not a malformed qualified name. Only an *unquoted* space
-    is flagged. That codegen sanitizes every segment, so L6_INVALID_QUALIFIED_NAME is
-    not a generator refusal; backlog L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES.
-    """
-    s = segment.strip()
-    return len(s) >= 2 and s.startswith("'") and s.endswith("'")
-
-
 def _element_error(check: str, element: Any, error: Exception) -> ValidationIssue:
     """`L6_CHECK_ERROR` for one element `check` could not inspect (design D4, element scope)."""
     return check_error_issue(
@@ -216,126 +185,9 @@ def _enumeration_error(check: str, type_name: str, error: Exception) -> Validati
     return check_error_issue(check, f"the model's {type_name} elements", error)
 
 
-def check_qualified_names(model: Any) -> list[ValidationIssue]:
-    """
-    Validate all calc defs and usages have valid qualified names.
-
-    Checks:
-    - Calc defs have non-empty qualified_name
-    - Calc usages have EQN-derivable qualified names
-
-    Returns:
-        List of ValidationIssue for invalid qualified names
-    """
-    issues: list[ValidationIssue] = []
-
-    # Check CalculationDefinitions; a failed listing ends only this half, not the usage half.
-    try:
-        calc_defs = list(SysideAdapter.elements_of_type(model, "CalculationDefinition"))
-    except Exception as error:
-        calc_defs = []
-        issues.append(_enumeration_error("check_qualified_names", "CalculationDefinition", error))
-
-    for calc_def in calc_defs:
-        try:
-            qname = calc_def.qualified_name
-            element_name = str(calc_def.name) if hasattr(calc_def, "name") else "<unnamed>"
-
-            if not qname or str(qname).strip() == "":
-                issues.append(
-                    ValidationIssue(
-                        level=6,
-                        severity=Severity.ERROR,
-                        code=ValidationCode.L6_MISSING_QUALIFIED_NAME,
-                        message=f"Calc def '{element_name}' has no qualified_name",
-                        element_name=element_name,
-                        location=get_element_location(calc_def),
-                        suggestion="Ensure calc def is in a named package",
-                    )
-                )
-            else:
-                # Validate format: must have :: separator or be simple name.
-                # A space inside a quoted segment is legal (C6b, sanitize_name).
-                qname_str = str(qname)
-                unquoted_space = any(
-                    " " in seg and not _segment_is_quoted(seg) for seg in qname_str.split("::")
-                )
-                if unquoted_space or qname_str.startswith("::"):
-                    issues.append(
-                        ValidationIssue(
-                            level=6,
-                            severity=Severity.ERROR,
-                            code=ValidationCode.L6_INVALID_QUALIFIED_NAME,
-                            message=f"Calc def '{element_name}' has malformed qualified_name: '{qname_str}'",
-                            element_name=element_name,
-                            location=get_element_location(calc_def),
-                            suggestion="Qualified names should be Package::Element format",
-                        )
-                    )
-        except Exception as error:
-            # A failed read is not a missing name: report it, make no finding (Appendix B).
-            issues.append(_element_error("check_qualified_names", calc_def, error))
-
-    # Check CalculationUsages (EQN derivability)
-    try:
-        calc_usages = list(SysideAdapter.elements_of_type(model, "CalculationUsage"))
-    except Exception as error:
-        issues.append(_enumeration_error("check_qualified_names", "CalculationUsage", error))
-        return issues
-
-    for calc_usage in calc_usages:
-        try:
-            qname = calc_usage.qualified_name
-            element_name = str(getattr(calc_usage, "name", "<unnamed>"))
-
-            if not qname or str(qname).strip() == "":
-                issues.append(
-                    ValidationIssue(
-                        level=6,
-                        severity=Severity.ERROR,
-                        code=ValidationCode.L6_MISSING_QUALIFIED_NAME,
-                        message=f"Calc usage '{element_name}' has no qualified_name",
-                        element_name=element_name,
-                        location=get_element_location(calc_usage),
-                        suggestion="Ensure calc usage is in a named package/part",
-                    )
-                )
-            else:
-                # Validate EQN derivability per ADR-001
-                qname_str = str(qname)
-                if "::" in qname_str:
-                    segments = qname_str.split("::")
-                    for segment in segments:
-                        # A quoted segment (e.g. 'Trap Plant') sanitizes to a valid
-                        # identifier (C6b), so its internal space is legal.
-                        if _segment_is_quoted(segment):
-                            continue
-                        if not segment or " " in segment or segment.startswith("_"):
-                            issues.append(
-                                ValidationIssue(
-                                    level=6,
-                                    severity=Severity.ERROR,
-                                    code=ValidationCode.L6_INVALID_QUALIFIED_NAME,
-                                    message=f"Calc usage '{qname_str}' has invalid segment '{segment}' - cannot derive EQN",
-                                    element_name=qname_str,
-                                    location=get_element_location(calc_usage),
-                                    suggestion="Segments must be valid identifiers (no spaces, leading underscores)",
-                                )
-                            )
-                            break
-        except Exception as error:
-            issues.append(_element_error("check_qualified_names", calc_usage, error))
-
-    return issues
-
-
 def check_calc_def_structure(model: Any) -> list[ValidationIssue]:
     """
-    Validate calc def parameter structure.
-
-    Checks:
-    - At least one output parameter (direction = Out/Return)
-    - Input parameters have direction markers
+    Warn on calc def parameters that carry no direction marker.
 
     Returns:
         List of ValidationIssue for structural problems
@@ -355,7 +207,6 @@ def check_calc_def_structure(model: Any) -> list[ValidationIssue]:
             if not hasattr(calc_def, "owned_members"):
                 continue
 
-            has_output = False
             params_without_direction: list[str] = []
 
             for member in calc_def.owned_members:
@@ -364,26 +215,9 @@ def check_calc_def_structure(model: Any) -> list[ValidationIssue]:
 
                 member_name = str(member.name) if member.name else "<unnamed>"
 
-                if hasattr(member, "direction") and member.direction:
-                    direction_str = str(member.direction).lower()
-                    if "out" in direction_str or "inout" in direction_str:
-                        has_output = True
-                else:
-                    if hasattr(member, "typing"):
-                        params_without_direction.append(member_name)
-
-            if not has_output:
-                issues.append(
-                    ValidationIssue(
-                        level=6,
-                        severity=Severity.ERROR,
-                        code=ValidationCode.L6_CALC_DEF_NO_OUTPUT,
-                        message=f"Calc def '{name}' has no output parameters",
-                        element_name=name,
-                        location=location,
-                        suggestion="Add 'out' or 'return' parameter to calc def",
-                    )
-                )
+                has_direction = hasattr(member, "direction") and member.direction
+                if not has_direction and hasattr(member, "typing"):
+                    params_without_direction.append(member_name)
 
             if params_without_direction:
                 issues.append(
@@ -402,102 +236,6 @@ def check_calc_def_structure(model: Any) -> list[ValidationIssue]:
             issues.append(_element_error("check_calc_def_structure", calc_def, error))
 
     return issues
-
-
-def _extract_chain_path(expr: Any) -> str | None:
-    """The resolved member path of a feature chain, dotted."""
-    target = resolved_chain_target(expr)
-    if target is None:
-        return None
-    parts = [
-        str(feature.name)
-        for feature in resolved_chaining_features(target)
-        if getattr(feature, "name", None)
-    ]
-    return ".".join(parts) if parts else None
-
-
-def _extract_reference_path(expr: Any) -> str | None:
-    """The qualified name of a feature reference's exact referent."""
-    referent = resolved_referent(expr)
-    qualified_name = getattr(referent, "qualified_name", None) if referent else None
-    return str(qualified_name) if qualified_name else None
-
-
-def check_binding_formats(
-    model: Any,
-) -> tuple[list[ValidationIssue], int]:
-    """
-    Validate binding path formats match expected patterns.
-
-    Checks:
-    - REFERENCE bindings use :: separator (or simple names)
-    - CHAIN bindings use . separator
-
-    Returns:
-        Tuple of (list of ValidationIssue, count of bindings validated)
-    """
-    issues: list[ValidationIssue] = []
-    bindings_checked = 0
-
-    try:
-        calc_usages = list(SysideAdapter.elements_of_type(model, "CalculationUsage"))
-    except Exception as error:
-        return [_enumeration_error("check_binding_formats", "CalculationUsage", error)], 0
-
-    for calc_usage in calc_usages:
-        try:
-            usage_name = get_qualified_name(calc_usage)
-
-            if not hasattr(calc_usage, "owned_members"):
-                continue
-
-            for member in calc_usage.owned_members:
-                if not hasattr(member, "feature_value_expression"):
-                    continue
-                expr = member.feature_value_expression
-                if not expr:
-                    continue
-
-                bindings_checked += 1
-                param_name = (
-                    str(member.name) if hasattr(member, "name") and member.name else "<unnamed>"
-                )
-
-                if SysideAdapter.is_instance(expr, "FeatureChainExpression"):
-                    source_path = _extract_chain_path(expr)
-                    if source_path and "::" in source_path:
-                        issues.append(
-                            ValidationIssue(
-                                level=6,
-                                severity=Severity.ERROR,
-                                code=ValidationCode.L6_INVALID_BINDING_FORMAT,
-                                message=f"CHAIN binding '{param_name}' in '{usage_name}' uses '::' separator (expected '.')",
-                                element_name=usage_name,
-                                location=get_element_location(calc_usage),
-                                suggestion="Use instance.attribute format for chain bindings",
-                            )
-                        )
-
-                elif SysideAdapter.is_instance(expr, "FeatureReferenceExpression"):
-                    source_path = _extract_reference_path(expr)
-                    if source_path and "." in source_path and "::" not in source_path:
-                        issues.append(
-                            ValidationIssue(
-                                level=6,
-                                severity=Severity.ERROR,
-                                code=ValidationCode.L6_INVALID_BINDING_FORMAT,
-                                message=f"REFERENCE binding '{param_name}' in '{usage_name}' uses '.' separator (expected '::')",
-                                element_name=usage_name,
-                                location=get_element_location(calc_usage),
-                                suggestion="Use Package::Element format for reference bindings",
-                            )
-                        )
-
-        except Exception as error:
-            issues.append(_element_error("check_binding_formats", calc_usage, error))
-
-    return issues, bindings_checked
 
 
 def check_design_attr_completeness(
@@ -555,10 +293,9 @@ def check_design_attr_completeness(
             )
 
             if has_value:
-                # D3 (L6-EXPOSE-CONSISTENCY): an EXPOSE binding is complete. Codegen
-                # wires the alias to its source (sysml-codegen `b5663c07`,
-                # `elaboration/elaborate.py:982-1012`), so it needs no numeric default
-                # and the static evaluator does not apply.
+                # D3 (L6-EXPOSE-CONSISTENCY): an EXPOSE binding is complete. Its value
+                # comes from the bound source, so it needs no numeric default and the
+                # static evaluator does not apply.
                 if is_expose_binding(attr, attr.feature_value_expression):
                     continue
                 try:
@@ -599,58 +336,6 @@ def check_design_attr_completeness(
             issues.append(_element_error("check_design_attr_completeness", attr, error))
 
     return issues, attrs_checked
-
-
-def check_anonymous_returns(model: Any) -> list[ValidationIssue]:
-    """
-    C2a (Item 12): FAIL a calc def with an anonymous `return`.
-
-    An anonymous `return : Real = <expr>` has no declared name (syside synthesizes
-    `result`, but declared_name is empty), so codegen derives no output channel from
-    it. Mirrors codegen's V8 diagnostic (sysml-codegen `b5663c07`,
-    `extraction/extractor.py:191-215`, REQ-EXT-11). The named forms — `out attribute`, named
-    `return` (inline or body-assignment), and bare `in` — carry a declared name and
-    are accepted.
-
-    Returns:
-        List of ValidationIssue (ERROR) for anonymous returns.
-    """
-    issues: list[ValidationIssue] = []
-
-    for calc_def in SysideAdapter.elements_of_type(model, "CalculationDefinition"):
-        try:
-            if not hasattr(calc_def, "owned_members"):
-                continue
-            name = get_qualified_name(calc_def)
-            for member in calc_def.owned_members:
-                direction = (
-                    str(getattr(member, "direction", "")) if hasattr(member, "direction") else ""
-                )
-                if "Out" not in direction and "Return" not in direction:
-                    continue
-                declared = getattr(member, "declared_name", None)
-                if declared is None or str(declared).strip() == "":
-                    issues.append(
-                        ValidationIssue(
-                            level=6,
-                            severity=Severity.ERROR,
-                            code=ValidationCode.L6_ANONYMOUS_RETURN,
-                            message=(
-                                f"Calc def '{name}' has an anonymous return (no declared name); "
-                                f"codegen derives no output channel from it"
-                            ),
-                            element_name=name,
-                            location=get_element_location(calc_def),
-                            suggestion=(
-                                "Name the result: `return <name> : Real = <expr>;` or "
-                                "`out attribute <name> : Real = <expr>;`"
-                            ),
-                        )
-                    )
-        except Exception as error:
-            issues.append(_element_error("check_anonymous_returns", calc_def, error))
-
-    return issues
 
 
 def _format_diagnostic_location(location: Any) -> str:
@@ -719,219 +404,6 @@ def check_constraint_executability(model: Any) -> list[ValidationIssue]:
                 reason_code=next((diagnostic.reason for diagnostic in decision.diagnostics), None),
             )
         )
-    return issues
-
-
-def check_calc_bearing_instantiation(model: Any) -> list[ValidationIssue]:
-    """
-    C4 (Item 12): FAIL a calc-bearing part def that no usage instantiates.
-
-    A part def that owns template calcs but is never instantiated — plainly OR by
-    retyping — has its calcs silently dropped at extraction. "Instantiated" means the
-    part def's name appears in some part usage's resolved type set. A part usage's
-    `.types` includes the full supertype chain AND any retype target, so a retyped
-    usage (`part :>> x : Subtype`) counts the subtype as instantiated (Item 4).
-
-    Returns:
-        List of ValidationIssue (ERROR) for uninstantiated calc-bearing part defs.
-    """
-    issues: list[ValidationIssue] = []
-
-    # Union of every type name reachable through a part usage (chain + retypes).
-    # A partial set would make false findings, so a failure here ends the check (Appendix B).
-    instantiated: set[str] = set()
-    try:
-        for part_usage in SysideAdapter.elements_of_type(model, "PartUsage"):
-            for typ in getattr(part_usage, "types", []) or []:
-                type_name = getattr(typ, "name", None)
-                if type_name:
-                    instantiated.add(str(type_name))
-    except Exception as error:
-        return [_enumeration_error("check_calc_bearing_instantiation", "PartUsage", error)]
-
-    for part_def in SysideAdapter.elements_of_type(model, "PartDefinition"):
-        try:
-            if not hasattr(part_def, "owned_members"):
-                continue
-            owns_calc = any(
-                SysideAdapter.is_instance(member, "CalculationUsage")
-                for member in part_def.owned_members
-            )
-            if not owns_calc:
-                continue
-
-            part_name = getattr(part_def, "name", None)
-            if not part_name:
-                continue
-            if str(part_name) in instantiated:
-                continue
-
-            issues.append(
-                ValidationIssue(
-                    level=6,
-                    severity=Severity.ERROR,
-                    code=ValidationCode.L6_CALC_DEF_NO_INSTANTIATION,
-                    message=(
-                        f"Part def '{part_name}' owns template calcs but is never instantiated "
-                        f"(plainly or by retyping); its calcs are dropped at extraction"
-                    ),
-                    element_name=str(part_name),
-                    location=get_element_location(part_def),
-                    suggestion=(
-                        "Instantiate the part def with a part usage, or retype an existing usage to it"
-                    ),
-                )
-            )
-        except Exception as error:
-            issues.append(_element_error("check_calc_bearing_instantiation", part_def, error))
-
-    return issues
-
-
-def check_body_assignment_impl_loss(model: Any) -> list[ValidationIssue]:
-    """
-    C2b (Item 12): WARN a calc def output computed by body assignment.
-
-    The form `return attribute y : Real; y = <expr>` declares a named output with
-    no inline value and assigns it in the calc body. Extraction captures the output
-    channel but loses auto-impl: sysml-codegen `b5663c07` drops the body-assignment
-    target as a parameter (`extraction/extractor.py:249-264`) and marks the output
-    MANUAL_REQUIRED, "no expression AST" (`extraction/expression_compiler.py:265-274`),
-    so the modeler must hand-write the stencil body.
-    Prefer the inline form `return y : Real = <expr>` / `out attribute y : Real =
-    <expr>`. WARNING, so Level 6 stays passing.
-
-    Detection: a NAMED output member (Out/Return, declared name non-empty) with no
-    inline value expression, whose name is also carried by a sibling member that
-    DOES have a value expression (the body assignment). The inline forms carry the
-    value on the output member itself, so they do not fire; an anonymous return
-    (no declared name) is C2a's FAIL, not this WARN.
-
-    Returns:
-        List of ValidationIssue (WARNING) for body-assignment outputs.
-    """
-    issues: list[ValidationIssue] = []
-
-    for calc_def in SysideAdapter.elements_of_type(model, "CalculationDefinition"):
-        try:
-            if not hasattr(calc_def, "owned_members"):
-                continue
-            members = list(calc_def.owned_members)
-
-            # Names of members carrying a value expression — candidate body assignments.
-            valued_names = {
-                str(getattr(m, "name", ""))
-                for m in members
-                if getattr(m, "feature_value_expression", None) is not None
-                and str(getattr(m, "name", ""))
-            }
-
-            name = get_qualified_name(calc_def)
-            for member in members:
-                direction = (
-                    str(getattr(member, "direction", "")) if hasattr(member, "direction") else ""
-                )
-                if "Out" not in direction and "Return" not in direction:
-                    continue
-                declared = getattr(member, "declared_name", None)
-                if declared is None or str(declared).strip() == "":
-                    continue  # anonymous return -> C2a FAIL, not C2b
-                if getattr(member, "feature_value_expression", None) is not None:
-                    continue  # inline value -> auto-impl OK
-                member_name = str(getattr(member, "name", ""))
-                if member_name and member_name in valued_names:
-                    issues.append(
-                        ValidationIssue(
-                            level=6,
-                            severity=Severity.WARNING,
-                            code=ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS,
-                            message=(
-                                f"Calc def '{name}' output '{member_name}' is set by body "
-                                f"assignment; extraction keeps the channel but loses auto-impl"
-                            ),
-                            element_name=name,
-                            location=get_element_location(calc_def),
-                            suggestion=(
-                                f"Use the inline form: `return {member_name} : Real = <expr>;` "
-                                f"or `out attribute {member_name} : Real = <expr>;`"
-                            ),
-                        )
-                    )
-        except Exception as error:
-            issues.append(_element_error("check_body_assignment_impl_loss", calc_def, error))
-
-    return issues
-
-
-def _is_literal_rhs(expr: Any) -> bool:
-    """True if a value expression is a literal node per shared SysML expression API."""
-    return is_literal_node(expr)
-
-
-def check_attr_redef_expression_dropped(model: Any) -> list[ValidationIssue]:
-    """
-    C7 (Item 9): WARN an `attribute :>>` redefinition carrying an expression value.
-
-    Written for an older sysml-codegen whose redefinition scan
-    (`hierarchy_resolver._extract_single_redefinition`) read only ReferenceUsage
-    members, so a redefinition written WITH the `attribute` keyword (an
-    AttributeUsage) was dropped. sysml-codegen `b5663c07` has deleted that scan
-    (`tests/helpers/live_extraction.py:9-10`); its current one takes every Feature with
-    a qualified name and a value (`elaboration/elaborate.py:832-898`), so both spellings
-    are treated alike. The check is kept unchanged under every target; backlog
-    L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES decides it. It fires only when the RHS is a
-    computed expression; the bare `:>> attr = ...` forms (ReferenceUsage) and the
-    `attribute :>> attr = <literal>` form (taught in semantic-operators.md) do NOT
-    fire. WARNING severity, so Level 6 stays passing.
-
-    Detection: an AttributeUsage with a non-empty owned_redefinitions and a
-    feature_value_expression that is not a literal.
-
-    Returns:
-        List of ValidationIssue (WARNING) for dropped attribute-redefinition exprs.
-    """
-    issues: list[ValidationIssue] = []
-
-    for attr in SysideAdapter.elements_of_type(model, "AttributeUsage"):
-        try:
-            redefs = getattr(attr, "owned_redefinitions", None)
-            if not redefs:
-                continue  # a plain typed attribute, not a :>> redefinition
-            expr = getattr(attr, "feature_value_expression", None)
-            if expr is None:
-                continue  # type-only redefinition — nothing to drop
-            if _is_literal_rhs(expr):
-                continue  # literal AttributeUsage redefine — taught (D5), not warned
-            # A redefinition member carries no qualified_name; name it by the
-            # redefined feature (falling back to the member's local name).
-            redefined = getattr(redefs[0], "redefined_feature", None)
-            name = (
-                getattr(attr, "name", None)
-                or getattr(redefined, "name", None)
-                or get_qualified_name(attr)
-            )
-            issues.append(
-                ValidationIssue(
-                    level=6,
-                    severity=Severity.WARNING,
-                    code=ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED,
-                    message=(
-                        f"Attribute redefinition '{name}' uses the `attribute :>>` form with an "
-                        f"expression value; earlier sysml-codegen versions dropped this "
-                        f"override at extraction"
-                    ),
-                    element_name=name,
-                    location=get_element_location(attr),
-                    suggestion=(
-                        "Use the bare `:>> attr = <value>` form (parses as ReferenceUsage and is "
-                        "captured), or move the computation into a calc def "
-                        "(see semantic-operators.md)"
-                    ),
-                )
-            )
-        except Exception as error:
-            issues.append(_element_error("check_attr_redef_expression_dropped", attr, error))
-
     return issues
 
 
@@ -1016,16 +488,7 @@ _CHECKS: tuple[tuple[Callable[[Any], list[ValidationIssue]], tuple[ValidationCod
     (check_static_expressions, (ValidationCode.V2_DYNAMIC_EXPRESSION,)),
     (check_supported_operators, (ValidationCode.V4_UNSUPPORTED_OPERATOR,)),
     (check_static_function_invocations, (ValidationCode.V4_STATIC_FUNCTION_INVOCATION,)),
-    (
-        check_qualified_names,
-        (ValidationCode.L6_MISSING_QUALIFIED_NAME, ValidationCode.L6_INVALID_QUALIFIED_NAME),
-    ),
-    (
-        check_calc_def_structure,
-        (ValidationCode.L6_CALC_DEF_NO_OUTPUT, ValidationCode.L6_CALC_DEF_NO_DIRECTION),
-    ),
-    (check_anonymous_returns, (ValidationCode.L6_ANONYMOUS_RETURN,)),
-    (check_body_assignment_impl_loss, (ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS,)),
+    (check_calc_def_structure, (ValidationCode.L6_CALC_DEF_NO_DIRECTION,)),
     (
         check_constraint_executability,
         (
@@ -1033,26 +496,16 @@ _CHECKS: tuple[tuple[Callable[[Any], list[ValidationIssue]], tuple[ValidationCod
             ValidationCode.L6_CONSTRAINT_NON_NUMERICAL,
         ),
     ),
-    (check_calc_bearing_instantiation, (ValidationCode.L6_CALC_DEF_NO_INSTANTIATION,)),
-    (check_attr_redef_expression_dropped, (ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED,)),
 )
 
 # The per-code count metrics, in their printed order.
 _COUNTED_CODES = (
-    ValidationCode.L6_MISSING_QUALIFIED_NAME,
-    ValidationCode.L6_INVALID_QUALIFIED_NAME,
-    ValidationCode.L6_CALC_DEF_NO_OUTPUT,
     ValidationCode.L6_CALC_DEF_NO_DIRECTION,
-    ValidationCode.L6_INVALID_BINDING_FORMAT,
     ValidationCode.L6_DESIGN_ATTR_INCOMPLETE,
     ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE,
-    ValidationCode.L6_ANONYMOUS_RETURN,
-    ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS,
     ValidationCode.V4_STATIC_FUNCTION_INVOCATION,
     ValidationCode.L6_CONSTRAINT_MALFORMED_NUMERICAL,
     ValidationCode.L6_CONSTRAINT_NON_NUMERICAL,
-    ValidationCode.L6_CALC_DEF_NO_INSTANTIATION,
-    ValidationCode.L6_ATTR_REDEF_EXPR_DROPPED,
 )
 
 NOT_COMPUTED = "not computed"
@@ -1076,16 +529,10 @@ def _count_elements(model: Any, type_name: str) -> tuple[int | None, list[Valida
     return _guarded(f"count of {type_name}", partial(_element_count, model, type_name))
 
 
-def _target_note(target: Target, folded: list[ValidationIssue]) -> dict[str, str]:
-    """The metric line the target adds: the unset note, or native's summary of what it folded."""
+def _target_note(target: Target) -> dict[str, str]:
+    """The metric line the target adds: the unset note, or nothing."""
     if target is Target.UNSET:
         return {"Execution target note": UNSET_NOTE}
-    if target is Target.NATIVE:
-        return {
-            "Generator-only findings (native: INFO summary)": (
-                f"{len(folded)} folded; each is listed in --json-report"
-            )
-        }
     return {}
 
 
@@ -1097,8 +544,8 @@ def validate_architecture(
     """
     Main entry point for Level 6 validation.
 
-    Runs the ADR-002, codegen and manifest checks over one loaded model. Under the `native`
-    execution target, the codes only generated code needs fold into one INFO summary.
+    Runs the ADR-002, convention and manifest checks over one loaded model. The execution
+    target is reported, never used to change a result.
 
     Args:
         models_path: Path to models directory
@@ -1109,7 +556,7 @@ def validate_architecture(
             project's `[tool.agentic-mbse] execution-target` (Item 3 design D3)
 
     Returns:
-        QualityCheckResult with the architecture and codegen-convention issues
+        QualityCheckResult with the architecture and convention issues
     """
     print_header(LEVEL_NAME, 6)
 
@@ -1161,7 +608,7 @@ def validate_architecture(
     num_calc_usages, count_errors = _count_elements(model, "CalculationUsage")
     all_issues.extend(count_errors)
 
-    # ADR-002, codegen and Item 12 checks, each wrapped so an escaped exception names it (D4).
+    # ADR-002 and convention checks, each wrapped so an escaped exception names it (D4).
     uncounted: set[ValidationCode] = set()
     for check, codes in _CHECKS:
         found, errors = _guarded(check.__name__, partial(check, model))
@@ -1169,12 +616,6 @@ def validate_architecture(
         if _reported_failure(issues):
             uncounted.update(codes)
         all_issues.extend(issues)
-    bindings, errors = _guarded("check_binding_formats", lambda: check_binding_formats(model))
-    binding_issues, num_bindings = bindings or ([], None)
-    binding_issues = errors + binding_issues
-    if _reported_failure(binding_issues):
-        uncounted.add(ValidationCode.L6_INVALID_BINDING_FORMAT)
-    all_issues.extend(binding_issues)
     design_attrs, errors = _guarded(
         "check_design_attr_completeness",
         lambda: check_design_attr_completeness(model, design_path_filter=design_path_filter),
@@ -1194,11 +635,9 @@ def validate_architecture(
     manifest_issues, manifests_checked = manifests or ([], None)
     all_issues.extend(manifest_errors)
 
-    shown, folded = fold(all_issues, resolution.target)
-
-    # ERROR-only failure criteria (matches old L8 behavior), over the issues as shown.
+    # ERROR-only failure criteria.
     # Manifest issues are unstructured strings; also fail if any found
-    success = not any(i.severity == Severity.ERROR for i in shown)
+    success = not any(i.severity == Severity.ERROR for i in all_issues)
     if manifest_issues:
         success = False
 
@@ -1210,16 +649,12 @@ def validate_architecture(
         level=6,
         level_name=LEVEL_NAME,
         success=success,
-        summarized=folded,
         report_detail=target_detail,
         metrics={
             **target_metrics,
-            **_target_note(resolution.target, folded),
+            **_target_note(resolution.target),
             "Calc defs checked": _count(num_calc_defs, failed=False),
             "Calc usages checked": _count(num_calc_usages, failed=False),
-            "Bindings validated": _count(
-                num_bindings, failed=ValidationCode.L6_INVALID_BINDING_FORMAT in uncounted
-            ),
             "Design attrs checked": _count(
                 num_design_attrs, failed=ValidationCode.L6_DESIGN_ATTR_INCOMPLETE in uncounted
             ),
@@ -1228,7 +663,7 @@ def validate_architecture(
         },
     )
 
-    for issue in shown:
+    for issue in all_issues:
         result.add_issue(issue)
 
     # Add manifest issues (unstructured strings)

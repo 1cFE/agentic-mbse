@@ -13,6 +13,7 @@ This register lists SysML v2 constructs that are valid, parse cleanly, and still
 
 An author writes a calculation usage and gives each input the name of the definition's parameter, in whatever order is convenient:
 
+<!-- @tool-example fails="L2_POSITIONAL_BINDING" -->
 <!-- @positional-example expect="p::c|b|Sub::a; p::c|a|Sub::b" -->
 ```sysml
 calc def Sub { in a : Real; in b : Real; return r : Real = a - b; }
@@ -65,6 +66,7 @@ Pick the definition's parameter you mean, then use one of these:
 - **Write the inputs in definition order**, with the definition's parameter names.
 - **Rename deliberately** with `redefines`, when the usage needs its own name for a parameter.
 
+<!-- @tool-example defect="UNBOUND_INPUT" -->
 <!-- @positional-example expect="none" -->
 ```sysml
 calc def Sub { in a : Real; in b : Real; return r : Real = a - b; }
@@ -143,7 +145,7 @@ Copy `owner`, `input`, `target`, `file` and `line` from the finding's message, w
 - Tree reproduction, including fusion-tea `f96ad312` (125 mismatches, value effect unknown) and two dc3 revisions (none): `.project/completed/20261018_positional-binding-check/evidence/run-trees.md`.
 - Native behavior pinned by learning tests: `tests/learning/test_syside_input_redefinition.py`.
 - sysml-codegen records parser positional behavior in `sysml-codegen@b5663c07:tests/fixtures/modeled_default_fidelity/PROVENANCE.md` and tracks POSITIONAL-FORMAL-REDEFINITION in `sysml-codegen@b5663c07:.project/backlog/BACKLOG.md`.
-- A draft finding for sysml-codegen about its by-name wiring (the -7 versus 7 above) is at `.project/completed/20261018_positional-binding-check/evidence/upstream-codegen-finding.md`. **It is unfiled** until it is filed in sysml-codegen.
+- A draft finding for sysml-codegen about its by-name wiring (the -7 versus 7 above) is at `.project/completed/20261018_positional-binding-check/evidence/upstream-codegen-finding.md`. It was filed on 2026-10-22 in sysml-codegen's backlog as `[POSITIONAL-FORMAL-REDEFINITION]`, with the same result re-run at sysml-codegen `6190f996` (generated 7, native −7).
 
 ## Candidates, not yet reproduced
 

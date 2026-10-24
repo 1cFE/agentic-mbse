@@ -40,6 +40,7 @@ SysML v2 syntax that appears similar can create vastly different AST structures 
 **AST Result:** Creates `FeatureValue` with `is_default=False`
 **Use Case:** Fixed values, computed expressions, bindings
 
+<!-- @tool-example -->
 ```sysml
 calc def SimpleCalculation {
     in attribute radius : Real;
@@ -47,7 +48,7 @@ calc def SimpleCalculation {
 }
 
 part def Component {
-    attribute fixed_mass : Mass = 1000 [kg];  // Fixed value
+    attribute fixed_mass : Real = 1000 [kg];  // Fixed value
 }
 ```
 
@@ -93,17 +94,19 @@ calc usage my_calc : AdvancedCalculation {
 
 ### Correct Use Case: Type Specialization (Within Hierarchy)
 
+<!-- @tool-example -->
 ```sysml
 // Base calc def
 calc def BaseCalculation {
     in attribute input : Real;
-    out attribute output : Real;
+    out attribute output : Real default input * 2.0;
 }
 
 // Specialized calc def
 calc def SpecializedCalculation :> BaseCalculation {
     // CORRECT: Redefinition within specialization hierarchy
-    in attribute input :>> BaseCalculation::input;
+    in attribute input : Real :>> BaseCalculation::input;
+    out attribute output : Real :>> BaseCalculation::output = input * 3.0;
 }
 ```
 
@@ -194,12 +197,13 @@ part def 'Specialized Component' :> 'Base Component' {
 
 ### Definitions (Declare Structure ONLY)
 
+<!-- @tool-example -->
 ```sysml
 // Library: Pure type declarations
 package AnalysisCalcs {
     calc def SourceCalculation {
         in attribute input_value : Real;
-        out attribute result : Real;
+        out attribute result : Real = input_value * 0.5;
     }
 }
 
@@ -381,16 +385,17 @@ deep_instance depends on:
 
 **Example (DO NOT DO THIS):**
 
+<!-- @tool-example fails="SI_EDGE_DANGLING" -->
 ```sysml
 // Definitions (pure types - no issues here)
 calc def CalcA {
     in attribute x : Real;
-    out attribute output : Real;
+    out attribute output : Real = x * 2.0;
 }
 
 calc def CalcB {
     in attribute y : Real;
-    out attribute output : Real;
+    out attribute output : Real = y * 2.0;
 }
 
 // Usages (this is where circular dependency is created!)
@@ -489,6 +494,7 @@ A check on `output` (an `assert constraint`) does not go in the specialized calc
 
 ### Not a check: plain constraint block
 
+<!-- @tool-example -->
 ```sysml
 part def WrongConstraint {
     attribute temperature_k : Real;  // [K]
@@ -501,6 +507,7 @@ part def WrongConstraint {
 
 ### Correct: assert prefix, on a part
 
+<!-- @tool-example -->
 ```sysml
 part def CorrectConstraint {
     attribute temperature_k : Real;  // [K]

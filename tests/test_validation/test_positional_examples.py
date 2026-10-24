@@ -123,5 +123,4 @@ def test_marked_example_has_exactly_its_stated_positional_findings(
     assert positional_identities(models) == example.expected
     if not example.expected:
         codes = {issue.code for issue in validate_structure(str(models)).structured_issues}
-        assert ValidationCode.L2_SELF_NAMED_BINDING not in codes
         assert ValidationCode.L2_POSITIONAL_BINDING not in codes

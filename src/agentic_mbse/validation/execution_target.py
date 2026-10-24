@@ -1,22 +1,18 @@
-"""The project's execution target: whether it targets generated code, and what that changes in L6.
+"""The project's execution target: whether it targets generated code.
 
 A project says in its committed `pyproject.toml` how it runs:
 `[tool.agentic-mbse] execution-target = "generated" | "native"`, or leaves it unset.
 
 - `generated` marks a project that targets generated code. The modelling workflow reads it to
-  decide when to run `sysml-codegen check` (`MODELING_PROCESS.md`, "Generated code"). L6
-  shows every result at its own severity, as it does when the target is unset.
-- `native` marks a project that does not run generated code. L6 folds the four codes that only
-  generated code needs (`FOLDED_UNDER_NATIVE`) into one INFO summary; every other code keeps
-  its own severity.
+  decide when to run `sysml-codegen check` (`MODELING_PROCESS.md`, "Generated code").
+- `native` marks a project that does not run generated code.
 
-The target changes how a result is shown, never what it is. A broken setting is
+L6 reports the target and changes no result for it (ADR 0006). A broken setting is
 `L6_SETTING_INVALID` and stops L6 under every target.
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -28,7 +24,6 @@ from agentic_mbse.project_settings import (
     SettingsFault,
     read_toolkit_table,
 )
-from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 
 
 class Target(StrEnum):
@@ -144,38 +139,9 @@ def describe_target(resolution: TargetResolution) -> str:
     return f"{resolution.target.value} ({origin})"
 
 
-#: The L6 codes that matter only to generated code. Each has its row in the legacy-check audit's
-#: "Lowered under native" table (`.project/completed/20261020_l6-subset-profile/evidence/
-#: legacy-l6-audit.md`) and in `tests/fixtures/l6/native_lowered.toml`; a test keeps the three
-#: equal.
-FOLDED_UNDER_NATIVE: frozenset[ValidationCode] = frozenset(
-    {
-        ValidationCode.L6_MISSING_QUALIFIED_NAME,
-        ValidationCode.L6_ANONYMOUS_RETURN,
-        ValidationCode.L6_BODY_ASSIGNMENT_IMPL_LOSS,
-        ValidationCode.L6_CALC_DEF_NO_INSTANTIATION,
-    }
-)
-
 UNSET_NOTE = (
     "execution-target is not set. Under [tool.agentic-mbse] in pyproject.toml, set "
     'execution-target = "generated" if the project targets generated code (the modelling '
-    'workflow then runs sysml-codegen check), or "native" if it does not (L6 then folds four '
-    "generator-only codes into one INFO summary). agentic-mbse init "
+    'workflow then runs sysml-codegen check), or "native" if it does not. agentic-mbse init '
     "--execution-target=generated|native writes it."
 )
-
-
-def fold(
-    issues: Sequence[ValidationIssue], target: Target
-) -> tuple[list[ValidationIssue], list[ValidationIssue]]:
-    """`issues` split into those shown and those folded into the native summary, as INFO."""
-    if target is not Target.NATIVE:
-        return list(issues), []
-    shown = [issue for issue in issues if issue.code not in FOLDED_UNDER_NATIVE]
-    folded = [
-        issue.model_copy(update={"severity": Severity.INFO})
-        for issue in issues
-        if issue.code in FOLDED_UNDER_NATIVE
-    ]
-    return shown, folded

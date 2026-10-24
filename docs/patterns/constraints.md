@@ -141,10 +141,11 @@ assume constraint IdealGas {
 
 ### In Part Definitions
 
+<!-- @tool-example -->
 ```sysml
 part def 'Pressure Vessel' {
-    attribute pressure : Pressure;
-    attribute max_pressure : Pressure;
+    attribute pressure : Real;
+    attribute max_pressure : Real;
 
     assert constraint PressureLimit {
         doc /* Operating pressure must not exceed design limit */
@@ -157,6 +158,7 @@ part def 'Pressure Vessel' {
 
 An `assert constraint` goes on a part (a `part def` or a part usage), not inside a `calc def` or a calc usage. The code generator refuses an assert that a calculation owns. To check a calculation's result, expose the result on the part that owns the calculation and assert there.
 
+<!-- @tool-example -->
 ```sysml
 calc def PowerCalculation {
     in attribute voltage_in : Real;
@@ -178,6 +180,7 @@ part def 'Heater' {
 }
 ```
 
+<!-- @tool-example fails="SI_CONSTRAINT_UNATTACHED" -->
 ```sysml
 // Incorrect: the check is inside the calc def, so the generator refuses the model
 calc def PowerCalculation {
@@ -193,8 +196,8 @@ calc def PowerCalculation {
 
 ```sysml
 part my_vessel : 'Pressure Vessel' {
-    attribute pressure = 10 [MPa];
-    attribute max_pressure = 15 [MPa];
+    attribute :>> pressure = 10.0e6 [Pa];
+    attribute :>> max_pressure = 15.0e6 [Pa];
 
     // Can add design-specific constraints
     assert constraint SafetyMargin {
@@ -210,13 +213,19 @@ part my_vessel : 'Pressure Vessel' {
 
 ### Logical Operators
 
+<!-- @tool-example -->
 ```sysml
-assert constraint ComplexCondition {
-    doc /* Multiple conditions must hold */
-    temperature > 0 [K] and
-    temperature < 1000 [K] and
-    (pressure < 10 [MPa] or is_reinforced)
+part def Vessel {
+    attribute temperature : Real = 500.0 [K];
+    attribute pressure : Real = 5.0e6 [Pa];
+    assert constraint ComplexCondition {
+        doc /* Multiple conditions must hold */
+        temperature [K] > 0 [K] and
+        temperature [K] < 1000 [K] and
+        pressure [Pa] < 10.0e6 [Pa]
+    }
 }
+part vessel : Vessel;
 ```
 
 ### Range Constraints
@@ -243,10 +252,11 @@ assert constraint Conservation {
 
 ### Not a check: plain constraint block (no prefix)
 
+<!-- @tool-example -->
 ```sysml
 // Parses fine — a ConstraintUsage — but never executes
 constraint TempLimit {
-    temperature < 1000 [K]
+    temperature [K] < 1000 [K]
 }
 ```
 
@@ -256,13 +266,20 @@ enforced. Use `assert constraint` for a check.
 
 ### Correct: With prefix
 
+<!-- @tool-example -->
 ```sysml
 // CORRECT: Creates ConstraintUsage
-assert constraint TempLimit {
-    doc /* Operating temperature must not exceed limit */
-    temperature < 1000 [K]
+part def Reactor {
+    attribute temperature : Real = 900.0 [K];
+    assert constraint TempLimit {
+        doc /* Operating temperature must not exceed limit */
+        temperature [K] < 1000 [K]
+    }
 }
+part reactor : Reactor;
 ```
+
+Annotate both operands with a unit, as here, or neither (`temperature < 1000.0`). With one annotated operand (`temperature < 1000 [K]` and `temperature : Real`) the generator refuses the predicate (`block_ordering_category_pair`).
 
 ### Wrong: Missing doc comment
 
@@ -381,21 +398,24 @@ blocked.
 
 For reusable constraint patterns:
 
+<!-- @tool-example -->
 ```sysml
 // Library: Define constraint pattern
 constraint def PositiveReal {
-    in attribute value : Real;
-    value > 0
+    in attribute amount : Real;
+    amount > 0
 }
 
 // Usage: Apply constraint
 part component {
     attribute mass : Real;
     assert constraint mass_positive : PositiveReal {
-        in value = mass;
+        in amount = mass;
     }
 }
 ```
+
+Do not name a constraint formal `value`: the generator refuses it as a collision with a name it generates (`generated_binding_overlap`).
 
 ---
 
@@ -448,6 +468,7 @@ That set of gates the headline is accountable for is the **feasibility denominat
 Put the marker in the constraint usage's doc comment, with a reason — **on a gate that does not
 run**:
 
+<!-- @tool-example -->
 ```sysml
 constraint def ProductWithinBand {
     in actual : Real;

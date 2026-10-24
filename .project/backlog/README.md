@@ -33,10 +33,6 @@ Edit `BACKLOG.md` to reorder epics. Use priority levels:
 ### Completing an Epic
 
 When ALL items are done:
-1. Move `epic_*.md` to `../completed/`
+1. Move `epic_*.md` to `../completed/` using `git mv` to preserve history
 2. Update `BACKLOG.md` (mark complete)
 3. Update `../completed/CHANGELOG.md`
-
-## Current tracking
-
-**Last Reconciled**: 2026-10-04. BACKLOG preserves inherited priorities and distinguishes ready work, completed work, and declined dispositions. See [CURRENT_WORK.md](../CURRENT_WORK.md) and the [status report](../reports/2026-10-04-0901-status-report.md) before resuming an older epic.

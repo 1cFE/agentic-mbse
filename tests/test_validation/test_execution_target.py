@@ -1,15 +1,11 @@
-"""The execution target: how it is resolved, and the four codes it folds under `native`."""
+"""The execution target: how it is resolved."""
 
-import re
 from pathlib import Path
 
 import pytest
-import tomllib
 
 from agentic_mbse.project_settings import SettingsFault
-from agentic_mbse.sysml.types import Severity, ValidationCode, ValidationIssue
 from agentic_mbse.validation.execution_target import (
-    FOLDED_UNDER_NATIVE,
     FromFile,
     FromOverride,
     Target,
@@ -18,52 +14,10 @@ from agentic_mbse.validation.execution_target import (
     TargetSettingError,
     Unset,
     describe_target,
-    fold,
     resolve_target,
 )
 
 REPO = Path(__file__).resolve().parents[2]
-LOWERED = frozenset(
-    {
-        "L6_MISSING_QUALIFIED_NAME",
-        "L6_ANONYMOUS_RETURN",
-        "L6_CALC_DEF_NO_INSTANTIATION",
-        "L6_BODY_ASSIGNMENT_IMPL_LOSS",
-    }
-)
-
-
-def _issue(code: ValidationCode, severity: Severity = Severity.ERROR) -> ValidationIssue:
-    return ValidationIssue(level=6, severity=severity, code=code, message=code.value)
-
-
-def test_folded_codes_are_exactly_the_four_evidenced_codes():
-    assert {code.value for code in FOLDED_UNDER_NATIVE} == LOWERED
-    fixture = tomllib.loads((REPO / "tests/fixtures/l6/native_lowered.toml").read_text())
-    assert frozenset(fixture["lowered"]) == LOWERED
-
-
-ISSUES = [
-    _issue(ValidationCode.L6_CHECK_ERROR),
-    _issue(ValidationCode.L6_MISSING_QUALIFIED_NAME),
-    _issue(ValidationCode.L6_CHECK_UNVERIFIED, Severity.WARNING),
-    _issue(ValidationCode.L6_ANONYMOUS_RETURN),
-    _issue(ValidationCode.L6_DESIGN_ATTR_UNEXTRACTABLE),
-]
-
-
-@pytest.mark.parametrize("target", [Target.UNSET, Target.GENERATED])
-def test_unset_and_generated_show_every_issue_at_its_own_severity(target):
-    assert fold(ISSUES, target) == (ISSUES, [])
-
-
-def test_native_folds_only_the_four_codes_as_info_and_keeps_the_rest_in_order():
-    shown, folded = fold(ISSUES, Target.NATIVE)
-    assert shown == [ISSUES[0], ISSUES[2], ISSUES[4]]
-    assert [(i.code, i.severity) for i in folded] == [
-        (ValidationCode.L6_MISSING_QUALIFIED_NAME, Severity.INFO),
-        (ValidationCode.L6_ANONYMOUS_RETURN, Severity.INFO),
-    ]
 
 
 # --- resolving the target ---------------------------------------------------------------
@@ -196,35 +150,3 @@ def test_subdirectory_reads_root_file_and_ignores_nested_pyproject(tmp_path):
 def test_unset_is_not_an_override(tmp_path):
     with pytest.raises(ValueError, match="unset is no override"):
         resolve_target(_project(tmp_path, None), Target.UNSET)
-
-
-def _audit() -> Path:
-    """The legacy-check audit that evidences each L6 code's place under `native`."""
-    return REPO / ".project/completed/20261020_l6-subset-profile/evidence/legacy-l6-audit.md"
-
-
-def test_audit_lowered_table_matches_fixture():
-    text = _audit().read_text(encoding="utf-8")
-    section = text.split("## Lowered under native", 1)[1].split("\n## ", 1)[0]
-    codes = re.findall(r"^\| `([A-Z0-9_]+)` \|", section, flags=re.MULTILINE)
-    assert frozenset(codes) == LOWERED
-    assert len(codes) == len(set(codes))
-
-
-def test_audit_has_one_row_per_legacy_code_plus_manifest_and_setup():
-    text = _audit().read_text(encoding="utf-8")
-    section = text.split("## Every legacy L6 code", 1)[1].split("\n## ", 1)[0]
-    first_cells = re.findall(r"^\| ([^|]+?) \|", section, flags=re.MULTILINE)
-    codes = {cell.split("`")[1] for cell in first_cells if cell.startswith("`")}
-    assert codes == _emitted_check_codes()
-    assert len(codes) == 17
-    assert {"Manifest failures", "Setup failures"} <= set(first_cells)
-
-
-def _emitted_check_codes() -> set[str]:
-    """The codes the L6 checks emit, read from their source; not the check-error or setting codes."""
-    emitted = set()
-    for name in ("level6_architecture.py", "adr002.py"):
-        source = (REPO / "src/agentic_mbse/validation" / name).read_text()
-        emitted |= set(re.findall(r"ValidationCode\.([A-Z0-9_]+)", source))
-    return emitted - {"L6_CHECK_ERROR", "L6_SETTING_INVALID"}

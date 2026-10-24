@@ -129,37 +129,12 @@ def raising(module: Any, name: str, error: Exception) -> Callable[[pytest.Monkey
     return force
 
 
-QN = frozenset({ValidationCode.L6_MISSING_QUALIFIED_NAME, ValidationCode.L6_INVALID_QUALIFIED_NAME})
 EXPOSE_DEPENDENT = frozenset(
     {ValidationCode.V2_DYNAMIC_EXPRESSION, ValidationCode.V4_UNSUPPORTED_OPERATOR, UNEXTRACTABLE}
 )
 
 SITES = [
     # level6_architecture.py (Appendix B line at ebb3d467 -> function)
-    Site(
-        ":191 qualified-name defs listed",
-        "check_qualified_names",
-        enumeration("check_qualified_names", "CalculationDefinition"),
-        QN,
-    ),
-    Site(
-        ":230 qualified-name read (AttributeError)",
-        "check_qualified_names",
-        element("check_qualified_names", "CalculationDefinition", "qualified_name", AttributeError),
-        QN,
-    ),
-    Site(
-        ":246 qualified-name usages listed",
-        "check_qualified_names",
-        enumeration("check_qualified_names", "CalculationUsage"),
-        QN,
-    ),
-    Site(
-        ":289 usage qualified-name read (AttributeError)",
-        "check_qualified_names",
-        element("check_qualified_names", "CalculationUsage", "qualified_name", AttributeError),
-        QN,
-    ),
     Site(
         ":320 calc def structure listed",
         "check_calc_def_structure",
@@ -169,16 +144,6 @@ SITES = [
         ":374 calc def structure per def",
         "check_calc_def_structure",
         element("check_calc_def_structure", "CalculationDefinition", "owned_members"),
-    ),
-    Site(
-        ":418 binding formats listed",
-        "check_binding_formats",
-        enumeration("check_binding_formats", "CalculationUsage"),
-    ),
-    Site(
-        ":470 binding formats per usage",
-        "check_binding_formats",
-        element("check_binding_formats", "CalculationUsage", "owned_members"),
     ),
     Site(
         ":502 design attrs listed",
@@ -207,41 +172,9 @@ SITES = [
         frozenset({UNEXTRACTABLE, INCOMPLETE}),
     ),
     Site(
-        ":623 anonymous returns per def",
-        "check_anonymous_returns",
-        element("check_anonymous_returns", "CalculationDefinition", "owned_members"),
-    ),
-    Site(
-        "new: anonymous returns listed (no try of its own)",
-        "check_anonymous_returns",
-        enumeration("check_anonymous_returns", "CalculationDefinition"),
-    ),
-    Site(
         "new: constraint executability",
         "check_constraint_executability",
         raising(level6_architecture, "evaluate_identified_profile", ForcedError("profile bug")),
-    ),
-    Site(
-        ":723 instantiated set",
-        "check_calc_bearing_instantiation",
-        enumeration("check_calc_bearing_instantiation", "PartUsage"),
-        frozenset({ValidationCode.L6_CALC_DEF_NO_INSTANTIATION}),
-    ),
-    Site(
-        ":759 instantiation per part def",
-        "check_calc_bearing_instantiation",
-        element("check_calc_bearing_instantiation", "PartDefinition", "owned_members"),
-        frozenset({ValidationCode.L6_CALC_DEF_NO_INSTANTIATION}),
-    ),
-    Site(
-        ":832 body assignment per def",
-        "check_body_assignment_impl_loss",
-        element("check_body_assignment_impl_loss", "CalculationDefinition", "owned_members"),
-    ),
-    Site(
-        ":907 attribute redefinition per attribute",
-        "check_attr_redef_expression_dropped",
-        element("check_attr_redef_expression_dropped", "AttributeUsage", "owned_redefinitions"),
     ),
     Site(
         ":973 calc def count",
@@ -326,8 +259,8 @@ def _errors(result: QualityCheckResult, check: str) -> list[Any]:
 
 
 def _codes(result: QualityCheckResult, subject: str | None = None) -> set[ValidationCode]:
-    """Every code L6 reported or summarized, or only those on `subject`."""
-    issues = [*result.structured_issues, *result.summarized]
+    """Every code L6 reported, or only those on `subject`."""
+    issues = result.structured_issues
     return {i.code for i in issues if subject is None or i.element_name == subject}
 
 
@@ -350,7 +283,6 @@ def test_site_failure_is_check_error_naming_check(site, target, monkeypatch, tmp
     assert all(e.severity.value == "error" for e in errors)
     assert not result.success
     assert not (site.no_finding & _codes(result, site.subject))
-    assert CHECK_ERROR not in {i.code for i in result.summarized}
 
 
 @pytest.mark.syside
@@ -380,7 +312,7 @@ def test_failed_check_prints_its_code_counts_not_computed(monkeypatch, tmp_path)
     assert metrics["Design attrs checked"] == "not computed"
     assert metrics["L6_DESIGN_ATTR_INCOMPLETE"] == "not computed"
     assert metrics["L6_DESIGN_ATTR_UNEXTRACTABLE"] == "not computed"
-    assert metrics["L6_ANONYMOUS_RETURN"] == 0
+    assert metrics["L6_CONSTRAINT_NON_NUMERICAL"] == 0
 
 
 @pytest.mark.syside
@@ -459,8 +391,7 @@ def test_static_expression_walker_refusal_is_a_warning(target, tmp_path):
     `check_static_expressions` reads references through `inspect_reference_uses`, which raises
     `SemanticEvidenceError` on every non-`sum` call (the ES-005 refusal path). That is the walker
     declining the attribute, not a crash, so it is an `L6_CHECK_UNVERIFIED` WARNING naming the
-    check, the attribute and the walker's reason, never folded into the native summary (design
-    D15, I1; align § Audit decisions, B1). At `ebb3d467` this attribute passed L6.
+    check, the attribute and the walker's reason (design D15, I1; align § Audit decisions, B1). At `ebb3d467` this attribute passed L6.
     """
     result = level6_architecture.validate_architecture(str(_abs_project(tmp_path, target)))
     (warning,) = _unverified(result, "check_static_expressions")
@@ -468,7 +399,6 @@ def test_static_expression_walker_refusal_is_a_warning(target, tmp_path):
     assert warning.element_name == "plant::Plant::scaled"
     assert warning.reason_code == SemanticEvidenceCode.EXPRESSION_KIND_UNSUPPORTED.value
     assert "is not supported by this executable subset" in warning.message
-    assert ValidationCode.L6_CHECK_UNVERIFIED not in {i.code for i in result.summarized}
     assert not _errors(result, "check_static_expressions")
     assert result.success
 
@@ -508,26 +438,6 @@ def test_other_legacy_walker_calls_report_unverified(function, check, monkeypatc
         w.reason_code == SemanticEvidenceCode.EXPRESSION_DEPTH_EXHAUSTED.value for w in warnings
     )
     assert not _errors(result, check)
-
-
-@pytest.mark.syside
-def test_failed_calc_def_listing_still_checks_calc_usages(monkeypatch, tmp_path):
-    """A failed calc-def listing ends only that half of `check_qualified_names` (audit adv. 2)."""
-    enumeration("check_qualified_names", "CalculationDefinition")(monkeypatch)
-    calcs = (FIXTURE / "library" / "calcs.sysml").read_text().replace("calc t :", "calc _t :")
-    assert "calc _t :" in calcs
-    models = {
-        "library/calcs.sysml": calcs,
-        "designs/plant.sysml": (FIXTURE / "designs" / "plant.sysml").read_text(),
-    }
-    result = level6_architecture.validate_architecture(
-        str(make_project(tmp_path, pyproject=target_table('"native"'), models=models))
-    )
-    assert len(_errors(result, "check_qualified_names")) == 1
-    invalid = [
-        i for i in result.structured_issues if i.code is ValidationCode.L6_INVALID_QUALIFIED_NAME
-    ]
-    assert [i.element_name for i in invalid] == ["lib::Site::_t"]
 
 
 def _assert_target_recorded(result: QualityCheckResult, pyproject: Path) -> None:

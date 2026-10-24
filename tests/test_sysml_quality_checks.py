@@ -778,11 +778,7 @@ class TestLevel6Architecture:
         """All L6 ValidationCode entries are defined"""
         from agentic_mbse.sysml.types import ValidationCode
 
-        assert hasattr(ValidationCode, "L6_MISSING_QUALIFIED_NAME")
-        assert hasattr(ValidationCode, "L6_INVALID_QUALIFIED_NAME")
-        assert hasattr(ValidationCode, "L6_CALC_DEF_NO_OUTPUT")
         assert hasattr(ValidationCode, "L6_CALC_DEF_NO_DIRECTION")
-        assert hasattr(ValidationCode, "L6_INVALID_BINDING_FORMAT")
         assert hasattr(ValidationCode, "L6_DESIGN_ATTR_INCOMPLETE")
 
     def test_models_report_incomplete_attrs(self):
@@ -803,14 +799,6 @@ class TestLevel6Architecture:
         assert result.level == 6
         assert result.level_name == "Architecture & Conventions"
 
-    def test_check_qualified_names_on_valid_model(self):
-        """Valid models produce no qualified name issues"""
-        from agentic_mbse.validation.level6_architecture import validate_architecture
-
-        result = validate_architecture("tests/fixtures/sample_models/")
-        qname_issues = [i for i in result.structured_issues if "QUALIFIED_NAME" in str(i.code)]
-        assert len(qname_issues) == 0, f"Unexpected issues: {qname_issues}"
-
     def test_metrics_include_element_counts(self):
         """Metrics include counts of checked elements"""
         from agentic_mbse.validation.level6_architecture import validate_architecture
@@ -819,30 +807,6 @@ class TestLevel6Architecture:
         assert "Calc defs checked" in result.metrics
         assert "Calc usages checked" in result.metrics
         assert result.metrics["Calc defs checked"] >= 0
-
-    def test_check_calc_def_structure_finds_outputs(self):
-        """Valid calc defs with outputs pass structure check"""
-        from agentic_mbse.sysml.types import ValidationCode
-        from agentic_mbse.validation.level6_architecture import validate_architecture
-
-        result = validate_architecture("tests/fixtures/sample_models/")
-        no_output_issues = [
-            i for i in result.structured_issues if i.code == ValidationCode.L6_CALC_DEF_NO_OUTPUT
-        ]
-        assert len(no_output_issues) == 0, f"Unexpected no-output issues: {no_output_issues}"
-
-    def test_check_binding_formats_valid(self):
-        """Valid bindings pass format check"""
-        from agentic_mbse.sysml.types import ValidationCode
-        from agentic_mbse.validation.level6_architecture import validate_architecture
-
-        result = validate_architecture("tests/fixtures/sample_models/")
-        binding_issues = [
-            i
-            for i in result.structured_issues
-            if i.code == ValidationCode.L6_INVALID_BINDING_FORMAT
-        ]
-        assert len(binding_issues) == 0, f"Unexpected binding issues: {binding_issues}"
 
     def test_all_checks_run(self):
         """All check functions execute and contribute to metrics"""
@@ -910,21 +874,6 @@ class TestLevel6NegativeCases:
 
     FIXTURES = "tests/fixtures/l6_negative"
     ADR002_FIXTURES = "tests/fixtures/adr002_violations"
-
-    def test_calc_def_no_output(self):
-        """Calc def with no output parameter triggers L6_CALC_DEF_NO_OUTPUT."""
-        from agentic_mbse.sysml.types import Severity, ValidationCode
-        from agentic_mbse.validation.level6_architecture import validate_architecture
-
-        result = validate_architecture(self.FIXTURES)
-        no_output = [
-            i for i in result.structured_issues if i.code == ValidationCode.L6_CALC_DEF_NO_OUTPUT
-        ]
-        assert len(no_output) >= 1, (
-            f"Expected L6_CALC_DEF_NO_OUTPUT, got: {result.structured_issues}"
-        )
-        assert no_output[0].severity == Severity.ERROR
-        assert "NoOutputCalc" in no_output[0].message
 
     def test_calc_def_no_direction_is_dead_code(self):
         """L6_CALC_DEF_NO_DIRECTION requires member.typing which syside never sets.

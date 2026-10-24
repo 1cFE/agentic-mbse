@@ -66,6 +66,7 @@ The code generator (sysml-codegen) refuses three structures that parse and valid
 
 **1. An `assert constraint` goes on a part, not inside a calculation.** Put it in a `part def` or a part usage, bound to the calculation's result there. Not in a `calc def`, and not in a calc usage.
 
+<!-- @tool-example fails="SI_CONSTRAINT_UNATTACHED" -->
 ```sysml
 constraint def Positive { in amount : Real; amount > 0.0 }
 
@@ -87,6 +88,8 @@ calc def PowerCalc {
 }
 ```
 
+A failed assert does not stop anything. In a generated package each constraint records satisfied, violated or indeterminate, and every output is still computed; SysIDE's own evaluation does not run asserts at all. Whatever reads the results must check the constraint verdicts before using the numbers.
+
 **2. Part multiplicities are exact.** Give a fixed count: a number (`[3]`), or an `Integer` attribute declared with a value in the part def that owns the parts (`[cell_count]`). Not an open range like `[*]`, `[0..*]` or `[1..*]`, and not an attribute declared at package level.
 
 ```sysml
@@ -103,18 +106,20 @@ part def Pack {
 part cells : Cell[0..*];
 ```
 
-Give the count attribute a fixed value (`= 3`). If you give it a default instead (`default := 2`) and redefine it later, in a part usage or a specializing part def (`:>> cell_count = 3;`), the generator still builds the default count (two parts), and nothing warns you.
+Give the count attribute a fixed value (`= 3`) when it never changes. To vary it, give the base a default (`attribute cell_count : Integer default 2;`) and override it in a specializing part def with the `attribute` keyword: `attribute :>> cell_count = 3;` (or `default 3`) builds three parts. Two overrides build the default count (two parts) and nothing warns you: one written without the keyword (`:>> cell_count = 3;`), and any override in a part usage. A base written with `= 2` cannot be overridden at all; the parser refuses the override.
 
-**3. A calculation input receives one value.** Do not pass a calculation a sequence of values: not a feature that spans several parts (`cells.capacity` when there are three cells), not a list-valued attribute (`Real[3] = (1.0, 2.0, 3.0)`), and not a tuple (`(a, b)`). To work over many parts, total them on the part with `sum(cells.capacity)` and pass the total in. A list-valued attribute is refused even when no calculation reads it, so do not declare one at all.
+**3. A calculation input receives one value.** Do not pass a calculation a sequence of values: not a feature that spans several parts (`cells.capacity` when there are three cells), not a list-valued attribute (`Real[3] = (1.0, 2.0, 3.0)`), and not a tuple (`(a, b)`). To work over many parts, total them on the part with `sum(cells.capacity)` and pass the total in. Write the total on a `part def` in `library/`; in a `designs/` attribute, validate level 6 rejects the call and the dotted path. A list-valued attribute is refused even when no calculation reads it, so do not declare one at all.
 
 ```sysml
-// Correct: the part sums its cells; the calculation receives one value
+// Correct: the part def (in library/) sums its cells; the calculation receives one value
 attribute total_capacity : Real = sum(cells.capacity);
 calc usable_calc : UsableCapacity { in total_capacity_in = total_capacity; in dod_in = depth_of_discharge; }
 
 // Incorrect: the calculation receives the three cells' values as a sequence
 calc total_calc : TotalCapacity { in capacities = cells.capacity; }
 ```
+
+**Attribute types are scalar.** The generator's typing admits only `Boolean`, `Integer`, `Real` and `String`. An assert that reads a quantity-typed attribute such as `mass : ISQ::MassValue` is refused (`SI_EDGE_DANGLING ... unsupported exact type`), and a custom type such as `attribute def Cost :> Real;` does not accept a literal value (`= 2.0` is a type error in the parser). Write `attribute mass : Real = 2.0 [kg];` and keep the unit in the value and the doc comment. A `String` attribute bound to a calculation input is refused too (`SI_RENDERING_COLLISION`, non-numeric default).
 
 > **Full reference**: [patterns/constraints.md] for where an assert goes; [patterns/adr002-calculations.md] for multiplicities and calculation inputs
 
@@ -150,6 +155,7 @@ models/
 
 Every `part def`, `calc def`, `constraint def` requires:
 
+<!-- @tool-example -->
 ```sysml
 part def 'Component' {
     doc /*
@@ -171,9 +177,8 @@ part def 'Component' {
 
 ```sysml
 package MyProject::Library::Components {
-    import ScalarValues::*;    // Real, Integer, Boolean
-    import ISQ::*;             // Physical quantities
-    import SI::*;              // SI units
+    import ScalarValues::*;    // Real, Integer, Boolean, String: the only attribute types the generator accepts
+    import SI::*;              // SI units, for unit literals such as [kg] and [K]
 
     // For cost aggregation over multiplicities:
     private import NumericalFunctions::sum;
@@ -191,12 +196,18 @@ One example each. See pattern docs for full syntax, variations, and common mista
 ```sysml
 attribute diff : Real = if x > y? x - y else y - x;
 ```
+The code generator does not accept this today. If the model will be generated, run `sysml-codegen check` before relying on it.
 > [patterns/conditionals.md]
 
 **Constraints:**
+<!-- @tool-example -->
 ```sysml
-assert constraint TempLimit { temperature < 1000 [K] }
+part def Reactor {
+    attribute temperature : Real = 900.0 [K];
+    assert constraint temp_limit { temperature [K] < 1000 [K] }
+}
 ```
+Annotate both operands of a comparison with a unit, or neither (`temperature < 1000.0`). One annotated operand (`temperature < 1000 [K]`) is refused by the generator (`block_ordering_category_pair`). Only an `assert constraint` is checked; a plain `constraint` is never run.
 > [patterns/constraints.md]
 
 **Cross-file binding:**

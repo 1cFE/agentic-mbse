@@ -1,0 +1,5 @@
+INFO: Generating code from evidence/probes/callable_attribute
+INFO: Output to /tmp/grg-impl/phaseR/callable_attribute/pkg
+INFO: Package name: callable_attribute
+INFO: Building pipeline context...
+ERROR: Model failed exact-route validation: SI_EXPRESSION_SOURCE_UNSUPPORTED: NumericalFunctions::product((a, b)): reference='NumericalFunctions::product((a, b))': inspect_reference_uses: invocation of 'NumericalFunctions::product' is valid SysML but is not supported by this executable subset; only NumericalFunctions::sum is supported [root-0/model.sysml:6] (reason: evidence_expression_kind_unsupported)

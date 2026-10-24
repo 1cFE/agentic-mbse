@@ -303,6 +303,8 @@ if __name__ == "__main__":
 | `Cannot resolve reference 'X'` | Import or spelling issue | Verify package/name spelling |
 | `Type mismatch` | Wrong type assignment | Check type compatibility |
 
+An import fix makes `sum` or `size` parse; it does not make them generate. The code generator does not accept library functions today, apart from `sum` over child parts (`sum(cells.capacity)`). If the model will be generated, tell the user to run `sysml-codegen check` before relying on one.
+
 ---
 
 ## Response Format

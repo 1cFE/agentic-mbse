@@ -1,0 +1,44 @@
+### check_dc3_redefinition
+INFO: Generator: builds (5 modules)
+### check_default_count_literal
+INFO: Generator: builds (4 modules)
+### check_default_count
+INFO: Generator: builds (3 modules)
+### check_gen_byname
+INFO: Generator: builds (1 modules)
+### check_gen_reversed
+INFO: Generator: builds (1 modules)
+### check_named_subsets
+INFO: Generator: builds (6 modules)
+### check_nested_indexed
+INFO: Generator: builds (6 modules)
+### check_one_slot
+INFO: Generator: builds (2 modules)
+### check_outer_redefinition
+INFO: Generator: builds (1 modules)
+### check_outer_retyping
+INFO: Generator: builds (1 modules)
+### check_s1_gen
+INFO: Generator: builds (6 modules)
+### check_split_files
+INFO: Generator: builds (3 modules)
+### check_split_noredef
+ERROR: Model failed exact-route validation: SI_EDGE_DANGLING: <model>: feature d4c65e7a-f5cd-5e32-bb56-93a0cfa01d23 has no exact live declaration (reason: elaboration_feature_declaration_unindexed)
+### check_split_onefile
+ERROR: Model failed exact-route validation: SI_EDGE_DANGLING: <model>: feature d4c65e7a-f5cd-5e32-bb56-93a0cfa01d23 has no exact live declaration (reason: elaboration_feature_declaration_unindexed)
+### check_units_int_bool
+INFO: Generator: builds (4 modules)
+### check_z_alias
+ERROR: Model failed exact-route validation: SI_OCCURRENCE_MISSING: Z3__holder__t: reference='x.v': exact containment step FeatureSlotId(root_declaration=DeclarationId(value=UUID('6e870d02-1d38-5da7-b7af-a505b9e43754'))) has no concrete occurrence [root-0/model.sysml:6] (reason: occurrence_containment_step_missing); SI_OCCURRENCE_MISSING: Z3__holder__u: reference='t': typed alias 'Z3__holder__t' has no resolved target [root-0/model.sysml:6]
+### check_z_constraint
+ERROR: Model failed exact-route validation: SI_CONSTRAINT_BLOCKED: Z4__holder__pos: constraint profile blocked execution: block_invocation: invocation: block_invocation [model.sysml:6] (reason: constraint_profile_blocked); SI_OCCURRENCE_MISSING: Z4__holder__pos: reference='x.v': exact containment step FeatureSlotId(root_declaration=DeclarationId(value=UUID('f4f464b7-cd58-5365-b6eb-8e731ca9cd4d'))) has no concrete occurrence [root-0/model.sysml:6] (reason: occurrence_containment_step_missing)
+### check_zero_slot
+ERROR: Model failed exact-route validation: SI_OCCURRENCE_MISSING: ZeroSlot__holder__total: reference='x.v': exact containment step FeatureSlotId(root_declaration=DeclarationId(value=UUID('2b11964d-206e-5855-9029-8311d32303bc'))) has no concrete occurrence [root-0/model.sysml:8] (reason: occurrence_containment_step_missing)
+### check_zero_unread
+INFO: Generator: builds (1 modules)
+### check_z_scalar_binding
+ERROR: Model failed exact-route validation: SI_OCCURRENCE_MISSING: Z1__holder__c: reference='x.v': exact containment step FeatureSlotId(root_declaration=DeclarationId(value=UUID('6eedce20-b60d-5766-ae9a-205d5908bc59'))) has no concrete occurrence [root-0/model.sysml:6] (reason: occurrence_containment_step_missing)
+### check_z_scalar_expr
+ERROR: Model failed exact-route validation: SI_OCCURRENCE_MISSING: Z5__holder__t: reference='x.v': exact containment step FeatureSlotId(root_declaration=DeclarationId(value=UUID('7af8615d-4985-5dea-a33b-0c248362492b'))) has no concrete occurrence [root-0/model.sysml:6] (reason: occurrence_containment_step_missing)
+### check_z_sum_binding
+ERROR: Model is not ready for the exact route: SI_EXPRESSION_SOURCE_UNSUPPORTED: Z2__Holder__c.a: reference='sum(x.v)': unsupported exact source form expression_source ('sum(x.v)') [root-0/model.sysml:6] (reason: binding_source_form_unsupported)

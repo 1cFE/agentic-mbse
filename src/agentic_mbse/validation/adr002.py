@@ -40,8 +40,7 @@ except ImportError:
 # belong in a calc def (C5, Item 12). `^` was previously (wrongly) in this set,
 # so `a ^ b` in a static design expression slipped through; removing it makes the
 # operator check flag it as V4_UNSUPPORTED_OPERATOR. This is ADR-002's rule, not a generator
-# refusal: sysml-codegen `b5663c07` has no "V4" and renders `^` as `**`
-# (`elaboration/project.py:795`).
+# refusal; whether a model generates is `sysml-codegen check`'s answer (ADR 0006).
 SUPPORTED_OPERATORS = {"+", "-", "*", "/", "["}
 
 
@@ -227,9 +226,7 @@ def check_static_function_invocations(model: Any) -> list[ValidationIssue]:
     A design-attribute expression like `x : Real = sqrt(2.0)` invokes a function
     (an InvocationExpression that is not an operator). Function results are not
     statically extractable, so the modeler should move the calculation into a calc
-    def. WARNING, not ERROR. sysml-codegen `b5663c07` refuses calls other than
-    `NumericalFunctions::sum` when it builds modules (`elaboration/project.py:806-810`)
-    and accepts `sum`, which this check also flags; it has no V4 diagnostic.
+    def. WARNING, not ERROR. This is ADR-002's rule, not a generator refusal (ADR 0006).
 
     Operators (`a ^ b`, `a * b`) are OperatorExpressions, handled by
     check_supported_operators; only genuine function calls are flagged here.
@@ -474,10 +471,7 @@ def _contains_feature_chain(expr: Any) -> bool:
     """True if the expression tree contains a FeatureChainExpression (a dotted path).
 
     A dotted path disqualifies an expression from the FORMULA exemption in
-    check_static_expressions. The codegen reason this once cited (a FORMULA compiler
-    rejecting chains) is gone: sysml-codegen `b5663c07` resolves chains
-    (`elaboration/elaborate.py:2286-2355`). The rule is unchanged here; backlog
-    L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES.
+    check_static_expressions. This is ADR-002 Rule 3, not a generator refusal (ADR 0006).
     """
 
     def _visitor(node: Any) -> Any:
@@ -499,10 +493,7 @@ def _is_supported_formula(attr: Any, uses: tuple[ExactReferenceUse, ...]) -> boo
     self-reference. Dotted paths are excluded by the caller via
     _contains_feature_chain.
 
-    The rule was modelled on a sysml-codegen classifier (`computed_attribute_extractor`)
-    that `b5663c07` has deleted. That codegen supports calc-output references through
-    producer edges (`elaboration/elaborate.py:2296-2311`), so the cases that still fire
-    are ADR-002 Rule 3, not generator refusals; backlog L6-LEGACY-CHECKS-ON-ACCEPTED-SHAPES.
+    The cases that fire are ADR-002 Rule 3, not generator refusals (ADR 0006).
     """
     owner = getattr(attr, "owner", None)
     if owner is None:

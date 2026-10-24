@@ -45,3 +45,8 @@ The rules for writing an entry are in `README.md`, in this directory. Do not rew
 
 **Fact:** A `pyproject.toml` holding only a `[tool...]` table and no `[project]` still makes uv treat that directory as its own project: `uv run` there creates a new `.venv` (warning "No requires-python value found"), `uv lock` succeeds and writes `uv.lock` instead of exiting 2, and a directory nested in another uv project stops using the parent's environment. That is why `init --execution-target` refuses to create the file under a parent `pyproject.toml`.
 **Evidence:** Item 3 Phase 9 notes and § Audit fixes in `.project/completed/20261020_l6-subset-profile/plan.md`; ADR 0003.
+
+## [SysIDE 0.8.4] 2026-10-22
+
+**Fact:** `Compiler().evaluate_feature(feature, scope=X)` applies only redefinitions written in `X`'s own body. It misses a value redefined in `X`'s type when an outer usage re-types the part (native 3.0 where the model means 21.0), and a calc usage's result inside a part that redefines one of its inputs (4.0 where the model means 8.0); no single scope fixes the second. It returns no value for any expression reaching a unit annotation (`2.0 [kg]`: "Operator '[' is not model-level evaluable"); `experimental_quantities=True` converts to SI base units (500 g gives 0.5). `sum(cells.capacity)` over `Cell[3]` returns one cell's value. So SysIDE is not a general reference for checking generated packages.
+**Evidence:** `.project/completed/20261023_generated-results-guidance/spike/derisk/RESULTS.md` (B1, B4) and `spike/RESULTS.md` (S1); sysml-codegen backlog `[SYSIDE-SINGLE-SCOPE-NATIVE-VALUES]`.

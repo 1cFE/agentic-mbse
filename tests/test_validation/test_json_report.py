@@ -46,7 +46,7 @@ def test_structured_issue_missing_from_issues_is_an_error():
 @pytest.mark.syside
 def test_report_holds_every_issue_of_every_level_untruncated(tmp_path):
     code, out, report = _report(tmp_path, "--complete", str(FIXTURES / "adr002_violations"))
-    assert report["schema"] == REPORT_SCHEMA == "validate-report/v2"
+    assert report["schema"] == REPORT_SCHEMA == "validate-report/v3"
     assert report["exit_code"] == code == 1
     assert report["overall_success"] is False
     assert [level["level"] for level in report["levels"]] == [1, 2, 3, 4, 5, 6]

@@ -62,6 +62,7 @@ part vehicle : Vehicle {
 ```
 
 ### State Definition
+<!-- @tool-example -->
 ```sysml
 state def EngineStates {
     state Off;
@@ -178,6 +179,7 @@ package VehicleModel {
 ## Parts
 
 ### Part Definitions and Specialization
+<!-- @tool-example -->
 ```sysml
 part def Engine;
 
@@ -204,6 +206,7 @@ part vehicle : Vehicle {
 ## Items
 
 ### Item Definition
+<!-- @tool-example -->
 ```sysml
 item def Fuel {
     attribute fuelMass :> ISQ::mass;

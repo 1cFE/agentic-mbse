@@ -37,7 +37,7 @@ Only the code generator can say whether a model generates. Its check works out w
 uv run sysml-codegen check --models models/
 ```
 
-- **Exit 0:** `generate` would build the model.
+- **Exit 0:** `generate` would build the model. A `WARNING ... is a manual stub` line still means that one output is not generated: `generate` writes a stub you implement by hand (for example a calc output written as `sum((a, b))`). Treat each manual-stub warning as a gap to fix or record.
 - **Exit 1:** `generate` would refuse the model, or the environment failed (for example a missing dependency). The output gives the reason; record it.
 - **Exit 2:** the command line was wrong (a usage error), so fix it and run again. `uv` also exits 2 when it cannot find `sysml-codegen` (“Failed to spawn”); that case is “sysml-codegen missing” below.
 

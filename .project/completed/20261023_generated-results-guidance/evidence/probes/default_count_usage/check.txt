@@ -1,0 +1,3 @@
+INFO: Checking evidence/probes/default_count_usage
+INFO: Built computation graph with 3 modules
+INFO: Generator: builds (3 modules)
