@@ -295,6 +295,8 @@ The authoritative copy of this rule is agentic-mbse `docs/patterns/plant-idiom.m
 
 Input order on a calc usage matters: an input without `:>>` or `redefines` binds to the definition's parameter at the same position. Bind by name (`in :>> radius_in = radius;`) or keep the definition's order; rename on purpose with `redefines`. See agentic-mbse `docs/patterns/semantic-hazards.md#positional-input-binding`.
 
+**Value overrides:** `:>> x = v`, `attribute :>> x = v` and `redefines x = v` give the same value, in a part usage or a specializing part def, with a literal or an expression on the right. Give the base `default v` or no value; a base written `= v` cannot be overridden (the parser refuses). A dotted override (`:>> inner.x = …`) keeps only a plain literal: an expression, or even `-5.0`, is ignored and the generated package uses the base value, with no warning. For anything other than a plain literal, use the block form, `part :>> inner { :>> x = q * 2.0; }`. Part counts follow different rules (see part multiplicities).
+
 **Semantic operators:**
 - `=` — fixed value (cannot be overridden)
 - `default :=` — default value (can be overridden by specialization)

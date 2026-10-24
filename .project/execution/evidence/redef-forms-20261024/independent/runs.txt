@@ -1,0 +1,174 @@
+== bdflt_none: inputs={"M__h__x": 1.0}
+    M__h__d__r=2.0
+== beq_none: inputs={"M__h__x": 1.0}
+    M__h__d__r=2.0
+== binit_none: inputs={"M__h__x": 1.0}
+    M__h__d__r=2.0
+== bnone_attr: inputs={"M__h__x": 5.0}
+    M__h__d__r=10.0
+== bnone_attrredef: inputs={"M__h__x": 5.0}
+    M__h__d__r=10.0
+== bnone_bare: inputs={"M__h__x": 5.0}
+    M__h__d__r=10.0
+== bnone_dflt: inputs={"M__h__x": 5.0}
+    M__h__d__r=10.0
+== bnone_redef: inputs={"M__h__x": 5.0}
+    M__h__d__r=10.0
+== cntd_attr: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0, "M__c__wheels[2]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+    M__c__wheels[2]__d__r=2.0
+== cntd_attrredef: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0, "M__c__wheels[2]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+    M__c__wheels[2]__d__r=2.0
+== cntd_bare: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+== cntd_dflt: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+== cntd_redef: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+== cntu_attr: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+== cntu_attrredef: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+== cntu_bare: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+== cntu_dflt: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+== cntu_redef: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+== cntw_attr: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0, "M__c__wheels[2]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+    M__c__wheels[2]__d__r=2.0
+== cntw_attrredef: inputs={"M__c__wheels[0]__w": 1.0, "M__c__wheels[1]__w": 1.0, "M__c__wheels[2]__w": 1.0}
+    M__c__wheels[0]__d__r=2.0
+    M__c__wheels[1]__d__r=2.0
+    M__c__wheels[2]__d__r=2.0
+== d_attr: inputs={"M__s__x": 5.0}
+    M__s__d__r=10.0
+== d_attrredef: inputs={"M__s__x": 5.0}
+    M__s__d__r=10.0
+== d_bare: inputs={"M__s__x": 5.0}
+    M__s__d__r=10.0
+== d_dflt: inputs={"M__s__x": 5.0}
+    M__s__d__r=10.0
+== d_redef: inputs={"M__s__x": 5.0}
+    M__s__d__r=10.0
+== dsib_attr: inputs={"M__s__y": 3.0}
+    M__s__x__x=6.0
+    M__s__d__r=12.0
+== dsib_attrredef: inputs={"M__s__y": 3.0}
+    M__s__x__x=6.0
+    M__s__d__r=12.0
+== dsib_bare: inputs={"M__s__y": 3.0}
+    M__s__x__x=6.0
+    M__s__d__r=12.0
+== dsib_dflt: inputs={"M__s__y": 3.0}
+    M__s__x__x=6.0
+    M__s__d__r=12.0
+== dsib_redef: inputs={"M__s__y": 3.0}
+    M__s__x__x=6.0
+    M__s__d__r=12.0
+== int_attr: inputs={"M__h__n": 4.0}
+    M__h__d__r=8.0
+== int_attrredef: inputs={"M__h__n": 4.0}
+    M__h__d__r=8.0
+== int_bare: inputs={"M__h__n": 4.0}
+    M__h__d__r=8.0
+== int_dflt: inputs={"M__h__n": 4.0}
+    M__h__d__r=8.0
+== int_redef: inputs={"M__h__n": 4.0}
+    M__h__d__r=8.0
+== nest_attr: inputs={"M__o__inner__x": 5.0}
+    M__o__inner__d__r=10.0
+== nest_attrredef: inputs={"M__o__inner__x": 5.0}
+    M__o__inner__d__r=10.0
+== nest_bare: inputs={"M__o__inner__x": 5.0}
+    M__o__inner__d__r=10.0
+== nest_dflt: inputs={"M__o__inner__x": 5.0}
+    M__o__inner__d__r=10.0
+== nest_redef: inputs={"M__o__inner__x": 5.0}
+    M__o__inner__d__r=10.0
+== nestx_attr: inputs={"M__o__inner__x": 1.0}
+    M__o__inner__d__r=2.0
+== nestx_attrredef: inputs={"M__o__inner__x": 1.0}
+    M__o__inner__d__r=2.0
+== nestx_bare: inputs={"M__o__inner__x": 1.0}
+    M__o__inner__d__r=2.0
+== nestx_dflt: inputs={"M__o__inner__x": 1.0}
+    M__o__inner__d__r=2.0
+== nestx_redef: inputs={"M__o__inner__x": 1.0}
+    M__o__inner__d__r=2.0
+== plain_attr: inputs={"M__sys__p__x": 5.0}
+    M__sys__d__r=10.0
+== plain_attrredef: inputs={"M__sys__p__x": 5.0}
+    M__sys__d__r=10.0
+== plain_bare: inputs={"M__sys__p__x": 5.0}
+    M__sys__d__r=10.0
+== plain_dflt: inputs={"M__sys__p__x": 5.0}
+    M__sys__d__r=10.0
+== plain_redef: inputs={"M__sys__p__x": 5.0}
+    M__sys__d__r=10.0
+== two_dflt: inputs={"M__s2__x": 2.0, "M__s__x": 5.0}
+    M__s2__d__r=4.0
+    M__s__d__r=10.0
+== twod_attr: inputs={"M__s2__x": 2.0, "M__s__x": 5.0}
+    M__s2__d__r=4.0
+    M__s__d__r=10.0
+== twod_attrredef: inputs={"M__s2__x": 2.0, "M__s__x": 5.0}
+    M__s2__d__r=4.0
+    M__s__d__r=10.0
+== twod_bare: inputs={"M__s2__x": 2.0, "M__s__x": 5.0}
+    M__s2__d__r=4.0
+    M__s__d__r=10.0
+== twod_dflt: inputs={"M__s2__x": 2.0, "M__s__x": 5.0}
+    M__s2__d__r=4.0
+    M__s__d__r=10.0
+== twod_redef: inputs={"M__s2__x": 2.0, "M__s__x": 5.0}
+    M__s2__d__r=4.0
+    M__s__d__r=10.0
+== u_attr: inputs={"M__h__x": 5.0}
+    M__h__d__r=10.0
+== u_attrredef: inputs={"M__h__x": 5.0}
+    M__h__d__r=10.0
+== u_bare: inputs={"M__h__x": 5.0}
+    M__h__d__r=10.0
+== u_dflt: inputs={"M__h__x": 5.0}
+    M__h__d__r=10.0
+== u_redef: inputs={"M__h__x": 5.0}
+    M__h__d__r=10.0
+== uoth_attr: inputs={"M__src__k": 7.0}
+    M__h__d__r=14.0
+== uoth_attrredef: inputs={"M__src__k": 7.0}
+    M__h__d__r=14.0
+== uoth_bare: inputs={"M__src__k": 7.0}
+    M__h__d__r=14.0
+== uoth_dflt: inputs={"M__src__k": 7.0}
+    M__h__d__r=14.0
+== uoth_redef: inputs={"M__src__k": 7.0}
+    M__h__d__r=14.0
+== usib_attr: inputs={"M__h__y": 3.0}
+    M__h__x__x=6.0
+    M__h__d__r=12.0
+== usib_attrredef: inputs={"M__h__y": 3.0}
+    M__h__x__x=6.0
+    M__h__d__r=12.0
+== usib_bare: inputs={"M__h__y": 3.0}
+    M__h__x__x=6.0
+    M__h__d__r=12.0
+== usib_dflt: inputs={"M__h__y": 3.0}
+    M__h__x__x=6.0
+    M__h__d__r=12.0
+== usib_redef: inputs={"M__h__y": 3.0}
+    M__h__x__x=6.0
+    M__h__d__r=12.0

@@ -1,0 +1,13 @@
+== xnest_neg: inputs={"M__o__inner__x": 1.0}
+    M__o__inner__d__r=2.0
+== xnest_const: inputs={"M__o__inner__x": 1.0}
+    M__o__inner__d__r=2.0
+== xnest_other: inputs={"M__o__inner__x": 1.0}
+    M__o__inner__d__r=2.0
+== xnest_deep2: inputs={"M__o__mid__inner__x": 5.0}
+    M__o__mid__inner__d__r=10.0
+== xnest_indef: inputs={"M__o__inner__x": 5.0}
+    M__o__inner__d__r=10.0
+== xnest_long: inputs={}
+    M__o__inner__x__x=8.0
+    M__o__inner__d__r=16.0
