@@ -247,17 +247,17 @@ What each assembly shows:
 - **A group of the same kind** (`Deck`). `part panel : Panel[4];` with `sum(panel.capital_cost)` adds one term per panel, four in all. The count must be exact (see [Calculation Inputs and Part Counts](#calculation-inputs-and-part-counts)).
 - **Two groups in one expression** (`Deck`). Two `sum()` terms may read the same-named attribute (`capital_cost`) off different groups. The generator keeps the panel and caster inputs apart; sysml-codegen's `test_a_two_term_same_name_rollup_keeps_both_resolved_source_families` pins this.
 - **One child of each kind** (`Frame`). Read each child's attribute directly: `rail.capital_cost + brace.capital_cost`.
-- **Nesting** (`Cart`). An assembly adds its sub-assemblies' rolled-up values the same way it adds leaves.
+- **Nesting** (`Cart`). An assembly adds its sub-assemblies' rolled-up values the same way it adds leaves. Each sub-assembly here appears once; for two or more copies, see [Repeated sub-assemblies](#repeated-sub-assemblies).
 
 Naming each group's total first also works and is optional: `attribute panel_capital : Real = sum(panel.capital_cost);`, then `:>> capital_cost = panel_capital + caster_capital;`. It reads well in a long rollup, and each named total becomes its own generated module you can inspect. sysml-codegen's `costed_cart_d5` fixture uses this form.
 
 Where the children are modelled, roll their values up as above. Do not declare a placeholder total on the assembly and bind a hand-typed number to it in a design; it drifts from the children.
 
-Both tools check that this example builds, not what it computes. sysml-codegen's `test_the_deck_rollup_sums_its_four_panels_and_the_allocation` checks the arithmetic of a rollup like `Deck`.
+Both tools check that this example builds, not what it computes. sysml-codegen's `test_the_deck_rollup_sums_its_four_panels_and_the_allocation` checks the numbers of its fixture's deck, which names each group's total and adds an allocation cost. No test checks the numbers of the direct `sum() + sum()` form shown here.
 
 ### Where the rollup goes
 
-Put a `sum()` over child parts on a `part def` in `library/`. This is validate's rule (ADR-002): in a `designs/` file, level 6 rejects it with `V2_DYNAMIC_EXPRESSION`, and also reports `V4_UNSUPPORTED_OPERATOR` and `L6_DESIGN_ATTR_UNEXTRACTABLE` for the same attribute. The generator would build the same rollup in `designs/`; the placement is for validate.
+ADR-002 keeps calculations, rollups included, on `part def`s in `library/`. Validate level 6 catches a `sum()` on an attribute declared in a `designs/` file (`V2_DYNAMIC_EXPRESSION`, below), but not the `:>>` redefinition form used in the example above, so the placement is a convention validate only partly enforces. The generator builds the rollup in either place.
 
 <!-- @tool-example dir="designs" fails="V2_DYNAMIC_EXPRESSION" -->
 ```sysml
@@ -272,6 +272,30 @@ part def Axle {
 }
 
 part axle : Axle;
+```
+
+### Repeated sub-assemblies
+
+The generator refuses two or more copies of a sub-assembly whose own cost is a computed rollup: a group such as `part deck_assembly : Deck[2];`, or two named parts typed `Deck`. `sysml-codegen check` fails with `REGISTRY_CLASS_NAME_COLLISION`, though validate passes. One copy builds, and so do several copies whose cost is a plain value (a leaf group such as `Panel[4]`). This is a current limit of sysml-codegen, not a modelling rule. When it is lifted, the example below stops failing and its test turns red, which is the signal to update this section.
+
+<!-- @tool-example fails="REGISTRY_CLASS_NAME_COLLISION" -->
+```sysml
+part def Shelf {
+    attribute capital_cost : Real = 30.0;
+}
+
+part def Rack {
+    part shelf : Shelf[3];
+    attribute capital_cost : Real = sum(shelf.capital_cost);
+}
+
+// Refused by the generator: two racks, each with a computed rollup of its own
+part def Facility {
+    part rack : Rack[2];
+    attribute capital_cost : Real = sum(rack.capital_cost);
+}
+
+part facility : Facility;
 ```
 
 ---

@@ -12,8 +12,8 @@ one carries a marker directly above it (other `<!-- ... -->` markers may sit bet
 Passing means: `agentic-mbse validate --complete` reports no ERROR-severity issue (an unused
 definition is only a warning, which an isolated example always has), and `sysml-codegen check`
 exits 0 with no "manual stub" warning, or reports there is nothing to generate. A code starting
-`SI_` or `block_` is the generator's and is looked for in the check output; any other code is
-looked for among validate's ERROR codes.
+`SI_`, `block_` or `REGISTRY_` is the generator's and is looked for in the check output; any other
+code is looked for among validate's ERROR codes.
 
 The check half runs `sysml-codegen` as a subprocess, found by the `SYSML_CODEGEN` environment
 variable or on PATH, and skips when it is absent. agentic-mbse never imports sysml_codegen.
@@ -50,6 +50,7 @@ WRAP_HEAD = (
     "    private import NumericalFunctions::*;\n"
 )
 NOTHING_TO_GENERATE = "There is nothing to generate"
+GENERATOR_PREFIXES = ("SI_", "block_", "REGISTRY_")
 
 
 @dataclass(frozen=True)
@@ -63,11 +64,11 @@ class Example:
 
     @property
     def generator_codes(self) -> list[str]:
-        return [c for c in self.fails if c.startswith(("SI_", "block_"))]
+        return [c for c in self.fails if c.startswith(GENERATOR_PREFIXES)]
 
     @property
     def validate_codes(self) -> list[str]:
-        return [c for c in self.fails if not c.startswith(("SI_", "block_"))]
+        return [c for c in self.fails if not c.startswith(GENERATOR_PREFIXES)]
 
 
 def shipped_text_files() -> list[Path]:

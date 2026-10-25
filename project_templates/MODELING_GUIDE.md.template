@@ -121,9 +121,13 @@ calc total_calc : TotalCapacity { in capacities = cells.capacity; }
 
 **Attribute types are scalar.** The generator's typing admits only `Boolean`, `Integer`, `Real` and `String`. An assert that reads a quantity-typed attribute such as `mass : ISQ::MassValue` is refused (`SI_EDGE_DANGLING ... unsupported exact type`), and a custom type such as `attribute def Cost :> Real;` does not accept a literal value (`= 2.0` is a type error in the parser). Write `attribute mass : Real = 2.0 [kg];` and keep the unit in the value and the doc comment. A `String` attribute bound to a calculation input is refused too (`SI_RENDERING_COLLISION`, non-numeric default).
 
-**Costing an assembly (a rollup).** Put the rollup on each assembly's `part def` in `library/`: add a group of same-kind children with `sum()` (`sum(panel.capital_cost) + sum(caster.capital_cost)`), read a single child directly (`rail.capital_cost`), and let each level add the totals of the level below. The worked, tested example, with the optional form that names each group's total first, is in [patterns/adr002-calculations.md], "Costing an Assembly (Rollups)".
+> **Full reference**: [patterns/constraints.md] for where an assert goes; [patterns/adr002-calculations.md] for multiplicities and calculation inputs
 
-> **Full reference**: [patterns/constraints.md] for where an assert goes; [patterns/adr002-calculations.md] for multiplicities, calculation inputs and rollups
+---
+
+## Costing an Assembly (Rollups)
+
+Put the rollup on each assembly's `part def` in `library/`: add a group of same-kind children with `sum()` (`sum(panel.capital_cost) + sum(caster.capital_cost)`), read a single child directly (`rail.capital_cost`), and let each level add the totals of the level below. The generator currently refuses two or more copies of a sub-assembly whose own cost is a rollup (`Deck[2]`, or two named `Deck` parts) with `REGISTRY_CLASS_NAME_COLLISION`. The worked, tested example, with the optional form that names each group's total first and that limit, is in [patterns/adr002-calculations.md], "Costing an Assembly (Rollups)".
 
 ---
 
