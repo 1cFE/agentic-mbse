@@ -171,33 +171,108 @@ part cells : Cell[0..*];    // Incorrect: no upper bound
 
 ---
 
-## Validated Patterns
+## Costing an Assembly (Rollups)
 
-### Multiplicity Cost Aggregation
+An assembly's cost is the sum of its children's costs (a rollup). Write the rollup on each assembly's `part def` in `library/`, and let each level add up the totals of the level below. The example is a three-level cart: four kinds of leaf part each cost themselves, two sub-assemblies add up their children, and the cart adds up the sub-assemblies. It passes `agentic-mbse validate` and `sysml-codegen check`.
 
-**Status:** Parser-validated example (2026-01-12).
-**Evidence:** `syside check` passes with no errors or warnings. This establishes syntax, not runtime occurrence expansion or numerical aggregation.
-
-Use `import NumericalFunctions::sum` then `sum(child.capital_cost)` to aggregate costs from parts with an exact multiplicity such as `[3]` (see [Calculation Inputs and Part Counts](#calculation-inputs-and-part-counts)).
-
-**Correct Pattern:**
+<!-- @tool-example -->
 ```sysml
-private import NumericalFunctions::sum;
+package CartCosting {
+    private import ScalarValues::*;
+    private import NumericalFunctions::sum;
 
-part def 'Assembly' :> 'Costed Component' {
-    part child : 'Child Component' [3];
-    :>> capital_cost = sum(child.capital_cost);  // Automatic aggregation!
+    abstract part def 'Costed Item' {
+        attribute capital_cost : Real;
+    }
+
+    calc def UnitCost {
+        in size_in : Real;
+        in rate_in : Real;
+        out attribute cost : Real = size_in * rate_in;
+    }
+
+    // Leaves: each part costs itself with one calc usage
+    part def Panel :> 'Costed Item' {
+        attribute area : Real;
+        calc cost_model : UnitCost { in size_in = area; in rate_in = 12.0; }
+        :>> capital_cost = cost_model.cost;
+    }
+
+    part def Caster :> 'Costed Item' {
+        attribute load_rating : Real;
+        calc cost_model : UnitCost { in size_in = load_rating; in rate_in = 0.75; }
+        :>> capital_cost = cost_model.cost;
+    }
+
+    part def Rail :> 'Costed Item' {
+        attribute length : Real;
+        calc cost_model : UnitCost { in size_in = length; in rate_in = 25.0; }
+        :>> capital_cost = cost_model.cost;
+    }
+
+    part def Brace :> 'Costed Item' {
+        attribute brace_count : Real;
+        calc cost_model : UnitCost { in size_in = brace_count; in rate_in = 5.0; }
+        :>> capital_cost = cost_model.cost;
+    }
+
+    // Groups of the same kind: sum() adds one term per child occurrence
+    part def Deck :> 'Costed Item' {
+        part panel : Panel[4];
+        part caster : Caster[4];
+        :>> capital_cost = sum(panel.capital_cost) + sum(caster.capital_cost);
+    }
+
+    // One child of each kind: read each one directly
+    part def Frame :> 'Costed Item' {
+        part rail : Rail;
+        part brace : Brace;
+        :>> capital_cost = rail.capital_cost + brace.capital_cost;
+    }
+
+    // Rollups nest: the cart adds its sub-assemblies' totals
+    part def Cart :> 'Costed Item' {
+        part deck_assembly : Deck;
+        part frame_assembly : Frame;
+        :>> capital_cost = deck_assembly.capital_cost + frame_assembly.capital_cost;
+    }
+
+    // In a project this usage lives in designs/; the example keeps it here so it is one file
+    part cart : Cart;
 }
 ```
 
-**Anti-Pattern (DO NOT USE):**
-```sysml
-// BROKEN: Hardcoded values that will drift
-attribute child_total_cost : Real;  // Placeholder
-:>> capital_cost = child_total_cost;  // Bound in design with hardcoded value
-```
+What each assembly shows:
 
-**Intent:** Aggregate costs from the modeled child occurrences. Before claiming executable aggregation, cite an applicable runtime fixture or check a heterogeneous two-occurrence sum and a changed child value through the intended route. Each occurrence must contribute its own value exactly once.
+- **A group of the same kind** (`Deck`). `part panel : Panel[4];` with `sum(panel.capital_cost)` adds one term per panel, four in all. The count must be exact (see [Calculation Inputs and Part Counts](#calculation-inputs-and-part-counts)).
+- **Two groups in one expression** (`Deck`). Two `sum()` terms may read the same-named attribute (`capital_cost`) off different groups. The generator keeps the panel and caster inputs apart; sysml-codegen's `test_a_two_term_same_name_rollup_keeps_both_resolved_source_families` pins this.
+- **One child of each kind** (`Frame`). Read each child's attribute directly: `rail.capital_cost + brace.capital_cost`.
+- **Nesting** (`Cart`). An assembly adds its sub-assemblies' rolled-up values the same way it adds leaves.
+
+Naming each group's total first also works and is optional: `attribute panel_capital : Real = sum(panel.capital_cost);`, then `:>> capital_cost = panel_capital + caster_capital;`. It reads well in a long rollup, and each named total becomes its own generated module you can inspect. sysml-codegen's `costed_cart_d5` fixture uses this form.
+
+Where the children are modelled, roll their values up as above. Do not declare a placeholder total on the assembly and bind a hand-typed number to it in a design; it drifts from the children.
+
+Both tools check that this example builds, not what it computes. sysml-codegen's `test_the_deck_rollup_sums_its_four_panels_and_the_allocation` checks the arithmetic of a rollup like `Deck`.
+
+### Where the rollup goes
+
+Put a `sum()` over child parts on a `part def` in `library/`. This is validate's rule (ADR-002): in a `designs/` file, level 6 rejects it with `V2_DYNAMIC_EXPRESSION`, and also reports `V4_UNSUPPORTED_OPERATOR` and `L6_DESIGN_ATTR_UNEXTRACTABLE` for the same attribute. The generator would build the same rollup in `designs/`; the placement is for validate.
+
+<!-- @tool-example dir="designs" fails="V2_DYNAMIC_EXPRESSION" -->
+```sysml
+part def Wheel {
+    attribute capital_cost : Real = 40.0;
+}
+
+// Wrong in designs/: validate level 6 rejects sum() over child parts here
+part def Axle {
+    part wheel : Wheel[2];
+    attribute capital_cost : Real = sum(wheel.capital_cost);
+}
+
+part axle : Axle;
+```
 
 ---
 

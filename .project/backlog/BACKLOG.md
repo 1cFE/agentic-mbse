@@ -468,6 +468,17 @@ Out of scope for `L6-EXPOSE-CONSISTENCY`: completeness still reports `L6_DESIGN_
 
 ## P3 - Low Priority
 
+### [TOOL-EXAMPLE-ZERO-MODULES] A marked example that builds nothing passes the generator check
+
+**Priority**: P3
+**Status**: [AGENT] Filed 2026-10-25 from `rollup-guidance` (orchestrator decision 5)
+
+**Problem**: `tests/test_validation/test_tool_examples.py` passes the check half when `sysml-codegen check` exits 0 or says there is nothing to generate. A file of definitions only, with no part usage, exits 0 with "builds (0 modules)", so a marked example can pass without the generator building anything from it. Evidence: probe p1 in `.project/active/rollup-guidance/evidence/probes.md`.
+
+**Goal**: Decide whether a passing marked example must build at least one module, and if so make the test fail on 0 modules (and fix any shipped example that then fails).
+
+---
+
 ### [ITEM-ITERATION-LOOP] Experiment Iteration Loop
 
 **Priority**: P3

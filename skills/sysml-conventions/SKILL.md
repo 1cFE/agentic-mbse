@@ -146,7 +146,9 @@ calc total_calc : TotalCapacity { in capacities = cells.capacity; }
 
 **Attribute types are scalar.** The generator's typing admits only `Boolean`, `Integer`, `Real` and `String`. An assert that reads a quantity-typed attribute such as `mass : ISQ::MassValue` is refused (`SI_EDGE_DANGLING ... unsupported exact type`), and a custom type such as `attribute def Cost :> Real;` does not accept a literal value (`= 2.0` is a type error in the parser). Write `attribute mass : Real = 2.0 [kg];` and keep the unit in the value and the doc comment. A `String` attribute bound to a calculation input is refused too (`SI_RENDERING_COLLISION`, non-numeric default).
 
-Fuller treatment: agentic-mbse `docs/patterns/constraints.md` (where an assert goes) and `docs/patterns/adr002-calculations.md` (multiplicities and calculation inputs).
+**Costing an assembly (a rollup).** Put the rollup on each assembly's `part def` in `library/`: add a group of same-kind children with `sum()` (`sum(panel.capital_cost) + sum(caster.capital_cost)`), read a single child directly (`rail.capital_cost`), and let each level add the totals of the level below. The worked, tested example, with the optional form that names each group's total first, is in agentic-mbse `docs/patterns/adr002-calculations.md`, "Costing an Assembly (Rollups)".
+
+Fuller treatment: agentic-mbse `docs/patterns/constraints.md` (where an assert goes) and `docs/patterns/adr002-calculations.md` (multiplicities, calculation inputs and rollups).
 
 ## Standard Imports
 

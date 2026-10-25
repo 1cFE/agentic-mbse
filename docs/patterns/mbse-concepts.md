@@ -120,18 +120,7 @@ part def 'Costed Component' {
 
 ### Cost Aggregation Over Multiplicities
 
-For assemblies with multiple child components:
-
-```sysml
-private import NumericalFunctions::sum;
-
-part def 'Assembly' :> 'Costed Component' {
-    part child : 'Child Component' [3];
-    :>> capital_cost = sum(child.capital_cost);  // Automatic aggregation!
-}
-```
-
-**Note:** Requires `import NumericalFunctions::sum` for the `sum()` function.
+To add up children's costs into an assembly's cost (a rollup), see [adr002-calculations.md, "Costing an Assembly (Rollups)"](adr002-calculations.md#costing-an-assembly-rollups). It has a complete, tested example: groups of same-kind children with `sum()`, single children of different kinds, and three levels of nesting.
 
 ### When to Use
 
@@ -245,15 +234,7 @@ part def 'Component' {
 
 ### Cost: Using hardcoded values instead of sum()
 
-```sysml
-// WRONG: Hardcoded placeholder
-attribute child_total_cost : Real;  // Manual binding required
-:>> capital_cost = child_total_cost;
-
-// CORRECT: Automatic aggregation
-private import NumericalFunctions::sum;
-:>> capital_cost = sum(child.capital_cost);
-```
+Where the children are modelled, roll their costs up from the children rather than binding a hand-typed total. See [adr002-calculations.md, "Costing an Assembly (Rollups)"](adr002-calculations.md#costing-an-assembly-rollups).
 
 ### Interface: Describe and verify conservation separately
 
