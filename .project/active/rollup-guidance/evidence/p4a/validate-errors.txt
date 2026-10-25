@@ -1,0 +1,14 @@
+6 V1_CALC_DEF_LOCATION Calc def 'RollupExample::UnitCost' is in designs/ instead of library/
+6 V2_DYNAMIC_EXPRESSION Derived expression references design attributes: ['capital_cost']
+6 V2_DYNAMIC_EXPRESSION Derived expression references design attributes: ['capital_cost']
+6 V4_UNSUPPORTED_OPERATOR Unsupported operator '.' in attribute 'RollupExample::Deck::panel_capital'
+6 V4_UNSUPPORTED_OPERATOR Unsupported operator '.' in attribute 'RollupExample::Deck::caster_capital'
+6 L6_DESIGN_ATTR_INCOMPLETE Design attribute 'RollupExample::'Costed Item'::capital_cost' has no value or binding
+6 L6_DESIGN_ATTR_UNEXTRACTABLE Design attribute 'RollupExample::UnitCost::cost' has an expression with no static numeric value: Feature reference 'size_in' found in static expression. This vi
+6 L6_DESIGN_ATTR_INCOMPLETE Design attribute 'RollupExample::Panel::area' has no value or binding
+6 L6_DESIGN_ATTR_INCOMPLETE Design attribute 'RollupExample::Caster::load_rating' has no value or binding
+6 L6_DESIGN_ATTR_INCOMPLETE Design attribute 'RollupExample::Rail::length' has no value or binding
+6 L6_DESIGN_ATTR_INCOMPLETE Design attribute 'RollupExample::Brace::brace_count' has no value or binding
+6 L6_DESIGN_ATTR_UNEXTRACTABLE Design attribute 'RollupExample::Deck::panel_capital' has an expression with no static numeric value: Cannot evaluate expression of type: InvocationExpression
+6 L6_DESIGN_ATTR_UNEXTRACTABLE Design attribute 'RollupExample::Deck::caster_capital' has an expression with no static numeric value: Cannot evaluate expression of type: InvocationExpression
+levels: [(1, 'passed'), (2, 'failed'), (3, 'passed'), (4, 'passed'), (5, 'passed'), (6, 'failed')]

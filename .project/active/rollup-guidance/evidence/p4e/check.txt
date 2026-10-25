@@ -1,0 +1,3 @@
+INFO: Checking /tmp/claude-1000/-home-reid-src-agentic-mbse/9366fe1c-453c-484d-b30e-782bbdd1390c/scratchpad/probes/p4e/models
+INFO: Built computation graph with 15 modules
+INFO: Generator: builds (15 modules)
