@@ -276,9 +276,9 @@ part axle : Axle;
 
 ### Repeated sub-assemblies
 
-The generator refuses two or more copies of a sub-assembly whose own cost is a computed rollup: a group such as `part deck_assembly : Deck[2];`, or two named parts typed `Deck`. `sysml-codegen check` fails with `REGISTRY_CLASS_NAME_COLLISION`, though validate passes. One copy builds, and so do several copies whose cost is a plain value (a leaf group such as `Panel[4]`). This is a current limit of sysml-codegen, not a modelling rule. When it is lifted, the example below stops failing and its test turns red, which is the signal to update this section.
+Two or more copies of a sub-assembly that rolls up its own cost build, and each copy computes its own total: a group such as `part rack : Rack[2];`, or two named parts typed `Rack`. The copies share one generated class and keep separate inputs, so a value changed in one copy moves only that copy's total. sysml-codegen's `tests/execution/test_repeated_rollup_teax.py` checks these numbers.
 
-<!-- @tool-example fails="REGISTRY_CLASS_NAME_COLLISION" -->
+<!-- @tool-example -->
 ```sysml
 part def Shelf {
     attribute capital_cost : Real = 30.0;
@@ -289,7 +289,7 @@ part def Rack {
     attribute capital_cost : Real = sum(shelf.capital_cost);
 }
 
-// Refused by the generator: two racks, each with a computed rollup of its own
+// Two racks, each rolling up its own shelves
 part def Facility {
     part rack : Rack[2];
     attribute capital_cost : Real = sum(rack.capital_cost);
@@ -297,6 +297,8 @@ part def Facility {
 
 part facility : Facility;
 ```
+
+Do not sum over a collection that also has named members (`part rack_1 :> rack;`). The generator builds each named member as an extra copy beside the unnamed ones, and `sum(rack.capital_cost)` adds only the unnamed copies, which hold default values (sysml-codegen backlog `[NAMED-SUBSET-DOUBLE-COUNT]`). It builds without a warning. If the parts need names, declare them as plain parts (`part rack_1 : Rack; part rack_2 : Rack;`) and add them: `rack_1.capital_cost + rack_2.capital_cost`.
 
 ---
 

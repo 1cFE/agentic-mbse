@@ -150,7 +150,7 @@ Fuller treatment: agentic-mbse `docs/patterns/constraints.md` (where an assert g
 
 ## Costing an Assembly (Rollups)
 
-Put the rollup on each assembly's `part def` in `library/`: add a group of same-kind children with `sum()` (`sum(panel.capital_cost) + sum(caster.capital_cost)`), read a single child directly (`rail.capital_cost`), and let each level add the totals of the level below. The generator currently refuses two or more copies of a sub-assembly whose own cost is a rollup (`Deck[2]`, or two named `Deck` parts) with `REGISTRY_CLASS_NAME_COLLISION`. The worked, tested example, with the optional form that names each group's total first and that limit, is in agentic-mbse `docs/patterns/adr002-calculations.md`, "Costing an Assembly (Rollups)".
+Put the rollup on each assembly's `part def` in `library/`: add a group of same-kind children with `sum()` (`sum(panel.capital_cost) + sum(caster.capital_cost)`), read a single child directly (`rail.capital_cost`), and let each level add the totals of the level below. Repeated sub-assemblies (`Rack[2]`, each summing its shelves) build, and each copy computes its own total. Don't `sum()` over a collection that also has named members (`rack_1 :> rack`): the generator leaves the named parts out of the total without a warning. The worked, tested examples, with the optional form that names each group's total first, are in agentic-mbse `docs/patterns/adr002-calculations.md`, "Costing an Assembly (Rollups)".
 
 ## Standard Imports
 
