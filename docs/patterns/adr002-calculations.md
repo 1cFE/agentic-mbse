@@ -300,7 +300,7 @@ part facility : Facility;
 
 ### Named members of a collection
 
-To name some or all of a collection's parts, subset the collection beside it: `part rack_1 :> rack;`. A named member is one of the collection's parts, not an extra one, and `sum(rack.capital_cost)` adds each named member once plus any unnamed copies left over. Redefining a named member later (`part :>> rack_1 { ... }`) keeps it in the collection. A member added by one usage (`rack_a : Rack { part :>> spare :> servers; }`) belongs to that usage only, and a `sum()` written inside a member reaches the whole collection.
+To name some or all of a collection's parts, subset the collection beside it: `part rack_1 :> rack;`. A named member is one of the collection's parts, not an extra one, and `sum(rack.capital_cost)` adds each named member once plus any unnamed copies left over. Redefining a named member later (`part :>> rack_1 { ... }`) keeps it in the collection. A member added by one usage (`rack_a : Rack { part :>> spare :> servers; }`) belongs to that usage only, and a `sum()` written inside a member reaches the whole collection. Inside a member or copy, read its own value by its plain name (`power`), not through the collection (`servers.power`), which the generator refuses there.
 
 <!-- @tool-example -->
 ```sysml
