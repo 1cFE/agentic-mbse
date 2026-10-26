@@ -300,7 +300,7 @@ part facility : Facility;
 
 ### Named members of a collection
 
-To name some or all of a collection's parts, subset the collection beside it: `part rack_1 :> rack;`. A named member is one of the collection's parts, not an extra one, and `sum(rack.capital_cost)` adds each named member once plus any unnamed copies left over. Redefining a named member later (`part :>> rack_1 { ... }`) keeps it in the collection.
+To name some or all of a collection's parts, subset the collection beside it: `part rack_1 :> rack;`. A named member is one of the collection's parts, not an extra one, and `sum(rack.capital_cost)` adds each named member once plus any unnamed copies left over. Redefining a named member later (`part :>> rack_1 { ... }`) keeps it in the collection. A member added by one usage (`rack_a : Rack { part :>> spare :> servers; }`) belongs to that usage only, and a `sum()` written inside a member reaches the whole collection.
 
 <!-- @tool-example -->
 ```sysml
@@ -325,7 +325,7 @@ The generator refuses, by name, the shapes it cannot count exactly:
 - a count on a named member other than `[1]`;
 - a subset of a named member;
 - a named member declared somewhere other than beside its collection (another part, or a package-level part);
-- a value set in the collection's own body (`part servers : Server[2] { :>> power = 12.0; }`) when the collection has named members. Set it on each named member instead.
+- anything other than parts in the collection's own body (a value such as `part servers : Server[2] { :>> power = 12.0; }`, a new attribute, a port or a constraint) when the collection has named members. Put it on each named member instead.
 
 A redefinition that writes no count keeps the one it redefines: `part :>> servers;` over `Server[2]` is still two servers.
 
