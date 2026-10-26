@@ -298,7 +298,36 @@ part def Facility {
 part facility : Facility;
 ```
 
-Do not sum over a collection that also has named members (`part rack_1 :> rack;`). The generator builds each named member as an extra copy beside the unnamed ones, and `sum(rack.capital_cost)` adds only the unnamed copies, which hold default values (sysml-codegen backlog `[NAMED-SUBSET-DOUBLE-COUNT]`). It builds without a warning. If the parts need names, declare them as plain parts (`part rack_1 : Rack; part rack_2 : Rack;`) and add them: `rack_1.capital_cost + rack_2.capital_cost`.
+### Named members of a collection
+
+To name some or all of a collection's parts, subset the collection beside it: `part rack_1 :> rack;`. A named member is one of the collection's parts, not an extra one, and `sum(rack.capital_cost)` adds each named member once plus any unnamed copies left over. Redefining a named member later (`part :>> rack_1 { ... }`) keeps it in the collection.
+
+<!-- @tool-example -->
+```sysml
+part def Server {
+    attribute power : Real default 10.0;
+}
+
+part def Rack {
+    part servers : Server[2];
+    // Both servers named; set values on each named member
+    part server_1 :> servers { :>> power = 15.0; }
+    part server_2 :> servers { :>> power = 20.0; }
+    attribute total_power : Real = sum(servers.power);
+}
+
+part rack : Rack;
+```
+
+The generator refuses, by name, the shapes it cannot count exactly:
+
+- more named members than the collection's count;
+- a count on a named member other than `[1]`;
+- a subset of a named member;
+- a named member declared somewhere other than beside its collection (another part, or a package-level part);
+- a value set in the collection's own body (`part servers : Server[2] { :>> power = 12.0; }`) when the collection has named members. Set it on each named member instead.
+
+A redefinition that writes no count keeps the one it redefines: `part :>> servers;` over `Server[2]` is still two servers.
 
 ---
 
