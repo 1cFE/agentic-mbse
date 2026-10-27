@@ -171,33 +171,163 @@ part cells : Cell[0..*];    // Incorrect: no upper bound
 
 ---
 
-## Validated Patterns
+## Costing an Assembly (Rollups)
 
-### Multiplicity Cost Aggregation
+An assembly's cost is the sum of its children's costs (a rollup). Write the rollup on each assembly's `part def` in `library/`, and let each level add up the totals of the level below. The example is a three-level cart: four kinds of leaf part each cost themselves, two sub-assemblies add up their children, and the cart adds up the sub-assemblies. It passes `agentic-mbse validate` and `sysml-codegen check`.
 
-**Status:** Parser-validated example (2026-01-12).
-**Evidence:** `syside check` passes with no errors or warnings. This establishes syntax, not runtime occurrence expansion or numerical aggregation.
-
-Use `import NumericalFunctions::sum` then `sum(child.capital_cost)` to aggregate costs from parts with an exact multiplicity such as `[3]` (see [Calculation Inputs and Part Counts](#calculation-inputs-and-part-counts)).
-
-**Correct Pattern:**
+<!-- @tool-example -->
 ```sysml
-private import NumericalFunctions::sum;
+package CartCosting {
+    private import ScalarValues::*;
+    private import NumericalFunctions::sum;
 
-part def 'Assembly' :> 'Costed Component' {
-    part child : 'Child Component' [3];
-    :>> capital_cost = sum(child.capital_cost);  // Automatic aggregation!
+    abstract part def 'Costed Item' {
+        attribute capital_cost : Real;
+    }
+
+    calc def UnitCost {
+        in size_in : Real;
+        in rate_in : Real;
+        out attribute cost : Real = size_in * rate_in;
+    }
+
+    // Leaves: each part costs itself with one calc usage
+    part def Panel :> 'Costed Item' {
+        attribute area : Real;
+        calc cost_model : UnitCost { in size_in = area; in rate_in = 12.0; }
+        :>> capital_cost = cost_model.cost;
+    }
+
+    part def Caster :> 'Costed Item' {
+        attribute load_rating : Real;
+        calc cost_model : UnitCost { in size_in = load_rating; in rate_in = 0.75; }
+        :>> capital_cost = cost_model.cost;
+    }
+
+    part def Rail :> 'Costed Item' {
+        attribute length : Real;
+        calc cost_model : UnitCost { in size_in = length; in rate_in = 25.0; }
+        :>> capital_cost = cost_model.cost;
+    }
+
+    part def Brace :> 'Costed Item' {
+        attribute brace_count : Real;
+        calc cost_model : UnitCost { in size_in = brace_count; in rate_in = 5.0; }
+        :>> capital_cost = cost_model.cost;
+    }
+
+    // Groups of the same kind: sum() adds one term per child occurrence
+    part def Deck :> 'Costed Item' {
+        part panel : Panel[4];
+        part caster : Caster[4];
+        :>> capital_cost = sum(panel.capital_cost) + sum(caster.capital_cost);
+    }
+
+    // One child of each kind: read each one directly
+    part def Frame :> 'Costed Item' {
+        part rail : Rail;
+        part brace : Brace;
+        :>> capital_cost = rail.capital_cost + brace.capital_cost;
+    }
+
+    // Rollups nest: the cart adds its sub-assemblies' totals
+    part def Cart :> 'Costed Item' {
+        part deck_assembly : Deck;
+        part frame_assembly : Frame;
+        :>> capital_cost = deck_assembly.capital_cost + frame_assembly.capital_cost;
+    }
+
+    // In a project this usage lives in designs/; the example keeps it here so it is one file
+    part cart : Cart;
 }
 ```
 
-**Anti-Pattern (DO NOT USE):**
+What each assembly shows:
+
+- **A group of the same kind** (`Deck`). `part panel : Panel[4];` with `sum(panel.capital_cost)` adds one term per panel, four in all. The count must be exact (see [Calculation Inputs and Part Counts](#calculation-inputs-and-part-counts)).
+- **Two groups in one expression** (`Deck`). Two `sum()` terms may read the same-named attribute (`capital_cost`) off different groups. The generator keeps the panel and caster inputs apart; sysml-codegen's `test_a_two_term_same_name_rollup_keeps_both_resolved_source_families` pins this.
+- **One child of each kind** (`Frame`). Read each child's attribute directly: `rail.capital_cost + brace.capital_cost`.
+- **Nesting** (`Cart`). An assembly adds its sub-assemblies' rolled-up values the same way it adds leaves. Each sub-assembly here appears once; for two or more copies, see [Repeated sub-assemblies](#repeated-sub-assemblies).
+
+Naming each group's total first also works and is optional: `attribute panel_capital : Real = sum(panel.capital_cost);`, then `:>> capital_cost = panel_capital + caster_capital;`. It reads well in a long rollup, and each named total becomes its own generated module you can inspect. sysml-codegen's `costed_cart_d5` fixture uses this form.
+
+Where the children are modelled, roll their values up as above. Do not declare a placeholder total on the assembly and bind a hand-typed number to it in a design; it drifts from the children.
+
+Both tools check that this example builds, not what it computes. sysml-codegen's `test_the_deck_rollup_sums_its_four_panels_and_the_allocation` checks the numbers of its fixture's deck, which names each group's total and adds an allocation cost. No test checks the numbers of the direct `sum() + sum()` form shown here.
+
+### Where the rollup goes
+
+ADR-002 keeps calculations, rollups included, on `part def`s in `library/`. Validate level 6 catches a `sum()` on an attribute declared in a `designs/` file (`V2_DYNAMIC_EXPRESSION`, below), but not the `:>>` redefinition form used in the example above, so the placement is a convention validate only partly enforces. The generator builds the rollup in either place.
+
+<!-- @tool-example dir="designs" fails="V2_DYNAMIC_EXPRESSION" -->
 ```sysml
-// BROKEN: Hardcoded values that will drift
-attribute child_total_cost : Real;  // Placeholder
-:>> capital_cost = child_total_cost;  // Bound in design with hardcoded value
+part def Wheel {
+    attribute capital_cost : Real = 40.0;
+}
+
+// Wrong in designs/: validate level 6 rejects sum() over child parts here
+part def Axle {
+    part wheel : Wheel[2];
+    attribute capital_cost : Real = sum(wheel.capital_cost);
+}
+
+part axle : Axle;
 ```
 
-**Intent:** Aggregate costs from the modeled child occurrences. Before claiming executable aggregation, cite an applicable runtime fixture or check a heterogeneous two-occurrence sum and a changed child value through the intended route. Each occurrence must contribute its own value exactly once.
+### Repeated sub-assemblies
+
+Two or more copies of a sub-assembly that rolls up its own cost build, and each copy computes its own total: a group such as `part rack : Rack[2];`, or two named parts typed `Rack`. The copies share one generated class and keep separate inputs, so a value changed in one copy moves only that copy's total. sysml-codegen's `tests/execution/test_repeated_rollup_teax.py` checks these numbers.
+
+<!-- @tool-example -->
+```sysml
+part def Shelf {
+    attribute capital_cost : Real = 30.0;
+}
+
+part def Rack {
+    part shelf : Shelf[3];
+    attribute capital_cost : Real = sum(shelf.capital_cost);
+}
+
+// Two racks, each rolling up its own shelves
+part def Facility {
+    part rack : Rack[2];
+    attribute capital_cost : Real = sum(rack.capital_cost);
+}
+
+part facility : Facility;
+```
+
+### Named members of a collection
+
+To name some or all of a collection's parts, subset the collection beside it: `part rack_1 :> rack;`. A named member is one of the collection's parts, not an extra one, and `sum(rack.capital_cost)` adds each named member once plus any unnamed copies left over. Redefining a named member later (`part :>> rack_1 { ... }`) keeps it in the collection. A member added by one usage (`rack_a : Rack { part :>> spare :> servers; }`) belongs to that usage only, and a `sum()` written inside a member reaches the whole collection. Inside a member or copy, read its own value by its plain name (`power`), not through the collection (`servers.power`), which the generator refuses there.
+
+<!-- @tool-example -->
+```sysml
+part def Server {
+    attribute power : Real default 10.0;
+}
+
+part def Rack {
+    part servers : Server[2];
+    // Both servers named; set values on each named member
+    part server_1 :> servers { :>> power = 15.0; }
+    part server_2 :> servers { :>> power = 20.0; }
+    attribute total_power : Real = sum(servers.power);
+}
+
+part rack : Rack;
+```
+
+The generator refuses, by name, the shapes it cannot count exactly:
+
+- more named members than the collection's count;
+- a count on a named member other than `[1]`;
+- a subset of a named member;
+- a named member declared somewhere other than beside its collection (another part, or a package-level part);
+- anything other than parts in the collection's own body (a value such as `part servers : Server[2] { :>> power = 12.0; }`, a new attribute, a port or a constraint) when the collection has named members. Put it on each named member instead.
+
+A redefinition that writes no count keeps the one it redefines: `part :>> servers;` over `Server[2]` is still two servers.
 
 ---
 

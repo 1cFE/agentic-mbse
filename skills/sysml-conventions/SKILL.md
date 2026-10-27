@@ -148,6 +148,10 @@ calc total_calc : TotalCapacity { in capacities = cells.capacity; }
 
 Fuller treatment: agentic-mbse `docs/patterns/constraints.md` (where an assert goes) and `docs/patterns/adr002-calculations.md` (multiplicities and calculation inputs).
 
+## Costing an Assembly (Rollups)
+
+Put the rollup on each assembly's `part def` in `library/`: add a group of same-kind children with `sum()` (`sum(panel.capital_cost) + sum(caster.capital_cost)`), read a single child directly (`rail.capital_cost`), and let each level add the totals of the level below. Repeated sub-assemblies (`Rack[2]`, each summing its shelves) build, and each copy computes its own total. Named members of a collection (`part rack_1 :> rack;`, declared beside it) count as its parts, so a `sum()` includes each once; set values on the named members, not in the collection's body. The worked, tested examples, with the optional form that names each group's total first, are in agentic-mbse `docs/patterns/adr002-calculations.md`, "Costing an Assembly (Rollups)".
+
 ## Standard Imports
 
 ```sysml

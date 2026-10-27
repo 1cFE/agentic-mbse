@@ -1,0 +1,14 @@
+# Brief: implement round 2, rollup-guidance
+
+Sent to the implement session on 2026-10-25 after the audit (`audit.md`, verdict Needs Work). Orchestrator decisions are [AGENT].
+
+The orchestrator reproduced audit must-fix 2 independently: `Top { part sub : Sub[2]; :>> capital_cost = sum(sub.capital_cost); }` where `Sub` sums `Leaf[3]` fails `sysml-codegen check` with `REGISTRY_CLASS_NAME_COLLISION ... (grandparent collision): 'Sub_capital_costModule' <- ['p.sub.capital_costModule', 'p.sub.capital_costModule']`. One `Sub` builds; two `Sub` with a literal cost build. It is not in sysml-codegen's backlog. Fixing or filing it in sysml-codegen is reserved for the owner, so do not touch sysml-codegen.
+
+## Changes
+
+1. **The `designs/` placement text (audit must-fix 1).** Say what is true: ADR-002 keeps calculations, rollups included, on `library/` part defs. Validate level 6 catches a `sum()` on an attribute declared in a `designs/` file (the tested wrong-way example, which stays), but not the `:>>` redefinition form, so the rule is the convention, not something validate fully enforces. Keep it to two or three sentences. Add a P3 `[AGENT]` row to `.project/backlog/BACKLOG.md` for the validator gap (`:>> x = sum(...)` in `designs/` passes L6), with the audit's minimal axle model as the reproducer.
+2. **The repeated sub-assembly limit (audit must-fix 2).** State it in the rollup section: two or more copies of a sub-assembly whose own cost is a computed rollup (`Deck[2]`, or two named `Deck` parts) are refused by `sysml-codegen check` with `REGISTRY_CLASS_NAME_COLLISION`; one copy, or copies whose cost is a plain value, build. Add a minimal wrong-way example marked `fails="REGISTRY_CLASS_NAME_COLLISION"`. For that, change `tests/test_validation/test_tool_examples.py` so codes starting `REGISTRY_` are looked for in the check output too, and update its docstring line about which codes belong to the generator. Make the smallest clean change; keep the test's style. Mention the limit in one clause in the guide and skill paragraphs too, since a modeller reading only those would otherwise hit it.
+3. **Move the guide and skill paragraphs (audit should-fix 3)** out from under "Three Structures the Code Generator Refuses" to their own short heading right after that section, in both `MODELING_GUIDE.md.template` and `skills/sysml-conventions/SKILL.md`.
+4. **The arithmetic citation (audit should-fix 4).** Say exactly what the cited test runs: the fixture's deck, which names each group's total and adds an allocation; no test checks the numbers of the direct `sum() + sum()` form.
+
+Re-run the example test (report the count), `uv run pytest tests/test_validation -q`, and `uv run ruff check tests/test_validation/test_tool_examples.py`. Do not commit. Report what changed and any decision beyond this brief. End with `ARTIFACT: <path>`.

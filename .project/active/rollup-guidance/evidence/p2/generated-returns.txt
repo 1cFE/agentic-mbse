@@ -1,0 +1,5 @@
+p2/gen/handwritten/rollupexample/cart/capital_cost_impl.py:30:    return (inputs.deck_assembly_capital_cost + inputs.frame_assembly_capital_cost)
+p2/gen/handwritten/rollupexample/cart/deck_assembly/panel_capital_impl.py:30:    return (inputs.capital_cost_0 + inputs.capital_cost_1 + inputs.capital_cost_2 + inputs.capital_cost_3)
+p2/gen/handwritten/rollupexample/cart/deck_assembly/caster_capital_impl.py:30:    return (inputs.capital_cost_0 + inputs.capital_cost_1 + inputs.capital_cost_2 + inputs.capital_cost_3)
+p2/gen/handwritten/rollupexample/deck/capital_cost_impl.py:30:    return (inputs.panel_capital + inputs.caster_capital)
+p2/gen/handwritten/rollupexample/frame/capital_cost_impl.py:30:    return (inputs.rail_capital_cost + inputs.brace_capital_cost)

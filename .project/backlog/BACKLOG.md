@@ -468,6 +468,28 @@ Out of scope for `L6-EXPOSE-CONSISTENCY`: completeness still reports `L6_DESIGN_
 
 ## P3 - Low Priority
 
+### [L6-REDEF-SUM-IN-DESIGNS] Level 6 passes a `:>> x = sum(...)` redefinition in `designs/`
+
+**Priority**: P3
+**Status**: [AGENT] Filed 2026-10-25 from `rollup-guidance` (audit must-fix 1)
+
+**Problem**: ADR-002 keeps rollups on `library/` part defs. Level 6 reports `V2_DYNAMIC_EXPRESSION` and `V4_UNSUPPORTED_OPERATOR` for a `sum()` over child parts on an attribute declared in a `designs/` file, but not for the same `sum()` written as a redefinition. Reproducer, in `models/designs/`: `abstract part def Costed { attribute capital_cost : Real; }`, `part def Wheel :> Costed { :>> capital_cost = 40.0; }`, `part def Axle :> Costed { part wheel : Wheel[2]; :>> capital_cost = sum(wheel.capital_cost); }`, `part axle : Axle;`. Validate reports only `L6_DESIGN_ATTR_INCOMPLETE` for the abstract base; no V2 or V4 error. Evidence: `.project/active/rollup-guidance/audit.md` finding 1. `docs/patterns/adr002-calculations.md` ("Where the rollup goes") states the gap.
+
+**Goal**: Decide whether level 6 should treat a redefined value like a declared one here, and if so add the check (and update the guidance sentence).
+
+---
+
+### [TOOL-EXAMPLE-ZERO-MODULES] A marked example that builds nothing passes the generator check
+
+**Priority**: P3
+**Status**: [AGENT] Filed 2026-10-25 from `rollup-guidance` (orchestrator decision 5)
+
+**Problem**: `tests/test_validation/test_tool_examples.py` passes the check half when `sysml-codegen check` exits 0 or says there is nothing to generate. A file of definitions only, with no part usage, exits 0 with "builds (0 modules)", so a marked example can pass without the generator building anything from it. Evidence: probe p1 in `.project/active/rollup-guidance/evidence/probes.md`.
+
+**Goal**: Decide whether a passing marked example must build at least one module, and if so make the test fail on 0 modules (and fix any shipped example that then fails).
+
+---
+
 ### [ITEM-ITERATION-LOOP] Experiment Iteration Loop
 
 **Priority**: P3

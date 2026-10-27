@@ -1,0 +1,7 @@
+6 V2_DYNAMIC_EXPRESSION Derived expression references design attributes: ['capital_cost']
+6 V2_DYNAMIC_EXPRESSION Derived expression references design attributes: ['capital_cost']
+6 V4_UNSUPPORTED_OPERATOR Unsupported operator '.' in attribute 'DeckDesign::Deck::panel_capital'
+6 V4_UNSUPPORTED_OPERATOR Unsupported operator '.' in attribute 'DeckDesign::Deck::caster_capital'
+6 L6_DESIGN_ATTR_UNEXTRACTABLE Design attribute 'DeckDesign::Deck::panel_capital' has an expression with no static numeric value: Cannot evaluate expression of type: InvocationExpression
+6 L6_DESIGN_ATTR_UNEXTRACTABLE Design attribute 'DeckDesign::Deck::caster_capital' has an expression with no static numeric value: Cannot evaluate expression of type: InvocationExpression
+levels: [(1, 'passed'), (2, 'failed'), (3, 'passed'), (4, 'passed'), (5, 'passed'), (6, 'failed')]
